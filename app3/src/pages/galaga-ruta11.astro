@@ -1,0 +1,765 @@
+---
+// Galaga Ruta 11 Kitchen Wars
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍔 GALAGA: RUTA 11 KITCHEN WARS</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: auto;
+        }
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .ui-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 16px;
+            font-size: clamp(14px, 4vw, 18px);
+            font-weight: bold;
+            padding: 10px;
+            background: rgba(255, 165, 0, 0.1);
+            border-radius: 10px;
+            border: 2px solid #ff6b35;
+        }
+        .ui-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .canvas {
+            border: 3px solid #ff6b35;
+            background: linear-gradient(180deg, #0f0f23, #1a1a2e);
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+        }
+        .combo-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 215, 0, 0.9);
+            color: #000;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 18px;
+            display: none;
+            animation: pulse 0.5s ease-in-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 16px;
+            padding: 0 10px;
+        }
+        .controls-text {
+            font-size: clamp(12px, 3vw, 14px);
+            color: #ff6b35;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .mobile-controls {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            gap: 20px;
+            z-index: 1000;
+        }
+        .mobile-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 107, 53, 0.3);
+            border: 2px solid #ff6b35;
+            color: #ff6b35;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .mobile-btn:active {
+            background: rgba(255, 107, 53, 0.6);
+        }
+        @media (max-width: 850px) {
+            .canvas {
+                width: 100vw;
+                max-width: 100vw;
+                height: 60vh;
+            }
+            .mobile-controls {
+                display: flex;
+            }
+            .controls-text {
+                display: none;
+            }
+        }
+        @media (max-width: 480px) {
+            .ui-header {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
+            .ui-item {
+                font-size: 14px;
+            }
+        }
+        .buttons {
+            display: flex;
+            gap: 8px;
+        }
+        .btn {
+            padding: 8px 12px;
+            background: #ff6b35;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background: #e55a2b;
+        }
+        .btn-green {
+            background: #059669;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .btn-green:hover {
+            background: #047857;
+        }
+        .text-red { color: #ef4444; }
+        .text-yellow { color: #ffd700; }
+        .text-xl { font-size: 20px; }
+        .text-4xl { font-size: 36px; }
+        .mb-4 { margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+    <div class="ui-header">
+        <div class="ui-item">
+            <span>🍔</span>
+            <span>SCORE: <span id="score">0</span></span>
+        </div>
+        <div class="ui-item">
+            <span>👨🍳</span>
+            <span>CHEF: <span id="lives">3</span></span>
+        </div>
+        <div class="ui-item">
+            <span>🔥</span>
+            <span>COMBO: <span id="combo">0</span>x</span>
+        </div>
+        <div>COCINA: <span id="level">1</span></div>
+    </div>
+
+    <div style="position: relative;">
+        <canvas id="gameCanvas" class="canvas" width="800" height="600"></canvas>
+        
+        <div id="comboDisplay" class="combo-display">
+            ¡COMBO x<span id="comboNumber">0</span>!
+        </div>
+        
+        <div id="gameOverScreen" class="game-over" style="display: none;">
+            <h2 class="text-4xl text-red mb-4">🔥 COCINA CERRADA 🔥</h2>
+            <p class="text-xl mb-4">PUNTUACIÓN FINAL: <span id="finalScore">0</span></p>
+            <p class="mb-4">🏆 Mejor Combo: <span id="bestCombo">0</span>x</p>
+            <button id="restartBtn" class="btn btn-green">
+                🔄 NUEVA COCINA
+            </button>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="controls-text">
+            ← → MOVER ESPÁTULA | ESPACIO 🥄 SALSA
+        </div>
+        
+        <div class="buttons">
+            <button id="soundBtn" class="btn">
+                <span id="soundIcon">🔊</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Mobile Controls -->
+    <div class="mobile-controls">
+        <div class="mobile-btn" id="leftBtn">←</div>
+        <div class="mobile-btn" id="shootBtn">🥄</div>
+        <div class="mobile-btn" id="rightBtn">→</div>
+    </div>
+    </div>
+
+    <script>
+        // @ts-nocheck
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game state
+        let gameState = 'playing';
+        let score = 0;
+        let lives = 3;
+        let level = 1;
+        let combo = 0;
+        let bestCombo = 0;
+        let comboTimer = 0;
+        let keys = {};
+        let soundEnabled = true;
+        let audioContext = null;
+        
+        // Game objects
+        let canvasScale = 1;
+        const player = { 
+            x: 385, 
+            y: 550, 
+            width: 40, 
+            height: 30, 
+            speed: 6,
+            emoji: '🥄'
+        };
+        
+        let bullets = [];
+        let enemies = [];
+        let enemyBullets = [];
+        let particles = [];
+        let powerUps = [];
+        let activePowerUps = [];
+        
+        // Enemy types
+        const enemyTypes = {
+            tomate: { emoji: '🍅', color: '#ff4444', points: 50, speed: 1 },
+            cebolla: { emoji: '🧅', color: '#dda0dd', points: 80, speed: 1.2 },
+            papa: { emoji: '🥔', color: '#deb887', points: 100, speed: 0.8 },
+            hamburguesa: { emoji: '🍔', color: '#ff6b35', points: 200, speed: 0.6 }
+        };
+        
+        const powerUpTypes = {
+            salsa_picante: { emoji: '🌶️', name: 'Salsa Picante', duration: 300 },
+            escudo_queso: { emoji: '🧀', name: 'Escudo de Queso', duration: 200 },
+            disparo_triple: { emoji: '🔥', name: 'Fuego Triple', duration: 250 }
+        };
+
+        // Responsive canvas setup
+        function setupCanvas() {
+            if (window.innerWidth <= 850) {
+                canvasScale = Math.min(window.innerWidth / 800, window.innerHeight * 0.6 / 600);
+                canvas.style.width = (800 * canvasScale) + 'px';
+                canvas.style.height = (600 * canvasScale) + 'px';
+            } else {
+                canvasScale = 1;
+                canvas.style.width = '800px';
+                canvas.style.height = '600px';
+            }
+        }
+
+        // Audio functions
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function playSound(frequency, duration, type = 'square', volume = 0.1) {
+            if (!soundEnabled || !audioContext) return;
+            
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                oscillator.type = type;
+                
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
+            } catch (e) {
+                console.log('Sound error');
+            }
+        }
+
+        function playShootSound() { playSound(600, 0.1, 'square', 0.05); }
+        function playExplosionSound() { playSound(120, 0.4, 'sawtooth', 0.1); }
+        function playComboSound(comboLevel) { playSound(400 + (comboLevel * 50), 0.2, 'triangle', 0.08); }
+
+        // Create enemy formation
+        function createEnemyFormation() {
+            enemies = [];
+            const startX = 80;
+            const startY = 50;
+            const spacing = 70;
+            
+            // Hamburguesas (top)
+            for (let i = 0; i < 3; i++) {
+                enemies.push({
+                    x: startX + i * spacing * 2,
+                    y: startY,
+                    width: 35,
+                    height: 30,
+                    type: 'hamburguesa',
+                    inFormation: true,
+                    formationX: startX + i * spacing * 2,
+                    formationY: startY,
+                    angle: 0,
+                    diving: false
+                });
+            }
+            
+            // Papas (middle)
+            for (let row = 0; row < 2; row++) {
+                for (let i = 0; i < 6; i++) {
+                    enemies.push({
+                        x: startX + i * spacing,
+                        y: startY + 80 + row * 50,
+                        width: 30,
+                        height: 25,
+                        type: 'papa',
+                        inFormation: true,
+                        formationX: startX + i * spacing,
+                        formationY: startY + 80 + row * 50,
+                        angle: 0,
+                        diving: false
+                    });
+                }
+            }
+            
+            // Tomates y cebollas (bottom)
+            const bottomTypes = ['cebolla', 'tomate'];
+            for (let row = 0; row < 2; row++) {
+                for (let i = 0; i < 8; i++) {
+                    enemies.push({
+                        x: startX + i * 60,
+                        y: startY + 180 + row * 45,
+                        width: 25,
+                        height: 20,
+                        type: bottomTypes[row],
+                        inFormation: true,
+                        formationX: startX + i * 60,
+                        formationY: startY + 180 + row * 45,
+                        angle: 0,
+                        diving: false
+                    });
+                }
+            }
+        }
+
+        // Shooting
+        function shoot() {
+            if (gameState !== 'playing') return;
+            
+            bullets.push({
+                x: player.x + player.width / 2 - 3,
+                y: player.y,
+                width: 6,
+                height: 12,
+                speed: 8,
+                color: '#ffd700',
+                emoji: '💧',
+                vx: 0
+            });
+            
+            playShootSound();
+        }
+
+        // Create explosion
+        function createExplosion(x, y, enemyType) {
+            const type = enemyTypes[enemyType];
+            for (let i = 0; i < 12; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 40,
+                    color: type.color,
+                    emoji: type.emoji,
+                    size: Math.random() * 8 + 4
+                });
+            }
+        }
+        
+        // Update combo
+        function updateCombo() {
+            combo++;
+            comboTimer = 120;
+            
+            if (combo > bestCombo) {
+                bestCombo = combo;
+            }
+            
+            if (combo >= 5) {
+                showComboDisplay();
+                playComboSound(combo);
+            }
+        }
+        
+        function showComboDisplay() {
+            const display = document.getElementById('comboDisplay');
+            const comboNum = document.getElementById('comboNumber');
+            if (display && comboNum) {
+                comboNum.textContent = combo.toString();
+                display.style.display = 'block';
+                
+                setTimeout(() => {
+                    display.style.display = 'none';
+                }, 1500);
+            }
+        }
+
+        // Mobile controls
+        let touchControls = { left: false, right: false };
+        
+        function setupMobileControls() {
+            const leftBtn = document.getElementById('leftBtn');
+            const rightBtn = document.getElementById('rightBtn');
+            const shootBtn = document.getElementById('shootBtn');
+            
+            if (leftBtn) {
+                leftBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    touchControls.left = true;
+                });
+                leftBtn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    touchControls.left = false;
+                });
+            }
+            
+            if (rightBtn) {
+                rightBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    touchControls.right = true;
+                });
+                rightBtn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    touchControls.right = false;
+                });
+            }
+            
+            if (shootBtn) {
+                shootBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    shoot();
+                });
+            }
+        }
+
+        // Update game
+        function update() {
+            if (gameState !== 'playing') return;
+            
+            // Update combo timer
+            if (comboTimer > 0) {
+                comboTimer--;
+                if (comboTimer === 0) {
+                    combo = 0;
+                }
+            }
+            
+            // Move player
+            if ((keys['ArrowLeft'] || touchControls.left) && player.x > 0) {
+                player.x -= player.speed;
+            }
+            if ((keys['ArrowRight'] || touchControls.right) && player.x < 760) {
+                player.x += player.speed;
+            }
+            
+            // Update bullets
+            bullets = bullets.filter(bullet => {
+                bullet.y -= bullet.speed;
+                return bullet.y > -bullet.height;
+            });
+            
+            // Update enemies
+            enemies.forEach(enemy => {
+                if (enemy.inFormation) {
+                    enemy.angle += 0.02;
+                    enemy.x = enemy.formationX + Math.sin(enemy.angle) * 15;
+                    
+                    if (Math.random() < 0.001) {
+                        enemy.diving = true;
+                        enemy.inFormation = false;
+                    }
+                } else if (enemy.diving) {
+                    enemy.y += enemyTypes[enemy.type].speed * 2;
+                    
+                    if (enemy.y > 600) {
+                        enemy.diving = false;
+                        enemy.inFormation = true;
+                        enemy.x = enemy.formationX;
+                        enemy.y = enemy.formationY;
+                    }
+                }
+            });
+            
+            // Update particles
+            particles = particles.filter(particle => {
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.life--;
+                return particle.life > 0;
+            });
+            
+            // Collision detection - bullets vs enemies
+            bullets.forEach((bullet, bulletIndex) => {
+                enemies.forEach((enemy, enemyIndex) => {
+                    if (bullet.x < enemy.x + enemy.width &&
+                        bullet.x + bullet.width > enemy.x &&
+                        bullet.y < enemy.y + enemy.height &&
+                        bullet.y + bullet.height > enemy.y) {
+                        
+                        createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.type);
+                        
+                        const points = enemyTypes[enemy.type].points;
+                        score += points;
+                        
+                        updateCombo();
+                        
+                        bullets.splice(bulletIndex, 1);
+                        enemies.splice(enemyIndex, 1);
+                        playExplosionSound();
+                        updateUI();
+                    }
+                });
+            });
+            
+            // Check if all enemies destroyed
+            if (enemies.length === 0) {
+                level++;
+                updateUI();
+                createEnemyFormation();
+            }
+        }
+
+        // Render game
+        function render() {
+            // Clear canvas
+            const gradient = ctx.createLinearGradient(0, 0, 0, 600);
+            gradient.addColorStop(0, '#0f0f23');
+            gradient.addColorStop(1, '#1a1a2e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 800, 600);
+            
+            if (gameState === 'playing') {
+                // Draw player (espátula)
+                ctx.fillStyle = '#ffd700';
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+                ctx.fillStyle = '#8b4513';
+                ctx.fillRect(player.x + 15, player.y + 25, 10, 15);
+                
+                // Draw bullets (salsa)
+                bullets.forEach(bullet => {
+                    ctx.fillStyle = bullet.color;
+                    ctx.beginPath();
+                    ctx.arc(bullet.x + bullet.width/2, bullet.y + bullet.height/2, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                // Draw enemies (ingredientes)
+                enemies.forEach(enemy => {
+                    const type = enemyTypes[enemy.type];
+                    ctx.fillStyle = type.color;
+                    
+                    if (enemy.type === 'hamburguesa') {
+                        // Hamburguesa - rectángulo con capas
+                        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                        ctx.fillStyle = '#8b4513';
+                        ctx.fillRect(enemy.x + 2, enemy.y + 5, enemy.width - 4, 5);
+                        ctx.fillStyle = '#228b22';
+                        ctx.fillRect(enemy.x + 2, enemy.y + 15, enemy.width - 4, 3);
+                    } else if (enemy.type === 'papa') {
+                        // Papa - óvalo
+                        ctx.beginPath();
+                        ctx.ellipse(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.width/2, enemy.height/2, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (enemy.type === 'tomate') {
+                        // Tomate - círculo
+                        ctx.beginPath();
+                        ctx.arc(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.width/2, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (enemy.type === 'cebolla') {
+                        // Cebolla - círculo con anillos
+                        ctx.beginPath();
+                        ctx.arc(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.width/2, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.arc(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.width/3, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                });
+                
+                // Draw particles
+                particles.forEach(particle => {
+                    ctx.globalAlpha = particle.life / 40;
+                    ctx.fillStyle = particle.color;
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.size/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                });
+            }
+        }
+
+        // Update UI
+        function updateUI() {
+            const scoreEl = document.getElementById('score');
+            const livesEl = document.getElementById('lives');
+            const levelEl = document.getElementById('level');
+            const comboEl = document.getElementById('combo');
+            
+            if (scoreEl) scoreEl.textContent = score.toLocaleString();
+            if (livesEl) livesEl.textContent = lives.toString();
+            if (levelEl) levelEl.textContent = level.toString();
+            if (comboEl) comboEl.textContent = combo.toString();
+        }
+
+        // Show game over
+        function showGameOver() {
+            const finalScoreEl = document.getElementById('finalScore');
+            const bestComboEl = document.getElementById('bestCombo');
+            const gameOverEl = document.getElementById('gameOverScreen');
+            
+            if (finalScoreEl) finalScoreEl.textContent = score.toLocaleString();
+            if (bestComboEl) bestComboEl.textContent = bestCombo.toString();
+            if (gameOverEl) gameOverEl.style.display = 'flex';
+        }
+
+        // Restart game
+        function restartGame() {
+            gameState = 'playing';
+            score = 0;
+            lives = 3;
+            level = 1;
+            combo = 0;
+            bestCombo = 0;
+            bullets = [];
+            enemyBullets = [];
+            particles = [];
+            powerUps = [];
+            activePowerUps = [];
+            player.x = 385;
+            player.y = 550;
+            
+            const gameOverEl = document.getElementById('gameOverScreen');
+            if (gameOverEl) gameOverEl.style.display = 'none';
+            
+            createEnemyFormation();
+            updateUI();
+        }
+
+        // Toggle sound
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const soundIcon = document.getElementById('soundIcon');
+            if (soundIcon) {
+                soundIcon.textContent = soundEnabled ? '🔊' : '🔇';
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            
+            if (e.code === 'Space') {
+                e.preventDefault();
+                shoot();
+            }
+            
+            if (!audioContext) {
+                initAudio();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+
+        const soundBtn = document.getElementById('soundBtn');
+        if (soundBtn) {
+            soundBtn.addEventListener('click', () => {
+                if (!audioContext) initAudio();
+                toggleSound();
+            });
+        }
+
+        const restartBtn = document.getElementById('restartBtn');
+        if (restartBtn) {
+            restartBtn.addEventListener('click', restartGame);
+        }
+        
+        window.addEventListener('resize', setupCanvas);
+
+        // Initialize game
+        setupCanvas();
+        setupMobileControls();
+        createEnemyFormation();
+        updateUI();
+        gameLoop();
+    </script>
+</body>
+</html>

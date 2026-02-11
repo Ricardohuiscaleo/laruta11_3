@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuadre de Caja - Ruta 11</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .filter-group input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .summary-item.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        
+        .summary-item.error {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        }
+        
+        .summary-item.warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .summary-item label {
+            display: block;
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .summary-item .value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        th {
+            background: #f5f5f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        tr:hover {
+            background: #f9f9f9;
+        }
+        
+        .status-ok {
+            color: #11998e;
+            font-weight: 600;
+        }
+        
+        .status-error {
+            color: #eb3349;
+            font-weight: 600;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c33;
+        }
+        
+        .success-message {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3c3;
+        }
+        
+        .currency {
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .print-btn {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            .filters, .btn-group, .print-btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Cuadre de Caja - Ruta 11</h1>
+            
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Fecha Inicio</label>
+                    <input type="date" id="fechaInicio" value="">
+                </div>
+                <div class="filter-group">
+                    <label>Fecha Fin</label>
+                    <input type="date" id="fechaFin" value="">
+                </div>
+                <div class="btn-group" style="align-self: flex-end;">
+                    <button class="btn-primary" onclick="generarCuadre()">🔍 Generar Cuadre</button>
+                    <button class="btn-secondary" onclick="window.print()">🖨️ Imprimir</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        // Establecer fechas por defecto
+        const hoy = new Date();
+        const hace30 = new Date(hoy.getTime() - 30 * 24 * 60 * 60 * 1000);
+        
+        document.getElementById('fechaInicio').valueAsDate = hace30;
+        document.getElementById('fechaFin').valueAsDate = hoy;
+
+        async function generarCuadre() {
+            const fechaInicio = document.getElementById('fechaInicio').value;
+            const fechaFin = document.getElementById('fechaFin').value;
+            const resultado = document.getElementById('resultado');
+            
+            resultado.innerHTML = '<div class="loading"><div class="spinner"></div>Generando cuadre...</div>';
+            
+            try {
+                const response = await fetch(`/api/cuadre_caja.php?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    resultado.innerHTML = `<div class="error-message">❌ Error: ${data.error}</div>`;
+                    return;
+                }
+                
+                let html = '';
+                
+                // Resumen principal
+                const cuadra = data.validacion.cuadra === 'SI';
+                html += `
+                    <div class="card">
+                        <h2>📈 Resumen General</h2>
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <label>Saldo Inicial</label>
+                                <div class="value">$${formatNumber(data.saldos.saldo_inicial)}</div>
+                            </div>
+                            <div class="summary-item">
+                                <label>Saldo Final</label>
+                                <div class="value">$${formatNumber(data.saldos.saldo_final)}</div>
+                            </div>
+                            <div class="summary-item">
+                                <label>Diferencia</label>
+                                <div class="value">$${formatNumber(data.saldos.diferencia)}</div>
+                            </div>
+                            <div class="summary-item ${cuadra ? 'success' : 'error'}">
+                                <label>Estado</label>
+                                <div class="value">${cuadra ? '✅ CUADRA' : '❌ NO CUADRA'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Totales
+                html += `
+                    <div class="card">
+                        <h2>💰 Totales por Tipo</h2>
+                        <div class="summary-grid">
+                            <div class="summary-item success">
+                                <label>Total Ingresos</label>
+                                <div class="value">$${formatNumber(data.totales.ingresos)}</div>
+                            </div>
+                            <div class="summary-item error">
+                                <label>Total Egresos</label>
+                                <div class="value">$${formatNumber(data.totales.egresos)}</div>
+                            </div>
+                            <div class="summary-item warning">
+                                <label>Neto</label>
+                                <div class="value">$${formatNumber(data.totales.neto)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Validación
+                if (data.cantidad_errores > 0) {
+                    html += `
+                        <div class="card">
+                            <h2>⚠️ Errores Detectados (${data.cantidad_errores})</h2>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Fecha</th>
+                                        <th>Tipo</th>
+                                        <th>Monto</th>
+                                        <th>Saldo Anterior</th>
+                                        <th>Saldo Calculado</th>
+                                        <th>Saldo Real</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    data.errores_saldo.forEach(error => {
+                        html += `
+                            <tr>
+                                <td>${error.id}</td>
+                                <td>${error.fecha_movimiento}</td>
+                                <td>${error.tipo}</td>
+                                <td>$${formatNumber(error.monto)}</td>
+                                <td>$${formatNumber(error.saldo_anterior)}</td>
+                                <td>$${formatNumber(error.saldo_calculado)}</td>
+                                <td class="status-error">$${formatNumber(error.saldo_nuevo)}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+                
+                // Movimientos sin referencia
+                if (data.movimientos_sin_referencia.length > 0) {
+                    html += `
+                        <div class="card">
+                            <h2>📝 Ingresos sin Referencia de Pedido (${data.movimientos_sin_referencia.length})</h2>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Fecha</th>
+                                        <th>Monto</th>
+                                        <th>Motivo</th>
+                                        <th>Usuario</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    data.movimientos_sin_referencia.forEach(mov => {
+                        html += `
+                            <tr>
+                                <td>${mov.id}</td>
+                                <td>${mov.fecha_movimiento}</td>
+                                <td class="currency">$${formatNumber(mov.monto)}</td>
+                                <td>${mov.motivo}</td>
+                                <td>${mov.usuario}</td>
+                            </tr>
+                        `;
+                    });
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+                
+                // Resumen diario
+                html += `
+                    <div class="card">
+                        <h2>📅 Resumen Diario</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Cantidad</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                data.resumen_diario.forEach(item => {
+                    html += `
+                        <tr>
+                            <td>${item.fecha}</td>
+                            <td>${item.tipo === 'ingreso' ? '📥 Ingreso' : '📤 Egreso'}</td>
+                            <td>${item.cantidad}</td>
+                            <td class="currency">$${formatNumber(item.total)}</td>
+                        </tr>
+                    `;
+                });
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                resultado.innerHTML = html;
+                
+            } catch (error) {
+                resultado.innerHTML = `<div class="error-message">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        function formatNumber(num) {
+            return new Intl.NumberFormat('es-CL', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(num);
+        }
+        
+        // Generar cuadre al cargar
+        window.addEventListener('load', generarCuadre);
+    </script>
+</body>
+</html>

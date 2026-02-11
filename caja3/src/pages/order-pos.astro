@@ -1,0 +1,24 @@
+---
+---
+
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Crear Pedido - La Ruta 11</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script>
+        import OrderPOSApp from '../components/OrderPOSApp.jsx';
+        import { createRoot } from 'react-dom/client';
+        import React from 'react';
+
+        const container = document.getElementById('app');
+        const root = createRoot(container);
+        root.render(React.createElement(OrderPOSApp));
+    </script>
+</body>
+</html>

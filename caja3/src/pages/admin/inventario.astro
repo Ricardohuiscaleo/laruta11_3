@@ -1,0 +1,348 @@
+---
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Inventario - Ruta 11</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div id="inventario-app"></div>
+    
+    <script type="module">
+        import { createElement as h, useState, useEffect } from 'https://esm.sh/react@18';
+        import { createRoot } from 'https://esm.sh/react-dom@18/client';
+
+        const API_BASE = '/api';
+
+        // Componente principal
+        function InventarioApp() {
+            const [activeTab, setActiveTab] = useState('productos');
+            const [productos, setProductos] = useState([]);
+            const [categorias, setCategorias] = useState([]);
+            const [ingredientes, setIngredientes] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [showModal, setShowModal] = useState(false);
+            const [editItem, setEditItem] = useState(null);
+
+            useEffect(() => {
+                loadData();
+            }, [activeTab]);
+
+            const loadData = async () => {
+                setLoading(true);
+                try {
+                    if (activeTab === 'productos') {
+                        const res = await fetch(`${API_BASE}/get_productos.php`);
+                        const data = await res.json();
+                        setProductos(data.productos || []);
+                    } else if (activeTab === 'categorias') {
+                        const res = await fetch(`${API_BASE}/get_categories.php`);
+                        const data = await res.json();
+                        setCategorias(data.categories || []);
+                    } else if (activeTab === 'ingredientes') {
+                        const res = await fetch(`${API_BASE}/get_ingredientes.php`);
+                        const data = await res.json();
+                        setIngredientes(data.ingredientes || []);
+                    }
+                } catch (error) {
+                    console.error('Error cargando datos:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleEdit = (item) => {
+                setEditItem(item);
+                setShowModal(true);
+            };
+
+            const handleDelete = async (id) => {
+                if (!confirm('¿Estás seguro de eliminar este elemento?')) return;
+                
+                try {
+                    const endpoint = activeTab === 'productos' ? 'delete_producto.php' : 
+                                   activeTab === 'categorias' ? 'delete_category.php' : 
+                                   'delete_ingrediente.php';
+                    
+                    await fetch(`${API_BASE}/${endpoint}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id })
+                    });
+                    
+                    loadData();
+                } catch (error) {
+                    console.error('Error eliminando:', error);
+                }
+            };
+
+            return h('div', { className: 'min-h-screen' },
+                // Header
+                h('header', { className: 'bg-white shadow-sm border-b' },
+                    h('div', { className: 'max-w-7xl mx-auto px-4 py-4' },
+                        h('div', { className: 'flex items-center justify-between' },
+                            h('div', null,
+                                h('h1', { className: 'text-2xl font-bold text-gray-900' }, 'Control de Inventario'),
+                                h('p', { className: 'text-gray-600' }, 'Gestiona productos, categorías e ingredientes')
+                            ),
+                            h('button', {
+                                onClick: () => window.location.href = '/admin',
+                                className: 'bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600'
+                            }, 'Volver al Admin')
+                        )
+                    )
+                ),
+
+                // Tabs
+                h('div', { className: 'bg-white border-b' },
+                    h('div', { className: 'max-w-7xl mx-auto px-4' },
+                        h('nav', { className: 'flex space-x-8' },
+                            ['productos', 'categorias', 'ingredientes'].map(tab =>
+                                h('button', {
+                                    key: tab,
+                                    onClick: () => setActiveTab(tab),
+                                    className: `py-4 px-1 border-b-2 font-medium text-sm capitalize ${
+                                        activeTab === tab 
+                                            ? 'border-orange-500 text-orange-600' 
+                                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    }`
+                                }, tab)
+                            )
+                        )
+                    )
+                ),
+
+                // Content
+                h('main', { className: 'max-w-7xl mx-auto px-4 py-6' },
+                    h('div', { className: 'flex justify-between items-center mb-6' },
+                        h('h2', { className: 'text-xl font-semibold capitalize' }, `Gestión de ${activeTab}`),
+                        h('button', {
+                            onClick: () => { setEditItem(null); setShowModal(true); },
+                            className: 'bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 flex items-center gap-2'
+                        },
+                            h('i', { className: 'fas fa-plus' }),
+                            `Agregar ${activeTab.slice(0, -1)}`
+                        )
+                    ),
+
+                    loading ? 
+                        h('div', { className: 'text-center py-8' }, 'Cargando...') :
+                        h(TabContent, { 
+                            activeTab, 
+                            productos, 
+                            categorias, 
+                            ingredientes, 
+                            onEdit: handleEdit, 
+                            onDelete: handleDelete 
+                        })
+                ),
+
+                // Modal
+                showModal && h(Modal, {
+                    activeTab,
+                    editItem,
+                    onClose: () => { setShowModal(false); setEditItem(null); },
+                    onSave: () => { setShowModal(false); setEditItem(null); loadData(); }
+                })
+            );
+        }
+
+        // Componente de contenido por tab
+        function TabContent({ activeTab, productos, categorias, ingredientes, onEdit, onDelete }) {
+            const data = activeTab === 'productos' ? productos : 
+                        activeTab === 'categorias' ? categorias : ingredientes;
+
+            if (data.length === 0) {
+                return h('div', { className: 'text-center py-12 bg-white rounded-lg' },
+                    h('i', { className: 'fas fa-box-open text-4xl text-gray-400 mb-4' }),
+                    h('p', { className: 'text-gray-500' }, `No hay ${activeTab} registrados`)
+                );
+            }
+
+            if (activeTab === 'productos') {
+                return h('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' },
+                    productos.map(producto =>
+                        h('div', { key: producto.id, className: 'bg-white rounded-lg shadow p-4' },
+                            producto.image && h('img', { 
+                                src: producto.image, 
+                                alt: producto.name,
+                                className: 'w-full h-32 object-cover rounded mb-3'
+                            }),
+                            h('h3', { className: 'font-semibold text-lg mb-2' }, producto.name),
+                            h('p', { className: 'text-gray-600 text-sm mb-2' }, producto.description),
+                            h('p', { className: 'text-orange-500 font-bold mb-3' }, `$${producto.price?.toLocaleString('es-CL')}`),
+                            h('div', { className: 'flex gap-2' },
+                                h('button', {
+                                    onClick: () => onEdit(producto),
+                                    className: 'flex-1 bg-blue-500 text-white py-2 rounded hover:bg-blue-600'
+                                }, 'Editar'),
+                                h('button', {
+                                    onClick: () => onDelete(producto.id),
+                                    className: 'flex-1 bg-red-500 text-white py-2 rounded hover:bg-red-600'
+                                }, 'Eliminar')
+                            )
+                        )
+                    )
+                );
+            }
+
+            return h('div', { className: 'bg-white rounded-lg shadow overflow-hidden' },
+                h('table', { className: 'w-full' },
+                    h('thead', { className: 'bg-gray-50' },
+                        h('tr', null,
+                            h('th', { className: 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase' }, 'Nombre'),
+                            activeTab === 'categorias' && h('th', { className: 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase' }, 'Descripción'),
+                            activeTab === 'ingredientes' && h('th', { className: 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase' }, 'Stock'),
+                            h('th', { className: 'px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase' }, 'Acciones')
+                        )
+                    ),
+                    h('tbody', { className: 'divide-y divide-gray-200' },
+                        data.map(item =>
+                            h('tr', { key: item.id },
+                                h('td', { className: 'px-6 py-4 whitespace-nowrap font-medium' }, item.name || item.nombre),
+                                activeTab === 'categorias' && h('td', { className: 'px-6 py-4 text-gray-600' }, item.description || '-'),
+                                activeTab === 'ingredientes' && h('td', { className: 'px-6 py-4' }, 
+                                    h('span', { 
+                                        className: `px-2 py-1 rounded text-xs ${
+                                            (item.stock || 0) > 10 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                        }`
+                                    }, item.stock || 0)
+                                ),
+                                h('td', { className: 'px-6 py-4 text-right' },
+                                    h('div', { className: 'flex gap-2 justify-end' },
+                                        h('button', {
+                                            onClick: () => onEdit(item),
+                                            className: 'text-blue-600 hover:text-blue-800'
+                                        }, h('i', { className: 'fas fa-edit' })),
+                                        h('button', {
+                                            onClick: () => onDelete(item.id),
+                                            className: 'text-red-600 hover:text-red-800'
+                                        }, h('i', { className: 'fas fa-trash' }))
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        // Modal para agregar/editar
+        function Modal({ activeTab, editItem, onClose, onSave }) {
+            const [formData, setFormData] = useState(editItem || {});
+            const [saving, setSaving] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setSaving(true);
+
+                try {
+                    const endpoint = editItem ? 
+                        (activeTab === 'productos' ? 'update_producto.php' : 
+                         activeTab === 'categorias' ? 'update_category.php' : 
+                         'update_ingrediente.php') :
+                        (activeTab === 'productos' ? 'add_producto.php' : 
+                         activeTab === 'categorias' ? 'save_category.php' : 
+                         'save_ingrediente.php');
+
+                    await fetch(`${API_BASE}/${endpoint}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+
+                    onSave();
+                } catch (error) {
+                    console.error('Error guardando:', error);
+                } finally {
+                    setSaving(false);
+                }
+            };
+
+            return h('div', { className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50' },
+                h('div', { className: 'bg-white rounded-lg p-6 w-full max-w-md mx-4' },
+                    h('h3', { className: 'text-lg font-semibold mb-4' }, 
+                        `${editItem ? 'Editar' : 'Agregar'} ${activeTab.slice(0, -1)}`
+                    ),
+                    h('form', { onSubmit: handleSubmit },
+                        h('div', { className: 'space-y-4' },
+                            h('input', {
+                                type: 'text',
+                                placeholder: 'Nombre',
+                                value: formData.name || formData.nombre || '',
+                                onChange: (e) => setFormData({...formData, name: e.target.value, nombre: e.target.value}),
+                                className: 'w-full p-3 border rounded-lg',
+                                required: true
+                            }),
+                            
+                            activeTab === 'productos' && [
+                                h('textarea', {
+                                    key: 'desc',
+                                    placeholder: 'Descripción',
+                                    value: formData.description || '',
+                                    onChange: (e) => setFormData({...formData, description: e.target.value}),
+                                    className: 'w-full p-3 border rounded-lg h-20'
+                                }),
+                                h('input', {
+                                    key: 'price',
+                                    type: 'number',
+                                    placeholder: 'Precio',
+                                    value: formData.price || '',
+                                    onChange: (e) => setFormData({...formData, price: parseInt(e.target.value)}),
+                                    className: 'w-full p-3 border rounded-lg',
+                                    required: true
+                                }),
+                                h('input', {
+                                    key: 'image',
+                                    type: 'url',
+                                    placeholder: 'URL de imagen',
+                                    value: formData.image || '',
+                                    onChange: (e) => setFormData({...formData, image: e.target.value}),
+                                    className: 'w-full p-3 border rounded-lg'
+                                })
+                            ],
+
+                            activeTab === 'categorias' && h('textarea', {
+                                placeholder: 'Descripción',
+                                value: formData.description || '',
+                                onChange: (e) => setFormData({...formData, description: e.target.value}),
+                                className: 'w-full p-3 border rounded-lg h-20'
+                            }),
+
+                            activeTab === 'ingredientes' && h('input', {
+                                type: 'number',
+                                placeholder: 'Stock',
+                                value: formData.stock || '',
+                                onChange: (e) => setFormData({...formData, stock: parseInt(e.target.value)}),
+                                className: 'w-full p-3 border rounded-lg'
+                            })
+                        ),
+                        
+                        h('div', { className: 'flex gap-3 mt-6' },
+                            h('button', {
+                                type: 'button',
+                                onClick: onClose,
+                                className: 'flex-1 py-2 border rounded-lg hover:bg-gray-50'
+                            }, 'Cancelar'),
+                            h('button', {
+                                type: 'submit',
+                                disabled: saving,
+                                className: 'flex-1 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50'
+                            }, saving ? 'Guardando...' : 'Guardar')
+                        )
+                    )
+                )
+            );
+        }
+
+        // Renderizar la aplicación
+        const root = createRoot(document.getElementById('inventario-app'));
+        root.render(h(InventarioApp));
+    </script>
+</body>
+</html>

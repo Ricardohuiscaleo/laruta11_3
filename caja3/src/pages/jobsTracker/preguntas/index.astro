@@ -1,0 +1,223 @@
+---
+export const prerender = false;
+---
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Preguntas - La Ruta 11</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body class="bg-gray-50">
+
+<header class="bg-white shadow p-4">
+    <div class="flex items-center gap-3">
+        <button onclick="history.back()" class="p-2 hover:bg-gray-100 rounded">←</button>
+        <h1 class="text-xl font-bold">Gestión de Preguntas</h1>
+    </div>
+</header>
+
+<main class="container mx-auto p-4 max-w-4xl">
+    
+    <div class="bg-white rounded shadow p-4 mb-4">
+        <div class="flex justify-between items-center mb-3">
+            <h2 class="font-semibold">Seleccionar Posición</h2>
+            <button onclick="exportarPDF()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                📄 Exportar PDF
+            </button>
+        </div>
+        <div class="flex gap-3">
+            <button id="btn-cajero" onclick="loadPosition('cajero')" class="px-4 py-2 bg-blue-600 text-white rounded">
+                Cajero
+            </button>
+            <button id="btn-maestro" onclick="loadPosition('maestro_sanguchero')" class="px-4 py-2 bg-gray-300 rounded">
+                Maestro Sanguchero
+            </button>
+        </div>
+    </div>
+
+    <div class="bg-white rounded shadow p-4 mb-4">
+        <h3 class="font-semibold mb-3">Agregar Pregunta</h3>
+        <div class="flex gap-3">
+            <select id="tipo" class="border rounded px-3 py-2">
+                <option value="yesno">Sí/No</option>
+                <option value="open">Abierta</option>
+            </select>
+            <input type="text" id="pregunta" placeholder="Nueva pregunta..." class="flex-1 border rounded px-3 py-2">
+            <button onclick="agregar()" class="bg-green-600 text-white px-4 py-2 rounded">
+                Agregar
+            </button>
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4">
+        <div class="bg-white rounded shadow p-4">
+            <h3 class="font-semibold mb-3">Preguntas Sí/No</h3>
+            <div id="yesno"></div>
+        </div>
+
+        <div class="bg-white rounded shadow p-4">
+            <h3 class="font-semibold mb-3">Preguntas Abiertas</h3>
+            <div id="open"></div>
+        </div>
+    </div>
+</main>
+
+<script is:inline>
+let posicion = 'cajero';
+let preguntas = { yesno: [], open: [] };
+
+function loadPosition(pos) {
+    posicion = pos;
+    
+    document.getElementById('btn-cajero').className = pos === 'cajero' 
+        ? 'px-4 py-2 bg-blue-600 text-white rounded'
+        : 'px-4 py-2 bg-gray-300 rounded';
+    
+    document.getElementById('btn-maestro').className = pos === 'maestro_sanguchero'
+        ? 'px-4 py-2 bg-blue-600 text-white rounded'
+        : 'px-4 py-2 bg-gray-300 rounded';
+    
+    cargar();
+}
+
+function cargar() {
+    fetch('/api/tracker/manage_questions.php?position=' + posicion)
+        .then(r => r.json())
+        .then(data => {
+            preguntas = data.success ? data.data : { yesno: [], open: [] };
+            mostrar();
+        })
+        .catch(() => {
+            preguntas = { yesno: [], open: [] };
+            mostrar();
+        });
+}
+
+function agregar() {
+    const tipo = document.getElementById('tipo').value;
+    const texto = document.getElementById('pregunta').value.trim();
+    
+    if (!texto) return alert('Escriba una pregunta');
+    
+    fetch('/api/tracker/manage_questions.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            position: posicion,
+            question_type: tipo,
+            question_text: texto
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('pregunta').value = '';
+            cargar();
+        }
+    });
+}
+
+function editar(id, texto) {
+    const nuevo = prompt('Editar:', texto);
+    if (!nuevo || nuevo === texto) return;
+    
+    fetch('/api/tracker/manage_questions.php', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, question_text: nuevo })
+    })
+    .then(r => r.json())
+    .then(data => data.success && cargar());
+}
+
+function eliminar(id) {
+    if (!confirm('¿Eliminar pregunta?')) return;
+    
+    fetch('/api/tracker/manage_questions.php', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id })
+    })
+    .then(r => r.json())
+    .then(data => data.success && cargar());
+}
+
+function mostrar() {
+    const yesnoDiv = document.getElementById('yesno');
+    const openDiv = document.getElementById('open');
+    
+    yesnoDiv.innerHTML = preguntas.yesno.length === 0 
+        ? '<p class="text-gray-500 py-4">Sin preguntas</p>'
+        : preguntas.yesno.map(q => `
+            <div class="border rounded p-3 mb-2">
+                <div class="flex justify-between items-start">
+                    <p class="flex-1 pr-2">${q.question_text}</p>
+                    <div class="flex gap-1">
+                        <button onclick="editar(${q.id}, '${q.question_text.replace(/'/g, "\\'")}')">✏️</button>
+                        <button onclick="eliminar(${q.id})">❌</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    
+    openDiv.innerHTML = preguntas.open.length === 0 
+        ? '<p class="text-gray-500 py-4">Sin preguntas</p>'
+        : preguntas.open.map(q => `
+            <div class="border rounded p-3 mb-2">
+                <div class="flex justify-between items-start">
+                    <p class="flex-1 pr-2">${q.question_text}</p>
+                    <div class="flex gap-1">
+                        <button onclick="editar(${q.id}, '${q.question_text.replace(/'/g, "\\'")}')">✏️</button>
+                        <button onclick="eliminar(${q.id})">❌</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+}
+
+function exportarPDF() {
+    const content = document.createElement('div');
+    content.innerHTML = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h1 style="text-align: center; color: #333;">Preguntas de Entrevista - La Ruta 11</h1>
+            <h2 style="color: #666;">Posición: ${posicion.replace('_', ' ').toUpperCase()}</h2>
+            
+            <h3 style="color: #333; margin-top: 30px;">Preguntas Sí/No</h3>
+            ${preguntas.yesno.map((q, i) => `
+                <div style="margin: 10px 0; padding: 10px; border-left: 3px solid #3b82f6;">
+                    <strong>${i + 1}.</strong> ${q.question_text}
+                </div>
+            `).join('')}
+            
+            <h3 style="color: #333; margin-top: 30px;">Preguntas Abiertas</h3>
+            ${preguntas.open.map((q, i) => `
+                <div style="margin: 10px 0; padding: 10px; border-left: 3px solid #10b981;">
+                    <strong>${i + 1}.</strong> ${q.question_text}
+                </div>
+            `).join('')}
+            
+            <div style="margin-top: 40px; text-align: center; color: #666; font-size: 12px;">
+                Generado el ${new Date().toLocaleDateString('es-ES')} - La Ruta 11
+            </div>
+        </div>
+    `;
+    
+    const opt = {
+        margin: 1,
+        filename: `preguntas-${posicion}-${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(content).save();
+}
+
+document.addEventListener('DOMContentLoaded', () => loadPosition('cajero'));
+</script>
+
+</body>
+</html>

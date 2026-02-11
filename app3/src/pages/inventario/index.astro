@@ -1,0 +1,478 @@
+---
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Inventario - Ruta 11</title>
+    <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        body { overscroll-behavior: none; }
+        .btn-primary { background: linear-gradient(135deg, #f97316, #ea580c) !important; color: white !important; }
+        .btn-primary:active { transform: scale(0.98); }
+        .card { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .stock-low { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app"></div>
+    
+    <script type="module">
+        import { createElement as h, useState, useEffect } from 'https://esm.sh/react@18';
+        import { createRoot } from 'https://esm.sh/react-dom@18/client';
+
+        function App() {
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                const token = localStorage.getItem('inventario_token');
+                if (token) {
+                    fetch('/api/verify_inventario_token.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        setIsLoggedIn(data.valid);
+                        setLoading(false);
+                    })
+                    .catch(() => setLoading(false));
+                } else {
+                    setLoading(false);
+                }
+            }, []);
+
+            if (loading) {
+                return h('div', { className: 'flex items-center justify-center min-h-screen' },
+                    h('div', { className: 'animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500' })
+                );
+            }
+
+            return isLoggedIn ? h(InventarioApp, { onLogout: () => setIsLoggedIn(false) }) : h(LoginForm, { onLogin: () => setIsLoggedIn(true) });
+        }
+
+        function LoginForm({ onLogin }) {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                setError('');
+
+                try {
+                    const response = await fetch('/api/inventario_login.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        localStorage.setItem('inventario_token', data.token);
+                        onLogin();
+                    } else {
+                        setError(data.error || 'Credenciales incorrectas');
+                    }
+                } catch (err) {
+                    setError('Error de conexión');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return h('div', { className: 'min-h-screen bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center p-4' },
+                h('div', { className: 'bg-white rounded-2xl p-8 w-full max-w-sm shadow-2xl' },
+                    h('div', { className: 'text-center mb-8' },
+                        h('img', { src: 'https://laruta11-images.s3.amazonaws.com/menu/logo.png', alt: 'Ruta 11', className: 'w-16 h-16 mx-auto mb-4 rounded-xl' }),
+                        h('h1', { className: 'text-2xl font-bold text-gray-800' }, 'Control Inventario'),
+                        h('p', { className: 'text-gray-600 text-sm' }, 'Acceso para personal autorizado')
+                    ),
+                    
+                    h('form', { onSubmit: handleSubmit, className: 'space-y-6' },
+                        h('div', null,
+                            h('input', {
+                                type: 'text',
+                                placeholder: 'Usuario',
+                                value: username,
+                                onChange: (e) => setUsername(e.target.value),
+                                className: 'w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg',
+                                required: true,
+                                autoComplete: 'username'
+                            })
+                        ),
+                        
+                        h('div', null,
+                            h('input', {
+                                type: 'password',
+                                placeholder: 'Contraseña',
+                                value: password,
+                                onChange: (e) => setPassword(e.target.value),
+                                className: 'w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg',
+                                required: true,
+                                autoComplete: 'current-password'
+                            })
+                        ),
+                        
+                        error && h('div', { className: 'text-red-500 text-sm text-center bg-red-50 p-3 rounded-lg' }, error),
+                        
+                        h('button', {
+                            type: 'submit',
+                            disabled: loading,
+                            style: { background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white' },
+                            className: 'w-full p-4 rounded-xl font-semibold text-lg transition-all disabled:opacity-50'
+                        }, loading ? 'Ingresando...' : 'Ingresar')
+                    )
+                )
+            );
+        }
+
+        function InventarioApp({ onLogout }) {
+            const [activeTab, setActiveTab] = useState('productos');
+            const [productos, setProductos] = useState([]);
+            const [ingredientes, setIngredientes] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [searchTerm, setSearchTerm] = useState('');
+
+            useEffect(() => {
+                loadData();
+            }, [activeTab]);
+
+            const loadData = async () => {
+                setLoading(true);
+                try {
+                    if (activeTab === 'productos') {
+                        const res = await fetch('/api/get_productos.php');
+                        const data = await res.json();
+                        setProductos(Array.isArray(data) ? data : data.productos || []);
+                    } else if (activeTab === 'ingredientes' || activeTab === 'compras') {
+                        const res = await fetch('/api/get_ingredients.php');
+                        const data = await res.json();
+                        setIngredientes(data.ingredientes || []);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleLogout = () => {
+                localStorage.removeItem('inventario_token');
+                onLogout();
+            };
+
+            const updateStock = async (id, newStock, type = 'producto') => {
+                try {
+                    const endpoint = type === 'producto' ? '/api/update_producto_stock.php' : '/api/update_ingredient_stock.php';
+                    const body = type === 'producto' ? 
+                        { id, stock_quantity: newStock } : 
+                        { id, stock: newStock };
+
+                    await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    
+                    loadData();
+                } catch (error) {
+                    alert('Error actualizando stock');
+                }
+            };
+
+            const filteredProductos = productos.filter(p => 
+                p.name?.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            const filteredIngredientes = ingredientes.filter(i => 
+                i.name?.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            return h('div', { className: 'min-h-screen bg-gray-50' },
+                h('div', { className: 'bg-white shadow-sm sticky top-0 z-10' },
+                    h('div', { className: 'flex items-center justify-between p-4' },
+                        h('h1', { className: 'text-xl font-bold text-gray-800' }, 'Inventario v2.1'),
+                        h('button', {
+                            onClick: handleLogout,
+                            className: 'text-gray-500 p-2'
+                        }, '⚙️')
+                    ),
+                    
+                    h('div', { className: 'flex border-b' },
+                        ['productos', 'ingredientes', 'compras'].map(tab => {
+                            const tabNames = {
+                                productos: 'Productos',
+                                ingredientes: 'Ingredientes e Insumos',
+                                compras: 'Compras 🛍️'
+                            };
+                            return h('button', {
+                                key: tab,
+                                onClick: () => setActiveTab(tab),
+                                className: `flex-1 py-3 px-2 text-sm font-medium ${
+                                    activeTab === tab 
+                                        ? 'text-orange-600 border-b-2 border-orange-500 bg-orange-50' 
+                                        : 'text-gray-500'
+                                }`
+                            }, tabNames[tab]);
+                        })
+                    ),
+                    
+                    activeTab !== 'compras' && h('div', { className: 'p-4 bg-gray-50 space-y-3' },
+                        h('input', {
+                            type: 'text',
+                            placeholder: `Buscar ${activeTab}...`,
+                            value: searchTerm,
+                            onChange: (e) => setSearchTerm(e.target.value),
+                            className: 'w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent'
+                        }),
+                        
+                        activeTab === 'productos' && h('button', {
+                            onClick: async () => {
+                                setLoading(true);
+                                try {
+                                    const res = await fetch('/api/recalcular_stock_productos.php', { method: 'POST' });
+                                    const data = await res.json();
+                                    if (data.success) {
+                                        alert(`✅ ${data.message}`);
+                                        loadData();
+                                    } else {
+                                        alert(`❌ Error: ${data.error}`);
+                                    }
+                                } catch (error) {
+                                    alert('❌ Error de conexión');
+                                } finally {
+                                    setLoading(false);
+                                }
+                            },
+                            className: 'w-full p-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-semibold flex items-center justify-center gap-2 hover:from-blue-600 hover:to-blue-700 transition-all'
+                        }, '🔄 Recalcular Stock de Productos')
+                    )
+                ),
+
+                h('div', { className: 'p-4 pb-20' },
+                    loading ? 
+                        h('div', { className: 'text-center py-8' },
+                            h('div', { className: 'animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto' })
+                        ) :
+                        activeTab === 'productos' ? 
+                            h(ProductosList, { productos: filteredProductos, onUpdateStock: updateStock }) :
+                        activeTab === 'ingredientes' ?
+                            h(IngredientesList, { ingredientes: filteredIngredientes, onUpdateStock: updateStock }) :
+                            h(ComprasList, { ingredientes: filteredIngredientes })
+                )
+            );
+        }
+
+        function ProductosList({ productos, onUpdateStock }) {
+            if (productos.length === 0) {
+                return h('div', { className: 'text-center py-12 text-gray-500' }, 'No hay productos');
+            }
+
+            return h('div', { className: 'space-y-3' },
+                productos.map(producto =>
+                    h(ProductoCard, { key: producto.id, producto, onUpdateStock })
+                )
+            );
+        }
+
+        function ProductoCard({ producto, onUpdateStock }) {
+            const [stock, setStock] = useState(producto.stock_quantity || 0);
+            const [hasRecipe, setHasRecipe] = useState(null);
+            const isLowStock = stock <= (producto.min_stock_level || 5);
+
+            useEffect(() => {
+                fetch(`/api/check_product_has_recipe.php?id=${producto.id}`)
+                    .then(r => r.json())
+                    .then(data => setHasRecipe(data.has_recipe))
+                    .catch(() => setHasRecipe(false));
+            }, [producto.id]);
+
+            const handleStockChange = (delta) => {
+                const newStock = Math.max(0, stock + delta);
+                setStock(newStock);
+                onUpdateStock(producto.id, newStock, 'producto');
+            };
+
+            const handleStockEdit = () => {
+                if (hasRecipe) return;
+                const newStock = prompt('Nuevo stock:', stock);
+                if (newStock !== null && !isNaN(newStock)) {
+                    const stockValue = Math.max(0, parseInt(newStock));
+                    setStock(stockValue);
+                    onUpdateStock(producto.id, stockValue, 'producto');
+                }
+            };
+
+            return h('div', { className: `card bg-white rounded-xl p-4 ${isLowStock ? 'border-l-4 border-red-500 stock-low' : ''}` },
+                h('div', { className: 'flex items-center gap-3' },
+                    producto.image_url && h('img', {
+                        src: producto.image_url,
+                        alt: producto.name,
+                        className: 'w-12 h-12 rounded-lg object-cover'
+                    }),
+                    
+                    h('div', { className: 'flex-1 min-w-0' },
+                        h('h3', { className: 'font-semibold text-gray-800 truncate' }, producto.name),
+                        h('p', { className: 'text-sm text-gray-500' }, `$${producto.price?.toLocaleString('es-CL')}`),
+                        isLowStock && h('p', { className: 'text-xs text-red-600 font-medium' }, '⚠️ Stock bajo')
+                    ),
+                    
+                    h('div', { className: 'flex items-center gap-2' },
+                        hasRecipe === false && h('button', {
+                            onClick: () => handleStockChange(-1),
+                            className: 'w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold'
+                        }, '−'),
+                        
+                        h('span', { 
+                            className: `min-w-[3rem] text-center font-bold ${isLowStock ? 'text-red-600' : 'text-gray-800'} ${hasRecipe === false ? 'cursor-pointer hover:bg-gray-100 px-2 py-1 rounded' : ''}`,
+                            onClick: hasRecipe === false ? handleStockEdit : undefined,
+                            title: hasRecipe === false ? 'Click para editar' : hasRecipe ? 'Stock calculado por ingredientes' : ''
+                        }, stock),
+                        
+                        hasRecipe === false && h('button', {
+                            onClick: () => handleStockChange(1),
+                            className: 'w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold'
+                        }, '+'),
+                        
+                        hasRecipe && h('span', { className: 'text-xs text-blue-600 font-medium' }, '🧮 Auto')
+                    )
+                )
+            );
+        }
+
+        function IngredientesList({ ingredientes, onUpdateStock }) {
+            if (ingredientes.length === 0) {
+                return h('div', { className: 'text-center py-12 text-gray-500' }, 'No hay ingredientes e insumos');
+            }
+
+            return h('div', { className: 'space-y-3' },
+                ingredientes.map(ingrediente =>
+                    h(IngredienteCard, { key: ingrediente.id, ingrediente, onUpdateStock })
+                )
+            );
+        }
+
+        function IngredienteCard({ ingrediente, onUpdateStock }) {
+            const [stock, setStock] = useState(Math.round(parseFloat(ingrediente.current_stock || 0)));
+            const isLowStock = stock <= Math.round(parseFloat(ingrediente.min_stock_level || 1));
+
+            const handleStockChange = (delta) => {
+                const newStock = Math.max(0, stock + delta);
+                setStock(newStock);
+                onUpdateStock(ingrediente.id, newStock, 'ingrediente');
+            };
+
+            return h('div', { className: `card bg-white rounded-xl p-4 ${isLowStock ? 'border-l-4 border-red-500 stock-low' : ''}` },
+                h('div', { className: 'flex items-center justify-between' },
+                    h('div', { className: 'flex-1' },
+                        h('h3', { className: 'font-semibold text-gray-800' }, ingrediente.name),
+                        h('p', { className: 'text-xs text-gray-500' }, `${ingrediente.unit} - $${parseFloat(ingrediente.cost_per_unit).toFixed(2)}/unidad`),
+                        isLowStock && h('p', { className: 'text-xs text-red-600 font-medium' }, '⚠️ Stock bajo')
+                    ),
+                    
+                    h('div', { className: 'flex items-center gap-2' },
+                        h('button', {
+                            onClick: () => handleStockChange(-1),
+                            className: 'w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold'
+                        }, '−'),
+                        
+                        h('span', { 
+                            className: `min-w-[3rem] text-center font-bold ${isLowStock ? 'text-red-600' : 'text-gray-800'}`
+                        }, stock),
+                        
+                        h('button', {
+                            onClick: () => handleStockChange(1),
+                            className: 'w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold'
+                        }, '+')
+                    )
+                )
+            );
+        }
+
+        function ComprasList({ ingredientes }) {
+            const ingredientesBajos = ingredientes.filter(i => {
+                const stock = parseFloat(i.current_stock || 0);
+                const minStock = parseFloat(i.min_stock_level || 1);
+                return stock <= minStock;
+            });
+
+            if (ingredientesBajos.length === 0) {
+                return h('div', { className: 'text-center py-12' },
+                    h('div', { className: 'text-6xl mb-4' }, '✅'),
+                    h('h3', { className: 'text-lg font-semibold text-gray-800 mb-2' }, 'Todo en orden'),
+                    h('p', { className: 'text-gray-500' }, 'No hay ingredientes con stock bajo')
+                );
+            }
+
+            return h('div', { className: 'space-y-4' },
+                h('div', { className: 'bg-red-50 border border-red-200 rounded-xl p-4 mb-4' },
+                    h('h3', { className: 'font-semibold text-red-800 mb-2 flex items-center gap-2' },
+                        h('span', null, '🚨'),
+                        `${ingredientesBajos.length} ingredientes necesitan reposición`
+                    )
+                ),
+                
+                h('div', { className: 'space-y-3' },
+                    ingredientesBajos.map(ingrediente => {
+                        const stock = parseFloat(ingrediente.current_stock || 0);
+                        const minStock = parseFloat(ingrediente.min_stock_level || 1);
+                        const sugerido = Math.max(minStock * 3, 10);
+                        const costo = parseFloat(ingrediente.cost_per_unit || 0) * sugerido;
+                        
+                        return h('div', { 
+                            key: ingrediente.id,
+                            className: 'bg-white rounded-xl p-4 border-l-4 border-red-500'
+                        },
+                            h('div', { className: 'flex justify-between items-start mb-3' },
+                                h('div', null,
+                                    h('h4', { className: 'font-semibold text-gray-800' }, ingrediente.name),
+                                    h('p', { className: 'text-sm text-gray-500' }, `Proveedor: ${ingrediente.supplier || 'No definido'}`)
+                                ),
+                                h('div', { className: 'text-right' },
+                                    h('div', { className: 'text-sm text-red-600 font-medium' }, `Stock: ${stock} ${ingrediente.unit}`),
+                                    h('div', { className: 'text-xs text-gray-500' }, `Mínimo: ${minStock} ${ingrediente.unit}`)
+                                )
+                            ),
+                            
+                            h('div', { className: 'bg-gray-50 rounded-lg p-3' },
+                                h('div', { className: 'flex justify-between items-center mb-2' },
+                                    h('span', { className: 'text-sm font-medium text-gray-700' }, 'Cantidad sugerida:'),
+                                    h('span', { className: 'font-bold text-green-600' }, `${sugerido} ${ingrediente.unit}`)
+                                ),
+                                h('div', { className: 'flex justify-between items-center' },
+                                    h('span', { className: 'text-sm font-medium text-gray-700' }, 'Costo estimado:'),
+                                    h('span', { className: 'font-bold text-blue-600' }, `$${costo.toLocaleString('es-CL')}`)
+                                )
+                            )
+                        );
+                    })
+                ),
+                
+                h('div', { className: 'bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6' },
+                    h('h4', { className: 'font-semibold text-blue-800 mb-2' }, '💡 Resumen de compras'),
+                    h('div', { className: 'text-sm text-blue-700' },
+                        `Total estimado: $${ingredientesBajos.reduce((total, i) => {
+                            const sugerido = Math.max(parseFloat(i.min_stock_level || 1) * 3, 10);
+                            return total + (parseFloat(i.cost_per_unit || 0) * sugerido);
+                        }, 0).toLocaleString('es-CL')}`
+                    )
+                )
+            );
+        }
+
+        const root = createRoot(document.getElementById('app'));
+        root.render(h(App));
+    </script>
+</body>
+</html>

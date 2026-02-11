@@ -1,0 +1,20 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Hero from '../components/Hero.jsx';
+import About from '../components/About.jsx';
+import Services from '../components/Services.jsx';
+import Menu from '../components/Menu.jsx';
+import Location from '../components/Location.jsx';
+import Contact from '../components/Contact.jsx';
+import Header from '../components/Header.jsx';
+---
+
+<Layout title="La Ruta11 - Food Trucks">
+  <Header client:load />
+  <Hero client:load />
+  <Services client:visible />
+  <About client:visible />
+  <Menu client:visible />
+  <Location client:visible />
+  <Contact client:visible />
+</Layout>

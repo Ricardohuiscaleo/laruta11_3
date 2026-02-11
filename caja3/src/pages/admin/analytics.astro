@@ -1,0 +1,253 @@
+---
+---
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics - La Ruta 11</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: #f8fafc;
+      min-height: 100vh;
+    }
+    .header { 
+      background: white; 
+      padding: 1.5rem 2rem; 
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .back-btn { 
+      background: #667eea; 
+      color: white; 
+      border: none; 
+      padding: 0.75rem 1.5rem; 
+      border-radius: 8px; 
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .back-btn:hover { background: #5a67d8; }
+    .container { max-width: 1400px; margin: 2rem auto; padding: 0 2rem; }
+    .grid { display: grid; gap: 1.5rem; }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .card { 
+      background: white; 
+      padding: 1.5rem; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .card h3 { margin-bottom: 1rem; color: #374151; font-size: 1.1rem; }
+    .metric { text-align: center; padding: 1rem; }
+    .metric-value { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; }
+    .metric-label { color: #6b7280; font-size: 0.9rem; }
+    .list-item { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      padding: 0.75rem 0; 
+      border-bottom: 1px solid #f3f4f6; 
+    }
+    .list-item:last-child { border-bottom: none; }
+    .chart-container { position: relative; height: 300px; }
+    .loading { text-align: center; padding: 2rem; color: #6b7280; }
+    .green { color: #10b981; }
+    .blue { color: #3b82f6; }
+    .purple { color: #8b5cf6; }
+    .orange { color: #f59e0b; }
+    .red { color: #ef4444; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>📊 Analytics Avanzado</h1>
+    <a href="/admin" class="back-btn">← Volver</a>
+  </div>
+  
+  <div class="container">
+    <!-- Métricas principales -->
+    <div class="grid grid-3" style="margin-bottom: 2rem;">
+      <div class="card">
+        <div class="metric">
+          <div class="metric-value green" id="total-interactions">0</div>
+          <div class="metric-label">Interacciones Hoy</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="metric">
+          <div class="metric-value blue" id="avg-time">0s</div>
+          <div class="metric-label">Tiempo Promedio</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="metric">
+          <div class="metric-value purple" id="avg-scroll">0%</div>
+          <div class="metric-label">Scroll Promedio</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficos principales -->
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>🎯 Interacciones por Tipo</h3>
+        <div class="chart-container">
+          <canvas id="interactionsChart"></canvas>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h3>👆 Clicks por Elemento</h3>
+        <div class="chart-container">
+          <canvas id="clicksChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Listas de datos -->
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>🏆 Productos Más Populares</h3>
+        <div id="top-products" class="loading">Cargando...</div>
+      </div>
+      
+      <div class="card">
+        <h3>🌍 Ubicaciones de Visitantes</h3>
+        <div id="visitor-locations" class="loading">Cargando...</div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    let interactionsChart, clicksChart;
+    
+    // Verificar auth
+    fetch('/api/check_admin_auth.php')
+      .then(r => r.json())
+      .then(data => {
+        if (!data.authenticated) window.location.href = '/admin/login';
+      });
+    
+    // Cargar datos de comportamiento
+    async function loadAnalytics() {
+      try {
+        const response = await fetch('/api/app/get_user_behavior.php');
+        const data = await response.json();
+        
+        if (data.success) {
+          updateMetrics(data.data);
+          updateCharts(data.data);
+          updateLists(data.data);
+        }
+      } catch (error) {
+        console.error('Error loading analytics:', error);
+      }
+    }
+    
+    function updateMetrics(data) {
+      // Total interacciones
+      const totalInteractions = data.interactions_today.reduce((sum, item) => sum + parseInt(item.count), 0);
+      document.getElementById('total-interactions').textContent = totalInteractions;
+      
+      // Tiempo promedio
+      const avgTime = data.engagement?.avg_time ? Math.round(data.engagement.avg_time) : 0;
+      document.getElementById('avg-time').textContent = avgTime + 's';
+      
+      // Scroll promedio
+      const avgScroll = data.engagement?.avg_scroll ? Math.round(data.engagement.avg_scroll) : 0;
+      document.getElementById('avg-scroll').textContent = avgScroll + '%';
+    }
+    
+    function updateCharts(data) {
+      // Gráfico de interacciones
+      const interactionsCtx = document.getElementById('interactionsChart').getContext('2d');
+      if (interactionsChart) interactionsChart.destroy();
+      
+      interactionsChart = new Chart(interactionsCtx, {
+        type: 'doughnut',
+        data: {
+          labels: data.interactions_today.map(item => item.action_type),
+          datasets: [{
+            data: data.interactions_today.map(item => item.count),
+            backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+      
+      // Gráfico de clicks
+      const clicksCtx = document.getElementById('clicksChart').getContext('2d');
+      if (clicksChart) clicksChart.destroy();
+      
+      clicksChart = new Chart(clicksCtx, {
+        type: 'bar',
+        data: {
+          labels: data.clicks_by_element.map(item => item.element_type),
+          datasets: [{
+            label: 'Clicks',
+            data: data.clicks_by_element.map(item => item.clicks),
+            backgroundColor: '#3b82f6'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+    
+    function updateLists(data) {
+      // Top productos
+      const productsHtml = data.top_products.map(product => `
+        <div class="list-item">
+          <div>
+            <strong>${product.product_name || 'Producto'}</strong>
+            <div style="font-size: 0.8rem; color: #6b7280;">
+              ${product.views_count} vistas • ${product.clicks_count} clicks • ${product.cart_adds} al carrito
+            </div>
+          </div>
+          <div class="green" style="font-weight: bold;">${product.views_count}</div>
+        </div>
+      `).join('');
+      document.getElementById('top-products').innerHTML = productsHtml || '<div class="loading">No hay datos</div>';
+      
+      // Ubicaciones
+      const locationsHtml = data.visitor_locations.map(location => `
+        <div class="list-item">
+          <div>
+            <strong>${location.city}, ${location.country}</strong>
+          </div>
+          <div class="blue" style="font-weight: bold;">${location.visits} visitas</div>
+        </div>
+      `).join('');
+      document.getElementById('visitor-locations').innerHTML = locationsHtml || '<div class="loading">No hay datos</div>';
+    }
+    
+    // Cargar datos al inicio
+    loadAnalytics();
+    
+    // Actualizar cada 30 segundos
+    setInterval(loadAnalytics, 30000);
+  </script>
+</body>
+</html>

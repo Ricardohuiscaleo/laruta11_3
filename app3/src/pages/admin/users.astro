@@ -1,0 +1,186 @@
+---
+---
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuarios - Admin La Ruta 11</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f8fafc; }
+    .header { background: white; padding: 1.5rem 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+    .back-btn { background: #667eea; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; text-decoration: none; }
+    .container { max-width: 1400px; margin: 2rem auto; padding: 0 2rem; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .stat-value { font-size: 2rem; font-weight: 700; color: #1f2937; }
+    .stat-label { font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem; }
+    .card { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+    .card-header { padding: 1.5rem 2rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+    .search { position: relative; width: 300px; }
+    .search input { width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; border: 1px solid #d1d5db; border-radius: 8px; }
+    .search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #6b7280; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th { text-align: left; padding: 1rem; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb; }
+    .table td { padding: 1rem; border-bottom: 1px solid #f3f4f6; }
+    .table tr:hover { background: #f9fafb; }
+    .btn { padding: 0.5rem 1rem; border-radius: 6px; border: none; font-size: 0.875rem; cursor: pointer; text-decoration: none; display: inline-block; margin-right: 0.5rem; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-secondary { background: #f3f4f6; color: #374151; }
+    .btn-danger { background: #ef4444; color: white; }
+    .status { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+    .status-active { background: #dcfce7; color: #166534; }
+    .status-inactive { background: #fef2f2; color: #dc2626; }
+    .user-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>👥 Gestión de Usuarios</h1>
+    <a href="/admin" class="back-btn">← Volver al Admin</a>
+  </div>
+  
+  <div class="container">
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-value" id="totalUsers">-</div>
+        <div class="stat-label">👥 Total Usuarios</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="activeUsers">-</div>
+        <div class="stat-label">✅ Usuarios Activos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="totalOrders">-</div>
+        <div class="stat-label">📦 Total Pedidos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="totalRevenue">-</div>
+        <div class="stat-label">💰 Ingresos Totales</div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <h2>Lista de Usuarios</h2>
+        <div class="search">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="Buscar usuarios..." onkeyup="filterUsers(this.value)">
+        </div>
+      </div>
+      
+      <table class="table" id="usersTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Usuario</th>
+            <th>Email</th>
+            <th>Teléfono</th>
+            <th>Registro</th>
+            <th>Pedidos</th>
+            <th>Total Gastado</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="9" style="text-align: center; padding: 2rem; color: #6b7280;">Cargando usuarios...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <script>
+    function loadUsers() {
+      fetch('/api/users/get_users.php')
+        .then(r => r.json())
+        .then(data => {
+          const tbody = document.querySelector('#usersTable tbody');
+          if (!tbody) return;
+          
+          if (data.success && data.data.length > 0) {
+            // Update stats
+            const totalOrders = data.data.reduce((sum, u) => sum + (parseInt(u.total_orders) || 0), 0);
+            const totalRevenue = data.data.reduce((sum, u) => sum + (parseFloat(u.total_spent) || 0), 0);
+            const activeUsers = data.data.filter(u => u.is_active).length;
+            
+            document.getElementById('totalUsers').textContent = data.data.length;
+            document.getElementById('activeUsers').textContent = activeUsers;
+            document.getElementById('totalOrders').textContent = totalOrders;
+            document.getElementById('totalRevenue').textContent = '$' + totalRevenue.toLocaleString('es-CL');
+            
+            // Render table
+            tbody.innerHTML = data.data.map(user => 
+              '<tr>' +
+                '<td>' + user.id + '</td>' +
+                '<td>' +
+                  '<div style="display: flex; align-items: center; gap: 0.75rem;">' +
+                    '<img src="' + (user.photo || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name || 'User') + '&background=f97316&color=fff') + '" class="user-avatar" />' +
+                    '<div>' +
+                      '<div style="font-weight: 600;">' + (user.name || 'Sin nombre') + '</div>' +
+                      '<div style="font-size: 0.75rem; color: #6b7280;">' + (user.city || 'Sin ciudad') + '</div>' +
+                    '</div>' +
+                  '</div>' +
+                '</td>' +
+                '<td>' + user.email + '</td>' +
+                '<td>' + (user.phone || '-') + '</td>' +
+                '<td>' + new Date(user.registration_date).toLocaleDateString('es-CL') + '</td>' +
+                '<td><span style="font-weight: 600; color: #3b82f6;">' + (user.total_orders || 0) + '</span></td>' +
+                '<td><span style="font-weight: 600; color: #059669;">$' + (user.total_spent || 0).toLocaleString('es-CL') + '</span></td>' +
+                '<td><span class="status ' + (user.is_active ? 'status-active' : 'status-inactive') + '">' + (user.is_active ? 'Activo' : 'Inactivo') + '</span></td>' +
+                '<td>' +
+                  '<button class="btn btn-secondary" onclick="viewUser(' + user.id + ')">👁️ Ver</button>' +
+                  '<button class="btn ' + (user.is_active ? 'btn-danger' : 'btn-primary') + '" onclick="toggleUserStatus(' + user.id + ', ' + user.is_active + ')">' + (user.is_active ? '🚫 Desactivar' : '✅ Activar') + '</button>' +
+                '</td>' +
+              '</tr>'
+            ).join('');
+          } else {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 2rem; color: #6b7280;">No hay usuarios registrados</td></tr>';
+          }
+        })
+        .catch(() => {
+          const tbody = document.querySelector('#usersTable tbody');
+          if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 2rem; color: #ef4444;">Error al cargar usuarios</td></tr>';
+          }
+        });
+    }
+    
+    function viewUser(userId) {
+      window.location.href = '/admin/user-detail?id=' + userId;
+    }
+    
+    function toggleUserStatus(userId, currentStatus) {
+      if (!confirm('¿Estás seguro de ' + (currentStatus ? 'desactivar' : 'activar') + ' este usuario?')) return;
+      
+      fetch('/api/users/toggle_status.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, active: !currentStatus })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          alert('Estado actualizado correctamente');
+          loadUsers();
+        } else {
+          alert('Error: ' + data.error);
+        }
+      })
+      .catch(() => alert('Error de conexión'));
+    }
+    
+    function filterUsers(searchTerm) {
+      const rows = document.querySelectorAll('#usersTable tbody tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const shouldShow = text.includes(searchTerm.toLowerCase());
+        (row as HTMLElement).style.display = shouldShow ? '' : 'none';
+      });
+    }
+    
+    document.addEventListener('DOMContentLoaded', loadUsers);
+  </script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Combos - La Ruta 11</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #0a0a0a; line-height: 1.6; }
+    
+    .container { max-width: 1400px; margin: 0 auto; padding: 16px; }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .back-btn { padding: 8px 16px; background: #f5f5f5; border: 1px solid #e5e5e5; border-radius: 6px; text-decoration: none; color: #0a0a0a; font-size: 14px; }
+    .back-btn:hover { background: #e5e5e5; }
+    .page-title { font-size: 24px; font-weight: 700; }
+    
+    .btn { padding: 10px 20px; border-radius: 6px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: #0a0a0a; color: #ffffff; }
+    .btn-primary:hover { background: #333; }
+    .btn-secondary { background: #f5f5f5; color: #0a0a0a; border: 1px solid #e5e5e5; }
+    .btn-secondary:hover { background: #e5e5e5; }
+    
+    .combos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+    .combo-card { background: white; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
+    .combo-header { padding: 16px; border-bottom: 1px solid #e5e5e5; }
+    .combo-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .combo-price { font-size: 16px; color: #22c55e; font-weight: 600; }
+    .combo-content { padding: 16px; }
+    .combo-items { margin-bottom: 16px; }
+    .combo-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f8f9fa; border-radius: 4px; margin-bottom: 4px; font-size: 14px; }
+    .combo-actions { display: flex; gap: 8px; }
+    
+    .empty-state { text-align: center; padding: 60px 20px; color: #666; }
+    .empty-state h3 { font-size: 20px; margin-bottom: 8px; }
+    .empty-state p { margin-bottom: 20px; }
+    
+    .loading { text-align: center; padding: 40px; color: #666; }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <a href="/admin" class="back-btn">← Volver al Admin</a>
+        <h1 class="page-title">🍽️ Gestión de Combos</h1>
+      </div>
+      <a href="/admin/edit-product.astro?category_id=8" class="btn btn-primary">
+        + Crear Combo
+      </a>
+    </div>
+    
+    <div id="loading" class="loading">Cargando combos...</div>
+    
+    <div id="combosContainer" style="display: none;">
+      <div id="combosGrid" class="combos-grid"></div>
+      
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <h3>🍽️ No hay combos creados</h3>
+        <p>Los combos te permiten agrupar productos con descuentos especiales</p>
+        <a href="/admin/edit-product.astro?category_id=8" class="btn btn-primary">
+          + Crear Primer Combo
+        </a>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Formatear precio
+    function formatPrice(value) {
+      if (!value) return '0';
+      return parseInt(value).toLocaleString('es-CL');
+    }
+    
+    // Cargar combos
+    async function loadCombos() {
+      try {
+        const response = await fetch('/api/get_combos.php');
+        const result = await response.json();
+        
+        const loading = document.getElementById('loading');
+        const container = document.getElementById('combosContainer');
+        if (loading) loading.style.display = 'none';
+        if (container) container.style.display = 'block';
+        
+        if (result.success && result.combos && result.combos.length > 0) {
+          displayCombos(result.combos);
+        } else {
+          const emptyState = document.getElementById('emptyState');
+          if (emptyState) emptyState.style.display = 'block';
+        }
+        
+      } catch (error) {
+        console.error('Error cargando combos:', error);
+        const loading = document.getElementById('loading');
+        if (loading) loading.innerHTML = '<p style="color: #ef4444;">Error cargando combos</p>';
+      }
+    }
+    
+    function displayCombos(combos) {
+      const grid = document.getElementById('combosGrid');
+      if (!grid) return;
+      
+      let html = '';
+      combos.forEach(combo => {
+        const itemsHtml = combo.items?.map(item => `
+          <div class="combo-item">
+            <span>${item.product_name}</span>
+            <span>x${item.quantity}${item.is_selectable ? ' (seleccionable)' : ''}</span>
+          </div>
+        `).join('') || '';
+        
+        html += `
+          <div class="combo-card">
+            <div class="combo-header">
+              <div class="combo-title">${combo.name}</div>
+              <div class="combo-price">$${formatPrice(combo.price)}</div>
+            </div>
+            <div class="combo-content">
+              ${combo.description ? `<p style="margin-bottom: 12px; color: #666; font-size: 14px;">${combo.description}</p>` : ''}
+              <div class="combo-items">
+                <h4 style="font-size: 14px; margin-bottom: 8px; color: #0a0a0a;">Productos incluidos (${combo.items?.length || 0}):</h4>
+                ${itemsHtml || '<p style="color: #666; font-size: 12px;">Sin productos configurados</p>'}
+              </div>
+              <div class="combo-actions">
+                <a href="/admin/edit-product?id=${combo.id}" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;">
+                  ✏️ Editar
+                </a>
+                <button onclick="deleteCombo(${combo.id}, '${combo.name}')" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px; background: #fef2f2; color: #dc2626; border-color: #fecaca;">
+                  🗑️ Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      grid.innerHTML = html;
+    }
+    
+    // Eliminar combo
+    async function deleteCombo(comboId, comboName) {
+      if (!confirm(`¿Eliminar el combo "${comboName}"?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/delete_combo.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id: comboId })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('✅ Combo eliminado correctamente');
+          loadCombos(); // Recargar lista
+        } else {
+          alert('❌ Error: ' + result.error);
+        }
+      } catch (error) {
+        alert('❌ Error eliminando combo: ' + error.message);
+      }
+    }
+    
+    // Inicializar
+    loadCombos();
+  </script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+---
+export const prerender = false;
+---
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/icon.png">
+    <title>Postulación Cajero/a - La Ruta 11</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .timer-warning { color: #d97706; animation: pulse 1.5s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-5xl">
+        
+        <!-- Fase 1: Formulario Básico -->
+        <div id="phase1">
+            <header class="text-center mb-6 sm:mb-8">
+                <h1 class="font-bold text-blue-600 flex items-center justify-center gap-2 sm:gap-3" style="font-size: clamp(1.5rem, 4vw, 2.5rem);">
+                    <img src="/icon.png" alt="La Ruta 11" class="w-8 h-8 sm:w-10 sm:h-10">
+                    La Ruta 11
+                </h1>
+                <p class="text-gray-600 mt-2" style="font-size: clamp(0.875rem, 2.5vw, 1.25rem);">Postulación para Cajero/a</p>
+            </header>
+            <div class="bg-white p-6 rounded-lg shadow-lg max-w-lg mx-auto">
+                <h2 class="text-2xl font-bold mb-4 border-b pb-3">1. Datos de Contacto</h2>
+                <form id="basicForm" onsubmit="return false;">
+                    <div class="mb-4 flex items-center gap-4">
+                        <img id="profile-img" src="" alt="Foto de perfil" class="w-16 h-16 rounded-full border-2 border-blue-200" style="display: none;">
+                        <div class="flex-1">
+                            <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+                            <input type="text" id="nombre" name="nombre" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+                        <input type="email" id="email" name="email" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" readonly>
+                    </div>
+                    <div class="mb-4">
+                        <label for="telefono" class="block text-sm font-medium text-gray-700 mb-1">Teléfono / WhatsApp <span class="text-red-500">*</span></label>
+                        <input type="tel" id="telefono" name="telefono" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="+56 9 1234 5678" required>
+                        <div id="phone-validator" class="text-xs mt-1 h-4"></div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="instagram" class="block text-sm font-medium text-gray-700 mb-1">Instagram <span class="text-gray-400">(opcional)</span></label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-gray-400">@</span>
+                            <input type="text" id="instagram" name="instagram" class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="tu_usuario">
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Solo el nombre de usuario, sin @</p>
+                    </div>
+                    <div class="mb-4">
+                        <label for="nacionalidad" class="block text-sm font-medium text-gray-700 mb-1">Nacionalidad <span class="text-red-500">*</span></label>
+                        <select id="nacionalidad" name="nacionalidad" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                            <option value="">Selecciona tu nacionalidad</option>
+                            <option value="chile">🇨🇱 Chile</option>
+                            <option value="argentina">🇦🇷 Argentina</option>
+                            <option value="bolivia">🇧🇴 Bolivia</option>
+                            <option value="brasil">🇧🇷 Brasil</option>
+                            <option value="colombia">🇨🇴 Colombia</option>
+                            <option value="ecuador">🇪🇨 Ecuador</option>
+                            <option value="guyana">🇬🇾 Guyana</option>
+                            <option value="paraguay">🇵🇾 Paraguay</option>
+                            <option value="peru">🇵🇪 Perú</option>
+                            <option value="suriname">🇸🇷 Suriname</option>
+                            <option value="uruguay">🇺🇾 Uruguay</option>
+                            <option value="venezuela">🇻🇪 Venezuela</option>
+                            <option value="otro_pais">🌍 Otro país</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="genero" class="block text-sm font-medium text-gray-700 mb-1">Género <span class="text-red-500">*</span></label>
+                        <select id="genero" name="genero" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                            <option value="">Selecciona tu género</option>
+                            <option value="masculino">Masculino</option>
+                            <option value="femenino">Femenino</option>
+                            <option value="otro">Otro</option>
+                            <option value="prefiero_no_decir">Prefiero no decir</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Requisitos legales para trabajar en Chile <span class="text-red-500">*</span></label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="mayor_edad" name="requisitos[]" value="mayor_edad" class="mr-2 text-blue-600 focus:ring-blue-500" required>
+                                Soy mayor de 18 años
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="cedula_vigente" name="requisitos[]" value="cedula_vigente" class="mr-2 text-blue-600 focus:ring-blue-500" required>
+                                Tengo cédula de identidad vigente (chilena o extranjera)
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="permiso_trabajo" name="requisitos[]" value="permiso_trabajo" class="mr-2 text-blue-600 focus:ring-blue-500" required>
+                                Tengo permiso legal para trabajar en Chile
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">¿Tienes curso de cajero/a? <span class="text-gray-500">(No excluyente)</span></label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center">
+                                <input type="radio" name="curso_cajero" value="si" class="mr-2 text-blue-600 focus:ring-blue-500">
+                                Sí, tengo el curso
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="curso_cajero" value="no" class="mr-2 text-blue-600 focus:ring-blue-500">
+                                No, no tengo el curso
+                            </label>
+                        </div>
+                        <p class="text-xs text-blue-600 mt-1">Opcional - No es requisito obligatorio</p>
+                    </div>
+                </form>
+                <div class="mt-6 text-center bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                    <h3 class="font-bold text-blue-800">Tu Primera Atención en La Ruta 11</h3>
+                    <p class="text-sm text-blue-700 mt-2">
+                        Buscamos un/a cajero/a que sea la cara amable de La Ruta 11. Esta prueba simula situaciones reales de atención al cliente. Tendrás <strong>11 minutos</strong> para demostrar tu capacidad de comunicación, organización y servicio. <strong>Todas tus respuestas y el número de intentos serán registrados</strong>.
+                    </p>
+                </div>
+                <div class="mt-8">
+                    <button type="button" id="startQuestionsButton" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300">
+                        Contestar Preguntas
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fase 2: Preguntas y Calificador -->
+        <div id="phase2" class="hidden fade-in">
+            
+            <!-- Header Fijo -->
+            <header class="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm z-10 shadow-md">
+                <div class="container mx-auto px-4 py-3 max-w-5xl">
+                    <p class="text-xs sm:text-sm text-center text-gray-600 mb-2">Afinidad con el servicio de "La Ruta 11"</p>
+                    <div class="w-full bg-gray-200 rounded-full h-5 sm:h-6">
+                        <div id="compatibilityBar" class="bg-blue-600 h-5 sm:h-6 rounded-full text-center text-white font-bold text-xs sm:text-sm flex items-center justify-center transition-all duration-500" style="width: 0%;">
+                            0%
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Contenido Principal -->
+            <main class="pt-20 sm:pt-24 pb-24 sm:pb-28">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Columna de Preguntas -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <div>
+                                <label for="pregunta1" class="block text-md font-semibold text-gray-800">1. Apertura y Organización</label>
+                                <p class="text-sm text-gray-600 mb-2">Llegas para abrir y notas que la caja registradora no enciende y hay una fila de 5 clientes esperando. El técnico no puede venir hasta la tarde. Describe paso a paso cómo organizas la atención, comunicas la situación a los clientes y te coordinas con el maestro sanguchero para mantener el servicio funcionando.</p>
+                                <textarea id="pregunta1" name="pregunta1" rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Tu plan de acción aquí..."></textarea>
+                            </div>
+                            <div>
+                                <label for="pregunta2" class="block text-md font-semibold text-gray-800">2. Atención al Cliente Difícil</label>
+                                <p class="text-sm text-gray-600 mb-2">Un cliente llega muy molesto porque su pedido de ayer tenía la carne muy seca y quiere que le devuelvan el dinero, pero no tiene el ticket. Otros clientes están esperando y se nota la tensión. Describe cómo manejas esta situación para resolver el problema del cliente molesto, mantener la calma de los otros clientes y coordinar con cocina si es necesario.</p>
+                                <textarea id="pregunta2" name="pregunta2" rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Cómo manejas la situación..."></textarea>
+                            </div>
+                            <div>
+                                <label for="pregunta3" class="block text-md font-semibold text-gray-800">3. Cierre y Mejora del Servicio</label>
+                                <p class="text-sm text-gray-600 mb-2">Al final del día, revisas que varios clientes preguntaron por descuentos para estudiantes y familias numerosas. También notas que muchos piden el menú en inglés para turistas. Describe tu proceso de cierre de caja y limpieza, y luego propón dos ideas concretas para mejorar la experiencia del cliente basándote en estas observaciones.</p>
+                                <textarea id="pregunta3" name="pregunta3" rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Describe el cierre y tus propuestas..."></textarea>
+                            </div>
+                            <div id="paste-alert" class="hidden p-2 bg-red-100 text-red-700 text-sm rounded-md text-center">La función de pegar está deshabilitada.</div>
+                        </div>
+                        <!-- Columna de Análisis -->
+                        <div class="lg:col-span-1">
+                            <div class="sticky top-20 sm:top-24">
+                                <h3 class="font-bold mb-2" style="font-size: clamp(0.875rem, 2vw, 1.125rem);">Análisis de Habilidades</h3>
+                                <ul id="skillsList" class="space-y-1 sm:space-y-2 text-xs sm:text-sm"></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón de Envío -->
+                    <div class="mt-8 border-t pt-6">
+                        <button type="button" id="submitButton" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 disabled:bg-gray-400" disabled>
+                            Enviar Postulación
+                        </button>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer Fijo -->
+            <footer class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm z-10 border-t">
+                <div class="container mx-auto px-3 py-3 max-w-5xl">
+                    <div class="grid grid-cols-3 gap-2 sm:gap-4 text-center">
+                        <div class="min-w-0">
+                            <h2 class="font-bold text-xs sm:text-sm lg:text-base mb-1">Calificador</h2>
+                            <div id="compatibilityText" class="font-semibold text-gray-700 text-xs sm:text-sm truncate">Esperando...</div>
+                        </div>
+                        <div class="min-w-0">
+                            <h2 class="font-bold text-xs sm:text-sm lg:text-base mb-1">Intentos</h2>
+                            <div id="attemptCounter" class="font-bold text-blue-600 text-sm sm:text-lg lg:text-xl"></div>
+                        </div>
+                        <div class="min-w-0">
+                            <h2 class="font-bold text-xs sm:text-sm lg:text-base mb-1">Tiempo</h2>
+                            <div id="timer" class="font-bold text-gray-800 text-sm sm:text-lg lg:text-xl">11:00</div>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="/js/job-application.js" is:inline></script>
+    <script is:inline>
+        window.addEventListener('load', () => {
+            if (typeof initJobApplication === 'function') {
+                initJobApplication('cajero');
+            }
+        });
+    </script>
+</body>
+</html>

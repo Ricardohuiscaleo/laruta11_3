@@ -1,0 +1,202 @@
+{
+  "timestamp": "2025-09-14T14:29:12.741Z",
+  "summary": {
+    "totalFiles": 571,
+    "totalLines": 73014,
+    "emptyFiles": 0
+  },
+  "categories": {
+    "Frontend": {
+      "files": 91,
+      "lines": 28589
+    },
+    "Backend PHP": {
+      "files": 406,
+      "lines": 34956
+    },
+    "Database": {
+      "files": 32,
+      "lines": 1678
+    },
+    "Config": {
+      "files": 6,
+      "lines": 7102
+    },
+    "Documentation": {
+      "files": 10,
+      "lines": 0
+    },
+    "Media": {
+      "files": 12,
+      "lines": 0
+    },
+    "Shell Scripts": {
+      "files": 2,
+      "lines": 689
+    },
+    "Other": {
+      "files": 12,
+      "lines": 0
+    }
+  },
+  "directories": {
+    ".": {
+      "files": 43,
+      "lines": 10048
+    },
+    "admin": {
+      "files": 1,
+      "lines": 84
+    },
+    "api": {
+      "files": 362,
+      "lines": 30244
+    },
+    "backup_deleted_apis": {
+      "files": 52,
+      "lines": 4165
+    },
+    "game-isolated": {
+      "files": 9,
+      "lines": 2995
+    },
+    "public": {
+      "files": 15,
+      "lines": 4024
+    },
+    "sql": {
+      "files": 8,
+      "lines": 301
+    },
+    "src": {
+      "files": 80,
+      "lines": 21153
+    },
+    "tuu-pluguin": {
+      "files": 1,
+      "lines": 0
+    }
+  },
+  "extensions": {
+    "": {
+      "files": 10,
+      "lines": 0
+    },
+    ".example": {
+      "files": 1,
+      "lines": 0
+    },
+    ".md": {
+      "files": 10,
+      "lines": 0
+    },
+    ".sql": {
+      "files": 32,
+      "lines": 1678
+    },
+    ".js": {
+      "files": 12,
+      "lines": 4389
+    },
+    ".php": {
+      "files": 406,
+      "lines": 34956
+    },
+    ".html": {
+      "files": 4,
+      "lines": 342
+    },
+    ".mjs": {
+      "files": 2,
+      "lines": 31
+    },
+    ".sh": {
+      "files": 2,
+      "lines": 689
+    },
+    ".astro": {
+      "files": 40,
+      "lines": 14652
+    },
+    ".json": {
+      "files": 4,
+      "lines": 7071
+    },
+    ".mp3": {
+      "files": 5,
+      "lines": 0
+    },
+    ".wav": {
+      "files": 1,
+      "lines": 0
+    },
+    ".png": {
+      "files": 3,
+      "lines": 0
+    },
+    ".ico": {
+      "files": 3,
+      "lines": 0
+    },
+    ".jsx": {
+      "files": 35,
+      "lines": 9206
+    },
+    ".ts": {
+      "files": 1,
+      "lines": 0
+    }
+  },
+  "largestFiles": [
+    {
+      "path": "package-lock.json",
+      "lines": 6991,
+      "size": 298843
+    },
+    {
+      "path": "src/components/MenuApp.jsx",
+      "lines": 3298,
+      "size": 163172
+    },
+    {
+      "path": "game-isolated/index.astro",
+      "lines": 2732,
+      "size": 106232
+    },
+    {
+      "path": "src/pages/admin/index.astro",
+      "lines": 2059,
+      "size": 104086
+    },
+    {
+      "path": "src/pages/admin/edit-product.astro",
+      "lines": 1929,
+      "size": 88446
+    },
+    {
+      "path": "public/js/jobs-tracker.js",
+      "lines": 1078,
+      "size": 43802
+    },
+    {
+      "path": "public/js/job-application.js",
+      "lines": 949,
+      "size": 46554
+    },
+    {
+      "path": "public/js/kanban.js",
+      "lines": 808,
+      "size": 35330
+    },
+    {
+      "path": "cleanup_apis.sh",
+      "lines": 674,
+      "size": 30446
+    },
+    {
+      "path": "src/components/ApiMonitor.jsx",
+      "lines": 559,
+      "size": 21019
+    }
+  ]
+}

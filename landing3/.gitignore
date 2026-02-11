@@ -1,0 +1,20 @@
+# Archivos de entorno
+.env
+.env.local
+.env.production
+
+# Dependencias
+node_modules/
+vendor/
+
+# Archivos de construcción
+dist/
+build/
+
+# Archivos temporales
+*.tmp
+*.log
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db

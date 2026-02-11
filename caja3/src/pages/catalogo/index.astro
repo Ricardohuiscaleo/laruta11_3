@@ -1,0 +1,448 @@
+---
+// Catálogo de Productos - Optimizado para impresión/PDF
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Productos - La Ruta 11</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo.png" />
+    <style>
+        @media print {
+            body { -webkit-print-color-adjust: exact; }
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+        }
+    </style>
+</head>
+<body class="bg-white">
+    <div id="catalogo-app"></div>
+
+    <script type="module">
+        import { createElement as h, useState, useEffect } from 'https://esm.sh/react@18';
+        import { createRoot } from 'https://esm.sh/react-dom@18/client';
+
+        const CatalogoApp = () => {
+            const [products, setProducts] = useState([]);
+            const [categories, setCategories] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [selectedCategories, setSelectedCategories] = useState(new Set());
+
+            const loadData = async () => {
+                try {
+                    const [productsRes, categoriesRes] = await Promise.all([
+                        fetch('/api/get_productos.php'),
+                        fetch('/api/get_categories.php')
+                    ]);
+                    
+                    const productsData = await productsRes.json();
+                    const categoriesData = await categoriesRes.json();
+                    
+                    console.log('Products API response:', productsData);
+                    console.log('Categories API response:', categoriesData);
+                    
+                    // Las APIs devuelven arrays directamente
+                    if (Array.isArray(productsData)) {
+                        console.log('Sample product is_active values:', productsData.slice(0, 5).map(p => ({ name: p.name, is_active: p.is_active, type: typeof p.is_active })));
+                        const activeProducts = productsData.filter(p => p.is_active === '1' || p.is_active === 1 || p.is_active === true);
+                        console.log('All products:', productsData.length, 'Active products:', activeProducts.length);
+                        setProducts(activeProducts);
+                    }
+                    if (Array.isArray(categoriesData)) {
+                        setCategories(categoriesData);
+                    }
+                } catch (error) {
+                    console.error('Error cargando datos:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            useEffect(() => {
+                loadData();
+            }, []);
+            
+            useEffect(() => {
+                if (categories.length > 0 && selectedCategories.size === 0) {
+                    setSelectedCategories(new Set(categories.map(c => c.id)));
+                }
+            }, [categories]);
+
+            const getProductsByCategory = (categoryId) => {
+                return products.filter(p => p.category_id === categoryId);
+            };
+
+            const getCategoryName = (categoryId) => {
+                const category = categories.find(c => c.id === categoryId);
+                return category ? category.name : 'Sin categoría';
+            };
+
+            const getProductImage = (imageUrl) => {
+                if (imageUrl && imageUrl.trim() !== '') {
+                    return imageUrl;
+                }
+                return 'https://laruta11-images.s3.amazonaws.com/menu/logo.png';
+            };
+
+            const loadImageAsBase64 = (url) => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            ctx.drawImage(img, 0, 0);
+                            resolve(canvas.toDataURL('image/jpeg', 0.8));
+                        } catch (e) {
+                            resolve(null);
+                        }
+                    };
+                    img.onerror = () => resolve(null);
+                    img.crossOrigin = 'anonymous';
+                    img.src = url;
+                });
+            };
+
+            const generatePDF = async () => {
+                try {
+                    // Cargar jsPDF dinámicamente
+                    if (!window.jspdf) {
+                        const script = document.createElement('script');
+                        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                        document.head.appendChild(script);
+                        await new Promise((resolve, reject) => {
+                            script.onload = resolve;
+                            script.onerror = reject;
+                        });
+                    }
+
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('p', 'mm', 'letter'); // Tamaño carta
+                    const pageWidth = 216; // Ancho carta en mm
+                    const pageHeight = 279; // Alto carta en mm
+                    const margin = 15;
+                    const contentWidth = pageWidth - (margin * 2);
+                    let yPos = margin;
+
+                    // Header
+                    pdf.setFontSize(20);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text('LA RUTA 11', pageWidth / 2, yPos, { align: 'center' });
+                    yPos += 8;
+                    
+                    pdf.setFontSize(14);
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.text('Catálogo de Productos', pageWidth / 2, yPos, { align: 'center' });
+                    yPos += 5;
+                    
+                    pdf.setFontSize(10);
+                    pdf.text(new Date().toLocaleDateString('es-CL'), pageWidth / 2, yPos, { align: 'center' });
+                    yPos += 15;
+
+                    // Intentar cargar imágenes, pero continuar sin ellas si fallan
+                    const selectedCats = categories.filter(cat => selectedCategories.has(cat.id));
+                    const allProducts = selectedCats.flatMap(cat => getProductsByCategory(cat.id));
+                    
+                    console.log('Intentando cargar imágenes...');
+                    const imageCache = new Map();
+                    
+                    // Cargar solo las primeras 3 imágenes como prueba
+                    const testProducts = allProducts.slice(0, 3);
+                    for (const product of testProducts) {
+                        const imageUrl = getProductImage(product.image_url);
+                        const imageData = await loadImageAsBase64(imageUrl);
+                        if (imageData) {
+                            imageCache.set(product.id, imageData);
+                            console.log(`✓ Imagen cargada para: ${product.name}`);
+                        }
+                    }
+                    
+                    if (imageCache.size > 0) {
+                        console.log('Imágenes funcionan, cargando todas...');
+                        // Si funcionan, cargar el resto
+                        for (const product of allProducts.slice(3)) {
+                            const imageUrl = getProductImage(product.image_url);
+                            const imageData = await loadImageAsBase64(imageUrl);
+                            if (imageData) {
+                                imageCache.set(product.id, imageData);
+                            }
+                        }
+                    } else {
+                        console.log('Imágenes no disponibles, generando PDF solo con texto');
+                    }
+                    
+                    console.log(`Imágenes cargadas: ${imageCache.size}/${allProducts.length}`);
+                    
+                    for (const category of selectedCats) {
+                        const categoryProducts = getProductsByCategory(category.id);
+                        if (categoryProducts.length === 0) continue;
+
+                        // Verificar espacio para título de categoría
+                        if (yPos > pageHeight - 40) {
+                            pdf.addPage();
+                            yPos = margin;
+                        }
+
+                        // Título de categoría
+                        pdf.setFontSize(16);
+                        pdf.setFont('helvetica', 'bold');
+                        pdf.text(category.name, margin, yPos);
+                        yPos += 10;
+
+                        // Productos en grid 2x2 para carta
+                        const cols = 2;
+                        const productWidth = (contentWidth - 10) / cols;
+                        const productHeight = 45; // Aumentado para imagen
+                        
+                        for (let i = 0; i < categoryProducts.length; i += cols) {
+                            // Verificar espacio para fila de productos
+                            if (yPos + productHeight > pageHeight - margin) {
+                                pdf.addPage();
+                                yPos = margin;
+                            }
+
+                            for (let j = 0; j < cols && (i + j) < categoryProducts.length; j++) {
+                                const product = categoryProducts[i + j];
+                                const xPos = margin + (j * (productWidth + 5));
+
+                                // Borde del producto
+                                pdf.rect(xPos, yPos, productWidth, productHeight);
+
+                                // Imagen del producto o placeholder elegante
+                                const imageData = imageCache.get(product.id);
+                                if (imageData) {
+                                    try {
+                                        const imgSize = 20;
+                                        pdf.addImage(imageData, 'JPEG', xPos + 2, yPos + 2, imgSize, imgSize);
+                                    } catch (e) {
+                                        // Fallback elegante
+                                        pdf.setFillColor(250, 250, 250);
+                                        pdf.rect(xPos + 2, yPos + 2, 20, 20, 'F');
+                                        pdf.setDrawColor(200, 200, 200);
+                                        pdf.rect(xPos + 2, yPos + 2, 20, 20);
+                                    }
+                                } else {
+                                    // Placeholder elegante sin imagen
+                                    pdf.setFillColor(250, 250, 250);
+                                    pdf.rect(xPos + 2, yPos + 2, 20, 20, 'F');
+                                    pdf.setDrawColor(200, 200, 200);
+                                    pdf.rect(xPos + 2, yPos + 2, 20, 20);
+                                    pdf.setFontSize(7);
+                                    pdf.setTextColor(150, 150, 150);
+                                    pdf.text('🍴', xPos + 12, yPos + 14, { align: 'center' });
+                                    pdf.setTextColor(0, 0, 0);
+                                }
+
+                                // Nombre del producto
+                                pdf.setFontSize(10);
+                                pdf.setFont('helvetica', 'bold');
+                                const nameLines = pdf.splitTextToSize(product.name, productWidth - 26);
+                                pdf.text(nameLines.slice(0, 2), xPos + 24, yPos + 6);
+
+                                let currentY = yPos + 6 + (Math.min(nameLines.length, 2) * 3.5);
+
+                                // Descripción
+                                if (product.description) {
+                                    pdf.setFontSize(7);
+                                    pdf.setFont('helvetica', 'normal');
+                                    const descLines = pdf.splitTextToSize(product.description, productWidth - 4);
+                                    pdf.text(descLines.slice(0, 3), xPos + 2, currentY + 2);
+                                    currentY += Math.min(descLines.length, 3) * 2.5;
+                                }
+
+                                // Precio
+                                pdf.setFontSize(12);
+                                pdf.setFont('helvetica', 'bold');
+                                const price = `$${parseFloat(product.price || 0).toLocaleString()}`;
+                                pdf.text(price, xPos + 2, yPos + productHeight - 3);
+                            }
+
+                            yPos += productHeight + 5;
+                        }
+
+                        yPos += 5; // Espacio entre categorías
+                    }
+
+                    pdf.save(`catalogo-laruta11-${new Date().toISOString().split('T')[0]}.pdf`);
+                } catch (error) {
+                    console.error('Error generando PDF:', error);
+                    alert('Error generando PDF: ' + error.message);
+                }
+            };
+
+            if (loading) {
+                return h('div', { className: 'flex items-center justify-center min-h-screen' },
+                    h('div', { className: 'text-center' },
+                        h('div', { className: 'animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4' }),
+                        h('p', { className: 'text-gray-600' }, 'Cargando catálogo...')
+                    )
+                );
+            }
+
+            return h('div', { className: 'min-h-screen bg-white' },
+                // Header
+                h('header', { className: 'bg-white border-b-2 border-gray-200 p-6 no-print' },
+                    h('div', { className: 'max-w-7xl mx-auto' },
+                        h('div', { className: 'flex justify-between items-center mb-6' },
+                            h('div', { className: 'flex items-center gap-4' },
+                                h('img', { src: 'https://laruta11-images.s3.amazonaws.com/menu/logo.png', alt: 'La Ruta 11', className: 'w-12 h-12' }),
+                                h('h1', { className: 'text-3xl font-bold text-gray-800' }, 'Catálogo de Productos')
+                            ),
+                            h('div', { className: 'flex gap-3' },
+                                h('button', {
+                                    onClick: () => {
+                                        if (selectedCategories.size === categories.length) {
+                                            setSelectedCategories(new Set());
+                                        } else {
+                                            setSelectedCategories(new Set(categories.map(c => c.id)));
+                                        }
+                                    },
+                                    className: 'bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors'
+                                }, selectedCategories.size === categories.length ? 'Deseleccionar Todo' : 'Seleccionar Todo'),
+                                h('button', {
+                                    onClick: generatePDF,
+                                    className: 'bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors font-bold'
+                                }, '📄 Generar PDF'),
+                                h('button', {
+                                    onClick: () => window.print(),
+                                    className: 'bg-gray-500 text-white px-4 py-3 rounded-lg hover:bg-gray-600 transition-colors'
+                                }, '🖨️ Imprimir')
+                            )
+                        ),
+                        // Filtros de categorías
+                        h('div', { className: 'mb-4 no-print' },
+                            h('h3', { className: 'text-lg font-semibold mb-3' }, 'Seleccionar categorías para mostrar/imprimir:'),
+                            h('div', { className: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3' },
+                                categories.map(category => 
+                                    h('label', {
+                                        key: category.id,
+                                        className: 'flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50'
+                                    },
+                                        h('input', {
+                                            type: 'checkbox',
+                                            checked: selectedCategories.has(category.id),
+                                            onChange: (e) => {
+                                                const newSelected = new Set(selectedCategories);
+                                                if (e.target.checked) {
+                                                    newSelected.add(category.id);
+                                                } else {
+                                                    newSelected.delete(category.id);
+                                                }
+                                                setSelectedCategories(newSelected);
+                                            },
+                                            className: 'w-4 h-4'
+                                        }),
+                                        h('span', { className: 'text-sm font-medium' }, category.name)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+
+                // Print Header
+                h('div', { className: 'hidden print:block text-center py-6 border-b-2 border-gray-200' },
+                    h('div', { className: 'flex items-center justify-center gap-4 mb-4' },
+                        h('img', { src: 'https://laruta11-images.s3.amazonaws.com/menu/logo.png', alt: 'La Ruta 11', className: 'w-16 h-16' }),
+                        h('h1', { className: 'text-4xl font-bold text-gray-800' }, 'LA RUTA 11')
+                    ),
+                    h('h2', { className: 'text-2xl font-semibold text-gray-600' }, 'Catálogo de Productos'),
+                    h('p', { className: 'text-gray-500 mt-2' }, new Date().toLocaleDateString('es-CL', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    }))
+                ),
+
+                // Content
+                h('main', { className: 'max-w-7xl mx-auto p-6' },
+                    // Debug info
+                    h('div', { className: 'mb-4 p-4 bg-gray-100 rounded no-print' },
+                        h('p', {}, `Productos cargados: ${products.length}`),
+                        h('p', {}, `Categorías cargadas: ${categories.length}`)
+                    ),
+                    
+                    products.length === 0 ? 
+                        h('div', { className: 'text-center py-12' },
+                            h('h2', { className: 'text-2xl font-bold text-gray-700 mb-4' }, 'No hay productos disponibles'),
+                            h('p', { className: 'text-gray-500' }, 'Verifica que existan productos activos en la base de datos')
+                        ) :
+                    categories.filter(category => selectedCategories.has(category.id)).map((category, categoryIndex) => {
+                        const categoryProducts = getProductsByCategory(category.id);
+                        if (categoryProducts.length === 0) return null;
+
+                        return h('div', { 
+                            key: category.id,
+                            className: categoryIndex > 0 ? 'page-break' : ''
+                        },
+                            // Category Header
+                            h('div', { className: 'mb-8' },
+                                h('h2', { className: 'text-3xl font-bold text-gray-800 mb-2 border-b-4 border-orange-500 pb-2' }, 
+                                    category.name
+                                ),
+                                category.description && h('p', { className: 'text-gray-600 text-lg' }, category.description)
+                            ),
+
+                            // Products Grid
+                            h('div', { className: 'grid grid-cols-3 gap-6 mb-12' },
+                                categoryProducts.map(product => 
+                                    h('div', {
+                                        key: product.id,
+                                        className: 'border-2 border-gray-200 rounded-lg p-4 bg-white shadow-sm'
+                                    },
+                                        // Product Image
+                                        h('div', { className: 'mb-4 aspect-[4/5] overflow-hidden' },
+                                            h('img', {
+                                                src: getProductImage(product.image_url),
+                                                alt: product.name,
+                                                className: 'w-full h-full object-cover rounded-lg border border-gray-300',
+                                                onError: (e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo.png'; }
+                                            })
+                                        ),
+
+                                        // Product Info
+                                        h('div', { className: 'text-center' },
+                                            h('h3', { className: 'text-xl font-bold text-gray-800 mb-2' }, product.name),
+                                            
+                                            product.description && h('p', { className: 'text-gray-600 text-sm mb-3 leading-relaxed' }, 
+                                                product.description
+                                            ),
+
+                                            h('div', { className: 'bg-orange-100 rounded-lg p-3' },
+                                                h('p', { className: 'text-2xl font-black text-orange-600' }, 
+                                                    `$${parseFloat(product.price || 0).toLocaleString()}`
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        );
+                    })
+                ),
+
+                // Footer
+                h('footer', { className: 'bg-gray-100 p-6 mt-12 text-center border-t-2 border-gray-200' },
+                    h('div', { className: 'max-w-4xl mx-auto' },
+                        h('h3', { className: 'text-xl font-bold text-gray-800 mb-2' }, 'LA RUTA 11'),
+                        h('p', { className: 'text-gray-600' }, 'Comida rápida de calidad'),
+                        h('p', { className: 'text-gray-500 text-sm mt-2' }, 
+                            `Catálogo generado el ${new Date().toLocaleDateString('es-CL')}`
+                        )
+                    )
+                )
+            );
+        };
+
+        const root = createRoot(document.getElementById('catalogo-app'));
+        root.render(h(CatalogoApp));
+    </script>
+</body>
+</html>

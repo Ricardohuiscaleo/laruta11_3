@@ -1,0 +1,178 @@
+---
+---
+
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>La Ruta 11 - Acceso Caja</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo">
+                <img src="https://laruta11-images.s3.amazonaws.com/menu/logo.png" alt="La Ruta 11" />
+            </div>
+            <h1>Acceso Caja</h1>
+            <form id="loginForm">
+                <div class="input-group">
+                    <input type="text" id="username" placeholder="Usuario" required />
+                </div>
+                <div class="input-group">
+                    <input type="password" id="password" placeholder="Contraseña" required />
+                </div>
+                <button type="submit" id="loginBtn">Ingresar</button>
+                <div id="error-message" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error-message');
+            const loginBtn = document.getElementById('loginBtn');
+            
+            loginBtn.textContent = 'Verificando...';
+            loginBtn.disabled = true;
+            errorDiv.textContent = '';
+            
+            try {
+                const response = await fetch('/api/auth/login_v2.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Guardar sesión con datos completos
+                    localStorage.setItem('caja_session', JSON.stringify({
+                        user: result.user,
+                        userId: result.userId,
+                        fullName: result.fullName,
+                        phone: result.phone,
+                        email: result.email,
+                        role: result.role,
+                        token: result.token,
+                        timestamp: Date.now()
+                    }));
+                    
+                    // Redirigir a la app
+                    window.location.href = '/';
+                } else {
+                    errorDiv.textContent = result.message || 'Usuario o contraseña incorrectos';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorDiv.textContent = 'Error de conexión. Intenta nuevamente.';
+            }
+            
+            loginBtn.textContent = 'Ingresar';
+            loginBtn.disabled = false;
+        });
+    </script>
+</body>
+</html>
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .login-container {
+        width: 100%;
+        max-width: 400px;
+        padding: 20px;
+    }
+    
+    .login-card {
+        background: white;
+        border-radius: 16px;
+        padding: 40px 30px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    
+    .logo img {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        margin-bottom: 20px;
+    }
+    
+    h1 {
+        color: #333;
+        margin-bottom: 30px;
+        font-weight: 700;
+    }
+    
+    .input-group {
+        margin-bottom: 20px;
+    }
+    
+    input {
+        width: 100%;
+        padding: 15px;
+        border: 2px solid #e1e5e9;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+    }
+    
+    input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    button {
+        width: 100%;
+        padding: 15px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    
+    button:hover:not(:disabled) {
+        background: #5a6fd8;
+    }
+    
+    button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+    
+    .error-message {
+        color: #e74c3c;
+        margin-top: 15px;
+        font-size: 14px;
+    }
+</style>

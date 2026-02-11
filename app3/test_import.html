@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Import TUU</title>
+</head>
+<body>
+    <h1>Importar Reportes TUU</h1>
+    <button onclick="importTUU()">IMPORTAR AHORA</button>
+    <div id="result"></div>
+
+    <script>
+    async function importTUU() {
+        document.getElementById('result').innerHTML = 'Importando...';
+        
+        try {
+            const response = await fetch('/api/import_tuu_reports.php');
+            const data = await response.json();
+            
+            if (data.success) {
+                document.getElementById('result').innerHTML = 
+                    `✓ Importados: ${data.imported} de ${data.total_transactions}`;
+            } else {
+                document.getElementById('result').innerHTML = 
+                    `✗ Error: ${data.error}`;
+            }
+        } catch (error) {
+            document.getElementById('result').innerHTML = `✗ Error: ${error.message}`;
+        }
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,285 @@
+---
+---
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Inventario - La Ruta 11</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; background: #f5f5f5; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h1 { margin-bottom: 24px; color: #0a0a0a; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; margin-bottom: 4px; font-weight: 600; color: #333; }
+    select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+    select[multiple] { height: 300px; }
+    select[multiple] option:checked { background: #0a0a0a; color: white; }
+    button { padding: 12px 24px; background: #0a0a0a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    button:hover { background: #333; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    .result { margin-top: 24px; padding: 16px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #0a0a0a; }
+    .success { border-left-color: #22c55e; }
+    .error { border-left-color: #ef4444; background: #fef2f2; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { padding: 8px; text-align: left; border-bottom: 1px solid #e5e5e5; }
+    th { background: #f8f9fa; font-weight: 600; }
+    .change { font-weight: 600; }
+    .change.negative { color: #ef4444; }
+    .change.positive { color: #22c55e; }
+    .payment-methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+    .payment-btn { padding: 8px; background: #f5f5f5; border: 2px solid #ddd; border-radius: 6px; cursor: pointer; text-align: center; }
+    .payment-btn.active { background: #0a0a0a; color: white; border-color: #0a0a0a; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Test de Descuento de Inventario</h1>
+    <p style="color: #666; margin-bottom: 24px;">Simula una venta para verificar que el inventario se descuenta correctamente</p>
+    
+    <div class="form-group">
+      <label>Producto(s): <small style="color: #666;">(Mantén Ctrl/Cmd para seleccionar múltiples)</small></label>
+      <select id="product-select" multiple size="10" style="height: auto;">
+        <option value="">Cargando productos...</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label>Cantidad:</label>
+      <input type="number" id="quantity" value="1" min="1" max="10">
+    </div>
+    
+    <div class="form-group">
+      <label>Método de Pago:</label>
+      <div class="payment-methods">
+        <div class="payment-btn active" data-method="efectivo">💵 Efectivo</div>
+        <div class="payment-btn" data-method="transferencia">🏦 Transferencia</div>
+        <div class="payment-btn" data-method="webpay">💳 Webpay</div>
+        <div class="payment-btn" data-method="tarjeta">💳 Tarjeta</div>
+        <div class="payment-btn" data-method="pedidosya">🛵 PedidosYa</div>
+      </div>
+    </div>
+    
+    <button id="test-btn">▶️ Ejecutar Test</button>
+    <button id="test-all-btn" style="margin-left: 8px; background: #3b82f6;">▶️ Test Múltiple (Seleccionados)</button>
+    
+    <div id="result"></div>
+  </div>
+  
+  <script is:inline>
+    let selectedPayment = 'efectivo';
+    
+    // Cargar productos
+    fetch('/api/test_inventory_deduction.php?action=list')
+      .then(r => r.json())
+      .then(data => {
+        const select = document.getElementById('product-select');
+        const categories = {1: 'La Ruta 11', 2: 'Sandwiches', 3: 'Hamburguesas', 4: 'Completos', 5: 'Bebidas', 6: 'Extras', 7: 'Propinas', 8: 'Combos'};
+        
+        if (!data.success || !data.products) {
+          select.innerHTML = '<option value="">Error: ' + (data.error || 'No se pudieron cargar productos') + '</option>';
+          console.error('Error API:', data);
+          return;
+        }
+        
+        select.innerHTML = '<option value="">Selecciona un producto...</option>';
+        data.products.forEach(p => {
+          const option = document.createElement('option');
+          option.value = p.id;
+          option.textContent = `[${categories[p.category_id] || 'Sin cat'}] ${p.name} - $${new Intl.NumberFormat('es-CL').format(p.price)}`;
+          select.appendChild(option);
+        });
+      })
+      .catch(err => {
+        const select = document.getElementById('product-select');
+        select.innerHTML = '<option value="">Error de conexión</option>';
+        console.error('Error fetch:', err);
+      });
+    
+    // Selección de método de pago
+    document.querySelectorAll('.payment-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.payment-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedPayment = btn.dataset.method;
+      });
+    });
+    
+    document.getElementById('test-btn').addEventListener('click', runTest);
+    document.getElementById('test-all-btn').addEventListener('click', runTestMultiple);
+    
+    async function runTest() {
+      const productId = document.getElementById('product-select').value;
+      const quantity = document.getElementById('quantity').value;
+      const resultDiv = document.getElementById('result');
+      const btn = document.getElementById('test-btn');
+      
+      if (!productId) {
+        resultDiv.innerHTML = '<div class="result error">⚠️ Selecciona un producto</div>';
+        return;
+      }
+      
+      btn.disabled = true;
+      btn.textContent = '⏳ Ejecutando test...';
+      resultDiv.innerHTML = '<div class="result">⏳ Procesando venta de prueba...</div>';
+      
+      try {
+        const formData = new FormData();
+        formData.append('product_id', productId);
+        formData.append('quantity', quantity);
+        formData.append('payment_method', selectedPayment);
+        
+        const response = await fetch('/api/test_inventory_deduction.php?action=simulate', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          let html = `
+            <div class="result success">
+              <h3>✅ Test Completado</h3>
+              <p><strong>Producto:</strong> ${data.product.name}</p>
+              <p><strong>Cantidad:</strong> ${data.quantity}</p>
+              <p><strong>Método de Pago:</strong> ${selectedPayment}</p>
+              ${data.reverted ? '<p style="background: #dcfce7; padding: 8px; border-radius: 4px; color: #166534; font-weight: 600;">♻️ Cambios revertidos automáticamente - BD intacta</p>' : ''}
+              
+              <h4 style="margin-top: 16px;">📦 Cambios en Inventario:</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Antes</th>
+                    <th>Después</th>
+                    <th>Cambio</th>
+                  </tr>
+                </thead>
+                <tbody>
+          `;
+          
+          // Ingredientes
+          if (data.inventory_changes.ingredients && data.inventory_changes.ingredients.length > 0) {
+            data.inventory_changes.ingredients.forEach(ing => {
+              const changeClass = ing.change < 0 ? 'negative' : ing.change > 0 ? 'positive' : '';
+              html += `
+                <tr>
+                  <td>🥫 ${ing.name}</td>
+                  <td>${ing.before} ${ing.unit}</td>
+                  <td>${ing.after} ${ing.unit}</td>
+                  <td class="change ${changeClass}">${ing.change > 0 ? '+' : ''}${ing.change} ${ing.unit}</td>
+                </tr>
+              `;
+            });
+          } else {
+            html += '<tr><td colspan="4" style="text-align: center; color: #999;">Sin ingredientes en receta</td></tr>';
+          }
+          
+          html += `
+                </tbody>
+              </table>
+              
+              <p style="margin-top: 16px; padding: 12px; background: #fef3c7; border-radius: 6px; font-size: 13px;">
+                ℹ️ <strong>Nota:</strong> Esta fue una venta de prueba. La orden se creó y eliminó automáticamente, pero los cambios de inventario son reales.
+              </p>
+            </div>
+          `;
+          
+          resultDiv.innerHTML = html;
+        } else {
+          resultDiv.innerHTML = `<div class="result error">❌ Error: ${data.error}</div>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="result error">❌ Error: ${error.message}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '▶️ Ejecutar Test';
+      }
+    }
+    
+    async function runTestMultiple() {
+      const select = document.getElementById('product-select');
+      const selectedOptions = Array.from(select.selectedOptions).filter(o => o.value);
+      const quantity = document.getElementById('quantity').value;
+      const resultDiv = document.getElementById('result');
+      const btn = document.getElementById('test-all-btn');
+      
+      if (selectedOptions.length === 0) {
+        resultDiv.innerHTML = '<div class="result error">⚠️ Selecciona al menos un producto</div>';
+        return;
+      }
+      
+      btn.disabled = true;
+      btn.textContent = `⏳ Testeando ${selectedOptions.length} productos...`;
+      resultDiv.innerHTML = '<div class="result">⏳ Procesando tests múltiples...</div>';
+      
+      let results = [];
+      
+      for (let i = 0; i < selectedOptions.length; i++) {
+        const option = selectedOptions[i];
+        const productId = option.value;
+        const productName = option.textContent;
+        
+        try {
+          const formData = new FormData();
+          formData.append('product_id', productId);
+          formData.append('quantity', quantity);
+          formData.append('payment_method', selectedPayment);
+          
+          const response = await fetch('/api/test_inventory_deduction.php?action=simulate', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            const ingredientsChanged = data.inventory_changes.ingredients?.filter(ing => ing.change !== 0).length || 0;
+            results.push({
+              success: true,
+              product: productName,
+              ingredients: ingredientsChanged,
+              data: data
+            });
+          } else {
+            results.push({
+              success: false,
+              product: productName,
+              error: data.error
+            });
+          }
+        } catch (error) {
+          results.push({
+            success: false,
+            product: productName,
+            error: error.message
+          });
+        }
+        
+        // Actualizar progreso
+        btn.textContent = `⏳ ${i + 1}/${selectedOptions.length} completados...`;
+      }
+      
+      // Mostrar resultados
+      let html = '<div class="result success"><h3>✅ Tests Completados</h3>';
+      html += `<p><strong>Total:</strong> ${results.length} productos testeados</p>`;
+      html += '<table><thead><tr><th>Producto</th><th>Estado</th><th>Ingredientes Afectados</th></tr></thead><tbody>';
+      
+      results.forEach(r => {
+        if (r.success) {
+          html += `<tr><td>${r.product}</td><td style="color: #22c55e;">✅ OK</td><td>${r.ingredients}</td></tr>`;
+        } else {
+          html += `<tr><td>${r.product}</td><td style="color: #ef4444;">❌ Error</td><td>${r.error}</td></tr>`;
+        }
+      });
+      
+      html += '</tbody></table></div>';
+      resultDiv.innerHTML = html;
+      
+      btn.disabled = false;
+      btn.textContent = '▶️ Test Múltiple (Seleccionados)';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,399 @@
+---
+export const prerender = false;
+import Sidebar from '../../../components/Sidebar.astro';
+---
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/icon.png">
+    <title>Dashboard - Jobs Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <Sidebar currentPage="dashboard" pageTitle="Dashboard" />
+
+    <!-- Main Content -->
+    <main class="lg:pl-64">
+        <div class="px-4 py-8 lg:px-8">
+            
+            <!-- Loading mientras verifica auth -->
+            <div id="auth-loading" class="text-center py-16">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p class="mt-2 text-gray-600">Verificando acceso...</p>
+                <div id="debug-info" class="mt-4 text-xs text-gray-500 max-w-md mx-auto bg-gray-100 p-2 rounded"></div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div id="dashboard-content" class="hidden">
+                
+                <!-- Stats Cards -->
+                <div class="mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Resumen de Candidatos</h2>
+                </div>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm border border-blue-200 p-4 lg:p-6 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-blue-700 mb-1">Total Candidatos</p>
+                                <p id="total-candidates" class="text-2xl lg:text-3xl font-bold text-blue-900">-</p>
+                            </div>
+                            <div class="p-3 bg-blue-200 rounded-full">
+                                <svg class="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-sm border border-green-200 p-4 lg:p-6 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-green-700 mb-1">Completadas</p>
+                                <p id="completed-applications" class="text-2xl lg:text-3xl font-bold text-green-900">-</p>
+                            </div>
+                            <div class="p-3 bg-green-200 rounded-full">
+                                <svg class="w-6 h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl shadow-sm border border-amber-200 p-4 lg:p-6 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-amber-700 mb-1">En Proceso</p>
+                                <p id="pending-applications" class="text-2xl lg:text-3xl font-bold text-amber-900">-</p>
+                            </div>
+                            <div class="p-3 bg-amber-200 rounded-full">
+                                <svg class="w-6 h-6 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-sm border border-purple-200 p-4 lg:p-6 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-purple-700 mb-1">Score Promedio</p>
+                                <p id="average-score" class="text-2xl lg:text-3xl font-bold text-purple-900">-%</p>
+                            </div>
+                            <div class="p-3 bg-purple-200 rounded-full">
+                                <svg class="w-6 h-6 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QR Stats Section -->
+                <div class="bg-white rounded-xl shadow-sm border p-6 mb-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-orange-100 rounded-lg">
+                                <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900">Seguimiento QR</h3>
+                        </div>
+                        <a href="/jobsTracker/qr/" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium bg-blue-50 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors">
+                            Ver detalles
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </a>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+                            <div class="flex items-center justify-center mb-2">
+                                <div class="p-2 bg-blue-200 rounded-full">
+                                    <svg class="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-xs text-blue-700 mb-1">Vistas Totales</p>
+                            <p id="total-qr-views" class="text-xl lg:text-2xl font-bold text-blue-900">68</p>
+                        </div>
+                        <div class="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
+                            <div class="flex items-center justify-center mb-2">
+                                <div class="p-2 bg-green-200 rounded-full">
+                                    <svg class="w-4 h-4 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-xs text-green-700 mb-1">Vistas Hoy</p>
+                            <p id="today-qr-views" class="text-xl lg:text-2xl font-bold text-green-900">31</p>
+                        </div>
+                        <div class="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200">
+                            <div class="flex items-center justify-center mb-2">
+                                <div class="p-2 bg-purple-200 rounded-full">
+                                    <svg class="w-4 h-4 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-xs text-purple-700 mb-1">Última Vista</p>
+                            <p id="last-qr-view" class="text-xs lg:text-sm font-bold text-purple-900">31/07/2025 17:54</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mapa y Estadísticas -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <!-- Mapa de Ubicaciones -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-medium text-gray-900">Mapa de Vistas del QR</h3>
+                            <button onclick="refreshQRMap()" class="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                🔄 Actualizar Mapa
+                            </button>
+                        </div>
+                        <div id="qr-map" class="w-full h-96 rounded-lg border border-gray-300"></div>
+                    </div>
+                    
+                    <!-- Gráfico de Estadísticas -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Estadísticas (28 Jul - 7 Ago 2025)</h3>
+                        <div class="w-full" style="height: 384px;">
+                            <canvas id="statsChart" width="400" height="384"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="bg-white rounded-lg shadow p-6 mb-8">
+                    <div class="flex flex-wrap gap-4 items-center">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Posición</label>
+                            <select id="filter-position" class="border border-gray-300 rounded-md px-3 py-2 text-sm">
+                                <option value="">Todas</option>
+                                <option value="maestro_sanguchero">Maestro Sanguchero</option>
+                                <option value="cajero">Cajero</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                            <select id="filter-status" class="border border-gray-300 rounded-md px-3 py-2 text-sm">
+                                <option value="">Todos</option>
+                                <option value="completed">Completadas</option>
+                                <option value="started">En Proceso</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Score Mínimo</label>
+                            <input type="number" id="filter-score" min="0" max="100" placeholder="0-100" class="border border-gray-300 rounded-md px-3 py-2 text-sm w-24">
+                        </div>
+                        <div class="flex items-end">
+                            <button id="apply-filters" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
+                                Aplicar Filtros
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Candidates Table/Cards -->
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Lista de Candidatos</h3>
+                    </div>
+                    
+                    <!-- Cards for all devices -->
+                    <div id="candidates-cards" class="p-4">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <!-- Cards will be loaded here -->
+                        </div>
+                    </div>
+                    <div id="loading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <p class="mt-2 text-gray-600">Cargando candidatos...</p>
+                    </div>
+                    <div id="no-results" class="hidden text-center py-8">
+                        <p class="text-gray-600">No se encontraron candidatos con los filtros aplicados.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+
+    <script>
+        window.dashboardInitMap = function() {
+            const mapElement = document.getElementById('qr-map');
+            if (!mapElement) return;
+            
+            const map = new google.maps.Map(mapElement, {
+                zoom: 10,
+                center: { lat: -18.4746, lng: -70.3127 },
+                mapTypeId: 'roadmap'
+            });
+            
+            fetch('/api/tracker/get_qr_locations.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.locations.length > 0) {
+                        data.locations.forEach(location => {
+                            new google.maps.Marker({
+                                position: { lat: location.lat, lng: location.lng },
+                                map: map,
+                                title: `${location.views} vista${location.views > 1 ? 's' : ''}`,
+                                icon: {
+                                    path: google.maps.SymbolPath.CIRCLE,
+                                    scale: Math.max(10, location.views * 4),
+                                    fillColor: '#f59e0b',
+                                    fillOpacity: 0.8,
+                                    strokeColor: '#d97706',
+                                    strokeWeight: 2
+                                }
+                            });
+                        });
+                    }
+                })
+                .catch(error => console.error('Error cargando ubicaciones:', error));
+        };
+    </script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAcK15oZ84Puu5Nc4wDQT_Wyht0xqkbO-A&callback=dashboardInitMap"></script>
+    
+    <script>
+        // Inicializar gráfico de estadísticas
+        async function initStatsChart() {
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            
+            try {
+                const response = await fetch('/api/tracker/get_dashboard_stats.php');
+                const data = await response.json();
+                
+                if (!data.success) {
+                    console.error('Error cargando estadísticas:', data.error);
+                    return;
+                }
+                
+                const { dates, postulantes, visitas } = data.data;
+            
+                new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Postulantes por Día',
+                        data: postulantes,
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                        borderColor: 'rgb(59, 130, 246)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Visitas Diarias',
+                        data: visitas,
+                        type: 'line',
+                        borderColor: 'rgb(245, 158, 11)',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderWidth: 3,
+                        fill: false,
+                        tension: 0.4,
+                        pointBackgroundColor: 'rgb(245, 158, 11)',
+                        pointBorderColor: 'rgb(217, 119, 6)',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: function(context) {
+                                    if (context.datasetIndex === 0) {
+                                        return 'Postulaciones completadas';
+                                    } else {
+                                        return 'Vistas del QR/Link';
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Fecha'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Postulantes',
+                                color: 'rgb(59, 130, 246)'
+                            },
+                            ticks: {
+                                color: 'rgb(59, 130, 246)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Visitas',
+                                color: 'rgb(245, 158, 11)'
+                            },
+                            ticks: {
+                                color: 'rgb(245, 158, 11)'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        }
+                    }
+                }
+            });
+            
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+            }
+        }
+        
+        // Inicializar cuando el dashboard se carga
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                if (document.getElementById('dashboard-content').classList.contains('hidden') === false) {
+                    initStatsChart();
+                }
+            }, 1000);
+        });
+    </script>
+    
+    <script src="/js/global-auth.js" is:inline></script>
+    <script src="/js/jobs-tracker.js" is:inline></script>
+</body>
+</html>

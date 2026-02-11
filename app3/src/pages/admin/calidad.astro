@@ -1,0 +1,582 @@
+---
+---
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Calidad - La Ruta 11</title>
+    <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: white;
+            padding: 1.5rem;
+        }
+        @media (min-width: 768px) {
+            body { padding: 3rem; }
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .text-center { text-align: center; }
+        .mb-10 { margin-bottom: 2.5rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mt-8 { margin-top: 2rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+        .text-5xl { font-size: 3rem; line-height: 1; }
+        .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+        .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+        .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+        .text-base { font-size: 1rem; line-height: 1.5rem; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .font-bold { font-weight: 700; }
+        .font-semibold { font-weight: 600; }
+        .font-medium { font-weight: 500; }
+        .text-gray-800 { color: #1f2937; }
+        .text-gray-600 { color: #4b5563; }
+        .text-gray-700 { color: #374151; }
+        .text-gray-500 { color: #6b7280; }
+        .text-white { color: white; }
+        .bg-white { background-color: white; }
+        .bg-gray-200 { background-color: #e5e7eb; }
+        .bg-blue-600 { background-color: #2563eb; }
+        .bg-blue-700 { background-color: #1d4ed8; }
+        .bg-green-600 { background-color: #16a34a; }
+        .bg-green-700 { background-color: #15803d; }
+        .border { border-width: 1px; }
+        .border-2 { border-width: 2px; }
+        .border-gray-300 { border-color: #d1d5db; }
+        .rounded-lg { border-radius: 0.5rem; }
+        .rounded-md { border-radius: 0.375rem; }
+        .rounded-full { border-radius: 9999px; }
+        .p-6 { padding: 1.5rem; }
+        .p-2 { padding: 0.5rem; }
+        .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .py-6 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+        .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .pt-4 { padding-top: 1rem; }
+        .w-full { width: 100%; }
+        .w-6 { width: 1.5rem; }
+        .h-6 { height: 1.5rem; }
+        .h-40 { height: 10rem; }
+        .h-2\.5 { height: 0.625rem; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .flex-1 { flex: 1 1 0%; }
+        .flex-shrink-0 { flex-shrink: 0; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .space-x-4 > * + * { margin-left: 1rem; }
+        .space-y-2 > * + * { margin-top: 0.5rem; }
+        .space-y-4 > * + * { margin-top: 1rem; }
+        .cursor-pointer { cursor: pointer; }
+        .hidden { display: none; }
+        .italic { font-style: italic; }
+        .transition-colors { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+        .transition-all { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+        .duration-300 { transition-duration: 300ms; }
+        .ease-in-out { transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+        .overflow-hidden { overflow: hidden; }
+        .max-h-0 { max-height: 0px; }
+        .focus\:outline-none:focus { outline: 2px solid transparent; outline-offset: 2px; }
+        .focus\:ring-2:focus { --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color); --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color); box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000); }
+        .focus\:ring-blue-500:focus { --tw-ring-color: #3b82f6; }
+        .focus\:ring-offset-2:focus { --tw-ring-offset-width: 2px; }
+        .hover\:bg-blue-700:hover { background-color: #1d4ed8; }
+        .hover\:bg-green-700:hover { background-color: #15803d; }
+        .hover\:transform:hover { transform: translateY(-2px); }
+
+        @media (min-width: 768px) {
+            .md\:text-5xl { font-size: 3rem; line-height: 1; }
+            .md\:text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+            .md\:text-2xl { font-size: 1.5rem; line-height: 2rem; }
+            .md\:flex-row { flex-direction: row; }
+            .md\:items-center { align-items: center; }
+            .md\:space-x-4 > * + * { margin-left: 1rem; }
+            .md\:space-y-0 > * + * { margin-top: 0; }
+        }
+
+        .role-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .role-btn {
+            padding: 15px 25px;
+            border: 2px solid #3b82f6;
+            background: white;
+            color: #3b82f6;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .role-btn:hover {
+            transform: translateY(-2px);
+        }
+        .role-btn.active {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+        .accordion-item {
+            border-bottom: 2px solid #e5e7eb;
+            transition: background-color 0.2s ease;
+        }
+        .accordion-item:hover {
+            background-color: #f9fafb;
+        }
+        .icon {
+            transition: transform 0.3s ease;
+        }
+        .icon.rotate {
+            transform: rotate(180deg);
+        }
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+        input[type="radio"] {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            border: 2px solid #6b7280;
+            cursor: pointer;
+            position: relative;
+            outline: none;
+        }
+        input[type="radio"]:checked {
+            background-color: #10b981;
+            border-color: #10b981;
+        }
+        input[type="radio"]:checked::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 50%;
+            background-color: white;
+        }
+        input[type="radio"][data-state="no"]:checked {
+            background-color: #ef4444;
+            border-color: #ef4444;
+        }
+        input[type="radio"][data-state="no"]:checked::after {
+            background-color: white;
+        }
+        .grid { display: grid; }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .gap-2 { gap: 0.5rem; }
+        .h-20 { height: 5rem; }
+        .object-cover { object-fit: cover; }
+        .relative { position: relative; }
+        .absolute { position: absolute; }
+        .top-1 { top: 0.25rem; }
+        .right-1 { right: 0.25rem; }
+        .bg-red-500 { background-color: #ef4444; }
+        .bg-red-600 { background-color: #dc2626; }
+        .w-5 { width: 1.25rem; }
+        .h-5 { height: 1.25rem; }
+        .text-xs { font-size: 0.75rem; line-height: 1rem; }
+        .hover\:bg-red-600:hover { background-color: #dc2626; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-5xl font-bold text-gray-800 mb-2">Control de Calidad</h1>
+            <p class="text-lg md:text-xl text-gray-600">Checklist diario para mantener los estándares de calidad</p>
+        </header>
+
+        <div class="role-selector">
+            <button class="role-btn active" onclick="selectRole('planchero')" id="btn-planchero">👨🍳 Maestro Planchero</button>
+            <button class="role-btn" onclick="selectRole('cajero')" id="btn-cajero">💰 Cajero</button>
+        </div>
+
+        <div class="mb-8">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-gray-700 font-medium">Cumplimiento</span>
+                <span id="progress-percentage" class="text-lg font-bold text-gray-800">0%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full progress-bar" style="width: 0%;"></div>
+            </div>
+        </div>
+
+        <div id="checklist-container"></div>
+
+        <button id="submit-btn" class="w-full mt-8 px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors">✅ Enviar Checklist</button>
+    </div>
+
+    <script>
+        var checklists = { planchero: [], cajero: [] };
+        var currentRole = 'planchero';
+        var uploadedImages = {};
+
+        (window as any).toggleAccordion = function(id) {
+            var content = document.getElementById('content-' + id);
+            var icon = document.getElementById('icon-' + id);
+            if (!content || !icon) return;
+            var isCollapsed = content.style.maxHeight === '0px' || !content.style.maxHeight;
+            
+            if (isCollapsed) {
+                content.style.maxHeight = content.scrollHeight + 'px';
+                icon.classList.add('rotate');
+            } else {
+                content.style.maxHeight = '0';
+                icon.classList.remove('rotate');
+            }
+        };
+
+        (window as any).selectRole = function(role) {
+            currentRole = role;
+            var buttons = document.querySelectorAll('.role-btn');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('active');
+            }
+            var btn = document.getElementById('btn-' + role);
+            if (btn) btn.classList.add('active');
+            loadQuestions();
+        };
+
+        function loadQuestions() {
+            fetch('/api/get_questions.php?role=' + currentRole)
+                .then(function(response) { return response.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        checklists[currentRole] = result.questions.map(function(q) {
+                            return {
+                                id: q.id,
+                                question: q.question,
+                                requiresPhoto: q.requires_photo == 1
+                            };
+                        });
+                        renderChecklist();
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error cargando preguntas:', error);
+                });
+        }
+
+        function renderChecklist() {
+            var container = document.getElementById('checklist-container');
+            if (!container) return;
+            var items = checklists[currentRole] || [];
+            
+            var sections = [
+                { title: '1. Checklist de Pre-Servicio', start: 0, end: 5 },
+                { title: '2. Checklist Durante el Servicio', start: 5, end: 9 },
+                { title: '3. Checklist de Post-Servicio', start: 9, end: 14 }
+            ];
+            
+            var html = '';
+            for (var s = 0; s < sections.length; s++) {
+                var section = sections[s];
+                var sectionItems = items.slice(section.start, section.end);
+                
+                html += '<div class="accordion-item py-6 px-0">';
+                html += '<div class="flex justify-between items-center cursor-pointer px-6" onclick="toggleAccordion(\'section-' + s + '\')">';
+                html += '<h2 class="text-lg md:text-2xl font-semibold text-gray-800">' + section.title + '</h2>';
+                html += '<svg class="icon w-6 h-6 text-gray-500" id="icon-section-' + s + '" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
+                html += '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>';
+                html += '</svg></div>';
+                html += '<div class="overflow-hidden transition-all duration-300 ease-in-out max-h-0 mt-4 pt-4 px-6" id="content-section-' + s + '">';
+                html += '<ul class="space-y-4 text-gray-700">';
+                
+                for (var i = 0; i < sectionItems.length; i++) {
+                    var item = sectionItems[i];
+                    html += '<li class="flex flex-col space-y-2">';
+                    html += '<div class="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-2 md:space-y-0 w-full">';
+                    html += '<span class="flex-1 text-base">' + item.question + '</span>';
+                    html += '<div class="flex items-center space-x-4">';
+                    html += '<input type="radio" id="q' + item.id + '_yes" name="q' + item.id + '" value="yes" onchange="updateProgress()">';
+                    html += '<label for="q' + item.id + '_yes" class="font-medium">Sí</label>';
+                    html += '<input type="radio" id="q' + item.id + '_no" name="q' + item.id + '" value="no" data-state="no" onchange="updateProgress()">';
+                    html += '<label for="q' + item.id + '_no" class="font-medium">No</label>';
+                    html += '</div></div>';
+                    html += '<textarea id="obs' + item.id + '" placeholder="Comentarios..." class="w-full p-2 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>';
+                    
+                    if (item.requiresPhoto) {
+                        html += '<button type="button" onclick="addPhoto(' + item.id + ')" id="addBtn' + item.id + '" class="flex-shrink-0 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Añadir Foto</button>';
+                        html += '<input type="file" id="photo' + item.id + '" accept="image/*" class="hidden" onchange="handleImageUpload(this, ' + item.id + ')">';
+                        html += '<div id="photoGrid' + item.id + '" class="grid grid-cols-2 gap-2 mt-2" style="display: none;"></div>';
+                    }
+                    
+                    html += '</li>';
+                }
+                
+                html += '</ul></div></div>';
+            }
+            
+            container.innerHTML = html;
+            updateProgress();
+            loadSavedData();
+            addEventListeners();
+        }
+
+        function updateProgress() {
+            var items = checklists[currentRole] || [];
+            var completedTasks = 0;
+            
+            for (var i = 0; i < items.length; i++) {
+                var yesRadio = document.getElementById('q' + items[i].id + '_yes');
+                if (yesRadio && (yesRadio as HTMLInputElement).checked) {
+                    completedTasks++;
+                }
+            }
+            
+            var percentage = items.length > 0 ? Math.round((completedTasks / items.length) * 100) : 0;
+            var progressText = document.getElementById('progress-percentage');
+            var progressBar = document.getElementById('progress-bar');
+            if (progressText) progressText.textContent = percentage + '%';
+            if (progressBar) progressBar.style.width = percentage + '%';
+        }
+
+        function loadSavedData() {
+            var items = checklists[currentRole] || [];
+            for (var i = 0; i < items.length; i++) {
+                var item = items[i];
+                var taskId = 'task_' + currentRole + '_' + item.id;
+                var savedState = JSON.parse(localStorage.getItem(taskId) || '{}');
+                
+                if (savedState.status) {
+                    var radio = document.getElementById('q' + item.id + '_' + savedState.status);
+                    if (radio) (radio as HTMLInputElement).checked = true;
+                }
+                
+                if (savedState.comment) {
+                    var textarea = document.getElementById('obs' + item.id);
+                    if (textarea) (textarea as HTMLTextAreaElement).value = savedState.comment;
+                }
+                
+                if (savedState.photos) {
+                    uploadedImages[item.id] = savedState.photos;
+                    updatePhotoGrid(item.id);
+                }
+            }
+        }
+
+        function saveTaskState(itemId, field, value) {
+            var taskId = 'task_' + currentRole + '_' + itemId;
+            var savedState = JSON.parse(localStorage.getItem(taskId) || '{}');
+            savedState[field] = value;
+            localStorage.setItem(taskId, JSON.stringify(savedState));
+        }
+
+        function addEventListeners() {
+            var radios = document.querySelectorAll('input[type="radio"]');
+            for (var i = 0; i < radios.length; i++) {
+                radios[i].addEventListener('change', function(e) {
+                    var target = e.target as HTMLInputElement;
+                    if (target && target.name) {
+                        var itemId = target.name.replace('q', '');
+                        saveTaskState(itemId, 'status', target.value);
+                        updateProgress();
+                    }
+                });
+            }
+
+            var textareas = document.querySelectorAll('textarea');
+            for (var i = 0; i < textareas.length; i++) {
+                textareas[i].addEventListener('input', function(e) {
+                    var target = e.target as HTMLTextAreaElement;
+                    if (target && target.id) {
+                        var itemId = target.id.replace('obs', '');
+                        saveTaskState(itemId, 'comment', target.value);
+                    }
+                });
+            }
+        }
+
+        (window as any).addPhoto = function(questionId) {
+            if (!uploadedImages[questionId]) uploadedImages[questionId] = [];
+            if (uploadedImages[questionId].length >= 2) {
+                alert('Máximo 2 fotos por pregunta');
+                return;
+            }
+            document.getElementById('photo' + questionId)?.click();
+        };
+
+        (window as any).openPhoto = function(url) {
+            window.open(url, '_blank');
+        };
+
+        (window as any).removePhoto = function(questionId, index) {
+            if (!uploadedImages[questionId]) return;
+            uploadedImages[questionId].splice(index, 1);
+            updatePhotoGrid(questionId);
+            saveTaskState(questionId, 'photos', uploadedImages[questionId]);
+        };
+
+        function updatePhotoGrid(questionId) {
+            var grid = document.getElementById('photoGrid' + questionId);
+            var addBtn = document.getElementById('addBtn' + questionId);
+            if (!grid || !uploadedImages[questionId]) return;
+            
+            var photos = uploadedImages[questionId];
+            if (photos.length === 0) {
+                grid.style.display = 'none';
+                if (addBtn) addBtn.textContent = 'Añadir Foto';
+                return;
+            }
+            
+            grid.style.display = 'grid';
+            if (addBtn) addBtn.textContent = photos.length >= 2 ? 'Máximo 2 fotos' : 'Añadir Foto (' + photos.length + '/2)';
+            if (addBtn) (addBtn as HTMLButtonElement).disabled = photos.length >= 2;
+            
+            var html = '';
+            for (var i = 0; i < photos.length; i++) {
+                html += '<div class="relative bg-gray-200 rounded-lg h-20 overflow-hidden cursor-pointer" onclick="openPhoto(\'' + photos[i] + '\')">'
+                html += '<img src="' + photos[i] + '" class="w-full h-full object-cover">';
+                html += '<button onclick="event.stopPropagation(); removePhoto(' + questionId + ', ' + i + ')" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hover:bg-red-600">×</button>';
+                html += '</div>';
+            }
+            grid.innerHTML = html;
+        }
+
+        (window as any).handleImageUpload = function(input, questionId) {
+            var file = input.files && input.files[0];
+            if (!file) return;
+            
+            if (!uploadedImages[questionId]) uploadedImages[questionId] = [];
+            if (uploadedImages[questionId].length >= 2) return;
+            
+            // Comprimir imagen
+            compressImage(file, function(compressedFile) {
+                // Subir a AWS S3
+                uploadToAWS(compressedFile, questionId, function(awsUrl) {
+                    if (awsUrl) {
+                        uploadedImages[questionId].push(awsUrl);
+                        updatePhotoGrid(questionId);
+                        saveTaskState(questionId, 'photos', uploadedImages[questionId]);
+                    }
+                });
+            });
+            
+            input.value = '';
+        }
+        
+        function compressImage(file, callback) {
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+            var img = new Image();
+            
+            if (!ctx) {
+                callback(file);
+                return;
+            }
+            
+            img.onload = function() {
+                var maxWidth = 800;
+                var maxHeight = 600;
+                var ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
+                
+                canvas.width = img.width * ratio;
+                canvas.height = img.height * ratio;
+                
+                if (ctx) {
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                }
+                
+                canvas.toBlob(function(blob) {
+                    callback(blob || file);
+                }, 'image/jpeg', 0.8);
+            };
+            
+            img.src = URL.createObjectURL(file);
+        }
+        
+        function uploadToAWS(file, questionId, callback) {
+            var formData = new FormData();
+            formData.append('image', file);
+            formData.append('folder', 'quality-evidence');
+            formData.append('prefix', 'q' + questionId + '_' + Date.now());
+            
+            fetch('/api/upload_image.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(result) {
+                if (result.success) {
+                    callback(result.url);
+                } else {
+                    callback(null);
+                }
+            })
+            .catch(function() {
+                callback(null);
+            });
+        }
+
+        var submitBtn = document.getElementById('submit-btn');
+        if (submitBtn) {
+            submitBtn.addEventListener('click', function() {
+                var items = checklists[currentRole] || [];
+                var responses = {};
+                
+                for (var i = 0; i < items.length; i++) {
+                    var item = items[i];
+                    var yesRadio = document.getElementById('q' + item.id + '_yes');
+                    var noRadio = document.getElementById('q' + item.id + '_no');
+                    var observations = document.getElementById('obs' + item.id);
+                    
+                    responses[item.id] = {
+                        question: item.question,
+                        answer: yesRadio && (yesRadio as HTMLInputElement).checked ? 'si' : (noRadio && (noRadio as HTMLInputElement).checked ? 'no' : ''),
+                        observations: observations && (observations as HTMLTextAreaElement).value || '',
+                        photos: uploadedImages[item.id] || []
+                    };
+                }
+                
+                fetch('/api/save_checklist.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        role: currentRole,
+                        responses: responses
+                    })
+                })
+                .then(function(response) { return response.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        alert('✅ Checklist enviado correctamente');
+                        var items = checklists[currentRole] || [];
+                        for (var i = 0; i < items.length; i++) {
+                            var taskId = 'task_' + currentRole + '_' + items[i].id;
+                            localStorage.removeItem(taskId);
+                        }
+                        location.reload();
+                    } else {
+                        alert('❌ Error: ' + result.error);
+                    }
+                })
+                .catch(function(error) {
+                    alert('❌ Error enviando checklist');
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadQuestions();
+        });
+    </script>
+
+</body>
+</html>

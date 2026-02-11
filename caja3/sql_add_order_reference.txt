@@ -1,0 +1,5 @@
+-- Agregar columna order_reference a caja_movimientos
+ALTER TABLE caja_movimientos ADD COLUMN order_reference VARCHAR(50) DEFAULT NULL AFTER usuario;
+
+-- Agregar índice para búsquedas rápidas
+CREATE INDEX idx_order_reference ON caja_movimientos(order_reference);

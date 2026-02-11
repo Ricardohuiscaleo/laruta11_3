@@ -1,0 +1,28 @@
+# Archivos de configuración con credenciales
+config.php
+config_root_update.php
+.env
+.env.local
+
+# Node modules
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+.astro/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Vendor
+vendor/

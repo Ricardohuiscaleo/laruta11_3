@@ -1,0 +1,1443 @@
+---
+// Descuento Hunter - Juego de descuentos La Ruta 11
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛍️ SHOPPING DE DESCUENTOS - RUTA 11</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: clamp(5px, 2vw, 10px);
+            background: linear-gradient(135deg, #2d1b69, #11998e);
+            color: white;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .game-container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 clamp(5px, 2vw, 10px);
+            box-sizing: border-box;
+        }
+        .ui-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 16px;
+            font-size: clamp(14px, 4vw, 18px);
+            font-weight: bold;
+            padding: 10px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 10px;
+            border: 2px solid #ffd700;
+        }
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .volume-slider {
+            width: 60px;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+        .volume-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #ffd700;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .canvas {
+            border: 3px solid #ffd700;
+            background: #1a1a2e;
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+        .discount-panel {
+            width: 100%;
+            margin-top: clamp(20px, 5vw, 40px);
+            margin-bottom: clamp(100px, 20vh, 150px);
+            padding: clamp(10px, 3vw, 15px);
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            border: 2px solid #ffd700;
+        }
+        .discount-title {
+            text-align: center;
+            font-size: clamp(14px, 4vw, 18px);
+            color: #ffd700;
+            margin-bottom: clamp(10px, 3vw, 15px);
+            font-weight: bold;
+        }
+        .companies {
+            display: flex;
+            gap: clamp(10px, 3vw, 20px);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .company {
+            flex: 1;
+            min-width: clamp(150px, 40vw, 200px);
+            padding: clamp(10px, 3vw, 15px);
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 8px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .company.selected {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.2);
+        }
+        .company-name {
+            font-size: clamp(14px, 3.5vw, 16px);
+            font-weight: bold;
+            margin-bottom: clamp(4px, 2vw, 8px);
+        }
+        .company-discount {
+            font-size: clamp(18px, 5vw, 24px);
+            color: #00ff00;
+            font-weight: bold;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-top: 16px;
+            font-size: clamp(12px, 3vw, 14px);
+            color: #ffd700;
+        }
+        .mobile-joystick {
+            display: none;
+            width: 100%;
+            margin-top: clamp(10px, 3vw, 15px);
+            padding: clamp(15px, 4vw, 20px);
+            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+            border: 2px solid #8b0000;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
+        }
+        .mobile-companies-section {
+            margin-top: clamp(20px, 5vw, 25px);
+            border-top: 1px solid #8b0000;
+            padding-top: clamp(15px, 4vw, 20px);
+        }
+        .joystick-text {
+            color: #ff6666;
+            font-size: clamp(12px, 3vw, 14px);
+            margin-bottom: clamp(10px, 3vw, 15px);
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(255, 102, 102, 0.5);
+        }
+        .joystick-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .mobile-companies-panel {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.9);
+            border-top: 2px solid #ffd700;
+            padding: clamp(10px, 3vw, 15px);
+        }
+        .joystick-container {
+            width: clamp(100px, 20vw, 120px);
+            height: clamp(100px, 20vw, 120px);
+            position: relative;
+            margin: 0 auto;
+        }
+        .joystick-base {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, #2a2a2a 0%, #1a1a1a 70%, #000 100%);
+            border: 4px solid #8b0000;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 0 15px rgba(139, 0, 0, 0.3);
+        }
+        .joystick-knob {
+            width: 45%;
+            height: 45%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ff4444, #cc0000, #8b0000);
+            border: 3px solid #660000;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s ease;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.2);
+            cursor: pointer;
+            touch-action: none;
+        }
+        .joystick-knob:active {
+            transform: translate(-50%, -50%) scale(0.9);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.7), inset 0 1px 2px rgba(255,255,255,0.1);
+        }
+        .company-search {
+            margin-bottom: clamp(10px, 3vw, 15px);
+        }
+        .search-input {
+            width: 100%;
+            padding: clamp(8px, 2vw, 10px);
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid #ffd700;
+            border-radius: 6px;
+            color: #fff;
+            font-size: clamp(12px, 3vw, 14px);
+            font-family: inherit;
+        }
+        .search-input::placeholder {
+            color: #ccc;
+        }
+        .mobile-companies {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(8px, 2vw, 10px);
+            width: 100%;
+        }
+        .mobile-company {
+            padding: clamp(10px, 3vw, 12px);
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 6px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            font-size: clamp(11px, 2.8vw, 13px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .mobile-company.selected {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.2);
+        }
+        .mobile-company.hidden {
+            display: none;
+        }
+        .mobile-company-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .mobile-company-name {
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        .mobile-company-desc {
+            font-size: clamp(9px, 2.2vw, 11px);
+            color: #ccc;
+        }
+        .mobile-company-discount {
+            font-size: clamp(16px, 4vw, 18px);
+            color: #00ff00;
+            font-weight: bold;
+        }
+        .desktop-companies {
+            display: none;
+        }
+        @media (min-width: 720px) {
+            .mobile-joystick {
+                display: none;
+            }
+            .desktop-companies {
+                display: block;
+                width: 100%;
+                margin-top: clamp(20px, 5vw, 40px);
+                margin-bottom: clamp(100px, 20vh, 150px);
+                padding: clamp(10px, 3vw, 15px);
+                background: rgba(0, 0, 0, 0.8);
+                border-radius: 10px;
+                border: 2px solid #ffd700;
+            }
+        }
+        @media (max-width: 850px) {
+            body {
+                padding: 5px;
+                padding-bottom: 0;
+            }
+            .canvas {
+                width: 100vw;
+                max-width: 100vw;
+                height: clamp(45vh, 55vh, 65vh);
+                border-radius: 0;
+            }
+            .mobile-joystick {
+                display: block;
+            }
+            .controls {
+                display: none;
+            }
+            .ui-header {
+                font-size: clamp(10px, 2.5vw, 14px);
+                padding: clamp(4px, 2vw, 8px);
+                margin-bottom: clamp(8px, 2vw, 12px);
+                flex-wrap: wrap;
+                gap: clamp(4px, 1vw, 8px);
+            }
+            .volume-control {
+                gap: clamp(2px, 1vw, 4px);
+                font-size: clamp(10px, 2vw, 12px);
+            }
+            .volume-slider {
+                width: clamp(30px, 8vw, 40px);
+            }
+        }
+        @media (max-width: 480px) {
+            .canvas {
+                height: clamp(40vh, 50vh, 60vh);
+            }
+            .ui-header {
+                font-size: clamp(9px, 2vw, 12px);
+            }
+            .joystick-container {
+                width: clamp(90px, 18vw, 110px);
+                height: clamp(90px, 18vw, 110px);
+            }
+        }
+        @media (max-width: 320px) {
+            .ui-header {
+                flex-direction: column;
+                gap: 4px;
+                align-items: center;
+            }
+            .volume-control {
+                order: -1;
+                margin-bottom: 8px;
+            }
+        }
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(15px, 5vw, 20px);
+            border-radius: 10px;
+        }
+        .btn {
+            padding: clamp(10px, 3vw, 12px) clamp(20px, 5vw, 24px);
+            background: #ffd700;
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: clamp(14px, 4vw, 16px);
+            min-height: 44px;
+        }
+        .btn:hover {
+            background: #ffed4e;
+        }
+        .text-yellow { color: #ffd700; }
+        .text-green { color: #00ff00; }
+        .text-red { color: #ff4444; }
+        .text-xl { font-size: clamp(16px, 4vw, 20px); }
+        .text-4xl { font-size: clamp(24px, 6vw, 36px); }
+        .mb-4 { margin-bottom: 16px; }
+        .w-3 { width: 0.75rem; }
+        .h-3 { height: 0.75rem; }
+        .w-4 { width: 1rem; }
+        .h-4 { height: 1rem; }
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #2d1b69, #11998e);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .start-modal {
+            width: 100%;
+            max-width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100%;
+        }
+        .start-title {
+            font-size: clamp(24px, 8vw, 36px);
+            color: #ffd700;
+            margin-bottom: 30px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .instructions {
+            font-size: clamp(14px, 4vw, 18px);
+            line-height: 1.8;
+            margin-bottom: 40px;
+            color: #fff;
+            max-width: 90%;
+        }
+        .play-btn {
+            padding: 20px 40px;
+            background: #ffd700;
+            border: none;
+            border-radius: 15px;
+            color: #000;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: clamp(16px, 5vw, 22px);
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+            min-height: 60px;
+            min-width: 200px;
+        }
+        .play-btn:active {
+            background: #ffed4e;
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <!-- Start Screen Modal -->
+    <div id="startScreen" class="start-screen">
+        <div class="start-modal">
+            <h1 class="start-title">🛍️ SHOPPING DE DESCUENTOS</h1>
+            <div class="instructions">
+                <p><strong>🎯 Eres un Shopper Competitivo:</strong></p>
+                <p>🔄 Mueve con las flechas</p>
+                <p>🟡 Recoge cupones de descuento</p>
+                <p>🔴 Evita otros shoppers </p>
+                <p>⚠️ Si te tocan: pierdes 90% de tus cupones</p>
+                <p><strong>🏆 ¡Compite por más descuentos!</strong></p>
+            </div>
+            <button id="playBtn" class="play-btn">🎮 ¡JUGAR AHORA!</button>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="ui-header">
+            <div>❤️ ENERGÍA: <span id="lives">3</span></div>
+            <div>🏆 PUNTOS: <span id="score">0</span></div>
+            <div>🎫 CUPONES: <span id="discount">0</span>%</div>
+            <div>NIVEL: <span id="level">1</span></div>
+            <div class="volume-control">
+                🎵 <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="20">
+                🔊 <input type="range" id="sfxSlider" class="volume-slider" min="0" max="100" value="70">
+            </div>
+        </div>
+
+        <div style="position: relative;">
+            <canvas id="gameCanvas" class="canvas" width="800" height="600"></canvas>
+            
+            <div id="gameOverScreen" class="game-over" style="display: none;">
+                <h2 class="text-4xl text-red mb-4">💀 GAME OVER</h2>
+                <div class="game-over-stats">
+                    <p class="text-xl mb-4">🏆 PUNTOS: <span id="finalScore" class="text-yellow">0</span></p>
+                    <p class="text-xl mb-4">🎫 CUPONES: <span id="finalDiscount" class="text-green">0</span>%</p>
+                    <p class="text-xl mb-4">🏅 NIVEL: <span id="finalLevel" class="text-yellow">1</span></p>
+                    <div class="final-company">
+                        <p class="text-lg mb-4">🎯 EMPRESA ELEGIDA:</p>
+                        <div class="company-final">
+                            <span id="finalCompanyName" class="text-yellow">ARICA ES BACÁN</span><br>
+                            <span id="finalCompanyDiscount" class="text-green">0% de descuento</span>
+                        </div>
+                    </div>
+                </div>
+                <button id="restartBtn" class="btn">🔄 JUGAR DE NUEVO</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            ← → ↑ ↓ MOVER SHOPPER | RECOGE CUPONES Y EVITA OTROS SHOPPERS
+        </div>
+        
+        <!-- Desktop Companies Panel -->
+        <div class="desktop-companies">
+            <div class="discount-title">🎯 ELIGE TU EMPRESA PARA DESCUENTOS</div>
+            <div class="company-search">
+                <input type="text" id="desktopCompanySearch" class="search-input" placeholder="🔍 Buscar empresa...">
+            </div>
+            <div class="mobile-companies">
+                <div class="mobile-company selected" data-company="arica" data-name="arica es bacan">
+                    <div class="mobile-company-info">
+                        <div class="mobile-company-name">🌮 ARICA ES BACÁN</div>
+                        <div class="mobile-company-desc">Hasta 30% primer reel</div>
+                    </div>
+                    <div class="mobile-company-discount" id="desktop-arica-discount">0%</div>
+                </div>
+                <div class="mobile-company" data-company="ruta11" data-name="la ruta 11">
+                    <div class="mobile-company-info">
+                        <div class="mobile-company-name">
+                            <img src="https://laruta11-images.s3.amazonaws.com/menu/logo.png" style="width: 16px; height: 16px; display: inline; margin-right: 4px; vertical-align: middle;"> LA RUTA 11
+                        </div>
+                        <div class="mobile-company-desc">
+                            Hasta 70% en bebidas (1 vez/mes)<br>
+                            <div style="display: flex; flex-direction: column; gap: 2px; margin-top: 2px; font-size: 12px;">
+                                <div style="display: flex; gap: 4px; align-items: center;">
+                                    <button onclick="window.open('https://wa.me/56936227422', '_blank')" style="background: #25d366; color: white; border: none; padding: 6px 12px; border-radius: 7px; cursor: pointer;">WhatsApp</button>
+                                    <button onclick="window.open('http://instagram.com/la_ruta_11/', '_blank')" style="background: #e4405f; color: white; border: none; padding: 6px 12px; border-radius: 7px; cursor: pointer;">Instagram</button>
+                                    <button onclick="window.open('https://www.facebook.com/laruta11', '_blank')" style="background: #1877f2; color: white; border: none; padding: 6px 12px; border-radius: 7px; cursor: pointer;">Facebook</button>
+                                </div>
+                                <div style="display: flex; gap: 4px; align-items: center;">
+                                    <button onclick="window.open('https://app.laruta11.cl/', '_blank')" style="background: #f97316; color: white; border: none; padding: 6px 12px; border-radius: 7px; cursor: pointer;">App</button>
+                                    <button onclick="window.open('https://www.pedidosya.cl/restaurantes/arica/la-ruta-11-9e15d333-e6ed-43f3-ba76-8181ab740779-menu?search=la+ruta+11', '_blank')" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 7px; cursor: pointer;">Delivery</button>
+                                    <button onclick="window.open('https://share.google/8HlQ1GTBb02RTSrlg', '_blank')" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 7px; cursor: pointer;">Maps</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mobile-company-discount" id="desktop-ruta11-discount">0%</div>
+                </div>
+                <div class="mobile-company" data-company="mcdonalds" data-name="mcdonalds">
+                    <div class="mobile-company-info">
+                        <div class="mobile-company-name">🍟 MCDONALD'S</div>
+                        <div class="mobile-company-desc">Hasta 25% en combos</div>
+                    </div>
+                    <div class="mobile-company-discount" id="desktop-mcdonalds-discount">0%</div>
+                </div>
+                <div class="mobile-company" data-company="kfc" data-name="kfc">
+                    <div class="mobile-company-info">
+                        <div class="mobile-company-name">🍗 KFC</div>
+                        <div class="mobile-company-desc">Hasta 20% en buckets</div>
+                    </div>
+                    <div class="mobile-company-discount" id="desktop-kfc-discount">0%</div>
+                </div>
+                <div class="mobile-company" data-company="subway" data-name="subway">
+                    <div class="mobile-company-info">
+                        <div class="mobile-company-name">🥪 SUBWAY</div>
+                        <div class="mobile-company-desc">Hasta 15% en subs</div>
+                    </div>
+                    <div class="mobile-company-discount" id="desktop-subway-discount">0%</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Joystick -->
+        <div class="mobile-joystick">
+            <div class="joystick-text">🕹️ USA EL JOYSTICK PARA MOVERTE</div>
+            <div class="joystick-wrapper">
+                <div class="joystick-container" id="joystickContainer">
+                    <div class="joystick-base">
+                        <div class="joystick-knob" id="joystickKnob"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mobile-companies-section">
+            <div class="discount-title">🎯 ELIGE TU EMPRESA PARA DESCUENTOS</div>
+            <div class="company-search">
+                <input type="text" id="companySearch" class="search-input" placeholder="🔍 Buscar empresa...">
+            </div>
+            <div class="mobile-companies">
+                <div class="mobile-company selected" data-company="arica" data-name="arica es bacan">
+                    <div class="mobile-company-info">
+                        <div class="mobile-company-name">🌮 ARICA ES BACÁN</div>
+                        <div class="mobile-company-desc">Hasta 30% primer reel</div>
+                    </div>
+                    <div class="mobile-company-discount" id="mobile-arica-discount">0%</div>
+                </div>
+                <div class="mobile-company" data-company="ruta11" data-name="la ruta 11">
+                    <div class="mobile-company-info">
+                        <div class="mobile-company-name">
+                            <img src="https://laruta11-images.s3.amazonaws.com/menu/logo.png" style="width: 16px; height: 16px; display: inline; margin-right: 4px; vertical-align: middle;"> LA RUTA 11
+                        </div>
+                        <div class="mobile-company-desc">
+                            Hasta 70% en bebidas (1 vez/mes)<br>
+                            <div style="display: flex; flex-direction: column; gap: 2px; margin-top: 2px; font-size: 11px;">
+                                <div style="display: flex; gap: 3px; align-items: center;">
+                                    <button onclick="window.open('https://wa.me/56936227422', '_blank')" style="background: #25d366; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer;">WhatsApp</button>
+                                    <button onclick="window.open('http://instagram.com/la_ruta_11/', '_blank')" style="background: #e4405f; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer;">Instagram</button>
+                                    <button onclick="window.open('https://www.facebook.com/laruta11', '_blank')" style="background: #1877f2; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer;">Facebook</button>
+                                </div>
+                                <div style="display: flex; gap: 3px; align-items: center;">
+                                    <button onclick="window.open('https://app.laruta11.cl/', '_blank')" style="background: #f97316; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer;">App</button>
+                                    <button onclick="window.open('https://www.pedidosya.cl/restaurantes/arica/la-ruta-11-9e15d333-e6ed-43f3-ba76-8181ab740779-menu?search=la+ruta+11', '_blank')" style="background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer;">Delivery</button>
+                                    <button onclick="window.open('https://share.google/8HlQ1GTBb02RTSrlg', '_blank')" style="background: #3b82f6; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer;">Maps</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mobile-company-discount" id="mobile-ruta11-discount">0%</div>
+                </div>
+                <div class="mobile-company" data-company="mcdonalds" data-name="mcdonalds">
+                    <div class="mobile-company-info">
+                        <div class="mobile-company-name">🍟 MCDONALD'S</div>
+                        <div class="mobile-company-desc">Hasta 25% en combos</div>
+                    </div>
+                    <div class="mobile-company-discount" id="mobile-mcdonalds-discount">0%</div>
+                </div>
+                <div class="mobile-company" data-company="kfc" data-name="kfc">
+                    <div class="mobile-company-info">
+                        <div class="mobile-company-name">🍗 KFC</div>
+                        <div class="mobile-company-desc">Hasta 20% en buckets</div>
+                    </div>
+                    <div class="mobile-company-discount" id="mobile-kfc-discount">0%</div>
+                </div>
+                <div class="mobile-company" data-company="subway" data-name="subway">
+                    <div class="mobile-company-info">
+                        <div class="mobile-company-name">🥪 SUBWAY</div>
+                        <div class="mobile-company-desc">Hasta 15% en subs</div>
+                    </div>
+                    <div class="mobile-company-discount" id="mobile-subway-discount">0%</div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <audio id="bgMusic" loop>
+        <source src="/descuento.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="gameOverSound">
+        <source src="/gg.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="couponSound">
+        <source src="/cupon.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="damageSound">
+        <source src="/damage.mp3" type="audio/mpeg">
+    </audio>
+
+
+    <script>
+        // @ts-nocheck
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const bgMusic = document.getElementById('bgMusic');
+        const gameOverSound = document.getElementById('gameOverSound');
+        const couponSound = document.getElementById('couponSound');
+        const damageSound = document.getElementById('damageSound');
+
+        const volumeSlider = document.getElementById('volumeSlider');
+        const sfxSlider = document.getElementById('sfxSlider');
+        
+        // Audio control
+        bgMusic.volume = 0.2;
+        
+        // Create synthetic blip sound
+        let audioContext;
+        let sfxVolume = 0.7;
+        
+        function createBlipSound() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(sfxVolume * 0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+        
+        function createMegaCouponSound() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
+            oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.3);
+            
+            gainNode.gain.setValueAtTime(sfxVolume * 0.4, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
+        
+        // Discount limits by company
+        const discountLimits = {
+            arica: 30,  // 30% max for Arica es Bacán
+            ruta11: 70  // 70% max for La Ruta 11
+        };
+        
+        function updateDiscountDisplay() {
+            const maxDiscount = discountLimits[selectedCompany];
+            const displayDiscount = Math.min(totalDiscount, maxDiscount);
+            document.getElementById('discount').textContent = displayDiscount;
+            
+            // Update mobile displays
+            const mobileElement = document.getElementById(`mobile-${selectedCompany}-discount`);
+            if (mobileElement) {
+                mobileElement.textContent = displayDiscount + '%';
+            }
+            
+            // Update desktop displays
+            const desktopElement = document.getElementById(`desktop-${selectedCompany}-discount`);
+            if (desktopElement) {
+                desktopElement.textContent = displayDiscount + '%';
+            }
+        }
+        
+        gameOverSound.volume = 0.7;
+        couponSound.volume = 0.7;
+        damageSound.volume = 0.7;
+        
+        volumeSlider.addEventListener('input', (e) => {
+            bgMusic.volume = e.target.value / 100;
+        });
+        
+        sfxSlider.addEventListener('input', (e) => {
+            const volume = e.target.value / 100;
+            sfxVolume = volume;
+            gameOverSound.volume = volume;
+            couponSound.volume = volume;
+            damageSound.volume = volume;
+        });
+        
+        // Start music on first user interaction
+        let musicStarted = false;
+        function startMusic() {
+            if (!musicStarted) {
+                bgMusic.play().catch(() => {});
+                musicStarted = true;
+            }
+        }
+        
+        // Game state
+        let gameState = 'start';
+        let score = 0;
+        let lives = 3;
+        let level = 1;
+        let totalDiscount = 0;
+        let selectedCompany = 'arica';
+        
+        // Grid settings
+        const GRID_SIZE = 40;
+        const COLS = 20;
+        const ROWS = 15;
+        
+        // Game objects
+        const player = {
+            x: 1.5,
+            y: 1.5,
+            direction: 0,
+            animTimer: 0,
+            speed: 0.08
+        };
+        
+        let enemies = [];
+        let coupons = [];
+        let megaCoupons = [];
+        let maze = [];
+        
+        // Simple maze layout (1=wall, 0=coupon, 2=mega coupon, 3=empty)
+        const mazeLayout = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,3,3,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,0,1,1,1,0,3,3,0,1,1,1,0,1,1,0,1],
+            [1,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,1],
+            [1,0,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,1,0,1],
+            [1,0,0,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0,0,1],
+            [1,1,1,1,0,1,1,1,0,1,1,0,1,1,1,0,1,1,1,1],
+            [3,3,3,1,0,0,0,0,0,3,3,0,0,0,0,0,1,3,3,3],
+            [1,1,1,1,0,1,1,1,0,1,1,0,1,1,1,0,1,1,1,1],
+            [1,0,0,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0,0,1],
+            [1,0,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,1,0,1],
+            [1,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,1],
+            [1,0,1,1,0,1,1,1,0,3,3,0,1,1,1,0,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,3,3,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+        
+        // Shoppers competitivos (otros compradores agresivos)
+        const enemyTypes = [
+            { emoji: '👨‍💼', color: '#ff4444', name: 'Vendedor Agresivo' },
+            { emoji: '👩‍💼', color: '#ff6b6b', name: 'Vendedora Insistente' },
+            { emoji: '🤵', color: '#ff8e8e', name: 'Gerente Molesto' },
+            { emoji: '👔', color: '#ffb3b3', name: 'Ejecutivo Pesado' }
+        ];
+        
+        // Movement directions
+        const directions = [
+            { x: 1, y: 0 },   // right
+            { x: 0, y: 1 },   // down
+            { x: -1, y: 0 },  // left
+            { x: 0, y: -1 }   // up
+        ];
+        
+        // Initialize game
+        function initGame() {
+            maze = mazeLayout.map(row => [...row]);
+            
+            // Create coupons and mega coupons
+            coupons = [];
+            megaCoupons = [];
+            
+            for (let y = 0; y < maze.length; y++) {
+                for (let x = 0; x < maze[y].length; x++) {
+                    if (maze[y] && maze[y][x] === 0) {
+                        coupons.push({ x, y });
+                    } else if (maze[y] && maze[y][x] === 2) {
+                        megaCoupons.push({ x, y, timer: 0 });
+                    }
+                }
+            }
+            
+            // Create competitive shoppers in open areas
+            enemies = enemyTypes.map((type, i) => ({
+                ...type,
+                x: 9.5 + i * 0.3,
+                y: 7.5,
+                direction: Math.floor(Math.random() * 4),
+                speed: 0.04,
+                scared: false,
+                scaredTimer: 0,
+                hitCooldown: 0
+            }));
+            
+            // Reset player to safe position
+            player.x = 1.5;
+            player.y = 1.5;
+            player.direction = 0;
+        }
+        
+        // Input handling
+        document.addEventListener('keydown', (e) => {
+            startMusic();
+            keys[e.key] = true;
+            e.preventDefault();
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+            e.preventDefault();
+        });
+        
+        // Joystick controls
+        const joystickContainer = document.getElementById('joystickContainer');
+        const joystickKnob = document.getElementById('joystickKnob');
+        let isDragging = false;
+        let joystickCenter = { x: 0, y: 0 };
+        let joystickRadius = 0;
+        
+        function initJoystick() {
+            const rect = joystickContainer.getBoundingClientRect();
+            joystickCenter.x = rect.width / 2;
+            joystickCenter.y = rect.height / 2;
+            joystickRadius = rect.width / 2 - 20;
+        }
+        
+        function updateJoystick(clientX, clientY) {
+            const rect = joystickContainer.getBoundingClientRect();
+            const x = clientX - rect.left - joystickCenter.x;
+            const y = clientY - rect.top - joystickCenter.y;
+            
+            const distance = Math.sqrt(x * x + y * y);
+            const angle = Math.atan2(y, x);
+            
+            let knobX = x;
+            let knobY = y;
+            
+            if (distance > joystickRadius) {
+                knobX = Math.cos(angle) * joystickRadius;
+                knobY = Math.sin(angle) * joystickRadius;
+            }
+            
+            joystickKnob.style.transform = `translate(calc(-50% + ${knobX}px), calc(-50% + ${knobY}px))`;
+            
+            // Update movement keys based on joystick position
+            const threshold = joystickRadius * 0.3;
+            keys['ArrowLeft'] = knobX < -threshold;
+            keys['ArrowRight'] = knobX > threshold;
+            keys['ArrowUp'] = knobY < -threshold;
+            keys['ArrowDown'] = knobY > threshold;
+        }
+        
+        function resetJoystick() {
+            joystickKnob.style.transform = 'translate(-50%, -50%)';
+            keys['ArrowLeft'] = false;
+            keys['ArrowRight'] = false;
+            keys['ArrowUp'] = false;
+            keys['ArrowDown'] = false;
+        }
+        
+        // Touch events
+        joystickKnob.addEventListener('touchstart', (e) => {
+            startMusic();
+            isDragging = true;
+            initJoystick();
+            e.preventDefault();
+        });
+        
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                updateJoystick(e.touches[0].clientX, e.touches[0].clientY);
+                e.preventDefault();
+            }
+        });
+        
+        document.addEventListener('touchend', (e) => {
+            if (isDragging) {
+                isDragging = false;
+                resetJoystick();
+                e.preventDefault();
+            }
+        });
+        
+        // Mouse events for desktop testing
+        joystickKnob.addEventListener('mousedown', (e) => {
+            startMusic();
+            isDragging = true;
+            initJoystick();
+            e.preventDefault();
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                updateJoystick(e.clientX, e.clientY);
+                e.preventDefault();
+            }
+        });
+        
+        document.addEventListener('mouseup', (e) => {
+            if (isDragging) {
+                isDragging = false;
+                resetJoystick();
+                e.preventDefault();
+            }
+        });
+        
+        // Company selection (desktop)
+        document.querySelectorAll('.company').forEach(company => {
+            company.addEventListener('click', () => {
+                document.querySelectorAll('.company').forEach(c => c.classList.remove('selected'));
+                company.classList.add('selected');
+                selectedCompany = company.dataset.company;
+                updateDiscountDisplay();
+            });
+        });
+        
+        // Company selection (mobile)
+        document.querySelectorAll('.mobile-company').forEach(company => {
+            company.addEventListener('click', () => {
+                document.querySelectorAll('.mobile-company').forEach(c => c.classList.remove('selected'));
+                company.classList.add('selected');
+                selectedCompany = company.dataset.company;
+                updateDiscountDisplay();
+            });
+        });
+        
+        // Company search functionality
+        function setupSearch(searchId) {
+            const companySearch = document.getElementById(searchId);
+            if (!companySearch) return;
+            
+            companySearch.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const companies = companySearch.closest('.mobile-joystick, .discount-panel').querySelectorAll('.mobile-company');
+                
+                companies.forEach(company => {
+                    const companyName = company.dataset.name.toLowerCase();
+                    const companyText = company.querySelector('.mobile-company-name').textContent.toLowerCase();
+                    
+                    if (companyName.includes(searchTerm) || companyText.includes(searchTerm)) {
+                        company.classList.remove('hidden');
+                    } else {
+                        company.classList.add('hidden');
+                    }
+                });
+            });
+        }
+        
+        setupSearch('companySearch');
+        setupSearch('desktopCompanySearch');
+        
+        function canMove(x, y) {
+            if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return false;
+            if (!maze[y] || maze[y][x] === undefined) return false;
+            return maze[y][x] !== 1;
+        }
+        
+        function canMoveToPosition(newX, newY) {
+            // Verificar límites del mapa
+            if (newX < 0.25 || newX >= COLS - 0.25 || newY < 0.25 || newY >= ROWS - 0.25) {
+                return false;
+            }
+            
+            // Verificar colisión con paredes usando hitbox más pequeño
+            const hitboxSize = 0.2;
+            const corners = [
+                { x: newX - hitboxSize, y: newY - hitboxSize },
+                { x: newX + hitboxSize, y: newY - hitboxSize },
+                { x: newX - hitboxSize, y: newY + hitboxSize },
+                { x: newX + hitboxSize, y: newY + hitboxSize }
+            ];
+            
+            // Todas las esquinas deben estar en espacios libres
+            return corners.every(corner => {
+                const gridX = Math.floor(corner.x);
+                const gridY = Math.floor(corner.y);
+                return gridX >= 0 && gridX < COLS && gridY >= 0 && gridY < ROWS && 
+                       maze[gridY] && maze[gridY][gridX] !== 1;
+            });
+        }
+        
+        let keys = {};
+        
+        function movePlayer() {
+            let moved = false;
+            
+            if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+                const newX = player.x - player.speed;
+                if (canMoveToPosition(newX, player.y)) {
+                    player.x = newX;
+                    player.direction = 2;
+                    moved = true;
+                }
+            }
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+                const newX = player.x + player.speed;
+                if (canMoveToPosition(newX, player.y)) {
+                    player.x = newX;
+                    player.direction = 0;
+                    moved = true;
+                }
+            }
+            if (keys['ArrowUp'] || keys['w'] || keys['W']) {
+                const newY = player.y - player.speed;
+                if (canMoveToPosition(player.x, newY)) {
+                    player.y = newY;
+                    player.direction = 3;
+                    moved = true;
+                }
+            }
+            if (keys['ArrowDown'] || keys['s'] || keys['S']) {
+                const newY = player.y + player.speed;
+                if (canMoveToPosition(player.x, newY)) {
+                    player.y = newY;
+                    player.direction = 1;
+                    moved = true;
+                }
+            }
+            
+            if (moved) {
+                player.animTimer++;
+            }
+        }
+        
+        function moveEnemies() {
+            enemies.forEach(enemy => {
+                if (enemy.scared) {
+                    enemy.scaredTimer--;
+                    if (enemy.scaredTimer <= 0) {
+                        enemy.scared = false;
+                    }
+                }
+                
+                // Cambio de dirección aleatorio
+                if (Math.random() < 0.02) {
+                    const possibleDirs = [];
+                    for (let i = 0; i < 4; i++) {
+                        const testDir = directions[i];
+                        const testX = enemy.x + testDir.x * 0.5;
+                        const testY = enemy.y + testDir.y * 0.5;
+                        if (canMoveToPosition(testX, testY)) {
+                            possibleDirs.push(i);
+                        }
+                    }
+                    if (possibleDirs.length > 0) {
+                        enemy.direction = possibleDirs[Math.floor(Math.random() * possibleDirs.length)];
+                    }
+                }
+                
+                // Mover en dirección actual
+                const dir = directions[enemy.direction];
+                const speed = enemy.scared ? 0.02 : enemy.speed;
+                const newX = enemy.x + dir.x * speed;
+                const newY = enemy.y + dir.y * speed;
+                
+                // Verificar si puede moverse
+                if (canMoveToPosition(newX, newY)) {
+                    enemy.x = newX;
+                    enemy.y = newY;
+                } else {
+                    // Buscar nueva dirección válida
+                    const possibleDirs = [];
+                    for (let i = 0; i < 4; i++) {
+                        const testDir = directions[i];
+                        const testX = enemy.x + testDir.x * 0.5;
+                        const testY = enemy.y + testDir.y * 0.5;
+                        if (canMoveToPosition(testX, testY)) {
+                            possibleDirs.push(i);
+                        }
+                    }
+                    if (possibleDirs.length > 0) {
+                        enemy.direction = possibleDirs[Math.floor(Math.random() * possibleDirs.length)];
+                    }
+                }
+            });
+        }
+        
+        function checkCollisions() {
+            // Colisión con cupones
+            for (let i = coupons.length - 1; i >= 0; i--) {
+                const coupon = coupons[i];
+                const distance = Math.sqrt((coupon.x + 0.5 - player.x) ** 2 + (coupon.y + 0.5 - player.y) ** 2);
+                if (distance < 0.5) {
+                    coupons.splice(i, 1);
+                    score += 10;
+                    createBlipSound();
+                    
+                    if (Math.random() < 0.2) {
+                        totalDiscount += Math.floor(Math.random() * 3) + 1;
+                        updateDiscountDisplay();
+                    }
+                }
+            }
+            
+            // Colisión con mega cupones
+            for (let i = megaCoupons.length - 1; i >= 0; i--) {
+                const megaCoupon = megaCoupons[i];
+                const distance = Math.sqrt((megaCoupon.x + 0.5 - player.x) ** 2 + (megaCoupon.y + 0.5 - player.y) ** 2);
+                if (distance < 0.6) {
+                    megaCoupons.splice(i, 1);
+                    score += 50;
+                    totalDiscount += Math.floor(Math.random() * 8) + 5;
+                    updateDiscountDisplay();
+                    createMegaCouponSound();
+                    
+                    enemies.forEach(enemy => {
+                        enemy.scared = true;
+                        enemy.scaredTimer = 300;
+                    });
+                }
+            }
+            
+            // Colisión con enemigos
+            enemies.forEach((enemy, index) => {
+                const distance = Math.sqrt((enemy.x - player.x) ** 2 + (enemy.y - player.y) ** 2);
+                
+                if (distance < 0.8) {
+                    if (enemy.scared) {
+                        score += 200;
+                        enemy.x = 9.5 + index * 0.5;
+                        enemy.y = 7.5;
+                        enemy.scared = false;
+                        enemy.scaredTimer = 0;
+                    } else if (!enemy.hitCooldown) {
+                        damageSound.currentTime = 0;
+                        damageSound.play().catch(() => {});
+                        
+                        totalDiscount = Math.floor(totalDiscount * 0.1);
+                        updateDiscountDisplay();
+                        
+                        lives--;
+                        enemy.hitCooldown = 120;
+                        
+                        if (lives <= 0) {
+                            gameOver();
+                        } else {
+                            resetPositions();
+                        }
+                    }
+                }
+                
+                if (enemy.hitCooldown > 0) {
+                    enemy.hitCooldown--;
+                }
+            });
+            
+            if (coupons.length === 0 && megaCoupons.length === 0) {
+                level++;
+                initGame();
+            }
+        }
+        
+
+        
+        function resetPositions() {
+            player.x = 1.5;
+            player.y = 1.5;
+            player.direction = 0;
+            
+            enemies.forEach((enemy, i) => {
+                enemy.x = 9.5 + i * 0.3;
+                enemy.y = 7.5;
+                enemy.scared = false;
+                enemy.scaredTimer = 0;
+                enemy.hitCooldown = 60;
+            });
+        }
+        
+        function gameOver() {
+            gameState = 'gameOver';
+            bgMusic.pause();
+            gameOverSound.currentTime = 0;
+            gameOverSound.play().catch(() => {});
+            
+            // Update final stats
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalDiscount').textContent = Math.min(totalDiscount, discountLimits[selectedCompany] || 0);
+            document.getElementById('finalLevel').textContent = level;
+            
+            // Update company info
+            const companyNames = {
+                arica: 'ARICA ES BACÁN',
+                ruta11: 'LA RUTA 11',
+                mcdonalds: 'MCDONALD\'S',
+                kfc: 'KFC',
+                subway: 'SUBWAY'
+            };
+            
+            document.getElementById('finalCompanyName').textContent = companyNames[selectedCompany] || 'EMPRESA';
+            document.getElementById('finalCompanyDiscount').textContent = `${Math.min(totalDiscount, discountLimits[selectedCompany] || 0)}% de descuento`;
+            
+            document.getElementById('gameOverScreen').style.display = 'flex';
+        }
+        
+        function restart() {
+            gameState = 'playing';
+            score = 0;
+            lives = 3;
+            level = 1;
+            totalDiscount = 0;
+            document.getElementById('gameOverScreen').style.display = 'none';
+            bgMusic.play().catch(() => {});
+            initGame();
+            updateUI();
+        }
+        
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
+            document.getElementById('level').textContent = level;
+            updateDiscountDisplay();
+        }
+        
+        // Rendering
+        function render() {
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw maze walls (thicker)
+            ctx.fillStyle = '#4a4a6a';
+            for (let y = 0; y < maze.length; y++) {
+                for (let x = 0; x < maze[y].length; x++) {
+                    if (maze[y] && maze[y][x] === 1) {
+                        ctx.fillRect(x * GRID_SIZE - 2, y * GRID_SIZE - 2, GRID_SIZE + 4, GRID_SIZE + 4);
+                    }
+                }
+            }
+            
+            // Draw coupons (larger)
+            ctx.fillStyle = '#ffd700';
+            coupons.forEach(coupon => {
+                ctx.beginPath();
+                ctx.arc(
+                    coupon.x * GRID_SIZE + GRID_SIZE/2,
+                    coupon.y * GRID_SIZE + GRID_SIZE/2,
+                    5, 0, Math.PI * 2
+                );
+                ctx.fill();
+            });
+            
+            // Draw mega coupons (larger)
+            megaCoupons.forEach(megaCoupon => {
+                megaCoupon.timer++;
+                const alpha = 0.5 + 0.5 * Math.sin(megaCoupon.timer * 0.1);
+                ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(
+                    megaCoupon.x * GRID_SIZE + GRID_SIZE/2,
+                    megaCoupon.y * GRID_SIZE + GRID_SIZE/2,
+                    12, 0, Math.PI * 2
+                );
+                ctx.fill();
+            });
+            
+            // Draw player (shopper)
+            const px = player.x * GRID_SIZE + GRID_SIZE/2;
+            const py = player.y * GRID_SIZE + GRID_SIZE/2;
+            
+            // Player body (15% más pequeño)
+            ctx.fillStyle = '#00ff00';
+            ctx.beginPath();
+            ctx.arc(px, py, 20, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Player eyes (15% más pequeños)
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(px - 8, py - 7, 7, 0, Math.PI * 2);
+            ctx.arc(px + 8, py - 7, 7, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Player pupils (move based on direction)
+            const eyeOffsets = [
+                { x: 1, y: 0 },   // right
+                { x: 0, y: 1 },   // down
+                { x: -1, y: 0 },  // left
+                { x: 0, y: -1 }   // up
+            ];
+            const offset = eyeOffsets[player.direction];
+            
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(px - 8 + offset.x * 2, py - 7 + offset.y * 2, 3, 0, Math.PI * 2);
+            ctx.arc(px + 8 + offset.x * 2, py - 7 + offset.y * 2, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw competitive shoppers
+            enemies.forEach(enemy => {
+                const ex = enemy.x * GRID_SIZE + GRID_SIZE/2;
+                const ey = enemy.y * GRID_SIZE + GRID_SIZE/2;
+                
+                if (enemy.scared) {
+                    // Scared vendor (blue and shaking)
+                    const shake = Math.sin(Date.now() * 0.02) * 1;
+                    
+                    // Body (15% más pequeño)
+                    ctx.fillStyle = '#4444ff';
+                    ctx.beginPath();
+                    ctx.arc(ex + shake, ey, 20, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Eyes (scared - spinning, 15% más pequeños)
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(ex - 8 + shake, ey - 7, 7, 0, Math.PI * 2);
+                    ctx.arc(ex + 8 + shake, ey - 7, 7, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Pupils (spinning)
+                    const spinAngle = Date.now() * 0.01;
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(ex - 8 + shake + Math.cos(spinAngle) * 3, ey - 7 + Math.sin(spinAngle) * 3, 2, 0, Math.PI * 2);
+                    ctx.arc(ex + 8 + shake + Math.cos(spinAngle) * 3, ey - 7 + Math.sin(spinAngle) * 3, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // Normal vendor
+                    ctx.fillStyle = enemy.color;
+                    
+                    // Body (15% más pequeño)
+                    ctx.beginPath();
+                    ctx.arc(ex, ey, 20, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Eyes (15% más pequeños)
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(ex - 8, ey - 7, 7, 0, Math.PI * 2);
+                    ctx.arc(ex + 8, ey - 7, 7, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Pupils (move based on direction)
+                    const eyeOffsets = [
+                        { x: 1, y: 0 },   // right
+                        { x: 0, y: 1 },   // down
+                        { x: -1, y: 0 },  // left
+                        { x: 0, y: -1 }   // up
+                    ];
+                    const offset = eyeOffsets[enemy.direction];
+                    
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(ex - 8 + offset.x * 2, ey - 7 + offset.y * 2, 3, 0, Math.PI * 2);
+                    ctx.arc(ex + 8 + offset.x * 2, ey - 7 + offset.y * 2, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Mouth (angry)
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(ex, ey + 2, 2, Math.PI, 0);
+                    ctx.stroke();
+                }
+            });
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (gameState === 'playing') {
+                movePlayer();
+                moveEnemies();
+                checkCollisions();
+                updateUI();
+            }
+            
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Event listeners
+        document.getElementById('restartBtn').addEventListener('click', restart);
+        
+        // Start screen functionality
+        document.getElementById('playBtn').addEventListener('click', () => {
+            document.getElementById('startScreen').style.display = 'none';
+            gameState = 'playing';
+            startMusic();
+        });
+        
+        // Initialize joystick on window resize
+        window.addEventListener('resize', initJoystick);
+        
+        // Start game
+        initGame();
+        updateUI();
+        gameLoop();
+        initJoystick();
+        
+        // Initialize Lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>

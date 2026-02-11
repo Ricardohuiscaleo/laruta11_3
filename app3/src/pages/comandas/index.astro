@@ -1,0 +1,769 @@
+---
+// Comandas - Sistema de pedidos para cocina
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comandas - La Ruta 11</title>
+    <style>
+        .bg-gray-100 { background-color: #f3f4f6; }
+        .min-h-screen { min-height: 100vh; }
+        .bg-white { background-color: #ffffff; }
+        .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+        .border-b { border-bottom-width: 1px; }
+        .sticky { position: sticky; }
+        .top-0 { top: 0; }
+        .z-10 { z-index: 10; }
+        .max-w-7xl { max-width: 80rem; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+        .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .gap-2 { gap: 0.5rem; }
+        .font-bold { font-weight: 700; }
+        .text-gray-800 { color: #1f2937; }
+        .text-lg { font-size: 1.125rem; }
+        .text-sm { font-size: 0.875rem; }
+        .text-gray-600 { color: #4b5563; }
+        .bg-red-500 { background-color: #ef4444; }
+        .text-white { color: #ffffff; }
+        .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .rounded-full { border-radius: 9999px; }
+        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .bg-blue-500 { background-color: #3b82f6; }
+        .hover\:bg-blue-600:hover { background-color: #2563eb; }
+        .transition-colors { transition: color 0.15s, background-color 0.15s; }
+        .bg-orange-500 { background-color: #f97316; }
+        .hover\:bg-orange-600:hover { background-color: #ea580c; }
+        .rounded-lg { border-radius: 0.5rem; }
+        .text-center { text-align: center; }
+        .py-12 { padding-top: 3rem; padding-bottom: 3rem; }
+        .text-6xl { font-size: 3.75rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .text-xl { font-size: 1.25rem; }
+        .text-gray-700 { color: #374151; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .text-gray-500 { color: #6b7280; }
+        .grid { display: grid; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .gap-3 { gap: 0.75rem; }
+        .rounded { border-radius: 0.25rem; }
+        .shadow { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); }
+        .border-l-8 { border-left-width: 8px; }
+        .border-red-500 { border-color: #ef4444; }
+        .bg-red-50 { background-color: #fef2f2; }
+        .border-orange-500 { border-color: #f97316; }
+        .bg-orange-50 { background-color: #fff7ed; }
+        .border-blue-500 { border-color: #3b82f6; }
+        .bg-blue-50 { background-color: #eff6ff; }
+        .border-green-500 { border-color: #22c55e; }
+        .bg-green-50 { background-color: #f0fdf4; }
+        .border-purple-500 { border-color: #a855f7; }
+        .bg-purple-50 { background-color: #faf5ff; }
+        .border-gray-400 { border-color: #9ca3af; }
+        .bg-gray-50 { background-color: #f9fafb; }
+        .border-red-800 { border-color: #991b1b; }
+        .bg-red-100 { background-color: #fee2e2; }
+        .p-3 { padding: 0.75rem; }
+        .w-full { width: 100%; }
+        .mb-3 { margin-bottom: 0.75rem; }
+        .pb-2 { padding-bottom: 0.5rem; }
+        .border-gray-200 { border-color: #e5e7eb; }
+        .text-gray-900 { color: #111827; }
+        .bg-yellow-50 { background-color: #fefce8; }
+        .border-yellow-300 { border-color: #fde047; }
+        .p-2 { padding: 0.5rem; }
+        .space-y-2 > * + * { margin-top: 0.5rem; }
+        .bg-red-800 { background-color: #991b1b; }
+        .animate-spin { animation: spin 1s linear infinite; }
+        .rounded-full { border-radius: 9999px; }
+        .h-12 { height: 3rem; }
+        .w-12 { width: 3rem; }
+        .border-b-2 { border-bottom-width: 2px; }
+        .border-orange-500 { border-color: #f97316; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (min-width: 1024px) {
+            .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (min-width: 1280px) {
+            .xl\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+    </style>
+    <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo.png" />
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="login-app"></div>
+    <div id="comandas-app" style="display: none;"></div>
+
+    <script type="module">
+        import { createElement as h, useState, useEffect } from 'https://esm.sh/react@18';
+        import { createRoot } from 'https://esm.sh/react-dom@18/client';
+
+        const LoginApp = () => {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                setError('');
+
+                try {
+                    const response = await fetch('/api/auth/login_comandas.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        document.getElementById('login-app').style.display = 'none';
+                        document.getElementById('comandas-app').style.display = 'block';
+                        const comandasRoot = createRoot(document.getElementById('comandas-app'));
+                        comandasRoot.render(h(ComandasApp));
+                    } else {
+                        setError(data.message);
+                    }
+                } catch (error) {
+                    setError('Error de conexión');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return h('div', { className: 'min-h-screen bg-gray-100 flex items-center justify-center' },
+                h('div', { className: 'bg-white p-8 rounded-xl shadow-xl w-full max-w-md' },
+                    h('div', { className: 'text-center mb-6' },
+                        h('img', { src: 'https://laruta11-images.s3.amazonaws.com/menu/logo.png', alt: 'La Ruta 11', className: 'w-16 h-16 mx-auto mb-4' }),
+                        h('h1', { className: 'text-2xl font-bold text-gray-800' }, 'Comandas - Cocina'),
+                        h('p', { className: 'text-gray-600' }, 'Ingresa tus credenciales')
+                    ),
+                    h('form', { onSubmit: handleLogin },
+                        h('div', { className: 'mb-4' },
+                            h('label', { className: 'block text-gray-700 text-sm font-bold mb-2' }, 'Usuario'),
+                            h('input', {
+                                type: 'text',
+                                value: username,
+                                onChange: (e) => setUsername(e.target.value),
+                                className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500',
+                                required: true
+                            })
+                        ),
+                        h('div', { className: 'mb-6' },
+                            h('label', { className: 'block text-gray-700 text-sm font-bold mb-2' }, 'Contraseña'),
+                            h('input', {
+                                type: 'password',
+                                value: password,
+                                onChange: (e) => setPassword(e.target.value),
+                                className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500',
+                                required: true
+                            })
+                        ),
+                        error && h('div', { className: 'mb-4 text-red-600 text-sm text-center' }, error),
+                        h('button', {
+                            type: 'submit',
+                            disabled: loading,
+                            className: 'w-full bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors font-bold disabled:opacity-50'
+                        }, loading ? 'Ingresando...' : 'Ingresar')
+                    )
+                )
+            );
+        };
+
+        const ComandasApp = () => {
+            const [orders, setOrders] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [previousOrderCount, setPreviousOrderCount] = useState(0);
+            const [audioEnabled, setAudioEnabled] = useState(false);
+            const [currentTime, setCurrentTime] = useState(new Date());
+
+            const enableAudio = () => {
+                if (!audioEnabled) {
+                    setAudioEnabled(true);
+                    console.log('Audio habilitado');
+                }
+            };
+
+            const requestNotificationPermission = async () => {
+                if ('Notification' in window && Notification.permission === 'default') {
+                    await Notification.requestPermission();
+                }
+            };
+
+            const showNotification = (title, body) => {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(title, {
+                        body: body,
+                        icon: 'https://laruta11-images.s3.amazonaws.com/menu/logo.png'
+                    });
+                }
+            };
+
+            const loadOrders = async () => {
+                try {
+                    const response = await fetch(`/api/tuu/get_comandas.php?t=${Date.now()}`, {
+                        method: 'GET',
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Filtrar pedidos cancelados en el frontend también
+                        const allOrders = data.orders || [];
+                        const newOrders = allOrders.filter(order => 
+                            order.order_status !== 'cancelled' && 
+                            order.order_status !== 'delivered'
+                        );
+                        
+                        console.log('Debug API response:', data);
+                        console.log('Filtered orders:', newOrders.length, 'of', allOrders.length);
+                        
+                        // Detectar nuevas órdenes en preparing (automático) o pending
+                        const newOrdersInPreparingOrPending = newOrders.filter(order => 
+                            order.order_status === 'preparing' || order.order_status === 'pending'
+                        );
+                        
+                        if (!loading && newOrdersInPreparingOrPending.length > 0 && newOrders.length > previousOrderCount) {
+                            playTestSound();
+                        }
+                        
+                        setOrders(newOrders);
+                        setPreviousOrderCount(newOrders.length);
+                    }
+                } catch (error) {
+                    console.error('Error cargando pedidos:', error);
+                    // Mostrar error específico
+                    if (error.message.includes('Failed to fetch')) {
+                        console.error('Error de red o CORS');
+                    }
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const updateOrderStatus = async (orderId, newStatus) => {
+                try {
+                    const response = await fetch('/api/tuu/update_order_status.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ order_id: orderId, order_status: newStatus })
+                    });
+                    
+                    if (response.ok) {
+                        const order = orders.find(o => o.id === orderId);
+                        const orderNumber = order ? order.order_number : orderId;
+                        
+                        const statusMessages = {
+                            'sent_to_kitchen': { title: '👨🍳 Enviado a Cocina', body: `Pedido ${orderNumber} enviado a cocina` },
+                            'preparing': { title: '🔥 Preparando', body: `Pedido ${orderNumber} en preparación` },
+                            'ready': { title: '✅ Listo', body: `Pedido ${orderNumber} listo para entregar` },
+                            'out_for_delivery': { title: '🚴 En Delivery', body: `Pedido ${orderNumber} enviado a delivery` },
+                            'delivered': { title: '📦 Entregado', body: `Pedido ${orderNumber} entregado exitosamente` }
+                        };
+                        
+                        if (statusMessages[newStatus]) {
+                            showNotification(statusMessages[newStatus].title, statusMessages[newStatus].body);
+                        }
+                        
+                        loadOrders();
+                    }
+                } catch (error) {
+                    console.error('Error actualizando estado:', error);
+                }
+            };
+
+            const confirmTransferPayment = async (orderId, orderNumber) => {
+                if (!confirm(`¿Confirmar pago por transferencia del pedido ${orderNumber}?`)) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/confirm_transfer_payment.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ order_id: orderId })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('💳 Pago Confirmado', `Transferencia confirmada para ${orderNumber}`);
+                        loadOrders();
+                    } else {
+                        alert('Error: ' + (result.error || 'No se pudo confirmar el pago'));
+                    }
+                } catch (error) {
+                    console.error('Error confirmando pago:', error);
+                    alert('Error al confirmar el pago');
+                }
+            };
+
+            const cancelOrder = async (orderId, orderNumber) => {
+                if (!confirm(`¿ANULAR el pedido ${orderNumber}? Esta acción no se puede deshacer.`)) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/cancel_order.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ order_id: orderId })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('❌ Pedido Anulado', `Pedido ${orderNumber} anulado`);
+                        loadOrders();
+                    } else {
+                        alert('Error: ' + (result.error || 'No se pudo anular el pedido'));
+                    }
+                } catch (error) {
+                    console.error('Error anulando pedido:', error);
+                    alert('Error al anular el pedido');
+                }
+            };
+
+            useEffect(() => {
+                requestNotificationPermission();
+                loadOrders();
+                const interval = setInterval(loadOrders, 5000);
+                const timeInterval = setInterval(() => setCurrentTime(new Date()), 1000);
+                return () => {
+                    clearInterval(interval);
+                    clearInterval(timeInterval);
+                };
+            }, []);
+
+            const getStatusColor = (status) => {
+                switch (status) {
+                    case 'pending': return 'border-l-8 border-red-500 bg-red-50';
+                    case 'sent_to_kitchen': return 'border-l-8 border-orange-500 bg-orange-50';
+                    case 'preparing': return 'border-l-8 border-blue-500 bg-blue-50';
+                    case 'ready': return 'border-l-8 border-green-500 bg-green-50';
+                    case 'out_for_delivery': return 'border-l-8 border-purple-500 bg-purple-50';
+                    case 'delivered': return 'border-l-8 border-gray-400 bg-gray-50';
+                    case 'completed': return 'border-l-8 border-emerald-600 bg-emerald-50';
+                    case 'cancelled': return 'border-l-8 border-red-800 bg-red-100';
+                    default: return 'border-l-8 border-gray-400 bg-gray-50';
+                }
+            };
+
+            const getStatusBadge = (status) => {
+                switch (status) {
+                    case 'pending': return 'bg-red-500 text-white shadow-lg';
+                    case 'sent_to_kitchen': return 'bg-orange-500 text-white shadow-lg';
+                    case 'preparing': return 'bg-blue-500 text-white shadow-lg';
+                    case 'ready': return 'bg-green-500 text-white shadow-lg';
+                    case 'out_for_delivery': return 'bg-purple-500 text-white shadow-lg';
+                    case 'delivered': return 'bg-gray-500 text-white shadow-lg';
+                    case 'completed': return 'bg-emerald-600 text-white shadow-lg';
+                    case 'cancelled': return 'bg-red-800 text-white shadow-lg';
+                    default: return 'bg-gray-500 text-white shadow-lg';
+                }
+            };
+
+            const getStatusText = (status) => {
+                switch (status) {
+                    case 'pending': return '⏳ Pendiente';
+                    case 'sent_to_kitchen': return '👨🍳 En Cocina';
+                    case 'preparing': return '🔥 Preparando';
+                    case 'ready': return '✅ Listo';
+                    case 'out_for_delivery': return '🚴 En Camino';
+                    case 'delivered': return '📦 Entregado';
+                    case 'completed': return '🎉 Completado';
+                    case 'cancelled': return '❌ Cancelado';
+                    default: return status;
+                }
+            };
+
+            const getProductImage = (imageUrl) => {
+                if (imageUrl && imageUrl.trim() !== '') {
+                    return imageUrl;
+                }
+                return 'https://laruta11-images.s3.amazonaws.com/menu/logo.png';
+            };
+
+            const formatPhone = (phone) => {
+                if (!phone) return 'Sin teléfono';
+                const cleaned = phone.replace(/\D/g, '');
+                if (cleaned.startsWith('56')) return '+' + cleaned;
+                if (cleaned.startsWith('9')) return '+569' + cleaned;
+                return '+56' + cleaned;
+            };
+
+            const getWhatsAppLink = (phone, orderNumber) => {
+                if (!phone) return null;
+                const formattedPhone = formatPhone(phone).replace('+', '');
+                const message = `Hola! Te contacto por tu pedido ${orderNumber} de La Ruta 11`;
+                return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+            };
+
+            const formatMoney = (amount) => {
+                return parseFloat(amount || 0).toLocaleString('es-CL').replace(/,/g, '.');
+            };
+
+            const getTimeElapsed = (createdAt) => {
+                const now = new Date();
+                const created = new Date(createdAt);
+                // Convertir UTC a hora Chile (UTC-3)
+                const createdChile = new Date(created.getTime() - (3 * 60 * 60 * 1000));
+                const diffMs = now - createdChile;
+                const diffSecs = Math.floor(diffMs / 1000);
+                const diffMins = Math.floor(diffSecs / 60);
+                const diffHours = Math.floor(diffMins / 60);
+                
+                if (diffSecs < 60) {
+                    return `${diffSecs}s`;
+                } else if (diffMins < 60) {
+                    return `${diffMins}m ${diffSecs % 60}s`;
+                } else {
+                    const remainingMins = diffMins % 60;
+                    return `${diffHours}h ${remainingMins}m`;
+                }
+            };
+
+            const getDetailedTimes = (order) => {
+                const now = new Date();
+                const created = new Date(order.created_at);
+                const createdChile = new Date(created.getTime() - (3 * 60 * 60 * 1000));
+                
+                const totalMs = now - createdChile;
+                const totalMins = Math.floor(totalMs / (1000 * 60));
+                const totalHours = Math.floor(totalMins / 60);
+                const totalRemainingMins = totalMins % 60;
+                
+                const prepTime = Math.min(totalMins, 18);
+                const deliveryTime = Math.max(0, totalMins - prepTime);
+                
+                return {
+                    total: totalHours > 0 ? `${totalHours}h ${totalRemainingMins}m` : `${totalMins}m`,
+                    prep: `${prepTime}m`,
+                    delivery: `${deliveryTime}m`
+                };
+            };
+
+            const playTestSound = async () => {
+                try {
+                    console.log('Intentando reproducir sonido...');
+                    const audio = new Audio('/comanda.mp3');
+                    audio.volume = 0.8;
+                    audio.preload = 'auto';
+                    
+                    const playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        await playPromise;
+                        console.log('Sonido reproducido exitosamente');
+                    }
+                } catch (error) {
+                    console.error('Error reproduciendo sonido:', error);
+                }
+            };
+
+            if (loading) {
+                return h('div', { className: 'flex items-center justify-center min-h-screen' },
+                    h('div', { className: 'text-center' },
+                        h('div', { className: 'animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4' }),
+                        h('p', { className: 'text-gray-600' }, 'Cargando comandas...')
+                    )
+                );
+            }
+
+            return h('div', { 
+                className: 'min-h-screen bg-gray-100',
+                onClick: enableAudio
+            },
+                h('header', { className: 'bg-white shadow-sm border-b sticky top-0 z-10' },
+                    h('div', { className: 'max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4' },
+                        h('div', { className: 'flex flex-col lg:flex-row justify-between items-start lg:items-center gap-2' },
+                            h('div', { className: 'flex items-center gap-2 sm:gap-3' },
+                                h('img', { src: 'https://laruta11-images.s3.amazonaws.com/menu/logo.png', alt: 'La Ruta 11', className: 'w-6 h-6 sm:w-8 sm:h-8' }),
+                                h('h1', { 
+                                    className: 'font-bold text-gray-800',
+                                    style: { fontSize: 'clamp(1.25rem, 4vw, 2rem)' }
+                                }, 'Comandas - Cocina')
+                            ),
+                            h('div', { className: 'text-center' },
+                                h('div', { className: 'text-lg font-bold text-gray-800' }, currentTime.toLocaleTimeString('es-CL')),
+                                h('div', { className: 'text-sm text-gray-600' }, currentTime.toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }))
+                            ),
+                            h('div', { className: 'flex items-center gap-2 sm:gap-4 w-full lg:w-auto justify-between lg:justify-end' },
+                                h('div', { className: 'bg-red-500 text-white px-3 py-2 rounded-full font-bold text-sm shadow-lg' }, `${orders.length} pedidos`),
+                                h('button', {
+                                    onClick: playTestSound,
+                                    className: 'bg-blue-500 text-white px-3 py-2 rounded-full hover:bg-blue-600 transition-colors text-sm shadow-lg'
+                                }, '🔔'),
+                                h('button', {
+                                    onClick: loadOrders,
+                                    className: 'bg-orange-500 text-white px-3 py-2 sm:px-4 rounded-lg hover:bg-orange-600 transition-colors text-sm'
+                                }, '🔄')
+                            )
+                        )
+                    )
+                ),
+
+                h('main', { className: 'max-w-full mx-auto px-2 py-3' },
+                    orders.length === 0 ? 
+                        h('div', { className: 'text-center py-12' },
+                            h('div', { className: 'text-6xl mb-4' }, '🍽️'),
+                            h('h2', { className: 'text-xl font-bold text-gray-700 mb-2' }, 'No hay pedidos'),
+                            h('p', { className: 'text-gray-500' }, 'Los nuevos pedidos aparecerán aquí automáticamente')
+                        ) :
+                        h('div', { className: 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3' },
+                            orders.filter(order => order.order_status !== 'cancelled').map(order => 
+                                h('div', {
+                                    key: order.id,
+                                    className: `rounded-lg shadow-lg ${getStatusColor(order.order_status)} transition-all duration-300 hover:shadow-xl`
+                                },
+                                    h('div', { className: 'p-3' },
+                                        // HEADER: Número + Estado
+                                        h('div', { className: 'flex flex-col justify-between items-center gap-2 mb-3 pb-2 border-b border-gray-200' },
+                                            h('div', { className: 'w-full text-center' },
+                                                h('h1', { 
+                                                    className: 'font-black text-gray-900 text-lg'
+                                                }, order.order_number)
+                                            ),
+                                            h('div', { className: 'w-full text-center' },
+                                                order.order_status === 'out_for_delivery' ? 
+                                                    h('div', { className: 'space-y-1' },
+                                                        h('div', {
+                                                            className: `px-3 py-2 rounded-lg font-bold text-sm ${getStatusBadge(order.order_status)}`
+                                                        }, getStatusText(order.order_status)),
+                                                        h('div', { className: 'text-xs bg-white rounded p-2 border border-purple-300' },
+                                                            (() => {
+                                                                const times = getDetailedTimes(order);
+                                                                return h('div', { className: 'space-y-1' },
+                                                                    h('div', { className: 'font-bold text-gray-800' }, `⏱️ ${times.total}`),
+                                                                    h('div', { className: 'text-blue-600' }, `🔥 ${times.prep}`),
+                                                                    h('div', { className: 'text-purple-600' }, `🚴 ${times.delivery}`)
+                                                                );
+                                                            })()
+                                                        )
+                                                    ) :
+                                                    h('div', {
+                                                        className: `px-3 py-2 rounded-lg font-bold text-sm ${getStatusBadge(order.order_status)}`
+                                                    }, `${getStatusText(order.order_status)} • ${getTimeElapsed(order.created_at)}`)
+                                            )
+                                        ),
+
+                                        // PRODUCTOS PRIMERO (Lo más importante para cocina)
+                                        h('div', { className: 'mb-3 bg-yellow-50 border border-yellow-300 rounded-lg p-2' },
+                                            h('h2', { 
+                                                className: 'font-bold text-gray-900 mb-2 text-center text-sm'
+                                            }, '🍽️ PRODUCTOS'),
+                                            h('div', { className: 'space-y-2' },
+                                                order.items && order.items.length > 0 ? 
+                                                    order.items.map((item, index) => {
+                                                        const isCombo = item.item_type === 'combo' || (item.combo_data && item.combo_data !== 'null');
+                                                        let comboData = null;
+                                                        if (isCombo && item.combo_data && item.combo_data !== 'null') {
+                                                            try {
+                                                                comboData = typeof item.combo_data === 'string' ? JSON.parse(item.combo_data) : item.combo_data;
+                                                            } catch (e) {
+                                                                console.error('Error parsing combo_data:', e);
+                                                            }
+                                                        }
+                                                        
+                                                        return h('div', {
+                                                            key: index,
+                                                            className: 'bg-white rounded-lg p-2 border border-gray-200'
+                                                        },
+                                                            h('div', { className: 'flex items-center gap-2' },
+                                                                h('img', {
+                                                                    src: getProductImage(item.image_url),
+                                                                    alt: item.product_name || 'Producto',
+                                                                    className: 'w-12 h-12 object-cover rounded border',
+                                                                    onError: (e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo.png'; }
+                                                                }),
+                                                                h('div', { className: 'flex-1 min-w-0' },
+                                                                    h('h3', { 
+                                                                        className: 'font-bold text-gray-900 text-sm truncate'
+                                                                    }, item.product_name || 'Producto'),
+                                                                    h('div', { className: 'flex items-center gap-2 text-xs' },
+                                                                        h('span', { 
+                                                                            className: 'bg-red-500 text-white px-2 py-1 rounded font-bold'
+                                                                        }, `x${item.quantity}`),
+                                                                        h('span', { 
+                                                                            className: 'text-green-600 font-bold'
+                                                                        }, `$${formatMoney(item.price)}`)
+                                                                    )
+                                                                )
+                                                            ),
+                                                            isCombo && comboData && h('div', { className: 'mt-2 pt-2 border-t border-gray-200' },
+                                                                h('p', { className: 'text-xs font-medium text-gray-700 mb-1' }, 'Incluye:'),
+                                                                h('div', { className: 'space-y-1 pl-2' },
+                                                                    comboData.fixed_items && comboData.fixed_items.map((fixedItem, idx) => 
+                                                                        h('p', { key: `fixed-${idx}`, className: 'text-xs text-gray-600' }, 
+                                                                            `• ${item.quantity}x ${fixedItem.product_name || fixedItem.name}`
+                                                                        )
+                                                                    ),
+                                                                    comboData.selections && Object.entries(comboData.selections).map(([group, selection]) => {
+                                                                        if (Array.isArray(selection)) {
+                                                                            return selection.map((sel, selIdx) => 
+                                                                                h('p', { key: `sel-${group}-${selIdx}`, className: 'text-xs text-blue-600 font-medium' }, 
+                                                                                    `• ${item.quantity}x ${sel.name}`
+                                                                                )
+                                                                            );
+                                                                        } else {
+                                                                            return h('p', { key: `sel-${group}`, className: 'text-xs text-blue-600 font-medium' }, 
+                                                                                `• ${item.quantity}x ${selection.name}`
+                                                                            );
+                                                                        }
+                                                                    })
+                                                                )
+                                                            )
+                                                        );
+                                                    }) :
+                                                    h('p', { className: 'text-gray-500 text-center text-xs' }, 'Sin productos específicos')
+                                            )
+                                        ),
+
+                                        // INFORMACIÓN DEL PEDIDO
+                                        h('div', { className: 'grid grid-cols-1 gap-2 mb-3' },
+                                            // Cliente y Contacto
+                                            h('div', { className: 'bg-gray-50 rounded p-2' },
+                                                h('div', { className: 'flex items-center justify-between' },
+                                                    h('div', { className: 'flex-1 min-w-0' },
+                                                        h('h3', { className: 'font-bold text-gray-800 text-xs mb-1' }, '👤 Cliente'),
+                                                        h('p', { className: 'font-semibold text-sm truncate' }, order.customer_name),
+                                                        h('p', { className: 'text-gray-600 text-xs' }, formatPhone(order.customer_phone)),
+                                                        order.table_number && h('p', { className: 'text-xs' }, `🪑 Mesa: ${order.table_number}`)
+                                                    ),
+                                                    order.customer_phone && h('a', {
+                                                        href: getWhatsAppLink(order.customer_phone, order.order_number),
+                                                        target: '_blank',
+                                                        className: 'bg-green-500 text-white px-2 py-1 rounded text-xs font-medium hover:bg-green-600 transition-colors ml-2'
+                                                    }, '📲')
+                                                )
+                                            ),
+                                            
+                                            // Entrega y Timing
+                                            h('div', { className: 'bg-blue-50 rounded p-2' },
+                                                h('div', { className: 'flex items-center justify-between' },
+                                                    h('div', { className: 'flex-1 min-w-0' },
+                                                        h('h3', { className: 'font-bold text-blue-800 text-xs mb-1' }, '🚚 Entrega'),
+                                                        h('p', { className: 'font-semibold text-sm' }, 
+                                                            order.delivery_type === 'delivery' ? '🚴 Delivery' : '🏪 Retiro'
+                                                        ),
+                                                        order.delivery_address && h('p', { className: 'text-xs text-blue-700 truncate' }, 
+                                                            `📍 ${order.delivery_address}`
+                                                        ),
+                                                        order.delivery_fee > 0 && h('p', { className: 'text-xs font-medium text-blue-800' }, 
+                                                            `💰 $${formatMoney(order.delivery_fee)}`
+                                                        )
+                                                    ),
+                                                    h('div', { className: 'text-right' },
+                                                        h('p', { className: 'text-xs text-gray-600' }, 
+                                                            (() => {
+                                                                const utcDate = new Date(order.created_at);
+                                                                const chileDate = new Date(utcDate.getTime() - (3 * 60 * 60 * 1000));
+                                                                return chileDate.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+                                                            })()
+                                                        )
+                                                    )
+                                                )
+                                            ),
+
+                                            // Pagos y Total
+                                            h('div', { className: 'bg-green-50 rounded p-2' },
+                                                h('div', { className: 'flex items-center justify-between' },
+                                                    h('div', {},
+                                                        h('h3', { className: 'font-bold text-green-800 text-xs mb-1' }, '💰 Pago'),
+                                                        h('p', { className: 'font-black text-green-600 text-lg' }, `$${formatMoney(order.installment_amount || order.tuu_amount || 0)}`),
+                                                        order.installments_total > 1 && h('p', { className: 'text-xs' }, 
+                                                            `📊 ${order.installment_current}/${order.installments_total}`
+                                                        ),
+                                                        // Mostrar método de pago
+                                                        h('p', { className: 'text-xs text-gray-600 mt-1' },
+                                                            order.payment_method === 'transfer' ? '🏦 Transferencia' : '💳 Online'
+                                                        )
+                                                    ),
+                                                    h('div', { className: 'text-right' },
+                                                        h('p', { 
+                                                            className: `text-xs font-medium ${
+                                                                order.payment_status === 'paid' ? 'text-green-700' : 'text-red-700'
+                                                            }`
+                                                        }, order.payment_status === 'paid' ? '✅ Pagado' : '❌ Pendiente'),
+                                                        order.order_number.startsWith('R11-') ?
+                                                            h('span', { className: 'inline-block px-1 py-0.5 bg-blue-100 text-blue-800 rounded text-xs' }, '📱') :
+                                                        order.order_number.startsWith('T11-') ?
+                                                            h('span', { className: 'inline-block px-1 py-0.5 bg-green-100 text-green-800 rounded text-xs' }, '🏦') :
+                                                            h('span', { className: 'inline-block px-1 py-0.5 bg-gray-100 text-gray-800 rounded text-xs' }, '🏪')
+                                                    )
+                                                ),
+                                                // Botón confirmar transferencia
+                                                order.payment_method === 'transfer' && order.payment_status !== 'paid' && 
+                                                h('div', { className: 'mt-2 pt-2 border-t border-green-200' },
+                                                    h('button', {
+                                                        onClick: () => confirmTransferPayment(order.id, order.order_number),
+                                                        className: 'w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded text-xs transition-colors'
+                                                    }, '✅ Confirmar Pago Transferencia')
+                                                )
+                                            )
+                                        ),
+
+                                        // Notas e Instrucciones
+                                        (order.customer_notes || order.special_instructions) && h('div', { className: 'bg-yellow-50 border border-yellow-200 rounded p-2 mb-3' },
+                                            h('h3', { className: 'font-bold text-yellow-800 text-xs mb-1' }, '📝 Notas'),
+                                            order.customer_notes && h('div', { className: 'mb-1' },
+                                                h('p', { className: 'text-xs font-medium text-yellow-700' }, 'Cliente:'),
+                                                h('p', { className: 'text-yellow-800 text-xs' }, order.customer_notes)
+                                            ),
+                                            order.special_instructions && h('div', {},
+                                                h('p', { className: 'text-xs font-medium text-yellow-700' }, 'Especiales:'),
+                                                h('p', { className: 'text-yellow-800 text-xs' }, order.special_instructions)
+                                            )
+                                        ),
+
+                                        // BOTONES DE ACCIÓN
+                                        h('div', { className: 'space-y-2' },
+                                            h('div', { className: 'flex gap-1 justify-center' },
+                                                order.order_status === 'pending' && h('button', {
+                                                    onClick: () => updateOrderStatus(order.id, 'sent_to_kitchen'),
+                                                    className: 'bg-orange-500 text-white px-3 py-2 rounded hover:bg-orange-600 transition-colors font-bold text-xs flex-1'
+                                                }, '👨🍳 COCINA'),
+                                                
+                                                order.order_status === 'sent_to_kitchen' && h('button', {
+                                                    onClick: () => updateOrderStatus(order.id, 'preparing'),
+                                                    className: 'bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 transition-colors font-bold text-xs flex-1'
+                                                }, '🔥 PREPARAR'),
+                                                
+                                                order.order_status === 'preparing' && h('button', {
+                                                    onClick: () => updateOrderStatus(order.id, 'out_for_delivery'),
+                                                    className: 'bg-purple-500 text-white px-3 py-2 rounded hover:bg-purple-600 transition-colors font-bold text-xs flex-1'
+                                                }, '🚴 DELIVERY'),
+                                                
+                                                (order.order_status === 'ready' || order.order_status === 'out_for_delivery') && h('button', {
+                                                    onClick: () => updateOrderStatus(order.id, 'delivered'),
+                                                    className: 'bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 transition-colors font-bold text-xs flex-1'
+                                                }, '✅ ENTREGADO')
+                                            ),
+                                            h('button', {
+                                                onClick: () => cancelOrder(order.id, order.order_number),
+                                                className: 'w-full bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors font-bold text-xs'
+                                            }, '❌ ANULAR PEDIDO')
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                )
+            );
+        };
+
+        const loginRoot = createRoot(document.getElementById('login-app'));
+        loginRoot.render(h(LoginApp));
+    </script>
+</body>
+</html>

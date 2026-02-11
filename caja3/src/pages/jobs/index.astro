@@ -1,0 +1,525 @@
+---
+export const prerender = false;
+---
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/icon.png">
+    <title>Únete a La Ruta 11 - Proceso de Selección</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body { 
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, #fed7aa, #f59e0b, #ea580c, #dc2626, #f97316);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .gradient-bg { background: linear-gradient(135deg, rgba(245, 158, 11, 0.9) 0%, rgba(249, 115, 22, 0.9) 50%, rgba(239, 68, 68, 0.9) 100%); }
+        .card-hover { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .bg-overlay { background: rgba(255, 255, 255, 0.85); }
+        .bg-gray-50 { background: transparent; }
+    </style>
+</head>
+<body class="bg-gray-50" id="main-body">
+
+    <!-- Header -->
+    <header class="gradient-bg text-white py-16">
+        <div class="container mx-auto px-4 text-center">
+            <div class="flex items-center justify-center gap-4 mb-6">
+                <img src="/icon.png" alt="La Ruta 11" class="w-16 h-16">
+                <h1 class="text-5xl font-extrabold">La Ruta 11</h1>
+            </div>
+            <p class="text-xl opacity-90 max-w-2xl mx-auto">
+                Únete a nuestro equipo y forma parte de la experiencia gastronómica más auténtica del norte de Chile
+            </p>
+        </div>
+    </header>
+
+    <!-- Sección Principal -->
+    <main class="container mx-auto px-4 py-12 space-y-20">
+        
+        <!-- Hero Section -->
+        <section class="text-center bg-white/90 backdrop-blur-sm rounded-3xl p-12 shadow-xl border border-white/20">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
+                    ¡Última Oportunidad!
+                </h2>
+                <p class="text-xl text-gray-700 mb-6 leading-relaxed">
+                    Ampliamos el plazo exclusivamente para <strong class="text-amber-600">Maestros Sangucheros</strong>
+                </p>
+                <div class="bg-gradient-to-r from-amber-100 to-orange-100 rounded-2xl p-6 mb-6 border border-amber-200">
+                    <div class="flex items-center justify-center gap-3 mb-3">
+                        <span class="text-3xl">👨🍳</span>
+                        <h3 class="text-2xl font-bold text-amber-800">Maestros Sangucheros</h3>
+                    </div>
+                    <p class="text-lg text-amber-700 font-semibold">Plazo extendido hasta el 15 de agosto</p>
+                    <p class="text-sm text-amber-600 mt-2">¡No pierdas esta oportunidad única!</p>
+                </div>
+                <div class="inline-flex items-center gap-2 bg-red-100 text-red-800 px-4 py-2 rounded-full text-sm font-medium">
+                    ⚠️ Cajeros: Postulaciones cerradas
+                </div>
+            </div>
+        </section>
+
+        <!-- Contador Regresivo -->
+        <section class="bg-gradient-to-br from-red-500 via-orange-500 to-amber-500 rounded-3xl shadow-2xl p-10 text-white text-center relative overflow-hidden">
+            <div class="absolute inset-0 bg-black/10"></div>
+            <div class="relative z-10">
+                <div class="flex items-center justify-center gap-3 mb-4">
+                    <span class="text-4xl">⏰</span>
+                    <h3 class="text-3xl font-bold">Tiempo Límite</h3>
+                </div>
+                <p class="text-lg mb-8 opacity-90">Maestros Sangucheros: <strong>15 de agosto de 2025</strong></p>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto">
+                    <div class="bg-white/20 backdrop-blur-sm rounded-xl p-6 border border-white/30">
+                        <div id="days" class="text-4xl md:text-5xl font-bold mb-2">--</div>
+                        <div class="text-sm uppercase tracking-wider font-medium">Días</div>
+                    </div>
+                    <div class="bg-white/20 backdrop-blur-sm rounded-xl p-6 border border-white/30">
+                        <div id="hours" class="text-4xl md:text-5xl font-bold mb-2">--</div>
+                        <div class="text-sm uppercase tracking-wider font-medium">Horas</div>
+                    </div>
+                    <div class="bg-white/20 backdrop-blur-sm rounded-xl p-6 border border-white/30">
+                        <div id="minutes" class="text-4xl md:text-5xl font-bold mb-2">--</div>
+                        <div class="text-sm uppercase tracking-wider font-medium">Minutos</div>
+                    </div>
+                    <div class="bg-white/20 backdrop-blur-sm rounded-xl p-6 border border-white/30">
+                        <div id="seconds" class="text-4xl md:text-5xl font-bold mb-2">--</div>
+                        <div class="text-sm uppercase tracking-wider font-medium">Segundos</div>
+                    </div>
+                </div>
+                
+                <div id="expired-message" class="hidden mt-8 p-6 bg-red-600/90 backdrop-blur-sm rounded-xl border border-red-400">
+                    <h4 class="text-2xl font-bold mb-2">⚠️ Postulaciones Cerradas</h4>
+                    <p class="text-lg">El período de postulaciones ha finalizado. ¡Gracias por tu interés!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Posiciones Disponibles -->
+        <section>
+            <div class="text-center mb-16">
+                <h3 class="text-4xl font-bold text-gray-900 mb-4">Posiciones Disponibles</h3>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">Elige la posición que mejor se adapte a tu perfil y experiencia</p>
+            </div>
+            
+            <div class="grid lg:grid-cols-2 gap-10 max-w-6xl mx-auto">
+                <!-- Maestro Sanguchero -->
+                <div id="card-maestro" class="group bg-white rounded-3xl shadow-xl p-10 card-hover border-2 border-transparent hover:border-amber-200 cursor-pointer transition-all duration-300">
+                    <div class="text-center mb-8">
+                        <div class="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <span class="text-4xl">👨‍🍳</span>
+                        </div>
+                        <h4 class="text-3xl font-bold text-gray-900 mb-2">Maestro/a Sanguchero/a</h4>
+                        <p class="text-amber-600 font-semibold text-lg">El corazón de nuestra cocina</p>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <ul class="space-y-3 text-gray-700">
+                            <li class="flex items-center"><span class="text-green-500 mr-3 text-lg">✓</span> Preparación de sándwiches gourmet</li>
+                            <li class="flex items-center"><span class="text-green-500 mr-3 text-lg">✓</span> Manejo de plancha y parrilla</li>
+                            <li class="flex items-center"><span class="text-green-500 mr-3 text-lg">✓</span> Control de calidad e higiene</li>
+                            <li class="flex items-center"><span class="text-red-500 mr-3 text-lg">*</span> Curso manipulador de alimentos <strong class="text-red-600">obligatorio</strong></li>
+                        </ul>
+                        
+                        <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-6 border border-amber-200">
+                            <div class="text-center mb-4">
+                                <div class="text-3xl font-bold text-amber-700 mb-1">$530.000</div>
+                                <div class="text-sm text-amber-600 font-medium">Sueldo base bruto</div>
+                            </div>
+                            <div class="bg-white/80 rounded-xl p-4">
+                                <p class="text-sm text-gray-700 leading-relaxed">
+                                    <strong class="text-amber-700">"La Ruta del Maestro Sanguchero"</strong> - Plan de incentivos que premia tu habilidad y rapidez con bonos diarios por metas
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="hidden mt-8 p-4 bg-amber-100 rounded-xl border border-amber-300">
+                        <p class="text-amber-800 text-sm font-semibold text-center">Haz clic para postular a esta posición</p>
+                    </div>
+                </div>
+
+                <!-- Cajero -->
+                <div id="card-cajero" class="hidden group bg-white rounded-3xl shadow-xl p-10 card-hover border-2 border-transparent hover:border-blue-200 cursor-pointer transition-all duration-300">
+                    <div class="text-center mb-8">
+                        <div class="w-20 h-20 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <span class="text-4xl">💼</span>
+                        </div>
+                        <h4 class="text-3xl font-bold text-gray-900 mb-2">Cajero/a</h4>
+                        <p class="text-blue-600 font-semibold text-lg">La cara amable de La Ruta 11</p>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <ul class="space-y-3 text-gray-700">
+                            <li class="flex items-center"><span class="text-green-500 mr-3 text-lg">✓</span> Atención al cliente excepcional</li>
+                            <li class="flex items-center"><span class="text-green-500 mr-3 text-lg">✓</span> Manejo de caja y pagos</li>
+                            <li class="flex items-center"><span class="text-green-500 mr-3 text-lg">✓</span> Coordinación con cocina</li>
+                            <li class="flex items-center"><span class="text-blue-500 mr-3 text-lg">○</span> Curso de cajero/a <strong class="text-blue-600">opcional</strong></li>
+                        </ul>
+                        
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
+                            <div class="text-center mb-4">
+                                <div class="text-3xl font-bold text-blue-700 mb-1">$530.000</div>
+                                <div class="text-sm text-blue-600 font-medium">Sueldo base bruto</div>
+                            </div>
+                            <div class="bg-white/80 rounded-xl p-4">
+                                <p class="text-sm text-gray-700 leading-relaxed">
+                                    Como <strong class="text-blue-700">pieza clave del equipo</strong>, participas directamente en bonos por metas de venta y reseñas de clientes
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 p-4 bg-blue-100 rounded-xl border border-blue-300">
+                        <p class="text-blue-800 text-sm font-semibold text-center">Haz clic para postular a esta posición</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Proceso de Selección -->
+        <section class="bg-white/80 backdrop-blur-sm rounded-3xl p-12 shadow-xl">
+            <div class="text-center mb-16">
+                <h3 class="text-4xl font-bold text-gray-900 mb-4">Cómo Funciona</h3>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Un proceso simple y transparente diseñado para conocer mejor tus capacidades</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-12 max-w-6xl mx-auto">
+                <div class="text-center group">
+                    <div class="w-24 h-24 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <span class="text-3xl font-bold text-white">1</span>
+                    </div>
+                    <h4 class="text-2xl font-bold text-gray-900 mb-4">Registro</h4>
+                    <p class="text-gray-600 text-lg leading-relaxed">Inicia sesión con Google y completa tus datos personales y de contacto</p>
+                </div>
+
+                <div class="text-center group">
+                    <div class="w-24 h-24 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <span class="text-3xl font-bold text-white">2</span>
+                    </div>
+                    <h4 class="text-2xl font-bold text-gray-900 mb-4">Evaluación</h4>
+                    <p class="text-gray-600 text-lg leading-relaxed">Responde 3 situaciones prácticas en 11 minutos para evaluar tu afinidad con nuestros valores y metodología de trabajo</p>
+                </div>
+
+                <div class="text-center group">
+                    <div class="w-24 h-24 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <span class="text-3xl font-bold text-white">3</span>
+                    </div>
+                    <h4 class="text-2xl font-bold text-gray-900 mb-4">Contacto</h4>
+                    <p class="text-gray-600 text-lg leading-relaxed">Si tu perfil encaja, te contactaremos para una entrevista personal</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Call to Action -->
+        <section class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl shadow-2xl p-12 text-center text-white relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20"></div>
+            <div class="relative z-10 max-w-3xl mx-auto">
+                <h3 class="text-4xl font-bold mb-6">Inicia Tu Proceso de Selección</h3>
+                <p class="text-xl mb-10 opacity-90 leading-relaxed">
+                    Utiliza tu cuenta de Google para acceder de forma segura a nuestro proceso de evaluación. 
+                    Garantizamos la protección y confidencialidad de toda tu información.
+                </p>
+                
+                <div id="auth-section" class="space-y-4">
+                    <button id="btn-google-login" class="bg-white text-gray-900 font-bold py-4 px-10 rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-lg flex items-center justify-center gap-4 mx-auto text-lg group">
+                        <svg class="w-7 h-7 group-hover:scale-110 transition-transform" viewBox="0 0 48 48">
+                            <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path>
+                            <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path>
+                            <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path>
+                            <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C39.901,35.636,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
+                        </svg>
+                        Iniciar Sesión con Google
+                    </button>
+                    
+                    <div class="text-center">
+                        <p class="text-white/80 mb-3">o</p>
+                        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                            <a href="/jobs/login" class="bg-orange-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-orange-700 transition-all duration-300 shadow-lg text-center">
+                                Iniciar Sesión Manual
+                            </a>
+                            <a href="/jobs/register" class="bg-transparent border-2 border-white text-white font-bold py-3 px-8 rounded-xl hover:bg-white hover:text-gray-900 transition-all duration-300 shadow-lg text-center">
+                                Crear Cuenta
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </section>
+        
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-16">
+        <div class="container mx-auto px-4 text-center">
+            <div class="flex items-center justify-center gap-3 mb-4">
+                <img src="/icon.png" alt="La Ruta 11" class="w-8 h-8">
+                <span class="font-bold">La Ruta 11</span>
+            </div>
+            <p class="text-gray-400">© 2025 La Ruta 11. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        let currentUser: any = null;
+
+        // Definir todas las funciones
+        function handleGoogleLogin() {
+            window.location.href = '/api/auth/google/jobs_login.php?redirect=' + encodeURIComponent(window.location.href);
+        }
+
+        function selectPosition(position) {
+            if (!currentUser) {
+                alert('Primero debes iniciar sesión con Google para continuar.');
+                return;
+            }
+            goToPosition(position === 'maestro' ? 'maestro-sanguchero' : 'cajero');
+        }
+
+        function goToPosition(position) {
+            window.location.href = `/jobs/${position}`;
+        }
+
+        async function checkAuthentication() {
+            try {
+                const response = await fetch('/api/auth/jobs_check_session.php');
+                const data = await response.json();
+                if (data.authenticated) {
+                    currentUser = data.user;
+                    showAuthenticatedView();
+                }
+            } catch (error) {
+                console.log('Usuario no autenticado');
+            }
+        }
+
+        function showAuthenticatedView() {
+            // Ocultar todo el contenido principal
+            const mainContent = document.querySelector('main');
+            const header = document.querySelector('header');
+            const footer = document.querySelector('footer');
+            
+            if (mainContent) mainContent.style.display = 'none';
+            if (header) header.style.display = 'none';
+            if (footer) footer.style.display = 'none';
+            
+            // Crear nueva vista para usuario autenticado
+            const authenticatedView = document.createElement('div');
+            authenticatedView.className = 'min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4';
+            authenticatedView.innerHTML = `
+                <div class="max-w-2xl mx-auto text-center text-white">
+                    <div class="mb-8">
+                        <div class="flex items-center justify-center gap-4 mb-6">
+                            <img src="/icon.png" alt="La Ruta 11" class="w-16 h-16">
+                            <h1 class="text-4xl font-bold">La Ruta 11</h1>
+                        </div>
+                        <h2 class="text-3xl font-bold mb-4">Inicia Tu Proceso de Selección</h2>
+                        <p class="text-lg mb-8 opacity-90 leading-relaxed">
+                            Utiliza tu cuenta de Google para acceder de forma segura a nuestro proceso de evaluación. 
+                            Garantizamos la protección y confidencialidad de toda tu información.
+                        </p>
+                    </div>
+                    
+                    <div class="flex items-center justify-center gap-6 mb-12 p-6 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
+                        <img id="auth-user-photo" src="${(currentUser as any).foto_perfil}" alt="Foto de perfil" class="w-16 h-16 rounded-full border-2 border-white/30">
+                        <div class="text-left">
+                            <p class="text-2xl font-bold">¡Hola, ${(currentUser as any).nombre.split(' ')[0]}!</p>
+                            <p class="text-white/80 text-lg">Elige la posición que mejor se adapte a tu perfil profesional</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row gap-6 justify-center">
+                        <button id="auth-btn-maestro" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-6 px-8 rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all duration-300 shadow-lg text-lg group">
+                            <div class="flex items-center justify-center gap-3">
+                                <span class="text-2xl group-hover:scale-110 transition-transform">👨‍🍳</span>
+                                <span>Maestro/a Sanguchero/a</span>
+                            </div>
+                        </button>
+                        <div class="bg-red-100/20 border border-red-300/30 rounded-xl p-4 max-w-md">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-xl">💼</span>
+                                <span class="font-semibold text-red-200">Cajero/a - Postulaciones Cerradas</span>
+                            </div>
+                            <p class="text-sm text-red-300 mb-3">Plazo extendido solo para Maestros Sangucheros</p>
+                            <div class="grid grid-cols-3 gap-2 text-center">
+                                <div class="bg-white/10 rounded p-2">
+                                    <div id="auth-days" class="text-lg font-bold">--</div>
+                                    <div class="text-xs">Días</div>
+                                </div>
+                                <div class="bg-white/10 rounded p-2">
+                                    <div id="auth-hours" class="text-lg font-bold">--</div>
+                                    <div class="text-xs">Horas</div>
+                                </div>
+                                <div class="bg-white/10 rounded p-2">
+                                    <div id="auth-seconds" class="text-lg font-bold">--</div>
+                                    <div class="text-xs">Seg</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(authenticatedView);
+            
+            // Agregar event listeners para los nuevos botones
+            document.getElementById('auth-btn-maestro')?.addEventListener('click', () => goToPosition('maestro-sanguchero'));
+        }
+
+        function showUserSection() {
+            const authSection = document.getElementById('auth-section');
+            const userSection = document.getElementById('user-section');
+            const userName = document.getElementById('user-name');
+            const userPhoto = document.getElementById('user-photo');
+            
+            if (authSection) authSection.classList.add('hidden');
+            if (userSection) userSection.classList.remove('hidden');
+            if (userName && currentUser) userName.textContent = (currentUser as any).nombre.split(' ')[0];
+            if (userPhoto && currentUser) (userPhoto as HTMLImageElement).src = (currentUser as any).foto_perfil;
+        }
+
+        // Contador regresivo
+        function startCountdown() {
+            const deadline = new Date('2025-08-15T23:59:59-04:00'); // 15 de agosto 2025, zona horaria Chile
+            
+            function updateCountdown() {
+                const now = new Date().getTime();
+                const timeLeft = deadline.getTime() - now;
+                
+                if (timeLeft > 0) {
+                    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                    
+                    document.getElementById('days')!.textContent = days.toString().padStart(2, '0');
+                    document.getElementById('hours')!.textContent = hours.toString().padStart(2, '0');
+                    document.getElementById('minutes')!.textContent = minutes.toString().padStart(2, '0');
+                    document.getElementById('seconds')!.textContent = seconds.toString().padStart(2, '0');
+                    
+                    // Actualizar contadores en vista autenticada
+                    const authDays = document.getElementById('auth-days');
+                    const authHours = document.getElementById('auth-hours');
+                    const authSeconds = document.getElementById('auth-seconds');
+                    if (authDays) authDays.textContent = days.toString().padStart(2, '0');
+                    if (authHours) authHours.textContent = hours.toString().padStart(2, '0');
+                    if (authSeconds) authSeconds.textContent = seconds.toString().padStart(2, '0');
+                } else {
+                    // Tiempo expirado
+                    document.getElementById('days')!.textContent = '00';
+                    document.getElementById('hours')!.textContent = '00';
+                    document.getElementById('minutes')!.textContent = '00';
+                    document.getElementById('seconds')!.textContent = '00';
+                    
+                    document.getElementById('expired-message')!.classList.remove('hidden');
+                    
+                    // Deshabilitar botones de postulación
+                    const buttons = document.querySelectorAll('#card-maestro, #card-cajero, #btn-google-login');
+                    buttons.forEach(btn => {
+                        (btn as HTMLElement).style.opacity = '0.5';
+                        (btn as HTMLElement).style.pointerEvents = 'none';
+                    });
+                    
+                    clearInterval(countdownInterval);
+                }
+            }
+            
+            updateCountdown();
+            const countdownInterval = setInterval(updateCountdown, 1000);
+        }
+
+        // Función para trackear vista con ubicación
+        function trackQRViewWithLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const locationData = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy
+                        };
+                        
+                        fetch('/api/tracker/track_qr_view.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(locationData)
+                        }).catch(() => {});
+                    },
+                    function(error) {
+                        // Si falla la ubicación, registrar sin coordenadas
+                        fetch('/api/tracker/track_qr_view.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({})
+                        }).catch(() => {});
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 300000
+                    }
+                );
+            } else {
+                // Navegador no soporta geolocalización
+                fetch('/api/tracker/track_qr_view.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                }).catch(() => {});
+            }
+        }
+
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            // Registrar vista del QR con ubicación
+            trackQRViewWithLocation();
+            
+            // Iniciar contador regresivo
+            startCountdown();
+            // Agregar event listeners para tarjetas clickeables
+            document.getElementById('card-maestro')?.addEventListener('click', () => selectPosition('maestro'));
+            document.getElementById('card-cajero')?.addEventListener('click', () => selectPosition('cajero'));
+            document.getElementById('btn-google-login')?.addEventListener('click', handleGoogleLogin);
+
+            
+            // Verificar autenticación al cargar
+            checkAuthentication();
+
+            // Manejar parámetros de URL para login exitoso
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('login') === 'success') {
+                window.history.replaceState({}, document.title, window.location.pathname);
+                checkAuthentication();
+            }
+        });
+    </script>
+</body>
+</html>

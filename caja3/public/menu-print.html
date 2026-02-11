@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menú La Ruta 11 - Imprimible</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+    
+    .no-print { margin-bottom: 20px; text-align: center; }
+    .btn { padding: 12px 24px; background: #0a0a0a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin: 0 8px; }
+    .btn:hover { background: #333; }
+    
+    #menu-container { background: white; max-width: 210mm; margin: 0 auto; padding: 20mm; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    
+    .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #0a0a0a; padding-bottom: 20px; }
+    .header h1 { font-size: 32px; margin-bottom: 8px; }
+    .header p { color: #666; font-size: 14px; }
+    
+    .category { margin-bottom: 40px; page-break-inside: avoid; }
+    .category-title { font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #0a0a0a; border-bottom: 2px solid #e5e5e5; padding-bottom: 8px; }
+    
+    .product { display: flex; gap: 15px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #f0f0f0; page-break-inside: avoid; }
+    .product:last-child { border-bottom: none; }
+    
+    .product-image { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; flex-shrink: 0; border: 1px solid #e5e5e5; }
+    .product-image-placeholder { width: 80px; height: 80px; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 32px; flex-shrink: 0; }
+    
+    .product-info { flex: 1; }
+    .product-name { font-size: 18px; font-weight: bold; margin-bottom: 4px; }
+    .product-description { font-size: 13px; color: #666; margin-bottom: 8px; line-height: 1.4; }
+    .product-price { font-size: 20px; font-weight: bold; color: #059669; }
+    
+    .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e5e5e5; color: #999; font-size: 12px; }
+    
+    @media print {
+      body { background: white; padding: 0; }
+      .no-print { display: none !important; }
+      #menu-container { box-shadow: none; max-width: 100%; padding: 15mm; }
+      .product { page-break-inside: avoid; }
+      .category { page-break-inside: avoid; }
+    }
+    
+    .loading { text-align: center; padding: 40px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <button class="btn" onclick="downloadPDF()">📥 Descargar PDF</button>
+    <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+  </div>
+  
+  <div id="menu-container">
+    <div class="header">
+      <h1>🍔 La Ruta 11</h1>
+      <p>Menú de Productos</p>
+    </div>
+    
+    <div id="menu-content" class="loading">Cargando menú...</div>
+    
+    <div class="footer">
+      La Ruta 11 - Menú actualizado al <?php echo date('d/m/Y'); ?>
+    </div>
+  </div>
+  
+  <script>
+    const categories = {
+      2: { name: 'Sandwiches', emoji: '🥪' },
+      3: { name: 'Hamburguesas', emoji: '🍔' },
+      4: { name: 'Completos', emoji: '🌭' },
+      12: { name: 'Papas', emoji: '🍟' },
+      8: { name: 'Combos', emoji: '🍽️' }
+    };
+    
+    async function loadMenu() {
+      try {
+        const response = await fetch('/api/get_productos.php');
+        const products = await response.json();
+        
+        if (!Array.isArray(products)) {
+          throw new Error('Formato de datos inválido');
+        }
+        
+        // Filtrar solo categorías del menú y productos activos
+        const menuProducts = products.filter(p => {
+          const catId = parseInt(p.category_id);
+          const subcatId = parseInt(p.subcategory_id);
+          // Incluir categorías 2,3,4,8,12 o subcategoría 9 (papas dentro de snacks)
+          return p.is_active == 1 && ([2, 3, 4, 8, 12].includes(catId) || (catId === 5 && subcatId === 9));
+        });
+        
+        // Agrupar por categoría
+        const grouped = {};
+        menuProducts.forEach(product => {
+          const catId = parseInt(product.category_id);
+          const subcatId = parseInt(product.subcategory_id);
+          
+          // Papas: categoría 12 o subcategoría 9 dentro de snacks
+          if (catId === 12 || (catId === 5 && subcatId === 9)) {
+            if (!grouped[12]) grouped[12] = [];
+            grouped[12].push(product);
+          } else {
+            if (!grouped[catId]) grouped[catId] = [];
+            grouped[catId].push(product);
+          }
+        });
+        
+        // Renderizar
+        let html = '';
+        
+        // Renderizar categorías normales (incluyendo papas)
+        [2, 3, 4, 12, 8].forEach(catId => {
+          const cat = categories[catId];
+          const items = grouped[catId] || [];
+          
+          if (items.length === 0) return;
+          
+          html += `
+            <div class="category">
+              <h2 class="category-title">${cat.emoji} ${cat.name}</h2>
+              ${items.map(product => `
+                <div class="product">
+                  ${product.image_url ? 
+                    `<img src="${product.image_url}" alt="${product.name}" class="product-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                     <div class="product-image-placeholder" style="display:none;">🍽️</div>` :
+                    `<div class="product-image-placeholder">🍽️</div>`
+                  }
+                  <div class="product-info">
+                    <div class="product-name">${product.name}</div>
+                    ${product.description ? `<div class="product-description">${product.description}</div>` : ''}
+                    <div class="product-price">$${new Intl.NumberFormat('es-CL').format(product.price)}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        });
+        
+        document.getElementById('menu-content').innerHTML = html || '<p style="text-align:center;color:#666;">No hay productos disponibles</p>';
+        
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('menu-content').innerHTML = '<p style="text-align:center;color:#ef4444;">Error al cargar el menú</p>';
+      }
+    }
+    
+    function downloadPDF() {
+      const element = document.getElementById('menu-container');
+      const opt = {
+        margin: 10,
+        filename: 'menu-laruta11.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      html2pdf().set(opt).from(element).save();
+    }
+    
+    loadMenu();
+  </script>
+</body>
+</html>

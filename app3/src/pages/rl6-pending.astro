@@ -1,0 +1,691 @@
+---
+---
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recibo de Pedido - La Ruta 11</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 0;
+        }
+        .receipt {
+            background: white;
+            max-width: 100%;
+            width: 100%;
+            min-height: 100vh;
+        }
+        .receipt-content {
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            padding: 30px 0 20px;
+            border-bottom: 3px solid #ff6b35;
+            margin-bottom: 20px;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: 900;
+            color: #ff6b35;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+        .status-badge {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-block;
+            margin: 20px 0;
+            border: 2px solid #f59e0b;
+        }
+        .section {
+            margin: 25px 0;
+            padding: 20px 0;
+            border-bottom: 2px dashed #e0e0e0;
+        }
+        .section:last-child { border-bottom: none; }
+        .section-title {
+            font-size: 12px;
+            color: #ff6b35;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            margin-bottom: 15px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin: 12px 0;
+            font-size: 14px;
+            gap: 10px;
+        }
+        .info-label {
+            color: #666;
+            font-weight: 600;
+            min-width: 80px;
+        }
+        .info-value {
+            color: #000;
+            text-align: right;
+            font-weight: 500;
+            flex: 1;
+            word-break: break-word;
+        }
+        .item {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #ff6b35;
+        }
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 8px;
+            color: #000;
+        }
+        .item-details {
+            font-size: 12px;
+            color: #666;
+            margin: 6px 0;
+            padding-left: 12px;
+            line-height: 1.5;
+        }
+        .totals {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 12px;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .total-row.discount {
+            color: #059669;
+            font-weight: 600;
+        }
+        .total-row.final {
+            font-size: 22px;
+            font-weight: 900;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 3px solid #ff6b35;
+            color: #ff6b35;
+        }
+        .rl6-info {
+            background: #fef3c7;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 25px 0;
+            border: 3px solid #f59e0b;
+        }
+        .rl6-info-title {
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .rl6-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 14px;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .rl6-label {
+            color: #92400e;
+            font-weight: 700;
+        }
+        .rl6-value {
+            color: #78350f;
+            font-weight: 600;
+        }
+        .actions {
+            margin-top: 30px;
+            padding-bottom: 20px;
+        }
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            margin-bottom: 12px;
+        }
+        .btn-primary {
+            background: #25d366;
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+        .btn-secondary {
+            background: white;
+            color: #666;
+            border: 2px solid #e0e0e0;
+        }
+        .btn-secondary:active {
+            background: #f5f5f5;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 25px 0;
+            border-top: 2px dashed #e0e0e0;
+            font-size: 12px;
+            color: #999;
+            line-height: 1.6;
+        }
+        .order-id {
+            font-weight: 700;
+            color: #000;
+            font-size: 16px;
+            letter-spacing: 1px;
+        }
+        .hidden { display: none; }
+        @media (min-width: 768px) {
+            body { padding: 20px; }
+            .receipt { 
+                border-radius: 16px; 
+                box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+                min-height: auto;
+            }
+        }
+        @media print {
+            body { background: white; padding: 0; }
+            .receipt { box-shadow: none; }
+            .actions { display: none; }
+        }
+    </style>
+    <link rel="icon" type="image/x-icon" href="/icon.ico" />
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="receipt">
+        <div class="receipt-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="logo"><img src="/icon.ico" style="width: 32px; height: 32px; vertical-align: middle; display: inline-block; margin-right: 8px;" alt="Logo"> LA RUTA 11</div>
+                <div class="subtitle">Pre-Comprobante de Pago</div>
+            </div>
+
+            <!-- Order ID -->
+            <div class="section">
+                <div class="section-title">Número de Pedido</div>
+                <div style="text-align: center; font-size: 16px; font-weight: bold; letter-spacing: 2px;" id="order-id">-</div>
+            </div>
+
+            <!-- Customer Info -->
+            <div id="customer-info" class="section hidden">
+                <div class="section-title">Datos del Cliente</div>
+                <div class="info-row">
+                    <span class="info-label">Cliente:</span>
+                    <span class="info-value" id="customer-name">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Teléfono:</span>
+                    <span class="info-value" id="customer-phone">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Entrega:</span>
+                    <span class="info-value" id="delivery-type">-</span>
+                </div>
+                <div id="delivery-address-row" class="info-row hidden">
+                    <span class="info-label">Dirección:</span>
+                    <span class="info-value" id="delivery-address" style="max-width: 200px;">-</span>
+                </div>
+                <div id="customer-notes-row" class="info-row hidden">
+                    <span class="info-label">Notas:</span>
+                    <span class="info-value" id="customer-notes" style="max-width: 200px;">-</span>
+                </div>
+            </div>
+
+            <!-- Items -->
+            <div class="section">
+                <div class="section-title">Productos</div>
+                <div id="order-items"></div>
+            </div>
+
+            <!-- Totals -->
+            <div class="totals">
+                <div id="product-discount-row" class="total-row discount hidden">
+                    <span>Descuento productos:</span>
+                    <span id="product-discount">-$0</span>
+                </div>
+                <div id="cashback-row" class="total-row discount hidden">
+                    <span>Cashback aplicado:</span>
+                    <span id="cashback-amount">-$0</span>
+                </div>
+                <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span id="subtotal">$0</span>
+                </div>
+                <div id="delivery-row" class="total-row hidden">
+                    <span>Delivery:</span>
+                    <span id="delivery-fee">$0</span>
+                </div>
+                <div id="delivery-extras-row" class="hidden" style="margin: 10px 0;">
+                    <div style="font-size: 11px; color: #666; margin-bottom: 5px;">EXTRAS DELIVERY:</div>
+                    <div id="delivery-extras-list" style="margin-left: 15px; font-size: 12px;"></div>
+                    <div class="total-row" style="margin-top: 5px; padding-top: 5px; border-top: 1px dotted #ddd;">
+                        <span>Total extras:</span>
+                        <span id="delivery-extras-total" style="color: #ff6b35; font-weight: bold;">$0</span>
+                    </div>
+                </div>
+                <div class="total-row final">
+                    <span>TOTAL A PAGAR:</span>
+                    <span id="total">$0</span>
+                </div>
+            </div>
+
+            <!-- RL6 Credit Info -->
+            <div class="rl6-info">
+                <div class="rl6-info-title">
+                    🎖️ CRÉDITO RL6 - REGIMIENTO LOGÍSTICO N°6
+                </div>
+                <div class="rl6-row">
+                    <span class="rl6-label">Método de pago:</span>
+                    <span class="rl6-value">Crédito Militar RL6</span>
+                </div>
+                <div class="rl6-row">
+                    <span class="rl6-label">Fecha de pago:</span>
+                    <span class="rl6-value" id="payment-date">21 de cada mes</span>
+                </div>
+                <div style="background: #fef9e7; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #f59e0b;">
+                    <p style="font-size: 13px; color: #92400e; line-height: 1.6; margin: 0;">
+                        <strong>📋 Importante:</strong> Este pedido fue pagado con tu crédito RL6. El monto será descontado automáticamente el día 21 del mes en curso.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions">
+                <a id="whatsapp-link" href="https://wa.me/56936227422" target="_blank" class="btn btn-primary">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.785"/>
+                    </svg>
+                    Enviar Comprobante por WhatsApp
+                </a>
+                <button onclick="window.location.href='/'" class="btn btn-secondary">
+                    ← Volver al Menú
+                </button>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <p>Recibo digital generado automáticamente</p>
+                <p style="margin-top: 5px;">Tu pedido será preparado de inmediato</p>
+                <p style="margin-top: 10px; font-size: 10px;">Respaldo digital disponible en:</p>
+                <p id="receipt-link" style="font-size: 10px; word-break: break-all; color: #667eea;"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentOrderData = null;
+
+        function generateWhatsAppMessage() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderId = urlParams.get('order');
+            const receiptUrl = window.location.href;
+            
+            const totalElement = document.getElementById('total');
+            const customerNameElement = document.getElementById('customer-name');
+            const deliveryTypeElement = document.getElementById('delivery-type');
+            const deliveryAddressElement = document.getElementById('delivery-address');
+            
+            const total = totalElement ? totalElement.textContent : '$0';
+            const customerName = customerNameElement ? customerNameElement.textContent : 'Cliente';
+            const deliveryType = deliveryTypeElement ? deliveryTypeElement.textContent : 'Retiro';
+            const deliveryAddress = deliveryAddressElement ? deliveryAddressElement.textContent : null;
+            
+            const today = new Date();
+            const currentDay = today.getDate();
+            let paymentDate = new Date(today);
+            
+            // Si hoy es después del 21, el pago es el 21 del mes siguiente
+            if (currentDay >= 21) {
+                paymentDate.setMonth(paymentDate.getMonth() + 1);
+            }
+            paymentDate.setDate(21);
+            
+            const paymentMonth = paymentDate.toLocaleDateString('es-CL', { month: 'long' });
+            
+            let message = `🧾 *PEDIDO CONFIRMADO*\n`;
+            message += `LA RUTA 11\n\n`;
+            message += `📋 *Pedido:* ${orderId}\n`;
+            message += `👤 *Cliente:* ${customerName}\n`;
+            message += `🚚 *Entrega:* ${deliveryType}`;
+            if (deliveryType === 'Delivery' && deliveryAddress) {
+                message += ` - ${deliveryAddress}`;
+            }
+            message += `\n`;
+            
+            if (currentOrderData && currentOrderData.scheduled_time && currentOrderData.is_scheduled) {
+                const scheduledDate = new Date(currentOrderData.scheduled_time);
+                const options = { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
+                const formattedDate = scheduledDate.toLocaleDateString('es-CL', options);
+                message += `⏰ *Programado:* ${formattedDate}\n`;
+            }
+            
+            // Agregar notas del cliente si existen
+            if (currentOrderData && currentOrderData.customer_notes) {
+                message += `📝 *Notas:* ${currentOrderData.customer_notes}\n`;
+            }
+            
+            message += `💰 *Total:* ${total}\n\n`;
+            
+            // Agregar productos
+            if (currentOrderData && currentOrderData.items && currentOrderData.items.length > 0) {
+                message += `🛒 *PRODUCTOS:*\n`;
+                currentOrderData.items.forEach(item => {
+                    message += `• ${item.quantity}x ${item.name} - $${(item.price * item.quantity).toLocaleString('es-CL')}\n`;
+                });
+                message += `\n`;
+            }
+            
+            message += `🎖️ *Pago con Crédito RL6*\n`;
+            message += `📅 *Pagas:* 21 de ${paymentMonth}\n\n`;
+            message += `🔗 Ver recibo completo:\n${receiptUrl}`;
+            
+            return encodeURIComponent(message);
+        }
+
+        function updateWhatsAppLink() {
+            const message = generateWhatsAppMessage();
+            const whatsappLink = document.getElementById('whatsapp-link');
+            if (whatsappLink) {
+                whatsappLink.setAttribute('href', `https://wa.me/56936227422?text=${message}`);
+            }
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('order');
+        if (orderId) {
+            const orderIdElement = document.getElementById('order-id');
+            if (orderIdElement) {
+                orderIdElement.textContent = orderId;
+            }
+            const receiptLink = document.getElementById('receipt-link');
+            if (receiptLink) {
+                receiptLink.textContent = window.location.href;
+            }
+        }
+
+        async function loadOrderData() {
+            if (!orderId) return;
+            
+            try {
+                const response = await fetch(`/api/get_order.php?order_id=${orderId}`);
+                const data = await response.json();
+                
+                if (data.success && data.order) {
+                    currentOrderData = data.order;
+                    displayOrderItems(
+                        data.order.items, 
+                        data.order.total, 
+                        data.order.delivery_fee,
+                        data.order.subtotal,
+                        data.order.discount_amount || 0,
+                        data.order.delivery_discount || 0,
+                        data.order.delivery_extras || 0,
+                        data.order.cashback_used || 0,
+                        data.order.delivery_extras_items
+                    );
+                    displayCustomerInfo(data.order);
+                    updateWhatsAppLink();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function displayOrderItems(cart, total, deliveryFee, subtotalValue, discountAmount, deliveryDiscount, deliveryExtras, cashbackUsed, deliveryExtrasItems) {
+            deliveryExtras = deliveryExtras || 0;
+            cashbackUsed = cashbackUsed || 0;
+            deliveryExtrasItems = deliveryExtrasItems || [];
+            const orderItemsElement = document.getElementById('order-items');
+            const subtotalElement = document.getElementById('subtotal');
+            const totalElement = document.getElementById('total');
+            const deliveryRowElement = document.getElementById('delivery-row');
+            
+            if (!orderItemsElement) return;
+            
+            let itemsHtml = '';
+            let subtotal = 0;
+            
+            cart.forEach(item => {
+                subtotal += item.price * item.quantity;
+            });
+            
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                
+                const isCombo = item.type === 'combo' || item.category_name === 'Combos' || item.selections;
+                let comboIncludesText = '';
+                let customizationsText = '';
+                
+                if (isCombo) {
+                    const comboIncludes = [];
+                    
+                    if (item.fixed_items && item.fixed_items.length > 0) {
+                        item.fixed_items.forEach(f => {
+                            if (typeof f === 'string') {
+                                comboIncludes.push(`${item.quantity}x ${f}`);
+                            } else {
+                                const name = f.product_name || f.name || JSON.stringify(f);
+                                comboIncludes.push(`${item.quantity}x ${name}`);
+                            }
+                        });
+                    }
+                    
+                    if (item.selections && typeof item.selections === 'object') {
+                        Object.values(item.selections).forEach(categoryItems => {
+                            if (Array.isArray(categoryItems)) {
+                                categoryItems.forEach(s => {
+                                    const name = s.name || s.product_name || String(s);
+                                    comboIncludes.push(`${item.quantity}x ${name}`);
+                                });
+                            } else if (categoryItems && typeof categoryItems === 'object') {
+                                const name = categoryItems.name || categoryItems.product_name || String(categoryItems);
+                                comboIncludes.push(`${item.quantity}x ${name}`);
+                            }
+                        });
+                    }
+                    
+                    if (comboIncludes.length > 0) {
+                        comboIncludesText = `<div class="item-details">→ ${comboIncludes.join(', ')}</div>`;
+                    }
+                    
+                    if (item.customizations && Array.isArray(item.customizations) && item.customizations.length > 0) {
+                        const customItems = item.customizations.map(c => `${c.quantity || 1}x ${c.name || c.product_name} (+$${((c.price || 0) * (c.quantity || 1)).toLocaleString('es-CL')})`);
+                        customizationsText = `<div class="item-details" style="color: #ff6b35; font-weight: 600;">+ ${customItems.join(', ')}</div>`;
+                    }
+                } else {
+                    if (item.customizations && Array.isArray(item.customizations) && item.customizations.length > 0) {
+                        const customItems = item.customizations.map(c => `${c.quantity || 1}x ${c.name || c.product_name} (+$${((c.price || 0) * (c.quantity || 1)).toLocaleString('es-CL')})`);
+                        customizationsText = `<div class="item-details" style="color: #ff6b35; font-weight: 600;">${customItems.join(', ')}</div>`;
+                    }
+                }
+                
+                itemsHtml += `
+                    <div class="item">
+                        <div class="item-header">
+                            <span>${item.quantity}x ${item.name}</span>
+                            <span>$${itemTotal.toLocaleString('es-CL')}</span>
+                        </div>
+                        ${comboIncludesText}
+                        ${customizationsText}
+                    </div>
+                `;
+            });
+            
+            orderItemsElement.innerHTML = itemsHtml;
+            
+            if (subtotalElement) {
+                const subtotalAfterDiscount = subtotal - discountAmount - cashbackUsed;
+                subtotalElement.textContent = `$${subtotalAfterDiscount.toLocaleString('es-CL')}`;
+            }
+            
+            if (totalElement) {
+                totalElement.textContent = `$${total.toLocaleString('es-CL')}`;
+            }
+            
+            if (deliveryFee > 0) {
+                if (deliveryRowElement) {
+                    deliveryRowElement.classList.remove('hidden');
+                }
+                const deliveryFeeElement = document.getElementById('delivery-fee');
+                if (deliveryFeeElement) {
+                    deliveryFeeElement.textContent = `$${deliveryFee.toLocaleString('es-CL')}`;
+                }
+            }
+            
+            if (deliveryExtras > 0 && deliveryExtrasItems) {
+                const deliveryExtrasRow = document.getElementById('delivery-extras-row');
+                if (deliveryExtrasRow) {
+                    deliveryExtrasRow.classList.remove('hidden');
+                }
+                const extrasList = document.getElementById('delivery-extras-list');
+                const extrasItems = typeof deliveryExtrasItems === 'string' ? JSON.parse(deliveryExtrasItems) : deliveryExtrasItems;
+                if (extrasList && extrasItems) {
+                    extrasList.innerHTML = extrasItems.map(extra => 
+                        `<div style="display: flex; justify-content: space-between; margin: 3px 0;"><span>${extra.quantity}x ${extra.name}</span><span style="font-weight: bold;">$${(extra.price * extra.quantity).toLocaleString('es-CL')}</span></div>`
+                    ).join('');
+                }
+                const extrasTotal = document.getElementById('delivery-extras-total');
+                if (extrasTotal) {
+                    extrasTotal.textContent = `$${deliveryExtras.toLocaleString('es-CL')}`;
+                }
+            }
+            
+            if (discountAmount > 0) {
+                const productDiscountRow = document.getElementById('product-discount-row');
+                if (productDiscountRow) {
+                    productDiscountRow.classList.remove('hidden');
+                }
+                const productDiscountElement = document.getElementById('product-discount');
+                if (productDiscountElement) {
+                    productDiscountElement.textContent = `-$${discountAmount.toLocaleString('es-CL')}`;
+                }
+            }
+            
+            if (cashbackUsed > 0) {
+                const cashbackRow = document.getElementById('cashback-row');
+                if (cashbackRow) {
+                    cashbackRow.classList.remove('hidden');
+                }
+                const cashbackElement = document.getElementById('cashback-amount');
+                if (cashbackElement) {
+                    cashbackElement.textContent = `-$${cashbackUsed.toLocaleString('es-CL')}`;
+                }
+            }
+        }
+
+        function displayCustomerInfo(order) {
+            const customerInfoElement = document.getElementById('customer-info');
+            const customerNameElement = document.getElementById('customer-name');
+            const customerPhoneElement = document.getElementById('customer-phone');
+            const deliveryTypeElement = document.getElementById('delivery-type');
+            const deliveryAddressElement = document.getElementById('delivery-address');
+            const deliveryAddressRowElement = document.getElementById('delivery-address-row');
+            const customerNotesElement = document.getElementById('customer-notes');
+            const customerNotesRowElement = document.getElementById('customer-notes-row');
+            
+            if (customerNameElement) {
+                customerNameElement.textContent = order.customer_name || 'No especificado';
+            }
+            if (customerPhoneElement) {
+                customerPhoneElement.textContent = order.customer_phone || 'No especificado';
+            }
+            if (deliveryTypeElement) {
+                deliveryTypeElement.textContent = order.delivery_type === 'delivery' ? 'Delivery' : 'Retiro';
+            }
+            
+            if (order.delivery_type === 'delivery' && order.delivery_address) {
+                if (deliveryAddressElement) {
+                    deliveryAddressElement.textContent = order.delivery_address;
+                }
+                if (deliveryAddressRowElement) {
+                    deliveryAddressRowElement.classList.remove('hidden');
+                }
+            }
+            
+            if (order.customer_notes) {
+                if (customerNotesElement) {
+                    customerNotesElement.textContent = order.customer_notes;
+                }
+                if (customerNotesRowElement) {
+                    customerNotesRowElement.classList.remove('hidden');
+                }
+            }
+            
+            if (customerInfoElement) {
+                customerInfoElement.classList.remove('hidden');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Calcular próxima fecha de pago (21 del mes actual o siguiente)
+            const today = new Date();
+            const currentDay = today.getDate();
+            let paymentDate = new Date(today);
+            
+            if (currentDay >= 21) {
+                paymentDate.setMonth(paymentDate.getMonth() + 1);
+            }
+            paymentDate.setDate(21);
+            
+            const paymentMonth = paymentDate.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
+            const paymentDateElement = document.getElementById('payment-date');
+            if (paymentDateElement) {
+                paymentDateElement.textContent = `21 de ${paymentMonth}`;
+            }
+            
+            loadOrderData();
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+</html>

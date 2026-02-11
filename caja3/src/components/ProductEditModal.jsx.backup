@@ -1,0 +1,321 @@
+import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
+
+export default function ProductEditModal({ productId, isOpen, onClose, onSave }) {
+  const [loading, setLoading] = useState(true);
+  const [product, setProduct] = useState(null);
+  const [formData, setFormData] = useState({});
+
+  useEffect(() => {
+    if (isOpen && productId) {
+      loadProduct();
+    }
+  }, [isOpen, productId]);
+
+  const loadProduct = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/get_productos.php?id=${productId}`);
+      const data = await response.json();
+      setProduct(data);
+      setFormData({
+        name: data.name || '',
+        sku: data.sku || '',
+        description: data.description || '',
+        price: data.price || '',
+        cost_price: data.cost_price || '',
+        stock_quantity: data.stock_quantity || '',
+        min_stock_level: data.min_stock_level || '',
+        category_id: data.category_id || '1',
+        subcategory_id: data.subcategory_id || '',
+        is_active: data.is_active !== undefined ? data.is_active.toString() : '1',
+        preparation_time: data.preparation_time || '',
+        grams: data.grams || '',
+        calories: data.calories || '',
+        allergens: data.allergens || ''
+      });
+    } catch (error) {
+      console.error('Error loading product:', error);
+      alert('Error cargando producto');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('id', productId);
+      Object.keys(formData).forEach(key => {
+        formDataToSend.append(key, formData[key]);
+      });
+
+      const response = await fetch('/api/update_producto.php', {
+        method: 'POST',
+        body: formDataToSend
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        alert('✅ Producto actualizado correctamente');
+        onSave?.();
+        onClose();
+      } else {
+        alert('❌ Error: ' + result.error);
+      }
+    } catch (error) {
+      alert('❌ Error guardando producto: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black/50 z-[9998] transition-opacity duration-300"
+        onClick={onClose}
+      />
+      
+      {/* Modal Panel */}
+      <div 
+        className="fixed top-0 right-0 h-full w-full md:w-[800px] bg-white shadow-2xl z-[9999] transform transition-transform duration-300 ease-out overflow-hidden flex flex-col"
+        style={{ animation: 'slideInRight 0.3s ease-out' }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+          <h2 className="text-xl font-bold text-gray-900">Editar Producto</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+                <p className="text-gray-600">Cargando producto...</p>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Información Básica */}
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <h3 className="text-lg font-semibold mb-4">Información Básica</h3>
+                
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Nombre *</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">SKU</label>
+                    <input
+                      type="text"
+                      value={formData.sku}
+                      onChange={(e) => setFormData({...formData, sku: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">Descripción</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    rows="3"
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Precio *</label>
+                    <input
+                      type="number"
+                      value={formData.price}
+                      onChange={(e) => setFormData({...formData, price: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Costo</label>
+                    <input
+                      type="number"
+                      value={formData.cost_price}
+                      onChange={(e) => setFormData({...formData, cost_price: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-blue-50"
+                      readOnly
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Stock</label>
+                    <input
+                      type="number"
+                      value={formData.stock_quantity}
+                      onChange={(e) => setFormData({...formData, stock_quantity: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Categorización */}
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <h3 className="text-lg font-semibold mb-4">Categorización</h3>
+                
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Categoría</label>
+                    <select
+                      value={formData.category_id}
+                      onChange={(e) => setFormData({...formData, category_id: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="1">La Ruta 11</option>
+                      <option value="2">Sandwiches</option>
+                      <option value="3">Hamburguesas</option>
+                      <option value="4">Completos</option>
+                      <option value="5">Snacks</option>
+                      <option value="6">Personalizar</option>
+                      <option value="7">Extras</option>
+                      <option value="8">Combos</option>
+                      <option value="12">Papas</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Estado</label>
+                    <select
+                      value={formData.is_active}
+                      onChange={(e) => setFormData({...formData, is_active: e.target.value})}
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+                        formData.is_active === '1' 
+                          ? 'bg-green-50 text-green-700 border-green-300' 
+                          : 'bg-red-50 text-red-700 border-red-300'
+                      }`}
+                    >
+                      <option value="1">Activo</option>
+                      <option value="0">Inactivo</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Tiempo Prep (min)</label>
+                    <input
+                      type="number"
+                      value={formData.preparation_time}
+                      onChange={(e) => setFormData({...formData, preparation_time: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Información Nutricional */}
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <h3 className="text-lg font-semibold mb-4">Información Nutricional</h3>
+                
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Peso (g)</label>
+                    <input
+                      type="number"
+                      value={formData.grams}
+                      onChange={(e) => setFormData({...formData, grams: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-blue-50"
+                      readOnly
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Calorías</label>
+                    <input
+                      type="number"
+                      value={formData.calories}
+                      onChange={(e) => setFormData({...formData, calories: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Alérgenos</label>
+                  <textarea
+                    value={formData.allergens}
+                    onChange={(e) => setFormData({...formData, allergens: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    rows="2"
+                    placeholder="Ej: Gluten, Lácteos, Frutos secos"
+                  />
+                </div>
+              </div>
+
+              {/* Botón para edición avanzada */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800 mb-2">
+                  Para gestionar imágenes, ingredientes y recetas, usa la página completa de edición:
+                </p>
+                <a
+                  href={`/admin/edit-product?id=${productId}`}
+                  target="_blank"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                >
+                  🔧 Edición Avanzada
+                </a>
+              </div>
+            </form>
+          )}
+        </div>
+
+        {/* Footer */}
+        {!loading && (
+          <div className="border-t border-gray-200 p-4 bg-gray-50 flex gap-3 justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
+            >
+              {loading ? 'Guardando...' : 'Guardar Cambios'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      <style jsx>{`
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100%);
+          }
+          to {
+            transform: translateX(0);
+          }
+        }
+      `}</style>
+    </>
+  );
+}

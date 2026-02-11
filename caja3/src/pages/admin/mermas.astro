@@ -1,0 +1,257 @@
+---
+---
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Mermas - La Ruta 11</title>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .header { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .header h1 { font-size: 24px; color: #0a0a0a; display: flex; align-items: center; gap: 12px; }
+    .back-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #f5f5f5; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; margin-bottom: 16px; }
+    .back-btn:hover { background: #e5e5e5; }
+    .card { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #374151; }
+    .form-group select, .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
+    .form-group select:focus, .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #ef4444; }
+    .btn { padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: #ef4444; color: white; }
+    .btn-primary:hover { background: #dc2626; }
+    .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+    .info-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 8px; margin-bottom: 20px; }
+    .info-box p { color: #92400e; font-size: 14px; }
+    .ingredient-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 12px; padding: 16px; background: #f9fafb; border-radius: 8px; }
+    .ingredient-info div { display: flex; flex-direction: column; }
+    .ingredient-info label { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+    .ingredient-info span { font-weight: 600; color: #0a0a0a; }
+    .history { margin-top: 32px; }
+    .history h2 { font-size: 20px; margin-bottom: 16px; color: #0a0a0a; }
+    .history-table { width: 100%; border-collapse: collapse; }
+    .history-table th { background: #f9fafb; padding: 12px; text-align: left; font-size: 12px; color: #6b7280; border-bottom: 2px solid #e5e7eb; }
+    .history-table td { padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
+    .history-table tr:hover { background: #f9fafb; }
+    .cost-highlight { color: #ef4444; font-weight: 700; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button class="back-btn" onclick="window.location.href='/admin'">
+      <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+      Volver al Dashboard
+    </button>
+
+    <div class="header">
+      <h1>
+        <i data-lucide="trash-2" style="width: 28px; height: 28px; color: #ef4444;"></i>
+        Registro de Mermas
+      </h1>
+    </div>
+
+    <div class="info-box">
+      <p><strong>⚠️ Importante:</strong> Las mermas registradas descontarán automáticamente del stock de ingredientes y se registrará el costo de capital perdido.</p>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size: 18px; margin-bottom: 20px; color: #0a0a0a;">Registrar Nueva Merma</h2>
+      
+      <form id="mermaForm">
+        <div class="form-group">
+          <label for="ingredient">Ingrediente *</label>
+          <select id="ingredient" required>
+            <option value="">Seleccionar ingrediente...</option>
+          </select>
+        </div>
+
+        <div id="ingredientInfo" class="ingredient-info" style="display: none;">
+          <div>
+            <label>Stock Actual</label>
+            <span id="currentStock">-</span>
+          </div>
+          <div>
+            <label>Unidad</label>
+            <span id="unit">-</span>
+          </div>
+          <div>
+            <label>Costo por Unidad</label>
+            <span id="costPerUnit">-</span>
+          </div>
+          <div>
+            <label>Costo de Merma</label>
+            <span id="mergeCost" class="cost-highlight">$0</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="quantity">Cantidad a Mermar *</label>
+          <input type="number" id="quantity" step="0.001" min="0.001" placeholder="Ej: 2.5" required>
+        </div>
+
+        <div class="form-group">
+          <label for="reason">Razón de la Merma</label>
+          <textarea id="reason" rows="3" placeholder="Ej: Producto vencido, deteriorado, etc."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+          <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+          Registrar Merma
+        </button>
+      </form>
+    </div>
+
+    <div class="card history">
+      <h2>Historial de Mermas</h2>
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Ingrediente</th>
+            <th>Cantidad</th>
+            <th>Costo</th>
+            <th>Razón</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <tr>
+            <td colspan="5" style="text-align: center; color: #9ca3af;">Cargando historial...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let ingredients = [];
+    let selectedIngredient = null;
+
+    // Cargar ingredientes
+    async function loadIngredients() {
+      try {
+        const response = await fetch('/api/get_ingredientes.php?t=' + Date.now());
+        const data = await response.json();
+        
+        if (data.success && data.ingredientes) {
+          ingredients = data.ingredientes;
+          const select = document.getElementById('ingredient');
+          
+          ingredients.forEach(ing => {
+            const option = document.createElement('option');
+            option.value = ing.id;
+            option.textContent = `${ing.name} (Stock: ${ing.stock} ${ing.unit})`;
+            option.dataset.ingredient = JSON.stringify(ing);
+            select.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('Error cargando ingredientes:', error);
+        alert('Error al cargar ingredientes');
+      }
+    }
+
+    // Mostrar info del ingrediente seleccionado
+    document.getElementById('ingredient').addEventListener('change', function(e) {
+      const option = e.target.selectedOptions[0];
+      if (!option.dataset.ingredient) {
+        document.getElementById('ingredientInfo').style.display = 'none';
+        selectedIngredient = null;
+        return;
+      }
+
+      selectedIngredient = JSON.parse(option.dataset.ingredient);
+      document.getElementById('ingredientInfo').style.display = 'grid';
+      document.getElementById('currentStock').textContent = selectedIngredient.stock;
+      document.getElementById('unit').textContent = selectedIngredient.unit;
+      document.getElementById('costPerUnit').textContent = '$' + new Intl.NumberFormat('es-CL').format(selectedIngredient.cost_per_unit);
+      
+      // Calcular costo inicial
+      calculateCost();
+    });
+
+    // Calcular costo de merma
+    document.getElementById('quantity').addEventListener('input', calculateCost);
+
+    function calculateCost() {
+      if (!selectedIngredient) return;
+      
+      const quantity = parseFloat(document.getElementById('quantity').value) || 0;
+      const cost = quantity * selectedIngredient.cost_per_unit;
+      
+      document.getElementById('mergeCost').textContent = '$' + new Intl.NumberFormat('es-CL').format(Math.round(cost));
+    }
+
+    // Registrar merma
+    document.getElementById('mermaForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      if (!selectedIngredient) {
+        alert('Selecciona un ingrediente');
+        return;
+      }
+
+      const quantity = parseFloat(document.getElementById('quantity').value);
+      const reason = document.getElementById('reason').value;
+
+      if (quantity > selectedIngredient.stock) {
+        alert(`No puedes mermar más de lo que hay en stock (${selectedIngredient.stock} ${selectedIngredient.unit})`);
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Registrando...';
+
+      try {
+        const response = await fetch('/api/registrar_merma.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ingredient_id: selectedIngredient.id,
+            quantity: quantity,
+            reason: reason || 'Sin especificar'
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alert(`✅ Merma registrada exitosamente\\nCosto: $${new Intl.NumberFormat('es-CL').format(Math.round(data.merma.cost))}`);
+          
+          // Limpiar formulario
+          document.getElementById('mermaForm').reset();
+          document.getElementById('ingredientInfo').style.display = 'none';
+          selectedIngredient = null;
+          
+          // Recargar datos
+          loadIngredients();
+          loadHistory();
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error al registrar merma');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i data-lucide="save" style="width: 16px; height: 16px;"></i> Registrar Merma';
+        lucide.createIcons();
+      }
+    });
+
+    // Cargar historial (simulado - necesitarías crear un API para esto)
+    async function loadHistory() {
+      // Por ahora mostrar mensaje
+      document.getElementById('historyBody').innerHTML = '<tr><td colspan="5" style="text-align: center; color: #9ca3af;">No hay mermas registradas</td></tr>';
+    }
+
+    // Inicializar
+    loadIngredients();
+    loadHistory();
+    lucide.createIcons();
+  </script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+---
+---
+
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>¡Registro Exitoso! - Concurso La Ruta 11</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #ea580c, #f97316); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: center; max-width: 500px; margin: 20px; }
+        .success-icon { font-size: 4rem; color: #22c55e; margin-bottom: 20px; }
+        h1 { color: #1e293b; font-size: 2rem; margin-bottom: 15px; }
+        .order-info { background: #f8fafc; padding: 20px; border-radius: 12px; margin: 20px 0; }
+        .order-number { font-size: 1.2rem; font-weight: bold; color: #ea580c; margin-bottom: 10px; }
+        .participant-info { color: #64748b; margin-bottom: 15px; }
+        .amount { font-size: 1.5rem; font-weight: bold; color: #22c55e; }
+        .message { color: #64748b; line-height: 1.6; margin: 20px 0; }
+        .btn { background: #ea580c; color: white; padding: 15px 30px; border: none; border-radius: 10px; font-size: 1.1rem; cursor: pointer; text-decoration: none; display: inline-block; margin-top: 20px; }
+        .btn:hover { background: #c2410c; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">🎉</div>
+        <h1>¡Registro Exitoso!</h1>
+        <p style="color: #64748b; font-size: 1.1rem;">Tu participación en el concurso ha sido confirmada</p>
+        
+        <div class="order-info">
+            <div class="order-number" id="orderNumber">-</div>
+            <div class="participant-info">
+                <strong id="participantName">-</strong><br>
+                <span id="participantEmail">-</span><br>
+                <span id="participantPhone">-</span>
+            </div>
+            <div class="amount">Pagado: $<span id="amount">5.000</span></div>
+        </div>
+        
+        <div class="message">
+            <p><strong>¡Felicitaciones!</strong> Ya eres parte oficial del concurso de inauguración.</p>
+            <p>Te contactaremos pronto con más detalles sobre el evento.</p>
+            <p><strong>¡Nos vemos en La Ruta 11!</strong></p>
+        </div>
+        
+        <button id="whatsappBtn" class="btn" style="background: #25d366; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;">
+            <i data-lucide="message-circle" style="width: 20px; height: 20px; color: white;"></i>
+            Confirmar Participación en WhatsApp
+        </button>
+    </div>
+
+    <script>
+        // @ts-ignore
+        const lucide = window.lucide;
+        
+        // Obtener parámetros de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Debug: mostrar todos los parámetros
+        console.log('=== DEBUG PÁGINA GRACIAS ===');
+        console.log('URL completa:', window.location.href);
+        console.log('Todos los parámetros:', Object.fromEntries(urlParams));
+        
+        // Si tenemos parámetros de TUU, procesar el pago
+        const x_reference = urlParams.get('x_reference');
+        const x_result = urlParams.get('x_result');
+        
+        if (x_reference && x_result) {
+            console.log('Procesando pago de TUU...');
+            
+            // Llamar al endpoint para procesar el pago
+            fetch('/api/process_concurso_payment.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    x_reference: urlParams.get('x_reference'),
+                    x_result: urlParams.get('x_result'),
+                    x_amount: urlParams.get('x_amount'),
+                    x_message: urlParams.get('x_message'),
+                    x_timestamp: urlParams.get('x_timestamp'),
+                    x_signature: urlParams.get('x_signature')
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Respuesta del procesamiento:', data);
+                
+                if (data.success && data.participante) {
+                    const p = data.participante;
+                    const orderEl = document.getElementById('orderNumber');
+                    const nameEl = document.getElementById('participantName');
+                    const emailEl = document.getElementById('participantEmail');
+                    const phoneEl = document.getElementById('participantPhone');
+                    const amountEl = document.getElementById('amount');
+                    
+                    if (orderEl) orderEl.textContent = p.order_number;
+                    if (nameEl) nameEl.textContent = p.nombre;
+                    if (emailEl) emailEl.textContent = p.email;
+                    if (phoneEl) phoneEl.textContent = p.telefono;
+                    
+                    const amount = urlParams.get('x_amount') || '5000';
+                    const formattedAmount = Math.round(parseFloat(amount)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                    if (amountEl) amountEl.textContent = formattedAmount;
+                } else {
+                    console.error('Error procesando pago:', data.error);
+                    // Usar valores por defecto
+                    setDefaultValues();
+                }
+            })
+            .catch(error => {
+                console.error('Error en fetch:', error);
+                setDefaultValues();
+            });
+        } else {
+            // Parámetros normales (no de TUU)
+            setDefaultValues();
+        }
+        
+        function setDefaultValues() {
+            const orderNumber = urlParams.get('order_number') || urlParams.get('x_reference') || 'N/A';
+            const participantName = urlParams.get('nombre') || 'Participante del Concurso';
+            const participantEmail = urlParams.get('email') || 'Email no disponible';
+            const participantPhone = urlParams.get('telefono') || 'Teléfono no disponible';
+            const amount = urlParams.get('monto') || urlParams.get('x_amount') || '5000';
+            
+            const orderEl = document.getElementById('orderNumber');
+            const nameEl = document.getElementById('participantName');
+            const emailEl = document.getElementById('participantEmail');
+            const phoneEl = document.getElementById('participantPhone');
+            const amountEl = document.getElementById('amount');
+            
+            if (orderEl) orderEl.textContent = orderNumber;
+            if (nameEl) nameEl.textContent = participantName;
+            if (emailEl) emailEl.textContent = participantEmail;
+            if (phoneEl) phoneEl.textContent = participantPhone;
+            
+            const formattedAmount = Math.round(parseFloat(amount)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            if (amountEl) amountEl.textContent = formattedAmount;
+        }
+        
+        // Funcionalidad del botón de WhatsApp
+        const whatsappBtn = document.getElementById('whatsappBtn');
+        if (whatsappBtn) {
+            whatsappBtn.addEventListener('click', function() {
+                const orderEl = document.getElementById('orderNumber');
+                const nameEl = document.getElementById('participantName');
+                const emailEl = document.getElementById('participantEmail');
+                const phoneEl = document.getElementById('participantPhone');
+                const amountEl = document.getElementById('amount');
+                
+                const orderNumber = orderEl?.textContent || 'N/A';
+                const participantName = nameEl?.textContent || 'N/A';
+                const participantEmail = emailEl?.textContent || 'N/A';
+                const participantPhone = phoneEl?.textContent || 'N/A';
+                const amount = amountEl?.textContent || '5.000';
+            
+            // Obtener fecha actual formateada
+            const now = new Date();
+            const fechaInscripcion = now.toLocaleDateString('es-CL') + ' - ' + now.toLocaleTimeString('es-CL', {hour12: false});
+            
+            const mensaje = `*CONFIRMACIÓN INSCRIPCIÓN CONCURSO*
+
+` +
+                `*Concurso:* Inauguración La Ruta 11
+` +
+                `*Número de Orden:* ${orderNumber}
+` +
+                `*Fecha Inscripción:* ${fechaInscripcion}
+
+` +
+                `*DATOS DEL PARTICIPANTE:*
+` +
+                `• *Nombre:* ${participantName}
+` +
+                `• *Email:* ${participantEmail}
+` +
+                `• *Teléfono:* ${participantPhone}
+
+` +
+                `*PAGO:*
+` +
+                `• *Monto:* $${amount} CLP
+` +
+                `• *Estado:* EXITOSO
+` +
+                `• *Payment Status:* paid
+
+` +
+                `*PARTICIPA POR:*
+` +
+                `• $50.000 en efectivo
+` +
+                `• Hamburguesas gratis por 1 año
+
+` +
+                `*Ver mi postulación:*
+` +
+                `https://app.laruta11.cl/concurso/
+
+` +
+                `*Estado:* INSCRIPCIÓN CONFIRMADA
+
+` +
+                `¡Hola! Acabo de completar mi inscripción al concurso. Por favor confirmen mi participación. ¡Gracias!`;
+            
+                const whatsappUrl = `https://wa.me/56936227422?text=${encodeURIComponent(mensaje)}`;
+                window.open(whatsappUrl, '_blank');
+            });
+        }
+        
+        // Inicializar iconos de Lucide
+        if (typeof lucide !== 'undefined') {
+            // @ts-ignore
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>

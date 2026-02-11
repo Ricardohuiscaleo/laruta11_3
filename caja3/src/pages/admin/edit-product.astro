@@ -1,0 +1,2290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editar Producto - La Ruta 11</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #0a0a0a; line-height: 1.6; }
+    
+    .container { max-width: 1400px; margin: 0 auto; padding: 16px; height: 100vh; display: flex; flex-direction: column; }
+    .header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+    .back-btn { padding: 6px 12px; background: #f5f5f5; border: 1px solid #e5e5e5; border-radius: 4px; text-decoration: none; color: #0a0a0a; font-size: 12px; }
+    .back-btn:hover { background: #e5e5e5; }
+    .page-title { font-size: 20px; font-weight: 600; }
+    
+    .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; overflow: hidden; }
+    .card { background: #ffffff; border: 1px solid #e5e5e5; border-radius: 6px; overflow: hidden; height: 100%; }
+    .card-header { padding: 16px; border-bottom: 1px solid #e5e5e5; }
+    .card-title { font-size: 14px; font-weight: 600; }
+    .card-content { padding: 16px; height: calc(100% - 49px); overflow-y: auto; }
+    
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .label { display: block; margin-bottom: 2px; font-weight: 500; font-size: 12px; }
+    .input { width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 4px; font-size: 12px; }
+    .input:focus { outline: none; border-color: #0a0a0a; }
+    .textarea { min-height: 60px; resize: vertical; }
+    
+    .btn { padding: 12px 24px; border-radius: 6px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: #0a0a0a; color: #ffffff; }
+    .btn-primary:hover { background: #333; }
+    .btn-secondary { background: #f5f5f5; color: #0a0a0a; border: 1px solid #e5e5e5; }
+    .btn-secondary:hover { background: #e5e5e5; }
+    .btn-danger { background: #ef4444; color: #ffffff; }
+    .btn-danger:hover { background: #dc2626; }
+    
+    .image-manager { height: 100%; display: flex; flex-direction: column; }
+    .step { margin-bottom: 16px; }
+    .step-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .step-number { width: 24px; height: 24px; background: #0a0a0a; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 11px; }
+    .step-title { font-size: 13px; font-weight: 600; }
+    .step-content { margin-left: 32px; }
+    
+    .status-message { padding: 8px 12px; border-radius: 4px; font-size: 12px; margin-top: 8px; }
+    .status-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .status-error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .status-info { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    
+    .current-image { display: inline-block; position: relative; }
+    .current-image img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e5e5; cursor: pointer; transition: transform 0.2s; }
+    .current-image img:hover { transform: scale(1.05); }
+    .delete-btn { position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 8px; }
+    
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .modal img { max-width: 90%; max-height: 90%; border-radius: 8px; }
+    .modal-close { position: absolute; top: 20px; right: 20px; background: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; }
+    
+    .upload-area { border: 2px dashed #e5e5e5; border-radius: 6px; padding: 16px; text-align: center; margin-bottom: 12px; }
+    .upload-area.dragover { border-color: #0a0a0a; background: #f9f9f9; }
+    .file-input { display: none; }
+    
+    .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin-top: 12px; }
+    .preview-item { position: relative; }
+    .preview-item img { width: 100%; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e5e5; }
+    .preview-item .remove-btn { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 10px; }
+    
+    .upload-progress { margin-top: 16px; }
+    .progress-bar { width: 100%; height: 8px; background: #f5f5f5; border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #0a0a0a; transition: width 0.3s; }
+    
+    .actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 32px; }
+    
+    .loading { display: none; text-align: center; padding: 20px; color: #666; }
+    
+    .recipe-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; margin-bottom: 6px; }
+    .recipe-item-info { flex: 1; }
+    .recipe-item-name { font-weight: 600; font-size: 12px; }
+    .recipe-item-amount { font-size: 11px; color: #666; }
+    .recipe-item-actions { display: flex; gap: 4px; }
+    .recipe-remove-btn { background: #dc3545; color: white; border: none; border-radius: 3px; padding: 4px 8px; font-size: 10px; cursor: pointer; }
+    .recipe-remove-btn:hover { background: #c82333; }
+    
+    .ingredient-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1001; }
+    .ingredient-modal-content { background: white; padding: 24px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+    .ingredient-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .ingredient-form-group { margin-bottom: 12px; }
+    .ingredient-form-group.full { grid-column: 1 / -1; }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <a href="/admin" class="back-btn">← Volver a Productos</a>
+      <h1 class="page-title">Editar Producto</h1>
+    </div>
+    
+    <div class="loading" id="loading">Cargando producto...</div>
+    
+    <form id="productForm" style="display: none;">
+      <div class="main-grid">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Información del Producto</h2>
+          </div>
+          <div class="card-content">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="label">Nombre *</label>
+              <input type="text" id="name" class="input" required>
+            </div>
+            <div class="form-group">
+              <label class="label">SKU</label>
+              <input type="text" id="sku" class="input">
+            </div>
+          </div>
+          
+          <div class="form-group full">
+            <label class="label">Descripción</label>
+            <textarea id="description" class="input textarea"></textarea>
+          </div>
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="label">Precio *</label>
+              <div style="position: relative;">
+                <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #666; font-size: 12px;">$</span>
+                <input type="text" id="price" class="input" style="padding-left: 20px;" required placeholder="0" oninput="calculateProfit()">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="label">Costo <small style="color: #22c55e;">(calculado automáticamente)</small></label>
+              <div style="position: relative;">
+                <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #666; font-size: 12px;">$</span>
+                <input type="text" id="cost_price" class="input" style="padding-left: 20px; background: #f0f9ff;" placeholder="0" readonly oninput="calculateProfit()">
+                <button type="button" onclick="updateProductCostFromRecipe()" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: #22c55e; color: white; border: none; border-radius: 3px; padding: 4px 8px; font-size: 10px; cursor: pointer;">🔄</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="label">Ganancia <small style="color: #059669;">(automática)</small></label>
+              <div style="display: flex; gap: 4px;">
+                <div style="position: relative; flex: 1;">
+                  <input type="text" id="profit_percentage" class="input" style="background: #f0fdf4; font-weight: 600; color: #059669;" placeholder="0%" readonly>
+                </div>
+                <div style="position: relative; flex: 1;">
+                  <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #666; font-size: 12px;">$</span>
+                  <input type="text" id="profit_amount" class="input" style="padding-left: 20px; background: #f0fdf4; font-weight: 600; color: #059669;" placeholder="0" readonly>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="label">Stock</label>
+              <input type="number" id="stock_quantity" class="input">
+            </div>
+            <div class="form-group">
+              <label class="label">Stock Mínimo</label>
+              <input type="number" id="min_stock_level" class="input">
+            </div>
+          </div>
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="label">Categoría</label>
+              <select id="category_id" class="input" onchange="updateSubcategoriesEdit(); checkComboCategory()">
+                <option value="1">La Ruta 11</option>
+                <option value="2">Sandwiches</option>
+                <option value="3">Hamburguesas</option>
+                <option value="4">Completos</option>
+                <option value="5">Snacks</option>
+                <option value="6">Personalizar</option>
+                <option value="7">Extras</option>
+                <option value="8">Combos</option>
+                <option value="12">Papas</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="label">Subcategoría</label>
+              <select id="subcategory_id" class="input">
+                <option value="">Cargando...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="label">Estado</label>
+              <select id="is_active" class="input" onchange="updateStatusColor(this)">
+                <option value="1">Activo</option>
+                <option value="0">Inactivo</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="label">Tiempo Prep (min)</label>
+              <input type="number" id="preparation_time" class="input">
+            </div>
+            <div class="form-group">
+              <label class="label">Peso <small style="color: #22c55e;">(calculado automáticamente)</small></label>
+              <div style="position: relative;">
+                <input type="number" id="grams" class="input" style="background: #f0f9ff;" placeholder="0" readonly>
+                <button type="button" onclick="updateProductWeightFromRecipe()" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: #22c55e; color: white; border: none; border-radius: 3px; padding: 4px 8px; font-size: 10px; cursor: pointer;">🔄</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="label">Calorías</label>
+            <input type="number" id="calories" class="input">
+          </div>
+          
+          <div class="form-group">
+            <label class="label">Alérgenos</label>
+            <textarea id="allergens" class="input textarea" placeholder="Ej: Gluten, Lácteos, Frutos secos"></textarea>
+          </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h2 class="card-title">Gestión Avanzada</h2>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-secondary" id="showImagesBtn" style="font-size: 12px; padding: 6px 12px;">📷 Imágenes</button>
+                <button type="button" class="btn btn-secondary" id="showIngredientsBtn" style="font-size: 12px; padding: 6px 12px;" onclick="openIngredientsModal()">🥘 Ingredientes</button>
+                <button type="button" class="btn btn-secondary" id="showComboBtn" style="font-size: 12px; padding: 6px 12px; display: none;" onclick="showComboPanel()">🍽️ Combo</button>
+              </div>
+            </div>
+          </div>
+          <div class="card-content">
+            <!-- Panel de Imágenes -->
+            <div id="imagesPanel" class="image-manager">
+            <!-- Paso 1: Ver imagen actual -->
+            <div class="step">
+              <div class="step-header">
+                <div class="step-number">1</div>
+                <div class="step-title">Imágenes Actuales</div>
+              </div>
+              <div class="step-content">
+                <div id="currentImageContainer">
+                  <p style="color: #666;">Sin imagen actual</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Paso 2: Seleccionar nuevas imágenes -->
+            <div class="step">
+              <div class="step-header">
+                <div class="step-number">2</div>
+                <div class="step-title">Seleccionar Nueva Imagen</div>
+              </div>
+              <div class="step-content">
+                <div class="upload-area" id="uploadArea">
+                  <p style="margin-bottom: 8px; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg> Arrastra imagen o haz clic</p>
+                  <button type="button" class="btn btn-secondary" id="selectBtn">
+                    Seleccionar
+                  </button>
+                  <input type="file" id="imageInput" class="file-input" accept="image/*">
+                  <p style="font-size: 10px; color: #666; margin-top: 4px;">JPG, PNG, GIF, WEBP (máx. 10MB)</p>
+                </div>
+                <div id="previewContainer" class="preview-grid"></div>
+                <div id="uploadActions" style="display: none; margin-top: 12px;">
+                  <button type="button" class="btn btn-primary" id="uploadBtn" style="font-size: 12px; padding: 6px 12px; display: flex; align-items: center; gap: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Subir a AWS S3
+                  </button>
+                </div>
+                <div id="uploadStatus"></div>
+                <div id="uploadProgress" class="upload-progress" style="display: none;">
+                  <p style="margin-bottom: 6px; font-size: 11px;">Subiendo a AWS S3...</p>
+                  <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Paso 3: Confirmar cambios -->
+            <div class="step">
+              <div class="step-header">
+                <div class="step-number">3</div>
+                <div class="step-title">Confirmar y Guardar</div>
+              </div>
+              <div class="step-content">
+                <p style="color: #666; margin-bottom: 12px; font-size: 11px;">
+                  Los cambios se guardarán cuando hagas clic en "Guardar Cambios"
+                </p>
+              </div>
+            </div>
+            
+            <!-- Panel de Combos -->
+            <div id="comboPanel" style="display: none;">
+              <div class="step">
+                <div class="step-header">
+                  <div class="step-number">1</div>
+                  <div class="step-title">Productos del Combo</div>
+                </div>
+                <div class="step-content">
+                  <div id="currentComboItems">
+                    <p style="color: #666; font-size: 12px;">Cargando productos del combo...</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="step">
+                <div class="step-header">
+                  <div class="step-number">2</div>
+                  <div class="step-title">Agregar Producto</div>
+                </div>
+                <div class="step-content">
+                  <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 8px; align-items: end; margin-bottom: 12px;">
+                    <div>
+                      <label class="label">Producto</label>
+                      <select id="comboProductSelect" class="input" style="font-size: 12px;">
+                        <option value="">Seleccionar producto...</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="label">Cantidad</label>
+                      <input type="number" id="comboProductQuantity" class="input" placeholder="1" min="1" value="1" style="font-size: 12px;">
+                    </div>
+                    <button type="button" class="btn btn-primary" id="addComboProductBtn" style="font-size: 12px; padding: 8px 12px;">
+                      + Agregar
+                    </button>
+                  </div>
+                  <div style="margin-bottom: 12px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
+                      <input type="checkbox" id="isSelectableProduct" style="margin: 0;">
+                      <span>Es seleccionable (bebidas, salsas, etc.)</span>
+                    </label>
+                  </div>
+                  <div id="selectionGroupDiv" style="display: none; margin-bottom: 12px;">
+                    <label class="label">Grupo de Selección</label>
+                    <input type="text" id="selectionGroup" class="input" placeholder="bebidas" style="font-size: 12px;">
+                  </div>
+                </div>
+              </div>
+              
+              <div class="step">
+                <div class="step-header">
+                  <div class="step-number">3</div>
+                  <div class="step-title">Guardar Combo</div>
+                </div>
+                <div class="step-content">
+                  <button type="button" class="btn btn-primary" id="saveComboBtn" style="font-size: 12px; padding: 8px 16px;">
+                    💾 Guardar Combo
+                  </button>
+                  <p style="color: #666; margin-top: 8px; font-size: 11px;">
+                    El combo se guarda independientemente de los datos del producto
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Panel de Ingredientes -->
+            <div id="ingredientsPanel" style="display: none;">
+              <div class="step">
+                <div class="step-header">
+                  <div class="step-number">1</div>
+                  <div class="step-title">Receta Actual</div>
+                </div>
+                <div class="step-content">
+                  <div id="currentRecipe">
+                    <p style="color: #666; font-size: 12px;">Cargando receta...</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="step">
+                <div class="step-header">
+                  <div class="step-number">2</div>
+                  <div class="step-title">Agregar Ingrediente</div>
+                </div>
+                <div class="step-content">
+                  <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 8px; align-items: end; margin-bottom: 12px;">
+                    <div>
+                      <label class="label">Ingrediente</label>
+                      <select id="ingredientSelect" class="input" style="font-size: 12px;">
+                        <option value="">Seleccionar ingrediente...</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="label">Gramos</label>
+                      <input type="number" id="ingredientGrams" class="input" placeholder="0" min="0" step="0.1" style="font-size: 12px;">
+                    </div>
+                    <button type="button" class="btn btn-primary" id="addIngredientBtn" style="font-size: 12px; padding: 8px 12px;">
+                      + Agregar
+                    </button>
+                  </div>
+                  <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                    <button type="button" class="btn btn-secondary" id="newIngredientBtn" style="font-size: 11px; padding: 6px 10px;">
+                      🍿 Nuevo Ingrediente
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="refreshIngredientsBtn" style="font-size: 11px; padding: 6px 10px;">
+                      🔄 Actualizar Lista
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="setupIngredientsBtn" style="font-size: 11px; padding: 6px 10px;">
+                      ⚙️ Setup Inicial
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="step">
+                <div class="step-header">
+                  <div class="step-number">3</div>
+                  <div class="step-title">Guardar Receta</div>
+                </div>
+                <div class="step-content">
+                  <button type="button" class="btn btn-primary" id="saveRecipeBtn" style="font-size: 12px; padding: 8px 16px;">
+                    💾 Guardar Receta
+                  </button>
+                  <p style="color: #666; margin-top: 8px; font-size: 11px;">
+                    La receta se guarda independientemente de los datos del producto
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="actions">
+        <a href="/admin" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary" id="saveBtn">Guardar Cambios</button>
+      </div>
+    </form>
+  </div>
+  
+  <script>
+    // @ts-nocheck
+    var currentProduct = null;
+    var selectedFile = null;
+    
+    // Formatear números con separador de miles
+    function formatPrice(value) {
+      if (!value) return '';
+      return parseInt(value).toLocaleString('es-CL');
+    }
+    
+    // Limpiar formato para enviar al servidor
+    function cleanPrice(value) {
+      if (!value) return 0;
+      return value.replace(/\./g, '').replace(/[^0-9]/g, '');
+    }
+    
+    // Calcular ganancia automáticamente
+    function calculateProfit() {
+      const priceValue = cleanPrice(document.getElementById('price').value) || 0;
+      const costValue = cleanPrice(document.getElementById('cost_price').value) || 0;
+      
+      const profitAmount = priceValue - costValue;
+      const profitPercentage = costValue > 0 ? ((profitAmount / costValue) * 100) : 0;
+      
+      document.getElementById('profit_amount').value = formatPrice(profitAmount);
+      document.getElementById('profit_percentage').value = profitPercentage.toFixed(1) + '%';
+      
+      // Cambiar color según rentabilidad
+      const profitAmountInput = document.getElementById('profit_amount');
+      const profitPercentageInput = document.getElementById('profit_percentage');
+      
+      if (profitPercentage < 20) {
+        profitAmountInput.style.color = '#ef4444';
+        profitPercentageInput.style.color = '#ef4444';
+      } else if (profitPercentage < 50) {
+        profitAmountInput.style.color = '#f59e0b';
+        profitPercentageInput.style.color = '#f59e0b';
+      } else {
+        profitAmountInput.style.color = '#059669';
+        profitPercentageInput.style.color = '#059669';
+      }
+    }
+    
+    // Configurar formateo automático de precios
+    function setupPriceFormatting() {
+      const priceInput = document.getElementById('price');
+      const costInput = document.getElementById('cost_price');
+      
+      [priceInput, costInput].forEach(input => {
+        if (!input) return;
+        
+        input.addEventListener('input', function(e) {
+          const cleaned = cleanPrice(e.target.value);
+          if (cleaned) {
+            e.target.value = formatPrice(cleaned);
+          }
+          calculateProfit();
+        });
+        
+        input.addEventListener('blur', function(e) {
+          const cleaned = cleanPrice(e.target.value);
+          if (cleaned) {
+            e.target.value = formatPrice(cleaned);
+          }
+          calculateProfit();
+        });
+      });
+    }
+    
+    // Obtener ID del producto de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('id');
+    
+    if (!productId) {
+      alert('ID de producto no especificado');
+      window.location.href = '/admin';
+    }
+    
+    // Cargar producto
+    async function loadProduct() {
+      try {
+        const response = await fetch(`/api/get_productos.php?id=${productId}`);
+        const result = await response.json();
+        
+        if (response.status === 404 || result.message === 'Producto no encontrado') {
+          alert('Producto no encontrado');
+          window.location.href = '/admin';
+          return;
+        }
+        
+        if (result.error) {
+          throw new Error(result.error);
+        }
+        
+        currentProduct = result;
+        
+        // Llenar formulario
+        document.getElementById('name').value = currentProduct.name || '';
+        document.getElementById('sku').value = currentProduct.sku || '';
+        document.getElementById('description').value = currentProduct.description || '';
+        document.getElementById('price').value = currentProduct.price ? formatPrice(currentProduct.price) : '';
+        document.getElementById('cost_price').value = currentProduct.cost_price ? formatPrice(currentProduct.cost_price) : '';
+        document.getElementById('stock_quantity').value = currentProduct.stock_quantity || '';
+        document.getElementById('min_stock_level').value = currentProduct.min_stock_level || '';
+        document.getElementById('category_id').value = currentProduct.category_id || '1';
+        document.getElementById('subcategory_id').value = currentProduct.subcategory_id || '';
+        
+        // Debug del estado
+        console.log('Estado del producto:', currentProduct.is_active, typeof currentProduct.is_active);
+        document.getElementById('is_active').value = currentProduct.is_active !== undefined ? currentProduct.is_active.toString() : '1';
+        
+        // Cargar subcategorías para la categoría actual
+        loadSubcategoriesForEdit(currentProduct.category_id, currentProduct.subcategory_id);
+        document.getElementById('preparation_time').value = currentProduct.preparation_time || '';
+        document.getElementById('grams').value = currentProduct.grams || '';
+        document.getElementById('calories').value = currentProduct.calories || '';
+        document.getElementById('allergens').value = currentProduct.allergens || '';
+        
+        // Mostrar imagen actual
+        showCurrentImage();
+        
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('productForm').style.display = 'block';
+        
+        // Configurar formateo de precios
+        setupPriceFormatting();
+        
+        // Calcular ganancia inicial
+        calculateProfit();
+        
+        // Configurar color del estado inicial
+        setTimeout(() => {
+          const statusSelect = document.getElementById('is_active');
+          console.log('Valor final del select:', statusSelect.value);
+          updateStatusColor(statusSelect);
+          
+          // Agregar event listener adicional
+          statusSelect.addEventListener('change', function() {
+            updateStatusColor(this);
+          });
+          
+          // Verificar si es combo
+          checkComboCategory();
+        }, 100);
+        
+      } catch (error) {
+        alert('Error cargando producto: ' + error.message);
+        window.location.href = '/admin';
+      }
+    }
+    
+    function showCurrentImage() {
+      const container = document.getElementById('currentImageContainer');
+      if (currentProduct.image_url) {
+        // Split images by comma for gallery support
+        const images = currentProduct.image_url.split(',').map(url => url.trim()).filter(url => url);
+        
+        let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); gap: 8px; max-width: 200px;">';
+        images.forEach((imageUrl, index) => {
+          html += `
+            <div class="current-image">
+              <img src="${imageUrl}" alt="Imagen ${index + 1}" data-url="${imageUrl}">
+              <button type="button" class="delete-btn" data-url="${imageUrl}" title="Eliminar imagen">×</button>
+            </div>
+          `;
+        });
+        html += `</div><p style="font-size: 10px; color: #666; margin-top: 4px;">${images.length} imagen(es)</p>`;
+        
+        container.innerHTML = html;
+        
+        // Agregar event listeners
+        container.querySelectorAll('img[data-url]').forEach(img => {
+          img.addEventListener('click', () => openImageModal(img.dataset.url));
+        });
+        
+        container.querySelectorAll('.delete-btn[data-url]').forEach(btn => {
+          btn.addEventListener('click', () => deleteCurrentImage(btn.dataset.url));
+        });
+      } else {
+        container.innerHTML = '<p style="color: #666; font-size: 11px;">Sin imágenes actuales</p>';
+      }
+    }
+    
+    async function deleteCurrentImage(imageUrl = null) {
+      const urlToDelete = imageUrl || currentProduct.image_url;
+      if (!confirm('¿Eliminar esta imagen?')) return;
+      
+      try {
+        const formData = new FormData();
+        formData.append('product_id', productId);
+        formData.append('image_url', urlToDelete);
+        
+        const response = await fetch('/api/delete_image_from_gallery.php', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          // Update current product with remaining images
+          currentProduct.image_url = result.remaining_images;
+          showCurrentImage();
+          alert(`Imagen eliminada. Quedan ${result.image_count} imagen(es)`);
+        } else {
+          alert('Error: ' + result.error);
+        }
+      } catch (error) {
+        alert('Error eliminando imagen: ' + error.message);
+      }
+    }
+    
+    // Configurar drag & drop
+    const uploadArea = document.getElementById('uploadArea');
+    const imageInput = document.getElementById('imageInput');
+    const previewContainer = document.getElementById('previewContainer');
+    const selectBtn = document.getElementById('selectBtn');
+    const uploadBtn = document.getElementById('uploadBtn');
+    
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFileSelect(files[0]);
+      }
+    });
+    
+    selectBtn.addEventListener('click', () => {
+      imageInput.click();
+    });
+    
+    imageInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFileSelect(e.target.files[0]);
+      }
+    });
+    
+    uploadBtn.addEventListener('click', uploadToS3);
+    
+    function handleFileSelect(file) {
+      // Validar tipo de archivo
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Tipo de archivo no permitido. Solo JPG, PNG, GIF, WEBP');
+        return;
+      }
+      
+      // Validar tamaño (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('El archivo es demasiado grande. Máximo 10MB');
+        return;
+      }
+      
+      selectedFile = file;
+      showPreview(file);
+    }
+    
+    var uploadedImageUrl = null;
+    
+    function showPreview(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewContainer.innerHTML = `
+          <div class="preview-item">
+            <img src="${e.target.result}" alt="Preview">
+            <button type="button" class="remove-btn" id="removePreviewBtn" title="Quitar imagen">×</button>
+          </div>
+        `;
+        document.getElementById('uploadActions').style.display = 'block';
+        showUploadStatus('info', 'Imagen seleccionada. Haz clic en "Subir a AWS S3" o "Guardar Cambios".');
+        
+        // Add event listener to remove button
+        document.getElementById('removePreviewBtn').addEventListener('click', removePreview);
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    async function uploadToS3() {
+      if (!selectedFile) return;
+      
+      const uploadBtn = document.getElementById('uploadBtn');
+      uploadBtn.disabled = true;
+      
+      // Show compression feedback if file is large
+      if (selectedFile.size > 500000) {
+        uploadBtn.textContent = 'Comprimiendo...';
+        showUploadStatus('info', `Comprimiendo imagen (${(selectedFile.size/1024/1024).toFixed(1)}MB)...`);
+        await new Promise(resolve => setTimeout(resolve, 800)); // Simulate compression time
+      }
+      
+      uploadBtn.textContent = 'Subiendo...';
+      showUploadProgress();
+      
+      try {
+        const formData = new FormData();
+        formData.append('image', selectedFile);
+        
+        const response = await fetch('/api/upload_image.php', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          uploadedImageUrl = result.url;
+          showUploadStatus('success', result.message);
+          
+          // Guardar URL en MySQL
+          const saveFormData = new FormData();
+          saveFormData.append('product_id', productId);
+          saveFormData.append('image_url', result.url);
+          
+          fetch('/api/save_image_url.php', {
+            method: 'POST',
+            body: saveFormData
+          })
+          .then(r => r.json())
+          .then(saveResult => {
+            if (saveResult.success) {
+              showUploadStatus('success', result.message + ' y guardada en MySQL');
+            }
+          });
+          
+          // Show AWS link
+          const linkHtml = `
+            <div style="margin-top: 8px; padding: 8px; background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 4px;">
+              <p style="font-size: 11px; margin-bottom: 4px; font-weight: 600;">Link AWS S3:</p>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <input type="text" value="${result.url}" readonly style="flex: 1; padding: 4px; font-size: 10px; border: 1px solid #ddd; border-radius: 3px;">
+                <button type="button" onclick="navigator.clipboard.writeText('${result.url}')" style="padding: 4px 8px; font-size: 10px; background: #0ea5e9; color: white; border: none; border-radius: 3px; cursor: pointer;">Copiar</button>
+              </div>
+            </div>
+          `;
+          document.getElementById('uploadStatus').innerHTML += linkHtml;
+          
+          uploadBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg> Subida Completa';
+          uploadBtn.style.background = '#22c55e';
+        } else {
+          showUploadStatus('error', result.error);
+          uploadBtn.disabled = false;
+          uploadBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Subir a AWS S3';
+        }
+      } catch (error) {
+        showUploadStatus('error', 'Error: ' + error.message);
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Subir a AWS S3';
+      } finally {
+        hideUploadProgress();
+      }
+    }
+    
+    function showUploadStatus(type, message) {
+      const statusDiv = document.getElementById('uploadStatus');
+      statusDiv.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
+    }
+    
+    function removePreview() {
+      selectedFile = null;
+      uploadedImageUrl = null;
+      previewContainer.innerHTML = '';
+      imageInput.value = '';
+      document.getElementById('uploadStatus').innerHTML = '';
+      document.getElementById('uploadActions').style.display = 'none';
+      
+      // Reset upload button
+      const uploadBtn = document.getElementById('uploadBtn');
+      uploadBtn.disabled = false;
+      uploadBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Subir a AWS S3';
+      uploadBtn.style.background = '#0a0a0a';
+    }
+    
+    // Manejar envío del formulario
+    document.getElementById('productForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const saveBtn = document.getElementById('saveBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Guardando...';
+      
+      try {
+        const formData = new FormData();
+        formData.append('id', productId);
+        formData.append('name', document.getElementById('name').value);
+        formData.append('sku', document.getElementById('sku').value);
+        formData.append('description', document.getElementById('description').value);
+        formData.append('price', cleanPrice(document.getElementById('price').value));
+        formData.append('cost_price', cleanPrice(document.getElementById('cost_price').value));
+        formData.append('stock_quantity', document.getElementById('stock_quantity').value);
+        formData.append('min_stock_level', document.getElementById('min_stock_level').value);
+        formData.append('category_id', document.getElementById('category_id').value);
+        formData.append('subcategory_id', document.getElementById('subcategory_id').value);
+        formData.append('is_active', document.getElementById('is_active').value);
+        formData.append('preparation_time', document.getElementById('preparation_time').value);
+        formData.append('grams', document.getElementById('grams').value);
+        formData.append('calories', document.getElementById('calories').value);
+        formData.append('allergens', document.getElementById('allergens').value);
+        
+        // Si hay imagen seleccionada pero no subida, subirla primero
+        if (selectedFile && !uploadedImageUrl) {
+          // Show compression feedback if file is large
+          if (selectedFile.size > 500000) {
+            showUploadStatus('info', `Comprimiendo imagen automáticamente (${(selectedFile.size/1024/1024).toFixed(1)}MB)...`);
+            await new Promise(resolve => setTimeout(resolve, 800));
+          }
+          
+          showUploadStatus('info', 'Subiendo imagen a AWS S3 automáticamente...');
+          showUploadProgress();
+          
+          try {
+            const imageFormData = new FormData();
+            imageFormData.append('image', selectedFile);
+            
+            const imageResponse = await fetch('/api/upload_image.php', {
+              method: 'POST',
+              body: imageFormData
+            });
+            
+            const imageResult = await imageResponse.json();
+            
+            if (imageResult.success) {
+              uploadedImageUrl = imageResult.url;
+              showUploadStatus('success', imageResult.message);
+              
+              // Guardar URL en MySQL automáticamente
+              const saveFormData = new FormData();
+              saveFormData.append('product_id', productId);
+              saveFormData.append('image_url', imageResult.url);
+              
+              fetch('/api/save_image_url.php', {
+                method: 'POST',
+                body: saveFormData
+              })
+              .then(r => r.json())
+              .then(saveResult => {
+                if (saveResult.success) {
+                  showUploadStatus('success', imageResult.message + ' y guardada en MySQL');
+                }
+              });
+              
+              // Show AWS link for automatic upload
+              const linkHtml = `
+                <div style="margin-top: 8px; padding: 8px; background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 4px;">
+                  <p style="font-size: 11px; margin-bottom: 4px; font-weight: 600;">Link AWS S3:</p>
+                  <div style="display: flex; gap: 4px; align-items: center;">
+                    <input type="text" value="${imageResult.url}" readonly style="flex: 1; padding: 4px; font-size: 10px; border: 1px solid #ddd; border-radius: 3px;">
+                    <button type="button" onclick="navigator.clipboard.writeText('${imageResult.url}')" style="padding: 4px 8px; font-size: 10px; background: #0ea5e9; color: white; border: none; border-radius: 3px; cursor: pointer;">Copiar</button>
+                  </div>
+                </div>
+              `;
+              document.getElementById('uploadStatus').innerHTML += linkHtml;
+            } else {
+              throw new Error(imageResult.error);
+            }
+          } catch (error) {
+            showUploadStatus('error', 'Error subiendo imagen: ' + error.message);
+            return;
+          } finally {
+            hideUploadProgress();
+          }
+        }
+        
+        // No agregar imagen al formulario si ya fue subida a S3
+        // La imagen ya está guardada en MySQL por uploadToS3() o por la subida automática
+        
+        const response = await fetch('/api/update_producto.php', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          alert(result.message || 'Producto actualizado correctamente');
+          // Recargar datos del producto en lugar de volver al admin
+          loadProduct();
+        } else {
+          showUploadStatus('error', 'Error: ' + result.error);
+          alert('Error: ' + result.error);
+        }
+        
+      } catch (error) {
+        alert('Error guardando producto: ' + error.message);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Guardar Cambios';
+        hideUploadProgress();
+      }
+    });
+    
+    function showUploadProgress() {
+      document.getElementById('uploadProgress').style.display = 'block';
+      // Simular progreso
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 10;
+        document.getElementById('progressFill').style.width = progress + '%';
+        if (progress >= 100) {
+          clearInterval(interval);
+        }
+      }, 100);
+    }
+    
+    function hideUploadProgress() {
+      document.getElementById('uploadProgress').style.display = 'none';
+      document.getElementById('progressFill').style.width = '0%';
+    }
+    
+    // Modal para ver imágenes
+    function openImageModal(src) {
+      const modal = document.getElementById('imageModal');
+      const modalImg = document.getElementById('modalImage');
+      modalImg.src = src;
+      modal.style.display = 'flex';
+    }
+    
+    window.closeImageModal = function() {
+      document.getElementById('imageModal').style.display = 'none';
+    };
+    
+    // Variables globales para ingredientes
+    var allIngredients = [];
+    var currentRecipe = [];
+    
+    // Variables para combos
+    var currentComboItems = [];
+    var allProducts = [];
+    
+    // Funciones para cambiar entre paneles
+    function showImagesPanel() {
+      document.getElementById('imagesPanel').style.display = 'block';
+      document.getElementById('ingredientsPanel').style.display = 'none';
+      document.getElementById('comboPanel').style.display = 'none';
+      document.getElementById('showImagesBtn').style.background = '#0a0a0a';
+      document.getElementById('showImagesBtn').style.color = 'white';
+      document.getElementById('showIngredientsBtn').style.background = '#f5f5f5';
+      document.getElementById('showIngredientsBtn').style.color = '#0a0a0a';
+      document.getElementById('showComboBtn').style.background = '#f5f5f5';
+      document.getElementById('showComboBtn').style.color = '#0a0a0a';
+    }
+    
+    function showComboPanel() {
+      document.getElementById('imagesPanel').style.display = 'none';
+      document.getElementById('ingredientsPanel').style.display = 'none';
+      document.getElementById('comboPanel').style.display = 'block';
+      document.getElementById('showImagesBtn').style.background = '#f5f5f5';
+      document.getElementById('showImagesBtn').style.color = '#0a0a0a';
+      document.getElementById('showIngredientsBtn').style.background = '#f5f5f5';
+      document.getElementById('showIngredientsBtn').style.color = '#0a0a0a';
+      document.getElementById('showComboBtn').style.background = '#0a0a0a';
+      document.getElementById('showComboBtn').style.color = 'white';
+      
+      loadComboData();
+    }
+    
+    // Verificar si es combo y mostrar/ocultar botón
+    function checkComboCategory() {
+      const categoryId = document.getElementById('category_id').value;
+      const comboBtn = document.getElementById('showComboBtn');
+      
+      if (categoryId === '8') {
+        comboBtn.style.display = 'block';
+      } else {
+        comboBtn.style.display = 'none';
+        showImagesPanel(); // Volver a imágenes si no es combo
+      }
+    }
+    
+    // Modal de ingredientes
+    window.openIngredientsModal = function() {
+      document.getElementById('ingredientsModal').style.display = 'flex';
+      loadIngredientsForModal();
+      loadCurrentRecipeForModal();
+    };
+    
+    window.closeIngredientsModal = function() {
+      document.getElementById('ingredientsModal').style.display = 'none';
+    };
+    
+    async function loadIngredientsForModal() {
+      try {
+        const response = await fetch('/api/get_ingredientes.php');
+        const result = await response.json();
+        allIngredients = Array.isArray(result) ? result : [];
+        
+        console.log('Ingredientes cargados para modal:', allIngredients.length);
+        
+        // Configurar búsqueda inteligente con delay
+        setTimeout(() => {
+          setupIngredientSearch();
+        }, 100);
+      } catch (error) {
+        console.error('Error cargando ingredientes:', error);
+        allIngredients = [];
+      }
+    }
+    
+    function setupIngredientSearch() {
+      const searchInput = document.getElementById('modalIngredientSearch');
+      const hiddenInput = document.getElementById('modalIngredientSelect');
+      const dropdown = document.getElementById('ingredientDropdown');
+      
+      if (!searchInput || !hiddenInput || !dropdown) {
+        console.error('Elementos de búsqueda no encontrados');
+        return;
+      }
+      
+      searchInput.addEventListener('input', function() {
+        const value = this.value.toLowerCase();
+        hiddenInput.value = ''; // Limpiar selección
+        
+        if (value.length === 0) {
+          dropdown.style.display = 'none';
+          return;
+        }
+        
+        const filtered = Array.isArray(allIngredients) ? allIngredients.filter(ingredient => 
+          ingredient.name.toLowerCase().includes(value) || 
+          (ingredient.category && ingredient.category.toLowerCase().includes(value))
+        ) : [];
+        
+        if (filtered.length > 0) {
+          dropdown.innerHTML = filtered.map(ingredient => 
+            `<div style="padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 14px;" 
+                  onmouseover="this.style.background='#f5f5f5'" 
+                  onmouseout="this.style.background='white'" 
+                  onclick="selectIngredient(${ingredient.id}, '${ingredient.name.replace(/'/g, "\\'")}')"
+                  data-ingredient='${JSON.stringify(ingredient).replace(/'/g, "\\'")}'>
+              <div style="font-weight: 600;">${ingredient.name}</div>
+              <div style="font-size: 12px; color: #666;">${ingredient.category || 'Sin categoría'} • $${ingredient.cost_per_unit}/unidad</div>
+            </div>`
+          ).join('');
+          dropdown.style.display = 'block';
+        } else {
+          dropdown.innerHTML = '<div style="padding: 12px; color: #666; font-size: 14px;">No se encontraron ingredientes</div>';
+          dropdown.style.display = 'block';
+        }
+      });
+      
+      searchInput.addEventListener('blur', function() {
+        setTimeout(() => dropdown.style.display = 'none', 200);
+      });
+      
+      window.selectIngredient = function(id, name) {
+        searchInput.value = name;
+        hiddenInput.value = id;
+        dropdown.style.display = 'none';
+        
+        // Trigger cost preview update
+        const amountInput = document.getElementById('modalIngredientAmount');
+        if (amountInput && amountInput.value && window.updateCostPreview) {
+          window.updateCostPreview();
+        }
+      };
+    }
+    
+    async function loadCurrentRecipeForModal() {
+      try {
+        const response = await fetch(`/api/get_product_recipe.php?product_id=${productId}`);
+        currentRecipe = await response.json();
+        displayCurrentRecipeInModal();
+      } catch (error) {
+        console.error('Error cargando receta:', error);
+        document.getElementById('modalCurrentRecipe').innerHTML = '<p style="color: #ef4444; font-size: 12px;">Error cargando receta</p>';
+      }
+    }
+    
+    function displayCurrentRecipeInModal() {
+      const container = document.getElementById('modalCurrentRecipe');
+      const costSummary = document.getElementById('recipeCostSummary');
+      
+      if (currentRecipe.length === 0) {
+        container.innerHTML = '<p style="color: #666; font-size: 14px; text-align: center; margin-top: 60px;">Sin ingredientes en la receta<br><small>Agrega ingredientes usando el formulario de la derecha</small></p>';
+        costSummary.innerHTML = '';
+        return;
+      }
+      
+      let html = '';
+      let totalCost = 0;
+      currentRecipe.forEach((item, index) => {
+        const cost = item.estimated_cost || 0;
+        totalCost += cost;
+        html += `
+          <div class="recipe-item" style="margin-bottom: 8px; padding: 12px; background: white; border: 1px solid #e5e5e5; border-radius: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 14px; color: #0a0a0a;">${item.name}</div>
+                <div style="font-size: 12px; color: #666; margin-top: 2px;">
+                  ${item.quantity} ${item.unit} • Costo: $${cost.toFixed(2)}
+                </div>
+              </div>
+              <button type="button" onclick="removeFromRecipeModal(${index})" style="background: #ef4444; color: white; border: none; border-radius: 4px; padding: 6px 10px; font-size: 12px; cursor: pointer;">
+                🗑️ Eliminar
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+      costSummary.innerHTML = `Costo Total: $${totalCost.toFixed(2)} (${currentRecipe.length} ingredientes)`;
+      
+      // Actualizar automáticamente el costo y peso del producto desde la base de datos
+      if (currentRecipe.length > 0 && totalCost > 0) {
+        setTimeout(async () => {
+          const costInput = document.getElementById('cost_price');
+          if (costInput && (!costInput.value || costInput.value === '0')) {
+            try {
+              const response = await fetch(`/api/calculate_product_cost.php?product_id=${productId}`);
+              const result = await response.json();
+              if (result.success && result.total_cost > 0) {
+                costInput.value = formatPrice(Math.round(result.total_cost));
+                costInput.style.background = '#f0f9ff';
+              }
+            } catch (error) {
+              console.log('Error auto-calculando costo:', error);
+            }
+          }
+          
+          // Auto-calcular peso también
+          updateProductWeightFromRecipe();
+        }, 500);
+      }
+    }
+    
+    window.addIngredientToRecipe = function() {
+      const ingredientId = document.getElementById('modalIngredientSelect').value;
+      const amount = parseFloat(document.getElementById('modalIngredientAmount').value);
+      const unit = document.getElementById('modalIngredientUnit').value;
+      
+      if (!ingredientId || !amount || amount <= 0) {
+        alert('Selecciona un ingrediente y especifica la cantidad');
+        return;
+      }
+      
+      const ingredient = allIngredients.find(i => i.id == ingredientId);
+      if (!ingredient) {
+        alert('Ingrediente no encontrado');
+        return;
+      }
+      
+      // Calcular costo según la unidad del ingrediente
+      let estimatedCost = 0;
+      
+      if (ingredient.unit === 'unidad') {
+        // Si el ingrediente se vende por unidad, usar directamente
+        estimatedCost = amount * (ingredient.cost_per_unit || 0);
+      } else {
+        // Para kg, litro, etc. convertir a la unidad base
+        let convertedAmount = amount;
+        if (unit === 'kg' && ingredient.unit === 'kg') convertedAmount = amount;
+        else if (unit === 'g' && ingredient.unit === 'kg') convertedAmount = amount / 1000;
+        else if (unit === 'ml' && ingredient.unit === 'litro') convertedAmount = amount / 1000;
+        else if (unit === 'l' && ingredient.unit === 'litro') convertedAmount = amount;
+        else if (unit === 'cucharada') convertedAmount = (amount * 15) / 1000; // 15g por cucharada, convertir a kg
+        else if (unit === 'taza') convertedAmount = (amount * 240) / 1000; // 240ml por taza, convertir a kg/litro
+        else convertedAmount = amount / 1000; // Por defecto asumir gramos a kg
+        
+        estimatedCost = convertedAmount * (ingredient.cost_per_unit || 0);
+      }
+      
+      const existingIndex = currentRecipe.findIndex(item => item.ingredient_id == ingredientId);
+      if (existingIndex >= 0) {
+        currentRecipe[existingIndex].quantity = amount;
+        currentRecipe[existingIndex].unit = unit;
+        currentRecipe[existingIndex].estimated_cost = estimatedCost;
+      } else {
+        currentRecipe.push({
+          ingredient_id: parseInt(ingredientId),
+          name: ingredient.name,
+          quantity: amount,
+          unit: unit,
+          estimated_cost: estimatedCost
+        });
+      }
+      
+      document.getElementById('modalIngredientSelect').value = '';
+      document.getElementById('modalIngredientAmount').value = '';
+      document.getElementById('modalIngredientUnit').value = 'g';
+      document.getElementById('ingredientCostPreview').style.display = 'none';
+      displayCurrentRecipeInModal();
+    };
+    
+    window.removeFromRecipeModal = function(index) {
+      if (confirm('¿Remover este ingrediente?')) {
+        currentRecipe.splice(index, 1);
+        displayCurrentRecipeInModal();
+      }
+    };
+    
+    window.saveRecipe = async function() {
+      try {
+        const response = await fetch('/api/save_product_recipe.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            product_id: productId,
+            ingredients: currentRecipe.map(item => ({
+              ingredient_id: item.ingredient_id,
+              quantity: item.quantity,
+              unit: item.unit || 'g'
+            }))
+          })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          alert('✅ Receta guardada correctamente');
+          updateProductCostFromRecipe(); // Actualizar costo automáticamente
+        } else {
+          alert('❌ Error: ' + result.error);
+        }
+      } catch (error) {
+        alert('❌ Error: ' + error.message);
+      }
+    };
+    
+    window.updateProductCostFromRecipe = async function() {
+      try {
+        const response = await fetch(`/api/calculate_product_cost.php?product_id=${productId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'update_product=1'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          if (result.total_cost > 0) {
+            const costInput = document.getElementById('cost_price');
+            costInput.value = formatPrice(Math.round(result.total_cost));
+            costInput.style.background = '#dcfce7';
+            costInput.style.border = '2px solid #22c55e';
+            
+            // Mostrar notificación detallada
+            const notification = document.createElement('div');
+            notification.innerHTML = `
+              💰 Costo actualizado: $${result.total_cost.toFixed(2)}<br>
+              <small>${result.ingredients_count} ingredientes calculados</small>
+            `;
+            notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #22c55e; color: white; padding: 12px 16px; border-radius: 6px; font-size: 14px; z-index: 9999; line-height: 1.4;';
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+              if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+              }
+              costInput.style.background = '#f0f9ff';
+              costInput.style.border = '1px solid #e5e5e5';
+            }, 4000);
+          } else {
+            alert('⚠️ ' + result.message);
+          }
+        } else {
+          alert('❌ Error: ' + result.error);
+        }
+      } catch (error) {
+        alert('❌ Error calculando costo: ' + error.message);
+      }
+    };
+    
+    // Función para calcular peso automáticamente desde la receta
+    window.updateProductWeightFromRecipe = function() {
+      if (!currentRecipe || currentRecipe.length === 0) {
+        return;
+      }
+      
+      let totalWeight = 0;
+      
+      currentRecipe.forEach(item => {
+        let weightInGrams = 0;
+        
+        // Convertir todas las unidades a gramos
+        switch(item.unit) {
+          case 'g':
+            weightInGrams = item.quantity;
+            break;
+          case 'kg':
+            weightInGrams = item.quantity * 1000;
+            break;
+          case 'ml':
+            weightInGrams = item.quantity; // Asumir densidad similar al agua
+            break;
+          case 'l':
+            weightInGrams = item.quantity * 1000;
+            break;
+          case 'unidad':
+            // Estimar peso por unidad según el tipo de ingrediente
+            const ingredientName = item.name.toLowerCase();
+            if (ingredientName.includes('pan') || ingredientName.includes('marraqueta')) {
+              weightInGrams = item.quantity * 80; // 80g por pan
+            } else if (ingredientName.includes('huevo')) {
+              weightInGrams = item.quantity * 60; // 60g por huevo
+            } else if (ingredientName.includes('tomate')) {
+              weightInGrams = item.quantity * 150; // 150g por tomate
+            } else if (ingredientName.includes('cebolla')) {
+              weightInGrams = item.quantity * 120; // 120g por cebolla
+            } else {
+              weightInGrams = item.quantity * 50; // 50g por defecto
+            }
+            break;
+          case 'cucharada':
+            weightInGrams = item.quantity * 15; // 15g por cucharada
+            break;
+          case 'taza':
+            weightInGrams = item.quantity * 240; // 240g por taza
+            break;
+          default:
+            weightInGrams = item.quantity; // Por defecto asumir gramos
+        }
+        
+        totalWeight += weightInGrams;
+      });
+      
+      // Actualizar el campo de peso
+      const weightInput = document.getElementById('grams');
+      if (weightInput && totalWeight > 0) {
+        weightInput.value = Math.round(totalWeight);
+        weightInput.style.background = '#dcfce7';
+        weightInput.style.border = '2px solid #22c55e';
+        
+        // Mostrar notificación
+        const notification = document.createElement('div');
+        notification.innerHTML = `
+          ⚖️ Peso calculado: ${Math.round(totalWeight)}g<br>
+          <small>Basado en ${currentRecipe.length} ingredientes</small>
+        `;
+        notification.style.cssText = 'position: fixed; top: 70px; right: 20px; background: #22c55e; color: white; padding: 12px 16px; border-radius: 6px; font-size: 14px; z-index: 9999; line-height: 1.4;';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification);
+          }
+          weightInput.style.background = '#f0f9ff';
+          weightInput.style.border = '1px solid #e5e5e5';
+        }, 4000);
+      }
+    };
+    
+    window.setupIngredients = async function() {
+      if (!confirm('¿Ejecutar setup inicial? Esto agregará 30 ingredientes básicos.')) return;
+      
+      try {
+        const response = await fetch('/api/setup_ingredients.php');
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('✅ ' + result.message);
+          loadIngredientsForModal();
+        } else {
+          alert('❌ Error: ' + result.error);
+        }
+      } catch (error) {
+        alert('❌ Error: ' + error.message);
+      }
+    };
+    
+    window.calculateRecipeCost = function() {
+      let totalCost = 0;
+      currentRecipe.forEach(item => {
+        totalCost += item.estimated_cost || 0;
+      });
+      alert(`📊 Cálculo de Costo de Receta:\n\nIngredientes: ${currentRecipe.length}\nCosto Total: $${totalCost.toFixed(2)}\n\nEste costo se basa en los precios de compra de los ingredientes.`);
+    };
+    
+    window.openNewIngredientModal = function() {
+      document.getElementById('ingredientModal').style.display = 'flex';
+    };
+    
+    window.copyRecipeFromProduct = async function() {
+      try {
+        // Cargar lista de productos
+        const response = await fetch('/api/get_productos.php');
+        const products = await response.json();
+        
+        if (!products || products.length === 0) {
+          alert('No hay productos disponibles');
+          return;
+        }
+        
+        // Filtrar productos que no sean el actual
+        const otherProducts = products.filter(p => p.id != productId);
+        
+        if (otherProducts.length === 0) {
+          alert('No hay otros productos para copiar recetas');
+          return;
+        }
+        
+        // Crear modal de selección
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1003;';
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = 'background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;';
+        
+        modalContent.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 18px; color: #0a0a0a;">📋 Copiar Receta de Otro Producto</h3>
+            <button onclick="closeCopyModal()" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 16px; cursor: pointer;">&times;</button>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Seleccionar Producto:</label>
+            <select id="productToCopy" style="width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+              <option value="">Seleccionar producto...</option>
+              ${otherProducts.map(p => `<option value="${p.id}">${p.name} (ID: ${p.id})</option>`).join('')}
+            </select>
+          </div>
+          
+          <div id="recipePreview" style="margin-bottom: 20px; padding: 16px; background: #f8f9fa; border-radius: 8px; display: none;">
+            <h4 style="margin-bottom: 12px; font-size: 16px;">Vista Previa de la Receta:</h4>
+            <div id="recipePreviewContent"></div>
+          </div>
+          
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button onclick="closeCopyModal()" style="padding: 10px 20px; background: #f5f5f5; border: 1px solid #e5e5e5; border-radius: 6px; cursor: pointer;">Cancelar</button>
+            <button onclick="confirmCopyRecipe()" style="padding: 10px 20px; background: #0a0a0a; color: white; border: none; border-radius: 6px; cursor: pointer;">📋 Copiar Receta</button>
+          </div>
+        `;
+        
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        // Configurar preview de receta
+        document.getElementById('productToCopy').addEventListener('change', async function() {
+          const selectedProductId = this.value;
+          if (!selectedProductId) {
+            document.getElementById('recipePreview').style.display = 'none';
+            return;
+          }
+          
+          try {
+            const recipeResponse = await fetch(`/api/get_product_recipe.php?product_id=${selectedProductId}`);
+            const recipe = await recipeResponse.json();
+            
+            const previewDiv = document.getElementById('recipePreviewContent');
+            const previewContainer = document.getElementById('recipePreview');
+            
+            if (recipe.length === 0) {
+              previewDiv.innerHTML = '<p style="color: #666;">Este producto no tiene receta configurada</p>';
+            } else {
+              const totalCost = recipe.reduce((sum, item) => sum + (item.estimated_cost || 0), 0);
+              previewDiv.innerHTML = `
+                <div style="margin-bottom: 12px; font-weight: 600; color: #22c55e;">Total: $${totalCost.toFixed(2)} (${recipe.length} ingredientes)</div>
+                ${recipe.map(item => `
+                  <div style="padding: 8px; background: white; border: 1px solid #e5e5e5; border-radius: 4px; margin-bottom: 4px; font-size: 14px;">
+                    <strong>${item.name}</strong> - ${item.quantity} ${item.unit} (• $${(item.estimated_cost || 0).toFixed(2)})
+                  </div>
+                `).join('')}
+              `;
+            }
+            
+            previewContainer.style.display = 'block';
+          } catch (error) {
+            console.error('Error cargando preview:', error);
+            document.getElementById('recipePreviewContent').innerHTML = '<p style="color: #ef4444;">Error cargando receta</p>';
+            document.getElementById('recipePreview').style.display = 'block';
+          }
+        });
+        
+        window.closeCopyModal = function() {
+          modal.remove();
+        };
+        
+        window.confirmCopyRecipe = async function() {
+          const selectedProductId = document.getElementById('productToCopy').value;
+          if (!selectedProductId) {
+            alert('Selecciona un producto');
+            return;
+          }
+          
+          try {
+            // Cargar receta del producto seleccionado
+            const recipeResponse = await fetch(`/api/get_product_recipe.php?product_id=${selectedProductId}`);
+            const recipe = await recipeResponse.json();
+            
+            if (recipe.length === 0) {
+              alert('El producto seleccionado no tiene receta');
+              return;
+            }
+            
+            // Confirmar acción
+            const productName = otherProducts.find(p => p.id == selectedProductId)?.name;
+            if (!confirm(`¿Copiar la receta de "${productName}" al producto actual?\n\nEsto reemplazará la receta actual (${currentRecipe.length} ingredientes) con ${recipe.length} ingredientes.`)) {
+              return;
+            }
+            
+            // Copiar receta al producto actual
+            currentRecipe = recipe.map(item => ({
+              ingredient_id: item.ingredient_id,
+              name: item.name,
+              quantity: item.quantity,
+              unit: item.unit,
+              estimated_cost: item.estimated_cost
+            }));
+            
+            // Actualizar vista
+            displayCurrentRecipeInModal();
+            
+            // Cerrar modal
+            modal.remove();
+            
+            alert(`✅ Receta copiada exitosamente de "${productName}"\n\n${recipe.length} ingredientes copiados. No olvides guardar la receta.`);
+            
+          } catch (error) {
+            alert('❌ Error copiando receta: ' + error.message);
+          }
+        };
+        
+      } catch (error) {
+        alert('❌ Error cargando productos: ' + error.message);
+      }
+    };
+    
+    // Preview de costo al seleccionar ingrediente
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(() => {
+        const ingredientSelect = document.getElementById('modalIngredientSelect');
+        const amountInput = document.getElementById('modalIngredientAmount');
+        const unitSelect = document.getElementById('modalIngredientUnit');
+        const preview = document.getElementById('ingredientCostPreview');
+        
+        function updateCostPreview() {
+          const ingredientId = document.getElementById('modalIngredientSelect')?.value;
+          const amount = parseFloat(document.getElementById('modalIngredientAmount')?.value) || 0;
+          const unit = document.getElementById('modalIngredientUnit')?.value || 'g';
+          
+          if (!ingredientId || amount <= 0) {
+            preview.style.display = 'none';
+            return;
+          }
+          
+          const ingredient = allIngredients.find(i => i.id == ingredientId);
+          if (!ingredient) return;
+          
+          // Calcular costo según la unidad del ingrediente
+          let estimatedCost = 0;
+          
+          if (ingredient.unit === 'unidad') {
+            // Si el ingrediente se vende por unidad, usar directamente
+            estimatedCost = amount * (ingredient.cost_per_unit || 0);
+          } else {
+            // Para kg, litro, etc. convertir a la unidad base
+            let convertedAmount = amount;
+            if (unit === 'kg' && ingredient.unit === 'kg') convertedAmount = amount;
+            else if (unit === 'g' && ingredient.unit === 'kg') convertedAmount = amount / 1000;
+            else if (unit === 'ml' && ingredient.unit === 'litro') convertedAmount = amount / 1000;
+            else if (unit === 'l' && ingredient.unit === 'litro') convertedAmount = amount;
+            else if (unit === 'cucharada') convertedAmount = (amount * 15) / 1000; // 15g por cucharada, convertir a kg
+            else if (unit === 'taza') convertedAmount = (amount * 240) / 1000; // 240ml por taza, convertir a kg/litro
+            else convertedAmount = amount / 1000; // Por defecto asumir gramos a kg
+            
+            estimatedCost = convertedAmount * (ingredient.cost_per_unit || 0);
+          }
+          
+          preview.innerHTML = `💰 Costo estimado: $${estimatedCost.toFixed(2)} (${ingredient.name})`;
+          preview.style.display = 'block';
+        }
+        
+        window.updateCostPreview = updateCostPreview;
+        
+        document.getElementById('modalIngredientAmount')?.addEventListener('input', updateCostPreview);
+        document.getElementById('modalIngredientUnit')?.addEventListener('change', updateCostPreview);
+      }, 1000);
+    });
+    
+    document.getElementById('showImagesBtn').addEventListener('click', showImagesPanel);
+    
+    // Mostrar panel de imágenes por defecto
+    showImagesPanel();
+    
+    // Cargar ingredientes disponibles
+    async function loadIngredients() {
+      try {
+        const response = await fetch('/api/get_ingredients.php');
+        const result = await response.json();
+        allIngredients = Array.isArray(result) ? result : [];
+        
+        console.log('Ingredientes cargados:', allIngredients.length);
+        
+        const select = document.getElementById('ingredientSelect');
+        select.innerHTML = '<option value="">Seleccionar ingrediente...</option>';
+        
+        if (allIngredients.length === 0) {
+          select.innerHTML += '<option value="" disabled>No hay ingredientes disponibles</option>';
+          return;
+        }
+        
+        allIngredients.forEach(ingredient => {
+          const option = document.createElement('option');
+          option.value = ingredient.id;
+          option.textContent = `${ingredient.name} (${ingredient.category || 'Sin categoría'})`;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error cargando ingredientes:', error);
+        allIngredients = [];
+        const select = document.getElementById('ingredientSelect');
+        select.innerHTML = '<option value="" disabled>Error cargando ingredientes</option>';
+      }
+    }
+    
+    // Cargar receta actual del producto
+    async function loadCurrentRecipe() {
+      try {
+        const response = await fetch(`/api/get_product_recipe.php?product_id=${productId}`);
+        currentRecipe = await response.json();
+        console.log('Receta cargada:', currentRecipe.length, 'ingredientes');
+        displayCurrentRecipe();
+      } catch (error) {
+        console.error('Error cargando receta:', error);
+        document.getElementById('currentRecipe').innerHTML = '<p style="color: #ef4444; font-size: 12px;">Error cargando receta</p>';
+      }
+    }
+    
+    // Mostrar receta actual
+    function displayCurrentRecipe() {
+      console.log('🍳 displayCurrentRecipe ejecutándose');
+      const container = document.getElementById('currentRecipe');
+      
+      if (!container) {
+        console.error('❌ Container currentRecipe no encontrado');
+        return;
+      }
+      
+      console.log('📝 Receta actual:', currentRecipe.length, 'ingredientes');
+      
+      if (currentRecipe.length === 0) {
+        const message = '<p style="color: #666; font-size: 12px; padding: 8px; background: #f8f9fa; border-radius: 4px;">Sin ingredientes en la receta. Agrega ingredientes usando el formulario de abajo.</p>';
+        container.innerHTML = message;
+        console.log('✅ Mensaje de receta vacía insertado');
+        return;
+      }
+      
+      let html = '';
+      let totalCost = 0;
+      currentRecipe.forEach((item, index) => {
+        const cost = item.estimated_cost || 0;
+        totalCost += cost;
+        html += `
+          <div class="recipe-item">
+            <div class="recipe-item-info">
+              <div class="recipe-item-name">${item.name}</div>
+              <div class="recipe-item-amount">${item.quantity}${item.unit} - $${cost.toFixed(2)}</div>
+            </div>
+            <div class="recipe-item-actions">
+              <button type="button" class="recipe-remove-btn" onclick="removeFromRecipe(${index})">×</button>
+            </div>
+          </div>
+        `;
+      });
+      
+      if (totalCost > 0) {
+        html += `<div style="margin-top: 12px; padding: 8px; background: #e8f5e8; border-radius: 4px; font-size: 12px; font-weight: 600;">Costo total estimado: $${totalCost.toFixed(2)}</div>`;
+      }
+      
+      container.innerHTML = html;
+      console.log('✅ HTML de receta insertado');
+    }
+    
+    // Agregar ingrediente a la receta
+    document.getElementById('addIngredientBtn').addEventListener('click', function() {
+      const ingredientId = document.getElementById('ingredientSelect').value;
+      const grams = parseFloat(document.getElementById('ingredientGrams').value);
+      
+      if (!ingredientId || !grams || grams <= 0) {
+        alert('Selecciona un ingrediente y especifica los gramos');
+        return;
+      }
+      
+      const ingredient = allIngredients.find(i => i.id == ingredientId);
+      if (!ingredient) {
+        alert('Ingrediente no encontrado');
+        return;
+      }
+      
+      // Verificar si ya existe en la receta
+      const existingIndex = currentRecipe.findIndex(item => item.ingredient_id == ingredientId);
+      if (existingIndex >= 0) {
+        // Actualizar cantidad existente
+        currentRecipe[existingIndex].quantity = grams;
+        currentRecipe[existingIndex].estimated_cost = (grams / 1000) * ingredient.cost_per_unit;
+      } else {
+        // Agregar nuevo ingrediente
+        currentRecipe.push({
+          ingredient_id: parseInt(ingredientId),
+          name: ingredient.name,
+          quantity: grams,
+          unit: 'g',
+          estimated_cost: (grams / 1000) * ingredient.cost_per_unit
+        });
+      }
+      
+      // Limpiar formulario
+      document.getElementById('ingredientSelect').value = '';
+      document.getElementById('ingredientGrams').value = '';
+      
+      displayCurrentRecipe();
+    });
+    
+    // Remover ingrediente de la receta
+    window.removeFromRecipe = function(index) {
+      if (confirm('¿Remover este ingrediente de la receta?')) {
+        currentRecipe.splice(index, 1);
+        displayCurrentRecipe();
+      }
+    };
+    
+    // Guardar receta
+    document.getElementById('saveRecipeBtn').addEventListener('click', async function() {
+      const btn = this;
+      btn.disabled = true;
+      btn.textContent = 'Guardando...';
+      
+      try {
+        const response = await fetch('/api/save_product_recipe.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            product_id: productId,
+            ingredients: currentRecipe.map(item => ({
+              ingredient_id: item.ingredient_id,
+              quantity: item.quantity,
+              unit: item.unit || 'g'
+            }))
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('✅ Receta guardada correctamente');
+        } else {
+          alert('❌ Error: ' + (result.error || 'Error desconocido'));
+        }
+      } catch (error) {
+        alert('❌ Error guardando receta: ' + error.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '💾 Guardar Receta';
+      }
+    });
+    
+    // Modal para nuevo ingrediente
+    document.getElementById('newIngredientBtn').addEventListener('click', function() {
+      document.getElementById('ingredientModal').style.display = 'flex';
+    });
+    
+    document.getElementById('refreshIngredientsBtn').addEventListener('click', loadIngredients);
+    
+    document.getElementById('setupIngredientsBtn').addEventListener('click', async function() {
+      if (!confirm('¿Ejecutar setup inicial de ingredientes? Esto agregará 30 ingredientes básicos.')) return;
+      
+      const btn = this;
+      btn.disabled = true;
+      btn.textContent = 'Configurando...';
+      
+      try {
+        const response = await fetch('/api/setup_ingredients.php');
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('✅ ' + result.message + '\nIngredientes: ' + result.ingredients_count);
+          loadIngredients();
+        } else {
+          alert('❌ Error: ' + result.error);
+        }
+      } catch (error) {
+        alert('❌ Error: ' + error.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '⚙️ Setup Inicial';
+      }
+    });
+    
+    window.closeIngredientModal = function() {
+      document.getElementById('ingredientModal').style.display = 'none';
+      document.getElementById('ingredientForm').reset();
+    };
+    
+    // Crear nuevo ingrediente
+    document.getElementById('ingredientForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = {
+        name: document.getElementById('newIngredientName').value,
+        category: document.getElementById('newIngredientCategory').value,
+        cost_per_unit: parseFloat(document.getElementById('newIngredientCost').value) || 0,
+        unit: document.getElementById('newIngredientUnit').value,
+        current_stock: 0,
+        min_stock_level: parseFloat(document.getElementById('newIngredientWeight').value) / 1000 || 1,
+        supplier: 'Manual'
+      };
+      
+      try {
+        const response = await fetch('/api/create_ingredient.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('✅ Ingrediente creado correctamente');
+          closeIngredientModal();
+          loadIngredientsForModal(); // Recargar lista en modal
+        } else {
+          alert('❌ Error: ' + result.error);
+        }
+      } catch (error) {
+        alert('❌ Error creando ingrediente: ' + error.message);
+      }
+    });
+    
+    // Función para actualizar color del estado
+    window.updateStatusColor = function(selectElement) {
+      if (!selectElement) return;
+      
+      console.log('Actualizando color del estado:', selectElement.value);
+      
+      if (selectElement.value === '1' || selectElement.value === 1) {
+        selectElement.style.background = '#dcfce7';
+        selectElement.style.color = '#166534';
+        selectElement.style.border = '1px solid #22c55e';
+      } else {
+        selectElement.style.background = '#fef2f2';
+        selectElement.style.color = '#dc2626';
+        selectElement.style.border = '1px solid #ef4444';
+      }
+    };
+    
+    // Función para cargar subcategorías en edición
+    async function loadSubcategoriesForEdit(categoryId, selectedSubcategoryId = null) {
+      const subcategorySelect = document.getElementById('subcategory_id');
+      
+      console.log('🔄 loadSubcategoriesForEdit - Categoría ID:', categoryId, 'Subcategoría seleccionada:', selectedSubcategoryId);
+      subcategorySelect.innerHTML = '<option value="">Cargando...</option>';
+      
+      if (!categoryId) {
+        subcategorySelect.innerHTML = '<option value="">Selecciona una categoría</option>';
+        console.log('⚠️ No hay categoría seleccionada');
+        return;
+      }
+      
+      try {
+        // Agregar timestamp para evitar caché
+        const url = `/api/get_subcategories.php?category_id=${categoryId}&t=${Date.now()}`;
+        console.log('📡 Haciendo petición a:', url);
+        
+        const response = await fetch(url);
+        console.log('📡 Respuesta HTTP:', response.status, response.statusText);
+        
+        if (!response.ok) {
+          throw new Error('HTTP ' + response.status);
+        }
+        
+        const data = await response.json();
+        console.log('📊 Datos recibidos:', data);
+        
+        subcategorySelect.innerHTML = '<option value="">Sin subcategoría</option>';
+        
+        if (data.success && data.subcategories && data.subcategories.length > 0) {
+          console.log('✅ Procesando', data.subcategories.length, 'subcategorías');
+          
+          data.subcategories.forEach(sub => {
+            const option = document.createElement('option');
+            option.value = sub.id;
+            option.textContent = sub.name;
+            if (selectedSubcategoryId && sub.id == selectedSubcategoryId) {
+              option.selected = true;
+              console.log('✅ Subcategoría seleccionada:', sub.name, '(ID:', sub.id + ')');
+            }
+            subcategorySelect.appendChild(option);
+            console.log('➕ Agregada subcategoría:', sub.name, '(ID:', sub.id + ')');
+          });
+          
+          console.log('✅ Subcategorías cargadas exitosamente:', data.subcategories.length);
+        } else {
+          console.log('⚠️ No hay subcategorías para la categoría', categoryId);
+          subcategorySelect.innerHTML = '<option value="">Sin subcategorías disponibles</option>';
+        }
+        
+      } catch (error) {
+        console.error('❌ Error cargando subcategorías:', error);
+        subcategorySelect.innerHTML = '<option value="">Error cargando</option>';
+      }
+    }
+    
+    // Función para actualizar subcategorías cuando cambia la categoría
+    window.updateSubcategoriesEdit = function() {
+      const categoryId = document.getElementById('category_id').value;
+      console.log('🔄 Actualizando subcategorías para categoría ID:', categoryId);
+      loadSubcategoriesForEdit(categoryId);
+    };
+    
+    // Funciones para combos
+    async function loadComboData() {
+      await loadAllProducts();
+      await loadCurrentComboItems();
+    }
+    
+    async function loadAllProducts() {
+      try {
+        const response = await fetch('/api/get_productos.php');
+        allProducts = await response.json();
+        
+        const select = document.getElementById('comboProductSelect');
+        select.innerHTML = '<option value="">Seleccionar producto...</option>';
+        
+        allProducts.forEach(product => {
+          if (product.id != productId) { // No incluir el producto actual
+            const option = document.createElement('option');
+            option.value = product.id;
+            option.textContent = `${product.name} - $${formatPrice(product.price)}`;
+            select.appendChild(option);
+          }
+        });
+      } catch (error) {
+        console.error('Error cargando productos:', error);
+      }
+    }
+    
+    async function loadCurrentComboItems() {
+      try {
+        const response = await fetch(`/api/get_combo_items.php?combo_id=${productId}`);
+        const result = await response.json();
+        
+        if (result.success) {
+          currentComboItems = result.items || [];
+        } else {
+          currentComboItems = [];
+        }
+        
+        displayCurrentComboItems();
+      } catch (error) {
+        console.error('Error cargando items del combo:', error);
+        currentComboItems = [];
+        displayCurrentComboItems();
+      }
+    }
+    
+    function displayCurrentComboItems() {
+      const container = document.getElementById('currentComboItems');
+      
+      if (currentComboItems.length === 0) {
+        container.innerHTML = '<p style="color: #666; font-size: 12px; padding: 8px; background: #f8f9fa; border-radius: 4px;">Sin productos en el combo. Agrega productos usando el formulario de abajo.</p>';
+        return;
+      }
+      
+      let html = '';
+      let totalCost = 0;
+      
+      currentComboItems.forEach((item, index) => {
+        const cost = parseFloat(item.product_price) * item.quantity;
+        totalCost += cost;
+        
+        html += `
+          <div class="recipe-item" style="margin-bottom: 8px;">
+            <div class="recipe-item-info">
+              <div class="recipe-item-name">${item.product_name}</div>
+              <div class="recipe-item-amount">
+                Cantidad: ${item.quantity} • Costo: $${formatPrice(cost)}
+                ${item.is_selectable ? ' • <span style="color: #0ea5e9; font-weight: 600;">Seleccionable</span>' : ''}
+                ${item.selection_group ? ` (${item.selection_group})` : ''}
+              </div>
+            </div>
+            <div class="recipe-item-actions">
+              <button type="button" class="recipe-remove-btn" onclick="removeComboItem(${index})">×</button>
+            </div>
+          </div>
+        `;
+      });
+      
+      if (totalCost > 0) {
+        html += `<div style="margin-top: 12px; padding: 8px; background: #e8f5e8; border-radius: 4px; font-size: 12px; font-weight: 600;">Costo total: $${formatPrice(totalCost)}</div>`;
+      }
+      
+      container.innerHTML = html;
+    }
+    
+    // Agregar producto al combo
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(() => {
+        const addBtn = document.getElementById('addComboProductBtn');
+        const selectableCheckbox = document.getElementById('isSelectableProduct');
+        const selectionGroupDiv = document.getElementById('selectionGroupDiv');
+        
+        if (selectableCheckbox) {
+          selectableCheckbox.addEventListener('change', function() {
+            selectionGroupDiv.style.display = this.checked ? 'block' : 'none';
+          });
+        }
+        
+        if (addBtn) {
+          addBtn.addEventListener('click', function() {
+            const productId = document.getElementById('comboProductSelect').value;
+            const quantity = parseInt(document.getElementById('comboProductQuantity').value) || 1;
+            const isSelectable = document.getElementById('isSelectableProduct').checked;
+            const selectionGroup = document.getElementById('selectionGroup').value;
+            
+            if (!productId) {
+              alert('Selecciona un producto');
+              return;
+            }
+            
+            const product = allProducts.find(p => p.id == productId);
+            if (!product) {
+              alert('Producto no encontrado');
+              return;
+            }
+            
+            // Verificar si ya existe
+            const existingIndex = currentComboItems.findIndex(item => item.product_id == productId);
+            if (existingIndex >= 0) {
+              currentComboItems[existingIndex].quantity = quantity;
+              currentComboItems[existingIndex].is_selectable = isSelectable;
+              currentComboItems[existingIndex].selection_group = selectionGroup;
+            } else {
+              currentComboItems.push({
+                product_id: parseInt(productId),
+                product_name: product.name,
+                product_price: product.price,
+                quantity: quantity,
+                is_selectable: isSelectable,
+                selection_group: selectionGroup
+              });
+            }
+            
+            // Limpiar formulario
+            document.getElementById('comboProductSelect').value = '';
+            document.getElementById('comboProductQuantity').value = '1';
+            document.getElementById('isSelectableProduct').checked = false;
+            document.getElementById('selectionGroup').value = '';
+            document.getElementById('selectionGroupDiv').style.display = 'none';
+            
+            displayCurrentComboItems();
+          });
+        }
+        
+        const saveComboBtn = document.getElementById('saveComboBtn');
+        if (saveComboBtn) {
+          saveComboBtn.addEventListener('click', saveCombo);
+        }
+      }, 1000);
+    });
+    
+    window.removeComboItem = function(index) {
+      if (confirm('¿Remover este producto del combo?')) {
+        currentComboItems.splice(index, 1);
+        displayCurrentComboItems();
+      }
+    };
+    
+    async function saveCombo() {
+      const btn = document.getElementById('saveComboBtn');
+      btn.disabled = true;
+      btn.textContent = 'Guardando...';
+      
+      try {
+        const response = await fetch('/api/save_combo.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            id: productId,
+            name: document.getElementById('name').value,
+            description: document.getElementById('description').value,
+            price: cleanPrice(document.getElementById('price').value),
+            image_url: currentProduct.image_url,
+            items: currentComboItems.map(item => ({
+              product_id: item.product_id,
+              quantity: item.quantity,
+              is_selectable: item.is_selectable ? 1 : 0,
+              selection_group: item.selection_group || null
+            }))
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('✅ Combo guardado correctamente');
+        } else {
+          alert('❌ Error: ' + result.error);
+        }
+      } catch (error) {
+        alert('❌ Error guardando combo: ' + error.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '💾 Guardar Combo';
+      }
+    }
+    
+    // Inicializar
+    loadProduct();
+  </script>
+  
+  <!-- Modal para ver imágenes -->
+  <div id="imageModal" class="modal" onclick="closeImageModal()">
+    <button class="modal-close" onclick="closeImageModal()">&times;</button>
+    <img id="modalImage" src="" alt="Imagen ampliada">
+  </div>
+  
+  <!-- Modal para gestionar ingredientes -->
+  <div id="ingredientsModal" class="ingredient-modal">
+    <div class="ingredient-modal-content" style="max-width: 1000px; max-height: 95vh; width: 95%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e5e5e5;">
+        <h3 style="font-size: 18px; color: #0a0a0a;">🥘 Gestionar Receta del Producto</h3>
+        <button type="button" onclick="closeIngredientsModal()" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 16px; cursor: pointer;">&times;</button>
+      </div>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+        <!-- Receta actual -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h4 style="font-size: 16px; color: #0a0a0a;">📝 Receta Actual</h4>
+            <div id="recipeCostSummary" style="font-size: 14px; font-weight: 600; color: #22c55e;"></div>
+          </div>
+          <div id="modalCurrentRecipe" style="min-height: 200px; max-height: 300px; overflow-y: auto; padding: 16px; background: #f8f9fa; border: 2px solid #e5e5e5; border-radius: 8px;">
+            <p style="color: #666; font-size: 14px; text-align: center; margin-top: 60px;">Cargando receta...</p>
+          </div>
+        </div>
+        
+        <!-- Agregar ingrediente -->
+        <div>
+          <h4 style="font-size: 16px; color: #0a0a0a; margin-bottom: 12px;">➕ Agregar Ingrediente</h4>
+          <div style="background: #ffffff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 16px;">
+            <div style="margin-bottom: 16px; position: relative;">
+              <label class="label" style="font-size: 14px; font-weight: 600;">Ingrediente *</label>
+              <input type="text" id="modalIngredientSearch" class="input" style="font-size: 14px; padding: 12px;" placeholder="Buscar ingrediente..." autocomplete="off">
+              <input type="hidden" id="modalIngredientSelect" value="">
+              <div id="ingredientDropdown" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e5e5e5; border-top: none; border-radius: 0 0 6px 6px; max-height: 200px; overflow-y: auto; z-index: 1002; display: none;"></div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+              <div>
+                <label class="label" style="font-size: 14px; font-weight: 600;">Cantidad *</label>
+                <input type="number" id="modalIngredientAmount" class="input" placeholder="0" min="0" step="0.1" style="font-size: 14px; padding: 12px;">
+              </div>
+              <div>
+                <label class="label" style="font-size: 14px; font-weight: 600;">Unidad</label>
+                <select id="modalIngredientUnit" class="input" style="font-size: 14px; padding: 12px;">
+                  <option value="g">Gramos (g)</option>
+                  <option value="kg">Kilogramos (kg)</option>
+                  <option value="ml">Mililitros (ml)</option>
+                  <option value="l">Litros (l)</option>
+                  <option value="unidad">Unidades</option>
+                  <option value="cucharada">Cucharadas</option>
+                  <option value="taza">Tazas</option>
+                </select>
+              </div>
+            </div>
+            
+            <div id="ingredientCostPreview" style="margin-bottom: 16px; padding: 8px; background: #f0f9ff; border-radius: 4px; font-size: 12px; color: #1d4ed8; display: none;"></div>
+            
+            <button type="button" class="btn btn-primary" onclick="addIngredientToRecipe()" style="width: 100%; font-size: 14px; padding: 12px;">
+              ➕ Agregar a la Receta
+            </button>
+          </div>
+          
+          <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" onclick="copyRecipeFromProduct()" class="btn btn-secondary" style="font-size: 12px; padding: 8px 12px;">
+              📋 Copiar Receta
+            </button>
+            <button type="button" onclick="setupIngredients()" class="btn btn-secondary" style="font-size: 12px; padding: 8px 12px;">
+              ⚙️ Setup Inicial
+            </button>
+            <button type="button" onclick="openNewIngredientModal()" class="btn btn-secondary" style="font-size: 12px; padding: 8px 12px;">
+              🍿 Nuevo Ingrediente
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Acciones principales -->
+      <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 16px; border-top: 2px solid #e5e5e5;">
+        <button type="button" onclick="calculateRecipeCost()" class="btn btn-secondary">📊 Calcular Costo</button>
+        <button type="button" onclick="updateProductCostFromRecipe()" class="btn btn-secondary">💰 Aplicar Costo</button>
+        <button type="button" onclick="updateProductWeightFromRecipe()" class="btn btn-secondary">⚖️ Calcular Peso</button>
+        <button type="button" onclick="saveRecipe()" class="btn btn-primary" style="font-size: 16px; padding: 12px 24px;">
+          💾 Guardar Receta
+        </button>
+        <button type="button" onclick="closeIngredientsModal()" class="btn btn-secondary">Cerrar</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modal para crear ingrediente -->
+  <div id="ingredientModal" class="ingredient-modal">
+    <div class="ingredient-modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3>Nuevo Ingrediente</h3>
+        <button type="button" onclick="closeIngredientModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+      </div>
+      <form id="ingredientForm">
+        <div class="ingredient-form-group">
+          <label class="label">Nombre *</label>
+          <input type="text" id="newIngredientName" class="input" required>
+        </div>
+        <div class="ingredient-form-grid">
+          <div class="ingredient-form-group">
+            <label class="label">Categoría</label>
+            <select id="newIngredientCategory" class="input">
+              <option value="Carnes">Carnes</option>
+              <option value="Panes">Panes</option>
+              <option value="Vegetales">Vegetales</option>
+              <option value="Lácteos">Lácteos</option>
+              <option value="Salsas">Salsas</option>
+              <option value="Embutidos">Embutidos</option>
+              <option value="Aves">Aves</option>
+              <option value="Pescados">Pescados</option>
+              <option value="Otros">Otros</option>
+            </select>
+          </div>
+          <div class="ingredient-form-group">
+            <label class="label">Costo Compra</label>
+            <input type="number" id="newIngredientCost" class="input" step="0.01" min="0">
+          </div>
+        </div>
+        <div class="ingredient-form-grid">
+          <div class="ingredient-form-group">
+            <label class="label">Unidad</label>
+            <select id="newIngredientUnit" class="input">
+              <option value="kg">Kilogramo (kg)</option>
+              <option value="unidad">Unidad</option>
+              <option value="litro">Litro</option>
+            </select>
+          </div>
+          <div class="ingredient-form-group">
+            <label class="label">Peso (gramos)</label>
+            <input type="number" id="newIngredientWeight" class="input" value="1000" min="1">
+          </div>
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px;">
+          <button type="button" onclick="closeIngredientModal()" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Crear Ingrediente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

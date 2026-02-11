@@ -1,0 +1,1059 @@
+---
+---
+
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🏆 Concurso EN VIVO - La Ruta 11</title>
+    <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo.png" />
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #0d1117 0%, #1a1a2e 100%); color: white; margin: 0; min-height: 100vh; }
+        .container { max-width: 100vw; margin: 0 auto; padding: 0 10px; }
+        .grid { display: grid; }
+        .grid-cols-1 { grid-template-columns: 1fr; }
+        .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+        .gap-8 { gap: 1rem; }
+        .gap-6 { gap: 0.75rem; }
+        .items-start { align-items: start; }
+        .justify-center { justify-content: center; }
+        .max-w-4xl { max-width: 56rem; }
+        .aspect-4-5 { aspect-ratio: 4/5; }
+        .object-cover { object-fit: cover; }
+        .w-24 { width: clamp(4rem, 8vw, 6rem); }
+        .h-30 { height: clamp(5rem, 10vw, 7.5rem); }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .aspect-video { aspect-ratio: 16/9; }
+        .flex-col { flex-direction: column; }
+        .p-4 { padding: 0.5rem; }
+        .p-8 { padding: clamp(1rem, 3vw, 2rem); }
+        .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .pb-2 { padding-bottom: 0.5rem; }
+        .pt-6 { padding-top: 1.5rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .mt-12 { margin-top: 3rem; }
+        .mt-24 { margin-top: 6rem; }
+        .mt-48 { margin-top: 12rem; }
+        .mt-72 { margin-top: 18rem; }
+        .text-center { text-align: center; }
+        .text-6xl { font-size: 3.75rem; }
+        .text-8xl { font-size: 6rem; }
+        .text-3xl { font-size: clamp(1.25rem, 4vw, 1.875rem); }
+        .text-2xl { font-size: clamp(1rem, 3vw, 1.5rem); }
+        .text-xl { font-size: clamp(0.875rem, 2.5vw, 1.25rem); }
+        .text-lg { font-size: clamp(0.75rem, 2vw, 1.125rem); }
+        .text-sm { font-size: 0.875rem; }
+        .font-black { font-weight: 900; }
+        .font-bold { font-weight: bold; }
+        .text-white { color: white; }
+        .text-yellow-400 { color: #fbbf24; }
+        .text-yellow-300 { color: #fcd34d; }
+        .text-orange-400 { color: #fb923c; }
+        .text-red-400 { color: #f87171; }
+        .text-gray-300 { color: #d1d5db; }
+        .text-gray-400 { color: #9ca3af; }
+        .text-gray-500 { color: #6b7280; }
+        .text-gray-700 { color: #374151; }
+        .text-gray-900 { color: #111827; }
+        .bg-red-600 { background: #dc2626; }
+        .bg-red-800 { background: #991b1b; }
+        .bg-gradient-to-r { background: linear-gradient(to right, var(--tw-gradient-stops)); }
+        .from-yellow-400 { --tw-gradient-from: #fbbf24; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(251, 191, 36, 0)); }
+        .via-orange-500 { --tw-gradient-stops: var(--tw-gradient-from), #f97316, var(--tw-gradient-to, rgba(249, 115, 22, 0)); }
+        .to-red-500 { --tw-gradient-to: #ef4444; }
+        .bg-gradient-to-br { background: linear-gradient(to bottom right, var(--tw-gradient-stops)); }
+        .to-yellow-600 { --tw-gradient-to: #d97706; }
+        .bg-clip-text { background-clip: text; -webkit-background-clip: text; }
+        .text-transparent { color: transparent; }
+        .border-b-4 { border-bottom: 4px solid; }
+        .border-t { border-top: 1px solid; }
+        .border-yellow-400 { border-color: #fbbf24; }
+        .border-yellow-300 { border-color: #fcd34d; }
+        .border-orange-400 { border-color: #fb923c; }
+        .border-red-400 { border-color: #f87171; }
+        .border-gray-700 { border-color: #374151; }
+        .rounded-full { border-radius: 9999px; }
+        .rounded-2xl { border-radius: 1rem; }
+        .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+        .space-y-6 > * + * { margin-top: 1.5rem; }
+        .space-y-8 > * + * { margin-top: 2rem; }
+        .inline-block { display: inline-block; }
+        .max-w-7xl { max-width: 80rem; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .min-h-screen { min-height: 100vh; }
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .participant-box { transition: all 0.3s ease; }
+        .winner { animation: winner-glow 2s infinite alternate; }
+        .live-match { animation: live-pulse 1.5s infinite; }
+        .match { transition: all 0.4s ease; animation: slideInUp 0.6s ease-out; }
+        .tournament-round { animation: fadeIn 0.8s ease-out; }
+        .participant-box:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        @keyframes winner-glow {
+            from { box-shadow: 0 0 20px #22c55e; }
+            to { box-shadow: 0 0 40px #22c55e, 0 0 60px #22c55e; }
+        }
+        @keyframes live-pulse {
+            0%, 100% { border-color: #ef4444; }
+            50% { border-color: #f97316; }
+        }
+        .champion-crown { animation: crown-bounce 2s infinite; }
+        @keyframes crown-bounce {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes newWinner {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1.05); }
+        }
+        /* Mobile First - Columna hasta 720px */
+        .lg\:flex-row { flex-direction: column; }
+        .lg\:w-1\/3, .lg\:w-2\/3 { width: 100%; }
+        
+        /* Desktop - Fila desde 721px */
+        @media (min-width: 721px) {
+            .lg\:flex-row { flex-direction: row; }
+            .lg\:w-1\/3 { width: 33.333333%; }
+            .lg\:w-2\/3 { width: 66.666667%; }
+        }
+        
+        @media (min-width: 1024px) {
+            .lg\:grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+            .lg\:grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+            .lg\:p-8 { padding: 2rem; }
+            .lg\:text-8xl { font-size: 6rem; }
+            .lg\:text-3xl { font-size: 1.875rem; }
+            .lg\:mt-24 { margin-top: 6rem; }
+            .lg\:mt-48 { margin-top: 12rem; }
+            .lg\:mt-72 { margin-top: 18rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container p-4">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex flex-col lg:flex-row items-center justify-center gap-2 lg:gap-4 mb-4">
+                <img src="https://laruta11-images.s3.amazonaws.com/menu/logo.png" alt="La Ruta 11" class="w-12 lg:w-20 h-12 lg:h-20 rounded-full">
+                <div class="flex flex-col lg:flex-row items-center gap-2 lg:gap-4">
+                    <h1 class="text-xl lg:text-6xl font-black bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent text-center">
+                        CONCURSO LA RUTA 11
+                    </h1>
+                    <div class="flex gap-1 items-center justify-center">
+                        <div id="live-status" class="inline-block px-2 py-1 bg-red-600 rounded-full text-xs font-bold animate-pulse" style="font-size: clamp(0.6rem, 1.5vw, 0.8rem);">
+                            🔴 EN VIVO
+                        </div>
+                        <div id="viewers-count" class="inline-block px-2 py-1 bg-blue-600 rounded-full text-xs font-bold" style="font-size: clamp(0.6rem, 1.5vw, 0.8rem);">
+                            👥 0 viendo
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center">
+                <div class="text-xl lg:text-4xl font-bold text-gray-300 mb-2">
+                    Primer lugar: $50.000 y un año de hamburguesas GRATIS
+                </div>
+                <div class="text-sm lg:text-lg font-semibold text-orange-400">
+                    El evento comienza en <span id="countdown-text" class="text-yellow-300 font-bold">--:--:--</span> en Tucapel 2645
+                </div>
+            </div>
+        </div>
+
+        <!-- Tournament Bracket -->
+        <div id="tournament-container" class="w-full mx-auto">
+            <div class="flex flex-col lg:flex-row gap-6">
+                
+                <!-- Video YouTube y Chat (Izquierda en desktop, arriba en móvil) -->
+                <div id="video-container" class="lg:w-1/3 w-full">
+                    <div class="bg-gray-800 rounded-xl p-4">
+                        <h3 class="text-xl font-bold text-center mb-4 text-red-400">
+                            📹 TRANSMISIÓN EN VIVO
+                        </h3>
+                        <div id="youtube-embed" class="aspect-video bg-gray-700 rounded-lg flex items-center justify-center">
+                            <span class="text-gray-500">Sin transmisión</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat en Vivo -->
+                    <div class="bg-gray-800 rounded-xl p-4 mt-4">
+                        <h3 class="text-lg font-bold text-center mb-4 text-blue-400">
+                            💬 CHAT EN VIVO
+                        </h3>
+                        <div id="chat-messages" class="bg-gray-900 rounded-lg p-3 h-64 overflow-y-auto mb-3">
+                            <div class="text-gray-500 text-sm text-center">No hay mensajes aún...</div>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" id="chat-input" placeholder="Escribe tu mensaje..." 
+                                   class="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm" 
+                                   maxlength="200">
+                            <button id="send-chat" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold">
+                                Enviar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Torneo (Derecha en desktop, abajo en móvil) -->
+                <div class="lg:w-2/3 w-full">
+            
+            <!-- Campeón -->
+            <div class="tournament-round text-center mb-12">
+                <h2 class="text-3xl font-bold text-center mb-6 text-yellow-300 border-b-4 border-yellow-300 pb-2">
+                    🏆 CAMPEÓN
+                </h2>
+                <div id="champion-container" class="text-center">
+                    <div class="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-2xl p-8 shadow-2xl inline-block">
+                        <div class="champion-crown text-6xl mb-4">👑</div>
+                        <div id="champion-name" class="text-2xl lg:text-3xl font-black text-gray-900">
+                            PENDIENTE
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Final -->
+            <div class="tournament-round text-center mb-12">
+                <h2 class="text-3xl font-bold text-center mb-6 text-red-400 border-b-4 border-red-400 pb-2">
+                    GRAN FINAL
+                </h2>
+                <div id="final-match" class="flex justify-center">
+                    <!-- Final match se carga aquí -->
+                </div>
+            </div>
+
+            <!-- Semifinales -->
+            <div class="tournament-round text-center mb-12">
+                <h2 class="text-3xl font-bold text-center mb-6 text-orange-400 border-b-4 border-orange-400 pb-2">
+                    SEMIFINALES
+                </h2>
+                <div id="semifinales-matches" class="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                    <!-- Matches se cargan aquí -->
+                </div>
+            </div>
+
+            <!-- Cuartos de Final -->
+            <div class="tournament-round text-center">
+                <h2 class="text-3xl font-bold text-center mb-6 text-yellow-400 border-b-4 border-yellow-400 pb-2">
+                    CUARTOS DE FINAL
+                </h2>
+                <div id="cuartos-matches" class="grid grid-cols-1 lg:grid-cols-4 gap-3">
+                    <!-- Matches se cargan aquí -->
+                </div>
+            </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="mt-12 pt-6 pb-4 border-t border-gray-700 bg-gray-900 w-full">
+        <div class="text-center">
+            <p class="text-gray-400 text-lg font-semibold">
+                Actualización en tiempo real
+            </p>
+            <p id="last-update" class="text-gray-500 text-sm mt-2">
+                Última actualización: --:--:--
+            </p>
+            
+            <!-- Redes Sociales -->
+            <div class="grid grid-cols-3 gap-3 max-w-2xl mx-auto mt-6">
+                <a href="https://wa.me/56936227422" target="_blank" class="flex items-center justify-center space-x-2 bg-green-500 text-white py-2 px-3 rounded-lg hover:bg-green-600 transition-all">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                    </svg>
+                    <span class="font-semibold text-sm">WhatsApp</span>
+                </a>
+                <a href="https://www.instagram.com/la_ruta_11/" target="_blank" class="flex items-center justify-center space-x-2 bg-pink-500 text-white py-2 px-3 rounded-lg hover:bg-pink-600 transition-all">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                    <span class="font-semibold text-sm">Instagram</span>
+                </a>
+                <a href="https://app.laruta11.cl/" target="_blank" class="flex items-center justify-center space-x-2 bg-orange-500 text-white py-2 px-3 rounded-lg hover:bg-orange-600 transition-all shadow-lg hover:shadow-orange-500/30">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 2v2h3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3V2h2v2h6V2h2zM4 9v11h16V9H4zm2-3v1h12V6H6z"/>
+                    </svg>
+                    <span class="font-semibold text-sm lg:hidden">APP</span>
+                    <span class="font-semibold text-sm hidden lg:inline">APP La Ruta 11</span>
+                </a>
+            </div>
+            <div class="grid grid-cols-3 gap-3 max-w-2xl mx-auto mt-3">
+                <a href="https://www.facebook.com/laruta11" target="_blank" class="flex items-center justify-center space-x-2 bg-blue-600 text-white py-2 px-3 rounded-lg hover:bg-blue-700 transition-all">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                    <span class="font-semibold text-sm">Facebook</span>
+                </a>
+                <a href="https://www.pedidosya.cl/restaurantes/arica/la-ruta-11-9e15d333-e6ed-43f3-ba76-8181ab740779-menu" target="_blank" class="flex items-center justify-center space-x-2 bg-red-500 text-white py-2 px-3 rounded-lg hover:bg-red-600 transition-all">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 7c0-1.1-.9-2-2-2h-3V3c0-.55-.45-1-1-1H8c-.55 0-1 .45-1 1v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h13c1.1 0 2-.9 2-2V7zM9 4h3v1H9V4zm8 14H4V8h13v10z"/>
+                    </svg>
+                    <span class="font-semibold text-sm">PedidosYa</span>
+                </a>
+                <a href="https://share.google/8HlQ1GTBb02RTSrlg" target="_blank" class="flex items-center justify-center space-x-2 bg-blue-500 text-white py-2 px-3 rounded-lg hover:bg-blue-600 transition-all">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                    </svg>
+                    <span class="font-semibold text-sm">Ubicación</span>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // @ts-nocheck
+        // Tipos de datos
+        interface Participant {
+            id: string;
+            name: string;
+            seed: number;
+            image_url?: string;
+        }
+
+        interface Match {
+            id: string;
+            p1: string;
+            p2: string;
+            winner: string | null;
+            status: 'pending' | 'live' | 'completed';
+        }
+
+        interface Round {
+            name: string;
+            matches: Match[];
+        }
+
+        interface TournamentData {
+            participants: Record<string, Participant>;
+            rounds: Round[];
+            champion: string | null;
+            status: string;
+        }
+
+        let tournamentData: TournamentData = {
+            participants: {},
+            rounds: [],
+            champion: null,
+            status: 'loading'
+        };
+
+        // Participantes dummy para testing
+        const DUMMY_PARTICIPANTS: Record<string, Participant> = {
+            'p1': { id: 'p1', name: 'Javier Pérez', seed: 1 },
+            'p2': { id: 'p2', name: 'Sofía Reyes', seed: 8 },
+            'p3': { id: 'p3', name: 'Miguel Soto', seed: 4 },
+            'p4': { id: 'p4', name: 'Laura Gómez', seed: 5 },
+            'p5': { id: 'p5', name: 'Ricardo Vidal', seed: 2 },
+            'p6': { id: 'p6', name: 'Andrea Díaz', seed: 7 },
+            'p7': { id: 'p7', name: 'Carlos Leal', seed: 3 },
+            'p8': { id: 'p8', name: 'Elena Rojas', seed: 6 }
+        };
+
+        // Estados de progresión para demo
+        const DEMO_STATES: TournamentData[] = [
+            {
+                participants: DUMMY_PARTICIPANTS,
+                rounds: [
+                    {
+                        name: 'Cuartos de Final',
+                        matches: [
+                            { id: 'm1', p1: 'p1', p2: 'p2', winner: null, status: 'pending' },
+                            { id: 'm2', p1: 'p3', p2: 'p4', winner: null, status: 'pending' },
+                            { id: 'm3', p1: 'p5', p2: 'p6', winner: null, status: 'pending' },
+                            { id: 'm4', p1: 'p7', p2: 'p8', winner: null, status: 'pending' }
+                        ]
+                    }
+                ],
+                champion: null,
+                status: 'active'
+            },
+            {
+                participants: DUMMY_PARTICIPANTS,
+                rounds: [
+                    {
+                        name: 'Cuartos de Final',
+                        matches: [
+                            { id: 'm1', p1: 'p1', p2: 'p2', winner: 'p1', status: 'completed' },
+                            { id: 'm2', p1: 'p3', p2: 'p4', winner: 'p4', status: 'completed' },
+                            { id: 'm3', p1: 'p5', p2: 'p6', winner: 'p5', status: 'live' },
+                            { id: 'm4', p1: 'p7', p2: 'p8', winner: null, status: 'pending' }
+                        ]
+                    }
+                ],
+                champion: null,
+                status: 'active'
+            },
+            {
+                participants: DUMMY_PARTICIPANTS,
+                rounds: [
+                    {
+                        name: 'Cuartos de Final',
+                        matches: [
+                            { id: 'm1', p1: 'p1', p2: 'p2', winner: 'p1', status: 'completed' },
+                            { id: 'm2', p1: 'p3', p2: 'p4', winner: 'p4', status: 'completed' },
+                            { id: 'm3', p1: 'p5', p2: 'p6', winner: 'p5', status: 'completed' },
+                            { id: 'm4', p1: 'p7', p2: 'p8', winner: 'p8', status: 'completed' }
+                        ]
+                    },
+                    {
+                        name: 'Semifinales',
+                        matches: [
+                            { id: 'm5', p1: 'p1', p2: 'p4', winner: null, status: 'live' },
+                            { id: 'm6', p1: 'p5', p2: 'p8', winner: null, status: 'pending' }
+                        ]
+                    }
+                ],
+                champion: null,
+                status: 'active'
+            },
+            {
+                participants: DUMMY_PARTICIPANTS,
+                rounds: [
+                    {
+                        name: 'Cuartos de Final',
+                        matches: [
+                            { id: 'm1', p1: 'p1', p2: 'p2', winner: 'p1', status: 'completed' },
+                            { id: 'm2', p1: 'p3', p2: 'p4', winner: 'p4', status: 'completed' },
+                            { id: 'm3', p1: 'p5', p2: 'p6', winner: 'p5', status: 'completed' },
+                            { id: 'm4', p1: 'p7', p2: 'p8', winner: 'p8', status: 'completed' }
+                        ]
+                    },
+                    {
+                        name: 'Semifinales',
+                        matches: [
+                            { id: 'm5', p1: 'p1', p2: 'p4', winner: 'p1', status: 'completed' },
+                            { id: 'm6', p1: 'p5', p2: 'p8', winner: 'p5', status: 'completed' }
+                        ]
+                    },
+                    {
+                        name: 'Final',
+                        matches: [
+                            { id: 'm7', p1: 'p1', p2: 'p5', winner: 'p5', status: 'completed' }
+                        ]
+                    }
+                ],
+                champion: 'p5',
+                status: 'completed'
+            }
+        ];
+
+        let currentDemoIndex = 0;
+        let isApiAvailable = false;
+
+        // Verificar si las APIs están disponibles
+        async function checkApiAvailability(): Promise<boolean> {
+            // En desarrollo local, usar siempre modo demo por simplicidad
+            const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            
+            if (isDev) {
+                console.log('🎮 Modo desarrollo detectado - Usando datos demo');
+                return false;
+            }
+            
+            // En producción, intentar conectar a las APIs
+            try {
+                const response = await fetch('/api/test_connection.php?t=' + Date.now(), {
+                    method: 'GET'
+                });
+                return response.ok;
+            } catch (error) {
+                console.log('📡 APIs no disponibles, usando modo demo');
+                return false;
+            }
+        }
+
+        // Variables globales para likes
+        let participantLikes = {};
+        let userLikes = {};
+        
+        // Crear elemento de participante
+        function createParticipantBox(participantId: string, winnerId: string | null, isLive: boolean): string {
+            const participant = tournamentData.participants[participantId];
+            
+            if (!participant) {
+                return `<div class="participant-box bg-gray-800 border-2 border-gray-700 rounded-xl p-4 text-center text-gray-500 italic flex flex-col items-center">
+                    <div class="w-24 h-30 bg-gray-700 rounded-lg mb-3 flex items-center justify-center">
+                        <span class="text-gray-500 text-sm">Sin foto</span>
+                    </div>
+                    <div>[TBA]</div>
+                </div>`;
+            }
+
+            const isWinner = winnerId === participantId;
+            const isLoser = winnerId && winnerId !== participantId;
+            
+            let classes = 'participant-box border-2 rounded-xl p-2 text-center font-bold text-sm transition-all duration-300 flex flex-col items-center min-w-0 flex-1';
+            
+            if (isWinner) {
+                classes += ' bg-green-600 border-green-400 text-white winner scale-105';
+            } else if (isLoser) {
+                classes += ' bg-gray-700 border-gray-600 text-gray-400 opacity-50';
+            } else if (isLive) {
+                classes += ' bg-blue-900 border-blue-400 text-white live-match';
+            } else {
+                classes += ' bg-gray-800 border-gray-600 text-gray-200';
+            }
+
+            const nameStyle = isLoser ? 'line-through' : '';
+            const imageHtml = participant.image_url ? 
+                `<img src="${participant.image_url}" class="w-24 h-30 object-cover rounded-lg mb-3" alt="${participant.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` +
+                `<div class="w-24 h-30 bg-gray-700 rounded-lg mb-3 flex items-center justify-content-center" style="display: none;"><span class="text-gray-500 text-xs">👤</span></div>` :
+                `<div class="w-24 h-30 bg-gray-700 rounded-lg mb-3 flex items-center justify-center"><span class="text-gray-500 text-xs">👤</span></div>`;
+
+            const likes = participantLikes[participantId] || 0;
+            const hasLiked = userLikes[participantId] || false;
+            const likeButtonClass = hasLiked ? 'bg-red-500 text-white' : 'bg-gray-600 text-gray-300 hover:bg-red-500 hover:text-white';
+            
+            return `<div class="${classes}">
+                ${imageHtml}
+                <div class="${nameStyle}">${participant.name.split(' ')[0]}</div>
+                <button onclick="likeParticipant('${participantId}')" class="${likeButtonClass} px-2 py-1 rounded-full text-xs mt-2 transition-all duration-200 cursor-pointer">
+                    ❤️ ${likes}
+                </button>
+                ${isWinner ? '<div class="text-xs bg-yellow-500 text-black px-2 py-1 rounded-full mt-1 font-bold">GANADOR</div>' : ''}
+                ${isLive ? '<div class="text-sm bg-red-600 px-2 py-1 rounded-full mt-1 animate-pulse">EN VIVO</div>' : ''}
+            </div>`;
+        }
+
+        // Crear match
+        function createMatch(match: Match): string {
+            const isLive = match.status === 'live';
+            const matchClasses = isLive ? 'live-match border-4 border-red-500' : 'border-2 border-gray-700';
+            
+            return `<div class="match bg-gray-800 rounded-xl p-3 ${matchClasses} max-w-full hover:bg-gray-700">
+                <div class="flex items-center justify-center gap-2 min-w-0">
+                    ${createParticipantBox(match.p1, match.winner, isLive)}
+                    <div class="text-center text-xl font-black text-gray-500 px-1 flex-shrink-0">VS</div>
+                    ${createParticipantBox(match.p2, match.winner, isLive)}
+                </div>
+                ${isLive ? '<div class="text-center mt-4 text-red-400 font-bold animate-pulse">🔴 COMBATE EN CURSO</div>' : ''}
+            </div>`;
+        }
+
+        // Renderizar torneo
+        function renderTournament(): void {
+            const cuartosContainer = document.getElementById('cuartos-matches');
+            const semifinalesContainer = document.getElementById('semifinales-matches');
+            const finalContainer = document.getElementById('final-match');
+            const championContainer = document.getElementById('champion-name');
+
+            // Verificar que los contenedores existan
+            if (!cuartosContainer || !semifinalesContainer || !finalContainer || !championContainer) {
+                console.error('No se encontraron los contenedores necesarios');
+                return;
+            }
+
+            // Limpiar contenedores
+            cuartosContainer.innerHTML = '';
+            semifinalesContainer.innerHTML = '';
+            finalContainer.innerHTML = '';
+
+            // Renderizar rondas
+            tournamentData.rounds.forEach(round => {
+                if (round.name === 'Cuartos de Final') {
+                    cuartosContainer.innerHTML = round.matches.map(createMatch).join('');
+                } else if (round.name === 'Semifinales') {
+                    semifinalesContainer.innerHTML = round.matches.map(createMatch).join('');
+                } else if (round.name === 'Final') {
+                    finalContainer.innerHTML = round.matches.map(createMatch).join('');
+                }
+            });
+
+            // Renderizar campeón
+            if (tournamentData.champion) {
+                const champion = tournamentData.participants[tournamentData.champion];
+                championContainer.textContent = champion ? champion.name.split(' ')[0] : 'CAMPEÓN';
+                const parentElement = championContainer.parentElement;
+                if (parentElement) {
+                    parentElement.classList.add('winner');
+                }
+            } else {
+                championContainer.textContent = 'PENDIENTE';
+                const parentElement = championContainer.parentElement;
+                if (parentElement) {
+                    parentElement.classList.remove('winner');
+                }
+            }
+
+            // Actualizar timestamp
+            const lastUpdateEl = document.getElementById('last-update');
+            if (lastUpdateEl) {
+                lastUpdateEl.textContent = `Última actualización: ${new Date().toLocaleTimeString()}`;
+            }
+        }
+
+        // Fetch datos del torneo desde API
+        async function fetchTournamentData(): Promise<void> {
+            // Si las APIs no están disponibles, usar datos demo directamente
+            if (!isApiAvailable) {
+                const demoData = DEMO_STATES[currentDemoIndex];
+                currentDemoIndex = (currentDemoIndex + 1) % DEMO_STATES.length;
+                tournamentData = demoData;
+                renderTournament();
+                return;
+            }
+            
+            try {
+                // Detectar entorno y usar ruta correcta
+                const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const apiUrl = isDev ? 'http://localhost/ruta11app/api/get_concurso_live.php' : '/api/get_concurso_live.php';
+                
+                // Obtener estado del torneo
+                const tournamentResponse = await fetch(apiUrl + '?t=' + Date.now());
+                
+                if (!tournamentResponse.ok) {
+                    throw new Error(`HTTP ${tournamentResponse.status}: ${tournamentResponse.statusText}`);
+                }
+                
+                const adminData = await tournamentResponse.json();
+                
+                if (adminData && adminData.participants && adminData.matches) {
+                    // Convertir formato admin a formato live
+                    const participants: Record<string, Participant> = {};
+                    adminData.participants.forEach((p: any) => {
+                        participants[p.id] = { 
+                            id: p.id, 
+                            name: p.name, 
+                            seed: p.seed, 
+                            image_url: p.image_url 
+                        };
+                    });
+                    
+                    // Organizar matches por rondas
+                    const rounds: Round[] = [];
+                    const cuartos = adminData.matches.filter((m: any) => m.id.startsWith('Q'));
+                    const semis = adminData.matches.filter((m: any) => m.id.startsWith('S'));
+                    const final = adminData.matches.filter((m: any) => m.id.startsWith('F'));
+                    
+                    if (cuartos.length > 0) {
+                        rounds.push({
+                            name: 'Cuartos de Final',
+                            matches: cuartos.map((m: any) => ({
+                                id: m.id,
+                                p1: m.p1.id,
+                                p2: m.p2.id,
+                                winner: m.winner ? m.winner.id : null,
+                                status: m.status === 'completed' ? 'completed' : 'pending'
+                            }))
+                        });
+                    }
+                    
+                    if (semis.length > 0) {
+                        rounds.push({
+                            name: 'Semifinales',
+                            matches: semis.map((m: any) => ({
+                                id: m.id,
+                                p1: m.p1.id,
+                                p2: m.p2.id,
+                                winner: m.winner ? m.winner.id : null,
+                                status: m.status === 'completed' ? 'completed' : 'pending'
+                            }))
+                        });
+                    }
+                    
+                    if (final.length > 0) {
+                        rounds.push({
+                            name: 'Final',
+                            matches: final.map((m: any) => ({
+                                id: m.id,
+                                p1: m.p1.id,
+                                p2: m.p2.id,
+                                winner: m.winner ? m.winner.id : null,
+                                status: m.status === 'completed' ? 'completed' : 'pending'
+                            }))
+                        });
+                    }
+                    
+                    // Encontrar campeón
+                    const champion = adminData.participants.find((p: any) => p.status === 'champion');
+                    
+                    tournamentData = {
+                        participants,
+                        rounds,
+                        champion: champion ? champion.id : null,
+                        status: adminData.status
+                    };
+                } else {
+                    // Usar datos demo si no hay datos reales
+                    const demoData = DEMO_STATES[currentDemoIndex];
+                    currentDemoIndex = (currentDemoIndex + 1) % DEMO_STATES.length;
+                    tournamentData = demoData;
+                }
+                
+                renderTournament();
+                
+            } catch (error) {
+                console.error('Error fetching tournament data:', error);
+                
+                // En desarrollo, usar datos demo si la API falla
+                const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                if (isDev) {
+                    console.log('🎮 Usando datos demo para desarrollo');
+                    const demoData = DEMO_STATES[currentDemoIndex];
+                    currentDemoIndex = (currentDemoIndex + 1) % DEMO_STATES.length;
+                    tournamentData = demoData;
+                    renderTournament();
+                    
+                    const liveStatusEl = document.getElementById('live-status');
+                    if (liveStatusEl) {
+                        liveStatusEl.textContent = '🎮 MODO DEMO';
+                        liveStatusEl.className = 'inline-block px-2 py-1 bg-blue-600 rounded-full text-xs font-bold animate-pulse';
+                        liveStatusEl.style.fontSize = 'clamp(0.6rem, 1.5vw, 0.8rem)';
+                    }
+                } else {
+                    const liveStatusEl = document.getElementById('live-status');
+                    if (liveStatusEl) {
+                        liveStatusEl.textContent = '❌ ERROR CONEXIÓN';
+                        liveStatusEl.className = 'inline-block px-2 py-1 bg-red-800 rounded-full text-xs font-bold';
+                        liveStatusEl.style.fontSize = 'clamp(0.6rem, 1.5vw, 0.8rem)';
+                    }
+                }
+            }
+        }
+
+        // Cargar video de YouTube
+        let currentVideoUrl = '';
+        async function loadYouTubeVideo(): Promise<void> {
+            try {
+                const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const apiUrl = isDev ? 'http://localhost/ruta11app/api/get_youtube_live.php' : '/api/get_youtube_live.php';
+                
+                const response = await fetch(apiUrl + '?t=' + Date.now());
+                const result = await response.json();
+                
+                const embedContainer = document.getElementById('youtube-embed');
+                if (result.success && result.embed_url && embedContainer) {
+                    // Solo actualizar si la URL cambió
+                    if (currentVideoUrl !== result.embed_url) {
+                        currentVideoUrl = result.embed_url;
+                        embedContainer.innerHTML = `<iframe 
+                            src="${result.embed_url}?autoplay=1&mute=1" 
+                            class="w-full h-full rounded-lg" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading YouTube video:', error);
+                const embedContainer = document.getElementById('youtube-embed');
+                if (embedContainer) {
+                    embedContainer.innerHTML = '<span class="text-gray-500">Video no disponible en modo desarrollo</span>';
+                }
+            }
+        }
+        
+        // Cargar mensajes del chat
+        async function loadChatMessages(): Promise<void> {
+            try {
+                const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const apiUrl = isDev ? 'http://localhost/ruta11app/api/get_chat_messages.php' : '/api/get_chat_messages.php';
+                
+                const response = await fetch(apiUrl + '?t=' + Date.now());
+                const result = await response.json();
+                
+                const chatContainer = document.getElementById('chat-messages');
+                if (result.success && result.messages && chatContainer) {
+                    if (result.messages.length === 0) {
+                        chatContainer.innerHTML = '<div class="text-gray-500 text-sm text-center">No hay mensajes aún...</div>';
+                    } else {
+                        chatContainer.innerHTML = result.messages.map((msg: any) => {
+                            // Convertir UTC a hora de Chile (restar 3 horas)
+                            const [hours, minutes, seconds] = msg.timestamp.split(':');
+                            let chileHour = parseInt(hours) - 3;
+                            if (chileHour < 0) chileHour += 24;
+                            const localTime = `${chileHour.toString().padStart(2, '0')}:${minutes}:${seconds}`;
+                            
+                            return `<div class="mb-2 p-2 bg-gray-800 rounded text-sm">
+                                <span class="font-bold text-blue-400">${msg.username}:</span>
+                                <span class="text-gray-200">${msg.message}</span>
+                                <div class="text-xs text-gray-500 mt-1">${localTime}</div>
+                            </div>`;
+                        }).join('');
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading chat messages:', error);
+                const chatContainer = document.getElementById('chat-messages');
+                if (chatContainer) {
+                    chatContainer.innerHTML = '<div class="text-gray-500 text-sm text-center">Chat no disponible en modo desarrollo</div>';
+                }
+            }
+        }
+        
+        // Enviar mensaje al chat
+        async function sendChatMessage(message: string): Promise<void> {
+            if (!message.trim()) return;
+            
+            try {
+                const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const apiUrl = isDev ? 'http://localhost/ruta11app/api/send_chat_message.php' : '/api/send_chat_message.php';
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        username: 'Anónimo',
+                        message: message.trim()
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    const chatInput = document.getElementById('chat-input') as HTMLInputElement;
+                    if (chatInput) chatInput.value = '';
+                    loadChatMessages(); // Recargar mensajes
+                }
+            } catch (error) {
+                console.error('Error sending chat message:', error);
+                alert('Chat no disponible en modo desarrollo');
+            }
+        }
+        
+        // Sistema de conteo de viewers
+        let viewerId = localStorage.getItem('viewer_id') || null;
+        
+        async function trackViewer() {
+            if (!isApiAvailable) return;
+            
+            try {
+                const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const apiUrl = isDev ? 'http://localhost/ruta11app/api/track_viewer.php' : '/api/track_viewer.php';
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({viewer_id: viewerId})
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    viewerId = result.viewer_id;
+                    localStorage.setItem('viewer_id', viewerId);
+                    updateViewersCount(result.active_viewers);
+                }
+            } catch (error) {
+                console.error('Error tracking viewer:', error);
+            }
+        }
+        
+        async function getViewersCount() {
+            if (!isApiAvailable) {
+                updateViewersCount(Math.floor(Math.random() * 50) + 10); // Demo: 10-60 viewers
+                return;
+            }
+            
+            try {
+                const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const apiUrl = isDev ? 'http://localhost/ruta11app/api/get_viewers_count.php' : '/api/get_viewers_count.php';
+                
+                const response = await fetch(apiUrl + '?t=' + Date.now());
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateViewersCount(result.active_viewers);
+                }
+            } catch (error) {
+                console.error('Error getting viewers count:', error);
+            }
+        }
+        
+        function updateViewersCount(count) {
+            const viewersEl = document.getElementById('viewers-count');
+            if (viewersEl) {
+                viewersEl.textContent = `👥 ${count} viendo`;
+            }
+        }
+        
+        // Sistema de likes
+        async function likeParticipant(participantId) {
+            if (!viewerId) {
+                alert('Error: No se pudo identificar el usuario');
+                return;
+            }
+            
+            try {
+                const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const apiUrl = isDev ? 'http://localhost/ruta11app/api/like_participant.php' : '/api/like_participant.php';
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        participant_id: participantId,
+                        viewer_id: viewerId
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    participantLikes[participantId] = result.likes;
+                    userLikes[participantId] = result.action === 'added';
+                    renderTournament(); // Re-renderizar para actualizar botones
+                }
+            } catch (error) {
+                console.error('Error liking participant:', error);
+            }
+        }
+        
+        async function loadParticipantLikes() {
+            try {
+                const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const apiUrl = isDev ? 'http://localhost/ruta11app/api/get_participant_likes.php' : '/api/get_participant_likes.php';
+                
+                const response = await fetch(apiUrl + '?viewer_id=' + (viewerId || '') + '&t=' + Date.now());
+                const result = await response.json();
+                
+                if (result.success) {
+                    participantLikes = result.likes;
+                    userLikes = result.user_likes;
+                }
+            } catch (error) {
+                console.error('Error loading likes:', error);
+            }
+        }
+        
+        // Sistema de countdown
+        function updateCountdown() {
+            const now = new Date();
+            // Convertir a hora de Chile (UTC-3)
+            const chileTime = new Date(now.getTime() - (3 * 60 * 60 * 1000));
+            
+            // Fecha objetivo: 11 de octubre 2025, 19:00 Chile
+            const targetDate = new Date('2025-10-11T19:00:00-03:00');
+            
+            const diff = targetDate.getTime() - now.getTime();
+            
+            const countdownEl = document.getElementById('countdown-text');
+            if (!countdownEl) return;
+            
+            if (diff <= 0) {
+                countdownEl.textContent = '🏆 ¡YA COMENZÓ!';
+                countdownEl.className = 'text-green-400 font-bold animate-pulse';
+                return;
+            }
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            let countdownText = '';
+            if (days > 0) {
+                countdownText = `${days}d ${hours}h ${minutes}m`;
+            } else if (hours > 0) {
+                countdownText = `${hours}h ${minutes}m ${seconds}s`;
+            } else {
+                countdownText = `${minutes}m ${seconds}s`;
+            }
+            
+            countdownEl.textContent = countdownText;
+        }
+        
+        // Hacer función global
+        window.likeParticipant = likeParticipant;
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Verificar disponibilidad de APIs
+            isApiAvailable = await checkApiAvailability();
+            
+            // Configurar estado inicial
+            const liveStatusEl = document.getElementById('live-status');
+            if (liveStatusEl) {
+                if (isApiAvailable) {
+                    liveStatusEl.textContent = '🔴 EN VIVO';
+                    liveStatusEl.className = 'inline-block px-2 py-1 bg-red-600 rounded-full text-xs font-bold animate-pulse';
+                    liveStatusEl.style.fontSize = 'clamp(0.6rem, 1.5vw, 0.8rem)';
+                } else {
+                    liveStatusEl.textContent = '🎮 MODO DEMO';
+                    liveStatusEl.className = 'inline-block px-2 py-1 bg-blue-600 rounded-full text-xs font-bold animate-pulse';
+                    liveStatusEl.style.fontSize = 'clamp(0.6rem, 1.5vw, 0.8rem)';
+                }
+            }
+            
+            // Cargar datos iniciales
+            fetchTournamentData();
+            
+            if (isApiAvailable) {
+                loadYouTubeVideo();
+                loadChatMessages();
+            } else {
+                // Configurar placeholders para modo demo
+                const embedContainer = document.getElementById('youtube-embed');
+                if (embedContainer) {
+                    embedContainer.innerHTML = '<span class="text-gray-500">Video no disponible en modo demo</span>';
+                }
+                
+                const chatContainer = document.getElementById('chat-messages');
+                if (chatContainer) {
+                    chatContainer.innerHTML = '<div class="text-gray-500 text-sm text-center">Chat no disponible en modo demo</div>';
+                }
+            }
+            
+            // Eventos del chat (solo si APIs disponibles)
+            if (isApiAvailable) {
+                const sendButton = document.getElementById('send-chat');
+                const chatInput = document.getElementById('chat-input') as HTMLInputElement;
+                
+                if (sendButton && chatInput) {
+                    sendButton.addEventListener('click', () => {
+                        sendChatMessage(chatInput.value);
+                    });
+                    
+                    chatInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            sendChatMessage(chatInput.value);
+                        }
+                    });
+                }
+            }
+            
+            // Configurar polling
+            setInterval(fetchTournamentData, isApiAvailable ? 1000 : 3000); // Más lento en demo
+            
+            if (isApiAvailable) {
+                setInterval(loadYouTubeVideo, 60000); // Video cada 60 segundos
+                setInterval(loadChatMessages, 3000); // Chat cada 3 segundos
+                setInterval(trackViewer, 15000); // Track viewer cada 15 segundos
+                setInterval(getViewersCount, 5000); // Actualizar conteo cada 5 segundos
+                setInterval(loadParticipantLikes, 10000); // Actualizar likes cada 10 segundos
+                
+                // Track inicial
+                trackViewer();
+                loadParticipantLikes();
+            } else {
+                setInterval(getViewersCount, 3000); // Demo viewers cada 3 segundos
+                getViewersCount(); // Inicial
+                
+                // Demo likes
+                participantLikes = {'p1': 15, 'p2': 8, 'p3': 23, 'p4': 12, 'p5': 31, 'p6': 7, 'p7': 19, 'p8': 14};
+            }
+            
+            // Iniciar countdown
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+            
+            console.log(`🏆 Monitor de concurso iniciado - ${isApiAvailable ? 'Modo API' : 'Modo Demo'}`);
+        });
+    </script>
+</body>
+</html>

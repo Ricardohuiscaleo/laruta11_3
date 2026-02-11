@@ -1,0 +1,284 @@
+---
+export function getStaticPaths() {
+  // Solo generar 1 página que maneja todos los IDs dinámicamente
+  return [
+    { params: { id: 'dynamic' } }
+  ];
+}
+---
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/icon.png">
+    <title>Detalle Candidato - Jobs Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <button onclick="history.back()" class="p-2 hover:bg-gray-100 rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <img src="/icon.png" alt="La Ruta 11" class="w-8 h-8">
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-bold text-gray-900">Detalle del Candidato</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6 max-w-6xl">
+        
+        <!-- Loading -->
+        <div id="loading" class="text-center py-16">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p class="mt-2 text-gray-600">Cargando datos del candidato...</p>
+        </div>
+
+        <!-- Error -->
+        <div id="error" class="hidden text-center py-16">
+            <div class="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
+                <h2 class="text-lg font-semibold text-red-800 mb-2">Error</h2>
+                <p id="error-message" class="text-red-600"></p>
+                <button onclick="history.back()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                    Volver
+                </button>
+            </div>
+        </div>
+
+        <!-- Candidate Details -->
+        <div id="candidate-details" class="hidden space-y-6">
+            
+            <!-- Ficha Personal Principal -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                    <h2 class="text-xl font-bold text-white">Ficha del Candidato</h2>
+                </div>
+                <div class="p-4 sm:p-6">
+                    <!-- Sección 1: Datos de Contacto -->
+                    <div class="mb-6 sm:mb-8">
+                        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 border-b pb-2">1. Datos de Contacto</h3>
+                        
+                        <!-- Header compacto con foto y nombre -->
+                        <div class="flex items-center gap-3 sm:gap-4 mb-4">
+                            <img id="candidate-photo" src="" alt="Foto de perfil" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-gray-200 flex-shrink-0">
+                            <div class="min-w-0 flex-1">
+                                <h4 id="candidate-name" class="font-bold text-gray-900 mb-1 line-clamp-1" style="font-size: clamp(1.125rem, 2.5vw, 1.25rem);"></h4>
+                                <p id="candidate-position" class="text-blue-600 font-medium line-clamp-1" style="font-size: clamp(0.875rem, 2vw, 1rem);"></p>
+                            </div>
+                        </div>
+                        
+                        <!-- Grid compacto de datos -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <label class="font-medium text-gray-500 uppercase block mb-1" style="font-size: clamp(0.625rem, 1.5vw, 0.75rem);">Email</label>
+                                <p id="candidate-email" class="font-medium text-gray-900 line-clamp-1" style="font-size: clamp(0.75rem, 2vw, 0.875rem);"></p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <label class="font-medium text-gray-500 uppercase block mb-1" style="font-size: clamp(0.625rem, 1.5vw, 0.75rem);">Teléfono</label>
+                                <a id="candidate-phone" href="" class="font-medium text-blue-600 hover:text-blue-800 block line-clamp-1" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">
+                                    <span id="phone-text"></span>
+                                </a>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <label class="font-medium text-gray-500 uppercase block mb-1" style="font-size: clamp(0.625rem, 1.5vw, 0.75rem);">Instagram</label>
+                                <a id="candidate-instagram" href="" target="_blank" class="hidden font-medium text-pink-600 hover:text-pink-800 line-clamp-1" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">
+                                    @<span id="instagram-text"></span>
+                                </a>
+                                <p id="no-instagram" class="text-gray-400" style="font-size: clamp(0.75rem, 2vw, 0.875rem);">No proporcionado</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <label class="font-medium text-gray-500 uppercase block mb-1" style="font-size: clamp(0.625rem, 1.5vw, 0.75rem);">Nacionalidad</label>
+                                <p id="candidate-nationality" class="font-medium text-gray-900 line-clamp-1" style="font-size: clamp(0.75rem, 2vw, 0.875rem);"></p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <label class="font-medium text-gray-500 uppercase block mb-1" style="font-size: clamp(0.625rem, 1.5vw, 0.75rem);">Género</label>
+                                <p id="candidate-gender" class="font-medium text-gray-900" style="font-size: clamp(0.75rem, 2vw, 0.875rem);"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección 2: Requisitos Legales -->
+                    <div class="mb-6 sm:mb-8">
+                        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 border-b pb-2">2. Requisitos Legales</h3>
+                        <div id="requisitos-legales-ficha" class="grid grid-cols-1 gap-2 sm:gap-3">
+                            <!-- Se llenará dinámicamente -->
+                        </div>
+                    </div>
+                    
+                    <!-- Sección 3: Cursos -->
+                    <div class="mb-6 sm:mb-8">
+                        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 border-b pb-2">3. Cursos por Posición</h3>
+                        <div class="space-y-3">
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <label class="text-xs sm:text-sm font-medium text-gray-700 block mb-2">Manipulador de Alimentos</label>
+                                <div id="curso-manipulador-ficha">
+                                    <span class="text-xs text-gray-500">Cargando...</span>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <label class="text-xs sm:text-sm font-medium text-gray-700 block mb-2">Curso de Cajero</label>
+                                <div id="curso-cajero-ficha">
+                                    <span class="text-xs text-gray-500">Cargando...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección 4: Datos Técnicos -->
+                    <div class="mb-4 sm:mb-6">
+                        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 border-b pb-2">4. Datos Técnicos</h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+                            <div class="bg-gray-50 p-2 sm:p-3 rounded">
+                                <label class="text-xs text-gray-500 uppercase block mb-1">ID</label>
+                                <p id="tech-id-ficha" class="text-xs font-medium text-gray-900 line-clamp-1"></p>
+                            </div>
+                            <div class="bg-gray-50 p-2 sm:p-3 rounded">
+                                <label class="text-xs text-gray-500 uppercase block mb-1">User ID</label>
+                                <p id="tech-user-id-ficha" class="text-xs font-medium text-gray-900"></p>
+                            </div>
+                            <div class="bg-gray-50 p-2 sm:p-3 rounded">
+                                <label class="text-xs text-gray-500 uppercase block mb-1">Estado</label>
+                                <p id="tech-status-ficha" class="text-xs font-medium text-gray-900 line-clamp-1"></p>
+                            </div>
+                            <div class="bg-gray-50 p-2 sm:p-3 rounded">
+                                <label class="text-xs text-gray-500 uppercase block mb-1">Intentos</label>
+                                <p id="tech-attempts-ficha" class="text-xs font-medium text-gray-900"></p>
+                            </div>
+                            <div class="bg-gray-50 p-2 sm:p-3 rounded sm:col-span-2">
+                                <label class="text-xs text-gray-500 uppercase block mb-1">Creado</label>
+                                <p id="tech-created-ficha" class="text-xs font-medium text-gray-900 line-clamp-1"></p>
+                            </div>
+                            <div class="bg-gray-50 p-2 sm:p-3 rounded sm:col-span-2">
+                                <label class="text-xs text-gray-500 uppercase block mb-1">Tiempo</label>
+                                <p id="tech-time-elapsed-ficha" class="text-xs font-medium text-gray-900"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Score destacado -->
+                    <div class="bg-blue-50 p-4 sm:p-6 rounded-lg text-center">
+                        <div id="candidate-score" class="font-bold text-blue-600 mb-2" style="font-size: clamp(2.5rem, 8vw, 3rem);"></div>
+                        <p class="text-blue-700 font-medium mb-2" style="font-size: clamp(1rem, 3vw, 1.125rem);">Mejor Score Obtenido</p>
+                        <div id="candidate-attempts" class="text-gray-600 mt-2" style="font-size: clamp(0.875rem, 2.5vw, 0.875rem);"></div>
+                        <div class="text-gray-600 mt-1" style="font-size: clamp(0.875rem, 2.5vw, 0.875rem);">
+                            <span>Último intento: </span><span id="last-attempt-ficha"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de Cursos y Estado -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="font-semibold text-gray-900 mb-4 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Cursos Completados
+                    </h3>
+                    <div id="cursos-container" class="space-y-3">
+                        <div id="curso-manipulador" class="hidden items-center p-2 bg-green-50 rounded">
+                            <svg class="w-4 h-4 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="text-sm font-medium text-green-800">Manipulador de Alimentos</span>
+                        </div>
+                        <div id="curso-cajero" class="hidden items-center p-2 bg-green-50 rounded">
+                            <svg class="w-4 h-4 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="text-sm font-medium text-green-800">Curso de Cajero</span>
+                        </div>
+                        <div id="no-cursos" class="text-sm text-gray-500 italic">No ha completado cursos aún</div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="font-semibold text-gray-900 mb-4 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        Estado Actual
+                    </h3>
+                    <div id="candidate-status" class="mb-3"></div>
+                    <div class="text-sm text-gray-600 space-y-1">
+                        <div><strong>Último intento:</strong> <span id="last-attempt"></span></div>
+                        <div id="completed-date" class="hidden"><strong>Completado:</strong> <span id="completed-at"></span></div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="font-semibold text-gray-900 mb-4 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v6a2 2 0 002 2h2m0 0h2a2 2 0 002-2V7a2 2 0 00-2-2H9m0 0V3m0 2v2m0-2h2a2 2 0 012 2v6a2 2 0 01-2 2H9"></path>
+                        </svg>
+                        Análisis de Palabras Clave
+                    </h3>
+                    <div id="keyword-analysis" class="text-xs text-gray-600 max-h-32 overflow-y-auto">
+                        <p class="text-sm text-gray-500 italic">No disponible</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attempts History -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Historial de Intentos</h3>
+                </div>
+                <div id="attempts-list" class="divide-y divide-gray-200">
+                    <!-- Attempts will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Requisitos Legales - OCULTO (ya está en ficha) -->
+            <div id="requisitos-section" class="bg-white rounded-lg shadow hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Requisitos Legales</h3>
+                </div>
+                <div id="requisitos-legales" class="p-6">
+                    <!-- Requisitos will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Datos Técnicos - OCULTO (ya está en ficha) -->
+            <div class="bg-white rounded-lg shadow hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Datos Técnicos</h3>
+                </div>
+                <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div><strong>ID:</strong> <span id="tech-id"></span></div>
+                    <div><strong>User ID:</strong> <span id="tech-user-id"></span></div>
+                    <div><strong>Posición:</strong> <span id="tech-position"></span></div>
+                    <div><strong>Creado:</strong> <span id="tech-created"></span></div>
+                    <div><strong>Actualizado:</strong> <span id="tech-updated"></span></div>
+                    <div><strong>Completado:</strong> <span id="tech-completed"></span></div>
+                    <div><strong>Tiempo Total:</strong> <span id="tech-time-elapsed"></span></div>
+                    <div><strong>Total Intentos:</strong> <span id="tech-attempts"></span></div>
+                    <div><strong>Estado:</strong> <span id="tech-status"></span></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="/js/candidate-detail.js" is:inline></script>
+</body>
+</html>

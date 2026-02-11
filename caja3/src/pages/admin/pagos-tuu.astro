@@ -1,0 +1,1366 @@
+---
+---
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pagos - Admin La Ruta 11</title>
+  <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo.png" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #0a0a0a; line-height: 1.6; }
+    .header { background: #ffffff; border-bottom: 1px solid #e5e5e5; padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+    .page-title { font-size: 20px; font-weight: 600; color: #0a0a0a; }
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+    .btn { padding: 8px 16px; border-radius: 6px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: #0a0a0a; color: #ffffff; }
+    .btn-primary:hover { background: #333; }
+    .btn-secondary { background: #f5f5f5; color: #0a0a0a; }
+    .btn-secondary:hover { background: #e5e5e5; }
+    .btn-success { background: #10b981; color: #ffffff; }
+    .btn-success:hover { background: #059669; }
+    .btn-danger { background: #dc2626; color: #ffffff; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .container { max-width: 1600px; margin: 0 auto; padding: 16px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 32px; }
+    .stat-card { background: #ffffff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 24px; }
+    .stat-value { font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 700; color: #0a0a0a; margin-bottom: 4px; }
+    .stat-label { font-size: clamp(0.75rem, 2vw, 0.875rem); color: #666; }
+    .card { background: #ffffff; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
+    .card-header { padding: 24px; border-bottom: 1px solid #e5e5e5; }
+    .card-title { font-size: 16px; font-weight: 600; color: #0a0a0a; }
+    .card-content { padding: 24px; }
+    .toolbar { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+    .tuu-filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tuu-select, .tuu-search { padding: 8px; border: 1px solid #e5e5e5; border-radius: 4px; font-size: 14px; }
+    .tuu-search { min-width: 200px; }
+    .table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .table th { text-align: left; padding: 12px; font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e5e5; }
+    .table td { padding: 12px; border-bottom: 1px solid #f5f5f5; }
+    .table tr:hover { background: #fafafa; }
+    .orders-list { display: flex; flex-direction: column; gap: 12px; }
+
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="header">
+    <h1 class="page-title" style="display: flex; align-items: center; gap: 8px;"><i data-lucide="credit-card"></i> Pagos</h1>
+  </div>
+  
+  <div class="container">
+
+    <!-- Resumen General -->
+    <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 24px;">
+      <div class="stat-card">
+        <div class="stat-value" id="tuu-total-sales" style="color: #059669;">$0</div>
+        <div class="stat-label" style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+          <span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="dollar-sign" style="width: 14px; height: 14px;"></i> Ventas (sin delivery)</span>
+          <span id="tuu-delivery-discount" style="font-size: 10px; color: #f59e0b; font-weight: 500;"></span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="tuu-total-cost" style="color: #dc2626;">$0</div>
+        <div class="stat-label" style="display: flex; align-items: center; gap: 4px;"><i data-lucide="package" style="width: 14px; height: 14px;"></i> Costo Total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="tuu-total-profit" style="color: #0284c7;">$0</div>
+        <div class="stat-label" style="display: flex; align-items: center; gap: 4px;"><i data-lucide="trending-up" style="width: 14px; height: 14px;"></i> Utilidad Total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="tuu-transactions-count">0</div>
+        <div class="stat-label" id="tuu-transactions-label" style="display: flex; align-items: center; gap: 4px;"><i data-lucide="receipt" style="width: 14px; height: 14px;"></i> Pedidos</div>
+      </div>
+    </div>
+    
+    <!-- Desglose por Método de Pago -->
+    <div class="card" style="margin-bottom: 32px;">
+      <button onclick="togglePaymentMethods()" class="card-header" style="width: 100%; text-align: left; cursor: pointer; background: none; border: none; padding: 24px; border-bottom: 1px solid #e5e5e5; display: flex; justify-content: space-between; align-items: center;">
+        <h2 class="card-title" style="display: flex; align-items: center; gap: 8px;"><i data-lucide="credit-card"></i> Desglose por Método de Pago</h2>
+        <span id="payment-methods-toggle" style="font-size: 20px;">▶</span>
+      </button>
+      <div class="card-content" id="payment-methods-content" style="display: none;">
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));" id="payment-methods-grid">
+          <!-- Se llenará dinámicamente -->
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <div class="toolbar">
+          <h2 class="card-title">Reportes de Pagos Multicanal</h2>
+          <div style="padding: 4px 10px; background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 10px; color: #666; display: flex; align-items: center; gap: 6px;">
+            <span style="display: inline-block; width: 6px; height: 6px; background: #10b981; border-radius: 50%;"></span>
+            <span id="tuu-last-update">-</span>
+          </div>
+          <div style="font-size: 11px; color: #999; display: flex; align-items: center; gap: 4px;">
+            <span style="display: inline-block; width: 6px; height: 6px; background: #10b981; border-radius: 50%;"></span>
+            <span id="tuu-last-update">-</span>
+          </div>
+          <div class="tuu-filters">
+            <select id="tuu-period" onchange="loadTUUReports()" class="tuu-select">
+              <option value="all" selected>Todo el Periodo</option>
+              <option value="shift_today">🕐 Turno Hoy (17:30-04:00)</option>
+              <option value="shift_select">📅 Seleccionar Turno</option>
+              <option value="today">Hoy (Calendario)</option>
+              <option value="week">Esta Semana</option>
+              <option value="month">Este Mes</option>
+            </select>
+            <select id="tuu-shift-selector" onchange="loadShiftData()" class="tuu-select" style="display: none;">
+              <option value="">Seleccionar turno...</option>
+            </select>
+            <select id="tuu-filter-type" onchange="filterTUUTransactions()" class="tuu-select">
+              <option value="all">Todos</option>
+              <option value="pos">Solo POS</option>
+              <option value="online">Solo Online</option>
+              <option value="app">Solo APP</option>
+            </select>
+            <input type="text" id="tuu-search" placeholder="Buscar..." onkeyup="filterTUUTransactions()" class="tuu-search">
+            <button class="btn btn-primary" onclick="loadTUUReports()" style="display: flex; align-items: center; gap: 6px;"><i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Actualizar</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-content">
+        <div id="tuu-loading" style="text-align: center; padding: 40px; color: #666;">Cargando reportes...</div>
+        <div id="tuu-error" style="display: none; text-align: center; padding: 40px; color: #ef4444;"></div>
+        <div id="tuu-content" style="display: none;">
+          <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+            <div id="tuu-showing-info" style="font-size: 14px; color: #666;">Mostrando 0 de 0 transacciones</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button id="tuu-prev-btn" onclick="changeTUUPage(-1)" class="btn btn-secondary" disabled>← Anterior</button>
+              <span id="tuu-page-info" style="font-size: 14px; color: #666;">Página 1 de 1</span>
+              <button id="tuu-next-btn" onclick="changeTUUPage(1)" class="btn btn-secondary" disabled>Siguiente →</button>
+            </div>
+          </div>
+          <div id="orders-list-container" class="orders-list" style="display: none;"></div>
+          <div class="table-container" id="table-view">
+            <table class="table" id="tuuTable">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>ID Venta</th>
+                  <th>Cliente</th>
+                  <th>Monto Neto</th>
+                  <th>Delivery</th>
+                  <th>Método Pago</th>
+                  <th>Estado</th>
+                  <th>Medio</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // @ts-nocheck
+    // Declaraciones de tipo para TypeScript
+    declare global {
+      interface Window {
+        manualSync: () => void;
+        fullSync: () => void;
+        loadTUUReports: () => void;
+        loadShiftData: () => void;
+        filterTUUTransactions: () => void;
+        changeTUUPage: (direction: number) => void;
+        viewTransaction: (transaction: any) => void;
+      }
+    }
+    
+    // Variables globales
+    let tuuAllTransactions = [];
+    let tuuFilteredTransactions = [];
+    let tuuCurrentPage = 1;
+    const tuuItemsPerPage = 100;
+    let autoReloadInterval;
+    let isLoadingData = false;
+    let lastRenderedHTML = '';
+    
+    // Auto-reload en tiempo real (cada 5 segundos)
+    function startAutoReload() {
+      autoReloadInterval = setInterval(() => {
+        if (!isLoadingData) {
+          window.loadTUUReports();
+        }
+      }, 5000);
+    }
+    
+    window.loadTUUReports = function() {
+      if (isLoadingData) return;
+      isLoadingData = true;
+      
+      const loadingEl = document.getElementById('tuu-loading');
+      const errorEl = document.getElementById('tuu-error');
+      const contentEl = document.getElementById('tuu-content');
+      const periodEl = document.getElementById('tuu-period') as HTMLSelectElement;
+      
+      // Solo mostrar loading en la primera carga
+      const isFirstLoad = !contentEl || contentEl.style.display === 'none';
+      if (isFirstLoad) {
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (errorEl) errorEl.style.display = 'none';
+        if (contentEl) contentEl.style.display = 'none';
+      }
+      
+      // Calcular fechas según periodo
+      const today = new Date();
+      let startDate, endDate;
+      let periodLabel = 'Este Mes';
+      
+      if (periodEl) {
+        const period = periodEl.value;
+        const shiftSelectorEl = document.getElementById('tuu-shift-selector') as HTMLSelectElement;
+        
+        // Mostrar/ocultar selector de turnos
+        if (period === 'shift_select') {
+          if (shiftSelectorEl) {
+            shiftSelectorEl.style.display = 'inline-block';
+            populateShiftSelector();
+          }
+          isLoadingData = false;
+          return;
+        } else {
+          if (shiftSelectorEl) shiftSelectorEl.style.display = 'none';
+        }
+        
+        endDate = today.toISOString().split('T')[0];
+        
+        switch(period) {
+          case 'shift_today':
+            const currentHour = today.getHours();
+            let shiftStartDate = new Date(today);
+            if (currentHour >= 0 && currentHour < 4) {
+              shiftStartDate.setDate(shiftStartDate.getDate() - 1);
+            }
+            const shiftDateStr = shiftStartDate.toISOString().split('T')[0];
+            
+            // Usar API de turnos
+            const nextDay = new Date(shiftStartDate);
+            nextDay.setDate(nextDay.getDate() + 1);
+            const endDateStr = nextDay.toISOString().split('T')[0];
+            
+            fetch(`/api/tuu/get_shift_transactions.php?shift_date=${shiftDateStr}&t=` + Date.now())
+              .then(r => r.ok ? r.json() : Promise.reject('HTTP ' + r.status))
+              .then(data => {
+                isLoadingData = false;
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (data.success && data.data) {
+                  processShiftData(data, shiftDateStr, endDateStr);
+                  if (contentEl) contentEl.style.display = 'block';
+                } else {
+                  if (errorEl) {
+                    errorEl.textContent = 'Error: ' + (data.error || 'No se pudieron cargar los reportes');
+                    errorEl.style.display = 'block';
+                  }
+                }
+              })
+              .catch(error => {
+                console.error('Error:', error);
+                isLoadingData = false;
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (errorEl) {
+                  errorEl.textContent = 'Error de conexión: ' + error;
+                  errorEl.style.display = 'block';
+                }
+              });
+            return;
+          case 'today':
+            startDate = endDate;
+            periodLabel = 'Hoy';
+            break;
+          case 'week':
+            const weekAgo = new Date(today);
+            weekAgo.setDate(today.getDate() - 7);
+            startDate = weekAgo.toISOString().split('T')[0];
+            periodLabel = 'Esta Semana';
+            break;
+          case 'month':
+            const startOfMonth = new Date(today);
+            startOfMonth.setDate(1);
+            startDate = startOfMonth.toISOString().split('T')[0];
+            periodLabel = 'Este Mes';
+            break;
+          case 'all':
+          default:
+            startDate = '2024-01-01';
+            periodLabel = 'Todo el Periodo';
+            break;
+        }
+      } else {
+        startDate = '2024-01-01';
+        endDate = today.toISOString().split('T')[0];
+      }
+      
+      fetch(`/api/tuu/get_from_mysql.php?start_date=${startDate}&end_date=${endDate}&t=` + Date.now())
+        .then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(data => {
+          console.log('TUU Data:', data);
+          isLoadingData = false;
+          if (loadingEl && isFirstLoad) loadingEl.style.display = 'none';
+          
+          if (data.success && data.data) {
+            const stats = data.data.combined_stats;
+            tuuAllTransactions = data.data.all_transactions || [];
+            
+            console.log('Total transacciones:', tuuAllTransactions.length);
+            console.log('Debug info:', data.data.debug);
+            
+            // Calcular totales y desglose por método de pago
+            const paymentMethods = {
+              'card': { icon: 'credit-card', label: 'Tarjetas', sales: 0, cost: 0, orders: 0 },
+              'transfer': { icon: 'landmark', label: 'Transfer', sales: 0, cost: 0, orders: 0 },
+              'cash': { icon: 'banknote', label: 'Efectivo', sales: 0, cost: 0, orders: 0 },
+              'webpay': { icon: 'credit-card', label: 'Webpay', sales: 0, cost: 0, orders: 0 },
+              'pedidosya': { icon: 'bike', label: 'PedidosYA', sales: 0, cost: 0, orders: 0 },
+              'rl6_credit': { icon: 'credit-card', label: 'Crédito RL6', sales: 0, cost: 0, orders: 0 }
+            };
+            
+            let totalCost = 0;
+            let totalDeliveryFee = 0;
+            
+            tuuAllTransactions.forEach(t => {
+              const method = t.payment_method || 'cash';
+              const amount = parseFloat(t.amount || 0);
+              const deliveryFee = parseFloat(t.delivery_fee || 0);
+              const netAmount = amount - deliveryFee;
+              
+              // Calcular costo real desde items
+              let realCost = 0;
+              if (t.items && t.items.length > 0) {
+                t.items.forEach(item => {
+                  realCost += parseFloat(item.item_cost || 0) * parseFloat(item.quantity || 1);
+                });
+              } else {
+                realCost = netAmount * 0.35; // Fallback 35%
+              }
+              
+              if (paymentMethods[method]) {
+                paymentMethods[method].sales += netAmount;
+                paymentMethods[method].cost += realCost;
+                paymentMethods[method].orders += 1;
+              }
+              
+              totalCost += realCost;
+              totalDeliveryFee += deliveryFee;
+            });
+            
+            const totalSales = stats.total_revenue || 0;
+            const totalSalesNet = totalSales - totalDeliveryFee;
+            const totalProfit = totalSalesNet - totalCost;
+            
+            // Actualizar estadísticas generales
+            const totalSalesEl = document.getElementById('tuu-total-sales');
+            const deliveryDiscountEl = document.getElementById('tuu-delivery-discount');
+            const totalCostEl = document.getElementById('tuu-total-cost');
+            const totalProfitEl = document.getElementById('tuu-total-profit');
+            const transactionsCountEl = document.getElementById('tuu-transactions-count');
+            const lastUpdateEl = document.getElementById('tuu-last-update');
+            
+            if (totalSalesEl) totalSalesEl.textContent = '$' + new Intl.NumberFormat('es-CL').format(totalSalesNet);
+            if (deliveryDiscountEl) {
+              if (totalDeliveryFee > 0) {
+                deliveryDiscountEl.textContent = `(-$${new Intl.NumberFormat('es-CL').format(totalDeliveryFee)} delivery)`;
+              } else {
+                deliveryDiscountEl.textContent = '';
+              }
+            }
+            if (totalCostEl) totalCostEl.textContent = '$' + new Intl.NumberFormat('es-CL', {maximumFractionDigits: 0}).format(totalCost);
+            if (totalProfitEl) totalProfitEl.textContent = '$' + new Intl.NumberFormat('es-CL', {maximumFractionDigits: 0}).format(totalProfit);
+            if (transactionsCountEl) {
+              const totalOrders = stats.total_transactions || 0;
+              transactionsCountEl.textContent = totalOrders;
+              const labelEl = document.getElementById('tuu-transactions-label');
+              if (labelEl && totalOrders > 0 && tuuAllTransactions.length > 0) {
+                const dates = tuuAllTransactions.map(t => new Date(t.created_at || t.payment_date_time).getTime());
+                const minDate = Math.min(...dates);
+                const maxDate = Math.max(...dates);
+                const daysDiff = Math.max(1, Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24)) + 1);
+                const ordersPerDay = (totalOrders / daysDiff).toFixed(1);
+                labelEl.innerHTML = `<i data-lucide="receipt" style="width: 14px; height: 14px;"></i> ${totalOrders} / ${daysDiff}d = ${ordersPerDay}/día`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+              }
+            }
+            if (lastUpdateEl) {
+              const now = new Date();
+              lastUpdateEl.textContent = now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            }
+            
+            // Renderizar desglose por método de pago
+            const paymentMethodsGrid = document.getElementById('payment-methods-grid');
+            if (paymentMethodsGrid) {
+              paymentMethodsGrid.innerHTML = Object.entries(paymentMethods).map(([key, data]) => {
+                const profit = data.sales - data.cost;
+                const profitPercent = data.sales > 0 ? ((profit / data.sales) * 100).toFixed(1) : 0;
+                return `
+                  <div class="stat-card" style="border-left: 4px solid ${data.sales > 0 ? '#10b981' : '#e5e5e5'};">
+                    <div style="font-size: clamp(1.25rem, 3vw, 1.5rem); font-weight: 700; color: #059669; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                      <i data-lucide="${data.icon}" style="width: 20px; height: 20px;"></i> $${new Intl.NumberFormat('es-CL').format(data.sales)}
+                    </div>
+                    <div style="font-size: clamp(0.75rem, 1.8vw, 0.875rem); color: #666; margin-bottom: 8px;">
+                      ${data.label}
+                    </div>
+                    <div style="font-size: clamp(0.7rem, 1.5vw, 0.8rem); color: #999; margin-bottom: 2px; display: flex; align-items: center; gap: 4px;">
+                      <i data-lucide="package" style="width: 12px; height: 12px;"></i> Costo: $${new Intl.NumberFormat('es-CL', {maximumFractionDigits: 0}).format(data.cost)}
+                    </div>
+                    <div style="font-size: clamp(0.7rem, 1.5vw, 0.8rem); color: #0284c7; margin-bottom: 2px; display: flex; align-items: center; gap: 4px;">
+                      <i data-lucide="trending-up" style="width: 12px; height: 12px;"></i> Utilidad: $${new Intl.NumberFormat('es-CL', {maximumFractionDigits: 0}).format(profit)} (${profitPercent}%)
+                    </div>
+                    <div style="font-size: clamp(0.7rem, 1.5vw, 0.8rem); color: #666; display: flex; align-items: center; gap: 4px;">
+                      <i data-lucide="receipt" style="width: 12px; height: 12px;"></i> ${data.orders} pedidos
+                    </div>
+                  </div>
+                `;
+              }).join('');
+              
+              // Agregar tarjeta de delivery si hay fees
+              if (totalDeliveryFee > 0) {
+                paymentMethodsGrid.innerHTML += `
+                  <div class="stat-card" style="border-left: 4px solid #f59e0b;">
+                    <div style="font-size: clamp(1.25rem, 3vw, 1.5rem); font-weight: 700; color: #f59e0b; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                      <i data-lucide="bike" style="width: 20px; height: 20px;"></i> $${new Intl.NumberFormat('es-CL').format(totalDeliveryFee)}
+                    </div>
+                    <div style="font-size: clamp(0.75rem, 1.8vw, 0.875rem); color: #666;">
+                      Delivery (Rider)
+                    </div>
+                  </div>
+                `;
+              }
+              
+              if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+            
+            // Inicializar filtros y paginación - USAR TARJETAS SIEMPRE
+            tuuCurrentPage = 1;
+            renderAllAsCards();
+            
+            if (contentEl) contentEl.style.display = 'block';
+          } else {
+            if (errorEl) {
+              errorEl.textContent = 'Error: ' + (data.error || 'No se pudieron cargar los reportes');
+              errorEl.style.display = 'block';
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error cargando TUU:', error);
+          isLoadingData = false;
+          if (loadingEl && isFirstLoad) loadingEl.style.display = 'none';
+          if (errorEl) {
+            errorEl.textContent = 'Error de conexión: ' + error.message;
+            errorEl.style.display = 'block';
+          }
+        });
+    }
+    
+    function renderAllAsCards() {
+      document.getElementById('orders-list-container').style.display = 'flex';
+      document.getElementById('table-view').style.display = 'none';
+      renderCardsFromTransactions(tuuAllTransactions);
+    }
+    
+    function renderCardsFromTransactions(transactions) {
+      const container = document.getElementById('orders-list-container');
+      if (!container) return;
+      
+      if (transactions.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 32px; color: #666;">No hay órdenes</div>';
+        return;
+      }
+      
+      const newHTML = transactions.map(order => {
+        const transaction = order as any;
+        const date = new Date(transaction.created_at || transaction.payment_date_time);
+        const paymentIcons = { 'cash': 'banknote', 'card': 'credit-card', 'transfer': 'landmark', 'webpay': 'credit-card', 'pedidosya': 'bike' };
+        const displayId = transaction.order_reference || transaction.sale_id;
+        const amount = parseFloat(transaction.amount || 0);
+        const deliveryFee = parseFloat(transaction.delivery_fee || 0);
+        const netAmount = amount - deliveryFee;
+        const customerName = transaction.customer_name || 'Cliente';
+        const customerPhone = transaction.customer_phone || '';
+        const paymentMethod = transaction.payment_method || 'cash';
+        
+        let totalCost = 0;
+        let itemsHtml = '';
+        if (transaction.items && transaction.items.length > 0) {
+          itemsHtml = transaction.items.map(item => {
+            const itemPrice = parseFloat(item.product_price || 0);
+            const itemCost = parseFloat(item.item_cost || 0);
+            const itemProfit = itemPrice - itemCost;
+            const itemSubtotal = parseFloat(item.subtotal || 0);
+            totalCost += itemCost * parseFloat(item.quantity || 1);
+            
+            let ingredientsHtml = '';
+            if (item.inventory_transactions && item.inventory_transactions.length > 0) {
+              const ingredientsList = item.inventory_transactions.map(trans => {
+                const isIngredient = trans.item_type === 'ingredient';
+                const textColor = isIngredient ? '#666' : '#0284c7';
+                let qtyUsed = Math.abs(parseFloat(trans.quantity));
+                let prevStock = parseFloat(trans.previous_stock || 0);
+                let newStock = parseFloat(trans.new_stock || 0);
+                const displayUnit = trans.unit === 'unit' ? 'unidad' : trans.unit;
+                
+                // Convertir kg a g si la unidad es 'g'
+                if (displayUnit === 'g') {
+                  qtyUsed *= 1000;
+                  prevStock *= 1000;
+                  newStock *= 1000;
+                }
+                
+                const currentStock = newStock;
+                let stockColor = '#10b981', stockIcon = '✓', tooltip = 'Stock OK (>10 unidades)';
+                if (currentStock === 0) { stockColor = '#dc2626'; stockIcon = '⚠️'; tooltip = 'AGOTADO - Sin stock'; }
+                else if (currentStock <= 10) { stockColor = '#f59e0b'; stockIcon = '⚠'; tooltip = 'BAJO STOCK - Reabastecer (≤10)'; }
+                const stockFlow = trans.previous_stock ? `${prevStock.toFixed(displayUnit === 'g' ? 1 : 0)} | -${qtyUsed.toFixed(displayUnit === 'g' ? 1 : 0)} | ` : "";
+                return `<div style="font-size: 9px; color: ${textColor}; padding-left: 16px; display: flex; justify-content: space-between; align-items: center;"><span>${trans.item_name}: ${qtyUsed.toFixed(displayUnit === 'g' ? 2 : 0)} ${displayUnit}</span><span title="${tooltip}" style="padding: 2px 6px; border-radius: 4px; background: ${stockColor}15; color: ${stockColor}; font-weight: 600; font-size: 8px; display: flex; align-items: center; gap: 3px; "><i data-lucide="package" style="width: 10px; height: 10px;"></i> ${stockFlow}${newStock.toFixed(displayUnit === 'g' ? 1 : 0)} ${stockIcon}</span></div>`;
+              }).join('');
+              ingredientsHtml = `<div style="font-size: 9px; font-weight: 600; color: #666; padding-left: 8px; margin-top: 2px; display: flex; align-items: center; gap: 4px;"><i data-lucide="flask-conical" style="width: 12px; height: 12px;"></i> Consumo de ingredientes:</div>${ingredientsList}`;
+            } else if (item.ingredients && item.ingredients.length > 0) {
+              const ingredientsList = item.ingredients.map(ing => {
+                const qtyUsed = parseFloat(ing.quantity_needed) * parseFloat(item.quantity);
+                const transactionStock = parseFloat(ing.new_stock || ing.current_stock || 0);
+                const currentStock = parseFloat(ing.current_stock || 0);
+                let stockColor = '#10b981', stockIcon = '✓', tooltip = 'Stock OK (>10 unidades)';
+                if (currentStock === 0) { stockColor = '#dc2626'; stockIcon = '⚠️'; tooltip = 'AGOTADO - Sin stock'; }
+                else if (currentStock <= 10) { stockColor = '#f59e0b'; stockIcon = '⚠'; tooltip = 'BAJO STOCK - Reabastecer (≤10)'; }
+                const stockFlow = ing.previous_stock ? `${parseFloat(ing.previous_stock).toFixed(1)} | -${qtyUsed.toFixed(1)} | ` : "";
+                return `<div style="font-size: 9px; color: #666; padding-left: 16px; display: flex; justify-content: space-between; align-items: center;"><span>• ${ing.ingredient_name}: ${qtyUsed.toFixed(2)} ${ing.unit}</span><span title="${tooltip}" style="padding: 2px 6px; border-radius: 4px; background: ${stockColor}15; color: ${stockColor}; font-weight: 600; font-size: 8px; display: flex; align-items: center; gap: 3px; "><i data-lucide="package" style="width: 10px; height: 10px;"></i> ${stockFlow}${transactionStock.toFixed(1)} ${stockIcon}</span></div>`;
+              }).join('');
+              ingredientsHtml = `<div style="font-size: 9px; font-weight: 600; color: #666; padding-left: 8px; margin-top: 2px; display: flex; align-items: center; gap: 4px;"><i data-lucide="flask-conical" style="width: 12px; height: 12px;"></i> Consumo de ingredientes:</div>${ingredientsList}`;
+            } else if (item.product_id) {
+              const prodStock = item.stock_quantity || 0;
+              let prodColor = '#10b981', prodIcon = '✓', prodTooltip = 'Stock OK (>10 unidades)';
+              if (prodStock === 0) { prodColor = '#dc2626'; prodIcon = '⚠️'; prodTooltip = 'AGOTADO - Sin stock'; }
+              else if (prodStock <= 10) { prodColor = '#f59e0b'; prodIcon = '⚠'; prodTooltip = 'BAJO STOCK - Reabastecer (≤10)'; }
+              ingredientsHtml = `<div style="font-size: 9px; color: #666; padding-left: 8px; margin-top: 2px; display: flex; justify-content: space-between; align-items: center;"><span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="package" style="width: 12px; height: 12px;"></i> Consumo: ${item.quantity} x ${item.product_name}</span><span title="${prodTooltip}" style="padding: 2px 6px; border-radius: 4px; background: ${prodColor}15; color: ${prodColor}; font-weight: 600; font-size: 8px; display: flex; align-items: center; gap: 3px;"><i data-lucide="package" style="width: 10px; height: 10px;"></i> ${prodStock} ${prodIcon}</span></div>`;
+            }
+            
+            return `
+              <div style="padding: 6px 0; border-bottom: 1px solid #f0f0f0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="flex: 1;">
+                    <div style="font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 4px;"><i data-lucide="utensils" style="width: 14px; height: 14px;"></i> ${item.product_name} x${item.quantity}</div>
+                    <div style="font-size: 10px; color: #666; margin-top: 2px; display: flex; gap: 8px;">
+                      <span style="display: flex; align-items: center; gap: 2px;"><i data-lucide="dollar-sign" style="width: 10px; height: 10px;"></i> ${new Intl.NumberFormat('es-CL').format(itemPrice)}</span>
+                      <span style="display: flex; align-items: center; gap: 2px;"><i data-lucide="package" style="width: 10px; height: 10px;"></i> ${new Intl.NumberFormat('es-CL').format(itemCost)}</span>
+                      <span style="display: flex; align-items: center; gap: 2px;"><i data-lucide="trending-up" style="width: 10px; height: 10px;"></i> ${new Intl.NumberFormat('es-CL').format(itemProfit)}</span>
+                    </div>
+                  </div>
+                  <div style="font-weight: 600; color: #059669; font-size: 14px;">$${new Intl.NumberFormat('es-CL').format(itemSubtotal)}</div>
+                </div>
+                ${ingredientsHtml ? `<div style="margin-top: 4px; padding: 4px 0; background: #f9fafb; border-radius: 4px;">${ingredientsHtml}</div>` : ''}
+              </div>
+            `;
+          }).join('');
+        } else {
+          itemsHtml = `<div style="padding: 6px 0; color: #666; font-size: 13px;">🍽️ ${transaction.product_name || 'Sin detalle de productos'}</div>`;
+        }
+        
+        const totalProfit = netAmount - totalCost;
+        
+        return `
+          <div style="background: white; border: 1px solid #e5e5e5; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)'">
+            <div style="background: #f9fafb; padding: clamp(8px, 2vw, 12px); border-bottom: 1px solid #e5e5e5; display: grid; grid-template-columns: 1fr auto; gap: clamp(8px, 2vw, 12px); font-size: clamp(11px, 2vw, 13px);">
+              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: clamp(6px, 1.5vw, 10px);">
+                <span style="font-weight: 600; display: flex; align-items: center; gap: 4px;"><i data-lucide="calendar" style="width: 14px; height: 14px;"></i> ${date.toLocaleDateString('es-CL')} ${date.toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}</span>
+              <span style="font-family: monospace; color: #2563eb; display: flex; align-items: center; gap: 4px;">><i data-lucide="${paymentIcons[paymentMethod]}" style="width: 14px; height: 14px;"></i> ${displayId}</span>
+              <span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="user" style="width: 14px; height: 14px;"></i> ${customerName}</span>
+              ${customerPhone ? `<span style="color: #666; display: flex; align-items: center; gap: 4px;"><i data-lucide="phone" style="width: 14px; height: 14px;"></i> ${customerPhone}</span>` : ''}
+              </div>
+              <div style="display: flex; gap: 4px;"><button onclick="reprocessInventory('${displayId}')" style="padding: 4px 8px; background: #f59e0b; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; height: fit-content;" title="Re-procesar inventario"><i data-lucide="refresh-ccw" style="width: 12px; height: 12px;"></i></button><button onclick="deleteTransaction('${displayId}', ${transaction.id || 0})" style="padding: 4px 8px; background: #dc2626; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; height: fit-content;"><i data-lucide="trash-2" style="width: 12px; height: 12px;"></i></button></div>
+            </div>
+            <div style="padding: 12px 16px;">
+              ${itemsHtml}
+              <div style="margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(clamp(90px, 23vw, 130px), 1fr)); gap: clamp(8px, 2vw, 12px);">
+                ${deliveryFee > 0 ? `
+                <div style="background: white; border: 1px solid #e5e5e5; border-radius: 6px; padding: clamp(10px, 2.5vw, 14px); display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                  <div style="color: #666; font-size: clamp(8px, 1.5vw, 9px); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px;">DELIVERY</div>
+                  <div style="font-weight: 700; color: #f59e0b; font-size: clamp(12px, 3vw, 16px); display: flex; align-items: center; gap: 6px;"><i data-lucide="bike" style="width: 14px; height: 14px;"></i>-$${new Intl.NumberFormat('es-CL').format(deliveryFee)}</div>
+                </div>
+                ` : ''}
+                <div style="background: white; border: 1px solid #e5e5e5; border-radius: 6px; padding: clamp(10px, 2.5vw, 14px); display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                  <div style="color: #666; font-size: clamp(8px, 1.5vw, 9px); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px;">SUBTOTAL</div>
+                  <div style="font-weight: 700; color: #059669; font-size: clamp(12px, 3vw, 16px); display: flex; align-items: center; gap: 6px;">$${new Intl.NumberFormat('es-CL').format(netAmount)}</div>
+                </div>
+                <div style="background: white; border: 1px solid #e5e5e5; border-radius: 6px; padding: clamp(10px, 2.5vw, 14px); display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                  <div style="color: #666; font-size: clamp(8px, 1.5vw, 9px); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px;">COSTO</div>
+                  <div style="font-weight: 700; color: #dc2626; font-size: clamp(12px, 3vw, 16px); display: flex; align-items: center; gap: 6px;"><i data-lucide="package" style="width: 14px; height: 14px;"></i>-$${new Intl.NumberFormat('es-CL', {maximumFractionDigits: 0}).format(totalCost)}</div>
+                </div>
+                <div style="background: white; border: 1px solid #e5e5e5; border-radius: 6px; padding: clamp(10px, 2.5vw, 14px); display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                  <div style="color: #666; font-size: clamp(8px, 1.5vw, 9px); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px;">UTILIDAD</div>
+                  <div style="font-weight: 700; color: #0284c7; font-size: clamp(12px, 3vw, 16px); display: flex; align-items: center; gap: 6px;"><i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>$${new Intl.NumberFormat('es-CL', {maximumFractionDigits: 0}).format(totalProfit)}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      // Solo actualizar si el contenido cambió
+      if (newHTML !== lastRenderedHTML) {
+        container.innerHTML = newHTML;
+        lastRenderedHTML = newHTML;
+        
+        // Reinicializar iconos después de renderizar
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        }
+      }
+    }
+    
+    window.filterTUUTransactions = function() {
+      const filterTypeEl = document.getElementById('tuu-filter-type') as HTMLSelectElement;
+      const searchEl = document.getElementById('tuu-search') as HTMLInputElement;
+      
+      if (!filterTypeEl || !searchEl) return;
+      
+      const filterType = filterTypeEl.value;
+      const searchTerm = searchEl.value.toLowerCase();
+      
+      tuuFilteredTransactions = tuuAllTransactions.filter(t => {
+        let typeMatch = true;
+        const displayId = (t as any).order_reference || (t as any).sale_id;
+        const isApp = displayId && displayId.toString().startsWith('R11-');
+        const isCaja = displayId && displayId.toString().startsWith('T11-');
+        const isPOS = (t as any).payment_source === 'pos';
+        
+        if (filterType === 'pos') typeMatch = isPOS;
+        else if (filterType === 'online') typeMatch = isCaja;
+        else if (filterType === 'app') typeMatch = isApp;
+        
+        let searchMatch = true;
+        if (searchTerm) {
+          const searchableText = [
+            (t as any).order_reference || (t as any).saleId || '',
+            (t as any).customer_name || '',
+            (t as any).customer_phone || '',
+            (t as any).detailed_items || (t as any).product_name || '',
+            ((t as any).amount || (t as any).totalAmount || (t as any).tuu_amount || 0).toString()
+          ].join(' ').toLowerCase();
+          searchMatch = searchableText.includes(searchTerm);
+        }
+        
+        return typeMatch && searchMatch;
+      });
+      
+      tuuCurrentPage = 1;
+      renderCardsFromTransactions(tuuFilteredTransactions);
+    }
+    
+    window.changeTUUPage = function(direction) {
+      const totalPages = Math.ceil(tuuFilteredTransactions.length / tuuItemsPerPage);
+      tuuCurrentPage += direction;
+      
+      if (tuuCurrentPage < 1) tuuCurrentPage = 1;
+      if (tuuCurrentPage > totalPages) tuuCurrentPage = totalPages;
+      
+      renderTUUTable();
+    }
+    
+    function renderTUUTable() {
+      const tbody = document.querySelector('#tuuTable tbody');
+      const showingInfo = document.getElementById('tuu-showing-info');
+      const pageInfo = document.getElementById('tuu-page-info');
+      const prevBtn = document.getElementById('tuu-prev-btn');
+      const nextBtn = document.getElementById('tuu-next-btn');
+      
+      if (!tbody) return;
+      
+      const totalItems = tuuFilteredTransactions.length;
+      const totalPages = Math.ceil(totalItems / tuuItemsPerPage);
+      const startIndex = (tuuCurrentPage - 1) * tuuItemsPerPage;
+      const endIndex = Math.min(startIndex + tuuItemsPerPage, totalItems);
+      const pageTransactions = tuuFilteredTransactions.slice(startIndex, endIndex);
+      
+      if (pageTransactions.length > 0) {
+        tbody.innerHTML = pageTransactions.map(t => {
+          const transaction = t as any;
+          const displayDate = transaction.created_at || transaction.payment_date_time;
+          const displayId = transaction.order_reference || transaction.sale_id;
+          const totalAmount = parseFloat(transaction.amount || 0);
+          const deliveryFee = parseFloat(transaction.delivery_fee || 0);
+          const netAmount = totalAmount - deliveryFee;
+          const isApp = displayId && displayId.toString().startsWith('R11-');
+          const isCaja = displayId && displayId.toString().startsWith('T11-');
+          const isPOS = transaction.payment_source === 'pos';
+          
+          let displayCustomer, paymentType, paymentIcon, displaySource;
+          
+          if (isApp) {
+            displayCustomer = transaction.customer_name || 'Cliente APP';
+            paymentType = 'APP';
+            paymentIcon = '📲';
+            displaySource = 'APP Ruta 11';
+          } else if (isCaja) {
+            displayCustomer = transaction.customer_name || 'Cliente Caja';
+            paymentType = 'CAJA';
+            paymentIcon = '💳';
+            displaySource = 'Caja/Online';
+          } else {
+            displayCustomer = 'Cliente POS';
+            paymentType = 'POS';
+            paymentIcon = '🏪';
+            displaySource = 'POS Físico';
+          }
+          
+          const paymentMethod = transaction.payment_method || 'N/A';
+          const paymentMethodLabels = {
+            'webpay': '💳 Webpay',
+            'transfer': '🏦 Transferencia',
+            'card': '💳 Tarjeta',
+            'cash': '💵 Efectivo',
+            'pedidosya': '🛵 PedidosYa'
+          };
+          const paymentMethodDisplay = paymentMethodLabels[paymentMethod] || paymentMethod;
+          
+          const isCanceled = transaction.order_status === 'cancelled' || transaction.order_status === 'canceled' || transaction.status === 'cancelled' || transaction.status === 'canceled';
+          
+          return `
+            <tr style="${isCanceled ? 'background: #fee; opacity: 0.7;' : ''}">
+              <td>${isCanceled ? '<span style="color: #dc2626; font-weight: 600; font-size: 10px;">CANCELADO</span><br>' : ''}
+                <div style="font-size: 12px;">${new Date(displayDate).toLocaleDateString('es-CL')}</div>
+                <div style="font-size: 10px; color: #666;">${new Date(displayDate).toLocaleTimeString('es-CL')}</div>
+              </td>
+              <td>
+                <div style="font-weight: 600;">${displayId}</div>
+                <div style="font-size: 10px; color: #666;">${displaySource}</div>
+              </td>
+              <td>
+                <div style="font-weight: 600;">${displayCustomer}</div>
+                ${transaction.customer_phone ? `<div style="font-size: 10px; color: #666;">📞 ${transaction.customer_phone}</div>` : ''}
+                ${transaction.items && transaction.items.length > 0 ? `
+                  <div style="margin-top: 4px; max-height: 120px; overflow-y: auto; border-top: 1px solid #f0f0f0; padding-top: 4px;">
+                    ${transaction.items.map(item => `
+                      <div style="font-size: 10px; padding: 3px 0; border-bottom: 1px solid #f9f9f9;">
+                        <div style="font-weight: 600; color: #059669;">🍽️ ${item.product_name} x${item.quantity}</div>
+                        <div style="color: #666; font-size: 9px;">
+                          💵 $${new Intl.NumberFormat('es-CL').format(parseFloat(item.product_price || 0))} | 
+                          📦 $${new Intl.NumberFormat('es-CL').format(parseFloat(item.item_cost || 0))} | 
+                          📈 $${new Intl.NumberFormat('es-CL').format(parseFloat(item.product_price || 0) - parseFloat(item.item_cost || 0))}
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : (transaction.product_name ? `<div style="font-size: 9px; color: #059669; margin-top: 2px;">🍽️ ${transaction.product_name}</div>` : '')}
+              </td>
+              <td>
+                <div style="font-weight: 600; color: #059669;">$${new Intl.NumberFormat('es-CL').format(netAmount)}</div>
+                ${deliveryFee > 0 ? `<div style="font-size: 9px; color: #999; text-decoration: line-through;">Total: $${new Intl.NumberFormat('es-CL').format(totalAmount)}</div>` : ''}
+              </td>
+              <td>
+                ${deliveryFee > 0 ? `<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; background: #fef3c7; color: #92400e; font-weight: 500;">🏍️ $${new Intl.NumberFormat('es-CL').format(deliveryFee)}</span>` : '<span style="font-size: 10px; color: #999;">-</span>'}
+              </td>
+              <td>
+                <span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; background: #f0f9ff; color: #0369a1; font-weight: 500;">
+                  ${paymentMethodDisplay}
+                </span>
+              </td>
+              <td>
+                <span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; background: ${(transaction.status === 'completed' || transaction.status === 'paid' || !transaction.status) ? '#dcfce7' : (isCanceled ? '#fef2f2' : '#fef3c7')}; color: ${(transaction.status === 'completed' || transaction.status === 'paid' || !transaction.status) ? '#166534' : (isCanceled ? '#dc2626' : '#92400e')};">
+                  ${(transaction.status === 'completed' || transaction.status === 'paid' || !transaction.status) ? '✓ Pagado' : (isCanceled ? '❌ Cancelado' : transaction.status)}
+                </span>
+              </td>
+              <td>
+                <span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; background: ${isApp ? '#dcfce7' : (isCaja ? '#dbeafe' : '#fef3c7')}; color: ${isApp ? '#166534' : (isCaja ? '#1e40af' : '#92400e')};">
+                  ${paymentIcon} ${paymentType}
+                </span>
+              </td>
+              <td>
+                <div style="display: flex; gap: 4px;">
+                  <button class="btn btn-secondary" onclick="viewTransaction(${JSON.stringify(t).replace(/"/g, '&quot;')})" style="font-size: 11px; padding: 4px 8px;">Ver</button>
+                  <button class="btn btn-danger" onclick="deleteTransaction('${displayId}', ${transaction.id || 0})" style="font-size: 11px; padding: 4px 8px;" style="display: flex; align-items: center; gap: 4px;"><i data-lucide="trash-2" style="width: 12px; height: 12px;"></i></button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #666;">No hay transacciones que coincidan con los filtros</td></tr>';
+      }
+      
+      // Actualizar información de paginación
+      if (showingInfo) {
+        showingInfo.textContent = `Mostrando ${startIndex + 1}-${endIndex} de ${totalItems} transacciones`;
+      }
+      
+      if (pageInfo) {
+        pageInfo.textContent = `Página ${tuuCurrentPage} de ${totalPages || 1}`;
+      }
+      
+      // Actualizar botones de navegación
+      if (prevBtn) {
+        (prevBtn as HTMLButtonElement).disabled = tuuCurrentPage <= 1;
+      }
+      
+      if (nextBtn) {
+        (nextBtn as HTMLButtonElement).disabled = tuuCurrentPage >= totalPages;
+      }
+    }
+    
+    window.reprocessInventory = function(orderNumber) {
+      if (!confirm(`¿Re-procesar inventario para ${orderNumber}?\n\nEsto descontará el inventario actual.`)) return;
+      
+      fetch(`/api/reprocess_order_inventory.php?order_number=${orderNumber}&t=` + Date.now())
+      .then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(data => {
+        if (data.success) {
+          alert(`✓ Inventario re-procesado: ${orderNumber}`);
+          window.loadTUUReports();
+        } else {
+          alert(`❌ Error: ${data.error}`);
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        alert(`❌ Error: ${error.message}`);
+      });
+    }
+    
+    window.deleteTransaction = function(displayId, transactionId) {
+      if (!confirm(`¿Estás seguro de eliminar la transacción ${displayId}?`)) return;
+      
+      fetch(`/api/tuu/delete_transaction.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: transactionId })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          alert('✓ Transacción eliminada correctamente');
+          window.loadTUUReports();
+        } else {
+          alert('❌ Error: ' + (data.error || 'No se pudo eliminar'));
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('❌ Error de conexión');
+      });
+    }
+    
+    window.viewTransaction = function(transaction) {
+      // Modal simple para ver detalles
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+      
+      const displayId = (transaction as any).order_reference || (transaction as any).sale_id;
+      const isApp = displayId && displayId.toString().startsWith('R11-');
+      const isCaja = displayId && displayId.toString().startsWith('T11-');
+      const isPOS = (transaction as any).payment_source === 'pos';
+      
+      const paymentMethod = (transaction as any).payment_method || 'N/A';
+      const paymentMethodLabels = {
+        'webpay': '💳 Webpay',
+        'transfer': '🏦 Transferencia',
+        'card': '💳 Tarjeta',
+        'cash': '💵 Efectivo',
+        'pedidosya': '🛵 PedidosYa'
+      };
+      const paymentMethodDisplay = paymentMethodLabels[paymentMethod] || paymentMethod;
+      
+      modal.innerHTML = `
+        <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2>Detalle Transacción ${isApp ? 'APP' : (isCaja ? 'CAJA' : 'POS')}</h2>
+            <button onclick="this.closest('div').parentElement.remove()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div>
+              <h3 style="margin-bottom: 12px;">Información de Venta</h3>
+              <p><strong>ID:</strong> ${(transaction as any).order_reference || (transaction as any).sale_id}</p>
+              <p><strong>Fecha:</strong> ${new Date((transaction as any).created_at || (transaction as any).payment_date_time).toLocaleString('es-CL')}</p>
+              <p><strong>Monto:</strong> $${new Intl.NumberFormat('es-CL').format((transaction as any).amount || 0)}</p>
+              <p><strong>Método Pago:</strong> ${paymentMethodDisplay}</p>
+              <p><strong>Estado:</strong> ${((transaction as any).status === 'completed' || (transaction as any).status === 'paid' || !(transaction as any).status) ? '✓ Pagado' : (transaction as any).status}</p>
+            </div>
+            <div>
+              <h3 style="margin-bottom: 12px;">Detalles del Cliente</h3>
+              <p><strong>Cliente:</strong> ${(transaction as any).customer_name || (isApp ? 'Cliente APP' : (isCaja ? 'Cliente Caja' : 'Cliente POS'))}</p>
+              ${(transaction as any).customer_phone ? `<p><strong>Teléfono:</strong> ${(transaction as any).customer_phone}</p>` : ''}
+              <p><strong>Tipo:</strong> ${isApp ? '📲 APP' : (isCaja ? '💳 CAJA' : '🏪 POS')}</p>
+              ${(transaction as any).pos_serial_number ? `<p><strong>Terminal:</strong> ${(transaction as any).pos_serial_number}</p>` : ''}
+            </div>
+          </div>
+          
+          ${(transaction as any).product_name ? `
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e5e5;">
+              <h3 style="margin-bottom: 8px;">Productos</h3>
+              <p>${(transaction as any).product_name}</p>
+            </div>
+          ` : ''}
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) document.body.removeChild(modal);
+      });
+    }
+    
+    function processShiftData(data, startDate, endDate) {
+      const stats = data.data.combined_stats || {};
+      tuuAllTransactions = data.data.all_transactions || [];
+      
+      // Renderizar tarjetas con inventario
+      renderSimpleOrderCards(startDate, endDate);
+      document.getElementById('orders-list-container').style.display = 'flex';
+      document.getElementById('table-view').style.display = 'none';
+      
+      const paymentMethods = {
+        'card': { icon: '💳', label: 'Tarjetas', sales: 0, cost: 0, orders: 0 },
+        'transfer': { icon: '🏦', label: 'Transfer', sales: 0, cost: 0, orders: 0 },
+        'cash': { icon: '💵', label: 'Efectivo', sales: 0, cost: 0, orders: 0 },
+        'webpay': { icon: '💳', label: 'Webpay', sales: 0, cost: 0, orders: 0 },
+        'pedidosya': { icon: '🛵', label: 'PedidosYA', sales: 0, cost: 0, orders: 0 },
+        'rl6_credit': { icon: '💳', label: 'Crédito RL6', sales: 0, cost: 0, orders: 0 }
+      };
+      
+      let totalCost = 0, totalDeliveryFee = 0;
+      tuuAllTransactions.forEach(t => {
+        const method = t.payment_method || 'cash';
+        const amount = parseFloat(t.amount || 0);
+        const deliveryFee = parseFloat(t.delivery_fee || 0);
+        const netAmount = amount - deliveryFee;
+        
+        let realCost = 0;
+        if (t.items && t.items.length > 0) {
+          t.items.forEach(item => {
+            realCost += parseFloat(item.item_cost || 0) * parseFloat(item.quantity || 1);
+          });
+        } else {
+          realCost = netAmount * 0.35;
+        }
+        
+        if (paymentMethods[method]) {
+          paymentMethods[method].sales += netAmount;
+          paymentMethods[method].cost += realCost;
+          paymentMethods[method].orders += 1;
+        }
+        totalCost += realCost;
+        totalDeliveryFee += deliveryFee;
+      });
+      
+      const totalSales = stats.total_revenue || 0;
+      const totalSalesNet = totalSales - totalDeliveryFee;
+      const totalProfit = totalSalesNet - totalCost;
+      
+      document.getElementById('tuu-total-sales').textContent = '$' + new Intl.NumberFormat('es-CL').format(totalSalesNet);
+      const deliveryDiscountEl = document.getElementById('tuu-delivery-discount');
+      if (deliveryDiscountEl) {
+        if (totalDeliveryFee > 0) {
+          deliveryDiscountEl.textContent = `(-$${new Intl.NumberFormat('es-CL').format(totalDeliveryFee)} delivery)`;
+        } else {
+          deliveryDiscountEl.textContent = '';
+        }
+      }
+      document.getElementById('tuu-total-cost').textContent = '$' + new Intl.NumberFormat('es-CL', {maximumFractionDigits: 0}).format(totalCost);
+      document.getElementById('tuu-total-profit').textContent = '$' + new Intl.NumberFormat('es-CL', {maximumFractionDigits: 0}).format(totalProfit);
+      document.getElementById('tuu-transactions-count').textContent = stats.total_transactions || 0;
+      document.getElementById('tuu-last-update').textContent = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      
+      const paymentMethodsGrid = document.getElementById('payment-methods-grid');
+      if (paymentMethodsGrid) {
+        paymentMethodsGrid.innerHTML = Object.entries(paymentMethods).map(([key, data]) => {
+          const profit = data.sales - data.cost;
+          const profitPercent = data.sales > 0 ? ((profit / data.sales) * 100).toFixed(1) : 0;
+          return `
+            <div class="stat-card" style="border-left: 4px solid ${data.sales > 0 ? '#10b981' : '#e5e5e5'};">
+              <div style="font-size: clamp(1.25rem, 3vw, 1.5rem); font-weight: 700; color: #059669; margin-bottom: 4px;">
+                ${data.icon} $${new Intl.NumberFormat('es-CL').format(data.sales)}
+              </div>
+              <div style="font-size: clamp(0.75rem, 1.8vw, 0.875rem); color: #666; margin-bottom: 8px;">${data.label}</div>
+              <div style="font-size: clamp(0.7rem, 1.5vw, 0.8rem); color: #999; margin-bottom: 2px;">📦 Costo: $${new Intl.NumberFormat('es-CL', {maximumFractionDigits: 0}).format(data.cost)}</div>
+              <div style="font-size: clamp(0.7rem, 1.5vw, 0.8rem); color: #0284c7; margin-bottom: 2px;">📈 Utilidad: $${new Intl.NumberFormat('es-CL', {maximumFractionDigits: 0}).format(profit)} (${profitPercent}%)</div>
+              <div style="font-size: clamp(0.7rem, 1.5vw, 0.8rem); color: #666;">🧾 ${data.orders} pedidos</div>
+            </div>
+          `;
+        }).join('');
+        if (totalDeliveryFee > 0) {
+          paymentMethodsGrid.innerHTML += `
+            <div class="stat-card" style="border-left: 4px solid #f59e0b;">
+              <div style="font-size: clamp(1.25rem, 3vw, 1.5rem); font-weight: 700; color: #f59e0b; margin-bottom: 4px;">🏍️ $${new Intl.NumberFormat('es-CL').format(totalDeliveryFee)}</div>
+              <div style="font-size: clamp(0.75rem, 1.8vw, 0.875rem); color: #666;">Delivery (Rider)</div>
+            </div>
+          `;
+        }
+      }
+      
+      tuuCurrentPage = 1;
+      if (!data.data.orders) {
+        window.filterTUUTransactions();
+      }
+    }
+    
+    function updateStatsUI(stats, orders) {
+      const paymentMethods = {
+        'card': { icon: '💳', label: 'Tarjetas', sales: 0, cost: 0, orders: 0 },
+        'transfer': { icon: '🏦', label: 'Transfer', sales: 0, cost: 0, orders: 0 },
+        'cash': { icon: '💵', label: 'Efectivo', sales: 0, cost: 0, orders: 0 },
+        'webpay': { icon: '💳', label: 'Webpay', sales: 0, cost: 0, orders: 0 },
+        'pedidosya': { icon: '🛵', label: 'PedidosYA', sales: 0, cost: 0, orders: 0 },
+        'rl6_credit': { icon: '💳', label: 'Crédito RL6', sales: 0, cost: 0, orders: 0 }
+      };
+      
+      let totalCost = 0, totalDeliveryFee = 0;
+      orders.forEach(o => {
+        const method = o.payment_method || 'cash';
+        const amount = parseFloat(o.total_amount || 0);
+        const estimatedCost = amount * 0.35;
+        const deliveryFee = parseFloat(o.delivery_fee || 0);
+        if (paymentMethods[method]) {
+          paymentMethods[method].sales += amount;
+          paymentMethods[method].cost += estimatedCost;
+          paymentMethods[method].orders += 1;
+        }
+        totalCost += estimatedCost;
+        totalDeliveryFee += deliveryFee;
+      });
+      
+      const totalSales = stats.total_revenue || 0;
+      const totalSalesNet = totalSales - totalDeliveryFee;
+      const totalProfit = totalSalesNet - totalCost;
+      
+      document.getElementById('tuu-total-sales').textContent = '$' + new Intl.NumberFormat('es-CL').format(totalSalesNet);
+      const deliveryDiscountEl = document.getElementById('tuu-delivery-discount');
+      if (deliveryDiscountEl) {
+        if (totalDeliveryFee > 0) {
+          deliveryDiscountEl.textContent = `(-$${new Intl.NumberFormat('es-CL').format(totalDeliveryFee)} delivery)`;
+        } else {
+          deliveryDiscountEl.textContent = '';
+        }
+      }
+      document.getElementById('tuu-total-cost').textContent = '$' + new Intl.NumberFormat('es-CL', {maximumFractionDigits: 0}).format(totalCost);
+      document.getElementById('tuu-total-profit').textContent = '$' + new Intl.NumberFormat('es-CL', {maximumFractionDigits: 0}).format(totalProfit);
+      document.getElementById('tuu-transactions-count').textContent = stats.total_transactions || 0;
+      document.getElementById('tuu-last-update').textContent = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      
+      const paymentMethodsGrid = document.getElementById('payment-methods-grid');
+      if (paymentMethodsGrid) {
+        paymentMethodsGrid.innerHTML = Object.entries(paymentMethods).map(([key, data]) => {
+          const profit = data.sales - data.cost;
+          const profitPercent = data.sales > 0 ? ((profit / data.sales) * 100).toFixed(1) : 0;
+          return `
+            <div class="stat-card" style="border-left: 4px solid ${data.sales > 0 ? '#10b981' : '#e5e5e5'};">
+              <div style="font-size: clamp(1.25rem, 3vw, 1.5rem); font-weight: 700; color: #059669; margin-bottom: 4px;">
+                ${data.icon} $${new Intl.NumberFormat('es-CL').format(data.sales)}
+              </div>
+              <div style="font-size: clamp(0.75rem, 1.8vw, 0.875rem); color: #666; margin-bottom: 8px;">${data.label}</div>
+              <div style="font-size: clamp(0.7rem, 1.5vw, 0.8rem); color: #999; margin-bottom: 2px;">📦 Costo: $${new Intl.NumberFormat('es-CL', {maximumFractionDigits: 0}).format(data.cost)}</div>
+              <div style="font-size: clamp(0.7rem, 1.5vw, 0.8rem); color: #0284c7; margin-bottom: 2px;">📈 Utilidad: $${new Intl.NumberFormat('es-CL', {maximumFractionDigits: 0}).format(profit)} (${profitPercent}%)</div>
+              <div style="font-size: clamp(0.7rem, 1.5vw, 0.8rem); color: #666;">🧾 ${data.orders} pedidos</div>
+            </div>
+          `;
+        }).join('');
+        if (totalDeliveryFee > 0) {
+          paymentMethodsGrid.innerHTML += `
+            <div class="stat-card" style="border-left: 4px solid #f59e0b;">
+              <div style="font-size: clamp(1.25rem, 3vw, 1.5rem); font-weight: 700; color: #f59e0b; margin-bottom: 4px;">🏍️ $${new Intl.NumberFormat('es-CL').format(totalDeliveryFee)}</div>
+              <div style="font-size: clamp(0.75rem, 1.8vw, 0.875rem); color: #666;">Delivery (Rider)</div>
+            </div>
+          `;
+        }
+      }
+    }
+    
+    async function renderSimpleOrderCards(startDate, endDate) {
+      const container = document.getElementById('orders-list-container');
+      if (!container) return;
+      
+      if (tuuAllTransactions.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 32px; color: #666;">No hay órdenes en este turno</div>';
+        return;
+      }
+      
+      container.innerHTML = tuuAllTransactions.map(order => {
+        const transaction = order as any;
+        const date = new Date(transaction.created_at || transaction.payment_date_time);
+        const paymentIcons = { 'cash': 'banknote', 'card': 'credit-card', 'transfer': 'landmark', 'webpay': 'credit-card', 'pedidosya': 'bike' };
+        const displayId = transaction.order_reference || transaction.sale_id;
+        const amount = parseFloat(transaction.amount || 0);
+        const deliveryFee = parseFloat(transaction.delivery_fee || 0);
+        const netAmount = amount - deliveryFee;
+        const customerName = transaction.customer_name || 'Cliente';
+        const customerPhone = transaction.customer_phone || '';
+        const paymentMethod = transaction.payment_method || 'cash';
+        
+        // Generar HTML de items detallado
+        let itemsHtml = '';
+        if (transaction.items && transaction.items.length > 0) {
+          itemsHtml = transaction.items.map(item => {
+            const itemPrice = parseFloat(item.product_price || 0);
+            const itemCost = parseFloat(item.item_cost || 0);
+            const itemProfit = itemPrice - itemCost;
+            const itemSubtotal = parseFloat(item.subtotal || 0);
+            
+            let ingredientsHtml = '';
+            if (item.ingredients && item.ingredients.length > 0) {
+              const ingredientsList = item.ingredients.map(ing => {
+                const qtyUsed = parseFloat(ing.quantity_needed) * parseFloat(item.quantity);
+                const transactionStock = parseFloat(ing.new_stock || ing.current_stock || 0);
+                const currentStock = parseFloat(ing.current_stock || 0);
+                let stockColor = '#10b981', stockIcon = '✓', tooltip = 'Stock OK (>10 unidades)';
+                if (currentStock === 0) { stockColor = '#dc2626'; stockIcon = '⚠️'; tooltip = 'AGOTADO - Sin stock'; }
+                else if (currentStock <= 10) { stockColor = '#f59e0b'; stockIcon = '⚠'; tooltip = 'BAJO STOCK - Reabastecer (≤10)'; }
+                const stockFlow = ing.previous_stock ? `${parseFloat(ing.previous_stock).toFixed(1)} | -${qtyUsed.toFixed(1)} | ` : "";
+                return `<div style="font-size: 9px; color: #666; padding-left: 16px; display: flex; justify-content: space-between; align-items: center;"><span>• ${ing.ingredient_name}: ${qtyUsed.toFixed(2)} ${ing.unit}</span><span title="${tooltip}" style="padding: 2px 6px; border-radius: 4px; background: ${stockColor}15; color: ${stockColor}; font-weight: 600; font-size: 8px; display: flex; align-items: center; gap: 3px; "><i data-lucide="package" style="width: 10px; height: 10px;"></i> ${stockFlow}${transactionStock.toFixed(1)} ${stockIcon}</span></div>`;
+              }).join('');
+              ingredientsHtml = `<div style="font-size: 9px; font-weight: 600; color: #666; padding-left: 8px; margin-top: 2px; display: flex; align-items: center; gap: 4px;"><i data-lucide="flask-conical" style="width: 12px; height: 12px;"></i> Consumo de ingredientes:</div>${ingredientsList}`;
+            } else if (item.product_id) {
+              const prodStock = item.stock_quantity || 0;
+              let prodColor = '#10b981', prodIcon = '✓', prodTooltip = 'Stock OK (>10 unidades)';
+              if (prodStock === 0) { prodColor = '#dc2626'; prodIcon = '⚠️'; prodTooltip = 'AGOTADO - Sin stock'; }
+              else if (prodStock <= 10) { prodColor = '#f59e0b'; prodIcon = '⚠'; prodTooltip = 'BAJO STOCK - Reabastecer (≤10)'; }
+              ingredientsHtml = `<div style="font-size: 9px; color: #666; padding-left: 8px; margin-top: 2px; display: flex; justify-content: space-between; align-items: center;"><span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="package" style="width: 12px; height: 12px;"></i> Consumo: ${item.quantity} x ${item.product_name}</span><span title="${prodTooltip}" style="padding: 2px 6px; border-radius: 4px; background: ${prodColor}15; color: ${prodColor}; font-weight: 600; font-size: 8px; display: flex; align-items: center; gap: 3px;"><i data-lucide="package" style="width: 10px; height: 10px;"></i> ${prodStock} ${prodIcon}</span></div>`;
+            }
+            
+            return `
+              <div style="padding: 6px 0; border-bottom: 1px solid #f0f0f0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="flex: 1;">
+                    <div style="font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 4px;"><i data-lucide="utensils" style="width: 14px; height: 14px;"></i> ${item.product_name} x${item.quantity}</div>
+                    <div style="font-size: 10px; color: #666; margin-top: 2px; display: flex; gap: 8px;">
+                      <span style="display: flex; align-items: center; gap: 2px;"><i data-lucide="dollar-sign" style="width: 10px; height: 10px;"></i> ${new Intl.NumberFormat('es-CL').format(itemPrice)}</span>
+                      <span style="display: flex; align-items: center; gap: 2px;"><i data-lucide="package" style="width: 10px; height: 10px;"></i> ${new Intl.NumberFormat('es-CL').format(itemCost)}</span>
+                      <span style="display: flex; align-items: center; gap: 2px;"><i data-lucide="trending-up" style="width: 10px; height: 10px;"></i> ${new Intl.NumberFormat('es-CL').format(itemProfit)}</span>
+                    </div>
+                  </div>
+                  <div style="font-weight: 600; color: #059669; font-size: 14px;">$${new Intl.NumberFormat('es-CL').format(itemSubtotal)}</div>
+                </div>
+                ${ingredientsHtml ? `<div style="margin-top: 4px; padding: 4px 0; background: #f9fafb; border-radius: 4px;">${ingredientsHtml}</div>` : ''}
+              </div>
+            `;
+          }).join('');
+        } else {
+          itemsHtml = `
+            <div style="padding: 6px 0; color: #666; font-size: 13px;">🍽️ ${transaction.product_name || 'Sin detalle de productos'}
+            </div>
+          `;
+        }
+        
+        return `
+          <div style="background: white; border: 1px solid #e5e5e5; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)'">
+            <div style="background: #f9fafb; padding: clamp(8px, 2vw, 12px); border-bottom: 1px solid #e5e5e5; display: grid; grid-template-columns: 1fr auto; gap: clamp(8px, 2vw, 12px); font-size: clamp(11px, 2vw, 13px);">
+              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: clamp(6px, 1.5vw, 10px);">
+                <span style="font-weight: 600; display: flex; align-items: center; gap: 4px;"><i data-lucide="calendar" style="width: 14px; height: 14px;"></i> ${date.toLocaleDateString('es-CL')} ${date.toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}</span>
+              <span style="font-family: monospace; color: #2563eb; display: flex; align-items: center; gap: 4px;">><i data-lucide="${paymentIcons[paymentMethod]}" style="width: 14px; height: 14px;"></i> ${displayId}</span>
+              <span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="user" style="width: 14px; height: 14px;"></i> ${customerName}</span>
+              ${customerPhone ? `<span style="color: #666; display: flex; align-items: center; gap: 4px;"><i data-lucide="phone" style="width: 14px; height: 14px;"></i> ${customerPhone}</span>` : ''}
+              </div>
+              <button onclick="deleteTransaction('${displayId}', ${transaction.id || 0})" style="padding: 4px 8px; background: #dc2626; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; height: fit-content;"><i data-lucide="trash-2" style="width: 12px; height: 12px;"></i></button>
+            </div>
+            <div style="padding: 12px 16px;">
+              ${itemsHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    function renderOrderCards(orders) {
+      const container = document.getElementById('orders-grid-container');
+      if (!container) return;
+      
+      container.innerHTML = orders.map(order => {
+        const date = new Date(order.created_at);
+        const paymentIcons = {
+          'cash': '💵',
+          'card': '💳',
+          'transfer': '🏦',
+          'webpay': '💳',
+          'pedidosya': '🛵'
+        };
+        
+        const itemsHtml = order.items.map(item => {
+          let statusBadge = '';
+          let ingredientsHtml = '';
+          
+          if (item.inventory_status === 'with_ingredients' && item.ingredients.length > 0) {
+            const allMatch = item.ingredients.every(ing => ing.stock_matches);
+            statusBadge = `<span class="status-badge ${allMatch ? 'status-ok' : 'status-error'}">
+              ${allMatch ? '✅ Inventario OK' : '⚠️ Descuadre'}
+            </span>`;
+            
+            ingredientsHtml = `
+              <div class="ingredient-list">
+                ${item.ingredients.map(ing => `
+                  <div class="ingredient-row">
+                    <span>🧂 ${ing.ingredient_name}</span>
+                    <span style="font-size: 10px;">
+                      Tenía: ${parseFloat(ing.stock_before).toFixed(1)}${ing.unit} | 
+                      -${parseFloat(ing.quantity_used).toFixed(1)}${ing.unit} | 
+                      Quedan: ${parseFloat(ing.current_stock).toFixed(1)}${ing.unit}
+                      ${ing.stock_matches ? '✅' : '❌'}
+                    </span>
+                  </div>
+                `).join('')}
+              </div>
+            `;
+          } else if (item.inventory_status === 'direct_product') {
+            statusBadge = `<span class="status-badge ${item.stock_matches ? 'status-ok' : 'status-warning'}">
+              ${item.stock_matches ? '✅ Stock OK' : '⚠️ Verificar'}
+            </span>`;
+            ingredientsHtml = `
+              <div class="ingredient-list">
+                <div class="ingredient-row">
+                  <span>🥤 Producto directo</span>
+                  <span style="font-size: 10px;">
+                    Tenía: ${item.stock_before || 0} | 
+                    -${item.quantity} | 
+                    Quedan: ${item.current_stock || 0}
+                    ${item.stock_matches ? '✅' : '❌'}
+                  </span>
+                </div>
+              </div>
+            `;
+          } else {
+            statusBadge = '<span class="status-badge status-warning">❓ Sin receta</span>';
+          }
+          
+          return `
+            <div class="item-row">
+              <div class="item-name">
+                ${item.product_name} x${item.quantity} - $${new Intl.NumberFormat('es-CL').format(item.subtotal)}
+                ${statusBadge}
+              </div>
+              ${ingredientsHtml}
+            </div>
+          `;
+        }).join('');
+        
+        return `
+          <div class="order-card">
+            <div class="order-header">
+              <div>
+                <div class="order-id">${paymentIcons[order.payment_method] || '💳'} ${order.order_number}</div>
+                <div class="order-time">${date.toLocaleString('es-CL')}</div>
+              </div>
+              <div style="text-align: right; font-weight: 600; color: #059669;">
+                $${new Intl.NumberFormat('es-CL').format(order.total_amount)}
+              </div>
+            </div>
+            <div class="order-customer">
+              👤 ${order.customer_name || 'Cliente'}
+              ${order.customer_phone ? `<br><span style="font-size: 11px; color: #666;">📞 ${order.customer_phone}</span>` : ''}
+            </div>
+            <div class="order-items">
+              ${itemsHtml}
+            </div>
+            ${order.delivery_fee > 0 ? `
+              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #f0f0f0; font-size: 11px; color: #f59e0b;">
+                🏍️ Delivery: $${new Intl.NumberFormat('es-CL').format(order.delivery_fee)}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+    
+    function populateShiftSelector() {
+      const shiftSelectorEl = document.getElementById('tuu-shift-selector') as HTMLSelectElement;
+      if (!shiftSelectorEl) return;
+      
+      const today = new Date();
+      const currentHour = today.getHours();
+      let currentShiftDate = new Date(today);
+      if (currentHour >= 0 && currentHour < 4) {
+        currentShiftDate.setDate(currentShiftDate.getDate() - 1);
+      }
+      
+      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const shifts = [];
+      let shiftDate = new Date(currentShiftDate);
+      
+      while (shiftDate >= firstDayOfMonth) {
+        const dateStr = shiftDate.toISOString().split('T')[0];
+        const dayName = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][shiftDate.getDay()];
+        const dayNum = shiftDate.getDate();
+        const monthName = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][shiftDate.getMonth()];
+        shifts.push({
+          value: dateStr,
+          label: `${dayName} ${dayNum} ${monthName} (17:30-04:00)`,
+          isCurrent: dateStr === currentShiftDate.toISOString().split('T')[0]
+        });
+        shiftDate.setDate(shiftDate.getDate() - 1);
+      }
+      
+      shiftSelectorEl.innerHTML = shifts.map(s => 
+        `<option value="${s.value}" ${s.isCurrent ? 'selected' : ''}>${s.isCurrent ? '🕐 ' : ''}${s.label}</option>`
+      ).join('');
+      
+      if (shifts.length > 0) loadShiftData();
+    }
+    
+    window.loadShiftData = function() {
+      const shiftSelectorEl = document.getElementById('tuu-shift-selector') as HTMLSelectElement;
+      if (!shiftSelectorEl || !shiftSelectorEl.value) return;
+      
+      const shiftDate = shiftSelectorEl.value;
+      
+      if (isLoadingData) return;
+      isLoadingData = true;
+      
+      const nextDay = new Date(shiftDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const endDate = nextDay.toISOString().split('T')[0];
+      
+      fetch(`/api/tuu/get_shift_transactions.php?shift_date=${shiftDate}&t=` + Date.now())
+        .then(r => r.ok ? r.json() : Promise.reject('HTTP ' + r.status))
+        .then(data => {
+          isLoadingData = false;
+          if (data.success && data.data) {
+            processShiftData(data, shiftDate, endDate);
+            document.getElementById('tuu-content').style.display = 'block';
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          isLoadingData = false;
+        });
+    }
+    
+    // Toggle para Desglose por Método de Pago
+    window.togglePaymentMethods = function() {
+      const content = document.getElementById('payment-methods-content');
+      const toggle = document.getElementById('payment-methods-toggle');
+      if (content && toggle) {
+        if (content.style.display === 'none') {
+          content.style.display = 'block';
+          toggle.textContent = '▼';
+        } else {
+          content.style.display = 'none';
+          toggle.textContent = '▶';
+        }
+      }
+    }
+    
+    // Inicializar cuando se carga la página
+    document.addEventListener('DOMContentLoaded', function() {
+      window.loadTUUReports();
+      startAutoReload();
+      lucide.createIcons();
+    });
+    
+    // Limpiar al salir
+    window.addEventListener('beforeunload', function() {
+      if (autoReloadInterval) clearInterval(autoReloadInterval);
+    });
+  </script>
+</body>
+</html>

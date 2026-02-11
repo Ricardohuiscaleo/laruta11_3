@@ -1,0 +1,3402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - La Ruta 11</title>
+  <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo.png" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #0a0a0a; line-height: 1.6; }
+    
+    .app { display: flex; height: 100vh; position: relative; }
+    
+    /* Mobile-first sidebar */
+    .sidebar { 
+      width: 280px; 
+      background: #ffffff; 
+      border-right: 1px solid #e5e5e5; 
+      display: flex; 
+      flex-direction: column;
+      position: fixed;
+      left: -280px;
+      top: 0;
+      height: 100vh;
+      z-index: 1000;
+      transition: left 0.3s ease;
+    }
+    .sidebar.open { left: 0; }
+    .sidebar-overlay { 
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    }
+    .sidebar-overlay.show { display: block; }
+    
+    .sidebar-header { padding: 16px 24px; border-bottom: 1px solid #e5e5e5; }
+    .logo { font-size: 16px; font-weight: 700; color: #0a0a0a; display: flex; align-items: center; gap: 8px; }
+    .nav { flex: 1; padding: 8px 0; overflow-y: auto; }
+    .nav-item { 
+      display: flex; 
+      align-items: center; 
+      gap: 12px; 
+      padding: 12px 24px; 
+      color: #666; 
+      text-decoration: none; 
+      transition: all 0.2s; 
+      border: none; 
+      background: none; 
+      width: 100%; 
+      cursor: pointer; 
+      font-size: 14px;
+      min-height: 44px;
+    }
+    .nav-item:hover { background: #f5f5f5; color: #0a0a0a; }
+    .nav-item.active { background: #0a0a0a; color: #ffffff; }
+    .nav-icon { width: 20px; height: 20px; flex-shrink: 0; }
+    
+    .main { 
+      flex: 1; 
+      display: flex; 
+      flex-direction: column; 
+      overflow: hidden;
+      margin-left: 0;
+      width: 100%;
+    }
+    .header { 
+      background: #ffffff; 
+      border-bottom: 1px solid #e5e5e5; 
+      padding: 0 16px; 
+      height: 64px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .mobile-menu-btn {
+      display: block;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 8px;
+      margin-right: 12px;
+    }
+    .page-title { font-size: 18px; font-weight: 600; color: #0a0a0a; }
+    .user-info { display: flex; align-items: center; gap: 8px; color: #666; font-size: 14px; }
+    
+    .content { flex: 1; overflow: auto; padding: 16px; }
+    .view { display: none; }
+    .view.active { display: block; }
+    
+    .card { background: #ffffff; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
+    .card-header { padding: 24px; border-bottom: 1px solid #e5e5e5; }
+    .card-title { font-size: 16px; font-weight: 600; color: #0a0a0a; }
+    .card-content { padding: 24px; }
+    
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: #ffffff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+    .stat-value { font-size: 24px; font-weight: 700; color: #0a0a0a; margin-bottom: 4px; }
+    .stat-label { font-size: 14px; color: #666; }
+    
+    .btn { padding: 8px 16px; border-radius: 6px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: #0a0a0a; color: #ffffff; }
+    .btn-primary:hover { background: #333; }
+    .btn-secondary { background: #f5f5f5; color: #0a0a0a; }
+    .btn-secondary:hover { background: #e5e5e5; }
+    .btn-danger { background: #ef4444; color: #ffffff; }
+    .btn-danger:hover { background: #dc2626; }
+    
+    .table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .table th { text-align: left; padding: 12px; font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e5e5; }
+    .table td { padding: 12px; border-bottom: 1px solid #f5f5f5; }
+    .table tr:hover { background: #fafafa; }
+    
+    .input { width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; transition: border-color 0.2s; }
+    .input:focus { outline: none; border-color: #0a0a0a; }
+    
+    .toolbar { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .search { position: relative; }
+    .search input { padding-left: 40px; width: 300px; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666; }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Desktop styles */
+    @media (min-width: 768px) {
+      .sidebar {
+        position: static;
+        left: 0;
+      }
+      .sidebar-overlay { display: none !important; }
+      .mobile-menu-btn { display: none; }
+      .header { padding: 0 32px; }
+      .content { padding: 32px; }
+      .stats-grid { gap: 24px; margin-bottom: 32px; }
+      .stat-card { padding: 24px; }
+      .stat-value { font-size: 32px; }
+      .page-title { font-size: 20px; }
+      .user-info { gap: 12px; }
+    }
+    
+    /* Tablet adjustments */
+    @media (max-width: 1024px) {
+      .stats-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+    }
+    
+    /* TUU Reports responsive */
+    .tuu-filters {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .tuu-select, .tuu-search {
+      padding: 8px;
+      border: 1px solid #e5e5e5;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .tuu-search { min-width: 200px; }
+    .tuu-pagination-header {
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .tuu-info { font-size: 14px; color: #666; }
+    .tuu-pagination-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .tuu-page-info { font-size: 14px; color: #666; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    
+    /* Mobile optimizations */
+    @media (max-width: 640px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .stat-card { padding: 12px; }
+      .stat-value { font-size: 20px; }
+      .stat-label { font-size: 12px; }
+      .table { font-size: 12px; }
+      .table th, .table td { padding: 8px 4px; }
+      .btn { padding: 6px 12px; font-size: 12px; }
+      .card-content { padding: 16px; }
+      .toolbar { flex-direction: column; gap: 12px; align-items: stretch; }
+      .search input { width: 100%; }
+      
+      /* TUU mobile specific */
+      .tuu-filters { flex-direction: column; align-items: stretch; }
+      .tuu-select, .tuu-search { width: 100%; }
+      .tuu-pagination-header { flex-direction: column; align-items: stretch; text-align: center; }
+      .tuu-pagination-controls { justify-content: center; }
+      .btn-sm { padding: 8px 16px; }
+      .tuu-page-info { margin: 0 8px; }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+</head>
+<body>
+  <div class="app">
+    <div class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <img src="https://laruta11-images.s3.amazonaws.com/menu/logo.png" width="24" height="24" alt="La Ruta 11" style="border-radius: 4px;">
+          La Ruta 11
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" onclick="showView('dashboard')" id="nav-dashboard">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          Dashboard
+        </button>
+        <button class="nav-item" onclick="showView('products')" id="nav-products">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+          Productos
+        </button>
+        <button class="nav-item" onclick="showView('orders')" id="nav-orders">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          Pedidos
+        </button>
+        <button class="nav-item" onclick="showView('users')" id="nav-users">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-4-4h-1.3"/><circle cx="17" cy="7" r="4"/></svg>
+          Usuarios
+        </button>
+        <button class="nav-item" onclick="window.location.href='/admin/ingredients'" id="nav-ingredients">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          Ingredientes
+        </button>
+        <button class="nav-item" onclick="window.location.href='/admin/inventario'" id="nav-inventario">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M9 9h6v6H9z"/><path d="M3 9h18"/><path d="M9 3v18"/></svg>
+          Control Inventario
+        </button>
+        <button class="nav-item" onclick="showView('payments')" id="nav-payments">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
+          Pagos
+        </button>
+        <button class="nav-item" onclick="showView('test')" id="nav-test">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          Test APIs
+        </button>
+        <button class="nav-item" onclick="window.location.href='/admin/food-trucks'" id="nav-trucks">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h2a1 1 0 0 1 1 1v2h-3V8zM4 17h1.5a2.5 2.5 0 0 0 5 0h3a2.5 2.5 0 0 0 5 0H20v-6H4v6zm14.5 1.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-12 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2zM4 8V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2h-2V7H6v1H4z"/></svg>
+          Food Trucks
+        </button>
+        <button class="nav-item" onclick="showView('technical-report')" id="nav-technical-report">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>
+          Informe Técnico
+        </button>
+        <button class="nav-item" onclick="showView('robots')" id="nav-robots">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="10" x="3" y="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="m12 7 0 4"/><line x1="8" x2="8" y1="16" y2="16"/><line x1="16" x2="16" y1="16" y2="16"/></svg>
+          Robots
+        </button>
+        <button class="nav-item" onclick="showView('calidad')" id="nav-calidad">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c.552 0 1-.448 1-1V5c0-.552-.448-1-1-1H3c-.552 0-1 .448-1-1H3c-.552 0-1 .448-1 1v6c0 .552.448 1 1 1h18z"/><path d="M3 12v6c0 .552.448 1 1 1h16c.552 0 1-.448 1-1v-6"/></svg>
+          Control Calidad
+        </button>
+        <button class="nav-item" onclick="window.location.href='/admin/keys'" id="nav-keys">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/></svg>
+          Keys
+        </button>
+        <button class="nav-item" onclick="showView('concurso')" id="nav-concurso">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-1.414-.586H13l-2.5-2.5L9 8v6l3 3 2.5-2.5H18.5a2 2 0 0 0 1.414-.586L21 15Z"/></svg>
+          Concurso Stats
+        </button>
+        <button class="nav-item" onclick="showView('concurso-admin')" id="nav-concurso-admin">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/><circle cx="12" cy="12" r="3"/></svg>
+          Concurso Admin
+        </button>
+        <button class="nav-item" onclick="showView('combos')" id="nav-combos">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M9 9h6v6H9z"/><path d="M3 9h18"/><path d="M9 3v18"/></svg>
+          Gestión Combos
+        </button>
+      </nav>
+    </aside>
+    
+    <main class="main">
+      <header class="header">
+        <div style="display: flex; align-items: center;">
+          <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+          <h1 class="page-title" id="page-title">Dashboard</h1>
+        </div>
+        <div class="user-info">
+          <div id="header-actions" style="display: flex; align-items: center; gap: 12px;">
+            <button class="btn btn-primary" onclick="loadDashboardMetrics()" id="refresh-btn" style="display: none;">🔄 Actualizar</button>
+          </div>
+          <span id="username">Admin</span>
+          <button onclick="logout()" class="btn btn-secondary">Salir</button>
+        </div>
+      </header>
+      
+      <div class="content">
+        <div class="view active" id="dashboard-view">
+          
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="visits-today">0</div>
+              <div class="stat-label">Visitas Hoy</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="visits-week">0</div>
+              <div class="stat-label">Visitas Semana</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="visits-month">0</div>
+              <div class="stat-label">Visitas Mes</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="total-users">0</div>
+              <div class="stat-label">Usuarios Registrados</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="sales-today">$0</div>
+              <div class="stat-label">Ventas Hoy</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="sales-month">$0</div>
+              <div class="stat-label">Ventas Mes Actual</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="total-products">0</div>
+              <div class="stat-label">Productos</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="quality-score">0%</div>
+              <div class="stat-label">Calidad Promedio</div>
+            </div>
+          </div>
+          
+          <div class="card" style="margin-top: 32px;">
+            <div class="card-header">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title">Ventas</h3>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn btn-secondary" onclick="changeSalesPeriod('daily')" id="btn-daily" style="padding: 4px 8px; font-size: 12px;">Diario</button>
+                  <button class="btn btn-secondary" onclick="changeSalesPeriod('weekly')" id="btn-weekly" style="padding: 4px 8px; font-size: 12px;">Semanal</button>
+                  <button class="btn btn-secondary" onclick="changeSalesPeriod('monthly')" id="btn-monthly" style="padding: 4px 8px; font-size: 12px;">Mensual</button>
+                </div>
+              </div>
+            </div>
+            <div class="card-content">
+              <canvas id="salesChart" width="400" height="200"></canvas>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Visitas Últimos 7 Días</h3>
+              </div>
+              <div class="card-content">
+                <canvas id="visitsChart" width="400" height="200"></canvas>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Interacciones por Tipo</h3>
+              </div>
+              <div class="card-content">
+                <canvas id="interactionsChart" width="400" height="200"></canvas>
+              </div>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Productos Más Vistos</h3>
+              </div>
+              <div class="card-content">
+                <canvas id="productsChart" width="400" height="200"></canvas>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Actividad por Horas</h3>
+              </div>
+              <div class="card-content">
+                <canvas id="hourlyChart" width="400" height="200"></canvas>
+              </div>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Tipos de Dispositivos</h3>
+              </div>
+              <div class="card-content">
+                <canvas id="devicesChart" width="400" height="200"></canvas>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Conversión de Carrito</h3>
+              </div>
+              <div class="card-content">
+                <canvas id="conversionChart" width="400" height="200"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="view" id="products-view">
+          <div class="card">
+            <div class="card-header">
+              <div class="toolbar">
+                <button class="btn btn-primary" onclick="addProduct()">+ Nuevo Producto</button>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <button class="btn btn-secondary" id="filter-all" onclick="filterProductsByStatus('all')" style="background: #0a0a0a; color: white;">Todos</button>
+                  <button class="btn btn-secondary" id="filter-active" onclick="filterProductsByStatus('active')">Activos</button>
+                  <button class="btn btn-secondary" id="filter-inactive" onclick="filterProductsByStatus('inactive')">Inactivos</button>
+                </div>
+                <div class="search">
+                  <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  <input type="text" class="input" placeholder="Buscar productos..." onkeyup="filterProducts(this.value)">
+                </div>
+              </div>
+              <div id="bulk-actions" style="display: none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e5e5e5;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span id="selected-count" style="font-size: 14px; color: #666;">0 productos seleccionados</span>
+                  <button class="btn btn-secondary" onclick="bulkEdit()">✏️ Editar</button>
+                  <button class="btn btn-secondary" onclick="bulkActivate()">✅ Activar</button>
+                  <button class="btn btn-secondary" onclick="bulkDeactivate()">❌ Desactivar</button>
+                  <button class="btn btn-danger" onclick="bulkDelete()">🗑️ Eliminar</button>
+                  <button class="btn btn-secondary" onclick="clearSelection()">Limpiar selección</button>
+                </div>
+              </div>
+            </div>
+            <div class="card-content">
+              <div class="table-container">
+                <table class="table" id="productsTable">
+                  <thead>
+                    <tr>
+                      <th><input type="checkbox" id="select-all" onchange="toggleSelectAll(this.checked)"></th>
+                      <th>Imagen</th>
+                      <th>Producto</th>
+                      <th>Categoría</th>
+                      <th>Precio/Costo</th>
+                      <th>Stock</th>
+                      <th>Tiempo Prep</th>
+                      <th>Popularidad</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td colspan="10" style="text-align: center; padding: 40px; color: #666;">Cargando productos...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="view" id="users-view">
+          <div class="card">
+            <div class="card-header">
+              <div class="toolbar">
+                <h2 class="card-title">Gestión de Usuarios</h2>
+                <div class="search">
+                  <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  <input type="text" class="input" placeholder="Buscar usuarios..." onkeyup="filterUsers(this.value)">
+                </div>
+              </div>
+            </div>
+            <div class="card-content">
+              <div class="table-container">
+                <table class="table" id="usersTable">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Usuario</th>
+                      <th>Email</th>
+                      <th>Teléfono</th>
+                      <th>Registro</th>
+                      <th>Pedidos</th>
+                      <th>Total Gastado</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td colspan="9" style="text-align: center; padding: 40px; color: #666;">Cargando usuarios...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="view" id="orders-view">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Gestión de Pedidos</h2>
+            </div>
+            <div class="card-content">
+              <p style="color: #666;">Sistema de pedidos en desarrollo</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="view" id="payments-view">
+          <iframe src="/admin/pagos-tuu" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 8px;"></iframe>
+        </div>
+        
+        <div class="view" id="test-view">
+          <iframe src="/admin/test" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 8px;"></iframe>
+        </div>
+        
+        <div class="view" id="technical-report-view">
+          <div id="technical-report-container"></div>
+        </div>
+        
+        <div class="view" id="calidad-view">
+          <iframe src="/admin/calidad" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 8px;"></iframe>
+        </div>
+        
+        <div class="view" id="concurso-admin-view">
+          <div class="card">
+            <div class="card-header">
+              <div class="toolbar">
+                <h2 class="card-title">Gestión de Concursantes</h2>
+                <button class="btn btn-primary" onclick="addConcursante()">+ Agregar Concursante</button>
+              </div>
+            </div>
+            <div class="card-content">
+              <div id="concursantes-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+                <div style="text-align: center; padding: 40px; color: #666;">Cargando concursantes...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="view" id="concurso-view">
+          <div class="stats-grid" style="margin-bottom: 24px;">
+            <div class="stat-card">
+              <div style="font-size: 2rem; margin-bottom: 8px;">👁️</div>
+              <div class="stat-value" id="concurso-total-visits">0</div>
+              <div class="stat-label">Total Visitas</div>
+            </div>
+            <div class="stat-card">
+              <div style="font-size: 2rem; margin-bottom: 8px;">📅</div>
+              <div class="stat-value" id="concurso-today-visits">0</div>
+              <div class="stat-label">Visitas Hoy</div>
+            </div>
+            <div class="stat-card">
+              <div style="font-size: 2rem; margin-bottom: 8px;">🎯</div>
+              <div class="stat-value" id="concurso-participants">0</div>
+              <div class="stat-label">Participantes</div>
+            </div>
+            <div class="stat-card">
+              <div style="font-size: 2rem; margin-bottom: 8px;">📈</div>
+              <div class="stat-value" id="concurso-conversion">0%</div>
+              <div class="stat-label">Conversión</div>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Visitas por Día (Últimos 7 días)</h3>
+              </div>
+              <div class="card-content">
+                <canvas id="concursoVisitsChart" width="400" height="200"></canvas>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Visitas por Fuente</h3>
+              </div>
+              <div class="card-content">
+                <canvas id="concursoSourcesChart" width="400" height="200"></canvas>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <h3 class="card-title">🔗 Links de Seguimiento</h3>
+            </div>
+            <div class="card-content">
+              <div style="display: grid; gap: 16px;">
+                <div style="background: #f8fafc; padding: 16px; border-radius: 8px; position: relative;">
+                  <div style="font-family: monospace; font-size: 14px; color: #1e293b; word-break: break-all; margin-bottom: 8px;">https://app.laruta11.cl/concurso/?source=ARICABKN</div>
+                  <div style="color: #64748b; font-size: 12px;">Para campañas de Arica es Bacán</div>
+                  <button onclick="copyConcursoLink('https://app.laruta11.cl/concurso/?source=ARICABKN', this)" style="position: absolute; top: 16px; right: 16px; background: #0a0a0a; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 4px;">
+                    📋 Copiar
+                  </button>
+                </div>
+                <div style="background: #f8fafc; padding: 16px; border-radius: 8px; position: relative;">
+                  <div style="font-family: monospace; font-size: 14px; color: #1e293b; word-break: break-all; margin-bottom: 8px;">https://app.laruta11.cl/concurso/?source=RUTA11</div>
+                  <div style="color: #64748b; font-size: 12px;">Para campañas oficiales de La Ruta 11</div>
+                  <button onclick="copyConcursoLink('https://app.laruta11.cl/concurso/?source=RUTA11', this)" style="position: absolute; top: 16px; right: 16px; background: #0a0a0a; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 4px;">
+                    📋 Copiar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Detalles por Fuente</h3>
+            </div>
+            <div class="card-content">
+              <div class="table-container">
+                <table class="table" id="concursoSourcesTable">
+                  <thead>
+                    <tr>
+                      <th>Fuente</th>
+                      <th>Total Visitas</th>
+                      <th>Visitas Hoy</th>
+                      <th>Participantes</th>
+                      <th>Conversión</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td colspan="5" style="text-align: center; padding: 40px; color: #666;">Cargando datos...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="view" id="combos-view">
+          <div class="card">
+            <div class="card-header">
+              <div class="toolbar">
+                <h2 class="card-title">Gestión de Combos</h2>
+                <button class="btn btn-primary" onclick="addCombo()">+ Nuevo Combo</button>
+              </div>
+            </div>
+            <div class="card-content">
+              <div id="combos-grid" style="display: grid; gap: 16px;">
+                <div style="text-align: center; padding: 40px; color: #666;">Cargando combos...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="view" id="robots-view">
+          <div class="stats-grid" style="margin-bottom: 24px;">
+            <div class="stat-card">
+              <div style="font-size: 2rem; margin-bottom: 8px;">🤖</div>
+              <div class="stat-value" id="robot-status">Inactivo</div>
+              <div class="stat-label">Estado del Robot</div>
+            </div>
+            <div class="stat-card">
+              <div style="font-size: 2rem; margin-bottom: 8px;">📊</div>
+              <div class="stat-value" id="robot-tests">0</div>
+              <div class="stat-label">Tests Ejecutados</div>
+            </div>
+            <div class="stat-card">
+              <div style="font-size: 2rem; margin-bottom: 8px;">✅</div>
+              <div class="stat-value" id="robot-success">0%</div>
+              <div class="stat-label">Tasa de Éxito</div>
+            </div>
+            <div class="stat-card">
+              <div style="font-size: 2rem; margin-bottom: 8px;">⏱️</div>
+              <div class="stat-value" id="robot-last">-</div>
+              <div class="stat-label">Último Test</div>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">🤖 Robot Test Tracking</h3>
+              </div>
+              <div class="card-content">
+                <p style="margin-bottom: 16px; color: #666;">Simula un usuario real navegando por la app y verifica que el sistema de tracking funcione correctamente.</p>
+                <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                  <button class="btn btn-primary" onclick="window.open('/api/robot_test_tracking.php', '_blank')">🚀 Ejecutar Robot</button>
+                  <button class="btn btn-secondary" onclick="checkRobotStatus()">📊 Ver Estado</button>
+                </div>
+                <div style="font-size: 12px; color: #666;">
+                  <p><strong>Funciones:</strong></p>
+                  <ul style="margin: 8px 0; padding-left: 20px;">
+                    <li>Simula visitas reales</li>
+                    <li>Hace clicks en productos</li>
+                    <li>Agrega items al carrito</li>
+                    <li>Verifica tracking completo</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">🧪 Test APIs Individual</h3>
+              </div>
+              <div class="card-content">
+                <p style="margin-bottom: 16px; color: #666;">Prueba cada API de tracking por separado para identificar problemas específicos.</p>
+                <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                  <button class="btn btn-primary" onclick="window.open('/api/test_analytics_system.php', '_blank')">🧪 Test APIs</button>
+                  <button class="btn btn-secondary" onclick="window.open('/api/check_tracking_data.php', '_blank')">📋 Ver Datos</button>
+                </div>
+                <div style="font-size: 12px; color: #666;">
+                  <p><strong>APIs Disponibles:</strong></p>
+                  <ul style="margin: 8px 0; padding-left: 20px;">
+                    <li>Track Visit</li>
+                    <li>Track Interaction</li>
+                    <li>Track Journey</li>
+                    <li>Product Analytics</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card" style="margin-top: 24px;">
+            <div class="card-header">
+              <h3 class="card-title">⚙️ Configuración y Mantenimiento</h3>
+            </div>
+            <div class="card-content">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                <div>
+                  <h4 style="margin-bottom: 8px;">Base de Datos</h4>
+                  <button class="btn btn-secondary" onclick="window.open('/api/check_visits_table.php', '_blank')" style="width: 100%; margin-bottom: 8px;">🗃️ Verificar Tablas</button>
+                  <button class="btn btn-secondary" onclick="window.open('/api/update_visits_table.php', '_blank')" style="width: 100%;">🔧 Actualizar Estructura</button>
+                </div>
+                <div>
+                  <h4 style="margin-bottom: 8px;">Analytics</h4>
+                  <button class="btn btn-secondary" onclick="window.open('/api/app/get_user_behavior.php', '_blank')" style="width: 100%; margin-bottom: 8px;">📊 Datos Comportamiento</button>
+                  <button class="btn btn-secondary" onclick="window.open('/admin/analytics', '_blank')" style="width: 100%;">📈 Dashboard Analytics</button>
+                </div>
+                <div>
+                  <h4 style="margin-bottom: 8px;">Limpieza</h4>
+                  <button class="btn btn-danger" onclick="cleanRobotData()" style="width: 100%; margin-bottom: 8px;">🧹 Limpiar Datos Robot</button>
+                  <button class="btn btn-secondary" onclick="window.open('/api/simulate_visit.php', '_blank')" style="width: 100%;">🎯 Simular Visita</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <script>
+    // @ts-nocheck
+    // Declarar funciones globalmente
+    window.isAppOrder = function(id) {
+      return id && id.toString().startsWith('R11-');
+    };
+    
+    window.showView = function(viewName) {
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+      
+      const navEl = document.getElementById(`nav-${viewName}`);
+      const viewEl = document.getElementById(`${viewName}-view`);
+      const titleEl = document.getElementById('page-title');
+      const refreshBtn = document.getElementById('refresh-btn');
+      
+      if (navEl) navEl.classList.add('active');
+      if (viewEl) viewEl.classList.add('active');
+      
+      const titles = { dashboard: 'Dashboard', products: 'Productos', users: 'Usuarios', orders: 'Pedidos', payments: 'Pagos TUU', test: 'Test APIs', 'technical-report': 'Informe Técnico', robots: '🤖 Robots', calidad: 'Control de Calidad', concurso: '🏆 Concurso Stats', 'concurso-admin': '🎮 Concurso Admin', combos: 'Gestión de Combos' };
+      if (titleEl) titleEl.textContent = titles[viewName];
+      
+      // Show/hide header actions based on view
+      if (refreshBtn) {
+        refreshBtn.style.display = viewName === 'dashboard' ? 'flex' : 'none';
+      }
+      
+      if (viewName === 'dashboard') loadDashboardMetrics();
+      if (viewName === 'products') loadProducts();
+      if (viewName === 'users') loadUsers();
+      // payments view now uses iframe
+      if (viewName === 'test') loadTestAPIs();
+      if (viewName === 'technical-report') loadTechnicalReport();
+      if (viewName === 'robots') loadRobotsView();
+      if (viewName === 'concurso') loadConcursoStats();
+      if (viewName === 'concurso-admin') loadConcursantes();
+      if (viewName === 'combos') loadCombos();
+    };
+    window.loadDashboardMetrics = loadDashboardMetrics;
+    
+    function loadDashboardMetrics() {
+      console.log('🔄 Cargando métricas del dashboard...');
+      fetch('/api/get_dashboard_analytics.php')
+        .then(r => {
+          console.log('📡 Respuesta HTTP:', r.status, r.statusText);
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(data => {
+          console.log('📊 Datos recibidos:', data);
+          if (data && data.success && data.data) {
+            const metrics = data.data.metrics;
+            console.log('📈 Métricas:', metrics);
+            
+            // Actualizar métricas principales
+            document.getElementById('visits-today').textContent = metrics.visits.today || 0;
+            document.getElementById('visits-week').textContent = metrics.visits.week || 0;
+            document.getElementById('visits-month').textContent = metrics.visits.month || 0;
+            document.getElementById('sales-today').textContent = metrics.interactions.cart_adds_today + ' carritos';
+            document.getElementById('total-products').textContent = metrics.products.total || 0;
+            
+            // Cargar usuarios registrados
+            loadUsersCount();
+            
+            // Cargar datos de ventas
+            loadSalesData();
+            
+            // Cargar calidad promedio
+            loadQualityScore();
+            
+            console.log('✅ Métricas actualizadas en el DOM');
+            
+            // Crear gráficos con datos reales
+            createAnalyticsCharts(data.data);
+          } else {
+            console.error('❌ Estructura de datos inválida:', data);
+          }
+        })
+        .catch(error => {
+          console.error('❌ Error cargando métricas:', error);
+          document.getElementById('visits-today').textContent = 'Error';
+          document.getElementById('visits-week').textContent = 'Error';
+          document.getElementById('visits-month').textContent = 'Error';
+          document.getElementById('total-users').textContent = 'Error';
+          document.getElementById('sales-today').textContent = 'Error';
+          document.getElementById('total-products').textContent = 'Error';
+        });
+    };
+    
+    window.loadUsers = function() {
+      // Cargar usuarios y datos de TUU en paralelo
+      Promise.all([
+        fetch('/api/users/get_users.php').then(r => r.json()),
+        fetch('/api/tuu/get_combined_reports.php').then(r => r.json())
+      ])
+      .then(([usersResponse, tuuResponse]) => {
+        const tbody = document.querySelector('#usersTable tbody');
+        if (!tbody) return;
+        
+        const users = usersResponse.success ? usersResponse.data : (Array.isArray(usersResponse) ? usersResponse : []);
+        const transactions = tuuResponse.success ? tuuResponse.data.all_transactions || [] : [];
+        
+        if (Array.isArray(users) && users.length > 0) {
+          tbody.innerHTML = users.map(user => {
+            // Calcular pedidos y total gastado desde TUU
+            const userTransactions = transactions.filter(t => {
+              const customerName = t.customer_name || '';
+              const userName = `${user.name || user.first_name || ''} ${user.last_name || ''}`.trim();
+              return customerName.toLowerCase().includes(userName.toLowerCase()) || 
+                     (t.customer_phone && t.customer_phone === user.phone);
+            });
+            
+            const orderCount = userTransactions.length;
+            const totalSpent = userTransactions.reduce((sum, t) => {
+              const amount = parseFloat(t.amount || t.totalAmount || t.tuu_amount || 0);
+              return sum + (isNaN(amount) ? 0 : amount);
+            }, 0);
+            
+            return `
+              <tr>
+                <td>${user.id}</td>
+                <td>
+                  <div style="font-weight: 600;">${user.name || user.first_name || 'Sin nombre'} ${user.last_name || ''}</div>
+                  <div style="font-size: 12px; color: #666;">${user.username || user.email}</div>
+                </td>
+                <td>${user.email}</td>
+                <td>${user.phone || 'No registrado'}</td>
+                <td>
+                  <div style="font-size: 12px;">${new Date(user.registration_date || user.created_at).toLocaleDateString('es-CL')}</div>
+                  <div style="font-size: 10px; color: #666;">${new Date(user.registration_date || user.created_at).toLocaleTimeString('es-CL')}</div>
+                </td>
+                <td>
+                  <div style="font-weight: 600; color: #3b82f6;">${orderCount}</div>
+                </td>
+                <td>
+                  <div style="font-weight: 600; color: #059669;">$${totalSpent.toLocaleString('es-CL')}</div>
+                </td>
+                <td>
+                  <span style="padding: 4px 8px; border-radius: 12px; font-size: 11px; background: ${user.is_active == 1 ? '#dcfce7' : '#fef2f2'}; color: ${user.is_active == 1 ? '#166534' : '#dc2626'};">
+                    ${user.is_active == 1 ? 'Activo' : 'Inactivo'}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn btn-secondary" onclick="viewUserDetails(${user.id}, ${JSON.stringify(userTransactions).replace(/"/g, '&quot;')})">Ver Detalles</button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #666;">No hay usuarios registrados</td></tr>';
+        }
+      })
+      .catch(error => {
+        console.error('Error loading users:', error);
+        const tbody = document.querySelector('#usersTable tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #ef4444;">Error al cargar usuarios</td></tr>';
+      });
+    };
+    
+    window.viewUserDetails = function(userId, userTransactions = []) {
+      // Si no se pasan transacciones, usar array vacío
+      const transactions = Array.isArray(userTransactions) ? userTransactions : [];
+      
+      // Obtener detalles del usuario
+      fetch(`/api/users/get_users.php`)
+        .then(r => r.json())
+        .then(response => {
+          const users = response.success ? response.data : (Array.isArray(response) ? response : []);
+          const user = users.find(u => u.id == userId);
+          
+          if (!user) {
+            alert('Usuario no encontrado');
+            return;
+          }
+          
+          const modal = document.createElement('div');
+          modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+          
+          const totalSpent = transactions.reduce((sum, t) => {
+            const amount = parseFloat(t.amount || t.totalAmount || t.tuu_amount || 0);
+            return sum + (isNaN(amount) ? 0 : amount);
+          }, 0);
+          
+          modal.innerHTML = `
+            <div style="background: white; padding: 32px; border-radius: 12px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h2>Detalles del Usuario</h2>
+                <button onclick="closeUserModal(this)" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+              </div>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                <div>
+                  <h3 style="margin-bottom: 12px;">Información Personal</h3>
+                  <p><strong>Nombre:</strong> ${user.name || user.first_name || 'No registrado'} ${user.last_name || ''}</p>
+                  <p><strong>Email:</strong> ${user.email}</p>
+                  <p><strong>Teléfono:</strong> ${user.phone || 'No registrado'}</p>
+                  <p><strong>Registro:</strong> ${new Date(user.registration_date || user.created_at).toLocaleString('es-CL')}</p>
+                </div>
+                <div>
+                  <h3 style="margin-bottom: 12px;">Estadísticas</h3>
+                  <p><strong>Total Pedidos:</strong> ${transactions.length}</p>
+                  <p><strong>Total Gastado:</strong> $${totalSpent.toLocaleString('es-CL')}</p>
+                  <p><strong>Promedio por Pedido:</strong> $${transactions.length > 0 ? Math.round(totalSpent / transactions.length).toLocaleString('es-CL') : 0}</p>
+                  <p><strong>Estado:</strong> ${user.is_active == 1 ? 'Activo' : 'Inactivo'}</p>
+                </div>
+              </div>
+              
+              <h3 style="margin-bottom: 12px;">Historial de Pedidos</h3>
+              <div style="max-height: 300px; overflow-y: auto;">
+                ${transactions.length > 0 ? `
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                      <tr style="background: #f9fafb;">
+                        <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">Fecha</th>
+                        <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">ID</th>
+                        <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">Productos</th>
+                        <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">Monto</th>
+                        <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">Tipo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${transactions.map(t => {
+                        const displayDate = t.created_at || t.date || t.tuu_timestamp;
+                        const displayId = t.order_reference || t.saleId || t.id;
+                        const displayAmount = t.amount || t.totalAmount || t.tuu_amount || 0;
+                        const isOnline = t.payment_source === 'online';
+                        const isApp = displayId && displayId.toString().startsWith('R11-');
+                        const paymentType = isOnline ? (isApp ? '📲 APP' : '💻 Online') : '🏪 POS';
+                        
+                        const productDetails = t.detailed_items || t.product_name || 'Pedido genérico';
+                        
+                        return `
+                          <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #f3f4f6;">${new Date(displayDate).toLocaleDateString('es-CL')}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #f3f4f6;">${displayId}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #f3f4f6; font-size: 12px;">
+                              <div style="color: #059669;">${productDetails}</div>
+                            </td>
+                            <td style="padding: 8px; border-bottom: 1px solid #f3f4f6;">$${parseFloat(displayAmount).toLocaleString('es-CL')}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #f3f4f6;">
+                              <span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; background: ${isOnline ? (isAppOrder ? '#dcfce7' : '#dbeafe') : '#fef3c7'}; color: ${isOnline ? (isAppOrder ? '#166534' : '#1e40af') : '#92400e'};">
+                                ${paymentType}
+                              </span>
+                            </td>
+                          </tr>
+                        `;
+                      }).join('')}
+                    </tbody>
+                  </table>
+                ` : '<p style="color: #666; text-align: center; padding: 20px;">No hay pedidos registrados</p>'}
+              </div>
+            </div>
+          `;
+          
+          document.body.appendChild(modal);
+        })
+        .catch(() => {
+          alert('Error cargando detalles del usuario');
+        });
+    };
+    
+    // Función legacy para compatibilidad
+    window.viewUserDetail = function(userId) {
+      viewUserDetails(userId); // Usar la nueva función
+      return;
+      
+      fetch(`/api/get_user_details.php?id=${userId}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            const user = data.user;
+            const orders = data.orders || [];
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+            
+            modal.innerHTML = `
+              <div style="background: white; padding: 32px; border-radius: 12px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto;">
+                <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 24px;">
+                  <h2>Detalles del Usuario</h2>
+                  <button onclick="document.body.removeChild(this.closest('div').parentElement)" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                  <div>
+                    <h3 style="margin-bottom: 12px;">Información Personal</h3>
+                    <p><strong>Nombre:</strong> ${user.name || 'No registrado'}</p>
+                    <p><strong>Email:</strong> ${user.email}</p>
+                    <p><strong>Teléfono:</strong> ${user.phone || 'No registrado'}</p>
+                    <p><strong>Registro:</strong> ${new Date(user.created_at).toLocaleString('es-CL')}</p>
+                  </div>
+                  <div>
+                    <h3 style="margin-bottom: 12px;">Estadísticas</h3>
+                    <p><strong>Total Pedidos:</strong> ${user.total_orders || 0}</p>
+                    <p><strong>Total Gastado:</strong> $${(user.total_spent || 0).toLocaleString('es-CL')}</p>
+                    <p><strong>Promedio por Pedido:</strong> $${user.total_orders > 0 ? Math.round((user.total_spent || 0) / user.total_orders).toLocaleString('es-CL') : 0}</p>
+                    <p><strong>Estado:</strong> ${user.is_active == 1 ? 'Activo' : 'Inactivo'}</p>
+                  </div>
+                </div>
+                
+                <h3 style="margin-bottom: 12px;">Historial de Pedidos</h3>
+                <div style="max-height: 300px; overflow-y: auto;">
+                  ${orders.length > 0 ? `
+                    <table style="width: 100%; border-collapse: collapse;">
+                      <thead>
+                        <tr style="background: #f9fafb;">
+                          <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">Fecha</th>
+                          <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">Total</th>
+                          <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">Estado</th>
+                          <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">Productos</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${orders.map(order => `
+                          <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #f3f4f6;">${new Date(order.created_at).toLocaleDateString('es-CL')}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #f3f4f6;">$${order.total.toLocaleString('es-CL')}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #f3f4f6;">
+                              <span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; background: #dcfce7; color: #166534;">${order.status}</span>
+                            </td>
+                            <td style="padding: 8px; border-bottom: 1px solid #f3f4f6; font-size: 12px;">${order.items_count} productos</td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  ` : '<p style="color: #666; text-align: center; padding: 20px;">No hay pedidos registrados</p>'}
+                </div>
+              </div>
+            `;
+            
+            document.body.appendChild(modal);
+          } else {
+            alert('Error cargando detalles del usuario');
+          }
+        })
+        .catch(() => {
+          alert('Error cargando detalles del usuario');
+        });
+    };
+    
+    window.filterUsers = function(searchTerm) {
+      const rows = document.querySelectorAll('#usersTable tbody tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm.toLowerCase()) ? '' : 'none';
+      });
+    };
+    
+    let allProducts = [];
+    let currentStatusFilter = 'all';
+    
+    window.loadProducts = function() {
+      fetch('/api/get_productos.php?include_inactive=1')
+        .then(r => r.json())
+        .then(data => {
+          allProducts = Array.isArray(data) ? data : [];
+          renderProducts();
+        })
+        .catch(() => {
+          const tbody = document.querySelector('#productsTable tbody');
+          if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #ef4444;">Error al cargar</td></tr>';
+        });
+    };
+    
+    window.renderProducts = function() {
+      const tbody = document.querySelector('#productsTable tbody');
+      if (!tbody) return;
+      
+      let filteredProducts = allProducts;
+      
+      // Filtrar por estado
+      if (currentStatusFilter === 'active') {
+        filteredProducts = allProducts.filter(p => p.is_active == 1);
+      } else if (currentStatusFilter === 'inactive') {
+        filteredProducts = allProducts.filter(p => p.is_active == 0);
+      }
+      
+      if (filteredProducts.length > 0) {
+        const categoryNames = {1: 'La Ruta 11', 2: 'Sandwiches', 3: 'Hamburguesas', 4: 'Completos', 5: 'Snacks', 6: 'Personalizar', 7: 'Extras', 8: 'Combos'};
+        tbody.innerHTML = filteredProducts.map(product => `
+          <tr data-status="${product.is_active == 1 ? 'active' : 'inactive'}">
+            <td><input type="checkbox" class="product-checkbox" value="${product.id}" onchange="updateSelection()"></td>
+            <td>
+              <img src="${product.image_url || 'https://laruta11-images.s3.amazonaws.com/default-product.jpg'}" 
+                   style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px;" 
+                   alt="${product.name}" onerror="this.src='https://via.placeholder.com/50x50?text=IMG'">
+            </td>
+            <td>
+              <div style="font-weight: 600;">${product.name}</div>
+              <div style="font-size: 12px; color: #666;">${product.sku || 'Sin SKU'}</div>
+              <div style="font-size: 11px; color: #999; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${product.description || ''}</div>
+              ${product.calories ? `<div style="font-size: 10px; color: #f59e0b;">🔥 ${product.calories} cal</div>` : ''}
+            </td>
+            <td>
+              <span style="padding: 2px 6px; background: #f3f4f6; border-radius: 4px; font-size: 11px;">${categoryNames[product.category_id] || 'Sin categoría'}</span>
+            </td>
+            <td>
+              <div style="font-weight: 600;">$${new Intl.NumberFormat('es-CL').format(product.price)}</div>
+              <div style="font-size: 11px; color: #666;">Costo: $${new Intl.NumberFormat('es-CL').format(product.cost_price || 0)}</div>
+              ${product.cost_price > 0 ? `<div style="font-size: 10px; color: #059669;">Margen: ${Math.round(((product.price - product.cost_price) / product.price) * 100)}%</div>` : ''}
+            </td>
+            <td>
+              <div style="color: ${product.stock_quantity <= (product.min_stock_level || 5) ? '#ef4444' : '#22c55e'}; font-weight: 600;">${product.stock_quantity || 0} uds</div>
+              <div style="font-size: 10px; color: #666;">Mín: ${product.min_stock_level || 5}</div>
+            </td>
+            <td>
+              <div style="font-size: 12px;">⏱️ ${product.preparation_time || 10} min</div>
+              ${product.grams ? `<div style="font-size: 10px; color: #666;">⚖️ ${product.grams}g</div>` : ''}
+            </td>
+            <td>
+              <div style="font-size: 11px;">👁️ ${product.views || 0}</div>
+              <div style="font-size: 11px;">❤️ ${product.likes || 0}</div>
+            </td>
+            <td>
+              <span style="padding: 4px 8px; border-radius: 12px; font-size: 11px; background: ${product.is_active == 1 ? '#dcfce7' : '#fef2f2'}; color: ${product.is_active == 1 ? '#166534' : '#dc2626'};">
+                ${product.is_active == 1 ? 'Activo' : 'Inactivo'}
+              </span>
+            </td>
+            <td>
+              <a href="/admin/edit-product?id=${product.id}" class="btn btn-secondary" title="Editar producto e ingredientes">📝 Editar</a>
+              <button class="btn btn-danger" onclick="deleteProduct(${product.id})">Eliminar</button>
+            </td>
+          </tr>
+        `).join('');
+      } else {
+        const message = currentStatusFilter === 'active' ? 'No hay productos activos' : 
+                       currentStatusFilter === 'inactive' ? 'No hay productos inactivos' : 
+                       'No hay productos';
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">${message}</td></tr>`;
+      }
+    };
+    
+    window.filterProductsByStatus = function(status) {
+      currentStatusFilter = status;
+      
+      // Actualizar botones activos
+      document.querySelectorAll('[id^="filter-"]').forEach(btn => {
+        btn.style.background = '#f5f5f5';
+        btn.style.color = '#0a0a0a';
+      });
+      
+      const activeBtn = document.getElementById(`filter-${status}`);
+      if (activeBtn) {
+        activeBtn.style.background = '#0a0a0a';
+        activeBtn.style.color = 'white';
+      }
+      
+      renderProducts();
+    };
+    
+    window.addProduct = function() {
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+      
+      modal.innerHTML = `
+        <div style="background: white; padding: 32px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+          <h2 style="margin-bottom: 24px;">Nuevo Producto</h2>
+          <form id="addForm">
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Nombre *:</label>
+              <input type="text" id="addName" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Descripción:</label>
+              <textarea id="addDescription" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; height: 80px;"></textarea>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+              <div>
+                <label style="display: block; margin-bottom: 4px; font-weight: 500;">Precio *:</label>
+                <input type="number" id="addPrice" required step="0.01" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+              </div>
+              <div>
+                <label style="display: block; margin-bottom: 4px; font-weight: 500;">Costo:</label>
+                <input type="number" id="addCost" step="0.01" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+              <div>
+                <label style="display: block; margin-bottom: 4px; font-weight: 500;">Stock inicial:</label>
+                <input type="number" id="addStock" value="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+              </div>
+              <div>
+                <label style="display: block; margin-bottom: 4px; font-weight: 500;">Stock Mínimo:</label>
+                <input type="number" id="addMinStock" value="5" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+              <div>
+                <label style="display: block; margin-bottom: 4px; font-weight: 500;">Categoría:</label>
+                <select id="addCategory" onchange="updateSubcategories()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                  <option value="1">La Ruta 11</option>
+                  <option value="2">Sandwiches</option>
+                  <option value="3">Hamburguesas</option>
+                  <option value="4">Completos</option>
+                  <option value="5">Snacks</option>
+                  <option value="6">Personalizar</option>
+                  <option value="8">Combos</option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; margin-bottom: 4px; font-weight: 500;">Subcategoría:</label>
+                <select id="addSubcategory" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                  <option value="tomahawks">Tomahawks</option>
+                </select>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+              <div>
+                <label style="display: block; margin-bottom: 4px; font-weight: 500;">SKU:</label>
+                <input type="text" id="addSku" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Ej: TOMA-001">
+              </div>
+              <div>
+                <label style="display: block; margin-bottom: 4px; font-weight: 500;">Tiempo Prep (min):</label>
+                <input type="number" id="addPrepTime" value="10" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+              </div>
+              <div>
+                <label style="display: block; margin-bottom: 4px; font-weight: 500;">Peso (gramos):</label>
+                <input type="number" id="addGrams" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+              <div>
+                <label style="display: block; margin-bottom: 4px; font-weight: 500;">Calorías:</label>
+                <input type="number" id="addCalories" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+              </div>
+              <div>
+                <label style="display: block; margin-bottom: 4px; font-weight: 500;">Estado:</label>
+                <select id="addActive" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                  <option value="1">Activo</option>
+                  <option value="0">Inactivo</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Alérgenos:</label>
+              <textarea id="addAllergens" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; height: 60px;" placeholder="Ej: Gluten, Lácteos, Frutos secos"></textarea>
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Imagen:</label>
+              <input type="file" id="addImage" accept="image/*" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+              <button type="button" onclick="document.body.removeChild(this.closest('.modal'))" style="padding: 8px 16px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">Cancelar</button>
+              <button type="submit" style="padding: 8px 16px; background: #0a0a0a; color: white; border: none; border-radius: 4px; cursor: pointer;">Crear Producto</button>
+            </div>
+          </form>
+        </div>
+      `;
+      
+      modal.className = 'modal';
+      document.body.appendChild(modal);
+      
+      document.getElementById('addForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        formData.append('name', document.getElementById('addName').value || '');
+        formData.append('description', document.getElementById('addDescription').value || '');
+        formData.append('price', document.getElementById('addPrice').value || '0');
+        formData.append('cost_price', document.getElementById('addCost').value || '0');
+        formData.append('stock_quantity', document.getElementById('addStock').value || '0');
+        formData.append('min_stock_level', document.getElementById('addMinStock').value || '5');
+        formData.append('category_id', document.getElementById('addCategory').value || '1');
+        formData.append('subcategory_id', document.getElementById('addSubcategory').value || '');
+        formData.append('sku', document.getElementById('addSku').value || '');
+        formData.append('preparation_time', document.getElementById('addPrepTime').value || '10');
+        formData.append('grams', document.getElementById('addGrams').value || '0');
+        formData.append('calories', document.getElementById('addCalories').value || '0');
+        formData.append('is_active', document.getElementById('addActive').value || '1');
+        formData.append('allergens', document.getElementById('addAllergens').value || '');
+        
+        const imageFile = document.getElementById('addImage').files[0];
+        if (imageFile) {
+          formData.append('image', imageFile);
+        }
+        
+        fetch('/api/add_producto.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(r => r.json())
+        .then(result => {
+          if (result.success) {
+            alert('Producto creado');
+            document.body.removeChild(modal);
+            window.loadProducts();
+          } else {
+            alert('Error: ' + result.error);
+          }
+        });
+      });
+    };
+    
+
+    
+
+    
+    window.viewUserDetail = function(userId) {
+      fetch(`/api/users/get_user_detail.php?id=${userId}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+            
+            modal.innerHTML = `
+              <div style="background: white; padding: 32px; border-radius: 12px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto;">
+                <h2 style="margin-bottom: 24px;">Detalle de Usuario</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                  <div>
+                    <h3 style="margin-bottom: 12px;">Información Personal</h3>
+                    <p><strong>Nombre:</strong> ${data.user.name}</p>
+                    <p><strong>Email:</strong> ${data.user.email}</p>
+                    <p><strong>Teléfono:</strong> ${data.user.phone || 'No registrado'}</p>
+                    <p><strong>Registro:</strong> ${new Date(data.user.registration_date).toLocaleDateString('es-CL')}</p>
+                    <p><strong>Último acceso:</strong> ${data.user.last_login ? new Date(data.user.last_login).toLocaleDateString('es-CL') : 'Nunca'}</p>
+                  </div>
+                  <div>
+                    <h3 style="margin-bottom: 12px;">Estadísticas</h3>
+                    <p><strong>Total pedidos:</strong> ${data.orders.length}</p>
+                    <p><strong>Total gastado:</strong> $${new Intl.NumberFormat('es-CL').format(data.user.total_spent || 0)}</p>
+                    <p><strong>Estado:</strong> ${data.user.is_active ? 'Activo' : 'Inactivo'}</p>
+                  </div>
+                </div>
+                <h3 style="margin-bottom: 12px;">Historial de Pedidos</h3>
+                <div style="max-height: 300px; overflow-y: auto;">
+                  ${data.orders.length > 0 ? data.orders.map(order => `
+                    <div style="border: 1px solid #e5e5e5; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+                      <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                          <strong>Pedido #${order.order_number || order.id}</strong>
+                          <span style="margin-left: 12px; padding: 2px 6px; background: #f3f4f6; border-radius: 4px; font-size: 11px;">${order.status}</span>
+                        </div>
+                        <div style="text-align: right;">
+                          <div style="font-weight: 600;">$${new Intl.NumberFormat('es-CL').format(order.total_amount)}</div>
+                          <div style="font-size: 11px; color: #666;">${new Date(order.created_at).toLocaleDateString('es-CL')}</div>
+                        </div>
+                      </div>
+                      <div style="margin-top: 8px; font-size: 12px; color: #666;">${order.items || 'Sin items'}</div>
+                    </div>
+                  `).join('') : '<p style="color: #666; text-align: center; padding: 20px;">No hay pedidos registrados</p>'}
+                </div>
+                <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+                  <button onclick="document.body.removeChild(this.closest('div'))" style="padding: 8px 16px; background: #0a0a0a; color: white; border: none; border-radius: 4px; cursor: pointer;">Cerrar</button>
+                </div>
+              </div>
+            `;
+            
+            document.body.appendChild(modal);
+          } else {
+            alert('Error: ' + data.error);
+          }
+        })
+        .catch(error => {
+          alert('Error cargando detalles del usuario');
+        });
+    };
+    
+    window.filterUsers = function(searchTerm) {
+      const rows = document.querySelectorAll('#usersTable tbody tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm.toLowerCase()) ? '' : 'none';
+      });
+    };
+    
+    window.deleteProduct = function(id) {
+      if (confirm('¿Eliminar producto?')) {
+        const formData = new FormData();
+        formData.append('id', id);
+        fetch('/api/delete_producto.php', { method: 'POST', body: formData })
+          .then(r => r.json())
+          .then(result => {
+            alert(result.success ? 'Producto eliminado' : 'Error: ' + result.error);
+            if (result.success) window.loadProducts();
+          });
+      }
+    };
+    
+    window.filterProducts = function(searchTerm) {
+      const tbody = document.querySelector('#productsTable tbody');
+      if (!tbody) return;
+      
+      let filteredProducts = allProducts;
+      
+      // Filtrar por estado primero
+      if (currentStatusFilter === 'active') {
+        filteredProducts = allProducts.filter(p => p.is_active == 1);
+      } else if (currentStatusFilter === 'inactive') {
+        filteredProducts = allProducts.filter(p => p.is_active == 0);
+      }
+      
+      // Luego filtrar por término de búsqueda
+      if (searchTerm.trim()) {
+        filteredProducts = filteredProducts.filter(product => {
+          const searchText = `${product.name} ${product.sku || ''} ${product.description || ''}`.toLowerCase();
+          return searchText.includes(searchTerm.toLowerCase());
+        });
+      }
+      
+      // Renderizar productos filtrados
+      if (filteredProducts.length > 0) {
+        const categoryNames = {1: 'La Ruta 11', 2: 'Sandwiches', 3: 'Hamburguesas', 4: 'Completos', 5: 'Snacks', 6: 'Personalizar', 7: 'Extras', 8: 'Combos'};
+        tbody.innerHTML = filteredProducts.map(product => `
+          <tr data-status="${product.is_active == 1 ? 'active' : 'inactive'}">
+            <td><input type="checkbox" class="product-checkbox" value="${product.id}" onchange="updateSelection()"></td>
+            <td>
+              <img src="${product.image_url || 'https://laruta11-images.s3.amazonaws.com/default-product.jpg'}" 
+                   style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px;" 
+                   alt="${product.name}" onerror="this.src='https://via.placeholder.com/50x50?text=IMG'">
+            </td>
+            <td>
+              <div style="font-weight: 600;">${product.name}</div>
+              <div style="font-size: 12px; color: #666;">${product.sku || 'Sin SKU'}</div>
+              <div style="font-size: 11px; color: #999; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${product.description || ''}</div>
+              ${product.calories ? `<div style="font-size: 10px; color: #f59e0b;">🔥 ${product.calories} cal</div>` : ''}
+            </td>
+            <td>
+              <span style="padding: 2px 6px; background: #f3f4f6; border-radius: 4px; font-size: 11px;">${categoryNames[product.category_id] || 'Sin categoría'}</span>
+            </td>
+            <td>
+              <div style="font-weight: 600;">$${new Intl.NumberFormat('es-CL').format(product.price)}</div>
+              <div style="font-size: 11px; color: #666;">Costo: $${new Intl.NumberFormat('es-CL').format(product.cost_price || 0)}</div>
+              ${product.cost_price > 0 ? `<div style="font-size: 10px; color: #059669;">Margen: ${Math.round(((product.price - product.cost_price) / product.price) * 100)}%</div>` : ''}
+            </td>
+            <td>
+              <div style="color: ${product.stock_quantity <= (product.min_stock_level || 5) ? '#ef4444' : '#22c55e'}; font-weight: 600;">${product.stock_quantity || 0} uds</div>
+              <div style="font-size: 10px; color: #666;">Mín: ${product.min_stock_level || 5}</div>
+            </td>
+            <td>
+              <div style="font-size: 12px;">⏱️ ${product.preparation_time || 10} min</div>
+              ${product.grams ? `<div style="font-size: 10px; color: #666;">⚖️ ${product.grams}g</div>` : ''}
+            </td>
+            <td>
+              <div style="font-size: 11px;">👁️ ${product.views || 0}</div>
+              <div style="font-size: 11px;">❤️ ${product.likes || 0}</div>
+            </td>
+            <td>
+              <span style="padding: 4px 8px; border-radius: 12px; font-size: 11px; background: ${product.is_active == 1 ? '#dcfce7' : '#fef2f2'}; color: ${product.is_active == 1 ? '#166534' : '#dc2626'};">
+                ${product.is_active == 1 ? 'Activo' : 'Inactivo'}
+              </span>
+            </td>
+            <td>
+              <a href="/admin/edit-product?id=${product.id}" class="btn btn-secondary" title="Editar producto e ingredientes">📝 Editar</a>
+              <button class="btn btn-danger" onclick="deleteProduct(${product.id})">Eliminar</button>
+            </td>
+          </tr>
+        `).join('');
+      } else {
+        const message = searchTerm.trim() ? 'No se encontraron productos' : 
+                       currentStatusFilter === 'active' ? 'No hay productos activos' : 
+                       currentStatusFilter === 'inactive' ? 'No hay productos inactivos' : 
+                       'No hay productos';
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">${message}</td></tr>`;
+      }
+    };
+    
+    window.logout = function() {
+      fetch('/api/admin_logout.php').then(() => window.location.href = '/admin/login');
+    };
+    
+    // TUU reports now handled in separate page
+    
+    window.viewTUUTransaction = function(transaction) {
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+      
+      const isOnline = transaction.payment_source === 'online';
+      const displayDate = transaction.created_at || transaction.date || transaction.tuu_timestamp;
+      const displayId = transaction.order_reference || transaction.saleId || transaction.id;
+      const displayAmount = transaction.amount || transaction.totalAmount || transaction.tuu_amount || 0;
+      const displayCustomer = transaction.customer_name || (isOnline ? 'Cliente Online' : 'Cliente POS');
+      
+      // Determinar tipo de pago
+      const isApp = displayId && displayId.toString().startsWith('R11-');
+      const paymentTypeText = isOnline ? (isApp ? 'Pedido desde APP' : 'Pago Web') : 'POS Físico';
+      
+      modal.innerHTML = `
+        <div style="background: white; padding: 16px; border-radius: 12px; width: 95%; max-width: 700px; max-height: 90vh; overflow-y: auto; margin: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="font-size: 18px; margin: 0;">${window.innerWidth < 640 ? (isOnline ? 'APP' : 'POS') : `Detalle Transacción ${isOnline ? (isApp ? 'APP' : 'Online') : 'POS'}`}</h2>
+            <button onclick="closeModal(this)" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 8px;">&times;</button>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: ${window.innerWidth < 640 ? '1fr' : '1fr 1fr'}; gap: 16px; margin-bottom: 16px;">
+            <div>
+              <h3 style="margin-bottom: 12px;">Información de Venta</h3>
+              <p><strong>ID Venta:</strong> ${displayId}</p>
+              <p><strong>Fecha:</strong> ${new Date(displayDate).toLocaleString('es-CL')}</p>
+              <p><strong>Monto:</strong> $${new Intl.NumberFormat('es-CL').format(displayAmount)}</p>
+              <p><strong>Estado:</strong> ${(transaction.status === 'completed' || !transaction.status) ? '✓ Completado' : transaction.status}</p>
+              <p><strong>Tipo:</strong> ${paymentTypeText}</p>
+            </div>
+            <div>
+              <h3 style="margin-bottom: 12px;">${isOnline ? 'Datos del Cliente' : 'Detalles de Pago'}</h3>
+              ${isOnline ? `
+                <p><strong>Cliente:</strong> ${displayCustomer}</p>
+                ${transaction.customer_phone ? `<p><strong>Teléfono:</strong> ${transaction.customer_phone}</p>` : ''}
+                ${transaction.detailed_items ? `<p><strong>Productos:</strong> ${transaction.detailed_items}</p>` : 
+                  (transaction.product_name && transaction.product_name !== 'Pedido La Ruta 11' ? `<p><strong>Producto:</strong> ${transaction.product_name}</p>` : '<p><strong>Producto:</strong> Pedido genérico</p>')}
+                ${transaction.items_count ? `<p><strong>Total Items:</strong> ${transaction.items_count}</p>` : ''}
+              ` : `
+                <p><strong>Tipo:</strong> ${transaction.transaction_type || 'Tarjeta'}</p>
+                <p><strong>Procesador:</strong> TUU/Transbank</p>
+                <p><strong>Cliente:</strong> ${displayCustomer}</p>
+                <p><strong>Terminal:</strong> ${transaction.pos_serial_number || 'POS Físico'}</p>
+              `}
+            </div>
+          </div>
+          
+          ${isOnline && (transaction.tuu_transaction_id || transaction.tuu_message || transaction.tuu_account_id) ? `
+            <div style="border-top: 1px solid #e5e5e5; padding-top: 24px;">
+              <h3 style="margin-bottom: 12px;">Detalles TUU/Transbank</h3>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div>
+                  ${transaction.tuu_transaction_id ? `<p><strong>ID Transacción TUU:</strong> ${transaction.tuu_transaction_id}</p>` : ''}
+                  ${transaction.tuu_account_id ? `<p><strong>Cuenta TUU:</strong> ${transaction.tuu_account_id}</p>` : ''}
+                  ${transaction.tuu_currency ? `<p><strong>Moneda:</strong> ${transaction.tuu_currency}</p>` : ''}
+                </div>
+                <div>
+                  ${transaction.tuu_message ? `<p><strong>Mensaje:</strong> ${transaction.tuu_message}</p>` : ''}
+                  ${transaction.tuu_timestamp ? `<p><strong>Timestamp TUU:</strong> ${new Date(transaction.tuu_timestamp * 1000).toLocaleString('es-CL')}</p>` : ''}
+                  <p><strong>Procesador:</strong> TUU/Transbank</p>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+          
+          ${!isOnline ? `
+            <div style="border-top: 1px solid #e5e5e5; padding-top: 24px;">
+              <h3 style="margin-bottom: 12px;">Detalles del Terminal POS</h3>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div>
+                  ${transaction.serialNumber ? `<p><strong>Número de Serie:</strong> ${transaction.serialNumber}</p>` : ''}
+                  ${transaction.sequenceNumber && transaction.sequenceNumber !== 'N/A' ? `<p><strong>Nº Transacción:</strong> ${transaction.sequenceNumber}</p>` : ''}
+                  ${transaction.locationId && transaction.locationId !== 'N/A' ? `<p><strong>ID Ubicación:</strong> ${transaction.locationId}</p>` : ''}
+                  ${transaction.address && transaction.address !== 'N/A' ? `<p><strong>Dirección:</strong> ${transaction.address}</p>` : ''}
+                  ${transaction.channel ? `<p><strong>Tipo de Canal:</strong> ${transaction.channel}</p>` : ''}
+                  ${transaction.commission && transaction.commission !== 'N/A' ? `<p><strong>Comisión:</strong> ${transaction.commission}</p>` : ''}
+                </div>
+                <div>
+                  ${transaction.cardBrand && transaction.cardBrand !== 'N/A' ? `<p><strong>Marca Tarjeta:</strong> ${transaction.cardBrand}</p>` : ''}
+                  ${transaction.cardBin && transaction.cardBin !== 'N/A' ? `<p><strong>BIN Tarjeta:</strong> ${transaction.cardBin}</p>` : ''}
+                  ${transaction.cardLastFour && transaction.cardLastFour !== 'N/A' ? `<p><strong>Nº Tarjeta:</strong> ****${transaction.cardLastFour}</p>` : ''}
+                  ${transaction.cardOrigin && transaction.cardOrigin !== 'N/A' ? `<p><strong>Origen:</strong> ${transaction.cardOrigin}</p>` : ''}
+                  ${transaction.cardIssuer && transaction.cardIssuer !== 'N/A' ? `<p><strong>Banco Emisor:</strong> ${transaction.cardIssuer}</p>` : ''}
+                  ${transaction.activityCode ? `<p><strong>Cód. Actividad SII:</strong> ${transaction.activityCode}</p>` : ''}
+                </div>
+              </div>
+              ${transaction.tipAmount > 0 || transaction.cashbackAmount > 0 ? `
+                <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0f0f0;">
+                  <h4 style="margin-bottom: 8px;">Desglose de Montos</h4>
+                  <p><strong>Venta:</strong> $${parseInt(transaction.saleAmount || transaction.totalAmount).toLocaleString('es-CL')}</p>
+                  ${transaction.tipAmount > 0 ? `<p><strong>Propina:</strong> $${parseInt(transaction.tipAmount).toLocaleString('es-CL')}</p>` : ''}
+                  ${transaction.cashbackAmount > 0 ? `<p><strong>Vuelto:</strong> $${parseInt(transaction.cashbackAmount).toLocaleString('es-CL')}</p>` : ''}
+                </div>
+              ` : ''}
+              ${transaction.installmentCount > 0 ? `
+                <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0f0f0;">
+                  <h4 style="margin-bottom: 8px;">Información de Cuotas</h4>
+                  <p><strong>Tipo:</strong> ${transaction.installmentType}</p>
+                  <p><strong>Cantidad:</strong> ${transaction.installmentCount} cuotas</p>
+                </div>
+              ` : ''}
+            </div>
+          ` : ''}
+          
+          <div style="margin-top: 24px; text-align: center; color: #666;">
+            <p>${isOnline ? 'Pago procesado vía TUU/Transbank Online con datos completos' : 'Transacción POS - Datos básicos disponibles'}</p>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) modal.remove();
+      });
+    };
+    
+    window.closeModal = function(button) {
+      const modal = button.closest('div[style*="position: fixed"]');
+      if (modal) modal.remove();
+    };
+    
+    window.loadTestAPIs = function() {
+      // El iframe ya carga automáticamente
+    };
+    
+    window.loadRobotsView = function() {
+      checkRobotStatus();
+    };
+    
+    window.checkRobotStatus = function() {
+      fetch('/api/check_tracking_data.php')
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('robot-tests').textContent = data.data.interactions_today || 0;
+            document.getElementById('robot-success').textContent = data.data.visits_today > 0 ? '100%' : '0%';
+            document.getElementById('robot-last').textContent = new Date().toLocaleTimeString('es-CL');
+            document.getElementById('robot-status').textContent = data.data.visits_today > 0 ? 'Activo' : 'Inactivo';
+          }
+        })
+        .catch(() => {
+          document.getElementById('robot-status').textContent = 'Error';
+        });
+    };
+    
+    window.cleanRobotData = function() {
+      if (confirm('¿Limpiar todos los datos generados por robots de testing?')) {
+        fetch('/api/cleanup_fake_data.php')
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              alert('✅ Datos de robot limpiados exitosamente');
+              checkRobotStatus();
+            } else {
+              alert('❌ Error: ' + data.error);
+            }
+          })
+          .catch(error => {
+            alert('❌ Error de conexión: ' + error.message);
+          });
+      }
+    };
+    
+    window.loadTechnicalReport = function() {
+      const container = document.getElementById('technical-report-container');
+      if (!container) return;
+      
+      container.innerHTML = '<div style="text-align: center; padding: 40px;"><div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #0a0a0a; border-radius: 50%; animation: spin 1s linear infinite;"></div><p style="margin-top: 16px;">Cargando informe técnico...</p></div>';
+      
+      fetch('/api/get_technical_report.php')
+        .then(r => r.json())
+        .then(data => {
+          if (data.success && data.report) {
+            const report = data.report;
+            
+            container.innerHTML = `
+              <div style="padding: 24px;">
+                <!-- Métricas principales -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px;">
+                  <div class="stat-card">
+                    <div class="stat-value">${report.summary.totalFiles.toLocaleString()}</div>
+                    <div class="stat-label">Total Archivos</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-value">${report.summary.totalLines.toLocaleString()}</div>
+                    <div class="stat-label">Líneas de Código</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-value">${report.categories['Backend PHP'].files}</div>
+                    <div class="stat-label">APIs PHP</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-value">${report.categories.Frontend.files}</div>
+                    <div class="stat-label">Frontend</div>
+                  </div>
+                </div>
+                
+                <!-- Stack tecnológico -->
+                <div class="card" style="margin-bottom: 24px;">
+                  <div class="card-header">
+                    <h3 class="card-title">Stack Tecnológico</h3>
+                  </div>
+                  <div class="card-content">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+                      ${Object.entries(report.categories).filter(([_, data]) => data.files > 0).map(([category, data]) => `
+                        <div style="padding: 12px; background: #f9fafb; border-radius: 6px; border: 1px solid #e5e7eb;">
+                          <div style="font-weight: 600; margin-bottom: 4px;">${category}</div>
+                          <div style="font-size: 14px; color: #666;">${data.files} archivos</div>
+                          <div style="font-size: 12px; color: #999;">${data.lines.toLocaleString()} líneas</div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Archivos más grandes -->
+                <div class="card" style="margin-bottom: 24px;">
+                  <div class="card-header">
+                    <h3 class="card-title">Archivos Más Grandes</h3>
+                  </div>
+                  <div class="card-content">
+                    <div style="max-height: 300px; overflow-y: auto;">
+                      ${report.largestFiles.slice(0, 10).map((file, index) => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                          <span style="font-family: monospace; font-size: 13px;">${index + 1}. ${file.path}</span>
+                          <span style="font-size: 13px; color: #666;">${file.lines.toLocaleString()} líneas</span>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Distribución por directorios -->
+                <div class="card">
+                  <div class="card-header">
+                    <h3 class="card-title">Distribución por Directorios</h3>
+                  </div>
+                  <div class="card-content">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                      ${Object.entries(report.directories).sort((a, b) => b[1].files - a[1].files).slice(0, 8).map(([dir, data]) => `
+                        <div style="padding: 12px; background: #f9fafb; border-radius: 6px; border: 1px solid #e5e7eb;">
+                          <div style="font-weight: 600; margin-bottom: 4px;">/${dir}</div>
+                          <div style="font-size: 14px; color: #666;">${data.files} archivos</div>
+                          <div style="font-size: 12px; color: #999;">${data.lines.toLocaleString()} líneas</div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Estado del sistema -->
+                <div style="margin-top: 24px; padding: 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;">
+                  <h3 style="color: #166534; margin-bottom: 12px;">Estado del Sistema</h3>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;">
+                    <div style="display: flex; align-items: center; color: #166534;">
+                      <div style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%; margin-right: 8px;"></div>
+                      Aplicación Operativa
+                    </div>
+                    <div style="display: flex; align-items: center; color: #166534;">
+                      <div style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%; margin-right: 8px;"></div>
+                      API Funcionando
+                    </div>
+                    <div style="display: flex; align-items: center; color: #166534;">
+                      <div style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%; margin-right: 8px;"></div>
+                      Base de Datos OK
+                    </div>
+                  </div>
+                </div>
+                
+                <div style="margin-top: 16px; text-align: center; color: #666; font-size: 12px;">
+                  Última actualización: ${new Date().toLocaleString('es-CL')}
+                </div>
+              </div>
+            `;
+          } else {
+            container.innerHTML = '<div style="text-align: center; padding: 40px; color: #ef4444;">Error cargando informe técnico</div>';
+          }
+        })
+        .catch(error => {
+          container.innerHTML = '<div style="text-align: center; padding: 40px; color: #ef4444;">Error de conexión: ' + error.message + '</div>';
+        });
+    };
+    
+    // Función para actualizar subcategorías en edición masiva
+    window.updateBulkSubcategories = function() {
+      const categorySelect = document.getElementById('bulkCategory');
+      const subcategorySelect = document.getElementById('bulkSubcategory');
+      const categoryId = categorySelect.value;
+      
+      console.log('🔄 Cargando subcategorías bulk para categoría ID:', categoryId);
+      subcategorySelect.innerHTML = '<option value="">No cambiar</option>';
+      
+      if (!categoryId) return;
+      
+      fetch(`/api/get_subcategories.php?category_id=${categoryId}`)
+        .then(r => {
+          console.log('📡 Respuesta HTTP bulk:', r.status, r.statusText);
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(data => {
+          console.log('📊 Datos bulk recibidos:', data);
+          if (data.success && data.subcategories && data.subcategories.length > 0) {
+            console.log('✅ Subcategorías bulk encontradas:', data.subcategories.length);
+            data.subcategories.forEach(sub => {
+              const option = document.createElement('option');
+              option.value = sub.id;
+              option.textContent = sub.name;
+              subcategorySelect.appendChild(option);
+              console.log('➕ Agregada subcategoría bulk:', sub.name, '(ID:', sub.id + ')');
+            });
+          } else {
+            console.log('⚠️ No hay subcategorías bulk disponibles');
+          }
+        })
+        .catch(error => {
+          console.error('❌ Error cargando subcategorías bulk:', error);
+        });
+    };
+    
+    // Función para actualizar subcategorías en nuevo producto
+    window.updateSubcategories = function() {
+      const categorySelect = document.getElementById('addCategory');
+      const subcategorySelect = document.getElementById('addSubcategory');
+      const categoryId = categorySelect.value;
+      
+      console.log('🔄 Cargando subcategorías para categoría ID:', categoryId);
+      subcategorySelect.innerHTML = '<option value="">Cargando...</option>';
+      
+      if (!categoryId) {
+        subcategorySelect.innerHTML = '<option value="">Selecciona una categoría</option>';
+        return;
+      }
+      
+      fetch(`/api/get_subcategories.php?category_id=${categoryId}`)
+        .then(r => {
+          console.log('📡 Respuesta HTTP:', r.status, r.statusText);
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(data => {
+          console.log('📊 Datos recibidos:', data);
+          subcategorySelect.innerHTML = '<option value="">Seleccionar subcategoría...</option>';
+          
+          if (data.success && data.subcategories && data.subcategories.length > 0) {
+            console.log('✅ Subcategorías encontradas:', data.subcategories.length);
+            data.subcategories.forEach(sub => {
+              const option = document.createElement('option');
+              option.value = sub.id;
+              option.textContent = sub.name;
+              subcategorySelect.appendChild(option);
+              console.log('➕ Agregada subcategoría:', sub.name, '(ID:', sub.id + ')');
+            });
+          } else {
+            console.log('⚠️ No hay subcategorías disponibles');
+            subcategorySelect.innerHTML = '<option value="">Sin subcategorías</option>';
+          }
+        })
+        .catch(error => {
+          console.error('❌ Error cargando subcategorías:', error);
+          subcategorySelect.innerHTML = '<option value="">Error cargando</option>';
+        });
+    };
+    
+    // Funciones de selección múltiple
+    window.toggleSelectAll = function(checked) {
+      const checkboxes = document.querySelectorAll('.product-checkbox');
+      checkboxes.forEach(cb => cb.checked = checked);
+      updateSelection();
+    };
+    
+    window.updateSelection = function() {
+      const checkboxes = document.querySelectorAll('.product-checkbox');
+      const checked = document.querySelectorAll('.product-checkbox:checked');
+      const selectAll = document.getElementById('select-all');
+      const bulkActions = document.getElementById('bulk-actions');
+      const selectedCount = document.getElementById('selected-count');
+      
+      if (checked.length === 0) {
+        selectAll.indeterminate = false;
+        selectAll.checked = false;
+      } else if (checked.length === checkboxes.length) {
+        selectAll.indeterminate = false;
+        selectAll.checked = true;
+      } else {
+        selectAll.indeterminate = true;
+        selectAll.checked = false;
+      }
+      
+      if (checked.length > 0) {
+        bulkActions.style.display = 'block';
+        selectedCount.textContent = `${checked.length} producto${checked.length > 1 ? 's' : ''} seleccionado${checked.length > 1 ? 's' : ''}`;
+      } else {
+        bulkActions.style.display = 'none';
+      }
+    };
+    
+    window.clearSelection = function() {
+      document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = false);
+      document.getElementById('select-all').checked = false;
+      updateSelection();
+    };
+    
+    window.getSelectedIds = function() {
+      return Array.from(document.querySelectorAll('.product-checkbox:checked')).map(cb => cb.value);
+    };
+    
+    window.bulkActivate = function() {
+      const ids = getSelectedIds();
+      if (ids.length === 0) return;
+      
+      if (confirm(`¿Activar ${ids.length} producto${ids.length > 1 ? 's' : ''}?`)) {
+        bulkUpdateStatus(ids, 1, 'activar');
+      }
+    };
+    
+    window.bulkDeactivate = function() {
+      const ids = getSelectedIds();
+      if (ids.length === 0) return;
+      
+      if (confirm(`¿Desactivar ${ids.length} producto${ids.length > 1 ? 's' : ''}?`)) {
+        bulkUpdateStatus(ids, 0, 'desactivar');
+      }
+    };
+    
+    window.bulkDelete = function() {
+      const ids = getSelectedIds();
+      if (ids.length === 0) return;
+      
+      if (confirm(`¿ELIMINAR PERMANENTEMENTE ${ids.length} producto${ids.length > 1 ? 's' : ''}?\n\nEsta acción no se puede deshacer.`)) {
+        bulkDeleteProducts(ids);
+      }
+    };
+    
+    window.bulkUpdateStatus = function(ids, status, action) {
+      const formData = new FormData();
+      formData.append('ids', JSON.stringify(ids));
+      formData.append('is_active', status);
+      
+      fetch('/api/bulk_update_products.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      })
+      .then(text => {
+        try {
+          const result = JSON.parse(text);
+          if (result.success) {
+            alert(`✅ ${ids.length} producto${ids.length > 1 ? 's' : ''} ${action === 'activar' ? 'activado' : 'desactivado'}${ids.length > 1 ? 's' : ''} correctamente`);
+            clearSelection();
+            loadProducts();
+          } else {
+            alert('❌ Error: ' + result.error);
+          }
+        } catch (e) {
+          alert('❌ Respuesta inválida del servidor: ' + text.substring(0, 100));
+        }
+      })
+      .catch(error => {
+        alert('❌ Error: ' + error.message);
+      });
+    };
+    
+    window.bulkDeleteProducts = function(ids) {
+      const formData = new FormData();
+      formData.append('ids', JSON.stringify(ids));
+      
+      fetch('/api/bulk_delete_products.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      })
+      .then(text => {
+        try {
+          const result = JSON.parse(text);
+          if (result.success) {
+            alert(`✅ ${ids.length} producto${ids.length > 1 ? 's' : ''} eliminado${ids.length > 1 ? 's' : ''} correctamente`);
+            clearSelection();
+            loadProducts();
+          } else {
+            alert('❌ Error: ' + result.error);
+          }
+        } catch (e) {
+          alert('❌ Respuesta inválida del servidor: ' + text.substring(0, 100));
+        }
+      })
+      .catch(error => {
+        alert('❌ Error: ' + error.message);
+      });
+    };
+    
+    window.bulkEdit = function() {
+      const ids = getSelectedIds();
+      if (ids.length === 0) return;
+      
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+      
+      modal.innerHTML = `
+        <div style="background: white; padding: 24px; border-radius: 8px; width: 90%; max-width: 500px;">
+          <h2 style="margin-bottom: 16px;">Editar ${ids.length} Productos</h2>
+          <form id="bulkEditForm">
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Precio:</label>
+              <input type="number" id="bulkPrice" step="0.01" placeholder="Dejar vacío para no cambiar" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Costo:</label>
+              <input type="number" id="bulkCost" step="0.01" placeholder="Dejar vacío para no cambiar" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Categoría:</label>
+              <select id="bulkCategory" onchange="updateBulkSubcategories()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="">No cambiar</option>
+                <option value="1">La Ruta 11</option>
+                <option value="2">Sandwiches</option>
+                <option value="3">Hamburguesas</option>
+                <option value="4">Completos</option>
+                <option value="5">Snacks</option>
+                <option value="6">Personalizar</option>
+                <option value="8">Combos</option>
+              </select>
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Subcategoría:</label>
+              <select id="bulkSubcategory" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="">No cambiar</option>
+              </select>
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Stock Mínimo:</label>
+              <input type="number" id="bulkMinStock" placeholder="Dejar vacío para no cambiar" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+              <button type="button" onclick="document.body.removeChild(this.closest('div').parentElement)" style="padding: 8px 16px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">Cancelar</button>
+              <button type="submit" style="padding: 8px 16px; background: #0a0a0a; color: white; border: none; border-radius: 4px; cursor: pointer;">Actualizar</button>
+            </div>
+          </form>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      document.getElementById('bulkEditForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const updates = {};
+        const price = document.getElementById('bulkPrice').value;
+        const cost = document.getElementById('bulkCost').value;
+        const category = document.getElementById('bulkCategory').value;
+        const minStock = document.getElementById('bulkMinStock').value;
+        
+        if (price) updates.price = price;
+        if (cost) updates.cost_price = cost;
+        if (category) updates.category_id = category;
+        
+        const subcategory = document.getElementById('bulkSubcategory').value;
+        if (subcategory) updates.subcategory_id = subcategory;
+        if (minStock) updates.min_stock_level = minStock;
+        
+        if (Object.keys(updates).length === 0) {
+          alert('Selecciona al menos un campo para actualizar');
+          return;
+        }
+        
+        const formData = new FormData();
+        formData.append('ids', JSON.stringify(ids));
+        formData.append('updates', JSON.stringify(updates));
+        
+        fetch('/api/bulk_edit_products.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.text();
+        })
+        .then(text => {
+          try {
+            const result = JSON.parse(text);
+            if (result.success) {
+              alert(`✅ ${ids.length} productos actualizados correctamente`);
+              document.body.removeChild(modal);
+              clearSelection();
+              loadProducts();
+            } else {
+              alert('❌ Error: ' + result.error);
+            }
+          } catch (e) {
+            alert('❌ Respuesta inválida: ' + text.substring(0, 100));
+          }
+        })
+        .catch(error => {
+          alert('❌ Error: ' + error.message);
+        });
+      });
+    };
+    
+    window.logout = function() {
+      fetch('/api/admin_logout.php').then(() => window.location.href = '/admin/login');
+    };
+    
+
+    
+    let charts = {};
+    let currentSalesPeriod = 'daily';
+    
+    window.loadUsersCount = function() {
+      fetch('/api/users/get_users.php')
+        .then(r => r.json())
+        .then(response => {
+          const users = response.success ? response.data : (Array.isArray(response) ? response : []);
+          const userCount = Array.isArray(users) ? users.length : 0;
+          document.getElementById('total-users').textContent = userCount;
+        })
+        .catch(() => {
+          document.getElementById('total-users').textContent = 'Error';
+        });
+    };
+    
+    window.loadQualityScore = function() {
+      // En desarrollo local usar mock
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        import('/src/mock/quality-api.js')
+          .then(module => {
+            const score = Math.round(module.mockQualityScore.average_score || 0);
+            document.getElementById('quality-score').textContent = score + '%';
+          })
+          .catch(() => {
+            document.getElementById('quality-score').textContent = '57.1%';
+          });
+      } else {
+        fetch('/api/get_quality_score.php')
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              const score = Math.round(data.average_score || 0);
+              document.getElementById('quality-score').textContent = score + '%';
+            } else {
+              document.getElementById('quality-score').textContent = 'N/A';
+            }
+          })
+          .catch(() => {
+            document.getElementById('quality-score').textContent = 'Error';
+          });
+      }
+    };
+    
+    window.loadSalesData = function(period = 'daily') {
+      currentSalesPeriod = period;
+      
+      // Actualizar botones activos
+      document.querySelectorAll('[id^="btn-"]').forEach(btn => btn.classList.remove('btn-primary'));
+      document.querySelectorAll('[id^="btn-"]').forEach(btn => btn.classList.add('btn-secondary'));
+      document.getElementById(`btn-${period}`).classList.remove('btn-secondary');
+      document.getElementById(`btn-${period}`).classList.add('btn-primary');
+      
+      // Usar API MySQL rápida para datos reales
+      fetch('/api/tuu/get_from_mysql.php')
+        .then(r => r.json())
+        .then(data => {
+          if (data.success && data.data) {
+            const transactions = data.data.all_transactions || [];
+            const stats = data.data.combined_stats || {};
+            
+            // Actualizar ventas del mes con datos reales
+            document.getElementById('sales-month').textContent = '$' + new Intl.NumberFormat('es-CL').format(stats.total_revenue || 0);
+            
+            // Calcular ventas de hoy
+            const today = new Date().toISOString().split('T')[0];
+            let todayTotal = 0;
+            
+            transactions.forEach(t => {
+              const amount = parseFloat(t.amount || 0);
+              if (!isNaN(amount)) {
+                const tDate = new Date(t.created_at || t.payment_date_time);
+                if (tDate.toISOString().split('T')[0] === today) {
+                  todayTotal += amount;
+                }
+              }
+            });
+            
+            document.getElementById('sales-today').textContent = '$' + new Intl.NumberFormat('es-CL').format(todayTotal);
+            
+            // Procesar datos para gráfico
+            const chartData = processSalesData(transactions, period);
+            createSalesChart(chartData);
+          }
+        })
+        .catch(error => {
+          console.error('Error loading sales data:', error);
+          document.getElementById('sales-month').textContent = 'Error';
+          document.getElementById('sales-today').textContent = 'Error';
+        });
+    };
+    
+    window.changeSalesPeriod = function(period) {
+      loadSalesData(period);
+    };
+    
+    window.processSalesData = function(transactions, period) {
+      const labels = [];
+      const data = [];
+      
+      switch (period) {
+        case 'daily':
+          for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
+            
+            let dayTotal = 0;
+            transactions.forEach(t => {
+              const amount = parseFloat(t.amount || 0);
+              if (!isNaN(amount)) {
+                const tDate = new Date(t.created_at || t.payment_date_time);
+                if (tDate.toISOString().split('T')[0] === dateStr) {
+                  dayTotal += amount;
+                }
+              }
+            });
+            
+            labels.push(date.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric' }));
+            data.push(dayTotal);
+          }
+          break;
+          
+        case 'weekly':
+          for (let i = 3; i >= 0; i--) {
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() - (i * 7));
+            const startDate = new Date(endDate);
+            startDate.setDate(startDate.getDate() - 6);
+            
+            let weekTotal = 0;
+            transactions.forEach(t => {
+              const amount = parseFloat(t.amount || 0);
+              if (!isNaN(amount)) {
+                const tDate = new Date(t.created_at || t.payment_date_time);
+                if (tDate >= startDate && tDate <= endDate) {
+                  weekTotal += amount;
+                }
+              }
+            });
+            
+            labels.push(`Sem ${Math.ceil((endDate.getDate()) / 7)}`);
+            data.push(weekTotal);
+          }
+          break;
+          
+        case 'monthly':
+          for (let i = 5; i >= 0; i--) {
+            const date = new Date();
+            date.setMonth(date.getMonth() - i);
+            const month = date.getMonth();
+            const year = date.getFullYear();
+            
+            let monthTotal = 0;
+            transactions.forEach(t => {
+              const amount = parseFloat(t.amount || 0);
+              if (!isNaN(amount)) {
+                const tDate = new Date(t.created_at || t.payment_date_time);
+                if (tDate.getMonth() === month && tDate.getFullYear() === year) {
+                  monthTotal += amount;
+                }
+              }
+            });
+            
+            labels.push(date.toLocaleDateString('es-CL', { month: 'short', year: '2-digit' }));
+            data.push(monthTotal);
+          }
+          break;
+      }
+      
+      return { labels, data };
+    };
+    
+    window.createSalesChart = function(chartData) {
+      if (charts.sales) {
+        charts.sales.destroy();
+      }
+      
+      const ctx = document.getElementById('salesChart');
+      charts.sales = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: chartData.labels,
+          datasets: [{
+            label: 'Ventas ($)',
+            data: chartData.data,
+            borderColor: '#059669',
+            backgroundColor: 'rgba(5, 150, 105, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { 
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return '$' + new Intl.NumberFormat('es-CL').format(context.parsed.y);
+                }
+              }
+            }
+          },
+          scales: { 
+            y: { 
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return '$' + new Intl.NumberFormat('es-CL').format(value);
+                }
+              }
+            }
+          }
+        }
+      });
+    };
+    
+    window.createAnalyticsCharts = function(data) {
+      // Destruir gráficos existentes
+      Object.values(charts).forEach(chart => {
+        if (chart) chart.destroy();
+      });
+      
+      // 1. Gráfico de visitas últimos 7 días
+      const visitsCtx = document.getElementById('visitsChart');
+      const visitsData = data.charts.visits_7days || [];
+      const visitLabels = visitsData.map(v => new Date(v.date).toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric' }));
+      const visitCounts = visitsData.map(v => v.count);
+      
+      charts.visits = new Chart(visitsCtx, {
+        type: 'line',
+        data: {
+          labels: visitLabels,
+          datasets: [{
+            label: 'Visitas',
+            data: visitCounts,
+            borderColor: '#0a0a0a',
+            backgroundColor: 'rgba(10, 10, 10, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+      });
+      
+      // 2. Interacciones por tipo
+      const interactionsCtx = document.getElementById('interactionsChart');
+      const interactionsData = data.charts.interactions_by_type || [];
+      
+      charts.interactions = new Chart(interactionsCtx, {
+        type: 'doughnut',
+        data: {
+          labels: interactionsData.map(i => i.action_type),
+          datasets: [{
+            data: interactionsData.map(i => i.count),
+            backgroundColor: ['#0a0a0a', '#333333', '#666666', '#999999', '#cccccc']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } }
+        }
+      });
+      
+      // 3. Productos más vistos
+      const productsCtx = document.getElementById('productsChart');
+      const productsData = data.charts.top_products || [];
+      
+      charts.products = new Chart(productsCtx, {
+        type: 'bar',
+        data: {
+          labels: productsData.map(p => p.name.substring(0, 15) + '...'),
+          datasets: [{
+            label: 'Vistas',
+            data: productsData.map(p => p.views_count),
+            backgroundColor: '#0a0a0a'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+      
+      // 4. Actividad por horas
+      const hourlyCtx = document.getElementById('hourlyChart');
+      const hourlyData = data.charts.hourly_activity || [];
+      
+      charts.hourly = new Chart(hourlyCtx, {
+        type: 'line',
+        data: {
+          labels: hourlyData.map(h => h.hour + ':00'),
+          datasets: [{
+            label: 'Interacciones',
+            data: hourlyData.map(h => h.count),
+            borderColor: '#0a0a0a',
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+      
+      // 5. Tipos de dispositivos
+      const devicesCtx = document.getElementById('devicesChart');
+      const devicesData = data.charts.device_types || [];
+      
+      charts.devices = new Chart(devicesCtx, {
+        type: 'pie',
+        data: {
+          labels: devicesData.map(d => d.device_type),
+          datasets: [{
+            data: devicesData.map(d => d.count),
+            backgroundColor: ['#0a0a0a', '#666666', '#cccccc']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+      
+      // 6. Conversión de carrito
+      const conversionCtx = document.getElementById('conversionChart');
+      const conversionData = data.charts.cart_conversion || {};
+      
+      charts.conversion = new Chart(conversionCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Vistas', 'Agregados al Carrito', 'Compras'],
+          datasets: [{
+            data: [conversionData.views || 0, conversionData.cart_adds || 0, conversionData.purchases || 0],
+            backgroundColor: ['#cccccc', '#666666', '#0a0a0a']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    };
+    
+
+    
+    window.closeUserModal = function(button) {
+      let modal = button;
+      while (modal && !modal.style.cssText.includes('position: fixed')) {
+        modal = modal.parentElement;
+      }
+      if (modal) {
+        modal.remove();
+      }
+    };
+    
+    // TUU variables moved to separate page
+    
+    // TUU functions moved to separate page
+    
+    // Función para toggle del menú móvil
+    window.toggleMobileMenu = function() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.querySelector('.sidebar-overlay');
+      
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('show');
+    };
+    
+    // Cerrar menú al hacer clic en nav items en móvil
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        if (window.innerWidth < 768) {
+          toggleMobileMenu();
+        }
+      });
+    });
+    
+    // Funciones del concurso
+    let concursoRefreshInterval;
+    
+    window.loadConcursoStats = function() {
+      loadConcursoData();
+      
+      // Auto-refresh cada 30 segundos
+      if (concursoRefreshInterval) clearInterval(concursoRefreshInterval);
+      concursoRefreshInterval = setInterval(loadConcursoData, 30000);
+    };
+    
+    window.loadConcursoData = function() {
+      fetch('/api/get_concurso_stats.php')
+        .then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(data => {
+          console.log('Concurso data received:', data);
+          
+          if (data.success && data.stats) {
+            const stats = data.stats;
+            
+            // Actualizar KPIs
+            document.getElementById('concurso-total-visits').textContent = stats.total_visits || 0;
+            document.getElementById('concurso-today-visits').textContent = stats.today_visits || 0;
+            document.getElementById('concurso-participants').textContent = stats.participants || 0;
+            document.getElementById('concurso-conversion').textContent = (stats.conversion_rate || 0) + '%';
+            
+            // Crear gráficos
+            createConcursoCharts(data);
+            
+            // Actualizar tabla de fuentes
+            updateConcursoSourcesTable(data.sources || []);
+          } else {
+            console.error('Invalid data structure:', data);
+            // Mostrar datos de prueba si no hay datos reales
+            document.getElementById('concurso-total-visits').textContent = '0';
+            document.getElementById('concurso-today-visits').textContent = '0';
+            document.getElementById('concurso-participants').textContent = '0';
+            document.getElementById('concurso-conversion').textContent = '0%';
+            
+            // Crear gráficos vacíos
+            createConcursoCharts({ daily_visits: [], sources: [] });
+            updateConcursoSourcesTable([]);
+          }
+        })
+        .catch(error => {
+          console.error('Error loading concurso stats:', error);
+          // Mostrar mensaje de error en la interfaz
+          document.getElementById('concurso-total-visits').textContent = 'Error';
+          document.getElementById('concurso-today-visits').textContent = 'Error';
+          document.getElementById('concurso-participants').textContent = 'Error';
+          document.getElementById('concurso-conversion').textContent = 'Error';
+        });
+    };
+    
+    window.createConcursoCharts = function(data) {
+      try {
+        // Gráfico de visitas por día
+        if (charts.concursoVisits) charts.concursoVisits.destroy();
+        
+        const visitsCtx = document.getElementById('concursoVisitsChart');
+        if (!visitsCtx) return;
+        
+        const dailyData = data.daily_visits || [];
+        
+        // Si no hay datos, crear datos de ejemplo
+        const chartData = dailyData.length > 0 ? dailyData : [
+          { date: new Date().toISOString().split('T')[0], visits: 0 }
+        ];
+        
+        charts.concursoVisits = new Chart(visitsCtx, {
+          type: 'line',
+          data: {
+            labels: chartData.map(d => {
+              try {
+                return new Date(d.date).toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric' });
+              } catch {
+                return d.date;
+              }
+            }),
+            datasets: [{
+              label: 'Visitas',
+              data: chartData.map(d => parseInt(d.visits) || 0),
+              borderColor: '#0a0a0a',
+              backgroundColor: 'rgba(10, 10, 10, 0.1)',
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+          }
+        });
+        
+        // Gráfico de fuentes
+        if (charts.concursoSources) charts.concursoSources.destroy();
+        
+        const sourcesCtx = document.getElementById('concursoSourcesChart');
+        if (!sourcesCtx) return;
+        
+        const sourcesData = data.sources || [];
+        
+        // Si no hay datos, mostrar mensaje
+        const sourceChartData = sourcesData.length > 0 ? sourcesData : [
+          { source: 'Sin datos', visits: 1 }
+        ];
+        
+        charts.concursoSources = new Chart(sourcesCtx, {
+          type: 'doughnut',
+          data: {
+            labels: sourceChartData.map(s => s.source || 'DIRECT'),
+            datasets: [{
+              data: sourceChartData.map(s => parseInt(s.visits) || 0),
+              backgroundColor: ['#0a0a0a', '#666666', '#cccccc']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+          }
+        });
+        
+      } catch (error) {
+        console.error('Error creating concurso charts:', error);
+      }
+    };
+    
+    window.updateConcursoSourcesTable = function(sources) {
+      const tbody = document.querySelector('#concursoSourcesTable tbody');
+      if (!tbody) return;
+      
+      try {
+        if (Array.isArray(sources) && sources.length > 0) {
+          tbody.innerHTML = sources.map(source => `
+            <tr>
+              <td><strong>${source.source || 'DIRECT'}</strong></td>
+              <td>${parseInt(source.visits) || 0}</td>
+              <td>${parseInt(source.today_visits) || 0}</td>
+              <td>${parseInt(source.participants) || 0}</td>
+              <td>${parseFloat(source.conversion_rate || 0).toFixed(1)}%</td>
+            </tr>
+          `).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #666;">No hay datos disponibles</td></tr>';
+        }
+      } catch (error) {
+        console.error('Error updating sources table:', error);
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #ef4444;">Error cargando datos</td></tr>';
+      }
+    };
+    
+    window.copyConcursoLink = function(url, button) {
+      navigator.clipboard.writeText(url).then(() => {
+        const originalText = button.innerHTML;
+        button.innerHTML = '✓ Copiado';
+        button.style.background = '#22c55e';
+        
+        setTimeout(() => {
+          button.innerHTML = originalText;
+          button.style.background = '#0a0a0a';
+        }, 2000);
+      }).catch(() => {
+        // Fallback para navegadores antiguos
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        const originalText = button.innerHTML;
+        button.innerHTML = '✓ Copiado';
+        button.style.background = '#22c55e';
+        
+        setTimeout(() => {
+          button.innerHTML = originalText;
+          button.style.background = '#0a0a0a';
+        }, 2000);
+      });
+    };
+    
+    // Funciones de concursantes
+    let concursantes = [];
+    
+    window.loadConcursantes = function() {
+      fetch('/api/get_participantes_concurso.php?admin=1')
+        .then(r => r.json())
+        .then(data => {
+          if (data.participantes) {
+            concursantes = data.participantes;
+            renderConcursantes();
+          }
+        })
+        .catch(() => {
+          document.getElementById('concursantes-grid').innerHTML = '<div style="text-align: center; padding: 40px; color: #ef4444;">Error al cargar</div>';
+        });
+    };
+    
+    window.renderConcursantes = function() {
+      const grid = document.getElementById('concursantes-grid');
+      if (!grid) return;
+      
+      if (concursantes.length === 0) {
+        grid.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">No hay concursantes registrados</div>';
+        return;
+      }
+      
+      grid.innerHTML = concursantes.map(c => {
+        const statusColor = c.payment_status === 'paid' ? '#22c55e' : c.payment_status === 'failed' ? '#ef4444' : '#f59e0b';
+        const statusText = c.payment_status === 'paid' ? '✅ Pagado' : c.payment_status === 'failed' ? '❌ Fallido' : '⏳ Pendiente';
+        
+        return `
+          <div class="card" style="padding: 16px; border: 1px solid #ccc;">
+            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
+              <img src="${c.image_url || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMzAiIGZpbGw9IiNmM2Y0ZjYiLz4KPHN2ZyB4PSIxNSIgeT0iMTUiIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjOWNhM2FmIj4KPHA+8J+RpDwvcD4KPC9zdmc+Cjwvc3ZnPgo='}" 
+                   style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid #e5e5e5;" 
+                   alt="${c.nombre}" 
+                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"><div style="width: 60px; height: 60px; background: #f3f4f6; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 24px; color: #9ca3af; border: 2px solid #e5e5e5;">👤</div>
+              <div style="flex: 1;">
+                <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 600;">${c.nombre}</h3>
+                <div style="font-size: 12px; color: #666; margin-bottom: 8px;">${c.rut || 'Sin RUT'}</div>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" onclick="editConcursante(${c.id})" style="padding: 4px 8px; font-size: 12px;">✏️</button>
+                <button class="btn btn-danger" onclick="deleteConcursante(${c.id})" style="padding: 4px 8px; font-size: 12px;">🗑️</button>
+              </div>
+            </div>
+            <div style="font-size: 14px; margin-bottom: 8px;">
+              <div><strong>Email:</strong> ${c.email}</div>
+              <div><strong>Teléfono:</strong> ${c.telefono || 'No registrado'}</div>
+              <div><strong>Peso:</strong> ${c.peso || 'No registrado'}kg</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 12px; color: ${statusColor}; font-weight: 500;">${statusText}</span>
+              <span style="font-size: 11px; color: #999;">${new Date(c.fecha_registro).toLocaleDateString('es-CL')}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+    
+    window.addConcursante = function() {
+      showConcursanteModal();
+    };
+    
+    window.editConcursante = function(id) {
+      const concursante = concursantes.find(c => c.id == id);
+      if (concursante) {
+        showConcursanteModal(concursante);
+      }
+    };
+    
+    window.deleteConcursante = function(id) {
+      if (confirm('¿Eliminar este concursante?')) {
+        fetch('/api/delete_concursante.php', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({id: id})
+        })
+        .then(r => r.json())
+        .then(result => {
+          if (result.success) {
+            loadConcursantes();
+          } else {
+            alert('Error: ' + result.error);
+          }
+        });
+      }
+    };
+    
+    let uploadedImageUrl = null;
+    
+    window.showConcursanteModal = function(concursante = null) {
+      uploadedImageUrl = null;
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+      
+      modal.innerHTML = `
+        <div style="background: white; padding: 24px; border-radius: 8px; width: 90%; max-width: 400px;">
+          <h2 style="margin-bottom: 16px;">${concursante ? 'Editar' : 'Agregar'} Concursante</h2>
+          <form id="concursanteForm">
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Nombre *:</label>
+              <input type="text" id="modalNombre" required value="${concursante?.nombre || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">RUT *:</label>
+              <input type="text" id="modalRut" required value="${concursante?.rut || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Email *:</label>
+              <input type="email" id="modalEmail" required value="${concursante?.email || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Teléfono *:</label>
+              <input type="tel" id="modalTelefono" required value="${concursante?.telefono || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Peso (kg) *:</label>
+              <input type="number" id="modalPeso" required value="${concursante?.peso || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Estado de Pago:</label>
+              <select id="modalPaymentStatus" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="unpaid" ${concursante?.payment_status === 'unpaid' ? 'selected' : ''}>No Pagado</option>
+                <option value="paid" ${concursante?.payment_status === 'paid' ? 'selected' : ''}>Pagado</option>
+                <option value="failed" ${concursante?.payment_status === 'failed' ? 'selected' : ''}>Fallido</option>
+              </select>
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Imagen del Concursante:</label>
+              <input type="file" id="modalImage" accept="image/*" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+              <div id="imagePreview" style="margin-top: 10px; display: none;">
+                <img id="previewImg" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 1px solid #d1d5db;">
+                <div id="uploadStatus" style="margin-top: 8px; font-size: 12px; color: #6b7280;"></div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+              <button type="button" onclick="closeConcursanteModal(this)" style="padding: 8px 16px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">Cancelar</button>
+              <button type="submit" style="padding: 8px 16px; background: #0a0a0a; color: white; border: none; border-radius: 4px; cursor: pointer;">Guardar</button>
+            </div>
+          </form>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // Manejar preview y subida de imagen
+      const imageInput = document.getElementById('modalImage');
+      const imagePreview = document.getElementById('imagePreview');
+      const previewImg = document.getElementById('previewImg');
+      const uploadStatus = document.getElementById('uploadStatus');
+      
+      imageInput.addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) {
+          imagePreview.style.display = 'none';
+          uploadedImageUrl = null;
+          return;
+        }
+        
+        // Mostrar preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          previewImg.src = e.target.result;
+          imagePreview.style.display = 'block';
+          uploadStatus.textContent = 'Preparando subida...';
+          uploadStatus.style.color = '#f59e0b';
+        };
+        reader.readAsDataURL(file);
+        
+        // Subir a AWS
+        try {
+          uploadStatus.textContent = 'Subiendo imagen...';
+          uploadStatus.style.color = '#f59e0b';
+          
+          const formData = new FormData();
+          formData.append('image', file);
+          
+          const response = await fetch('/api/upload_image.php', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            uploadedImageUrl = result.url;
+            uploadStatus.textContent = '✅ Imagen subida exitosamente';
+            uploadStatus.style.color = '#22c55e';
+          } else {
+            uploadedImageUrl = null;
+            uploadStatus.textContent = '❌ Error: ' + result.error;
+            uploadStatus.style.color = '#ef4444';
+          }
+        } catch (error) {
+          uploadedImageUrl = null;
+          uploadStatus.textContent = '❌ Error de conexión';
+          uploadStatus.style.color = '#ef4444';
+        }
+      });
+      
+      document.getElementById('concursanteForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = {
+          nombre: document.getElementById('modalNombre').value,
+          rut: document.getElementById('modalRut').value,
+          email: document.getElementById('modalEmail').value,
+          telefono: document.getElementById('modalTelefono').value,
+          peso: parseInt(document.getElementById('modalPeso').value),
+          payment_status: document.getElementById('modalPaymentStatus').value,
+          mayor_18: 1,
+          image_url: uploadedImageUrl
+        };
+        
+        if (concursante) {
+          formData.id = concursante.id;
+        }
+        
+        const url = concursante ? '/api/update_concursante.php' : '/api/add_concursante_manual.php';
+        
+        fetch(url, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(formData)
+        })
+        .then(r => r.json())
+        .then(result => {
+          if (result.success) {
+            document.body.removeChild(modal);
+            loadConcursantes();
+          } else {
+            alert('Error: ' + result.error);
+          }
+        });
+      });
+    };
+    
+    window.closeConcursanteModal = function(button) {
+      let modal = button;
+      while (modal && modal.style.position !== 'fixed') {
+        modal = modal.parentElement;
+      }
+      if (modal && modal.parentElement) {
+        modal.parentElement.removeChild(modal);
+      }
+    };
+    
+    // Funciones de combos
+    let productos = [];
+    let combos = [];
+    
+    window.loadCombos = function() {
+      Promise.all([
+        fetch('/api/get_productos.php').then(r => r.json()),
+        fetch('/api/get_combos.php').then(r => r.json())
+      ])
+      .then(([productosData, combosData]) => {
+        productos = Array.isArray(productosData) ? productosData : [];
+        combos = combosData.success ? combosData.combos : [];
+        renderCombos();
+      })
+      .catch(() => {
+        document.getElementById('combos-grid').innerHTML = '<div style="text-align: center; padding: 40px; color: #ef4444;">Error al cargar combos</div>';
+      });
+    };
+    
+    window.renderCombos = function() {
+      const grid = document.getElementById('combos-grid');
+      if (!grid) return;
+      
+      if (combos.length === 0) {
+        grid.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">No hay combos creados aún</div>';
+        return;
+      }
+      
+      grid.innerHTML = combos.map(combo => `
+        <div class="card" style="padding: 16px; margin-bottom: 16px; border: 1px solid #e5e5e5; border-radius: 8px; background: white;">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div style="flex: 1;">
+              <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600;">${combo.name}</h3>
+              <p style="margin: 0 0 8px 0; color: #666; font-size: 14px;">${combo.description || ''}</p>
+              <p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: #059669;">$${new Intl.NumberFormat('es-CL').format(combo.price)}</p>
+              <div style="display: flex; gap: 8px;">
+                <span style="font-size: 12px; background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px;">
+                  ${combo.fixed_items?.length || 0} productos incluidos
+                </span>
+                <span style="font-size: 12px; background: #ede9fe; color: #5b21b6; padding: 2px 6px; border-radius: 4px;">
+                  ${Object.keys(combo.selection_groups || {}).length} grupos seleccionables
+                </span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary" onclick="editCombo(${combo.id})" style="padding: 6px 12px; font-size: 12px;">Editar</button>
+              <button class="btn btn-danger" onclick="deleteCombo(${combo.id})" style="padding: 6px 12px; font-size: 12px;">Eliminar</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    };
+    
+    window.addCombo = function() {
+      showComboModal();
+    };
+    
+    window.editCombo = function(id) {
+      const combo = combos.find(c => c.id == id);
+      if (combo) {
+        showComboModal(combo);
+      }
+    };
+    
+    window.loadComboData = function(combo) {
+      // Cargar productos fijos existentes
+      if (combo && combo.fixed_items) {
+        const fixedContainer = document.getElementById('fixedItems');
+        combo.fixed_items.forEach(item => {
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'fixed-item';
+          itemDiv.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 8px;';
+          itemDiv.innerHTML = `
+            <select class="product-select" style="flex: 1; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+              <option value="">Seleccionar producto...</option>
+              ${productos.map(p => `<option value="${p.id}" ${p.id == item.product_id ? 'selected' : ''}>${p.name}</option>`).join('')}
+            </select>
+            <input type="number" class="quantity-input" placeholder="Cant" min="1" value="${item.quantity}" style="width: 60px; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+            <button type="button" onclick="this.parentElement.remove()" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">×</button>
+          `;
+          fixedContainer.appendChild(itemDiv);
+        });
+      }
+      
+      // Cargar grupos de selección existentes
+      if (combo && combo.selection_groups) {
+        const groupsContainer = document.getElementById('selectionGroups');
+        Object.keys(combo.selection_groups).forEach(groupName => {
+          const groupDiv = document.createElement('div');
+          groupDiv.className = 'selection-group';
+          groupDiv.style.cssText = 'border: 1px solid #ddd; border-radius: 4px; padding: 8px; margin-bottom: 8px; background: white;';
+          groupDiv.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <input type="text" class="group-name" placeholder="Nombre del grupo (ej: Bebidas)" value="${groupName}" style="flex: 1; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <label style="font-size: 12px; color: #666;">Máx:</label>
+                <input type="number" class="max-selections" placeholder="1" min="1" value="1" style="width: 50px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;" title="Máximo de selecciones permitidas">
+              </div>
+              <button type="button" onclick="this.closest('.selection-group').remove()" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Eliminar</button>
+            </div>
+            <div class="group-options" style="margin-bottom: 8px;"></div>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <button type="button" onclick="addGroupOption(this)" style="padding: 4px 8px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">+ Opción Manual</button>
+              <button type="button" onclick="addBulkOptions(this)" style="padding: 4px 8px; background: #0ea5e9; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">🚀 Auto Bebidas</button>
+              <button type="button" onclick="addBulkSalsas(this)" style="padding: 4px 8px; background: #f59e0b; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">🌶️ Auto Salsas</button>
+            </div>
+          `;
+          
+          const optionsContainer = groupDiv.querySelector('.group-options');
+          combo.selection_groups[groupName].forEach(option => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'group-option';
+            optionDiv.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 4px;';
+            optionDiv.innerHTML = `
+              <select class="option-product" style="flex: 1; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="">Seleccionar producto...</option>
+                ${productos.map(p => `<option value="${p.id}" ${p.id == option.product_id ? 'selected' : ''}>${p.name}</option>`).join('')}
+              </select>
+              <input type="number" class="option-price" placeholder="Precio extra" step="0.01" value="${option.additional_price}" style="width: 80px; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+              <button type="button" onclick="this.parentElement.remove()" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">×</button>
+            `;
+            optionsContainer.appendChild(optionDiv);
+          });
+          
+          groupsContainer.appendChild(groupDiv);
+        });
+      }
+    };
+    
+    window.deleteCombo = function(id) {
+      if (confirm('¿Eliminar este combo?')) {
+        fetch('/api/delete_combo.php', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({id: id})
+        })
+        .then(r => r.json())
+        .then(result => {
+          if (result.success) {
+            loadCombos();
+          } else {
+            alert('Error: ' + result.error);
+          }
+        });
+      }
+    };
+    
+    window.showComboModal = function(combo = null) {
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+      
+      modal.innerHTML = `
+        <div style="background: white; padding: 24px; border-radius: 8px; width: 95%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+          <h2 style="margin-bottom: 16px;">${combo ? 'Editar' : 'Nuevo'} Combo</h2>
+          <form id="comboForm">
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Nombre *:</label>
+              <input type="text" id="comboName" required value="${combo?.name || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Descripción:</label>
+              <textarea id="comboDescription" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; height: 60px;">${combo?.description || ''}</textarea>
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">Precio *:</label>
+              <input type="number" id="comboPrice" required step="0.01" value="${combo?.price || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500;">URL Imagen:</label>
+              <input type="url" id="comboImage" value="${combo?.image_url || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            
+            <!-- Productos incluidos -->
+            <div style="margin-bottom: 16px; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; background: #f9fafb;">
+              <h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Productos Incluidos</h4>
+              <div id="fixedItems" style="margin-bottom: 12px;">
+                <!-- Items se cargan aquí -->
+              </div>
+              <button type="button" onclick="addFixedItem()" style="padding: 6px 12px; background: #059669; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">+ Agregar Producto</button>
+            </div>
+            
+            <!-- Grupos seleccionables -->
+            <div style="margin-bottom: 16px; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; background: #f9fafb;">
+              <h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Opciones Seleccionables</h4>
+              <div id="selectionGroups" style="margin-bottom: 12px;">
+                <!-- Grupos se cargan aquí -->
+              </div>
+              <button type="button" onclick="addSelectionGroup()" style="padding: 6px 12px; background: #7c3aed; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">+ Agregar Grupo</button>
+            </div>
+            
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+              <button type="button" onclick="closeComboModal(this)" style="padding: 8px 16px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">Cancelar</button>
+              <button type="submit" style="padding: 8px 16px; background: #0a0a0a; color: white; border: none; border-radius: 4px; cursor: pointer;">Guardar</button>
+            </div>
+          </form>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // Cargar datos existentes del combo si es edición
+      if (combo) {
+        loadComboData(combo);
+      }
+      
+      document.getElementById('comboForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = {
+          name: document.getElementById('comboName').value,
+          description: document.getElementById('comboDescription').value,
+          price: parseFloat(document.getElementById('comboPrice').value),
+          image_url: document.getElementById('comboImage').value,
+          active: 1,
+          fixed_items: [],
+          selection_groups: {}
+        };
+        
+        if (combo) {
+          formData.id = combo.id;
+        }
+        
+        // Recopilar productos fijos
+        document.querySelectorAll('#fixedItems .fixed-item').forEach(item => {
+          const productId = item.querySelector('.product-select').value;
+          const quantity = parseInt(item.querySelector('.quantity-input').value) || 1;
+          console.log('Fixed item:', productId, quantity);
+          if (productId && productId !== '') {
+            formData.fixed_items.push({ product_id: parseInt(productId), quantity });
+          }
+        });
+        
+        // Recopilar grupos de selección
+        document.querySelectorAll('#selectionGroups .selection-group').forEach(group => {
+          const groupName = group.querySelector('.group-name').value;
+          const maxSelections = parseInt(group.querySelector('.max-selections').value) || 1;
+          console.log('Selection group:', groupName, maxSelections);
+          if (groupName) {
+            formData.selection_groups[groupName] = {
+              max_selections: maxSelections,
+              options: []
+            };
+            group.querySelectorAll('.group-option').forEach(option => {
+              const productId = option.querySelector('.option-product').value;
+              const additionalPrice = parseFloat(option.querySelector('.option-price').value) || 0;
+              console.log('Group option:', productId, additionalPrice);
+              if (productId && productId !== '') {
+                formData.selection_groups[groupName].options.push({
+                  product_id: parseInt(productId),
+                  additional_price: additionalPrice
+                });
+              }
+            });
+          }
+        });
+        
+        console.log('Final formData:', formData);
+        
+        fetch('/api/save_combo.php', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(formData)
+        })
+        .then(r => r.json())
+        .then(result => {
+          if (result.success) {
+            document.body.removeChild(modal);
+            loadCombos();
+          } else {
+            alert('Error: ' + result.error);
+          }
+        });
+      });
+    };
+    
+    window.addFixedItem = function() {
+      const container = document.getElementById('fixedItems');
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'fixed-item';
+      itemDiv.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 8px;';
+      itemDiv.innerHTML = `
+        <select class="product-select" style="flex: 1; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="">Seleccionar producto...</option>
+          ${productos.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+        </select>
+        <input type="number" class="quantity-input" placeholder="Cant" min="1" value="1" style="width: 60px; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+        <button type="button" onclick="this.parentElement.remove()" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">×</button>
+      `;
+      container.appendChild(itemDiv);
+    };
+    
+    window.addSelectionGroup = function() {
+      const container = document.getElementById('selectionGroups');
+      const groupDiv = document.createElement('div');
+      groupDiv.className = 'selection-group';
+      groupDiv.style.cssText = 'border: 1px solid #ddd; border-radius: 4px; padding: 8px; margin-bottom: 8px; background: white;';
+      groupDiv.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px;">
+          <input type="text" class="group-name" placeholder="Nombre del grupo (ej: Bebidas)" style="flex: 1; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <label style="font-size: 12px; color: #666;">Máx:</label>
+            <input type="number" class="max-selections" placeholder="1" min="1" value="1" style="width: 50px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;" title="Máximo de selecciones permitidas">
+          </div>
+          <button type="button" onclick="this.closest('.selection-group').remove()" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Eliminar</button>
+        </div>
+        <div class="group-options" style="margin-bottom: 8px;"></div>
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+          <button type="button" onclick="addGroupOption(this)" style="padding: 4px 8px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">+ Opción Manual</button>
+          <button type="button" onclick="addBulkOptions(this)" style="padding: 4px 8px; background: #0ea5e9; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">🚀 Auto Bebidas</button>
+          <button type="button" onclick="addBulkSalsas(this)" style="padding: 4px 8px; background: #f59e0b; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">🌶️ Auto Salsas</button>
+        </div>
+      `;
+      container.appendChild(groupDiv);
+    };
+    
+    window.addGroupOption = function(button) {
+      const optionsContainer = button.closest('.selection-group').querySelector('.group-options');
+      const optionDiv = document.createElement('div');
+      optionDiv.className = 'group-option';
+      optionDiv.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 4px;';
+      optionDiv.innerHTML = `
+        <select class="option-product" style="flex: 1; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="">Seleccionar producto...</option>
+          ${productos.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+        </select>
+        <input type="number" class="option-price" placeholder="Precio extra" step="0.01" value="0" style="width: 80px; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+        <button type="button" onclick="this.parentElement.remove()" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">×</button>
+      `;
+      optionsContainer.appendChild(optionDiv);
+    };
+    
+    window.addBulkOptions = function(button) {
+      const optionsContainer = button.closest('.selection-group').querySelector('.group-options');
+      const groupNameInput = button.closest('.selection-group').querySelector('.group-name');
+      
+      // Auto-llenar nombre del grupo si está vacío
+      if (!groupNameInput.value) {
+        groupNameInput.value = 'Bebidas';
+      }
+      
+      // Filtrar bebidas 350ml activas con stock
+      const bebidas = productos.filter(p => {
+        const text = `${p.name} ${p.description || ''}`.toLowerCase();
+        const is350ml = text.includes('350ml') || text.includes('lata') || text.includes('350');
+        const isBebida = text.includes('coca') || text.includes('sprite') || text.includes('fanta') || 
+                        text.includes('bebida') || text.includes('pepsi') || text.includes('jugo');
+        const hasStock = (p.stock_quantity || 0) > 0;
+        
+        return is350ml && isBebida && p.is_active == 1 && hasStock;
+      });
+      
+      // Agregar cada bebida encontrada
+      bebidas.forEach(bebida => {
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'group-option';
+        optionDiv.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 4px;';
+        optionDiv.innerHTML = `
+          <select class="option-product" style="flex: 1; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="${bebida.id}" selected>${bebida.name}</option>
+          </select>
+          <input type="number" class="option-price" placeholder="Precio extra" step="0.01" value="0" style="width: 80px; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+          <button type="button" onclick="this.parentElement.remove()" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">×</button>
+        `;
+        optionsContainer.appendChild(optionDiv);
+      });
+      
+      if (bebidas.length === 0) {
+        alert('No se encontraron bebidas 350ml activas con stock');
+      } else {
+        alert(`✅ Agregadas ${bebidas.length} bebidas 350ml con stock`);
+      }
+    };
+    
+    window.addBulkSalsas = function(button) {
+      const optionsContainer = button.closest('.selection-group').querySelector('.group-options');
+      const groupNameInput = button.closest('.selection-group').querySelector('.group-name');
+      
+      // Auto-llenar nombre del grupo si está vacío
+      if (!groupNameInput.value) {
+        groupNameInput.value = 'Salsas';
+      }
+      
+      // Filtrar salsas
+      const salsas = productos.filter(p => {
+        const text = `${p.name} ${p.description || ''}`.toLowerCase();
+        return (text.includes('salsa') || text.includes('mayo') || text.includes('ketchup') ||
+                text.includes('mostaza') || text.includes('ají') || text.includes('palta')) &&
+               p.is_active == 1;
+      });
+      
+      // Agregar cada salsa encontrada
+      salsas.forEach(salsa => {
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'group-option';
+        optionDiv.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 4px;';
+        optionDiv.innerHTML = `
+          <select class="option-product" style="flex: 1; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="${salsa.id}" selected>${salsa.name}</option>
+          </select>
+          <input type="number" class="option-price" placeholder="Precio extra" step="0.01" value="0" style="width: 80px; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+          <button type="button" onclick="this.parentElement.remove()" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">×</button>
+        `;
+        optionsContainer.appendChild(optionDiv);
+      });
+      
+      if (salsas.length === 0) {
+        alert('No se encontraron salsas activas');
+      }
+    };
+    
+    window.closeComboModal = function(button) {
+      let modal = button;
+      while (modal && modal.style.position !== 'fixed') {
+        modal = modal.parentElement;
+      }
+      if (modal && modal.parentElement) {
+        modal.parentElement.removeChild(modal);
+      }
+    };
+    
+    // Inicializar después de cargar
+    fetch('/api/check_admin_auth.php')
+      .then(r => r.json())
+      .then(data => {
+        if (!data.authenticated) window.location.href = '/admin/login';
+        const usernameEl = document.getElementById('username');
+        if (usernameEl) usernameEl.textContent = data.user;
+        showView('dashboard');
+        
+      });
+  </script>
+</body>
+</html>

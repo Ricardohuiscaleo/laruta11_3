@@ -1,0 +1,421 @@
+---
+---
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pago con Tarjeta Pendiente - La Ruta 11</title>
+    <style>
+        .bg-gray-50 { background-color: #f9fafb; }
+        .font-sans { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; }
+        .min-h-screen { min-height: 100vh; }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .p-4 { padding: 1rem; }
+        .max-w-md { max-width: 28rem; }
+        .w-full { width: 100%; }
+        .bg-white { background-color: #ffffff; }
+        .rounded-lg { border-radius: 0.5rem; }
+        .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .p-8 { padding: 2rem; }
+        .text-center { text-align: center; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .w-16 { width: 4rem; }
+        .h-16 { height: 4rem; }
+        .bg-purple-100 { background-color: #f3e8ff; }
+        .rounded-full { border-radius: 9999px; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .mb-4 { margin-bottom: 1rem; }
+        .w-8 { width: 2rem; }
+        .h-8 { height: 2rem; }
+        .text-purple-600 { color: #9333ea; }
+        .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+        .font-bold { font-weight: 700; }
+        .text-gray-900 { color: #111827; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .text-gray-600 { color: #4b5563; }
+        .bg-purple-50 { background-color: #faf5ff; }
+        .border { border-width: 1px; }
+        .border-purple-200 { border-color: #e9d5ff; }
+        .font-semibold { font-weight: 600; }
+        .text-purple-800 { color: #6b21a8; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-purple-700 { color: #7e22ce; }
+        .bg-blue-50 { background-color: #eff6ff; }
+        .border-blue-200 { border-color: #bfdbfe; }
+        .text-blue-800 { color: #1e40af; }
+        .space-y-1 > * + * { margin-top: 0.25rem; }
+        .border-gray-200 { border-color: #e5e7eb; }
+        .mb-3 { margin-bottom: 0.75rem; }
+        .border-t { border-top-width: 1px; }
+        .pt-3 { padding-top: 0.75rem; }
+        .mt-3 { margin-top: 0.75rem; }
+        .justify-between { justify-content: space-between; }
+        .hidden { display: none; }
+        .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+        .pt-2 { padding-top: 0.5rem; }
+        .text-emerald-600 { color: #059669; }
+        .space-y-3 > * + * { margin-top: 0.75rem; }
+        .bg-emerald-600 { background-color: #059669; }
+        .hover\:bg-emerald-700:hover { background-color: #047857; }
+        .text-white { color: #ffffff; }
+        .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .gap-2 { gap: 0.5rem; }
+        .transition-colors { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+        .w-5 { width: 1.25rem; }
+        .h-5 { height: 1.25rem; }
+        .bg-gray-600 { background-color: #4b5563; }
+        .hover\:bg-gray-700:hover { background-color: #374151; }
+        .text-xs { font-size: 0.75rem; line-height: 1rem; }
+        .text-gray-500 { color: #6b7280; }
+        .mt-6 { margin-top: 1.5rem; }
+        .font-mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace; }
+        .text-red-500 { color: #ef4444; }
+        .mt-1 { margin-top: 0.25rem; }
+        .border-b { border-bottom-width: 1px; }
+        .pb-2 { padding-bottom: 0.5rem; }
+        .last\:border-b-0:last-child { border-bottom-width: 0; }
+        .last\:mb-0:last-child { margin-bottom: 0; }
+        .items-start { align-items: flex-start; }
+        .font-medium { font-weight: 500; }
+        .bg-green-50 { background-color: #f0fdf4; }
+        .border-green-200 { border-color: #bbf7d0; }
+        .text-green-800 { color: #166534; }
+    </style>
+    <link rel="icon" type="image/png" href="/icon.png">
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
+            <div class="mb-6 text-center">
+                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">Pago Pendiente</h1>
+                <p class="text-gray-600 mb-6">Tu pedido está esperando confirmación de pago con tarjeta</p>
+            </div>
+
+            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
+                <h3 class="font-semibold text-purple-800 mb-2">💳 Pago con Tarjeta</h3>
+                <div class="text-sm text-purple-800 space-y-1">
+                    <p>Por favor realiza el pago con tarjeta de crédito o débito en el local</p>
+                    <p><strong>Monto a pagar:</strong> <span id="total-display">$0</span></p>
+                </div>
+            </div>
+
+            <!-- Datos del Cliente -->
+            <div id="customer-info" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 hidden">
+                <h3 class="font-semibold text-green-800 mb-2">👤 Datos del Cliente</h3>
+                <div class="text-sm text-green-800 space-y-1">
+                    <p><strong>Cliente:</strong> <span id="customer-name">-</span></p>
+                    <p><strong>Teléfono:</strong> <span id="customer-phone">-</span></p>
+                    <p><strong>Tipo de entrega:</strong> <span id="delivery-type">-</span></p>
+                    <p id="delivery-address-row" class="hidden"><strong>Dirección:</strong> <span id="delivery-address">-</span></p>
+                </div>
+            </div>
+
+            <!-- Tu Pedido -->
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                <h3 class="font-semibold text-gray-900 mb-3">🛒 Tu Pedido</h3>
+                <div id="order-items">
+                    <!-- Los items se cargarán dinámicamente -->
+                </div>
+                <div class="border-t border-gray-200 pt-3 mt-3">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-gray-600">Subtotal:</span>
+                        <span id="subtotal" class="font-semibold">$0</span>
+                    </div>
+                    <div id="delivery-row" class="justify-between mb-2 hidden">
+                        <span class="text-gray-600">Delivery:</span>
+                        <span id="delivery-fee" class="font-semibold">$0</span>
+                    </div>
+                    <div class="flex justify-between text-lg font-bold border-t border-gray-200 pt-2">
+                        <span>Total:</span>
+                        <span id="total" class="text-emerald-600">$0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <a 
+                    id="whatsapp-link"
+                    href="https://wa.me/56936227422?text=Cargando%20pedido..."
+                    target="_blank"
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                >
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.785"/>
+                    </svg>
+                    Continuar en WhatsApp
+                </a>
+                
+                <button 
+                    onclick="window.location.href='https://caja.laruta11.cl'"
+                    class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+                >
+                    Volver a Caja
+                </button>
+            </div>
+
+            <div class="text-xs text-gray-500 mt-6 space-y-1 text-center">
+                <p>Pedido: <span id="order-id" class="font-mono"></span></p>
+                <p>Una vez confirmado el pago, comenzaremos a preparar tu pedido</p>
+            </div>
+        </div>
+    </div>
+
+    <script is:inline>
+        // Generar mensaje estructurado para WhatsApp
+        function generateWhatsAppMessage() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderId = urlParams.get('order');
+            
+            const totalElement = document.getElementById('total');
+            const subtotalElement = document.getElementById('subtotal');
+            const deliveryFeeElement = document.getElementById('delivery-fee');
+            const deliveryRowElement = document.getElementById('delivery-row');
+            
+            const total = totalElement ? totalElement.textContent : '$0';
+            const subtotal = subtotalElement ? subtotalElement.textContent : '$0';
+            const deliveryFee = deliveryFeeElement ? deliveryFeeElement.textContent : '$0';
+            const hasDelivery = deliveryRowElement && !deliveryRowElement.classList.contains('hidden');
+            
+            const customerNameElement = document.getElementById('customer-name');
+            const customerPhoneElement = document.getElementById('customer-phone');
+            const deliveryTypeElement = document.getElementById('delivery-type');
+            const deliveryAddressElement = document.getElementById('delivery-address');
+            
+            const customerName = customerNameElement ? customerNameElement.textContent : 'No especificado';
+            const customerPhone = customerPhoneElement ? customerPhoneElement.textContent : 'No especificado';
+            const deliveryType = deliveryTypeElement ? deliveryTypeElement.textContent : 'Retiro';
+            const deliveryAddress = deliveryAddressElement ? deliveryAddressElement.textContent : null;
+            
+            let message = `*PEDIDO PENDIENTE - LA RUTA 11*\n\n`;
+            message += `*Pedido:* ${orderId}\n`;
+            message += `*Cliente:* ${customerName}\n`;
+            message += `*Teléfono:* ${customerPhone}\n`;
+            message += `*Tipo de entrega:* ${deliveryType}\n`;
+            if (deliveryType === 'Delivery' && deliveryAddress) {
+                message += `*Dirección:* ${deliveryAddress}\n`;
+            }
+            message += `*Estado:* Pendiente de pago con tarjeta\n`;
+            message += `*Total:* ${total}\n`;
+            message += `*Método:* Pago con tarjeta\n\n`;
+            
+            message += `*PRODUCTOS:*\n`;
+            const orderItems = document.querySelectorAll('#order-items > div');
+            orderItems.forEach((item, index) => {
+                const nameElement = item.querySelector('.font-medium');
+                const quantityElement = item.querySelector('.text-xs');
+                const includesElement = item.querySelector('.text-gray-500.mt-1');
+                const priceElement = item.querySelector('.font-semibold:last-child');
+                
+                if (nameElement) {
+                    message += `${index + 1}. ${nameElement.textContent}\n`;
+                }
+                if (quantityElement) {
+                    message += `${quantityElement.textContent}\n`;
+                }
+                if (includesElement) {
+                    message += `${includesElement.textContent}\n`;
+                }
+                if (priceElement) {
+                    message += `Precio: ${priceElement.textContent}\n\n`;
+                }
+            });
+            
+            message += `*Subtotal:* ${subtotal}\n`;
+            if (hasDelivery) {
+                message += `*Delivery:* ${deliveryFee}\n`;
+            }
+            message += `*Total:* ${total}\n\n`;
+            
+            message += `*Pago con Tarjeta*\n\n`;
+            message += `Pedido realizado desde la app web.\n`;
+            message += `Por favor confirmar pago con tarjeta en el local.`;
+            
+            return encodeURIComponent(message);
+        }
+
+        // Actualizar enlace de WhatsApp
+        function updateWhatsAppLink() {
+            const message = generateWhatsAppMessage();
+            const whatsappLink = document.getElementById('whatsapp-link');
+            if (whatsappLink) {
+                whatsappLink.setAttribute('href', `https://wa.me/56936227422?text=${message}`);
+            }
+        }
+
+        // Obtener order ID de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('order');
+        if (orderId) {
+            const orderIdElement = document.getElementById('order-id');
+            if (orderIdElement) {
+                orderIdElement.textContent = orderId;
+            }
+        }
+
+        // Cargar datos del pedido
+        async function loadOrderData() {
+            if (!orderId) return;
+            
+            try {
+                const response = await fetch(`/api/get_transfer_order.php?order_id=${orderId}`);
+                const data = await response.json();
+                
+                if (data.success && data.order) {
+                    displayOrderItems(data.order.items, data.order.total, data.order.delivery_fee);
+                    displayCustomerInfo(data.order);
+                    updateWhatsAppLink();
+                    
+                    // Actualizar total display
+                    const totalDisplayElement = document.getElementById('total-display');
+                    if (totalDisplayElement) {
+                        totalDisplayElement.textContent = `$${data.order.total.toLocaleString('es-CL')}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Mostrar items del pedido
+        function displayOrderItems(cart, total, deliveryFee) {
+            const orderItemsElement = document.getElementById('order-items');
+            const subtotalElement = document.getElementById('subtotal');
+            const totalElement = document.getElementById('total');
+            const deliveryRowElement = document.getElementById('delivery-row');
+            
+            if (!orderItemsElement) return;
+            
+            let itemsHtml = '';
+            let subtotal = 0;
+            
+            cart.forEach(item => {
+                let itemTotal = item.price * item.quantity;
+                
+                if (item.customizations && item.customizations.length > 0) {
+                    itemTotal += item.customizations.reduce((sum, c) => sum + (c.price * c.quantity), 0);
+                }
+                
+                subtotal += itemTotal;
+                
+                let includesText = '';
+                
+                if (item.customizations && item.customizations.length > 0) {
+                    const customItems = item.customizations.map(c => `${c.quantity}x ${c.name} (+$${(c.price * c.quantity).toLocaleString('es-CL')})`).join(', ');
+                    includesText = `<div class="text-xs text-blue-600 mt-1">Incluye: ${customItems}</div>`;
+                }
+                
+                const allIncludes = [];
+                
+                if (item.fixed_items && item.fixed_items.length > 0) {
+                    item.fixed_items.forEach(f => {
+                        if (typeof f === 'string') {
+                            allIncludes.push(f);
+                        } else {
+                            allIncludes.push(f.product_name || f.name || JSON.stringify(f));
+                        }
+                    });
+                }
+                
+                if (item.selections && typeof item.selections === 'object') {
+                    Object.values(item.selections).forEach(categoryItems => {
+                        if (Array.isArray(categoryItems)) {
+                            categoryItems.forEach(s => {
+                                allIncludes.push(s.name || s.product_name || String(s));
+                            });
+                        } else if (categoryItems && typeof categoryItems === 'object') {
+                            allIncludes.push(categoryItems.name || categoryItems.product_name || String(categoryItems));
+                        }
+                    });
+                }
+                
+                if (allIncludes.length > 0) {
+                    if (includesText) {
+                        includesText += `<div class="text-xs text-gray-500 mt-1">También: ${allIncludes.join(', ')}</div>`;
+                    } else {
+                        includesText = `<div class="text-xs text-gray-500 mt-1">Incluye: ${allIncludes.join(', ')}</div>`;
+                    }
+                }
+                
+                itemsHtml += `
+                    <div class="border-b border-gray-200 pb-2 mb-3 last:border-b-0 last:mb-0">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="font-medium text-gray-900">${item.name}</div>
+                                <div class="text-xs text-gray-500">Cantidad: ${item.quantity}</div>
+                                ${includesText}
+                            </div>
+                            <div class="font-semibold text-gray-900">$${itemTotal.toLocaleString('es-CL')}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            orderItemsElement.innerHTML = itemsHtml;
+            
+            if (subtotalElement) {
+                subtotalElement.textContent = `$${subtotal.toLocaleString('es-CL')}`;
+            }
+            
+            if (totalElement) {
+                totalElement.textContent = `$${total.toLocaleString('es-CL')}`;
+            }
+            
+            if (deliveryFee > 0) {
+                if (deliveryRowElement) {
+                    deliveryRowElement.classList.remove('hidden');
+                    deliveryRowElement.classList.add('flex');
+                }
+                const deliveryFeeElement = document.getElementById('delivery-fee');
+                if (deliveryFeeElement) {
+                    deliveryFeeElement.textContent = `$${deliveryFee.toLocaleString('es-CL')}`;
+                }
+            }
+        }
+
+        // Mostrar datos del cliente
+        function displayCustomerInfo(order) {
+            const customerInfoElement = document.getElementById('customer-info');
+            const customerNameElement = document.getElementById('customer-name');
+            const customerPhoneElement = document.getElementById('customer-phone');
+            const deliveryTypeElement = document.getElementById('delivery-type');
+            const deliveryAddressElement = document.getElementById('delivery-address');
+            const deliveryAddressRowElement = document.getElementById('delivery-address-row');
+            
+            if (customerNameElement) {
+                customerNameElement.textContent = order.customer_name || 'No especificado';
+            }
+            if (customerPhoneElement) {
+                customerPhoneElement.textContent = order.customer_phone || 'No especificado';
+            }
+            if (deliveryTypeElement) {
+                deliveryTypeElement.textContent = order.delivery_type === 'delivery' ? 'Delivery' : 'Retiro';
+            }
+            
+            if (order.delivery_type === 'delivery' && order.delivery_address) {
+                if (deliveryAddressElement) {
+                    deliveryAddressElement.textContent = order.delivery_address;
+                }
+                if (deliveryAddressRowElement) {
+                    deliveryAddressRowElement.classList.remove('hidden');
+                }
+            }
+            
+            if (customerInfoElement) {
+                customerInfoElement.classList.remove('hidden');
+            }
+        }
+
+        // Cargar datos al cargar la página
+        document.addEventListener('DOMContentLoaded', loadOrderData);
+    </script>
+</body>
+</html>

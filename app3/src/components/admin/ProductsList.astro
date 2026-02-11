@@ -1,0 +1,74 @@
+---
+// ProductsList.astro - Componente para lista de productos
+---
+
+<div class="products-container">
+  <div class="tabs">
+    <div class="tab-list">
+      <button class="tab active" onclick="showProductsTab()"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg> Lista de Productos</button>
+      <button class="tab" onclick="showEditTab()" id="edit-tab" style="display:none;"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg> Editar Producto</button>
+    </div>
+  </div>
+  
+  <div class="tab-content active" id="products-tab">
+    <div class="toolbar">
+      <div class="quick-actions">
+        <button class="btn btn-success" onclick="addProduct()">+ Nuevo Producto</button>
+        <input type="text" class="search-box" placeholder="Buscar productos..." onkeyup="filterProducts(this.value)">
+        <select class="filter-select" onchange="filterByCategory(this.value)">
+          <option value="">Todas las categorías</option>
+          <option value="1">Tomahawk</option>
+          <option value="2">Churrascos</option>
+          <option value="3">Hamburguesas</option>
+          <option value="4">Completos</option>
+          <option value="5">Acompañamientos</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="table-container">
+      <table id="productsTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Producto</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <th>Estado</th>
+            <th>Categoría</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 40px; color: #6b7280;">
+              Cargando productos...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <div class="tab-content" id="edit-tab-content"></div>
+</div>
+
+<style>
+  .products-container {
+    background: #f7f6f3;
+    min-height: calc(100vh - 200px);
+    padding: 0;
+  }
+  .tab-content {
+    padding: 24px;
+    background: #f7f6f3;
+  }
+  .tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .icon {
+    flex-shrink: 0;
+  }
+</style>

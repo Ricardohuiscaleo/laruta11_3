@@ -1,0 +1,295 @@
+---
+// Reportes Financieros
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reportes Financieros</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #fafafa; color: #0a0a0a; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    .header { margin-bottom: 32px; }
+    .title { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .subtitle { color: #666; font-size: 14px; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .kpi-card { background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #0a0a0a; }
+    .kpi-value { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+    .kpi-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card { background: white; border-radius: 8px; border: 1px solid #e5e5e5; margin-bottom: 24px; overflow: hidden; }
+    .card-header { padding: 20px; border-bottom: 1px solid #e5e5e5; background: #f9fafb; }
+    .card-title { font-size: 16px; font-weight: 600; }
+    .card-content { padding: 20px; }
+    .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table th { text-align: left; padding: 12px; font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e5e5; background: #f9fafb; }
+    .table td { padding: 12px; border-bottom: 1px solid #f5f5f5; }
+    .table tr:hover { background: #fafafa; }
+    .positive { color: #10b981; font-weight: 600; }
+    .negative { color: #dc2626; font-weight: 600; }
+    .chart-container { position: relative; height: 300px; margin-bottom: 24px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 768px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .kpis { grid-template-columns: repeat(2, 1fr); }
+      .table { font-size: 12px; }
+      .table th, .table td { padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 class="title">📊 Reportes Financieros</h1>
+      <p class="subtitle">Análisis de ventas, costos y rentabilidad</p>
+    </div>
+    
+    <div class="kpis">
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-ventas">$0</div>
+        <div class="kpi-label">Ventas Mes Actual</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-utilidad">$0</div>
+        <div class="kpi-label">Utilidad Neta</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-margen">0%</div>
+        <div class="kpi-label">Margen Bruto</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-pedidos">0</div>
+        <div class="kpi-label">Pedidos Mes</div>
+      </div>
+    </div>
+    
+    <div class="kpis">
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-ventas-total">$0</div>
+        <div class="kpi-label">Venta Total (12 Meses)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-utilidad-total">$0</div>
+        <div class="kpi-label">Utilidad Total (12 Meses)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-pedidos-total">0</div>
+        <div class="kpi-label">Total Pedidos (12 Meses)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value positive" id="kpi-crecimiento">0%</div>
+        <div class="kpi-label">Crecimiento Mes vs Mes</div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">📅 Resumen Mensual (Últimos 12 Meses)</h2>
+      </div>
+      <div class="card-content">
+        <div style="overflow-x: auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Mes</th><th>Pedidos</th><th>Ventas Bruto</th><th>Delivery Fee</th><th>Ventas Neto</th><th>Costo Real</th><th>Utilidad Bruta</th><th>Gastos Fijos</th><th>Utilidad Neta</th><th>Margen %</th><th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-meses">
+              <tr><td colspan="11" style="text-align: center; padding: 40px; color: #666;">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">📈 Tendencia de Utilidad Neta</h2>
+      </div>
+      <div class="card-content">
+        <div class="chart-container">
+          <canvas id="chart-utilidad"></canvas>
+        </div>
+      </div>
+    </div>
+    
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">🏆 Top 10 Productos Vendidos</h2>
+        </div>
+        <div class="card-content">
+          <div style="overflow-x: auto;">
+            <table class="table">
+              <thead>
+                <tr><th>Producto</th><th>Veces</th><th>Ingresos</th><th>Precio Prom</th></tr>
+              </thead>
+              <tbody id="tabla-top">
+                <tr><td colspan="4" style="text-align: center; padding: 20px; color: #666;">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">📉 Productos Menos Vendidos</h2>
+        </div>
+        <div class="card-content">
+          <div style="overflow-x: auto;">
+            <table class="table">
+              <thead>
+                <tr><th>Producto</th><th>Veces</th><th>Ingresos</th><th>Precio Prom</th></tr>
+              </thead>
+              <tbody id="tabla-menos">
+                <tr><td colspan="4" style="text-align: center; padding: 20px; color: #666;">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">💳 Canales de Venta (Últimos 3 Meses)</h2>
+      </div>
+      <div class="card-content">
+        <div style="overflow-x: auto;">
+          <table class="table">
+            <thead>
+              <tr><th>Canal</th><th>Pedidos</th><th>Ventas</th><th>Ticket Promedio</th></tr>
+            </thead>
+            <tbody id="tabla-canales">
+              <tr><td colspan="4" style="text-align: center; padding: 20px; color: #666;">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // @ts-nocheck
+    let chartUtilidad;
+    
+    async function cargarReportes() {
+      try {
+        const response = await fetch(`/api/get_financial_reports.php?t=${Date.now()}`);
+        const data = await response.json();
+        
+        if (!data.success) return;
+        
+        const mesActual = data.rentabilidad?.[0];
+        if (mesActual) {
+          const fmt = (v) => '$' + new Intl.NumberFormat('es-CL').format(Math.round(v));
+          document.getElementById('kpi-ventas').textContent = fmt(mesActual.ventas);
+          document.getElementById('kpi-utilidad').textContent = fmt(mesActual.utilidad_neta);
+          document.getElementById('kpi-margen').textContent = mesActual.margen_pct + '%';
+          document.getElementById('kpi-pedidos').textContent = mesActual.pedidos;
+        }
+        
+        const totales = data.totales;
+        const fmt = (v) => '$' + new Intl.NumberFormat('es-CL').format(Math.round(v));
+        document.getElementById('kpi-ventas-total').textContent = fmt(totales.ventas_total);
+        document.getElementById('kpi-utilidad-total').textContent = fmt(totales.utilidad_total);
+        document.getElementById('kpi-pedidos-total').textContent = totales.pedidos_total;
+        
+        const crecEl = document.getElementById('kpi-crecimiento');
+        crecEl.textContent = totales.crecimiento_ventas + '%';
+        crecEl.className = totales.crecimiento_ventas >= 0 ? 'positive' : 'negative';
+        
+        const fmt2 = (v) => '$' + new Intl.NumberFormat('es-CL').format(Math.round(v));
+        document.getElementById('tabla-meses').innerHTML = data.rentabilidad.map(m => `
+          <tr>
+            <td><strong>${m.mes}</strong></td>
+            <td>${m.pedidos}</td>
+            <td>${fmt2(m.ventas_bruto)}</td>
+            <td class="negative">-${fmt2(m.delivery_fee)}</td>
+            <td>${fmt2(m.ventas)}</td>
+            <td>${fmt2(m.costo_real)}</td>
+            <td>${fmt2(m.utilidad_bruta)}</td>
+            <td>${fmt2(m.gastos_fijos)}</td>
+            <td class="${m.utilidad_neta >= 0 ? 'positive' : 'negative'}">${fmt2(m.utilidad_neta)}</td>
+            <td>${m.margen_pct}%</td>
+            <td>${m.estado}</td>
+          </tr>
+        `).join('');
+        
+        crearGrafico(data.rentabilidad);
+        
+        document.getElementById('tabla-top').innerHTML = data.productos_top.map(p => `
+          <tr><td>${p.producto}</td><td>${p.veces_vendido}</td><td>${fmt2(p.ingresos)}</td><td>${fmt2(p.precio_promedio)}</td></tr>
+        `).join('');
+        
+        document.getElementById('tabla-menos').innerHTML = data.productos_menos.map(p => `
+          <tr><td>${p.producto}</td><td>${p.veces_vendido}</td><td>${fmt2(p.ingresos)}</td><td>${fmt2(p.precio_promedio)}</td></tr>
+        `).join('');
+        
+        document.getElementById('tabla-canales').innerHTML = data.canales.map(c => `
+          <tr><td><strong>${c.canal}</strong></td><td>${c.pedidos}</td><td>${fmt2(c.ventas)}</td><td>${fmt2(c.ticket_promedio)}</td></tr>
+        `).join('');
+        
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+    
+    function crearGrafico(rentabilidad) {
+      const ctx = document.getElementById('chart-utilidad');
+      if (!ctx) return;
+      
+      if (chartUtilidad) chartUtilidad.destroy();
+      
+      const ChartLib = window.Chart;
+      chartUtilidad = new ChartLib(ctx, {
+        type: 'line',
+        data: {
+          labels: rentabilidad.map(r => r.mes).reverse(),
+          datasets: [{
+            label: 'Utilidad Neta',
+            data: rentabilidad.map(r => r.utilidad_neta).reverse(),
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            tension: 0.4,
+            fill: true,
+            borderWidth: 2,
+            pointRadius: 4,
+            pointBackgroundColor: '#10b981',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, position: 'bottom' },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => '$' + new Intl.NumberFormat('es-CL').format(Math.round(ctx.parsed.y))
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: (v) => '$' + new Intl.NumberFormat('es-CL').format(v)
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    cargarReportes();
+    setInterval(cargarReportes, 300000);
+  </script>
+</body>
+</html>

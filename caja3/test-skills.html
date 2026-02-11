@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Skills - Jobs</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 20px; margin: 10px 5px; cursor: pointer; }
+        textarea { width: 100%; height: 100px; margin: 10px 0; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Skills Detection</h1>
+    
+    <div class="test">
+        <h3>1. Test Analyze Text API</h3>
+        <textarea id="testText" placeholder="Escribe texto para analizar skills...">
+Primero verificaría si hay algún sistema de respaldo o caja manual. Informaría a los clientes sobre la situación con transparencia y les ofrecería alternativas como pago en efectivo. Me coordinaría con el maestro sanguchero para priorizar los pedidos más simples y mantener el flujo de trabajo. Implementaría un sistema temporal de anotación manual para llevar el control de las ventas.
+        </textarea>
+        <select id="position">
+            <option value="cajero">Cajero</option>
+            <option value="maestro_sanguchero">Maestro Sanguchero</option>
+        </select>
+        <button onclick="testAnalyzeText()">Analizar Texto</button>
+        <div id="analyzeResult"></div>
+    </div>
+
+    <div class="test">
+        <h3>2. Verificar Tabla jobs_applications</h3>
+        <button onclick="checkJobsTable()">Ver Últimas Aplicaciones</button>
+        <div id="tableResult"></div>
+    </div>
+
+    <div class="test">
+        <h3>3. Verificar Keywords Table</h3>
+        <button onclick="checkKeywords()">Ver Keywords</button>
+        <div id="keywordsResult"></div>
+    </div>
+
+    <script>
+        async function testAnalyzeText() {
+            const text = document.getElementById('testText').value;
+            const position = document.getElementById('position').value;
+            
+            try {
+                const formData = new FormData();
+                formData.append('texto', text);
+                formData.append('position', position);
+                
+                const response = await fetch('/api/jobs/analyze_text.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                document.getElementById('analyzeResult').innerHTML = `
+                    <div class="success">
+                        <h4>✅ Análisis Exitoso</h4>
+                        <p><strong>Porcentaje:</strong> ${data.percentage}%</p>
+                        <p><strong>Skills Detectadas:</strong></p>
+                        <pre>${JSON.stringify(data.skills, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('analyzeResult').innerHTML = `
+                    <div class="error">
+                        <h4>❌ Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function checkJobsTable() {
+            try {
+                const response = await fetch('/api/jobs/test_jobs_table.php');
+                const data = await response.json();
+                
+                document.getElementById('tableResult').innerHTML = `
+                    <div class="success">
+                        <h4>✅ Últimas Aplicaciones</h4>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('tableResult').innerHTML = `
+                    <div class="error">
+                        <h4>❌ Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function checkKeywords() {
+            try {
+                const response = await fetch('/api/jobs/test_keywords.php');
+                const data = await response.json();
+                
+                document.getElementById('keywordsResult').innerHTML = `
+                    <div class="success">
+                        <h4>✅ Keywords Disponibles</h4>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('keywordsResult').innerHTML = `
+                    <div class="error">
+                        <h4>❌ Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

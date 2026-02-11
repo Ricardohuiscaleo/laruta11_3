@@ -1,0 +1,194 @@
+---
+// Visualizador de Estructura del Proyecto
+---
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa del Proyecto - La Ruta 11</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Inter', -apple-system, sans-serif; 
+      background: #0f172a;
+      color: #e2e8f0;
+      overflow-x: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      padding: 2rem;
+      border-bottom: 2px solid #334155;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+    .container { max-width: 1600px; margin: 0 auto; padding: 2rem; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 2px solid #334155;
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .stat-label { color: #94a3b8; font-size: 0.9rem; margin-top: 0.5rem; }
+    .search-box {
+      width: 100%;
+      padding: 1rem;
+      background: #1e293b;
+      border: 2px solid #334155;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 1rem;
+      margin-bottom: 2rem;
+    }
+    .filters {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 0.75rem 1.5rem;
+      background: #1e293b;
+      border: 2px solid #334155;
+      border-radius: 8px;
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+    .filter-btn.active { 
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      border-color: #60a5fa;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    .card {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 2px solid #334155;
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: #60a5fa;
+      box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .card-icon { font-size: 2rem; }
+    .card-title { font-size: 1.25rem; font-weight: 700; color: #f1f5f9; }
+    .card-subtitle { font-size: 0.85rem; color: #94a3b8; margin-top: 0.25rem; }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .badge-page { background: #3b82f6; color: white; }
+    .badge-api { background: #10b981; color: white; }
+    .badge-table { background: #f59e0b; color: white; }
+    .apis-list {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #334155;
+    }
+    .api-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      background: #0f172a;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+      border-left: 3px solid #3b82f6;
+    }
+    .section-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🗺️ Mapa del Proyecto - La Ruta 11</h1>
+    <p style="color: #94a3b8;">Visualización interactiva de páginas, APIs y tablas</p>
+  </div>
+
+  <div class="container">
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-value" id="total-pages">8</div>
+        <div class="stat-label">📄 Páginas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="total-apis">35+</div>
+        <div class="stat-label">🔌 APIs</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="total-tables">15+</div>
+        <div class="stat-label">🗄️ Tablas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="total-components">6</div>
+        <div class="stat-label">⚛️ Componentes</div>
+      </div>
+    </div>
+
+    <input type="text" class="search-box" id="search" placeholder="🔍 Buscar páginas, APIs, tablas...">
+
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">🌐 Todo</button>
+      <button class="filter-btn" data-filter="admin">👨‍💼 Admin</button>
+      <button class="filter-btn" data-filter="user">👤 Usuario</button>
+    </div>
+
+    <h2 class="section-title">📄 Páginas del Sistema</h2>
+    <div class="grid" id="pages-grid"></div>
+
+    <h2 class="section-title">🔌 APIs Backend</h2>
+    <div class="grid" id="apis-grid"></div>
+  </div>
+
+  <script is:inline src="/project-map-data.js"></script>
+</body>
+</html>

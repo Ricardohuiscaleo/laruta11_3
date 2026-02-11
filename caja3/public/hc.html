@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Hamburguesas - Gabriela Fernanda</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        h2 { color: #2c3e50; border-bottom: 2px solid #e67e22; padding-bottom: 10px; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; }
+        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        .results { background: #fff3e0; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 5px solid #e67e22; }
+        .res-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 1.1em; }
+        .total-highlight { font-weight: bold; color: #d35400; font-size: 1.3em; margin-top: 10px; border-top: 1px solid #ffcc80; padding-top: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9em; }
+        th, td { border: 1px solid #eee; padding: 8px; text-align: left; }
+        th { background: #f8f8f8; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🍔 Costo de Hamburguesas</h2>
+    
+    <div class="input-group">
+        <label>Cantidad de Hamburguesas a preparar:</label>
+        <input type="number" id="cantidadHamb" value="30" oninput="calcular()">
+    </div>
+
+    <hr>
+    <h3>Precios por Kilo ($)</h3>
+    <div class="input-group">
+        <label>Carne Molida:</label>
+        <input type="number" id="pCarne" value="6490" oninput="calcular()">
+    </div>
+    <div class="input-group">
+        <label>Tocino:</label>
+        <input type="number" id="pTocino" value="14000" oninput="calcular()">
+    </div>
+    <div class="input-group">
+        <label>Longaniza:</label>
+        <input type="number" id="pLonga" value="15980" oninput="calcular()">
+    </div>
+
+    <div class="results" id="resultado">
+        </div>
+
+    <h3>Insumos a comprar:</h3>
+    <table id="tablaInsumos">
+        <thead>
+            <tr>
+                <th>Ingrediente</th>
+                <th>Cantidad (kg)</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+</div>
+
+<script>
+    function calcular() {
+        const n = parseFloat(document.getElementById('cantidadHamb').value) || 0;
+        const pc = parseFloat(document.getElementById('pCarne').value) || 0;
+        const pt = parseFloat(document.getElementById('pTocino').value) || 0;
+        const pl = parseFloat(document.getElementById('pLonga').value) || 0;
+
+        // Fórmula: 150g Carne, 40g Tocino, 10g Longaniza
+        const kgCarne = (150 * n) / 1000;
+        const kgTocino = (40 * n) / 1000;
+        const kgLonga = (10 * n) / 1000;
+
+        const costoC = kgCarne * pc;
+        const costoT = kgTocino * pt;
+        const costoL = kgLonga * pl;
+        const costoTotal = costoC + costoT + costoL;
+        const costoUnitario = n > 0 ? costoTotal / n : 0;
+
+        // Mostrar Resultados Principales
+        document.getElementById('resultado').innerHTML = `
+            <div class="res-item"><span>Costo Unitario:</span> <span>$${costoUnitario.toLocaleString('es-CL', {maximumFractionDigits: 1})}</span></div>
+            <div class="res-item total-highlight"><span>Costo Total (${n} u):</span> <span>$${costoTotal.toLocaleString('es-CL')}</span></div>
+        `;
+
+        // Llenar Tabla de Compras
+        const tbody = document.querySelector('#tablaInsumos tbody');
+        tbody.innerHTML = `
+            <tr><td>Carne Molida</td><td>${kgCarne.toFixed(2)} kg</td></tr>
+            <tr><td>Tocino</td><td>${kgTocino.toFixed(2)} kg</td></tr>
+            <tr><td>Longaniza</td><td>${kgLonga.toFixed(2)} kg</td></tr>
+            <tr style="font-weight:bold"><td>Total Mezcla</td><td>${(kgCarne + kgTocino + kgLonga).toFixed(2)} kg</td></tr>
+        `;
+    }
+
+    // Ejecutar al cargar
+    calcular();
+</script>
+
+</body>
+</html>

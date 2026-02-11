@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingredientes - La Ruta 11</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #0a0a0a; line-height: 1.6; }
+    
+    .container { max-width: 1200px; margin: 0 auto; padding: 32px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+    .title { font-size: 24px; font-weight: 700; }
+    .btn { padding: 8px 16px; border-radius: 6px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: #0a0a0a; color: #ffffff; }
+    .btn-primary:hover { background: #333; }
+    .btn-secondary { background: #f5f5f5; color: #0a0a0a; }
+    .btn-secondary:hover { background: #e5e5e5; }
+    .btn-danger { background: #ef4444; color: #ffffff; }
+    .btn-danger:hover { background: #dc2626; }
+    
+    .card { background: #ffffff; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
+    .card-content { padding: 24px; }
+    
+    .toolbar { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .search { position: relative; }
+    .search input { padding: 8px 12px 8px 40px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; width: 300px; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666; }
+    
+    .table { width: 100%; border-collapse: collapse; }
+    .table th { text-align: left; padding: 12px; font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e5e5; }
+    .table td { padding: 12px; border-bottom: 1px solid #f5f5f5; }
+    .table tr:hover { background: #fafafa; }
+    
+    .input { width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; transition: border-color 0.2s; }
+    .input:focus { outline: none; border-color: #0a0a0a; }
+    
+    .modal { position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; background: rgba(0,0,0,0.5) !important; display: flex !important; align-items: center !important; justify-content: center !important; z-index: 1000 !important; }
+    .modal-content { background: white !important; padding: 32px !important; border-radius: 12px !important; width: 90% !important; max-width: 600px !important; max-height: 90vh !important; overflow-y: auto !important; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important; }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 class="title">Gestión de Ingredientes</h1>
+      <button class="btn btn-primary" onclick="addIngredient()">+ Nuevo Ingrediente</button>
+    </div>
+    
+    <div class="card">
+      <div class="card-content">
+        <div class="toolbar">
+          <div class="search">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" placeholder="Buscar ingredientes..." onkeyup="filterIngredients(this.value)">
+          </div>
+        </div>
+        
+        <table class="table" id="ingredientsTable">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Categoría</th>
+              <th>Unidad</th>
+              <th>Costo/Unidad</th>
+              <th>Stock Actual</th>
+              <th>Stock Mínimo</th>
+              <th>Proveedor</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="9" style="text-align: center; padding: 40px; color: #666;">Cargando ingredientes...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    window.loadIngredients = function() {
+      fetch('/api/get_ingredientes.php?t=' + Date.now())
+        .then(r => r.json())
+        .then(data => {
+          console.log('Ingredientes cargados:', data.length);
+          const tbody = document.querySelector('#ingredientsTable tbody');
+          if (!tbody) return;
+          
+          if (Array.isArray(data) && data.length > 0) {
+            console.log('Renderizando', data.length, 'ingredientes');
+            tbody.innerHTML = data.map(ingredient => `
+              <tr>
+                <td>
+                  <div style="font-weight: 600;">${ingredient.name}</div>
+                </td>
+                <td>
+                  <span style="padding: 2px 6px; background: #f3f4f6; border-radius: 4px; font-size: 11px;">${ingredient.category}</span>
+                </td>
+                <td>${ingredient.unit}</td>
+                <td>
+                  <div style="font-weight: 600;">$${parseFloat(ingredient.cost_per_unit || 0).toLocaleString('es-CL')}</div>
+                </td>
+                <td>
+                  <div style="color: ${parseFloat(ingredient.current_stock) <= parseFloat(ingredient.min_stock_level) ? '#ef4444' : '#22c55e'}; font-weight: 600;">
+                    ${parseFloat(ingredient.current_stock || 0).toLocaleString('es-CL')} ${ingredient.unit}
+                  </div>
+                </td>
+                <td>${parseFloat(ingredient.min_stock_level || 0).toLocaleString('es-CL')} ${ingredient.unit}</td>
+                <td>${ingredient.supplier || 'Sin proveedor'}</td>
+                <td>
+                  <span style="padding: 4px 8px; border-radius: 12px; font-size: 11px; background: ${ingredient.is_active == 1 ? '#dcfce7' : '#fef2f2'}; color: ${ingredient.is_active == 1 ? '#166534' : '#dc2626'};">
+                    ${ingredient.is_active == 1 ? 'Activo' : 'Inactivo'}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn btn-secondary" onclick="editIngredient(${ingredient.id})" style="font-size: 12px; padding: 4px 8px;">Editar</button>
+                  <button class="btn btn-danger" onclick="deleteIngredient(${ingredient.id})" style="font-size: 12px; padding: 4px 8px;">Eliminar</button>
+                </td>
+              </tr>
+            `).join('');
+          } else {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #666;">No hay ingredientes registrados</td></tr>';
+          }
+        })
+        .catch(error => {
+          console.error('Error loading ingredients:', error);
+          const tbody = document.querySelector('#ingredientsTable tbody');
+          if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #ef4444;">Error al cargar ingredientes</td></tr>';
+        });
+    };
+    
+    window.addIngredient = function() {
+      // Crear overlay del modal
+      const modalOverlay = document.createElement('div');
+      modalOverlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+      
+      // Crear contenido del modal
+      const modalContent = document.createElement('div');
+      modalContent.style.cssText = 'background: white; padding: 32px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);';
+      
+      modalContent.innerHTML = `
+        <h2 style="margin-bottom: 24px; font-size: 20px; font-weight: 600; color: #0a0a0a;">Nuevo Ingrediente</h2>
+        <form id="addForm">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <div>
+              <label style="display: block; margin-bottom: 4px; font-weight: 500; font-size: 14px; color: #374151;">Nombre *:</label>
+              <input type="text" id="addName" required style="width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;">
+            </div>
+            <div style="position: relative;">
+              <label style="display: block; margin-bottom: 4px; font-weight: 500; font-size: 14px; color: #374151;">Categoría *:</label>
+              <input type="text" id="addCategory" required autocomplete="off" style="width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;" placeholder="Escribe para buscar...">
+              <div id="categoryDropdown" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e5e5e5; border-top: none; border-radius: 0 0 6px 6px; max-height: 200px; overflow-y: auto; z-index: 1001; display: none;"></div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <div>
+              <label style="display: block; margin-bottom: 4px; font-weight: 500; font-size: 14px; color: #374151;">Unidad *:</label>
+              <select id="addUnit" required style="width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;">
+                <option value="kg">kg</option>
+                <option value="unidad">unidad</option>
+                <option value="litro">litro</option>
+                <option value="gramo">gramo</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 4px; font-weight: 500; font-size: 14px; color: #374151;">Costo/Unidad *:</label>
+              <input type="number" id="addCost" required step="0.01" style="width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;">
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 4px; font-weight: 500; font-size: 14px; color: #374151;">Stock Inicial:</label>
+              <input type="number" id="addStock" value="0" step="0.01" style="width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;">
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <div>
+              <label style="display: block; margin-bottom: 4px; font-weight: 500; font-size: 14px; color: #374151;">Stock Mínimo:</label>
+              <input type="number" id="addMinStock" value="1" step="0.01" style="width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;">
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 4px; font-weight: 500; font-size: 14px; color: #374151;">Proveedor:</label>
+              <input type="text" id="addSupplier" style="width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;">
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+            <button type="button" onclick="closeIngredientModal()" style="padding: 8px 16px; border-radius: 6px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; background: #f5f5f5; color: #0a0a0a;">Cancelar</button>
+            <button type="submit" style="padding: 8px 16px; border-radius: 6px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; background: #0a0a0a; color: #ffffff;">Crear Ingrediente</button>
+          </div>
+        </form>
+      `;
+      
+      modalOverlay.appendChild(modalContent);
+      document.body.appendChild(modalOverlay);
+      
+      // Cerrar modal al hacer clic en el overlay
+      modalOverlay.addEventListener('click', function(e) {
+        if (e.target === modalOverlay) {
+          modalOverlay.remove();
+        }
+      });
+      
+      // Configurar búsqueda inteligente de categorías
+      setTimeout(() => {
+        const categoryInput = document.getElementById('addCategory');
+        const dropdown = document.getElementById('categoryDropdown');
+        const categories = ['Carnes', 'Aves', 'Pescados', 'Embutidos', 'Lácteos', 'Vegetales', 'Frutas', 'Panes', 'Salsas', 'Conservas', 'Congelados', 'Condimentos', 'Aceites', 'Packaging'];
+        
+        categoryInput.addEventListener('input', function() {
+          const value = this.value.toLowerCase();
+          if (value.length === 0) {
+            dropdown.style.display = 'none';
+            return;
+          }
+          
+          const filtered = categories.filter(cat => cat.toLowerCase().includes(value));
+          
+          if (filtered.length > 0) {
+            dropdown.innerHTML = filtered.map(cat => 
+              `<div style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 14px;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'" onclick="selectCategory('${cat}')">${cat}</div>`
+            ).join('');
+            dropdown.style.display = 'block';
+          } else {
+            dropdown.style.display = 'none';
+          }
+        });
+        
+        categoryInput.addEventListener('blur', function() {
+          setTimeout(() => dropdown.style.display = 'none', 200);
+        });
+        
+        window.selectCategory = function(category) {
+          categoryInput.value = category;
+          dropdown.style.display = 'none';
+        };
+        
+      // Agregar event listener al formulario después de agregarlo al DOM
+        document.getElementById('addForm').addEventListener('submit', function(e) {
+          e.preventDefault();
+          
+          const formData = new FormData();
+          formData.append('name', document.getElementById('addName').value);
+          formData.append('category', document.getElementById('addCategory').value);
+          formData.append('unit', document.getElementById('addUnit').value);
+          formData.append('cost_per_unit', document.getElementById('addCost').value);
+          formData.append('current_stock', document.getElementById('addStock').value);
+          formData.append('min_stock_level', document.getElementById('addMinStock').value);
+          formData.append('supplier', document.getElementById('addSupplier').value);
+          formData.append('is_active', '1');
+          
+          fetch('/api/save_ingrediente.php', {
+            method: 'POST',
+            body: formData
+          })
+          .then(r => r.json())
+          .then(result => {
+            if (result.success) {
+              alert('Ingrediente creado exitosamente');
+              modalOverlay.remove();
+              loadIngredients();
+            } else {
+              alert('Error: ' + (result.error || 'Error desconocido'));
+            }
+          })
+          .catch(error => {
+            alert('Error de conexión: ' + error.message);
+          });
+        });
+      }, 100);
+    };
+    
+    window.editIngredient = function(id) {
+      // Buscar el ingrediente en los datos cargados
+      fetch('/api/get_ingredientes.php')
+        .then(r => r.json())
+        .then(ingredients => {
+          const ingredient = ingredients.find(i => i.id === id);
+          if (!ingredient) {
+            alert('Ingrediente no encontrado');
+            return;
+          }
+          
+          // Crear modal de edición
+          const modalOverlay = document.createElement('div');
+          modalOverlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+          
+          const modalContent = document.createElement('div');
+          modalContent.style.cssText = 'background: white; padding: 32px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);';
+          
+          modalContent.innerHTML = `
+            <h2 style="margin-bottom: 24px; font-size: 20px; font-weight: 600; color: #0a0a0a;">Editar Ingrediente</h2>
+            <form id="editForm">
+              <input type="hidden" id="editId" value="${ingredient.id}">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div>
+                  <label style="display: block; margin-bottom: 4px; font-weight: 500; font-size: 14px; color: #374151;">Nombre *:</label>
+                  <input type="text" id="editName" required value="${ingredient.name}" style="width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;">
+                </div>
+                <div style="position: relative;">
+                  <label style="display: block; margin-bottom: 4px; font-weight: 500; font-size: 14px; color: #374151;">Categoría *:</label>
+                  <input type="text" id="editCategory" required value="${ingredient.category}" autocomplete="off" style="width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;" placeholder="Escribe para buscar...">
+                  <div id="editCategoryDropdown" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e5e5e5; border-top: none; border-radius: 0 0 6px 6px; max-height: 200px; overflow-y: auto; z-index: 1001; display: none;"></div>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div>
+                  <label style="display: block; margin-bottom: 4px; font-weight: 500; font-size: 14px; color: #374151;">Unidad *:</label>
+                  <select id="editUnit" required style="width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;">
+                    <option value="kg" ${ingredient.unit === 'kg' ? 'selected' : ''}>kg</option>
+                    <option value="unidad" ${ingredient.unit === 'unidad' ? 'selected' : ''}>unidad</option>
+                    <option value="litro" ${ingredient.unit === 'litro' ? 'selected' : ''}>litro</option>
+                    <option value="gramo" ${ingredient.unit === 'gramo' ? 'selected' : ''}>gramo</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display: block; margin-bottom: 4px; font-weight: 500; font-size: 14px; color: #374151;">Costo/Unidad *:</label>
+                  <input type="number" id="editCost" required step="0.01" value="${ingredient.cost_per_unit}" style="width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;">
+                </div>
+                <div>
+                  <label style="display: block; margin-bottom: 4px; font-weight: 500; font-size: 14px; color: #374151;">Stock Actual:</label>
+                  <input type="number" id="editStock" step="0.01" value="${ingredient.current_stock}" style="width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;">
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div>
+                  <label style="display: block; margin-bottom: 4px; font-weight: 500; font-size: 14px; color: #374151;">Stock Mínimo:</label>
+                  <input type="number" id="editMinStock" step="0.01" value="${ingredient.min_stock_level}" style="width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;">
+                </div>
+                <div>
+                  <label style="display: block; margin-bottom: 4px; font-weight: 500; font-size: 14px; color: #374151;">Proveedor:</label>
+                  <input type="text" id="editSupplier" value="${ingredient.supplier || ''}" style="width: 100%; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;">
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+                <button type="button" onclick="closeEditModal()" style="padding: 8px 16px; border-radius: 6px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; background: #f5f5f5; color: #0a0a0a;">Cancelar</button>
+                <button type="submit" style="padding: 8px 16px; border-radius: 6px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; background: #0a0a0a; color: #ffffff;">Actualizar</button>
+              </div>
+            </form>
+          `;
+          
+          modalOverlay.appendChild(modalContent);
+          document.body.appendChild(modalOverlay);
+          
+          // Configurar búsqueda de categorías para edición
+          setTimeout(() => {
+            const categoryInput = document.getElementById('editCategory');
+            const dropdown = document.getElementById('editCategoryDropdown');
+            const categories = ['Carnes', 'Aves', 'Pescados', 'Embutidos', 'Lácteos', 'Vegetales', 'Frutas', 'Panes', 'Salsas', 'Conservas', 'Congelados', 'Condimentos', 'Aceites', 'Packaging'];
+            
+            categoryInput.addEventListener('input', function() {
+              const value = this.value.toLowerCase();
+              if (value.length === 0) {
+                dropdown.style.display = 'none';
+                return;
+              }
+              
+              const filtered = categories.filter(cat => cat.toLowerCase().includes(value));
+              
+              if (filtered.length > 0) {
+                dropdown.innerHTML = filtered.map(cat => 
+                  `<div style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 14px;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'" onclick="selectEditCategory('${cat}')">${cat}</div>`
+                ).join('');
+                dropdown.style.display = 'block';
+              } else {
+                dropdown.style.display = 'none';
+              }
+            });
+            
+            window.selectEditCategory = function(category) {
+              categoryInput.value = category;
+              dropdown.style.display = 'none';
+            };
+            
+            window.closeEditModal = function() {
+              modalOverlay.remove();
+            };
+            
+            // Event listener para el formulario
+            document.getElementById('editForm').addEventListener('submit', function(e) {
+              e.preventDefault();
+              
+              const formData = new FormData();
+              formData.append('id', document.getElementById('editId').value);
+              formData.append('name', document.getElementById('editName').value);
+              formData.append('category', document.getElementById('editCategory').value);
+              formData.append('unit', document.getElementById('editUnit').value);
+              formData.append('cost_per_unit', document.getElementById('editCost').value);
+              formData.append('current_stock', document.getElementById('editStock').value);
+              formData.append('min_stock_level', document.getElementById('editMinStock').value);
+              formData.append('supplier', document.getElementById('editSupplier').value);
+              formData.append('is_active', '1');
+              
+              fetch('/api/update_ingrediente_full.php', {
+                method: 'POST',
+                body: formData
+              })
+              .then(r => {
+                if (!r.ok) {
+                  throw new Error('HTTP ' + r.status);
+                }
+                return r.text();
+              })
+              .then(text => {
+                try {
+                  const result = JSON.parse(text);
+                  if (result.success) {
+                    alert('Ingrediente actualizado exitosamente');
+                    modalOverlay.remove();
+                    loadIngredients();
+                  } else {
+                    alert('Error: ' + (result.error || 'Error desconocido'));
+                  }
+                } catch (e) {
+                  console.error('Respuesta no JSON:', text);
+                  alert('Error del servidor: ' + text.substring(0, 200));
+                }
+              })
+              .catch(error => {
+                alert('Error de conexión: ' + error.message);
+              });
+            });
+          }, 100);
+          
+          // Cerrar modal al hacer clic en el overlay
+          modalOverlay.addEventListener('click', function(e) {
+            if (e.target === modalOverlay) {
+              modalOverlay.remove();
+            }
+          });
+        })
+        .catch(error => {
+          alert('Error cargando ingrediente: ' + error.message);
+        });
+    };
+    
+    window.deleteIngredient = function(id) {
+      if (confirm('¿Estás seguro de eliminar este ingrediente?')) {
+        const formData = new FormData();
+        formData.append('id', id);
+        
+        fetch('/api/delete_ingrediente.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(r => r.json())
+        .then(result => {
+          if (result.success) {
+            alert('Ingrediente eliminado');
+            loadIngredients();
+          } else {
+            alert('Error: ' + (result.error || 'Error desconocido'));
+          }
+        })
+        .catch(error => {
+          alert('Error: ' + error.message);
+        });
+      }
+    };
+    
+    window.filterIngredients = function(searchTerm) {
+      const rows = document.querySelectorAll('#ingredientsTable tbody tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm.toLowerCase()) ? '' : 'none';
+      });
+    };
+    
+    window.closeModal = function(button) {
+      const modal = button.closest('.modal');
+      if (modal) modal.remove();
+    };
+    
+    window.closeIngredientModal = function() {
+      const modal = document.querySelector('[style*="position: fixed"]');
+      if (modal) modal.remove();
+    };
+    
+    // Cargar ingredientes al iniciar
+    loadIngredients();
+  </script>
+</body>
+</html>

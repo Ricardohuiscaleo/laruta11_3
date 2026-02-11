@@ -1,0 +1,514 @@
+---
+// Admin Food Trucks Management
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrar Food Trucks - La Ruta 11</title>
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .bg-gray-100 { background-color: #f7fafc; }
+        .bg-white { background-color: #ffffff; }
+        .rounded-lg { border-radius: 0.5rem; }
+        .shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .p-6 { padding: 1.5rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .text-2xl { font-size: 1.5rem; }
+        .font-bold { font-weight: 700; }
+        .text-gray-800 { color: #2d3748; }
+        .bg-gray-500 { background-color: #718096; }
+        .text-white { color: #ffffff; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .rounded { border-radius: 0.25rem; }
+        .hover\:bg-gray-600:hover { background-color: #4a5568; }
+        .bg-gray-50 { background-color: #f9fafb; }
+        .p-4 { padding: 1rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .text-lg { font-size: 1.125rem; }
+        .font-semibold { font-weight: 600; }
+        .grid { display: grid; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .gap-4 { gap: 1rem; }
+        .block { display: block; }
+        .text-sm { font-size: 0.875rem; }
+        .font-medium { font-weight: 500; }
+        .text-gray-700 { color: #4a5568; }
+        .mb-1 { margin-bottom: 0.25rem; }
+        .w-full { width: 100%; }
+        .border { border-width: 1px; }
+        .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .gap-2 { gap: 0.5rem; }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .bg-blue-500 { background-color: #4299e1; }
+        .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+        .hover\:bg-blue-600:hover { background-color: #3182ce; }
+        .ml-2 { margin-left: 0.5rem; }
+        .h-96 { height: 24rem; }
+        .overflow-x-auto { overflow-x: auto; }
+        .border-collapse { border-collapse: collapse; }
+        .border-gray-300 { border-color: #e2e8f0; }
+        .text-left { text-align: left; }
+        .text-xs { font-size: 0.75rem; }
+        .bg-green-100 { background-color: #f0fff4; }
+        .text-green-700 { color: #2f855a; }
+        .bg-red-100 { background-color: #fed7d7; }
+        .text-red-700 { color: #c53030; }
+        .bg-yellow-500 { background-color: #ecc94b; }
+        .hover\:bg-yellow-600:hover { background-color: #d69e2e; }
+        .bg-red-500 { background-color: #f56565; }
+        .hover\:bg-red-600:hover { background-color: #e53e3e; }
+        .mr-1 { margin-right: 0.25rem; }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAcK15oZ84Puu5Nc4wDQT_Wyht0xqkbO-A"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-gray-800">🚚 Administrar Food Trucks</h1>
+                <a href="/admin" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">← Volver</a>
+            </div>
+
+            <!-- Agregar/Editar Food Truck -->
+            <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                <h2 class="text-lg font-semibold mb-4">Agregar/Editar Food Truck</h2>
+                <form id="truckForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="hidden" id="truckId">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del Truck</label>
+                        <input type="text" id="nombre" class="w-full border rounded-lg px-3 py-2" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                        <input type="text" id="descripcion" class="w-full border rounded-lg px-3 py-2">
+                    </div>
+                    
+                    <div class="relative">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                        <input type="text" id="direccion" class="w-full border rounded-lg px-3 py-2" placeholder="Buscar dirección..." required autocomplete="off">
+                        <div id="addressSuggestions" class="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-48 overflow-y-auto hidden"></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Latitud</label>
+                            <input type="number" step="any" id="latitud" class="w-full border rounded-lg px-3 py-2" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Longitud</label>
+                            <input type="number" step="any" id="longitud" class="w-full border rounded-lg px-3 py-2" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Hora Inicio</label>
+                            <input type="time" id="horario_inicio" class="w-full border rounded-lg px-3 py-2" value="10:00">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Hora Fin</label>
+                            <input type="time" id="horario_fin" class="w-full border rounded-lg px-3 py-2" value="22:00">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                        <select id="activo" class="w-full border rounded-lg px-3 py-2">
+                            <option value="1">Activo</option>
+                            <option value="0">Inactivo</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tarifa Delivery (CLP)</label>
+                        <input type="number" id="tarifa_delivery" class="w-full border rounded-lg px-3 py-2" value="2000">
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+                            Guardar Food Truck
+                        </button>
+                        <button type="button" id="cancelEdit" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 ml-2" style="display: none;">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Mapa -->
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold mb-4">📍 Ubicaciones en Mapa</h2>
+                <div id="map" class="w-full h-96 rounded-lg border"></div>
+            </div>
+
+            <!-- Lista de Food Trucks -->
+            <div>
+                <h2 class="text-lg font-semibold mb-4">Lista de Food Trucks</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse border border-gray-300">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="border border-gray-300 px-4 py-2 text-left">Nombre</th>
+                                <th class="border border-gray-300 px-4 py-2 text-left">Dirección</th>
+                                <th class="border border-gray-300 px-4 py-2 text-left">Horario</th>
+                                <th class="border border-gray-300 px-4 py-2 text-left">Estado</th>
+                                <th class="border border-gray-300 px-4 py-2 text-left">Tarifa</th>
+                                <th class="border border-gray-300 px-4 py-2 text-left">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trucksTable">
+                            <!-- Trucks will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // @ts-ignore
+        declare const google: any;
+        
+        let map: any, markers: any[] = [], geocoder: any;
+        
+        // Inicializar mapa
+        function initMap() {
+            const mapElement = document.getElementById('map');
+            if (!mapElement) return;
+            
+            map = new google.maps.Map(mapElement, {
+                center: { lat: -33.4489, lng: -70.6693 }, // Santiago
+                zoom: 12
+            });
+            
+            geocoder = new google.maps.Geocoder();
+            
+            // Setup address search
+            setupAddressSearch();
+            
+            // Cargar trucks después de inicializar el mapa
+            setTimeout(loadTrucks, 500);
+        }
+        
+        // Setup address search functionality
+        function setupAddressSearch() {
+            const direccionInput = document.getElementById('direccion') as HTMLInputElement;
+            const suggestionsDiv = document.getElementById('addressSuggestions');
+            
+            if (!direccionInput || !suggestionsDiv) return;
+            
+            let searchTimeout: any;
+            
+            direccionInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                if (query.length < 3) {
+                    suggestionsDiv.classList.add('hidden');
+                    return;
+                }
+                
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    searchAddresses(query);
+                }, 300);
+            });
+            
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!direccionInput.contains(e.target as Node) && !suggestionsDiv.contains(e.target as Node)) {
+                    suggestionsDiv.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Search addresses using Geocoding API
+        function searchAddresses(query: string) {
+            const suggestionsDiv = document.getElementById('addressSuggestions');
+            if (!suggestionsDiv || !geocoder) return;
+            
+            geocoder.geocode({
+                address: query + ', Chile',
+                componentRestrictions: { country: 'CL' }
+            }, function(results: any, status: any) {
+                if (status === 'OK' && results) {
+                    displayAddressSuggestions(results.slice(0, 5)); // Show max 5 results
+                } else {
+                    suggestionsDiv.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Display address suggestions
+        function displayAddressSuggestions(results: any[]) {
+            const suggestionsDiv = document.getElementById('addressSuggestions');
+            if (!suggestionsDiv) return;
+            
+            suggestionsDiv.innerHTML = '';
+            
+            results.forEach(result => {
+                const suggestion = document.createElement('div');
+                suggestion.className = 'px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-200';
+                suggestion.textContent = result.formatted_address;
+                
+                suggestion.addEventListener('click', function() {
+                    selectAddress(result);
+                });
+                
+                suggestionsDiv.appendChild(suggestion);
+            });
+            
+            suggestionsDiv.classList.remove('hidden');
+        }
+        
+        // Select an address from suggestions
+        function selectAddress(result: any) {
+            const direccionInput = document.getElementById('direccion') as HTMLInputElement;
+            const latInput = document.getElementById('latitud') as HTMLInputElement;
+            const lngInput = document.getElementById('longitud') as HTMLInputElement;
+            const suggestionsDiv = document.getElementById('addressSuggestions');
+            
+            if (direccionInput) direccionInput.value = result.formatted_address;
+            if (latInput) latInput.value = result.geometry.location.lat();
+            if (lngInput) lngInput.value = result.geometry.location.lng();
+            if (suggestionsDiv) suggestionsDiv.classList.add('hidden');
+            
+            // Center map on selected location
+            if (map) {
+                map.setCenter(result.geometry.location);
+                map.setZoom(15);
+            }
+        }
+        
+        // Cargar food trucks
+        async function loadTrucks() {
+            try {
+                const response = await fetch('/api/food_trucks/get_all.php');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayTrucks(data.trucks);
+                    displayMarkersOnMap(data.trucks);
+                }
+            } catch (error) {
+                console.error('Error loading trucks:', error);
+            }
+        }
+        
+        // Mostrar trucks en tabla
+        function displayTrucks(trucks: any[]) {
+            const tbody = document.getElementById('trucksTable');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            trucks.forEach(truck => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="border border-gray-300 px-4 py-2">${truck.nombre}</td>
+                    <td class="border border-gray-300 px-4 py-2">${truck.direccion}</td>
+                    <td class="border border-gray-300 px-4 py-2">${truck.horario_inicio} - ${truck.horario_fin}</td>
+                    <td class="border border-gray-300 px-4 py-2">
+                        <span class="px-2 py-1 rounded text-xs ${truck.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                            ${truck.activo ? 'Activo' : 'Inactivo'}
+                        </span>
+                    </td>
+                    <td class="border border-gray-300 px-4 py-2">$${parseInt(truck.tarifa_delivery || 0).toLocaleString()}</td>
+                    <td class="border border-gray-300 px-4 py-2">
+                        <button onclick="editTruck(${truck.id})" class="bg-yellow-500 text-white px-2 py-1 rounded text-xs hover:bg-yellow-600 mr-1">
+                            Editar
+                        </button>
+                        <button onclick="deleteTruck(${truck.id})" class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">
+                            Eliminar
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        // Mostrar marcadores en mapa
+        function displayMarkersOnMap(trucks: any[]) {
+            // Limpiar marcadores existentes
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+            
+            trucks.forEach(truck => {
+                const marker = new google.maps.Marker({
+                    position: { lat: parseFloat(truck.latitud), lng: parseFloat(truck.longitud) },
+                    map: map,
+                    title: truck.nombre,
+                    icon: truck.activo ? 
+                        'https://maps.google.com/mapfiles/ms/icons/green-dot.png' : 
+                        'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
+                });
+                
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div>
+                            <h3><strong>${truck.nombre}</strong></h3>
+                            <p>${truck.descripcion}</p>
+                            <p><strong>Horario:</strong> ${truck.horario_inicio} - ${truck.horario_fin}</p>
+                            <p><strong>Tarifa:</strong> $${parseInt(truck.tarifa_delivery || 0).toLocaleString()}</p>
+                            <p><strong>Estado:</strong> ${truck.activo ? 'Activo' : 'Inactivo'}</p>
+                        </div>
+                    `
+                });
+                
+                marker.addListener('click', () => {
+                    infoWindow.open(map, marker);
+                });
+                
+                markers.push(marker);
+            });
+        }
+        
+        // Guardar food truck
+        const truckForm = document.getElementById('truckForm') as HTMLFormElement;
+        if (truckForm) {
+            truckForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData();
+                const truckId = (document.getElementById('truckId') as HTMLInputElement)?.value || '';
+                const nombre = (document.getElementById('nombre') as HTMLInputElement)?.value || '';
+                const descripcion = (document.getElementById('descripcion') as HTMLInputElement)?.value || '';
+                const direccion = (document.getElementById('direccion') as HTMLInputElement)?.value || '';
+                const latitud = (document.getElementById('latitud') as HTMLInputElement)?.value || '';
+                const longitud = (document.getElementById('longitud') as HTMLInputElement)?.value || '';
+                const horarioInicio = (document.getElementById('horario_inicio') as HTMLInputElement)?.value || '';
+                const horarioFin = (document.getElementById('horario_fin') as HTMLInputElement)?.value || '';
+                const activo = (document.getElementById('activo') as HTMLSelectElement)?.value || '';
+                const tarifaDelivery = (document.getElementById('tarifa_delivery') as HTMLInputElement)?.value || '';
+                
+                formData.append('id', truckId);
+                formData.append('nombre', nombre);
+                formData.append('descripcion', descripcion);
+                formData.append('direccion', direccion);
+                formData.append('latitud', latitud);
+                formData.append('longitud', longitud);
+                formData.append('horario_inicio', horarioInicio);
+                formData.append('horario_fin', horarioFin);
+                formData.append('activo', activo);
+                formData.append('tarifa_delivery', tarifaDelivery);
+                
+                try {
+                    const response = await fetch('/api/food_trucks/save.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert('Food truck guardado exitosamente');
+                        const form = document.getElementById('truckForm') as HTMLFormElement;
+                        const cancelBtn = document.getElementById('cancelEdit') as HTMLElement;
+                        const truckIdInput = document.getElementById('truckId') as HTMLInputElement;
+                        
+                        if (form) form.reset();
+                        if (truckIdInput) truckIdInput.value = '';
+                        if (cancelBtn) cancelBtn.style.display = 'none';
+                        loadTrucks();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                } catch (error) {
+                    alert('Error de conexión');
+                }
+            });
+        }
+        
+        // Editar truck
+        window.editTruck = async function editTruck(id: number) {
+            try {
+                const response = await fetch(`/api/food_trucks/get_by_id.php?id=${id}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const truck = data.truck;
+                    const truckIdInput = document.getElementById('truckId') as HTMLInputElement;
+                    const nombreInput = document.getElementById('nombre') as HTMLInputElement;
+                    const descripcionInput = document.getElementById('descripcion') as HTMLInputElement;
+                    const direccionInput = document.getElementById('direccion') as HTMLInputElement;
+                    const latitudInput = document.getElementById('latitud') as HTMLInputElement;
+                    const longitudInput = document.getElementById('longitud') as HTMLInputElement;
+                    const horarioInicioInput = document.getElementById('horario_inicio') as HTMLInputElement;
+                    const horarioFinInput = document.getElementById('horario_fin') as HTMLInputElement;
+                    const activoSelect = document.getElementById('activo') as HTMLSelectElement;
+                    const tarifaDeliveryInput = document.getElementById('tarifa_delivery') as HTMLInputElement;
+                    const cancelBtn = document.getElementById('cancelEdit') as HTMLElement;
+                    
+                    if (truckIdInput) truckIdInput.value = truck.id;
+                    if (nombreInput) nombreInput.value = truck.nombre;
+                    if (descripcionInput) descripcionInput.value = truck.descripcion;
+                    if (direccionInput) direccionInput.value = truck.direccion;
+                    if (latitudInput) latitudInput.value = truck.latitud;
+                    if (longitudInput) longitudInput.value = truck.longitud;
+                    if (horarioInicioInput) horarioInicioInput.value = truck.horario_inicio;
+                    if (horarioFinInput) horarioFinInput.value = truck.horario_fin;
+                    if (activoSelect) activoSelect.value = truck.activo;
+                    if (tarifaDeliveryInput) tarifaDeliveryInput.value = truck.tarifa_delivery || 2000;
+                    if (cancelBtn) cancelBtn.style.display = 'inline-block';
+                    
+                    // Centrar mapa en el truck
+                    if (map) {
+                        map.setCenter({ lat: parseFloat(truck.latitud), lng: parseFloat(truck.longitud) });
+                        map.setZoom(15);
+                    }
+                }
+            } catch (error) {
+                alert('Error cargando datos del truck');
+            }
+        }
+        
+        // Eliminar truck
+        window.deleteTruck = async function deleteTruck(id: number) {
+            if (!confirm('¿Estás seguro de eliminar este food truck?')) return;
+            
+            try {
+                const response = await fetch('/api/food_trucks/delete.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Food truck eliminado');
+                    loadTrucks();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error de conexión');
+            }
+        }
+        
+        // Cancelar edición
+        const cancelEditBtn = document.getElementById('cancelEdit');
+        if (cancelEditBtn) {
+            cancelEditBtn.addEventListener('click', function() {
+                const form = document.getElementById('truckForm') as HTMLFormElement;
+                const truckIdInput = document.getElementById('truckId') as HTMLInputElement;
+                
+                if (form) form.reset();
+                if (truckIdInput) truckIdInput.value = '';
+                this.style.display = 'none';
+            });
+        }
+        
+        // Inicializar cuando cargue la página
+        window.onload = function() {
+            initMap();
+        };
+    </script>
+</body>
+</html>

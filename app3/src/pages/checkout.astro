@@ -1,0 +1,49 @@
+---
+import CheckoutApp from '../components/CheckoutApp.jsx';
+import ErrorBoundary from '../components/ErrorBoundary.jsx';
+---
+
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/x-icon" href="/icon.ico" />
+		<link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo.png" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Checkout - La Ruta 11</title>
+		
+		<!-- PWA Configuration -->
+		<link rel="manifest" href="/manifest.json">
+		<meta name="theme-color" content="#ffffff">
+		<meta name="description" content="Finaliza tu pedido en La Ruta 11. Pago seguro con TUU.">
+		
+		<!-- iOS PWA Support -->
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="default">
+		<meta name="apple-mobile-web-app-title" content="La Ruta 11">
+		<link rel="apple-touch-icon" href="https://laruta11-images.s3.amazonaws.com/menu/logo.png">
+		
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+	</head>
+	<body>
+		<ErrorBoundary client:load>
+			<CheckoutApp client:only="react" />
+		</ErrorBoundary>
+	</body>
+</html>
+<style is:global>
+	body {
+		font-family: 'Inter', sans-serif;
+		background-color: #f8fafc !important;
+		background: #f8fafc !important;
+	}
+	html {
+		background-color: #f8fafc !important;
+		background: #f8fafc !important;
+	}
+	* {
+		box-sizing: border-box;
+	}
+</style>

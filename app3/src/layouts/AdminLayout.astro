@@ -1,0 +1,167 @@
+---
+export interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <span class="logo-icon">🍔</span>
+          <span class="logo-text">La Ruta 11</span>
+        </div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <a href="/admin" class="nav-item">
+          <span class="nav-icon">📊</span>
+          Dashboard
+        </a>
+        <a href="/admin/orders" class="nav-item">
+          <span class="nav-icon">🛒</span>
+          Órdenes
+        </a>
+        <a href="/admin/products" class="nav-item">
+          <span class="nav-icon">📦</span>
+          Productos
+        </a>
+        <a href="/admin/tuu-transactions" class="nav-item">
+          <span class="nav-icon">💳</span>
+          Transacciones TUU
+        </a>
+        <a href="/admin/monitor" class="nav-item">
+          <span class="nav-icon">🔍</span>
+          Monitor APIs
+        </a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="main-header">
+        <h1 class="page-title">{title.split(' - ')[0]}</h1>
+      </header>
+      
+      <div class="content-wrapper">
+        <slot />
+      </div>
+    </main>
+  </div>
+</body>
+</html>
+
+<style is:global>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    min-height: 100vh;
+  }
+
+  .admin-layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    width: 280px;
+    background: white;
+    border-right: 1px solid #e2e8f0;
+    position: fixed;
+    height: 100vh;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  .sidebar-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: white;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .logo-icon {
+    font-size: 1.5rem;
+  }
+
+  .logo-text {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .sidebar-nav {
+    padding: 1rem 0;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+
+  .nav-item:hover {
+    background: #f1f5f9;
+    color: #3b82f6;
+  }
+
+  .nav-item.active {
+    background: #eff6ff;
+    color: #3b82f6;
+    border-right: 3px solid #3b82f6;
+  }
+
+  .nav-icon {
+    font-size: 1.125rem;
+  }
+
+  .main-content {
+    flex: 1;
+    margin-left: 280px;
+    background: #f8fafc;
+  }
+
+  .main-header {
+    background: white;
+    padding: 0;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  .page-title {
+    display: none;
+  }
+
+  .content-wrapper {
+    padding: 0;
+  }
+</style>

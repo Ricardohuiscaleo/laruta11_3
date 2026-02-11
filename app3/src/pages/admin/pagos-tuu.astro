@@ -1,0 +1,557 @@
+---
+---
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pagos TUU - Admin La Ruta 11</title>
+  <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo.png" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #0a0a0a; line-height: 1.6; }
+    .header { background: #ffffff; border-bottom: 1px solid #e5e5e5; padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+    .page-title { font-size: 20px; font-weight: 600; color: #0a0a0a; }
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+    .btn { padding: 8px 16px; border-radius: 6px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: #0a0a0a; color: #ffffff; }
+    .btn-primary:hover { background: #333; }
+    .btn-secondary { background: #f5f5f5; color: #0a0a0a; }
+    .btn-secondary:hover { background: #e5e5e5; }
+    .btn-success { background: #10b981; color: #ffffff; }
+    .btn-success:hover { background: #059669; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 32px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 32px; }
+    .stat-card { background: #ffffff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 24px; }
+    .stat-value { font-size: 32px; font-weight: 700; color: #0a0a0a; margin-bottom: 4px; }
+    .stat-label { font-size: 14px; color: #666; }
+    .card { background: #ffffff; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
+    .card-header { padding: 24px; border-bottom: 1px solid #e5e5e5; }
+    .card-title { font-size: 16px; font-weight: 600; color: #0a0a0a; }
+    .card-content { padding: 24px; }
+    .toolbar { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+    .tuu-filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tuu-select, .tuu-search { padding: 8px; border: 1px solid #e5e5e5; border-radius: 4px; font-size: 14px; }
+    .tuu-search { min-width: 200px; }
+    .table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .table th { text-align: left; padding: 12px; font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e5e5; }
+    .table td { padding: 12px; border-bottom: 1px solid #f5f5f5; }
+    .table tr:hover { background: #fafafa; }
+    .status-bar { background: white; padding: 1rem 2rem; border-radius: 12px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .status-indicator { display: flex; align-items: center; gap: 0.5rem; }
+    .status-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .status-dot.active { background: #10b981; animation: pulse 2s infinite; }
+    .status-dot.inactive { background: #ef4444; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="header">
+    <h1 class="page-title">💳 Pagos TUU</h1>
+    <div class="header-actions">
+      <button id="sync-btn" class="btn btn-success" onclick="manualSync()">🔄 Sincronizar</button>
+      <button id="full-sync-btn" class="btn btn-primary" onclick="fullSync()">⚡ Sync Completo</button>
+    </div>
+  </div>
+  
+  <div class="container">
+    <div class="status-bar">
+      <div class="status-indicator">
+        <div class="status-dot" id="sync-status"></div>
+        <span id="sync-text">Iniciando...</span>
+      </div>
+      <div>
+        <span id="last-sync">Última sincronización: --</span>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="tuu-total-sales">$0</div>
+        <div class="stat-label">Ventas TUU Total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="tuu-transactions-count">0</div>
+        <div class="stat-label">Transacciones</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="tuu-avg-ticket">$0</div>
+        <div class="stat-label">Ticket Promedio</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="tuu-last-update">-</div>
+        <div class="stat-label">Última Actualización</div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <div class="toolbar">
+          <h2 class="card-title">Reportes de Pagos TUU</h2>
+          <div class="tuu-filters">
+            <select id="tuu-filter-type" onchange="filterTUUTransactions()" class="tuu-select">
+              <option value="all">Todos</option>
+              <option value="pos">Solo POS</option>
+              <option value="online">Solo Online</option>
+              <option value="app">Solo APP</option>
+            </select>
+            <input type="text" id="tuu-search" placeholder="Buscar..." onkeyup="filterTUUTransactions()" class="tuu-search">
+            <button class="btn btn-primary" onclick="loadTUUReports()">🔄 Actualizar</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-content">
+        <div id="tuu-loading" style="text-align: center; padding: 40px; color: #666;">Cargando reportes TUU...</div>
+        <div id="tuu-error" style="display: none; text-align: center; padding: 40px; color: #ef4444;"></div>
+        <div id="tuu-content" style="display: none;">
+          <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+            <div id="tuu-showing-info" style="font-size: 14px; color: #666;">Mostrando 0 de 0 transacciones</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button id="tuu-prev-btn" onclick="changeTUUPage(-1)" class="btn btn-secondary" disabled>← Anterior</button>
+              <span id="tuu-page-info" style="font-size: 14px; color: #666;">Página 1 de 1</span>
+              <button id="tuu-next-btn" onclick="changeTUUPage(1)" class="btn btn-secondary" disabled>Siguiente →</button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="table" id="tuuTable">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>ID Venta</th>
+                  <th>Cliente</th>
+                  <th>Monto</th>
+                  <th>Estado</th>
+                  <th>Medio</th>
+                  <th>TUU ID</th>
+                  <th>Detalles</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Declaraciones de tipo para TypeScript
+    declare global {
+      interface Window {
+        manualSync: () => void;
+        fullSync: () => void;
+        loadTUUReports: () => void;
+        filterTUUTransactions: () => void;
+        changeTUUPage: (direction: number) => void;
+        viewTransaction: (transaction: any) => void;
+      }
+    }
+    
+    // Variables globales
+    let tuuAllTransactions = [];
+    let tuuFilteredTransactions = [];
+    let tuuCurrentPage = 1;
+    const tuuItemsPerPage = 20;
+    let autoSyncInterval;
+    let isPageActive = true;
+    
+    // Auto-sync mientras la página esté activa
+    document.addEventListener('visibilitychange', function() {
+      isPageActive = !document.hidden;
+      if (isPageActive) {
+        startAutoSync();
+      } else {
+        stopAutoSync();
+      }
+    });
+    
+    function startAutoSync() {
+      // Sincronizar inmediatamente
+      autoSync();
+      
+      // Configurar intervalo cada 60 segundos
+      autoSyncInterval = setInterval(autoSync, 60000);
+      
+      updateStatus('active', 'Auto-sync activo (cada 1 min)');
+    }
+    
+    function stopAutoSync() {
+      if (autoSyncInterval) {
+        clearInterval(autoSyncInterval);
+        autoSyncInterval = null;
+      }
+      updateStatus('inactive', 'Auto-sync pausado');
+    }
+    
+    function updateStatus(status, text) {
+      const statusDot = document.getElementById('sync-status');
+      const statusText = document.getElementById('sync-text');
+      
+      if (statusDot) statusDot.className = 'status-dot ' + status;
+      if (statusText) statusText.textContent = text;
+    }
+    
+    function autoSync() {
+      if (!isPageActive) return;
+      
+      fetch('/api/tuu/manual_sync.php')
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            const lastSync = document.getElementById('last-sync');
+            if (lastSync) lastSync.textContent = 'Última sincronización: ' + data.sync_time;
+            
+            if (data.new_transactions > 0) {
+              updateStatus('active', `✅ ${data.new_transactions} nuevas transacciones`);
+              window.loadTUUReports(); // Recargar tabla
+            } else {
+              updateStatus('active', 'Auto-sync activo - Sin nuevas transacciones');
+            }
+          }
+        })
+        .catch(error => {
+          updateStatus('inactive', 'Error en sincronización');
+        });
+    }
+    
+    window.manualSync = function() {
+      const btn = document.getElementById('sync-btn') as HTMLButtonElement;
+      if (!btn) return;
+      
+      btn.disabled = true;
+      btn.textContent = '🔄 Sincronizando...';
+      
+      fetch('/api/tuu/manual_sync.php')
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            alert(data.message);
+            window.loadTUUReports();
+          } else {
+            alert('Error: ' + data.error);
+          }
+        })
+        .finally(() => {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = '🔄 Sincronizar';
+          }
+        });
+    }
+    
+    window.fullSync = function() {
+      const btn = document.getElementById('full-sync-btn') as HTMLButtonElement;
+      if (!btn) return;
+      
+      if (!confirm('¿Ejecutar sincronización completa? Esto puede tomar unos minutos.')) return;
+      
+      btn.disabled = true;
+      btn.textContent = '⚡ Ejecutando...';
+      
+      fetch('/api/tuu/daily_sync_with_output.php')
+        .then(r => r.text())
+        .then(data => {
+          // Mostrar resultado en modal
+          const modal = document.createElement('div');
+          modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+          
+          modal.innerHTML = `
+            <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2>Resultado Sincronización</h2>
+                <button onclick="document.body.removeChild(this.closest('.modal-overlay'))" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+              </div>
+              <pre style="background: #f5f5f5; padding: 16px; border-radius: 8px; font-size: 12px; white-space: pre-wrap; overflow-x: auto;">${data}</pre>
+              <div style="margin-top: 16px; text-align: right;">
+                <button onclick="document.body.removeChild(this.closest('.modal-overlay')); window.loadTUUReports();" class="btn btn-primary">Cerrar y Actualizar</button>
+              </div>
+            </div>
+          `;
+          
+          modal.className = 'modal-overlay';
+          
+          document.body.appendChild(modal);
+        })
+        .catch(error => {
+          alert('Error: ' + error.message);
+        })
+        .finally(() => {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = '⚡ Sync Completo';
+          }
+        });
+    }
+    
+    window.loadTUUReports = function() {
+      const loadingEl = document.getElementById('tuu-loading');
+      const errorEl = document.getElementById('tuu-error');
+      const contentEl = document.getElementById('tuu-content');
+      
+      if (loadingEl) loadingEl.style.display = 'block';
+      if (errorEl) errorEl.style.display = 'none';
+      if (contentEl) contentEl.style.display = 'none';
+      
+      fetch('/api/tuu/get_from_mysql.php')
+        .then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(data => {
+          if (loadingEl) loadingEl.style.display = 'none';
+          
+          if (data.success && data.data) {
+            const stats = data.data.combined_stats;
+            tuuAllTransactions = data.data.all_transactions || [];
+            
+            // Actualizar estadísticas
+            const totalSalesEl = document.getElementById('tuu-total-sales');
+            const transactionsCountEl = document.getElementById('tuu-transactions-count');
+            const avgTicketEl = document.getElementById('tuu-avg-ticket');
+            const lastUpdateEl = document.getElementById('tuu-last-update');
+            
+            if (totalSalesEl) totalSalesEl.textContent = '$' + new Intl.NumberFormat('es-CL').format(stats.total_revenue || 0);
+            if (transactionsCountEl) transactionsCountEl.textContent = stats.total_transactions || 0;
+            if (avgTicketEl) avgTicketEl.textContent = '$' + new Intl.NumberFormat('es-CL').format(
+              stats.total_transactions > 0 ? (stats.total_revenue / stats.total_transactions) : 0
+            );
+            if (lastUpdateEl) lastUpdateEl.textContent = new Date().toLocaleTimeString('es-CL');
+            
+            // Inicializar filtros y paginación
+            tuuCurrentPage = 1;
+            window.filterTUUTransactions();
+            
+            if (contentEl) contentEl.style.display = 'block';
+          } else {
+            if (errorEl) {
+              errorEl.textContent = 'Error: ' + (data.error || 'No se pudieron cargar los reportes');
+              errorEl.style.display = 'block';
+            }
+          }
+        })
+        .catch(error => {
+          if (loadingEl) loadingEl.style.display = 'none';
+          if (errorEl) {
+            errorEl.textContent = 'Error de conexión: ' + error.message;
+            errorEl.style.display = 'block';
+          }
+        });
+    }
+    
+    window.filterTUUTransactions = function() {
+      const filterTypeEl = document.getElementById('tuu-filter-type') as HTMLSelectElement;
+      const searchEl = document.getElementById('tuu-search') as HTMLInputElement;
+      
+      if (!filterTypeEl || !searchEl) return;
+      
+      const filterType = filterTypeEl.value;
+      const searchTerm = searchEl.value.toLowerCase();
+      
+      tuuFilteredTransactions = tuuAllTransactions.filter(t => {
+        // Filtro por tipo
+        let typeMatch = true;
+        const displayId = (t as any).order_reference || (t as any).sale_id;
+        const isApp = displayId && displayId.toString().startsWith('R11-');
+        const isOnline = (t as any).payment_source === 'online' || isApp;
+        
+        if (filterType === 'pos') typeMatch = !isOnline;
+        else if (filterType === 'online') typeMatch = isOnline && !isApp;
+        else if (filterType === 'app') typeMatch = isApp;
+        
+        // Filtro por búsqueda
+        let searchMatch = true;
+        if (searchTerm) {
+          const searchableText = [
+            (t as any).order_reference || (t as any).saleId || '',
+            (t as any).customer_name || '',
+            (t as any).customer_phone || '',
+            (t as any).detailed_items || (t as any).product_name || '',
+            ((t as any).amount || (t as any).totalAmount || (t as any).tuu_amount || 0).toString()
+          ].join(' ').toLowerCase();
+          
+          searchMatch = searchableText.includes(searchTerm);
+        }
+        
+        return typeMatch && searchMatch;
+      });
+      
+      tuuCurrentPage = 1;
+      renderTUUTable();
+    }
+    
+    window.changeTUUPage = function(direction) {
+      const totalPages = Math.ceil(tuuFilteredTransactions.length / tuuItemsPerPage);
+      tuuCurrentPage += direction;
+      
+      if (tuuCurrentPage < 1) tuuCurrentPage = 1;
+      if (tuuCurrentPage > totalPages) tuuCurrentPage = totalPages;
+      
+      renderTUUTable();
+    }
+    
+    function renderTUUTable() {
+      const tbody = document.querySelector('#tuuTable tbody');
+      const showingInfo = document.getElementById('tuu-showing-info');
+      const pageInfo = document.getElementById('tuu-page-info');
+      const prevBtn = document.getElementById('tuu-prev-btn');
+      const nextBtn = document.getElementById('tuu-next-btn');
+      
+      if (!tbody) return;
+      
+      const totalItems = tuuFilteredTransactions.length;
+      const totalPages = Math.ceil(totalItems / tuuItemsPerPage);
+      const startIndex = (tuuCurrentPage - 1) * tuuItemsPerPage;
+      const endIndex = Math.min(startIndex + tuuItemsPerPage, totalItems);
+      const pageTransactions = tuuFilteredTransactions.slice(startIndex, endIndex);
+      
+      if (pageTransactions.length > 0) {
+        tbody.innerHTML = pageTransactions.map(t => {
+          const transaction = t as any;
+          const displayDate = transaction.created_at || transaction.payment_date_time;
+          const displayId = transaction.order_reference || transaction.sale_id;
+          const displayAmount = transaction.amount || 0;
+          const isApp = displayId && displayId.toString().startsWith('R11-');
+          const isOnline = transaction.payment_source === 'online' || isApp;
+          
+          let displayCustomer, paymentType, paymentIcon;
+          
+          if (isApp) {
+            displayCustomer = transaction.customer_name || 'Cliente APP';
+            paymentType = 'APP';
+            paymentIcon = '📲';
+          } else if (isOnline) {
+            displayCustomer = transaction.customer_name || 'Cliente Online';
+            paymentType = 'Online';
+            paymentIcon = '💻';
+          } else {
+            displayCustomer = 'Cliente POS';
+            paymentType = 'POS';
+            paymentIcon = '🏪';
+          }
+          
+          return `
+            <tr>
+              <td>
+                <div style="font-size: 12px;">${new Date(displayDate).toLocaleDateString('es-CL')}</div>
+                <div style="font-size: 10px; color: #666;">${new Date(displayDate).toLocaleTimeString('es-CL')}</div>
+              </td>
+              <td>
+                <div style="font-weight: 600;">${displayId}</div>
+                <div style="font-size: 10px; color: #666;">${isApp ? 'APP Ruta 11' : (isOnline ? 'Online' : 'POS Físico')}</div>
+              </td>
+              <td>
+                <div style="font-weight: 600;">${displayCustomer}</div>
+                ${transaction.customer_phone ? `<div style="font-size: 10px; color: #666;">📞 ${transaction.customer_phone}</div>` : ''}
+                ${transaction.product_name ? `<div style="font-size: 9px; color: #059669; margin-top: 2px;">🍽️ ${transaction.product_name}</div>` : ''}
+              </td>
+              <td>
+                <div style="font-weight: 600; color: #059669;">$${new Intl.NumberFormat('es-CL').format(displayAmount)}</div>
+              </td>
+              <td>
+                <span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; background: ${(transaction.status === 'completed' || !transaction.status) ? '#dcfce7' : '#fef2f2'}; color: ${(transaction.status === 'completed' || !transaction.status) ? '#166534' : '#dc2626'};">
+                  ${(transaction.status === 'completed' || !transaction.status) ? '✓ Completado' : transaction.status}
+                </span>
+              </td>
+              <td>
+                <span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; background: ${isApp ? '#dcfce7' : (isOnline ? '#dbeafe' : '#fef3c7')}; color: ${isApp ? '#166534' : (isOnline ? '#1e40af' : '#92400e')};">
+                  ${paymentIcon} ${paymentType}
+                </span>
+              </td>
+              <td>
+                <div style="font-size: 10px; color: #666;">${isApp ? `APP-${displayId}` : (isOnline ? `WEB-${displayId}` : `POS-${displayId}`)}</div>
+                ${transaction.pos_serial_number ? `<div style="font-size: 9px; color: #666;">Terminal: ${transaction.pos_serial_number}</div>` : ''}
+              </td>
+              <td>
+                <button class="btn btn-secondary" onclick="viewTransaction(${JSON.stringify(t).replace(/"/g, '&quot;')})" style="font-size: 11px; padding: 4px 8px;">Ver</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #666;">No hay transacciones que coincidan con los filtros</td></tr>';
+      }
+      
+      // Actualizar información de paginación
+      if (showingInfo) {
+        showingInfo.textContent = `Mostrando ${startIndex + 1}-${endIndex} de ${totalItems} transacciones`;
+      }
+      
+      if (pageInfo) {
+        pageInfo.textContent = `Página ${tuuCurrentPage} de ${totalPages || 1}`;
+      }
+      
+      // Actualizar botones de navegación
+      if (prevBtn) {
+        (prevBtn as HTMLButtonElement).disabled = tuuCurrentPage <= 1;
+      }
+      
+      if (nextBtn) {
+        (nextBtn as HTMLButtonElement).disabled = tuuCurrentPage >= totalPages;
+      }
+    }
+    
+    window.viewTransaction = function(transaction) {
+      // Modal simple para ver detalles
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+      
+      const displayId = (transaction as any).order_reference || (transaction as any).sale_id;
+      const isApp = displayId && displayId.toString().startsWith('R11-');
+      const isOnline = (transaction as any).payment_source === 'online' || isApp;
+      
+      modal.innerHTML = `
+        <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2>Detalle Transacción ${isApp ? 'APP' : (isOnline ? 'Online' : 'POS')}</h2>
+            <button onclick="this.closest('div').parentElement.remove()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div>
+              <h3 style="margin-bottom: 12px;">Información de Venta</h3>
+              <p><strong>ID:</strong> ${(transaction as any).order_reference || (transaction as any).sale_id}</p>
+              <p><strong>Fecha:</strong> ${new Date((transaction as any).created_at || (transaction as any).payment_date_time).toLocaleString('es-CL')}</p>
+              <p><strong>Monto:</strong> $${new Intl.NumberFormat('es-CL').format((transaction as any).amount || 0)}</p>
+              <p><strong>Estado:</strong> ${((transaction as any).status === 'completed' || !(transaction as any).status) ? '✓ Completado' : (transaction as any).status}</p>
+            </div>
+            <div>
+              <h3 style="margin-bottom: 12px;">Detalles del Cliente</h3>
+              <p><strong>Cliente:</strong> ${(transaction as any).customer_name || (isApp ? 'Cliente APP' : (isOnline ? 'Cliente Online' : 'Cliente POS'))}</p>
+              ${(transaction as any).customer_phone ? `<p><strong>Teléfono:</strong> ${(transaction as any).customer_phone}</p>` : ''}
+              <p><strong>Tipo:</strong> ${isApp ? '📲 APP' : (isOnline ? '💻 Online' : '🏪 POS')}</p>
+              ${(transaction as any).pos_serial_number ? `<p><strong>Terminal:</strong> ${(transaction as any).pos_serial_number}</p>` : ''}
+            </div>
+          </div>
+          
+          ${(transaction as any).product_name ? `
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e5e5;">
+              <h3 style="margin-bottom: 8px;">Productos</h3>
+              <p>${(transaction as any).product_name}</p>
+            </div>
+          ` : ''}
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) document.body.removeChild(modal);
+      });
+    }
+    
+    // Inicializar cuando se carga la página
+    document.addEventListener('DOMContentLoaded', function() {
+      startAutoSync();
+      window.loadTUUReports();
+    });
+    
+    // Limpiar al salir
+    window.addEventListener('beforeunload', function() {
+      stopAutoSync();
+    });
+  </script>
+</body>
+</html>

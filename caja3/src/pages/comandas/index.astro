@@ -1,0 +1,856 @@
+---
+// Comandas - Sistema de pedidos para cocina
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comandas - La Ruta 11</title>
+    <style>
+        .bg-gray-100 { background-color: #f3f4f6; }
+        .min-h-screen { min-height: 100vh; }
+        .bg-white { background-color: #ffffff; }
+        .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+        .border-b { border-bottom-width: 1px; }
+        .sticky { position: sticky; }
+        .top-0 { top: 0; }
+        .z-10 { z-index: 10; }
+        .max-w-7xl { max-width: 80rem; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+        .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .gap-2 { gap: 0.5rem; }
+        .font-bold { font-weight: 700; }
+        .text-gray-800 { color: #1f2937; }
+        .text-lg { font-size: 1.125rem; }
+        .text-sm { font-size: 0.875rem; }
+        .text-gray-600 { color: #4b5563; }
+        .bg-red-500 { background-color: #ef4444; }
+        .text-white { color: #ffffff; }
+        .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .rounded-full { border-radius: 9999px; }
+        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .bg-blue-500 { background-color: #3b82f6; }
+        .hover\:bg-blue-600:hover { background-color: #2563eb; }
+        .transition-colors { transition: color 0.15s, background-color 0.15s; }
+        .bg-orange-500 { background-color: #f97316; }
+        .hover\:bg-orange-600:hover { background-color: #ea580c; }
+        .rounded-lg { border-radius: 0.5rem; }
+        .text-center { text-align: center; }
+        .py-12 { padding-top: 3rem; padding-bottom: 3rem; }
+        .text-6xl { font-size: 3.75rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .text-xl { font-size: 1.25rem; }
+        .text-gray-700 { color: #374151; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .text-gray-500 { color: #6b7280; }
+        .grid { display: grid; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .gap-3 { gap: 0.75rem; }
+        .rounded { border-radius: 0.25rem; }
+        .shadow { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); }
+        .border-l-8 { border-left-width: 8px; }
+        .border-red-500 { border-color: #ef4444; }
+        .bg-red-50 { background-color: #fef2f2; }
+        .border-orange-500 { border-color: #f97316; }
+        .bg-orange-50 { background-color: #fff7ed; }
+        .border-blue-500 { border-color: #3b82f6; }
+        .bg-blue-50 { background-color: #eff6ff; }
+        .border-green-500 { border-color: #22c55e; }
+        .bg-green-50 { background-color: #f0fdf4; }
+        .border-purple-500 { border-color: #a855f7; }
+        .bg-purple-50 { background-color: #faf5ff; }
+        .border-gray-400 { border-color: #9ca3af; }
+        .bg-gray-50 { background-color: #f9fafb; }
+        .border-red-800 { border-color: #991b1b; }
+        .bg-red-100 { background-color: #fee2e2; }
+        .p-3 { padding: 0.75rem; }
+        .w-full { width: 100%; }
+        .mb-3 { margin-bottom: 0.75rem; }
+        .pb-2 { padding-bottom: 0.5rem; }
+        .border-gray-200 { border-color: #e5e7eb; }
+        .text-gray-900 { color: #111827; }
+        .bg-yellow-50 { background-color: #fefce8; }
+        .border-yellow-300 { border-color: #fde047; }
+        .p-2 { padding: 0.5rem; }
+        .space-y-2 > * + * { margin-top: 0.5rem; }
+        .bg-red-800 { background-color: #991b1b; }
+        .animate-spin { animation: spin 1s linear infinite; }
+        .rounded-full { border-radius: 9999px; }
+        .h-12 { height: 3rem; }
+        .w-12 { width: 3rem; }
+        .border-b-2 { border-bottom-width: 2px; }
+        .border-orange-500 { border-color: #f97316; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (min-width: 1024px) {
+            .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (min-width: 1280px) {
+            .xl\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+    </style>
+    <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo.png" />
+</head>
+<body class="bg-white min-h-screen">
+    <div id="login-app"></div>
+    <div id="comandas-app" style="display: none;"></div>
+
+    <script type="module">
+        import { createElement as h, useState, useEffect, useRef } from 'https://esm.sh/react@18';
+        import { createRoot } from 'https://esm.sh/react-dom@18/client';
+        import { Clock, ChefHat, Flame, CheckCircle, Bike, Package, PartyPopper, X, Hourglass, Store, DollarSign, Banknote, CreditCard, Building2, FileText, Gift, Volume2, VolumeX, UtensilsCrossed, Copy, Check } from 'https://esm.sh/lucide-react@0.263.1';
+
+        const LoginApp = () => {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                setError('');
+
+                try {
+                    const response = await fetch('/api/auth/login_comandas.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        document.getElementById('login-app').style.display = 'none';
+                        document.getElementById('comandas-app').style.display = 'block';
+                        const comandasRoot = createRoot(document.getElementById('comandas-app'));
+                        comandasRoot.render(h(ComandasApp));
+                    } else {
+                        setError(data.message);
+                    }
+                } catch (error) {
+                    setError('Error de conexión');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return h('div', { className: 'min-h-screen bg-gray-100 flex items-center justify-center' },
+                h('div', { className: 'bg-white p-8 rounded-xl shadow-xl w-full max-w-md' },
+                    h('div', { className: 'text-center mb-6' },
+                        h('img', { src: 'https://laruta11-images.s3.amazonaws.com/menu/logo.png', alt: 'La Ruta 11', className: 'w-16 h-16 mx-auto mb-4' }),
+                        h('h1', { className: 'text-2xl font-bold text-gray-800' }, 'Comandas - Cocina'),
+                        h('p', { className: 'text-gray-600' }, 'Ingresa tus credenciales')
+                    ),
+                    h('form', { onSubmit: handleLogin },
+                        h('div', { className: 'mb-4' },
+                            h('label', { className: 'block text-gray-700 text-sm font-bold mb-2' }, 'Usuario'),
+                            h('input', {
+                                type: 'text',
+                                value: username,
+                                onChange: (e) => setUsername(e.target.value),
+                                className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500',
+                                required: true
+                            })
+                        ),
+                        h('div', { className: 'mb-6' },
+                            h('label', { className: 'block text-gray-700 text-sm font-bold mb-2' }, 'Contraseña'),
+                            h('input', {
+                                type: 'password',
+                                value: password,
+                                onChange: (e) => setPassword(e.target.value),
+                                className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500',
+                                required: true
+                            })
+                        ),
+                        error && h('div', { className: 'mb-4 text-red-600 text-sm text-center' }, error),
+                        h('button', {
+                            type: 'submit',
+                            disabled: loading,
+                            className: 'w-full bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors font-bold disabled:opacity-50'
+                        }, loading ? 'Ingresando...' : 'Ingresar')
+                    )
+                )
+            );
+        };
+
+        const ComandasApp = () => {
+            const [orders, setOrders] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const previousOrderCountRef = useRef(0);
+            const [audioEnabled, setAudioEnabled] = useState(false);
+            const [showAudioPopup, setShowAudioPopup] = useState(true);
+            const [currentTime, setCurrentTime] = useState(new Date());
+            const [copiedPhone, setCopiedPhone] = useState(null);
+            const [copiedAddress, setCopiedAddress] = useState(null);
+
+            const enableAudio = () => {
+                if (!audioEnabled) {
+                    setAudioEnabled(true);
+                    setShowAudioPopup(false);
+                    console.log('✅ Audio habilitado por interacción del usuario');
+                    // Reproducir sonido silencioso para desbloquear audio
+                    const audio = new Audio('/comanda.mp3');
+                    audio.volume = 0.01;
+                    audio.play().then(() => {
+                        console.log('✅ Audio desbloqueado exitosamente');
+                    }).catch(e => {
+                        console.log('⚠️ No se pudo desbloquear audio:', e);
+                    });
+                }
+            };
+
+            const requestNotificationPermission = async () => {
+                if ('Notification' in window && Notification.permission === 'default') {
+                    await Notification.requestPermission();
+                }
+            };
+
+            const showNotification = (title, body) => {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(title, {
+                        body: body,
+                        icon: 'https://laruta11-images.s3.amazonaws.com/menu/logo.png'
+                    });
+                }
+            };
+
+            const loadOrders = async () => {
+                try {
+                    const response = await fetch(`/api/tuu/get_comandas_v2.php?v=2&t=${Date.now()}`, {
+                        method: 'GET',
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Filtrar pedidos cancelados en el frontend también
+                        const allOrders = data.orders || [];
+                        const newOrders = allOrders.filter(order => 
+                            order.order_status !== 'cancelled' && 
+                            order.order_status !== 'delivered' &&
+                            order.order_status !== 'ready'
+                        );
+                        
+                        console.log('Debug API response:', data);
+                        console.log('Filtered orders:', newOrders.length, 'of', allOrders.length);
+                        console.log('Previous count:', previousOrderCountRef.current, 'New count:', newOrders.length);
+                        
+                        // Reproducir sonido si hay más pedidos que antes (y no es la primera carga)
+                        if (newOrders.length > previousOrderCountRef.current && previousOrderCountRef.current > 0) {
+                            console.log('🔔 NUEVO PEDIDO! Reproduciendo sonido...');
+                            playTestSound();
+                        }
+                        
+                        setOrders(newOrders);
+                        // Actualizar el contador DESPUÉS de verificar
+                        if (previousOrderCountRef.current === 0 && newOrders.length > 0) {
+                            console.log('📊 Inicializando contador en:', newOrders.length);
+                        }
+                        previousOrderCountRef.current = newOrders.length;
+                    }
+                } catch (error) {
+                    console.error('Error cargando pedidos:', error);
+                    // Mostrar error específico
+                    if (error.message.includes('Failed to fetch')) {
+                        console.error('Error de red o CORS');
+                    }
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const updateOrderStatus = async (orderId, newStatus) => {
+                try {
+                    const response = await fetch('/api/tuu/update_order_status.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ order_id: orderId, order_status: newStatus })
+                    });
+                    
+                    if (response.ok) {
+                        const order = orders.find(o => o.id === orderId);
+                        const orderNumber = order ? order.order_number : orderId;
+                        
+                        const statusMessages = {
+                            'sent_to_kitchen': { title: 'Enviado a Cocina', body: `Pedido ${orderNumber} enviado a cocina` },
+                            'preparing': { title: 'Preparando', body: `Pedido ${orderNumber} en preparación` },
+                            'ready': { title: 'Listo', body: `Pedido ${orderNumber} listo para entregar` },
+                            'out_for_delivery': { title: 'En Delivery', body: `Pedido ${orderNumber} enviado a delivery` },
+                            'delivered': { title: 'Entregado', body: `Pedido ${orderNumber} entregado exitosamente` }
+                        };
+                        
+                        if (statusMessages[newStatus]) {
+                            showNotification(statusMessages[newStatus].title, statusMessages[newStatus].body);
+                        }
+                        
+                        loadOrders();
+                    }
+                } catch (error) {
+                    console.error('Error actualizando estado:', error);
+                }
+            };
+
+            const markAsReady = async (orderId, orderNumber) => {
+                if (!confirm(`¿Marcar pedido ${orderNumber} como LISTO?`)) return;
+
+                try {
+                    const response = await fetch('/api/tuu/update_order_status.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ order_id: orderId, order_status: 'ready' })
+                    });
+                    
+                    if (response.ok) {
+                        showNotification('Pedido Listo', `Pedido ${orderNumber} listo para entregar`);
+                        loadOrders();
+                    }
+                } catch (error) {
+                    console.error('Error marcando como listo:', error);
+                }
+            };
+
+            const cancelOrder = async (orderId, orderNumber) => {
+                if (!confirm(`¿ANULAR el pedido ${orderNumber}? Esta acción no se puede deshacer.`)) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/cancel_order.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ order_id: orderId })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('Pedido Anulado', `Pedido ${orderNumber} anulado`);
+                        loadOrders();
+                    } else {
+                        alert('Error: ' + (result.error || 'No se pudo anular el pedido'));
+                    }
+                } catch (error) {
+                    console.error('Error anulando pedido:', error);
+                    alert('Error al anular el pedido');
+                }
+            };
+
+            useEffect(() => {
+                requestNotificationPermission();
+                loadOrders();
+                const interval = setInterval(loadOrders, 5000);
+                const timeInterval = setInterval(() => setCurrentTime(new Date()), 1000);
+                return () => {
+                    clearInterval(interval);
+                    clearInterval(timeInterval);
+                };
+            }, []);
+
+            const getStatusColor = (status) => {
+                switch (status) {
+                    case 'pending': return 'border-l-8 border-red-500 bg-red-50';
+                    case 'sent_to_kitchen': return 'border-l-8 border-orange-500 bg-orange-50';
+                    case 'preparing': return 'border-l-8 border-blue-500 bg-blue-50';
+                    case 'ready': return 'border-l-8 border-green-500 bg-green-50';
+                    case 'out_for_delivery': return 'border-l-8 border-purple-500 bg-purple-50';
+                    case 'delivered': return 'border-l-8 border-gray-400 bg-gray-50';
+                    case 'completed': return 'border-l-8 border-emerald-600 bg-emerald-50';
+                    case 'cancelled': return 'border-l-8 border-red-800 bg-red-100';
+                    default: return 'border-l-8 border-gray-400 bg-gray-50';
+                }
+            };
+
+            const getStatusBadge = (status) => {
+                switch (status) {
+                    case 'pending': return 'bg-red-500 text-white shadow-lg';
+                    case 'sent_to_kitchen': return 'bg-orange-500 text-white shadow-lg';
+                    case 'preparing': return 'bg-blue-500 text-white shadow-lg';
+                    case 'ready': return 'bg-green-500 text-white shadow-lg';
+                    case 'out_for_delivery': return 'bg-purple-500 text-white shadow-lg';
+                    case 'delivered': return 'bg-gray-500 text-white shadow-lg';
+                    case 'completed': return 'bg-emerald-600 text-white shadow-lg';
+                    case 'cancelled': return 'bg-red-800 text-white shadow-lg';
+                    default: return 'bg-gray-500 text-white shadow-lg';
+                }
+            };
+
+            const getStatusText = (status) => {
+                switch (status) {
+                    case 'pending': return 'Pendiente';
+                    case 'sent_to_kitchen': return 'En Cocina';
+                    case 'preparing': return 'Preparando';
+                    case 'ready': return 'Listo';
+                    case 'out_for_delivery': return 'En Camino';
+                    case 'delivered': return 'Entregado';
+                    case 'completed': return 'Completado';
+                    case 'cancelled': return 'Cancelado';
+                    default: return status;
+                }
+            };
+
+            const getStatusIcon = (status) => {
+                const iconProps = { size: 14, className: 'inline' };
+                switch (status) {
+                    case 'pending': return h(Hourglass, iconProps);
+                    case 'sent_to_kitchen': return h(ChefHat, iconProps);
+                    case 'preparing': return h(Flame, iconProps);
+                    case 'ready': return h(CheckCircle, iconProps);
+                    case 'out_for_delivery': return h(Bike, iconProps);
+                    case 'delivered': return h(Package, iconProps);
+                    case 'completed': return h(PartyPopper, iconProps);
+                    case 'cancelled': return h(X, iconProps);
+                    default: return null;
+                }
+            };
+
+            const getProductImage = (imageUrl) => {
+                if (imageUrl && imageUrl.trim() !== '') {
+                    return imageUrl;
+                }
+                return 'https://laruta11-images.s3.amazonaws.com/menu/logo.png';
+            };
+
+            const formatPhone = (phone) => {
+                if (!phone) return 'Sin teléfono';
+                const cleaned = phone.replace(/\D/g, '');
+                if (cleaned.startsWith('56')) return '+' + cleaned;
+                if (cleaned.startsWith('9')) return '+569' + cleaned;
+                return '+56' + cleaned;
+            };
+
+            const getWhatsAppLink = (phone, orderNumber) => {
+                if (!phone) return null;
+                const formattedPhone = formatPhone(phone).replace('+', '');
+                const message = `Hola! Te contacto por tu pedido ${orderNumber} de La Ruta 11`;
+                return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+            };
+
+            const formatMoney = (amount) => {
+                return parseFloat(amount || 0).toLocaleString('es-CL').replace(/,/g, '.');
+            };
+
+            const getTimeElapsed = (createdAt) => {
+                const now = new Date();
+                const created = new Date(createdAt);
+                // Convertir UTC a hora Chile (UTC-3)
+                const createdChile = new Date(created.getTime() - (3 * 60 * 60 * 1000));
+                const diffMs = now - createdChile;
+                const diffSecs = Math.floor(diffMs / 1000);
+                const diffMins = Math.floor(diffSecs / 60);
+                const diffHours = Math.floor(diffMins / 60);
+                
+                if (diffSecs < 60) {
+                    return `${diffSecs}s`;
+                } else if (diffMins < 60) {
+                    return `${diffMins}m ${diffSecs % 60}s`;
+                } else {
+                    const remainingMins = diffMins % 60;
+                    return `${diffHours}h ${remainingMins}m`;
+                }
+            };
+
+            const getMinutesElapsed = (createdAt) => {
+                const now = new Date();
+                const created = new Date(createdAt);
+                const createdChile = new Date(created.getTime() - (3 * 60 * 60 * 1000));
+                const diffMs = now - createdChile;
+                return Math.floor(diffMs / (1000 * 60));
+            };
+
+            const getTimeStatus = () => {
+                if (orders.length === 0) return null;
+                const maxMins = Math.max(...orders.map(o => getMinutesElapsed(o.created_at)));
+                if (maxMins >= 20) return { text: 'MUY ATRASADO', color: 'text-red-800 font-bold' };
+                if (maxMins >= 10) return { text: 'ATRASADO', color: 'text-yellow-800 font-bold' };
+                return { text: 'A TIEMPO', color: 'text-green-600 font-bold' };
+            };
+
+            const getTimeBorderColor = (createdAt) => {
+                const mins = getMinutesElapsed(createdAt);
+                if (mins < 10) return 'border-gray-300 bg-white';
+                if (mins < 20) return 'border-gray-300 bg-yellow-50';
+                return 'border-gray-300 bg-red-50';
+            };
+
+            const getDetailedTimes = (order) => {
+                const now = new Date();
+                const created = new Date(order.created_at);
+                const createdChile = new Date(created.getTime() - (3 * 60 * 60 * 1000));
+                
+                const totalMs = now - createdChile;
+                const totalMins = Math.floor(totalMs / (1000 * 60));
+                const totalHours = Math.floor(totalMins / 60);
+                const totalRemainingMins = totalMins % 60;
+                
+                const prepTime = Math.min(totalMins, 18);
+                const deliveryTime = Math.max(0, totalMins - prepTime);
+                
+                return {
+                    total: totalHours > 0 ? `${totalHours}h ${totalRemainingMins}m` : `${totalMins}m`,
+                    prep: `${prepTime}m`,
+                    delivery: `${deliveryTime}m`
+                };
+            };
+
+            const copyToClipboard = async (text, type, orderId) => {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    if (type === 'phone') {
+                        setCopiedPhone(orderId);
+                        setTimeout(() => setCopiedPhone(null), 2000);
+                    } else if (type === 'address') {
+                        setCopiedAddress(orderId);
+                        setTimeout(() => setCopiedAddress(null), 2000);
+                    }
+                } catch (err) {
+                    console.error('Error copiando:', err);
+                }
+            };
+
+            const playTestSound = async () => {
+                try {
+                    console.log('🔊 Intentando reproducir sonido...');
+                    console.log('Audio habilitado:', audioEnabled);
+                    
+                    const audio = new Audio('/comanda.mp3');
+                    audio.volume = 1.0;
+                    
+                    const playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            console.log('✅ Sonido reproducido exitosamente');
+                        }).catch(error => {
+                            console.error('❌ Error reproduciendo sonido:', error.name, error.message);
+                            if (!audioEnabled) {
+                                console.log('👆 Haz click en la pantalla para habilitar audio');
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error('❌ Error creando audio:', error);
+                }
+            };
+
+            if (loading) {
+                return h('div', { className: 'flex items-center justify-center min-h-screen' },
+                    h('div', { className: 'text-center' },
+                        h('div', { className: 'animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4' }),
+                        h('p', { className: 'text-gray-600' }, 'Cargando comandas...')
+                    )
+                );
+            }
+
+            return h('div', { 
+                className: 'min-h-screen bg-white'
+            },
+                // Popup de activación de sonido
+                showAudioPopup && !audioEnabled && h('div', {
+                    style: {
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.7)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 9999
+                    },
+                    onClick: (e) => e.stopPropagation()
+                },
+                    h('div', {
+                        style: {
+                            background: 'white',
+                            padding: '32px',
+                            borderRadius: '16px',
+                            maxWidth: '400px',
+                            textAlign: 'center',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+                        }
+                    },
+                        h(Volume2, { size: 64, style: { margin: '0 auto 16px', color: '#f97316' } }),
+                        h('h2', { style: { fontSize: '24px', fontWeight: 'bold', marginBottom: '12px', color: '#1f2937' } }, '🔔 Activar Notificaciones de Sonido'),
+                        h('p', { style: { color: '#6b7280', marginBottom: '24px', fontSize: '14px' } }, 'Para recibir alertas sonoras cuando lleguen nuevos pedidos, activa el sonido.'),
+                        h('div', { style: { display: 'flex', gap: '12px', justifyContent: 'center' } },
+                            h('button', {
+                                onClick: () => setShowAudioPopup(false),
+                                style: {
+                                    padding: '12px 24px',
+                                    background: '#e5e7eb',
+                                    color: '#374151',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer'
+                                }
+                            }, 'Ahora no'),
+                            h('button', {
+                                onClick: enableAudio,
+                                style: {
+                                    padding: '12px 24px',
+                                    background: '#f97316',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer'
+                                }
+                            }, '🔊 Activar Sonido')
+                        )
+                    )
+                ),
+                h('header', { className: 'bg-white shadow-sm border-b sticky top-0 z-10' },
+                    h('div', { className: 'max-w-7xl mx-auto px-4 py-2' },
+                        h('div', { className: 'flex items-center justify-between gap-4 mb-2' },
+                            h('div', { className: 'flex items-center gap-2' },
+                                h('img', { src: 'https://laruta11-images.s3.amazonaws.com/menu/logo.png', alt: 'La Ruta 11', className: 'w-6 h-6' }),
+                                h('h1', { className: 'font-bold text-gray-800 text-base' }, 'Comandas')
+                            ),
+                            h('div', { className: 'flex items-center gap-2 text-xs text-gray-600' },
+                                h('span', { className: 'font-bold' }, currentTime.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })),
+                                h('span', { className: 'text-gray-400' }, '•'),
+                                h('span', {}, currentTime.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' }))
+                            ),
+                            h('div', { className: 'flex items-center gap-2' },
+                                h('div', { className: 'bg-red-500 text-white px-2 py-1 rounded-full font-bold text-xs' }, `${orders.length}`),
+                                h('button', {
+                                    onClick: playTestSound,
+                                    className: `px-2 py-1 rounded-full hover:opacity-80 transition-colors text-sm ${
+                                        audioEnabled ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'
+                                    }`,
+                                    title: audioEnabled ? 'Audio habilitado - Click para probar' : 'Click para habilitar audio'
+}, audioEnabled ? h(Volume2, { size: 16 }) : h(VolumeX, { size: 16 }))
+                            )
+                        ),
+                        (() => {
+                            const productCounts = {};
+                            orders.forEach(order => {
+                                if (order.items) {
+                                    order.items.forEach(item => {
+                                        const name = item.product_name || 'Producto';
+                                        productCounts[name] = (productCounts[name] || 0) + (item.quantity || 1);
+                                    });
+                                }
+                            });
+                            const summary = Object.entries(productCounts)
+                                .sort((a, b) => b[1] - a[1])
+                                .map(([name, count]) => `${count} ${name}`)
+                                .join(', ');
+                            return summary ? h('div', { className: 'text-xs font-bold text-gray-800 bg-orange-50 px-3 py-1 rounded border border-orange-200' }, `Preparando: ${summary}`) : null;
+                        })()
+                    )
+                ),
+
+                h('main', { className: 'max-w-full mx-auto px-2 py-3' },
+                    orders.length === 0 ? 
+                        h('div', { className: 'text-center py-12' },
+                            h(UtensilsCrossed, { size: 64, className: 'mx-auto mb-4 text-gray-400' }),
+                            h('h2', { className: 'text-xl font-bold text-gray-700 mb-2' }, 'No hay pedidos'),
+                            h('p', { className: 'text-gray-500' }, 'Los nuevos pedidos aparecerán aquí automáticamente')
+                        ) :
+                        h('div', { className: 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3' },
+                            orders.filter(order => order.order_status !== 'cancelled').map(order => 
+                                h('div', {
+                                    key: order.id,
+                                    className: `rounded-lg border-2 transition-all duration-300 ${getTimeBorderColor(order.created_at)}`
+                                },
+                                    h('div', { className: 'p-3' },
+                                        // HEADER: Todo en una línea con estado de tiempo
+                                        h('div', { className: 'mb-3 pb-2 border-b border-gray-200' },
+                                            h('div', { className: 'flex flex-wrap items-center gap-1 text-xs mb-2' },
+                                                h('span', { className: 'flex items-center gap-1 text-gray-600' }, 
+                                                    order.delivery_type === 'delivery' ? [h(Bike, { size: 12, key: 'icon' }), ' Delivery'] : [h(Store, { size: 12, key: 'icon' }), ' Retiro']
+                                                ),
+                                                h('span', { className: 'text-gray-400' }, '|'),
+                                                (() => {
+                                                    const mins = getMinutesElapsed(order.created_at);
+                                                    if (mins >= 20) {
+                                                        return h('span', { className: 'font-bold text-red-800' }, '🚨 MUY ATRASADO');
+                                                    } else if (mins >= 10) {
+                                                        return h('span', { className: 'font-bold text-yellow-800' }, '⚠️ ATRASADO');
+                                                    }
+                                                    return h('span', { className: 'font-bold text-green-600' }, '✓ A TIEMPO');
+                                                })(),
+                                                h('span', { className: 'text-gray-400' }, '|'),
+                                                h('span', { className: 'font-bold text-gray-900 text-sm' }, order.customer_name),
+                                                h('span', { className: 'text-gray-400' }, '|'),
+                                                h('span', { className: 'font-bold text-gray-600' }, getTimeElapsed(order.created_at)),
+                                                order.delivery_type === 'delivery' && order.delivery_address && h('a', {
+                                                    href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.delivery_address)}`,
+                                                    target: '_blank',
+                                                    rel: 'noopener noreferrer',
+                                                    className: 'bg-blue-500 text-white px-2 py-0.5 rounded font-medium hover:bg-blue-600 transition-colors ml-2',
+                                                    title: 'Abrir en Google Maps'
+                                                }, order.delivery_address),
+                                                order.customer_phone && h('a', {
+                                                    href: `tel:${formatPhone(order.customer_phone)}`,
+                                                    className: 'bg-purple-500 text-white px-2 py-0.5 rounded font-medium hover:bg-purple-600 transition-colors ml-2',
+                                                    title: 'Llamar'
+                                                }, formatPhone(order.customer_phone))
+                                            ),
+                                            (order.customer_notes || order.special_instructions) && h('div', { className: 'text-sm font-bold text-gray-900 bg-yellow-300 border-2 border-yellow-400 rounded-lg px-3 py-2 mt-2 flex items-start gap-2' },
+                                                h(FileText, { size: 14, className: 'mt-0.5 flex-shrink-0' }),
+                                                h('span', {}, order.customer_notes || ''),
+                                                order.customer_notes && order.special_instructions && h('span', {}, ' • '),
+                                                !order.customer_notes && order.special_instructions && h('span', {}, order.special_instructions)
+                                            )
+                                        ),
+
+                                        // PRODUCTOS (sin tarjeta padre)
+                                        h('div', { className: 'space-y-2 mb-3' },
+                                                order.items && order.items.length > 0 ? 
+                                                    order.items.map((item, index) => {
+                                                        const isCombo = item.item_type === 'combo';
+                                                        let comboData = null;
+                                                        let customizations = null;
+                                                        
+                                                        if (item.combo_data) {
+                                                            try {
+                                                                const parsed = typeof item.combo_data === 'string' ? JSON.parse(item.combo_data) : item.combo_data;
+                                                                if (isCombo) {
+                                                                    comboData = parsed;
+                                                                } else if (parsed.customizations) {
+                                                                    customizations = parsed.customizations;
+                                                                }
+                                                            } catch (e) {
+                                                                console.error('Error parsing combo_data:', e);
+                                                            }
+                                                        }
+                                                        
+                                                        return h('div', {
+                                                            key: index,
+                                                            className: `bg-white border-orange-500 border-2 rounded-lg p-3`
+                                                        },
+                                                            // Producto principal - Layout 2 columnas
+                                                            h('div', { className: 'flex gap-4 mb-2' },
+                                                                // Columna 1: Imagen
+                                                                h('img', {
+                                                                    src: getProductImage(item.image_url),
+                                                                    alt: item.product_name || 'Producto',
+                                                                    className: 'w-24 h-24 object-cover rounded border-2 border-white shadow flex-shrink-0',
+                                                                    onError: (e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo.png'; }
+                                                                }),
+                                                                // Columna 2: Info del producto
+                                                                h('div', { className: 'flex-1 min-w-0' },
+                                                                    // Fila 1: Nombre + Cantidad
+                                                                    h('div', { className: 'flex items-center gap-2 mb-1' },
+                                                                        h('h3', { 
+                                                                            className: `font-bold text-gray-900 text-2xl ${isCombo ? 'text-orange-600' : ''} flex items-center gap-2`
+                                                                        }, 
+                                                                            isCombo && h(Gift, { size: 20 }), 
+                                                                            item.product_name || 'Producto'
+                                                                        ),
+                                                                        h('span', { className: 'bg-gray-900 text-white px-2 py-0.5 rounded font-bold text-sm' }, `x${item.quantity}`)
+                                                                    ),
+                                                                    // Fila 2: Ingredientes de la receta
+                                                                    item.recipe_description && (() => {
+                                                                        const cleaned = item.recipe_description
+                                                                            .replace(/\(.*?\)/g, '')
+                                                                            .replace(/\d+(\.\d+)?\s*(g|gr|gramos?|kg|ml|l|litros?|u|unidades?|un|und)/gi, '')
+                                                                            .split(',')
+                                                                            .map(i => i.trim())
+                                                                            .filter(i => {
+                                                                                const lower = i.toLowerCase();
+                                                                                return !lower.includes('bolsa') && 
+                                                                                       !lower.includes('caja') && 
+                                                                                       !lower.includes('packaging') && 
+                                                                                       !lower.includes('delivery') && 
+                                                                                       !lower.includes('envase') &&
+                                                                                       i.length > 0;
+                                                                            })
+                                                                            .join(', ');
+                                                                        return cleaned ? h('p', { className: 'text-sm text-gray-700 mt-1 font-normal' }, cleaned) : null;
+                                                                    })()
+                                                                )
+                                                            ),
+                                                            
+                                                            // Personalizaciones (customizations)
+                                                            customizations && customizations.length > 0 && h('div', { className: 'mt-2 space-y-2' },
+                                                                h('p', { className: 'text-xs font-bold text-blue-700 mb-1' }, `${item.product_name} además incluye:`),
+                                                                ...customizations.map((custom, idx) => 
+                                                                    h('div', { key: `custom-${idx}`, className: 'flex items-center gap-2 bg-blue-50 p-2 rounded border border-blue-200' },
+                                                                        h('img', {
+                                                                            src: getProductImage(custom.image_url || custom.image),
+                                                                            alt: custom.name,
+                                                                            className: 'w-12 h-12 object-cover rounded border border-blue-300',
+                                                                            onError: (e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo.png'; }
+                                                                        }),
+                                                                        h('div', { className: 'flex-1' },
+                                                                            h('p', { className: 'text-sm font-bold text-gray-900' }, custom.name),
+                                                                            h('p', { className: 'text-xs text-gray-600' }, `Cantidad: ${custom.quantity}`)
+                                                                        )
+                                                                    )
+                                                                )
+                                                            ),
+                                                            
+                                                            // Detalles del combo
+                                                            isCombo && comboData && h('div', { className: 'mt-2 pl-2 border-l-2 border-orange-300 space-y-1' },
+                                                                // Fixed items
+                                                                comboData.fixed_items && comboData.fixed_items.length > 0 && h('div', {},
+                                                                    h('p', { className: 'text-xs font-bold text-orange-700 mb-1' }, 'Incluye:'),
+                                                                    ...comboData.fixed_items.map((fixed, idx) => 
+                                                                        h('div', { key: `fixed-${idx}`, className: 'text-xs text-gray-700 flex items-center gap-1' },
+                                                                            h('span', { className: 'text-orange-500' }, '•'),
+                                                                            h('span', {}, `${item.quantity * fixed.quantity}x ${fixed.product_name}`)
+                                                                        )
+                                                                    )
+                                                                ),
+                                                                // Selections
+                                                                comboData.selections && Object.keys(comboData.selections).length > 0 && h('div', { className: 'mt-1' },
+                                                                    h('p', { className: 'text-xs font-bold text-blue-700 mb-1' }, 'Seleccionado:'),
+                                                                    ...Object.entries(comboData.selections).map(([group, selection]) => {
+                                                                        if (Array.isArray(selection)) {
+                                                                            return selection.map((sel, idx) => 
+                                                                                h('div', { key: `sel-${group}-${idx}`, className: 'text-xs text-gray-700 flex items-center gap-1' },
+                                                                                    h('span', { className: 'text-blue-500' }, '•'),
+                                                                                    h('span', {}, `${item.quantity}x ${sel.name}`)
+                                                                                )
+                                                                            );
+                                                                        } else if (selection && selection.name) {
+                                                                            return h('div', { key: `sel-${group}`, className: 'text-xs text-gray-700 flex items-center gap-1' },
+                                                                                h('span', { className: 'text-blue-500' }, '•'),
+                                                                                h('span', {}, `${item.quantity}x ${selection.name}`)
+                                                                            );
+                                                                        }
+                                                                        return null;
+                                                                    })
+                                                                )
+                                                            )
+                                                        );
+                                                    }) :
+                                                    h('p', { className: 'text-gray-500 text-center text-xs' }, 'Sin productos específicos')
+                                        ),
+
+                                        // BOTONES DE ACCIÓN (al final)
+                                        h('div', { className: 'flex flex-col gap-2 mt-3' },
+                                            h('div', { className: 'flex gap-2' },
+                                                h('button', {
+                                                    onClick: () => markAsReady(order.id, order.order_number),
+                                                    className: 'flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded text-xs'
+                                                }, '✅ ESTÁ LISTO')
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                )
+            );
+        };
+
+        const loginRoot = createRoot(document.getElementById('login-app'));
+        loginRoot.render(h(LoginApp));
+    </script>
+</body>
+</html>

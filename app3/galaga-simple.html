@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍔 GALAGA: RUTA 11 KITCHEN WARS</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .ui-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 16px;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 10px;
+            background: rgba(255, 165, 0, 0.1);
+            border-radius: 10px;
+            border: 2px solid #ff6b35;
+        }
+        .canvas {
+            border: 3px solid #ff6b35;
+            background: linear-gradient(180deg, #0f0f23, #1a1a2e);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+        }
+        .combo-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 215, 0, 0.9);
+            color: #000;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 18px;
+            display: none;
+        }
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 16px;
+            padding: 0 10px;
+        }
+        .btn {
+            padding: 8px 12px;
+            background: #ff6b35;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background: #e55a2b;
+        }
+        .btn-green {
+            background: #059669;
+            padding: 12px 24px;
+            border-radius: 8px;
+        }
+        .btn-green:hover {
+            background: #047857;
+        }
+        .mobile-controls {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            gap: 20px;
+            z-index: 1000;
+        }
+        .mobile-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 107, 53, 0.3);
+            border: 2px solid #ff6b35;
+            color: #ff6b35;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        @media (max-width: 850px) {
+            .canvas {
+                width: 90vw;
+                height: 60vh;
+            }
+            .mobile-controls {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="ui-header">
+            <div>🍔 SCORE: <span id="score">0</span></div>
+            <div>👨🍳 CHEF: <span id="lives">3</span></div>
+            <div>🔥 COMBO: <span id="combo">0</span>x</div>
+            <div>COCINA: <span id="level">1</span></div>
+        </div>
+
+        <div style="position: relative;">
+            <canvas id="gameCanvas" class="canvas" width="800" height="600"></canvas>
+            
+            <div id="comboDisplay" class="combo-display">
+                ¡COMBO x<span id="comboNumber">0</span>!
+            </div>
+            
+            <div id="gameOverScreen" class="game-over" style="display: none;">
+                <h2 style="font-size: 36px; color: #ef4444; margin-bottom: 16px;">🔥 COCINA CERRADA 🔥</h2>
+                <p style="font-size: 20px; margin-bottom: 16px;">PUNTUACIÓN FINAL: <span id="finalScore">0</span></p>
+                <p style="margin-bottom: 16px;">🏆 Mejor Combo: <span id="bestCombo">0</span>x</p>
+                <button id="restartBtn" class="btn btn-green">
+                    🔄 NUEVA COCINA
+                </button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div style="font-size: 14px; color: #ff6b35;">
+                ← → MOVER ESPÁTULA | ESPACIO 🥄 SALSA
+            </div>
+            <button id="soundBtn" class="btn">
+                <span id="soundIcon">🔊</span>
+            </button>
+        </div>
+        
+        <div class="mobile-controls">
+            <div class="mobile-btn" id="leftBtn">←</div>
+            <div class="mobile-btn" id="shootBtn">🥄</div>
+            <div class="mobile-btn" id="rightBtn">→</div>
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        var canvas = document.getElementById('gameCanvas');
+        var ctx = canvas.getContext('2d');
+        var gameState = 'playing';
+        var score = 0;
+        var lives = 3;
+        var level = 1;
+        var combo = 0;
+        var bestCombo = 0;
+        var comboTimer = 0;
+        var keys = {};
+        var soundEnabled = true;
+        var audioContext = null;
+        
+        // Game objects
+        var player = { x: 385, y: 550, width: 40, height: 30, speed: 6, emoji: '🥄' };
+        var bullets = [];
+        var enemies = [];
+        var enemyBullets = [];
+        var particles = [];
+        var powerUps = [];
+        var activePowerUps = [];
+        
+        // Enemy types
+        var enemyTypes = {
+            tomate: { emoji: '🍅', color: '#ff4444', points: 50, speed: 1 },
+            cebolla: { emoji: '🧅', color: '#dda0dd', points: 80, speed: 1.2 },
+            papa: { emoji: '🥔', color: '#deb887', points: 100, speed: 0.8 },
+            hamburguesa: { emoji: '🍔', color: '#ff6b35', points: 200, speed: 0.6 }
+        };
+        
+        var powerUpTypes = {
+            salsa_picante: { emoji: '🌶️', name: 'Salsa Picante', duration: 300 },
+            escudo_queso: { emoji: '🧀', name: 'Escudo de Queso', duration: 200 },
+            disparo_triple: { emoji: '🔥', name: 'Fuego Triple', duration: 250 }
+        };
+
+        // Touch controls
+        var touchControls = { left: false, right: false };
+
+        // Audio functions
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function playSound(frequency, duration) {
+            if (!soundEnabled || !audioContext) return;
+            try {
+                var oscillator = audioContext.createOscillator();
+                var gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                oscillator.type = 'square';
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
+            } catch (e) {
+                console.log('Sound error');
+            }
+        }
+
+        // Create enemy formation
+        function createEnemyFormation() {
+            enemies = [];
+            var startX = 80;
+            var startY = 50;
+            var spacing = 70;
+            
+            // Hamburguesas (top)
+            for (var i = 0; i < 3; i++) {
+                enemies.push({
+                    x: startX + i * spacing * 2,
+                    y: startY,
+                    width: 35,
+                    height: 30,
+                    type: 'hamburguesa',
+                    inFormation: true,
+                    formationX: startX + i * spacing * 2,
+                    formationY: startY,
+                    angle: 0,
+                    diving: false
+                });
+            }
+            
+            // Papas (middle)
+            for (var row = 0; row < 2; row++) {
+                for (var i = 0; i < 6; i++) {
+                    enemies.push({
+                        x: startX + i * spacing,
+                        y: startY + 80 + row * 50,
+                        width: 30,
+                        height: 25,
+                        type: 'papa',
+                        inFormation: true,
+                        formationX: startX + i * spacing,
+                        formationY: startY + 80 + row * 50,
+                        angle: 0,
+                        diving: false
+                    });
+                }
+            }
+            
+            // Tomates y cebollas (bottom)
+            var bottomTypes = ['cebolla', 'tomate'];
+            for (var row = 0; row < 2; row++) {
+                for (var i = 0; i < 8; i++) {
+                    enemies.push({
+                        x: startX + i * 60,
+                        y: startY + 180 + row * 45,
+                        width: 25,
+                        height: 20,
+                        type: bottomTypes[row],
+                        inFormation: true,
+                        formationX: startX + i * 60,
+                        formationY: startY + 180 + row * 45,
+                        angle: 0,
+                        diving: false
+                    });
+                }
+            }
+        }
+
+        // Shooting
+        function shoot() {
+            if (gameState !== 'playing') return;
+            
+            var hasTripleShot = activePowerUps.some(function(p) { return p.type === 'disparo_triple'; });
+            var hasSpicySauce = activePowerUps.some(function(p) { return p.type === 'salsa_picante'; });
+            
+            if (hasTripleShot) {
+                for (var i = -1; i <= 1; i++) {
+                    bullets.push({
+                        x: player.x + player.width / 2 - 3,
+                        y: player.y,
+                        width: 6,
+                        height: 12,
+                        speed: 9,
+                        color: hasSpicySauce ? '#ff4444' : '#ffd700',
+                        emoji: hasSpicySauce ? '🔥' : '💧',
+                        vx: i * 2
+                    });
+                }
+            } else {
+                bullets.push({
+                    x: player.x + player.width / 2 - 3,
+                    y: player.y,
+                    width: 6,
+                    height: 12,
+                    speed: 8,
+                    color: hasSpicySauce ? '#ff4444' : '#ffd700',
+                    emoji: hasSpicySauce ? '🔥' : '💧',
+                    vx: 0
+                });
+            }
+            
+            playSound(600, 0.1);
+        }
+
+        // Create explosion
+        function createExplosion(x, y, enemyType) {
+            var type = enemyTypes[enemyType];
+            for (var i = 0; i < 12; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 40,
+                    color: type.color,
+                    emoji: type.emoji,
+                    size: Math.random() * 8 + 4
+                });
+            }
+        }
+        
+        // Create power-up
+        function createPowerUp(x, y) {
+            if (Math.random() < 0.3) {
+                var types = Object.keys(powerUpTypes);
+                var type = types[Math.floor(Math.random() * types.length)];
+                
+                powerUps.push({
+                    x: x,
+                    y: y,
+                    width: 25,
+                    height: 25,
+                    type: type,
+                    speed: 2,
+                    bounce: 0
+                });
+            }
+        }
+        
+        // Update combo
+        function updateCombo() {
+            combo++;
+            comboTimer = 120;
+            
+            if (combo > bestCombo) {
+                bestCombo = combo;
+            }
+            
+            if (combo >= 5) {
+                showComboDisplay();
+                playSound(400 + (combo * 50), 0.2);
+            }
+        }
+        
+        function showComboDisplay() {
+            var display = document.getElementById('comboDisplay');
+            var comboNum = document.getElementById('comboNumber');
+            if (display && comboNum) {
+                comboNum.textContent = combo.toString();
+                display.style.display = 'block';
+                
+                setTimeout(function() {
+                    display.style.display = 'none';
+                }, 1500);
+            }
+        }
+
+        // Setup mobile controls
+        function setupMobileControls() {
+            var leftBtn = document.getElementById('leftBtn');
+            var rightBtn = document.getElementById('rightBtn');
+            var shootBtn = document.getElementById('shootBtn');
+            
+            if (leftBtn) {
+                leftBtn.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    touchControls.left = true;
+                    if (!audioContext) initAudio();
+                });
+                leftBtn.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    touchControls.left = false;
+                });
+            }
+            
+            if (rightBtn) {
+                rightBtn.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    touchControls.right = true;
+                    if (!audioContext) initAudio();
+                });
+                rightBtn.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    touchControls.right = false;
+                });
+            }
+            
+            if (shootBtn) {
+                shootBtn.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    shoot();
+                    if (!audioContext) initAudio();
+                });
+            }
+        }
+
+        // Update game
+        function update() {
+            if (gameState !== 'playing') return;
+            
+            // Update combo timer
+            if (comboTimer > 0) {
+                comboTimer--;
+                if (comboTimer === 0) {
+                    combo = 0;
+                }
+            }
+            
+            // Update power-ups
+            activePowerUps = activePowerUps.filter(function(powerUp) {
+                powerUp.duration--;
+                return powerUp.duration > 0;
+            });
+            
+            var hasSlowTime = activePowerUps.some(function(p) { return p.type === 'tiempo_lento'; });
+            var gameSpeed = hasSlowTime ? 0.5 : 1;
+            
+            // Move player
+            if ((keys['ArrowLeft'] || touchControls.left) && player.x > 0) {
+                player.x -= player.speed;
+            }
+            if ((keys['ArrowRight'] || touchControls.right) && player.x < 760) {
+                player.x += player.speed;
+            }
+            
+            // Update bullets
+            bullets = bullets.filter(function(bullet) {
+                bullet.y -= bullet.speed * gameSpeed;
+                if (bullet.vx) bullet.x += bullet.vx;
+                return bullet.y > -bullet.height && bullet.x > -50 && bullet.x < 850;
+            });
+            
+            // Update power-ups
+            powerUps = powerUps.filter(function(powerUp) {
+                powerUp.y += powerUp.speed * gameSpeed;
+                powerUp.bounce += 0.1;
+                return powerUp.y < 650;
+            });
+            
+            // Update enemy bullets
+            enemyBullets = enemyBullets.filter(function(bullet) {
+                bullet.y += bullet.speed * gameSpeed;
+                return bullet.y < 600;
+            });
+            
+            // Update enemies
+            enemies.forEach(function(enemy) {
+                if (enemy.inFormation) {
+                    enemy.angle += 0.02 * gameSpeed;
+                    enemy.x = enemy.formationX + Math.sin(enemy.angle) * 15;
+                    
+                    if (Math.random() < 0.001 * gameSpeed) {
+                        enemy.diving = true;
+                        enemy.inFormation = false;
+                    }
+                } else if (enemy.diving) {
+                    enemy.y += enemyTypes[enemy.type].speed * 2 * gameSpeed;
+                    
+                    if (enemy.y > 600) {
+                        enemy.diving = false;
+                        enemy.inFormation = true;
+                        enemy.x = enemy.formationX;
+                        enemy.y = enemy.formationY;
+                    }
+                }
+                
+                // Enemy shooting
+                if (Math.random() < 0.002 * gameSpeed) {
+                    enemyBullets.push({
+                        x: enemy.x + enemy.width / 2 - 2,
+                        y: enemy.y + enemy.height,
+                        width: 4,
+                        height: 8,
+                        speed: 3,
+                        color: '#ff4444',
+                        emoji: '💥'
+                    });
+                }
+            });
+            
+            // Update particles
+            particles = particles.filter(function(particle) {
+                particle.x += particle.vx * gameSpeed;
+                particle.y += particle.vy * gameSpeed;
+                particle.life--;
+                return particle.life > 0;
+            });
+            
+            // Collision detection - bullets vs enemies
+            for (var i = bullets.length - 1; i >= 0; i--) {
+                var bullet = bullets[i];
+                for (var j = enemies.length - 1; j >= 0; j--) {
+                    var enemy = enemies[j];
+                    if (bullet.x < enemy.x + enemy.width &&
+                        bullet.x + bullet.width > enemy.x &&
+                        bullet.y < enemy.y + enemy.height &&
+                        bullet.y + bullet.height > enemy.y) {
+                        
+                        createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.type);
+                        
+                        var points = enemyTypes[enemy.type].points * Math.max(1, Math.floor(combo / 5) + 1);
+                        score += points;
+                        
+                        updateCombo();
+                        createPowerUp(enemy.x, enemy.y);
+                        
+                        bullets.splice(i, 1);
+                        enemies.splice(j, 1);
+                        playSound(120, 0.4);
+                        updateUI();
+                        break;
+                    }
+                }
+            }
+            
+            // Collision detection - player vs power-ups
+            for (var i = powerUps.length - 1; i >= 0; i--) {
+                var powerUp = powerUps[i];
+                if (powerUp.x < player.x + player.width &&
+                    powerUp.x + powerUp.width > player.x &&
+                    powerUp.y < player.y + player.height &&
+                    powerUp.y + powerUp.height > player.y) {
+                    
+                    activePowerUps.push({
+                        type: powerUp.type,
+                        duration: powerUpTypes[powerUp.type].duration
+                    });
+                    
+                    powerUps.splice(i, 1);
+                    playSound(800, 0.1);
+                }
+            }
+            
+            // Collision detection - enemy bullets vs player
+            var hasShield = activePowerUps.some(function(p) { return p.type === 'escudo_queso'; });
+            
+            if (!hasShield) {
+                for (var i = enemyBullets.length - 1; i >= 0; i--) {
+                    var bullet = enemyBullets[i];
+                    if (bullet.x < player.x + player.width &&
+                        bullet.x + bullet.width > player.x &&
+                        bullet.y < player.y + player.height &&
+                        bullet.y + bullet.height > player.y) {
+                        
+                        createExplosion(player.x + player.width/2, player.y + player.height/2, 'tomate');
+                        enemyBullets.splice(i, 1);
+                        lives--;
+                        combo = 0;
+                        updateUI();
+                        playSound(200, 0.2);
+                        
+                        if (lives <= 0) {
+                            gameState = 'gameOver';
+                            showGameOver();
+                        }
+                    }
+                }
+            }
+            
+            // Check if all enemies destroyed
+            if (enemies.length === 0) {
+                level++;
+                updateUI();
+                createEnemyFormation();
+            }
+        }
+
+        // Render game
+        function render() {
+            // Clear canvas
+            var gradient = ctx.createLinearGradient(0, 0, 0, 600);
+            gradient.addColorStop(0, '#0f0f23');
+            gradient.addColorStop(1, '#1a1a2e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 800, 600);
+            
+            // Draw kitchen tiles
+            ctx.strokeStyle = 'rgba(255, 107, 53, 0.1)';
+            ctx.lineWidth = 1;
+            for (var i = 0; i < 800; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, 600);
+                ctx.stroke();
+            }
+            for (var i = 0; i < 600; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(800, i);
+                ctx.stroke();
+            }
+            
+            if (gameState === 'playing') {
+                // Draw player
+                ctx.font = '30px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(player.emoji, player.x + player.width/2, player.y + player.height);
+                
+                // Draw shield effect
+                var hasShield = activePowerUps.some(function(p) { return p.type === 'escudo_queso'; });
+                if (hasShield) {
+                    ctx.strokeStyle = '#ffd700';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(player.x + player.width/2, player.y + player.height/2, 25, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                
+                // Draw bullets
+                bullets.forEach(function(bullet) {
+                    ctx.font = '12px Arial';
+                    ctx.fillText(bullet.emoji, bullet.x + bullet.width/2, bullet.y + bullet.height);
+                });
+                
+                // Draw enemies
+                enemies.forEach(function(enemy) {
+                    ctx.font = enemy.width + 'px Arial';
+                    ctx.fillText(enemyTypes[enemy.type].emoji, enemy.x + enemy.width/2, enemy.y + enemy.height);
+                });
+                
+                // Draw power-ups
+                powerUps.forEach(function(powerUp) {
+                    var bounce = Math.sin(powerUp.bounce) * 3;
+                    ctx.font = '20px Arial';
+                    ctx.fillText(powerUpTypes[powerUp.type].emoji, powerUp.x + powerUp.width/2, powerUp.y + powerUp.height + bounce);
+                });
+                
+                // Draw enemy bullets
+                enemyBullets.forEach(function(bullet) {
+                    ctx.font = '10px Arial';
+                    ctx.fillText(bullet.emoji, bullet.x + bullet.width/2, bullet.y + bullet.height);
+                });
+                
+                // Draw particles
+                particles.forEach(function(particle) {
+                    ctx.globalAlpha = particle.life / 40;
+                    ctx.font = particle.size + 'px Arial';
+                    ctx.fillText(particle.emoji, particle.x, particle.y);
+                    ctx.globalAlpha = 1;
+                });
+            }
+        }
+
+        // Update UI
+        function updateUI() {
+            var scoreEl = document.getElementById('score');
+            var livesEl = document.getElementById('lives');
+            var levelEl = document.getElementById('level');
+            var comboEl = document.getElementById('combo');
+            
+            if (scoreEl) scoreEl.textContent = score.toLocaleString();
+            if (livesEl) livesEl.textContent = lives.toString();
+            if (levelEl) levelEl.textContent = level.toString();
+            if (comboEl) comboEl.textContent = combo.toString();
+        }
+
+        // Show game over
+        function showGameOver() {
+            var finalScoreEl = document.getElementById('finalScore');
+            var bestComboEl = document.getElementById('bestCombo');
+            var gameOverEl = document.getElementById('gameOverScreen');
+            
+            if (finalScoreEl) finalScoreEl.textContent = score.toLocaleString();
+            if (bestComboEl) bestComboEl.textContent = bestCombo.toString();
+            if (gameOverEl) gameOverEl.style.display = 'flex';
+        }
+
+        // Restart game
+        function restartGame() {
+            gameState = 'playing';
+            score = 0;
+            lives = 3;
+            level = 1;
+            combo = 0;
+            bestCombo = 0;
+            bullets = [];
+            enemyBullets = [];
+            particles = [];
+            powerUps = [];
+            activePowerUps = [];
+            player.x = 385;
+            player.y = 550;
+            
+            var gameOverEl = document.getElementById('gameOverScreen');
+            if (gameOverEl) gameOverEl.style.display = 'none';
+            
+            createEnemyFormation();
+            updateUI();
+        }
+
+        // Toggle sound
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            var soundIcon = document.getElementById('soundIcon');
+            if (soundIcon) {
+                soundIcon.textContent = soundEnabled ? '🔊' : '🔇';
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', function(e) {
+            keys[e.code] = true;
+            
+            if (e.code === 'Space') {
+                e.preventDefault();
+                shoot();
+            }
+            
+            if (!audioContext) {
+                initAudio();
+            }
+        });
+
+        document.addEventListener('keyup', function(e) {
+            keys[e.code] = false;
+        });
+
+        var soundBtn = document.getElementById('soundBtn');
+        if (soundBtn) {
+            soundBtn.addEventListener('click', function() {
+                if (!audioContext) initAudio();
+                toggleSound();
+            });
+        }
+
+        var restartBtn = document.getElementById('restartBtn');
+        if (restartBtn) {
+            restartBtn.addEventListener('click', restartGame);
+        }
+
+        // Initialize game
+        setupMobileControls();
+        createEnemyFormation();
+        updateUI();
+        gameLoop();
+    </script>
+</body>
+</html>

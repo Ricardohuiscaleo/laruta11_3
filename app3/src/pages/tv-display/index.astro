@@ -1,0 +1,215 @@
+---
+// TV Display - Presentación de productos para televisor
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TV Display - La Ruta 11</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: linear-gradient(to bottom right, #1e3a8a, #1e40af); overflow: hidden; height: 100vh; width: 100vw; }
+        #app { height: 100vh; width: 100vw; position: relative; }
+        .slide { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .slide.active { display: block; }
+        .container { height: 100%; width: 100%; display: flex; flex-direction: column; }
+        .header { background: rgba(0,0,0,0.8); color: white; padding: 1.5rem; text-align: center; flex-shrink: 0; }
+        .header h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 0.25rem; }
+        .header p { font-size: 1.25rem; opacity: 0.9; }
+        .grid-container { flex: 1; padding: 1.5rem; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; width: 100%; max-width: 1400px; }
+        .card { background: white; border-radius: 1rem; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: flex; flex-direction: column; height: 100%; max-height: 600px; }
+        .card-image { width: 100%; height: 0; padding-bottom: 125%; position: relative; background: #f3f4f6; }
+        .card-image img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+        .card-content { padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
+        .card-category { background: #f97316; color: white; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; display: inline-block; align-self: flex-start; }
+        .card-title { font-size: 1.25rem; font-weight: 700; color: #111827; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .card-price { font-size: 1.5rem; font-weight: 700; color: #f97316; margin-top: auto; }
+        .controls { position: fixed; top: 1rem; right: 1rem; display: flex; gap: 0.5rem; z-index: 100; }
+        .btn { padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.3s; font-size: 0.875rem; }
+        .btn:hover { opacity: 0.9; transform: scale(1.05); }
+        .btn-green { background: #22c55e; color: white; }
+        .btn-blue { background: #3b82f6; color: white; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div style="display: flex; align-items: center; justify-content: center; height: 100vh; color: white; font-size: 1.875rem;">
+            Cargando productos...
+        </div>
+    </div>
+
+    <script is:inline>
+        let products = [];
+        let categories = [];
+        let selectedCategories = new Set();
+        let currentSlide = 0;
+        let isPlaying = false;
+        let slideInterval = null;
+        const slideDuration = 5000;
+
+        async function loadData() {
+            try {
+                const [productsRes, categoriesRes] = await Promise.all([
+                    fetch('/api/get_productos.php'),
+                    fetch('/api/get_categories.php')
+                ]);
+                
+                const productsData = await productsRes.json();
+                const categoriesData = await categoriesRes.json();
+                
+                if (Array.isArray(productsData)) {
+                    products = productsData.filter(function(p) {
+                        return p.is_active === '1' || p.is_active === 1 || p.is_active === true;
+                    });
+                }
+                
+                if (Array.isArray(categoriesData)) {
+                    categories = categoriesData;
+                    selectedCategories = new Set(categoriesData.map(function(c) { return parseInt(c.id); }));
+                }
+                
+                render();
+                setupEventListeners();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function getFilteredProducts() {
+            return products.filter(function(p) { 
+                const catId = parseInt(p.category_id);
+                return selectedCategories.has(catId);
+            });
+        }
+
+        function getCategoryName(categoryId) {
+            const category = categories.find(function(c) { return parseInt(c.id) === parseInt(categoryId); });
+            return category ? category.name : 'Sin categoría';
+        }
+
+        function getProductImage(imageUrl) {
+            return imageUrl && imageUrl.trim() !== '' ? imageUrl : 'https://laruta11-images.s3.amazonaws.com/menu/logo.png';
+        }
+
+        function formatPrice(price) {
+            return '$' + parseInt(price).toLocaleString('es-CL');
+        }
+
+        function chunkArray(arr, size) {
+            const chunks = [];
+            for (let i = 0; i < arr.length; i += size) {
+                chunks.push(arr.slice(i, i + size));
+            }
+            return chunks;
+        }
+
+        function render() {
+            const filteredProducts = getFilteredProducts();
+            const appElement = document.getElementById('app');
+            if (!appElement || filteredProducts.length === 0) {
+                if (appElement) appElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100vh; color: white; font-size: 1.5rem;">No hay productos para mostrar</div>';
+                return;
+            }
+
+            const slides = chunkArray(filteredProducts, 3);
+            
+            const slidesHTML = slides.map(function(slideProducts, slideIndex) {
+                const cardsHTML = slideProducts.map(function(product) {
+                    return '<div class="card">' +
+                        '<div class="card-image"><img src="' + getProductImage(product.image_url) + '" alt="' + product.name + '" onerror="this.src=\'https://laruta11-images.s3.amazonaws.com/menu/logo.png\'"></div>' +
+                        '<div class="card-content">' +
+                            '<span class="card-category">' + getCategoryName(product.category_id) + '</span>' +
+                            '<h3 class="card-title">' + product.name + '</h3>' +
+                            '<div class="card-price">' + formatPrice(product.price) + '</div>' +
+                        '</div>' +
+                    '</div>';
+                }).join('');
+
+                return '<div class="slide ' + (slideIndex === 0 ? 'active' : '') + '">' +
+                    '<div class="container">' +
+                        '<div class="header">' +
+                            '<h1>LA RUTA 11</h1>' +
+                            '<p>Nuestros Productos</p>' +
+                        '</div>' +
+                        '<div class="grid-container">' +
+                            '<div class="grid">' + cardsHTML + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+
+            appElement.innerHTML = slidesHTML +
+                '<div class="controls">' +
+                    '<button id="playBtn" class="btn btn-green">▶️ Play</button>' +
+                    '<button id="configBtn" class="btn btn-blue">⚙️ Config</button>' +
+                '</div>';
+        }
+
+        function setupEventListeners() {
+            const playBtn = document.getElementById('playBtn');
+            const configBtn = document.getElementById('configBtn');
+
+            if (playBtn) playBtn.addEventListener('click', togglePlay);
+            if (configBtn) configBtn.addEventListener('click', function() { alert('Configuración próximamente'); });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === ' ') {
+                    e.preventDefault();
+                    togglePlay();
+                } else if (e.key === 'ArrowRight') {
+                    nextSlide();
+                } else if (e.key === 'ArrowLeft') {
+                    prevSlide();
+                }
+            });
+        }
+
+        function togglePlay() {
+            const playBtn = document.getElementById('playBtn');
+            if (isPlaying) {
+                pause();
+                if (playBtn) playBtn.textContent = '▶️ Play';
+            } else {
+                play();
+                if (playBtn) playBtn.textContent = '⏸️ Pause';
+            }
+        }
+
+        function play() {
+            isPlaying = true;
+            slideInterval = setInterval(nextSlide, slideDuration);
+        }
+
+        function pause() {
+            isPlaying = false;
+            if (slideInterval) {
+                clearInterval(slideInterval);
+                slideInterval = null;
+            }
+        }
+
+        function nextSlide() {
+            const slides = document.querySelectorAll('.slide');
+            if (slides.length === 0) return;
+
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (currentSlide + 1) % slides.length;
+            slides[currentSlide].classList.add('active');
+        }
+
+        function prevSlide() {
+            const slides = document.querySelectorAll('.slide');
+            if (slides.length === 0) return;
+
+            slides[currentSlide].classList.remove('active');
+            currentSlide = currentSlide === 0 ? slides.length - 1 : currentSlide - 1;
+            slides[currentSlide].classList.add('active');
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

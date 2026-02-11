@@ -1,0 +1,65 @@
+---
+// Orders.astro - Componente para gestión de pedidos
+---
+
+<div class="orders-container">
+  <div class="orders-header">
+    <h2><svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6 6"/><path d="M9 9 3 3"/></svg> Gestión de Pedidos</h2>
+    <p>Sistema de pedidos en desarrollo</p>
+  </div>
+  
+  <div class="orders-placeholder">
+    <div class="placeholder-card">
+      <h3><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Próximamente</h3>
+      <p>Esta sección incluirá:</p>
+      <ul>
+        <li>Lista de pedidos activos</li>
+        <li>Historial de pedidos</li>
+        <li>Estados de preparación</li>
+        <li>Tiempos de entrega</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<style>
+  .orders-container {
+    padding: 24px;
+    background: #f7f6f3;
+    min-height: calc(100vh - 200px);
+  }
+  .orders-header {
+    margin-bottom: 24px;
+  }
+  .orders-header h2 {
+    font-size: 20px;
+    color: #37352f;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .orders-header p {
+    color: #787774;
+  }
+  .placeholder-card {
+    background: white;
+    padding: 24px;
+    border-radius: 3px;
+    border: 1px solid #e9e9e7;
+  }
+  .placeholder-card h3 {
+    color: #37352f;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .icon {
+    flex-shrink: 0;
+  }
+  .placeholder-card ul {
+    margin-left: 20px;
+    color: #787774;
+  }
+</style>

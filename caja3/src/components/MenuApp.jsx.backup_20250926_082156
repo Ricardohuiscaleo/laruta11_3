@@ -1,0 +1,3362 @@
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { 
+    PlusCircle, X, Star, ShoppingCart, MinusCircle, User, ZoomIn,
+    Award, ChefHat, GlassWater, CupSoda, Droplets,
+    Eye, Heart, MessageSquare, Calendar, Search, Bike, Caravan, ChevronDown, ChevronUp
+} from 'lucide-react';
+import { GiHamburger, GiHotDog, GiFrenchFries, GiMeat, GiSandwich, GiSteak } from 'react-icons/gi';
+import OnboardingModal from './OnboardingModal.jsx';
+import LoadingScreen from './LoadingScreen.jsx';
+import TUUPaymentIntegration from './TUUPaymentIntegration.jsx';
+import ReviewsModal from './ReviewsModal.jsx';
+import OrderNotifications from './OrderNotifications.jsx';
+
+// Función de vibración para PWA
+const vibrate = (pattern = 100) => {
+  if ('vibrate' in navigator) {
+    navigator.vibrate(pattern);
+  }
+};
+
+// Función de sonido de notificación
+const playNotificationSound = () => {
+  try {
+    const audio = new Audio('/notificacion.mp3');
+    audio.volume = 0.5;
+    audio.play().catch(() => {});
+  } catch (e) {}
+};
+
+// Función de confeti
+const createConfetti = () => {
+  const colors = ['#f43f5e', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#f97316'];
+  const confettiCount = 50;
+  
+  for (let i = 0; i < confettiCount; i++) {
+    const confetti = document.createElement('div');
+    confetti.style.cssText = `
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      left: ${Math.random() * 100}vw;
+      top: -10px;
+      z-index: 9999;
+      pointer-events: none;
+      border-radius: 50%;
+      animation: confetti-fall ${2 + Math.random() * 3}s linear forwards;
+    `;
+    
+    document.body.appendChild(confetti);
+    
+    setTimeout(() => {
+      if (confetti.parentNode) {
+        confetti.parentNode.removeChild(confetti);
+      }
+    }, 5000);
+  }
+};
+
+// Hook para doble tap
+const useDoubleTap = (onDoubleTap, delay = 300) => {
+  const [lastTap, setLastTap] = useState(0);
+  
+  const handleTap = (e) => {
+    const now = Date.now();
+    if (now - lastTap < delay) {
+      e.preventDefault();
+      onDoubleTap(e);
+    }
+    setLastTap(now);
+  };
+  
+  return handleTap;
+};
+
+// Componente de corazón flotante que se eleva como globo
+const FloatingHeart = ({ show, onAnimationEnd, startPosition }) => {
+  if (!show) return null;
+  
+  return (
+    <div 
+      className="fixed pointer-events-none z-50"
+      style={{
+        left: startPosition?.x || '50%',
+        top: startPosition?.y || '50%',
+        transform: 'translate(-50%, -50%)'
+      }}
+      onAnimationEnd={onAnimationEnd}
+    >
+      <Heart 
+        size={40} 
+        className="text-red-500 fill-current animate-heart-float"
+      />
+    </div>
+  );
+};
+
+// Datos del menú - se cargarán dinámicamente desde MySQL
+let menuData = {
+  la_ruta_11: { tomahawks: [] },
+  churrascos: { carne: [], pollo: [], vegetariano: [] },
+  hamburguesas: { clasicas: [], especiales: [] },
+  completos: { tradicionales: [], 'al vapor': [] },
+  papas_y_snacks: { papas: [], empanadas: [], jugos: [], bebidas: [], salsas: [] },
+  Combos: { hamburguesas: [], churrascos: [], completos: [] }
+};
+
+const categoryDisplayNames = {
+  hamburguesas: "Hamburguesas",
+  churrascos: "Sandwiches", 
+  la_ruta_11: "La Ruta 11",
+  completos: "Completos",
+  papas_y_snacks: "Snacks",
+  Combos: "Combos"
+};
+
+const mainCategories = ['hamburguesas', 'churrascos', 'la_ruta_11', 'completos', 'Combos'];
+
+const HotdogIcon = ({ size = 24, color = "currentColor", ...props }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth="2.0"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M2 15 C 2 11, 5 10, 12 10 s 10 1, 10 5 s -4 5, -10 5 S 2 19, 2 15 Z" />
+    <path d="M1 15 c 0 -2.5, 3 -4, 11 -4 s 11 1.5, 11 4" />
+    <path d="M5 10 q 3.5 -4, 7 0 t 7 0" />
+  </svg>
+);
+
+const categoryIcons = {
+  hamburguesas: <GiHamburger style={{width: 'clamp(18px, 4.5vw, 24px)', height: 'clamp(18px, 4.5vw, 24px)'}} />,
+  churrascos: <GiSandwich style={{width: 'clamp(18px, 4.5vw, 24px)', height: 'clamp(18px, 4.5vw, 24px)'}} />,
+  la_ruta_11: <GiSteak style={{width: 'clamp(18px, 4.5vw, 24px)', height: 'clamp(18px, 4.5vw, 24px)'}} />,
+  completos: <GiHotDog style={{width: 'clamp(18px, 4.5vw, 24px)', height: 'clamp(18px, 4.5vw, 24px)'}} />,
+  papas_y_snacks: <GiFrenchFries style={{width: 'clamp(18px, 4.5vw, 24px)', height: 'clamp(18px, 4.5vw, 24px)'}} />,
+  Combos: (
+    <div style={{display: 'flex', alignItems: 'center', gap: '2px'}}>
+      <GiHamburger style={{width: 'clamp(12px, 3vw, 16px)', height: 'clamp(12px, 3vw, 16px)'}} />
+      <CupSoda style={{width: 'clamp(12px, 3vw, 16px)', height: 'clamp(12px, 3vw, 16px)'}} />
+    </div>
+  )
+};
+
+const categoryColors = {
+  hamburguesas: '#D2691E', // Marrón dorado para hamburguesas
+  churrascos: '#FF6347', // Tomate rojo para sandwiches
+  la_ruta_11: '#8B0000', // Rojo oscuro para carne premium
+  completos: '#FF4500', // Naranja rojizo para completos
+  papas_y_snacks: '#FFD700', // Dorado para papas fritas
+  Combos: '#FF6B35' // Naranja para combos
+};
+
+const GoogleLogo = () => (
+    <svg className="w-6 h-6" viewBox="0 0 48 48">
+        <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path>
+        <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path>
+        <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path>
+        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C39.901,35.636,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
+    </svg>
+);
+
+const StarRating = ({ rating, setRating }) => (
+  <div className="flex space-x-1">
+    {[1, 2, 3, 4, 5].map((star) => (
+      <Star
+        key={star}
+        className={`cursor-pointer transition-colors ${
+          star <= rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+        }`}
+        onClick={() => setRating && setRating(star)}
+      />
+    ))}
+  </div>
+);
+
+const ImageFullscreenModal = ({ product, total, onClose }) => {
+    if (!product) return null;
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
+    return (
+        <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center animate-fade-in" onClick={onClose}>
+            <button onClick={onClose} className="absolute top-4 right-4 bg-black/50 rounded-full p-2 text-white hover:bg-black/70 transition-all z-20">
+                <X size={24} />
+            </button>
+            <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" />
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/40 backdrop-blur-sm text-white text-center">
+                <h3 className="text-xl font-bold">{product.name}</h3>
+                <p className="text-lg text-orange-400 font-semibold">${total.toLocaleString('es-CL')}</p>
+            </div>
+        </div>
+    );
+};
+
+const ProductDetailModal = ({ product, onClose, onAddToCart, onRemoveFromCart, getProductQuantity, activeCategory, comboItems, cart, onZoom, setReviewsModalProduct, user }) => {
+  if (!product) return null;
+  const scrollRef = useRef(null);
+  const [isHeaderSticky, setIsHeaderSticky] = useState(false);
+  const [newReviewRating, setNewReviewRating] = useState(0);
+  const [newReviewComment, setNewReviewComment] = useState('');
+  const [newReviewName, setNewReviewName] = useState('');
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [expandedComboSections, setExpandedComboSections] = useState(new Set());
+  
+  // Inicializar nombre cuando se abre el formulario
+  useEffect(() => {
+    if (showReviewForm) {
+      setNewReviewName(user?.nombre || '');
+    }
+  }, [showReviewForm, user]);
+  const showComboSection = ['churrascos', 'hamburguesas', 'completos', 'la_ruta_11', 'papas_y_snacks', 'Combos'].includes(activeCategory);
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      setIsHeaderSticky(scrollRef.current.scrollTop > 60);
+    }
+  };
+  const handleAddReview = (e) => {
+    e.preventDefault();
+    console.log({ user: 'Nuevo Usuario', rating: newReviewRating, comment: newReviewComment });
+    setShowReviewForm(false);
+    setNewReviewRating(0);
+    setNewReviewComment('');
+  };
+  const ComboItem = ({ item, isExtra = false }) => {
+      const quantity = getProductQuantity(item.id);
+      const maxReached = isExtra && item.maxQuantity && quantity >= item.maxQuantity;
+      
+      // Lógica especial para salsas: primera gratis, adicionales $500
+      const isSalsa = item.id >= 25 && item.id <= 30; // Rango de IDs de salsas
+      const displayPrice = isSalsa && quantity === 1 ? 0 : item.price;
+      const priceText = isSalsa ? 
+        (quantity === 1 ? 'Gratis' : `$${item.price.toLocaleString('es-CL')}`) :
+        (item.price === 0 ? 'Gratis' : `$${item.price.toLocaleString('es-CL')}`);
+      const priceColor = isSalsa && quantity === 1 ? 'text-red-500' : 'text-orange-500';
+      
+      return (
+        <div className="flex justify-between items-center bg-gray-50 p-2 rounded-lg">
+            <div className="flex items-center gap-3">
+                {item.image ? (
+                    <img 
+                        src={item.image} 
+                        alt={item.name} 
+                        className="w-12 h-12 object-cover rounded-md flex-shrink-0"
+                    />
+                ) : (
+                    <div className="w-12 h-12 bg-gray-200 rounded-md flex-shrink-0 animate-pulse"></div>
+                )}
+                <div>
+                    <p className="font-semibold text-sm text-gray-800">{item.name}</p>
+                    <p className={`text-xs font-medium ${priceColor}`}>
+                        {priceText}
+                        {item.extraPrice && ` / +$${item.extraPrice.toLocaleString('es-CL')}`}
+                        {isExtra && item.maxQuantity && ` (máx. ${item.maxQuantity})`}
+                        {isSalsa && quantity === 0 && ' (1ra gratis)'}
+                    </p>
+                    {item.description && <p className="text-xs text-gray-500 italic">{item.description}</p>}
+                </div>
+            </div>
+            <div className="flex items-center gap-2">
+                {quantity > 0 && (
+                     <button onClick={() => onRemoveFromCart(item.id)} className="text-red-500 hover:text-red-700"><MinusCircle size={22} /></button>
+                )}
+                {quantity > 0 && <span className="font-bold w-5 text-center">{quantity}</span>}
+                <button 
+                    onClick={() => onAddToCart(item)} 
+                    disabled={maxReached}
+                    className={`${maxReached ? 'text-gray-400 cursor-not-allowed' : 'text-green-500 hover:text-green-700'}`}
+                >
+                    <PlusCircle size={22} />
+                </button>
+            </div>
+        </div>
+      );
+  };
+  const ComboSection = ({ title, items, isExtra = false, titleColor = 'text-gray-700', sectionKey }) => {
+    const isExpanded = expandedComboSections.has(sectionKey);
+    const toggleSection = () => {
+      setExpandedComboSections(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(sectionKey)) {
+          newSet.delete(sectionKey);
+        } else {
+          newSet.add(sectionKey);
+        }
+        return newSet;
+      });
+    };
+    
+    return (
+      <div className="mb-4 border border-gray-200 rounded-lg overflow-hidden">
+        <button
+          onClick={toggleSection}
+          className="w-full px-4 py-3 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <h4 className={`font-bold ${titleColor}`}>{title}</h4>
+            {items.length > 0 && (
+              <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
+                {items.length}
+              </span>
+            )}
+          </div>
+          {isExpanded ? (
+            <ChevronUp className="text-gray-600" size={18} />
+          ) : (
+            <ChevronDown className="text-gray-600" size={18} />
+          )}
+        </button>
+        
+        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          isExpanded ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
+        }`}>
+          <div className="p-4 space-y-2 max-h-80 overflow-y-auto">
+            {items.map(item => <ComboItem key={item.id} item={item} isExtra={isExtra} />)}
+          </div>
+        </div>
+      </div>
+    );
+  };
+  const comboSubtotal = useMemo(() => {
+    const allComboItems = [
+      ...comboItems.papas_y_snacks,
+      ...comboItems.jugos,
+      ...comboItems.bebidas,
+      ...comboItems.salsas,
+      ...comboItems.personalizar,
+      ...comboItems.extras
+    ];
+    const comboCartItems = cart.filter(cartItem =>
+        allComboItems.some(comboItem => comboItem.id === cartItem.id)
+    );
+    return comboCartItems.reduce((total, item) => {
+        let itemPrice = item.price;
+        
+        // Lógica especial para salsas: primera gratis, adicionales $500
+        const isSalsa = item.id >= 25 && item.id <= 30;
+        if (isSalsa) {
+            itemPrice = item.quantity > 1 ? (item.quantity - 1) * item.price : 0;
+        } else if (item.extraPrice && item.quantity > 1) {
+            itemPrice = item.price + (item.quantity - 1) * item.extraPrice;
+        } else {
+            itemPrice = item.price * item.quantity;
+        }
+        return total + itemPrice;
+    }, 0);
+  }, [cart, comboItems]);
+  const displayTotal = useMemo(() => product.price + comboSubtotal, [product.price, comboSubtotal]);
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center animate-fade-in">
+      <div className="bg-white w-full h-full flex flex-col animate-slide-up">
+        <div className="relative flex-shrink-0">
+          {product.image ? (
+            <img src={product.image} alt={product.name} className="w-full h-16 object-cover" />
+          ) : (
+            <div className="w-full h-16 bg-gray-200 animate-pulse"></div>
+          )}
+           <div onClick={() => onZoom(product, displayTotal)} className="absolute top-4 left-4 bg-black/50 rounded-full p-2 cursor-pointer text-white hover:bg-black/70 transition-all">
+              <ZoomIn size={24} />
+          </div>
+          <button onClick={onClose} className="absolute top-4 right-4 bg-white/70 rounded-full p-2 text-gray-800 hover:bg-white transition-all z-20">
+            <X size={24} />
+          </button>
+        </div>
+        <div className="flex-grow relative overflow-y-auto" ref={scrollRef} onScroll={handleScroll}>
+            <div className={`sticky top-0 bg-white p-4 shadow-md transition-opacity duration-300 ease-in-out z-10 ${isHeaderSticky ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                <div className="flex justify-between items-center">
+                    <h3 className="font-bold text-lg text-gray-800 truncate pr-4">{product.name}</h3>
+                    <p className="font-bold text-xl text-orange-500 whitespace-nowrap">${displayTotal.toLocaleString('es-CL')}</p>
+                </div>
+            </div>
+            <div className="px-6 pb-6">
+              <div className="flex justify-between items-start mb-2">
+                <h2 className="text-2xl font-bold text-gray-800">{product.name}</h2>
+                <p className="text-xl font-bold text-orange-500">${displayTotal.toLocaleString('es-CL')}</p>
+              </div>
+              {/* <p className="text-sm text-gray-500 mb-4">{product.grams}g aprox.</p> TODO: Habilitar cuando se implemente el sistema de gramos */}
+              <p className="text-base text-gray-700 leading-relaxed mb-6">{product.description}</p>
+              <div className="border-t pt-4 mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold text-gray-800">Reseñas</h3>
+                  <button 
+                    onClick={() => setReviewsModalProduct(product)}
+                    className="text-orange-500 font-semibold text-sm hover:text-orange-600 transition-colors"
+                  >
+                    Ver todas las reseñas
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 mb-4">
+                  {product.reviews.average > 0 ? (
+                    <>
+                      <div className="flex">
+                        {[...Array(5)].map((_, i) => (
+                          <span key={i} className={`text-lg ${i < Math.round(product.reviews.average) ? 'text-yellow-400' : 'text-gray-300'}`}>
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                      <span className="font-semibold">{product.reviews.average}</span>
+                      <span className="text-gray-600">({product.reviews.count} reseñas)</span>
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-500">Aún no hay reseñas. ¡Sé el primero!</p>
+                  )}
+                </div>
+                
+                {!showReviewForm ? (
+                  <button 
+                    onClick={() => setShowReviewForm(true)}
+                    className="w-full bg-orange-50 text-orange-600 py-2 rounded-lg hover:bg-orange-100 transition-colors"
+                  >
+                    Escribir una reseña
+                  </button>
+                ) : (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-bold mb-3">Tu opinión nos importa</h4>
+                    <form onSubmit={async (e) => {
+                      e.preventDefault();
+                      if (!newReviewRating) {
+                        alert('Por favor selecciona una calificación');
+                        return;
+                      }
+                      
+                      try {
+                        const customerName = newReviewName.trim() || 'Usuario Anónimo';
+                        
+                        const response = await fetch('/api/add_review.php', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            product_id: product.id,
+                            customer_name: customerName,
+                            rating: newReviewRating,
+                            comment: newReviewComment
+                          })
+                        });
+                        
+                        const data = await response.json();
+                        if (data.success) {
+                          alert('¡Gracias por tu reseña!');
+                          setShowReviewForm(false);
+                          setNewReviewRating(0);
+                          setNewReviewComment('');
+                          setNewReviewName('');
+                        } else {
+                          alert(data.error || 'Error al enviar reseña');
+                        }
+                      } catch (error) {
+                        alert('Error de conexión');
+                      }
+                    }}>
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Tu nombre</label>
+                        <input
+                          type="text"
+                          value={newReviewName}
+                          onChange={(e) => setNewReviewName(e.target.value)}
+                          className="w-full p-2 border rounded-lg text-sm"
+                          placeholder={user ? user.nombre : 'Tu nombre (opcional)'}
+                          maxLength="100"
+                        />
+                      </div>
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Calificación</label>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setNewReviewRating(star)}
+                              className={`text-2xl transition-colors ${
+                                star <= newReviewRating ? 'text-yellow-400' : 'text-gray-300'
+                              }`}
+                            >
+                              ★
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Comentario (opcional)</label>
+                        <textarea
+                          value={newReviewComment}
+                          onChange={(e) => setNewReviewComment(e.target.value)}
+                          rows="2"
+                          className="w-full p-2 border rounded-lg text-sm"
+                          placeholder="¿Qué te pareció?"
+                          maxLength="200"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="submit"
+                          className="bg-green-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-600 transition-colors"
+                        >
+                          Enviar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowReviewForm(false);
+                            setNewReviewRating(0);
+                            setNewReviewComment('');
+                            setNewReviewName('');
+                          }}
+                          className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+              </div>
+              {showComboSection && (
+                <div className="border-t pt-4">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">Combina tu Pedido</h3>
+                    {/* Sección Personalizar solo para hamburguesas, churrascos, completos, tomahawks y subcategoría papas */}
+                    {(['hamburguesas', 'churrascos', 'completos', 'la_ruta_11'].includes(activeCategory) || 
+                      (activeCategory === 'papas_y_snacks' && product.subcategory_name === 'Papas')) && (
+                      <ComboSection 
+                        title={`Personaliza tu ${activeCategory === 'hamburguesas' ? 'Hamburguesa' : activeCategory === 'churrascos' ? 'Sandwich' : activeCategory === 'completos' ? 'Completo' : activeCategory === 'la_ruta_11' ? 'Tomahawk' : 'Papas'}`} 
+                        items={comboItems.personalizar} 
+                        isExtra={true} 
+                        titleColor="text-blue-600"
+                        sectionKey="personalizar"
+                      />
+                    )}
+                    <ComboSection title="Papas & Snack" items={comboItems.papas_y_snacks} sectionKey="papas_snacks" />
+                    <ComboSection title="Jugos" items={comboItems.jugos} sectionKey="jugos" />
+                    <ComboSection title="Bebidas" items={comboItems.bebidas} sectionKey="bebidas" />
+                    <ComboSection title="Empanadas" items={comboItems.empanadas} sectionKey="empanadas" />
+                    <ComboSection title="Café" items={comboItems.cafe} sectionKey="cafe" />
+                    <ComboSection title="Té" items={comboItems.te} sectionKey="te" />
+                    <ComboSection title="Salsas" items={comboItems.salsas} sectionKey="salsas" />
+                    <ComboSection title="Extras" items={comboItems.extras} isExtra={true} titleColor="text-red-600" sectionKey="extras" />
+                    {comboSubtotal > 0 &&
+                        <div className="mt-4 pt-4 border-t flex justify-between items-center">
+                            <h4 className="font-bold text-gray-800">Subtotal Acompañamientos</h4>
+                            <p className="font-bold text-lg text-orange-500">${comboSubtotal.toLocaleString('es-CL')}</p>
+                        </div>
+                    }
+                </div>
+              )}
+            </div>
+        </div>
+        <div className="p-4 bg-white border-t sticky bottom-0 flex-shrink-0">
+          <button onClick={() => { vibrate([100, 50, 100]); onAddToCart(product); onClose(); }} className="w-full bg-orange-500 text-white py-4 rounded-full text-lg font-bold flex items-center justify-center gap-2 hover:bg-orange-600 transition-transform active:scale-95 shadow-lg">
+            <ShoppingCart size={20} />
+            Agregar al Carro
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartTotal, onCheckout }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-end animate-fade-in" onClick={onClose}>
+            <div className="bg-white w-full max-w-2xl max-h-[75vh] rounded-t-2xl flex flex-col animate-slide-up" onClick={(e) => e.stopPropagation()}>
+                <div className="border-b flex justify-between items-center" style={{padding: 'clamp(12px, 3vw, 16px)'}}>
+                    <h2 className="font-bold text-gray-800" style={{fontSize: 'clamp(16px, 4vw, 20px)'}}>Tu Pedido</h2>
+                    <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-800"><X size={24} /></button>
+                </div>
+                {cart.length === 0 ? (
+                    <div className="flex-grow flex flex-col justify-center items-center text-gray-500">
+                        <ShoppingCart size={48} className="mb-4" />
+                        <p>Tu carrito está vacío.</p>
+                    </div>
+                ) : (
+                    <div className="flex-grow overflow-y-auto space-y-3" style={{padding: 'clamp(12px, 3vw, 16px)'}}>
+                        {cart.map(item => {
+                            const displayPrice = item.price > 0 ? item.price : (item.quantity > 1 ? item.extraPrice : 0);
+                            return (
+                                <div key={item.id} className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        {item.image ? (
+                                            <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-md" />
+                                        ) : (
+                                            <div className="w-16 h-16 bg-gray-200 rounded-md animate-pulse"></div>
+                                        )}
+                                        <div>
+                                            <p className="font-semibold">{item.name}</p>
+                                            <p className="text-orange-500 font-medium">${displayPrice.toLocaleString('es-CL')}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={() => onRemoveFromCart(item.id)} className="bg-gray-200 rounded-full p-1.5 text-gray-700 hover:bg-gray-300"><MinusCircle size={20} /></button>
+                                        <span className="font-bold w-6 text-center">{item.quantity}</span>
+                                        <button onClick={() => onAddToCart(item)} className="bg-gray-200 rounded-full p-1.5 text-gray-700 hover:bg-gray-300"><PlusCircle size={20} /></button>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
+                <div className="bg-white border-t sticky bottom-0" style={{padding: 'clamp(12px, 3vw, 16px)'}}>
+                    <div className="flex justify-between items-center mb-3">
+                        <span className="font-medium text-gray-600" style={{fontSize: 'clamp(14px, 3.5vw, 18px)'}}>Total</span>
+                        <span className="font-bold text-gray-800" style={{fontSize: 'clamp(18px, 5vw, 24px)'}}>${cartTotal.toLocaleString('es-CL')}</span>
+                    </div>
+                    <button 
+                        disabled={cart.length === 0} 
+                        onClick={() => { 
+                            // Guardar carrito en localStorage
+                            localStorage.setItem('ruta11_cart', JSON.stringify(cart));
+                            localStorage.setItem('ruta11_cart_total', cartTotal.toString());
+                            // Redirigir a página de checkout
+                            window.location.href = '/checkout';
+                        }}
+                        className="w-full bg-green-500 text-white rounded-full font-bold flex items-center justify-center gap-2 hover:bg-green-600 transition-transform active:scale-95 shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed" 
+                        style={{padding: 'clamp(12px, 3vw, 16px)', fontSize: 'clamp(14px, 3.5vw, 18px)'}}
+                    >
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/>
+                            <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd"/>
+                        </svg>
+                        Ir a Pagar
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const LoginModal = ({ isOpen, onClose }) => {
+    if (!isOpen) return null;
+    const handleGoogleLogin = () => {
+        const authUrl = 'https://accounts.google.com/o/oauth2/auth?' + new URLSearchParams({
+            client_id: '531902921465-1l4fa0esvcbhdlq4btejp7d1thdtj4a7.apps.googleusercontent.com',
+            redirect_uri: 'https://app.laruta11.cl/api/auth/google/app_callback.php',
+            scope: 'email profile',
+            response_type: 'code'
+        });
+        window.location.href = authUrl;
+    };
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center animate-fade-in" onClick={onClose}>
+            <div className="bg-white w-full max-w-sm mx-2 sm:m-4 rounded-2xl flex flex-col animate-slide-up text-center" style={{padding: 'clamp(20px, 5vw, 32px)'}} onClick={(e) => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-3 right-3 p-1 text-gray-400 hover:text-gray-600"><X size={24} /></button>
+                <h2 className="font-bold text-gray-800 mb-2" style={{fontSize: 'clamp(18px, 5vw, 24px)'}}>Acceso / Registro</h2>
+                <p className="text-gray-500 mb-6" style={{fontSize: 'clamp(13px, 3.5vw, 16px)'}}>Ingresa a tu cuenta para guardar tus pedidos y reseñas.</p>
+                <button 
+                    onClick={handleGoogleLogin}
+                    className="w-full bg-white border border-gray-300 text-gray-700 font-semibold rounded-full flex items-center justify-center gap-2 sm:gap-3 hover:bg-gray-50 transition-colors shadow-sm"
+                    style={{padding: 'clamp(10px, 2.5vw, 12px)', fontSize: 'clamp(13px, 3.5vw, 16px)'}}
+                >
+                    <GoogleLogo />
+                    Continuar con Google
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const FoodTrucksModal = ({ isOpen, onClose, trucks, userLocation, deliveryZone }) => {
+    if (!isOpen) return null;
+    
+    const openDirections = (truck) => {
+        const url = `https://www.google.com/maps/dir/${userLocation?.latitude},${userLocation?.longitude}/${truck.latitud},${truck.longitud}`;
+        window.open(url, '_blank');
+    };
+    
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center animate-fade-in" onClick={onClose}>
+            <div className="bg-white w-full h-full flex flex-col animate-slide-up" onClick={(e) => e.stopPropagation()}>
+                <div className="border-b flex justify-between items-center" style={{padding: 'clamp(12px, 3vw, 16px)'}}>
+                    <h2 className="font-bold text-gray-800 flex items-center gap-2" style={{fontSize: 'clamp(16px, 4vw, 20px)'}}>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="text-orange-500">
+                            <path d="M18 8h2a1 1 0 0 1 1 1v2h-3V8zM4 17h1.5a2.5 2.5 0 0 0 5 0h3a2.5 2.5 0 0 0 5 0H20v-6H4v6zm14.5 1.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-12 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2zM4 8V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2h-2V7H6v1H4z"/>
+                        </svg>
+                        Food Trucks Cercanos
+                        {deliveryZone && (
+                            <span className={`ml-2 text-sm px-2 py-1 rounded-full ${
+                                deliveryZone.in_delivery_zone 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : 'bg-red-100 text-red-700'
+                            }`}>
+                                {deliveryZone.in_delivery_zone 
+                                    ? `🚚 ${deliveryZone.zones[0]?.tiempo_estimado}min` 
+                                    : '❌ Sin delivery'
+                                }
+                            </span>
+                        )}
+                    </h2>
+                    <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600"><X size={20} /></button>
+                </div>
+                
+                <div className="flex-grow overflow-y-auto">
+                    {trucks.length > 0 && userLocation ? (
+                        <div className="flex flex-col h-full">
+                            {/* Mapa */}
+                            <div className="h-64 bg-gray-200 relative rounded-t-lg overflow-hidden">
+                                <iframe
+                                    width="100%"
+                                    height="100%"
+                                    frameBorder="0"
+                                    src={`https://www.google.com/maps/embed/v1/directions?key=AIzaSyAcK15oZ84Puu5Nc4wDQT_Wyht0xqkbO-A&origin=${userLocation.latitude},${userLocation.longitude}&destination=${trucks[0]?.latitud},${trucks[0]?.longitud}&mode=driving&zoom=14`}
+                                    allowFullScreen
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer-when-downgrade"
+                                    title="Mapa de Food Trucks"
+                                ></iframe>
+                                
+
+                                
+                                {/* Botón para abrir en Google Maps */}
+                                <div className="absolute bottom-2 right-2">
+                                    <button 
+                                        onClick={() => window.open(`https://www.google.com/maps/dir/${userLocation.latitude},${userLocation.longitude}/${trucks[0]?.latitud},${trucks[0]?.longitud}`, '_blank')}
+                                        className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs hover:bg-blue-600 shadow-lg flex items-center gap-1"
+                                    >
+                                        🗺️ Abrir Maps
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            {/* Lista de trucks */}
+                            <div className="p-4 space-y-3">
+                                {trucks.map(truck => {
+                                    // Verificar si está abierto según horario actual
+                                    const now = new Date();
+                                    const currentTime = now.toTimeString().slice(0, 5); // HH:MM
+                                    const isOpen = truck.activo && 
+                                                  currentTime >= truck.horario_inicio && 
+                                                  currentTime <= truck.horario_fin;
+                                    
+                                    return (
+                                        <div key={truck.id} className="border rounded-lg p-3 hover:bg-gray-50">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h3 className="font-bold text-gray-800 text-sm">{truck.nombre}</h3>
+                                                <span className="text-sm text-orange-500 font-medium">
+                                                    {truck.distance ? `${truck.distance.toFixed(1)} km` : 'Calculando...'}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-gray-600 mb-2">{truck.descripcion}</p>
+                                            <p className="text-xs text-gray-500 mb-2">{truck.direccion}</p>
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex items-center gap-2 text-xs">
+                                                    <span className="text-green-600">
+                                                        🕰️ {truck.horario_inicio} - {truck.horario_fin}
+                                                    </span>
+                                                    <span className={`px-2 py-1 rounded-full ${
+                                                        isOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                                    }`}>
+                                                        {isOpen ? 'Abierto' : 'Cerrado'}
+                                                    </span>
+                                                    {truck.tarifa_delivery && (
+                                                        <span className="text-blue-600">
+                                                            🚚 ${parseInt(truck.tarifa_delivery).toLocaleString('de-DE')}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <button 
+                                                    onClick={() => openDirections(truck)}
+                                                    className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs hover:bg-blue-600 flex items-center gap-1"
+                                                >
+                                                    🗺️ Ir al Truck
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 p-4">
+                            <svg width="44" height="44" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400 mx-auto mb-4">
+                                <path d="M18 8h2a1 1 0 0 1 1 1v2h-3V8zM4 17h1.5a2.5 2.5 0 0 0 5 0h3a2.5 2.5 0 0 0 5 0H20v-6H4v6zm14.5 1.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-12 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2zM4 8V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2h-2V7H6v1H4z"/>
+                            </svg>
+                            <p className="text-gray-600">No hay food trucks cerca</p>
+                            <p className="text-sm text-gray-500 mt-1">
+                                {!userLocation ? 'Activa tu ubicación para encontrar trucks cercanos' : 'No hay trucks en un radio de 10km'}
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const NotificationsModal = ({ isOpen, onClose, notifications, onMarkAllRead }) => {
+    if (!isOpen) return null;
+    
+    const getStatusIcon = (status) => {
+        switch (status) {
+            case 'sent_to_kitchen': return '👨🍳';
+            case 'preparing': return '🔥';
+            case 'ready': return '✅';
+            case 'delivered': return '🎉';
+            default: return '📱';
+        }
+    };
+    
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center animate-fade-in" onClick={onClose}>
+            <div className="bg-white w-full max-w-md mx-2 sm:m-4 rounded-2xl flex flex-col animate-slide-up max-h-[80vh]" onClick={(e) => e.stopPropagation()}>
+                <div className="border-b flex justify-between items-center" style={{padding: 'clamp(12px, 3vw, 16px)'}}>
+                    <h2 className="font-bold text-gray-800 flex items-center gap-2" style={{fontSize: 'clamp(14px, 3.5vw, 18px)'}}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="text-orange-500">
+                            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                        </svg>
+                        Notificaciones
+                    </h2>
+                    <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600"><X size={20} /></button>
+                </div>
+                
+                <div className="flex-grow overflow-y-auto" style={{padding: 'clamp(12px, 3vw, 16px)'}}>
+                    {notifications.length > 0 ? (
+                        <div className="space-y-3">
+                            {notifications.map((notif, index) => (
+                                <div key={notif.id || index} className={`border-l-4 rounded-r-lg ${
+                                    notif.is_read ? 'border-gray-300 bg-gray-50' : 'border-orange-500 bg-orange-50'
+                                }`} style={{padding: 'clamp(8px, 2vw, 12px)'}}>
+                                    <div className="flex items-start gap-2">
+                                        <div className="text-lg">
+                                            {getStatusIcon(notif.status)}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex justify-between items-start mb-1">
+                                                <h4 className="font-semibold text-gray-800 truncate" style={{fontSize: 'clamp(11px, 2.5vw, 13px)'}}>
+                                                    {notif.order_number}
+                                                </h4>
+                                                <span className="text-gray-500 ml-2 flex-shrink-0" style={{fontSize: 'clamp(9px, 2vw, 11px)'}}>
+                                                    {new Date(notif.created_at).toLocaleTimeString('es-CL', {
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                        timeZone: 'America/Santiago'
+                                                    })}
+                                                </span>
+                                            </div>
+                                            <p className="text-gray-600 leading-tight" style={{fontSize: 'clamp(10px, 2.2vw, 12px)'}}>
+                                                {notif.message}
+                                            </p>
+                                            {(notif.product_details || notif.product_name) && (
+                                                <p className="text-gray-500 mt-1 leading-tight" style={{fontSize: 'clamp(9px, 2vw, 11px)'}}>
+                                                    📦 {notif.product_details || notif.product_name}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8">
+                            <svg width="44" height="44" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400 mx-auto mb-4">
+                                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                            </svg>
+                            <p className="text-gray-600">No tienes notificaciones</p>
+                            <p className="text-sm text-gray-500 mt-1">Te notificaremos sobre el estado de tus pedidos</p>
+                        </div>
+                    )}
+                </div>
+                
+                {notifications.length > 0 && (
+                    <div className="p-4 border-t">
+                        <button 
+                            onClick={onMarkAllRead}
+                            className="w-full text-sm text-orange-500 hover:text-orange-600"
+                        >
+                            Marcar todas como leídas
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const SecurityModal = ({ isOpen, onClose, type, onConfirm }) => {
+    const [mathAnswer, setMathAnswer] = useState('');
+    const [mathProblem, setMathProblem] = useState({ a: 0, b: 0, answer: 0 });
+    const [error, setError] = useState('');
+    
+    useEffect(() => {
+        if (isOpen) {
+            // Generar suma simple (unidad + decena ≤ 9)
+            const a = Math.floor(Math.random() * 5) + 1; // 1-5
+            const b = Math.floor(Math.random() * (10 - a)) + 1; // 1-(9-a)
+            const answer = a + b;
+            setMathProblem({ a, b, answer });
+            setMathAnswer('');
+            setError('');
+        }
+    }, [isOpen]);
+    
+    const handleSubmit = (e) => {
+        if (e && e.preventDefault) {
+            e.preventDefault();
+        }
+        if (parseInt(mathAnswer) === mathProblem.answer) {
+            onConfirm();
+            onClose();
+        } else {
+            setError('Respuesta incorrecta. Inténtalo de nuevo.');
+            setMathAnswer('');
+        }
+    };
+    
+    if (!isOpen) return null;
+    
+    const config = {
+        logout: {
+            title: 'Cerrar Sesión',
+            icon: '🚪',
+            description: 'Se cerrará tu sesión actual. Perderás el carrito y tendrás que iniciar sesión nuevamente.',
+            action: 'Cerrar Sesión',
+            color: 'bg-orange-500 hover:bg-orange-600'
+        },
+        delete: {
+            title: 'Eliminar Cuenta',
+            icon: '⚠️',
+            description: 'Se eliminará permanentemente tu cuenta, historial de pedidos, favoritos y toda tu información. Esta acción NO se puede deshacer.',
+            action: 'Eliminar Cuenta',
+            color: 'bg-red-500 hover:bg-red-600'
+        }
+    };
+    
+    const currentConfig = config[type];
+    
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-70 z-[70] flex justify-center items-center animate-fade-in" onClick={onClose}>
+            <div className="bg-white w-full max-w-md mx-4 rounded-2xl flex flex-col animate-slide-up" onClick={(e) => e.stopPropagation()}>
+                <div className="p-6 text-center">
+                    <div className="text-4xl mb-4">{currentConfig.icon}</div>
+                    <h2 className="text-xl font-bold text-gray-800 mb-3">{currentConfig.title}</h2>
+                    <p className="text-sm text-gray-600 mb-6 leading-relaxed">{currentConfig.description}</p>
+                    
+                    <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                        <p className="text-sm font-medium text-gray-700 mb-3">Para continuar, resuelve esta suma:</p>
+                        <div className="text-2xl font-bold text-gray-800 mb-3">
+                            {mathProblem.a} + {mathProblem.b} = ?
+                        </div>
+                        <form onSubmit={handleSubmit}>
+                            <input
+                                type="number"
+                                value={mathAnswer}
+                                onChange={(e) => setMathAnswer(e.target.value)}
+                                className="w-20 p-2 border rounded-lg text-center text-lg font-bold"
+                                placeholder="?"
+                                min="1"
+                                max="9"
+                                required
+                            />
+                            {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
+                        </form>
+                    </div>
+                    
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={onClose}
+                            className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button 
+                            onClick={(e) => {
+                                e.preventDefault();
+                                if (parseInt(mathAnswer) === mathProblem.answer) {
+                                    onConfirm();
+                                    onClose();
+                                } else {
+                                    setError('Respuesta incorrecta. Inténtalo de nuevo.');
+                                    setMathAnswer('');
+                                }
+                            }}
+                            className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${currentConfig.color}`}
+                            disabled={!mathAnswer}
+                        >
+                            {currentConfig.action}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const SaveChangesModal = ({ isOpen, onClose, onSave, onDiscard }) => {
+    if (!isOpen) return null;
+    
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center animate-fade-in" onClick={onDiscard}>
+            <div className="bg-white w-full max-w-md mx-4 rounded-2xl flex flex-col animate-slide-up" onClick={(e) => e.stopPropagation()}>
+                <div className="p-6 text-center">
+                    <div className="text-4xl mb-4">💾</div>
+                    <h2 className="text-xl font-bold text-gray-800 mb-3">¿Guardar cambios?</h2>
+                    <p className="text-sm text-gray-600 mb-6">Actualizaste tu perfil. ¿Deseas guardar los cambios realizados?</p>
+                    
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={onDiscard}
+                            className="bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
+                            style={{padding: 'clamp(8px, 2vw, 12px)', fontSize: 'clamp(12px, 3vw, 14px)', flex: '1'}}
+                        >
+                            NO
+                        </button>
+                        <button 
+                            onClick={() => {
+                                onSave();
+                                window.location.reload();
+                            }}
+                            className="bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+                            style={{padding: 'clamp(8px, 2vw, 12px)', fontSize: 'clamp(12px, 3vw, 14px)', flex: '4'}}
+                        >
+                            SÍ, GUARDAR CAMBIOS
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const ProfileModal = ({ isOpen, onClose, user, setUser, userLocation, locationPermission, requestLocation, setUserLocation, setLocationPermission, hasProfileChanges, setHasProfileChanges, setIsSaveChangesModalOpen, setIsLogoutModalOpen, setIsDeleteAccountModalOpen, currentSessionTime, userOrders = [], userStats = null, showAllOrders = false, setShowAllOrders = () => {}, loadUserOrders }) => {
+    // Verificaciones de seguridad
+    if (!isOpen || !user) return null;
+    
+    // Verificar que las funciones existen
+    const safeSetHasProfileChanges = setHasProfileChanges || (() => {});
+    const safeSetIsSaveChangesModalOpen = setIsSaveChangesModalOpen || (() => {});
+    const safeSetIsLogoutModalOpen = setIsLogoutModalOpen || (() => {});
+    const safeSetIsDeleteAccountModalOpen = setIsDeleteAccountModalOpen || (() => {});
+    const safeRequestLocation = requestLocation || (() => {});
+    const [formData, setFormData] = useState({
+        telefono: '',
+        instagram: '',
+        fechaNacimiento: '',
+        genero: '',
+        direccion: ''
+    });
+    const [saveButtonState, setSaveButtonState] = useState('idle'); // idle, saving, saved
+    
+    // Cargar datos frescos del perfil al abrir modal
+    useEffect(() => {
+        if (isOpen && user) {
+            const loadProfileData = async () => {
+                try {
+                    const response = await fetch('/api/auth/get_profile.php');
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        const userData = result.user;
+                        setFormData({
+                            telefono: userData.telefono || '',
+                            instagram: userData.instagram || '',
+                            fechaNacimiento: userData.fecha_nacimiento || '',
+                            genero: userData.genero || '',
+                            direccion: userData.direccion || ''
+                        });
+                        
+                        // Actualizar usuario en el estado principal
+                        if (setUser) {
+                            setUser(userData);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error cargando perfil:', error);
+                }
+            };
+            
+            loadProfileData();
+            safeSetHasProfileChanges(false);
+            setSaveButtonState('idle');
+        }
+    }, [isOpen, user?.id]);
+    
+    const handleInputChange = (field, value) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+        safeSetHasProfileChanges(true);
+        setSaveButtonState('idle');
+    };
+    
+    const handleClose = () => {
+        if (hasProfileChanges) {
+            safeSetIsSaveChangesModalOpen(true);
+        } else {
+            onClose();
+        }
+    };
+    
+    const handleSaveChanges = async () => {
+        setSaveButtonState('saving');
+        
+        try {
+            const saveFormData = new FormData();
+            saveFormData.append('telefono', formData.telefono);
+            saveFormData.append('instagram', formData.instagram);
+            saveFormData.append('fecha_nacimiento', formData.fechaNacimiento);
+            saveFormData.append('genero', formData.genero);
+            saveFormData.append('direccion', formData.direccion);
+            
+            const response = await fetch('/api/auth/update_profile.php', {
+                method: 'POST',
+                body: saveFormData
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                console.log('Perfil actualizado exitosamente');
+                safeSetHasProfileChanges(false);
+                setSaveButtonState('saved');
+            } else {
+                console.error('Error guardando perfil:', result.error);
+                alert('Error al guardar: ' + result.error);
+                setSaveButtonState('idle');
+            }
+        } catch (error) {
+            console.error('Error guardando cambios:', error);
+            alert('Error de conexión al guardar cambios');
+            setSaveButtonState('idle');
+        }
+    };
+    
+    const handleDiscardChanges = () => {
+        safeSetHasProfileChanges(false);
+        safeSetIsSaveChangesModalOpen(false);
+        onClose();
+    };
+
+    
+    const handleLogout = () => {
+        window.location.href = '/api/auth/logout.php';
+    };
+    
+    const handleDeleteAccount = () => {
+        // Implementar lógica de eliminación de cuenta
+        fetch('/api/auth/delete_account.php', { method: 'POST' })
+            .then(() => {
+                window.location.href = '/api/auth/logout.php';
+            })
+            .catch(error => console.error('Error eliminando cuenta:', error));
+    };
+    
+    // Cargar ubicación guardada del usuario
+    useEffect(() => {
+        if (user && !userLocation && setUserLocation && setLocationPermission) {
+            fetch('/api/location/get_location.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.latitud && data.longitud) {
+                        setUserLocation({
+                            latitude: parseFloat(data.latitud),
+                            longitude: parseFloat(data.longitud),
+                            address: data.direccion_actual || `${data.latitud}, ${data.longitud}`
+                        });
+                        setLocationPermission('granted');
+                    }
+                })
+                .catch(error => console.error('Error cargando ubicación:', error));
+        }
+    }, [user, userLocation, setUserLocation, setLocationPermission]);
+    
+    // Cargar pedidos cuando se abre el modal
+    useEffect(() => {
+        if (isOpen && user && loadUserOrders) {
+            loadUserOrders();
+        }
+    }, [isOpen, user, loadUserOrders]);
+    
+
+    
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center animate-fade-in" onClick={onClose}>
+            <div className="bg-white w-full h-full flex flex-col animate-slide-up overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                <div className="border-b flex justify-between items-center" style={{padding: 'clamp(16px, 4vw, 24px)'}}>
+                    <h2 className="font-bold text-gray-800" style={{fontSize: 'clamp(18px, 5vw, 24px)'}}>Mi Perfil</h2>
+                    <button onClick={handleClose} className="p-1 text-gray-400 hover:text-gray-600"><X size={24} /></button>
+                </div>
+                
+                <div className="flex-grow overflow-y-auto" style={{padding: 'clamp(16px, 4vw, 24px)'}}>
+                    <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+                        <img src={user.foto_perfil} alt={user.nombre} className="rounded-full" style={{width: 'clamp(60px, 15vw, 80px)', height: 'clamp(60px, 15vw, 80px)'}} />
+                        <div>
+                            <h3 className="font-bold text-gray-800" style={{fontSize: 'clamp(16px, 4.5vw, 20px)'}}>{user.nombre}</h3>
+                            <p className="text-gray-600" style={{fontSize: 'clamp(12px, 3vw, 16px)'}}>{user.email}</p>
+                        </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                            <h4 className="font-bold text-gray-800" style={{fontSize: 'clamp(14px, 3.5vw, 16px)'}}>Información Personal</h4>
+                            <div className="space-y-3">
+                                <input 
+                                    type="tel" 
+                                    placeholder="Teléfono (+56 9 1234 5678)" 
+                                    value={formData.telefono}
+                                    onChange={(e) => handleInputChange('telefono', e.target.value)}
+                                    className="w-full border rounded-lg" 
+                                    style={{padding: 'clamp(8px, 2vw, 12px)', fontSize: 'clamp(12px, 3vw, 14px)'}} 
+                                />
+                                <input 
+                                    type="text" 
+                                    placeholder="Instagram (@usuario)" 
+                                    value={formData.instagram}
+                                    onChange={(e) => handleInputChange('instagram', e.target.value)}
+                                    className="w-full border rounded-lg" 
+                                    style={{padding: 'clamp(8px, 2vw, 12px)', fontSize: 'clamp(12px, 3vw, 14px)'}} 
+                                />
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-700">Fecha de nacimiento</label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <select 
+                                            value={formData.fechaNacimiento ? new Date(formData.fechaNacimiento).getDate() : ''}
+                                            onChange={(e) => {
+                                                const day = e.target.value;
+                                                const month = formData.fechaNacimiento ? new Date(formData.fechaNacimiento).getMonth() + 1 : '';
+                                                const year = formData.fechaNacimiento ? new Date(formData.fechaNacimiento).getFullYear() : '';
+                                                if (day && month && year) {
+                                                    handleInputChange('fechaNacimiento', `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`);
+                                                }
+                                            }}
+                                            className="border rounded-lg" 
+                                            style={{padding: 'clamp(6px, 1.5vw, 8px)', fontSize: 'clamp(11px, 2.5vw, 13px)'}}
+                                        >
+                                            <option value="">Día</option>
+                                            {Array.from({length: 31}, (_, i) => i + 1).map(day => (
+                                                <option key={day} value={day}>{day}</option>
+                                            ))}
+                                        </select>
+                                        <select 
+                                            value={formData.fechaNacimiento ? new Date(formData.fechaNacimiento).getMonth() + 1 : ''}
+                                            onChange={(e) => {
+                                                const month = e.target.value;
+                                                const day = formData.fechaNacimiento ? new Date(formData.fechaNacimiento).getDate() : '';
+                                                const year = formData.fechaNacimiento ? new Date(formData.fechaNacimiento).getFullYear() : '';
+                                                if (day && month && year) {
+                                                    handleInputChange('fechaNacimiento', `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`);
+                                                }
+                                            }}
+                                            className="border rounded-lg" 
+                                            style={{padding: 'clamp(6px, 1.5vw, 8px)', fontSize: 'clamp(11px, 2.5vw, 13px)'}}
+                                        >
+                                            <option value="">Mes</option>
+                                            {['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'].map((month, i) => (
+                                                <option key={i + 1} value={i + 1}>{month}</option>
+                                            ))}
+                                        </select>
+                                        <select 
+                                            value={formData.fechaNacimiento ? new Date(formData.fechaNacimiento).getFullYear() : ''}
+                                            onChange={(e) => {
+                                                const year = e.target.value;
+                                                const day = formData.fechaNacimiento ? new Date(formData.fechaNacimiento).getDate() : '';
+                                                const month = formData.fechaNacimiento ? new Date(formData.fechaNacimiento).getMonth() + 1 : '';
+                                                if (day && month && year) {
+                                                    handleInputChange('fechaNacimiento', `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`);
+                                                }
+                                            }}
+                                            className="border rounded-lg" 
+                                            style={{padding: 'clamp(6px, 1.5vw, 8px)', fontSize: 'clamp(11px, 2.5vw, 13px)'}}
+                                        >
+                                            <option value="">Año</option>
+                                            {Array.from({length: 80}, (_, i) => new Date().getFullYear() - i).map(year => (
+                                                <option key={year} value={year}>{year}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                                <select 
+                                    value={formData.genero}
+                                    onChange={(e) => handleInputChange('genero', e.target.value)}
+                                    className="w-full border rounded-lg" 
+                                    style={{padding: 'clamp(8px, 2vw, 12px)', fontSize: 'clamp(12px, 3vw, 14px)'}}
+                                >
+                                    <option value="">¿Cómo te identificas?</option>
+                                    <option value="masculino">Masculino</option>
+                                    <option value="femenino">Femenino</option>
+                                    <option value="otro">Otro</option>
+                                    <option value="no_decir">Prefiero no decir</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <h4 className="font-bold text-gray-800">Mi dirección</h4>
+                            <textarea 
+                                placeholder="Ingresa tu dirección" 
+                                value={formData.direccion || ''}
+                                onChange={(e) => handleInputChange('direccion', e.target.value)}
+                                className="w-full border rounded-lg resize-none" 
+                                style={{padding: 'clamp(8px, 2vw, 12px)', fontSize: 'clamp(12px, 3vw, 14px)', minHeight: '80px'}} 
+                                rows="3"
+                            />
+                            <button 
+                                onClick={handleSaveChanges}
+                                disabled={saveButtonState === 'saving'}
+                                className={`w-full py-3 rounded-lg font-medium transition-colors ${
+                                    saveButtonState === 'saving' 
+                                        ? 'bg-orange-500 text-white cursor-not-allowed' 
+                                        : saveButtonState === 'saved'
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-green-500 text-white hover:bg-green-600'
+                                }`}
+                            >
+                                {saveButtonState === 'saving' 
+                                    ? 'Guardando...' 
+                                    : saveButtonState === 'saved'
+                                    ? 'Actualizado'
+                                    : 'Guardar Cambios'
+                                }
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                        <h4 className="font-bold text-gray-800 mb-3">Ubicación Actual</h4>
+                        {userLocation ? (
+                            <div className="space-y-3">
+                                <div className="text-sm text-gray-700">
+                                    <p>📍 {userLocation.address || 'Ubicación detectada'}</p>
+                                </div>
+                                <button 
+                                    onClick={safeRequestLocation}
+                                    className="text-xs text-orange-500 hover:text-orange-600"
+                                >
+                                    Actualizar ubicación
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="text-center py-4">
+                                <p className="text-sm text-gray-600 mb-3">No se ha detectado tu ubicación</p>
+                                <button 
+                                    onClick={safeRequestLocation}
+                                    className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm"
+                                    disabled={locationPermission === 'requesting'}
+                                >
+                                    {locationPermission === 'requesting' ? 'Detectando...' : 'Activar Ubicación'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="mt-8 space-y-4">
+                        <div className="flex justify-between items-center">
+                            <h4 className="font-bold text-gray-800">Mis Pedidos</h4>
+                            <button 
+                                onClick={() => setShowAllOrders(!showAllOrders)}
+                                className="text-orange-500 text-sm font-medium hover:text-orange-600"
+                            >
+                                {showAllOrders ? 'Ver menos' : 'Ver todos'}
+                            </button>
+                        </div>
+                        
+                        {/* Lista de pedidos (1 por fila) */}
+                        <div className="space-y-3">
+                            {userOrders.length === 0 ? (
+                                <div className="text-center py-8 text-gray-500">
+                                    <div className="text-4xl mb-2">🍽️</div>
+                                    <p>Aún no tienes pedidos</p>
+                                    <p className="text-sm">¡Haz tu primer pedido!</p>
+                                </div>
+                            ) : (
+                                userOrders.slice(0, showAllOrders ? userOrders.length : 3).map((order, index) => (
+                                    <div key={index} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-lg">🍔</span>
+                                                <div>
+                                                    <h5 className="font-semibold text-gray-800 text-sm">
+                                                        Pedido {order.order_reference}
+                                                    </h5>
+                                                    <p className="text-xs text-gray-500">
+                                                        {new Date(order.created_at).toLocaleDateString('es-CL', {
+                                                            day: 'numeric',
+                                                            month: 'short',
+                                                            year: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <span className="text-xs px-2 py-1 rounded-full font-medium" 
+                                                  style={{
+                                                      backgroundColor: order.status === 'completed' ? '#dcfce7' : 
+                                                                      order.status === 'pending' ? '#fef3c7' : '#fee2e2',
+                                                      color: order.status === 'completed' ? '#166534' : 
+                                                             order.status === 'pending' ? '#92400e' : '#991b1b'
+                                                  }}>
+                                                {order.status_display}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center gap-4">
+                                                <span className="font-bold text-green-600">
+                                                    ${parseInt(order.amount).toLocaleString()}
+                                                </span>
+                                                <span className="text-xs text-gray-500">
+                                                    {order.payment_method === 'webpay' ? '💳 Webpay' : '💰 Efectivo'}
+                                                </span>
+                                            </div>
+                                            
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    onClick={() => {
+                                                        alert(`Pedido: ${order.order_reference}\nProductos: ${order.product_name}\nTotal: $${parseInt(order.amount).toLocaleString()}\nEstado: ${order.status_display}\nFecha: ${new Date(order.created_at).toLocaleDateString('es-CL')}`);
+                                                    }}
+                                                    className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
+                                                >
+                                                    Ver Detalle
+                                                </button>
+                                                {order.status === 'completed' && (
+                                                    <button 
+                                                        onClick={() => {
+                                                            if (confirm('¿Repetir este pedido? Se agregará al carrito.')) {
+                                                                alert('Funcionalidad de repetir pedido en desarrollo');
+                                                            }
+                                                        }}
+                                                        className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded hover:bg-orange-200 transition-colors"
+                                                    >
+                                                        Repetir
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                        
+                                        {order.customer_phone && (
+                                            <div className="mt-2 pt-2 border-t border-gray-200">
+                                                <p className="text-xs text-gray-500">
+                                                    📍 Entrega: {order.customer_phone}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                        
+                        {/* Estadísticas rápidas */}
+                        {userStats && userStats.total_orders > 0 && (
+                            <div className="bg-orange-50 rounded-lg p-4 mt-4">
+                                <h5 className="font-semibold text-gray-800 mb-2">📊 Resumen</h5>
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <p className="text-gray-600">Total pedidos</p>
+                                        <p className="font-bold text-orange-600">{userStats.total_orders}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-600">Total gastado</p>
+                                        <p className="font-bold text-green-600">
+                                            ${parseInt(userStats.total_spent || 0).toLocaleString()}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="mt-8 space-y-4">
+                        <h4 className="font-bold text-gray-800">Oportunidades Laborales</h4>
+                        <div className="grid grid-cols-1 gap-3">
+                            <button 
+                                onClick={() => window.open('/jobs/maestro-sanguchero', '_blank')}
+                                className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-left hover:bg-amber-100 transition-colors"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="text-2xl">👨‍🍳</span>
+                                    <div>
+                                        <h5 className="font-semibold text-amber-700">Postular como Maestro/a Sanguchero/a</h5>
+                                        <p className="text-sm text-amber-600">Únete a nuestro equipo de cocina</p>
+                                    </div>
+                                </div>
+                            </button>
+                            <button 
+                                onClick={() => window.open('/jobs/cajero', '_blank')}
+                                className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-left hover:bg-blue-100 transition-colors"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="text-2xl">💼</span>
+                                    <div>
+                                        <h5 className="font-semibold text-blue-700">Postular como Cajero/a</h5>
+                                        <p className="text-sm text-blue-600">Sé la cara amable de La Ruta 11</p>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                    
+
+                    
+                    <div className="mt-8 space-y-4">
+                        <h4 className="font-bold text-gray-800" style={{fontSize: 'clamp(14px, 3.5vw, 16px)'}}>Seguridad de la Cuenta</h4>
+                        <div className="grid grid-cols-1 gap-3">
+                            <button 
+                                onClick={() => safeSetIsLogoutModalOpen(true)}
+                                className="p-4 bg-orange-50 border border-orange-200 rounded-lg text-left hover:bg-orange-100 transition-colors"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="text-2xl">🚪</span>
+                                    <div>
+                                        <h5 className="font-semibold text-orange-700">Cerrar Sesión</h5>
+                                        <p className="text-sm text-orange-600">Salir de tu cuenta actual</p>
+                                    </div>
+                                </div>
+                            </button>
+                            <button 
+                                onClick={() => safeSetIsDeleteAccountModalOpen(true)}
+                                className="p-4 bg-red-50 border border-red-200 rounded-lg text-left hover:bg-red-100 transition-colors"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="text-2xl">⚠️</span>
+                                    <div>
+                                        <h5 className="font-semibold text-red-700">Eliminar Cuenta</h5>
+                                        <p className="text-sm text-red-600">Eliminar permanentemente tu cuenta</p>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, type, isLiked, handleLike, setReviewsModalProduct }) => {
+  const [showFloatingHeart, setShowFloatingHeart] = useState(false);
+  const [heartPosition, setHeartPosition] = useState({ x: 0, y: 0 });
+  const heartButtonRef = useRef(null);
+  
+  // Track product view when component mounts
+  useEffect(() => {
+    if (window.Analytics) {
+      window.Analytics.trackProductView(product.id, product.name);
+    }
+  }, [product.id, product.name]);
+  
+  // Doble tap para me gusta
+  const handleDoubleTap = useDoubleTap((e) => {
+    e.stopPropagation();
+    if (!isLiked) {
+      // Obtener posición del corazón en la tarjeta
+      const rect = e.currentTarget.getBoundingClientRect();
+      setHeartPosition({
+        x: rect.left + rect.width * 0.2, // Posición del corazón en la tarjeta
+        y: rect.bottom - 60 // Cerca del corazón de me gusta
+      });
+      
+      handleLike(product.id);
+      setShowFloatingHeart(true);
+      vibrate([50, 50, 50]); // Vibración triple
+      
+
+    }
+  });
+    const typeColors = {
+        // Churrascos/Sandwiches
+        'Carne': {
+            bg: 'bg-red-500',
+            text: 'text-white',
+            border: 'border-red-500'
+        },
+        'Pollo': {
+            bg: 'bg-yellow-500',
+            text: 'text-white',
+            border: 'border-yellow-500'
+        },
+        'Vegetariano': {
+            bg: 'bg-green-500',
+            text: 'text-white',
+            border: 'border-green-500'
+        },
+        // Hamburguesas
+        'Clásicas': {
+            bg: 'bg-orange-500',
+            text: 'text-white',
+            border: 'border-orange-500'
+        },
+        'Especiales': {
+            bg: 'bg-purple-500',
+            text: 'text-white',
+            border: 'border-purple-500'
+        },
+        // Completos
+        'Tradicionales': {
+            bg: 'bg-blue-500',
+            text: 'text-white',
+            border: 'border-blue-500'
+        },
+        'Al Vapor': {
+            bg: 'bg-cyan-500',
+            text: 'text-white',
+            border: 'border-cyan-500'
+        },
+        // Tomahawks
+        'Tomahawks': {
+            bg: 'bg-red-700',
+            text: 'text-white',
+            border: 'border-red-700'
+        },
+        // Snacks
+        'Papas': {
+            bg: 'bg-yellow-600',
+            text: 'text-white',
+            border: 'border-yellow-600'
+        },
+        'Jugos': {
+            bg: 'bg-green-400',
+            text: 'text-white',
+            border: 'border-green-400'
+        },
+        'Bebidas': {
+            bg: 'bg-blue-400',
+            text: 'text-white',
+            border: 'border-blue-400'
+        },
+        'Salsas': {
+            bg: 'bg-red-400',
+            text: 'text-white',
+            border: 'border-red-400'
+        },
+        'Empanadas': {
+            bg: 'bg-amber-500',
+            text: 'text-white',
+            border: 'border-amber-500'
+        }
+    };
+    const colorClasses = type ? typeColors[type] : null;
+  return (
+    <div className={`bg-white rounded-xl shadow-md hover:shadow-lg overflow-hidden animate-fade-in relative transition-all duration-300 hover:scale-105`}>
+        <div 
+            className="w-full aspect-[4/5] cursor-pointer relative" 
+            onClick={(e) => {
+                // Solo abrir modal si no es doble tap
+                if (e.detail === 1) {
+                    setTimeout(() => {
+                        if (!showFloatingHeart) {
+                            // Track product click
+                            if (window.Analytics) {
+                                window.Analytics.trackInteraction({
+                                    action_type: 'click',
+                                    element_type: 'product_image',
+                                    product_id: product.id,
+                                    product_name: product.name,
+                                    element_text: 'Product Image Click'
+                                });
+                            }
+                            onSelect(product);
+                        }
+                    }, 300);
+                }
+            }}
+            onTouchStart={handleDoubleTap}
+        >
+            {product.image ? (
+                <img 
+                    src={product.image} 
+                    alt={product.name} 
+                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                />
+            ) : (
+                <div className="w-full h-full bg-gray-200 animate-pulse"></div>
+            )}
+            
+            {/* Corazón flotante para doble tap */}
+            <FloatingHeart 
+                show={showFloatingHeart} 
+                startPosition={heartPosition}
+                onAnimationEnd={() => setShowFloatingHeart(false)}
+            />
+        </div>
+        {colorClasses && (
+            <div className={`absolute top-2 left-2 sm:top-3 sm:left-3 lg:top-4 lg:left-4 ${colorClasses.bg} ${colorClasses.text} text-xs font-bold px-2 py-1 rounded-full shadow-md`}>
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+            </div>
+        )}
+        {product.category_name === 'Combos' && (
+            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 lg:top-4 lg:right-4 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md flex items-center gap-1">
+                <GiHamburger size={12} />
+                <CupSoda size={12} />
+                COMBO
+            </div>
+        )}
+        <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 lg:p-4 bg-black/50 backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-1">
+                <h3 
+                    className="font-bold text-sm sm:text-base lg:text-lg text-white cursor-pointer flex-1 truncate pr-2"
+                    onClick={() => onSelect(product)}
+                    title={product.name}
+                >
+                    {product.name}
+                </h3>
+                <div className="flex items-center gap-2 sm:gap-2 bg-white/90 backdrop-blur-sm rounded-full p-2 sm:p-1 shadow-md">
+                    {quantity > 0 && (
+                        <button
+                            onClick={() => onRemoveFromCart(product.id)}
+                            className="text-red-600 rounded-full hover:bg-red-100 transition-colors p-1 sm:p-0.5"
+                            aria-label={`Quitar ${product.name} del carro`}
+                        >
+                            <MinusCircle size={20} className="sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
+                        </button>
+                    )}
+                    {quantity > 0 && <span className="font-bold text-sm sm:text-xs text-gray-800 w-4 sm:w-3 text-center">{quantity}</span>}
+                    <button 
+                        onClick={() => onAddToCart(product)} 
+                        className="text-green-600 rounded-full hover:bg-green-100 transition-colors p-1 sm:p-0.5"
+                        aria-label={`Agregar ${product.name} al carro`}
+                    >
+                        <PlusCircle size={20} className="sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
+                    </button>
+                </div>
+            </div>
+            <p className="text-xs text-gray-200 mb-1 italic leading-tight line-clamp-2" style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>
+              {product.description}{/* • {product.grams}g - TODO: Habilitar cuando se implemente el sistema de gramos */}
+            </p>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 sm:gap-3 text-sm sm:text-xs text-gray-300">
+                    <div className="flex items-center gap-1"><Eye size={16} className="sm:w-3 sm:h-3" /><span className="font-semibold text-sm sm:text-xs">{product.views}</span></div>
+                    <button 
+                        ref={heartButtonRef}
+                        onClick={(e) => {
+                            if (!isLiked) {
+                                // Obtener posición del botón de corazón
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setHeartPosition({
+                                    x: rect.left + rect.width / 2,
+                                    y: rect.top + rect.height / 2
+                                });
+                                setShowFloatingHeart(true);
+                                vibrate(50);
+                            }
+                            handleLike(product.id);
+                        }} 
+                        className={`flex items-center gap-1 cursor-pointer hover:text-red-400 transition-colors rounded-full px-1 py-0.5 ${isLiked ? 'bg-red-500 text-white' : ''}`}
+                    >
+                        <Heart size={16} className={`sm:w-3 sm:h-3 transition-colors ${isLiked ? 'text-white fill-current' : ''}`} />
+                        <span className="font-semibold text-sm sm:text-xs">{product.likes}</span>
+                    </button>
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            console.log('Opening reviews for product:', product);
+                            setReviewsModalProduct(product);
+                        }}
+                        className="flex items-center gap-1 cursor-pointer hover:text-blue-400 transition-colors"
+                    >
+                        <MessageSquare size={16} className="sm:w-3 sm:h-3" />
+                        <span className="font-semibold text-sm sm:text-xs">{product.reviews.count || 0}</span>
+                    </button>
+                </div>
+                <p className="text-lg sm:text-sm lg:text-base font-bold text-orange-400">${product.price.toLocaleString('es-CL')}</p>
+            </div>
+        </div>
+    </div>
+  );
+};
+
+export default function App() {
+  const [activeCategory, setActiveCategory] = useState('hamburguesas');
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [zoomedProduct, setZoomedProduct] = useState(null);
+  const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [currentOrder, setCurrentOrder] = useState(null);
+  const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', email: '', address: '', deliveryType: 'pickup', pickupTime: '' });
+  const [menuWithImages, setMenuWithImages] = useState(menuData);
+  const [likedProducts, setLikedProducts] = useState(new Set());
+  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState(null);
+  const [userOrders, setUserOrders] = useState([]);
+  const [userStats, setUserStats] = useState(null);
+  const [showAllOrders, setShowAllOrders] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isFoodTrucksOpen, setIsFoodTrucksOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationPermission, setLocationPermission] = useState('prompt');
+  const [deliveryZone, setDeliveryZone] = useState(null);
+  const [nearbyProducts, setNearbyProducts] = useState(null);
+  const [nearbyTrucks, setNearbyTrucks] = useState([]);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
+  const [hasProfileChanges, setHasProfileChanges] = useState(false);
+  const [isSaveChangesModalOpen, setIsSaveChangesModalOpen] = useState(false);
+  const [sessionId] = useState(() => Date.now().toString());
+  const [sessionStartTime] = useState(Date.now());
+  const [currentSessionTime, setCurrentSessionTime] = useState(0);
+  const [isNavVisible, setIsNavVisible] = useState(true);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [reviewsModalProduct, setReviewsModalProduct] = useState(null);
+
+  const handleCheckout = () => {
+    if (!user) {
+      setIsLoginOpen(true);
+      return;
+    }
+    setShowCheckout(true);
+  };
+
+  const handleCreateOrder = async () => {
+    const orderNumber = 'R11-' + Date.now();
+    const orderData = {
+      order_number: orderNumber,
+      customer: customerInfo.name ? customerInfo : { name: user?.nombre || '', phone: '', email: user?.email || '' },
+      items: cart,
+      total: cartTotal,
+      created_at: new Date().toISOString()
+    };
+
+    setCurrentOrder(orderData);
+    setShowCheckout(false);
+    setShowPayment(true);
+  };
+
+  const handlePaymentSuccess = (paymentData) => {
+    createConfetti();
+    playNotificationSound();
+    vibrate([200, 100, 200]);
+    
+    // Agregar notificación de pago exitoso
+    const newNotification = {
+      titulo: '✅ Pago Exitoso',
+      mensaje: `Tu pedido #${currentOrder?.order_number} fue pagado correctamente. ¡Gracias por tu compra!`,
+      leida: false
+    };
+    setNotifications(prev => [newNotification, ...prev]);
+    
+    // Notificar al admin
+    fetch('/api/notify_admin_payment.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        order_number: currentOrder?.order_number,
+        amount: cartTotal,
+        customer_name: customerInfo.name || user?.nombre || 'Cliente'
+      })
+    }).catch(() => {});
+    
+    // Limpiar carrito
+    setCart([]);
+    setShowPayment(false);
+    setCurrentOrder(null);
+    setCustomerInfo({ name: '', phone: '', email: '', address: '' });
+    
+    if (paymentData && paymentData.payment_url) {
+      alert(`¡Pedido #${currentOrder?.order_number} enviado a TUU para pago online!`);
+    } else {
+      alert(`¡Pedido #${currentOrder?.order_number} creado exitosamente! Puedes pagar en el local.`);
+    }
+  };
+
+  const handlePaymentError = () => {
+    setShowPayment(false);
+  };
+
+
+  const handleLike = async (productId) => {
+    if (likedProducts.has(productId)) return;
+    
+    try {
+      const response = await fetch('/api/toggle_like.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: productId })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setMenuWithImages(prevMenu => {
+          const updatedMenu = { ...prevMenu };
+          Object.keys(updatedMenu).forEach(category => {
+            if (Array.isArray(updatedMenu[category])) {
+              updatedMenu[category] = updatedMenu[category].map(product => 
+                product.id === productId ? { ...product, likes: data.likes } : product
+              );
+            } else {
+              Object.keys(updatedMenu[category]).forEach(subcat => {
+                updatedMenu[category][subcat] = updatedMenu[category][subcat].map(product => 
+                  product.id === productId ? { ...product, likes: data.likes } : product
+                );
+              });
+            }
+          });
+          return updatedMenu;
+        });
+        setLikedProducts(prev => new Set([...prev, productId]));
+      }
+    } catch (error) {
+      console.error('Error al dar like:', error);
+    }
+  };
+
+  const handleSaveChanges = () => {
+    console.log('Guardando cambios del perfil');
+    setHasProfileChanges(false);
+    setIsSaveChangesModalOpen(false);
+    setIsProfileOpen(false);
+  };
+
+  const handleDiscardChanges = () => {
+    setHasProfileChanges(false);
+    setIsSaveChangesModalOpen(false);
+    setIsProfileOpen(false);
+  };
+
+  const handleLogout = () => {
+    window.location.href = '/api/auth/logout.php';
+  };
+
+  const handleDeleteAccount = () => {
+    fetch('/api/auth/delete_account.php', { method: 'POST' })
+      .then(() => {
+        window.location.href = '/api/auth/logout.php';
+      })
+      .catch(error => console.error('Error eliminando cuenta:', error));
+  };
+
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    if (!query.trim()) {
+      setFilteredProducts([]);
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    
+    const allProducts = [];
+    const seenIds = new Set();
+    
+    Object.entries(menuWithImages).forEach(([categoryKey, category]) => {
+      // Excluir categorías personalizar y extras de la vista principal
+      if (categoryKey === 'personalizar' || categoryKey === 'extras') return;
+      
+      if (Array.isArray(category)) {
+        category.forEach(p => {
+          if (!seenIds.has(p.id)) {
+            allProducts.push({...p, category: categoryKey});
+            seenIds.add(p.id);
+          }
+        });
+      } else {
+        Object.entries(category).forEach(([subKey, products]) => {
+          products.forEach(p => {
+            if (!seenIds.has(p.id)) {
+              allProducts.push({...p, category: categoryKey, subcategory: subKey});
+              seenIds.add(p.id);
+            }
+          });
+        });
+      }
+    });
+    
+    const filtered = allProducts.filter(product => {
+      // Excluir productos de categorías personalizar y extras de búsquedas
+      if (product.category === 'personalizar' || product.category === 'extras') return false;
+      
+      return product.name.toLowerCase().includes(query.toLowerCase()) ||
+        product.description.toLowerCase().includes(query.toLowerCase()) ||
+        categoryDisplayNames[product.category]?.toLowerCase().includes(query.toLowerCase()) ||
+        product.subcategory?.toLowerCase().includes(query.toLowerCase());
+    });
+    
+    setFilteredProducts(filtered);
+    setSuggestions(filtered.slice(0, 5));
+    setShowSuggestions(query.length > 0 && filtered.length > 0 && filtered.length <= 10); // Solo mostrar sugerencias si hay pocos resultados
+  };
+  
+  const selectSuggestion = (product) => {
+    setSelectedProduct(product);
+    setShowSuggestions(false);
+    setSearchQuery('');
+  };
+
+  const requestLocation = () => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      alert('Tu navegador no soporta geolocalización');
+      return;
+    }
+
+    setLocationPermission('requesting');
+    
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        // Obtener dirección usando Google Geocoding API
+        try {
+          const formData = new FormData();
+          formData.append('lat', latitude);
+          formData.append('lng', longitude);
+          
+          const response = await fetch('/api/location/geocode.php', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const data = await response.json();
+          
+          let addressInfo;
+          if (data.success) {
+            addressInfo = {
+              formatted_address: data.formatted_address,
+              street: data.readable.street,
+              city: data.readable.city,
+              region: data.readable.region,
+              country: data.readable.country,
+              components: data.components
+            };
+          } else {
+            addressInfo = {
+              formatted_address: `${latitude}, ${longitude}`,
+              street: 'Calle no disponible',
+              city: 'Ciudad no disponible',
+              region: 'Región no disponible',
+              country: 'País no disponible'
+            };
+          }
+          
+          const locationData = {
+            latitude,
+            longitude,
+            address: addressInfo.formatted_address,
+            addressInfo,
+            accuracy: position.coords.accuracy
+          };
+          
+          setUserLocation(locationData);
+          setLocationPermission('granted');
+          
+          // Verificar zona de delivery
+          checkDeliveryZone(latitude, longitude);
+          
+          // Obtener productos cercanos
+          getNearbyProducts(latitude, longitude);
+          
+          // Obtener food trucks cercanos
+          getNearbyTrucks(latitude, longitude);
+          
+          // Guardar en servidor si usuario está logueado
+          if (user) {
+            const saveFormData = new FormData();
+            saveFormData.append('latitud', latitude);
+            saveFormData.append('longitud', longitude);
+            saveFormData.append('direccion', addressInfo.formatted_address);
+            saveFormData.append('precision', position.coords.accuracy);
+            
+            fetch('/api/location/save_location.php', {
+              method: 'POST',
+              body: saveFormData
+            });
+          }
+        } catch (error) {
+          console.error('Error obteniendo dirección:', error);
+          const fallbackData = {
+            latitude, 
+            longitude, 
+            address: `${latitude}, ${longitude}`,
+            addressInfo: {
+              formatted_address: `${latitude}, ${longitude}`,
+              street: 'Calle no disponible',
+              city: 'Ciudad no disponible',
+              region: 'Región no disponible',
+              country: 'País no disponible'
+            }
+          };
+          setUserLocation(fallbackData);
+          setLocationPermission('granted');
+        }
+      },
+      (error) => {
+        console.error('Error obteniendo ubicación:', error);
+        setLocationPermission('denied');
+        alert('No se pudo obtener tu ubicación. Verifica los permisos del navegador.');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000 // 5 minutos
+      }
+    );
+  };
+
+  const checkDeliveryZone = async (lat, lng) => {
+    try {
+      const formData = new FormData();
+      formData.append('lat', lat);
+      formData.append('lng', lng);
+      
+      const response = await fetch('/api/location/check_delivery_zone.php', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const data = await response.json();
+      if (data.error) {
+        console.error('API Error:', data.error);
+        setDeliveryZone({ in_delivery_zone: false, zones: [] });
+      } else {
+        setDeliveryZone(data);
+      }
+      
+      // Calcular tiempo real si está en zona
+      if (data.in_delivery_zone && data.zones.length > 0) {
+        const zone = data.zones[0];
+        
+        // Obtener coordenadas del food truck más cercano
+        if (nearbyTrucks.length > 0) {
+          const closestTruck = nearbyTrucks[0];
+          calculateRealDeliveryTime(lat, lng, closestTruck.latitud, closestTruck.longitud);
+        }
+      }
+    } catch (error) {
+      console.error('Error verificando zona de delivery:', error);
+    }
+  };
+
+  const getNearbyProducts = async (lat, lng) => {
+    try {
+      const formData = new FormData();
+      formData.append('lat', lat);
+      formData.append('lng', lng);
+      
+      const response = await fetch('/api/location/get_nearby_products.php', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await response.json();
+      setNearbyProducts(data);
+    } catch (error) {
+      console.error('Error obteniendo productos cercanos:', error);
+    }
+  };
+
+  const getNearbyTrucks = async (lat, lng) => {
+    try {
+      const formData = new FormData();
+      formData.append('lat', lat);
+      formData.append('lng', lng);
+      formData.append('radius', 10); // 10km radio
+      
+      const response = await fetch('/api/get_nearby_trucks.php', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const data = await response.json();
+      if (data.success && data.trucks) {
+        setNearbyTrucks(data.trucks);
+      } else {
+        console.error('API Error:', data.error || 'No trucks found');
+        setNearbyTrucks([]);
+      }
+    } catch (error) {
+      console.error('Error obteniendo food trucks cercanos:', error);
+      setNearbyTrucks([]);
+    }
+  };
+
+  const loadUserOrders = async () => {
+    if (!user?.email) {
+      console.log('No hay usuario logueado');
+      return;
+    }
+    
+    try {
+      console.log('Cargando pedidos del usuario:', user.email);
+      const response = await fetch('/api/get_user_orders.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_email: user.email })
+      });
+      const data = await response.json();
+      console.log('Respuesta API pedidos:', data);
+      
+      if (data.success) {
+        console.log('Pedidos encontrados:', data.orders?.length || 0);
+        setUserOrders(data.orders || []);
+        setUserStats(data.stats || null);
+      } else {
+        console.log('Error en API:', data.error);
+      }
+    } catch (error) {
+      console.error('Error cargando pedidos del usuario:', error);
+      setUserOrders([]);
+    }
+  };
+
+  const loadNotifications = async () => {
+    if (!user) {
+      console.log('No hay usuario logueado');
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/get_order_notifications.php');
+      const data = await response.json();
+      
+      if (data.success && data.notifications) {
+        setNotifications(data.notifications);
+        setUnreadCount(data.unread_count || 0);
+      } else {
+        console.log('Error en API notificaciones:', data.error);
+        setNotifications([]);
+        setUnreadCount(0);
+      }
+    } catch (error) {
+      console.error('Error cargando notificaciones:', error);
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+  };
+
+  const calculateRealDeliveryTime = async (userLat, userLng, truckLat, truckLng) => {
+    try {
+      const formData = new FormData();
+      formData.append('user_lat', userLat);
+      formData.append('user_lng', userLng);
+      formData.append('truck_lat', truckLat);
+      formData.append('truck_lng', truckLng);
+      
+      const response = await fetch('/api/location/calculate_delivery_time.php', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        // Actualizar el tiempo en deliveryZone
+        setDeliveryZone(prev => ({
+          ...prev,
+          zones: prev.zones.map(zone => ({
+            ...zone,
+            tiempo_estimado: data.total_delivery_time,
+            real_time_data: data
+          }))
+        }));
+      }
+    } catch (error) {
+      console.error('Error calculando tiempo real:', error);
+    }
+  };
+
+  // Cargar productos desde MySQL
+  useEffect(() => {
+    const loadMenuFromDatabase = async () => {
+      try {
+        const response = await fetch('/api/get_menu_products.php?v=' + Date.now());
+        const data = await response.json();
+        
+        if (data.success && data.menuData) {
+          menuData = data.menuData;
+          setMenuWithImages(data.menuData);
+        } else {
+          console.error('Error cargando menú:', data.error);
+          // Mantener estructura vacía si falla
+          setMenuWithImages(menuData);
+        }
+      } catch (error) {
+        console.error('Error conectando con API:', error);
+        // Mantener estructura vacía si falla
+        setMenuWithImages(menuData);
+      }
+    };
+    
+    loadMenuFromDatabase();
+  }, []);
+
+  const productsToShow = useMemo(() => {
+    const menu = menuWithImages;
+    if (activeCategory === 'churrascos' || activeCategory === 'jugos_bebidas' || activeCategory === 'la_ruta_11' || activeCategory === 'completos' || activeCategory === 'papas_y_snacks') {
+      // Para vistas con subcategorías, no filtramos aquí
+      return []; 
+    }
+    return Array.isArray(menu[activeCategory]) ? menu[activeCategory] : [];
+  }, [activeCategory, menuWithImages]);
+
+  const handleAddToCart = (product) => {
+    vibrate(50); // Vibración suave al agregar
+    
+    // Track add to cart
+    if (window.Analytics) {
+      window.Analytics.trackAddToCart(product.id, product.name);
+    }
+    
+    setCart(prevCart => {
+        const existingItem = prevCart.find(item => item.id === product.id);
+        if (existingItem) {
+            return prevCart.map(item => 
+                item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+            );
+        } else {
+            return [...prevCart, { ...product, quantity: 1 }];
+        }
+    });
+  };
+  
+  const handleRemoveFromCart = (productId) => {
+    // Track remove from cart
+    const product = cart.find(item => item.id === productId);
+    if (window.Analytics && product) {
+      window.Analytics.trackInteraction({
+        action_type: 'remove_from_cart',
+        element_type: 'product',
+        product_id: productId,
+        product_name: product.name
+      });
+    }
+    
+    setCart(prevCart => {
+        const existingItem = prevCart.find(item => item.id === productId);
+        if (existingItem && existingItem.quantity > 1) {
+            return prevCart.map(item => 
+                item.id === productId ? { ...item, quantity: item.quantity - 1 } : item
+            );
+        } else {
+            return prevCart.filter(item => item.id !== productId);
+        }
+    });
+  };
+
+  const cartSubtotal = useMemo(() => {
+    return cart.reduce((total, item) => {
+        let itemPrice = item.price;
+        
+        // Lógica especial para salsas: primera gratis, adicionales $500
+        const isSalsa = item.id >= 25 && item.id <= 30;
+        if (isSalsa) {
+            itemPrice = item.quantity > 1 ? (item.quantity - 1) * item.price : 0;
+        } else if (item.extraPrice && item.quantity > 1) {
+            itemPrice = item.price + (item.quantity - 1) * item.extraPrice;
+        } else {
+            itemPrice = item.price * item.quantity;
+        }
+        return total + itemPrice;
+    }, 0);
+  }, [cart]);
+
+  const deliveryFee = useMemo(() => {
+    if (customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0) {
+      return parseInt(nearbyTrucks[0].tarifa_delivery || 0);
+    }
+    return 0;
+  }, [customerInfo.deliveryType, nearbyTrucks]);
+
+  const cartTotal = useMemo(() => {
+    const currentDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 
+      ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) 
+      : 0;
+    return cartSubtotal + currentDeliveryFee;
+  }, [cartSubtotal, customerInfo.deliveryType, nearbyTrucks]);
+
+  const cartItemCount = useMemo(() => cart.reduce((count, item) => count + item.quantity, 0), [cart]);
+  const getProductQuantity = (productId) => cart.find(item => item.id === productId)?.quantity || 0;
+  
+  const comboItems = {
+      papas_y_snacks: menuWithImages.papas_y_snacks?.papas || [],
+      jugos: menuWithImages.papas_y_snacks?.jugos || [],
+      bebidas: menuWithImages.papas_y_snacks?.bebidas || [],
+      empanadas: menuWithImages.papas_y_snacks?.empanadas || [],
+      cafe: menuWithImages.papas_y_snacks?.café || [],
+      te: menuWithImages.papas_y_snacks?.té || [],
+      salsas: menuWithImages.papas_y_snacks?.salsas || [],
+      personalizar: menuWithImages.personalizar?.personalizar || [],
+      extras: menuWithImages.extras?.extras || []
+  }
+
+  useEffect(() => {
+    document.body.style.overflow = selectedProduct || isCartOpen || isLoginOpen || zoomedProduct ? 'hidden' : 'auto';
+  }, [selectedProduct, isCartOpen, isLoginOpen, zoomedProduct]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsNavVisible(false);
+        setIsHeaderVisible(false);
+      } else {
+        setIsNavVisible(true);
+        setIsHeaderVisible(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
+  useEffect(() => {
+    // Registrar Service Worker para PWA badge
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+    
+    // Mostrar loader por 1.5 segundos y luego activar ubicación
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+    
+    // Auto-activar ubicación en paralelo
+    const locationTimer = setTimeout(() => {
+      if (typeof navigator !== 'undefined' && navigator.geolocation && locationPermission === 'prompt') {
+        requestLocation();
+      }
+    }, 2000);
+    
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(locationTimer);
+    };
+  }, []);
+
+  // Sistema de tracking de uso
+  useEffect(() => {
+    if (!user) return;
+    
+    // Iniciar sesión
+    const startSession = async () => {
+      try {
+        const formData = new FormData();
+        formData.append('action', 'start_session');
+        formData.append('session_id', sessionId);
+        const response = await fetch('/api/track_usage.php', { method: 'POST', body: formData });
+        const result = await response.json();
+        console.log('Start session result:', result);
+      } catch (error) {
+        console.error('Error iniciando sesión:', error);
+      }
+    };
+    
+    startSession();
+    
+    // Actualizar tiempo cada 30 segundos
+    const timeInterval = setInterval(() => {
+      setCurrentSessionTime(Math.floor((Date.now() - sessionStartTime) / 1000));
+      
+      const formData = new FormData();
+      formData.append('action', 'update_activity');
+      formData.append('session_id', sessionId);
+      fetch('/api/track_usage.php', { method: 'POST', body: formData }).catch(() => {});
+    }, 30000);
+    
+    // Finalizar sesión al cerrar
+    const endSession = () => {
+      const formData = new FormData();
+      formData.append('action', 'end_session');
+      formData.append('session_id', sessionId);
+      navigator.sendBeacon('/api/track_usage.php', formData);
+    };
+    
+    window.addEventListener('beforeunload', endSession);
+    
+    return () => {
+      clearInterval(timeInterval);
+      window.removeEventListener('beforeunload', endSession);
+      endSession();
+    };
+  }, [user, sessionId, sessionStartTime]);
+
+  // Autocompletar campos del checkout cuando se abre el modal
+  useEffect(() => {
+    if (showCheckout && user) {
+      setCustomerInfo({
+        name: user.nombre || '',
+        phone: user.telefono || '',
+        email: user.email || '',
+        address: user.direccion || userLocation?.address || ''
+      });
+    }
+  }, [showCheckout, user, userLocation]);
+
+  useEffect(() => {
+    // Verificar si usuario está logueado
+    fetch('/api/auth/check_session.php')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.authenticated) {
+          setUser(data.user);
+          // Cargar notificaciones y pedidos del usuario después de un pequeño delay
+          setTimeout(() => {
+            loadNotifications();
+            loadUserOrders();
+          }, 100);
+        }
+      })
+      .catch(error => {
+        // Silenciar errores de sesión en desarrollo
+        console.warn('Session check failed:', error.message);
+      });
+
+    // Detectar parámetros de URL para login/logout
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('login') === 'success') {
+      // Limpiar URL y recargar sesión
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Recargar datos de sesión sin reload completo
+      fetch('/api/auth/check_session.php')
+        .then(response => response.json())
+        .then(data => {
+          if (data.authenticated) {
+            setUser(data.user);
+            loadNotifications();
+            loadUserOrders();
+            
+            // Mostrar onboarding solo para usuarios completamente nuevos
+            if (data.user.is_new_user && !localStorage.getItem('onboarding_completed')) {
+              setTimeout(() => setShowOnboarding(true), 500);
+            }
+          }
+        })
+        .catch(error => console.error('Error checking session after login:', error));
+    }
+    if (urlParams.get('logout') === 'success') {
+      setUser(null);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  if (isLoading) {
+    return <LoadingScreen onComplete={() => setIsLoading(false)} />;
+  }
+
+  return (
+    <div className="bg-white font-sans min-h-screen w-full pb-32" style={{backgroundColor: '#ffffff', background: '#ffffff'}}>
+      <header className={`px-2 py-2 sm:p-3 fixed top-0 left-0 right-0 bg-white z-40 shadow-sm transition-transform duration-300 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+        <div className="flex justify-between items-center">
+          {/* Perfil */}
+          <div className="flex items-center">
+            {user ? (
+                <button 
+                    onClick={() => { vibrate(30); setIsProfileOpen(true); }} 
+                    className="flex items-center gap-2 text-gray-600 hover:text-orange-500 p-1 rounded-lg hover:bg-gray-100 transition-all"
+                    title="Mi Perfil"
+                >
+                    <img src={user.foto_perfil} alt={user.nombre} className="rounded-full border border-gray-200" style={{width: 'clamp(20px, 5vw, 24px)', height: 'clamp(20px, 5vw, 24px)'}} />
+                    <span className="font-medium" style={{fontSize: 'clamp(12px, 3vw, 14px)'}}>{user.nombre.split(' ')[0]}</span>
+                </button>
+            ) : (
+                <button onClick={() => { vibrate(30); setIsLoginOpen(true); }} className="text-gray-600 hover:text-orange-500" title="Iniciar Sesión">
+                    <User size={22}/>
+                </button>
+            )}
+          </div>
+
+          {/* Ubicación */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            <button 
+                onClick={() => { vibrate(30); setIsFoodTrucksOpen(true); }}
+                className={`relative ${
+                    locationPermission === 'prompt' ? 'text-gray-600 hover:text-orange-500' :
+                    locationPermission === 'requesting' ? 'text-orange-500 animate-pulse' :
+                    locationPermission === 'granted' && userLocation ? 'text-green-500' : 'text-gray-600 hover:text-orange-500'
+                }`}
+                title="Food Trucks Cercanos"
+            >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+                {nearbyTrucks.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                        {nearbyTrucks.length}
+                    </span>
+                )}
+            </button>
+          </div>
+          
+          {/* Redes Sociales */}
+          <div className="flex items-center gap-3 ml-4">
+            {/* Instagram */}
+            <a 
+                href="https://www.instagram.com/la_ruta_11/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="instagram-gradient hover:scale-110 transition-transform"
+                title="Síguenos en Instagram"
+            >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="url(#instagram-gradient)">
+                    <defs>
+                        <linearGradient id="instagram-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#f09433" />
+                            <stop offset="25%" stopColor="#e6683c" />
+                            <stop offset="50%" stopColor="#dc2743" />
+                            <stop offset="75%" stopColor="#cc2366" />
+                            <stop offset="100%" stopColor="#bc1888" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+            </a>
+            
+            {/* WhatsApp */}
+            <a 
+                href="https://wa.me/56936227422" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:scale-110 transition-transform"
+                title="Contáctanos por WhatsApp"
+            >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="#25D366">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                </svg>
+            </a>
+          </div>
+
+          {/* Logo */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            <img src="https://laruta11-images.s3.amazonaws.com/menu/logo.png" alt="La Ruta 11" style={{width: 'clamp(24px, 6vw, 28px)', height: 'clamp(24px, 6vw, 28px)'}} />
+            <h1 className="font-extrabold text-orange-500" style={{fontSize: 'clamp(16px, 4.5vw, 20px)'}}>
+              La Ruta 11
+            </h1>
+          </div>
+
+          {/* Notificaciones */}
+          <div className="flex items-center">
+            <button 
+                onClick={() => { vibrate(30); setIsNotificationsOpen(true); }}
+                className="text-gray-600 hover:text-orange-500 relative" 
+                title="Notificaciones"
+            >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                </svg>
+                {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full flex items-center justify-center" style={{fontSize: 'clamp(8px, 2vw, 10px)', width: 'clamp(14px, 3.5vw, 16px)', height: 'clamp(14px, 3.5vw, 16px)'}}>
+                        {unreadCount}
+                    </span>
+                )}
+            </button>
+          </div>
+          
+          {/* Carro */}
+          <div className="flex items-center">
+            <button onClick={() => { vibrate(30); setIsCartOpen(true); }} className="text-gray-600 hover:text-orange-500 relative">
+                <ShoppingCart size={24}/>
+                {cartItemCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center animate-fade-in" style={{fontSize: 'clamp(9px, 2.2vw, 11px)', width: 'clamp(16px, 4vw, 20px)', height: 'clamp(16px, 4vw, 20px)'}}>
+                        {cartItemCount}
+                    </span>
+                )}
+            </button>
+          </div>
+        </div>
+      </header>
+      
+      <main className="pt-20 pb-32 px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto">
+        {searchQuery ? (
+          <div>
+            <h2 className="text-xl font-bold text-gray-800 mb-4 px-2">
+              Resultados para "{searchQuery}" ({filteredProducts.length})
+            </h2>
+            {filteredProducts.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 xl:gap-8">
+                {filteredProducts.map(product => (
+                  <MenuItem
+                    key={product.id}
+                    product={product}
+                    onSelect={setSelectedProduct}
+                    onAddToCart={handleAddToCart}
+                    onRemoveFromCart={handleRemoveFromCart}
+                    quantity={getProductQuantity(product.id)}
+                    isLiked={likedProducts.has(product.id)}
+                    handleLike={handleLike}
+                    setReviewsModalProduct={setReviewsModalProduct}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Search className="mx-auto mb-4 text-gray-400" size={48} />
+                <p className="text-gray-600">No se encontraron productos</p>
+                <p className="text-sm text-gray-500 mt-1">Intenta con otros términos de búsqueda</p>
+              </div>
+            )}
+          </div>
+        ) : (activeCategory === 'churrascos' || activeCategory === 'hamburguesas' || activeCategory === 'la_ruta_11' || activeCategory === 'completos' || activeCategory === 'papas_y_snacks' || activeCategory === 'Combos') ? (
+            <div className="space-y-8">
+                {(() => {
+                  const categoryData = menuWithImages[activeCategory];
+                  if (!categoryData) return null;
+                  let orderedEntries = Object.entries(categoryData);
+                  
+                  // Orden específico para completos
+                  if (activeCategory === 'completos') {
+                    orderedEntries = [
+                      ['tradicionales', categoryData.tradicionales || []],
+                      ['al vapor', categoryData['al vapor'] || []]
+                    ];
+                  }
+                  
+                  // Para Combos, usar las subcategorías reales de la base de datos
+                  if (activeCategory === 'papas_y_snacks') {
+                    // No filtrar, mostrar todas las subcategorías que vengan de la API
+                    // La API ya debe devolver los productos organizados por subcategoría
+                  }
+                  
+                  return orderedEntries
+                    .filter(([subCategory, products]) => products && products.length > 0)
+                    .map(([subCategory, products]) => (
+                    <section key={subCategory} id={subCategory}>
+                        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-800 mb-4 capitalize border-b-2 border-orange-500 pb-2 px-2">{subCategory}</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 xl:gap-8 mt-4">
+                            {products.map(product => (
+                                <MenuItem
+                                    key={product.id}
+                                    product={product}
+                                    type={product.subcategory_name || subCategory}
+                                    onSelect={setSelectedProduct}
+                                    onAddToCart={handleAddToCart}
+                                    onRemoveFromCart={handleRemoveFromCart}
+                                    quantity={getProductQuantity(product.id)}
+                                    isLiked={likedProducts.has(product.id)}
+                                    handleLike={handleLike}
+                                    setReviewsModalProduct={setReviewsModalProduct}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                  ));
+                })()}
+            </div>
+        ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 xl:gap-8">
+                {productsToShow.map(product => (
+                    <MenuItem
+                        key={product.id}
+                        product={product}
+                        onSelect={setSelectedProduct}
+                        onAddToCart={handleAddToCart}
+                        onRemoveFromCart={handleRemoveFromCart}
+                        quantity={getProductQuantity(product.id)}
+                        isLiked={likedProducts.has(product.id)}
+                        handleLike={handleLike}
+                        setReviewsModalProduct={setReviewsModalProduct}
+                    />
+                ))}
+            </div>
+        )}
+      </main>
+
+      {/* Barra de búsqueda independiente */}
+      <div className={`fixed bottom-20 left-4 right-4 z-30 bg-white border border-gray-200 rounded-full shadow-lg transition-transform duration-300 lg:left-1/2 lg:transform lg:-translate-x-1/2 lg:max-w-md ${isNavVisible ? 'translate-y-0' : 'translate-y-full'}`}>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+          <input
+            type="text"
+            placeholder="Buscar productos..."
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+            onFocus={() => {
+              if (searchQuery && suggestions.length > 0) {
+                setShowSuggestions(true);
+              }
+            }}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+            className="w-full pl-9 pr-8 py-2 bg-transparent rounded-full text-sm focus:outline-none transition-all"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => handleSearch('')}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        {/* Sugerencias */}
+        {showSuggestions && (
+          <div className="absolute bottom-full left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto mb-2">
+            {suggestions.map(product => (
+              <button
+                key={product.id}
+                onClick={() => selectSuggestion(product)}
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 flex items-center gap-3"
+              >
+                {product.image ? (
+                  <img src={product.image} alt={product.name} className="w-8 h-8 object-cover rounded" />
+                ) : (
+                  <div className="w-8 h-8 bg-gray-200 rounded"></div>
+                )}
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-800">{product.name}</p>
+                  <p className="text-xs text-gray-500">{categoryDisplayNames[product.category]}</p>
+                </div>
+                <p className="text-sm font-bold text-orange-500">${product.price.toLocaleString('es-CL')}</p>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <nav className={`fixed bottom-0 left-0 right-0 z-40 transition-transform duration-300 lg:left-1/2 lg:transform lg:-translate-x-1/2 lg:max-w-4xl lg:rounded-t-2xl ${isNavVisible ? 'translate-y-0' : 'translate-y-16'}`}>
+        <div className="bg-white border-t border-gray-200/50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] rounded-t-xl">
+          <div className="flex justify-around items-center overflow-x-auto px-1 py-2">
+          {mainCategories.map(cat => (
+            <button
+              key={cat}
+              onClick={() => { vibrate(30); setActiveCategory(cat); }}
+              className={`flex flex-col items-center justify-center flex-1 min-w-[50px] py-1 transition-all duration-200 text-xs font-medium hover:scale-105 rounded-lg relative ${
+                activeCategory === cat
+                  ? ''
+                  : 'text-gray-700 hover:text-orange-500 hover:bg-orange-50'
+              }`}
+            >
+              {activeCategory === cat && (
+                <div className="absolute -top-0 left-0 right-0 h-1 bg-orange-500"></div>
+              )}
+              <div 
+                className="flex items-center justify-center h-6 mb-1"
+                style={{color: activeCategory === cat ? categoryColors[cat] : '#374151'}}
+              >
+                {categoryIcons[cat]}
+              </div>
+              <span 
+                className="text-[9px] sm:text-[10px] leading-tight text-center max-w-full break-words"
+                style={activeCategory === cat ? (
+                  cat === 'la_ruta_11' ? {
+                    color: '#dc2626'
+                  } : {
+                    background: 'linear-gradient(135deg, #dc2626, #ea580c, #f97316)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }
+                ) : {}}
+              >
+                {categoryDisplayNames[cat]}
+              </span>
+            </button>
+          ))}
+          </div>
+        </div>
+      </nav>
+
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      <FoodTrucksModal 
+        isOpen={isFoodTrucksOpen} 
+        onClose={() => setIsFoodTrucksOpen(false)}
+        trucks={nearbyTrucks}
+        userLocation={userLocation}
+        deliveryZone={deliveryZone}
+      />
+      <NotificationsModal 
+        isOpen={isNotificationsOpen} 
+        onClose={() => setIsNotificationsOpen(false)}
+        notifications={notifications}
+        onMarkAllRead={async () => {
+          try {
+            const response = await fetch('/api/mark_notifications_read.php', { method: 'POST' });
+            const data = await response.json();
+            if (data.success) {
+              setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+              setUnreadCount(0);
+            }
+          } catch (error) {
+            console.error('Error marking notifications as read:', error);
+          }
+        }}
+      />
+      <SecurityModal 
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        type="logout"
+        onConfirm={handleLogout}
+      />
+      <SecurityModal 
+        isOpen={isDeleteAccountModalOpen}
+        onClose={() => setIsDeleteAccountModalOpen(false)}
+        type="delete"
+        onConfirm={handleDeleteAccount}
+      />
+      <SaveChangesModal 
+        isOpen={isSaveChangesModalOpen}
+        onClose={() => setIsSaveChangesModalOpen(false)}
+        onSave={handleSaveChanges}
+        onDiscard={handleDiscardChanges}
+      />
+      <ProfileModal 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+        user={user}
+        setUser={setUser}
+        userLocation={userLocation}
+        locationPermission={locationPermission}
+        requestLocation={requestLocation}
+        setUserLocation={setUserLocation}
+        setLocationPermission={setLocationPermission}
+        hasProfileChanges={hasProfileChanges}
+        setHasProfileChanges={setHasProfileChanges}
+        setIsSaveChangesModalOpen={setIsSaveChangesModalOpen}
+        setIsLogoutModalOpen={setIsLogoutModalOpen}
+        setIsDeleteAccountModalOpen={setIsDeleteAccountModalOpen}
+        currentSessionTime={currentSessionTime}
+        userOrders={userOrders}
+        userStats={userStats}
+        showAllOrders={showAllOrders}
+        setShowAllOrders={setShowAllOrders}
+        loadUserOrders={loadUserOrders}
+      />
+      <ProductDetailModal 
+        product={selectedProduct} 
+        onClose={() => setSelectedProduct(null)}
+        onAddToCart={handleAddToCart}
+        onRemoveFromCart={handleRemoveFromCart}
+        getProductQuantity={getProductQuantity}
+        activeCategory={activeCategory}
+        comboItems={comboItems}
+        cart={cart}
+        onZoom={(product, total) => setZoomedProduct({ product, total })}
+        setReviewsModalProduct={setReviewsModalProduct}
+        user={user}
+      />
+       <ImageFullscreenModal 
+        product={zoomedProduct?.product} 
+        total={zoomedProduct?.total}
+        onClose={() => setZoomedProduct(null)} 
+      />
+      <CartModal
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cart={cart}
+        onAddToCart={handleAddToCart}
+        onRemoveFromCart={handleRemoveFromCart}
+        cartTotal={cartTotal}
+        onCheckout={handleCheckout}
+      />
+      
+      {/* Checkout Modal */}
+      {showCheckout && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center animate-fade-in">
+          <div className="bg-white w-full max-w-md mx-4 rounded-2xl flex flex-col animate-slide-up max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-800">Finalizar Pedido</h2>
+                <button onClick={() => setShowCheckout(false)} className="p-1 text-gray-400 hover:text-gray-600">
+                  <X size={24} />
+                </button>
+              </div>
+              
+              {/* Tipo de entrega */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Tipo de Entrega</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCustomerInfo({...customerInfo, deliveryType: 'delivery'})}
+                    className={`p-3 border-2 rounded-lg text-center transition-colors ${
+                      customerInfo.deliveryType === 'delivery' 
+                        ? 'border-orange-500 bg-orange-50 text-orange-700' 
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="flex justify-center mb-2">
+                      <Bike size={32} className="text-red-500" />
+                    </div>
+                    <div className="font-semibold">Delivery</div>
+                    <div className="text-xs text-gray-500">Entrega a domicilio</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCustomerInfo({...customerInfo, deliveryType: 'pickup'})}
+                    className={`p-3 border-2 rounded-lg text-center transition-colors ${
+                      customerInfo.deliveryType === 'pickup' 
+                        ? 'border-orange-500 bg-orange-50 text-orange-700' 
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="flex justify-center mb-2">
+                      <Caravan size={32} className="text-red-500" />
+                    </div>
+                    <div className="font-semibold">Retiro</div>
+                    <div className="text-xs text-gray-500">Retiro en local</div>
+                  </button>
+                </div>
+              </div>
+              
+              <div className="space-y-4 mb-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Datos del Cliente</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo *</label>
+                  <input
+                    type="text"
+                    value={customerInfo.name || user?.nombre || ''}
+                    onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none ${
+                      user ? 'border-gray-200 bg-gray-50 text-gray-600 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-orange-500'
+                    }`}
+                    placeholder="Tu nombre completo"
+                    readOnly={!!user}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
+                  <input
+                    type="tel"
+                    value={customerInfo.phone || user?.telefono || ''}
+                    onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="+56 9 1234 5678"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={customerInfo.email || user?.email || ''}
+                    onChange={(e) => setCustomerInfo({...customerInfo, email: e.target.value})}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none ${
+                      user ? 'border-gray-200 bg-gray-50 text-gray-600 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-orange-500'
+                    }`}
+                    placeholder="tu@email.com"
+                    readOnly={!!user}
+                  />
+                </div>
+                
+                {/* Dirección para delivery */}
+                {customerInfo.deliveryType === 'delivery' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Dirección de entrega *</label>
+                    <input
+                      type="text"
+                      id="deliveryAddress"
+                      value={customerInfo.address || ''}
+                      onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      placeholder="Buscar dirección..."
+                      required
+                    />
+                    {nearbyTrucks.length > 0 && (
+                      <p className="text-xs text-blue-600 mt-1">
+                        🚚 Costo de delivery: ${parseInt(nearbyTrucks[0].tarifa_delivery || 0).toLocaleString('es-CL')}
+                      </p>
+                    )}
+                    {nearbyTrucks.length === 0 && (
+                      <p className="text-xs text-red-600 mt-1">
+                        ⚠️ No hay food trucks disponibles para delivery
+                      </p>
+                    )}
+                  </div>
+                )}
+                
+                {/* Horario de retiro */}
+                {customerInfo.deliveryType === 'pickup' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Horario de retiro *</label>
+                    <select
+                      value={customerInfo.pickupTime || ''}
+                      onChange={(e) => setCustomerInfo({...customerInfo, pickupTime: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      required
+                    >
+                      <option value="">Seleccionar horario</option>
+                      {(() => {
+                        const now = new Date();
+                        const currentHour = now.getHours();
+                        const currentMinute = now.getMinutes();
+                        const closeHour = 22; // Cierre a las 22:00
+                        const slots = [];
+                        
+                        // Generar slots cada 30 minutos desde ahora + 30 min hasta 1 hora antes del cierre
+                        let startHour = currentHour;
+                        let startMinute = currentMinute + 30;
+                        
+                        if (startMinute >= 60) {
+                          startHour += 1;
+                          startMinute -= 60;
+                        }
+                        
+                        // Redondear a la media hora más cercana
+                        startMinute = startMinute >= 30 ? 30 : 0;
+                        if (startMinute === 0 && currentMinute > 30) {
+                          startHour += 1;
+                        }
+                        
+                        for (let hour = startHour; hour < closeHour; hour++) {
+                          for (let minute of [0, 30]) {
+                            if (hour === startHour && minute < startMinute) continue;
+                            if (hour === closeHour - 1 && minute === 30) continue; // No permitir 30 min antes del cierre
+                            
+                            const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                            const displayTime = `${timeStr} - ${(hour + (minute === 30 ? 1 : 0)).toString().padStart(2, '0')}:${(minute === 30 ? '00' : '30')}`;
+                            slots.push(<option key={timeStr} value={timeStr}>{displayTime}</option>);
+                          }
+                        }
+                        
+                        return slots;
+                      })()
+                      }
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Tiempo de preparación: 15-30 minutos</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="border-t pt-4 mb-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Tu Pedido</h3>
+                <div className="space-y-2 mb-4">
+                  {cart.map(item => (
+                    <div key={item.id} className="flex justify-between py-1">
+                      <span className="text-sm">{item.name} x{item.quantity}</span>
+                      <span className="text-sm font-medium">${(item.price * item.quantity).toLocaleString('es-CL')}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-2 border-t pt-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="font-semibold">${cartSubtotal.toLocaleString('es-CL')}</span>
+                  </div>
+                  {customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Delivery:</span>
+                      <span className="font-semibold">${parseInt(nearbyTrucks[0].tarifa_delivery || 0).toLocaleString('es-CL')}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center text-lg font-bold border-t pt-2">
+                    <span>Total:</span>
+                    <span className="text-green-600">${cartTotal.toLocaleString('es-CL')}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={handleCreateOrder}
+                  disabled={(!customerInfo.name && !user?.nombre) || (!customerInfo.phone && !user?.telefono)}
+                  className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/>
+                    <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd"/>
+                  </svg>
+                  Continuar al Pago
+                </button>
+                
+                <button
+                  onClick={() => {
+                    handlePaymentSuccess();
+                  }}
+                  className="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                >
+                  Pagar en el Local
+                </button>
+                
+                <button
+                  onClick={() => {
+                    const orderNumber = 'R11-' + Date.now();
+                    const customerName = customerInfo.name || user?.nombre || 'Cliente';
+                    const customerPhone = customerInfo.phone || user?.telefono || '';
+                    const deliveryType = customerInfo.deliveryType || 'pickup';
+                    const currentDeliveryFee = deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
+                    
+                    let message = `**NUEVO PEDIDO - LA RUTA 11**\n\n`;
+                    message += `**Pedido:** ${orderNumber}\n`;
+                    message += `**Cliente:** ${customerName}\n`;
+                    if (customerPhone) message += `**Telefono:** ${customerPhone}\n`;
+                    
+                    if (deliveryType === 'delivery') {
+                      message += `**Tipo:** Delivery\n`;
+                      if (customerInfo.address) message += `**Direccion:** ${customerInfo.address}\n`;
+                    } else {
+                      message += `**Tipo:** Retiro en Food Truck\n`;
+                      if (customerInfo.pickupTime) message += `**Hora de retiro:** ${customerInfo.pickupTime}\n`;
+                    }
+                    
+                    message += `\n**PRODUCTOS:**\n`;
+                    
+                    cart.forEach((item, index) => {
+                      message += `${index + 1}. ${item.name} x${item.quantity} - $${(item.price * item.quantity).toLocaleString('de-DE')}\n`;
+                    });
+                    
+                    if (deliveryType === 'delivery' && nearbyTrucks.length > 0) {
+                      const deliveryFeeForMessage = parseInt(nearbyTrucks[0].tarifa_delivery || 0);
+                      if (deliveryFeeForMessage > 0) {
+                        message += `\n**Subtotal productos:** $${(cartTotal - deliveryFeeForMessage).toLocaleString('de-DE')}\n`;
+                        message += `**Delivery:** $${deliveryFeeForMessage.toLocaleString('de-DE')}\n`;
+                      }
+                    }
+                    
+                    if (deliveryFee > 0) {
+                      message += `\n**Subtotal productos:** $${cartSubtotal.toLocaleString('de-DE')}\n`;
+                      message += `**Delivery:** $${deliveryFee.toLocaleString('de-DE')}\n`;
+                    }
+                    message += `\n**TOTAL: $${cartTotal.toLocaleString('de-DE')}**\n\n`;
+                    message += `Pedido realizado desde la app web.`;
+                    
+                    const whatsappUrl = `https://wa.me/56936227422?text=${encodeURIComponent(message)}`;
+                    window.open(whatsappUrl, '_blank');
+                    
+                    // Limpiar carrito después de enviar
+                    setTimeout(() => {
+                      setCart([]);
+                      setShowCheckout(false);
+                      alert('Pedido enviado por WhatsApp. Te contactaremos pronto!');
+                    }, 1000);
+                  }}
+                  disabled={(!customerInfo.name && !user?.nombre) || (customerInfo.deliveryType === 'pickup' && !customerInfo.pickupTime) || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
+                  className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                  </svg>
+                  Terminar Pedido (WhatsApp)
+                </button>
+              </div>
+              
+              <p className="text-xs text-gray-500 text-center mt-3">
+                🔒 Pago 100% seguro SSL con TUU Webpay
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Payment Modal with TUU Integration */}
+      {showPayment && currentOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center animate-fade-in">
+          <div className="bg-white w-full max-w-2xl mx-4 rounded-2xl flex flex-col animate-slide-up max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-800">Pagar Pedido #{currentOrder.order_number}</h2>
+              <button onClick={() => setShowPayment(false)} className="p-1 text-gray-400 hover:text-gray-600">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="flex-grow overflow-y-auto p-4">
+              <TUUPaymentIntegration
+                cartItems={cart}
+                total={cartTotal}
+                customerInfo={{
+                  name: customerInfo.name || user?.nombre || '',
+                  phone: customerInfo.phone || '',
+                  email: customerInfo.email || user?.email || '',
+                  table: 'Delivery'
+                }}
+                deliveryFee={deliveryFee}
+                onPaymentSuccess={handlePaymentSuccess}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      <OnboardingModal 
+        isOpen={showOnboarding}
+        onComplete={() => setShowOnboarding(false)}
+      />
+      <ReviewsModal 
+        product={reviewsModalProduct}
+        isOpen={!!reviewsModalProduct}
+        onClose={() => {
+          console.log('Closing reviews modal');
+          setReviewsModalProduct(null);
+        }}
+      />
+      {user && <OrderNotifications userId={user.id} onNotificationsUpdate={(notifs, unread) => {
+        setNotifications(notifs);
+        setUnreadCount(unread);
+      }} />}
+
+      <style>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes slide-up {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+        @keyframes confetti-fall {
+          0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
+        .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
+        @keyframes shimmer-sweep {
+          0% { transform: translateX(-100%) skewX(-15deg); }
+          100% { transform: translateX(200%) skewX(-15deg); }
+        }
+
+        .animate-shimmer-sweep {
+          animation: shimmer-sweep 2s ease-in-out infinite;
+        }
+        
+        @keyframes heartFloat {
+          0% { 
+            transform: translate(-50%, -50%) scale(0.8) rotate(0deg); 
+            opacity: 1; 
+          }
+          10% { 
+            transform: translate(-50%, -50%) scale(1.2) rotate(-5deg); 
+            opacity: 1; 
+          }
+          20% { 
+            transform: translate(-50%, -60%) scale(1) rotate(5deg); 
+            opacity: 1; 
+          }
+          40% { 
+            transform: translate(-50%, -80%) scale(0.9) rotate(-3deg); 
+            opacity: 0.8; 
+          }
+          60% { 
+            transform: translate(-50%, -120%) scale(0.7) rotate(2deg); 
+            opacity: 0.6; 
+          }
+          80% { 
+            transform: translate(-50%, -160%) scale(0.5) rotate(-1deg); 
+            opacity: 0.3; 
+          }
+          100% { 
+            transform: translate(-50%, -200%) scale(0.2) rotate(0deg); 
+            opacity: 0; 
+          }
+        }
+        
+        .animate-heart-float {
+          animation: heartFloat 2s ease-out forwards;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #aaa; }
+        
+        html, body { background: #ffffff !important; }
+      `}</style>
+    </div>
+  );
+}

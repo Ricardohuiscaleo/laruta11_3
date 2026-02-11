@@ -1,0 +1,627 @@
+---
+---
+
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Admin Concurso - La Ruta 11</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #111827; color: white; margin: 0; min-height: 100vh; }
+        .container { max-width: 72rem; margin: 0 auto; padding: 1.5rem; }
+        .card { background: #1f2937; border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+        .btn { padding: 1rem 1.5rem; border: none; border-radius: 0.75rem; cursor: pointer; font-weight: bold; font-size: 1.125rem; transition: all 0.3s; }
+        .btn:hover { transform: scale(1.05); }
+        .btn-green { background: #059669; color: white; }
+        .btn-green:hover { background: #047857; }
+        .btn-red { background: #dc2626; color: white; }
+        .btn-red:hover { background: #b91c1c; }
+        .grid { display: grid; gap: 1rem; }
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-cols-2 { grid-template-columns: 1fr 1fr; }
+        .grid-cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .text-center { text-align: center; }
+        .text-5xl { font-size: 3rem; }
+        .text-4xl { font-size: 2.25rem; }
+        .text-2xl { font-size: 1.5rem; }
+        .text-xl { font-size: 1.25rem; }
+        .text-lg { font-size: 1.125rem; }
+        .text-sm { font-size: 0.875rem; }
+        .font-black { font-weight: 900; }
+        .font-bold { font-weight: bold; }
+        .text-yellow-400 { color: #fbbf24; }
+        .text-green-400 { color: #34d399; }
+        .text-blue-400 { color: #60a5fa; }
+        .text-gray-300 { color: #d1d5db; }
+        .text-gray-400 { color: #9ca3af; }
+        .bg-gray-700 { background: #374151; }
+        .bg-gray-800 { background: #1f2937; }
+        .bg-gray-600 { background: #4b5563; }
+        .bg-gray-500 { background: #6b7280; }
+        .bg-green-600 { background: #059669; }
+        .bg-blue-600 { background: #2563eb; }
+        .bg-red-600 { background: #dc2626; }
+        .bg-yellow-600 { background: #d97706; }
+        .bg-purple-600 { background: #9333ea; }
+        .hover\:bg-purple-700:hover { background: #7c3aed; }
+        .border-l-4 { border-left: 4px solid; }
+        .border-green-500 { border-color: #10b981; }
+        .border-red-500 { border-color: #ef4444; }
+        .border-yellow-400 { border-color: #fbbf24; }
+        .rounded-lg { border-radius: 0.5rem; }
+        .rounded-xl { border-radius: 0.75rem; }
+        .rounded-full { border-radius: 9999px; }
+        .p-4 { padding: 1rem; }
+        .p-6 { padding: 1.5rem; }
+        .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .mt-4 { margin-top: 1rem; }
+        .flex { display: flex; }
+        .justify-between { justify-content: space-between; }
+        .items-center { align-items: center; }
+        .space-y-4 > * + * { margin-top: 1rem; }
+        .cursor-pointer { cursor: pointer; }
+        .transition-all { transition: all 0.3s; }
+        .transform { transform: translateZ(0); }
+        .hover\:scale-105:hover { transform: scale(1.05); }
+        .hover\:bg-gray-500:hover { background: #6b7280; }
+        .opacity-60 { opacity: 0.6; }
+        .winner-glow { animation: glow 1s ease-in-out infinite alternate; }
+        @keyframes glow { 
+            from { box-shadow: 0 0 10px #22c55e; } 
+            to { box-shadow: 0 0 20px #22c55e, 0 0 30px #22c55e; } 
+        }
+        .fixed { position: fixed; }
+        .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+        .z-50 { z-index: 50; }
+        .max-w-md { max-width: 28rem; }
+        .w-full { width: 100%; }
+        .space-y-2 > * + * { margin-top: 0.5rem; }
+        .space-y-4 > * + * { margin-top: 1rem; }
+        .flex-1 { flex: 1 1 0%; }
+        .gap-4 { gap: 1rem; }
+        .bg-black { background: black; }
+        .bg-opacity-75 { background-color: rgba(0, 0, 0, 0.75); }
+
+    </style>
+</head>
+<body>
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
+        <div class="bg-gray-800 rounded-xl p-8 max-w-md w-full mx-4">
+            <h2 class="text-2xl font-bold text-center mb-6 text-yellow-400">🔐 Acceso Admin Concurso</h2>
+            <div class="space-y-4">
+                <input type="text" id="username" placeholder="Usuario" 
+                       class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                <input type="password" id="password" placeholder="Contraseña" 
+                       class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                <button id="login-btn" class="w-full btn btn-green">
+                    🚀 Ingresar
+                </button>
+                <div id="login-error" class="text-red-400 text-sm text-center" style="display:none"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="main-content" class="container" style="display:none">
+        <h1 class="text-5xl font-black text-center text-yellow-400 mb-8">🎮 Admin Concurso</h1>
+        
+        <div class="card">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Estado del Torneo</h2>
+                <span id="status" class="px-4 py-2 rounded-full text-sm font-bold bg-blue-600">Preparando</span>
+            </div>
+            <div class="grid grid-cols-3 text-center gap-4">
+                <div class="bg-gray-700 rounded-lg p-4">
+                    <div id="count" class="text-4xl font-black text-green-400 mb-2">8</div>
+                    <div class="text-gray-300">Participantes Activos</div>
+                </div>
+                <div class="bg-gray-700 rounded-lg p-4">
+                    <div id="round" class="text-4xl font-black text-blue-400 mb-2">Cuartos</div>
+                    <div class="text-gray-300">Ronda Actual</div>
+                </div>
+                <div class="bg-gray-700 rounded-lg p-4">
+                    <div id="viewers" class="text-4xl font-black text-yellow-400 mb-2">0</div>
+                    <div class="text-gray-300">Viewers EN VIVO</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-2 mb-6">
+            <button id="start" class="btn btn-green">▶️ Iniciar Torneo</button>
+            <button id="reset" class="btn btn-red">🔄 Reiniciar Todo</button>
+        </div>
+        
+        <div class="mb-6 text-center">
+            <button id="refresh-participants" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg mr-2">
+                🔄 Actualizar Participantes desde DB
+            </button>
+            <button id="re-match" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg mr-2">
+                ⚖️ Re-emparejar por Pesos
+            </button>
+            <button id="clear-state" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">
+                🗑️ Limpiar Estado Guardado
+            </button>
+        </div>
+        
+
+
+        <div class="card">
+            <h2 class="text-2xl font-bold mb-4">Transmisión en Vivo</h2>
+            <div class="mb-4">
+                <label class="block text-sm font-bold mb-2">URL de YouTube (Live/Video)</label>
+                <input type="text" id="youtube-url" placeholder="https://www.youtube.com/watch?v=..." 
+                       class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                <button id="save-youtube" class="mt-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">
+                    📹 Guardar Video
+                </button>
+                <div id="youtube-status" class="mt-2 text-sm"></div>
+            </div>
+        </div>
+
+
+
+        <div class="card">
+            <h2 class="text-2xl font-bold mb-4">Participantes</h2>
+            <div id="participants" class="grid grid-2"></div>
+        </div>
+
+        <div class="card">
+            <h2 class="text-2xl font-bold mb-4">Enfrentamientos</h2>
+            <div id="matches" class="space-y-4"></div>
+            <div class="mt-6 text-center">
+                <button id="next-round" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg cursor-pointer transition-all duration-300 transform hover:scale-105" style="display:none">
+                    ➡️ Avanzar a Siguiente Etapa
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // @ts-nocheck
+        // Autenticación
+        function checkAuth() {
+            const token = localStorage.getItem('concurso_admin_token');
+            if (token === 'ruta11_concurso_2024') {
+                document.getElementById('login-modal').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                return true;
+            }
+            return false;
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('login-btn').onclick = function() {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const errorEl = document.getElementById('login-error');
+                
+                if (username === 'admin' && password === 'ruta11concurso') {
+                    localStorage.setItem('concurso_admin_token', 'ruta11_concurso_2024');
+                    document.getElementById('login-modal').style.display = 'none';
+                    document.getElementById('main-content').style.display = 'block';
+                    load();
+                } else {
+                    errorEl.textContent = '❌ Usuario o contraseña incorrectos';
+                    errorEl.style.display = 'block';
+                }
+            };
+            
+            document.getElementById('password').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('login-btn').click();
+                }
+            });
+            
+            if (!checkAuth()) {
+                document.getElementById('login-modal').style.display = 'flex';
+            } else {
+                load();
+                loadViewersCount();
+            }
+        });
+        
+        // Cargar conteo de viewers para admin
+        function loadViewersCount() {
+            fetch('/api/get_viewers_count.php?t=' + Date.now())
+                .then(function(r) { return r.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        document.getElementById('viewers').textContent = result.active_viewers;
+                    }
+                })
+                .catch(function() {
+                    document.getElementById('viewers').textContent = '?';
+                });
+        }
+        
+        // Variables para likes
+        var participantLikes = {};
+        
+        // Cargar likes de participantes
+        function loadParticipantLikes() {
+            fetch('/api/get_participant_likes.php?t=' + Date.now())
+                .then(function(r) { return r.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        participantLikes = result.likes;
+                        draw(); // Re-dibujar para mostrar likes actualizados
+                    }
+                })
+                .catch(function() {
+                    console.error('Error loading likes');
+                });
+        }
+        
+        // Actualizar viewers cada 5 segundos
+        setInterval(loadViewersCount, 5000);
+        // Actualizar likes cada 10 segundos
+        setInterval(loadParticipantLikes, 10000);
+        loadParticipantLikes(); // Cargar inicial
+        
+        // @ts-nocheck
+        var data = {
+            participants: [],
+            matches: [],
+            round: 'Cuartos',
+            status: 'preparing'
+        };
+
+        function makeMatches() {
+            var active = data.participants.filter(function(p) { return p.status === 'active'; });
+            
+            // Ordenar por peso para emparejar similares
+            active.sort(function(a, b) { 
+                var weightA = parseFloat(a.weight) || 70; // Default 70kg si no hay peso
+                var weightB = parseFloat(b.weight) || 70;
+                return weightA - weightB;
+            });
+            
+            if (active.length === 8) {
+                data.matches = [
+                    {id: 'Q1', p1: active[0], p2: active[1], winner: null, status: 'pending'}, // Pesos más bajos
+                    {id: 'Q2', p1: active[2], p2: active[3], winner: null, status: 'pending'},
+                    {id: 'Q3', p1: active[4], p2: active[5], winner: null, status: 'pending'},
+                    {id: 'Q4', p1: active[6], p2: active[7], winner: null, status: 'pending'}  // Pesos más altos
+                ];
+                data.round = 'Cuartos';
+            } else if (active.length === 4) {
+                data.matches = [
+                    {id: 'S1', p1: active[0], p2: active[1], winner: null, status: 'pending'},
+                    {id: 'S2', p1: active[2], p2: active[3], winner: null, status: 'pending'}
+                ];
+                data.round = 'Semifinales';
+            } else if (active.length === 2) {
+                data.matches = [{id: 'F1', p1: active[0], p2: active[1], winner: null, status: 'pending'}];
+                data.round = 'Final';
+            }
+        }
+
+        function draw() {
+            if (!data.participants) data.participants = [];
+            if (!data.matches) data.matches = [];
+            
+            // Participantes
+            var html = '';
+            data.participants.forEach(function(p) {
+                var emoji = p.status === 'active' ? '🟢' : p.status === 'eliminated' ? '🔴' : '👑';
+                var bgClass = p.status === 'active' ? 'bg-gray-700 border-green-500' : 
+                             p.status === 'eliminated' ? 'bg-gray-800 border-red-500 opacity-60' : 
+                             'bg-yellow-600 border-yellow-400 winner-glow';
+                
+                var imageHtml = p.image_url ? 
+                    '<img src="' + p.image_url + '" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; border: 2px solid #374151;" alt="' + p.name + '" onerror="this.style.display=\'none\'">' :
+                    '<div style="width: 40px; height: 40px; background: #4b5563; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;">👤</div>';
+                
+                var likes = participantLikes[p.id] || 0;
+                html += '<div class="' + bgClass + ' border-l-4 rounded-lg p-4">' +
+                    '<div class="flex justify-between items-center mb-2">' +
+                        '<div class="flex items-center gap-3">' +
+                            imageHtml +
+                            '<div class="font-bold text-lg">' + p.name + '</div>' +
+                        '</div>' +
+                        '<div class="flex items-center gap-2">' +
+                            '<div class="text-sm bg-red-500 text-white px-2 py-1 rounded-full">❤️ ' + likes + '</div>' +
+                            '<div class="text-2xl">' + emoji + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="text-sm text-gray-400 mb-2">Peso: ' + (p.weight || '70') + ' kg</div>' +
+                    '<div class="grid grid-cols-2 gap-2 mb-2">' +
+                        '<input type="text" value="' + p.name + '" onchange="window.updateParticipantName(\'' + p.id + '\', this.value)" ' +
+                        'class="p-2 bg-gray-600 border border-gray-500 rounded text-white text-sm" placeholder="Nombre">' +
+                        '<input type="number" value="' + (p.weight || '70') + '" onchange="window.updateParticipantWeight(\'' + p.id + '\', this.value)" ' +
+                        'class="p-2 bg-gray-600 border border-gray-500 rounded text-white text-sm" placeholder="Peso (kg)" min="40" max="150">' +
+                    '</div>' +
+                '</div>';
+            });
+            document.getElementById('participants').innerHTML = html;
+
+            // Matches
+            html = '';
+            data.matches.forEach(function(m) {
+                // Obtener nombres actuales de los participantes
+                var p1 = data.participants.find(function(p) { return p.id === m.p1.id; }) || m.p1;
+                var p2 = data.participants.find(function(p) { return p.id === m.p2.id; }) || m.p2;
+                
+                var p1win = m.winner && m.winner.id === p1.id;
+                var p2win = m.winner && m.winner.id === p2.id;
+                html += '<div class="bg-gray-700 rounded-lg p-6">' +
+                    '<div class="text-center font-bold text-xl mb-4 text-yellow-400">' + m.id + '</div>' +
+                    '<div class="grid grid-cols-2 gap-4">' +
+                        '<div class="' + (p1win ? 'bg-green-600 winner-glow' : 'bg-gray-600 hover:bg-gray-500') + ' p-4 rounded-lg cursor-pointer text-center transition-all transform hover:scale-105" onclick="window.selectWinner(\'' + m.id + '\',\'' + p1.id + '\')">' +
+                            (p1.image_url ? '<img src="' + p1.image_url + '" style="width: 50px; height: 50px; object-fit: cover; border-radius: 50%; margin: 0 auto 8px; border: 2px solid #374151;" alt="' + p1.name + '" onerror="this.style.display=\'none\'">' : '<div style="width: 50px; height: 50px; background: #4b5563; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">👤</div>') +
+                            '<div class="font-bold">' + p1.name + '</div><div class="text-sm text-gray-300">' + (p1.weight || '70') + ' kg</div>' +
+                        '</div>' +
+                        '<div class="' + (p2win ? 'bg-green-600 winner-glow' : 'bg-gray-600 hover:bg-gray-500') + ' p-4 rounded-lg cursor-pointer text-center transition-all transform hover:scale-105" onclick="window.selectWinner(\'' + m.id + '\',\'' + p2.id + '\')">' +
+                            (p2.image_url ? '<img src="' + p2.image_url + '" style="width: 50px; height: 50px; object-fit: cover; border-radius: 50%; margin: 0 auto 8px; border: 2px solid #374151;" alt="' + p2.name + '" onerror="this.style.display=\'none\'">' : '<div style="width: 50px; height: 50px; background: #4b5563; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">👤</div>') +
+                            '<div class="font-bold">' + p2.name + '</div><div class="text-sm text-gray-300">' + (p2.weight || '70') + ' kg</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="text-center mt-4">' +
+                        '<span class="px-3 py-1 rounded-full text-sm font-bold ' + (m.status === 'completed' ? 'bg-green-600' : 'bg-blue-600') + '">' +
+                            (m.status === 'completed' ? '✅ Completado' : '⏳ Pendiente') +
+                        '</span>' +
+                    '</div>' +
+                '</div>';
+            });
+            document.getElementById('matches').innerHTML = html;
+
+            // Status
+            var activeCount = data.participants.filter(function(p) { return p.status === 'active'; }).length;
+            document.getElementById('count').textContent = activeCount;
+            document.getElementById('round').textContent = data.round;
+            
+            var statusEl = document.getElementById('status');
+            var statusText = data.status === 'preparing' ? 'Preparando' : 
+                           data.status === 'active' ? 'En Curso' : 'Completado';
+            var statusClass = data.status === 'preparing' ? 'bg-blue-600' : 
+                            data.status === 'active' ? 'bg-green-600' : 'bg-red-600';
+            statusEl.textContent = statusText;
+            statusEl.className = 'px-4 py-2 rounded-full text-sm font-bold ' + statusClass;
+        }
+
+        window.selectWinner = function(matchId, winnerId) {
+            var match = data.matches.find(function(m) { return m.id === matchId; });
+            if (!match) return;
+
+            match.winner = match.p1.id === winnerId ? match.p1 : match.p2;
+            match.status = 'completed';
+
+            var loser = match.p1.id === winnerId ? match.p2 : match.p1;
+            var loserP = data.participants.find(function(p) { return p.id === loser.id; });
+            if (loserP) loserP.status = 'eliminated';
+
+            var allDone = data.matches.every(function(m) { return m.status === 'completed'; });
+            if (allDone) {
+                var winners = data.matches.map(function(m) { return m.winner; });
+                
+                if (winners.length === 1) {
+                    var champ = data.participants.find(function(p) { return p.id === winners[0].id; });
+                    if (champ) champ.status = 'champion';
+                    data.status = 'completed';
+                    document.getElementById('next-round').style.display = 'none';
+                } else {
+                    // Mostrar botón para avanzar manualmente
+                    document.getElementById('next-round').style.display = 'block';
+                }
+            } else {
+                document.getElementById('next-round').style.display = 'none';
+            }
+
+            draw();
+            save();
+        }
+
+        function save() {
+            fetch('/api/update_concurso_state.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            }).catch(console.error);
+        }
+
+        function loadRealParticipants() {
+            return fetch('/api/get_participantes_concurso.php')
+                .then(function(r) { return r.json(); })
+                .then(function(response) {
+                    if (response.participantes && response.participantes.length > 0) {
+                        // Convertir participantes reales al formato del torneo
+                        var realParticipants = response.participantes
+                            .filter(function(p) { return p.payment_status === 'paid'; }) // Solo pagados
+                            .slice(0, 8) // Máximo 8 participantes
+                            .map(function(p, index) {
+                                console.log('Participante:', p.nombre, 'Peso DB:', p.peso, 'Peso parseado:', parseFloat(p.peso) || 70);
+                                return {
+                                    id: 'p' + p.id,
+                                    name: p.nombre,
+                                    seed: index + 1,
+                                    status: 'active',
+                                    realId: p.id,
+                                    image_url: p.image_url,
+                                    weight: parseFloat(p.peso) || 70
+                                };
+                            });
+                        
+                        // Completar con participantes dummy si faltan
+                        while (realParticipants.length < 8) {
+                            var dummyIndex = realParticipants.length;
+                            realParticipants.push({
+                                id: 'dummy' + dummyIndex,
+                                name: 'Participante ' + (dummyIndex + 1),
+                                seed: dummyIndex + 1,
+                                status: 'active',
+                                weight: 70
+                            });
+                        }
+                        
+                        return realParticipants;
+                    }
+                    return [];
+                })
+                .catch(function() {
+                    return [];
+                });
+        }
+        
+        function load() {
+            // Primero cargar participantes reales
+            loadRealParticipants().then(function(realParticipants) {
+                console.log('Participantes reales cargados:', realParticipants);
+                
+                // Siempre usar participantes reales, pero preservar estado del torneo si existe
+                fetch('/api/get_concurso_live.php')
+                    .then(function(r) { return r.json(); })
+                    .then(function(result) {
+                        if (result && result.participants && result.matches && result.participants.length > 0) {
+                            // Actualizar nombres, imágenes y pesos con datos reales
+                            result.participants.forEach(function(savedP, index) {
+                                if (realParticipants[index]) {
+                                    savedP.name = realParticipants[index].name;
+                                    savedP.image_url = realParticipants[index].image_url;
+                                    savedP.realId = realParticipants[index].realId;
+                                    savedP.weight = realParticipants[index].weight;
+                                }
+                            });
+                            data = result;
+                        } else {
+                            // Crear nuevo torneo con participantes reales
+                            data.participants = realParticipants;
+                            makeMatches();
+                        }
+                        draw();
+                    })
+                    .catch(function() {
+                        data.participants = realParticipants;
+                        makeMatches();
+                        draw();
+                    });
+            });
+        }
+
+        document.getElementById('start').onclick = function() {
+            data.status = 'active';
+            draw();
+            save();
+        };
+
+        document.getElementById('reset').onclick = function() {
+            if (confirm('¿Reiniciar todo el torneo?')) {
+                data.participants.forEach(function(p) { p.status = 'active'; });
+                data.status = 'preparing';
+                makeMatches();
+                draw();
+                save();
+            }
+        };
+        
+        document.getElementById('next-round').onclick = function() {
+            if (confirm('¿Avanzar a la siguiente etapa?')) {
+                makeMatches();
+                draw();
+                save();
+            }
+        };
+        
+        document.getElementById('refresh-participants').onclick = function() {
+            if (confirm('¿Actualizar participantes con datos reales de la base de datos?')) {
+                loadRealParticipants().then(function(realParticipants) {
+                    console.log('Forzando actualización con participantes reales:', realParticipants);
+                    data.participants = realParticipants;
+                    makeMatches();
+                    draw();
+                    save();
+                });
+            }
+        };
+        
+        document.getElementById('clear-state').onclick = function() {
+            if (confirm('¿Limpiar completamente el estado guardado del torneo? Esto reiniciará todo.')) {
+                fetch('/api/clear_concurso_state.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        alert('✅ Estado limpiado. Recargando...');
+                        location.reload();
+                    } else {
+                        alert('❌ Error: ' + result.error);
+                    }
+                })
+                .catch(function() {
+                    alert('❌ Error de conexión');
+                });
+            }
+        };
+        
+        document.getElementById('re-match').onclick = function() {
+            if (confirm('¿Re-emparejar participantes por pesos similares?')) {
+                makeMatches();
+                draw();
+                save();
+                alert('✅ Participantes re-emparejados por peso');
+            }
+        };
+        
+        // Guardar YouTube
+        document.getElementById('save-youtube').onclick = function() {
+            var url = document.getElementById('youtube-url').value;
+            if (!url) {
+                alert('Ingresa una URL de YouTube');
+                return;
+            }
+            
+            fetch('/api/save_youtube_live.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({url: url})
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(result) {
+                var status = document.getElementById('youtube-status');
+                if (result.success) {
+                    status.textContent = '✅ Video guardado: ' + result.embed_url;
+                    status.className = 'mt-2 text-sm text-green-400';
+                } else {
+                    status.textContent = '❌ Error: ' + result.error;
+                    status.className = 'mt-2 text-sm text-red-400';
+                }
+            })
+            .catch(function() {
+                document.getElementById('youtube-status').textContent = '❌ Error de conexión';
+            });
+        };
+        
+        // Actualizar nombre de participante
+        window.updateParticipantName = function(participantId, newName) {
+            var participant = data.participants.find(function(p) { return p.id === participantId; });
+            if (participant) {
+                participant.name = newName;
+                draw();
+                save();
+            }
+        };
+        
+        // Actualizar peso de participante
+        window.updateParticipantWeight = function(participantId, newWeight) {
+            var participant = data.participants.find(function(p) { return p.id === participantId; });
+            if (participant) {
+                participant.weight = parseFloat(newWeight) || 70;
+                makeMatches(); // Re-emparejar por pesos
+                draw();
+                save();
+            }
+        };
+
+
+    </script>
+</body>
+</html>

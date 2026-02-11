@@ -1,0 +1,57 @@
+---
+// Dashboard.astro - Componente para vista Dashboard
+---
+
+<div class="dashboard-container">
+  <div class="dashboard-stats">
+    <div class="stat-card">
+      <h3><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M6 17l4-4 4 4 6-6"/><path d="M18 7h3v5"/></svg> Ventas Hoy</h3>
+      <p class="stat-value">$0</p>
+    </div>
+    <div class="stat-card">
+      <h3><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M5 10v2a7 7 0 0 0 14 0v-2"/><path d="M15 7v5a3 3 0 0 1-6 0v-5"/></svg> Productos</h3>
+      <p class="stat-value">0</p>
+    </div>
+    <div class="stat-card">
+      <h3><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6 6"/><path d="M9 9 3 3"/></svg> Pedidos</h3>
+      <p class="stat-value">0</p>
+    </div>
+  </div>
+  <p style="color: #787774; margin-top: 24px;">Panel de control - Estadísticas en desarrollo</p>
+</div>
+
+<style>
+  .dashboard-container {
+    padding: 24px;
+    background: #f7f6f3;
+    min-height: calc(100vh - 200px);
+  }
+  .dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 3px;
+    border: 1px solid #e9e9e7;
+  }
+  .stat-card h3 {
+    font-size: 14px;
+    color: #787774;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .icon {
+    flex-shrink: 0;
+  }
+  .stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #37352f;
+  }
+</style>
