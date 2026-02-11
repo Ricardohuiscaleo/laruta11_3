@@ -12,20 +12,20 @@ RUN docker-php-ext-install mysqli pdo pdo_mysql
 RUN a2enmod rewrite
 
 # Copiar código
-WORKDIR /var/www/html
+WORKDIR /app
 COPY . .
 
 # Instalar dependencias y build
 RUN npm install && npm run build
 
-# Configurar Apache para servir desde dist
-RUN rm -rf /var/www/html && \
-    mv dist /var/www/html
+# Mover build a Apache
+RUN rm -rf /var/www/html/* && \
+    cp -r dist/* /var/www/html/ && \
+    cp -r api /var/www/html/ && \
+    cp load-env.php /var/www/html/ && \
+    cp -r vendor /var/www/html/
 
-# Copiar archivos PHP (api, config, etc)
-COPY api /var/www/html/api
-COPY load-env.php /var/www/html/
-COPY vendor /var/www/html/vendor
+WORKDIR /var/www/html
 
 EXPOSE 80
 
