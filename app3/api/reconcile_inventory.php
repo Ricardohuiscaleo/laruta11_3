@@ -10,7 +10,7 @@ header('Content-Type: application/json');
 $config_paths = [
     __DIR__ . '/../config.php',
     __DIR__ . '/../../config.php',
-    __DIR__ . '/../../../config.php'
+    __DIR__ . '/../config.php'
 ];
 
 $config = null;

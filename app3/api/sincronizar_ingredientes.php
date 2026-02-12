@@ -10,7 +10,7 @@ header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers
 if (file_exists(__DIR__ . '/../config.php')) {
     require_once __DIR__ . '/../config.php';
 } else {
-    $config_path = __DIR__ . '/../../../config.php';
+    $config_path = __DIR__ . '/../config.php';
     if (file_exists($config_path)) {
         $config = require_once $config_path;
         $conn = mysqli_connect(

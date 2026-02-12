@@ -6,7 +6,7 @@ header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
 // Cargar credenciales desde config.php
-$config = require_once __DIR__ . '/../../../config.php';
+$config = require_once __DIR__ . '/../config.php';
 $admin_users = $config['admin_users'];
 
 try {

@@ -12,7 +12,7 @@ require_once __DIR__ . '/../config.php';
 // Si no se pudo conectar con la configuración principal, intentar con alternativas
 if (!isset($conn) || $conn === false) {
     // Si no existe, intentamos con la configuración global
-    $config_path = __DIR__ . '/../../../config.php';
+    $config_path = __DIR__ . '/../config.php';
     if (file_exists($config_path)) {
         $config = require_once $config_path;
         

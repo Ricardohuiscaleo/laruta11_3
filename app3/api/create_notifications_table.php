@@ -5,7 +5,7 @@ header('Cache-Control: no-cache, no-store, must-revalidate');
 $config_paths = [
     __DIR__ . '/../config.php',
     __DIR__ . '/../../config.php',
-    __DIR__ . '/../../../config.php',
+    __DIR__ . '/../config.php',
     __DIR__ . '/../../../../config.php'
 ];
 

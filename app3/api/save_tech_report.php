@@ -6,7 +6,7 @@ $configPaths = [
     __DIR__ . '/config.php',
     __DIR__ . '/../config.php', 
     __DIR__ . '/../../config.php',
-    __DIR__ . '/../../../config.php',
+    __DIR__ . '/../config.php',
     __DIR__ . '/../../../../config.php'
 ];
 

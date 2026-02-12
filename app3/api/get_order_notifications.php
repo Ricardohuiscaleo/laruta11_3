@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $config_paths = [
     __DIR__ . '/../config.php',
     __DIR__ . '/../../config.php',
-    __DIR__ . '/../../../config.php'
+    __DIR__ . '/../config.php'
 ];
 
 $config = null;
