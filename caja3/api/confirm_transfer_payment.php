@@ -61,7 +61,7 @@ try {
     $update_stmt->execute([$order_id]);
     
     // Obtener items de la orden para descontar inventario
-    $items_stmt = $pdo->prepare("SELECT id, product_id, item_type, combo_data, quantity FROM tuu_order_items WHERE order_id = ?");
+    $items_stmt = $pdo->prepare("SELECT id, product_id, product_name, item_type, combo_data, quantity FROM tuu_order_items WHERE order_id = ?");
     $items_stmt->execute([$order_id]);
     $order_items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -146,7 +146,7 @@ function processInventoryDeduction($pdo, $order_items, $order_reference = null) 
         $quantity = $item['quantity'] ?? 1;
         $is_combo = ($item['item_type'] ?? '') === 'combo';
         
-        error_log("[INVENTORY] Item: {$item['product_name']}, tipo: {$item['item_type']}, qty: {$quantity}");
+        error_log("[INVENTORY] Item ID: {$item['id']}, tipo: {$item['item_type']}, qty: {$quantity}");
         
         if ($is_combo && !empty($item['combo_data'])) {
             $combo_data = json_decode($item['combo_data'], true);
