@@ -3,7 +3,7 @@
 $config_paths = [
     __DIR__ . '/../../config.php',     // 2 niveles
     __DIR__ . '/../../../config.php',  // 3 niveles  
-    __DIR__ . '/../../../../config.php', // 4 niveles
+    __DIR__ . '/../../config.php', // 4 niveles
     __DIR__ . '/../../../../../config.php' // 5 niveles
 ];
 

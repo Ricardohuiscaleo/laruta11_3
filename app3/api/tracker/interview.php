@@ -5,7 +5,7 @@ header('Access-Control-Allow-Methods: GET, POST, PUT');
 header('Access-Control-Allow-Headers: Content-Type');
 
 // Cargar config desde raíz
-$config = require_once __DIR__ . '/../../../../config.php';
+$config = require_once __DIR__ . '/../../config.php';
 
 // Conectar a BD
 $conn = mysqli_connect(

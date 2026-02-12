@@ -2,7 +2,7 @@
 session_start();
 header('Content-Type: application/json');
 
-$config = require_once __DIR__ . '/../../../../config.php';
+$config = require_once __DIR__ . '/../../config.php';
 
 $conn = mysqli_connect(
     $config['ruta11_db_host'],

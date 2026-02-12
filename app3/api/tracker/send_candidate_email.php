@@ -9,7 +9,7 @@ if (!isset($_SESSION['tracker_user'])) {
 }
 
 // Cargar config
-$config = require_once __DIR__ . '/../../../../config.php';
+$config = require_once __DIR__ . '/../../config.php';
 
 // Conectar a BD
 $conn = mysqli_connect(

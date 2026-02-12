@@ -1,6 +1,6 @@
 <?php
 // Cargar config desde raíz
-$config = require_once __DIR__ . '/../../../../config.php';
+$config = require_once __DIR__ . '/../../config.php';
 
 // Intentar cargar Dompdf (si está instalado via Composer)
 $dompdfPath = __DIR__ . '/../../vendor/autoload.php';

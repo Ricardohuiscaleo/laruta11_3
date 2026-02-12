@@ -9,7 +9,7 @@ if (!isset($_SESSION['tracker_user']) || $_SESSION['tracker_user']['role'] !== '
 }
 
 // Cargar config desde raíz
-$config = require_once __DIR__ . '/../../../../config.php';
+$config = require_once __DIR__ . '/../../config.php';
 
 // Conectar a BD desde config central
 $conn = mysqli_connect(

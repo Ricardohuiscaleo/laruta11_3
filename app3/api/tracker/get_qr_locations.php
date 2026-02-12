@@ -2,7 +2,7 @@
 session_start();
 
 // Cargar config desde raíz
-$config = require_once __DIR__ . '/../../../../config.php';
+$config = require_once __DIR__ . '/../../config.php';
 
 header('Content-Type: application/json');
 
