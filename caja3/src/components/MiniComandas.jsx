@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Banknote, Smartphone, Store, Truck, Clock, XCircle, CheckCircle } from 'lucide-react';
+import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Banknote, Smartphone, Store, Truck, Clock, XCircle, CheckCircle, X } from 'lucide-react';
 import ChecklistCard from './ChecklistCard.jsx';
 
-const MiniComandas = ({ onOrdersUpdate }) => {
+const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
   const [orders, setOrders] = useState([]);
   const [checklists, setChecklists] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -525,12 +525,20 @@ const MiniComandas = ({ onOrdersUpdate }) => {
   return (
     <div className="fixed inset-0 bg-white z-40 flex flex-col overflow-hidden">
       <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 shadow-lg flex items-center justify-between">
-        <h2 className="text-xl font-bold">📋 Comandas Activas</h2>
-        <div className="flex items-center gap-3">
-          <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold">
-            {activeOrders.length} pedidos
-          </span>
-        </div>
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          📋 Comandas Activas
+          {activeOrdersCount > 0 && (
+            <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold">
+              {activeOrdersCount}
+            </span>
+          )}
+        </h2>
+        <button 
+          onClick={onClose}
+          className="bg-white/20 hover:bg-white/30 p-2 rounded-full transition-colors"
+        >
+          <X size={24} />
+        </button>
       </div>
       
       <div className="flex-1 overflow-y-auto">

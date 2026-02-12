@@ -699,21 +699,7 @@ const NotificationsModal = ({ isOpen, onClose, onOrdersUpdate, activeOrdersCount
     if (!isOpen) return null;
     
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center animate-fade-in" onClick={onClose}>
-            <div className="bg-white w-full max-w-2xl mx-2 sm:m-4 rounded-2xl flex flex-col animate-slide-up max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                <div className="border-b flex justify-between items-center p-4">
-                    <h2 className="font-bold text-gray-800 flex items-center gap-2 text-lg">
-                        <Package size={20} className="text-orange-500" />
-                        Pedidos Activos
-                        <span className="bg-orange-500 text-white px-3 py-1 rounded-full font-bold text-sm ml-2">
-                            {activeOrdersCount}
-                        </span>
-                    </h2>
-                    <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600"><X size={24} /></button>
-                </div>
-                
-                <div className="flex-grow overflow-y-auto">
-                    <MiniComandas onOrdersUpdate={onOrdersUpdate} />
+        <MiniComandas onOrdersUpdate={onOrdersUpdate} onClose={onClose} activeOrdersCount={activeOrdersCount} />
                 </div>
             </div>
         </div>
