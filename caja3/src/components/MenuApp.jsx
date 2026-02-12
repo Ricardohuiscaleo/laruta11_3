@@ -700,9 +700,6 @@ const NotificationsModal = ({ isOpen, onClose, onOrdersUpdate, activeOrdersCount
     
     return (
         <MiniComandas onOrdersUpdate={onOrdersUpdate} onClose={onClose} activeOrdersCount={activeOrdersCount} />
-                </div>
-            </div>
-        </div>
     );
 };
 
