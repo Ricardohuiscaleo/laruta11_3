@@ -22,7 +22,7 @@ RUN npm install && npm run build
 RUN rm -rf /var/www/html/* && \
     cp -r dist/* /var/www/html/ && \
     cp -r api /var/www/html/ && \
-    cp -r admin /var/www/html/ && \
+    [ -d admin ] && cp -r admin /var/www/html/ || true && \
     cp load-env.php /var/www/html/
 
 WORKDIR /var/www/html

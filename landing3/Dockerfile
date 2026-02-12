@@ -23,7 +23,7 @@ RUN rm -rf /var/www/html/* && \
     cp -r dist/* /var/www/html/ && \
     cp -r api /var/www/html/ && \
     cp load-env.php /var/www/html/ && \
-    cp -r vendor /var/www/html/
+    [ -d vendor ] && cp -r vendor /var/www/html/ || true
 
 WORKDIR /var/www/html
 
