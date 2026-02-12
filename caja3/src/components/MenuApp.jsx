@@ -1437,7 +1437,7 @@ export default function App() {
             throw new Error(data.error || 'Geocoding failed');
           }
         } catch (error) {
-          console.error('Error obteniendo dirección:', error);
+          // Silenciar error de geocoding
           addressInfo = {
             formatted_address: `${latitude}, ${longitude}`,
             street: 'Calle no disponible',
@@ -1483,13 +1483,11 @@ export default function App() {
             }).catch(() => {});
           }
         } catch (error) {
-          console.error('Error guardando ubicación:', error);
+          // Silenciar error al guardar ubicación
         }
       },
       (error) => {
-        console.error('Error obteniendo ubicación:', error);
         setLocationPermission('denied');
-        alert('No se pudo obtener tu ubicación. Verifica los permisos del navegador.');
       },
       {
         enableHighAccuracy: true,
@@ -2028,25 +2026,25 @@ export default function App() {
     // Verificar si usuario está logueado
     fetch('/api/auth/check_session.php')
       .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        return response.json();
+        if (!response.ok) return null;
+        return response.text();
       })
-      .then(data => {
-        if (data.authenticated) {
-          setUser(data.user);
-          // Cargar notificaciones y pedidos del usuario después de un pequeño delay
-          setTimeout(() => {
-            loadNotifications();
-            loadUserOrders();
-          }, 100);
+      .then(text => {
+        if (!text || text.trim().startsWith('<')) return;
+        try {
+          const data = JSON.parse(text);
+          if (data.authenticated) {
+            setUser(data.user);
+            setTimeout(() => {
+              loadNotifications();
+              loadUserOrders();
+            }, 100);
+          }
+        } catch (e) {
+          // Silenciar errores de parsing
         }
       })
-      .catch(error => {
-        // Silenciar errores de sesión en desarrollo
-        console.warn('Session check failed:', error.message);
-      });
+      .catch(() => {});
 
     // Detectar parámetros de URL para login/logout/producto compartido
     const urlParams = new URLSearchParams(window.location.search);
