@@ -701,7 +701,6 @@
                       <th>Registro</th>
                       <th>Pedidos</th>
                       <th>Total Gastado</th>
-                      <th>Recompensas</th>
                       <th>Estado</th>
                       <th>Acciones</th>
                     </tr>
@@ -1978,20 +1977,7 @@
             const totalSpent = Math.round(user.total_spent || 0);
             const deliveryCount = user.delivery_count || 0;
             const pickupCount = user.pickup_count || 0;
-            const rewardsUsed = user.rewards_used || 0;
-            const totalStamps = user.total_stamps_earned || 0;
-            const stampsConsumed = user.stamps_consumed || 0;
-            const availableStamps = totalStamps - stampsConsumed;
             const lastOrder = user.last_order_date ? new Date(user.last_order_date).toLocaleDateString('es-CL', {day: 'numeric', month: 'short'}) : '-';
-            
-            let rewardStatus = '';
-            if (availableStamps >= 6) {
-              rewardStatus = '<div style="font-size: 10px; color: #10b981; font-weight: 600;">✅ $10k descuento</div>';
-            } else if (availableStamps >= 4) {
-              rewardStatus = '<div style="font-size: 10px; color: #10b981; font-weight: 600;">✅ Papas + Bebida</div>';
-            } else if (availableStamps >= 2) {
-              rewardStatus = '<div style="font-size: 10px; color: #10b981; font-weight: 600;">✅ Delivery gratis</div>';
-            }
             
             return `
               <tr>
@@ -2010,17 +1996,10 @@
                 <td>
                   <div style="font-weight: 600; color: #3b82f6;">${user.total_orders || 0}</div>
                   ${deliveryCount > 0 || pickupCount > 0 ? `<div style="font-size: 10px; color: #666;">🚚${deliveryCount} 🏪${pickupCount}</div>` : ''}
-                  ${rewardsUsed > 0 ? `<div style="font-size: 10px; color: #f59e0b;">🎁${rewardsUsed} canjeadas</div>` : ''}
                 </td>
                 <td>
                   <div style="font-weight: 600; color: #059669;">$${totalSpent.toLocaleString('es-CL')}</div>
                   ${user.total_orders > 0 ? `<div style="font-size: 10px; color: #666;">~$${Math.round(totalSpent / user.total_orders).toLocaleString('es-CL')}/pedido</div>` : ''}
-                </td>
-                <td>
-                  <div style="font-weight: 600; color: #3b82f6; font-size: 16px;">${availableStamps}</div>
-                  <div style="font-size: 10px; color: #666;">sellos disponibles</div>
-                  ${rewardStatus}
-                  ${rewardsUsed > 0 ? `<div style="font-size: 9px; color: #999; margin-top: 2px;">${stampsConsumed} usados</div>` : ''}
                 </td>
                 <td>
                   <span style="padding: 4px 8px; border-radius: 12px; font-size: 11px; background: ${user.is_active == 1 ? '#dcfce7' : '#fef2f2'}; color: ${user.is_active == 1 ? '#166534' : '#dc2626'};">
