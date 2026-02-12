@@ -80,7 +80,7 @@ try {
         $order_stmt->execute([
             $order_id, $user_id, $customer_name, $customer_phone,
             $product_summary, $amount, $delivery_fee, $amount,
-            $payment_status === 'paid' ? 'paid' : 'unpaid',
+            'pending',
             $payment_status,
             $payment_method,
             $order_status,
@@ -108,7 +108,7 @@ try {
         $order_stmt->execute([
             $order_id, $customer_name, $customer_phone,
             $product_summary, $amount, $delivery_fee, $amount,
-            $payment_status === 'paid' ? 'paid' : 'unpaid',
+            'pending',
             $payment_status,
             $payment_method,
             $order_status,

@@ -1143,6 +1143,7 @@ export default function App() {
   const processCashOrder = async () => {
     setIsProcessing(true);
     try {
+      console.log('💵 Procesando pago en EFECTIVO...');
       const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
       const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
       const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
@@ -1172,6 +1173,7 @@ export default function App() {
         payment_method: 'cash'
       };
       
+      console.log('📤 Enviando orden:', orderData);
       const response = await fetch('/api/create_order.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1179,18 +1181,20 @@ export default function App() {
       });
       
       const result = await response.json();
+      console.log('📥 Respuesta:', result);
       if (result.success) {
         localStorage.removeItem('ruta11_cart');
         localStorage.removeItem('ruta11_cart_total');
+        console.log('✅ Redirigiendo a /cash-pending?order=' + result.order_id);
         window.location.href = '/cash-pending?order=' + result.order_id;
       } else {
         setIsProcessing(false);
-        alert('Error al crear el pedido: ' + (result.error || 'Error desconocido'));
+        alert('❌ Error al crear el pedido: ' + (result.error || 'Error desconocido'));
       }
     } catch (error) {
       setIsProcessing(false);
-      console.error('Error cash:', error);
-      alert('Error al procesar el pedido: ' + error.message);
+      console.error('❌ Error procesando pago en efectivo:', error);
+      alert('❌ Error al procesar el pedido: ' + error.message);
     }
   };
 
@@ -3080,6 +3084,7 @@ export default function App() {
                       const confirmed = window.confirm('Has seleccionado TARJETA como método de pago. ¿Continuar?');
                       if (!confirmed) return;
                       try {
+                        console.log('💳 Procesando pago con TARJETA...');
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
                         const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
                         const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
@@ -3099,19 +3104,25 @@ export default function App() {
                           delivery_address: customerInfo.address || null,
                           payment_method: 'card'
                         };
+                        console.log('📤 Enviando orden:', orderData);
                         const response = await fetch('/api/create_order.php', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify(orderData)
                         });
                         const result = await response.json();
+                        console.log('📥 Respuesta:', result);
                         if (result.success) {
                           localStorage.removeItem('ruta11_cart');
                           localStorage.removeItem('ruta11_cart_total');
+                          console.log('✅ Redirigiendo a /card-pending?order=' + result.order_id);
                           window.location.href = '/card-pending?order=' + result.order_id;
+                        } else {
+                          alert('❌ Error al crear orden: ' + (result.error || 'Error desconocido'));
                         }
                       } catch (error) {
-                        console.error('Error:', error);
+                        console.error('❌ Error procesando pago con tarjeta:', error);
+                        alert('❌ Error al procesar el pago: ' + error.message);
                       }
                     }}
                     disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
@@ -3126,6 +3137,7 @@ export default function App() {
                       const confirmed = window.confirm('Has seleccionado TRANSFERENCIA como método de pago. ¿Continuar?');
                       if (!confirmed) return;
                       try {
+                        console.log('📱 Procesando pago con TRANSFERENCIA...');
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
                         const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
                         const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
@@ -3145,19 +3157,25 @@ export default function App() {
                           delivery_address: customerInfo.address || null,
                           payment_method: 'transfer'
                         };
+                        console.log('📤 Enviando orden:', orderData);
                         const response = await fetch('/api/create_order.php', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify(orderData)
                         });
                         const result = await response.json();
+                        console.log('📥 Respuesta:', result);
                         if (result.success) {
                           localStorage.removeItem('ruta11_cart');
                           localStorage.removeItem('ruta11_cart_total');
+                          console.log('✅ Redirigiendo a /transfer-pending?order=' + result.order_id);
                           window.location.href = '/transfer-pending?order=' + result.order_id;
+                        } else {
+                          alert('❌ Error al crear orden: ' + (result.error || 'Error desconocido'));
                         }
                       } catch (error) {
-                        console.error('Error:', error);
+                        console.error('❌ Error procesando pago con transferencia:', error);
+                        alert('❌ Error al procesar el pago: ' + error.message);
                       }
                     }}
                     disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
@@ -3172,6 +3190,7 @@ export default function App() {
                       const confirmed = window.confirm('Has seleccionado PEDIDOSYA como método de pago. ¿Continuar?');
                       if (!confirmed) return;
                       try {
+                        console.log('🚴 Procesando pago con PEDIDOSYA...');
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
                         const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
                         const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
@@ -3191,19 +3210,25 @@ export default function App() {
                           delivery_address: customerInfo.address || null,
                           payment_method: 'pedidosya'
                         };
+                        console.log('📤 Enviando orden:', orderData);
                         const response = await fetch('/api/create_order.php', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify(orderData)
                         });
                         const result = await response.json();
+                        console.log('📥 Respuesta:', result);
                         if (result.success) {
                           localStorage.removeItem('ruta11_cart');
                           localStorage.removeItem('ruta11_cart_total');
+                          console.log('✅ Redirigiendo a /pedidosya-pending?order=' + result.order_id);
                           window.location.href = '/pedidosya-pending?order=' + result.order_id;
+                        } else {
+                          alert('❌ Error al crear orden: ' + (result.error || 'Error desconocido'));
                         }
                       } catch (error) {
-                        console.error('Error:', error);
+                        console.error('❌ Error procesando pago con PedidosYA:', error);
+                        alert('❌ Error al procesar el pago: ' + error.message);
                       }
                     }}
                     disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
