@@ -8,8 +8,9 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
 # Instalar extensiones PHP necesarias
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 
-# Habilitar mod_rewrite
-RUN a2enmod rewrite
+# Habilitar mod_rewrite y configurar Apache
+RUN a2enmod rewrite headers && \
+    sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
 
 # Copiar código
 WORKDIR /app
