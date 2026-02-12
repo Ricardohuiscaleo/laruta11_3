@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Banknote, Smartphone, Store, Truck, Clock, XCircle, CheckCircle, X } from 'lucide-react';
+import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Banknote, Smartphone, Store, Truck, Clock, XCircle, CheckCircle, X, Send } from 'lucide-react';
 import ChecklistCard from './ChecklistCard.jsx';
 
 const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
@@ -421,13 +421,31 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
 
         {order.delivery_type === 'delivery' ? (
           <div className="text-xs bg-blue-50 border border-blue-200 rounded p-2 mb-2">
-            <div className="flex items-center gap-2 text-blue-800">
-              <Truck size={12} className="flex-shrink-0" />
-              <span className="font-medium">Delivery</span>
-              {!isScheduled && order.created_at && (
-                <><Clock size={12} /><span>{new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}</span></>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-blue-800">
+                <Truck size={12} className="flex-shrink-0" />
+                <span className="font-medium">Delivery</span>
+                {!isScheduled && order.created_at && (
+                  <><Clock size={12} /><span>{new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}</span></>
+                )}
+                {order.delivery_address && <span className="font-semibold">• {order.delivery_address}</span>}
+              </div>
+              {order.delivery_address && (
+                <button
+                  onClick={() => {
+                    const address = encodeURIComponent(order.delivery_address);
+                    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${address}`;
+                    const total = parseInt(order.installment_amount || 0).toLocaleString('es-CL');
+                    const items = order.items?.map(item => `${item.quantity}x ${item.product_name}`).join('\n') || order.product_name;
+                    const message = `🚚 *Pedido ${order.order_number}*\n\n📦 *Productos:*\n${items}\n\n💰 *Total: $${total}*\n\n📍 *Dirección:*\n${order.delivery_address}\n\n🗺️ Ver en mapa:\n${mapsUrl}`;
+                    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                  }}
+                  className="flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
+                >
+                  <Send size={12} />
+                  Rider
+                </button>
               )}
-              {order.delivery_address && <span className="font-semibold">• {order.delivery_address}</span>}
             </div>
           </div>
         ) : order.delivery_type === 'cuartel' ? (
