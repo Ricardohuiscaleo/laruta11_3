@@ -33,6 +33,11 @@ import { validateCheckoutForm, getFormDisabledState } from '../utils/validation.
 
 
 
+// ============================================
+// CAJA3: UBICACIÓN DESACTIVADA
+// Esta app NO solicita ubicación del usuario
+// ============================================
+
 // Datos del menú - se cargarán dinámicamente desde MySQL
 let menuData = {
   la_ruta_11: { tomahawks: [] },
@@ -1378,7 +1383,11 @@ export default function App() {
     }, 100);
   };
 
+  // DISABLED FOR CAJA: No se solicita ubicación en caja3
   const requestLocation = () => {
+    console.log('⚠️ Ubicación desactivada en caja3');
+    return;
+    /* CÓDIGO DESACTIVADO
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       alert('Tu navegador no soporta geolocalización');
       return;
@@ -1482,6 +1491,7 @@ export default function App() {
         maximumAge: 300000 // 5 minutos
       }
     );
+    */
   };
 
   const checkDeliveryZone = async (lat, lng) => {
