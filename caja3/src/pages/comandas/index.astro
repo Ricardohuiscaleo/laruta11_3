@@ -695,8 +695,8 @@
                                                                         h('span', { className: 'bg-gray-900 text-white px-2 py-0.5 rounded font-bold text-sm' }, `x${item.quantity}`)
                                                                     ),
                                                                     // Fila 2: Ingredientes de la receta
-                                                                    item.recipe_description && (() => {
-                                                                        const cleaned = item.recipe_description
+                                                                    item.description && (() => {
+                                                                        const cleaned = item.description
                                                                             .replace(/\(.*?\)/g, '')
                                                                             .replace(/\d+(\.\d+)?\s*(g|gr|gramos?|kg|ml|l|litros?|u|unidades?|un|und)/gi, '')
                                                                             .split(',')
