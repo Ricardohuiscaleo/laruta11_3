@@ -18,11 +18,17 @@ if (!$config) {
     throw new Exception('Config file not found');
 }
 
+// Usar variables de entorno directamente si config no las tiene
+$db_host = $config['app_db_host'] ?? getenv('APP_DB_HOST') ?? 'localhost';
+$db_name = $config['app_db_name'] ?? getenv('APP_DB_NAME') ?? 'laruta11';
+$db_user = $config['app_db_user'] ?? getenv('APP_DB_USER') ?? 'root';
+$db_pass = $config['app_db_pass'] ?? getenv('APP_DB_PASS') ?? '';
+
 // Crear conexión PDO con SQL_MODE configurado
 $pdo = new PDO(
-    "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
-    $config['app_db_user'],
-    $config['app_db_pass'],
+    "mysql:host={$db_host};dbname={$db_name};charset=utf8mb4",
+    $db_user,
+    $db_pass,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
 
