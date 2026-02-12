@@ -1404,6 +1404,7 @@ export default function App() {
         const { latitude, longitude } = position.coords;
         
         // Obtener dirección usando Google Geocoding API
+        let addressInfo;
         try {
           const formData = new FormData();
           formData.append('lat', latitude);
@@ -1414,14 +1415,15 @@ export default function App() {
             body: formData
           });
           
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+          const text = await response.text();
+          
+          // Verificar si la respuesta es JSON válido
+          if (!text || text.trim().startsWith('<')) {
+            throw new Error('API returned HTML instead of JSON');
           }
           
-          const text = await response.text();
-          const data = text ? JSON.parse(text) : {};
+          const data = JSON.parse(text);
           
-          let addressInfo;
           if (data.success) {
             addressInfo = {
               formatted_address: data.formatted_address,
@@ -1432,14 +1434,20 @@ export default function App() {
               components: data.components
             };
           } else {
-            addressInfo = {
-              formatted_address: `${latitude}, ${longitude}`,
-              street: 'Calle no disponible',
-              city: 'Ciudad no disponible',
-              region: 'Región no disponible',
-              country: 'País no disponible'
-            };
+            throw new Error(data.error || 'Geocoding failed');
           }
+        } catch (error) {
+          console.error('Error obteniendo dirección:', error);
+          addressInfo = {
+            formatted_address: `${latitude}, ${longitude}`,
+            street: 'Calle no disponible',
+            city: 'Ciudad no disponible',
+            region: 'Región no disponible',
+            country: 'País no disponible'
+          };
+        }
+        
+        try {
           
           const locationData = {
             latitude,
@@ -1472,24 +1480,10 @@ export default function App() {
             fetch('/api/location/save_location.php', {
               method: 'POST',
               body: saveFormData
-            });
+            }).catch(() => {});
           }
         } catch (error) {
-          console.error('Error obteniendo dirección:', error);
-          const fallbackData = {
-            latitude, 
-            longitude, 
-            address: `${latitude}, ${longitude}`,
-            addressInfo: {
-              formatted_address: `${latitude}, ${longitude}`,
-              street: 'Calle no disponible',
-              city: 'Ciudad no disponible',
-              region: 'Región no disponible',
-              country: 'País no disponible'
-            }
-          };
-          setUserLocation(fallbackData);
-          setLocationPermission('granted');
+          console.error('Error guardando ubicación:', error);
         }
       },
       (error) => {
