@@ -1,6 +1,6 @@
 <?php
 session_start();
-$config = require_once __DIR__ . '/../../../../../config.php';
+$config = require_once __DIR__ . '/../../../config.php';
 
 $google_login_url = 'https://accounts.google.com/o/oauth2/auth?' . http_build_query([
     'client_id' => $config['ruta11_google_client_id'],

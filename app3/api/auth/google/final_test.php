@@ -1,5 +1,5 @@
 <?php
-$config = require_once __DIR__ . '/../../../../../config.php';
+$config = require_once __DIR__ . '/../../../config.php';
 
 // URL que usa exactamente el callback autorizado
 $auth_url = 'https://accounts.google.com/o/oauth2/auth?' . http_build_query([

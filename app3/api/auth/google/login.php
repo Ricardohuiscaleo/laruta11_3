@@ -1,6 +1,6 @@
 <?php
 // Cargar config desde raíz
-$config = require_once __DIR__ . '/../../../../../config.php';
+$config = require_once __DIR__ . '/../../../config.php';
 
 // Verificar que las configuraciones existan
 if (!isset($config['ruta11_google_client_id']) || !isset($config['ruta11_google_redirect_uri'])) {

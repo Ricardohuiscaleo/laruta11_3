@@ -19,7 +19,7 @@ if (file_exists($oauth_log)) {
 
 // Test directo de conexión DB
 echo "<hr><h2>Test DB Connections:</h2>";
-$config = require_once __DIR__ . '/../../../../../config.php';
+$config = require_once __DIR__ . '/../../../config.php';
 
 // Test usuarios DB
 $user_conn = mysqli_connect(

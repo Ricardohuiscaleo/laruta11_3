@@ -3,7 +3,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Cargar config
-$config_path = __DIR__ . '/../../../../../config.php';
+$config_path = __DIR__ . '/../../../config.php';
 echo "Config path: " . $config_path . "<br>";
 echo "Config exists: " . (file_exists($config_path) ? 'YES' : 'NO') . "<br>";
 

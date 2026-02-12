@@ -4,7 +4,7 @@ ini_set('display_errors', 1);
 
 try {
     // Cargar config desde raíz
-    $config_path = __DIR__ . '/../../../../../config.php';
+    $config_path = __DIR__ . '/../../../config.php';
     if (!file_exists($config_path)) {
         throw new Exception('Archivo config.php no encontrado en: ' . $config_path);
     }

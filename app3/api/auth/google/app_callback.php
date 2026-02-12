@@ -4,7 +4,7 @@ ini_set('display_errors', 1);
 
 try {
     // Cargar config
-    $config = require_once __DIR__ . '/../../../../../config.php';
+    $config = require_once __DIR__ . '/../../../config.php';
 
     if (!isset($_GET['code'])) {
         throw new Exception('No se recibió código de autorización');

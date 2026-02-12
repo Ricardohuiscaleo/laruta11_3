@@ -1,5 +1,5 @@
 <?php
-$config = require_once __DIR__ . '/../../../../../config.php';
+$config = require_once __DIR__ . '/../../../config.php';
 
 echo "<h1>OAuth Configuration Check</h1>";
 echo "<p><strong>Client ID:</strong> " . htmlspecialchars($config['ruta11_google_client_id']) . "</p>";

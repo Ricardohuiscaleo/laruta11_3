@@ -1,6 +1,6 @@
 <?php
 // Callback simplificado para debug
-$config = require_once __DIR__ . '/../../../../../config.php';
+$config = require_once __DIR__ . '/../../../config.php';
 
 // Log todo en un archivo
 $log_file = __DIR__ . '/oauth_debug.log';

@@ -1,7 +1,7 @@
 <?php
 session_start();
 // Cargar config desde raíz
-$config = require_once __DIR__ . '/../../../../../config.php';
+$config = require_once __DIR__ . '/../../../config.php';
 
 // Configuración desde config.php
 $client_id = $config['ruta11_jobs_client_id'];
