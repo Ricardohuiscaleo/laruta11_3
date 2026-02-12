@@ -65,7 +65,7 @@ $percentage = $total > 0 ? round(($withConfig / $total) * 100, 1) : 0;
         .stat-label { font-size: 14px; opacity: 0.9; }
         .section { margin-bottom: 30px; }
         .section-title { font-size: 20px; color: #333; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #eee; }
-        .api-list { display: grid; gap: 8px; max-height: 400px; overflow-y: auto; }
+        .api-list { display: grid; gap: 8px; max-height: 600px; overflow-y: auto; }
         .api-item { display: flex; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 13px; }
         .api-item .icon { margin-right: 10px; font-size: 16px; }
         .api-item .name { flex: 1; font-family: 'Courier New', monospace; }
@@ -120,7 +120,7 @@ $percentage = $total > 0 ? round(($withConfig / $total) * 100, 1) : 0;
         <div class="section">
             <h2 class="section-title">📁 Todas las APIs (<?php echo $total; ?>)</h2>
             <div class="api-list">
-                <?php foreach (array_slice($apis, 0, 50) as $api): 
+                <?php foreach ($apis as $api): 
                     $content = @file_get_contents(__DIR__ . '/' . $api);
                     $hasConfig = $content && (strpos($content, 'config.php') !== false || strpos($content, 'config_loader.php') !== false);
                 ?>
@@ -132,12 +132,7 @@ $percentage = $total > 0 ? round(($withConfig / $total) * 100, 1) : 0;
                     </span>
                 </div>
                 <?php endforeach; ?>
-                <?php if ($total > 50): ?>
-                <div class="api-item" style="background: #fff3cd; color: #856404;">
-                    <span class="icon">ℹ️</span>
-                    <span class="name">Mostrando 50 de <?php echo $total; ?> APIs</span>
-                </div>
-                <?php endif; ?>
+
             </div>
         </div>
 
