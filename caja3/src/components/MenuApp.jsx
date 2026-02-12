@@ -2067,10 +2067,10 @@ export default function App() {
             loadNotifications();
             loadUserOrders();
             
-            // Mostrar onboarding solo para usuarios completamente nuevos
-            if (data.user.is_new_user && !localStorage.getItem('onboarding_completed')) {
-              setTimeout(() => setShowOnboarding(true), 500);
-            }
+            // DISABLED: Onboarding no necesario en caja3
+            // if (data.user.is_new_user && !localStorage.getItem('onboarding_completed')) {
+            //   setTimeout(() => setShowOnboarding(true), 500);
+            // }
           }
         })
         .catch(error => console.error('Error checking session after login:', error));
