@@ -163,7 +163,7 @@ function restoreInventory($conn, $order_number) {
             $insert_stmt = $conn->prepare("
                 INSERT INTO inventory_transactions 
                 (transaction_type, ingredient_id, quantity, unit, previous_stock, new_stock, order_reference) 
-                VALUES ('refund', ?, ?, ?, ?, ?, ?)
+                VALUES ('return', ?, ?, ?, ?, ?, ?)
             ");
             $insert_stmt->bind_param("idsdds", 
                 $trans['ingredient_id'], 
@@ -194,7 +194,7 @@ function restoreInventory($conn, $order_number) {
             $insert_stmt = $conn->prepare("
                 INSERT INTO inventory_transactions 
                 (transaction_type, product_id, quantity, unit, previous_stock, new_stock, order_reference) 
-                VALUES ('refund', ?, ?, 'unit', ?, ?, ?)
+                VALUES ('return', ?, ?, 'unit', ?, ?, ?)
             ");
             $insert_stmt->bind_param("iddds", 
                 $trans['product_id'], 
