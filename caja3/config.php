@@ -117,7 +117,15 @@ $config = [
     'aws_secret_access_key' => getenv('AWS_SECRET_ACCESS_KEY'),
     's3_bucket' => getenv('S3_BUCKET'),
     's3_region' => getenv('S3_REGION'),
-    's3_url' => getenv('S3_URL')
+    's3_url' => getenv('S3_URL'),
+    
+    'discount_codes' => [
+        'PIZZA11' => ['product_id' => 231, 'discount_percent' => 20, 'name' => 'Pizza 20% OFF', 'active' => true],
+        'TENS' => ['product_id' => 213, 'discount_percent' => 30, 'name' => 'Tens 30% OFF', 'active' => true],
+        'RL6' => ['type' => 'delivery', 'discount_percent' => 40, 'name' => 'Delivery 40% OFF', 'active' => true],
+        'R11LOV' => ['type' => 'cart', 'discount_percent' => 10, 'name' => '10% OFF Total', 'active' => true],
+        'TUAREG' => ['type' => 'cart', 'discount_percent' => 7, 'name' => '7% OFF Total', 'active' => true]
+    ]
 ];
 
 return $config;
