@@ -1510,30 +1510,21 @@ export default function App() {
         body: formData
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      if (!response.ok) return;
       
       const data = await response.json();
       if (data.error) {
-        console.error('API Error:', data.error);
         setDeliveryZone({ in_delivery_zone: false, zones: [] });
       } else {
         setDeliveryZone(data);
       }
       
-      // Calcular tiempo real si está en zona
-      if (data.in_delivery_zone && data.zones.length > 0) {
-        const zone = data.zones[0];
-        
-        // Obtener coordenadas del food truck más cercano
-        if (nearbyTrucks.length > 0) {
-          const closestTruck = nearbyTrucks[0];
-          calculateRealDeliveryTime(lat, lng, closestTruck.latitud, closestTruck.longitud);
-        }
+      if (data.in_delivery_zone && data.zones.length > 0 && nearbyTrucks.length > 0) {
+        const closestTruck = nearbyTrucks[0];
+        calculateRealDeliveryTime(lat, lng, closestTruck.latitud, closestTruck.longitud).catch(() => {});
       }
     } catch (error) {
-      console.error('Error verificando zona de delivery:', error);
+      // Silenciar errores de API no disponible
     }
   };
 
@@ -1548,10 +1539,11 @@ export default function App() {
         body: formData
       });
       
+      if (!response.ok) return;
       const data = await response.json();
       setNearbyProducts(data);
     } catch (error) {
-      console.error('Error obteniendo productos cercanos:', error);
+      // Silenciar errores de API no disponible
     }
   };
 
@@ -1560,26 +1552,22 @@ export default function App() {
       const formData = new FormData();
       formData.append('lat', lat);
       formData.append('lng', lng);
-      formData.append('radius', 10); // 10km radio
+      formData.append('radius', 10);
       
       const response = await fetch('/api/get_nearby_trucks.php', {
         method: 'POST',
         body: formData
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      if (!response.ok) return;
       
       const data = await response.json();
       if (data.success && data.trucks) {
         setNearbyTrucks(data.trucks);
       } else {
-        console.error('API Error:', data.error || 'No trucks found');
         setNearbyTrucks([]);
       }
     } catch (error) {
-      console.error('Error obteniendo food trucks cercanos:', error);
       setNearbyTrucks([]);
     }
   };
@@ -1651,9 +1639,9 @@ export default function App() {
         body: formData
       });
       
+      if (!response.ok) return;
       const data = await response.json();
       if (data.success) {
-        // Actualizar el tiempo en deliveryZone
         setDeliveryZone(prev => ({
           ...prev,
           zones: prev.zones.map(zone => ({
@@ -1664,7 +1652,7 @@ export default function App() {
         }));
       }
     } catch (error) {
-      console.error('Error calculando tiempo real:', error);
+      // Silenciar errores de API no disponible
     }
   };
 
