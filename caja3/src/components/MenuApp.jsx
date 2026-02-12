@@ -1399,7 +1399,7 @@ export default function App() {
 
     setLocationPermission('requesting');
     
-    navigator.geolocation.getCurrentPosition(
+    // DISABLED FOR CAJA: navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
         
@@ -2039,7 +2039,7 @@ export default function App() {
     }
     
     // Verificar si usuario está logueado
-    fetch('/api/auth/check_session.php')
+    // DISABLED FOR CAJA: fetch('/api/auth/check_session.php')
       .then(response => {
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -2095,7 +2095,7 @@ export default function App() {
       // Limpiar URL y recargar sesión
       window.history.replaceState({}, document.title, window.location.pathname);
       // Recargar datos de sesión sin reload completo
-      fetch('/api/auth/check_session.php')
+      // DISABLED FOR CAJA: fetch('/api/auth/check_session.php')
         .then(response => response.json())
         .then(data => {
           if (data.authenticated) {
@@ -3528,7 +3528,7 @@ export default function App() {
                         <button
                           onClick={() => {
                             if (navigator.geolocation) {
-                              navigator.geolocation.getCurrentPosition(async (pos) => {
+                              // DISABLED FOR CAJA: navigator.geolocation.getCurrentPosition(async (pos) => {
                                 const { latitude, longitude } = pos.coords;
                                 try {
                                   const formData = new FormData();
