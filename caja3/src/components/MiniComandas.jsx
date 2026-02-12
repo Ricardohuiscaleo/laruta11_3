@@ -457,12 +457,21 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
 
         <div className="mb-3 p-2 bg-white rounded">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-green-600">${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}</span>
-              {order.delivery_type === 'delivery' && order.delivery_fee > 0 && (
-                <span className="text-xs text-orange-600 font-semibold">+${parseInt(order.delivery_fee).toLocaleString('es-CL')} delivery</span>
-              )}
-              <div className="flex items-center gap-1 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-gray-600">Subtotal: <span className="font-semibold text-gray-800">${parseInt(order.subtotal || 0).toLocaleString('es-CL')}</span></span>
+                {order.delivery_type === 'delivery' && order.delivery_fee > 0 && (
+                  <>
+                    <span className="text-xs text-orange-600">+ Delivery: <span className="font-semibold">${parseInt(order.delivery_fee).toLocaleString('es-CL')}</span></span>
+                    {order.delivery_discount > 0 && (
+                      <span className="text-xs text-green-600">- Desc: <span className="font-semibold">${parseInt(order.delivery_discount).toLocaleString('es-CL')}</span></span>
+                    )}
+                  </>
+                )}
+                <span className="text-xs text-gray-400">→</span>
+                <span className="font-bold text-green-600">${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}</span>
+              </div>
+              <div className="flex items-center gap-1 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded w-fit">
                 {getPaymentIcon(order.payment_method)}
                 <span>{getPaymentText(order.payment_method)}</span>
               </div>
