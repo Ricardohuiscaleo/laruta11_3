@@ -438,7 +438,19 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                 <span className="text-xs font-bold text-gray-800">Envía el pedido al delivery 😎👉🏻</span>
                 <button
                   onClick={() => {
-                    const address = encodeURIComponent(order.delivery_address);
+                    // Normalizar direcciones pre-establecidas
+                    let normalizedAddress = order.delivery_address;
+                    if (normalizedAddress.toLowerCase().includes('ctel.')) {
+                      if (normalizedAddress.toLowerCase().includes('domeyco')) {
+                        normalizedAddress = 'Domeyco 1540, Providencia, Chile';
+                      } else if (normalizedAddress.toLowerCase().includes('oscar quina')) {
+                        normalizedAddress = 'Oscar Quina 1333, Providencia, Chile';
+                      } else if (normalizedAddress.toLowerCase().includes('santa maría') || normalizedAddress.toLowerCase().includes('santa maria')) {
+                        normalizedAddress = 'Av. Santa María 3000, Providencia, Chile';
+                      }
+                    }
+                    
+                    const address = encodeURIComponent(normalizedAddress);
                     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${address}`;
                     const subtotal = parseInt(order.subtotal || 0).toLocaleString('es-CL');
                     const deliveryFee = parseInt(order.delivery_fee - (order.delivery_discount || 0)).toLocaleString('es-CL');
