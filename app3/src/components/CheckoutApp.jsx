@@ -863,7 +863,7 @@ const CheckoutApp = () => {
             <div className="bg-white rounded-lg shadow-sm p-1">
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-3">Tipo de Entrega</h3>
-                <div className={`grid gap-3 ${isMilitarRL6 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                <div className="grid gap-3 grid-cols-2">
                   <button
                     type="button"
                     onClick={() => setCustomerInfo({...customerInfo, deliveryType: 'delivery'})}
@@ -899,23 +899,6 @@ const CheckoutApp = () => {
                     <div className="font-bold text-white">Retiro</div>
                     <div className="text-xs text-white/90">Retiro en local</div>
                   </button>
-                  {isMilitarRL6 && (
-                    <button
-                      type="button"
-                      onClick={() => setCustomerInfo({...customerInfo, deliveryType: 'cuartel'})}
-                      className={`p-4 rounded-xl text-center transition-all transform hover:scale-105 ${
-                        customerInfo.deliveryType === 'cuartel' 
-                          ? 'bg-gradient-to-br from-amber-500 to-yellow-600 shadow-lg' 
-                          : 'bg-gradient-to-br from-gray-400 to-gray-500 opacity-60 hover:opacity-80'
-                      }`}
-                    >
-                      <div className="flex justify-center mb-2">
-                        <Award size={32} className="text-white" />
-                      </div>
-                      <div className="font-bold text-white">Cuartel</div>
-                      <div className="text-xs text-white/90">Retiro en Cuartel</div>
-                    </button>
-                  )}
                 </div>
               </div>
               
