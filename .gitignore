@@ -1,5 +1,4 @@
 # Archivos de configuración con credenciales
-config.php
 config_root_update.php
 .env
 .env.local
