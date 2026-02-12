@@ -1460,11 +1460,11 @@ export default function App() {
           setUserLocation(locationData);
           setLocationPermission('granted');
           
-          // Verificar zona de delivery
-          checkDeliveryZone(latitude, longitude);
+          // DISABLED FOR CAJA: Verificar zona de delivery
+          // checkDeliveryZone(latitude, longitude);
           
-          // Obtener productos cercanos
-          getNearbyProducts(latitude, longitude);
+          // DISABLED FOR CAJA: Obtener productos cercanos
+          // getNearbyProducts(latitude, longitude);
           
           // Obtener food trucks cercanos
           getNearbyTrucks(latitude, longitude);
