@@ -58,12 +58,15 @@ try {
     $stmt->execute([$orderId]);
 
     // 3. Si era transferencia pagada, registrar reembolso pendiente
+    // NOTA: Tabla 'refunds' no existe - comentado temporalmente
+    /*
     if ($order['payment_method'] === 'transfer' && $order['payment_status'] === 'paid') {
         $refundSql = "INSERT INTO refunds (order_id, order_number, amount, status, created_at) 
                       VALUES (?, ?, ?, 'pending', NOW())";
         $refundStmt = $pdo->prepare($refundSql);
         $refundStmt->execute([$orderId, $order['order_number'], $order['installment_amount']]);
     }
+    */
 
     // 4. Devolver inventario si estaba pagado
     $inventoryRestored = false;
@@ -79,9 +82,12 @@ try {
     if ($inventoryRestored) {
         $message .= ". Inventario restaurado ({$restoredCount} transacciones)";
     }
+    // Mensaje de reembolso comentado ya que tabla refunds no existe
+    /*
     if ($order['payment_method'] === 'transfer' && $order['payment_status'] === 'paid') {
         $message .= '. Reembolso registrado como pendiente';
     }
+    */
 
     echo json_encode([
         'success' => true, 
