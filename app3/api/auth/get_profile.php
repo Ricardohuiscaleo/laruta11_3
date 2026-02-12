@@ -1,7 +1,7 @@
 <?php
 session_start();
 // Cargar config desde raíz
-$config = require_once __DIR__ . '/../../../../config.php';
+$config = require_once __DIR__ . '/../../config.php';
 
 // Conectar a BD desde config central (u958525313_app)
 $conn = mysqli_connect(

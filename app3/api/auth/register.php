@@ -1,6 +1,6 @@
 <?php
 // Cargar config desde raíz
-$config = require_once __DIR__ . '/../../../../config.php';
+$config = require_once __DIR__ . '/../../config.php';
 
 // Conectar a ambas bases de datos
 $conn = mysqli_connect(

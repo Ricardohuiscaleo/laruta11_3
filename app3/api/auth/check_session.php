@@ -20,7 +20,7 @@ if (isset($_COOKIE[session_name()])) {
     error_log('⚠️ [DEBUG] Cookie de sesión NO existe');
 }
 
-$config = require_once __DIR__ . '/../../../../config.php';
+$config = require_once __DIR__ . '/../../config.php';
 
 header('Content-Type: application/json');
 
