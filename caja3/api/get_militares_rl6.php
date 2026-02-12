@@ -59,7 +59,7 @@ try {
                 fecha_registro as registration_date,
                 ultimo_acceso as last_login
             FROM usuarios 
-            WHERE is_militar_rl6 = 1";
+            WHERE rut IS NOT NULL AND rut != '' AND grado_militar IS NOT NULL";
     
     if ($status === 'pending') {
         $sql .= " AND credito_aprobado = 0";
