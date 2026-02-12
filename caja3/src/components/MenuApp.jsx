@@ -1414,7 +1414,12 @@ export default function App() {
             body: formData
           });
           
-          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          
+          const text = await response.text();
+          const data = text ? JSON.parse(text) : {};
           
           let addressInfo;
           if (data.success) {
