@@ -523,8 +523,17 @@ const MiniComandas = ({ onOrdersUpdate }) => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm">
-      <div className="max-h-[600px] overflow-y-auto pb-4">
+    <div className="fixed inset-0 bg-white z-40 flex flex-col overflow-hidden">
+      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 shadow-lg flex items-center justify-between">
+        <h2 className="text-xl font-bold">📋 Comandas Activas</h2>
+        <div className="flex items-center gap-3">
+          <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold">
+            {activeOrders.length} pedidos
+          </span>
+        </div>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto">
         {activeOrders.length === 0 && checklists.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <Package size={48} className="mx-auto mb-2 opacity-50" />
