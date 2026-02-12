@@ -435,9 +435,39 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                   onClick={() => {
                     const address = encodeURIComponent(order.delivery_address);
                     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${address}`;
+                    const subtotal = parseInt(order.subtotal || 0).toLocaleString('es-CL');
+                    const deliveryFee = parseInt(order.delivery_fee - (order.delivery_discount || 0)).toLocaleString('es-CL');
                     const total = parseInt(order.installment_amount || 0).toLocaleString('es-CL');
                     const items = order.items?.map(item => `${item.quantity}x ${item.product_name}`).join('\n') || order.product_name;
-                    const message = `🚚 *Pedido ${order.order_number}*\n\n📦 *Productos:*\n${items}\n\n💰 *Total: $${total}*\n\n📍 *Dirección:*\n${order.delivery_address}\n\n🗺️ Ver en mapa:\n${mapsUrl}`;
+                    
+                    // Determinar instrucción de pago
+                    let paymentInstruction = '';
+                    const isPaid = order.payment_status === 'paid';
+                    if (isPaid) {
+                      paymentInstruction = '✅ *YA ESTÁ PAGADO*';
+                    } else {
+                      switch(order.payment_method) {
+                        case 'card':
+                          paymentInstruction = '💳 *Tarjeta* - No olvides llevar máquina de pagos';
+                          break;
+                        case 'cash':
+                          paymentInstruction = '💵 *Efectivo* - No olvides llevar vuelto';
+                          break;
+                        case 'webpay':
+                          paymentInstruction = '💻 *Webpay* - Ya está pagado';
+                          break;
+                        case 'credit':
+                          paymentInstruction = '🏦 *Crédito* - Ya está pagado';
+                          break;
+                        case 'transfer':
+                          paymentInstruction = '🔄 *Transferencia* - Preguntar en caja si está pagado';
+                          break;
+                        default:
+                          paymentInstruction = `💰 *${order.payment_method}*`;
+                      }
+                    }
+                    
+                    const message = `🚚 *Pedido ${order.order_number}*\n\n📦 *Productos:*\n${items}\n\n💰 *Montos:*\nSubtotal: $${subtotal}\nDelivery: $${deliveryFee}\n*Total: $${total}*\n\n${paymentInstruction}\n\n📍 *Dirección:*\n${order.delivery_address}\n\n🗺️ Ver en mapa:\n${mapsUrl}`;
                     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
                   }}
                   className="flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
