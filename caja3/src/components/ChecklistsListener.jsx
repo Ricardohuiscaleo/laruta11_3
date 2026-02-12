@@ -9,9 +9,12 @@ export default function ChecklistsListener({ onChecklistsUpdate }) {
         const minutes = now.getMinutes();
         const currentTime = hours * 60 + minutes;
         
+        // Apertura: 17:00-19:00 (1020-1140 min)
+        // Cierre: 00:30-01:45 (30-105 min)
         const shouldLoadApertura = currentTime >= 1020 && currentTime < 1140;
         const shouldLoadCierre = currentTime >= 30 && currentTime < 105;
         
+        // Salir temprano si no está en horario
         if (!shouldLoadApertura && !shouldLoadCierre) {
           if (onChecklistsUpdate) onChecklistsUpdate(0);
           return;
@@ -38,7 +41,7 @@ export default function ChecklistsListener({ onChecklistsUpdate }) {
     };
 
     loadChecklists();
-    const interval = setInterval(loadChecklists, 5000);
+    const interval = setInterval(loadChecklists, 30000); // 30s en vez de 5s
     return () => clearInterval(interval);
   }, [onChecklistsUpdate]);
 
