@@ -356,7 +356,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-lg">{isScheduled ? '🕐' : timeAlert.icon}</span>
-            <span className="font-bold">{order.order_number}</span>
+            <span className="text-xs font-mono">{order.order_number}</span>
             <button 
               onClick={() => cancelOrder(order.id, order.order_number)} 
               disabled={processing === order.id}
