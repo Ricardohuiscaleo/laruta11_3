@@ -10,8 +10,6 @@ const ReviewsModal = ({ product, isOpen, onClose }) => {
     comment: ''
   });
   const [loading, setLoading] = useState(false);
-  
-  console.log('ReviewsModal render:', { product, isOpen });
 
   useEffect(() => {
     if (isOpen && product) {
@@ -23,15 +21,12 @@ const ReviewsModal = ({ product, isOpen, onClose }) => {
     try {
       const response = await fetch(`/api/get_reviews.php?product_id=${product.id}&t=${Date.now()}`);
       const data = await response.json();
-      console.log('Reviews response:', data);
       if (data.success) {
         setReviews(data.reviews);
         setStats(data.stats);
-      } else {
-        console.error('API Error:', data.error);
       }
     } catch (error) {
-      console.error('Error loading reviews:', error);
+      // Silenciar errores
     }
   };
 
@@ -40,11 +35,6 @@ const ReviewsModal = ({ product, isOpen, onClose }) => {
     setLoading(true);
 
     try {
-      console.log('Sending review:', {
-        product_id: product.id,
-        ...newReview
-      });
-      
       const response = await fetch('/api/add_review.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,19 +45,16 @@ const ReviewsModal = ({ product, isOpen, onClose }) => {
       });
 
       const data = await response.json();
-      console.log('Add review response:', data);
       
       if (data.success) {
         setNewReview({ customer_name: '', rating: 5, comment: '' });
         setShowAddForm(false);
-        loadReviews(); // Recargar reseñas
+        loadReviews();
         alert('¡Gracias por tu reseña!');
       } else {
-        console.error('Review submission error:', data.error);
         alert(data.error || 'Error al enviar reseña');
       }
     } catch (error) {
-      console.error('Network error:', error);
       alert('Error de conexión al enviar reseña');
     } finally {
       setLoading(false);
@@ -88,12 +75,7 @@ const ReviewsModal = ({ product, isOpen, onClose }) => {
     ));
   };
 
-  if (!isOpen) {
-    console.log('ReviewsModal not open, returning null');
-    return null;
-  }
-  
-  console.log('ReviewsModal is open, rendering modal');
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
