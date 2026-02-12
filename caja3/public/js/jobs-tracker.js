@@ -1030,49 +1030,16 @@ function refreshQRMap() {
     }
 }
 
-// Función para trackear vista con ubicación
+// DISABLED FOR CAJA: No se solicita ubicación en caja3
+// Función para trackear vista SIN ubicación
 function trackQRViewWithLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            function(position) {
-                const locationData = {
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                    accuracy: position.coords.accuracy
-                };
-                
-                fetch('/api/tracker/track_qr_view.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(locationData)
-                }).catch(() => {});
-            },
-            function(error) {
-                // Si falla la ubicación, registrar sin coordenadas
-                fetch('/api/tracker/track_qr_view.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({})
-                }).catch(() => {});
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 300000
-            }
-        );
-    } else {
-        // Navegador no soporta geolocalización
-        fetch('/api/tracker/track_qr_view.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({})
-        }).catch(() => {});
-    }
+    console.log('⚠️ Ubicación desactivada en caja3');
+    // Registrar sin coordenadas
+    fetch('/api/tracker/track_qr_view.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+    }).catch(() => {});
 }
