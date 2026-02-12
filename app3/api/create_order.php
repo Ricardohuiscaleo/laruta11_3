@@ -98,7 +98,7 @@ try {
         $amount, 
         $delivery_fee, 
         $amount,
-        $payment_status === 'paid' ? 'paid' : 'unpaid',
+        'pending',
         $payment_status,
         $payment_method,
         $order_status,
