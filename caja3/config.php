@@ -28,50 +28,6 @@ $config = [
     'Calcularuta11_db_user' => getenv('CALCULARUTA11_DB_USER'),
     'Calcularuta11_db_pass' => getenv('CALCULARUTA11_DB_PASS'),
     
-    'ruta11_db_host' => getenv('RUTA11_DB_HOST'),
-    'ruta11_db_name' => getenv('RUTA11_DB_NAME'),
-    'ruta11_db_user' => getenv('RUTA11_DB_USER'),
-    'ruta11_db_pass' => getenv('RUTA11_DB_PASS'),
-    
-    'ruta11_google_client_id' => getenv('RUTA11_GOOGLE_CLIENT_ID'),
-    'ruta11_google_client_secret' => getenv('RUTA11_GOOGLE_CLIENT_SECRET'),
-    'ruta11_google_redirect_uri' => getenv('RUTA11_GOOGLE_REDIRECT_URI'),
-    'ruta11_app_redirect_uri' => getenv('RUTA11_APP_REDIRECT_URI'),
-    
-    'ruta11_jobs_client_id' => getenv('RUTA11_JOBS_CLIENT_ID'),
-    'ruta11_jobs_client_secret' => getenv('RUTA11_JOBS_CLIENT_SECRET'),
-    'ruta11_jobs_redirect_uri' => getenv('RUTA11_JOBS_REDIRECT_URI'),
-    
-    'ruta11_tracker_client_id' => getenv('RUTA11_TRACKER_CLIENT_ID'),
-    'ruta11_tracker_client_secret' => getenv('RUTA11_TRACKER_CLIENT_SECRET'),
-    'ruta11_tracker_redirect_uri' => getenv('RUTA11_TRACKER_REDIRECT_URI'),
-    
-    'ruta11_google_maps_api_key' => getenv('RUTA11_GOOGLE_MAPS_API_KEY'),
-    
-    'gmail_client_id' => getenv('GMAIL_CLIENT_ID'),
-    'gmail_client_secret' => getenv('GMAIL_CLIENT_SECRET'),
-    'gmail_redirect_uri' => getenv('GMAIL_REDIRECT_URI'),
-    'gmail_sender_email' => getenv('GMAIL_SENDER_EMAIL'),
-    
-    'tuu_api_key' => getenv('TUU_API_KEY'),
-    'tuu_online_rut' => getenv('TUU_ONLINE_RUT'),
-    'tuu_online_secret' => getenv('TUU_ONLINE_SECRET'),
-    'tuu_online_env' => getenv('TUU_ONLINE_ENV'),
-    'tuu_environment' => getenv('TUU_ENVIRONMENT'),
-    'tuu_device_serial' => getenv('TUU_DEVICE_SERIAL'),
-    'tuu_devices' => [
-        'pos1' => [
-            'serial' => '6010B232541610747',
-            'name' => 'POS Principal - La Ruta 11',
-            'location' => 'Mostrador Principal'
-        ],
-        'pos2' => [
-            'serial' => '6010B232541609909',
-            'name' => 'POS Secundario - La Ruta 11',
-            'location' => 'Caja 2'
-        ]
-    ],
-    
     'app_db_host' => getenv('APP_DB_HOST'),
     'app_db_name' => getenv('APP_DB_NAME'),
     'app_db_user' => getenv('APP_DB_USER'),
