@@ -42,6 +42,17 @@ $result = [
     'json_enabled' => function_exists('json_encode')
 ];
 
+// Intentar conectar a la base de datos
+$conn = null;
+if (isset($config['ruta11_db_host'], $config['ruta11_db_name'], $config['ruta11_db_user'], $config['ruta11_db_pass'])) {
+    $conn = @mysqli_connect(
+        $config['ruta11_db_host'],
+        $config['ruta11_db_user'],
+        $config['ruta11_db_pass'],
+        $config['ruta11_db_name']
+    );
+}
+
 // Verificar conexión a la base de datos
 if ($conn) {
     $result['database']['connected'] = true;
