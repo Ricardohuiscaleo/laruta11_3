@@ -1,3 +1,61 @@
+// Sistema de audio para notificaciones
+let audioContext = null;
+let audioUnlocked = false;
+let comandaAudio = null;
+
+// Inicializar audio context (necesario para iOS)
+export const initAudio = () => {
+  if (audioUnlocked) return true;
+  
+  try {
+    // Crear instancia de audio
+    comandaAudio = new Audio('/comanda.mp3');
+    comandaAudio.volume = 1.0;
+    comandaAudio.load();
+    
+    // Intentar reproducir silenciosamente para desbloquear
+    const playPromise = comandaAudio.play();
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        comandaAudio.pause();
+        comandaAudio.currentTime = 0;
+        audioUnlocked = true;
+        console.log('✅ Audio desbloqueado');
+      }).catch(() => {
+        console.log('⚠️ Audio aún bloqueado, se desbloqueará con interacción');
+      });
+    }
+    return true;
+  } catch (e) {
+    console.error('Error inicializando audio:', e);
+    return false;
+  }
+};
+
+// Reproducir sonido de comanda
+export const playComandaSound = () => {
+  try {
+    if (!comandaAudio) {
+      comandaAudio = new Audio('/comanda.mp3');
+      comandaAudio.volume = 1.0;
+    }
+    
+    comandaAudio.currentTime = 0;
+    const playPromise = comandaAudio.play();
+    
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        audioUnlocked = true;
+        console.log('🔊 Reproduciendo comanda.mp3');
+      }).catch(error => {
+        console.log('⚠️ No se pudo reproducir audio:', error.message);
+      });
+    }
+  } catch (e) {
+    console.error('Error reproduciendo audio:', e);
+  }
+};
+
 // Función de vibración para PWA
 export const vibrate = (pattern = 100) => {
   if ('vibrate' in navigator) {
@@ -5,13 +63,9 @@ export const vibrate = (pattern = 100) => {
   }
 };
 
-// Función de sonido de notificación
+// Función de sonido de notificación (legacy)
 export const playNotificationSound = () => {
-  try {
-    const audio = new Audio('/notificacion.mp3');
-    audio.volume = 0.5;
-    audio.play().catch(() => {});
-  } catch (e) {}
+  playComandaSound();
 };
 
 // Función de confeti

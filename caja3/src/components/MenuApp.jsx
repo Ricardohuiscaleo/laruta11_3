@@ -28,7 +28,7 @@ import ComboModal from './modals/ComboModal.jsx';
 import PaymentPendingModal from './modals/PaymentPendingModal.jsx';
 import SwipeToggle from './SwipeToggle.jsx';
 import useDoubleTap from '../hooks/useDoubleTap.js';
-import { vibrate, playNotificationSound, createConfetti } from '../utils/effects.js';
+import { vibrate, playNotificationSound, createConfetti, initAudio, playComandaSound } from '../utils/effects.js';
 import { validateCheckoutForm, getFormDisabledState } from '../utils/validation.js';
 
 
@@ -1929,6 +1929,16 @@ export default function App() {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
     
+    // Desbloquear audio con primera interacción del usuario
+    const unlockAudio = () => {
+      initAudio();
+      // Remover listeners después del primer uso
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+    };
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+    
     // Mostrar loader por 1.5 segundos
     setIsLoading(true);
     const timer = setTimeout(() => {
@@ -1937,6 +1947,8 @@ export default function App() {
     
     return () => {
       clearTimeout(timer);
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
     };
   }, []);
 
