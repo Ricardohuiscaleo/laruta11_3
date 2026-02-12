@@ -24,8 +24,7 @@ if (!$config) {
 }
 
 try {
-    $pdo = new PDO("mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4", $config['app_db_user'], $config['app_db_pass']);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = require_once __DIR__ . '/db_connect.php';
 
     // Obtener todos los productos activos con estadísticas de reseñas y subcategorías
     $stmt = $pdo->query("
