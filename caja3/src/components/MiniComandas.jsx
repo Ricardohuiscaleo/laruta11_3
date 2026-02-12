@@ -468,7 +468,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                     }
                     
                     const message = `🚚 *Pedido ${order.order_number}*\n\n📦 *Productos:*\n${items}\n\n💰 *Montos:*\nSubtotal: $${subtotal}\nDelivery: $${deliveryFee}\n*Total: $${total}*\n\n${paymentInstruction}\n\n📍 *Dirección:*\n${order.delivery_address}\n\n🗺️ Ver en mapa:\n${mapsUrl}`;
-                    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                    window.location.href = `whatsapp://send?text=${encodeURIComponent(message)}`;
                   }}
                   className="flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
                 >
