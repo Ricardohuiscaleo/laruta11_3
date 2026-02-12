@@ -129,7 +129,14 @@ const MiniComandas = ({ onOrdersUpdate }) => {
         body: JSON.stringify({ order_id: orderId })
       });
 
-      const result = await response.json();
+      const text = await response.text();
+      if (text.trim().startsWith('<')) {
+        console.error('API devolvió HTML:', text.substring(0, 200));
+        alert('❌ Error del servidor. Revisa la consola.');
+        return;
+      }
+
+      const result = JSON.parse(text);
       if (result.success) {
         await loadOrders();
       } else {
