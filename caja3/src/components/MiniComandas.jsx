@@ -5,13 +5,14 @@ import ChecklistCard from './ChecklistCard.jsx';
 const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
   const [orders, setOrders] = useState([]);
   const [checklists, setChecklists] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
 
   useEffect(() => {
-    loadOrders();
-    loadChecklists();
+    // Cargar inmediatamente sin loading
+    Promise.all([loadOrders(), loadChecklists()]);
+    
     const interval = setInterval(() => {
       loadOrders();
       loadChecklists();
@@ -34,8 +35,6 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
       }
     } catch (error) {
       console.error('Error cargando pedidos:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -513,13 +512,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
   };
 
   if (loading) {
-    return (
-      <div className="bg-white rounded-lg shadow-sm p-4">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
