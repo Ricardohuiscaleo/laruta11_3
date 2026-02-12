@@ -24,8 +24,7 @@ RUN rm -rf /var/www/html/* && \
     cp -r dist/* /var/www/html/ && \
     cp -r api /var/www/html/ && \
     [ -d admin ] && cp -r admin /var/www/html/ || true && \
-    cp load-env.php /var/www/html/ && \
-    cp config.php /var/www/html/ && \
+
     chown -R www-data:www-data /var/www/html && \
     chmod -R 755 /var/www/html
 
