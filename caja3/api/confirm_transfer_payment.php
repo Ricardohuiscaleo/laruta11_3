@@ -85,6 +85,7 @@ try {
         'order_number' => $order['order_number'],
         'payment_method' => $order['payment_method']
     ]);
+    exit;
     
 } catch (Exception $e) {
     if (isset($pdo)) $pdo->rollBack();
@@ -95,6 +96,7 @@ try {
         'error' => $e->getMessage(),
         'trace' => $e->getTraceAsString()
     ]);
+    exit;
 }
 
 function registerCashIncome($pdo, $amount, $order_number) {
