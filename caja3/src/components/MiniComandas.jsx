@@ -442,11 +442,11 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                     let normalizedAddress = order.delivery_address;
                     if (normalizedAddress.toLowerCase().includes('ctel.')) {
                       if (normalizedAddress.toLowerCase().includes('domeyco')) {
-                        normalizedAddress = 'Domeyco 1540, Providencia, Chile';
+                        normalizedAddress = 'Domeyco 1540, Arica, Chile';
                       } else if (normalizedAddress.toLowerCase().includes('oscar quina')) {
-                        normalizedAddress = 'Oscar Quina 1333, Providencia, Chile';
+                        normalizedAddress = 'Oscar Quina 1333, Arica, Chile';
                       } else if (normalizedAddress.toLowerCase().includes('santa maría') || normalizedAddress.toLowerCase().includes('santa maria')) {
-                        normalizedAddress = 'Av. Santa María 3000, Providencia, Chile';
+                        normalizedAddress = 'Av. Santa María 3000, Arica, Chile';
                       }
                     }
                     
