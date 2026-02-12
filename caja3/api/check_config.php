@@ -42,41 +42,28 @@ $result = [
     'json_enabled' => function_exists('json_encode')
 ];
 
-// Intentar conectar a la base de datos
+// Verificar conexión a la base de datos APP
 $conn = null;
-if (isset($config['ruta11_db_host'], $config['ruta11_db_name'], $config['ruta11_db_user'], $config['ruta11_db_pass'])) {
-    $conn = @mysqli_connect(
-        $config['ruta11_db_host'],
-        $config['ruta11_db_user'],
-        $config['ruta11_db_pass'],
-        $config['ruta11_db_name']
-    );
-}
-
-// Verificar conexión a la base de datos
-if ($conn) {
-    $result['database']['connected'] = true;
-    
-    // Verificar tablas
-    $tables = ['ia_prompts', 'ia_analisis'];
-    foreach ($tables as $table) {
-        $query = "SHOW TABLES LIKE '$table'";
-        $tableExists = $conn->query($query)->num_rows > 0;
-        $result['tables'][$table] = $tableExists;
-        
-        if ($tableExists) {
-            $countQuery = "SELECT COUNT(*) as count FROM $table";
-            $countResult = $conn->query($countQuery);
-            $row = $countResult->fetch_assoc();
-            $result['tables'][$table . '_count'] = $row['count'];
+if (isset($config['app_db_host'], $config['app_db_name'], $config['app_db_user'], $config['app_db_pass'])) {
+    try {
+        $conn = @mysqli_connect(
+            $config['app_db_host'],
+            $config['app_db_user'],
+            $config['app_db_pass'],
+            $config['app_db_name']
+        );
+        if ($conn) {
+            $result['database']['connected'] = true;
+        } else {
+            $result['database']['error'] = mysqli_connect_error();
         }
+    } catch (Exception $e) {
+        $result['database']['error'] = $e->getMessage();
     }
 } else {
-    $result['database']['error'] = mysqli_connect_error();
-    $result['success'] = false;
+    $result['database']['note'] = 'APP_DB credentials not configured';
 }
 
-// Verificar configuración de Gemini API
 if (isset($config['gemini_api_key']) && !empty($config['gemini_api_key'])) {
     $result['gemini_api']['configured'] = true;
     $result['gemini_api']['key_length'] = strlen($config['gemini_api_key']);
