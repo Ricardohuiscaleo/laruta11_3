@@ -185,24 +185,20 @@
             const [loading, setLoading] = useState(true);
             const previousOrderCountRef = useRef(0);
             const [audioEnabled, setAudioEnabled] = useState(false);
-            const [showAudioPopup, setShowAudioPopup] = useState(true);
             const [currentTime, setCurrentTime] = useState(new Date());
             const [copiedPhone, setCopiedPhone] = useState(null);
             const [copiedAddress, setCopiedAddress] = useState(null);
+            const audioUnlockedRef = useRef(false);
 
-            const enableAudio = () => {
-                if (!audioEnabled) {
-                    setAudioEnabled(true);
-                    setShowAudioPopup(false);
-                    console.log('✅ Audio habilitado por interacción del usuario');
-                    // Reproducir sonido silencioso para desbloquear audio
+            const unlockAudio = () => {
+                if (!audioUnlockedRef.current) {
                     const audio = new Audio('/comanda.mp3');
                     audio.volume = 0.01;
                     audio.play().then(() => {
-                        console.log('✅ Audio desbloqueado exitosamente');
-                    }).catch(e => {
-                        console.log('⚠️ No se pudo desbloquear audio:', e);
-                    });
+                        audioUnlockedRef.current = true;
+                        setAudioEnabled(true);
+                        console.log('🔊 Audio desbloqueado automáticamente');
+                    }).catch(() => {});
                 }
             };
 
@@ -350,9 +346,21 @@
                 loadOrders();
                 const interval = setInterval(loadOrders, 5000);
                 const timeInterval = setInterval(() => setCurrentTime(new Date()), 1000);
+                
+                // Desbloquear audio con primer click/tap
+                const handleInteraction = () => {
+                    unlockAudio();
+                    document.removeEventListener('click', handleInteraction);
+                    document.removeEventListener('touchstart', handleInteraction);
+                };
+                document.addEventListener('click', handleInteraction);
+                document.addEventListener('touchstart', handleInteraction);
+                
                 return () => {
                     clearInterval(interval);
                     clearInterval(timeInterval);
+                    document.removeEventListener('click', handleInteraction);
+                    document.removeEventListener('touchstart', handleInteraction);
                 };
             }, []);
 
@@ -518,26 +526,16 @@
             };
 
             const playTestSound = async () => {
+                if (!audioUnlockedRef.current) {
+                    unlockAudio();
+                }
                 try {
-                    console.log('🔊 Intentando reproducir sonido...');
-                    console.log('Audio habilitado:', audioEnabled);
-                    
                     const audio = new Audio('/comanda.mp3');
                     audio.volume = 1.0;
-                    
-                    const playPromise = audio.play();
-                    if (playPromise !== undefined) {
-                        playPromise.then(() => {
-                            console.log('✅ Sonido reproducido exitosamente');
-                        }).catch(error => {
-                            console.error('❌ Error reproduciendo sonido:', error.name, error.message);
-                            if (!audioEnabled) {
-                                console.log('👆 Haz click en la pantalla para habilitar audio');
-                            }
-                        });
-                    }
+                    await audio.play();
+                    console.log('🔊 Sonido reproducido');
                 } catch (error) {
-                    console.error('❌ Error creando audio:', error);
+                    console.error('❌ Error reproduciendo:', error);
                 }
             };
 
@@ -553,63 +551,6 @@
             return h('div', { 
                 className: 'min-h-screen bg-white'
             },
-                // Popup de activación de sonido
-                showAudioPopup && !audioEnabled && h('div', {
-                    style: {
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0,0,0,0.7)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 9999
-                    },
-                    onClick: (e) => e.stopPropagation()
-                },
-                    h('div', {
-                        style: {
-                            background: 'white',
-                            padding: '32px',
-                            borderRadius: '16px',
-                            maxWidth: '400px',
-                            textAlign: 'center',
-                            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
-                        }
-                    },
-                        h(Volume2, { size: 64, style: { margin: '0 auto 16px', color: '#f97316' } }),
-                        h('h2', { style: { fontSize: '24px', fontWeight: 'bold', marginBottom: '12px', color: '#1f2937' } }, '🔔 Activar Notificaciones de Sonido'),
-                        h('p', { style: { color: '#6b7280', marginBottom: '24px', fontSize: '14px' } }, 'Para recibir alertas sonoras cuando lleguen nuevos pedidos, activa el sonido.'),
-                        h('div', { style: { display: 'flex', gap: '12px', justifyContent: 'center' } },
-                            h('button', {
-                                onClick: () => setShowAudioPopup(false),
-                                style: {
-                                    padding: '12px 24px',
-                                    background: '#e5e7eb',
-                                    color: '#374151',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer'
-                                }
-                            }, 'Ahora no'),
-                            h('button', {
-                                onClick: enableAudio,
-                                style: {
-                                    padding: '12px 24px',
-                                    background: '#f97316',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer'
-                                }
-                            }, '🔊 Activar Sonido')
-                        )
-                    )
-                ),
                 h('header', { className: 'bg-white shadow-sm border-b sticky top-0 z-10' },
                     h('div', { className: 'max-w-7xl mx-auto px-4 py-2' },
                         h('div', { className: 'flex items-center justify-between gap-4 mb-2' },
