@@ -469,7 +469,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                   </>
                 )}
                 <span className="text-xs text-gray-400">→</span>
-                <span className="font-bold text-green-600">${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}</span>
+                <span className="text-xs text-gray-600">Total: <span className="font-bold text-green-600">${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}</span></span>
               </div>
               <div className="flex items-center gap-1 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded w-fit">
                 {getPaymentIcon(order.payment_method)}
