@@ -419,7 +419,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
 
         {renderDeliveryExtras(order)}
 
-        {order.delivery_type === 'delivery' && order.delivery_address ? (
+        {order.delivery_type === 'delivery' ? (
           <div className="text-xs bg-blue-50 border border-blue-200 rounded p-2 mb-2">
             <div className="flex items-center gap-2 text-blue-800">
               <Truck size={12} className="flex-shrink-0" />
@@ -427,7 +427,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
               {!isScheduled && order.created_at && (
                 <><Clock size={12} /><span>{new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}</span></>
               )}
-              <span className="font-semibold">• {order.delivery_address}</span>
+              {order.delivery_address && <span className="font-semibold">• {order.delivery_address}</span>}
             </div>
           </div>
         ) : order.delivery_type === 'cuartel' ? (
@@ -459,6 +459,9 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <span className="font-bold text-green-600">${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}</span>
+              {order.delivery_type === 'delivery' && order.delivery_fee > 0 && (
+                <span className="text-xs text-orange-600 font-semibold">+${parseInt(order.delivery_fee).toLocaleString('es-CL')} delivery</span>
+              )}
               <div className="flex items-center gap-1 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
                 {getPaymentIcon(order.payment_method)}
                 <span>{getPaymentText(order.payment_method)}</span>
