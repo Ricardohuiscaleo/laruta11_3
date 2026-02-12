@@ -2,7 +2,7 @@
 // Script para corregir las fechas completed_at que están mal
 
 // Cargar config desde raíz
-$config = require_once __DIR__ . '/../../../../config.php';
+$config = require_once __DIR__ . '/../../config.php';
 
 // Conectar a BD desde config central
 $conn = mysqli_connect(
