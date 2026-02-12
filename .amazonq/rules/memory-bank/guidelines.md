@@ -2,466 +2,545 @@
 
 ## Code Quality Standards
 
-### Naming Conventions
-- **Variables**: camelCase for JavaScript/React (`cartTotal`, `customerInfo`, `isProcessingOrder`)
-- **Functions**: camelCase for JavaScript (`handleDrop`, `loadKanbanData`, `renderCard`)
-- **PHP Functions**: snake_case (`executeQuery`, `get_flag_emoji`)
-- **Database Tables**: snake_case (`tuu_orders`, `wallet_transactions`, `proyecciones_financieras`)
-- **Database Columns**: snake_case (`user_id`, `payment_status`, `created_at`)
-- **React Components**: PascalCase (`CheckoutApp`, `SmartAnalysis`, `ScheduleOrderModal`)
-- **CSS Classes**: kebab-case with utility classes (`kanban-column`, `bg-white`, `text-gray-900`)
-
 ### File Organization
-- **One endpoint per file**: Each PHP API endpoint is a separate file (e.g., `get_productos.php`, `create_order.php`)
-- **Component files**: React components in `.jsx` files under `src/components/`
-- **Utility files**: Helper functions in `src/utils/`
-- **API directory structure**: Organized by feature (`/api/auth/`, `/api/orders/`, `/api/tuu/`)
+- **Component files**: Single component per file with descriptive names (e.g., `GalagaGame.jsx`, `ApiMonitor.jsx`, `MenuApp.jsx`)
+- **API endpoints**: Descriptive PHP filenames indicating functionality (e.g., `get_smart_projection_shifts.php`, `geocode.php`)
+- **Utility scripts**: Node.js scripts with clear purpose (e.g., `project-summary.js`, `analyze-project.js`)
+- **Directory structure**: Organized by feature/domain (api/orders/, api/location/, src/components/, src/utils/)
 
-### Code Formatting
-- **Indentation**: 2 spaces for JavaScript/JSX, 4 spaces for PHP
-- **String quotes**: Single quotes for JavaScript, double quotes for PHP
-- **Line length**: No strict limit, but keep readable (typically under 120 characters)
-- **Semicolons**: Used in JavaScript
-- **Trailing commas**: Used in JavaScript arrays and objects
+### Code Formatting Patterns
+
+#### JavaScript/JSX
+- **Indentation**: 2 spaces consistently
+- **Imports**: Grouped logically - React first, then external libraries, then internal modules
+- **Component structure**: Hooks at top, helper functions in middle, render at bottom
+- **Destructuring**: Extensive use for props and state objects
+- **Template literals**: Used for string interpolation and multi-line strings
+- **Arrow functions**: Preferred for callbacks and functional components
+- **Semicolons**: Consistently used at statement ends
+
+#### PHP
+- **Opening tags**: `<?php` on first line
+- **Headers**: Set early (Content-Type, CORS headers)
+- **Config loading**: Flexible path resolution with fallback array
+- **Error handling**: Try-catch blocks with JSON error responses
+- **Database**: PDO with prepared statements and error mode exceptions
+- **Response format**: Consistent JSON structure with `success` boolean and `data`/`error` keys
+- **Closing tags**: `?>` at file end
+
+### Naming Conventions
+
+#### JavaScript/JSX
+- **Components**: PascalCase (e.g., `GalagaGame`, `ApiMonitor`, `ProductDetailModal`)
+- **Functions**: camelCase (e.g., `checkStatus`, `categorizeApis`, `getOverallStats`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `API_CATEGORIES`, `STATUS_CONFIG`)
+- **State variables**: Descriptive camelCase (e.g., `gameState`, `lastCheck`, `showTestPanel`)
+- **Event handlers**: Prefix with `handle` or `on` (e.g., `handleKeyDown`, `onClick`)
+
+#### PHP
+- **Variables**: snake_case (e.g., `$current_hour`, `$sales_by_weekday`, `$total_avg`)
+- **Arrays**: snake_case keys (e.g., `['success' => true, 'total_real' => $value]`)
+- **Functions**: snake_case (e.g., `file_get_contents`, `json_encode`)
+- **Database columns**: snake_case (e.g., `installment_amount`, `delivery_fee`, `created_at`)
+
+#### SQL
+- **Tables**: snake_case (e.g., `tuu_orders`, `food_trucks`, `cash_register`)
+- **Columns**: snake_case (e.g., `payment_status`, `order_id`, `user_id`)
 
 ### Documentation Standards
-- **Inline comments**: Used sparingly, only for complex logic
-- **Function comments**: Minimal, code should be self-documenting
-- **TODO comments**: Used for pending work
-- **Debug logs**: `console.log()` for frontend, error_log() for backend
+- **Inline comments**: Used sparingly, explain "why" not "what"
+- **Section comments**: Mark major code sections in complex files
+- **JSDoc**: Not heavily used, prefer self-documenting code
+- **README files**: Markdown format with clear sections and examples
+- **API documentation**: Inline comments in PHP explaining business logic
 
 ## Semantic Patterns
 
 ### React Component Patterns
 
-#### State Management
-```javascript
-// useState for local component state
-const [cart, setCart] = useState([]);
-const [user, setUser] = useState(null);
-const [loading, setLoading] = useState(false);
+#### Hooks Usage (Frequency: 5/5 files)
+```jsx
+// State management with multiple useState calls
+const [gameState, setGameState] = useState('playing');
+const [score, setScore] = useState(0);
+const [loading, setLoading] = useState(true);
 
-// useEffect for side effects and data loading
+// Refs for DOM access and persistent values
+const canvasRef = useRef(null);
+const gameLoopRef = useRef(null);
+const gameObjects = useRef({ player: {}, bullets: [] });
+
+// Effects for lifecycle and side effects
 useEffect(() => {
-  fetch('/api/endpoint.php')
-    .then(response => response.json())
-    .then(data => setData(data))
-    .catch(error => console.error('Error:', error));
-}, [dependency]);
+  // Setup logic
+  return () => {
+    // Cleanup logic
+  };
+}, [dependencies]);
+
+// Memoized callbacks to prevent re-renders
+const handleAction = useCallback(() => {
+  // Action logic
+}, [dependencies]);
 ```
 
-#### Conditional Rendering
-```javascript
-// Ternary for simple conditions
-{user ? <UserProfile /> : <LoginButton />}
-
-// Logical AND for single condition
-{isLoading && <LoadingSpinner />}
-
-// IIFE for complex logic
-{(() => {
-  if (condition1) return <Component1 />;
-  if (condition2) return <Component2 />;
-  return <DefaultComponent />;
-})()}
-```
-
-#### Event Handlers
-```javascript
-// Inline arrow functions for simple handlers
-onClick={() => setShowModal(true)}
-
-// Named functions for complex logic
-const handleSubmit = async () => {
-  setLoading(true);
-  try {
-    const response = await fetch('/api/endpoint.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    const result = await response.json();
-    if (result.success) {
-      // Handle success
-    }
-  } catch (error) {
-    console.error('Error:', error);
-  } finally {
-    setLoading(false);
-  }
+#### Component Structure Pattern (Frequency: 5/5 files)
+```jsx
+const ComponentName = () => {
+  // 1. State declarations
+  const [state, setState] = useState(initialValue);
+  
+  // 2. Refs
+  const ref = useRef(null);
+  
+  // 3. Helper functions and callbacks
+  const helperFunction = useCallback(() => {
+    // Logic
+  }, [deps]);
+  
+  // 4. Effects
+  useEffect(() => {
+    // Side effects
+  }, [deps]);
+  
+  // 5. Render logic
+  return (
+    <div>
+      {/* JSX */}
+    </div>
+  );
 };
+
+export default ComponentName;
+```
+
+#### Conditional Rendering Pattern (Frequency: 5/5 files)
+```jsx
+// Early return for loading states
+if (loading && !lastCheck) {
+  return <LoadingSpinner />;
+}
+
+// Ternary operators for inline conditions
+{gameState === 'gameOver' && (
+  <GameOverOverlay />
+)}
+
+// Logical AND for conditional display
+{showTestPanel && (
+  <TestPanel />
+)}
+
+// Optional chaining for safe property access
+{item.response_time && (
+  <ResponseTime time={item.response_time} />
+)}
 ```
 
 ### PHP API Patterns
 
-#### Standard API Response Structure
+#### Config Loading Pattern (Frequency: 5/5 PHP files)
+```php
+// Flexible config path resolution
+$config_paths = [
+    __DIR__ . '/config.php',
+    __DIR__ . '/../config.php',
+    __DIR__ . '/../../config.php',
+    __DIR__ . '/../../../config.php',
+    __DIR__ . '/../../../../config.php'
+];
+
+$config = null;
+foreach ($config_paths as $path) {
+    if (file_exists($path)) {
+        $config = require_once $path;
+        break;
+    }
+}
+
+if (!$config) {
+    echo json_encode(['success' => false, 'error' => 'Config no encontrado']);
+    exit;
+}
+```
+
+#### Database Connection Pattern (Frequency: 5/5 PHP files)
+```php
+try {
+    $pdo = new PDO(
+        "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
+        $config['app_db_user'],
+        $config['app_db_pass'],
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+} catch (Exception $e) {
+    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    exit;
+}
+```
+
+#### API Response Pattern (Frequency: 5/5 PHP files)
 ```php
 // Success response
 echo json_encode([
     'success' => true,
-    'data' => $result,
-    'message' => 'Operation completed successfully'
+    'data' => [
+        'key' => $value,
+        'items' => $array
+    ]
 ]);
 
 // Error response
 echo json_encode([
     'success' => false,
-    'error' => 'Error message',
-    'details' => $additionalInfo
+    'error' => 'Error message'
+]);
+
+// Response with debug info
+echo json_encode([
+    'success' => true,
+    'data' => $mainData,
+    'debug' => [
+        'timestamp' => $now,
+        'query_count' => $count
+    ]
 ]);
 ```
 
-#### Database Connection Pattern
+#### Request Validation Pattern (Frequency: 4/5 PHP files)
 ```php
-// Include config
-require_once __DIR__ . '/../config.php';
-
-// Check connection
-if (!isset($conn) || $conn === false) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Database connection failed']);
-    exit;
+// Method validation
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode(['error' => 'Método no permitido']);
+    exit();
 }
 
-// Set charset
-mysqli_set_charset($conn, 'utf8');
-```
+// Parameter validation
+$lat = floatval($_POST['lat']);
+$lng = floatval($_POST['lng']);
 
-#### CORS Headers
-```php
-header('Access-Control-Allow-Origin: *');
-header('Content-Type: application/json; charset=UTF-8');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
-header('Access-Control-Allow-Headers: Content-Type');
-```
-
-#### Prepared Statements
-```php
-// Always use prepared statements for SQL queries
-$stmt = $conn->prepare("SELECT * FROM productos WHERE id = ?");
-$stmt->bind_param("i", $product_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$product = $result->fetch_assoc();
-$stmt->close();
-```
-
-### JavaScript Patterns
-
-#### Async/Await for API Calls
-```javascript
-// Preferred pattern for API calls
-const loadData = async () => {
-  try {
-    const response = await fetch('/api/endpoint.php');
-    const data = await response.json();
-    if (data.success) {
-      setData(data.data);
-    } else {
-      console.error('Error:', data.error);
-    }
-  } catch (error) {
-    console.error('Error:', error);
-  }
-};
-```
-
-#### LocalStorage for Cart Management
-```javascript
-// Save to localStorage
-localStorage.setItem('ruta11_cart', JSON.stringify(cart));
-
-// Load from localStorage
-const savedCart = localStorage.getItem('ruta11_cart');
-if (savedCart) {
-  setCart(JSON.parse(savedCart));
+if (!$lat || !$lng) {
+    echo json_encode(['error' => 'Coordenadas inválidas']);
+    exit();
 }
 
-// Remove from localStorage
-localStorage.removeItem('ruta11_cart');
+// GET parameter with default
+$mode = $_GET['mode'] ?? 'weighted';
 ```
 
-#### Dynamic Styling with Inline Styles
+### Data Processing Patterns
+
+#### Array Manipulation (Frequency: 5/5 files)
 ```javascript
-// Conditional inline styles
-style={{
-  background: isActive ? '#059669' : '#e5e5e5',
-  color: isActive ? 'white' : '#666',
-  width: `${percentage}%`
-}}
+// Array filtering
+const filtered = items.filter(item => item.status === 'active');
+
+// Array mapping
+const mapped = items.map(item => ({ ...item, newProp: value }));
+
+// Array reduction
+const total = items.reduce((sum, item) => sum + item.value, 0);
+
+// Array sorting
+items.sort((a, b) => b.value - a.value);
+
+// Array slicing for pagination
+const limited = items.slice(0, 10);
 ```
 
-### Modal Patterns
-
-#### Modal Creation (Vanilla JS)
-```javascript
-// Create overlay
-const overlay = document.createElement('div');
-overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999';
-
-// Create modal
-const modal = document.createElement('div');
-modal.style.cssText = 'background:white;border-radius:12px;max-width:600px';
-modal.innerHTML = '...content...';
-
-// Append and handle close
-overlay.appendChild(modal);
-document.body.appendChild(overlay);
-overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
-```
-
-#### Modal Pattern (React)
-```javascript
-{showModal && (
-  <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
-       onClick={() => setShowModal(false)}>
-    <div className="bg-white rounded-2xl max-w-md"
-         onClick={(e) => e.stopPropagation()}>
-      {/* Modal content */}
-    </div>
-  </div>
-)}
-```
-
-## Internal API Usage Patterns
-
-### Authentication Check
-```javascript
-// Check user session
-fetch('/api/auth/check_session.php')
-  .then(response => response.json())
-  .then(data => {
-    if (data.authenticated) {
-      setUser(data.user);
-    }
-  });
-```
-
-### Order Creation
-```javascript
-// Create order with full details
-const orderData = {
-  amount: cartTotal,
-  subtotal: cartSubtotal,
-  customer_name: customerInfo.name,
-  customer_phone: customerInfo.phone,
-  user_id: user?.id || null,
-  cart_items: cart,
-  delivery_fee: deliveryFee,
-  delivery_type: customerInfo.deliveryType,
-  payment_method: 'cash',
-  cashback_used: cashbackAmount
-};
-
-const response = await fetch('/api/create_order.php', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(orderData)
+```php
+// PHP array operations
+$filtered = array_filter($items, function($item) {
+    return $item['status'] === 'active';
 });
+
+$mapped = array_map(function($item) {
+    return $item['value'];
+}, $items);
+
+$total = array_sum($values);
+$keys = array_keys($array);
+$values = array_values($array);
 ```
 
-### Product Management
-```javascript
-// Load products
-fetch('/api/get_productos.php')
-  .then(response => response.json())
-  .then(products => {
-    if (Array.isArray(products)) {
-      setProducts(products);
-    }
-  });
+#### Date/Time Handling (Frequency: 4/5 files)
+```php
+// Timezone-aware date handling
+$now = new DateTime('now', new DateTimeZone('America/Santiago'));
+$currentHour = (int)$now->format('G');
 
-// Update product
-const formData = new FormData();
-formData.append('id', productId);
-formData.append('name', productName);
-formData.append('price', price);
+// Date manipulation
+$shiftToday = clone $now;
+if ($currentHour >= 0 && $currentHour < 4) {
+    $shiftToday->modify('-1 day');
+}
 
-fetch('/api/update_producto.php', {
-  method: 'POST',
-  body: formData
-});
+// Date formatting
+$dateKey = $date->format('Y-m-d');
+$weekday = (int)$date->format('w');
 ```
 
-### Image Upload to S3
 ```javascript
-// Upload image
-const formData = new FormData();
-formData.append('image', file);
-formData.append('product_id', productId);
-
-const response = await fetch('/api/upload_image.php', {
-  method: 'POST',
-  body: formData
-});
+// JavaScript date handling
+const timestamp = new Date().toLocaleString();
+const dateKey = date.toISOString().split('T')[0];
 ```
 
-## Frequently Used Code Idioms
+### Error Handling Patterns
 
-### Currency Formatting
+#### Try-Catch Pattern (Frequency: 5/5 files)
 ```javascript
-// Chilean peso formatting
-`$${parseInt(amount).toLocaleString('es-CL')}`
-
-// Example: $15.000 (Chilean format with dots)
-```
-
-### Date Formatting
-```javascript
-// Chilean date format
-new Date(dateString).toLocaleDateString('es-CL')
-
-// Example: 15/01/2025
-```
-
-### Timestamp for Cache Busting
-```javascript
-// Add timestamp to API calls to prevent caching
-fetch(`/api/endpoint.php?t=${Date.now()}`)
-```
-
-### Loose Equality for Database Values
-```javascript
-// Handle string/number inconsistency from database
-if (user?.es_militar_rl6 == 1 || user?.es_militar_rl6 === '1')
-```
-
-### Array Filtering and Mapping
-```javascript
-// Filter and map pattern
-const activeProducts = products
-  .filter(p => p.is_active === 1 || p.active === 1)
-  .map(p => ({
-    id: p.id,
-    name: p.name,
-    price: parseFloat(p.price)
-  }));
-```
-
-### Reduce for Totals
-```javascript
-// Calculate cart total
-const total = cart.reduce((sum, item) => {
-  return sum + (item.price * item.quantity);
-}, 0);
-```
-
-### Conditional Class Names
-```javascript
-// TailwindCSS conditional classes
-className={`px-4 py-2 rounded ${
-  isActive 
-    ? 'bg-blue-600 text-white' 
-    : 'bg-gray-200 text-gray-700'
-}`}
-```
-
-### Error Handling Pattern
-```javascript
-// Standard try-catch with user feedback
+// Async error handling
 try {
-  const response = await fetch('/api/endpoint.php', {
-    method: 'POST',
-    body: JSON.stringify(data)
-  });
-  const result = await response.json();
-  
-  if (result.success) {
-    alert('✅ Operación exitosa');
-  } else {
-    alert('❌ Error: ' + result.error);
-  }
+  const response = await fetch(url);
+  const data = await response.json();
+  // Process data
 } catch (error) {
   console.error('Error:', error);
-  alert('❌ Error de conexión');
+  // Handle error
+} finally {
+  setLoading(false);
 }
 ```
 
-### Loading States
-```javascript
-// Standard loading pattern
-const [isLoading, setIsLoading] = useState(false);
+```php
+// PHP error handling
+try {
+    // Database operations
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
+    exit;
+}
+```
 
-const handleAction = async () => {
-  setIsLoading(true);
-  try {
-    // Perform action
-  } finally {
-    setIsLoading(false);
+### Performance Optimization Patterns
+
+#### Memoization and Caching (Frequency: 4/5 files)
+```javascript
+// useCallback for expensive functions
+const expensiveOperation = useCallback(() => {
+  // Complex calculation
+}, [dependencies]);
+
+// useMemo for computed values
+const computedValue = useMemo(() => {
+  return expensiveCalculation(data);
+}, [data]);
+
+// Refs for values that don't trigger re-renders
+const persistentValue = useRef(initialValue);
+```
+
+#### Cleanup Pattern (Frequency: 5/5 files)
+```javascript
+useEffect(() => {
+  // Setup
+  const interval = setInterval(checkStatus, 30000);
+  const listener = window.addEventListener('keydown', handleKeyDown);
+  
+  // Cleanup
+  return () => {
+    clearInterval(interval);
+    window.removeEventListener('keydown', handleKeyDown);
+  };
+}, [dependencies]);
+```
+
+### UI/UX Patterns
+
+#### Loading States (Frequency: 5/5 files)
+```javascript
+// Loading indicator
+if (loading && !data) {
+  return (
+    <div className="flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <span className="ml-3">Cargando...</span>
+    </div>
+  );
+}
+```
+
+#### Status Indicators (Frequency: 4/5 files)
+```javascript
+// Status configuration object
+const STATUS_CONFIG = {
+  ok: {
+    icon: CheckCircle,
+    color: 'text-green-600',
+    bg: 'bg-green-50',
+    label: 'Operativo'
+  },
+  error: {
+    icon: XCircle,
+    color: 'text-red-600',
+    bg: 'bg-red-50',
+    label: 'Error'
   }
 };
 
-// Render
-<button disabled={isLoading}>
-  {isLoading ? 'Procesando...' : 'Confirmar'}
-</button>
+// Dynamic status rendering
+const statusConfig = STATUS_CONFIG[item.status];
+<StatusIcon className={statusConfig.color} />
 ```
 
-## Popular Annotations and Emojis
+#### Responsive Design (Frequency: 5/5 files)
+```jsx
+// Tailwind responsive classes
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  {/* Content */}
+</div>
 
-### User-Facing Messages
-- ✅ Success messages
-- ❌ Error messages
-- ⚠️ Warning messages
-- 💰 Money/pricing related
-- 🚚 Delivery related
-- 📦 Inventory/stock related
-- 🎯 Goals/targets
-- 🔥 Promotions/hot items
-- ⏰ Time-sensitive
-- 📊 Analytics/reports
+// Mobile-first approach
+<div className="flex flex-col md:flex-row items-center">
+  {/* Content */}
+</div>
+```
 
-### Code Comments
+## Internal API Usage
+
+### Fetch API Pattern (Frequency: 5/5 files)
 ```javascript
-// PASO 1: Create payment
-// PASO 2: Save delivery info
-// CRITICAL: Check business hours
-// TODO: Implement feature
-// FIXME: Bug to fix
-// NOTE: Important information
+// GET request
+const response = await fetch('/api/endpoint.php');
+const data = await response.json();
+
+// POST request
+const response = await fetch('/api/endpoint.php', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(payload)
+});
+
+// Query parameters
+const url = `/api/endpoint.php?param=${value}&mode=${mode}`;
+const response = await fetch(url);
 ```
 
-## Best Practices
+### Database Query Pattern (Frequency: 5/5 PHP files)
+```php
+// Prepared statement with parameters
+$sql = "SELECT * FROM table WHERE status = :status ORDER BY created_at DESC";
+$stmt = $pdo->prepare($sql);
+$stmt->execute(['status' => 'active']);
+$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-### Security
-- Always use prepared statements for SQL queries
-- Validate and sanitize user input
-- Store sensitive data in `.env` files
-- Never commit credentials to git
-- Use HTTPS for production
-- Implement CORS properly
+// Complex aggregation query
+$sql = "SELECT 
+            o.amount,
+            o.delivery_fee,
+            o.created_at
+        FROM tuu_orders o
+        WHERE o.payment_status = 'paid'
+        ORDER BY o.created_at ASC";
+```
 
-### Performance
-- Cache bust with timestamps when needed
-- Minimize API calls with batch operations
-- Use localStorage for cart persistence
-- Lazy load images
-- Debounce search inputs
+### External API Integration (Frequency: 3/5 files)
+```php
+// Google Maps API
+$url = "https://maps.googleapis.com/maps/api/geocode/json?latlng={$lat},{$lng}&key={$config['api_key']}&language=es";
+$response = file_get_contents($url);
+$data = json_decode($response, true);
 
-### User Experience
-- Show loading states for async operations
-- Provide clear error messages with emojis
-- Confirm destructive actions
-- Use optimistic UI updates when possible
-- Mobile-first responsive design
+// Response validation
+if ($data['status'] === 'OK' && !empty($data['results'])) {
+    // Process results
+}
+```
 
-### Code Organization
-- Keep components small and focused
-- Extract reusable logic into utilities
-- Group related API endpoints in folders
-- Use consistent naming across the codebase
-- Document complex business logic
+## Code Idioms
 
-### Testing
-- Test payment flows thoroughly
-- Verify inventory deductions
-- Check edge cases (empty cart, out of stock)
-- Test on multiple devices and browsers
-- Validate form inputs
+### Frequently Used Patterns
 
-### Deployment
-- Build before deploying
-- Test in staging environment
-- Backup database before migrations
-- Monitor error logs
-- Keep dependencies updated
+#### Null Coalescing (Frequency: 5/5 files)
+```php
+$mode = $_GET['mode'] ?? 'default';
+$amount = (float)($transaction['amount'] ?? 0);
+```
+
+```javascript
+const value = data?.property ?? defaultValue;
+const items = response.data || [];
+```
+
+#### Spread Operator (Frequency: 5/5 JS files)
+```javascript
+// Object spreading
+const newState = { ...oldState, updatedProp: value };
+
+// Array spreading
+const combined = [...array1, ...array2];
+const updated = [newItem, ...prev.slice(0, 9)];
+```
+
+#### Destructuring (Frequency: 5/5 JS files)
+```javascript
+// Object destructuring
+const { player, bullets, enemies } = gameObjects.current;
+const { success, data, error } = response;
+
+// Array destructuring
+const [state, setState] = useState(initial);
+const [first, ...rest] = array;
+```
+
+#### Template Literals (Frequency: 5/5 files)
+```javascript
+const message = `Total: ${total.toLocaleString('es-CL')}`;
+const url = `/api/endpoint.php?id=${id}&action=${action}`;
+```
+
+```php
+$sql = "SELECT * FROM {$table} WHERE id = :id";
+$dateKey = "$currentYear-$currentMonth-$day";
+```
+
+### Common Annotations and Comments
+
+#### Section Markers (Frequency: 4/5 files)
+```javascript
+// Game objects
+// Audio functions
+// Input handling
+// Render game
+```
+
+```php
+// Modo de proyección
+// Determinar día del turno actual
+// Obtener TODO el histórico
+// Generar proyección día por día
+```
+
+#### Business Logic Comments (Frequency: 5/5 PHP files)
+```php
+// Aplicar lógica de turnos: 00:00-03:59 pertenece al día anterior
+// Si estamos antes de las 17:00, el turno actual aún no ha comenzado
+// Saltar transacciones inválidas
+// Usar promedio general para días sin datos
+```
+
+#### TODO and FIXME (Frequency: 2/5 files)
+```javascript
+// TODO: Implement error recovery
+// FIXME: Handle edge case for timezone
+```
+
+## Best Practices Observed
+
+1. **Separation of Concerns**: Clear separation between UI components, business logic, and data access
+2. **Error Handling**: Comprehensive try-catch blocks with user-friendly error messages
+3. **Type Safety**: Explicit type casting in PHP (`(int)`, `(float)`, `floatval()`)
+4. **Security**: Prepared statements for SQL, input validation, CORS headers
+5. **Performance**: useCallback/useMemo for optimization, efficient array operations
+6. **Maintainability**: Small, focused functions with clear responsibilities
+7. **Consistency**: Uniform code style across files, consistent naming conventions
+8. **Debugging**: Debug information included in API responses for troubleshooting
+9. **Timezone Awareness**: Explicit timezone handling for Chilean time (America/Santiago)
+10. **Responsive Design**: Mobile-first approach with Tailwind responsive utilities

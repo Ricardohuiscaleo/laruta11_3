@@ -1,74 +1,72 @@
 # La Ruta 11 - Product Overview
 
 ## Project Purpose
-La Ruta 11 is a comprehensive food truck management system for a Chilean restaurant business. It provides a complete digital ecosystem for managing online orders, point-of-sale operations, inventory, financial projections, and customer engagement.
+La Ruta 11 is a comprehensive food truck management system for a Chilean restaurant business. It provides a complete digital ecosystem for managing online orders, point-of-sale operations, and customer-facing experiences across multiple domains.
 
 ## Value Proposition
-- **Multi-channel ordering**: Customers can order through web app with Google OAuth authentication
-- **Integrated POS system**: Complete cash register management with shift tracking and financial reporting
-- **Real-time inventory**: Automatic stock deduction based on recipes and ingredient tracking
-- **Payment processing**: Integration with TUU payment gateway for online and POS transactions
-- **Business intelligence**: Sales analytics, financial projections, and smart purchase recommendations
-- **Customer engagement**: Loyalty programs, cashback system, live contests, and notifications
+- **Multi-channel ordering**: Customers can order through web app with real-time menu updates
+- **Integrated POS system**: Complete cash register management with inventory tracking
+- **Real-time operations**: Live order notifications, delivery tracking, and food truck location services
+- **Payment flexibility**: Multiple payment methods including TUU.cl integration, transfers, and cash
+- **Inventory intelligence**: Automated stock tracking, ingredient management, and purchase recommendations
+- **Business analytics**: Sales reports, financial projections, and performance dashboards
 
 ## Key Features
 
-### Customer-Facing (app3)
-- Online menu with product customization and combos
-- Shopping cart with delivery/pickup options
-- Google OAuth authentication
+### Customer App (app3 - app.laruta11.cl)
+- Dynamic menu with categories: hamburgers (100g/200g), sandwiches, completos, pizzas, beverages, combos
+- Product customization system with extras and modifications
+- Shopping cart with combo support
+- Multiple delivery options: pickup, delivery with geolocation-based fees
+- Payment integration: TUU online payments, bank transfers, cash
+- User authentication via Google OAuth
 - Order tracking and history
-- Wallet system with cashback rewards
-- Discount codes and promotional campaigns
-- Live contest participation with voting
-- Real-time notifications
+- Loyalty rewards and cashback system
+- Product reviews and ratings
+- Live contest participation system
 
-### Point of Sale (caja3)
-- Cash register management (open/close shifts)
-- Order creation and payment processing
-- Multiple payment methods (cash, card, transfer, TUU)
-- Inventory management and stock tracking
-- Recipe and ingredient management
-- Product cost calculation
-- Sales analytics and reporting
-- Smart purchase recommendations
-- Merma (waste) tracking
-- Financial projections
-- Shift-based sales reports
+### POS System (caja3 - caja.laruta11.cl)
+- Complete cash register operations (open/close shifts)
+- Order management with real-time notifications
+- Inventory management with ingredient tracking
+- Product recipe management with cost calculations
+- Sales analytics by period, product, and location
+- Smart purchase recommendations based on sales projections
+- Cash flow tracking and shift reconciliation
+- Waste (merma) registration
+- Multi-payment method support
+- WhatsApp order integration
+- Cashier profile management
 
-### Landing Page (landing3)
+### Landing Page (landing3 - laruta11.cl)
 - Public-facing website
-- Brand presentation
-- AWS S3 integration for media
-
-### Shared Capabilities
-- Multi-location food truck scheduling
-- Real-time order notifications
-- WhatsApp integration for order confirmations
-- Email notifications via Gmail OAuth
-- Image management with AWS S3
-- AI-powered analytics with Gemini API
-- Unsplash integration for backgrounds
+- Food truck location information
+- Business hours and contact details
+- AWS S3 integration for media management
 
 ## Target Users
 
-### Primary Users
-- **Customers**: Order food online, track orders, earn rewards
-- **Cashiers**: Process orders, manage inventory, handle payments
-- **Managers**: View analytics, manage products, configure system
-- **Administrators**: Full system access, user management, financial reports
+### Customers
+- Mobile-first users ordering food online
+- Customers seeking delivery or pickup options
+- Users participating in loyalty programs and contests
 
-### Use Cases
-1. **Online ordering**: Customer browses menu, customizes products, places order with delivery
-2. **POS sales**: Cashier creates order, processes payment, prints receipt
-3. **Inventory management**: Manager updates ingredient stock, tracks usage, receives purchase recommendations
-4. **Financial analysis**: Administrator reviews sales reports, analyzes trends, creates projections
-5. **Contest engagement**: Customer participates in live contests, votes for participants, wins prizes
-6. **Loyalty rewards**: Customer accumulates cashback, uses wallet balance for discounts
+### Staff
+- Cashiers managing point-of-sale operations
+- Kitchen staff viewing order comandas
+- Managers monitoring sales and inventory
+- Administrators configuring products and prices
 
-## Business Model
-- Direct sales through web app and POS
-- Delivery and pickup options
-- Loyalty program to increase retention
-- Contest-based marketing for engagement
-- Multi-location food truck operations
+### Business Owners
+- Reviewing financial reports and analytics
+- Managing multiple food truck locations
+- Making data-driven purchasing decisions
+- Monitoring business performance metrics
+
+## Use Cases
+
+1. **Online Ordering Flow**: Customer browses menu → customizes products → adds to cart → selects delivery/pickup → pays online or on delivery → receives order confirmation
+2. **POS Order Flow**: Cashier opens register → takes order → processes payment → prints comanda → closes shift with reconciliation
+3. **Inventory Management**: System tracks ingredient usage per sale → alerts low stock → generates purchase recommendations → manager places orders
+4. **Delivery Operations**: Customer places order → system calculates delivery fee based on location → assigns to nearest food truck → tracks delivery status
+5. **Business Intelligence**: System aggregates sales data → generates reports → provides financial projections → supports decision-making

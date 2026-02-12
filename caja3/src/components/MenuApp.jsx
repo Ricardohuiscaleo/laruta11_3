@@ -1919,22 +1919,14 @@ export default function App() {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
     
-    // Mostrar loader por 1.5 segundos y luego activar ubicación
+    // Mostrar loader por 1.5 segundos
     setIsLoading(true);
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1500);
     
-    // Auto-activar ubicación en paralelo
-    const locationTimer = setTimeout(() => {
-      if (typeof navigator !== 'undefined' && navigator.geolocation && locationPermission === 'prompt') {
-        requestLocation();
-      }
-    }, 2000);
-    
     return () => {
       clearTimeout(timer);
-      clearTimeout(locationTimer);
     };
   }, []);
 
