@@ -123,7 +123,7 @@ function restoreInventory($pdo, $order_number) {
             $pdo->prepare("
                 INSERT INTO inventory_transactions 
                 (transaction_type, ingredient_id, quantity, unit, previous_stock, new_stock, order_reference) 
-                VALUES ('refund', ?, ?, ?, ?, ?, ?)
+                VALUES ('return', ?, ?, ?, ?, ?, ?)
             ")->execute([
                 $trans['ingredient_id'], 
                 $restore_qty, 
@@ -149,7 +149,7 @@ function restoreInventory($pdo, $order_number) {
             $pdo->prepare("
                 INSERT INTO inventory_transactions 
                 (transaction_type, product_id, quantity, unit, previous_stock, new_stock, order_reference) 
-                VALUES ('refund', ?, ?, 'unit', ?, ?, ?)
+                VALUES ('return', ?, ?, 'unit', ?, ?, ?)
             ")->execute([
                 $trans['product_id'], 
                 $restore_qty, 
