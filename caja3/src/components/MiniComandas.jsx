@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Banknote, Smartphone, Store, Truck, Clock, XCircle, CheckCircle, X, Send } from 'lucide-react';
+import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Banknote, Smartphone, Store, Truck, Clock, XCircle, CheckCircle, X, Send, Bike } from 'lucide-react';
 import ChecklistCard from './ChecklistCard.jsx';
 
 const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
@@ -420,17 +420,22 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
         {renderDeliveryExtras(order)}
 
         {order.delivery_type === 'delivery' ? (
-          <div className="text-xs bg-blue-50 border border-blue-200 rounded p-2 mb-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-blue-800">
-                <Truck size={12} className="flex-shrink-0" />
-                <span className="font-medium">Delivery</span>
-                {!isScheduled && order.created_at && (
-                  <><Clock size={12} /><span>{new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}</span></>
-                )}
-                {order.delivery_address && <span className="font-semibold">• {order.delivery_address}</span>}
+          <div className="space-y-2">
+            <div className="text-xs bg-blue-50 border border-blue-200 rounded p-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-blue-800">
+                  <Bike size={12} className="flex-shrink-0" />
+                  <span className="font-medium">Delivery</span>
+                  {!isScheduled && order.created_at && (
+                    <><Clock size={12} /><span>{new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}</span></>
+                  )}
+                  {order.delivery_address && <span className="font-semibold">• {order.delivery_address}</span>}
+                </div>
               </div>
-              {order.delivery_address && (
+            </div>
+            {order.delivery_address && (
+              <div className="flex items-center justify-between bg-white border border-gray-200 rounded p-2">
+                <span className="text-xs font-bold text-gray-800">Envía el pedido al delivery 😎👉🏻</span>
                 <button
                   onClick={() => {
                     const address = encodeURIComponent(order.delivery_address);
@@ -475,8 +480,8 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                   <Send size={12} />
                   Rider
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         ) : order.delivery_type === 'cuartel' ? (
           <div className="text-xs bg-green-50 border border-green-200 rounded p-2 mb-2">
@@ -509,7 +514,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs text-gray-600">Subtotal: <span className="font-semibold text-gray-800">${parseInt(order.subtotal || 0).toLocaleString('es-CL')}</span></span>
                 {order.delivery_type === 'delivery' && order.delivery_fee > 0 && (
-                  <span className="text-xs text-orange-600">+ Delivery: <span className="font-semibold">${parseInt(order.delivery_fee - (order.delivery_discount || 0)).toLocaleString('es-CL')}</span></span>
+                  <span className="text-xs text-orange-600 flex items-center gap-1">+ <Bike size={12} /> <span className="font-semibold">${parseInt(order.delivery_fee - (order.delivery_discount || 0)).toLocaleString('es-CL')}</span></span>
                 )}
                 <span className="text-xs text-gray-400">→</span>
                 <span className="text-xs text-gray-600">Total: <span className="font-bold text-green-600">${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}</span></span>
