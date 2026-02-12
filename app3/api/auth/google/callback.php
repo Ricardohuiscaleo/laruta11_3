@@ -65,14 +65,7 @@ try {
         throw new Exception('Error obteniendo datos del usuario');
     }
 
-    // Conectar a ambas bases de datos
-    $user_conn = mysqli_connect(
-        $config['ruta11_db_host'],
-        $config['ruta11_db_user'],
-        $config['ruta11_db_pass'],
-        $config['ruta11_db_name']
-    );
-
+    // Conectar solo a APP_DB
     $app_conn = mysqli_connect(
         $config['app_db_host'],
         $config['app_db_user'],
@@ -80,77 +73,38 @@ try {
         $config['app_db_name']
     );
 
-    if (!$user_conn || !$app_conn) {
+    if (!$app_conn) {
         throw new Exception('Error de conexión a BD: ' . mysqli_connect_error());
     }
 
-    mysqli_set_charset($user_conn, 'utf8');
     mysqli_set_charset($app_conn, 'utf8');
 
     // Verificar si usuario existe
-    $google_id = mysqli_real_escape_string($user_conn, $user_info['id']);
-    $email = mysqli_real_escape_string($user_conn, $user_info['email']);
-    $nombre = mysqli_real_escape_string($user_conn, $user_info['name']);
-    $foto_perfil = mysqli_real_escape_string($user_conn, $user_info['picture']);
+    $google_id = mysqli_real_escape_string($app_conn, $user_info['id']);
+    $email = mysqli_real_escape_string($app_conn, $user_info['email']);
+    $nombre = mysqli_real_escape_string($app_conn, $user_info['name']);
+    $foto_perfil = mysqli_real_escape_string($app_conn, $user_info['picture']);
 
     $check_user = "SELECT * FROM usuarios WHERE google_id = '$google_id'";
-    $result = mysqli_query($user_conn, $check_user);
+    $result = mysqli_query($app_conn, $check_user);
 
     if (!$result) {
-        throw new Exception('Error en consulta: ' . mysqli_error($user_conn));
+        throw new Exception('Error en consulta: ' . mysqli_error($app_conn));
     }
 
     if (mysqli_num_rows($result) > 0) {
-        // Usuario existe en users DB, actualizar
+        // Usuario existe, actualizar
         $update_user = "UPDATE usuarios SET ultimo_acceso = NOW(), foto_perfil = '$foto_perfil' WHERE google_id = '$google_id'";
-        if (!mysqli_query($user_conn, $update_user)) {
-            throw new Exception('Error actualizando usuario: ' . mysqli_error($user_conn));
-        }
+        mysqli_query($app_conn, $update_user);
         $user = mysqli_fetch_assoc($result);
     } else {
-        // Crear nuevo usuario en ambas BDs
+        // Crear nuevo usuario
         $insert_user = "INSERT INTO usuarios (google_id, email, nombre, foto_perfil, fecha_registro) VALUES ('$google_id', '$email', '$nombre', '$foto_perfil', NOW())";
-        if (!mysqli_query($user_conn, $insert_user)) {
-            throw new Exception('Error creando usuario: ' . mysqli_error($user_conn));
+        if (!mysqli_query($app_conn, $insert_user)) {
+            throw new Exception('Error creando usuario: ' . mysqli_error($app_conn));
         }
-        $user_id = mysqli_insert_id($user_conn);
-        
-        // Log para debug
-        file_put_contents(__DIR__ . '/callback_debug.log', date('Y-m-d H:i:s') . " - Usuario creado en users DB con ID: $user_id\n", FILE_APPEND);
-        
-        // Crear también en app DB
-        $insert_app = "INSERT INTO usuarios (google_id, email, nombre, foto_perfil, fecha_registro) VALUES ('$google_id', '$email', '$nombre', '$foto_perfil', NOW())";
-        if (mysqli_query($app_conn, $insert_app)) {
-            $app_user_id = mysqli_insert_id($app_conn);
-            file_put_contents(__DIR__ . '/callback_debug.log', date('Y-m-d H:i:s') . " - Usuario creado en app DB con ID: $app_user_id\n", FILE_APPEND);
-        } else {
-            file_put_contents(__DIR__ . '/callback_debug.log', date('Y-m-d H:i:s') . " - ERROR en app DB: " . mysqli_error($app_conn) . "\n", FILE_APPEND);
-        }
-        
+        $user_id = mysqli_insert_id($app_conn);
         $user = ['id' => $user_id, 'google_id' => $google_id, 'email' => $email, 'nombre' => $nombre, 'foto_perfil' => $foto_perfil];
-    }
-
-    // SIEMPRE verificar y crear en app DB
-    $check_app = "SELECT id FROM usuarios WHERE google_id = '$google_id'";
-    $app_result = mysqli_query($app_conn, $check_app);
-    
-    if (mysqli_num_rows($app_result) > 0) {
-        // Existe en app DB, actualizar
-        $update_app = "UPDATE usuarios SET ultimo_acceso = NOW(), foto_perfil = '$foto_perfil' WHERE google_id = '$google_id'";
-        if (mysqli_query($app_conn, $update_app)) {
-            file_put_contents(__DIR__ . '/callback_debug.log', date('Y-m-d H:i:s') . " - Usuario actualizado en app DB\n", FILE_APPEND);
-        } else {
-            file_put_contents(__DIR__ . '/callback_debug.log', date('Y-m-d H:i:s') . " - ERROR actualizando en app DB: " . mysqli_error($app_conn) . "\n", FILE_APPEND);
-        }
-    } else {
-        // NO existe en app DB, crear
-        $insert_app = "INSERT INTO usuarios (google_id, email, nombre, foto_perfil, fecha_registro) VALUES ('$google_id', '$email', '$nombre', '$foto_perfil', NOW())";
-        if (mysqli_query($app_conn, $insert_app)) {
-            $app_user_id = mysqli_insert_id($app_conn);
-            file_put_contents(__DIR__ . '/callback_debug.log', date('Y-m-d H:i:s') . " - Usuario creado en app DB con ID: $app_user_id\n", FILE_APPEND);
-        } else {
-            file_put_contents(__DIR__ . '/callback_debug.log', date('Y-m-d H:i:s') . " - ERROR creando en app DB: " . mysqli_error($app_conn) . "\n", FILE_APPEND);
-        }
     }
 
     // Crear sesión persistente (30 días)
@@ -164,7 +118,6 @@ try {
         setcookie(session_name(), session_id(), time() + 2592000, '/', '', true, true);
     }
 
-    mysqli_close($user_conn);
     mysqli_close($app_conn);
 
     // Redirigir de vuelta a la app
