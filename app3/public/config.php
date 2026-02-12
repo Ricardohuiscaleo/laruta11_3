@@ -1,7 +1,4 @@
 <?php
-// Cargar variables de entorno
-require_once __DIR__ . '/load-env.php';
-
 $config = [
     'PUBLIC_SUPABASE_URL' => getenv('PUBLIC_SUPABASE_URL'),
     'PUBLIC_SUPABASE_ANON_KEY' => getenv('PUBLIC_SUPABASE_ANON_KEY'),
