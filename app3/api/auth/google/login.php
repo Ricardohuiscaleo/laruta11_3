@@ -23,8 +23,8 @@ try {
     // Redirigir a Google
     header('Location: ' . $auth_url);
     exit();
-} catch (Exception $e) {
-    header('Location: https://app.laruta11.cl/?login=error&msg=' . urlencode($e->getMessage()));
-    exit();
+} catch (Throwable $e) {
+    error_log('Login Error: ' . $e->getMessage());
+    die('Error: ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine());
 }
 ?>
