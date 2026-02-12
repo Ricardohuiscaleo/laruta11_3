@@ -5,13 +5,15 @@ import ChecklistCard from './ChecklistCard.jsx';
 const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
   const [orders, setOrders] = useState([]);
   const [checklists, setChecklists] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
 
   useEffect(() => {
-    // Cargar inmediatamente sin loading
-    Promise.all([loadOrders(), loadChecklists()]);
+    // Cargar datos y quitar loading después
+    Promise.all([loadOrders(), loadChecklists()]).finally(() => {
+      setLoading(false);
+    });
     
     const interval = setInterval(() => {
       loadOrders();
@@ -511,10 +513,6 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
     );
   };
 
-  if (loading) {
-    return null;
-  }
-
   return (
     <div className="fixed inset-0 bg-white z-40 flex flex-col overflow-hidden">
       <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 shadow-lg flex items-center justify-between">
@@ -535,7 +533,29 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
       </div>
       
       <div className="flex-1 overflow-y-auto">
-        {activeOrders.length === 0 && checklists.length === 0 ? (
+        {loading ? (
+          <div className="p-4 space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-white border border-gray-200 rounded-lg p-4 animate-pulse">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-gray-200 rounded"></div>
+                    <div className="w-24 h-5 bg-gray-200 rounded"></div>
+                  </div>
+                  <div className="w-16 h-8 bg-gray-200 rounded"></div>
+                </div>
+                <div className="w-32 h-4 bg-gray-200 rounded mb-3"></div>
+                <div className="bg-gray-50 rounded p-3 mb-3">
+                  <div className="w-full h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="w-3/4 h-4 bg-gray-200 rounded"></div>
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1 h-10 bg-gray-200 rounded"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : activeOrders.length === 0 && checklists.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <Package size={48} className="mx-auto mb-2 opacity-50" />
             <p>No hay pedidos activos ni checklists pendientes</p>
