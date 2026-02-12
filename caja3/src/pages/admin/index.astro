@@ -767,11 +767,11 @@
         </div>
         
         <div class="view" id="payments-view">
-          <iframe src="//caja.laruta11.cl/admin/pagos-tuu" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 8px;"></iframe>
+          <iframe id="iframe-payments" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 8px;"></iframe>
         </div>
         
         <div class="view" id="test-view">
-          <iframe src="//caja.laruta11.cl/admin/test" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 8px;"></iframe>
+          <iframe id="iframe-test" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 8px;"></iframe>
         </div>
         
         <div class="view" id="technical-report-view">
@@ -779,7 +779,7 @@
         </div>
         
         <div class="view" id="calidad-view">
-          <iframe src="//caja.laruta11.cl/admin/calidad" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 8px;"></iframe>
+          <iframe id="iframe-calidad" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 8px;"></iframe>
         </div>
         
         <div class="view" id="concurso-admin-view">
@@ -894,7 +894,7 @@
         </div>
         
         <div class="view" id="ingredients-view">
-          <iframe src="//caja.laruta11.cl/admin/ingredients" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 8px;"></iframe>
+          <iframe id="iframe-ingredients" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 8px;"></iframe>
         </div>
         
         <div class="view" id="combos-view">
@@ -914,7 +914,7 @@
         </div>
         
         <div class="view" id="reportes-view">
-          <iframe src="//caja.laruta11.cl/admin/reportes" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 8px;"></iframe>
+          <iframe id="iframe-reportes" style="width: 100%; height: calc(100vh - 120px); border: none; border-radius: 8px;"></iframe>
         </div>
         
         <div class="view" id="sales-analytics-view">
@@ -1229,6 +1229,23 @@
       
       if (navEl) navEl.classList.add('active');
       if (viewEl) viewEl.classList.add('active');
+      
+      // Cargar iframes con HTTPS forzado
+      const iframeMap = {
+        'payments': 'iframe-payments',
+        'test': 'iframe-test',
+        'calidad': 'iframe-calidad',
+        'ingredients': 'iframe-ingredients',
+        'reportes': 'iframe-reportes'
+      };
+      
+      if (iframeMap[viewName]) {
+        const iframe = document.getElementById(iframeMap[viewName]);
+        if (iframe && !iframe.src) {
+          const path = viewName === 'payments' ? '/admin/pagos-tuu' : `/admin/${viewName}`;
+          iframe.src = `https://${window.location.hostname}${path}`;
+        }
+      }
       
       const titles = { dashboard: 'Dashboard', products: 'Productos', users: 'Usuarios', 'militares-rl6': 'Militares RL6', orders: 'Pedidos', payments: 'Pagos TUU', test: 'Test APIs', 'technical-report': 'Informe Técnico', robots: '🤖 Robots', calidad: 'Control de Calidad', concurso: '🏆 Concurso Stats', 'concurso-admin': '🎮 Concurso Admin', combos: 'Gestión de Combos', ingredients: 'Ingredientes', 'sales-analytics': 'Control Ventas', 'purchase-plan': 'Plan de Compras' };
       if (titleEl) titleEl.textContent = titles[viewName];
