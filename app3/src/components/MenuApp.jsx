@@ -196,9 +196,9 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                             }, 0) : 0;
                             const displayPrice = item.price + customizationsTotal;
                             const itemSubtotal = displayPrice * item.quantity;
-                            const isCombo = item.type === 'combo' || item.category_name === 'Combos' || item.selections;
+                            const isCombo = item.type === 'combo' || item.category_name === 'combos' || item.category_name === 'Combos' || item.selections;
                             const nonPersonalizableCategories = ['Bebidas', 'Jugos', 'Té', 'Café', 'Salsas'];
-                            const shouldShowPersonalizeButton = !nonPersonalizableCategories.includes(item.subcategory_name);
+                            const shouldShowPersonalizeButton = !isCombo && !nonPersonalizableCategories.includes(item.subcategory_name);
                             const isRemoving = removingItems.has(item.cartItemId);
                             
                             return (
