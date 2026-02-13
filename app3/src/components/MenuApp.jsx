@@ -834,11 +834,7 @@ export default function App() {
     const filters = {};
     menuCategories.forEach(cat => {
       if (cat.filter_config) {
-        try {
-          filters[cat.category_key] = JSON.parse(cat.filter_config);
-        } catch (e) {
-          console.error('Error parsing filter_config:', e);
-        }
+        filters[cat.category_key] = cat.filter_config;
       }
     });
     return filters;
