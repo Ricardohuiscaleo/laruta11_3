@@ -3600,16 +3600,17 @@ export default function App() {
               <span className="text-[9px] font-bold">Mi Perfil</span>
             </button>
             
-            {/* Información */}
+            {/* Nosotros */}
             <button onClick={() => { vibrate(30); setIsInfoModalOpen(true); }} className="flex flex-col items-center gap-1 py-2 px-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-all active:scale-95">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-              <span className="text-[9px] font-bold">Información</span>
+              <Caravan size={20} />
+              <span className="text-[9px] font-bold">Nosotros</span>
             </button>
             
             {/* Recomendar */}
-            <button onClick={() => { vibrate(30); setIsReviewModalOpen(true); }} className="flex flex-col items-center gap-1 py-2 px-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-all active:scale-95">
-              <Star size={20} />
-              <span className="text-[9px] font-bold">Recomendar</span>
+            <button onClick={() => { vibrate(30); setIsReviewModalOpen(true); }} className="flex flex-col items-center gap-1 py-2 px-2 rounded-lg transition-all active:scale-95 bg-gradient-to-br from-yellow-400 via-yellow-300 to-yellow-500 hover:from-yellow-500 hover:via-yellow-400 hover:to-yellow-600 shadow-md hover:shadow-lg relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer"></div>
+              <Star size={20} className="text-yellow-900 relative z-10" fill="currentColor" />
+              <span className="text-[9px] font-bold text-yellow-900 relative z-10">Recomendar</span>
             </button>
             
             {/* Instagram */}
