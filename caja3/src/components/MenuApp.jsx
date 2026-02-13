@@ -2293,12 +2293,16 @@ export default function App() {
                   if (activeCategory === 'papas') {
                     categoryData = { papas: [] };
                     if (menuWithImages.papas) {
+                      console.log('🍟 DEBUG PAPAS - menuWithImages.papas:', menuWithImages.papas);
                       // Combinar todas las subcategorías de papas
                       Object.values(menuWithImages.papas).forEach(subCatProducts => {
                         if (Array.isArray(subCatProducts)) {
-                          categoryData.papas.push(...subCatProducts.filter(p => p.active === 1 && p.category_id === 12));
+                          const filtered = subCatProducts.filter(p => p.active === 1 && p.category_id === 12);
+                          console.log('🍟 Subcategoría encontrada:', subCatProducts.length, 'productos, filtrados:', filtered.length);
+                          categoryData.papas.push(...filtered);
                         }
                       });
+                      console.log('🍟 TOTAL PAPAS:', categoryData.papas.length, categoryData.papas.map(p => p.name));
                     }
                   }
                   
