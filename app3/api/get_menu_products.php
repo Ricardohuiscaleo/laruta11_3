@@ -50,12 +50,15 @@ try {
             p.created_at,
             s.name as subcategory_name,
             s.slug as subcategory_slug,
+            c.name as category_name,
+            c.is_active as category_active,
             COALESCE(AVG(r.rating), 0) as avg_rating,
             COUNT(r.id) as review_count
         FROM products p
+        LEFT JOIN categories c ON p.category_id = c.id
         LEFT JOIN subcategories s ON p.subcategory_id = s.id
         LEFT JOIN reviews r ON p.id = r.product_id AND r.is_approved = 1
-        WHERE p.is_active = 1 
+        WHERE p.is_active = 1 AND c.is_active = 1
         GROUP BY p.id
         ORDER BY p.category_id, p.subcategory_id, p.name
     ");

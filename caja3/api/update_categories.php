@@ -36,7 +36,7 @@ try {
     
     $pdo->beginTransaction();
     
-    $sql = "UPDATE product_categories SET is_active = :is_active WHERE id = :id";
+    $sql = "UPDATE categories SET is_active = :is_active WHERE id = :id";
     $stmt = $pdo->prepare($sql);
     
     foreach ($input['categories'] as $cat) {

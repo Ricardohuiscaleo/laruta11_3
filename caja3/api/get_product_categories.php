@@ -34,18 +34,19 @@ try {
                 c.name,
                 c.is_active,
                 COUNT(p.id) as product_count
-            FROM product_categories c
-            LEFT JOIN productos p ON p.category_id = c.id
+            FROM categories c
+            LEFT JOIN products p ON p.category_id = c.id
+            WHERE c.id IN (2, 3, 4, 5, 8, 12)
             GROUP BY c.id, c.name, c.is_active
-            ORDER BY c.name";
+            ORDER BY c.sort_order";
     
     $stmt = $pdo->query($sql);
     $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Para cada categoría, obtener productos con miniaturas
     foreach ($categories as &$cat) {
-        $sql = "SELECT id, name, image, price 
-                FROM productos 
+        $sql = "SELECT id, name, image_url as image, price 
+                FROM products 
                 WHERE category_id = :cat_id 
                 AND is_active = 1
                 ORDER BY name 
