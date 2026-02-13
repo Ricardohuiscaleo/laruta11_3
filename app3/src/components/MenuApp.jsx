@@ -2407,6 +2407,11 @@ export default function App() {
                     });
                   }
                   
+                  // Filtro para Combos (Cat 8) - Mostrar como productos que abren modal
+                  if (activeCategory === 'combos') {
+                    categoryData = menuWithImages.combos || {};
+                  }
+                  
                   if (!categoryData || Object.keys(categoryData).length === 0) return null;
                   let orderedEntries = Object.entries(categoryData);
                   
