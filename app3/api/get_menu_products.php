@@ -79,7 +79,7 @@ try {
         5 => 'papas_y_snacks',
         6 => 'personalizar',
         7 => 'extras',
-        8 => 'Combos',
+        8 => 'combos',
         12 => 'papas'
     ];
 
@@ -144,7 +144,7 @@ try {
             'subcategory_id' => (int)$product['subcategory_id'],
             'subcategory_name' => $product['subcategory_name'],
             'active' => (int)$product['is_active'],
-            'category_name' => $product['category_id'] == 8 ? 'Combos' : null
+            'category_name' => $product['category_id'] == 8 ? 'combos' : null
         ];
     }
     
