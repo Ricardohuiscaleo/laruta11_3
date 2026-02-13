@@ -2183,7 +2183,6 @@ export default function App() {
                   const catRes = await fetch('/api/get_product_categories.php');
                   const catData = await catRes.json();
                   if (catData.success) setCategories(catData.categories);
-                  }
                 }}
                 className="text-gray-600 hover:text-orange-500 transition-colors"
                 title="Configuración"
