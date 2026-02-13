@@ -33,31 +33,30 @@ try {
     
     // Obtener categorías activas ordenadas
     $stmt = $pdo->prepare("
-        SELECT id, slug, display_name, icon_type, color, sort_order
+        SELECT id, slug as category_key, display_name, icon_type, color, sort_order, is_active, filter_config
         FROM menu_categories
-        WHERE is_active = 1
         ORDER BY sort_order ASC
     ");
     $stmt->execute();
     $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
+    // Parsear filter_config JSON
+    foreach ($categories as &$cat) {
+        if ($cat['filter_config']) {
+            $cat['filter_config'] = json_decode($cat['filter_config'], true);
+        }
+    }
+    
     // Para cada categoría, obtener sus subcategorías
     foreach ($categories as &$category) {
         $stmt = $pdo->prepare("
-            SELECT id, display_name, sort_order, category_id, subcategory_id, subcategory_ids
+            SELECT id, slug as subcategory_key, display_name, sort_order, is_active
             FROM menu_subcategories
-            WHERE menu_category_id = :menu_category_id AND is_active = 1
+            WHERE menu_category_id = :menu_category_id
             ORDER BY sort_order ASC
         ");
         $stmt->execute(['menu_category_id' => $category['id']]);
         $subcategories = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        // Parsear JSON de subcategory_ids
-        foreach ($subcategories as &$subcat) {
-            if ($subcat['subcategory_ids']) {
-                $subcat['subcategory_ids'] = json_decode($subcat['subcategory_ids'], true);
-            }
-        }
         
         $category['subcategories'] = $subcategories;
     }
