@@ -2289,21 +2289,9 @@ export default function App() {
                     });
                   }
                   
-                  // Filtro para Papas - Mostrar TODAS las papas activas de todas las subcategorías
+                  // Filtro para Papas
                   if (activeCategory === 'papas') {
-                    categoryData = { papas: [] };
-                    if (menuWithImages.papas) {
-                      console.log('🍟 DEBUG PAPAS - menuWithImages.papas:', menuWithImages.papas);
-                      // Combinar todas las subcategorías de papas
-                      Object.values(menuWithImages.papas).forEach(subCatProducts => {
-                        if (Array.isArray(subCatProducts)) {
-                          const filtered = subCatProducts.filter(p => p.active === 1 && p.category_id === 12);
-                          console.log('🍟 Subcategoría encontrada:', subCatProducts.length, 'productos, filtrados:', filtered.length);
-                          categoryData.papas.push(...filtered);
-                        }
-                      });
-                      console.log('🍟 TOTAL PAPAS:', categoryData.papas.length, categoryData.papas.map(p => p.name));
-                    }
+                    categoryData = { papas: menuWithImages.papas?.papas?.filter(p => p.category_id === 12) || [] };
                   }
                   
                   // Filtro para Pizzas (Cat 5, Subcat 60)
