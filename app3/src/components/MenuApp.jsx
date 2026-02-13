@@ -1119,12 +1119,6 @@ export default function App() {
           setUserLocation(locationData);
           setLocationPermission('granted');
           
-          // Verificar zona de delivery
-          checkDeliveryZone(latitude, longitude);
-          
-          // Obtener productos cercanos
-          getNearbyProducts(latitude, longitude);
-          
           // Obtener food trucks cercanos
           getNearbyTrucks(latitude, longitude);
           
@@ -1172,61 +1166,9 @@ export default function App() {
     );
   };
 
-  const checkDeliveryZone = async (lat, lng) => {
-    try {
-      const formData = new FormData();
-      formData.append('lat', lat);
-      formData.append('lng', lng);
-      
-      const response = await fetch('/api/location/check_delivery_zone.php', {
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      
-      const data = await response.json();
-      if (data.error) {
-        console.error('API Error:', data.error);
-        setDeliveryZone({ in_delivery_zone: false, zones: [] });
-      } else {
-        setDeliveryZone(data);
-      }
-      
-      // Calcular tiempo real si está en zona
-      if (data.in_delivery_zone && data.zones.length > 0) {
-        const zone = data.zones[0];
-        
-        // Obtener coordenadas del food truck más cercano
-        if (nearbyTrucks.length > 0) {
-          const closestTruck = nearbyTrucks[0];
-          calculateRealDeliveryTime(lat, lng, closestTruck.latitud, closestTruck.longitud);
-        }
-      }
-    } catch (error) {
-      console.error('Error verificando zona de delivery:', error);
-    }
-  };
+  // Función obsoleta eliminada - no se usa en app3
 
-  const getNearbyProducts = async (lat, lng) => {
-    try {
-      const formData = new FormData();
-      formData.append('lat', lat);
-      formData.append('lng', lng);
-      
-      const response = await fetch('/api/location/get_nearby_products.php', {
-        method: 'POST',
-        body: formData
-      });
-      
-      const data = await response.json();
-      setNearbyProducts(data);
-    } catch (error) {
-      console.error('Error obteniendo productos cercanos:', error);
-    }
-  };
+  // Función obsoleta eliminada - no se usa en app3
 
   const getNearbyTrucks = async (lat, lng) => {
     try {
