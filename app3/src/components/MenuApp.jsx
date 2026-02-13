@@ -1437,7 +1437,7 @@ export default function App() {
 
   const handleAddToCart = (product) => {
     // Abrir modal de combo para combos
-    if (product.type === 'combo' || product.category_name === 'Combos') {
+    if (product.type === 'combo' || product.category_name === 'combos' || product.category_name === 'Combos') {
       setComboModalProduct(product);
       return;
     }
