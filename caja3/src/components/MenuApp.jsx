@@ -2289,12 +2289,16 @@ export default function App() {
                     });
                   }
                   
-                  // Filtro para Papas - Mostrar TODAS las papas activas
+                  // Filtro para Papas - Mostrar TODAS las papas activas de todas las subcategorías
                   if (activeCategory === 'papas') {
                     categoryData = { papas: [] };
-                    if (menuWithImages.papas && menuWithImages.papas.papas) {
-                      // Mostrar todas las papas activas sin filtrar por subcategory
-                      categoryData.papas = menuWithImages.papas.papas.filter(p => p.active === 1);
+                    if (menuWithImages.papas) {
+                      // Combinar todas las subcategorías de papas
+                      Object.values(menuWithImages.papas).forEach(subCatProducts => {
+                        if (Array.isArray(subCatProducts)) {
+                          categoryData.papas.push(...subCatProducts.filter(p => p.active === 1 && p.category_id === 12));
+                        }
+                      });
                     }
                   }
                   
