@@ -1542,28 +1542,21 @@ export default function App() {
     }
   };
 
-  const getNearbyTrucks = async (lat, lng) => {
+  const loadDeliveryFee = async () => {
     try {
-      const formData = new FormData();
-      formData.append('lat', lat);
-      formData.append('lng', lng);
-      formData.append('radius', 10);
-      
-      const response = await fetch('/api/get_nearby_trucks.php', {
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!response.ok) return;
-      
+      const response = await fetch('/api/get_truck_status.php?truckId=4');
       const data = await response.json();
-      if (data.success && data.trucks) {
-        setNearbyTrucks(data.trucks);
-      } else {
-        setNearbyTrucks([]);
+      
+      if (data.success && data.truck) {
+        setNearbyTrucks([{
+          id: data.truck.id,
+          nombre: data.truck.nombre,
+          tarifa_delivery: data.truck.tarifa_delivery,
+          activo: data.truck.activo
+        }]);
       }
     } catch (error) {
-      setNearbyTrucks([]);
+      console.error('Error loading delivery fee:', error);
     }
   };
 
@@ -1673,6 +1666,7 @@ export default function App() {
     };
     
     loadMenuFromDatabase();
+    loadDeliveryFee();
   }, []);
 
   const productsToShow = useMemo(() => {
