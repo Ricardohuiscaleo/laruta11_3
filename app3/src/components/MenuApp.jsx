@@ -2348,18 +2348,7 @@ export default function App() {
                   
                   // Filtro para Papas (Cat 12, Subcat 9 y 57)
                   if (activeCategory === 'papas') {
-                    categoryData = { papas: [] };
-                    Object.values(menuWithImages).forEach(category => {
-                      if (Array.isArray(category)) {
-                        categoryData.papas.push(...category.filter(p => p.category_id === 12 && [9, 57].includes(p.subcategory_id)));
-                      } else {
-                        Object.values(category).forEach(subcat => {
-                          if (Array.isArray(subcat)) {
-                            categoryData.papas.push(...subcat.filter(p => p.category_id === 12 && [9, 57].includes(p.subcategory_id)));
-                          }
-                        });
-                      }
-                    });
+                    categoryData = { papas: menuWithImages.papas?.papas?.filter(p => p.category_id === 12) || [] };
                   }
                   
                   // Filtro para Pizzas (Cat 5, Subcat 60)
