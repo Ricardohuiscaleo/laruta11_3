@@ -551,7 +551,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
             </div>
           </div>
           {tuuCallbackFailed && (
-            <div className="mt-2 bg-red-100 border-l-4 border-red-500 p-2 rounded">
+            <div className="mt-2 bg-white border-2 border-red-500 p-2 rounded">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-red-600 font-bold text-sm">❌</span>
