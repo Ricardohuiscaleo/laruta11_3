@@ -1423,7 +1423,7 @@ export default function App() {
 
   const productsToShow = useMemo(() => {
     const menu = menuWithImages;
-    if (activeCategory === 'churrascos' || activeCategory === 'completos' || activeCategory === 'hamburguesas_100g' || activeCategory === 'papas' || activeCategory === 'pizzas' || activeCategory === 'bebidas' || activeCategory === 'Combos') {
+    if (activeCategory === 'churrascos' || activeCategory === 'completos' || activeCategory === 'hamburguesas_100g' || activeCategory === 'papas' || activeCategory === 'pizzas' || activeCategory === 'bebidas' || activeCategory === 'combos') {
       return []; 
     }
     // Para hamburguesas 200g, filtrar solo especiales (subcat 6), excluyendo clásicas (subcat 5)
@@ -2327,7 +2327,7 @@ export default function App() {
       <main className={`px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-3xl sm:max-w-3xl lg:max-w-5xl mx-auto pb-20 lg:ml-64 lg:mr-96 ${
         !user ? 'pt-[180px] sm:pt-[160px]' : 'pt-32 sm:pt-28'
       }`}>
-        {(activeCategory === 'churrascos' || activeCategory === 'hamburguesas' || activeCategory === 'hamburguesas_100g' || activeCategory === 'completos' || activeCategory === 'papas' || activeCategory === 'pizzas' || activeCategory === 'bebidas' || activeCategory === 'Combos') ? (
+        {(activeCategory === 'churrascos' || activeCategory === 'hamburguesas' || activeCategory === 'hamburguesas_100g' || activeCategory === 'completos' || activeCategory === 'papas' || activeCategory === 'pizzas' || activeCategory === 'bebidas' || activeCategory === 'combos') ? (
             <div className="space-y-8">
                 {(() => {
                   let categoryData = menuWithImages[activeCategory];
