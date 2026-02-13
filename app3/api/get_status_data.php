@@ -1,14 +1,13 @@
 <?php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Cache-Control: no-cache, no-store, must-revalidate');
 
 $config_paths = [
+    __DIR__ . '/config.php',
     __DIR__ . '/../config.php',
     __DIR__ . '/../../config.php',
-    __DIR__ . '/../config.php',
-    __DIR__ . '/../../../../config.php'
+    __DIR__ . '/../../../config.php'
 ];
 
 $config = null;
@@ -32,117 +31,80 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 
-    // 1. Obtener horarios
-    $stmt = $pdo->prepare("
-        SELECT day_of_week, horario_inicio, horario_fin, activo 
-        FROM food_truck_schedules 
-        WHERE food_truck_id = 4
-        ORDER BY day_of_week
-    ");
-    $stmt->execute();
-    $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    $dayNames = [
-        1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles',
-        4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 0 => 'Domingo'
-    ];
-    
-    // Chile timezone (UTC-3)
-    date_default_timezone_set('America/Santiago');
-    $today = (int)date('w');
-    $currentTime = date('H:i');
-    
-    // Calcular status con estados intermedios
-    $isOpen = false;
-    $status = 'closed';
-    $nextOpenTime = null;
-    $todaySchedule = null;
-    
-    foreach ($schedules as $schedule) {
-        if ($schedule['day_of_week'] == $today && $schedule['activo'] == 1) {
-            $todaySchedule = $schedule;
-            $start = substr($schedule['horario_inicio'], 0, 5);
-            $end = substr($schedule['horario_fin'], 0, 5);
-            
-            if ($end < $start) {
-                $isOpen = $currentTime >= $start || $currentTime <= $end;
-            } else {
-                $isOpen = $currentTime >= $start && $currentTime <= $end;
-            }
-            
-            // Si está cerrado pero es hoy, calcular cuándo abre
-            if (!$isOpen && $currentTime < $start) {
-                $status = 'opens_today';
-                $nextOpenTime = $start;
-            }
-            break;
-        }
-    }
-    
-    // Si no está abierto hoy, verificar horario de ayer que cruza medianoche
-    if (!$isOpen) {
-        $yesterday = $today === 0 ? 6 : $today - 1;
-        foreach ($schedules as $schedule) {
-            if ($schedule['day_of_week'] == $yesterday && $schedule['activo'] == 1) {
-                $start = substr($schedule['horario_inicio'], 0, 5);
-                $end = substr($schedule['horario_fin'], 0, 5);
-                
-                if ($end < $start && $currentTime <= $end) {
-                    $isOpen = true;
-                }
-                break;
-            }
-        }
-    }
-    
-    $formattedSchedules = [];
-    $dayOrder = [1, 2, 3, 4, 5, 6, 0]; // Lunes a Domingo
-    
-    foreach ($dayOrder as $dayNum) {
-        foreach ($schedules as $schedule) {
-            if ($schedule['day_of_week'] == $dayNum) {
-                $isToday = $schedule['day_of_week'] == $today;
-                $formattedSchedules[] = [
-                    'day' => $dayNames[$schedule['day_of_week']],
-                    'day_of_week' => $schedule['day_of_week'],
-                    'start' => substr($schedule['horario_inicio'], 0, 5),
-                    'end' => $schedule['horario_fin'] === '00:00:00' ? '24:00' : substr($schedule['horario_fin'], 0, 5),
-                    'active' => $schedule['activo'],
-                    'is_today' => $isToday
-                ];
-                break;
-            }
-        }
-    }
-    
-    // 2. Obtener food truck principal
-    $stmt = $pdo->prepare("
-        SELECT id, nombre, descripcion, latitud, longitud, direccion, tarifa_delivery, activo
-        FROM food_trucks 
-        WHERE id = 4
-    ");
+    // Obtener food truck principal (ID 4)
+    $stmt = $pdo->prepare("SELECT * FROM food_trucks WHERE id = 4 LIMIT 1");
     $stmt->execute();
     $truck = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Calcular si está abierto
+    date_default_timezone_set('America/Santiago');
+    $now = new DateTime();
+    $currentTime = $now->format('H:i:s');
+    $dayOfWeek = (int)$now->format('w'); // 0=domingo, 6=sábado
+
+    $isOpen = false;
+    $todaySchedule = null;
+    $nextOpenTime = null;
+
+    if ($truck) {
+        $openTime = $truck['horario_inicio'];
+        $closeTime = $truck['horario_fin'];
+        
+        // Verificar si está abierto
+        if ($truck['activo']) {
+            if ($closeTime < $openTime) {
+                // Horario cruza medianoche (ej: 18:00 - 03:00)
+                $isOpen = ($currentTime >= $openTime || $currentTime <= $closeTime);
+            } else {
+                $isOpen = ($currentTime >= $openTime && $currentTime <= $closeTime);
+            }
+        }
+
+        $todaySchedule = [
+            'horario_inicio' => $openTime,
+            'horario_fin' => $closeTime
+        ];
+
+        // Calcular próxima apertura
+        if (!$isOpen && $truck['activo']) {
+            if ($currentTime < $openTime) {
+                $nextOpenTime = substr($openTime, 0, 5); // HH:MM
+            }
+        }
+    }
+
+    // Generar horarios de la semana
+    $schedules = [];
+    $days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     
-    $trucks = $truck ? [$truck] : [];
-    
+    for ($i = 0; $i < 7; $i++) {
+        $schedules[] = [
+            'day' => $days[$i],
+            'start' => $truck ? substr($truck['horario_inicio'], 0, 5) : '18:00',
+            'end' => $truck ? substr($truck['horario_fin'], 0, 5) : '00:30',
+            'is_today' => $i === $dayOfWeek
+        ];
+    }
+
+    // Obtener todos los trucks activos
+    $stmt = $pdo->prepare("SELECT * FROM food_trucks WHERE activo = 1 ORDER BY nombre");
+    $stmt->execute();
+    $trucks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
     echo json_encode([
         'success' => true,
-        'schedules' => $formattedSchedules,
         'status' => [
             'is_open' => $isOpen,
-            'status' => $isOpen ? 'open' : $status,
-            'next_open_time' => $nextOpenTime,
-            'current_time' => $currentTime,
-            'today_schedule' => $todaySchedule
+            'current_time' => $now->format('H:i'),
+            'today_schedule' => $todaySchedule,
+            'status' => $isOpen ? 'open' : ($nextOpenTime ? 'opens_today' : 'closed'),
+            'next_open_time' => $nextOpenTime
         ],
+        'schedules' => $schedules,
         'trucks' => $trucks
     ]);
-    
+
 } catch (Exception $e) {
-    echo json_encode([
-        'success' => false,
-        'error' => $e->getMessage()
-    ]);
+    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
 ?>

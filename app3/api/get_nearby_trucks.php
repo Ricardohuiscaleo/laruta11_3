@@ -1,18 +1,12 @@
 <?php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
-}
-
-// Buscar config.php en múltiples niveles
 $config_paths = [
+    __DIR__ . '/config.php',
     __DIR__ . '/../config.php',
     __DIR__ . '/../../config.php',
-    __DIR__ . '/../config.php'
+    __DIR__ . '/../../../config.php'
 ];
 
 $config = null;
@@ -24,84 +18,57 @@ foreach ($config_paths as $path) {
 }
 
 if (!$config) {
-    die(json_encode(['success' => false, 'error' => 'Config file not found']));
-}
-
-// Crear conexión usando la configuración de app
-$conn = new mysqli($config['app_db_host'], $config['app_db_user'], $config['app_db_pass'], $config['app_db_name']);
-
-if ($conn->connect_error) {
-    die(json_encode(['success' => false, 'error' => 'Database connection failed']));
+    echo json_encode(['success' => false, 'error' => 'Config no encontrado']);
+    exit;
 }
 
 try {
-    $lat = floatval($_POST['lat'] ?? 0);
-    $lng = floatval($_POST['lng'] ?? 0);
-    $radius = floatval($_POST['radius'] ?? 10); // Default 10km
-    
-    if ($lat == 0 || $lng == 0) {
-        echo json_encode(['success' => false, 'error' => 'Coordenadas inválidas']);
-        exit;
-    }
-    
-    // Consulta para obtener food trucks con cálculo de distancia
-    $sql = "SELECT 
-                id,
-                nombre,
-                descripcion,
-                direccion,
-                latitud,
-                longitud,
-                horario_inicio,
-                horario_fin,
-                activo,
-                tarifa_delivery,
-                created_at,
-                (6371 * acos(cos(radians(?)) * cos(radians(latitud)) * cos(radians(longitud) - radians(?)) + sin(radians(?)) * sin(radians(latitud)))) AS distance
-            FROM food_trucks 
-            HAVING distance <= ? 
-            ORDER BY distance ASC";
-    
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param('dddd', $lat, $lng, $lat, $radius);
+    $pdo = new PDO(
+        "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
+        $config['app_db_user'],
+        $config['app_db_pass'],
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+
+    // Obtener todos los food trucks activos
+    $stmt = $pdo->prepare("SELECT * FROM food_trucks WHERE activo = 1 ORDER BY nombre");
     $stmt->execute();
-    $result = $stmt->get_result();
-    $trucks = $result->fetch_all(MYSQLI_ASSOC);
-    $stmt->close();
-    $conn->close();
-    
-    // Formatear datos para el frontend
-    $formattedTrucks = array_map(function($truck) {
-        return [
-            'id' => intval($truck['id']),
-            'nombre' => $truck['nombre'],
-            'descripcion' => $truck['descripcion'],
-            'direccion' => $truck['direccion'],
-            'latitud' => floatval($truck['latitud']),
-            'longitud' => floatval($truck['longitud']),
-            'horario_inicio' => $truck['horario_inicio'],
-            'horario_fin' => $truck['horario_fin'],
-            'activo' => intval($truck['activo']),
-            'tarifa_delivery' => intval($truck['tarifa_delivery']),
-            'distance' => floatval($truck['distance']),
-            'created_at' => $truck['created_at']
-        ];
-    }, $trucks);
-    
+    $trucks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Si se envían coordenadas, calcular distancia
+    if (isset($_POST['lat']) && isset($_POST['lng'])) {
+        $userLat = floatval($_POST['lat']);
+        $userLng = floatval($_POST['lng']);
+        
+        foreach ($trucks as &$truck) {
+            // Fórmula Haversine para calcular distancia
+            $earthRadius = 6371; // km
+            
+            $latDiff = deg2rad($userLat - $truck['latitud']);
+            $lngDiff = deg2rad($userLng - $truck['longitud']);
+            
+            $a = sin($latDiff/2) * sin($latDiff/2) +
+                 cos(deg2rad($truck['latitud'])) * cos(deg2rad($userLat)) *
+                 sin($lngDiff/2) * sin($lngDiff/2);
+            
+            $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+            $distance = $earthRadius * $c;
+            
+            $truck['distance'] = round($distance, 2);
+        }
+        
+        // Ordenar por distancia
+        usort($trucks, function($a, $b) {
+            return $a['distance'] <=> $b['distance'];
+        });
+    }
+
     echo json_encode([
         'success' => true,
-        'trucks' => $formattedTrucks,
-        'count' => count($formattedTrucks),
-        'user_location' => [
-            'lat' => $lat,
-            'lng' => $lng
-        ]
+        'trucks' => $trucks
     ]);
-    
+
 } catch (Exception $e) {
-    echo json_encode([
-        'success' => false,
-        'error' => 'Error del servidor: ' . $e->getMessage()
-    ]);
+    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
 ?>
