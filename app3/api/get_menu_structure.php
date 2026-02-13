@@ -50,7 +50,7 @@ try {
     // Para cada categoría, obtener sus subcategorías
     foreach ($categories as &$category) {
         $stmt = $pdo->prepare("
-            SELECT id, slug as subcategory_key, display_name, sort_order, is_active
+            SELECT id, display_name, sort_order, is_active
             FROM menu_subcategories
             WHERE menu_category_id = :menu_category_id
             ORDER BY sort_order ASC
