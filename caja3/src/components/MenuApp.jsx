@@ -58,6 +58,12 @@ const categoryIcons = {
   papas: <GiFrenchFries style={{width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)'}} />,
   pizzas: <Pizza style={{width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)'}} />,
   bebidas: <CupSoda style={{width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)'}} />,
+  combos: (
+    <div style={{display: 'flex', alignItems: 'center', gap: '2px'}}>
+      <GiHamburger style={{width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)'}} />
+      <CupSoda style={{width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)'}} />
+    </div>
+  ),
   Combos: (
     <div style={{display: 'flex', alignItems: 'center', gap: '2px'}}>
       <GiHamburger style={{width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)'}} />
