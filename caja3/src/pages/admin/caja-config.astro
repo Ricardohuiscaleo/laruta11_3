@@ -36,11 +36,33 @@
     .card { 
       background: white; 
       border-radius: 12px; 
-      padding: 2rem; 
       box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
+      overflow: hidden;
     }
-    .card h2 { margin-bottom: 1.5rem; color: #374151; }
+    .card-header { 
+      padding: 1.5rem 2rem; 
+      cursor: pointer; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      background: white;
+      transition: background 0.2s;
+    }
+    .card-header:hover { background: #f9fafb; }
+    .card-header h2 { margin: 0; color: #374151; font-size: 1.25rem; }
+    .card-content { 
+      padding: 0 2rem 2rem 2rem; 
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+    .card.expanded .card-content { max-height: 2000px; }
+    .chevron { 
+      transition: transform 0.3s; 
+      color: #9ca3af;
+    }
+    .card.expanded .chevron { transform: rotate(180deg); }
     .form-group { margin-bottom: 1.5rem; }
     .form-group label { 
       display: block; 
@@ -96,18 +118,27 @@
   
   <div class="container">
     <!-- Estado del Sistema -->
-    <div class="card">
-      <h2>📊 Estado del Sistema</h2>
+    <div class="card expanded">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h2>📊 Estado del Sistema</h2>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-content">
       <div id="system-status">
         <div class="status warning">Verificando configuración...</div>
       </div>
-      <button class="btn" onclick="verificarSistema()">🔄 Verificar Sistema</button>
-      <button class="btn success" onclick="window.open('/caja', '_blank')">🚀 Abrir Caja</button>
+        <button class="btn" onclick="verificarSistema()">🔄 Verificar Sistema</button>
+        <button class="btn success" onclick="window.open('/caja', '_blank')">🚀 Abrir Caja</button>
+      </div>
     </div>
     
     <!-- Configuración del Terminal POS -->
     <div class="card">
-      <h2>💳 Configuración Terminal POS</h2>
+      <div class="card-header" onclick="toggleCard(this)">
+        <h2>💳 Configuración Terminal POS</h2>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-content">
       <form id="pos-config-form">
         <div class="form-group">
           <label for="pos-serial">Número de Serie del Terminal:</label>
@@ -127,14 +158,34 @@
           </div>
         </div>
         
-        <button type="submit" class="btn">💾 Guardar Configuración</button>
-        <button type="button" class="btn" onclick="testPOS()">🧪 Probar Terminal</button>
-      </form>
+          <button type="submit" class="btn">💾 Guardar Configuración</button>
+          <button type="button" class="btn" onclick="testPOS()">🧪 Probar Terminal</button>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Control de Categorías -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h2>🏷️ Control de Categorías</h2>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-content">
+        <div id="categorias-container" style="margin-bottom: 1.5rem;">
+          <div class="status warning">Cargando categorías...</div>
+        </div>
+        <button class="btn" onclick="cargarCategorias()">🔄 Recargar Categorías</button>
+        <button class="btn success" onclick="guardarCategorias()">💾 Guardar Cambios</button>
+      </div>
     </div>
     
     <!-- Configuración de Productos -->
     <div class="card">
-      <h2>📦 Gestión de Productos</h2>
+      <div class="card-header" onclick="toggleCard(this)">
+        <h2>📦 Gestión de Productos</h2>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-content">
       <div class="grid">
         <div>
           <h3>Productos Activos</h3>
@@ -146,34 +197,51 @@
         </div>
       </div>
       
-      <button class="btn" onclick="sincronizarProductos()">🔄 Sincronizar Productos</button>
-      <button class="btn" onclick="window.open('/admin/ingredients', '_blank')">📋 Gestionar Inventario</button>
+        <button class="btn" onclick="sincronizarProductos()">🔄 Sincronizar Productos</button>
+        <button class="btn" onclick="window.open('/admin/ingredients', '_blank')">📋 Gestionar Inventario</button>
+      </div>
     </div>
     
     <!-- Configuración de Base de Datos -->
     <div class="card">
-      <h2>🗄️ Base de Datos</h2>
+      <div class="card-header" onclick="toggleCard(this)">
+        <h2>🗄️ Base de Datos</h2>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-content">
       <div id="db-status">
         <div class="status warning">Verificando tablas...</div>
       </div>
       
-      <button class="btn" onclick="setupDatabase()">🔧 Configurar Tablas</button>
-      <button class="btn" onclick="verificarDB()">✅ Verificar Conexión</button>
+        <button class="btn" onclick="setupDatabase()">🔧 Configurar Tablas</button>
+        <button class="btn" onclick="verificarDB()">✅ Verificar Conexión</button>
+      </div>
     </div>
     
     <!-- Logs del Sistema -->
     <div class="card">
-      <h2>📋 Logs Recientes</h2>
+      <div class="card-header" onclick="toggleCard(this)">
+        <h2>📋 Logs Recientes</h2>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-content">
       <div id="logs-container" style="background: #f8fafc; padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.9rem; max-height: 300px; overflow-y: auto;">
         <div style="color: #6b7280;">Cargando logs...</div>
       </div>
       
-      <button class="btn" onclick="cargarLogs()">🔄 Actualizar Logs</button>
-      <button class="btn danger" onclick="limpiarLogs()">🗑️ Limpiar Logs</button>
+        <button class="btn" onclick="cargarLogs()">🔄 Actualizar Logs</button>
+        <button class="btn danger" onclick="limpiarLogs()">🗑️ Limpiar Logs</button>
+      </div>
     </div>
   </div>
   
   <script>
+    // Toggle card accordion
+    function toggleCard(header) {
+      const card = header.parentElement;
+      card.classList.toggle('expanded');
+    }
+    
     // Verificar autenticación
     fetch('/api/check_admin_auth.php')
       .then(r => r.json())
@@ -186,6 +254,7 @@
       cargarConfiguracion();
       verificarSistema();
       cargarEstadisticasProductos();
+      cargarCategorias();
     });
     
     async function cargarConfiguracion() {
@@ -432,6 +501,98 @@
         } catch (error) {
           alert('❌ Error limpiando logs');
         }
+      }
+    }
+    
+    // Gestión de categorías
+    let categoriasData = [];
+    
+    async function cargarCategorias() {
+      const container = document.getElementById('categorias-container');
+      container.innerHTML = '<div class="status warning">Cargando categorías...</div>';
+      
+      try {
+        const response = await fetch('/api/get_product_categories.php');
+        const result = await response.json();
+        
+        if (result.success && result.categories) {
+          categoriasData = result.categories;
+          renderCategorias();
+        } else {
+          container.innerHTML = '<div class="status error">Error cargando categorías</div>';
+        }
+      } catch (error) {
+        container.innerHTML = '<div class="status error">Error: ' + error.message + '</div>';
+      }
+    }
+    
+    function renderCategorias() {
+      const container = document.getElementById('categorias-container');
+      
+      if (categoriasData.length === 0) {
+        container.innerHTML = '<div class="status warning">No hay categorías disponibles</div>';
+        return;
+      }
+      
+      container.innerHTML = categoriasData.map(cat => `
+        <div style="background: #f9fafb; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; border: 2px solid #e5e7eb;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600; color: #374151;">
+                <input type="checkbox" 
+                  id="cat-${cat.id}" 
+                  ${cat.is_active ? 'checked' : ''}
+                  onchange="toggleCategoria(${cat.id}, this.checked)"
+                  style="width: 20px; height: 20px; cursor: pointer;">
+                ${cat.name}
+              </label>
+              <span style="background: ${cat.is_active ? '#dcfce7' : '#fef2f2'}; color: ${cat.is_active ? '#166534' : '#dc2626'}; padding: 0.25rem 0.75rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">
+                ${cat.is_active ? 'Visible' : 'Oculta'}
+              </span>
+            </div>
+            <span style="color: #6b7280; font-size: 0.875rem;">${cat.product_count || 0} productos</span>
+          </div>
+          ${cat.products && cat.products.length > 0 ? `
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb;">
+              ${cat.products.slice(0, 6).map(prod => `
+                <div style="display: flex; align-items: center; gap: 0.5rem; background: white; padding: 0.5rem; border-radius: 6px; border: 1px solid #e5e7eb;">
+                  ${prod.image ? `<img src="${prod.image}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px;">` : ''}
+                  <span style="font-size: 0.75rem; color: #6b7280;">${prod.name}</span>
+                </div>
+              `).join('')}
+              ${cat.products.length > 6 ? `<span style="color: #6b7280; font-size: 0.75rem; padding: 0.5rem;">+${cat.products.length - 6} más</span>` : ''}
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+    
+    function toggleCategoria(id, isActive) {
+      const categoria = categoriasData.find(c => c.id === id);
+      if (categoria) {
+        categoria.is_active = isActive;
+        renderCategorias();
+      }
+    }
+    
+    async function guardarCategorias() {
+      try {
+        const response = await fetch('/api/update_categories.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ categories: categoriasData })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('✅ Categorías actualizadas correctamente');
+          cargarCategorias();
+        } else {
+          alert('❌ Error: ' + result.error);
+        }
+      } catch (error) {
+        alert('❌ Error guardando categorías: ' + error.message);
       }
     }
   </script>
