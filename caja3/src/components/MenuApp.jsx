@@ -2291,11 +2291,19 @@ export default function App() {
                   
                   // Filtro para Papas (Cat 12, Subcat 9 y 57)
                   if (activeCategory === 'papas') {
+                    console.log('🔍 DEBUG PAPAS - menuWithImages.papas:', menuWithImages.papas);
                     categoryData = { papas: [] };
                     // Cargar desde menuWithImages.papas directamente
                     if (menuWithImages.papas && menuWithImages.papas.papas) {
-                      categoryData.papas = menuWithImages.papas.papas.filter(p => p.category_id === 12 && [9, 57].includes(p.subcategory_id));
+                      const allPapas = menuWithImages.papas.papas;
+                      console.log('🔍 DEBUG - Total papas en menuWithImages.papas.papas:', allPapas.length);
+                      const filtered = allPapas.filter(p => p.category_id === 12 && [9, 57].includes(p.subcategory_id));
+                      console.log('🔍 DEBUG - Papas filtradas (cat 12, subcat 9 o 57):', filtered.length);
+                      categoryData.papas = filtered;
+                    } else {
+                      console.log('❌ DEBUG - menuWithImages.papas.papas NO existe');
                     }
+                    console.log('🔍 DEBUG - categoryData.papas final:', categoryData.papas.length);
                   }
                   
                   // Filtro para Pizzas (Cat 5, Subcat 60)
