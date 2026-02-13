@@ -118,6 +118,20 @@ caja3/
 - **food_trucks**: Truck locations and schedules
 - **notifications**: System notifications
 - **cash_register**: POS shift management
+- **menu_categories**: Menu category structure with filter_config
+- **menu_subcategories**: Menu subcategory structure
+- **categories**: Product categories (legacy)
+- **subcategories**: Product subcategories (legacy)
+
+### Category and Subcategory IDs (Production Database)
+- **Hamburguesas**: category_id=3, subcategory_id=6
+- **Hamburguesas 100g**: category_id=3, subcategory_id=5
+- **Churrascos**: category_id=2
+- **Completos**: category_id=4
+- **Papas**: category_id=12, subcategory_id=57
+- **Pizzas**: category_id=5, subcategory_id=60
+- **Bebidas**: category_id=5, subcategory_ids=[11,10,27,28] (Bebidas, Jugos, Café, Té)
+- **Combos**: category_id=8
 
 ## Architectural Patterns
 
