@@ -48,27 +48,6 @@ let menuData = {
   Combos: { hamburguesas: [], sandwiches: [], completos: [] }
 };
 
-const categoryDisplayNames = {
-  hamburguesas: "Hamburguesas\n(200g)",
-  hamburguesas_100g: "Hamburguesas\n(100g)",
-  churrascos: "Sandwiches", 
-  completos: "Completos",
-  papas: "Papas",
-  pizzas: "Pizzas",
-  bebidas: "Bebidas",
-  Combos: "Combos"
-};
-
-const mainCategories = ['hamburguesas', 'hamburguesas_100g', 'churrascos', 'completos', 'papas', 'pizzas', 'bebidas', 'Combos'];
-
-const categoryFilters = {
-  hamburguesas_100g: { category_id: 3, subcategory_id: 5 },
-  hamburguesas: { category_id: 3, subcategory_id: 6 },
-  papas: { category_id: 12, subcategory_ids: [9, 57] },
-  pizzas: { category_id: 5, subcategory_id: 60 },
-  bebidas: { category_id: 5, subcategory_ids: [11, 10, 28, 27] }
-};
-
 
 
 const categoryIcons = {
@@ -1062,13 +1041,45 @@ export default function App() {
   const [editMode, setEditMode] = useState(false);
   const [tempTruckData, setTempTruckData] = useState(null);
   const [schedules, setSchedules] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [menuCategories, setMenuCategories] = useState([]);
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
+  
+  // Generar mainCategories dinámicamente desde menuCategories
+  const mainCategories = useMemo(() => {
+    if (menuCategories.length === 0) return [];
+    return menuCategories
+      .filter(cat => cat.is_active === 1)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(cat => cat.category_key);
+  }, [menuCategories]);
+  
+  // Generar categoryDisplayNames dinámicamente desde menuCategories
+  const categoryDisplayNames = useMemo(() => {
+    const names = {};
+    menuCategories.forEach(cat => {
+      names[cat.category_key] = cat.display_name;
+    });
+    return names;
+  }, [menuCategories]);
+  
+  // Generar categoryFilters dinámicamente desde menuCategories
+  const categoryFilters = useMemo(() => {
+    const filters = {};
+    menuCategories.forEach(cat => {
+      if (cat.filter_config) {
+        try {
+          filters[cat.category_key] = JSON.parse(cat.filter_config);
+        } catch (e) {
+          console.error('Error parsing filter_config:', e);
+        }
+      }
+    });
+    return filters;
+  }, [menuCategories]);
   const [infoExpanded, setInfoExpanded] = useState(true);
   const [statusExpanded, setStatusExpanded] = useState(false);
   const [schedulesExpanded, setSchedulesExpanded] = useState(false);
   const [menuCategoriesExpanded, setMenuCategoriesExpanded] = useState(false);
-  const [menuCategories, setMenuCategories] = useState([]);
   const [currentDayOfWeek, setCurrentDayOfWeek] = useState(null);
   const [editingSchedules, setEditingSchedules] = useState(false);
   const [showInactiveProducts, setShowInactiveProducts] = useState(false);
@@ -1672,8 +1683,21 @@ export default function App() {
       }
     };
     
+    const loadMenuCategories = async () => {
+      try {
+        const response = await fetch('/api/get_menu_structure.php');
+        const data = await response.json();
+        if (data.success) {
+          setMenuCategories(data.categories);
+        }
+      } catch (error) {
+        console.error('Error cargando categorías del menú:', error);
+      }
+    };
+    
     loadMenuFromDatabase();
     loadDeliveryFee();
+    loadMenuCategories();
   }, []);
 
   const productsToShow = useMemo(() => {
@@ -2185,9 +2209,9 @@ export default function App() {
                     setCurrentDayOfWeek(schedData.currentDayOfWeek);
                   }
                   
-                  const catRes = await fetch('/api/get_product_categories.php');
+                  const catRes = await fetch('/api/get_menu_structure.php');
                   const catData = await catRes.json();
-                  if (catData.success) setCategories(catData.categories);
+                  if (catData.success) setMenuCategories(catData.categories);
                 }}
                 className="text-gray-600 hover:text-orange-500 transition-colors"
                 title="Configuración"
@@ -3815,7 +3839,7 @@ export default function App() {
                 )}
               </div>
 
-              {/* Control de Categorías */}
+              {/* Gestión de Categorías del Menú */}
               <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                 <button
                   onClick={() => setCategoriesExpanded(!categoriesExpanded)}
@@ -3824,8 +3848,8 @@ export default function App() {
                   <div className="flex items-center gap-3">
                     <Package size={24} className="text-orange-600" />
                     <div className="text-left">
-                      <h4 className="text-xl font-bold text-gray-800">Control de Categorías</h4>
-                      <p className="text-sm text-gray-600">Mostrar/ocultar categorías del menú</p>
+                      <h4 className="text-xl font-bold text-gray-800">Gestión de Categorías del Menú</h4>
+                      <p className="text-sm text-gray-600">Controla las categorías visibles en el menú</p>
                     </div>
                   </div>
                   <ChevronDown size={24} className={`text-gray-400 transition-transform ${
@@ -3835,57 +3859,56 @@ export default function App() {
                 
                 {categoriesExpanded && (
                   <div className="p-6 pt-0 space-y-3">
-                    {categories.map(cat => (
+                    {menuCategories.map(cat => (
                       <div key={cat.id} className="bg-gray-50 rounded-lg p-4 border-2 border-gray-200">
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-3">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={cat.is_active}
-                                onChange={async (e) => {
-                                  const newCategories = categories.map(c => 
-                                    c.id === cat.id ? {...c, is_active: e.target.checked} : c
-                                  );
-                                  setCategories(newCategories);
-                                  
-                                  try {
-                                    await fetch('/api/update_categories.php', {
-                                      method: 'POST',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ categories: newCategories })
-                                    });
-                                    vibrate(30);
-                                  } catch (error) {
-                                    console.error('Error:', error);
-                                  }
-                                }}
-                                className="w-5 h-5 cursor-pointer"
-                              />
-                              <span className="font-semibold text-gray-800">{cat.name}</span>
-                            </label>
-                            <span className={`px-2 py-1 rounded text-xs font-bold ${
-                              cat.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                            }`}>
-                              {cat.is_active ? 'Visible' : 'Oculta'}
-                            </span>
+                            <span className="text-2xl">{cat.icon}</span>
+                            <span className="font-semibold text-gray-800">{cat.display_name}</span>
                           </div>
-                          <span className="text-sm text-gray-500">{cat.product_count || 0} productos</span>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await fetch('/api/update_menu_categories.php', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ 
+                                    category_id: cat.id, 
+                                    is_active: cat.is_active ? 0 : 1 
+                                  })
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  const catRes = await fetch('/api/get_menu_structure.php');
+                                  const catData = await catRes.json();
+                                  if (catData.success) setMenuCategories(catData.categories);
+                                  vibrate(30);
+                                }
+                              } catch (error) {
+                                console.error('Error:', error);
+                              }
+                            }}
+                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                              cat.is_active 
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                            }`}
+                          >
+                            {cat.is_active ? 'Visible' : 'Oculta'}
+                          </button>
                         </div>
-                        
-                        {cat.products && cat.products.length > 0 && (
-                          <div className="flex gap-2 flex-wrap pt-3 border-t border-gray-200">
-                            {cat.products.slice(0, 6).map(prod => (
-                              <div key={prod.id} className="flex items-center gap-2 bg-white px-2 py-1 rounded border border-gray-200">
-                                {prod.image_url && (
-                                  <img src={prod.image_url} className="w-6 h-6 object-cover rounded" />
-                                )}
-                                <span className="text-xs text-gray-600">{prod.name}</span>
+                        {cat.subcategories && cat.subcategories.length > 0 && (
+                          <div className="ml-8 mt-2 space-y-1">
+                            {cat.subcategories.map(sub => (
+                              <div key={sub.id} className="flex items-center justify-between text-sm py-1">
+                                <span className="text-gray-600">{sub.display_name}</span>
+                                <span className={`px-2 py-1 rounded text-xs ${
+                                  sub.is_active ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-400'
+                                }`}>
+                                  {sub.is_active ? 'Activa' : 'Inactiva'}
+                                </span>
                               </div>
                             ))}
-                            {cat.products.length > 6 && (
-                              <span className="text-xs text-gray-500 px-2 py-1">+{cat.products.length - 6} más</span>
-                            )}
                           </div>
                         )}
                       </div>

@@ -43,26 +43,6 @@ let menuData = {
   Combos: { hamburguesas: [], sandwiches: [], completos: [] }
 };
 
-const categoryDisplayNames = {
-  hamburguesas: "Hamburguesas\n(200g)",
-  hamburguesas_100g: "Hamburguesas\n(100g)",
-  churrascos: "Sandwiches", 
-  completos: "Completos",
-  papas: "Papas",
-  pizzas: "Pizzas",
-  bebidas: "Bebidas",
-  Combos: "Combos"
-};
-
-const mainCategories = ['hamburguesas', 'hamburguesas_100g', 'churrascos', 'completos', 'papas', 'pizzas', 'bebidas', 'Combos'];
-const categoryFilters = {
-  hamburguesas_100g: { category_id: 3, subcategory_id: 5 },
-  hamburguesas: { category_id: 3, subcategory_id: 6 },
-  papas: { category_id: 12, subcategory_ids: [9, 57] },
-  pizzas: { category_id: 5, subcategory_id: 60 },
-  bebidas: { category_id: 5, subcategory_ids: [11, 10, 28, 27] }
-};
-
 
 
 const categoryIcons = {
@@ -829,6 +809,40 @@ export default function App() {
   const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false);
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
+  const [menuCategories, setMenuCategories] = useState([]);
+  
+  // Generar mainCategories dinámicamente desde menuCategories
+  const mainCategories = useMemo(() => {
+    if (menuCategories.length === 0) return [];
+    return menuCategories
+      .filter(cat => cat.is_active === 1)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(cat => cat.category_key);
+  }, [menuCategories]);
+  
+  // Generar categoryDisplayNames dinámicamente desde menuCategories
+  const categoryDisplayNames = useMemo(() => {
+    const names = {};
+    menuCategories.forEach(cat => {
+      names[cat.category_key] = cat.display_name;
+    });
+    return names;
+  }, [menuCategories]);
+  
+  // Generar categoryFilters dinámicamente desde menuCategories
+  const categoryFilters = useMemo(() => {
+    const filters = {};
+    menuCategories.forEach(cat => {
+      if (cat.filter_config) {
+        try {
+          filters[cat.category_key] = JSON.parse(cat.filter_config);
+        } catch (e) {
+          console.error('Error parsing filter_config:', e);
+        }
+      }
+    });
+    return filters;
+  }, [menuCategories]);
 
   // Calcular descuento de pizza
   useEffect(() => {
@@ -1386,9 +1400,23 @@ export default function App() {
       }
     };
     
+    // 3. CARGAR CATEGORÍAS DEL MENÚ
+    const loadMenuCategories = async () => {
+      try {
+        const response = await fetch('/api/get_menu_structure.php');
+        const data = await response.json();
+        if (data.success) {
+          setMenuCategories(data.categories);
+        }
+      } catch (error) {
+        console.error('Error cargando categorías del menú:', error);
+      }
+    };
+    
     // EJECUTAR INMEDIATAMENTE Y EN PARALELO
     loadMenuImmediately();
     loadStatusData();
+    loadMenuCategories();
   }, []);
 
   const productsToShow = useMemo(() => {
