@@ -346,7 +346,11 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
   const scheduledOrders = activeOrders.filter(o => isScheduledOrder(o));
 
   const renderOrderCard = (order, isScheduled = false) => {
-    const isPaid = order.payment_status === 'paid';
+    // Validar pago: para webpay/credit debe tener tuu_message, para otros métodos solo payment_status
+    const isPaid = order.payment_status === 'paid' && 
+      (order.payment_method === 'webpay' || order.payment_method === 'credit' 
+        ? order.tuu_message !== null && order.tuu_message !== '' 
+        : true);
     const seconds = isScheduled ? 0 : getTimeElapsed(order.created_at);
     const timeAlert = isScheduled ? null : getTimeAlert(seconds);
     const scheduledTimeDisplay = isScheduled ? getScheduledTimeDisplay(order.scheduled_time) : null;
