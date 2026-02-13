@@ -100,7 +100,7 @@ const ImageFullscreenModal = ({ product, total, onClose }) => {
             <button onClick={onClose} className="absolute top-4 right-4 bg-black/50 rounded-full p-2 text-white hover:bg-black/70 transition-all z-20">
                 <X size={24} />
             </button>
-            <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" />
+            <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" loading="lazy" decoding="async" />
             <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/40 backdrop-blur-sm text-white text-center">
                 <h3 className="text-xl font-bold">{product.name}</h3>
                 <p className="text-lg text-orange-400 font-semibold">${total.toLocaleString('es-CL')}</p>
@@ -141,7 +141,7 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center gap-3">
                                             {item.image ? (
-                                                <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-md" />
+                                                <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-md" loading="lazy" decoding="async" />
                                             ) : (
                                                 <div className="w-16 h-16 bg-gray-200 rounded-md animate-pulse"></div>
                                             )}
@@ -2455,7 +2455,7 @@ export default function App() {
                         onClick={() => selectSuggestion(product)}
                       >
                         {product.image ? (
-                          <img src={product.image} alt={product.name} className="w-10 h-10 object-cover rounded" />
+                          <img src={product.image} alt={product.name} className="w-10 h-10 object-cover rounded" loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-10 h-10 bg-gray-200 rounded"></div>
                         )}

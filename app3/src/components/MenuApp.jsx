@@ -98,7 +98,7 @@ const ImageFullscreenModal = ({ product, total, onClose }) => {
             <button onClick={onClose} className="absolute top-4 right-4 bg-black/50 rounded-full p-2 text-white hover:bg-black/70 transition-all z-20">
                 <X size={24} />
             </button>
-            <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" />
+            <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" loading="lazy" decoding="async" />
             <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/40 backdrop-blur-sm text-white text-center">
                 <h3 className="text-xl font-bold">{product.name}</h3>
                 <p className="text-lg text-orange-400 font-semibold">${total.toLocaleString('es-CL')}</p>
@@ -208,7 +208,7 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                                     <div className="bg-white p-3">
                                         <div className="flex items-start gap-3">
                                             {item.image ? (
-                                                <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
+                                                <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" loading="lazy" decoding="async" />
                                             ) : (
                                                 <div className="w-16 h-16 bg-gray-200 rounded-md animate-pulse flex-shrink-0"></div>
                                             )}
@@ -2207,7 +2207,7 @@ export default function App() {
                   <div key={item.cartItemId} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                     <div className="flex items-start gap-3">
                       {item.image && (
-                        <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
+                        <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" loading="lazy" decoding="async" />
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-gray-800 text-sm mb-1">{item.name}</p>
@@ -2499,7 +2499,7 @@ export default function App() {
                       className="w-full px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 flex items-center gap-3 transition-colors"
                     >
                       {product.image ? (
-                        <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded-lg" />
+                        <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded-lg" loading="lazy" decoding="async" />
                       ) : (
                         <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
                       )}
