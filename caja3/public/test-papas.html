@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Papas API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .product {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .product.active {
+            background: #e8f5e9;
+        }
+        .product.inactive {
+            background: #ffebee;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            background: #ff6b35;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #ff5722;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            color: #ff6b35;
+        }
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>🍟 Test API Papas - CAJA3</h1>
+    
+    <div class="section">
+        <h2>Controles</h2>
+        <button onclick="testAPI(false)">Test SIN cashier=1</button>
+        <button onclick="testAPI(true)">Test CON cashier=1</button>
+        <button onclick="testDirectDB()">Test Directo DB</button>
+    </div>
+
+    <div class="section">
+        <h2>📊 Estadísticas</h2>
+        <div class="stats" id="stats"></div>
+    </div>
+
+    <div class="section">
+        <h2>🍟 Productos en menuData.papas</h2>
+        <div id="papas-structure"></div>
+    </div>
+
+    <div class="section">
+        <h2>📋 Lista de Papas (category_id=12)</h2>
+        <div id="papas-list"></div>
+    </div>
+
+    <div class="section">
+        <h2>🔍 JSON Completo</h2>
+        <pre id="json-output"></pre>
+    </div>
+
+    <script>
+        async function testAPI(withCashier) {
+            const url = withCashier 
+                ? '/api/get_menu_products.php?cashier=1&v=' + Date.now()
+                : '/api/get_menu_products.php?v=' + Date.now();
+            
+            console.log('🔍 Fetching:', url);
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                console.log('📦 Response:', data);
+                
+                if (!data.success) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+
+                displayResults(data.menuData, withCashier);
+            } catch (error) {
+                console.error('❌ Error:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function testDirectDB() {
+            try {
+                const response = await fetch('/api/test_papas_direct.php');
+                const data = await response.json();
+                
+                console.log('📦 Direct DB Response:', data);
+                
+                if (data.success) {
+                    displayDirectResults(data.papas);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function displayResults(menuData, withCashier) {
+            // Estadísticas
+            const allPapas = [];
+            if (menuData.papas) {
+                Object.entries(menuData.papas).forEach(([subcat, products]) => {
+                    if (Array.isArray(products)) {
+                        allPapas.push(...products);
+                    }
+                });
+            }
+
+            const activePapas = allPapas.filter(p => p.active === 1 && p.category_id === 12);
+            const inactivePapas = allPapas.filter(p => p.active === 0 && p.category_id === 12);
+            const combos = allPapas.filter(p => p.category_id === 8);
+
+            document.getElementById('stats').innerHTML = `
+                <div class="stat-card">
+                    <h3>Modo</h3>
+                    <div class="number">${withCashier ? 'CAJERO' : 'CLIENTE'}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Productos</h3>
+                    <div class="number">${allPapas.length}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Papas Activas</h3>
+                    <div class="number">${activePapas.length}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Papas Inactivas</h3>
+                    <div class="number">${inactivePapas.length}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Combos</h3>
+                    <div class="number">${combos.length}</div>
+                </div>
+            `;
+
+            // Estructura de subcategorías
+            let structureHTML = '<h3>Subcategorías encontradas:</h3>';
+            if (menuData.papas) {
+                Object.entries(menuData.papas).forEach(([subcat, products]) => {
+                    if (Array.isArray(products)) {
+                        structureHTML += `<div style="margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 4px;">
+                            <strong>${subcat}</strong>: ${products.length} productos
+                        </div>`;
+                    }
+                });
+            } else {
+                structureHTML += '<p>❌ No se encontró menuData.papas</p>';
+            }
+            document.getElementById('papas-structure').innerHTML = structureHTML;
+
+            // Lista de papas
+            let listHTML = '';
+            allPapas
+                .filter(p => p.category_id === 12)
+                .sort((a, b) => a.id - b.id)
+                .forEach(p => {
+                    listHTML += `
+                        <div class="product ${p.active === 1 ? 'active' : 'inactive'}">
+                            <strong>ID ${p.id}</strong>: ${p.name}<br>
+                            <small>
+                                Category: ${p.category_id} | 
+                                Subcategory: ${p.subcategory_id} (${p.subcategory_name}) | 
+                                Active: ${p.active} | 
+                                Price: $${p.price.toLocaleString('es-CL')}
+                            </small>
+                        </div>
+                    `;
+                });
+            
+            if (listHTML === '') {
+                listHTML = '<p>❌ No se encontraron papas con category_id=12</p>';
+            }
+            
+            document.getElementById('papas-list').innerHTML = listHTML;
+
+            // JSON completo
+            document.getElementById('json-output').textContent = JSON.stringify(menuData.papas, null, 2);
+        }
+
+        function displayDirectResults(papas) {
+            let html = '<h3>Consulta directa a la base de datos:</h3>';
+            papas.forEach(p => {
+                html += `
+                    <div class="product ${p.is_active === '1' ? 'active' : 'inactive'}">
+                        <strong>ID ${p.id}</strong>: ${p.name}<br>
+                        <small>
+                            Category: ${p.category_id} | 
+                            Subcategory: ${p.subcategory_id} | 
+                            Active: ${p.is_active} | 
+                            Price: $${parseInt(p.price).toLocaleString('es-CL')}
+                        </small>
+                    </div>
+                `;
+            });
+            document.getElementById('papas-list').innerHTML = html;
+            document.getElementById('stats').innerHTML = `
+                <div class="stat-card">
+                    <h3>Total en DB</h3>
+                    <div class="number">${papas.length}</div>
+                </div>
+            `;
+        }
+
+        // Auto-ejecutar con cashier=1
+        window.onload = () => testAPI(true);
+    </script>
+</body>
+</html>
