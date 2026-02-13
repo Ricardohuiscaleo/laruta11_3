@@ -4,6 +4,7 @@
  * Uso: node scripts/convert-to-webp.js
  */
 
+require('dotenv').config();
 const sharp = require('sharp');
 const axios = require('axios');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
