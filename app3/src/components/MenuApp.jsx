@@ -3601,7 +3601,7 @@ export default function App() {
       )}
 
       {/* Menú inferior fijo - Solo móvil */}
-      <nav className={`sm:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md z-40 shadow-sm transition-transform duration-300 rounded-t-3xl border-t border-gray-300 ${isNavVisible ? 'translate-y-0' : 'translate-y-full'}`}>
+      <nav className={`sm:hidden fixed bottom-0 left-0 right-0 bg-white/5 backdrop-blur-md z-40 shadow-sm transition-transform duration-300 rounded-t-3xl border-t border-gray-300 ${isNavVisible ? 'translate-y-0' : 'translate-y-full'}`}>
         <div className="max-w-3xl mx-auto px-2 py-2">
           <div className="flex items-center justify-around relative">
             {!user && showRegisterBanner && (
