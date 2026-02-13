@@ -3573,10 +3573,12 @@ export default function App() {
             </button>
             
             {/* Recomendar */}
-            <button onClick={() => { vibrate(30); setIsReviewModalOpen(true); }} className="flex flex-col items-center gap-1 py-2 px-2 rounded-lg transition-all active:scale-95 bg-gradient-to-br from-yellow-400 via-yellow-300 to-yellow-500 hover:from-yellow-500 hover:via-yellow-400 hover:to-yellow-600 shadow-md hover:shadow-lg relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer"></div>
-              <Star size={20} className="text-yellow-900 relative z-10" fill="currentColor" />
-              <span className="text-[9px] font-bold text-yellow-900 relative z-10">Recomendar</span>
+            <button onClick={() => { vibrate(30); setIsReviewModalOpen(true); }} className="flex flex-col items-center gap-1 py-2 px-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-all active:scale-95 relative">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-yellow-300 to-yellow-500 rounded-full blur-sm opacity-75"></div>
+                <Star size={20} className="relative z-10 text-yellow-500" fill="currentColor" />
+              </div>
+              <span className="text-[9px] font-bold">Recomendar</span>
             </button>
             
             {/* Instagram */}
