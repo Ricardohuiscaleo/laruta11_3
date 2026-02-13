@@ -552,9 +552,22 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
           </div>
           {tuuCallbackFailed && (
             <div className="mt-2 bg-red-100 border-l-4 border-red-500 p-2 rounded">
-              <div className="flex items-center gap-2">
-                <span className="text-red-600 font-bold text-sm">❌</span>
-                <span className="text-xs text-red-800 font-bold">Pago online falló ❌ contacta al cliente.</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-red-600 font-bold text-sm">❌</span>
+                  <span className="text-xs text-red-800 font-bold">Pago online falló contacta al cliente 👉🏻</span>
+                </div>
+                <button
+                  onClick={() => {
+                    const message = `Hola ${order.customer_name}, somos *La Ruta 11 Food Truck* 🍔\n\nTe contactamos porque tu pago online del pedido *${order.order_number}* no fue procesado por Transbank.\n\n❌ *Tu pedido NO ha sido cobrado*\n\nPara continuar con tu pedido, puedes pagar con:\n\n💳 *Transferencia bancaria*\nBanco: [Banco]\nCuenta: [Número]\nRUT: [RUT]\nMonto: $${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}\n\n💵 *Efectivo al recibir*\n\n¡Disculpa las molestias! 🙏`;
+                    navigator.clipboard.writeText(message);
+                    alert('✓ Mensaje copiado al portapapeles');
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1"
+                >
+                  <Copy size={12} />
+                  Copiar mensaje
+                </button>
               </div>
             </div>
           )}
