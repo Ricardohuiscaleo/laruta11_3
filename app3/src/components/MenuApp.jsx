@@ -3348,6 +3348,7 @@ export default function App() {
                     </svg>
                     Dejar Reseña en Google
                   </a>
+                  {/* Botón Food Trucks Cercanos oculto - no necesario en app3
                   <button 
                     onClick={() => {
                       setIsInfoModalOpen(false);
@@ -3360,6 +3361,7 @@ export default function App() {
                     </svg>
                     Ver Food Trucks Cercanos
                   </button>
+                  */}
                 </div>
               </div>
             </div>
@@ -3523,6 +3525,7 @@ export default function App() {
                         </svg>
                         Dejar Reseña en Google
                       </a>
+                      {/* Botón Food Trucks Cercanos oculto - no necesario en app3
                       <button 
                         onClick={() => {
                           setIsInfoModalOpen(false);
@@ -3535,6 +3538,7 @@ export default function App() {
                         </svg>
                         Ver Food Trucks Cercanos
                       </button>
+                      */}
                     </div>
                   </div>
                 </div>
