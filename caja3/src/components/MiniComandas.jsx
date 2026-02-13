@@ -559,7 +559,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                 </div>
                 <button
                   onClick={() => {
-                    const message = `Hola ${order.customer_name}, somos *La Ruta 11 Food Truck* 🍔\n\nTe contactamos porque tu pago online del pedido *${order.order_number}* no fue procesado por Transbank.\n\n❌ *Tu pedido NO ha sido cobrado*\n\nPara continuar con tu pedido, puedes pagar con:\n\n💳 *Transferencia bancaria*\nBanco: [Banco]\nCuenta: [Número]\nRUT: [RUT]\nMonto: $${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}\n\n💵 *Efectivo al recibir*\n\n¡Disculpa las molestias! 🙏`;
+                    const message = `Hola ${order.customer_name}, somos *La Ruta 11 Food Truck* 🍔\n\nTe contactamos porque tu pago online del pedido *${order.order_number}* no fue procesado por Transbank.\n\n❌ *Tu pedido NO ha sido cobrado*\n\nPara continuar con tu pedido, puedes pagar con:\n\n💳 *Transferencia bancaria*\nTitular: La Ruta once Spa\nRUT: 78.194.739-3\nBanco: Banco BCI\nCuenta Corriente: 97618110\nEmail: SABORESDELARUTA11@GMAIL.COM\nMonto: $${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}\n\n💵 *Efectivo al recibir*\n\n💳 *Tarjeta al recibir*\n\n¡Disculpa las molestias! 🙏`;
                     navigator.clipboard.writeText(message);
                     alert('✓ Mensaje copiado al portapapeles');
                   }}
