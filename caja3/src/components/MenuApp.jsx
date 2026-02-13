@@ -1064,6 +1064,11 @@ export default function App() {
   const [schedules, setSchedules] = useState([]);
   const [categories, setCategories] = useState([]);
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
+  const [infoExpanded, setInfoExpanded] = useState(true);
+  const [statusExpanded, setStatusExpanded] = useState(false);
+  const [schedulesExpanded, setSchedulesExpanded] = useState(false);
+  const [menuCategoriesExpanded, setMenuCategoriesExpanded] = useState(false);
+  const [menuCategories, setMenuCategories] = useState([]);
   const [currentDayOfWeek, setCurrentDayOfWeek] = useState(null);
   const [editingSchedules, setEditingSchedules] = useState(false);
   const [showInactiveProducts, setShowInactiveProducts] = useState(false);
@@ -3483,29 +3488,46 @@ export default function App() {
           <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
             <div className="max-w-3xl mx-auto space-y-6">
               {/* Información del Local */}
-              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="bg-orange-100 p-4 rounded-full">
-                      <Truck size={32} className="text-orange-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-gray-800">{truckStatus.nombre}</h3>
-                      <p className="text-gray-600">{truckStatus.descripcion}</p>
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => setInfoExpanded(!infoExpanded)}
+                  className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Truck size={24} className="text-orange-600" />
+                    <div className="text-left">
+                      <h4 className="text-xl font-bold text-gray-800">Información del Local</h4>
+                      <p className="text-sm text-gray-600">Datos y configuración del food truck</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      setEditMode(!editMode);
-                      if (!editMode) setTempTruckData({...truckStatus});
-                    }}
-                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-                  >
-                    {editMode ? <X size={18} /> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>}
-                    {editMode ? 'Cancelar' : 'Editar'}
-                  </button>
-                </div>
+                  <ChevronDown size={24} className={`text-gray-400 transition-transform ${
+                    infoExpanded ? 'rotate-180' : ''
+                  }`} />
+                </button>
                 
+                {infoExpanded && (
+                  <div className="p-6 pt-0">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-orange-100 p-4 rounded-full">
+                          <Truck size={32} className="text-orange-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold text-gray-800">{truckStatus.nombre}</h3>
+                          <p className="text-gray-600">{truckStatus.descripcion}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setEditMode(!editMode);
+                          if (!editMode) setTempTruckData({...truckStatus});
+                        }}
+                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                      >
+                        {editMode ? <X size={18} /> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>}
+                        {editMode ? 'Cancelar' : 'Editar'}
+                      </button>
+                    </div>
                 {!editMode ? (
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center gap-2 text-gray-700">
@@ -3624,15 +3646,30 @@ export default function App() {
                     </button>
                   </div>
                 )}
+                  </div>
+                )}
               </div>
 
               {/* Switch de Estado con Swipe */}
-              <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-200">
-                <div className="text-center mb-4 sm:mb-6">
-                  <h4 className="text-lg sm:text-xl font-bold text-gray-800 mb-1 sm:mb-2">Estado Actual</h4>
-                  <p className="text-xs sm:text-sm text-gray-600">Desliza para cambiar el estado del local</p>
-                </div>
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => setStatusExpanded(!statusExpanded)}
+                  className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Settings size={24} className="text-green-600" />
+                    <div className="text-left">
+                      <h4 className="text-xl font-bold text-gray-800">Estado Actual</h4>
+                      <p className="text-sm text-gray-600">Desliza para cambiar el estado del local</p>
+                    </div>
+                  </div>
+                  <ChevronDown size={24} className={`text-gray-400 transition-transform ${
+                    statusExpanded ? 'rotate-180' : ''
+                  }`} />
+                </button>
                 
+                {statusExpanded && (
+                  <div className="p-6 pt-0">
                 <SwipeToggle
                   isActive={truckStatus.activo === 1}
                   onChange={async (newStatus) => {
@@ -3656,24 +3693,39 @@ export default function App() {
                   disabled={isUpdatingStatus}
                   label="Desliza para cambiar el estado"
                 />
+                  </div>
+                )}
               </div>
 
               {/* Horarios por día */}
-              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h4 className="text-xl font-bold text-gray-800">Horarios por Día</h4>
-                    <p className="text-sm text-gray-600 mt-1">Configura horarios específicos para cada día</p>
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => setSchedulesExpanded(!schedulesExpanded)}
+                  className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Clock size={24} className="text-purple-600" />
+                    <div className="text-left">
+                      <h4 className="text-xl font-bold text-gray-800">Horarios por Día</h4>
+                      <p className="text-sm text-gray-600">Configura horarios específicos para cada día</p>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => setEditingSchedules(!editingSchedules)}
-                    className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-                  >
-                    {editingSchedules ? <X size={18} /> : <Clock size={18} />}
-                    {editingSchedules ? 'Cancelar' : 'Editar'}
-                  </button>
-                </div>
+                  <ChevronDown size={24} className={`text-gray-400 transition-transform ${
+                    schedulesExpanded ? 'rotate-180' : ''
+                  }`} />
+                </button>
                 
+                {schedulesExpanded && (
+                  <div className="p-6 pt-0">
+                    <div className="flex items-center justify-end mb-4">
+                      <button
+                        onClick={() => setEditingSchedules(!editingSchedules)}
+                        className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                      >
+                        {editingSchedules ? <X size={18} /> : <Clock size={18} />}
+                        {editingSchedules ? 'Cancelar' : 'Editar'}
+                      </button>
+                    </div>
                 <div className="space-y-2">
                   {schedules.map((schedule) => {
                     const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -3758,6 +3810,8 @@ export default function App() {
                   >
                     Guardar Horarios
                   </button>
+                )}
+                  </div>
                 )}
               </div>
 
