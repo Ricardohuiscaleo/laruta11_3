@@ -346,11 +346,16 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
   const scheduledOrders = activeOrders.filter(o => isScheduledOrder(o));
 
   const renderOrderCard = (order, isScheduled = false) => {
-    // Validar pago: para webpay/credit debe tener tuu_message, para otros métodos solo payment_status
+    // Validar pago: para webpay/credit debe tener tuu_message === "Transaccion aprobada"
     const isPaid = order.payment_status === 'paid' && 
       (order.payment_method === 'webpay' || order.payment_method === 'credit' 
-        ? order.tuu_message !== null && order.tuu_message !== '' 
+        ? order.tuu_message === 'Transaccion aprobada'
         : true);
+    
+    // Detectar si el callback de TUU falló
+    const tuuCallbackFailed = (order.payment_method === 'webpay' || order.payment_method === 'credit') && 
+      order.payment_status === 'paid' && 
+      order.tuu_message !== 'Transaccion aprobada';
     const seconds = isScheduled ? 0 : getTimeElapsed(order.created_at);
     const timeAlert = isScheduled ? null : getTimeAlert(seconds);
     const scheduledTimeDisplay = isScheduled ? getScheduledTimeDisplay(order.scheduled_time) : null;
@@ -545,6 +550,16 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
               <span>{isPaid ? 'Pagado' : 'Pendiente'}</span>
             </div>
           </div>
+          {tuuCallbackFailed && (
+            <div className="mt-2 bg-yellow-100 border-l-4 border-yellow-500 p-2 rounded">
+              <div className="flex items-start gap-2">
+                <span className="text-yellow-600 font-bold text-xs">⚠️</span>
+                <div className="text-xs text-yellow-800">
+                  <span className="font-bold">Callback TUU pendiente</span>
+                  <div className="mt-1">El pago puede estar procesándose. Verifica en TUU antes de confirmar manualmente.</div>
+                </div>
+              </div>
+            </div>
           {!isScheduled && (order.discount_amount > 0 || order.cashback_used > 0) && (
             <div className="text-xs space-y-1 pt-2 border-t border-gray-200">
               {order.discount_amount > 0 && (
