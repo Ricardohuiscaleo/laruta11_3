@@ -618,10 +618,6 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
     }
   });
 
-  const handleAddToCart = (product) => {
-    onAddToCart(product);
-  };
-
   return (
     <div className="bg-white rounded-xl shadow-lg hover:shadow-xl overflow-hidden animate-fade-in transition-shadow duration-300 border border-gray-100">
       <div className="flex p-2">
@@ -729,7 +725,7 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
               </div>
             )}
             <button 
-              onClick={() => handleAddToCart(product)} 
+              onClick={() => onAddToCart(product)} 
               className={`flex-1 px-2 font-bold transition-all duration-200 flex items-center justify-center gap-1 rounded-lg ${
                 quantity > 0 
                   ? 'bg-yellow-500 text-black hover:bg-yellow-600' 
