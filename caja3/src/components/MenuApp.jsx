@@ -1062,6 +1062,8 @@ export default function App() {
   const [editMode, setEditMode] = useState(false);
   const [tempTruckData, setTempTruckData] = useState(null);
   const [schedules, setSchedules] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   const [currentDayOfWeek, setCurrentDayOfWeek] = useState(null);
   const [editingSchedules, setEditingSchedules] = useState(false);
   const [showInactiveProducts, setShowInactiveProducts] = useState(false);
@@ -2176,6 +2178,11 @@ export default function App() {
                   if (schedData.success) {
                     setSchedules(schedData.schedules);
                     setCurrentDayOfWeek(schedData.currentDayOfWeek);
+                  }
+                  
+                  const catRes = await fetch('/api/get_product_categories.php');
+                  const catData = await catRes.json();
+                  if (catData.success) setCategories(catData.categories);
                   }
                 }}
                 className="text-gray-600 hover:text-orange-500 transition-colors"
@@ -3752,6 +3759,85 @@ export default function App() {
                   >
                     Guardar Horarios
                   </button>
+                )}
+              </div>
+
+              {/* Control de Categorías */}
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => setCategoriesExpanded(!categoriesExpanded)}
+                  className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Package size={24} className="text-orange-600" />
+                    <div className="text-left">
+                      <h4 className="text-xl font-bold text-gray-800">Control de Categorías</h4>
+                      <p className="text-sm text-gray-600">Mostrar/ocultar categorías del menú</p>
+                    </div>
+                  </div>
+                  <ChevronDown size={24} className={`text-gray-400 transition-transform ${
+                    categoriesExpanded ? 'rotate-180' : ''
+                  }`} />
+                </button>
+                
+                {categoriesExpanded && (
+                  <div className="p-6 pt-0 space-y-3">
+                    {categories.map(cat => (
+                      <div key={cat.id} className="bg-gray-50 rounded-lg p-4 border-2 border-gray-200">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={cat.is_active}
+                                onChange={async (e) => {
+                                  const newCategories = categories.map(c => 
+                                    c.id === cat.id ? {...c, is_active: e.target.checked} : c
+                                  );
+                                  setCategories(newCategories);
+                                  
+                                  try {
+                                    await fetch('/api/update_categories.php', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ categories: newCategories })
+                                    });
+                                    vibrate(30);
+                                  } catch (error) {
+                                    console.error('Error:', error);
+                                  }
+                                }}
+                                className="w-5 h-5 cursor-pointer"
+                              />
+                              <span className="font-semibold text-gray-800">{cat.name}</span>
+                            </label>
+                            <span className={`px-2 py-1 rounded text-xs font-bold ${
+                              cat.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                            }`}>
+                              {cat.is_active ? 'Visible' : 'Oculta'}
+                            </span>
+                          </div>
+                          <span className="text-sm text-gray-500">{cat.product_count || 0} productos</span>
+                        </div>
+                        
+                        {cat.products && cat.products.length > 0 && (
+                          <div className="flex gap-2 flex-wrap pt-3 border-t border-gray-200">
+                            {cat.products.slice(0, 6).map(prod => (
+                              <div key={prod.id} className="flex items-center gap-2 bg-white px-2 py-1 rounded border border-gray-200">
+                                {prod.image_url && (
+                                  <img src={prod.image_url} className="w-6 h-6 object-cover rounded" />
+                                )}
+                                <span className="text-xs text-gray-600">{prod.name}</span>
+                              </div>
+                            ))}
+                            {cat.products.length > 6 && (
+                              <span className="text-xs text-gray-500 px-2 py-1">+{cat.products.length - 6} más</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 
