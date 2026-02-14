@@ -1741,6 +1741,15 @@ export default function App() {
             try {
               localStorage.setItem('ruta11_user', JSON.stringify(data.user));
               console.log('✅ Login Google exitoso, sesión guardada');
+              
+              // Verificar si debe redirigir a RL6
+              const rl6Redirect = localStorage.getItem('rl6_redirect');
+              if (rl6Redirect === 'true') {
+                localStorage.removeItem('rl6_redirect');
+                console.log('🔄 Redirigiendo a RL6...');
+                window.location.href = '/rl6?login=success';
+                return;
+              }
             } catch (error) {
               console.warn('⚠️ No se pudo guardar sesión de Google:', error);
             }
@@ -1760,6 +1769,13 @@ export default function App() {
     if (urlParams.get('logout') === 'success') {
       setUser(null);
       window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    // Abrir modal de perfil si viene de RL6 sin sesión
+    if (urlParams.get('login') === 'required') {
+      console.log('🔑 Abriendo modal de login desde RL6...');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setTimeout(() => setIsProfileOpen(true), 500);
     }
   }, [menuWithImages]);
 

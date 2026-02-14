@@ -332,6 +332,18 @@ const GRADOS_MILITARES = [
         if (userData) {
           usuarioLogueado = JSON.parse(userData);
         }
+        
+        // Verificar si viene de redirect después de login
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('login') === 'success') {
+          // Limpiar URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+          // Recargar datos del usuario
+          var storedUser = localStorage.getItem('ruta11_user');
+          if (storedUser) {
+            usuarioLogueado = JSON.parse(storedUser);
+          }
+        }
       } catch (e) {
         console.error('Error al leer localStorage:', e);
       }
@@ -680,7 +692,9 @@ const GRADOS_MILITARES = [
       var btnAbrirLogin = document.getElementById('btnAbrirLogin');
       if (btnAbrirLogin) {
         btnAbrirLogin.addEventListener('click', function() {
-          window.location.href = '/';
+          // Guardar que viene de RL6 para redirigir después
+          localStorage.setItem('rl6_redirect', 'true');
+          window.location.href = '/?login=required';
         });
       }
 
