@@ -1722,8 +1722,10 @@ export default function App() {
           }
         })
         .catch(error => {
-          console.warn('❌ [DEBUG] Session check failed:', error.message);
-          // Si falla la verificación pero hay usuario en localStorage, mantenerlo
+          // Silenciar error si hay usuario en localStorage (fallback funciona)
+          if (!storedUser) {
+            console.warn('⚠️ [DEBUG] Session check failed:', error.message);
+          }
         });
     }, 100); // Delay mínimo para no bloquear render inicial
     
