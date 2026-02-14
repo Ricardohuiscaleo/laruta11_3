@@ -440,19 +440,21 @@ const GRADOS_MILITARES = [
           }
           
           // Agregar validación en tiempo real a todos los inputs
+          if (!formMultiPaso) return;
           var allInputs = formMultiPaso.querySelectorAll('input[required], select[required], textarea[required]');
           for (var i = 0; i < allInputs.length; i++) {
             allInputs[i].addEventListener('input', function() {
-              var errorId = 'error-' + (this.name || this.id);
+              var input = this as HTMLInputElement;
+              var errorId = 'error-' + (input.name || input.id);
               var existingError = document.getElementById(errorId);
               
-              if (this.value && this.value.trim() !== '') {
-                this.classList.remove('border-red-500', 'bg-red-50');
-                this.classList.add('border-green-500');
+              if (input.value && input.value.trim() !== '') {
+                input.classList.remove('border-red-500', 'bg-red-50');
+                input.classList.add('border-green-500');
                 if (existingError) existingError.remove();
               } else {
-                this.classList.remove('border-green-500');
-                this.classList.add('border-gray-300');
+                input.classList.remove('border-green-500');
+                input.classList.add('border-gray-300');
               }
             });
           }
@@ -471,7 +473,7 @@ const GRADOS_MILITARES = [
             var todosValidos = true;
             
             for (var i = 0; i < inputs.length; i++) {
-              var input = inputs[i];
+              var input = inputs[i] as HTMLInputElement;
               var errorId = 'error-' + (input.name || input.id || i);
               var existingError = document.getElementById(errorId);
               
@@ -479,7 +481,8 @@ const GRADOS_MILITARES = [
               if (existingError) existingError.remove();
               
               // Validar
-              if (!input.value || input.value.trim() === '') {
+              var inputValue = input.value || '';
+              if (!inputValue || inputValue.trim() === '') {
                 todosValidos = false;
                 input.classList.add('border-red-500', 'bg-red-50');
                 input.classList.remove('border-gray-300');
@@ -489,7 +492,8 @@ const GRADOS_MILITARES = [
                 errorMsg.id = errorId;
                 errorMsg.className = 'text-red-600 text-xs mt-1 font-medium';
                 errorMsg.innerHTML = '⚠️ Este campo es obligatorio';
-                input.parentElement.appendChild(errorMsg);
+                var parent = input.parentElement;
+                if (parent) parent.appendChild(errorMsg);
                 
                 // Shake animation
                 input.style.animation = 'shake 0.3s';
@@ -721,6 +725,7 @@ const GRADOS_MILITARES = [
         var remaining = seconds;
         
         function updateCountdown() {
+          if (!countdownEl) return;
           var mins = Math.floor(remaining / 60);
           var secs = remaining % 60;
           countdownEl.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
@@ -734,16 +739,24 @@ const GRADOS_MILITARES = [
         }
         updateCountdown();
         
-        document.getElementById('btnCerrarModal').addEventListener('click', function() {
-          document.body.removeChild(modal);
-        });
+        var btnCerrar = document.getElementById('btnCerrarModal');
+        if (btnCerrar) {
+          btnCerrar.addEventListener('click', function() {
+            document.body.removeChild(modal);
+          });
+        }
         
-        document.getElementById('btnUnlock').addEventListener('click', async function() {
-          var code = document.getElementById('unlockCode').value;
+        var btnUnlock = document.getElementById('btnUnlock');
+        if (btnUnlock) {
+          btnUnlock.addEventListener('click', async function() {
+            var unlockInput = document.getElementById('unlockCode') as HTMLInputElement;
+            var code = unlockInput?.value || '';
           if (!code) {
             alert('⚠️ Ingresa un código');
             return;
           }
+          
+          if (!usuarioLogueado || !usuarioLogueado['id']) return;
           
           var formData = new FormData();
           formData.append('unlock_code', code);
@@ -765,7 +778,8 @@ const GRADOS_MILITARES = [
           } catch (error) {
             alert('❌ Error: ' + error.message);
           }
-        });
+          });
+        }
       }
 
 
