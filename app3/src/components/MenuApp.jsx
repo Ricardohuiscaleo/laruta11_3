@@ -1777,6 +1777,13 @@ export default function App() {
       window.history.replaceState({}, document.title, window.location.pathname);
       setTimeout(() => setIsProfileOpen(true), 500);
     }
+    
+    // Abrir modal de perfil si viene de RL6 sin sesión
+    if (urlParams.get('login') === 'required') {
+      console.log('🔑 Abriendo modal de login desde RL6...');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setTimeout(() => setIsProfileOpen(true), 500);
+    }
   }, [menuWithImages]);
 
   if (isLoading) {
