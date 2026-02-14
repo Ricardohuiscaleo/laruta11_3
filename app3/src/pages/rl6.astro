@@ -427,6 +427,24 @@ const GRADOS_MILITARES = [
             }
           }
           
+          // Agregar validación en tiempo real a todos los inputs
+          var allInputs = formMultiPaso.querySelectorAll('input[required], select[required], textarea[required]');
+          for (var i = 0; i < allInputs.length; i++) {
+            allInputs[i].addEventListener('input', function() {
+              var errorId = 'error-' + (this.name || this.id);
+              var existingError = document.getElementById(errorId);
+              
+              if (this.value && this.value.trim() !== '') {
+                this.classList.remove('border-red-500', 'bg-red-50');
+                this.classList.add('border-green-500');
+                if (existingError) existingError.remove();
+              } else {
+                this.classList.remove('border-green-500');
+                this.classList.add('border-gray-300');
+              }
+            });
+          }
+          
           pasoActual = 1;
           mostrarPaso(1);
         });
@@ -434,6 +452,50 @@ const GRADOS_MILITARES = [
 
       if (btnSiguiente) {
         btnSiguiente.addEventListener('click', function() {
+          // Validar campos del paso actual antes de avanzar
+          var pasoActualEl = document.getElementById('paso' + pasoActual);
+          if (pasoActualEl) {
+            var inputs = pasoActualEl.querySelectorAll('input[required], select[required], textarea[required]');
+            var todosValidos = true;
+            
+            for (var i = 0; i < inputs.length; i++) {
+              var input = inputs[i];
+              var errorId = 'error-' + (input.name || input.id || i);
+              var existingError = document.getElementById(errorId);
+              
+              // Remover error previo
+              if (existingError) existingError.remove();
+              
+              // Validar
+              if (!input.value || input.value.trim() === '') {
+                todosValidos = false;
+                input.classList.add('border-red-500', 'bg-red-50');
+                input.classList.remove('border-gray-300');
+                
+                // Crear mensaje de error
+                var errorMsg = document.createElement('p');
+                errorMsg.id = errorId;
+                errorMsg.className = 'text-red-600 text-xs mt-1 font-medium';
+                errorMsg.innerHTML = '⚠️ Este campo es obligatorio';
+                input.parentElement.appendChild(errorMsg);
+                
+                // Shake animation
+                input.style.animation = 'shake 0.3s';
+                setTimeout(function() { input.style.animation = ''; }, 300);
+              } else {
+                input.classList.remove('border-red-500', 'bg-red-50');
+                input.classList.add('border-green-500');
+              }
+            }
+            
+            if (!todosValidos) {
+              // Scroll al primer campo con error
+              var primerError = pasoActualEl.querySelector('.border-red-500');
+              if (primerError) primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              return;
+            }
+          }
+          
           if (pasoActual < totalPasos) {
             pasoActual++;
             mostrarPaso(pasoActual);
@@ -725,6 +787,11 @@ const GRADOS_MILITARES = [
       }
       @keyframes spin {
         to { transform: rotate(360deg); }
+      }
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-10px); }
+        75% { transform: translateX(10px); }
       }
       .animate-spin {
         animation: spin 1s linear infinite;
