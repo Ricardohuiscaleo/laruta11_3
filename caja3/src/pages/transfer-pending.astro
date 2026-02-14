@@ -136,6 +136,22 @@
                         <span class="text-gray-600">Delivery:</span>
                         <span id="delivery-fee" class="font-semibold">$0</span>
                     </div>
+                    <div id="discount-10-row" class="justify-between mb-2 hidden">
+                        <span class="text-green-600">⭐ Descuento 10%:</span>
+                        <span id="discount-10" class="font-semibold text-green-600">$0</span>
+                    </div>
+                    <div id="discount-30-row" class="justify-between mb-2 hidden">
+                        <span class="text-yellow-600">⭐ Descuento 30%:</span>
+                        <span id="discount-30" class="font-semibold text-yellow-600">$0</span>
+                    </div>
+                    <div id="discount-birthday-row" class="justify-between mb-2 hidden">
+                        <span class="text-pink-600">🎂 Descuento Cumpleaños:</span>
+                        <span id="discount-birthday" class="font-semibold text-pink-600">$0</span>
+                    </div>
+                    <div id="discount-pizza-row" class="justify-between mb-2 hidden">
+                        <span class="text-orange-600">🍕 Descuento Pizza:</span>
+                        <span id="discount-pizza" class="font-semibold text-orange-600">$0</span>
+                    </div>
                     <div class="flex justify-between text-lg font-bold border-t border-gray-200 pt-2">
                         <span>Total:</span>
                         <span id="total" class="text-emerald-600">$0</span>
@@ -279,6 +295,7 @@
                     currentOrderData = data.order;
                     displayOrderItems(data.order.items, data.order.total, data.order.delivery_fee);
                     displayCustomerInfo(data.order);
+                    displayDiscounts(data.order);
                     updateWhatsAppLink();
                 } else {
                     console.error('Error cargando pedido:', data.error);
@@ -428,6 +445,29 @@
             
             if (customerInfoElement) {
                 customerInfoElement.classList.remove('hidden');
+            }
+        }
+
+        function displayDiscounts(order) {
+            if (order.discount_10 > 0) {
+                document.getElementById('discount-10-row').classList.remove('hidden');
+                document.getElementById('discount-10-row').classList.add('flex');
+                document.getElementById('discount-10').textContent = `-$${parseInt(order.discount_10).toLocaleString('es-CL')}`;
+            }
+            if (order.discount_30 > 0) {
+                document.getElementById('discount-30-row').classList.remove('hidden');
+                document.getElementById('discount-30-row').classList.add('flex');
+                document.getElementById('discount-30').textContent = `-$${parseInt(order.discount_30).toLocaleString('es-CL')}`;
+            }
+            if (order.discount_birthday > 0) {
+                document.getElementById('discount-birthday-row').classList.remove('hidden');
+                document.getElementById('discount-birthday-row').classList.add('flex');
+                document.getElementById('discount-birthday').textContent = `-$${parseInt(order.discount_birthday).toLocaleString('es-CL')}`;
+            }
+            if (order.discount_pizza > 0) {
+                document.getElementById('discount-pizza-row').classList.remove('hidden');
+                document.getElementById('discount-pizza-row').classList.add('flex');
+                document.getElementById('discount-pizza').textContent = `-$${parseInt(order.discount_pizza).toLocaleString('es-CL')}`;
             }
         }
 

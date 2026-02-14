@@ -537,6 +537,18 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                 {order.delivery_type === 'delivery' && order.delivery_fee > 0 && (
                   <span className="text-xs text-orange-600 flex items-center gap-1">+ <Bike size={12} /> <span className="font-semibold">${parseInt(order.delivery_fee - (order.delivery_discount || 0)).toLocaleString('es-CL')}</span></span>
                 )}
+                {order.discount_10 > 0 && (
+                  <span className="text-xs text-green-600 flex items-center gap-1">- ⭐10% <span className="font-semibold">${parseInt(order.discount_10).toLocaleString('es-CL')}</span></span>
+                )}
+                {order.discount_30 > 0 && (
+                  <span className="text-xs text-yellow-600 flex items-center gap-1">- ⭐30% <span className="font-semibold">${parseInt(order.discount_30).toLocaleString('es-CL')}</span></span>
+                )}
+                {order.discount_birthday > 0 && (
+                  <span className="text-xs text-pink-600 flex items-center gap-1">- 🎂 <span className="font-semibold">${parseInt(order.discount_birthday).toLocaleString('es-CL')}</span></span>
+                )}
+                {order.discount_pizza > 0 && (
+                  <span className="text-xs text-orange-600 flex items-center gap-1">- 🍕 <span className="font-semibold">${parseInt(order.discount_pizza).toLocaleString('es-CL')}</span></span>
+                )}
                 <span className="text-xs text-gray-400">→</span>
                 <span className="text-xs text-gray-600">Total: <span className="font-bold text-green-600">${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}</span></span>
               </div>
@@ -571,9 +583,33 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
               </div>
             </div>
           )}
-          {!isScheduled && (order.discount_amount > 0 || order.cashback_used > 0) && (
+          {!isScheduled && (order.discount_10 > 0 || order.discount_30 > 0 || order.discount_birthday > 0 || order.discount_pizza > 0 || order.discount_amount > 0 || order.cashback_used > 0) && (
             <div className="text-xs space-y-1 pt-2 border-t border-gray-200">
-              {order.discount_amount > 0 && (
+              {order.discount_10 > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>⭐ Descuento 10%:</span>
+                  <span className="font-semibold">-${parseInt(order.discount_10).toLocaleString('es-CL')}</span>
+                </div>
+              )}
+              {order.discount_30 > 0 && (
+                <div className="flex justify-between text-yellow-600">
+                  <span>⭐ Descuento 30%:</span>
+                  <span className="font-semibold">-${parseInt(order.discount_30).toLocaleString('es-CL')}</span>
+                </div>
+              )}
+              {order.discount_birthday > 0 && (
+                <div className="flex justify-between text-pink-600">
+                  <span>🎂 Descuento Cumpleaños:</span>
+                  <span className="font-semibold">-${parseInt(order.discount_birthday).toLocaleString('es-CL')}</span>
+                </div>
+              )}
+              {order.discount_pizza > 0 && (
+                <div className="flex justify-between text-orange-600">
+                  <span>🍕 Descuento Pizza:</span>
+                  <span className="font-semibold">-${parseInt(order.discount_pizza).toLocaleString('es-CL')}</span>
+                </div>
+              )}
+              {order.discount_amount > 0 && !order.discount_10 && !order.discount_30 && !order.discount_birthday && !order.discount_pizza && (
                 <div className="flex justify-between text-green-600">
                   <span>💰 Descuento:</span>
                   <span className="font-semibold">-${parseInt(order.discount_amount).toLocaleString('es-CL')}</span>
