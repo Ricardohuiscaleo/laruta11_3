@@ -37,7 +37,7 @@ try {
     $truck = $stmt->fetch(PDO::FETCH_ASSOC);
     
     // Obtener horarios personalizados de la tabla food_truck_schedules
-    $stmt = $pdo->prepare("SELECT * FROM food_truck_schedules WHERE food_truck_id = 4 AND is_active = 1 ORDER BY day_of_week");
+    $stmt = $pdo->prepare("SELECT * FROM food_truck_schedules WHERE food_truck_id = 4 AND activo = 1 ORDER BY day_of_week");
     $stmt->execute();
     $customSchedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -45,8 +45,8 @@ try {
     $schedulesByDay = [];
     foreach ($customSchedules as $schedule) {
         $schedulesByDay[$schedule['day_of_week']] = [
-            'start' => $schedule['start_time'],
-            'end' => $schedule['end_time']
+            'start' => $schedule['horario_inicio'],
+            'end' => $schedule['horario_fin']
         ];
     }
 
