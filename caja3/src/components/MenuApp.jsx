@@ -3316,54 +3316,6 @@ export default function App() {
                     <Bike size={16} />
                     <span>PedidosYA</span>
                   </button>
-                      try {
-                        console.log('🚴 Procesando pago con PEDIDOSYA...');
-                        const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-                        const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
-                        const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
-                        const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
-                        const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - birthdayDiscountAmount;
-                        
-                        const orderData = {
-                          amount: finalTotal,
-                          customer_name: customerInfo.name,
-                          customer_phone: customerInfo.phone,
-                          customer_email: customerInfo.email || `${customerInfo.phone}@ruta11.cl`,
-                          user_id: user?.id || null,
-                          cart_items: cart,
-                          delivery_fee: deliveryFee,
-                          customer_notes: customerInfo.customerNotes || null,
-                          delivery_type: customerInfo.deliveryType,
-                          delivery_address: customerInfo.address || null,
-                          payment_method: 'pedidosya'
-                        };
-                        console.log('📤 Enviando orden:', orderData);
-                        const response = await fetch('/api/create_order.php', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify(orderData)
-                        });
-                        const result = await response.json();
-                        console.log('📥 Respuesta:', result);
-                        if (result.success) {
-                          localStorage.removeItem('ruta11_cart');
-                          localStorage.removeItem('ruta11_cart_total');
-                          console.log('✅ Redirigiendo a /pedidosya-pending?order=' + result.order_id);
-                          window.location.href = '/pedidosya-pending?order=' + result.order_id;
-                        } else {
-                          alert('❌ Error al crear orden: ' + (result.error || 'Error desconocido'));
-                        }
-                      } catch (error) {
-                        console.error('❌ Error procesando pago con PedidosYA:', error);
-                        alert('❌ Error al procesar el pago: ' + error.message);
-                      }
-                    }}
-                    disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                    className="disabled:bg-white disabled:text-gray-700 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs bg-orange-500 hover:bg-orange-600 text-white border-orange-500 flex flex-col items-center justify-center gap-1"
-                  >
-                    <Bike size={16} />
-                    <span>PedidosYA</span>
-                  </button>
                 </div>
                 
               </div>
