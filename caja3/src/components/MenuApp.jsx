@@ -3107,6 +3107,7 @@ export default function App() {
                       const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
                       const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
                       const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
+                      const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                       const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                       const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
                       return (cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
@@ -3419,6 +3420,7 @@ export default function App() {
                     const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
                     const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
                     const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
+                    const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                     const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                     const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
                     return (cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
@@ -3496,6 +3498,7 @@ export default function App() {
                       const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
                       const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
                       const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
+                      const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                       const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                       const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
                       return (cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
