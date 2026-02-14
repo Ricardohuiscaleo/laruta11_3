@@ -1551,10 +1551,13 @@ export default function App() {
         formData.append('action', 'start_session');
         formData.append('session_id', sessionId);
         const response = await fetch('/api/track_usage.php', { method: 'POST', body: formData });
-        const result = await response.json();
+        if (!response.ok) return;
+        const text = await response.text();
+        if (!text) return;
+        const result = JSON.parse(text);
         console.log('Start session result:', result);
       } catch (error) {
-        console.error('Error iniciando sesión:', error);
+        // Silenciar error si no hay sesión PHP aún
       }
     };
     
