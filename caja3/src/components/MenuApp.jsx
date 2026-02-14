@@ -992,7 +992,7 @@ export default function App() {
   const [showCheckout, setShowCheckout] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
-  const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', email: '', address: '', deliveryType: 'pickup', pickupTime: '', customerNotes: '', deliveryDiscount: false, pickupDiscount: false, birthdayDiscount: false });
+  const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', email: '', address: '', deliveryType: 'pickup', pickupTime: '', customerNotes: '', deliveryDiscount: false, pickupDiscount: false, birthdayDiscount: false, discount30: false });
   const [menuWithImages, setMenuWithImages] = useState(menuData);
   const [likedProducts, setLikedProducts] = useState(new Set());
   const [isLoading, setIsLoading] = useState(false);
@@ -2851,6 +2851,32 @@ export default function App() {
                       className="w-3 h-3 pointer-events-none"
                     />
                     <span>🎂 Cumpleaños</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!customerInfo.discount30) {
+                        const confirmed = window.confirm('⭐ Descuento 30%\n\nSe aplicará un 30% de descuento en productos seleccionados.\n\n¿Aplicar descuento?');
+                        if (confirmed) {
+                          setCustomerInfo({...customerInfo, discount30: true});
+                        }
+                      } else {
+                        setCustomerInfo({...customerInfo, discount30: false});
+                      }
+                    }}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                      customerInfo.discount30 
+                        ? 'bg-yellow-400 text-black' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    <Percent size={14} />
+                    <input
+                      type="checkbox"
+                      checked={customerInfo.discount30}
+                      readOnly
+                      className="w-3 h-3 pointer-events-none"
+                    />
+                    <span>-30%</span>
                   </button>
                   <div className="flex items-center gap-1">
                     <span className="bg-orange-500 text-white px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap">Código Descuento:</span>
