@@ -47,8 +47,20 @@ try {
     $nextOpenTime = null;
 
     if ($truck) {
-        $openTime = $truck['horario_inicio'];
-        $closeTime = $truck['horario_fin'];
+        // Obtener horario específico del día actual
+        $dayColumns = ['horario_domingo', 'horario_lunes', 'horario_martes', 'horario_miercoles', 'horario_jueves', 'horario_viernes', 'horario_sabado'];
+        $todayColumn = $dayColumns[$dayOfWeek];
+        $todayScheduleStr = $truck[$todayColumn] ?? null;
+        
+        // Si hay horario específico del día, usarlo; sino usar horario general
+        if ($todayScheduleStr && strpos($todayScheduleStr, '-') !== false) {
+            list($openTime, $closeTime) = array_map('trim', explode('-', $todayScheduleStr));
+            $openTime .= ':00'; // Agregar segundos
+            $closeTime .= ':00';
+        } else {
+            $openTime = $truck['horario_inicio'];
+            $closeTime = $truck['horario_fin'];
+        }
         
         // Verificar si está abierto
         if ($truck['activo']) {
