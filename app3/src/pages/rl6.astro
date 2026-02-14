@@ -579,7 +579,12 @@ const GRADOS_MILITARES = [
               
               window.location.href = '/';
             } else {
-              alert('❌ Error: ' + result.error);
+              // Verificar si hay bloqueo con cronómetro
+              if (result.blocked_until && result.remaining_seconds) {
+                mostrarCronometroBloqueo(result.remaining_seconds);
+              } else {
+                alert('❌ Error: ' + result.error);
+              }
               if (btnEnviar) {
                 btnEnviar.removeAttribute('disabled');
                 btnEnviar.textContent = 'Enviar Solicitud';
@@ -614,6 +619,76 @@ const GRADOS_MILITARES = [
       if (btnAbrirLogin) {
         btnAbrirLogin.addEventListener('click', function() {
           window.location.href = '/';
+        });
+      }
+
+      // Función para mostrar cronómetro de bloqueo
+      function mostrarCronometroBloqueo(seconds) {
+        var modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50';
+        modal.innerHTML = `
+          <div class="bg-white rounded-2xl p-8 max-w-md mx-4 text-center">
+            <div class="text-6xl mb-4">⏱️</div>
+            <h3 class="text-2xl font-bold text-slate-900 mb-4">Demasiados Intentos</h3>
+            <p class="text-gray-600 mb-6">Espera <span id="countdown" class="font-bold text-red-600"></span> para intentar nuevamente</p>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+              <p class="text-sm text-amber-900 mb-2">🔑 ¿Tienes un código de desbloqueo?</p>
+              <input type="text" id="unlockCode" placeholder="Ingresa el código" class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-2" />
+              <button id="btnUnlock" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-lg">Desbloquear</button>
+            </div>
+            <button id="btnCerrarModal" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg">Cerrar</button>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        
+        var countdownEl = document.getElementById('countdown');
+        var remaining = seconds;
+        
+        function updateCountdown() {
+          var mins = Math.floor(remaining / 60);
+          var secs = remaining % 60;
+          countdownEl.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+          
+          if (remaining <= 0) {
+            document.body.removeChild(modal);
+            return;
+          }
+          remaining--;
+          setTimeout(updateCountdown, 1000);
+        }
+        updateCountdown();
+        
+        document.getElementById('btnCerrarModal').addEventListener('click', function() {
+          document.body.removeChild(modal);
+        });
+        
+        document.getElementById('btnUnlock').addEventListener('click', async function() {
+          var code = document.getElementById('unlockCode').value;
+          if (!code) {
+            alert('⚠️ Ingresa un código');
+            return;
+          }
+          
+          var formData = new FormData();
+          formData.append('unlock_code', code);
+          formData.append('user_id', usuarioLogueado['id']);
+          
+          try {
+            var response = await fetch('/api/rl6/register_militar.php', {
+              method: 'POST',
+              body: formData
+            });
+            var result = await response.json();
+            
+            if (result.success || !result.blocked_until) {
+              alert('✅ Desbloqueado correctamente');
+              document.body.removeChild(modal);
+            } else {
+              alert('❌ Código incorrecto');
+            }
+          } catch (error) {
+            alert('❌ Error: ' + error.message);
+          }
         });
       }
 

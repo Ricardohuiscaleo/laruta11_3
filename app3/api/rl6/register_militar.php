@@ -30,26 +30,64 @@ if ($conn->connect_error) {
     die(json_encode(['success' => false, 'error' => 'Error de conexión']));
 }
 
-// Rate Limiting: 5 registros por IP en 1 hora
+// Rate Limiting: 11 intentos por IP en 11 minutos
 $ip = $_SERVER['REMOTE_ADDR'];
 $rate_limit_file = sys_get_temp_dir() . '/rl6_rate_' . md5($ip) . '.txt';
 $current_time = time();
+$unlock_code = $_POST['unlock_code'] ?? null;
 
-if (file_exists($rate_limit_file)) {
-    $attempts = json_decode(file_get_contents($rate_limit_file), true);
-    $attempts = array_filter($attempts, function($timestamp) use ($current_time) {
-        return ($current_time - $timestamp) < 3600; // 1 hora
-    });
-    
-    if (count($attempts) >= 5) {
-        echo json_encode(['success' => false, 'error' => 'Demasiados intentos. Intenta en 1 hora.']);
-        exit;
+// Verificar código de desbloqueo
+if ($unlock_code === $config['unlock_code']) {
+    // Eliminar archivo de rate limit si el código es correcto
+    if (file_exists($rate_limit_file)) {
+        unlink($rate_limit_file);
     }
-    $attempts[] = $current_time;
 } else {
-    $attempts = [$current_time];
+    // Aplicar rate limiting normal
+    if (file_exists($rate_limit_file)) {
+        $data = json_decode(file_get_contents($rate_limit_file), true);
+        $attempts = $data['attempts'] ?? [];
+        $blocked_until = $data['blocked_until'] ?? 0;
+        
+        // Verificar si está bloqueado
+        if ($blocked_until > $current_time) {
+            $remaining = $blocked_until - $current_time;
+            $minutes = ceil($remaining / 60);
+            echo json_encode([
+                'success' => false, 
+                'error' => 'Demasiados intentos. Intenta en ' . $minutes . ' minuto' . ($minutes > 1 ? 's' : '') . '.',
+                'blocked_until' => $blocked_until,
+                'remaining_seconds' => $remaining
+            ]);
+            exit;
+        }
+        
+        // Filtrar intentos de los últimos 11 minutos
+        $attempts = array_filter($attempts, function($timestamp) use ($current_time) {
+            return ($current_time - $timestamp) < 660; // 11 minutos
+        });
+        
+        if (count($attempts) >= 11) {
+            // Bloquear por 11 minutos
+            $blocked_until = $current_time + 660;
+            file_put_contents($rate_limit_file, json_encode([
+                'attempts' => $attempts,
+                'blocked_until' => $blocked_until
+            ]));
+            echo json_encode([
+                'success' => false, 
+                'error' => 'Demasiados intentos. Intenta en 11 minutos.',
+                'blocked_until' => $blocked_until,
+                'remaining_seconds' => 660
+            ]);
+            exit;
+        }
+        $attempts[] = $current_time;
+    } else {
+        $attempts = [$current_time];
+    }
+    file_put_contents($rate_limit_file, json_encode(['attempts' => $attempts, 'blocked_until' => 0]));
 }
-file_put_contents($rate_limit_file, json_encode($attempts));
 
 // Validar datos requeridos
 $user_id = $_POST['user_id'] ?? null;
