@@ -63,8 +63,7 @@ try {
             WHERE payment_status = 'paid'
             GROUP BY user_id
         ) o ON u.id = o.user_id
-        ORDER BY u.fecha_registro DESC
-        LIMIT 50
+        ORDER BY u.id DESC
     ";
 
     $stmt = $pdo->query($sql);
