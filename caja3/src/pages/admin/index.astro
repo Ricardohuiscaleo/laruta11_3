@@ -1980,58 +1980,19 @@
         .catch(error => console.error('❌ Error cargando tarjetas operativas:', error));
     };
     
+    let allUsers = [];
+    let currentUserPage = 1;
+    const usersPerPage = 20;
+    let filteredUsers = [];
+    
     window.loadUsers = function() {
       fetch('/api/users/get_users.php')
       .then(r => r.json())
       .then(usersResponse => {
-        const tbody = document.querySelector('#usersTable tbody');
-        if (!tbody) return;
-        
-        const users = usersResponse.success ? usersResponse.data : [];
-        
-        if (Array.isArray(users) && users.length > 0) {
-          tbody.innerHTML = users.map(user => {
-            const totalSpent = Math.round(user.total_spent || 0);
-            const deliveryCount = user.delivery_count || 0;
-            const pickupCount = user.pickup_count || 0;
-            const lastOrder = user.last_order_date ? new Date(user.last_order_date).toLocaleDateString('es-CL', {day: 'numeric', month: 'short'}) : '-';
-            
-            return `
-              <tr>
-                <td>${user.id}</td>
-                <td>
-                  <div style="font-weight: 600;">${user.name || 'Sin nombre'}</div>
-                  <div style="font-size: 11px; color: #666;">${user.email}</div>
-                  ${user.city ? `<div style="font-size: 10px; color: #999;">📍 ${user.city}</div>` : ''}
-                </td>
-                <td>${user.email}</td>
-                <td>${user.phone || '-'}</td>
-                <td>
-                  <div style="font-size: 12px;">${new Date(user.registration_date).toLocaleDateString('es-CL', {day: 'numeric', month: 'short', year: 'numeric'})}</div>
-                  ${user.last_order_date ? `<div style="font-size: 10px; color: #666;">Último: ${lastOrder}</div>` : ''}
-                </td>
-                <td>
-                  <div style="font-weight: 600; color: #3b82f6;">${user.total_orders || 0}</div>
-                  ${deliveryCount > 0 || pickupCount > 0 ? `<div style="font-size: 10px; color: #666;">🚚${deliveryCount} 🏪${pickupCount}</div>` : ''}
-                </td>
-                <td>
-                  <div style="font-weight: 600; color: #059669;">$${totalSpent.toLocaleString('es-CL')}</div>
-                  ${user.total_orders > 0 ? `<div style="font-size: 10px; color: #666;">~$${Math.round(totalSpent / user.total_orders).toLocaleString('es-CL')}/pedido</div>` : ''}
-                </td>
-                <td>
-                  <span style="padding: 4px 8px; border-radius: 12px; font-size: 11px; background: ${user.is_active == 1 ? '#dcfce7' : '#fef2f2'}; color: ${user.is_active == 1 ? '#166534' : '#dc2626'};">
-                    ${user.is_active == 1 ? 'Activo' : 'Inactivo'}
-                  </span>
-                </td>
-                <td>
-                  <button class="btn btn-secondary" onclick="viewUserDetails(${user.id})">Ver Detalles</button>
-                </td>
-              </tr>
-            `;
-          }).join('');
-        } else {
-          tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">No hay usuarios registrados</td></tr>';
-        }
+        allUsers = usersResponse.success ? usersResponse.data : [];
+        filteredUsers = allUsers;
+        currentUserPage = 1;
+        renderUsersTable();
       })
       .catch(error => {
         console.error('Error loading users:', error);
@@ -2040,15 +2001,108 @@
       });
     };
     
-    window.viewUserDetails = function(userId, userTransactions = []) {
-      // Si no se pasan transacciones, usar array vacío
-      const transactions = Array.isArray(userTransactions) ? userTransactions : [];
+    window.renderUsersTable = function() {
+      const tbody = document.querySelector('#usersTable tbody');
+      if (!tbody) return;
       
-      // Obtener detalles del usuario
+      const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+      const startIdx = (currentUserPage - 1) * usersPerPage;
+      const endIdx = startIdx + usersPerPage;
+      const pageUsers = filteredUsers.slice(startIdx, endIdx);
+      
+      if (pageUsers.length > 0) {
+        tbody.innerHTML = pageUsers.map(user => {
+          const totalSpent = Math.round(user.total_spent || 0);
+          const deliveryCount = user.delivery_count || 0;
+          const pickupCount = user.pickup_count || 0;
+          const lastOrder = user.last_order_date ? new Date(user.last_order_date).toLocaleDateString('es-CL', {day: 'numeric', month: 'short'}) : '-';
+          const isMilitarRL6 = user.credito_aprobado == 1;
+          
+          return `
+            <tr>
+              <td>${user.id}</td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <div>
+                    <div style="font-weight: 600;">${user.name || 'Sin nombre'}</div>
+                    <div style="font-size: 11px; color: #666;">${user.email}</div>
+                    ${isMilitarRL6 ? '<div style="font-size: 10px; color: #f59e0b; font-weight: 600;">🎯 Militar RL6</div>' : ''}
+                  </div>
+                </div>
+              </td>
+              <td>${user.email}</td>
+              <td>${user.phone || '-'}</td>
+              <td>
+                <div style="font-size: 12px;">${new Date(user.registration_date).toLocaleDateString('es-CL', {day: 'numeric', month: 'short', year: 'numeric'})}</div>
+                ${user.last_order_date ? `<div style="font-size: 10px; color: #666;">Último: ${lastOrder}</div>` : ''}
+              </td>
+              <td>
+                <div style="font-weight: 600; color: #3b82f6;">${user.total_orders || 0}</div>
+                ${deliveryCount > 0 || pickupCount > 0 ? `<div style="font-size: 10px; color: #666;">🚚${deliveryCount} 🏪${pickupCount}</div>` : ''}
+              </td>
+              <td>
+                <div style="font-weight: 600; color: #059669;">$${totalSpent.toLocaleString('es-CL')}</div>
+                ${user.total_orders > 0 ? `<div style="font-size: 10px; color: #666;">~$${Math.round(totalSpent / user.total_orders).toLocaleString('es-CL')}/pedido</div>` : ''}
+              </td>
+              <td>
+                <span style="padding: 4px 8px; border-radius: 12px; font-size: 11px; background: ${user.is_active == 1 ? '#dcfce7' : '#fef2f2'}; color: ${user.is_active == 1 ? '#166534' : '#dc2626'};">
+                  ${user.is_active == 1 ? 'Activo' : 'Inactivo'}
+                </span>
+              </td>
+              <td>
+                <button class="btn btn-secondary" onclick="viewUserDetails(${user.id})" style="font-size: 12px; padding: 6px 12px;">✏️ Editar</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #666;">No hay usuarios</td></tr>';
+      }
+      
+      // Actualizar paginación
+      updateUsersPagination(totalPages);
+    };
+    
+    window.updateUsersPagination = function(totalPages) {
+      let paginationHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border-top: 1px solid #e5e5e5;">
+          <div style="font-size: 14px; color: #666;">
+            Mostrando ${((currentUserPage - 1) * usersPerPage) + 1} - ${Math.min(currentUserPage * usersPerPage, filteredUsers.length)} de ${filteredUsers.length} usuarios
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn btn-secondary" onclick="changeUserPage(${currentUserPage - 1})" ${currentUserPage === 1 ? 'disabled' : ''} style="padding: 6px 12px; font-size: 12px;">← Anterior</button>
+            <span style="font-size: 14px; color: #666;">Página ${currentUserPage} de ${totalPages}</span>
+            <button class="btn btn-secondary" onclick="changeUserPage(${currentUserPage + 1})" ${currentUserPage === totalPages ? 'disabled' : ''} style="padding: 6px 12px; font-size: 12px;">Siguiente →</button>
+          </div>
+        </div>
+      `;
+      
+      const existingPagination = document.getElementById('users-pagination');
+      if (existingPagination) {
+        existingPagination.innerHTML = paginationHTML;
+      } else {
+        const cardContent = document.querySelector('#users-view .card-content');
+        if (cardContent) {
+          let paginationDiv = document.createElement('div');
+          paginationDiv.id = 'users-pagination';
+          paginationDiv.innerHTML = paginationHTML;
+          cardContent.appendChild(paginationDiv);
+        }
+      }
+    };
+    
+    window.changeUserPage = function(page) {
+      const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+      if (page < 1 || page > totalPages) return;
+      currentUserPage = page;
+      renderUsersTable();
+    };
+    
+    window.viewUserDetails = function(userId, userTransactions = []) {
       fetch(`/api/users/get_users.php`)
         .then(r => r.json())
         .then(response => {
-          const users = response.success ? response.data : (Array.isArray(response) ? response : []);
+          const users = response.success ? response.data : [];
           const user = users.find(u => u.id == userId);
           
           if (!user) {
@@ -2057,85 +2111,160 @@
           }
           
           const modal = document.createElement('div');
-          modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+          modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; overflow-y: auto; padding: 20px;';
           
-          const totalSpent = transactions.reduce((sum, t) => {
-            const amount = parseFloat(t.amount || t.totalAmount || t.tuu_amount || 0);
-            return sum + (isNaN(amount) ? 0 : amount);
-          }, 0);
+          const isMilitarRL6 = user.credito_aprobado == 1;
           
           modal.innerHTML = `
-            <div style="background: white; padding: 32px; border-radius: 12px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                <h2>Detalles del Usuario</h2>
-                <button onclick="closeUserModal(this)" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+            <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="font-size: 20px; margin: 0;">✏️ Editar Usuario</h2>
+                <button onclick="this.closest('div[style*=fixed]').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
               </div>
               
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-                <div>
-                  <h3 style="margin-bottom: 12px;">Información Personal</h3>
-                  <p><strong>Nombre:</strong> ${user.name || user.first_name || 'No registrado'} ${user.last_name || ''}</p>
-                  <p><strong>Email:</strong> ${user.email}</p>
-                  <p><strong>Teléfono:</strong> ${user.phone || 'No registrado'}</p>
-                  <p><strong>Registro:</strong> ${new Date(user.registration_date || user.created_at).toLocaleString('es-CL')}</p>
+              <form id="editUserForm" style="display: grid; gap: 16px;">
+                <input type="hidden" id="editUserId" value="${user.id}">
+                
+                <!-- Información Personal -->
+                <div style="background: #f9fafb; padding: 16px; border-radius: 8px;">
+                  <h3 style="font-size: 16px; margin-bottom: 12px;">👤 Información Personal</h3>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Nombre Completo</label>
+                      <input type="text" id="editName" value="${user.name || ''}" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Email</label>
+                      <input type="email" id="editEmail" value="${user.email || ''}" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Teléfono</label>
+                      <input type="tel" id="editPhone" value="${user.phone || ''}" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Estado</label>
+                      <select id="editActive" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+                        <option value="1" ${user.is_active == 1 ? 'selected' : ''}>Activo</option>
+                        <option value="0" ${user.is_active == 0 ? 'selected' : ''}>Inactivo</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 style="margin-bottom: 12px;">Estadísticas</h3>
-                  <p><strong>Total Pedidos:</strong> ${transactions.length}</p>
-                  <p><strong>Total Gastado:</strong> $${totalSpent.toLocaleString('es-CL')}</p>
-                  <p><strong>Promedio por Pedido:</strong> $${transactions.length > 0 ? Math.round(totalSpent / transactions.length).toLocaleString('es-CL') : 0}</p>
-                  <p><strong>Estado:</strong> ${user.is_active == 1 ? 'Activo' : 'Inactivo'}</p>
+                
+                <!-- Información Militar RL6 -->
+                <div style="background: #fef3c7; padding: 16px; border-radius: 8px; border: 2px solid #fbbf24;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="font-size: 16px; margin: 0;">🎯 Información Militar RL6</h3>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                      <input type="checkbox" id="editIsMilitar" ${isMilitarRL6 ? 'checked' : ''} onchange="toggleMilitarFields(this.checked)" style="width: 18px; height: 18px; cursor: pointer;">
+                      <span style="font-size: 14px; font-weight: 600;">Es Militar RL6</span>
+                    </label>
+                  </div>
+                  <div id="militarFields" style="display: ${isMilitarRL6 ? 'grid' : 'none'}; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">RUT Militar</label>
+                      <input type="text" id="editRutMilitar" value="${user.rut_militar || ''}" placeholder="12.345.678-9" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Rango</label>
+                      <input type="text" id="editRango" value="${user.rango_militar || ''}" placeholder="Ej: Cabo, Sargento" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Unidad Militar</label>
+                      <input type="text" id="editUnidad" value="${user.unidad_militar || ''}" placeholder="Ej: Regimiento Rancagua" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Límite de Crédito ($)</label>
+                      <input type="number" id="editLimiteCredito" value="${user.limite_credito || 50000}" min="0" step="1000" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div style="grid-column: 1 / -1;">
+                      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="editCreditoAprobado" ${user.credito_aprobado == 1 ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer;">
+                        <span style="font-size: 14px; font-weight: 600; color: #059669;">✅ Crédito Aprobado</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              
-              <h3 style="margin-bottom: 12px;">Historial de Pedidos</h3>
-              <div style="max-height: 300px; overflow-y: auto;">
-                ${transactions.length > 0 ? `
-                  <table style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                      <tr style="background: #f9fafb;">
-                        <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">Fecha</th>
-                        <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">ID</th>
-                        <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">Productos</th>
-                        <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">Monto</th>
-                        <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">Tipo</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${transactions.map(t => {
-                        const displayDate = t.created_at || t.date || t.tuu_timestamp;
-                        const displayId = t.order_reference || t.saleId || t.id;
-                        const displayAmount = t.amount || t.totalAmount || t.tuu_amount || 0;
-                        const isOnline = t.payment_source === 'online';
-                        const isApp = displayId && displayId.toString().startsWith('R11-');
-                        const paymentType = isOnline ? (isApp ? '📲 APP' : '💻 Online') : '🏪 POS';
-                        
-                        const productDetails = t.detailed_items || t.product_name || 'Pedido genérico';
-                        
-                        return `
-                          <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #f3f4f6;">${new Date(displayDate).toLocaleDateString('es-CL')}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #f3f4f6;">${displayId}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #f3f4f6; font-size: 12px;">
-                              <div style="color: #059669;">${productDetails}</div>
-                            </td>
-                            <td style="padding: 8px; border-bottom: 1px solid #f3f4f6;">$${parseFloat(displayAmount).toLocaleString('es-CL')}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #f3f4f6;">
-                              <span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; background: ${isOnline ? (isAppOrder ? '#dcfce7' : '#dbeafe') : '#fef3c7'}; color: ${isOnline ? (isAppOrder ? '#166534' : '#1e40af') : '#92400e'};">
-                                ${paymentType}
-                              </span>
-                            </td>
-                          </tr>
-                        `;
-                      }).join('')}
-                    </tbody>
-                  </table>
-                ` : '<p style="color: #666; text-align: center; padding: 20px;">No hay pedidos registrados</p>'}
-              </div>
+                
+                <!-- Estadísticas (solo lectura) -->
+                <div style="background: #f0f9ff; padding: 16px; border-radius: 8px;">
+                  <h3 style="font-size: 16px; margin-bottom: 12px;">📊 Estadísticas</h3>
+                  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; text-align: center;">
+                    <div>
+                      <div style="font-size: 24px; font-weight: 700; color: #0369a1;">${user.total_orders || 0}</div>
+                      <div style="font-size: 12px; color: #666;">Pedidos</div>
+                    </div>
+                    <div>
+                      <div style="font-size: 24px; font-weight: 700; color: #059669;">$${new Intl.NumberFormat('es-CL').format(user.total_spent || 0)}</div>
+                      <div style="font-size: 12px; color: #666;">Total Gastado</div>
+                    </div>
+                    <div>
+                      <div style="font-size: 24px; font-weight: 700; color: #7c3aed;">${user.delivery_count || 0}</div>
+                      <div style="font-size: 12px; color: #666;">Delivery</div>
+                    </div>
+                    <div>
+                      <div style="font-size: 24px; font-weight: 700; color: #f59e0b;">${user.pickup_count || 0}</div>
+                      <div style="font-size: 12px; color: #666;">Retiro</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Botones -->
+                <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 8px;">
+                  <button type="button" onclick="this.closest('div[style*=fixed]').remove()" class="btn btn-secondary">Cancelar</button>
+                  <button type="submit" class="btn btn-primary" style="background: #10b981;">💾 Guardar Cambios</button>
+                </div>
+              </form>
             </div>
           `;
           
           document.body.appendChild(modal);
+          
+          // Toggle militar fields
+          window.toggleMilitarFields = function(show) {
+            document.getElementById('militarFields').style.display = show ? 'grid' : 'none';
+          };
+          
+          // Submit form
+          document.getElementById('editUserForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('user_id', document.getElementById('editUserId').value);
+            formData.append('name', document.getElementById('editName').value);
+            formData.append('email', document.getElementById('editEmail').value);
+            formData.append('phone', document.getElementById('editPhone').value);
+            formData.append('is_active', document.getElementById('editActive').value);
+            
+            const isMilitar = document.getElementById('editIsMilitar').checked;
+            formData.append('is_militar_rl6', isMilitar ? '1' : '0');
+            
+            if (isMilitar) {
+              formData.append('rut_militar', document.getElementById('editRutMilitar').value);
+              formData.append('rango_militar', document.getElementById('editRango').value);
+              formData.append('unidad_militar', document.getElementById('editUnidad').value);
+              formData.append('limite_credito', document.getElementById('editLimiteCredito').value);
+              formData.append('credito_aprobado', document.getElementById('editCreditoAprobado').checked ? '1' : '0');
+            }
+            
+            fetch('/api/users/update_user.php', {
+              method: 'POST',
+              body: formData
+            })
+            .then(r => r.json())
+            .then(result => {
+              if (result.success) {
+                alert('✅ Usuario actualizado correctamente');
+                modal.remove();
+                loadUsers();
+              } else {
+                alert('❌ Error: ' + result.error);
+              }
+            })
+            .catch(error => {
+              alert('❌ Error: ' + error.message);
+            });
+          });
         })
         .catch(() => {
           alert('Error cargando detalles del usuario');
@@ -2222,11 +2351,17 @@
     };
     
     window.filterUsers = function(searchTerm) {
-      const rows = document.querySelectorAll('#usersTable tbody tr');
-      rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(searchTerm.toLowerCase()) ? '' : 'none';
-      });
+      if (!searchTerm.trim()) {
+        filteredUsers = allUsers;
+      } else {
+        const term = searchTerm.toLowerCase();
+        filteredUsers = allUsers.filter(user => {
+          const searchText = `${user.name || ''} ${user.email || ''} ${user.phone || ''} ${user.id || ''}`.toLowerCase();
+          return searchText.includes(term);
+        });
+      }
+      currentUserPage = 1;
+      renderUsersTable();
     };
     
     let allProducts = [];
