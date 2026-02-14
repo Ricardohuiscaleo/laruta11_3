@@ -108,9 +108,7 @@ try {
     }
 
     // Crear sesión persistente (30 días)
-    ini_set('session.cookie_lifetime', 2592000); // 30 días en segundos
-    ini_set('session.gc_maxlifetime', 2592000);
-    session_start();
+    require_once __DIR__ . '/../../session_config.php';
     $_SESSION['user'] = $user;
     
     // Renovar cookie de sesión para que persista
