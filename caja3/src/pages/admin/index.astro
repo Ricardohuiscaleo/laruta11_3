@@ -2160,22 +2160,39 @@
                       <span style="font-size: 14px; font-weight: 600;">Es Militar RL6</span>
                     </label>
                   </div>
-                  <div id="militarFields" style="display: ${isMilitarRL6 ? 'grid' : 'none'}; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
                       <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">RUT Militar</label>
                       <input type="text" id="editRutMilitar" value="${user.rut_militar || ''}" placeholder="12.345.678-9" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
                     </div>
                     <div>
-                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Rango</label>
-                      <input type="text" id="editRango" value="${user.rango_militar || ''}" placeholder="Ej: Cabo, Sargento" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Grado Militar</label>
+                      <select id="editRango" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+                        <option value="">Seleccionar...</option>
+                        <option value="Soldado" ${user.rango_militar === 'Soldado' ? 'selected' : ''}>Soldado</option>
+                        <option value="Cabo" ${user.rango_militar === 'Cabo' ? 'selected' : ''}>Cabo</option>
+                        <option value="Cabo 1°" ${user.rango_militar === 'Cabo 1°' ? 'selected' : ''}>Cabo 1°</option>
+                        <option value="Sargento 2°" ${user.rango_militar === 'Sargento 2°' ? 'selected' : ''}>Sargento 2°</option>
+                        <option value="Sargento 1°" ${user.rango_militar === 'Sargento 1°' ? 'selected' : ''}>Sargento 1°</option>
+                        <option value="Suboficial" ${user.rango_militar === 'Suboficial' ? 'selected' : ''}>Suboficial</option>
+                        <option value="Suboficial Mayor" ${user.rango_militar === 'Suboficial Mayor' ? 'selected' : ''}>Suboficial Mayor</option>
+                      </select>
                     </div>
-                    <div>
-                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Unidad Militar</label>
+                    <div style="grid-column: 1 / -1;">
+                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Unidad de Trabajo</label>
                       <input type="text" id="editUnidad" value="${user.unidad_militar || ''}" placeholder="Ej: Regimiento Rancagua" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div style="grid-column: 1 / -1;">
+                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Domicilio Particular</label>
+                      <textarea id="editDomicilio" rows="2" placeholder="Calle, número, ciudad, región" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">${user.domicilio_particular || ''}</textarea>
                     </div>
                     <div>
                       <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Límite de Crédito ($)</label>
                       <input type="number" id="editLimiteCredito" value="${user.limite_credito || 50000}" min="0" step="1000" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Crédito Disponible</label>
+                      <input type="number" id="editCreditoDisponible" value="${user.credito_disponible || 0}" readonly style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; background: #f9fafb; color: #666;">
                     </div>
                     <div style="grid-column: 1 / -1;">
                       <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -2243,6 +2260,7 @@
               formData.append('rut_militar', document.getElementById('editRutMilitar').value);
               formData.append('rango_militar', document.getElementById('editRango').value);
               formData.append('unidad_militar', document.getElementById('editUnidad').value);
+              formData.append('domicilio_particular', document.getElementById('editDomicilio').value);
               formData.append('limite_credito', document.getElementById('editLimiteCredito').value);
               formData.append('credito_aprobado', document.getElementById('editCreditoAprobado').checked ? '1' : '0');
             }

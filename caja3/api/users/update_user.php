@@ -46,9 +46,10 @@ try {
     
     // Si es militar RL6, actualizar campos adicionales
     if ($is_militar_rl6 == 1) {
-        $rut_militar = $_POST['rut_militar'] ?? '';
+    $rut_militar = $_POST['rut_militar'] ?? '';
         $rango_militar = $_POST['rango_militar'] ?? '';
         $unidad_militar = $_POST['unidad_militar'] ?? '';
+        $domicilio_particular = $_POST['domicilio_particular'] ?? '';
         $limite_credito = $_POST['limite_credito'] ?? 50000;
         $credito_aprobado = $_POST['credito_aprobado'] ?? 0;
         
@@ -62,6 +63,7 @@ try {
                       rut_militar = :rut_militar,
                       rango_militar = :rango_militar,
                       unidad_militar = :unidad_militar,
+                      domicilio_particular = :domicilio_particular,
                       limite_credito = :limite_credito,
                       credito_aprobado = :credito_aprobado";
             
@@ -78,6 +80,7 @@ try {
                 'rut_militar' => $rut_militar,
                 'rango_militar' => $rango_militar,
                 'unidad_militar' => $unidad_militar,
+                'domicilio_particular' => $domicilio_particular,
                 'limite_credito' => $limite_credito,
                 'credito_aprobado' => $credito_aprobado,
                 'user_id' => $user_id
