@@ -1034,6 +1034,7 @@ export default function App() {
   const [showCheckoutSection, setShowCheckoutSection] = useState(false);
   const [pendingPaymentModal, setPendingPaymentModal] = useState(null);
   const [showCashModal, setShowCashModal] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
   const [cashAmount, setCashAmount] = useState('');
   const [cashStep, setCashStep] = useState('input');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -3111,12 +3112,17 @@ export default function App() {
                   <button
                     onClick={() => {
                       if (!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)) return;
+                      setSelectedPaymentMethod('cash');
                       setShowCashModal(true);
                       setCashAmount('');
                       setCashStep('input');
                     }}
                     disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                    className="disabled:bg-white disabled:text-gray-700 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs bg-green-500 hover:bg-green-600 text-white border-green-500 flex flex-col items-center justify-center gap-1"
+                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${
+                      selectedPaymentMethod === 'cash'
+                        ? 'bg-green-500 hover:bg-green-600 text-white border-green-500'
+                        : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                    }`}
                   >
                     <Banknote size={16} />
                     <span>Efectivo</span>
@@ -3124,8 +3130,12 @@ export default function App() {
                   <button
                     onClick={async () => {
                       if (!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)) return;
+                      setSelectedPaymentMethod('card');
                       const confirmed = window.confirm('Has seleccionado TARJETA como método de pago. ¿Continuar?');
-                      if (!confirmed) return;
+                      if (!confirmed) {
+                        setSelectedPaymentMethod(null);
+                        return;
+                      }
                       try {
                         console.log('💳 Procesando pago con TARJETA...');
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
@@ -3162,14 +3172,20 @@ export default function App() {
                           window.location.href = '/card-pending?order=' + result.order_id;
                         } else {
                           alert('❌ Error al crear orden: ' + (result.error || 'Error desconocido'));
+                          setSelectedPaymentMethod(null);
                         }
                       } catch (error) {
                         console.error('❌ Error procesando pago con tarjeta:', error);
                         alert('❌ Error al procesar el pago: ' + error.message);
+                        setSelectedPaymentMethod(null);
                       }
                     }}
                     disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                    className="disabled:bg-white disabled:text-gray-700 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs bg-purple-500 hover:bg-purple-600 text-white border-purple-500 flex flex-col items-center justify-center gap-1"
+                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${
+                      selectedPaymentMethod === 'card'
+                        ? 'bg-purple-500 hover:bg-purple-600 text-white border-purple-500'
+                        : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                    }`}
                   >
                     <CreditCard size={16} />
                     <span>Tarjeta</span>
@@ -3177,8 +3193,12 @@ export default function App() {
                   <button
                     onClick={async () => {
                       if (!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)) return;
+                      setSelectedPaymentMethod('transfer');
                       const confirmed = window.confirm('Has seleccionado TRANSFERENCIA como método de pago. ¿Continuar?');
-                      if (!confirmed) return;
+                      if (!confirmed) {
+                        setSelectedPaymentMethod(null);
+                        return;
+                      }
                       try {
                         console.log('📱 Procesando pago con TRANSFERENCIA...');
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
@@ -3215,14 +3235,20 @@ export default function App() {
                           window.location.href = '/transfer-pending?order=' + result.order_id;
                         } else {
                           alert('❌ Error al crear orden: ' + (result.error || 'Error desconocido'));
+                          setSelectedPaymentMethod(null);
                         }
                       } catch (error) {
                         console.error('❌ Error procesando pago con transferencia:', error);
                         alert('❌ Error al procesar el pago: ' + error.message);
+                        setSelectedPaymentMethod(null);
                       }
                     }}
                     disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                    className="disabled:bg-white disabled:text-gray-700 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs bg-blue-500 hover:bg-blue-600 text-white border-blue-500 flex flex-col items-center justify-center gap-1"
+                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${
+                      selectedPaymentMethod === 'transfer'
+                        ? 'bg-blue-500 hover:bg-blue-600 text-white border-blue-500'
+                        : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                    }`}
                   >
                     <Smartphone size={16} />
                     <span>Transfer.</span>
@@ -3230,8 +3256,66 @@ export default function App() {
                   <button
                     onClick={async () => {
                       if (!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)) return;
+                      setSelectedPaymentMethod('pedidosya');
                       const confirmed = window.confirm('Has seleccionado PEDIDOSYA como método de pago. ¿Continuar?');
-                      if (!confirmed) return;
+                      if (!confirmed) {
+                        setSelectedPaymentMethod(null);
+                        return;
+                      }
+                      try {
+                        console.log('🛌 Procesando pago con PEDIDOSYA...');
+                        const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
+                        const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
+                        const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
+                        const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
+                        const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - birthdayDiscountAmount;
+                        
+                        const orderData = {
+                          amount: finalTotal,
+                          customer_name: customerInfo.name,
+                          customer_phone: customerInfo.phone,
+                          customer_email: customerInfo.email || `${customerInfo.phone}@ruta11.cl`,
+                          user_id: user?.id || null,
+                          cart_items: cart,
+                          delivery_fee: deliveryFee,
+                          customer_notes: customerInfo.customerNotes || null,
+                          delivery_type: customerInfo.deliveryType,
+                          delivery_address: customerInfo.address || null,
+                          payment_method: 'pedidosya'
+                        };
+                        console.log('📤 Enviando orden:', orderData);
+                        const response = await fetch('/api/create_order.php', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(orderData)
+                        });
+                        const result = await response.json();
+                        console.log('📥 Respuesta:', result);
+                        if (result.success) {
+                          localStorage.removeItem('ruta11_cart');
+                          localStorage.removeItem('ruta11_cart_total');
+                          console.log('✅ Redirigiendo a /pedidosya-pending?order=' + result.order_id);
+                          window.location.href = '/pedidosya-pending?order=' + result.order_id;
+                        } else {
+                          alert('❌ Error al crear orden: ' + (result.error || 'Error desconocido'));
+                          setSelectedPaymentMethod(null);
+                        }
+                      } catch (error) {
+                        console.error('❌ Error procesando pago con PedidosYA:', error);
+                        alert('❌ Error al procesar el pago: ' + error.message);
+                        setSelectedPaymentMethod(null);
+                      }
+                    }}
+                    disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
+                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${
+                      selectedPaymentMethod === 'pedidosya'
+                        ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500'
+                        : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                    }`}
+                  >
+                    <Bike size={16} />
+                    <span>PedidosYA</span>
+                  </button>
                       try {
                         console.log('🚴 Procesando pago con PEDIDOSYA...');
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
