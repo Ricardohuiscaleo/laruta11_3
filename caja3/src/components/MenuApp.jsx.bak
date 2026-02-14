@@ -28,10 +28,15 @@ import ComboModal from './modals/ComboModal.jsx';
 import PaymentPendingModal from './modals/PaymentPendingModal.jsx';
 import SwipeToggle from './SwipeToggle.jsx';
 import useDoubleTap from '../hooks/useDoubleTap.js';
-import { vibrate, playNotificationSound, createConfetti } from '../utils/effects.js';
+import { vibrate, playNotificationSound, createConfetti, initAudio, playComandaSound } from '../utils/effects.js';
 import { validateCheckoutForm, getFormDisabledState } from '../utils/validation.js';
 
 
+
+// ============================================
+// CAJA3: UBICACIÓN DESACTIVADA
+// Esta app NO solicita ubicación del usuario
+// ============================================
 
 // Datos del menú - se cargarán dinámicamente desde MySQL
 let menuData = {
@@ -41,27 +46,6 @@ let menuData = {
   completos: { tradicionales: [], 'al vapor': [], papas: [] },
   papas_y_snacks: { papas: [], empanadas: [], jugos: [], bebidas: [], salsas: [] },
   Combos: { hamburguesas: [], sandwiches: [], completos: [] }
-};
-
-const categoryDisplayNames = {
-  hamburguesas: "Hamburguesas\n(200g)",
-  hamburguesas_100g: "Hamburguesas\n(100g)",
-  churrascos: "Sandwiches", 
-  completos: "Completos",
-  papas: "Papas",
-  pizzas: "Pizzas",
-  bebidas: "Bebidas",
-  Combos: "Combos"
-};
-
-const mainCategories = ['hamburguesas', 'hamburguesas_100g', 'churrascos', 'completos', 'papas', 'pizzas', 'bebidas', 'Combos'];
-
-const categoryFilters = {
-  hamburguesas_100g: { category_id: 3, subcategory_id: 5 },
-  hamburguesas: { category_id: 3, subcategory_id: 6 },
-  papas: { category_id: 12, subcategory_ids: [9, 57] },
-  pizzas: { category_id: 5, subcategory_id: 60 },
-  bebidas: { category_id: 5, subcategory_ids: [11, 10, 28, 27] }
 };
 
 
@@ -74,6 +58,12 @@ const categoryIcons = {
   papas: <GiFrenchFries style={{width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)'}} />,
   pizzas: <Pizza style={{width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)'}} />,
   bebidas: <CupSoda style={{width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)'}} />,
+  combos: (
+    <div style={{display: 'flex', alignItems: 'center', gap: '2px'}}>
+      <GiHamburger style={{width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)'}} />
+      <CupSoda style={{width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)'}} />
+    </div>
+  ),
   Combos: (
     <div style={{display: 'flex', alignItems: 'center', gap: '2px'}}>
       <GiHamburger style={{width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)'}} />
@@ -110,7 +100,7 @@ const ImageFullscreenModal = ({ product, total, onClose }) => {
             <button onClick={onClose} className="absolute top-4 right-4 bg-black/50 rounded-full p-2 text-white hover:bg-black/70 transition-all z-20">
                 <X size={24} />
             </button>
-            <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" />
+            <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" loading="lazy" decoding="async" />
             <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/40 backdrop-blur-sm text-white text-center">
                 <h3 className="text-xl font-bold">{product.name}</h3>
                 <p className="text-lg text-orange-400 font-semibold">${total.toLocaleString('es-CL')}</p>
@@ -151,7 +141,7 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center gap-3">
                                             {item.image ? (
-                                                <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-md" />
+                                                <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-md" loading="lazy" decoding="async" />
                                             ) : (
                                                 <div className="w-16 h-16 bg-gray-200 rounded-md animate-pulse"></div>
                                             )}
@@ -699,24 +689,7 @@ const NotificationsModal = ({ isOpen, onClose, onOrdersUpdate, activeOrdersCount
     if (!isOpen) return null;
     
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center animate-fade-in" onClick={onClose}>
-            <div className="bg-white w-full max-w-2xl mx-2 sm:m-4 rounded-2xl flex flex-col animate-slide-up max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                <div className="border-b flex justify-between items-center p-4">
-                    <h2 className="font-bold text-gray-800 flex items-center gap-2 text-lg">
-                        <Package size={20} className="text-orange-500" />
-                        Pedidos Activos
-                        <span className="bg-orange-500 text-white px-3 py-1 rounded-full font-bold text-sm ml-2">
-                            {activeOrdersCount}
-                        </span>
-                    </h2>
-                    <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600"><X size={24} /></button>
-                </div>
-                
-                <div className="flex-grow overflow-y-auto">
-                    <MiniComandas onOrdersUpdate={onOrdersUpdate} />
-                </div>
-            </div>
-        </div>
+        <MiniComandas onOrdersUpdate={onOrdersUpdate} onClose={onClose} activeOrdersCount={activeOrdersCount} />
     );
 };
 
@@ -1019,7 +992,7 @@ export default function App() {
   const [showCheckout, setShowCheckout] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
-  const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', email: '', address: '', deliveryType: 'pickup', pickupTime: '', customerNotes: '', deliveryDiscount: false, pickupDiscount: false, birthdayDiscount: false });
+  const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', email: '', address: '', deliveryType: 'pickup', pickupTime: '', customerNotes: '', deliveryDiscount: false, pickupDiscount: false, birthdayDiscount: false, discount30: false });
   const [menuWithImages, setMenuWithImages] = useState(menuData);
   const [likedProducts, setLikedProducts] = useState(new Set());
   const [isLoading, setIsLoading] = useState(false);
@@ -1061,6 +1034,7 @@ export default function App() {
   const [showCheckoutSection, setShowCheckoutSection] = useState(false);
   const [pendingPaymentModal, setPendingPaymentModal] = useState(null);
   const [showCashModal, setShowCashModal] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
   const [cashAmount, setCashAmount] = useState('');
   const [cashStep, setCashStep] = useState('input');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -1074,6 +1048,41 @@ export default function App() {
   const [editMode, setEditMode] = useState(false);
   const [tempTruckData, setTempTruckData] = useState(null);
   const [schedules, setSchedules] = useState([]);
+  const [menuCategories, setMenuCategories] = useState([]);
+  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
+  
+  // Generar mainCategories dinámicamente desde menuCategories
+  const mainCategories = useMemo(() => {
+    if (menuCategories.length === 0) return [];
+    return menuCategories
+      .filter(cat => cat.is_active === 1)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(cat => cat.category_key);
+  }, [menuCategories]);
+  
+  // Generar categoryDisplayNames dinámicamente desde menuCategories
+  const categoryDisplayNames = useMemo(() => {
+    const names = {};
+    menuCategories.forEach(cat => {
+      names[cat.category_key] = cat.display_name;
+    });
+    return names;
+  }, [menuCategories]);
+  
+  // Generar categoryFilters dinámicamente desde menuCategories
+  const categoryFilters = useMemo(() => {
+    const filters = {};
+    menuCategories.forEach(cat => {
+      if (cat.filter_config) {
+        filters[cat.category_key] = cat.filter_config;
+      }
+    });
+    return filters;
+  }, [menuCategories]);
+  const [infoExpanded, setInfoExpanded] = useState(true);
+  const [statusExpanded, setStatusExpanded] = useState(false);
+  const [schedulesExpanded, setSchedulesExpanded] = useState(false);
+  const [menuCategoriesExpanded, setMenuCategoriesExpanded] = useState(false);
   const [currentDayOfWeek, setCurrentDayOfWeek] = useState(null);
   const [editingSchedules, setEditingSchedules] = useState(false);
   const [showInactiveProducts, setShowInactiveProducts] = useState(false);
@@ -1143,6 +1152,7 @@ export default function App() {
   const processCashOrder = async () => {
     setIsProcessing(true);
     try {
+      console.log('💵 Procesando pago en EFECTIVO...');
       const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
       const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
       const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
@@ -1172,6 +1182,7 @@ export default function App() {
         payment_method: 'cash'
       };
       
+      console.log('📤 Enviando orden:', orderData);
       const response = await fetch('/api/create_order.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1179,18 +1190,20 @@ export default function App() {
       });
       
       const result = await response.json();
+      console.log('📥 Respuesta:', result);
       if (result.success) {
         localStorage.removeItem('ruta11_cart');
         localStorage.removeItem('ruta11_cart_total');
+        console.log('✅ Redirigiendo a /cash-pending?order=' + result.order_id);
         window.location.href = '/cash-pending?order=' + result.order_id;
       } else {
         setIsProcessing(false);
-        alert('Error al crear el pedido: ' + (result.error || 'Error desconocido'));
+        alert('❌ Error al crear el pedido: ' + (result.error || 'Error desconocido'));
       }
     } catch (error) {
       setIsProcessing(false);
-      console.error('Error cash:', error);
-      alert('Error al procesar el pedido: ' + error.message);
+      console.error('❌ Error procesando pago en efectivo:', error);
+      alert('❌ Error al procesar el pedido: ' + error.message);
     }
   };
 
@@ -1391,7 +1404,11 @@ export default function App() {
     }, 100);
   };
 
+  // DISABLED FOR CAJA: No se solicita ubicación en caja3
   const requestLocation = () => {
+    console.log('⚠️ Ubicación desactivada en caja3');
+    return;
+    /* CÓDIGO DESACTIVADO
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       alert('Tu navegador no soporta geolocalización');
       return;
@@ -1404,6 +1421,7 @@ export default function App() {
         const { latitude, longitude } = position.coords;
         
         // Obtener dirección usando Google Geocoding API
+        let addressInfo;
         try {
           const formData = new FormData();
           formData.append('lat', latitude);
@@ -1414,9 +1432,15 @@ export default function App() {
             body: formData
           });
           
-          const data = await response.json();
+          const text = await response.text();
           
-          let addressInfo;
+          // Verificar si la respuesta es JSON válido
+          if (!text || text.trim().startsWith('<')) {
+            throw new Error('API returned HTML instead of JSON');
+          }
+          
+          const data = JSON.parse(text);
+          
           if (data.success) {
             addressInfo = {
               formatted_address: data.formatted_address,
@@ -1427,14 +1451,20 @@ export default function App() {
               components: data.components
             };
           } else {
-            addressInfo = {
-              formatted_address: `${latitude}, ${longitude}`,
-              street: 'Calle no disponible',
-              city: 'Ciudad no disponible',
-              region: 'Región no disponible',
-              country: 'País no disponible'
-            };
+            throw new Error(data.error || 'Geocoding failed');
           }
+        } catch (error) {
+          // Silenciar error de geocoding
+          addressInfo = {
+            formatted_address: `${latitude}, ${longitude}`,
+            street: 'Calle no disponible',
+            city: 'Ciudad no disponible',
+            region: 'Región no disponible',
+            country: 'País no disponible'
+          };
+        }
+        
+        try {
           
           const locationData = {
             latitude,
@@ -1447,11 +1477,11 @@ export default function App() {
           setUserLocation(locationData);
           setLocationPermission('granted');
           
-          // Verificar zona de delivery
-          checkDeliveryZone(latitude, longitude);
+          // DISABLED FOR CAJA: Verificar zona de delivery
+          // checkDeliveryZone(latitude, longitude);
           
-          // Obtener productos cercanos
-          getNearbyProducts(latitude, longitude);
+          // DISABLED FOR CAJA: Obtener productos cercanos
+          // getNearbyProducts(latitude, longitude);
           
           // Obtener food trucks cercanos
           getNearbyTrucks(latitude, longitude);
@@ -1467,30 +1497,14 @@ export default function App() {
             fetch('/api/location/save_location.php', {
               method: 'POST',
               body: saveFormData
-            });
+            }).catch(() => {});
           }
         } catch (error) {
-          console.error('Error obteniendo dirección:', error);
-          const fallbackData = {
-            latitude, 
-            longitude, 
-            address: `${latitude}, ${longitude}`,
-            addressInfo: {
-              formatted_address: `${latitude}, ${longitude}`,
-              street: 'Calle no disponible',
-              city: 'Ciudad no disponible',
-              region: 'Región no disponible',
-              country: 'País no disponible'
-            }
-          };
-          setUserLocation(fallbackData);
-          setLocationPermission('granted');
+          // Silenciar error al guardar ubicación
         }
       },
       (error) => {
-        console.error('Error obteniendo ubicación:', error);
         setLocationPermission('denied');
-        alert('No se pudo obtener tu ubicación. Verifica los permisos del navegador.');
       },
       {
         enableHighAccuracy: true,
@@ -1498,6 +1512,7 @@ export default function App() {
         maximumAge: 300000 // 5 minutos
       }
     );
+    */
   };
 
   const checkDeliveryZone = async (lat, lng) => {
@@ -1511,30 +1526,21 @@ export default function App() {
         body: formData
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      if (!response.ok) return;
       
       const data = await response.json();
       if (data.error) {
-        console.error('API Error:', data.error);
         setDeliveryZone({ in_delivery_zone: false, zones: [] });
       } else {
         setDeliveryZone(data);
       }
       
-      // Calcular tiempo real si está en zona
-      if (data.in_delivery_zone && data.zones.length > 0) {
-        const zone = data.zones[0];
-        
-        // Obtener coordenadas del food truck más cercano
-        if (nearbyTrucks.length > 0) {
-          const closestTruck = nearbyTrucks[0];
-          calculateRealDeliveryTime(lat, lng, closestTruck.latitud, closestTruck.longitud);
-        }
+      if (data.in_delivery_zone && data.zones.length > 0 && nearbyTrucks.length > 0) {
+        const closestTruck = nearbyTrucks[0];
+        calculateRealDeliveryTime(lat, lng, closestTruck.latitud, closestTruck.longitud).catch(() => {});
       }
     } catch (error) {
-      console.error('Error verificando zona de delivery:', error);
+      // Silenciar errores de API no disponible
     }
   };
 
@@ -1549,39 +1555,29 @@ export default function App() {
         body: formData
       });
       
+      if (!response.ok) return;
       const data = await response.json();
       setNearbyProducts(data);
     } catch (error) {
-      console.error('Error obteniendo productos cercanos:', error);
+      // Silenciar errores de API no disponible
     }
   };
 
-  const getNearbyTrucks = async (lat, lng) => {
+  const loadDeliveryFee = async () => {
     try {
-      const formData = new FormData();
-      formData.append('lat', lat);
-      formData.append('lng', lng);
-      formData.append('radius', 10); // 10km radio
-      
-      const response = await fetch('/api/get_nearby_trucks.php', {
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      
+      const response = await fetch('/api/get_truck_status.php?truckId=4');
       const data = await response.json();
-      if (data.success && data.trucks) {
-        setNearbyTrucks(data.trucks);
-      } else {
-        console.error('API Error:', data.error || 'No trucks found');
-        setNearbyTrucks([]);
+      
+      if (data.success && data.truck) {
+        setNearbyTrucks([{
+          id: data.truck.id,
+          nombre: data.truck.nombre,
+          tarifa_delivery: data.truck.tarifa_delivery,
+          activo: data.truck.activo
+        }]);
       }
     } catch (error) {
-      console.error('Error obteniendo food trucks cercanos:', error);
-      setNearbyTrucks([]);
+      console.error('Error loading delivery fee:', error);
     }
   };
 
@@ -1652,9 +1648,9 @@ export default function App() {
         body: formData
       });
       
+      if (!response.ok) return;
       const data = await response.json();
       if (data.success) {
-        // Actualizar el tiempo en deliveryZone
         setDeliveryZone(prev => ({
           ...prev,
           zones: prev.zones.map(zone => ({
@@ -1665,7 +1661,7 @@ export default function App() {
         }));
       }
     } catch (error) {
-      console.error('Error calculando tiempo real:', error);
+      // Silenciar errores de API no disponible
     }
   };
 
@@ -1690,7 +1686,21 @@ export default function App() {
       }
     };
     
+    const loadMenuCategories = async () => {
+      try {
+        const response = await fetch('/api/get_menu_structure.php');
+        const data = await response.json();
+        if (data.success) {
+          setMenuCategories(data.categories);
+        }
+      } catch (error) {
+        console.error('Error cargando categorías del menú:', error);
+      }
+    };
+    
     loadMenuFromDatabase();
+    loadDeliveryFee();
+    loadMenuCategories();
   }, []);
 
   const productsToShow = useMemo(() => {
@@ -1947,22 +1957,26 @@ export default function App() {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
     
-    // Mostrar loader por 1.5 segundos y luego activar ubicación
+    // Desbloquear audio con primera interacción del usuario
+    const unlockAudio = () => {
+      initAudio();
+      // Remover listeners después del primer uso
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+    };
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+    
+    // Mostrar loader por 1.5 segundos
     setIsLoading(true);
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1500);
     
-    // Auto-activar ubicación en paralelo
-    const locationTimer = setTimeout(() => {
-      if (typeof navigator !== 'undefined' && navigator.geolocation && locationPermission === 'prompt') {
-        requestLocation();
-      }
-    }, 2000);
-    
     return () => {
       clearTimeout(timer);
-      clearTimeout(locationTimer);
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
     };
   }, []);
 
@@ -2041,25 +2055,25 @@ export default function App() {
     // Verificar si usuario está logueado
     fetch('/api/auth/check_session.php')
       .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        return response.json();
+        if (!response.ok) return null;
+        return response.text();
       })
-      .then(data => {
-        if (data.authenticated) {
-          setUser(data.user);
-          // Cargar notificaciones y pedidos del usuario después de un pequeño delay
-          setTimeout(() => {
-            loadNotifications();
-            loadUserOrders();
-          }, 100);
+      .then(text => {
+        if (!text || text.trim().startsWith('<')) return;
+        try {
+          const data = JSON.parse(text);
+          if (data.authenticated) {
+            setUser(data.user);
+            setTimeout(() => {
+              loadNotifications();
+              loadUserOrders();
+            }, 100);
+          }
+        } catch (e) {
+          // Silenciar errores de parsing
         }
       })
-      .catch(error => {
-        // Silenciar errores de sesión en desarrollo
-        console.warn('Session check failed:', error.message);
-      });
+      .catch(() => {});
 
     // Detectar parámetros de URL para login/logout/producto compartido
     const urlParams = new URLSearchParams(window.location.search);
@@ -2103,10 +2117,10 @@ export default function App() {
             loadNotifications();
             loadUserOrders();
             
-            // Mostrar onboarding solo para usuarios completamente nuevos
-            if (data.user.is_new_user && !localStorage.getItem('onboarding_completed')) {
-              setTimeout(() => setShowOnboarding(true), 500);
-            }
+            // DISABLED: Onboarding no necesario en caja3
+            // if (data.user.is_new_user && !localStorage.getItem('onboarding_completed')) {
+            //   setTimeout(() => setShowOnboarding(true), 500);
+            // }
           }
         })
         .catch(error => console.error('Error checking session after login:', error));
@@ -2197,6 +2211,10 @@ export default function App() {
                     setSchedules(schedData.schedules);
                     setCurrentDayOfWeek(schedData.currentDayOfWeek);
                   }
+                  
+                  const catRes = await fetch('/api/get_menu_structure.php');
+                  const catData = await catRes.json();
+                  if (catData.success) setMenuCategories(catData.categories);
                 }}
                 className="text-gray-600 hover:text-orange-500 transition-colors"
                 title="Configuración"
@@ -2272,20 +2290,9 @@ export default function App() {
                     });
                   }
                   
-                  // Filtro para Papas (Cat 12, Subcat 9 y 57)
+                  // Filtro para Papas
                   if (activeCategory === 'papas') {
-                    categoryData = { papas: [] };
-                    Object.values(menuWithImages).forEach(category => {
-                      if (Array.isArray(category)) {
-                        categoryData.papas.push(...category.filter(p => p.category_id === 12 && [9, 57].includes(p.subcategory_id)));
-                      } else {
-                        Object.values(category).forEach(subcat => {
-                          if (Array.isArray(subcat)) {
-                            categoryData.papas.push(...subcat.filter(p => p.category_id === 12 && [9, 57].includes(p.subcategory_id)));
-                          }
-                        });
-                      }
-                    });
+                    categoryData = { papas: menuWithImages.papas?.papas?.filter(p => p.category_id === 12) || [] };
                   }
                   
                   // Filtro para Pizzas (Cat 5, Subcat 60)
@@ -2449,7 +2456,7 @@ export default function App() {
                         onClick={() => selectSuggestion(product)}
                       >
                         {product.image ? (
-                          <img src={product.image} alt={product.name} className="w-10 h-10 object-cover rounded" />
+                          <img src={product.image} alt={product.name} className="w-10 h-10 object-cover rounded" loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-10 h-10 bg-gray-200 rounded"></div>
                         )}
@@ -2846,6 +2853,32 @@ export default function App() {
                     />
                     <span>🎂 Cumpleaños</span>
                   </button>
+                  <button
+                    onClick={() => {
+                      if (!customerInfo.discount30) {
+                        const confirmed = window.confirm('⭐ Descuento 30%\n\nSe aplicará un 30% de descuento en productos seleccionados.\n\n¿Aplicar descuento?');
+                        if (confirmed) {
+                          setCustomerInfo({...customerInfo, discount30: true});
+                        }
+                      } else {
+                        setCustomerInfo({...customerInfo, discount30: false});
+                      }
+                    }}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                      customerInfo.discount30 
+                        ? 'bg-yellow-400 text-black' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    <Percent size={14} />
+                    <input
+                      type="checkbox"
+                      checked={customerInfo.discount30}
+                      readOnly
+                      className="w-3 h-3 pointer-events-none"
+                    />
+                    <span>-30%</span>
+                  </button>
                   <div className="flex items-center gap-1">
                     <span className="bg-orange-500 text-white px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap">Código Descuento:</span>
                     <input
@@ -3047,6 +3080,12 @@ export default function App() {
                       <span className="font-semibold text-green-600">-${Math.round(cartSubtotal * 0.1).toLocaleString('es-CL')}</span>
                     </div>
                   )}
+                  {customerInfo.discount30 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-green-600 text-sm">Descuento 30%:</span>
+                      <span className="font-semibold text-green-600">-${Math.round(cartSubtotal * 0.3).toLocaleString('es-CL')}</span>
+                    </div>
+                  )}
                   {customerInfo.birthdayDiscount && cart.some(item => item.id === 9) && (
                     <div className="flex justify-between items-center">
                       <span className="text-green-600 text-sm">🎂 Descuento Cumpleaños:</span>
@@ -3065,9 +3104,10 @@ export default function App() {
                       const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
                       const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
                       const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
+                      const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                       const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                       const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-                      return (cartSubtotal + deliveryFee - pickupDiscountAmount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
+                      return (cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
                     })()}</span>
                   </div>
                 </div>
@@ -3079,12 +3119,17 @@ export default function App() {
                   <button
                     onClick={() => {
                       if (!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)) return;
+                      setSelectedPaymentMethod('cash');
                       setShowCashModal(true);
                       setCashAmount('');
                       setCashStep('input');
                     }}
                     disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                    className="disabled:bg-white disabled:text-gray-700 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs bg-green-500 hover:bg-green-600 text-white border-green-500 flex flex-col items-center justify-center gap-1"
+                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${
+                      selectedPaymentMethod === 'cash'
+                        ? 'bg-green-500 hover:bg-green-600 text-white border-green-500'
+                        : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                    }`}
                   >
                     <Banknote size={16} />
                     <span>Efectivo</span>
@@ -3092,9 +3137,14 @@ export default function App() {
                   <button
                     onClick={async () => {
                       if (!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)) return;
+                      setSelectedPaymentMethod('card');
                       const confirmed = window.confirm('Has seleccionado TARJETA como método de pago. ¿Continuar?');
-                      if (!confirmed) return;
+                      if (!confirmed) {
+                        setSelectedPaymentMethod(null);
+                        return;
+                      }
                       try {
+                        console.log('💳 Procesando pago con TARJETA...');
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
                         const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
                         const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
@@ -3114,23 +3164,35 @@ export default function App() {
                           delivery_address: customerInfo.address || null,
                           payment_method: 'card'
                         };
+                        console.log('📤 Enviando orden:', orderData);
                         const response = await fetch('/api/create_order.php', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify(orderData)
                         });
                         const result = await response.json();
+                        console.log('📥 Respuesta:', result);
                         if (result.success) {
                           localStorage.removeItem('ruta11_cart');
                           localStorage.removeItem('ruta11_cart_total');
+                          console.log('✅ Redirigiendo a /card-pending?order=' + result.order_id);
                           window.location.href = '/card-pending?order=' + result.order_id;
+                        } else {
+                          alert('❌ Error al crear orden: ' + (result.error || 'Error desconocido'));
+                          setSelectedPaymentMethod(null);
                         }
                       } catch (error) {
-                        console.error('Error:', error);
+                        console.error('❌ Error procesando pago con tarjeta:', error);
+                        alert('❌ Error al procesar el pago: ' + error.message);
+                        setSelectedPaymentMethod(null);
                       }
                     }}
                     disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                    className="disabled:bg-white disabled:text-gray-700 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs bg-purple-500 hover:bg-purple-600 text-white border-purple-500 flex flex-col items-center justify-center gap-1"
+                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${
+                      selectedPaymentMethod === 'card'
+                        ? 'bg-purple-500 hover:bg-purple-600 text-white border-purple-500'
+                        : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                    }`}
                   >
                     <CreditCard size={16} />
                     <span>Tarjeta</span>
@@ -3138,9 +3200,14 @@ export default function App() {
                   <button
                     onClick={async () => {
                       if (!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)) return;
+                      setSelectedPaymentMethod('transfer');
                       const confirmed = window.confirm('Has seleccionado TRANSFERENCIA como método de pago. ¿Continuar?');
-                      if (!confirmed) return;
+                      if (!confirmed) {
+                        setSelectedPaymentMethod(null);
+                        return;
+                      }
                       try {
+                        console.log('📱 Procesando pago con TRANSFERENCIA...');
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
                         const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
                         const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
@@ -3160,23 +3227,35 @@ export default function App() {
                           delivery_address: customerInfo.address || null,
                           payment_method: 'transfer'
                         };
+                        console.log('📤 Enviando orden:', orderData);
                         const response = await fetch('/api/create_order.php', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify(orderData)
                         });
                         const result = await response.json();
+                        console.log('📥 Respuesta:', result);
                         if (result.success) {
                           localStorage.removeItem('ruta11_cart');
                           localStorage.removeItem('ruta11_cart_total');
+                          console.log('✅ Redirigiendo a /transfer-pending?order=' + result.order_id);
                           window.location.href = '/transfer-pending?order=' + result.order_id;
+                        } else {
+                          alert('❌ Error al crear orden: ' + (result.error || 'Error desconocido'));
+                          setSelectedPaymentMethod(null);
                         }
                       } catch (error) {
-                        console.error('Error:', error);
+                        console.error('❌ Error procesando pago con transferencia:', error);
+                        alert('❌ Error al procesar el pago: ' + error.message);
+                        setSelectedPaymentMethod(null);
                       }
                     }}
                     disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                    className="disabled:bg-white disabled:text-gray-700 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs bg-blue-500 hover:bg-blue-600 text-white border-blue-500 flex flex-col items-center justify-center gap-1"
+                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${
+                      selectedPaymentMethod === 'transfer'
+                        ? 'bg-blue-500 hover:bg-blue-600 text-white border-blue-500'
+                        : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                    }`}
                   >
                     <Smartphone size={16} />
                     <span>Transfer.</span>
@@ -3184,9 +3263,14 @@ export default function App() {
                   <button
                     onClick={async () => {
                       if (!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)) return;
+                      setSelectedPaymentMethod('pedidosya');
                       const confirmed = window.confirm('Has seleccionado PEDIDOSYA como método de pago. ¿Continuar?');
-                      if (!confirmed) return;
+                      if (!confirmed) {
+                        setSelectedPaymentMethod(null);
+                        return;
+                      }
                       try {
+                        console.log('🛌 Procesando pago con PEDIDOSYA...');
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
                         const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
                         const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
@@ -3206,23 +3290,35 @@ export default function App() {
                           delivery_address: customerInfo.address || null,
                           payment_method: 'pedidosya'
                         };
+                        console.log('📤 Enviando orden:', orderData);
                         const response = await fetch('/api/create_order.php', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify(orderData)
                         });
                         const result = await response.json();
+                        console.log('📥 Respuesta:', result);
                         if (result.success) {
                           localStorage.removeItem('ruta11_cart');
                           localStorage.removeItem('ruta11_cart_total');
+                          console.log('✅ Redirigiendo a /pedidosya-pending?order=' + result.order_id);
                           window.location.href = '/pedidosya-pending?order=' + result.order_id;
+                        } else {
+                          alert('❌ Error al crear orden: ' + (result.error || 'Error desconocido'));
+                          setSelectedPaymentMethod(null);
                         }
                       } catch (error) {
-                        console.error('Error:', error);
+                        console.error('❌ Error procesando pago con PedidosYA:', error);
+                        alert('❌ Error al procesar el pago: ' + error.message);
+                        setSelectedPaymentMethod(null);
                       }
                     }}
                     disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                    className="disabled:bg-white disabled:text-gray-700 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs bg-orange-500 hover:bg-orange-600 text-white border-orange-500 flex flex-col items-center justify-center gap-1"
+                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${
+                      selectedPaymentMethod === 'pedidosya'
+                        ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500'
+                        : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                    }`}
                   >
                     <Bike size={16} />
                     <span>PedidosYA</span>
@@ -3476,29 +3572,46 @@ export default function App() {
           <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
             <div className="max-w-3xl mx-auto space-y-6">
               {/* Información del Local */}
-              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="bg-orange-100 p-4 rounded-full">
-                      <Truck size={32} className="text-orange-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-gray-800">{truckStatus.nombre}</h3>
-                      <p className="text-gray-600">{truckStatus.descripcion}</p>
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => setInfoExpanded(!infoExpanded)}
+                  className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Truck size={24} className="text-orange-600" />
+                    <div className="text-left">
+                      <h4 className="text-xl font-bold text-gray-800">Información del Local</h4>
+                      <p className="text-sm text-gray-600">Datos y configuración del food truck</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      setEditMode(!editMode);
-                      if (!editMode) setTempTruckData({...truckStatus});
-                    }}
-                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-                  >
-                    {editMode ? <X size={18} /> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>}
-                    {editMode ? 'Cancelar' : 'Editar'}
-                  </button>
-                </div>
+                  <ChevronDown size={24} className={`text-gray-400 transition-transform ${
+                    infoExpanded ? 'rotate-180' : ''
+                  }`} />
+                </button>
                 
+                {infoExpanded && (
+                  <div className="p-6 pt-0">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-orange-100 p-4 rounded-full">
+                          <Truck size={32} className="text-orange-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold text-gray-800">{truckStatus.nombre}</h3>
+                          <p className="text-gray-600">{truckStatus.descripcion}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setEditMode(!editMode);
+                          if (!editMode) setTempTruckData({...truckStatus});
+                        }}
+                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                      >
+                        {editMode ? <X size={18} /> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>}
+                        {editMode ? 'Cancelar' : 'Editar'}
+                      </button>
+                    </div>
                 {!editMode ? (
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center gap-2 text-gray-700">
@@ -3617,15 +3730,30 @@ export default function App() {
                     </button>
                   </div>
                 )}
+                  </div>
+                )}
               </div>
 
               {/* Switch de Estado con Swipe */}
-              <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-200">
-                <div className="text-center mb-4 sm:mb-6">
-                  <h4 className="text-lg sm:text-xl font-bold text-gray-800 mb-1 sm:mb-2">Estado Actual</h4>
-                  <p className="text-xs sm:text-sm text-gray-600">Desliza para cambiar el estado del local</p>
-                </div>
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => setStatusExpanded(!statusExpanded)}
+                  className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Settings size={24} className="text-green-600" />
+                    <div className="text-left">
+                      <h4 className="text-xl font-bold text-gray-800">Estado Actual</h4>
+                      <p className="text-sm text-gray-600">Desliza para cambiar el estado del local</p>
+                    </div>
+                  </div>
+                  <ChevronDown size={24} className={`text-gray-400 transition-transform ${
+                    statusExpanded ? 'rotate-180' : ''
+                  }`} />
+                </button>
                 
+                {statusExpanded && (
+                  <div className="p-6 pt-0">
                 <SwipeToggle
                   isActive={truckStatus.activo === 1}
                   onChange={async (newStatus) => {
@@ -3649,24 +3777,39 @@ export default function App() {
                   disabled={isUpdatingStatus}
                   label="Desliza para cambiar el estado"
                 />
+                  </div>
+                )}
               </div>
 
               {/* Horarios por día */}
-              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h4 className="text-xl font-bold text-gray-800">Horarios por Día</h4>
-                    <p className="text-sm text-gray-600 mt-1">Configura horarios específicos para cada día</p>
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => setSchedulesExpanded(!schedulesExpanded)}
+                  className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Clock size={24} className="text-purple-600" />
+                    <div className="text-left">
+                      <h4 className="text-xl font-bold text-gray-800">Horarios por Día</h4>
+                      <p className="text-sm text-gray-600">Configura horarios específicos para cada día</p>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => setEditingSchedules(!editingSchedules)}
-                    className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-                  >
-                    {editingSchedules ? <X size={18} /> : <Clock size={18} />}
-                    {editingSchedules ? 'Cancelar' : 'Editar'}
-                  </button>
-                </div>
+                  <ChevronDown size={24} className={`text-gray-400 transition-transform ${
+                    schedulesExpanded ? 'rotate-180' : ''
+                  }`} />
+                </button>
                 
+                {schedulesExpanded && (
+                  <div className="p-6 pt-0">
+                    <div className="flex items-center justify-end mb-4">
+                      <button
+                        onClick={() => setEditingSchedules(!editingSchedules)}
+                        className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                      >
+                        {editingSchedules ? <X size={18} /> : <Clock size={18} />}
+                        {editingSchedules ? 'Cancelar' : 'Editar'}
+                      </button>
+                    </div>
                 <div className="space-y-2">
                   {schedules.map((schedule) => {
                     const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -3751,6 +3894,86 @@ export default function App() {
                   >
                     Guardar Horarios
                   </button>
+                )}
+                  </div>
+                )}
+              </div>
+
+              {/* Gestión de Categorías del Menú */}
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => setCategoriesExpanded(!categoriesExpanded)}
+                  className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Package size={24} className="text-orange-600" />
+                    <div className="text-left">
+                      <h4 className="text-xl font-bold text-gray-800">Gestión de Categorías del Menú</h4>
+                      <p className="text-sm text-gray-600">Controla las categorías visibles en el menú</p>
+                    </div>
+                  </div>
+                  <ChevronDown size={24} className={`text-gray-400 transition-transform ${
+                    categoriesExpanded ? 'rotate-180' : ''
+                  }`} />
+                </button>
+                
+                {categoriesExpanded && (
+                  <div className="p-6 pt-0 space-y-3">
+                    {menuCategories.map(cat => (
+                      <div key={cat.id} className="bg-gray-50 rounded-lg p-4 border-2 border-gray-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{cat.icon}</span>
+                            <span className="font-semibold text-gray-800">{cat.display_name}</span>
+                          </div>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await fetch('/api/update_menu_categories.php', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ 
+                                    category_id: cat.id, 
+                                    is_active: cat.is_active ? 0 : 1 
+                                  })
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  const catRes = await fetch('/api/get_menu_structure.php');
+                                  const catData = await catRes.json();
+                                  if (catData.success) setMenuCategories(catData.categories);
+                                  vibrate(30);
+                                }
+                              } catch (error) {
+                                console.error('Error:', error);
+                              }
+                            }}
+                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                              cat.is_active 
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                            }`}
+                          >
+                            {cat.is_active ? 'Visible' : 'Oculta'}
+                          </button>
+                        </div>
+                        {cat.subcategories && cat.subcategories.length > 0 && (
+                          <div className="ml-8 mt-2 space-y-1">
+                            {cat.subcategories.map(sub => (
+                              <div key={sub.id} className="flex items-center justify-between text-sm py-1">
+                                <span className="text-gray-600">{sub.display_name}</span>
+                                <span className={`px-2 py-1 rounded text-xs ${
+                                  sub.is_active ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-400'
+                                }`}>
+                                  {sub.is_active ? 'Activa' : 'Inactiva'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 

@@ -104,6 +104,10 @@ try {
             'customer_notes' => $order['customer_notes'],
             'total' => (int)$order['installment_amount'],
             'delivery_fee' => (int)$order['delivery_fee'],
+            'discount_10' => (int)($order['discount_10'] ?? 0),
+            'discount_30' => (int)($order['discount_30'] ?? 0),
+            'discount_birthday' => (int)($order['discount_birthday'] ?? 0),
+            'discount_pizza' => (int)($order['discount_pizza'] ?? 0),
             'items' => $formatted_items
         ]
     ]);
