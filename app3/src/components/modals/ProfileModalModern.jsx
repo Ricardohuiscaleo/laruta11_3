@@ -260,18 +260,18 @@ const ProfileModalModern = ({
               </div>
             </div>
             
-            <div className="mt-4 flex items-center gap-3 text-sm bg-black/20 p-3 rounded-lg backdrop-blur-md">
-              <img src={user.foto_perfil} alt={user.nombre} className="h-12 w-12 rounded-full border-2 border-white/30" />
-              <div className="flex-1">
-                <p className="font-bold text-white">{user.nombre}</p>
-                <p className="text-xs text-orange-200">{user.email}</p>
-                <p className="text-xs text-green-300 font-semibold mt-1">Cashback: ${walletData?.balance ? parseInt(walletData.balance).toLocaleString('es-CL') : '0'}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-slate-300 flex items-center justify-end gap-1">
-                  <Truck size={14} />
-                  {userOrders.filter(order => order.order_status !== 'cancelled').length} pedidos
-                </p>
+            <div className="mt-4 flex items-center gap-2 text-sm bg-black/20 p-2.5 rounded-lg backdrop-blur-md">
+              <img src={user.foto_perfil} alt={user.nombre} className="h-10 w-10 rounded-full border-2 border-white/30 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-white text-sm truncate">{user.nombre}</p>
+                <p className="text-[10px] text-orange-200 truncate">{user.email}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-[10px] text-green-300 font-semibold">💰 ${walletData?.balance ? parseInt(walletData.balance).toLocaleString('es-CL') : '0'}</p>
+                  <p className="text-[10px] text-slate-300 flex items-center gap-0.5">
+                    <Truck size={10} />
+                    {userOrders.filter(order => order.order_status !== 'cancelled').length}
+                  </p>
+                </div>
               </div>
             </div>
           </header>
