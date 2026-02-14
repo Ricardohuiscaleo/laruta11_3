@@ -73,17 +73,33 @@ try {
         }
     }
 
-    // Generar horarios de la semana
+    // Generar horarios de la semana desde la base de datos
     $schedules = [];
     $days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    $dayColumns = ['horario_domingo', 'horario_lunes', 'horario_martes', 'horario_miercoles', 'horario_jueves', 'horario_viernes', 'horario_sabado'];
     
     for ($i = 0; $i < 7; $i++) {
-        $schedules[] = [
-            'day' => $days[$i],
-            'start' => $truck ? substr($truck['horario_inicio'], 0, 5) : '18:00',
-            'end' => $truck ? substr($truck['horario_fin'], 0, 5) : '00:30',
-            'is_today' => $i === $dayOfWeek
-        ];
+        $dayColumn = $dayColumns[$i];
+        $daySchedule = $truck && isset($truck[$dayColumn]) ? $truck[$dayColumn] : null;
+        
+        if ($daySchedule && strpos($daySchedule, '-') !== false) {
+            // Formato: "18:00-01:00"
+            list($start, $end) = explode('-', $daySchedule);
+            $schedules[] = [
+                'day' => $days[$i],
+                'start' => trim($start),
+                'end' => trim($end),
+                'is_today' => $i === $dayOfWeek
+            ];
+        } else {
+            // Fallback al horario general
+            $schedules[] = [
+                'day' => $days[$i],
+                'start' => $truck ? substr($truck['horario_inicio'], 0, 5) : '18:00',
+                'end' => $truck ? substr($truck['horario_fin'], 0, 5) : '00:30',
+                'is_today' => $i === $dayOfWeek
+            ];
+        }
     }
 
     // Obtener todos los trucks activos
