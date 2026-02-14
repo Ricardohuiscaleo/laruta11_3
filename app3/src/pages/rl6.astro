@@ -166,14 +166,17 @@ const GRADOS_MILITARES = [
 
           <!-- PASO 0: Verificación de sesión -->
           <div id="paso0" class="paso-form text-center">
-            <div id="noLogueado" class="hidden">
-              <div class="mb-6">
-                <div class="text-6xl mb-4">🎖️</div>
-                <h3 class="text-2xl font-bold mb-4 text-slate-900">Primero regístrate en La Ruta 11</h3>
-                <p class="text-gray-600 mb-6">Para solicitar el crédito RL6, necesitas tener una cuenta en nuestra app.</p>
+            <!-- Modal Login Required -->
+            <div id="modalLoginRequired" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+              <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
+                <div class="text-center">
+                  <div class="text-6xl mb-4">🎖️</div>
+                  <h3 class="text-2xl font-bold mb-4 text-slate-900">Primero regístrate en La Ruta 11</h3>
+                  <p class="text-gray-600 mb-6">Para solicitar el crédito RL6, necesitas tener una cuenta en nuestra app.</p>
+                  <button id="btnAbrirLogin" class="w-full px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-lg hover:shadow-lg transition duration-300 transform hover:scale-105 mb-3">Registrarme / Iniciar Sesión</button>
+                  <p class="text-sm text-gray-500">Luego podrás solicitar tu crédito RL6</p>
+                </div>
               </div>
-              <button id="btnAbrirLogin" class="px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-lg hover:shadow-lg transition duration-300 transform hover:scale-105">Registrarme / Iniciar Sesión</button>
-              <p class="text-sm text-gray-500 mt-4">Luego podrás solicitar tu crédito RL6</p>
             </div>
             <div id="siLogueado" class="hidden">
               <div class="mb-6">
@@ -350,15 +353,15 @@ const GRADOS_MILITARES = [
 
       // Mostrar pantalla según estado de sesión
       var siLogueado = document.getElementById('siLogueado');
-      var noLogueado = document.getElementById('noLogueado');
+      var modalLoginRequired = document.getElementById('modalLoginRequired');
       var nombreUsuario = document.getElementById('nombreUsuario');
       
       if (usuarioLogueado && siLogueado && nombreUsuario) {
         siLogueado.classList.remove('hidden');
         var primerNombre = String(usuarioLogueado['nombre'] || '').split(' ')[0];
         nombreUsuario.textContent = primerNombre;
-      } else if (noLogueado) {
-        noLogueado.classList.remove('hidden');
+      } else if (modalLoginRequired) {
+        modalLoginRequired.classList.remove('hidden');
       }
       var btnSiguiente = document.getElementById('btnSiguiente');
       var btnAnterior = document.getElementById('btnAnterior');
