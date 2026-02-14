@@ -1111,9 +1111,10 @@ export default function App() {
     const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
     const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
     const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
+    const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
     const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
     const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-    const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - birthdayDiscountAmount - pizzaDiscountAmount;
+    const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
     setCashAmount(finalTotal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
   };
 
@@ -1125,9 +1126,10 @@ export default function App() {
     const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
     const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
     const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
+    const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
     const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
     const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-    const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - birthdayDiscountAmount - pizzaDiscountAmount;
+    const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
     
     const numericAmount = parseInt(cashAmount.replace(/\./g, ''));
     
@@ -1156,9 +1158,10 @@ export default function App() {
       const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
       const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
       const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
+      const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
       const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
       const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-      const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - birthdayDiscountAmount - pizzaDiscountAmount;
+      const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
       const numericAmount = parseInt(cashAmount.replace(/\./g, ''));
       const vuelto = numericAmount - finalTotal;
       
@@ -3080,6 +3083,12 @@ export default function App() {
                       <span className="font-semibold text-green-600">-${Math.round(cartSubtotal * 0.1).toLocaleString('es-CL')}</span>
                     </div>
                   )}
+                  {customerInfo.discount30 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-yellow-600 text-sm font-bold">⭐ Descuento 30%:</span>
+                      <span className="font-semibold text-yellow-600">-${Math.round(cartSubtotal * 0.3).toLocaleString('es-CL')}</span>
+                    </div>
+                  )}
                   {customerInfo.birthdayDiscount && cart.some(item => item.id === 9) && (
                     <div className="flex justify-between items-center">
                       <span className="text-green-600 text-sm">🎂 Descuento Cumpleaños:</span>
@@ -3100,7 +3109,7 @@ export default function App() {
                       const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                       const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                       const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-                      return (cartSubtotal + deliveryFee - pickupDiscountAmount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
+                      return (cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
                     })()}</span>
                   </div>
                 </div>
@@ -3141,8 +3150,10 @@ export default function App() {
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
                         const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
                         const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
+                        const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                         const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
-                        const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - birthdayDiscountAmount;
+                        const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
+                        const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
                         
                         const orderData = {
                           amount: finalTotal,
@@ -3204,8 +3215,10 @@ export default function App() {
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
                         const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
                         const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
+                        const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                         const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
-                        const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - birthdayDiscountAmount;
+                        const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
+                        const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
                         
                         const orderData = {
                           amount: finalTotal,
@@ -3267,8 +3280,10 @@ export default function App() {
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
                         const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
                         const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
+                        const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                         const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
-                        const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - birthdayDiscountAmount;
+                        const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
+                        const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
                         
                         const orderData = {
                           amount: finalTotal,
@@ -3406,7 +3421,7 @@ export default function App() {
                     const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                     const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                     const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-                    return (cartSubtotal + deliveryFee - pickupDiscountAmount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
+                    return (cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
                   })()}</p>
                 </div>
 
@@ -3483,7 +3498,7 @@ export default function App() {
                       const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                       const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                       const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-                      return (cartSubtotal + deliveryFee - pickupDiscountAmount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
+                      return (cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
                     })()}</span>
                   </div>
                   <div className="flex justify-between items-center mb-2">
