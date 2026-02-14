@@ -35,6 +35,20 @@ try {
     $stmt = $pdo->prepare("SELECT * FROM food_trucks WHERE id = 4 LIMIT 1");
     $stmt->execute();
     $truck = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Obtener horarios personalizados de la tabla food_truck_schedules
+    $stmt = $pdo->prepare("SELECT * FROM food_truck_schedules WHERE food_truck_id = 4 AND is_active = 1 ORDER BY day_of_week");
+    $stmt->execute();
+    $customSchedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Crear mapa de horarios por día
+    $schedulesByDay = [];
+    foreach ($customSchedules as $schedule) {
+        $schedulesByDay[$schedule['day_of_week']] = [
+            'start' => $schedule['start_time'],
+            'end' => $schedule['end_time']
+        ];
+    }
 
     // Calcular si está abierto
     date_default_timezone_set('America/Santiago');
@@ -47,17 +61,12 @@ try {
     $nextOpenTime = null;
 
     if ($truck) {
-        // Obtener horario específico del día actual
-        $dayColumns = ['horario_domingo', 'horario_lunes', 'horario_martes', 'horario_miercoles', 'horario_jueves', 'horario_viernes', 'horario_sabado'];
-        $todayColumn = $dayColumns[$dayOfWeek];
-        $todayScheduleStr = $truck[$todayColumn] ?? null;
-        
-        // Si hay horario específico del día, usarlo; sino usar horario general
-        if ($todayScheduleStr && strpos($todayScheduleStr, '-') !== false) {
-            list($openTime, $closeTime) = array_map('trim', explode('-', $todayScheduleStr));
-            $openTime .= ':00'; // Agregar segundos
-            $closeTime .= ':00';
+        // Obtener horario del día actual desde food_truck_schedules
+        if (isset($schedulesByDay[$dayOfWeek])) {
+            $openTime = $schedulesByDay[$dayOfWeek]['start'];
+            $closeTime = $schedulesByDay[$dayOfWeek]['end'];
         } else {
+            // Fallback a horario general
             $openTime = $truck['horario_inicio'];
             $closeTime = $truck['horario_fin'];
         }
@@ -85,22 +94,16 @@ try {
         }
     }
 
-    // Generar horarios de la semana desde la base de datos
+    // Generar horarios de la semana desde food_truck_schedules
     $schedules = [];
     $days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    $dayColumns = ['horario_domingo', 'horario_lunes', 'horario_martes', 'horario_miercoles', 'horario_jueves', 'horario_viernes', 'horario_sabado'];
     
     for ($i = 0; $i < 7; $i++) {
-        $dayColumn = $dayColumns[$i];
-        $daySchedule = $truck && isset($truck[$dayColumn]) ? $truck[$dayColumn] : null;
-        
-        if ($daySchedule && strpos($daySchedule, '-') !== false) {
-            // Formato: "18:00-01:00"
-            list($start, $end) = explode('-', $daySchedule);
+        if (isset($schedulesByDay[$i])) {
             $schedules[] = [
                 'day' => $days[$i],
-                'start' => trim($start),
-                'end' => trim($end),
+                'start' => substr($schedulesByDay[$i]['start'], 0, 5),
+                'end' => substr($schedulesByDay[$i]['end'], 0, 5),
                 'is_today' => $i === $dayOfWeek
             ];
         } else {
