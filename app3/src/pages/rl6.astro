@@ -644,7 +644,16 @@ const GRADOS_MILITARES = [
               body: formData
             });
             
-            var result = await response.json();
+            if (!response.ok) {
+              throw new Error('HTTP ' + response.status);
+            }
+            
+            var text = await response.text();
+            if (!text) {
+              throw new Error('Respuesta vacía del servidor');
+            }
+            
+            var result = JSON.parse(text);
             
             if (result.success) {
               alert('✅ ' + result.message);
