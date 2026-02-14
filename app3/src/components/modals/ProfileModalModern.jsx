@@ -3,7 +3,7 @@ import {
   X, Stamp, Gift, Truck, Utensils, Clock, QrCode, ChevronRight, 
   Star, Zap, Info, User, MapPin, Phone, Instagram, Calendar,
   LogOut, Trash2, Briefcase, Wallet, TrendingUp, ArrowDownCircle, ShoppingBag,
-  CheckCircle2, Package, CreditCard, Banknote, DollarSign
+  CheckCircle2, Package, CreditCard, Banknote, DollarSign, RefreshCw
 } from 'lucide-react';
 
 const Card = ({ children, className = "" }) => (
@@ -49,6 +49,7 @@ const ProfileModalModern = ({
   const [expandedOrders, setExpandedOrders] = useState({});
   const [rl6Credit, setRl6Credit] = useState(null);
   const [loadingRL6, setLoadingRL6] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   
   // Verificar si es militar RL6 aprobado
   const isMilitarRL6 = (user?.es_militar_rl6 == 1 || user?.es_militar_rl6 === '1') && 
@@ -148,6 +149,25 @@ const ProfileModalModern = ({
     }
   };
   
+  const handleRefreshProfile = async () => {
+    setRefreshing(true);
+    try {
+      const response = await fetch('/api/auth/get_profile.php');
+      const data = await response.json();
+      if (data.success) {
+        setUser(data.user);
+        await loadWalletData();
+        if (isMilitarRL6) {
+          await loadRL6Credit();
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+  
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     safeSetHasProfileChanges(true);
@@ -225,9 +245,19 @@ const ProfileModalModern = ({
                   <p className="text-orange-100 text-xs font-medium opacity-90">MI PERFIL</p>
                 </div>
               </div>
-              <button onClick={handleClose} className="bg-white/20 p-2 rounded-full backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-colors">
-                <X size={24} className="text-white" />
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={handleRefreshProfile} 
+                  disabled={refreshing}
+                  className="bg-white/20 p-2 rounded-full backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-colors disabled:opacity-50"
+                  title="Actualizar datos"
+                >
+                  <RefreshCw size={20} className={`text-white ${refreshing ? 'animate-spin' : ''}`} />
+                </button>
+                <button onClick={handleClose} className="bg-white/20 p-2 rounded-full backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-colors">
+                  <X size={24} className="text-white" />
+                </button>
+              </div>
             </div>
             
             <div className="mt-4 flex items-center gap-3 text-sm bg-black/20 p-3 rounded-lg backdrop-blur-md">
