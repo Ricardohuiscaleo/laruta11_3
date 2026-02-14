@@ -40,6 +40,10 @@ try {
     // Nuevos campos
     $subtotal = $amount - $delivery_fee;
     $discount_amount = $input['discount_amount'] ?? 0;
+    $discount_10 = $input['discount_10'] ?? 0;
+    $discount_30 = $input['discount_30'] ?? 0;
+    $discount_birthday = $input['discount_birthday'] ?? 0;
+    $discount_pizza = $input['discount_pizza'] ?? 0;
     $delivery_discount = $input['delivery_discount'] ?? 0;
     $delivery_extras = $input['delivery_extras'] ?? 0;
     $delivery_extras_items = !empty($input['delivery_extras_items']) ? json_encode($input['delivery_extras_items']) : null;
@@ -73,8 +77,8 @@ try {
             product_name, product_price, delivery_fee, installment_amount, 
             has_item_details, status, payment_status, payment_method, order_status, delivery_type, 
             delivery_address, pickup_time, customer_notes, 
-            subtotal, discount_amount, delivery_discount, delivery_extras, delivery_extras_items, cashback_used
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            subtotal, discount_amount, discount_10, discount_30, discount_birthday, discount_pizza, delivery_discount, delivery_extras, delivery_extras_items, cashback_used
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $order_stmt = $pdo->prepare($order_sql);
         $order_stmt->execute([
@@ -90,6 +94,10 @@ try {
             $input['customer_notes'] ?? null,
             $subtotal,
             $discount_amount,
+            $discount_10,
+            $discount_30,
+            $discount_birthday,
+            $discount_pizza,
             $delivery_discount,
             $delivery_extras,
             $delivery_extras_items,
@@ -101,8 +109,8 @@ try {
             product_name, product_price, delivery_fee, installment_amount, 
             has_item_details, status, payment_status, payment_method, order_status, delivery_type, 
             delivery_address, pickup_time, customer_notes, 
-            subtotal, discount_amount, delivery_discount, delivery_extras, delivery_extras_items, cashback_used
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            subtotal, discount_amount, discount_10, discount_30, discount_birthday, discount_pizza, delivery_discount, delivery_extras, delivery_extras_items, cashback_used
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $order_stmt = $pdo->prepare($order_sql);
         $order_stmt->execute([
@@ -118,6 +126,10 @@ try {
             $input['customer_notes'] ?? null,
             $subtotal,
             $discount_amount,
+            $discount_10,
+            $discount_30,
+            $discount_birthday,
+            $discount_pizza,
             $delivery_discount,
             $delivery_extras,
             $delivery_extras_items,
