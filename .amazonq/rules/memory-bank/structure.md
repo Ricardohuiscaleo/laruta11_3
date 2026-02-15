@@ -4,177 +4,175 @@
 
 ```
 laruta11_3/
-├── landing3/          # Landing page (laruta11.cl)
-├── app3/              # Customer web app (app.laruta11.cl)
-├── caja3/             # POS system (caja.laruta11.cl)
-└── .amazonq/rules/    # Project documentation and rules
+├── app3/           # Customer web application (app.laruta11.cl)
+├── caja3/          # Cashier POS system (caja.laruta11.cl)
+├── landing3/       # Marketing landing page (laruta11.cl)
+├── scripts/        # Utility scripts (image conversion, etc.)
+└── .amazonq/       # Amazon Q AI assistant rules and memory
 ```
 
 ## Application Architecture
 
-### Landing3 (Public Website)
-```
-landing3/
-├── src/
-│   ├── components/    # Astro/React components
-│   ├── layouts/       # Page layouts
-│   └── pages/         # Route pages
-├── api/               # PHP backend endpoints
-├── vendor/            # PHP Composer dependencies (AWS SDK)
-├── .env               # Environment variables
-└── config.php         # PHP configuration
-```
+### app3/ - Customer Web Application
+**Purpose**: Public-facing menu and ordering system for customers
 
-**Purpose**: Public-facing marketing site with food truck information
-**Tech Stack**: Astro, React, TailwindCSS, PHP, AWS S3
-**Port**: 4321
+**Key Directories**:
+- `src/components/` - React components (MenuApp, CartModal, ProductModal, CheckoutModal, etc.)
+- `src/pages/` - Astro pages (index, menu, orders, profile, etc.)
+- `api/` - PHP backend endpoints (200+ API files)
+  - `auth/` - Authentication (Google OAuth, session management)
+  - `orders/` - Order creation, status updates, history
+  - `tuu/` - Payment gateway integration
+  - `users/` - User profiles, wallet, rewards
+  - `tracker/` - Analytics and usage tracking
+- `public/` - Static assets (images, sounds, manifest.json, service worker)
+- `sql/` - Database migration scripts
 
-### App3 (Customer Application)
-```
-app3/
-├── src/
-│   ├── components/    # React components (modals, UI elements)
-│   ├── hooks/         # Custom React hooks
-│   ├── utils/         # Utility functions (validation, effects)
-│   ├── layouts/       # Page layouts
-│   ├── pages/         # Astro route pages
-│   └── mock/          # Mock data for development
-├── api/               # PHP backend (400+ endpoints)
-│   ├── orders/        # Order management
-│   ├── users/         # User authentication
-│   ├── tuu/           # Payment integration
-│   ├── notifications/ # Real-time notifications
-│   ├── location/      # Geolocation services
-│   ├── food_trucks/   # Truck management
-│   └── auth/          # Google OAuth
-├── public/
-│   ├── imagenes/      # Product images
-│   ├── js/            # Client-side scripts
-│   └── config.php     # PHP configuration
-├── sql/               # Database schemas
-└── docs/              # Technical documentation
-```
+**Architecture Pattern**: 
+- Frontend: Astro + React (SSR + Islands)
+- Backend: PHP REST APIs
+- Database: MySQL (shared with caja3)
+- Storage: AWS S3 for images
+- Auth: Google OAuth + PHP sessions
 
-**Purpose**: Customer-facing ordering application with full e-commerce features
-**Tech Stack**: Astro, React, TailwindCSS, PHP, MySQL, AWS S3, TUU Payments
-**Port**: 4322
+### caja3/ - Cashier POS System
+**Purpose**: Internal system for staff to process orders and manage operations
 
-### Caja3 (Point of Sale System)
-```
-caja3/
-├── src/
-│   ├── components/    # React components (MenuApp, modals, dashboards)
-│   │   ├── modals/    # Modal components
-│   │   └── ui/        # Reusable UI components
-│   ├── hooks/         # Custom React hooks
-│   ├── utils/         # Utility functions
-│   ├── layouts/       # Page layouts
-│   └── pages/         # Astro route pages
-├── api/               # PHP backend (500+ endpoints)
-│   ├── orders/        # Order processing
-│   ├── compras/       # Purchase management
-│   ├── admin/         # Admin operations
-│   ├── location/      # Geolocation
-│   ├── food_trucks/   # Truck schedules
-│   └── notifications/ # Order notifications
-├── public/
-│   ├── imagenes/      # Product images
-│   ├── js/            # Client-side scripts
-│   └── config.php     # PHP configuration
-├── sql/               # Database schemas
-└── docs/              # Technical documentation
-```
+**Key Directories**:
+- `src/components/` - React components (MenuApp, ComprasApp, DashboardApp, InventarioApp, etc.)
+- `src/pages/` - Astro pages (index, compras, dashboard, inventario, etc.)
+- `api/` - PHP backend endpoints (300+ API files)
+  - `compras/` - Purchase management
+  - `orders/` - Order processing
+  - `tracker/` - QR code generation, analytics
+  - `auth/` - Cashier authentication
+- `docs/` - Technical documentation (30+ markdown files)
+- `public/` - Static assets, health check tools
+- `sql/` - Database schemas and migrations
 
-**Purpose**: Internal POS system for staff to manage orders, inventory, and cash operations
-**Tech Stack**: Astro, React, TailwindCSS, PHP, MySQL, Tesseract.js (OCR)
-**Port**: 4323
+**Architecture Pattern**:
+- Frontend: Astro + React (SSR + Islands)
+- Backend: PHP REST APIs
+- Database: MySQL (shared with app3)
+- Features: Cash register, inventory, financial reports, purchase planning
+
+### landing3/ - Landing Page
+**Purpose**: Marketing website and business information
+
+**Key Directories**:
+- `src/components/` - Astro/React components
+- `src/pages/` - Static pages
+- `api/` - Minimal PHP endpoints (S3 integration)
+- `vendor/` - PHP Composer dependencies (AWS SDK)
+
+**Architecture Pattern**:
+- Frontend: Astro (static site generation)
+- Backend: Minimal PHP for AWS S3
+- Deployment: Static hosting
 
 ## Core Components
 
-### Frontend Components (React)
-- **MenuApp.jsx**: Main menu interface with product catalog
-- **Modals**: ProductDetail, Profile, Security, SaveChanges, ShareProduct, Combo, PaymentPending
-- **UI Components**: FloatingHeart, StarRating, SwipeToggle, NotificationIcon
-- **Listeners**: OrdersListener, ChecklistsListener (real-time updates)
-- **Integrations**: TUUPaymentIntegration, ReviewsModal, OrderNotifications
+### Shared Infrastructure
+- **Database**: Single MySQL database shared between app3 and caja3
+- **Image Storage**: AWS S3 bucket (laruta11-images)
+- **Payment Gateway**: TUU.cl API integration
+- **Authentication**: 
+  - Customers: Google OAuth
+  - Cashiers: Username/password with PHP sessions
 
-### Backend API Structure (PHP)
-- **Database Connection**: `db_connect.php` - centralized MySQL connection
-- **Configuration**: `config.php` - environment-specific settings
-- **S3Manager**: AWS S3 integration for image uploads
-- **CRUD Operations**: Products, ingredients, orders, users, combos
-- **Business Logic**: Inventory tracking, cost calculations, sales analytics
-- **Payment Processing**: TUU integration, transfer confirmations
-- **Notifications**: Real-time order updates, admin alerts
+### Database Schema (Key Tables)
+- `productos` - Menu items with categories, prices, recipes
+- `categorias` - Product categories and subcategories
+- `ingredientes` - Inventory ingredients with stock levels
+- `recetas` - Product recipes (ingredient quantities)
+- `ventas` - Sales/orders with items and customizations
+- `usuarios` - Customer accounts
+- `cashiers` - Cashier accounts
+- `combos` - Combo definitions with rules
+- `caja_movimientos` - Cash register transactions
+- `compras` - Purchase orders
+- `mermas` - Inventory waste tracking
+- `tuu_orders` - Online payment records
 
-### Database Schema
-- **productos**: Product catalog with pricing and stock
-- **ingredientes**: Ingredient inventory with units and costs
-- **recetas**: Product recipes linking products to ingredients
-- **ventas**: Sales transactions with payment details
-- **tuu_orders**: Online payment records
-- **usuarios**: User accounts and authentication
-- **combos**: Combo definitions and pricing
-- **food_trucks**: Truck locations and schedules
-- **notifications**: System notifications
-- **cash_register**: POS shift management
-- **menu_categories**: Menu category structure with filter_config
-- **menu_subcategories**: Menu subcategory structure
-- **categories**: Product categories (legacy)
-- **subcategories**: Product subcategories (legacy)
+### API Architecture
+**Pattern**: RESTful PHP endpoints with JSON responses
 
-### Category and Subcategory IDs (Production Database)
-- **Hamburguesas**: category_id=3, subcategory_id=6
-- **Hamburguesas 100g**: category_id=3, subcategory_id=5
-- **Churrascos**: category_id=2
-- **Completos**: category_id=4
-- **Papas**: category_id=12, subcategory_id=57
-- **Pizzas**: category_id=5, subcategory_id=60
-- **Bebidas**: category_id=5, subcategory_ids=[11,10,27,28] (Bebidas, Jugos, Café, Té)
-- **Combos**: category_id=8
+**Common Structure**:
+```php
+// Database connection
+require_once 'db_connect.php';
 
-## Architectural Patterns
+// CORS headers
+header('Access-Control-Allow-Origin: *');
+header('Content-Type: application/json');
 
-### Multi-Tenant Architecture
-- Shared database across all applications
-- Domain-based routing (landing, app, caja subdomains)
-- Centralized authentication with role-based access
+// Business logic
+$result = performOperation();
 
-### API-First Design
-- RESTful PHP endpoints for all operations
-- JSON response format
-- CORS enabled for cross-origin requests
-- Centralized error handling
+// JSON response
+echo json_encode(['success' => true, 'data' => $result]);
+```
 
-### Real-Time Updates
-- Polling-based notification system
-- OrdersListener and ChecklistsListener components
-- Server-sent events for live order updates
+**Key API Groups**:
+- CRUD operations (get, create, update, delete)
+- Business logic (calculate costs, process inventory)
+- Integrations (TUU payments, Google OAuth)
+- Analytics (sales reports, projections)
 
-### Inventory Management
-- Recipe-based ingredient tracking
-- Automatic stock deduction on sales
-- Cost calculation from ingredient prices
-- Purchase recommendations based on projections
+### Frontend Architecture
+**Pattern**: Astro Islands with React components
 
-### Payment Flow
-- Multi-method support (TUU, transfer, cash, credit)
-- Callback handling for online payments
-- Order status synchronization
-- Delivery fee calculation based on geolocation
+**Component Structure**:
+- Large interactive apps as single React components (MenuApp, ComprasApp)
+- Smaller reusable components (modals, cards, forms)
+- Astro pages for routing and SSR
+- TailwindCSS for styling
+
+**State Management**:
+- React useState/useEffect for local state
+- localStorage for persistence
+- API calls for server state
 
 ## Deployment Configuration
 
-### EasyPanel Setup
-- Each app deployed as separate service
-- Environment variables configured per app
-- Build command: `npm run build`
-- Start command: `npm run preview`
-- Custom ports: 4321 (landing), 4322 (app), 4323 (caja)
+### Ports
+- landing3: 4321
+- app3: 4322
+- caja3: 4323
+
+### Build Process
+```bash
+npm run build    # Astro build
+npm run preview  # Production preview
+```
 
 ### Environment Variables
-- Database credentials (MySQL)
+Each app has `.env` file with:
+- Database credentials
 - AWS S3 credentials
-- TUU payment API keys
+- TUU API keys
 - Google OAuth credentials
-- Domain configurations
+
+## Architectural Patterns
+
+### Database-Driven Menu System
+- Categories and products stored in database
+- No hardcoded category definitions in frontend
+- Dynamic filtering based on `is_active` flag
+- JSON fields for customizations and extras
+
+### Recipe-Based Inventory
+- Products linked to recipes
+- Recipes define ingredient quantities
+- Automatic stock deduction on sales
+- Real-time stock calculations
+
+### Multi-Tenant Design
+- Single database, multiple applications
+- Shared data models (products, orders, inventory)
+- Application-specific features (POS vs customer app)
+
+### Progressive Web App (PWA)
+- Service workers for offline capability
+- Manifest.json for installability
+- Push notifications for order updates

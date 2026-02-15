@@ -2,188 +2,264 @@
 
 ## Programming Languages
 
-### JavaScript/JSX
-- **Version**: ES6+ modules
-- **Usage**: Frontend components, React applications, utility scripts
-- **Files**: `.jsx`, `.js`, `.mjs`
+### Frontend
+- **JavaScript/JSX** - React components, interactive features
+- **Astro** - SSR framework, page routing, islands architecture
+- **HTML/CSS** - Markup and styling
+- **TailwindCSS** - Utility-first CSS framework
 
-### PHP
-- **Version**: 7.4+
-- **Usage**: Backend API endpoints, database operations, business logic
-- **Files**: `.php`
+### Backend
+- **PHP** - Server-side API endpoints, business logic
+- **SQL** - Database queries and migrations
 
-### SQL
-- **Dialect**: MySQL
-- **Usage**: Database schemas, migrations, queries
-- **Files**: `.sql`
+### Configuration
+- **JSON** - Package manifests, configuration files
+- **Markdown** - Documentation
 
-## Frontend Technologies
+## Framework Versions
 
-### Astro
-- **Version**: ^4.11.5 (app3/caja3), ^4.0.0 (landing3)
-- **Purpose**: Static site generation and SSR framework
-- **Configuration**: `astro.config.mjs`
-- **Commands**:
-  - `npm run dev` - Development server
-  - `npm run build` - Production build
-  - `npm run preview` - Preview production build
+### app3 (Customer App)
+```json
+{
+  "astro": "^4.11.5",
+  "react": "^18.3.1",
+  "react-dom": "^18.3.1",
+  "@astrojs/react": "^3.6.0",
+  "@astrojs/node": "^8.3.4",
+  "@astrojs/tailwind": "^6.0.2",
+  "tailwindcss": "^3.4.17"
+}
+```
 
-### React
-- **Version**: ^18.3.1 (app3/caja3), ^18.0.0 (landing3)
-- **Purpose**: Interactive UI components
-- **Key Libraries**:
-  - `react-dom`: ^18.3.1 - DOM rendering
-  - `react-icons`: ^5.5.0 - Icon library (GiHamburger, GiHotDog, etc.)
-  - `lucide-react`: ^0.400.0 (app3/caja3), ^0.540.0 (landing3) - Modern icons
+### caja3 (Cashier POS)
+```json
+{
+  "astro": "^4.11.5",
+  "react": "^18.3.1",
+  "react-dom": "^18.3.1",
+  "@astrojs/react": "^3.6.0",
+  "@astrojs/tailwind": "^6.0.2",
+  "tailwindcss": "^3.4.17",
+  "tesseract.js": "^7.0.0"
+}
+```
 
-### TailwindCSS
-- **Version**: ^3.4.17 (app3/caja3), ^3.0.0 (landing3)
-- **Purpose**: Utility-first CSS framework
-- **Configuration**: `tailwind.config.mjs`
-- **Integration**: `@astrojs/tailwind` package
+### landing3 (Landing Page)
+```json
+{
+  "astro": "^4.0.0",
+  "react": "^18.0.0",
+  "react-dom": "^18.0.0",
+  "@astrojs/react": "^3.0.0",
+  "@astrojs/tailwind": "^5.0.0",
+  "tailwindcss": "^3.0.0"
+}
+```
 
-### Additional Frontend Libraries
-- **recharts**: ^3.1.2 - Data visualization and charts
-- **tesseract.js**: ^7.0.0 (caja3 only) - OCR for receipt scanning
+## Key Dependencies
 
-## Backend Technologies
+### UI Libraries
+- **lucide-react** (^0.400.0 / ^0.540.0) - Icon library
+- **react-icons** (^5.5.0) - Additional icon sets
+- **recharts** (^3.1.2) - Charts and data visualization (app3, caja3)
 
-### PHP Stack
-- **Core**: Native PHP for API endpoints
-- **Database**: MySQLi extension for database connections
-- **File Structure**: RESTful API endpoints in `/api` directories
+### Backend Libraries (PHP)
+- **AWS SDK for PHP** - S3 image storage integration
+- **Composer** - PHP dependency management (landing3)
+- **vlucas/phpdotenv** - Environment variable management
 
-### Composer Dependencies (landing3)
-- **aws/aws-sdk-php**: AWS S3 integration
-- **vlucas/phpdotenv**: Environment variable management
-- **guzzlehttp/guzzle**: HTTP client for API requests
+### Special Features
+- **tesseract.js** (^7.0.0) - OCR for receipt scanning (caja3 only)
 
 ## Database
 
-### MySQL
-- **Purpose**: Primary data store
-- **Connection**: MySQLi with `db_connect.php`
-- **Key Tables**:
-  - `productos` - Product catalog
-  - `ingredientes` - Ingredient inventory
-  - `recetas` - Product recipes
-  - `ventas` - Sales transactions
-  - `tuu_orders` - Online payments
-  - `usuarios` - User accounts
-  - `combos` - Combo products
-  - `food_trucks` - Truck locations
-  - `cash_register` - POS shifts
+### Technology
+- **MySQL** - Relational database
+- **Version**: Compatible with MySQL 5.7+
+
+### Connection
+- PHP MySQLi extension
+- Connection pooling via `db_connect.php`
+- Shared database between app3 and caja3
+
+### Key Tables (40+ tables)
+- productos, categorias, ingredientes, recetas
+- ventas, ventas_items, ventas_customizations
+- usuarios, cashiers
+- combos, combo_items, combo_groups
+- caja_movimientos, caja_historial
+- compras, mermas
+- tuu_orders, tuu_pagos_online
+- notifications, reviews, visits
 
 ## External Services
 
-### AWS S3
-- **Purpose**: Image and media storage
-- **Integration**: PHP SDK via Composer
-- **Manager**: `S3Manager.php` class
-- **Usage**: Product images, gallery uploads
+### AWS Services
+- **S3** - Image storage and CDN
+  - Bucket: laruta11-images
+  - Public read access for menu images
+  - PHP SDK for uploads
 
-### TUU.cl Payment Gateway
-- **Purpose**: Online payment processing
-- **Integration**: REST API with callbacks
-- **Endpoints**: `/api/tuu/` and `/api/tuu-pagos-online/`
-- **Features**: Payment creation, callback handling, order synchronization
+### Payment Gateway
+- **TUU.cl** - Chilean payment processor
+  - REST API integration
+  - Webhook callbacks for payment confirmation
+  - Support for online payments and transfers
 
-### Google OAuth
-- **Purpose**: User authentication
-- **Integration**: OAuth 2.0 flow
-- **Endpoints**: `/api/auth/`
-- **Usage**: Customer login in app3
+### Authentication
+- **Google OAuth 2.0** - Customer authentication
+  - OAuth flow for login/signup
+  - Profile data retrieval
+  - Session management via PHP
 
-### Geolocation Services
-- **Purpose**: Delivery fee calculation, truck location
-- **Endpoints**: `/api/location/geocode.php`
-- **Usage**: Distance-based pricing
+### Media
+- **YouTube API** - Live streaming integration (contests)
+- **Unsplash API** - Background images
 
 ## Build System
 
-### Node.js & NPM
-- **Package Manager**: npm
-- **Scripts**:
-  - `dev` / `start`: Development server
-  - `build`: Production build
-  - `preview`: Preview production build
-  - `astro`: Astro CLI
+### Package Manager
+- **npm** - Node.js package management
+- **Composer** - PHP package management (landing3)
 
-### Build Configuration
-- **Astro Config**: `astro.config.mjs`
-  - React integration: `@astrojs/react`
-  - Tailwind integration: `@astrojs/tailwind`
-  - Node adapter: `@astrojs/node` (app3 only)
+### Build Commands
+```bash
+# Development
+npm run dev        # Start dev server with hot reload
+npm run start      # Alias for dev
+
+# Production
+npm run build      # Build for production
+npm run preview    # Preview production build
+```
+
+### Build Output
+- **Astro**: Static files + server endpoints
+- **Output directory**: `dist/`
+- **SSR mode**: Node.js adapter for dynamic routes
 
 ## Development Tools
 
-### Environment Management
-- **Files**: `.env`, `.env.example`
-- **Loader**: `load-env.php` for PHP
-- **Variables**: Database credentials, API keys, domain configs
+### Code Quality
+- **ESLint** - JavaScript linting (implicit via Astro)
+- **Prettier** - Code formatting (implicit)
 
 ### Version Control
-- **System**: Git
-- **Ignore**: `.gitignore` excludes `.env`, `config.php`, `node_modules/`, `dist/`
+- **Git** - Source control
+- **GitHub** - Repository hosting
 
 ### Deployment
-- **Platform**: EasyPanel
-- **Method**: Docker containers
-- **Dockerfile**: Available in app3 and landing3
-- **Scripts**: `deploy.sh` for automation
+- **EasyPanel** - Hosting platform
+- **Docker** - Containerization (Dockerfile present)
+- **Shell scripts** - Deployment automation (deploy.sh)
 
-## Development Commands
+## Environment Configuration
 
-### App3 (Customer App)
-```bash
-cd app3
-npm install          # Install dependencies
-npm run dev          # Start dev server on port 4322
-npm run build        # Build for production
-npm run preview      # Preview production build
+### Required Environment Variables
+
+**Database**:
+```
+DB_HOST=localhost
+DB_USER=username
+DB_PASS=password
+DB_NAME=database_name
 ```
 
-### Caja3 (POS System)
-```bash
-cd caja3
-npm install          # Install dependencies
-npm run dev          # Start dev server on port 4323
-npm run build        # Build for production
-npm run preview      # Preview production build
+**AWS S3**:
+```
+AWS_ACCESS_KEY_ID=key
+AWS_SECRET_ACCESS_KEY=secret
+AWS_REGION=us-east-1
+AWS_BUCKET=laruta11-images
 ```
 
-### Landing3 (Landing Page)
-```bash
-cd landing3
-npm install          # Install dependencies
-composer install     # Install PHP dependencies
-npm run dev          # Start dev server on port 4321
-npm run build        # Build for production
-npm run preview      # Preview production build
+**TUU Payment Gateway**:
+```
+TUU_API_KEY=key
+TUU_SECRET=secret
+TUU_WEBHOOK_URL=url
 ```
 
-## API Endpoints Structure
-
-### Common Patterns
-- **GET requests**: Retrieve data (products, orders, analytics)
-- **POST requests**: Create/update data (orders, payments, inventory)
-- **Response format**: JSON with status codes
-- **Error handling**: Consistent error messages
-
-### Key API Categories
-- `/api/orders/` - Order management
-- `/api/products.php` - Product CRUD
-- `/api/get_ingredientes.php` - Inventory data
-- `/api/tuu/` - Payment processing
-- `/api/users/` - User management
-- `/api/notifications/` - Real-time updates
-- `/api/food_trucks/` - Truck operations
-- `/api/admin/` - Administrative functions
+**Google OAuth**:
+```
+GOOGLE_CLIENT_ID=id
+GOOGLE_CLIENT_SECRET=secret
+GOOGLE_REDIRECT_URI=uri
+```
 
 ## Performance Optimizations
-- Static site generation with Astro
-- Image optimization via AWS S3
-- Lazy loading for components
-- API response caching
-- Database query optimization
-- Minified production builds
+
+### Frontend
+- Astro Islands architecture (partial hydration)
+- Image optimization via S3 CDN
+- Service Worker for offline caching
+- Lazy loading for images and components
+
+### Backend
+- Database connection pooling
+- JSON response caching where applicable
+- Indexed database queries
+- Optimized SQL queries with JOINs
+
+### Assets
+- TailwindCSS purging for minimal CSS
+- WebP image format conversion (scripts/convert-to-webp.js)
+- Minified JavaScript in production
+
+## Browser Compatibility
+
+### Target Browsers
+- Chrome/Edge (latest)
+- Firefox (latest)
+- Safari (latest, with specific fixes documented)
+- Mobile browsers (iOS Safari, Chrome Mobile)
+
+### PWA Features
+- Service Worker API
+- Web App Manifest
+- Push Notifications API
+- LocalStorage API
+- Geolocation API
+
+## Development Workflow
+
+### Local Development
+1. Install dependencies: `npm install`
+2. Configure `.env` file
+3. Start dev server: `npm run dev`
+4. Access at `localhost:4321/4322/4323`
+
+### Database Management
+- **Beekeeper Studio** - Preferred SQL client
+- SQL scripts executed manually (not PHP migrations)
+- Schema changes via SQL files in `sql/` directories
+
+### API Development
+- PHP files in `api/` directories
+- Direct file execution (no routing framework)
+- JSON responses with CORS headers
+- Error handling with try-catch blocks
+
+## Testing
+
+### Manual Testing
+- Browser DevTools for frontend debugging
+- PHP error logs for backend issues
+- Database query testing in Beekeeper Studio
+
+### Test Files
+- `test_*.php` - API endpoint tests
+- `debug_*.php` - Debugging utilities
+- `test-*.html` - Frontend component tests
+
+## Documentation
+
+### Inline Documentation
+- PHP comments for complex logic
+- JSDoc comments for JavaScript functions
+- SQL comments in migration files
+
+### External Documentation
+- README.md files in each app
+- Markdown docs in `docs/` (caja3)
+- API documentation in README_*.md files
