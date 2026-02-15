@@ -461,10 +461,40 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                     
                     const address = encodeURIComponent(normalizedAddress);
                     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${address}`;
+                    // Calcular delivery fee real (con descuento aplicado)
+                    const deliveryFeeReal = parseInt(order.delivery_fee) - parseInt(order.delivery_discount || 0);
                     const subtotal = parseInt(order.subtotal || 0).toLocaleString('es-CL');
-                    const deliveryFee = parseInt(order.delivery_fee - (order.delivery_discount || 0)).toLocaleString('es-CL');
+                    const deliveryFee = deliveryFeeReal.toLocaleString('es-CL');
                     const total = parseInt(order.installment_amount || 0).toLocaleString('es-CL');
-                    const items = order.items?.map(item => `${item.quantity}x ${item.product_name}`).join('\n') || order.product_name;
+                    
+                    // Construir lista de productos desde items array
+                    const items = order.items?.map(item => {
+                      const isCombo = item.item_type === 'combo' && item.combo_data;
+                      let itemText = `${item.quantity}x ${item.product_name}`;
+                      
+                      if (isCombo) {
+                        try {
+                          const comboData = JSON.parse(item.combo_data);
+                          if (comboData.fixed_items) {
+                            itemText += '\n  Incluye:';
+                            comboData.fixed_items.forEach(fixed => {
+                              itemText += `\n  • ${item.quantity}x ${fixed.product_name}`;
+                            });
+                          }
+                          if (comboData.selections) {
+                            Object.entries(comboData.selections).forEach(([group, selection]) => {
+                              if (selection && selection.name) {
+                                itemText += `\n  • ${item.quantity}x ${selection.name}`;
+                              }
+                            });
+                          }
+                        } catch (e) {
+                          // Si falla el parsing, usar solo el nombre del producto
+                        }
+                      }
+                      
+                      return itemText;
+                    }).join('\n\n') || order.product_name;
                     
                     // Determinar instrucción de pago
                     let paymentInstruction = '';
@@ -493,7 +523,14 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                       }
                     }
                     
-                    const message = `🚚 *Pedido ${order.order_number}*\n\n📦 *Productos:*\n${items}\n\n💰 *Montos:*\nSubtotal: $${subtotal}\nDelivery: $${deliveryFee}\n*Total: $${total}*\n\n${paymentInstruction}\n\n📍 *Dirección:*\n${order.delivery_address}\n\n🗺️ Ver en mapa:\n${mapsUrl}`;
+                    const message = `🚚 *Pedido ${order.order_number}*\n\n👤 *Cliente:* ${order.customer_name}\n📞 *Teléfono:* ${order.customer_phone || 'No disponible'}\n\n📦 *Productos:*\n${items}\n\n💰 *Montos:*\nSubtotal: $${subtotal}\nDelivery: $${deliveryFee}\n*Total: $${total}*\n\n${paymentInstruction}\n\n📍 *Dirección:*\n${order.delivery_address}\n\n🗺️ Ver en mapa:\n${mapsUrl}`;
+                    
+                    // Debug: mostrar el mensaje completo antes de enviarlo
+                    console.log('=== MENSAJE COMPLETO PARA RIDER ===');
+                    console.log(message);
+                    console.log('=== LONGITUD DEL MENSAJE ===');
+                    console.log(message.length);
+                    
                     window.location.href = `whatsapp://send?text=${encodeURIComponent(message)}`;
                   }}
                   className="flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
