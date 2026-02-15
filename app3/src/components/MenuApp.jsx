@@ -2117,23 +2117,18 @@ export default function App() {
       
       {/* Banner de deslizar - Solo móvil */}
       {isCategoriesVisible && (
-        <div className={`sm:hidden fixed top-[115px] left-0 right-0 z-30 px-2 py-2 transition-all duration-300 ${isCategoriesVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'}`}>
-          <div className="max-w-3xl sm:max-w-7xl mx-auto flex justify-end">
-            <div className="bg-yellow-300 text-black px-3 py-1.5 rounded-full text-[9px] font-bold flex items-center gap-1.5 whitespace-nowrap shadow-sm">
-              <span>Desliza para ver más</span>
-              <svg 
-                width="12" 
-                height="12" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2.5" 
-                className={`transition-transform duration-300 ${isScrolledToEnd ? 'rotate-180' : ''} ${!isScrolledToEnd ? 'animate-bounce-horizontal' : ''}`}
-              >
-                <path d="M9 5l7 7-7 7"/>
-              </svg>
-            </div>
-          </div>
+        <div className={`sm:hidden fixed top-[115px] right-2 z-30 transition-all duration-300 ${isCategoriesVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'}`}>
+          <svg 
+            width="20" 
+            height="20" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2.5" 
+            className={`transition-transform duration-300 text-gray-600 ${isScrolledToEnd ? 'rotate-180' : ''} ${!isScrolledToEnd ? 'animate-bounce-horizontal' : ''}`}
+          >
+            <path d="M9 5l7 7-7 7"/>
+          </svg>
         </div>
       )}
       

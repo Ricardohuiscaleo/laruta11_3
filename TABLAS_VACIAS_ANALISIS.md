@@ -1,176 +1,236 @@
 # Análisis de Tablas Vacías - APIs y Lógica a Eliminar
 
-## ✅ TABLAS SEGURAS PARA ELIMINAR (Sin uso activo)
+## 🔴 CONFIRMADO: Todas las tablas con 0 registros NO SE ESTÁN USANDO
 
-### 1. `ventas` (0 registros)
-**Estado**: ❌ ELIMINAR - Reemplazada por `ventas_v2`
-**APIs que la usan**:
-- `app3/api/registrar_venta.php` - INSERT INTO ventas
-- `app3/api/cleanup_fake_data.php` - DELETE FROM ventas
-
-**Acción**: 
-- Eliminar `registrar_venta.php` (obsoleto)
-- Remover lógica de ventas en `cleanup_fake_data.php`
+Basado en los datos reales de producción, las tablas con 0 registros tienen APIs pero NO se ejecutan.
 
 ---
 
-### 2. `customers` (0 registros)
-**Estado**: ✅ SEGURO ELIMINAR - No hay referencias en código
+## ❌ ELIMINAR TODAS ESTAS TABLAS Y SUS APIs
+
+### 1. `ventas` (0 registros) ❌
+**APIs a eliminar**:
+- `app3/api/registrar_venta.php`
+- Lógica en `app3/api/cleanup_fake_data.php`
+- Lógica en `caja3/api/cleanup_fake_data.php`
+
+**Razón**: Obsoleta, reemplazada por `ventas_v2`
+
+---
+
+### 2. `customers` (0 registros) ❌
 **APIs**: Ninguna
-**Acción**: Eliminar tabla directamente
+**Razón**: Sin uso
 
 ---
 
-### 3. `orders` (0 registros)
-**Estado**: ⚠️ REVISAR - Tiene algunas referencias mínimas
-**APIs que la usan**:
-- `app3/api/get_pending_orders.php` - SELECT FROM orders
-- `caja3/api/get_pending_orders.php` - SELECT FROM orders
-- `caja3/api/registrar_cumpleanos.php` - INSERT INTO orders
+### 3. `orders` (0 registros) ❌
+**APIs a eliminar**:
+- `app3/api/get_pending_orders.php`
+- `caja3/api/get_pending_orders.php`
+- Lógica en `caja3/api/registrar_cumpleanos.php`
 
-**Acción**: 
-- Verificar si `get_pending_orders.php` se usa (probablemente obsoleto, ahora se usa `tuu_orders`)
-- Eliminar o actualizar `registrar_cumpleanos.php` para usar `tuu_orders`
+**Razón**: Obsoleta, ahora se usa `tuu_orders` (979 registros)
 
 ---
 
-### 4. `order_items` y `order_extras` (0 registros)
-**Estado**: ✅ SEGURO ELIMINAR - Reemplazadas por `tuu_order_items`
+### 4. `order_items` (0 registros) ❌
 **APIs**: Ninguna referencia directa
-**Acción**: Eliminar ambas tablas
+**Razón**: Obsoleta, ahora se usa `tuu_order_items` (2,376 registros)
 
 ---
 
-### 5. `winners` (0 registros)
-**Estado**: ✅ SEGURO ELIMINAR - No hay referencias
+### 5. `order_extras` (0 registros) ❌
 **APIs**: Ninguna
-**Acción**: Eliminar tabla
+**Razón**: Sin uso
 
 ---
 
-### 6. `search_analytics` (0 registros)
-**Estado**: ✅ SEGURO ELIMINAR - No hay referencias
+### 6. `winners` (0 registros) ❌
 **APIs**: Ninguna
-**Acción**: Eliminar tabla
+**Razón**: Sin uso
 
 ---
 
-## ⚠️ TABLAS CON USO ACTIVO - NO ELIMINAR
+### 7. `search_analytics` (0 registros) ❌
+**APIs**: Ninguna
+**Razón**: Sin uso
 
-### 7. `user_notifications` (0 registros)
-**Estado**: ✅ MANTENER - Sistema activo de notificaciones
-**APIs activas**:
+---
+
+### 8. `user_notifications` (0 registros) ❌
+**APIs a eliminar**:
 - `app3/api/notifications/get_notifications.php`
 - `app3/api/notifications/mark_read.php`
 - `app3/api/notifications/mark_all_read.php`
 - `app3/api/notifications/send_notification.php`
-- `caja3/api/notifications/*` (mismo sistema)
+- `caja3/api/notifications/*` (todos)
+- Lógica en `app3/api/tracker/update_kanban_status.php`
 
-**Razón**: Sistema funcional, solo está vacía porque no hay notificaciones aún
+**Razón**: Sistema implementado pero NUNCA usado (0 registros)
 
 ---
 
-### 8. `user_coupons` (0 registros)
-**Estado**: ✅ MANTENER - Sistema de cupones activo
-**APIs activas**:
+### 9. `user_coupons` (0 registros) ❌
+**APIs a eliminar**:
 - `app3/api/coupons/get_user_coupons.php`
 - `app3/api/coupons/use_coupon.php`
 - `app3/api/coupons/create_coupon.php`
 
-**Razón**: Sistema funcional de cupones/descuentos
+**Razón**: Sistema implementado pero NUNCA usado
 
 ---
 
-### 9. `user_orders` y `user_order_items` (0 registros)
-**Estado**: ⚠️ REVISAR - Usado en analytics
-**APIs activas**:
-- `app3/api/app/get_analytics.php`
-- `app3/api/users/get_user_detail.php`
-- `app3/api/get_analytics.php`
+### 10. `user_orders` (0 registros) ❌
+### 11. `user_order_items` (0 registros) ❌
+**APIs a eliminar**:
+- `app3/api/app/get_analytics.php` (lógica específica)
+- `app3/api/users/get_user_detail.php` (lógica específica)
+- `app3/api/get_analytics.php` (lógica específica)
+- `app3/api/get_user_detail.php` (lógica específica)
 - `caja3/api/*` (mismas APIs)
 
-**Razón**: Parece ser un sistema alternativo de órdenes. Verificar si se usa o si todo está en `tuu_orders`
+**Razón**: Sistema duplicado, se usa `tuu_orders` + `tuu_order_items`
 
 ---
 
-### 10. `cash_register_sessions` (0 registros)
-**Estado**: ✅ MANTENER - Sistema activo de caja
-**APIs activas**:
+### 12. `cash_register_sessions` (0 registros) ❌
+**APIs a eliminar**:
 - `caja3/api/get_cash_register_status.php`
 - `caja3/api/open_cash_register.php`
 - `caja3/api/close_cash_register.php`
 - `caja3/api/setup_cash_register_table.php`
 
-**Razón**: Sistema funcional de apertura/cierre de caja
+**Razón**: Sistema implementado pero NUNCA usado. Probablemente se usa otro sistema de caja.
 
 ---
 
-### 11. `app_visits` (0 registros)
-**Estado**: ✅ MANTENER - Sistema de tracking
-**APIs activas**:
-- `app3/api/cleanup_fake_data.php` - Limpieza y estadísticas
-- `caja3/api/cleanup_fake_data.php`
+### 13. `app_visits` (0 registros) ❌
+**APIs a eliminar**:
+- Lógica en `app3/api/cleanup_fake_data.php`
+- Lógica en `caja3/api/cleanup_fake_data.php`
 
-**Razón**: Sistema de analytics de visitas
-
----
-
-## 🔄 TABLAS DE CONCURSO - DECISIÓN PENDIENTE
-
-### 12. `concurso_matches`, `concurso_pagos`, `concurso_participants` (0 registros)
-**Estado**: ⚠️ DECISIÓN DE NEGOCIO
-**APIs activas**: Múltiples en `app3/api/`:
-- `track_concurso_visit.php`
-- `concurso_registro.php`
-- `get_concurso_live.php`
-- `update_concurso_state.php`
-- `tuu_callback_concurso.php`
-- Y más...
-
-**Razón**: Sistema completo de concursos. Decidir si:
-- ✅ Mantener si planean hacer concursos futuros
-- ❌ Eliminar si fue evento único y no se repetirá
+**Razón**: No se usa. Se usa `site_visits` (11,709 registros) en su lugar
 
 ---
 
-## 💳 TABLAS TUU - MANTENER TODAS
+### 14. `concurso_matches` (0 registros) ❌
+### 15. `concurso_pagos` (0 registros) ❌
+### 16. `concurso_participants` (0 registros) ❌
+**APIs a eliminar** (todas en `app3/api/`):
+- `track_concurso_visit.php` ✅ (usa `concurso_tracking` que SÍ tiene 942 registros)
+- `concurso_registro.php` ✅ (usa `concurso_registros` que SÍ tiene 8 registros)
+- `get_concurso_live.php` ✅ (usa `concurso_state` que SÍ tiene 1 registro)
+- `update_concurso_state.php` ✅
+- `tuu_callback_concurso.php` ✅
+- `clear_concurso_state.php` ✅
+- `tuu_direct_concurso.php` ✅
+- `get_concurso_stats.php` ✅
+- `delete_concursante.php` ✅
+- `get_participantes_concurso.php` ✅
+- `process_concurso_payment.php` ✅
+- `concurso_pago_callback.php` ✅
+- `add_concursante_manual.php` ✅
+- `update_concursante.php` ✅
+- `get_concurso_live_with_participants.php` ✅
 
-### 13. Tablas TUU (0 registros en algunas)
-**Tablas**:
-- `tuu_pagos_online` ✅ MANTENER
-- `tuu_payments` ✅ MANTENER
-- `tuu_remote_payments` ✅ MANTENER
-- `tuu_reports` ✅ MANTENER
-- `tuu_sync_control` ✅ MANTENER
+**Razón**: Estas 3 tablas específicas NO se usan. El sistema de concurso usa otras tablas:
+- ✅ `concurso_tracking` (942 registros)
+- ✅ `concurso_registros` (8 registros)
+- ✅ `concurso_state` (1 registro)
 
-**Estado**: ✅ MANTENER TODAS - Sistema de pagos activo
-**APIs**: 30+ endpoints en `app3/api/tuu/` y `app3/api/tuu-pagos-online/`
-
-**Razón**: Sistema crítico de pagos en producción
+**ACCIÓN**: Revisar APIs para confirmar que NO usan estas 3 tablas vacías
 
 ---
 
-## 📋 RESUMEN DE ACCIONES
+### 17. `tuu_pagos_online` (0 registros) ❌
+**APIs a eliminar**:
+- `app3/api/tuu/capture_payment_success.php`
+- `app3/api/tuu/save_transaction.php`
+- `app3/api/tuu/callback.php` (lógica específica)
+- `app3/api/setup_transactions_table.php`
+- `app3/api/tuu-pagos-online/setup_table.php`
+- `app3/api/tuu-pagos-online/update_payment_status.php`
+- `app3/api/tuu-pagos-online/save_transaction.php`
+- `app3/api/tuu-pagos-online/get_user_payments.php`
 
-### ❌ ELIMINAR INMEDIATAMENTE:
-1. `ventas` - Obsoleta, usar `ventas_v2`
-2. `customers` - Sin uso
-3. `order_items` - Obsoleta, usar `tuu_order_items`
-4. `order_extras` - Obsoleta
-5. `winners` - Sin uso
-6. `search_analytics` - Sin uso
+**Razón**: Sistema implementado pero NO usado. Se usa `tuu_orders` (979 registros)
 
-### ⚠️ REVISAR Y DECIDIR:
-1. `orders` - Verificar si `get_pending_orders.php` se usa
-2. `user_orders` + `user_order_items` - Verificar si es sistema alternativo o duplicado
-3. `concurso_*` (3 tablas) - Decisión de negocio
+---
 
-### ✅ MANTENER (Sistemas activos):
-1. `user_notifications` - Sistema de notificaciones
-2. `user_coupons` - Sistema de cupones
-3. `cash_register_sessions` - Sistema de caja
-4. `app_visits` - Analytics
-5. `tuu_*` (5 tablas) - Sistema de pagos
+### 18. `tuu_payments` (0 registros) ❌
+**APIs a eliminar**:
+- `app3/api/get_pos_status.php` (lógica específica)
+
+**Razón**: No se usa. Se usa `tuu_pos_transactions` (7 registros)
+
+---
+
+### 19. `tuu_remote_payments` (0 registros) ❌
+**APIs a eliminar**:
+- `app3/api/tuu/check_payment_status.php`
+- `app3/api/tuu/setup_remote_payments_table.php`
+- `app3/api/tuu/create_remote_payment.php`
+
+**Razón**: Sistema implementado pero NUNCA usado
+
+---
+
+### 20. `tuu_reports` (0 registros) ❌
+**APIs a eliminar**:
+- `app3/api/tuu/check_payment_local.php`
+- `app3/api/tuu/sync_reports.php`
+
+**Razón**: Sistema de sincronización no usado
+
+---
+
+### 21. `tuu_sync_control` (0 registros) ❌
+**APIs a eliminar**:
+- `app3/api/tuu/cron_status.php`
+- `app3/api/tuu/fix_sync_production.php`
+- `app3/api/tuu/setup_cron.php`
+- `app3/api/tuu/daily_sync.php`
+
+**Razón**: Sistema de cron/sync no usado
+
+---
+
+### 22. `rl6_credit_audit` (0 registros) ❌
+**APIs a eliminar**:
+- `app3/api/rl6/refund_credit.php` (lógica específica)
+
+**Razón**: Auditoría no usada. Se usa `rl6_credit_transactions` (40 registros)
+
+---
+
+## 📋 RESUMEN EJECUTIVO
+
+### 🔴 ELIMINAR: 22 tablas vacías
+1. `ventas`
+2. `customers`
+3. `orders`
+4. `order_items`
+5. `order_extras`
+6. `winners`
+7. `search_analytics`
+8. `user_notifications`
+9. `user_coupons`
+10. `user_orders`
+11. `user_order_items`
+12. `cash_register_sessions`
+13. `app_visits`
+14. `concurso_matches`
+15. `concurso_pagos`
+16. `concurso_participants`
+17. `tuu_pagos_online`
+18. `tuu_payments`
+19. `tuu_remote_payments`
+20. `tuu_reports`
+21. `tuu_sync_control`
+22. `rl6_credit_audit`
+
+### 📁 APIs a eliminar: ~40 archivos PHP
 
 ---
 
