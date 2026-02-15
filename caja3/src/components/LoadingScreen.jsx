@@ -10,74 +10,9 @@ const LoadingScreen = ({ onComplete }) => {
       setCurrentText('Iniciando aplicación...');
       setProgress(5);
 
-      // 2. Cargar imágenes dinámicamente desde la base de datos
-      setCurrentText('Cargando recursos...');
-      
-      const imageSet = new Set();
-      try {
-        const response = await fetch('/api/get_menu_products.php?v=' + Date.now());
-        const data = await response.json();
-        
-        if (data.success && data.menuData) {
-          // Extraer todas las URLs de imágenes del menú (sin duplicados)
-          Object.values(data.menuData).forEach(category => {
-            if (Array.isArray(category)) {
-              category.forEach(product => {
-                if (product.image) imageSet.add(product.image);
-              });
-            } else {
-              Object.values(category).forEach(subcategory => {
-                if (Array.isArray(subcategory)) {
-                  subcategory.forEach(product => {
-                    if (product.image) imageSet.add(product.image);
-                  });
-                }
-              });
-            }
-          });
-        }
-      } catch (error) {
-        console.error('Error loading menu images:', error);
-      }
-      
-      const allImages = imageSet.size > 0 
-        ? Array.from(imageSet) 
-        : ['https://laruta11-images.s3.amazonaws.com/menu/logo.png'];
-      
-      let loadedCount = 0;
-      const totalImages = allImages.length;
-      
-      const imagePromises = allImages.map((src, index) => {
-        return new Promise((resolve) => {
-          const img = new Image();
-          img.onload = async () => {
-            try {
-              // Garantizar que está 100% decodificada para visualización
-              await img.decode();
-              loadedCount++;
-              const imageProgress = Math.floor((loadedCount / totalImages) * 80);
-              setProgress(5 + imageProgress);
-              setCurrentText(`Cargando recursos... ${loadedCount}/${totalImages}`);
-              resolve();
-            } catch {
-              // Si decode() falla, usar onload normal
-              loadedCount++;
-              const imageProgress = Math.floor((loadedCount / totalImages) * 80);
-              setProgress(5 + imageProgress);
-              resolve();
-            }
-          };
-          img.onerror = () => {
-            loadedCount++;
-            const imageProgress = Math.floor((loadedCount / totalImages) * 80);
-            setProgress(5 + imageProgress);
-            resolve();
-          };
-          img.src = src;
-        });
-      });
-      
-      await Promise.all(imagePromises);
+      // 2. Simular carga (sin precargar imágenes)
+      setCurrentText('Preparando aplicación...');
+      await new Promise(resolve => setTimeout(resolve, 800));
       setProgress(85);
 
       // 3. Verificar conectividad
