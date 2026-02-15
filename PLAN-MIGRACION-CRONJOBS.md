@@ -1,7 +1,7 @@
 # 📅 PLAN: Migración de Cronjobs - Hostinger → VPS
 
 ## 🎯 Objetivo
-Migrar los 3 cronjobs de Hostinger a VPS antes de cancelar el hosting.
+Migrar los 2 cronjobs de Hostinger a VPS antes de cancelar el hosting.
 
 ---
 
@@ -13,13 +13,7 @@ Migrar los 3 cronjobs de Hostinger a VPS antes de cancelar el hosting.
 - **Nueva URL**: `https://app.laruta11.cl/api/cron/refresh_gmail_token.php`
 - **Propósito**: Renovar token de Gmail OAuth para envío de emails
 
-### 2. TUU Daily Sync
-- **Frecuencia**: Cada 30 minutos (`0,30 * * * *`)
-- **Comando**: `/usr/bin/php /home/u958525313/domains/laruta11.cl/public_html/app/api/tuu/daily_sync_with_output.php`
-- **Nueva URL**: `https://app.laruta11.cl/api/tuu/daily_sync_with_output.php`
-- **Propósito**: Sincronizar transacciones TUU con base de datos
-
-### 3. Daily Checklists
+### 2. Daily Checklists
 - **Frecuencia**: Diario a las 8 AM (`0 8 * * *`)
 - **Comando**: `/usr/bin/php /home/u958525313/domains/laruta11.cl/public_html/caja/api/cron/create_daily_checklists.php`
 - **Nueva URL**: `https://caja.laruta11.cl/api/cron/create_daily_checklists.php`
@@ -35,7 +29,7 @@ Migrar los 3 cronjobs de Hostinger a VPS antes de cancelar el hosting.
 **Pasos**:
 1. Ir a https://cron-job.org
 2. Crear cuenta gratuita
-3. Agregar 3 cronjobs:
+3. Agregar 2 cronjobs:
 
 #### Job 1: Gmail Token Refresh
 ```
@@ -46,16 +40,7 @@ Método: GET
 Timeout: 30 segundos
 ```
 
-#### Job 2: TUU Sync
-```
-Nombre: TUU Daily Sync - La Ruta 11
-URL: https://app.laruta11.cl/api/tuu/daily_sync_with_output.php
-Schedule: */30 * * * * (cada 30 minutos)
-Método: GET
-Timeout: 60 segundos
-```
-
-#### Job 3: Daily Checklists
+#### Job 2: Daily Checklists
 ```
 Nombre: Daily Checklists - La Ruta 11
 URL: https://caja.laruta11.cl/api/cron/create_daily_checklists.php
@@ -83,9 +68,6 @@ crontab -e
 ```bash
 # Gmail Token Refresh (cada 30 min)
 0,30 * * * * curl -s https://app.laruta11.cl/api/cron/refresh_gmail_token.php > /dev/null 2>&1
-
-# TUU Sync (cada 30 min)
-0,30 * * * * curl -s https://app.laruta11.cl/api/tuu/daily_sync_with_output.php > /dev/null 2>&1
 
 # Daily Checklists (8 AM diario)
 0 8 * * * curl -s https://caja.laruta11.cl/api/cron/create_daily_checklists.php > /dev/null 2>&1
@@ -117,12 +99,6 @@ jobs:
       - name: Refresh Gmail Token
         run: curl -s https://app.laruta11.cl/api/cron/refresh_gmail_token.php
 
-  tuu-sync:
-    runs-on: ubuntu-latest
-    steps:
-      - name: TUU Daily Sync
-        run: curl -s https://app.laruta11.cl/api/tuu/daily_sync_with_output.php
-
   daily-checklists:
     runs-on: ubuntu-latest
     if: github.event.schedule == '0 8 * * *'
@@ -142,7 +118,6 @@ jobs:
 - [ ] Verificar que las URLs funcionan:
   ```bash
   curl https://app.laruta11.cl/api/cron/refresh_gmail_token.php
-  curl https://app.laruta11.cl/api/tuu/daily_sync_with_output.php
   curl https://caja.laruta11.cl/api/cron/create_daily_checklists.php
   ```
 - [ ] Documentar horarios actuales de ejecución
@@ -157,7 +132,6 @@ jobs:
 ### Post-Migración
 - [ ] Monitorear ejecuciones durante 3 días
 - [ ] Verificar que Gmail tokens se renuevan
-- [ ] Confirmar que TUU sync funciona
 - [ ] Validar que checklists se crean a las 8 AM
 - [ ] Desactivar cronjobs en Hostinger
 - [ ] Cancelar hosting Hostinger
@@ -170,12 +144,6 @@ jobs:
 ```bash
 # Debe ejecutarse cada 30 min
 curl https://app.laruta11.cl/api/cron/refresh_gmail_token.php
-```
-
-### Verificar TUU Sync
-```bash
-# Debe ejecutarse cada 30 min
-curl https://app.laruta11.cl/api/tuu/daily_sync_with_output.php
 ```
 
 ### Verificar Checklists
@@ -192,11 +160,6 @@ curl https://caja.laruta11.cl/api/cron/create_daily_checklists.php
 - Verificar que el cronjob se ejecuta cada 30 min
 - Revisar logs en `/api/cron/refresh_gmail_token.php`
 - Renovar manualmente el token OAuth
-
-### Si TUU no sincroniza
-- Verificar credenciales TUU en variables de entorno
-- Revisar logs de la API
-- Ejecutar manualmente el sync
 
 ### Si no se crean checklists
 - Verificar horario (debe ser 8 AM Chile)
@@ -232,7 +195,7 @@ curl https://caja.laruta11.cl/api/cron/create_daily_checklists.php
 - ✅ Interfaz web fácil
 - ✅ Notificaciones automáticas si falla
 - ✅ Logs de ejecución
-- ✅ Gratis para 3 jobs
+- ✅ Gratis para 2 jobs
 - ✅ Más confiable que GitHub Actions
 
 ---

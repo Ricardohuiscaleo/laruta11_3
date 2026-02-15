@@ -138,9 +138,13 @@ if (!$selfie_url || !$carnet_frontal_url || !$carnet_trasero_url) {
 
 // Actualizar usuario en BD
 try {
+    // Generar google_id único si no existe
+    $google_id = 'rl6_' . $user_id . '_' . time();
+    
     $stmt = $conn->prepare("
         UPDATE usuarios SET 
             es_militar_rl6 = 1,
+            google_id = IF(google_id IS NULL OR google_id = '', ?, google_id),
             rut = ?,
             grado_militar = ?,
             unidad_trabajo = ?,
@@ -156,7 +160,8 @@ try {
     ");
     
     $stmt->bind_param(
-        "sssssssi",
+        "ssssssssi",
+        $google_id,
         $rut,
         $grado_militar,
         $unidad_trabajo,

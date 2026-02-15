@@ -1,20 +1,39 @@
 <?php
 session_start();
-// Cargar config desde raíz
-$config = require_once __DIR__ . '/../../config.php';
+
+// Buscar config en múltiples ubicaciones
+$config_paths = [
+    __DIR__ . '/../../config.php',
+    __DIR__ . '/../../../config.php',
+    __DIR__ . '/../../../../config.php'
+];
+
+$config = null;
+foreach ($config_paths as $path) {
+    if (file_exists($path)) {
+        $config = require_once $path;
+        break;
+    }
+}
+
+if (!$config) {
+    echo json_encode(['success' => false, 'error' => 'Configuración no encontrada']);
+    exit();
+}
+
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['user'])) {
-    echo json_encode(['error' => 'No autenticado']);
+    echo json_encode(['success' => false, 'error' => 'No autenticado']);
     exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['error' => 'Método no permitido']);
+    echo json_encode(['success' => false, 'error' => 'Método no permitido']);
     exit();
 }
 
-// Conectar a BD desde config central
+// Conectar a BD laruta11
 $user_conn = mysqli_connect(
     $config['ruta11_db_host'],
     $config['ruta11_db_user'],
@@ -23,7 +42,7 @@ $user_conn = mysqli_connect(
 );
 
 if (!$user_conn) {
-    echo json_encode(['error' => 'Error de conexión a BD']);
+    echo json_encode(['success' => false, 'error' => 'Error de conexión a BD']);
     exit();
 }
 
@@ -52,9 +71,9 @@ if (mysqli_query($user_conn, $query)) {
     $_SESSION['user']['genero'] = $genero;
     $_SESSION['user']['fecha_nacimiento'] = $fecha_nacimiento;
     
-    echo json_encode(['success' => true]);
+    echo json_encode(['success' => true, 'message' => 'Perfil actualizado correctamente']);
 } else {
-    echo json_encode(['error' => 'Error actualizando perfil']);
+    echo json_encode(['success' => false, 'error' => 'Error actualizando perfil: ' . mysqli_error($user_conn)]);
 }
 
 mysqli_close($user_conn);

@@ -35,9 +35,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $comuna = mysqli_real_escape_string($conn, $_POST['comuna']);
     $region = mysqli_real_escape_string($conn, $_POST['region']);
     
+    // Generar google_id único si no existe
+    $google_id = 'rl6_' . $user_id . '_' . time();
+    
     // Actualizar usuario
     $sql = "UPDATE usuarios SET 
             es_militar_rl6 = 1,
+            google_id = IF(google_id IS NULL OR google_id = '', '$google_id', google_id),
             rut = '$rut',
             grado_militar = '$grado_militar',
             credito_aprobado = 0
