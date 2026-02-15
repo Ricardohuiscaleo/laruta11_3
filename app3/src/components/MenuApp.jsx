@@ -1987,7 +1987,7 @@ export default function App() {
             </div>
 
             {/* Fila 2: Menú de categorías scrolleable - Sin padding */}
-            <div className={`flex items-center gap-3 mt-3 transition-all duration-300 overflow-hidden ${isCategoriesVisible ? 'max-h-20' : 'max-h-0'}`}>
+            <div className={`flex items-center gap-3 mt-2 transition-all duration-300 overflow-hidden ${isCategoriesVisible ? 'max-h-20' : 'max-h-0'}`}>
               {/* Menú de categorías scrolleable */}
               <div 
                 ref={categoriesScrollRef}
