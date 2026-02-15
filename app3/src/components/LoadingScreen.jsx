@@ -13,27 +13,23 @@ const LoadingScreen = ({ onComplete }) => {
       // 2. Cargar imágenes dinámicamente desde la base de datos
       setCurrentText('Cargando recursos...');
       
-      let allImages = [];
+      const imageSet = new Set();
       try {
         const response = await fetch('/api/get_menu_products.php?v=' + Date.now());
         const data = await response.json();
         
         if (data.success && data.menuData) {
-          // Extraer todas las URLs de imágenes del menú
+          // Extraer todas las URLs de imágenes del menú (sin duplicados)
           Object.values(data.menuData).forEach(category => {
             if (Array.isArray(category)) {
               category.forEach(product => {
-                if (product.image && !allImages.includes(product.image)) {
-                  allImages.push(product.image);
-                }
+                if (product.image) imageSet.add(product.image);
               });
             } else {
               Object.values(category).forEach(subcategory => {
                 if (Array.isArray(subcategory)) {
                   subcategory.forEach(product => {
-                    if (product.image && !allImages.includes(product.image)) {
-                      allImages.push(product.image);
-                    }
+                    if (product.image) imageSet.add(product.image);
                   });
                 }
               });
@@ -44,10 +40,9 @@ const LoadingScreen = ({ onComplete }) => {
         console.error('Error loading menu images:', error);
       }
       
-      // Si no se pudieron cargar imágenes, usar logo como fallback
-      if (allImages.length === 0) {
-        allImages = ['https://laruta11-images.s3.amazonaws.com/menu/logo.png'];
-      }
+      const allImages = imageSet.size > 0 
+        ? Array.from(imageSet) 
+        : ['https://laruta11-images.s3.amazonaws.com/menu/logo.png'];
       
       let loadedCount = 0;
       const totalImages = allImages.length;
