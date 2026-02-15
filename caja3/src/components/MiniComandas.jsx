@@ -457,6 +457,11 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                       } else if (normalizedAddress.toLowerCase().includes('santa maría') || normalizedAddress.toLowerCase().includes('santa maria')) {
                         normalizedAddress = 'Av. Santa María 3000, Arica, Chile';
                       }
+                    } else {
+                      // Para direcciones normales, agregar ", Arica, Chile" si no lo tiene
+                      if (!normalizedAddress.toLowerCase().includes('arica') && !normalizedAddress.toLowerCase().includes('chile')) {
+                        normalizedAddress = `${normalizedAddress}, Arica, Chile`;
+                      }
                     }
                     
                     const address = encodeURIComponent(normalizedAddress);
