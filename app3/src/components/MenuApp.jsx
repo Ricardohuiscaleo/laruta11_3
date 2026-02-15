@@ -2117,7 +2117,7 @@ export default function App() {
       
       {/* Banner de deslizar - Solo móvil */}
       {isCategoriesVisible && (
-        <div className={`sm:hidden fixed top-[115px] right-2 z-30 transition-all duration-300 ${isCategoriesVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'}`}>
+        <div className={`sm:hidden fixed top-[115px] right-2 z-40 transition-all duration-300 ${isCategoriesVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'}`}>
           <svg 
             width="20" 
             height="20" 
