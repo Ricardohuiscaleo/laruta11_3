@@ -1896,7 +1896,7 @@ export default function App() {
             {/* Fila única: Logo | Status | Menú | Búsqueda | Notificaciones | Carrito */}
             <div className="flex items-center justify-between gap-2">
               {/* Logo */}
-              <img src="https://laruta11-images.s3.amazonaws.com/menu/logo.png" alt="La Ruta 11" className="drop-shadow-sm flex-shrink-0" style={{width: 'clamp(32px, 8vw, 36px)', height: 'clamp(32px, 8vw, 36px)'}} />
+              <img src="https://laruta11-images.s3.amazonaws.com/menu/logo.png" alt="La Ruta 11" className="drop-shadow-sm flex-shrink-0" style={{width: '24px', height: '24px'}} />
               
               {/* Status */}
               {(() => {
@@ -3651,11 +3651,8 @@ export default function App() {
             </button>
             
             {/* Recomendar */}
-            <button onClick={() => { vibrate(30); setIsReviewModalOpen(true); }} className="flex flex-col items-center gap-1 py-2 px-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-all active:scale-95 relative">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-yellow-300 to-yellow-500 rounded-full blur-sm opacity-75"></div>
-                <Star size={20} className="relative z-10 text-yellow-500" fill="currentColor" />
-              </div>
+            <button onClick={() => { vibrate(30); setIsReviewModalOpen(true); }} className="flex flex-col items-center gap-1 py-2 px-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-all active:scale-95">
+              <Star size={20} className="text-yellow-500" fill="currentColor" />
               <span className="text-[9px] font-bold">Recomendar</span>
             </button>
             
