@@ -619,7 +619,7 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
   });
 
   return (
-    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl overflow-hidden animate-fade-in transition-shadow duration-300 border border-gray-100">
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl overflow-hidden animate-fade-in transition-shadow duration-300 border border-gray-200">
       <div className="flex p-2">
         {/* Imagen - 45% izquierda con aspecto 4:5 */}
         <div 

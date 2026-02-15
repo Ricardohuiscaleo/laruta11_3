@@ -21,7 +21,7 @@ try {
             SUM(CASE WHEN status = 'Failed' THEN 1 ELSE 0 END) as failed,
             SUM(CASE WHEN status = 'Completed' THEN amount ELSE 0 END) as total_amount,
             MAX(created_at) as last_transaction
-        FROM tuu_payments 
+        FROM tuu_pos_transactions 
         WHERE created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
         GROUP BY pos_device, cart_type
         ORDER BY pos_device, cart_type

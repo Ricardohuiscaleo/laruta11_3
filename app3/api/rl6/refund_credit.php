@@ -65,20 +65,6 @@ try {
     $stmt->bind_param("isds", $user_id, $order_number, $monto, $reason);
     $stmt->execute();
 
-    // 4. Auditoría
-    $stmt = $conn->prepare("
-        INSERT INTO rl6_credit_audit 
-        (user_id, admin_id, action, details) 
-        VALUES (?, ?, 'refund', ?)
-    ");
-    $details = json_encode([
-        'order_number' => $order_number,
-        'amount' => $monto,
-        'reason' => $reason
-    ]);
-    $stmt->bind_param("iis", $user_id, $admin_id, $details);
-    $stmt->execute();
-
     // 5. Marcar pedido como reembolsado
     $stmt = $conn->prepare("
         UPDATE tuu_orders 

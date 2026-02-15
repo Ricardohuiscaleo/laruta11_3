@@ -8,7 +8,7 @@ header('Access-Control-Allow-Headers: Content-Type');
 $config_paths = [
     __DIR__ . '/../config.php',
     __DIR__ . '/../../config.php',
-    __DIR__ . '/../../../config.php',
+    __DIR__ . '/../config.php',
     __DIR__ . '/../../../../config.php'
 ];
 
@@ -47,13 +47,7 @@ try {
         is_active TINYINT DEFAULT 1
     )");
     
-    $pdo->exec("CREATE TABLE IF NOT EXISTS app_visits (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        ip_address VARCHAR(45),
-        user_agent TEXT,
-        page_url VARCHAR(500),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )");
+
     
     $pdo->exec("CREATE TABLE IF NOT EXISTS productos (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -63,13 +57,7 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )");
     
-    $pdo->exec("CREATE TABLE IF NOT EXISTS ventas (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        total_amount DECIMAL(10,2),
-        customer_name VARCHAR(255),
-        customer_email VARCHAR(255),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )");
+
     
     $pdo->exec("CREATE TABLE IF NOT EXISTS site_visits (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -125,17 +113,7 @@ try {
     $fake_users->execute();
     $cleaned['fake_users'] = $fake_users->rowCount();
     
-    // 2. Limpiar visitas con IPs locales o de prueba
-    $fake_visits = $pdo->prepare("DELETE FROM app_visits WHERE 
-        ip_address LIKE '127.0.0.1' OR
-        ip_address LIKE '192.168.%' OR
-        ip_address LIKE '10.0.%' OR
-        ip_address LIKE '172.16.%' OR
-        user_agent LIKE '%test%' OR
-        page_url LIKE '%test%'
-    ");
-    $fake_visits->execute();
-    $cleaned['fake_visits'] = $fake_visits->rowCount();
+
     
     // 3. Limpiar productos de prueba
     $fake_products = $pdo->prepare("DELETE FROM productos WHERE 
@@ -150,21 +128,9 @@ try {
     $fake_products->execute();
     $cleaned['fake_products'] = $fake_products->rowCount();
     
-    // 4. Limpiar ventas de prueba (montos sospechosos)
-    $fake_sales = $pdo->prepare("DELETE FROM ventas WHERE 
-        total_amount = 1 OR
-        total_amount = 100 OR
-        total_amount = 1000 OR
-        customer_name LIKE '%test%' OR
-        customer_email LIKE '%test%'
-    ");
-    $fake_sales->execute();
-    $cleaned['fake_sales'] = $fake_sales->rowCount();
+
     
-    // 5. Limpiar sesiones antiguas (más de 30 días)
-    $old_sessions = $pdo->prepare("DELETE FROM app_visits WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)");
-    $old_sessions->execute();
-    $cleaned['old_sessions'] = $old_sessions->rowCount();
+
     
     // 6. Limpiar datos de tracking de robots (solo si las tablas existen)
     $tables_to_clean = [
@@ -208,9 +174,9 @@ try {
     $stats = [
         'total_users' => $pdo->query("SELECT COUNT(*) FROM usuarios")->fetchColumn(),
         'total_products' => $pdo->query("SELECT COUNT(*) FROM productos")->fetchColumn(),
-        'total_visits_today' => $pdo->query("SELECT COUNT(*) FROM app_visits WHERE DATE(created_at) = CURDATE()")->fetchColumn(),
-        'total_visits_week' => $pdo->query("SELECT COUNT(*) FROM app_visits WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)")->fetchColumn(),
-        'total_visits_month' => $pdo->query("SELECT COUNT(*) FROM app_visits WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")->fetchColumn()
+        'total_visits_today' => $pdo->query("SELECT COUNT(*) FROM site_visits WHERE DATE(created_at) = CURDATE()")->fetchColumn(),
+        'total_visits_week' => $pdo->query("SELECT COUNT(*) FROM site_visits WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)")->fetchColumn(),
+        'total_visits_month' => $pdo->query("SELECT COUNT(*) FROM site_visits WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")->fetchColumn()
     ];
     
     echo json_encode([

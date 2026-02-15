@@ -91,16 +91,10 @@ try {
         // Enviar email primero
         $email_result = sendStatusNotification($user_id, $user['email'], $user['nombre'], $new_status, $conn);
         
-        // Registrar notificación con datos del email
-        $history_query = "INSERT INTO user_notifications (user_id, tipo, titulo, mensaje, email_enviado, email_destinatario, email_asunto, email_error, fecha_envio_email) VALUES (?, 'sistema', ?, ?, ?, ?, ?, ?, NOW())";
+        // Registrar notificación
+        $history_query = "INSERT INTO order_notifications (user_id, tipo, titulo, mensaje) VALUES (?, 'sistema', ?, ?)";
         $stmt = mysqli_prepare($conn, $history_query);
-        
-        $email_enviado = $email_result['success'] ? 1 : 0;
-        $email_destinatario = $user['email'];
-        $email_asunto = $email_result['subject'] ?? null;
-        $email_error = $email_result['success'] ? null : ($email_result['error'] ?? 'Error desconocido');
-        
-        mysqli_stmt_bind_param($stmt, "ississs", $user_id, $titulo, $mensaje, $email_enviado, $email_destinatario, $email_asunto, $email_error);
+        mysqli_stmt_bind_param($stmt, "iss", $user_id, $titulo, $mensaje);
         mysqli_stmt_execute($stmt);
         $notification_id = mysqli_insert_id($conn);
     }
