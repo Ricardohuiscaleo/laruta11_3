@@ -1987,25 +1987,25 @@ export default function App() {
             </div>
 
             {/* Fila 2: Menú de categorías scrolleable - Sin padding */}
-            <div className={`flex items-center gap-3 mt-2 transition-all duration-300 overflow-hidden ${isCategoriesVisible ? 'max-h-20' : 'max-h-0'}`}>
+            <div className={`mx-2 mt-2 transition-all duration-300 overflow-hidden ${isCategoriesVisible ? 'max-h-20' : 'max-h-0'}`}>
               {/* Menú de categorías scrolleable */}
               <div 
                 ref={categoriesScrollRef}
-                className="flex-1 overflow-x-auto scrollbar-visible"
+                className="overflow-x-auto scrollbar-visible bg-gray-50 rounded-lg p-2 border border-gray-200"
                 onScroll={(e) => {
                   const { scrollLeft, scrollWidth, clientWidth } = e.target;
                   setIsScrolledToEnd(scrollLeft + clientWidth >= scrollWidth - 5);
                 }}
               >
-                <div className="flex gap-1 pb-1">
+                <div className="flex gap-2">
                   {mainCategories.map(cat => (
                     <button
                       key={cat}
                       onClick={() => { vibrate(30); setActiveCategory(cat); }}
-                      className={`flex flex-col items-center justify-center px-3 py-2 transition-all duration-200 text-xs font-bold min-h-[60px] ${
+                      className={`flex flex-col items-center justify-center px-3 py-2 transition-all duration-200 text-xs font-bold min-h-[60px] min-w-[80px] rounded-lg ${
                         activeCategory === cat
-                          ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white'
-                          : 'text-gray-700 hover:text-orange-500 hover:bg-orange-50'
+                          ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-md'
+                          : 'text-gray-700 hover:text-orange-500 hover:bg-white bg-white border border-gray-200'
                       }`}
                     >
                       <div 
