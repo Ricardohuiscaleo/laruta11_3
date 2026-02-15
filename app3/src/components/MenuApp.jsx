@@ -75,7 +75,7 @@ const categoryColors = {
   papas: '#dc2626',
   pizzas: '#dc2626',
   bebidas: '#dc2626',
-  Combos: '#dc2626'
+  Combos: '#f97316'
 };
 
 
@@ -3647,7 +3647,7 @@ export default function App() {
             
             {/* Recomendar */}
             <button onClick={() => { vibrate(30); setIsReviewModalOpen(true); }} className="flex flex-col items-center gap-1 py-2 px-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-all active:scale-95">
-              <Star size={20} className="text-yellow-500" fill="currentColor" />
+              <span className="text-xl">⭐️</span>
               <span className="text-[9px] font-bold">Recomendar</span>
             </button>
             
