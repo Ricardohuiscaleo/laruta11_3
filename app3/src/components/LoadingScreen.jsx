@@ -10,34 +10,44 @@ const LoadingScreen = ({ onComplete }) => {
       setCurrentText('Iniciando aplicación...');
       setProgress(5);
 
-      // 2. Cargar todos los recursos del menú
+      // 2. Cargar imágenes dinámicamente desde la base de datos
       setCurrentText('Cargando recursos...');
-      const allImages = [
-        'https://laruta11-images.s3.amazonaws.com/menu/1755571382_test.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1755619377_Completo-italiano.png',
-        'https://laruta11-images.s3.amazonaws.com/menu/1755619379_completo-talquino.png',
-        'https://laruta11-images.s3.amazonaws.com/menu/1755619380_salchi-papas.png',
-        'https://laruta11-images.s3.amazonaws.com/menu/1755619383_papas-ruta11.png',
-        'https://laruta11-images.s3.amazonaws.com/menu/1755619385_toma-provoleta.png',
-        'https://laruta11-images.s3.amazonaws.com/menu/1755574768_tomahawk-full-ig-portrait-1080-1350-2.png',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125226_1-churrasco-vacuno.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125224_104-churrasco-queso--vacuno-.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125223_3-churrasco-pollo.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125222_105-churrasco-queso--pollo-.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125221_4-churrasco-vegetariano.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125220_107-completo-talquino-premium.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125219_12-papas-fritas.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125217_109-papas-provenzal.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125217_6-jugo-de-frutilla.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125216_7-jugo-de-mel-n-tuna.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125215_8-coca-cola.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125214_9-sprite.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125210_401-hamburguesa-cl-sica.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125209_402-hamburguesa-con-queso.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125208_403-hamburguesa-doble.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125207_404-hamburguesa-bbq.jpg',
-        'https://laruta11-images.s3.amazonaws.com/menu/1756125206_405-hamburguesa-ruta-11.jpg'
-      ];
+      
+      let allImages = [];
+      try {
+        const response = await fetch('/api/get_menu_products.php?v=' + Date.now());
+        const data = await response.json();
+        
+        if (data.success && data.menuData) {
+          // Extraer todas las URLs de imágenes del menú
+          Object.values(data.menuData).forEach(category => {
+            if (Array.isArray(category)) {
+              category.forEach(product => {
+                if (product.image && !allImages.includes(product.image)) {
+                  allImages.push(product.image);
+                }
+              });
+            } else {
+              Object.values(category).forEach(subcategory => {
+                if (Array.isArray(subcategory)) {
+                  subcategory.forEach(product => {
+                    if (product.image && !allImages.includes(product.image)) {
+                      allImages.push(product.image);
+                    }
+                  });
+                }
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error loading menu images:', error);
+      }
+      
+      // Si no se pudieron cargar imágenes, usar logo como fallback
+      if (allImages.length === 0) {
+        allImages = ['https://laruta11-images.s3.amazonaws.com/menu/logo.png'];
+      }
       
       let loadedCount = 0;
       const totalImages = allImages.length;
