@@ -8,7 +8,7 @@ import ReviewsModal from './ReviewsModal.jsx';
 import AddressAutocomplete from './AddressAutocomplete.jsx';
 import { isWithinBusinessHours, getBusinessStatus } from '../utils/businessHours.js';
 
-const CheckoutApp = () => {
+const CheckoutApp = ({ onClose }) => {
   const [cart, setCart] = useState([]);
   const [cartTotal, setCartTotal] = useState(0);
   const [customerInfo, setCustomerInfo] = useState({
@@ -520,7 +520,11 @@ const CheckoutApp = () => {
   };
 
   const goBack = () => {
-    window.location.href = '/';
+    if (onClose) {
+      onClose();
+    } else {
+      window.location.href = '/';
+    }
   };
 
   const proceedToPayment = () => {

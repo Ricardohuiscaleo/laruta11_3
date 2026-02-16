@@ -28,6 +28,7 @@ import ShareProductModal from './modals/ShareProductModal.jsx';
 import ComboModal from './modals/ComboModal.jsx';
 import SwipeableModal from './SwipeableModal.jsx';
 import AddressAutocomplete from './AddressAutocomplete.jsx';
+import CheckoutApp from './CheckoutApp.jsx';
 import useDoubleTap from '../hooks/useDoubleTap.js';
 import { vibrate, playNotificationSound, createConfetti } from '../utils/effects.js';
 import { validateCheckoutForm, getFormDisabledState } from '../utils/validation.js';
@@ -864,20 +865,20 @@ export default function App() {
     }
   }, [discountCode, cart]);
 
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
   const handleCheckout = () => {
     if (!user) {
       setIsLoginOpen(true);
       return;
     }
-    // Verificar si foodtruck está activo
     const isClosed = nearbyTrucks.length > 0 && nearbyTrucks[0].activo === false;
     if (isClosed) {
-      return; // No hacer nada si está cerrado
+      return;
     }
-    // Guardar carrito y redirigir a checkout
     localStorage.setItem('ruta11_cart', JSON.stringify(cart));
     localStorage.setItem('ruta11_cart_total', cartTotal.toString());
-    window.location.href = '/checkout';
+    setIsCheckoutOpen(true);
   };
 
   const handleCreateOrder = async () => {
@@ -3753,6 +3754,13 @@ export default function App() {
         
         html, body { background: #ffffff !important; }
       `}</style>
+
+      {/* Checkout Modal */}
+      {isCheckoutOpen && (
+        <div className="fixed inset-0 z-[100] bg-white">
+          <CheckoutApp onClose={() => setIsCheckoutOpen(false)} />
+        </div>
+      )}
     </div>
   );
 }
