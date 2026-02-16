@@ -878,6 +878,8 @@ export default function App() {
     }
     localStorage.setItem('ruta11_cart', JSON.stringify(cart));
     localStorage.setItem('ruta11_cart_total', cartTotal.toString());
+    setIsCartOpen(false);
+    setIsProfileOpen(false);
     setIsCheckoutOpen(true);
   };
 
