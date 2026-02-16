@@ -8,15 +8,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
+// Buscar config.php en múltiples niveles
 $config_paths = [
-    __DIR__ . '/config.php',
     __DIR__ . '/../config.php',
     __DIR__ . '/../../config.php',
     __DIR__ . '/../../../config.php',
-    __DIR__ . '/../../../../config.php',
-    __DIR__ . '/../../../../../config.php',
-    '/var/www/html/config.php',
-    '/var/www/html/app3/config.php'
+    __DIR__ . '/../../../../config.php'
 ];
 
 $config = null;
@@ -28,14 +25,7 @@ foreach ($config_paths as $path) {
 }
 
 if (!$config) {
-    echo json_encode([
-        'success' => false, 
-        'error' => 'Config no encontrado',
-        'debug' => [
-            'cwd' => __DIR__,
-            'paths_tried' => $config_paths
-        ]
-    ]);
+    echo json_encode(['success' => false, 'error' => 'Config file not found']);
     exit;
 }
 
@@ -54,9 +44,9 @@ if (empty($email) || empty($password)) {
 
 try {
     $pdo = new PDO(
-        "mysql:host={$config['ruta11_db_host']};dbname={$config['ruta11_db_name']};charset=utf8mb4",
-        $config['ruta11_db_user'],
-        $config['ruta11_db_pass'],
+        "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
+        $config['app_db_user'],
+        $config['app_db_pass'],
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
     
