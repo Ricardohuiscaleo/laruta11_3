@@ -27,6 +27,7 @@ import DynamicStatusMessage from './ui/DynamicStatusMessage.jsx';
 import ShareProductModal from './modals/ShareProductModal.jsx';
 import ComboModal from './modals/ComboModal.jsx';
 import SwipeableModal from './SwipeableModal.jsx';
+import AddressAutocomplete from './AddressAutocomplete.jsx';
 import useDoubleTap from '../hooks/useDoubleTap.js';
 import { vibrate, playNotificationSound, createConfetti } from '../utils/effects.js';
 import { validateCheckoutForm, getFormDisabledState } from '../utils/validation.js';
@@ -2745,33 +2746,10 @@ export default function App() {
                 {customerInfo.deliveryType === 'delivery' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Dirección de entrega *</label>
-                    <input
-                      type="text"
-                      id="deliveryAddress"
+                    <AddressAutocomplete
                       value={customerInfo.address || ''}
-                      onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
-                      onFocus={(e) => {
-                        // Inicializar Google Places Autocomplete
-                        if (window.google && window.google.maps && !e.target.dataset.autocompleteInit) {
-                          const autocomplete = new window.google.maps.places.Autocomplete(e.target, {
-                            componentRestrictions: { country: 'cl' },
-                            fields: ['formatted_address', 'geometry', 'address_components'],
-                            types: ['address']
-                          });
-                          
-                          autocomplete.addListener('place_changed', () => {
-                            const place = autocomplete.getPlace();
-                            if (place.formatted_address) {
-                              setCustomerInfo({...customerInfo, address: place.formatted_address});
-                            }
-                          });
-                          
-                          e.target.dataset.autocompleteInit = 'true';
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      onChange={(address) => setCustomerInfo({...customerInfo, address})}
                       placeholder="Escribe tu dirección..."
-                      required
                     />
                     {nearbyTrucks.length > 0 && (
                       <p className="text-xs text-blue-600 mt-1">
