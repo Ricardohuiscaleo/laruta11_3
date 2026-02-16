@@ -190,11 +190,15 @@ const ProfileModalModern = ({
       const saveFormData = new FormData();
       saveFormData.append('telefono', formData.telefono);
       saveFormData.append('instagram', formData.instagram);
-      saveFormData.append('fecha_nacimiento', formData.fechaNacimiento);
+      // Filtrar fecha_nacimiento inválida
+      const fechaNac = formData.fecha_nacimiento || formData.fechaNacimiento;
+      if (fechaNac && fechaNac !== '0000-00-00') {
+        saveFormData.append('fecha_nacimiento', fechaNac);
+      }
       saveFormData.append('genero', formData.genero);
       saveFormData.append('direccion', formData.direccion);
       
-      const response = await fetch('/api/auth/update_profile.php', {
+      const response = await fetch('/api/users/update_profile.php', {
         method: 'POST',
         body: saveFormData
       });
@@ -204,7 +208,7 @@ const ProfileModalModern = ({
         safeSetHasProfileChanges(false);
         setSaveButtonState('saved');
       } else {
-        alert('Error al guardar: ' + result.error);
+        alert('Error al guardar: ' + (result.error || 'Error del servidor: ' + JSON.stringify(result)));
         setSaveButtonState('idle');
       }
     } catch (error) {
