@@ -358,6 +358,19 @@ const ProfileModalModern = ({
 
               <Card className="p-4">
                 <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+                  <Calendar size={18} className="text-orange-500" />
+                  Fecha de Nacimiento
+                </h3>
+                <input 
+                  type="date"
+                  value={formData.fecha_nacimiento && formData.fecha_nacimiento !== '0000-00-00' ? formData.fecha_nacimiento : ''}
+                  onChange={(e) => handleInputChange('fecha_nacimiento', e.target.value)}
+                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </Card>
+
+              <Card className="p-4">
+                <h3 className="text-white font-bold mb-3 flex items-center gap-2">
                   <MapPin size={18} className="text-orange-500" />
                   Mi Dirección
                 </h3>
