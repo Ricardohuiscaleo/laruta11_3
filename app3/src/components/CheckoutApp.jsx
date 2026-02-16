@@ -5,6 +5,7 @@ import TUUPaymentFrame from './TUUPaymentFrame.jsx';
 import ScheduleOrderModal from './ScheduleOrderModal.jsx';
 import ClosedInfoModal from './modals/ClosedInfoModal.jsx';
 import ReviewsModal from './ReviewsModal.jsx';
+import AddressAutocomplete from './AddressAutocomplete.jsx';
 import { isWithinBusinessHours, getBusinessStatus } from '../utils/businessHours.js';
 
 const CheckoutApp = () => {
@@ -1153,11 +1154,12 @@ const CheckoutApp = () => {
                         <option value="Ctel. Av. Santa María 3000">Ctel. Av. Santa María 3000</option>
                       </select>
                     ) : (
-                      <input
-                        type="text"
+                      <AddressAutocomplete
                         value={customerInfo.address}
-                        onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        onChange={(address) => setCustomerInfo({...customerInfo, address})}
+                        placeholder="Escribe tu dirección..."
+                      />
+                    )}
                         placeholder="Buscar dirección..."
                         required
                       />
