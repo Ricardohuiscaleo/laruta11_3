@@ -17,7 +17,17 @@ foreach ($config_paths as $path) {
 }
 
 if (!$config) {
-    echo json_encode(['success' => false, 'error' => 'Configuración no encontrada']);
+    // Debug: mostrar rutas intentadas
+    $attempted = [];
+    foreach ($config_paths as $p) {
+        $attempted[] = $p . ' => ' . (file_exists($p) ? 'EXISTS' : 'NOT FOUND');
+    }
+    echo json_encode([
+        'success' => false, 
+        'error' => 'Configuración no encontrada',
+        'debug' => $attempted,
+        'cwd' => __DIR__
+    ]);
     exit();
 }
 
@@ -53,15 +63,33 @@ $telefono = mysqli_real_escape_string($user_conn, $_POST['telefono'] ?? '');
 $instagram = mysqli_real_escape_string($user_conn, $_POST['instagram'] ?? '');
 $lugar_nacimiento = mysqli_real_escape_string($user_conn, $_POST['lugar_nacimiento'] ?? '');
 $genero = mysqli_real_escape_string($user_conn, $_POST['genero'] ?? '');
-$fecha_nacimiento = mysqli_real_escape_string($user_conn, $_POST['fecha_nacimiento'] ?? '');
+$fecha_nacimiento = $_POST['fecha_nacimiento'] ?? '';
+
+// Validar género (debe ser uno de los valores del ENUM)
+$generos_validos = ['masculino', 'femenino', 'otro', 'no_decir'];
+if ($genero && !in_array($genero, $generos_validos)) {
+    $genero = '';
+}
+
+// Validar fecha
+if ($fecha_nacimiento && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha_nacimiento)) {
+    $fecha_nacimiento = '';
+}
 
 $query = "UPDATE usuarios SET 
     telefono = '$telefono',
     instagram = '$instagram', 
-    lugar_nacimiento = '$lugar_nacimiento',
-    genero = '$genero',
-    fecha_nacimiento = " . ($fecha_nacimiento ? "'$fecha_nacimiento'" : "NULL") . "
-    WHERE id = $user_id";
+    lugar_nacimiento = '$lugar_nacimiento'";
+
+if ($genero) {
+    $query .= ", genero = '$genero'";
+}
+
+if ($fecha_nacimiento) {
+    $query .= ", fecha_nacimiento = '$fecha_nacimiento'";
+}
+
+$query .= " WHERE id = $user_id";
 
 if (mysqli_query($user_conn, $query)) {
     // Actualizar sesión
