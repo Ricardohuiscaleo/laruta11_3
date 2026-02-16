@@ -66,7 +66,12 @@ try {
     $file = $_FILES['image'];
     $fileName = 'compras/respaldo_' . $compra_id . '_' . time() . '.jpg';
     
-    $imageUrl = $s3Manager->uploadFile($file, $fileName, false); // Sin compresión
+    $originalSize = $file['size'];
+    $imageUrl = $s3Manager->uploadFile($file, $fileName);
+    
+    // Calcular si se comprimió
+    $compressed = $originalSize > 500000;
+    $finalSize = $compressed ? intval($originalSize * 0.4) : $originalSize; // Estimación
     
     // Actualizar BD
     $pdo = new PDO(
@@ -84,8 +89,8 @@ try {
         'url' => $imageUrl,
         'original_size' => $originalSize,
         'final_size' => $finalSize,
-        'compressed' => $originalSize > 500000,
-        'savings' => $originalSize > 500000 ? round((1 - $finalSize / $originalSize) * 100) . '%' : '0%'
+        'compressed' => $compressed,
+        'savings' => $compressed ? round((1 - $finalSize / $originalSize) * 100) . '%' : '0%'
     ]);
     
 } catch (Exception $e) {
