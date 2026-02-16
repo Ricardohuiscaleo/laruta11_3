@@ -365,7 +365,7 @@ const ProfileModalModern = ({
                   value={formData.direccion || ''}
                   onChange={(value) => handleInputChange('direccion', value)}
                   placeholder="Ingresa tu dirección"
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 pl-10 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
                 <button 
                   onClick={handleSaveChanges}
