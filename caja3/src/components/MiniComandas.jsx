@@ -50,23 +50,54 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
       const shouldLoadApertura = currentTime >= 1020 && currentTime < 1140;
       const shouldLoadCierre = currentTime >= 30 && currentTime < 105;
       
-      if (!shouldLoadApertura && !shouldLoadCierre) {
-        setChecklists([]);
-        return;
-      }
-      
-      const types = [];
-      if (shouldLoadApertura) types.push('apertura');
-      if (shouldLoadCierre) types.push('cierre');
-      
       const results = [];
-      for (const type of types) {
-        const res = await fetch(`/api/checklist.php?action=get_active&type=${type}&date=${now.toISOString().split('T')[0]}`);
-        const data = await res.json();
-        if (data.success && data.checklist) {
-          results.push(data.checklist);
+      
+      // Checklists normales
+      if (shouldLoadApertura || shouldLoadCierre) {
+        const types = [];
+        if (shouldLoadApertura) types.push('apertura');
+        if (shouldLoadCierre) types.push('cierre');
+        
+        for (const type of types) {
+          const res = await fetch(`/api/checklist.php?action=get_active&type=${type}&date=${now.toISOString().split('T')[0]}`);
+          const data = await res.json();
+          if (data.success && data.checklist) {
+            results.push(data.checklist);
+          }
         }
       }
+      
+      // Recordatorio de basura (8:55 PM - 10:00 PM)
+      const shouldShowTrash = currentTime >= 1255 && currentTime < 1320; // 20:55 - 22:00
+      if (shouldShowTrash) {
+        const dayOfWeek = now.getDay(); // 0=Domingo, 1=Lunes, etc.
+        const location = [2, 4, 6].includes(dayOfWeek) ? 'Codpa' : 'Tucapel'; // Mar, Jue, Sab = Codpa
+        
+        // Verificar si ya fue marcado como listo hoy
+        const today = now.toISOString().split('T')[0];
+        const trashDone = localStorage.getItem(`trash_done_${today}`);
+        
+        if (!trashDone) {
+          // Calcular tiempo restante hasta las 10 PM
+          const targetTime = new Date(now);
+          targetTime.setHours(22, 0, 0, 0);
+          const diffMs = targetTime - now;
+          const diffMins = Math.floor(diffMs / 60000);
+          const hours = Math.floor(diffMins / 60);
+          const mins = diffMins % 60;
+          const countdown = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+          
+          results.push({
+            id: 'trash_reminder',
+            type: 'trash',
+            title: `🗑️ Recuerda botar la basura en ${location}`,
+            description: `Hoy en ${countdown}`,
+            status: 'pending',
+            location: location
+          });
+        }
+      }
+      
       setChecklists(results);
     } catch (error) {
       console.error('Error cargando checklists:', error);

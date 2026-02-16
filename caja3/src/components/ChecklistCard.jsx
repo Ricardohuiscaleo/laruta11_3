@@ -1,6 +1,12 @@
 import { Clock, PlayCircle } from 'lucide-react';
 
 export default function ChecklistCard({ checklist, onStart }) {
+  const handleTrashDone = () => {
+    const today = new Date().toISOString().split('T')[0];
+    localStorage.setItem(`trash_done_${today}`, 'true');
+    window.location.reload();
+  };
+
   const formatTime = (minutes) => {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
@@ -15,6 +21,31 @@ export default function ChecklistCard({ checklist, onStart }) {
       default: return 'border-yellow-500 bg-yellow-50';
     }
   };
+
+  // Renderizado especial para recordatorio de basura
+  if (checklist.type === 'trash') {
+    return (
+      <div className="border-2 rounded-xl p-4 border-orange-500 bg-orange-50">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-2xl">🗑️</span>
+          <div className="flex-1">
+            <div className="font-bold text-lg">
+              {checklist.title}
+            </div>
+            <div className="text-sm text-gray-600">
+              {checklist.description}
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={handleTrashDone}
+          className="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition-colors"
+        >
+          ✅ Listo
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className={`border-2 rounded-xl p-4 ${getStatusColor(checklist.status)}`}>
