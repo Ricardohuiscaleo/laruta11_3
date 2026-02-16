@@ -21,13 +21,44 @@ if (empty($input)) {
 
 $apiKey = $config['ruta11_google_maps_api_key'] ?? 'AIzaSyAcK15oZ84Puu5Nc4wDQT_Wyht0xqkbO-A';
 
-$url = "https://maps.googleapis.com/maps/api/place/autocomplete/json?" . http_build_query([
+// Nueva Places API (New)
+$url = "https://places.googleapis.com/v1/places:autocompleteText";
+
+$postData = json_encode([
     'input' => $input,
-    'components' => "country:$country",
-    'language' => 'es',
-    'key' => $apiKey
+    'includedRegionCodes' => [strtoupper($country)],
+    'languageCode' => 'es'
 ]);
 
-$response = file_get_contents($url);
-echo $response;
+$options = [
+    'http' => [
+        'method' => 'POST',
+        'header' => [
+            'Content-Type: application/json',
+            'X-Goog-Api-Key: ' . $apiKey
+        ],
+        'content' => $postData
+    ]
+];
+
+$context = stream_context_create($options);
+$response = file_get_contents($url, false, $context);
+
+// Transformar respuesta al formato esperado por el frontend
+$data = json_decode($response, true);
+$predictions = [];
+
+if (isset($data['suggestions'])) {
+    foreach ($data['suggestions'] as $suggestion) {
+        if (isset($suggestion['placePrediction'])) {
+            $pred = $suggestion['placePrediction'];
+            $predictions[] = [
+                'description' => $pred['text']['text'] ?? '',
+                'place_id' => $pred['placeId'] ?? ''
+            ];
+        }
+    }
+}
+
+echo json_encode(['predictions' => $predictions]);
 ?>
