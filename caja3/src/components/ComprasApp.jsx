@@ -537,7 +537,19 @@ export default function ComprasApp() {
         body: formData,
         cache: 'no-store'
       });
-      const data = await response.json();
+      
+      const text = await response.text();
+      console.log('Raw response:', text);
+      
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        alert('❌ Error parseando respuesta del servidor:\n\n' + text.substring(0, 500));
+        console.error('Parse error:', e, 'Response:', text);
+        return;
+      }
+      
       if (data.success) {
         alert('✅ Respaldo subido correctamente');
         loadCompras();
