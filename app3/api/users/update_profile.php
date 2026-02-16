@@ -64,6 +64,7 @@ $instagram = mysqli_real_escape_string($user_conn, $_POST['instagram'] ?? '');
 $lugar_nacimiento = mysqli_real_escape_string($user_conn, $_POST['lugar_nacimiento'] ?? '');
 $genero = mysqli_real_escape_string($user_conn, $_POST['genero'] ?? '');
 $fecha_nacimiento = $_POST['fecha_nacimiento'] ?? '';
+$direccion = mysqli_real_escape_string($user_conn, $_POST['direccion'] ?? '');
 
 // Validar género (debe ser uno de los valores del ENUM)
 $generos_validos = ['masculino', 'femenino', 'otro', 'no_decir'];
@@ -79,7 +80,8 @@ if ($fecha_nacimiento && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha_nacimiento)
 $query = "UPDATE usuarios SET 
     telefono = '$telefono',
     instagram = '$instagram', 
-    lugar_nacimiento = '$lugar_nacimiento'";
+    lugar_nacimiento = '$lugar_nacimiento',
+    direccion = '$direccion'";
 
 if ($genero) {
     $query .= ", genero = '$genero'";
@@ -98,6 +100,7 @@ if (mysqli_query($user_conn, $query)) {
     $_SESSION['user']['lugar_nacimiento'] = $lugar_nacimiento;
     $_SESSION['user']['genero'] = $genero;
     $_SESSION['user']['fecha_nacimiento'] = $fecha_nacimiento;
+    $_SESSION['user']['direccion'] = $direccion;
     
     echo json_encode(['success' => true, 'message' => 'Perfil actualizado correctamente']);
 } else {
