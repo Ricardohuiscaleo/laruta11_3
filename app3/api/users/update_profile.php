@@ -15,10 +15,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $config_file = __DIR__ . '/../../config.php';
 $config = file_exists($config_file) ? require_once $config_file : [];
 
-$db_host = $config['ruta11_db_host'] ?? getenv('DB_HOST') ?? 'localhost';
-$db_user = $config['ruta11_db_user'] ?? getenv('DB_USER') ?? 'root';
-$db_pass = $config['ruta11_db_pass'] ?? getenv('DB_PASS') ?? '';
-$db_name = $config['ruta11_db_name'] ?? getenv('DB_NAME') ?? 'laruta11';
+$db_host = $config['ruta11_db_host'] ?? getenv('APP_DB_HOST') ?? 'localhost';
+$db_user = $config['ruta11_db_user'] ?? getenv('APP_DB_USER') ?? 'root';
+$db_pass = $config['ruta11_db_pass'] ?? getenv('APP_DB_PASS') ?? '';
+$db_name = $config['ruta11_db_name'] ?? getenv('APP_DB_NAME') ?? 'laruta11';
 
 $user_conn = mysqli_connect($db_host, $db_user, $db_pass, $db_name);
 
