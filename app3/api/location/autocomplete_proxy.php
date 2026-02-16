@@ -13,6 +13,7 @@ $data = json_decode(file_get_contents('php://input'), true);
 
 $input = $data['input'] ?? '';
 $country = $data['country'] ?? 'cl';
+$city = $data['city'] ?? 'Arica';
 
 if (empty($input)) {
     echo json_encode(['error' => 'Input requerido']);
@@ -27,7 +28,16 @@ $url = "https://places.googleapis.com/v1/places:autocomplete";
 $postData = json_encode([
     'input' => $input,
     'includedRegionCodes' => [strtoupper($country)],
-    'languageCode' => 'es'
+    'languageCode' => 'es',
+    'locationBias' => [
+        'circle' => [
+            'center' => [
+                'latitude' => -18.4746,
+                'longitude' => -70.2979
+            ],
+            'radius' => 50000.0
+        ]
+    ]
 ]);
 
 $ch = curl_init($url);
