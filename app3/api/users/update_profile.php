@@ -74,7 +74,9 @@ if ($genero && !in_array($genero, $generos_validos)) {
 
 // Validar fecha
 if ($fecha_nacimiento && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha_nacimiento)) {
-    $fecha_nacimiento = '';
+    $fecha_nacimiento = null;
+} elseif (empty($fecha_nacimiento) || $fecha_nacimiento === '0000-00-00') {
+    $fecha_nacimiento = null;
 }
 
 $query = "UPDATE usuarios SET 
@@ -89,6 +91,8 @@ if ($genero) {
 
 if ($fecha_nacimiento) {
     $query .= ", fecha_nacimiento = '$fecha_nacimiento'";
+} else {
+    $query .= ", fecha_nacimiento = NULL";
 }
 
 $query .= " WHERE id = $user_id";

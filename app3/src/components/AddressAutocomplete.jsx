@@ -90,7 +90,7 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
 
       {/* Sugerencias */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
           {suggestions.map((suggestion) => (
             <button
               key={suggestion.place_id}
