@@ -5,6 +5,7 @@ import {
   LogOut, Trash2, Briefcase, Wallet, TrendingUp, ArrowDownCircle, ShoppingBag,
   CheckCircle2, Package, CreditCard, Banknote, DollarSign, RefreshCw
 } from 'lucide-react';
+import AddressAutocomplete from '../AddressAutocomplete.jsx';
 
 const Card = ({ children, className = "" }) => (
   <div className={`bg-slate-800 rounded-xl border border-slate-700 shadow-lg overflow-hidden ${className}`}>
@@ -360,11 +361,10 @@ const ProfileModalModern = ({
                   <MapPin size={18} className="text-orange-500" />
                   Mi Dirección
                 </h3>
-                <input 
-                  type="text"
-                  placeholder="Ingresa tu dirección" 
+                <AddressAutocomplete
                   value={formData.direccion || ''}
-                  onChange={(e) => handleInputChange('direccion', e.target.value)}
+                  onChange={(value) => handleInputChange('direccion', value)}
+                  placeholder="Ingresa tu dirección"
                   className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
                 <button 
