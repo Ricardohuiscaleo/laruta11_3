@@ -130,7 +130,7 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
         }
         localStorage.setItem('ruta11_cart', JSON.stringify(cart));
         localStorage.setItem('ruta11_cart_total', cartTotal.toString());
-        window.location.href = '/checkout';
+        onCheckout();
     };
     
     const handleDeleteClick = (cartItemId) => {
