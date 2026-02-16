@@ -1,6 +1,5 @@
 <?php
 session_start();
-$config = require_once __DIR__ . '/../../config.php';
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['user'])) {
@@ -13,12 +12,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-$user_conn = mysqli_connect(
-    $config['ruta11_db_host'],
-    $config['ruta11_db_user'],
-    $config['ruta11_db_pass'],
-    $config['ruta11_db_name']
-);
+$config_file = __DIR__ . '/../../config.php';
+$config = file_exists($config_file) ? require_once $config_file : [];
+
+$db_host = $config['ruta11_db_host'] ?? getenv('DB_HOST') ?? 'localhost';
+$db_user = $config['ruta11_db_user'] ?? getenv('DB_USER') ?? 'root';
+$db_pass = $config['ruta11_db_pass'] ?? getenv('DB_PASS') ?? '';
+$db_name = $config['ruta11_db_name'] ?? getenv('DB_NAME') ?? 'laruta11';
+
+$user_conn = mysqli_connect($db_host, $db_user, $db_pass, $db_name);
 
 if (!$user_conn) {
     echo json_encode(['success' => false, 'error' => 'Error de conexión a BD']);
