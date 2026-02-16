@@ -567,7 +567,7 @@
                 const location = [2, 4, 6].includes(dayOfWeek) ? 'Codpa' : 'Tucapel';
                 
                 const targetTime = new Date(now);
-                targetTime.setHours(22, 0, 0, 0);
+                targetTime.setHours(21, 30, 0, 0);
                 const diffMs = targetTime - now;
                 const diffMins = Math.floor(diffMs / 60000);
                 const hours = Math.floor(diffMins / 60);
@@ -645,8 +645,8 @@
                         h('div', { className: 'flex items-center gap-3 mb-3' },
                             h('span', { className: 'text-3xl' }, '🗑️'),
                             h('div', { className: 'flex-1' },
-                                h('div', { className: 'font-bold text-lg text-gray-900' }, `Recuerda botar la basura en ${trashReminder.location}`),
-                                h('div', { className: 'text-sm text-gray-600' }, `Hoy en ${trashReminder.countdown}`)
+                                h('div', { className: 'font-bold text-lg text-gray-900' }, `Botar la basura en ${trashReminder.location}`),
+                                h('div', { className: 'text-sm text-gray-600' }, `Entre 9:00 PM y 9:30 PM (quedan ${trashReminder.countdown})`)
                             )
                         ),
                         h('button', {

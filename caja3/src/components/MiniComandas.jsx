@@ -78,9 +78,9 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
         const trashDone = localStorage.getItem(`trash_done_${today}`);
         
         if (!trashDone) {
-          // Calcular tiempo restante hasta las 10 PM
+          // Calcular tiempo restante hasta las 9:30 PM
           const targetTime = new Date(now);
-          targetTime.setHours(22, 0, 0, 0);
+          targetTime.setHours(21, 30, 0, 0);
           const diffMs = targetTime - now;
           const diffMins = Math.floor(diffMs / 60000);
           const hours = Math.floor(diffMins / 60);
@@ -90,8 +90,8 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
           results.push({
             id: 'trash_reminder',
             type: 'trash',
-            title: `🗑️ Recuerda botar la basura en ${location}`,
-            description: `Hoy en ${countdown}`,
+            title: `🗑️ Botar la basura en ${location}`,
+            description: `Entre 9:00 PM y 9:30 PM (quedan ${countdown})`,
             status: 'pending',
             location: location
           });
