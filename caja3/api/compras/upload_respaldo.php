@@ -33,8 +33,14 @@ if (!$config) {
 }
 
 try {
+    // Debug: ver qué llega desde móvil
+    error_log('=== UPLOAD DEBUG ===');
+    error_log('FILES: ' . json_encode($_FILES));
+    error_log('POST: ' . json_encode($_POST));
+    error_log('Content-Type: ' . ($_SERVER['CONTENT_TYPE'] ?? 'not set'));
+    
     if (!isset($_FILES['image']) || !isset($_POST['compra_id'])) {
-        throw new Exception('Imagen y compra_id requeridos');
+        throw new Exception('Imagen y compra_id requeridos. FILES=' . json_encode($_FILES) . ' POST=' . json_encode($_POST));
     }
 
     $s3ManagerPaths = [
@@ -79,9 +85,23 @@ try {
     ]);
     
 } catch (Exception $e) {
+    $debugInfo = [
+        'error' => $e->getMessage(),
+        'FILES' => $_FILES,
+        'POST' => $_POST,
+        'SERVER' => [
+            'CONTENT_TYPE' => $_SERVER['CONTENT_TYPE'] ?? 'not set',
+            'CONTENT_LENGTH' => $_SERVER['CONTENT_LENGTH'] ?? 'not set',
+            'REQUEST_METHOD' => $_SERVER['REQUEST_METHOD'] ?? 'not set'
+        ]
+    ];
+    
+    error_log('UPLOAD ERROR: ' . json_encode($debugInfo));
+    
     echo json_encode([
         'success' => false,
-        'error' => $e->getMessage()
+        'error' => $e->getMessage(),
+        'debug' => $debugInfo
     ]);
 }
 ?>

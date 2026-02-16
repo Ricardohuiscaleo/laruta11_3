@@ -514,6 +514,18 @@ export default function ComprasApp() {
     const file = event.target.files[0];
     if (!file) return;
     
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      alert('❌ Por favor selecciona una imagen');
+      return;
+    }
+    
+    // Validar tamaño (máx 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('❌ La imagen es demasiado grande (máx 10MB)');
+      return;
+    }
+    
     setUploadingRespaldo(compraId);
     const formData = new FormData();
     formData.append('image', file);
@@ -530,10 +542,13 @@ export default function ComprasApp() {
         alert('✅ Respaldo subido correctamente');
         loadCompras();
       } else {
-        alert('❌ Error: ' + data.error);
+        // Mostrar error completo con debug
+        const debugStr = data.debug ? '\n\nDEBUG:\n' + JSON.stringify(data.debug, null, 2) : '';
+        alert('❌ Error: ' + data.error + debugStr);
+        console.error('Upload error:', data);
       }
     } catch (error) {
-      alert('❌ Error al subir respaldo');
+      alert('❌ Error al subir respaldo: ' + error.message);
     } finally {
       setUploadingRespaldo(null);
     }
@@ -997,10 +1012,21 @@ export default function ComprasApp() {
                 <input
                   type="file"
                   accept="image/*"
+                  capture="environment"
                   style={{display: 'none'}}
                   onChange={(e) => {
                     const file = e.target.files[0];
                     if (file) {
+                      // Validar tipo
+                      if (!file.type.startsWith('image/')) {
+                        alert('❌ Por favor selecciona una imagen');
+                        return;
+                      }
+                      // Validar tamaño (máx 10MB)
+                      if (file.size > 10 * 1024 * 1024) {
+                        alert('❌ La imagen es demasiado grande (máx 10MB)');
+                        return;
+                      }
                       setRespaldoFile(file);
                       setRespaldoPreview(URL.createObjectURL(file));
                     }
@@ -1204,6 +1230,7 @@ export default function ComprasApp() {
                       <input
                         type="file"
                         accept="image/*"
+                        capture="environment"
                         style={{display: 'none'}}
                         onChange={(e) => handleUploadRespaldo(compra.id, e)}
                         disabled={uploadingRespaldo === compra.id}

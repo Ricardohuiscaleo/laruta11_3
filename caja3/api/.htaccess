@@ -8,6 +8,12 @@ RewriteEngine On
 RewriteCond %{REQUEST_METHOD} OPTIONS
 RewriteRule ^(.*)$ $1 [R=200,L]
 
+# Configuración para subida de archivos
+php_value upload_max_filesize 10M
+php_value post_max_size 10M
+php_value max_execution_time 300
+php_value max_input_time 300
+
 # Asegurarse de que PHP procese los archivos correctamente
 <FilesMatch "\.php$">
     SetHandler application/x-httpd-php

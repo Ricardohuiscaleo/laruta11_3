@@ -89,8 +89,17 @@ class S3Manager {
     }
     
     public function uploadFile($file, $key, $compress = true) {
+        // Debug: ver qué llega
+        error_log('S3Manager uploadFile - file array: ' . json_encode([
+            'name' => $file['name'] ?? 'not set',
+            'type' => $file['type'] ?? 'not set',
+            'tmp_name' => $file['tmp_name'] ?? 'not set',
+            'error' => $file['error'] ?? 'not set',
+            'size' => $file['size'] ?? 'not set'
+        ]));
+        
         if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
-            throw new Exception('No se recibió un archivo válido');
+            throw new Exception('No se recibió un archivo válido. tmp_name=' . ($file['tmp_name'] ?? 'not set') . ', is_uploaded=' . (isset($file['tmp_name']) && is_uploaded_file($file['tmp_name']) ? 'yes' : 'no'));
         }
         
         // Validate file type
