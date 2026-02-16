@@ -1,36 +1,6 @@
 <?php
 session_start();
-
-// Buscar config en múltiples ubicaciones
-$config_paths = [
-    __DIR__ . '/../../config.php',
-    __DIR__ . '/../../../config.php',
-    __DIR__ . '/../../../../config.php'
-];
-
-$config = null;
-foreach ($config_paths as $path) {
-    if (file_exists($path)) {
-        $config = require_once $path;
-        break;
-    }
-}
-
-if (!$config) {
-    // Debug: mostrar rutas intentadas
-    $attempted = [];
-    foreach ($config_paths as $p) {
-        $attempted[] = $p . ' => ' . (file_exists($p) ? 'EXISTS' : 'NOT FOUND');
-    }
-    echo json_encode([
-        'success' => false, 
-        'error' => 'Configuración no encontrada',
-        'debug' => $attempted,
-        'cwd' => __DIR__
-    ]);
-    exit();
-}
-
+$config = require_once __DIR__ . '/../../config.php';
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['user'])) {
@@ -43,7 +13,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-// Conectar a BD laruta11
 $user_conn = mysqli_connect(
     $config['ruta11_db_host'],
     $config['ruta11_db_user'],
