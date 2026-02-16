@@ -868,11 +868,6 @@ export default function App() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   const handleCheckout = () => {
-    if (!user) {
-      setIsCartOpen(false);
-      setIsLoginOpen(true);
-      return;
-    }
     const isClosed = nearbyTrucks.length > 0 && nearbyTrucks[0].activo === false;
     if (isClosed) {
       return;
@@ -882,6 +877,15 @@ export default function App() {
     setIsCartOpen(false);
     setIsProfileOpen(false);
     setIsCheckoutOpen(true);
+  };
+
+  const handleCheckoutWithLogin = () => {
+    if (!user) {
+      setIsCartOpen(false);
+      setIsLoginOpen(true);
+      return;
+    }
+    handleCheckout();
   };
 
   const handleCreateOrder = async () => {
@@ -2524,6 +2528,8 @@ export default function App() {
           loadNotifications();
           loadUserOrders();
         }}
+        showGuestOption={true}
+        onGuestCheckout={handleCheckout}
       />
       <FoodTrucksModal 
         isOpen={isFoodTrucksOpen} 
@@ -2631,7 +2637,7 @@ export default function App() {
         onAddToCart={handleAddToCart}
         onRemoveFromCart={handleRemoveFromCart}
         cartTotal={cartTotal}
-        onCheckout={handleCheckout}
+        onCheckout={handleCheckoutWithLogin}
         onCustomizeProduct={(item, itemIndex) => {
           setSelectedProduct({...item, cartIndex: itemIndex, isEditing: true});
         }}

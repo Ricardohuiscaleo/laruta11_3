@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Gift, Truck, Zap, Star, Mail, Lock, User, Phone, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
-const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
+const AuthModal = ({ isOpen, onClose, onLoginSuccess, showGuestOption = false, onGuestCheckout }) => {
   if (!isOpen) return null;
 
   const [mode, setMode] = useState('login'); // 'login' | 'register'
@@ -293,7 +293,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
               <div className="w-full border-t border-slate-700"></div>
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-slate-900 px-2 text-yellow-400 font-semibold">o continúa rápido y simple 😎👇</span>
+              <span className="bg-slate-900 px-2 text-yellow-400 font-semibold">Registro automático con Google 😎👇</span>
             </div>
           </div>
 
@@ -318,6 +318,19 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
             </svg>
             <span className="relative z-10">Google</span>
           </button>
+
+          {showGuestOption && onGuestCheckout && (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onGuestCheckout();
+              }}
+              className="w-full mt-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-lg transition-all"
+            >
+              Continuar sin registro
+            </button>
+          )}
         </form>
 
       </div>
