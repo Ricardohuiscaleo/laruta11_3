@@ -66,7 +66,7 @@ try {
     $file = $_FILES['image'];
     $fileName = 'compras/respaldo_' . $compra_id . '_' . time() . '.jpg';
     
-    $imageUrl = $s3Manager->uploadFile($file, $fileName);
+    $imageUrl = $s3Manager->uploadFile($file, $fileName, false); // Sin compresión
     
     // Actualizar BD
     $pdo = new PDO(
@@ -81,7 +81,11 @@ try {
     
     echo json_encode([
         'success' => true,
-        'url' => $imageUrl
+        'url' => $imageUrl,
+        'original_size' => $originalSize,
+        'final_size' => $finalSize,
+        'compressed' => $originalSize > 500000,
+        'savings' => $originalSize > 500000 ? round((1 - $finalSize / $originalSize) * 100) . '%' : '0%'
     ]);
     
 } catch (Exception $e) {
