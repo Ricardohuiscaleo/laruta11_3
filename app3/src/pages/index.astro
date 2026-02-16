@@ -45,6 +45,9 @@ import MenuApp from '../components/MenuApp.jsx';
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+		
+		<!-- Google Places API -->
+		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAcK15oZ84Puu5Nc4wDQT_Wyht0xqkbO-A&libraries=places&language=es" async defer></script>
 	</head>
 	<body>
 		<MenuApp client:only="react" />
@@ -124,19 +127,9 @@ import MenuApp from '../components/MenuApp.jsx';
 						platform: navigator.platform
 					};
 					
-					if (navigator.geolocation) {
-						navigator.geolocation.getCurrentPosition(
-							position => {
-								(visitData as any).latitude = position.coords.latitude;
-								(visitData as any).longitude = position.coords.longitude;
-								this.sendData('/api/app/track_visit.php', visitData);
-							},
-							() => this.sendData('/api/app/track_visit.php', visitData),
-							{ timeout: 5000 }
-						);
-					} else {
-						this.sendData('/api/app/track_visit.php', visitData);
-					}
+					// NO solicitar geolocalización automáticamente
+					// Solo enviar datos de visita sin ubicación
+					this.sendData('/api/app/track_visit.php', visitData);
 				},
 				
 				setupEventListeners() {

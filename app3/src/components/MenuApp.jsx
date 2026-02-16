@@ -1069,6 +1069,8 @@ export default function App() {
       return;
     }
 
+    // Marcar que ya se solicitó ubicación
+    localStorage.setItem('location_asked', 'true');
     setLocationPermission('requesting');
     
     navigator.geolocation.getCurrentPosition(
@@ -1521,22 +1523,21 @@ export default function App() {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
     
-    // Mostrar loader por 1.5 segundos y luego activar ubicación
+    // Mostrar loader por 1.5 segundos
     setIsLoading(true);
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1500);
     
-    // Auto-activar ubicación en paralelo
-    const locationTimer = setTimeout(() => {
-      if (typeof navigator !== 'undefined' && navigator.geolocation && locationPermission === 'prompt') {
-        requestLocation();
-      }
-    }, 2000);
+    // NO auto-activar ubicación - solo si el usuario lo solicita manualmente
+    // Verificar si ya se solicitó antes
+    const locationAsked = localStorage.getItem('location_asked');
+    if (locationAsked === 'true') {
+      setLocationPermission('denied'); // Ya se preguntó antes, no volver a preguntar
+    }
     
     return () => {
       clearTimeout(timer);
-      clearTimeout(locationTimer);
     };
   }, []);
 
@@ -2749,8 +2750,27 @@ export default function App() {
                       id="deliveryAddress"
                       value={customerInfo.address || ''}
                       onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
+                      onFocus={(e) => {
+                        // Inicializar Google Places Autocomplete
+                        if (window.google && window.google.maps && !e.target.dataset.autocompleteInit) {
+                          const autocomplete = new window.google.maps.places.Autocomplete(e.target, {
+                            componentRestrictions: { country: 'cl' },
+                            fields: ['formatted_address', 'geometry', 'address_components'],
+                            types: ['address']
+                          });
+                          
+                          autocomplete.addListener('place_changed', () => {
+                            const place = autocomplete.getPlace();
+                            if (place.formatted_address) {
+                              setCustomerInfo({...customerInfo, address: place.formatted_address});
+                            }
+                          });
+                          
+                          e.target.dataset.autocompleteInit = 'true';
+                        }
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      placeholder="Buscar dirección..."
+                      placeholder="Escribe tu dirección..."
                       required
                     />
                     {nearbyTrucks.length > 0 && (
