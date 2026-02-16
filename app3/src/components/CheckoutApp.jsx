@@ -1160,10 +1160,6 @@ const CheckoutApp = () => {
                         placeholder="Escribe tu dirección..."
                       />
                     )}
-                        placeholder="Buscar dirección..."
-                        required
-                      />
-                    )}
                     {nearbyTrucks.length > 0 && !deliveryDiscountActive && (
                       <p className="text-xs text-blue-600 mt-1">
                         🚚 Costo de delivery: ${parseInt(nearbyTrucks[0].tarifa_delivery || 0).toLocaleString('es-CL')}
