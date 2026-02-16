@@ -5,7 +5,9 @@ session_start();
 $config_paths = [
     __DIR__ . '/../../config.php',
     __DIR__ . '/../../../config.php',
-    __DIR__ . '/../../../../config.php'
+    __DIR__ . '/../../../../config.php',
+    '/var/www/html/config.php',
+    '/var/www/html/app3/config.php'
 ];
 
 $config = null;
@@ -17,7 +19,14 @@ foreach ($config_paths as $path) {
 }
 
 if (!$config) {
-    echo json_encode(['success' => false, 'error' => 'Configuración no encontrada']);
+    echo json_encode([
+        'success' => false, 
+        'error' => 'Configuración no encontrada',
+        'debug' => [
+            'cwd' => __DIR__,
+            'paths_tried' => $config_paths
+        ]
+    ]);
     exit();
 }
 
