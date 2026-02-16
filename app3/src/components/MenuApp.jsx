@@ -1496,8 +1496,8 @@ export default function App() {
   }), [menuWithImages]);
 
   useEffect(() => {
-    document.body.style.overflow = selectedProduct || isCartOpen || isLoginOpen || zoomedProduct || showSearchModal || isProfileOpen ? 'hidden' : 'auto';
-  }, [selectedProduct, isCartOpen, isLoginOpen, zoomedProduct, showSearchModal, isProfileOpen]);
+    document.body.style.overflow = selectedProduct || isCartOpen || isLoginOpen || zoomedProduct || showSearchModal || isProfileOpen || isCheckoutOpen ? 'hidden' : 'auto';
+  }, [selectedProduct, isCartOpen, isLoginOpen, zoomedProduct, showSearchModal, isProfileOpen, isCheckoutOpen]);
 
   useEffect(() => {
     let ticking = false;
@@ -3760,7 +3760,7 @@ export default function App() {
 
       {/* Checkout Modal */}
       {isCheckoutOpen && (
-        <div className="fixed inset-0 z-[100] bg-white">
+        <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
           <CheckoutApp onClose={() => setIsCheckoutOpen(false)} />
         </div>
       )}
