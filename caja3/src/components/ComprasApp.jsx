@@ -1012,7 +1012,6 @@ export default function ComprasApp() {
                 <input
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   style={{display: 'none'}}
                   onChange={(e) => {
                     const file = e.target.files[0];
@@ -1230,7 +1229,6 @@ export default function ComprasApp() {
                       <input
                         type="file"
                         accept="image/*"
-                        capture="environment"
                         style={{display: 'none'}}
                         onChange={(e) => handleUploadRespaldo(compra.id, e)}
                         disabled={uploadingRespaldo === compra.id}
