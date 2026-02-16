@@ -66,7 +66,7 @@ try {
     $file = $_FILES['image'];
     $fileName = 'compras/respaldo_' . $compra_id . '_' . time() . '.jpg';
     
-    $imageUrl = $s3Manager->uploadFile($file, $fileName);
+    $imageUrl = $s3Manager->uploadFile($file, $fileName, false); // Desactivar compresión
     
     // Actualizar BD
     $pdo = new PDO(
