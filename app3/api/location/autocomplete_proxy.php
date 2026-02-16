@@ -21,8 +21,8 @@ if (empty($input)) {
 
 $apiKey = $config['ruta11_google_maps_api_key'] ?? 'AIzaSyAcK15oZ84Puu5Nc4wDQT_Wyht0xqkbO-A';
 
-// Nueva Places API (New)
-$url = "https://places.googleapis.com/v1/places:autocompleteText";
+// Places API (New) - Autocomplete
+$url = "https://places.googleapis.com/v1/places:autocomplete";
 
 $postData = json_encode([
     'input' => $input,
@@ -30,21 +30,25 @@ $postData = json_encode([
     'languageCode' => 'es'
 ]);
 
-$options = [
-    'http' => [
-        'method' => 'POST',
-        'header' => [
-            'Content-Type: application/json',
-            'X-Goog-Api-Key: ' . $apiKey
-        ],
-        'content' => $postData
-    ]
-];
+$ch = curl_init($url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'Content-Type: application/json',
+    'X-Goog-Api-Key: ' . $apiKey
+]);
 
-$context = stream_context_create($options);
-$response = file_get_contents($url, false, $context);
+$response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
 
-// Transformar respuesta al formato esperado por el frontend
+if ($httpCode !== 200) {
+    echo json_encode(['predictions' => [], 'error' => 'API error: ' . $httpCode]);
+    exit;
+}
+
+// Transformar respuesta al formato esperado
 $data = json_decode($response, true);
 $predictions = [];
 
