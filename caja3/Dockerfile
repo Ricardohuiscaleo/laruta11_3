@@ -6,7 +6,13 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get clean
 
 # Instalar extensiones PHP necesarias
-RUN docker-php-ext-install mysqli pdo pdo_mysql
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install mysqli pdo pdo_mysql gd \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Habilitar mod_rewrite y configurar Apache
 RUN a2enmod rewrite headers && \
