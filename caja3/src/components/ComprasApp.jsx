@@ -551,7 +551,13 @@ export default function ComprasApp() {
       }
       
       if (data.success) {
-        alert('✅ Respaldo subido correctamente');
+        let msg = '✅ Respaldo subido correctamente';
+        if (data.compressed) {
+          msg += `\n\n📦 Tamaño original: ${(data.original_size / 1024).toFixed(0)} KB`;
+          msg += `\n✅ Comprimido a: ${(data.final_size / 1024).toFixed(0)} KB`;
+          msg += `\n📊 Ahorro: ${data.savings}`;
+        }
+        alert(msg);
         loadCompras();
       } else {
         // Mostrar error completo con debug
