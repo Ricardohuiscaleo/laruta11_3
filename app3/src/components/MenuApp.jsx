@@ -869,6 +869,7 @@ export default function App() {
 
   const handleCheckout = () => {
     if (!user) {
+      setIsCartOpen(false);
       setIsLoginOpen(true);
       return;
     }
