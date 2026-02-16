@@ -8,8 +8,6 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
   const debounceTimer = useRef(null);
   const inputRef = useRef(null);
 
-  const API_KEY = 'AIzaSyAcK15oZ84Puu5Nc4wDQT_Wyht0xqkbO-A';
-
   const fetchSuggestions = async (input) => {
     if (!input || input.length < 3) {
       setSuggestions([]);
@@ -18,12 +16,7 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
 
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&components=country:cl&language=es&key=${API_KEY}`,
-        { mode: 'cors' }
-      );
-      
-      // Como la API tiene CORS, usamos un proxy PHP
+      // Usar proxy PHP para evitar CORS
       const proxyResponse = await fetch('/api/location/autocomplete_proxy.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
