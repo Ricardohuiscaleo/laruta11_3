@@ -1,8 +1,5 @@
 ---
 const user_id = Astro.url.searchParams.get('user_id');
-if (!user_id) {
-  return Astro.redirect('/');
-}
 ---
 <!DOCTYPE html>
 <html lang="es">
@@ -80,9 +77,18 @@ if (!user_id) {
     </div>
 
     <script define:vars={{ user_id }}>
-        async function loadStatement() {
+        const userId = user_id || new URLSearchParams(window.location.search).get('user_id');
+        
+        if (!userId) {
+            alert('ID de usuario no proporcionado');
+            document.getElementById('loading').innerHTML = '<p class="text-red-600">Error: ID de usuario requerido</p>';
+        } else {
+            loadStatement(userId);
+        }
+        
+        async function loadStatement(uid) {
             try {
-                const response = await fetch(`https://app.laruta11.cl/api/rl6/get_statement.php?user_id=${user_id}`);
+                const response = await fetch(`https://app.laruta11.cl/api/rl6/get_statement.php?user_id=${uid}`);
                 const data = await response.json();
                 
                 if (!data.success) {
@@ -147,8 +153,6 @@ if (!user_id) {
                 console.error(error);
             }
         }
-
-        loadStatement();
     </script>
 
     <style>
