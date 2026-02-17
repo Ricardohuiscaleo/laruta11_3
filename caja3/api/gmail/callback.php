@@ -55,35 +55,39 @@ if ($conn->connect_error) {
     die('Error de conexión a BD: ' . $conn->connect_error);
 }
 
-$stmt = $conn->prepare("INSERT INTO gmail_tokens (id, access_token, refresh_token, expires_at) VALUES (1, ?, ?, ?) ON DUPLICATE KEY UPDATE access_token=?, refresh_token=?, expires_at=?, updated_at=NOW()");
-$stmt->bind_param('ssissi', 
-    $token_data['access_token'], 
-    $token_data['refresh_token'], 
-    $token_data['expires_at'],
-    $token_data['access_token'], 
-    $token_data['refresh_token'], 
-    $token_data['expires_at']
-);
+// Escapar valores
+$access_token = $conn->real_escape_string($token_data['access_token']);
+$refresh_token = $conn->real_escape_string($token_data['refresh_token']);
+$expires_at = intval($token_data['expires_at']);
 
-if ($stmt->execute()) {
+$sql = "INSERT INTO gmail_tokens (id, access_token, refresh_token, expires_at) 
+        VALUES (1, '$access_token', '$refresh_token', $expires_at) 
+        ON DUPLICATE KEY UPDATE 
+        access_token='$access_token', 
+        refresh_token='$refresh_token', 
+        expires_at=$expires_at, 
+        updated_at=NOW()";
+
+if ($conn->query($sql)) {
     echo '<h1>✅ Autenticación exitosa</h1>';
-    echo '<p>Token guardado en base de datos. Persistirá para siempre.</p>';
-    echo '<p>Affected rows: ' . $stmt->affected_rows . '</p>';
     
-    // DEBUG: Verificar en BD
+    // Verificar en BD
     $result = $conn->query("SELECT id, LENGTH(access_token) as at_len, LENGTH(refresh_token) as rt_len, expires_at FROM gmail_tokens WHERE id=1");
     if ($row = $result->fetch_assoc()) {
-        echo '<h2>Verificación en BD:</h2>';
-        echo '<pre>' . print_r($row, true) . '</pre>';
-        if ($row['at_len'] == 0 || $row['rt_len'] == 0) {
-            echo '<p style="color:red">⚠️ TOKENS VACÍOS EN BD</p>';
+        echo '<h2>✅ Token guardado en BD:</h2>';
+        echo '<p>Access token: ' . $row['at_len'] . ' caracteres</p>';
+        echo '<p>Refresh token: ' . $row['rt_len'] . ' caracteres</p>';
+        echo '<p>Expira: ' . date('Y-m-d H:i:s', $row['expires_at']) . '</p>';
+        
+        if ($row['at_len'] > 0 && $row['rt_len'] > 0) {
+            echo '<p style="color:green; font-weight:bold">🎉 TODO CORRECTO - Tokens guardados exitosamente</p>';
+        } else {
+            echo '<p style="color:red; font-weight:bold">⚠️ ERROR - Tokens vacíos en BD</p>';
         }
     }
     
     echo '<p><a href="/admin/emails">Ir al gestor de correos</a></p>';
 } else {
-    die('Error al guardar token: ' . $stmt->error);
+    die('Error al guardar token: ' . $conn->error);
 }
-
-$stmt->close();
 $conn->close();
