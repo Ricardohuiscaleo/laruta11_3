@@ -52,6 +52,17 @@ const user_id = Astro.url.searchParams.get('user_id');
                         <p id="saldoPagar" class="text-xl font-bold text-red-600"></p>
                     </div>
                 </div>
+                
+                <div id="paymentButton" class="hidden mt-4">
+                    <button 
+                        onclick="pagarCredito()" 
+                        class="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold py-3 px-6 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-md flex items-center justify-center gap-2"
+                    >
+                        <span style="font-size: 20px;">💳</span>
+                        <span>Pagar con TUU</span>
+                    </button>
+                    <p class="text-xs text-gray-500 text-center mt-2">Pago seguro con Webpay</p>
+                </div>
             </div>
 
             <div class="bg-white rounded-lg shadow-md p-6">
@@ -86,6 +97,36 @@ const user_id = Astro.url.searchParams.get('user_id');
             loadStatement(userId);
         }
         
+        async function pagarCredito() {
+            if (!confirm('¿Deseas proceder con el pago de tu crédito RL6?')) return;
+            
+            const btn = event.target.closest('button');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="animate-spin">⏳</span> Procesando...';
+            
+            try {
+                const response = await fetch('https://app.laruta11.cl/api/rl6/create_payment.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = data.payment_url;
+                } else {
+                    alert('Error: ' + data.error);
+                    btn.disabled = false;
+                    btn.innerHTML = '<span style="font-size: 20px;">💳</span><span>Pagar con TUU</span>';
+                }
+            } catch (error) {
+                alert('Error de conexión');
+                btn.disabled = false;
+                btn.innerHTML = '<span style="font-size: 20px;">💳</span><span>Pagar con TUU</span>';
+            }
+        }
+        
         async function loadStatement(uid) {
             try {
                 const response = await fetch(`https://app.laruta11.cl/api/rl6/get_statement.php?user_id=${uid}`);
@@ -106,6 +147,11 @@ const user_id = Astro.url.searchParams.get('user_id');
                 document.getElementById('creditoUsado').textContent = '$' + user.credito_usado.toLocaleString();
                 document.getElementById('creditoDisponible').textContent = '$' + user.credito_disponible.toLocaleString();
                 document.getElementById('saldoPagar').textContent = '$' + user.credito_usado.toLocaleString();
+                
+                // Mostrar botón de pago si hay saldo pendiente
+                if (user.credito_usado > 0) {
+                    document.getElementById('paymentButton').classList.remove('hidden');
+                }
 
                 document.getElementById('totalTx').textContent = `${transactions.length} transacciones`;
                 
