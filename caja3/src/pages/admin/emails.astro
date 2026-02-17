@@ -118,7 +118,7 @@ window.addEventListener('DOMContentLoaded', () => {
 async function checkGmailStatus() {
     const statusDiv = document.getElementById('gmailStatus');
     try {
-        const response = await fetch('/api/gmail/get_token.php');
+        const response = await fetch('/api/gmail/check_token.php');
         const result = await response.json();
         if (result.access_token) {
             statusDiv.innerHTML = '<div class="w-3 h-3 bg-green-500 rounded-full"></div><span class="text-green-700 font-medium">✅ Gmail API configurado</span>';
