@@ -2,9 +2,22 @@
 // Helper para obtener token válido (con auto-refresh)
 function getValidGmailToken() {
     $config = require __DIR__ . '/../../config.php';
-    $token_file = __DIR__ . '/../../gmail_token.json';
     
-    if (!file_exists($token_file)) {
+    // Buscar token en múltiples ubicaciones
+    $token_paths = [
+        __DIR__ . '/../../gmail_token.json',  // caja3 local
+        '/var/www/html/gmail_token.json',      // app3 compartido
+    ];
+    
+    $token_file = null;
+    foreach ($token_paths as $path) {
+        if (file_exists($path)) {
+            $token_file = $path;
+            break;
+        }
+    }
+    
+    if (!$token_file) {
         return ['error' => 'Token no encontrado. Debes autenticarte primero en /api/gmail/auth.php'];
     }
     
