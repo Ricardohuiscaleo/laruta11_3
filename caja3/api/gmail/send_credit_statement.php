@@ -142,16 +142,18 @@ $html = "
                     
                     <tr>
                         <td style='padding: 0 30px 30px 30px;' align='center'>
-                            <a href='https://caja.laruta11.cl/estado-cuenta?user_id=$user_id' 
-                               style='display: inline-block; background: #6b7280; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; font-size: 14px; margin-bottom: 10px;'>
-                                📊 Ver Estado de Cuenta Detallado
-                            </a><br>
                             <a href='https://app.laruta11.cl/pagar-credito?user_id=$user_id&monto=$saldo_pagar' 
-                               style='display: inline-block; background: #0074D9; color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+                               style='display: inline-block; background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: #ffffff; text-decoration: none; padding: 16px 50px; border-radius: 8px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 12px rgba(255,107,53,0.3);'>
                                 💳 Pagar Ahora
                             </a>
-                            <p style='color: #999999; font-size: 12px; margin: 15px 0 0 0;'>
+                            <p style='color: #999999; font-size: 12px; margin: 15px 0 5px 0;'>
                                 Pago seguro procesado por TUU.cl
+                            </p>
+                            <p style='margin: 0;'>
+                                <a href='https://caja.laruta11.cl/estado-cuenta?user_id=$user_id' 
+                                   style='color: #666666; text-decoration: underline; font-size: 14px;'>
+                                    📊 Ver estado de cuenta detallado
+                                </a>
                             </p>
                         </td>
                     </tr>
