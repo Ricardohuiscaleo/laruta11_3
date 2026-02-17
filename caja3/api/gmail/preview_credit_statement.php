@@ -144,8 +144,9 @@ $conn->close();
                     <tr>
                         <td style='background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e0e0e0;'>
                             <p style='color: #999999; margin: 0; font-size: 12px;'>
-                                📍 Yumbel 2629, La Florida, Santiago<br>
-                                📞 +56 9 3622 7422 | 📧 saboresdelaruta11@gmail.com<br>
+                                📍 Yumbel 2629, Arica, Chile<br>
+                                📞 Ventas: +56 9 3622 7422 | 🛠️ Soporte: +56 9 4539 2581<br>
+                                📧 saboresdelaruta11@gmail.com<br>
                                 <a href='https://app.laruta11.cl' style='color: #ff6b35; text-decoration: none;'>app.laruta11.cl</a>
                             </p>
                             <p style='color: #cccccc; margin: 15px 0 0 0; font-size: 11px;'>

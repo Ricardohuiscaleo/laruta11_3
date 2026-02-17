@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
 
-$config = require_once __DIR__ . '/../../caja3/config.php';
+require_once __DIR__ . '/../db_connect.php';
 
 $user_id = $_GET['user_id'] ?? null;
 
@@ -10,7 +10,7 @@ if (!$user_id) {
     exit;
 }
 
-$conn = new mysqli($config['app_db_host'], $config['app_db_user'], $config['app_db_pass'], $config['app_db_name']);
+$conn = getDBConnection();
 
 if ($conn->connect_error) {
     echo json_encode(['success' => false, 'error' => 'Error de conexión']);
