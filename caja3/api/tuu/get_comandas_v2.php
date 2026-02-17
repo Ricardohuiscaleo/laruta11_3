@@ -38,7 +38,7 @@ try {
     $customer_name = $_GET['customer_name'] ?? null;
     $user_id = $_GET['user_id'] ?? null;
     
-    $where_clause = "WHERE order_status NOT IN ('delivered', 'cancelled')";
+    $where_clause = "WHERE order_status NOT IN ('delivered', 'cancelled') AND order_number NOT LIKE 'RL6-%'";
     
     if ($user_id) {
         $where_clause .= " AND user_id = :user_id";
