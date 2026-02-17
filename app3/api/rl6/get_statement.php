@@ -56,10 +56,9 @@ while ($row = $result->fetch_assoc()) {
     // Si tiene order_id, obtener items de la venta
     if ($row['order_id']) {
         $stmt_items = $conn->prepare("
-            SELECT vi.producto_nombre, vi.cantidad, vi.precio_unitario
-            FROM ventas_items vi
-            JOIN ventas v ON vi.venta_id = v.id
-            WHERE v.order_id = ?
+            SELECT product_name, quantity, product_price
+            FROM tuu_order_items
+            WHERE order_reference = ?
         ");
         $stmt_items->bind_param("s", $row['order_id']);
         $stmt_items->execute();
@@ -67,9 +66,9 @@ while ($row = $result->fetch_assoc()) {
         
         while ($item = $result_items->fetch_assoc()) {
             $items[] = [
-                'nombre' => $item['producto_nombre'],
-                'cantidad' => intval($item['cantidad']),
-                'precio' => floatval($item['precio_unitario'])
+                'nombre' => $item['product_name'],
+                'cantidad' => intval($item['quantity']),
+                'precio' => floatval($item['product_price'])
             ];
         }
     }
