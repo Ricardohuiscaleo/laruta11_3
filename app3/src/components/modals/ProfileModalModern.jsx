@@ -641,25 +641,25 @@ const ProfileModalModern = ({
                     >
                       <div className="flex items-center justify-center gap-2">
                         <CreditCard size={20} />
-                        <span>
-                          {rl6Credit.credit.credito_usado > 0 
-                            ? `Pagar Crédito ($${parseInt(rl6Credit.credit.credito_usado).toLocaleString('es-CL')})`
-                            : 'Ver Estado de Cuenta'
-                          }
-                        </span>
+                        <span>Pagar Crédito</span>
                       </div>
                     </a>
-                    {rl6Credit.credit.credito_usado > 0 && daysUntilPayment && (
-                      <p className="text-center text-yellow-300 text-xs mt-3 font-bold">
-                        ⏰ Deberás pagar tu cuenta en {daysUntilPayment.days} días, {daysUntilPayment.hours} horas y {daysUntilPayment.minutes} minutos (hasta el 21 a las 11:59 PM)
+                    {rl6Credit.credit.credito_usado > 0 ? (
+                      <>
+                        {daysUntilPayment && (
+                          <p className="text-center text-yellow-300 text-xs mt-3 font-bold">
+                            ⏰ Deberás pagar tu cuenta en {daysUntilPayment.days} días, {daysUntilPayment.hours} horas y {daysUntilPayment.minutes} minutos (hasta el 21 a las 11:59 PM)
+                          </p>
+                        )}
+                        <p className="text-center text-green-300 text-xs mt-2">
+                          💳 Saldo pendiente: ${parseInt(rl6Credit.credit.credito_usado).toLocaleString('es-CL')}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-center text-green-300 text-xs mt-2">
+                        📊 Sin saldo pendiente - Revisa tu historial
                       </p>
                     )}
-                    <p className="text-center text-green-300 text-xs mt-2">
-                      {rl6Credit.credit.credito_usado > 0 
-                        ? '💳 Paga con TUU/Webpay'
-                        : '📊 Revisa tu historial de crédito'
-                      }
-                    </p>
                   </Card>
 
                   {/* Historial de Transacciones */}
