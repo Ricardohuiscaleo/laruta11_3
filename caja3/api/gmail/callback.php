@@ -55,20 +55,11 @@ if ($conn->connect_error) {
     die('Error de conexión a BD: ' . $conn->connect_error);
 }
 
-// Escapar valores
-$access_token = $conn->real_escape_string($token_data['access_token']);
-$refresh_token = $conn->real_escape_string($token_data['refresh_token']);
-$expires_at = intval($token_data['expires_at']);
+// Guardar en BD usando prepared statement
+$stmt = $conn->prepare("INSERT INTO gmail_tokens (id, access_token, refresh_token, expires_at) VALUES (1, ?, ?, ?) ON DUPLICATE KEY UPDATE access_token=VALUES(access_token), refresh_token=VALUES(refresh_token), expires_at=VALUES(expires_at), updated_at=NOW()");
+$stmt->bind_param('ssi', $token_data['access_token'], $token_data['refresh_token'], $token_data['expires_at']);
 
-$sql = "INSERT INTO gmail_tokens (id, access_token, refresh_token, expires_at) 
-        VALUES (1, '$access_token', '$refresh_token', $expires_at) 
-        ON DUPLICATE KEY UPDATE 
-        access_token='$access_token', 
-        refresh_token='$refresh_token', 
-        expires_at=$expires_at, 
-        updated_at=NOW()";
-
-if ($conn->query($sql)) {
+if ($stmt->execute()) {
     echo '<h1>✅ Autenticación exitosa</h1>';
     
     // Verificar en BD
@@ -88,6 +79,8 @@ if ($conn->query($sql)) {
     
     echo '<p><a href="/admin/emails">Ir al gestor de correos</a></p>';
 } else {
-    die('Error al guardar token: ' . $conn->error);
+    die('Error al guardar token: ' . $stmt->error);
 }
+
+$stmt->close();
 $conn->close();

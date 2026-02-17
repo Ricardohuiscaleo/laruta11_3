@@ -20,6 +20,11 @@ RUN a2enmod rewrite headers && \
 
 # Copiar código
 WORKDIR /app
+
+# Invalidar cache para forzar rebuild
+ARG CACHEBUST=1
+RUN echo "Cache bust: $CACHEBUST"
+
 COPY . .
 
 # Instalar dependencias y build
