@@ -45,7 +45,7 @@ try {
     $customer_name = $_GET['customer_name'] ?? null;
     $user_id = $_GET['user_id'] ?? null;
     
-    $where_clause = "WHERE order_status NOT IN ('cancelled')";
+    $where_clause = "WHERE order_status NOT IN ('cancelled') AND order_number NOT LIKE 'RL6-%'";
     
     if ($user_id) {
         $where_clause .= " AND user_id = :user_id";
@@ -56,7 +56,8 @@ try {
     $sql = "SELECT id, order_number, user_id, customer_name, customer_phone, 
                    order_status, payment_status, payment_method, 
                    delivery_type, delivery_address, pickup_time, delivery_fee, installment_amount, 
-                   customer_notes, discount_amount, cashback_used, delivery_extras, delivery_extras_items, created_at
+                   customer_notes, discount_amount, cashback_used, delivery_extras, delivery_extras_items, 
+                   delivery_discount, created_at
             FROM tuu_orders 
             {$where_clause}
             ORDER BY created_at DESC";
