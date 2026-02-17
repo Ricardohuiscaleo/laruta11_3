@@ -392,6 +392,7 @@ const MiniComandasCliente = ({ customerName, userId, onOrdersUpdate, isOpen, onC
                         const total = parseInt(order.installment_amount || 0);
                         const deliveryCost = order.delivery_type === 'delivery' ? parseInt(order.delivery_fee || 0) : 0;
                         const discountAmount = parseFloat(order.discount_amount || 0);
+                        const deliveryDiscount = parseFloat(order.delivery_discount || 0);
                         const cashbackUsed = parseFloat(order.cashback_used || 0);
                         const deliveryExtras = parseFloat(order.delivery_extras || 0);
                         let deliveryExtrasItems = [];
@@ -423,6 +424,12 @@ const MiniComandasCliente = ({ customerName, userId, onOrdersUpdate, isOpen, onC
                               <div className="flex justify-between items-center text-sm mb-1">
                                 <span className="text-gray-600">Delivery:</span>
                                 <span className="font-semibold text-gray-900">${deliveryCost.toLocaleString('es-CL')}</span>
+                              </div>
+                            )}
+                            {deliveryDiscount > 0 && (
+                              <div className="flex justify-between items-center text-sm mb-1">
+                                <span className="text-green-600">🎉 Descuento Delivery:</span>
+                                <span className="font-semibold text-green-600">-${deliveryDiscount.toLocaleString('es-CL')}</span>
                               </div>
                             )}
                             {deliveryExtras > 0 && deliveryExtrasItems.length > 0 && (
