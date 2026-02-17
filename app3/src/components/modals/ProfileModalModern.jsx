@@ -611,21 +611,29 @@ const ProfileModalModern = ({
                     </Card>
                   </div>
 
-                  {/* Botón Pagar Crédito */}
-                  {rl6Credit.credit.credito_usado > 0 && (
-                    <Card className="p-4 bg-gradient-to-r from-green-900/30 to-green-800/30 border-green-600">
-                      <a 
-                        href="/pagar-credito"
-                        className="w-full py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
-                      >
+                  {/* Botón Pagar Crédito - SIEMPRE VISIBLE */}
+                  <Card className="p-4 bg-gradient-to-r from-green-900/30 to-green-800/30 border-green-600">
+                    <a 
+                      href="/pagar-credito"
+                      className="block w-full py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition-colors text-center"
+                    >
+                      <div className="flex items-center justify-center gap-2">
                         <CreditCard size={20} />
-                        Pagar Crédito (${parseInt(rl6Credit.credit.credito_usado).toLocaleString('es-CL')})
-                      </a>
-                      <p className="text-center text-green-300 text-xs mt-2">
-                        💳 Paga con TUU/Webpay
-                      </p>
-                    </Card>
-                  )}
+                        <span>
+                          {rl6Credit.credit.credito_usado > 0 
+                            ? `Pagar Crédito ($${parseInt(rl6Credit.credit.credito_usado).toLocaleString('es-CL')})`
+                            : 'Ver Estado de Cuenta'
+                          }
+                        </span>
+                      </div>
+                    </a>
+                    <p className="text-center text-green-300 text-xs mt-2">
+                      {rl6Credit.credit.credito_usado > 0 
+                        ? '💳 Paga con TUU/Webpay'
+                        : '📊 Revisa tu historial de crédito'
+                      }
+                    </p>
+                  </Card>
 
                   {/* Historial de Transacciones */}
                   <div>
