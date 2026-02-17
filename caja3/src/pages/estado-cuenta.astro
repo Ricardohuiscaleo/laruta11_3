@@ -114,8 +114,8 @@ const user_id = Astro.url.searchParams.get('user_id');
                 } else {
                     const container = document.getElementById('transactions');
                     
-                    // Ordenar por fecha (más recientes primero)
-                    const sorted = [...transactions].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+                    // Ordenar por fecha (más antiguas primero)
+                    const sorted = [...transactions].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
                     
                     container.innerHTML = sorted.map(tx => {
                         const fecha = new Date(tx.fecha);
