@@ -34,7 +34,7 @@ $config = [
     'app_db_pass' => getenv('APP_DB_PASS'),
     
     'admin_users' => [
-        'admin' => getenv('ADMIN_PASSWORD'),
+        getenv('ADMIN_USER') ?: 'admin' => getenv('ADMIN_PASS') ?: 'admin123',
         'ricardo' => getenv('RICARDO_PASSWORD'),
         'manager' => getenv('MANAGER_PASSWORD'),
         'ruta11' => getenv('RUTA11_PASSWORD')
