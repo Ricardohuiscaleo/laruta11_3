@@ -51,6 +51,7 @@ const ProfileModalModern = ({
   const [rl6Credit, setRl6Credit] = useState(null);
   const [loadingRL6, setLoadingRL6] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [daysUntilPayment, setDaysUntilPayment] = useState(null);
   
   // Verificar si es militar RL6 aprobado
   const isMilitarRL6 = (user?.es_militar_rl6 == 1 || user?.es_militar_rl6 === '1') && 
@@ -114,6 +115,7 @@ const ProfileModalModern = ({
     }
     if (isOpen && user && activeTab === 'rl6' && isMilitarRL6) {
       loadRL6Credit();
+      calculateDaysUntilPayment();
     }
   }, [isOpen, user, activeTab]);
   
@@ -138,7 +140,9 @@ const ProfileModalModern = ({
   const loadRL6Credit = async () => {
     setLoadingRL6(true);
     try {
-      const response = await fetch(`/api/rl6/get_credit.php?user_id=${user.id}&t=${Date.now()}`);
+      const userData = JSON.parse(localStorage.getItem('laruta11_user') || '{}');
+      const userId = userData.id || user.id;
+      const response = await fetch(`/api/rl6/get_credit.php?user_id=${userId}&t=${Date.now()}`);
       const data = await response.json();
       if (data.success) {
         setRl6Credit(data);
@@ -148,6 +152,24 @@ const ProfileModalModern = ({
     } finally {
       setLoadingRL6(false);
     }
+  };
+  
+  const calculateDaysUntilPayment = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const paymentDate = new Date(currentYear, currentMonth, 21, 23, 59, 59);
+    
+    if (now > paymentDate) {
+      paymentDate.setMonth(currentMonth + 1);
+    }
+    
+    const diff = paymentDate - now;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    setDaysUntilPayment({ days, hours, minutes });
   };
   
   const handleRefreshProfile = async () => {
@@ -627,6 +649,11 @@ const ProfileModalModern = ({
                         </span>
                       </div>
                     </a>
+                    {rl6Credit.credit.credito_usado > 0 && daysUntilPayment && (
+                      <p className="text-center text-yellow-300 text-xs mt-3 font-bold">
+                        ⏰ Deberás pagar tu cuenta en {daysUntilPayment.days} días, {daysUntilPayment.hours} horas y {daysUntilPayment.minutes} minutos (hasta el 21 a las 11:59 PM)
+                      </p>
+                    )}
                     <p className="text-center text-green-300 text-xs mt-2">
                       {rl6Credit.credit.credito_usado > 0 
                         ? '💳 Paga con TUU/Webpay'
