@@ -2148,7 +2148,7 @@ export default function App() {
       <header className="px-4 py-2 sm:p-3 fixed top-0 left-0 right-0 bg-white z-40 shadow-sm">
         <div className="flex items-center justify-between w-full">
           {/* Logo */}
-          <img src="https://laruta11-images.s3.amazonaws.com/menu/logo.png" alt="La Ruta 11" style={{width: 'clamp(32px, 8vw, 40px)', height: 'clamp(32px, 8vw, 40px)'}} />
+          <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg" alt="La Ruta 11" style={{width: 'clamp(32px, 8vw, 40px)', height: 'clamp(32px, 8vw, 40px)'}} />
           
           {/* Checklist */}
           {cajaUser && (

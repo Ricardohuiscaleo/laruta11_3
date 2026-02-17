@@ -95,7 +95,7 @@
             .xl\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
     </style>
-    <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo.png" />
+    <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg" />
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div id="login-app"></div>
@@ -143,7 +143,7 @@
             return h('div', { className: 'min-h-screen bg-gray-100 flex items-center justify-center' },
                 h('div', { className: 'bg-white p-8 rounded-xl shadow-xl w-full max-w-md' },
                     h('div', { className: 'text-center mb-6' },
-                        h('img', { src: 'https://laruta11-images.s3.amazonaws.com/menu/logo.png', alt: 'La Ruta 11', className: 'w-16 h-16 mx-auto mb-4' }),
+                        h('img', { src: 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg', alt: 'La Ruta 11', className: 'w-16 h-16 mx-auto mb-4' }),
                         h('h1', { className: 'text-2xl font-bold text-gray-800' }, 'Comandas - Cocina'),
                         h('p', { className: 'text-gray-600' }, 'Ingresa tus credenciales')
                     ),
@@ -203,7 +203,7 @@
                 if ('Notification' in window && Notification.permission === 'granted') {
                     new Notification(title, {
                         body: body,
-                        icon: 'https://laruta11-images.s3.amazonaws.com/menu/logo.png'
+                        icon: 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg'
                     });
                 }
             };
@@ -392,7 +392,7 @@
                 if (imageUrl && imageUrl.trim() !== '') {
                     return imageUrl;
                 }
-                return 'https://laruta11-images.s3.amazonaws.com/menu/logo.png';
+                return 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg';
             };
 
             const formatPhone = (phone) => {
@@ -488,7 +488,7 @@
                     h('div', { className: 'max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4' },
                         h('div', { className: 'flex flex-col lg:flex-row justify-between items-start lg:items-center gap-2' },
                             h('div', { className: 'flex items-center gap-2 sm:gap-3' },
-                                h('img', { src: 'https://laruta11-images.s3.amazonaws.com/menu/logo.png', alt: 'La Ruta 11', className: 'w-6 h-6 sm:w-8 sm:h-8' }),
+                                h('img', { src: 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg', alt: 'La Ruta 11', className: 'w-6 h-6 sm:w-8 sm:h-8' }),
                                 h('h1', { 
                                     className: 'font-bold text-gray-800',
                                     style: { fontSize: 'clamp(1.25rem, 4vw, 2rem)' }
@@ -584,7 +584,7 @@
                                                                     src: getProductImage(item.image_url),
                                                                     alt: item.product_name || 'Producto',
                                                                     className: 'w-12 h-12 object-cover rounded border',
-                                                                    onError: (e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo.png'; }
+                                                                    onError: (e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg'; }
                                                                 }),
                                                                 h('div', { className: 'flex-1 min-w-0' },
                                                                     h('h3', { 

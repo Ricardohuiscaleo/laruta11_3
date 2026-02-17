@@ -1808,7 +1808,7 @@ export default function App() {
       {/* Sidebar PC - Fixed left */}
       <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-gray-200 z-40 overflow-y-auto">
         <div className="p-4 border-b flex-shrink-0">
-          <img src="https://laruta11-images.s3.amazonaws.com/menu/logo.png" alt="La Ruta 11" className="w-10 h-10 mx-auto mb-2" />
+          <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg" alt="La Ruta 11" className="w-10 h-10 mx-auto mb-2" />
           <div className="flex items-center justify-center gap-2">
             <h2 className="text-center font-black text-gray-800 text-sm">MENÚ</h2>
             {(() => {
@@ -1906,7 +1906,7 @@ export default function App() {
             {/* Fila única: Logo | Status | Menú | Búsqueda | Notificaciones | Carrito */}
             <div className="flex items-center justify-between gap-2">
               {/* Logo */}
-              <img src="https://laruta11-images.s3.amazonaws.com/menu/logo.png" alt="La Ruta 11" className="drop-shadow-sm flex-shrink-0" style={{width: '24px', height: '24px'}} />
+              <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg" alt="La Ruta 11" className="drop-shadow-sm flex-shrink-0" style={{width: '24px', height: '24px'}} />
               
               {/* Status */}
               {(() => {
@@ -2040,7 +2040,7 @@ export default function App() {
               {/* Fila única: Logo | Status | Búsqueda | Notificaciones | Carrito */}
               <div className="flex items-center justify-between gap-3 lg:gap-4">
                 {/* Logo - Solo en sm, en lg está en sidebar */}
-                <img src="https://laruta11-images.s3.amazonaws.com/menu/logo.png" alt="La Ruta 11" className="w-10 h-10 drop-shadow-lg flex-shrink-0 lg:hidden" />
+                <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg" alt="La Ruta 11" className="w-10 h-10 drop-shadow-lg flex-shrink-0 lg:hidden" />
                 
                 {/* Menú adicional PC - Izquierda */}
                 <div className="hidden lg:flex items-center gap-3 mr-4 pr-4 border-r border-gray-200">
