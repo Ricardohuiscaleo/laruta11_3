@@ -146,6 +146,7 @@ const user_id = Astro.url.searchParams.get('user_id');
                         // Resumen financiero
                         const subtotalProd = mainTx.subtotal_productos || 0;
                         const deliveryFee = mainTx.delivery_fee || 0;
+                        const deliveryDiscount = mainTx.delivery_discount || 0;
                         const totalReal = Math.abs(netAmount);
                         const extras = totalReal - subtotalProd - deliveryFee;
                         
@@ -160,6 +161,9 @@ const user_id = Astro.url.searchParams.get('user_id');
                             }
                             if (deliveryFee > 0) {
                                 resumenHtml += '<div class="flex justify-between text-gray-600"><span>Delivery:</span><span>$' + Math.round(deliveryFee).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '</span></div>';
+                            }
+                            if (deliveryDiscount > 0) {
+                                resumenHtml += '<div class="flex justify-between text-green-600"><span>Descuento delivery:</span><span>-$' + Math.round(deliveryDiscount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '</span></div>';
                             }
                             resumenHtml += '<div class="flex justify-between font-semibold text-orange-600"><span>Total:</span><span>$' + Math.round(totalReal).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '</span></div>';
                             resumenHtml += '</div>';

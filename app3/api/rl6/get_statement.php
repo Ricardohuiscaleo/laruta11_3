@@ -146,7 +146,8 @@ while ($row = $result->fetch_assoc()) {
         'order_id' => $row['order_id'],
         'items' => $items,
         'subtotal_productos' => $subtotal_productos,
-        'delivery_fee' => $delivery_fee - $delivery_discount
+        'delivery_fee' => $delivery_fee - $delivery_discount,
+        'delivery_discount' => $delivery_discount
     ];
 }
 
