@@ -73,25 +73,30 @@ try {
     
     $token_response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curl_error = curl_error($ch);
     curl_close($ch);
     
     if ($httpCode !== 200) {
-        throw new Exception('Error obteniendo token TUU');
+        error_log("RL6 Token Error - HTTP $httpCode: $token_response, CURL: $curl_error");
+        throw new Exception("Error obteniendo token TUU - HTTP $httpCode");
     }
     
     $token_data = json_decode($token_response, true);
     if (!isset($token_data['token'])) {
-        throw new Exception('Token no recibido');
+        error_log("RL6 Token Response: $token_response");
+        throw new Exception('Token no recibido de TUU');
     }
     
     // Decodificar JWT directamente
     $jwt_parts = explode('.', $token_data['token']);
     if (count($jwt_parts) !== 3) {
+        error_log("RL6 JWT Invalid: " . $token_data['token']);
         throw new Exception('Token JWT inválido');
     }
     
     $payload = json_decode(base64_decode($jwt_parts[1]), true);
     if (!isset($payload['secret_key']) || !isset($payload['account_id'])) {
+        error_log("RL6 JWT Payload: " . json_encode($payload));
         throw new Exception('Token JWT no contiene datos necesarios');
     }
     
@@ -145,16 +150,19 @@ try {
     
     $payment_response = curl_exec($ch);
     $payment_httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $payment_curl_error = curl_error($ch);
     curl_close($ch);
     
     if ($payment_httpCode !== 200) {
-        throw new Exception('Error creando pago TUU');
+        error_log("RL6 Payment Error - HTTP $payment_httpCode: $payment_response, CURL: $payment_curl_error");
+        throw new Exception("Error creando pago TUU - HTTP $payment_httpCode");
     }
     
     $webpay_url = trim($payment_response, '"');
     
     if (!filter_var($webpay_url, FILTER_VALIDATE_URL)) {
-        throw new Exception('URL de pago inválida');
+        error_log("RL6 Payment Response: $payment_response");
+        throw new Exception('URL de pago inválida recibida de TUU');
     }
     
     echo json_encode([
@@ -165,6 +173,7 @@ try {
     ]);
     
 } catch (Exception $e) {
+    error_log("RL6 Payment Exception: " . $e->getMessage() . " | Line: " . $e->getLine());
     echo json_encode([
         'success' => false,
         'error' => $e->getMessage()
