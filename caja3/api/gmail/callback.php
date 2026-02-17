@@ -56,7 +56,7 @@ if ($conn->connect_error) {
 }
 
 $stmt = $conn->prepare("INSERT INTO gmail_tokens (id, access_token, refresh_token, expires_at) VALUES (1, ?, ?, ?) ON DUPLICATE KEY UPDATE access_token=?, refresh_token=?, expires_at=?, updated_at=NOW()");
-$stmt->bind_param('ssissii', 
+$stmt->bind_param('ssissi', 
     $token_data['access_token'], 
     $token_data['refresh_token'], 
     $token_data['expires_at'],
