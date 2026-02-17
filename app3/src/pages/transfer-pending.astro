@@ -317,6 +317,10 @@
                     <span>Delivery:</span>
                     <span id="delivery-fee">$0</span>
                 </div>
+                <div id="delivery-discount-row" class="total-row discount hidden">
+                    <span>🎉 Descuento Delivery:</span>
+                    <span id="delivery-discount">-$0</span>
+                </div>
                 <div id="delivery-extras-row" class="hidden" style="margin: 10px 0;">
                     <div style="font-size: 11px; color: #666; margin-bottom: 5px;">EXTRAS DELIVERY:</div>
                     <div id="delivery-extras-list" style="margin-left: 15px; font-size: 12px;"></div>
@@ -617,11 +621,10 @@
                 const deliveryDiscountRow = document.getElementById('delivery-discount-row');
                 if (deliveryDiscountRow) {
                     deliveryDiscountRow.classList.remove('hidden');
-                    deliveryDiscountRow.classList.add('flex');
                 }
                 const deliveryDiscountElement = document.getElementById('delivery-discount');
                 if (deliveryDiscountElement) {
-                    deliveryDiscountElement.textContent = `$${(deliveryFee - deliveryDiscount).toLocaleString('es-CL')}`;
+                    deliveryDiscountElement.textContent = `-$${deliveryDiscount.toLocaleString('es-CL')}`;
                 }
             }
             
