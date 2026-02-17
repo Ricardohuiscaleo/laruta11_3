@@ -155,12 +155,12 @@ $html = "
                     <tr>
                         <td style='background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e0e0e0;'>
                             <p style='color: #999999; margin: 0; font-size: 12px;'>
-                                📍 Av. Vicuña Mackenna 7255, La Florida, Santiago<br>
-                                📞 +56 9 2250 4275 | 📧 hola@laruta11.cl<br>
-                                <a href='https://laruta11.cl' style='color: #ff6b35; text-decoration: none;'>www.laruta11.cl</a>
+                                📍 Yumbel 2629, La Florida, Santiago<br>
+                                📞 +56 9 3622 7422 | 📧 saboresdelaruta11@gmail.com<br>
+                                <a href='https://app.laruta11.cl' style='color: #ff6b35; text-decoration: none;'>app.laruta11.cl</a>
                             </p>
                             <p style='color: #cccccc; margin: 15px 0 0 0; font-size: 11px;'>
-                                © 2026 La Ruta 11. Todos los derechos reservados.
+                                © " . date('Y') . " La Ruta 11 SpA. Todos los derechos reservados.
                             </p>
                         </td>
                     </tr>
