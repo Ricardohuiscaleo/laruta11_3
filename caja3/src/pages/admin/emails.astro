@@ -1,17 +1,9 @@
 ---
-// Email Manager for Caja3
+import Layout from '../../layouts/Layout.astro';
 ---
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📧 Gestor de Correos - La Ruta 11</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100">
-    <div class="min-h-screen p-6">
+<Layout title="📧 Gestor de Correos">
+<div class="min-h-screen p-6 bg-gray-100">
         <div class="max-w-4xl mx-auto">
             <!-- Header -->
             <div class="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -68,8 +60,9 @@
             <div id="statusMessage" class="hidden mt-6 p-4 rounded-lg"></div>
         </div>
     </div>
+</Layout>
 
-    <script>
+<script>
         // Check Gmail status on load
         window.addEventListener('DOMContentLoaded', checkGmailStatus);
 
@@ -143,6 +136,4 @@
                 }, 5000);
             }
         }
-    </script>
-</body>
-</html>
+</script>
