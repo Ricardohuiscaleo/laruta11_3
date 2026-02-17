@@ -14,21 +14,21 @@ $s3 = new S3Client([
     ],
 ]);
 
-$localFile = '/tmp/logo-optimized.jpg';
+$localFile = '/tmp/logo-optimized.png';
 $bucket = 'laruta11-images';
-$key = 'menu/logo-optimized.jpg';
+$key = 'menu/logo-optimized.png';
 
 try {
     $result = $s3->putObject([
         'Bucket' => $bucket,
         'Key'    => $key,
         'SourceFile' => $localFile,
-        'ContentType' => 'image/jpeg',
+        'ContentType' => 'image/png',
     ]);
     
     echo "✅ Logo optimizado subido exitosamente!\n";
     echo "URL: " . $result['ObjectURL'] . "\n";
-    echo "Tamaño: 52KB (93% más liviano)\n";
+    echo "Tamaño: 243KB con transparencia\n";
 } catch (Exception $e) {
     echo "❌ Error: " . $e->getMessage() . "\n";
 }

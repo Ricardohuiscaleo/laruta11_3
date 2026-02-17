@@ -91,7 +91,7 @@
         }
 
         function getProductImage(imageUrl) {
-            return imageUrl && imageUrl.trim() !== '' ? imageUrl : 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg';
+            return imageUrl && imageUrl.trim() !== '' ? imageUrl : 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png';
         }
 
         function formatPrice(price) {
@@ -119,7 +119,7 @@
             const slidesHTML = slides.map(function(slideProducts, slideIndex) {
                 const cardsHTML = slideProducts.map(function(product) {
                     return '<div class="card">' +
-                        '<div class="card-image"><img src="' + getProductImage(product.image_url) + '" alt="' + product.name + '" onerror="this.src=\'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg\'"></div>' +
+                        '<div class="card-image"><img src="' + getProductImage(product.image_url) + '" alt="' + product.name + '" onerror="this.src=\'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png\'"></div>' +
                         '<div class="card-content">' +
                             '<span class="card-category">' + getCategoryName(product.category_id) + '</span>' +
                             '<h3 class="card-title">' + product.name + '</h3>' +

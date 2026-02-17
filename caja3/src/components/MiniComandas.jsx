@@ -292,19 +292,19 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                 {Object.entries(comboData.selections).map(([group, selection], idx) => {
                   if (Array.isArray(selection)) {
                     return selection.map((sel, sidx) => {
-                      const imageUrl = sel.image_url || sel.image || 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg';
+                      const imageUrl = sel.image_url || sel.image || 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png';
                       return (
                         <div key={`${idx}-${sidx}`} className="flex items-center gap-2 bg-blue-50 p-1.5 rounded border border-blue-200">
-                          <img src={imageUrl} alt={sel.name} className="w-10 h-10 object-cover rounded border border-blue-300" onError={(e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg'; }} />
+                          <img src={imageUrl} alt={sel.name} className="w-10 h-10 object-cover rounded border border-blue-300" onError={(e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png'; }} />
                           <span className="text-xs text-gray-700">{item.quantity}x {sel.name}</span>
                         </div>
                       );
                     });
                   } else if (selection && selection.name) {
-                    const imageUrl = selection.image_url || selection.image || 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg';
+                    const imageUrl = selection.image_url || selection.image || 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png';
                     return (
                       <div key={idx} className="flex items-center gap-2 bg-blue-50 p-1.5 rounded border border-blue-200">
-                        <img src={imageUrl} alt={selection.name} className="w-10 h-10 object-cover rounded border border-blue-300" onError={(e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg'; }} />
+                        <img src={imageUrl} alt={selection.name} className="w-10 h-10 object-cover rounded border border-blue-300" onError={(e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png'; }} />
                         <span className="text-xs text-gray-700">{item.quantity}x {selection.name}</span>
                       </div>
                     );

@@ -95,7 +95,7 @@
             .xl\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
     </style>
-    <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg" />
+    <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" />
 </head>
 <body class="bg-white min-h-screen">
     <div id="login-app"></div>
@@ -144,7 +144,7 @@
             return h('div', { className: 'min-h-screen bg-gray-100 flex items-center justify-center' },
                 h('div', { className: 'bg-white p-8 rounded-xl shadow-xl w-full max-w-md' },
                     h('div', { className: 'text-center mb-6' },
-                        h('img', { src: 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg', alt: 'La Ruta 11', className: 'w-16 h-16 mx-auto mb-4' }),
+                        h('img', { src: 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png', alt: 'La Ruta 11', className: 'w-16 h-16 mx-auto mb-4' }),
                         h('h1', { className: 'text-2xl font-bold text-gray-800' }, 'Comandas - Cocina'),
                         h('p', { className: 'text-gray-600' }, 'Ingresa tus credenciales')
                     ),
@@ -213,7 +213,7 @@
                 if ('Notification' in window && Notification.permission === 'granted') {
                     new Notification(title, {
                         body: body,
-                        icon: 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg'
+                        icon: 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png'
                     });
                 }
             };
@@ -430,7 +430,7 @@
                 if (imageUrl && imageUrl.trim() !== '') {
                     return imageUrl;
                 }
-                return 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg';
+                return 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png';
             };
 
             const formatPhone = (phone) => {
@@ -602,7 +602,7 @@
                     h('div', { className: 'max-w-7xl mx-auto px-4 py-2' },
                         h('div', { className: 'flex items-center justify-between gap-4 mb-2' },
                             h('div', { className: 'flex items-center gap-2' },
-                                h('img', { src: 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg', alt: 'La Ruta 11', className: 'w-6 h-6' }),
+                                h('img', { src: 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png', alt: 'La Ruta 11', className: 'w-6 h-6' }),
                                 h('h1', { className: 'font-bold text-gray-800 text-base' }, 'Comandas')
                             ),
                             h('div', { className: 'flex items-center gap-2 text-xs text-gray-600' },
@@ -743,7 +743,7 @@
                                                                     src: getProductImage(item.image_url),
                                                                     alt: item.product_name || 'Producto',
                                                                     className: 'w-24 h-24 object-cover rounded border-2 border-white shadow flex-shrink-0',
-                                                                    onError: (e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg'; }
+                                                                    onError: (e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png'; }
                                                                 }),
                                                                 // Columna 2: Info del producto
                                                                 h('div', { className: 'flex-1 min-w-0' },
@@ -788,7 +788,7 @@
                                                                             src: getProductImage(custom.image_url || custom.image),
                                                                             alt: custom.name,
                                                                             className: 'w-12 h-12 object-cover rounded border border-blue-300',
-                                                                            onError: (e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.jpg'; }
+                                                                            onError: (e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png'; }
                                                                         }),
                                                                         h('div', { className: 'flex-1' },
                                                                             h('p', { className: 'text-sm font-bold text-gray-900' }, custom.name),
