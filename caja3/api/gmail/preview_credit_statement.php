@@ -62,7 +62,8 @@ $conn->close();
                     
                     <tr>
                         <td style='background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); padding: 30px; text-align: center;'>
-                            <h1 style='color: #ffffff; margin: 0; font-size: 28px;'>🍔 La Ruta 11</h1>
+                            <img src='https://laruta11-images.s3.amazonaws.com/menu/logo.png' alt='La Ruta 11' style='width: 80px; height: 80px; margin: 0 auto 15px;'>
+                            <h1 style='color: #ffffff; margin: 0; font-size: 28px;'>La Ruta 11</h1>
                             <p style='color: #ffffff; margin: 10px 0 0 0; font-size: 16px;'>Estado de Cuenta - Crédito RL6</p>
                         </td>
                     </tr>
@@ -165,8 +166,8 @@ $conn->close();
                     <tr>
                         <td style='background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e0e0e0;'>
                             <p style='color: #999999; margin: 0; font-size: 12px;'>
-                                📍 Av. Principal 123, Santiago<br>
-                                📞 +56 9 1234 5678 | 📧 contacto@laruta11.cl<br>
+                                📍 Av. Vicuña Mackenna 7255, La Florida, Santiago<br>
+                                📞 +56 9 2250 4275 | 📧 hola@laruta11.cl<br>
                                 <a href='https://laruta11.cl' style='color: #ff6b35; text-decoration: none;'>www.laruta11.cl</a>
                             </p>
                             <p style='color: #cccccc; margin: 15px 0 0 0; font-size: 11px;'>
