@@ -5,8 +5,10 @@ function getValidGmailToken() {
     
     // Buscar token en múltiples ubicaciones
     $token_paths = [
-        __DIR__ . '/../../gmail_token.json',  // caja3 local
-        '/var/www/html/gmail_token.json',      // app3 compartido
+        '/var/www/html/api/gmail/gmail_token.json',  // Volumen persistente (PRIORITARIO)
+        __DIR__ . '/gmail_token.json',               // Directorio actual
+        __DIR__ . '/../../gmail_token.json',         // caja3 local
+        '/var/www/html/gmail_token.json',            // app3 compartido
     ];
     
     $token_file = null;

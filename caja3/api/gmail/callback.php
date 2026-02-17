@@ -39,8 +39,19 @@ $token_data = [
     'created_at' => date('Y-m-d H:i:s')
 ];
 
-$token_file = __DIR__ . '/../../gmail_token.json';
+// Guardar en volumen persistente (PRIORITARIO)
+$token_file = '/var/www/html/api/gmail/gmail_token.json';
+
+// Crear directorio si no existe
+if (!is_dir(dirname($token_file))) {
+    mkdir(dirname($token_file), 0755, true);
+}
+
 file_put_contents($token_file, json_encode($token_data, JSON_PRETTY_PRINT));
+
+// También guardar copia local como backup
+$backup_file = __DIR__ . '/gmail_token.json';
+file_put_contents($backup_file, json_encode($token_data, JSON_PRETTY_PRINT));
 
 echo '<h1>✅ Autenticación exitosa</h1>';
 echo '<p>Token guardado correctamente. Ya puedes enviar emails desde caja3.</p>';
