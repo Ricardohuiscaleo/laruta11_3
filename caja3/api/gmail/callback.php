@@ -1,5 +1,5 @@
 <?php
-// Callback de OAuth - Recibe el código y obtiene tokens (v2)
+// Callback de OAuth - Recibe el código y obtiene tokens (v3 - FINAL)
 $config = require_once __DIR__ . '/../../config.php';
 
 if (!isset($_GET['code'])) {
