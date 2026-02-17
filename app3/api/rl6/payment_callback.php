@@ -95,15 +95,26 @@ try {
         }
         
         error_log("RL6 Payment SUCCESS - User: {$order_data['user_id']}, Order: $order_id, Amount: {$order_data['product_price']}");
+        
+        // Redirigir a página de éxito
+        header("Location: https://app.laruta11.cl/rl6-payment-success?order=$order_id&amount={$order_data['product_price']}");
+        exit;
     } else {
         error_log("RL6 Payment FAILED - Order: $order_id, Status: $payment_status, Message: $tuu_message");
+        
+        // Redirigir a página de error
+        header("Location: https://app.laruta11.cl/pagar-credito?error=1");
+        exit;
     }
 
     echo json_encode([
         'success' => true,
         'order_id' => $order_id,
         'status' => $new_status,
-        'payment_processed' => ($payment_status === 'paid' && $tuu_message === 'Transaccion aprobada')
+        'payment_processed' => ($payment_status === 'paid' && $tuu_message === 'Transaccion aprobada'),
+        'redirect' => ($payment_status === 'paid' && $tuu_message === 'Transaccion aprobada') 
+            ? "https://app.laruta11.cl/rl6-payment-success?order=$order_id&amount={$order_data['product_price']}"
+            : "https://app.laruta11.cl/pagar-credito?error=1"
     ]);
 
 } catch (Exception $e) {

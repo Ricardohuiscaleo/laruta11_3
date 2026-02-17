@@ -1,0 +1,195 @@
+---
+---
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Pago Exitoso! - La Ruta 11</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #dcfce7 0%, #fef3c7 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: #dcfce7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .success-icon svg {
+            width: 40px;
+            height: 40px;
+            color: #16a34a;
+        }
+        h1 {
+            font-size: 28px;
+            color: #166534;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .info-card {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            color: #666;
+            font-weight: 600;
+        }
+        .info-value {
+            color: #000;
+            font-weight: 700;
+        }
+        .amount {
+            font-size: 32px;
+            color: #16a34a;
+            font-weight: 900;
+            margin: 20px 0;
+        }
+        .success-box {
+            background: #dcfce7;
+            border: 2px solid #16a34a;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+        .success-box p {
+            font-size: 14px;
+            color: #166534;
+            line-height: 1.6;
+            margin: 8px 0;
+        }
+        .btn {
+            display: inline-block;
+            background: #16a34a;
+            color: white;
+            padding: 16px 40px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            margin: 10px;
+            transition: all 0.2s;
+        }
+        .btn:hover {
+            background: #15803d;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: white;
+            color: #666;
+            border: 2px solid #e5e7eb;
+        }
+        .btn-secondary:hover {
+            background: #f9fafb;
+        }
+    </style>
+    <link rel="icon" type="image/x-icon" href="/icon.ico" />
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+            </svg>
+        </div>
+        
+        <h1>¡Pago Exitoso!</h1>
+        <p class="subtitle">Tu crédito RL6 ha sido pagado correctamente</p>
+        
+        <div class="amount" id="amount">$0</div>
+        
+        <div class="info-card">
+            <div class="info-row">
+                <span class="info-label">Orden de pago:</span>
+                <span class="info-value" id="order-id">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Método:</span>
+                <span class="info-value">TUU/Webpay</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Estado:</span>
+                <span class="info-value" style="color: #16a34a;">✓ Confirmado</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Fecha:</span>
+                <span class="info-value" id="date">-</span>
+            </div>
+        </div>
+        
+        <div class="success-box">
+            <p><strong>🎉 ¡Excelente!</strong></p>
+            <p>Tu saldo de crédito RL6 ha sido actualizado a <strong>$0</strong></p>
+            <p>Ya puedes seguir usando tu crédito militar normalmente.</p>
+            <p><strong>📧 Recibirás un email de confirmación</strong></p>
+        </div>
+        
+        <div>
+            <a href="/pagar-credito" class="btn">Ver Estado de Cuenta</a>
+            <a href="/" class="btn btn-secondary">Ir al Menú</a>
+        </div>
+    </div>
+
+    <script>
+        // Obtener parámetros de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('order') || urlParams.get('x_reference');
+        const amount = urlParams.get('amount') || urlParams.get('x_amount');
+        
+        // Mostrar datos
+        if (orderId) {
+            document.getElementById('order-id').textContent = orderId;
+        }
+        
+        if (amount) {
+            document.getElementById('amount').textContent = `$${parseInt(amount).toLocaleString('es-CL')}`;
+        }
+        
+        // Fecha actual
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('es-CL', { 
+            day: 'numeric', 
+            month: 'long', 
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        document.getElementById('date').textContent = dateStr;
+    </script>
+</body>
+</html>

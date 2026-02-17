@@ -1,0 +1,156 @@
+---
+---
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesando Pago - La Ruta 11</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #fef3c7 0%, #fef9e7 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+        }
+        h1 {
+            font-size: 24px;
+            color: #92400e;
+            margin-bottom: 10px;
+        }
+        .order-id {
+            font-size: 18px;
+            font-weight: 700;
+            color: #78350f;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #fef3c7;
+            border-top-color: #f59e0b;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 30px auto;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .status {
+            font-size: 16px;
+            color: #666;
+            margin: 20px 0;
+        }
+        .info-box {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+        .info-box p {
+            font-size: 14px;
+            color: #92400e;
+            line-height: 1.6;
+            margin: 8px 0;
+        }
+        .btn {
+            display: inline-block;
+            background: #f59e0b;
+            color: white;
+            padding: 14px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            margin-top: 20px;
+            transition: all 0.2s;
+        }
+        .btn:hover {
+            background: #d97706;
+            transform: translateY(-2px);
+        }
+    </style>
+    <link rel="icon" type="image/x-icon" href="/icon.ico" />
+</head>
+<body>
+    <div class="container">
+        <img src="/icon.ico" alt="La Ruta 11" class="logo">
+        <h1>🎖️ Procesando Pago RL6</h1>
+        <div class="order-id" id="order-id">Cargando...</div>
+        
+        <div class="spinner"></div>
+        
+        <div class="status">
+            Estamos procesando tu pago con TUU/Webpay...<br>
+            Por favor espera un momento.
+        </div>
+        
+        <div class="info-box">
+            <p><strong>📋 ¿Qué está pasando?</strong></p>
+            <p>Tu pago de crédito RL6 está siendo procesado de forma segura.</p>
+            <p>Una vez confirmado, tu saldo será actualizado automáticamente.</p>
+            <p><strong>⏱️ Esto puede tomar unos segundos...</strong></p>
+        </div>
+        
+        <a href="/pagar-credito" class="btn">← Volver a Estado de Cuenta</a>
+    </div>
+
+    <script>
+        // Obtener order ID de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('order') || urlParams.get('x_reference');
+        
+        if (orderId) {
+            document.getElementById('order-id').textContent = orderId;
+        }
+        
+        // Auto-verificar estado cada 3 segundos
+        let checkCount = 0;
+        const maxChecks = 20; // 1 minuto máximo
+        
+        const checkInterval = setInterval(async () => {
+            checkCount++;
+            
+            if (checkCount > maxChecks) {
+                clearInterval(checkInterval);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/rl6/check_payment_status.php?order=${orderId}`);
+                const data = await response.json();
+                
+                if (data.success && data.status === 'completed') {
+                    clearInterval(checkInterval);
+                    window.location.href = `/rl6-payment-success?order=${orderId}&amount=${data.amount}`;
+                } else if (data.status === 'failed' || data.status === 'cancelled') {
+                    clearInterval(checkInterval);
+                    alert('El pago no pudo ser procesado. Por favor intenta nuevamente.');
+                    window.location.href = '/pagar-credito';
+                }
+            } catch (error) {
+                console.error('Error verificando estado:', error);
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

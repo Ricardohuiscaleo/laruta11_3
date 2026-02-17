@@ -114,8 +114,8 @@ try {
         'x_shop_country' => 'CL',
         'x_shop_name' => 'La Ruta 11 - Crédito RL6',
         'x_url_callback' => 'https://app.laruta11.cl/api/rl6/payment_callback.php',
-        'x_url_cancel' => 'https://app.laruta11.cl/credito?cancelled=1',
-        'x_url_complete' => 'https://app.laruta11.cl/credito?success=1',
+        'x_url_cancel' => 'https://app.laruta11.cl/pagar-credito?cancelled=1',
+        'x_url_complete' => 'https://app.laruta11.cl/rl6-payment-pending',
         'secret' => '18756627',
         'dte_type' => 48
     ];
