@@ -114,52 +114,42 @@ const user_id = Astro.url.searchParams.get('user_id');
                 } else {
                     const container = document.getElementById('transactions');
                     
-                    // Agrupar por order_id
-                    const grouped = {};
-                    transactions.forEach(tx => {
-                        const key = tx.order_id || 'tx_' + tx.id;
-                        if (!grouped[key]) grouped[key] = [];
-                        grouped[key].push(tx);
-                    });
+                    // Ordenar por fecha (más recientes primero)
+                    const sorted = [...transactions].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
                     
-                    // Ordenar grupos por fecha (más recientes primero)
-                    const sortedGroups = Object.values(grouped).sort((a, b) => new Date(b[0].fecha) - new Date(a[0].fecha));
-                    
-                    container.innerHTML = sortedGroups.map(group => {
-                        const mainTx = group[0];
-                        const hasRefund = group.length > 1;
-                        const netAmount = group.reduce((sum, t) => sum + (t.tipo === 'debit' ? -t.monto : t.monto), 0);
-                        
-                        const fecha = new Date(mainTx.fecha);
+                    container.innerHTML = sorted.map(tx => {
+                        const fecha = new Date(tx.fecha);
                         const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
                         const fechaStr = fecha.getDate() + ' ' + meses[fecha.getMonth()];
                         
+                        const isRefund = tx.tipo === 'refund';
+                        const monto = Math.round(tx.monto);
+                        
                         let itemsHtml = '';
-                        if (mainTx.items && mainTx.items.length > 0) {
-                            itemsHtml = '<div class="mt-2 text-xs text-gray-600">' + mainTx.items.map(item => 
+                        if (tx.items && tx.items.length > 0) {
+                            itemsHtml = '<div class="mt-2 text-xs text-gray-600">' + tx.items.map(item => 
                                 item.cantidad + 'x ' + item.nombre
                             ).join(' • ') + '</div>';
                         }
                         
-                        const subtotalProd = mainTx.subtotal_productos || 0;
-                        const deliveryFee = mainTx.delivery_fee || 0;
-                        const deliveryDiscount = mainTx.delivery_discount || 0;
-                        const totalReal = Math.abs(netAmount);
-                        const extras = totalReal - subtotalProd - deliveryFee + deliveryDiscount;
+                        const subtotalProd = tx.subtotal_productos || 0;
+                        const deliveryFee = tx.delivery_fee || 0;
+                        const deliveryDiscount = tx.delivery_discount || 0;
+                        const extras = monto - subtotalProd - deliveryFee + deliveryDiscount;
                         
                         let resumenHtml = '';
-                        if (totalReal > 0) {
+                        if (!isRefund && monto > 0) {
                             resumenHtml = '<div class="mt-2 pt-2 border-t border-gray-100 text-xs space-y-1">';
                             if (subtotalProd > 0) resumenHtml += '<div class="flex justify-between text-gray-600"><span>Subtotal pedidos:</span><span>$' + Math.round(subtotalProd).toLocaleString() + '</span></div>';
                             if (extras > 0) resumenHtml += '<div class="flex justify-between text-gray-600"><span>Extras/Customizaciones:</span><span>$' + Math.round(extras).toLocaleString() + '</span></div>';
                             if (deliveryFee > 0) resumenHtml += '<div class="flex justify-between text-gray-600"><span>Delivery:</span><span>$' + Math.round(deliveryFee).toLocaleString() + '</span></div>';
                             if (deliveryDiscount > 0) resumenHtml += '<div class="flex justify-between text-green-600"><span>Descuento delivery:</span><span>-$' + Math.round(deliveryDiscount).toLocaleString() + '</span></div>';
-                            resumenHtml += '<div class="flex justify-between font-semibold text-orange-600"><span>Total:</span><span>$' + Math.round(totalReal).toLocaleString() + '</span></div></div>';
+                            resumenHtml += '<div class="flex justify-between font-semibold text-orange-600"><span>Total:</span><span>$' + Math.round(monto).toLocaleString() + '</span></div></div>';
                         }
                         
-                        const statusBadge = hasRefund ? '<span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded ml-2">Reembolsado</span>' : '';
+                        const montoDisplay = '<div class="text-right"><span class="text-lg font-bold ' + (isRefund ? 'text-green-600' : 'text-red-600') + '">' + (isRefund ? '+' : '-') + '$' + monto.toLocaleString() + '</span></div>';
                         
-                        return '<div class="bg-white border border-gray-200 rounded p-3"><div class="flex items-center gap-2 mb-1"><span class="text-sm font-semibold text-gray-800">' + fechaStr + '</span>' + statusBadge + '</div><p class="text-xs text-gray-500">Orden #' + (mainTx.order_id || mainTx.id) + '</p>' + itemsHtml + resumenHtml + '</div>';
+                        return '<div class="bg-white border-l-4 ' + (isRefund ? 'border-green-400' : 'border-red-400') + ' border-r border-t border-b border-gray-200 rounded p-3"><div class="flex justify-between items-start mb-2"><div><span class="text-sm font-semibold text-gray-800">' + fechaStr + '</span><p class="text-xs text-gray-500 mt-1">' + tx.descripcion + '</p></div>' + montoDisplay + '</div><p class="text-xs text-gray-500">Orden #' + (tx.order_id || tx.id) + '</p>' + itemsHtml + resumenHtml + '</div>';
                     }).join('');
                     
                     // Resumen General - Calcular directamente de credito_usado
