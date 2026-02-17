@@ -28,7 +28,11 @@ curl_close($ch);
 $tokens = json_decode($response, true);
 
 if (isset($tokens['error'])) {
-    die('Error al obtener tokens: ' . $tokens['error_description']);
+    die('Error al obtener tokens: ' . ($tokens['error_description'] ?? $tokens['error']));
+}
+
+if (!isset($tokens['access_token']) || !isset($tokens['refresh_token'])) {
+    die('Error: No se recibieron los tokens necesarios. Respuesta: ' . json_encode($tokens));
 }
 
 // Guardar tokens con timestamp de expiración
@@ -41,18 +45,36 @@ $token_data = [
 
 // Guardar en volumen persistente (PRIORITARIO)
 $token_file = '/var/www/html/api/gmail/gmail_token.json';
+$backup_file = __DIR__ . '/gmail_token.json';
 
-// Crear directorio si no existe
+$results = [];
+
+// Intentar crear directorio si no existe
 if (!is_dir(dirname($token_file))) {
-    mkdir(dirname($token_file), 0755, true);
+    $mkdir_result = @mkdir(dirname($token_file), 0777, true);
+    $results[] = 'Crear directorio: ' . ($mkdir_result ? 'OK' : 'FALLÓ');
 }
 
-file_put_contents($token_file, json_encode($token_data, JSON_PRETTY_PRINT));
+// Intentar guardar en volumen persistente
+$persistent_result = @file_put_contents($token_file, json_encode($token_data, JSON_PRETTY_PRINT));
+$results[] = 'Guardar en volumen persistente (' . $token_file . '): ' . ($persistent_result !== false ? 'OK (' . $persistent_result . ' bytes)' : 'FALLÓ');
 
-// También guardar copia local como backup
-$backup_file = __DIR__ . '/gmail_token.json';
-file_put_contents($backup_file, json_encode($token_data, JSON_PRETTY_PRINT));
+// Guardar copia local como backup
+$backup_result = @file_put_contents($backup_file, json_encode($token_data, JSON_PRETTY_PRINT));
+$results[] = 'Guardar backup local (' . $backup_file . '): ' . ($backup_result !== false ? 'OK (' . $backup_result . ' bytes)' : 'FALLÓ');
+
+// Verificar permisos
+$results[] = 'Directorio volumen existe: ' . (is_dir(dirname($token_file)) ? 'SÍ' : 'NO');
+$results[] = 'Directorio volumen escribible: ' . (is_writable(dirname($token_file)) ? 'SÍ' : 'NO');
+$results[] = 'Archivo volumen existe: ' . (file_exists($token_file) ? 'SÍ' : 'NO');
+$results[] = 'Archivo backup existe: ' . (file_exists($backup_file) ? 'SÍ' : 'NO');
 
 echo '<h1>✅ Autenticación exitosa</h1>';
-echo '<p>Token guardado correctamente. Ya puedes enviar emails desde caja3.</p>';
+echo '<h2>📊 Resultados del guardado:</h2>';
+echo '<ul>';
+foreach ($results as $result) {
+    echo '<li>' . $result . '</li>';
+}
+echo '</ul>';
 echo '<p><a href="/admin/emails">Ir al gestor de correos</a></p>';
+echo '<p><a href="/api/gmail/check_token.php">Verificar token</a></p>';
