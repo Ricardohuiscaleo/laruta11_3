@@ -104,6 +104,7 @@ try {
         'raw' => base64_encode(
             "From: La Ruta 11 <saboresdelaruta11@gmail.com>\r\n" .
             "To: {$user['email']}\r\n" .
+            "Cc: saboresdelaruta11@gmail.com\r\n" .
             "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n" .
             "MIME-Version: 1.0\r\n" .
             "Content-Type: text/html; charset=UTF-8\r\n\r\n" .
