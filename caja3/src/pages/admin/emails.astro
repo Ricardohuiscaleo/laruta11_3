@@ -7,196 +7,324 @@
 </head>
 <body>
 <div class="min-h-screen p-6" style="background-color: #f3f4f6;">
-        <div class="max-w-4xl mx-auto">
-            <!-- Header -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h1 class="text-2xl font-bold text-gray-800 mb-2">📧 Gestor de Correos Gmail</h1>
-                <p class="text-gray-600">Envío de emails automatizados desde saboresdelaruta11@gmail.com</p>
-            </div>
+    <div class="max-w-6xl mx-auto">
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">📧 Gestor de Correos - Estados de Cuenta RL6</h1>
+            <p class="text-gray-600">Envío de estados de cuenta de crédito</p>
+        </div>
 
-            <!-- Gmail Status -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h2 class="text-lg font-bold text-gray-800 mb-4">🔑 Estado de Gmail API</h2>
-                <div id="gmailStatus" class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                    <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
-                    <span class="text-gray-700">Verificando...</span>
-                </div>
-                <div class="mt-4 flex gap-3">
-                    <button onclick="checkGmailStatus()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
-                        🔍 Verificar Estado
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">🔑 Estado de Gmail API</h2>
+            <div id="gmailStatus" class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+                <span class="text-gray-700">Verificando...</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="flex">
+                    <button onclick="showTab('users')" id="tab-users" class="tab-btn px-6 py-3 font-medium border-b-2 border-orange-500 text-orange-600">
+                        👥 Usuarios RL6
                     </button>
-                    <a href="/api/gmail/auth.php" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium inline-block">
-                        🔐 Autorizar Gmail
-                    </a>
+                    <button onclick="showTab('test')" id="tab-test" class="tab-btn px-6 py-3 font-medium border-b-2 border-transparent text-gray-500">
+                        🧪 Email de Prueba
+                    </button>
+                </nav>
+            </div>
+
+            <div id="content-users" class="tab-content p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">📊 Usuarios con Crédito RL6</h3>
+                    <button onclick="sendMassive()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium">
+                        📤 Enviar a Todos
+                    </button>
+                </div>
+                <div id="usersList" class="space-y-3">
+                    <div class="text-center text-gray-400 py-8">Cargando usuarios...</div>
                 </div>
             </div>
 
-            <!-- Send Email Form -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-lg font-bold text-gray-800 mb-4">📤 Enviar Email de Prueba</h2>
+            <div id="content-test" class="tab-content p-6 hidden">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">📤 Enviar Email de Prueba</h3>
                 <form id="emailForm" class="space-y-4">
                     <div>
                         <label class="block text-gray-700 font-medium mb-2">Para (Email)</label>
-                        <input type="email" id="emailTo" required 
-                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="destinatario@example.com">
+                        <input type="email" id="emailTo" required class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="destinatario@example.com">
                     </div>
                     <div>
                         <label class="block text-gray-700 font-medium mb-2">Asunto</label>
-                        <input type="text" id="emailSubject" required 
-                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="Asunto del correo">
+                        <input type="text" id="emailSubject" required class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="Asunto del correo">
                     </div>
                     <div>
                         <label class="block text-gray-700 font-medium mb-2">Mensaje</label>
-                        <textarea id="emailBody" rows="6" required 
-                                  class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                  placeholder="Escribe tu mensaje aquí..."></textarea>
+                        <textarea id="emailBody" rows="6" required class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="Escribe tu mensaje aquí..."></textarea>
                     </div>
                     <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg">
                         📧 Enviar Email
                     </button>
                 </form>
             </div>
+        </div>
 
-            <!-- Status Message -->
-            <div id="statusMessage" class="hidden mt-6 p-4 rounded-lg"></div>
+        <div id="statusMessage" class="hidden mt-6 p-4 rounded-lg"></div>
+    </div>
+</div>
+
+<div id="previewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style="z-index: 1000;">
+    <div class="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-auto">
+        <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-gray-800">👁️ Preview - Estado de Cuenta</h3>
+            <button onclick="closePreview()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+        </div>
+        <iframe id="previewFrame" class="w-full" style="height: 600px; border: none;"></iframe>
+        <div class="p-4 border-t border-gray-200 flex gap-3">
+            <button onclick="closePreview()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded-lg">Cerrar</button>
+            <button onclick="sendFromPreview()" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-lg">📧 Enviar Email</button>
         </div>
     </div>
-</body>
-</html>
+</div>
 
 <script>
-        // Check Gmail status on load
-        window.addEventListener('DOMContentLoaded', checkGmailStatus);
+let currentUserId = null;
+let users = [];
 
-        async function checkGmailStatus() {
-            const statusDiv = document.getElementById('gmailStatus');
-            statusDiv.innerHTML = '<div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div><span class="text-gray-700">Verificando...</span>';
-            
-            try {
-                const response = await fetch('/api/gmail/send_email.php?to=test@test.com&subject=test&body=test');
-                const result = await response.json();
-                
-                if (result.success || result.error?.includes('Token')) {
-                    // Token exists
-                    statusDiv.innerHTML = '<div class="w-3 h-3 bg-green-500 rounded-full"></div><span class="text-green-700 font-medium">✅ Gmail API configurado correctamente</span>';
-                } else {
-                    statusDiv.innerHTML = '<div class="w-3 h-3 bg-red-500 rounded-full"></div><span class="text-red-700 font-medium">❌ Gmail API no configurado</span>';
-                }
-            } catch (error) {
-                statusDiv.innerHTML = '<div class="w-3 h-3 bg-red-500 rounded-full"></div><span class="text-red-700 font-medium">❌ Error de conexión</span>';
-            }
+window.addEventListener('DOMContentLoaded', () => {
+    checkGmailStatus();
+    loadUsers();
+});
+
+async function checkGmailStatus() {
+    const statusDiv = document.getElementById('gmailStatus');
+    try {
+        const response = await fetch('/api/gmail/send_email.php?to=test@test.com&subject=test&body=test');
+        const result = await response.json();
+        if (result.success || result.error?.includes('Token')) {
+            statusDiv.innerHTML = '<div class="w-3 h-3 bg-green-500 rounded-full"></div><span class="text-green-700 font-medium">✅ Gmail API configurado</span>';
+        } else {
+            statusDiv.innerHTML = '<div class="w-3 h-3 bg-red-500 rounded-full"></div><span class="text-red-700 font-medium">❌ Gmail API no configurado</span>';
         }
+    } catch (error) {
+        statusDiv.innerHTML = '<div class="w-3 h-3 bg-red-500 rounded-full"></div><span class="text-red-700 font-medium">❌ Error de conexión</span>';
+    }
+}
 
-        document.getElementById('emailForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const to = document.getElementById('emailTo').value;
-            const subject = document.getElementById('emailSubject').value;
-            const body = document.getElementById('emailBody').value;
-            
-            showStatus('Enviando email...', 'info');
-            
-            try {
-                const formData = new FormData();
-                formData.append('to', to);
-                formData.append('subject', subject);
-                formData.append('body', body);
-                
-                const response = await fetch('/api/gmail/send_email.php', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showStatus('✅ Email enviado correctamente a ' + to, 'success');
-                    document.getElementById('emailForm').reset();
-                } else {
-                    showStatus('❌ Error: ' + result.error, 'error');
-                }
-            } catch (error) {
-                showStatus('❌ Error de conexión', 'error');
-            }
-        });
-
-        function showStatus(message, type) {
-            const statusDiv = document.getElementById('statusMessage');
-            const colors = {
-                success: 'bg-green-100 border-green-500 text-green-700',
-                error: 'bg-red-100 border-red-500 text-red-700',
-                info: 'bg-blue-100 border-blue-500 text-blue-700'
-            };
-            
-            statusDiv.className = `mt-6 p-4 rounded-lg border-l-4 ${colors[type]}`;
-            statusDiv.textContent = message;
-            statusDiv.classList.remove('hidden');
-            
-            if (type === 'success' || type === 'error') {
-                setTimeout(() => {
-                    statusDiv.classList.add('hidden');
-                }, 5000);
-            }
+async function loadUsers() {
+    try {
+        const response = await fetch('/api/gmail/get_rl6_users.php');
+        const result = await response.json();
+        if (result.success) {
+            users = result.users;
+            renderUsers(users);
         }
+    } catch (error) {
+        document.getElementById('usersList').innerHTML = '<div class="text-center text-red-400 py-8">Error cargando usuarios</div>';
+    }
+}
+
+function renderUsers(userList) {
+    const container = document.getElementById('usersList');
+    if (userList.length === 0) {
+        container.innerHTML = '<div class="text-center text-gray-400 py-8">No hay usuarios con crédito RL6</div>';
+        return;
+    }
+    container.innerHTML = userList.map(user => `
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <h4 class="font-bold text-gray-800">${user.nombre}</h4>
+                    <p class="text-sm text-gray-600">${user.email}</p>
+                    <p class="text-xs text-gray-500 mt-1">${user.grado_militar} - ${user.unidad_trabajo}</p>
+                    <div class="mt-2 flex gap-4 text-sm">
+                        <span class="text-gray-600">Crédito: <strong>$${user.credito_total.toLocaleString()}</strong></span>
+                        <span class="text-gray-600">Usado: <strong>$${user.credito_usado.toLocaleString()}</strong></span>
+                        <span class="text-red-600">Saldo: <strong>$${user.saldo_pagar.toLocaleString()}</strong></span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="previewEmail(${user.id})" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">👁️ Preview</button>
+                    <button onclick="sendEmail(${user.id})" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm">📧 Enviar</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('border-orange-500', 'text-orange-600');
+        btn.classList.add('border-transparent', 'text-gray-500');
+    });
+    document.getElementById(`tab-${tab}`).classList.add('border-orange-500', 'text-orange-600');
+    document.getElementById(`tab-${tab}`).classList.remove('border-transparent', 'text-gray-500');
+    
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+    document.getElementById(`content-${tab}`).classList.remove('hidden');
+}
+
+function previewEmail(userId) {
+    currentUserId = userId;
+    document.getElementById('previewFrame').src = `/api/gmail/preview_credit_statement.php?user_id=${userId}`;
+    document.getElementById('previewModal').classList.remove('hidden');
+}
+
+function closePreview() {
+    document.getElementById('previewModal').classList.add('hidden');
+    currentUserId = null;
+}
+
+async function sendFromPreview() {
+    if (currentUserId) {
+        await sendEmail(currentUserId);
+        closePreview();
+    }
+}
+
+async function sendEmail(userId) {
+    showStatus('Enviando email...', 'info');
+    try {
+        const response = await fetch(`/api/gmail/send_credit_statement.php?user_id=${userId}`);
+        const result = await response.json();
+        if (result.success) {
+            showStatus(`✅ Email enviado a ${result.to}`, 'success');
+        } else {
+            showStatus(`❌ Error: ${result.error}`, 'error');
+        }
+    } catch (error) {
+        showStatus('❌ Error de conexión', 'error');
+    }
+}
+
+async function sendMassive() {
+    if (!confirm(`¿Enviar estado de cuenta a ${users.length} usuarios?`)) return;
+    showStatus(`Enviando ${users.length} emails...`, 'info');
+    let sent = 0;
+    for (const user of users) {
+        try {
+            await fetch(`/api/gmail/send_credit_statement.php?user_id=${user.id}`);
+            sent++;
+        } catch (error) {}
+    }
+    showStatus(`✅ ${sent} de ${users.length} emails enviados`, 'success');
+}
+
+document.getElementById('emailForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('to', document.getElementById('emailTo').value);
+    formData.append('subject', document.getElementById('emailSubject').value);
+    formData.append('body', document.getElementById('emailBody').value);
+    showStatus('Enviando email...', 'info');
+    try {
+        const response = await fetch('/api/gmail/send_email.php', { method: 'POST', body: formData });
+        const result = await response.json();
+        if (result.success) {
+            showStatus('✅ Email enviado', 'success');
+            document.getElementById('emailForm').reset();
+        } else {
+            showStatus(`❌ Error: ${result.error}`, 'error');
+        }
+    } catch (error) {
+        showStatus('❌ Error de conexión', 'error');
+    }
+});
+
+function showStatus(message, type) {
+    const statusDiv = document.getElementById('statusMessage');
+    const colors = { success: 'bg-green-100 border-green-500 text-green-700', error: 'bg-red-100 border-red-500 text-red-700', info: 'bg-blue-100 border-blue-500 text-blue-700' };
+    statusDiv.className = `mt-6 p-4 rounded-lg border-l-4 ${colors[type]}`;
+    statusDiv.textContent = message;
+    statusDiv.classList.remove('hidden');
+    if (type !== 'info') setTimeout(() => statusDiv.classList.add('hidden'), 5000);
+}
 </script>
 
 <style>
-    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
-    .bg-white { background-color: white; }
-    .rounded-lg { border-radius: 0.5rem; }
-    .shadow-md { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-    .p-6 { padding: 1.5rem; }
-    .mb-6 { margin-bottom: 1.5rem; }
-    .mb-4 { margin-bottom: 1rem; }
-    .mb-2 { margin-bottom: 0.5rem; }
-    .mt-4 { margin-top: 1rem; }
-    .mt-6 { margin-top: 1.5rem; }
-    .text-2xl { font-size: 1.5rem; line-height: 2rem; }
-    .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
-    .font-bold { font-weight: 700; }
-    .font-medium { font-weight: 500; }
-    .text-gray-800 { color: #1f2937; }
-    .text-gray-700 { color: #374151; }
-    .text-gray-600 { color: #4b5563; }
-    .text-green-700 { color: #15803d; }
-    .text-red-700 { color: #b91c1c; }
-    .flex { display: flex; }
-    .items-center { align-items: center; }
-    .gap-3 { gap: 0.75rem; }
-    .gap-4 { gap: 1rem; }
-    .w-3 { width: 0.75rem; }
-    .h-3 { height: 0.75rem; }
-    .w-full { width: 100%; }
-    .max-w-4xl { max-width: 56rem; }
-    .mx-auto { margin-left: auto; margin-right: auto; }
-    .rounded-full { border-radius: 9999px; }
-    .bg-yellow-500 { background-color: #eab308; }
-    .bg-green-500 { background-color: #22c55e; }
-    .bg-red-500 { background-color: #ef4444; }
-    .bg-gray-50 { background-color: #f9fafb; }
-    .bg-blue-600 { background-color: #2563eb; }
-    .bg-blue-700 { background-color: #1d4ed8; }
-    .bg-green-600 { background-color: #16a34a; }
-    .bg-green-700 { background-color: #15803d; }
-    .bg-orange-600 { background-color: #ea580c; }
-    .bg-orange-700 { background-color: #c2410c; }
-    .text-white { color: white; }
-    .px-4 { padding-left: 1rem; padding-right: 1rem; }
-    .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-    .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
-    .border { border-width: 1px; }
-    .border-gray-300 { border-color: #d1d5db; }
-    .space-y-4 > * + * { margin-top: 1rem; }
-    .block { display: block; }
-    .inline-block { display: inline-block; }
-    .hidden { display: none; }
-    button, input, textarea { font-family: inherit; }
-    button { cursor: pointer; border: none; }
-    button:hover { opacity: 0.9; }
-    input, textarea { outline: none; }
-    input:focus, textarea:focus { ring: 2px solid #2563eb; }
-    .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+.bg-white { background-color: white; }
+.rounded-lg { border-radius: 0.5rem; }
+.shadow-md { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+.p-6 { padding: 1.5rem; }
+.p-4 { padding: 1rem; }
+.px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+.py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+.py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-6 { margin-top: 1.5rem; }
+.text-2xl { font-size: 1.5rem; }
+.text-lg { font-size: 1.125rem; }
+.text-sm { font-size: 0.875rem; }
+.text-xs { font-size: 0.75rem; }
+.font-bold { font-weight: 700; }
+.font-medium { font-weight: 500; }
+.text-gray-800 { color: #1f2937; }
+.text-gray-700 { color: #374151; }
+.text-gray-600 { color: #4b5563; }
+.text-gray-500 { color: #6b7280; }
+.text-gray-400 { color: #9ca3af; }
+.text-orange-600 { color: #ea580c; }
+.text-red-600 { color: #dc2626; }
+.text-green-700 { color: #15803d; }
+.text-red-700 { color: #b91c1c; }
+.text-white { color: white; }
+.bg-gray-50 { background-color: #f9fafb; }
+.bg-yellow-500 { background-color: #eab308; }
+.bg-green-500 { background-color: #22c55e; }
+.bg-red-500 { background-color: #ef4444; }
+.bg-blue-500 { background-color: #3b82f6; }
+.bg-blue-600 { background-color: #2563eb; }
+.bg-orange-500 { background-color: #f97316; }
+.bg-orange-600 { background-color: #ea580c; }
+.bg-orange-700 { background-color: #c2410c; }
+.bg-gray-500 { background-color: #6b7280; }
+.bg-gray-600 { background-color: #4b5563; }
+.border { border-width: 1px; }
+.border-b { border-bottom-width: 1px; }
+.border-b-2 { border-bottom-width: 2px; }
+.border-l-4 { border-left-width: 4px; }
+.border-gray-200 { border-color: #e5e7eb; }
+.border-gray-300 { border-color: #d1d5db; }
+.border-orange-500 { border-color: #f97316; }
+.border-transparent { border-color: transparent; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
+.gap-4 { gap: 1rem; }
+.space-y-3 > * + * { margin-top: 0.75rem; }
+.space-y-4 > * + * { margin-top: 1rem; }
+.w-3 { width: 0.75rem; }
+.h-3 { height: 0.75rem; }
+.w-full { width: 100%; }
+.max-w-6xl { max-width: 72rem; }
+.max-w-4xl { max-width: 56rem; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+.rounded-full { border-radius: 9999px; }
+.block { display: block; }
+.hidden { display: none; }
+.fixed { position: fixed; }
+.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+.bg-black { background-color: black; }
+.bg-opacity-50 { background-color: rgba(0,0,0,0.5); }
+.flex-1 { flex: 1; }
+.overflow-auto { overflow: auto; }
+.max-h-screen { max-height: 100vh; }
+.text-center { text-align: center; }
+button { cursor: pointer; border: none; }
+button:hover { opacity: 0.9; }
+input, textarea { outline: none; font-family: inherit; }
+.animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
 </style>
+</body>
+</html>
