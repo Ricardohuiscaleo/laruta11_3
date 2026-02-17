@@ -151,10 +151,10 @@ const user_id = Astro.url.searchParams.get('user_id');
                 document.getElementById('userInfo').textContent = `${user.grado_militar} - ${user.unidad_trabajo}`;
                 document.getElementById('userEmail').textContent = user.email;
 
-                document.getElementById('creditoTotal').textContent = '$' + user.credito_total.toLocaleString();
-                document.getElementById('creditoUsado').textContent = '$' + user.credito_usado.toLocaleString();
-                document.getElementById('creditoDisponible').textContent = '$' + user.credito_disponible.toLocaleString();
-                document.getElementById('saldoPagar').textContent = '$' + user.credito_usado.toLocaleString();
+                document.getElementById('creditoTotal').textContent = '$' + user.credito_total.toLocaleString('es-CL');
+                document.getElementById('creditoUsado').textContent = '$' + user.credito_usado.toLocaleString('es-CL');
+                document.getElementById('creditoDisponible').textContent = '$' + user.credito_disponible.toLocaleString('es-CL');
+                document.getElementById('saldoPagar').textContent = '$' + user.credito_usado.toLocaleString('es-CL');
                 
                 // Mostrar botón de pago si hay saldo pendiente
                 if (user.credito_usado > 0) {
@@ -194,14 +194,14 @@ const user_id = Astro.url.searchParams.get('user_id');
                         let resumenHtml = '';
                         if (!isRefund && monto > 0) {
                             resumenHtml = '<div class="mt-2 pt-2 border-t border-gray-100 text-xs space-y-1">';
-                            if (subtotalProd > 0) resumenHtml += '<div class="flex justify-between text-gray-600"><span>Subtotal pedidos:</span><span>$' + Math.round(subtotalProd).toLocaleString() + '</span></div>';
-                            if (extras > 0) resumenHtml += '<div class="flex justify-between text-gray-600"><span>Extras/Customizaciones:</span><span>$' + Math.round(extras).toLocaleString() + '</span></div>';
-                            if (deliveryFee > 0) resumenHtml += '<div class="flex justify-between text-gray-600"><span>Delivery:</span><span>$' + Math.round(deliveryFee).toLocaleString() + '</span></div>';
-                            if (deliveryDiscount > 0) resumenHtml += '<div class="flex justify-between text-green-600"><span>Descuento delivery:</span><span>-$' + Math.round(deliveryDiscount).toLocaleString() + '</span></div>';
-                            resumenHtml += '<div class="flex justify-between font-semibold text-orange-600"><span>Total:</span><span>$' + Math.round(monto).toLocaleString() + '</span></div></div>';
+                            if (subtotalProd > 0) resumenHtml += '<div class="flex justify-between text-gray-600"><span>Subtotal pedidos:</span><span>$' + Math.round(subtotalProd).toLocaleString('es-CL') + '</span></div>';
+                            if (extras > 0) resumenHtml += '<div class="flex justify-between text-gray-600"><span>Extras/Customizaciones:</span><span>$' + Math.round(extras).toLocaleString('es-CL') + '</span></div>';
+                            if (deliveryFee > 0) resumenHtml += '<div class="flex justify-between text-gray-600"><span>Delivery:</span><span>$' + Math.round(deliveryFee).toLocaleString('es-CL') + '</span></div>';
+                            if (deliveryDiscount > 0) resumenHtml += '<div class="flex justify-between text-green-600"><span>Descuento delivery:</span><span>-$' + Math.round(deliveryDiscount).toLocaleString('es-CL') + '</span></div>';
+                            resumenHtml += '<div class="flex justify-between font-semibold text-orange-600"><span>Total:</span><span>$' + Math.round(monto).toLocaleString('es-CL') + '</span></div></div>';
                         }
                         
-                        const montoDisplay = '<div class="text-right"><span class="text-lg font-bold ' + (isRefund ? 'text-green-600' : 'text-red-600') + '">' + (isRefund ? '+' : '-') + '$' + monto.toLocaleString() + '</span></div>';
+                        const montoDisplay = '<div class="text-right"><span class="text-lg font-bold ' + (isRefund ? 'text-green-600' : 'text-red-600') + '">' + (isRefund ? '+' : '-') + '$' + monto.toLocaleString('es-CL') + '</span></div>';
                         
                         return '<div class="bg-white border-l-4 ' + (isRefund ? 'border-green-400' : 'border-red-400') + ' border-r border-t border-b border-gray-200 rounded p-3"><div class="flex justify-between items-start mb-2"><div><span class="text-sm font-semibold text-gray-800">' + fechaStr + '</span><p class="text-xs text-gray-500 mt-1">' + tx.descripcion + '</p></div>' + montoDisplay + '</div><p class="text-xs text-gray-500">Orden #' + (tx.order_id || tx.id) + '</p>' + itemsHtml + resumenHtml + '</div>';
                     }).join('');
@@ -209,7 +209,7 @@ const user_id = Astro.url.searchParams.get('user_id');
                     // Resumen General - Calcular directamente de credito_usado
                     const totalGeneral = user.credito_usado;
                     
-                    container.innerHTML += '<div class="mt-6 pt-4 border-t-2 border-gray-300 bg-gray-50 rounded-lg p-4"><h4 class="text-sm font-bold text-gray-700 mb-3">Resumen General</h4><div class="space-y-2 text-sm"><div class="flex justify-between text-lg font-bold text-orange-600"><span>Total a Pagar:</span><span>$' + Math.round(totalGeneral).toLocaleString() + '</span></div><p class="text-xs text-gray-500 mt-2">Este monto refleja tu saldo actual de crédito usado</p></div></div>';
+                    container.innerHTML += '<div class="mt-6 pt-4 border-t-2 border-gray-300 bg-gray-50 rounded-lg p-4"><h4 class="text-sm font-bold text-gray-700 mb-3">Resumen General</h4><div class="space-y-2 text-sm"><div class="flex justify-between text-lg font-bold text-orange-600"><span>Total a Pagar:</span><span>$' + Math.round(totalGeneral).toLocaleString('es-CL') + '</span></div><p class="text-xs text-gray-500 mt-2">Este monto refleja tu saldo actual de crédito usado</p></div></div>';
                 }
 
                 document.getElementById('loading').classList.add('hidden');
