@@ -1,7 +1,7 @@
 <?php
 /**
  * Cron job para refrescar el token de Gmail cada 40 minutos
- * Ejecutar: */40 * * * * /usr/bin/php /path/to/caja3/api/gmail/refresh_token_cron.php
+ * Ejecutar: cada 40 minutos
  */
 
 require_once __DIR__ . '/get_token.php';
