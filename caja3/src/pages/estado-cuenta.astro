@@ -1,0 +1,218 @@
+---
+const user_id = Astro.url.searchParams.get('user_id');
+if (!user_id) {
+  return Astro.redirect('/');
+}
+---
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estado de Cuenta - La Ruta 11</title>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-4xl mx-auto p-4 md:p-6">
+        <div id="loading" class="text-center py-20">
+            <div class="animate-spin w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full mx-auto"></div>
+            <p class="text-gray-600 mt-4">Cargando estado de cuenta...</p>
+        </div>
+
+        <div id="content" class="hidden">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <img src="https://laruta11-images.s3.amazonaws.com/menu/logo.png" alt="La Ruta 11" class="w-16 h-16">
+                    <div class="text-right">
+                        <h1 class="text-2xl font-bold text-gray-800">Estado de Cuenta</h1>
+                        <p class="text-sm text-gray-600">Crédito RL6</p>
+                    </div>
+                </div>
+                
+                <div class="border-t pt-4">
+                    <h2 id="userName" class="text-xl font-bold text-gray-800"></h2>
+                    <p id="userInfo" class="text-sm text-gray-600"></p>
+                    <p id="userEmail" class="text-sm text-gray-500"></p>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-orange-500 to-red-600 rounded-lg shadow-md p-6 mb-6 text-white">
+                <h3 class="text-lg font-bold mb-4">📊 Resumen de Crédito</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <p class="text-sm opacity-90">Crédito Total</p>
+                        <p id="creditoTotal" class="text-2xl font-bold"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm opacity-90">Consumido</p>
+                        <p id="creditoUsado" class="text-2xl font-bold"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm opacity-90">Disponible</p>
+                        <p id="creditoDisponible" class="text-2xl font-bold text-green-300"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm opacity-90">Saldo a Pagar</p>
+                        <p id="saldoPagar" class="text-2xl font-bold text-yellow-300"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">📋 Historial de Transacciones</h3>
+                    <span id="totalTx" class="text-sm text-gray-600"></span>
+                </div>
+                
+                <div id="transactions" class="space-y-3"></div>
+                
+                <div id="noTransactions" class="hidden text-center py-8 text-gray-400">
+                    No hay transacciones registradas
+                </div>
+            </div>
+
+            <div class="mt-6 text-center text-sm text-gray-500">
+                <p>📍 Yumbel 2629, Arica, Chile</p>
+                <p>📞 Ventas: +56 9 3622 7422 | 🛠️ Soporte: +56 9 4539 2581</p>
+                <p>📧 saboresdelaruta11@gmail.com</p>
+                <p class="mt-2">© {new Date().getFullYear()} La Ruta 11 SpA</p>
+            </div>
+        </div>
+    </div>
+
+    <script define:vars={{ user_id }}>
+        async function loadStatement() {
+            try {
+                const response = await fetch(`https://app.laruta11.cl/api/rl6/get_statement.php?user_id=${user_id}`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+
+                const { user, transactions } = data;
+
+                document.getElementById('userName').textContent = user.nombre;
+                document.getElementById('userInfo').textContent = `${user.grado_militar} - ${user.unidad_trabajo}`;
+                document.getElementById('userEmail').textContent = user.email;
+
+                document.getElementById('creditoTotal').textContent = '$' + user.credito_total.toLocaleString();
+                document.getElementById('creditoUsado').textContent = '$' + user.credito_usado.toLocaleString();
+                document.getElementById('creditoDisponible').textContent = '$' + user.credito_disponible.toLocaleString();
+                document.getElementById('saldoPagar').textContent = '$' + user.credito_usado.toLocaleString();
+
+                document.getElementById('totalTx').textContent = `${transactions.length} transacciones`;
+                
+                if (transactions.length === 0) {
+                    document.getElementById('noTransactions').classList.remove('hidden');
+                } else {
+                    const container = document.getElementById('transactions');
+                    container.innerHTML = transactions.map(tx => {
+                        const fecha = new Date(tx.fecha);
+                        const fechaStr = fecha.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
+                        const horaStr = fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+                        
+                        const tipoIcon = tx.tipo === 'debit' ? '🛒' : (tx.tipo === 'refund' ? '🔄' : '💳');
+                        const tipoText = tx.tipo === 'debit' ? 'Compra' : (tx.tipo === 'refund' ? 'Reembolso' : 'Crédito');
+                        const montoColor = tx.tipo === 'debit' ? 'text-red-600' : 'text-green-600';
+                        const montoSign = tx.tipo === 'debit' ? '-' : '+';
+                        
+                        return `
+                            <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="text-2xl">${tipoIcon}</span>
+                                            <div>
+                                                <p class="font-bold text-gray-800">${tipoText} #${tx.id}</p>
+                                                <p class="text-xs text-gray-500">${fechaStr} ${horaStr}</p>
+                                            </div>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mt-2">${tx.descripcion || 'Sin descripción'}</p>
+                                        ${tx.order_id ? `<p class="text-xs text-gray-400 mt-1">Orden: ${tx.order_id}</p>` : ''}
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-lg font-bold ${montoColor}">${montoSign}$${tx.monto.toLocaleString()}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('content').classList.remove('hidden');
+            } catch (error) {
+                alert('Error al cargar estado de cuenta');
+                console.error(error);
+            }
+        }
+
+        loadStatement();
+    </script>
+
+    <style>
+        body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+        .bg-gray-50 { background-color: #f9fafb; }
+        .bg-white { background-color: white; }
+        .text-gray-800 { color: #1f2937; }
+        .text-gray-600 { color: #4b5563; }
+        .text-gray-500 { color: #6b7280; }
+        .text-gray-400 { color: #9ca3af; }
+        .text-red-600 { color: #dc2626; }
+        .text-green-600 { color: #16a34a; }
+        .rounded-lg { border-radius: 0.5rem; }
+        .shadow-md { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .p-4 { padding: 1rem; }
+        .p-6 { padding: 1.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-6 { margin-top: 1.5rem; }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        .text-lg { font-size: 1.125rem; }
+        .text-xl { font-size: 1.25rem; }
+        .text-2xl { font-size: 1.5rem; }
+        .font-bold { font-weight: 700; }
+        .max-w-4xl { max-width: 56rem; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .flex { display: flex; }
+        .grid { display: grid; }
+        .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+        .gap-2 { gap: 0.5rem; }
+        .gap-4 { gap: 1rem; }
+        .items-center { align-items: center; }
+        .items-start { align-items: flex-start; }
+        .justify-between { justify-content: space-between; }
+        .space-y-3 > * + * { margin-top: 0.75rem; }
+        .border { border-width: 1px; }
+        .border-t { border-top-width: 1px; }
+        .border-gray-200 { border-color: #e5e7eb; }
+        .pt-4 { padding-top: 1rem; }
+        .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+        .py-20 { padding-top: 5rem; padding-bottom: 5rem; }
+        .w-12 { width: 3rem; }
+        .h-12 { height: 3rem; }
+        .w-16 { width: 4rem; }
+        .h-16 { height: 4rem; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .hidden { display: none; }
+        .flex-1 { flex: 1; }
+        .rounded-full { border-radius: 9999px; }
+        .opacity-90 { opacity: 0.9; }
+        .text-white { color: white; }
+        .text-green-300 { color: #86efac; }
+        .text-yellow-300 { color: #fde047; }
+        .transition { transition: all 0.2s; }
+        .hover\:bg-gray-50:hover { background-color: #f9fafb; }
+        .animate-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @media (min-width: 768px) {
+            .md\:p-6 { padding: 1.5rem; }
+            .md\:grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+        }
+    </style>
+</body>
+</html>
