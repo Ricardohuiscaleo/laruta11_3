@@ -371,7 +371,11 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
     }
   };
 
-  const activeOrders = orders.filter(o => o.order_status !== 'delivered' && o.order_status !== 'cancelled');
+  const activeOrders = orders.filter(o => 
+    o.order_status !== 'delivered' && 
+    o.order_status !== 'cancelled' && 
+    !o.order_number.startsWith('RL6-') // Ocultar pagos de crédito RL6
+  );
   const activeChecklists = checklists.filter(c => c.status !== 'completed' && c.status !== 'missed');
   const immediateOrders = activeOrders.filter(o => !isScheduledOrder(o));
   const scheduledOrders = activeOrders.filter(o => isScheduledOrder(o));
