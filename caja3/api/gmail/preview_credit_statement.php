@@ -42,8 +42,11 @@ $credito_usado = floatval($user['credito_usado']);
 $credito_disponible = $credito_total - $credito_usado;
 $saldo_pagar = $credito_usado;
 
-// Fecha de vencimiento
-$fecha_vencimiento = date('d \d\e F, Y', strtotime('last day of next month'));
+// Fecha de vencimiento (día 21 del mes actual)
+$meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+$mes_actual = $meses[date('n') - 1];
+$anio_actual = date('Y');
+$fecha_vencimiento = "21 de $mes_actual, $anio_actual";
 
 $conn->close();
 ?>
@@ -125,41 +128,12 @@ $conn->close();
                     <tr>
                         <td style='padding: 0 30px 30px 30px;' align='center'>
                             <a href='https://app.laruta11.cl/pagar-credito?user_id=<?= $user_id ?>&monto=<?= $saldo_pagar ?>' 
-                               style='display: inline-block; background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
-                                💳 Pagar con TUU (Webpay)
+                               style='display: inline-block; background: #0074D9; color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+                                💳 Pagar Ahora
                             </a>
                             <p style='color: #999999; font-size: 12px; margin: 15px 0 0 0;'>
                                 Pago seguro procesado por TUU.cl
                             </p>
-                        </td>
-                    </tr>
-                    
-                    <tr>
-                        <td style='padding: 0 30px 30px 30px;'>
-                            <h3 style='color: #333333; margin: 0 0 15px 0; font-size: 16px;'>💰 Otras formas de pago:</h3>
-                            <ul style='color: #666666; line-height: 1.8; margin: 0; padding-left: 20px;'>
-                                <li>Transferencia bancaria</li>
-                                <li>Efectivo en nuestro local</li>
-                                <li>Tarjeta de débito/crédito en local</li>
-                            </ul>
-                        </td>
-                    </tr>
-                    
-                    <tr>
-                        <td style='padding: 0 30px 30px 30px;'>
-                            <table width='100%' cellpadding='0' cellspacing='0' style='background-color: #f8f9fa; border-radius: 8px;'>
-                                <tr>
-                                    <td style='padding: 20px;'>
-                                        <h4 style='color: #333333; margin: 0 0 10px 0; font-size: 14px;'>🏦 Datos para Transferencia:</h4>
-                                        <p style='color: #666666; margin: 5px 0; font-size: 13px;'>
-                                            <strong>Banco:</strong> Banco Estado<br>
-                                            <strong>Cuenta Corriente:</strong> 12345678<br>
-                                            <strong>RUT:</strong> 78.194.739-3<br>
-                                            <strong>Titular:</strong> La Ruta 11 SpA
-                                        </p>
-                                    </td>
-                                </tr>
-                            </table>
                         </td>
                     </tr>
                     
