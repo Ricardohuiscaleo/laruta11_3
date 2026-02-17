@@ -57,7 +57,7 @@ while ($row = $result->fetch_assoc()) {
     if ($row['order_id']) {
         // Items de productos
         $stmt_items = $conn->prepare("
-            SELECT product_name, quantity, product_price
+            SELECT product_name, quantity, product_price, combo_data
             FROM tuu_order_items
             WHERE order_reference = ?
         ");
@@ -71,6 +71,20 @@ while ($row = $result->fetch_assoc()) {
                 'cantidad' => intval($item['quantity']),
                 'precio' => floatval($item['product_price'])
             ];
+            
+            // Parsear customizaciones si existen
+            if ($item['combo_data']) {
+                $combo_data = json_decode($item['combo_data'], true);
+                if (isset($combo_data['customizations']) && is_array($combo_data['customizations'])) {
+                    foreach ($combo_data['customizations'] as $custom) {
+                        $items[] = [
+                            'nombre' => '  + ' . ($custom['name'] ?? 'Extra'),
+                            'cantidad' => intval($custom['quantity'] ?? 1),
+                            'precio' => floatval($custom['price'] ?? 0)
+                        ];
+                    }
+                }
+            }
         }
         
         // Datos de delivery/extras
