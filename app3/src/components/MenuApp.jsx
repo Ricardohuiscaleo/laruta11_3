@@ -632,11 +632,7 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
         >
           {product.image ? (
             <>
-              {!imageLoaded && (
-                <div className="absolute inset-0 rounded-lg overflow-hidden">
-                  <div className="w-[200%] h-full bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 animate-[shimmer_2s_infinite] blur-sm"></div>
-                </div>
-              )}
+              {!imageLoaded && <div className="absolute inset-0 bg-gray-100 rounded-lg"></div>}
               <img 
                 src={product.image} 
                 alt={product.name} 
@@ -647,9 +643,7 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
               />
             </>
           ) : (
-            <div className="w-full h-full rounded-lg overflow-hidden">
-              <div className="w-[200%] h-full bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 animate-[shimmer_2s_infinite] blur-sm"></div>
-            </div>
+            <div className="w-full h-full bg-gray-100 rounded-lg"></div>
           )}
           
           <FloatingHeart 
