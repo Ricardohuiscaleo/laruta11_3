@@ -91,7 +91,7 @@ while ($row = $result->fetch_assoc()) {
         
         // Datos de delivery/extras
         $stmt_order = $conn->prepare("
-            SELECT delivery_type, delivery_fee, delivery_extras, delivery_extras_items
+            SELECT delivery_type, delivery_fee, delivery_extras, delivery_extras_items, subtotal
             FROM tuu_orders
             WHERE order_number = ?
         ");
@@ -100,13 +100,22 @@ while ($row = $result->fetch_assoc()) {
         $result_order = $stmt_order->get_result();
         $order_data = $result_order->fetch_assoc();
         
+        $delivery_fee = 0;
+        $subtotal_productos = 0;
+        
         // Agregar delivery fee si existe
         if ($order_data && floatval($order_data['delivery_fee']) > 0) {
+            $delivery_fee = floatval($order_data['delivery_fee']);
             $items[] = [
                 'nombre' => 'Delivery (' . ucfirst($order_data['delivery_type']) . ')',
                 'cantidad' => 1,
-                'precio' => floatval($order_data['delivery_fee'])
+                'precio' => $delivery_fee
             ];
+        }
+        
+        // Calcular subtotal de productos (sin delivery)
+        if ($order_data) {
+            $subtotal_productos = floatval($order_data['subtotal']) - $delivery_fee;
         }
         
         // Agregar extras de delivery si existen
@@ -131,7 +140,9 @@ while ($row = $result->fetch_assoc()) {
         'tipo' => $row['type'],
         'descripcion' => $row['description'],
         'order_id' => $row['order_id'],
-        'items' => $items
+        'items' => $items,
+        'subtotal_productos' => $subtotal_productos,
+        'delivery_fee' => $delivery_fee
     ];
 }
 
