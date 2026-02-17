@@ -40,3 +40,12 @@
 21. **Filtros SQL**: AND order_number NOT LIKE 'RL6-%' en múltiples endpoints
 22. **JWT decode directo**: TUU token validation sin endpoint /validatetoken
 23. **Chilean locale**: toLocaleString('es-CL') en todos los números
+
+## ⚡ Optimizaciones de Performance
+
+24. **Cache headers**: No-cache en endpoints críticos para datos en tiempo real
+25. **Prepared statements**: Todas las queries SQL usan bind_param para seguridad y performance
+26. **Índices de BD**: order_number, user_id indexados para búsquedas rápidas
+27. **Queries optimizadas**: JOINs eficientes en lugar de múltiples queries
+28. **Polling inteligente**: Intervalos de 5-10 segundos en comandas/notificaciones
+29. **Lazy loading**: Componentes React cargados bajo demanda
