@@ -53,11 +53,16 @@ try {
         $where_clause .= " AND customer_name = :customer_name";
     }
     
-    $sql = "SELECT id, order_number, user_id, customer_name, customer_phone, 
-                   order_status, payment_status, payment_method, 
-                   delivery_type, delivery_address, pickup_time, delivery_fee, installment_amount, 
-                   customer_notes, discount_amount, cashback_used, delivery_extras, delivery_extras_items, 
-                   delivery_discount, created_at
+    $sql = "SELECT id, order_number, user_id, customer_name, customer_phone, table_number, 
+                   product_name, has_item_details, product_price, installments_total, 
+                   installment_current, installment_amount, tuu_payment_request_id, 
+                   tuu_idempotency_key, tuu_device_used, status, payment_status, payment_method, order_status, 
+                   delivery_type, delivery_address, pickup_time, customer_notes, 
+                   subtotal, discount_amount, delivery_discount, delivery_extras, delivery_extras_items, cashback_used,
+                   special_instructions, rider_id, estimated_delivery_time, created_at, updated_at, 
+                   tuu_transaction_id, tuu_amount, tuu_timestamp, tuu_message, 
+                   tuu_account_id, tuu_currency, tuu_signature, delivery_fee, 
+                   scheduled_time, is_scheduled, reward_used, reward_stamps_consumed, reward_applied_at
             FROM tuu_orders 
             {$where_clause}
             ORDER BY created_at DESC";
@@ -73,15 +78,52 @@ try {
     $stmt->execute();
     $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Obtener items de cada pedido
+    // Obtener items de cada pedido con imágenes y recetas
     foreach ($orders as &$order) {
         $items_stmt = $pdo->prepare("
-            SELECT id, product_name, quantity, product_price, item_type, combo_data
-            FROM tuu_order_items
-            WHERE order_id = ?
+            SELECT 
+                oi.id, 
+                oi.product_id, 
+                oi.product_name, 
+                oi.quantity, 
+                oi.product_price, 
+                oi.item_type, 
+                oi.combo_data,
+                p.image_url,
+                p.category_id,
+                p.description
+            FROM tuu_order_items oi
+            LEFT JOIN products p ON oi.product_id = p.id
+            WHERE oi.order_id = ?
         ");
         $items_stmt->execute([$order['id']]);
-        $order['items'] = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
+        $items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Obtener ingredientes de la receta para cada item
+        foreach ($items as &$item) {
+            if ($item['product_id']) {
+                $recipeSql = "SELECT i.name, pr.quantity, pr.unit 
+                             FROM product_recipes pr 
+                             JOIN ingredients i ON pr.ingredient_id = i.id 
+                             WHERE pr.product_id = ? AND i.is_active = 1
+                             ORDER BY i.name";
+                $recipeStmt = $pdo->prepare($recipeSql);
+                $recipeStmt->execute([$item['product_id']]);
+                $ingredients = $recipeStmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                // Crear descripción con ingredientes y cantidades
+                if (!empty($ingredients)) {
+                    $ingredientNames = array_map(function($ing) {
+                        $qty = intval($ing['quantity']); // Sin decimales
+                        $unit = strtolower($ing['unit']);
+                        return $ing['name'] . ' (' . $qty . $unit . ')';
+                    }, $ingredients);
+                    $item['recipe_description'] = implode(', ', $ingredientNames);
+                }
+            }
+        }
+        
+        $order['items'] = $items;
     }
     
     echo json_encode([
