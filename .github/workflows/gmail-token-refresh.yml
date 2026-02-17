@@ -1,0 +1,26 @@
+name: Gmail Token Refresh
+
+on:
+  schedule:
+    - cron: '*/40 * * * *'  # Cada 40 minutos
+  workflow_dispatch:  # Permite ejecución manual
+
+jobs:
+  refresh-token:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refresh Gmail Token
+        run: |
+          response=$(curl -s -w "\n%{http_code}" https://caja.laruta11.cl/api/gmail/refresh_token_cron.php)
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n-1)
+          
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+          
+          if [ "$http_code" != "200" ]; then
+            echo "❌ Error refreshing token"
+            exit 1
+          fi
+          
+          echo "✅ Token refreshed successfully"
