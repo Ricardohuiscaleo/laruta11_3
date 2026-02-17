@@ -33,11 +33,6 @@ $config = [
     'ruta11_db_user' => getenv('RUTA11_DB_USER'),
     'ruta11_db_pass' => getenv('RUTA11_DB_PASS'),
     
-    'ruta11_google_client_id' => getenv('RUTA11_GOOGLE_CLIENT_ID'),
-    'ruta11_google_client_secret' => getenv('RUTA11_GOOGLE_CLIENT_SECRET'),
-    'ruta11_google_redirect_uri' => getenv('RUTA11_GOOGLE_REDIRECT_URI'),
-    'ruta11_app_redirect_uri' => getenv('RUTA11_APP_REDIRECT_URI'),
-    
     'ruta11_jobs_client_id' => getenv('RUTA11_JOBS_CLIENT_ID'),
     'ruta11_jobs_client_secret' => getenv('RUTA11_JOBS_CLIENT_SECRET'),
     'ruta11_jobs_redirect_uri' => getenv('RUTA11_JOBS_REDIRECT_URI'),

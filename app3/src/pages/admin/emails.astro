@@ -1,0 +1,595 @@
+---
+// Email Manager Admin Page
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📧 Gestor de Correos - La Ruta 11</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        orange: {
+                            500: '#f97316',
+                            600: '#ea580c'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-slate-900 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+            <p class="text-slate-400">Verificando acceso...</p>
+        </div>
+    </div>
+
+    <!-- Login Form -->
+    <div id="loginForm" class="hidden fixed inset-0 bg-slate-900 flex items-center justify-center">
+        <div class="bg-slate-800 p-8 rounded-xl border border-slate-700 w-full max-w-md">
+            <div class="text-center mb-6">
+                <h1 class="text-2xl font-bold text-white mb-2">📧 Gestor de Correos</h1>
+                <p class="text-slate-400">Acceso restringido - Solo administradores</p>
+            </div>
+            
+            <div id="loginError" class="hidden bg-red-900/30 border border-red-700 text-red-400 p-3 rounded-lg mb-4 text-sm"></div>
+            
+            <form id="adminLoginForm" class="space-y-4">
+                <div>
+                    <label class="block text-slate-300 text-sm font-medium mb-2">Usuario</label>
+                    <input type="text" id="loginUsername" required 
+                           class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <div>
+                    <label class="block text-slate-300 text-sm font-medium mb-2">Contraseña</label>
+                    <input type="password" id="loginPassword" required 
+                           class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <button type="submit" id="loginBtn" 
+                        class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition-colors">
+                    Iniciar Sesión
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden">
+        <!-- Header -->
+        <header class="bg-slate-800 border-b border-slate-700 p-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <img src="/icon.ico" alt="La Ruta 11" class="w-8 h-8">
+                    <div>
+                        <h1 class="text-xl font-bold text-white">📧 Gestor de Correos</h1>
+                        <p class="text-slate-400 text-sm">Configuración y envío de emails</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-slate-400 text-sm">Admin: <span id="adminUser" class="text-white font-medium"></span></span>
+                    <button onclick="logout()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="bg-slate-800 border-b border-slate-700 px-4">
+            <div class="flex space-x-1">
+                <button onclick="showTab('config')" id="tab-config" 
+                        class="tab-btn px-4 py-3 text-sm font-medium rounded-t-lg transition-colors bg-orange-500 text-white">
+                    ⚙️ Configuración
+                </button>
+                <button onclick="showTab('send')" id="tab-send" 
+                        class="tab-btn px-4 py-3 text-sm font-medium rounded-t-lg transition-colors text-slate-400 hover:text-white">
+                    📤 Enviar Email
+                </button>
+                <button onclick="showTab('templates')" id="tab-templates" 
+                        class="tab-btn px-4 py-3 text-sm font-medium rounded-t-lg transition-colors text-slate-400 hover:text-white">
+                    📝 Plantillas
+                </button>
+                <button onclick="showTab('logs')" id="tab-logs" 
+                        class="tab-btn px-4 py-3 text-sm font-medium rounded-t-lg transition-colors text-slate-400 hover:text-white">
+                    📊 Logs
+                </button>
+            </div>
+        </nav>
+
+        <!-- Content -->
+        <main class="p-6">
+            <!-- Configuration Tab -->
+            <div id="content-config" class="tab-content">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Gmail API Config -->
+                    <div class="bg-slate-800 rounded-xl border border-slate-700 p-6">
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            🔑 Configuración Gmail API
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-slate-300 text-sm font-medium mb-2">Estado del Token</label>
+                                <div id="tokenStatus" class="flex items-center gap-2 p-3 bg-slate-700 rounded-lg">
+                                    <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+                                    <span class="text-slate-300">Verificando...</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 text-sm font-medium mb-2">Email Remitente</label>
+                                <input type="email" id="senderEmail" placeholder="noreply@laruta11.cl" 
+                                       class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            </div>
+                            <button onclick="testGmailConnection()" 
+                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition-colors">
+                                🔍 Probar Conexión Gmail
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SMTP Backup Config -->
+                    <div class="bg-slate-800 rounded-xl border border-slate-700 p-6">
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            📮 Configuración SMTP (Backup)
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="mb-3">
+                                <div class="flex gap-2 mb-2">
+                                    <button onclick="setHostingerConfig()" class="text-xs bg-orange-600 hover:bg-orange-700 text-white px-2 py-1 rounded">
+                                        📧 Hostinger
+                                    </button>
+                                    <button onclick="setGmailConfig()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded">
+                                        📧 Gmail
+                                    </button>
+                                </div>
+                                <label class="block text-slate-300 text-sm font-medium mb-2">Servidor SMTP</label>
+                                <input type="text" id="smtpHost" placeholder="mail.laruta11.cl" 
+                                       class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-slate-300 text-sm font-medium mb-2">Puerto</label>
+                                    <input type="number" id="smtpPort" placeholder="587" 
+                                           class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-300 text-sm font-medium mb-2">Encriptación</label>
+                                    <select id="smtpEncryption" 
+                                            class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                        <option value="tls">TLS</option>
+                                        <option value="ssl">SSL</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 text-sm font-medium mb-2">Usuario SMTP</label>
+                                <input type="email" id="smtpUser" placeholder="email@gmail.com" 
+                                       class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 text-sm font-medium mb-2">Contraseña SMTP</label>
+                                <input type="password" id="smtpPass" placeholder="••••••••••••••••" 
+                                       class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            </div>
+                            <button onclick="testSmtpConnection()" 
+                                    class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 rounded-lg transition-colors">
+                                🔍 Probar Conexión SMTP
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Configuration -->
+                <div class="mt-6">
+                    <button onclick="saveEmailConfig()" 
+                            class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                        💾 Guardar Configuración
+                    </button>
+                </div>
+            </div>
+
+            <!-- Send Email Tab -->
+            <div id="content-send" class="tab-content hidden">
+                <div class="bg-slate-800 rounded-xl border border-slate-700 p-6">
+                    <h3 class="text-lg font-bold text-white mb-4">📤 Enviar Email de Prueba</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-slate-300 text-sm font-medium mb-2">Para (Email)</label>
+                            <input type="email" id="testEmailTo" placeholder="test@example.com" 
+                                   class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        <div>
+                            <label class="block text-slate-300 text-sm font-medium mb-2">Asunto</label>
+                            <input type="text" id="testEmailSubject" placeholder="Prueba de email - La Ruta 11" 
+                                   class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        <div>
+                            <label class="block text-slate-300 text-sm font-medium mb-2">Mensaje</label>
+                            <textarea id="testEmailMessage" rows="6" placeholder="Escribe tu mensaje aquí..." 
+                                      class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="sendTestEmail('gmail')" 
+                                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition-colors">
+                                📧 Enviar con Gmail API
+                            </button>
+                            <button onclick="sendTestEmail('smtp')" 
+                                    class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 rounded-lg transition-colors">
+                                📮 Enviar con SMTP
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Templates Tab -->
+            <div id="content-templates" class="tab-content hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-slate-800 rounded-xl border border-slate-700 p-6">
+                        <h3 class="text-lg font-bold text-white mb-4">📝 Plantilla RL6 - Registro</h3>
+                        <div class="space-y-3">
+                            <div class="bg-slate-700 p-3 rounded-lg">
+                                <p class="text-slate-300 text-sm"><strong>Asunto:</strong> Registro RL6 - Confirmación</p>
+                                <p class="text-slate-300 text-sm mt-1"><strong>Para:</strong> Militares que se registran</p>
+                            </div>
+                            <button onclick="editTemplate('rl6_register')" 
+                                    class="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 rounded-lg transition-colors">
+                                ✏️ Editar Plantilla
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800 rounded-xl border border-slate-700 p-6">
+                        <h3 class="text-lg font-bold text-white mb-4">✅ Plantilla RL6 - Aprobación</h3>
+                        <div class="space-y-3">
+                            <div class="bg-slate-700 p-3 rounded-lg">
+                                <p class="text-slate-300 text-sm"><strong>Asunto:</strong> Crédito RL6 Aprobado</p>
+                                <p class="text-slate-300 text-sm mt-1"><strong>Para:</strong> Militares aprobados</p>
+                            </div>
+                            <button onclick="editTemplate('rl6_approved')" 
+                                    class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded-lg transition-colors">
+                                ✏️ Editar Plantilla
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logs Tab -->
+            <div id="content-logs" class="tab-content hidden">
+                <div class="bg-slate-800 rounded-xl border border-slate-700 p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-white">📊 Logs de Emails</h3>
+                        <button onclick="refreshLogs()" 
+                                class="bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            🔄 Actualizar
+                        </button>
+                    </div>
+                    <div id="emailLogs" class="space-y-2">
+                        <div class="text-center text-slate-400 py-8">
+                            <p>Cargando logs...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Status Messages -->
+    <div id="statusMessage" class="fixed bottom-4 right-4 hidden"></div>
+
+    <script>
+        let isAuthenticated = false;
+        let currentTab = 'config';
+
+        // Check authentication on load
+        window.addEventListener('DOMContentLoaded', checkAuth);
+
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/check_admin_auth.php');
+                const result = await response.json();
+                
+                if (result.authenticated) {
+                    isAuthenticated = true;
+                    document.getElementById('adminUser').textContent = result.user;
+                    showMainApp();
+                } else {
+                    showLoginForm();
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                showLoginForm();
+            }
+        }
+
+        function showMainApp() {
+            document.getElementById('loadingScreen').classList.add('hidden');
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            loadEmailConfig();
+        }
+
+        function showLoginForm() {
+            document.getElementById('loadingScreen').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+        }
+
+        // Login form handler
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const loginBtn = document.getElementById('loginBtn');
+            const errorDiv = document.getElementById('loginError');
+            
+            loginBtn.textContent = 'Verificando...';
+            loginBtn.disabled = true;
+            errorDiv.classList.add('hidden');
+            
+            try {
+                const response = await fetch('/api/admin_auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    isAuthenticated = true;
+                    document.getElementById('adminUser').textContent = result.user;
+                    showMainApp();
+                } else {
+                    errorDiv.textContent = result.error || 'Credenciales incorrectas';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Error de conexión';
+                errorDiv.classList.remove('hidden');
+            }
+            
+            loginBtn.textContent = 'Iniciar Sesión';
+            loginBtn.disabled = false;
+        });
+
+        function logout() {
+            fetch('/api/admin_logout.php').then(() => {
+                isAuthenticated = false;
+                showLoginForm();
+            });
+        }
+
+        function showTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-orange-500', 'text-white');
+                btn.classList.add('text-slate-400', 'hover:text-white');
+            });
+            document.getElementById(`tab-${tabName}`).classList.add('bg-orange-500', 'text-white');
+            document.getElementById(`tab-${tabName}`).classList.remove('text-slate-400', 'hover:text-white');
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+
+            currentTab = tabName;
+
+            // Load tab-specific data
+            if (tabName === 'logs') {
+                refreshLogs();
+            }
+        }
+
+        async function loadEmailConfig() {
+            // TODO: Load saved email configuration
+            showStatus('Configuración cargada', 'success');
+        }
+
+        async function testGmailConnection() {
+            showStatus('Probando conexión Gmail...', 'info');
+            
+            try {
+                const response = await fetch('/api/emails/test_gmail.php');
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('✅ Gmail API funcionando correctamente', 'success');
+                    updateTokenStatus(true);
+                } else {
+                    showStatus('❌ Error en Gmail API: ' + result.error, 'error');
+                    updateTokenStatus(false);
+                }
+            } catch (error) {
+                showStatus('❌ Error de conexión', 'error');
+                updateTokenStatus(false);
+            }
+        }
+
+        async function testSmtpConnection() {
+            showStatus('Probando conexión SMTP...', 'info');
+            
+            const config = {
+                host: document.getElementById('smtpHost').value,
+                port: document.getElementById('smtpPort').value,
+                encryption: document.getElementById('smtpEncryption').value,
+                user: document.getElementById('smtpUser').value,
+                pass: document.getElementById('smtpPass').value
+            };
+            
+            try {
+                const response = await fetch('/api/emails/test_smtp.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('✅ SMTP funcionando correctamente', 'success');
+                } else {
+                    showStatus('❌ Error en SMTP: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Error de conexión', 'error');
+            }
+        }
+
+        async function sendTestEmail(method) {
+            const to = document.getElementById('testEmailTo').value;
+            const subject = document.getElementById('testEmailSubject').value;
+            const message = document.getElementById('testEmailMessage').value;
+            
+            if (!to || !subject || !message) {
+                showStatus('❌ Completa todos los campos', 'error');
+                return;
+            }
+            
+            showStatus(`Enviando email con ${method.toUpperCase()}...`, 'info');
+            
+            try {
+                const response = await fetch('/api/emails/send_test.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to, subject, message, method })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('✅ Email enviado correctamente', 'success');
+                } else {
+                    showStatus('❌ Error enviando email: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Error de conexión', 'error');
+            }
+        }
+
+        async function saveEmailConfig() {
+            showStatus('Guardando configuración...', 'info');
+            
+            const config = {
+                sender_email: document.getElementById('senderEmail').value,
+                smtp_host: document.getElementById('smtpHost').value,
+                smtp_port: document.getElementById('smtpPort').value,
+                smtp_encryption: document.getElementById('smtpEncryption').value,
+                smtp_user: document.getElementById('smtpUser').value,
+                smtp_pass: document.getElementById('smtpPass').value
+            };
+            
+            try {
+                const response = await fetch('/api/emails/save_config.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('✅ Configuración guardada', 'success');
+                } else {
+                    showStatus('❌ Error guardando: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Error de conexión', 'error');
+            }
+        }
+
+        async function refreshLogs() {
+            const logsContainer = document.getElementById('emailLogs');
+            logsContainer.innerHTML = '<div class="text-center text-slate-400 py-8"><p>Cargando logs...</p></div>';
+            
+            try {
+                const response = await fetch('/api/emails/get_logs.php');
+                const result = await response.json();
+                
+                if (result.success && result.logs.length > 0) {
+                    logsContainer.innerHTML = result.logs.map(log => `
+                        <div class="bg-slate-700 p-3 rounded-lg">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-white font-medium">${log.to}</span>
+                                <span class="text-xs text-slate-400">${log.created_at}</span>
+                            </div>
+                            <p class="text-slate-300 text-sm">${log.subject}</p>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="text-xs px-2 py-1 rounded ${log.status === 'sent' ? 'bg-green-600' : 'bg-red-600'} text-white">
+                                    ${log.status === 'sent' ? '✅ Enviado' : '❌ Error'}
+                                </span>
+                                <span class="text-xs text-slate-400">${log.method}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    logsContainer.innerHTML = '<div class="text-center text-slate-400 py-8"><p>No hay logs disponibles</p></div>';
+                }
+            } catch (error) {
+                logsContainer.innerHTML = '<div class="text-center text-red-400 py-8"><p>Error cargando logs</p></div>';
+            }
+        }
+
+        function updateTokenStatus(isValid) {
+            const statusDiv = document.getElementById('tokenStatus');
+            if (isValid) {
+                statusDiv.innerHTML = `
+                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span class="text-green-400">Token válido y activo</span>
+                `;
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <span class="text-red-400">Token inválido o expirado</span>
+                `;
+            }
+        }
+
+        function editTemplate(templateName) {
+            showStatus('Función de edición de plantillas en desarrollo', 'info');
+        }
+
+        function setHostingerConfig() {
+            document.getElementById('smtpHost').value = 'mail.laruta11.cl';
+            document.getElementById('smtpPort').value = '587';
+            document.getElementById('smtpEncryption').value = 'tls';
+            document.getElementById('smtpUser').value = 'noreply@laruta11.cl';
+            document.getElementById('senderEmail').value = 'noreply@laruta11.cl';
+            showStatus('✅ Configuración Hostinger cargada', 'success');
+        }
+
+        function setGmailConfig() {
+            document.getElementById('smtpHost').value = 'smtp.gmail.com';
+            document.getElementById('smtpPort').value = '587';
+            document.getElementById('smtpEncryption').value = 'tls';
+            showStatus('✅ Configuración Gmail cargada', 'success');
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            const colors = {
+                success: 'bg-green-600',
+                error: 'bg-red-600',
+                info: 'bg-blue-600'
+            };
+            
+            statusDiv.className = `fixed bottom-4 right-4 ${colors[type]} text-white px-4 py-2 rounded-lg shadow-lg`;
+            statusDiv.textContent = message;
+            statusDiv.classList.remove('hidden');
+            
+            setTimeout(() => {
+                statusDiv.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
