@@ -118,12 +118,12 @@ window.addEventListener('DOMContentLoaded', () => {
 async function checkGmailStatus() {
     const statusDiv = document.getElementById('gmailStatus');
     try {
-        const response = await fetch('/api/gmail/send_email.php?to=test@test.com&subject=test&body=test');
+        const response = await fetch('/api/gmail/get_token.php');
         const result = await response.json();
-        if (result.success || result.error?.includes('Token')) {
+        if (result.access_token) {
             statusDiv.innerHTML = '<div class="w-3 h-3 bg-green-500 rounded-full"></div><span class="text-green-700 font-medium">✅ Gmail API configurado</span>';
         } else {
-            statusDiv.innerHTML = '<div class="w-3 h-3 bg-red-500 rounded-full"></div><span class="text-red-700 font-medium">❌ Gmail API no configurado</span>';
+            statusDiv.innerHTML = '<div class="w-3 h-3 bg-red-500 rounded-full"></div><span class="text-red-700 font-medium">❌ Error: ' + (result.error || 'Token no encontrado') + '</span>';
         }
     } catch (error) {
         statusDiv.innerHTML = '<div class="w-3 h-3 bg-red-500 rounded-full"></div><span class="text-red-700 font-medium">❌ Error de conexión</span>';
