@@ -68,6 +68,18 @@ $stmt->bind_param('ssissi',
 if ($stmt->execute()) {
     echo '<h1>✅ Autenticación exitosa</h1>';
     echo '<p>Token guardado en base de datos. Persistirá para siempre.</p>';
+    echo '<p>Affected rows: ' . $stmt->affected_rows . '</p>';
+    
+    // DEBUG: Verificar en BD
+    $result = $conn->query("SELECT id, LENGTH(access_token) as at_len, LENGTH(refresh_token) as rt_len, expires_at FROM gmail_tokens WHERE id=1");
+    if ($row = $result->fetch_assoc()) {
+        echo '<h2>Verificación en BD:</h2>';
+        echo '<pre>' . print_r($row, true) . '</pre>';
+        if ($row['at_len'] == 0 || $row['rt_len'] == 0) {
+            echo '<p style="color:red">⚠️ TOKENS VACÍOS EN BD</p>';
+        }
+    }
+    
     echo '<p><a href="/admin/emails">Ir al gestor de correos</a></p>';
 } else {
     die('Error al guardar token: ' . $stmt->error);
