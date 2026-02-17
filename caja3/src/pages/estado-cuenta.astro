@@ -183,16 +183,20 @@ const user_id = Astro.url.searchParams.get('user_id');
                     sortedGroups.forEach(group => {
                         const mainTx = group[0];
                         const netAmount = group.reduce((sum, t) => sum + (t.tipo === 'debit' ? -t.monto : t.monto), 0);
-                        const subtotalProd = mainTx.subtotal_productos || 0;
-                        const deliveryFee = mainTx.delivery_fee || 0;
-                        const deliveryDiscount = mainTx.delivery_discount || 0;
-                        const totalReal = Math.abs(netAmount);
-                        const extras = totalReal - subtotalProd - deliveryFee;
                         
-                        totalSubtotal += subtotalProd;
-                        totalExtras += extras > 0 ? extras : 0;
-                        totalDelivery += deliveryFee;
-                        totalDeliveryDiscount += deliveryDiscount;
+                        // Solo sumar transacciones NO reembolsadas (netAmount < 0 = compra real)
+                        if (netAmount < 0) {
+                            const subtotalProd = mainTx.subtotal_productos || 0;
+                            const deliveryFee = mainTx.delivery_fee || 0;
+                            const deliveryDiscount = mainTx.delivery_discount || 0;
+                            const totalReal = Math.abs(netAmount);
+                            const extras = totalReal - subtotalProd - deliveryFee;
+                            
+                            totalSubtotal += subtotalProd;
+                            totalExtras += extras > 0 ? extras : 0;
+                            totalDelivery += deliveryFee;
+                            totalDeliveryDiscount += deliveryDiscount;
+                        }
                     });
                     const totalGeneral = totalSubtotal + totalExtras + totalDelivery;
                     
