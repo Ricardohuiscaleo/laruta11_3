@@ -84,26 +84,19 @@ try {
         throw new Exception('Token no recibido');
     }
     
-    // PASO 2: Validar Token
-    $validate_url = $url_base . '/validatetoken';
-    $validate_data = ['token' => $token_data['token']];
-    
-    $ch = curl_init($validate_url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($validate_data));
-    
-    $validate_response = curl_exec($ch);
-    curl_close($ch);
-    
-    $validate_result = json_decode($validate_response, true);
-    if (!isset($validate_result['secret_key'])) {
-        throw new Exception('Error validando token TUU');
+    // Decodificar JWT directamente
+    $jwt_parts = explode('.', $token_data['token']);
+    if (count($jwt_parts) !== 3) {
+        throw new Exception('Token JWT inválido');
     }
     
-    $secret_key = $validate_result['secret_key'];
-    $account_id = $validate_result['account_id'];
+    $payload = json_decode(base64_decode($jwt_parts[1]), true);
+    if (!isset($payload['secret_key']) || !isset($payload['account_id'])) {
+        throw new Exception('Token JWT no contiene datos necesarios');
+    }
+    
+    $secret_key = $payload['secret_key'];
+    $account_id = $payload['account_id'];
     
     // PASO 3: Crear Transacción
     $transaction_data = [
