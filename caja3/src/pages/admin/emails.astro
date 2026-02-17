@@ -1,0 +1,148 @@
+---
+// Email Manager for Caja3
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📧 Gestor de Correos - La Ruta 11</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen p-6">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">📧 Gestor de Correos Gmail</h1>
+                <p class="text-gray-600">Envío de emails automatizados desde saboresdelaruta11@gmail.com</p>
+            </div>
+
+            <!-- Gmail Status -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4">🔑 Estado de Gmail API</h2>
+                <div id="gmailStatus" class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                    <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+                    <span class="text-gray-700">Verificando...</span>
+                </div>
+                <div class="mt-4 flex gap-3">
+                    <button onclick="checkGmailStatus()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
+                        🔍 Verificar Estado
+                    </button>
+                    <a href="/api/gmail/auth.php" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium inline-block">
+                        🔐 Autorizar Gmail
+                    </a>
+                </div>
+            </div>
+
+            <!-- Send Email Form -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4">📤 Enviar Email de Prueba</h2>
+                <form id="emailForm" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Para (Email)</label>
+                        <input type="email" id="emailTo" required 
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="destinatario@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Asunto</label>
+                        <input type="text" id="emailSubject" required 
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="Asunto del correo">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Mensaje</label>
+                        <textarea id="emailBody" rows="6" required 
+                                  class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Escribe tu mensaje aquí..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg">
+                        📧 Enviar Email
+                    </button>
+                </form>
+            </div>
+
+            <!-- Status Message -->
+            <div id="statusMessage" class="hidden mt-6 p-4 rounded-lg"></div>
+        </div>
+    </div>
+
+    <script>
+        // Check Gmail status on load
+        window.addEventListener('DOMContentLoaded', checkGmailStatus);
+
+        async function checkGmailStatus() {
+            const statusDiv = document.getElementById('gmailStatus');
+            statusDiv.innerHTML = '<div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div><span class="text-gray-700">Verificando...</span>';
+            
+            try {
+                const response = await fetch('/api/gmail/send_email.php?to=test@test.com&subject=test&body=test');
+                const result = await response.json();
+                
+                if (result.success || result.error?.includes('Token')) {
+                    // Token exists
+                    statusDiv.innerHTML = '<div class="w-3 h-3 bg-green-500 rounded-full"></div><span class="text-green-700 font-medium">✅ Gmail API configurado correctamente</span>';
+                } else {
+                    statusDiv.innerHTML = '<div class="w-3 h-3 bg-red-500 rounded-full"></div><span class="text-red-700 font-medium">❌ Gmail API no configurado</span>';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<div class="w-3 h-3 bg-red-500 rounded-full"></div><span class="text-red-700 font-medium">❌ Error de conexión</span>';
+            }
+        }
+
+        document.getElementById('emailForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const to = document.getElementById('emailTo').value;
+            const subject = document.getElementById('emailSubject').value;
+            const body = document.getElementById('emailBody').value;
+            
+            showStatus('Enviando email...', 'info');
+            
+            try {
+                const formData = new FormData();
+                formData.append('to', to);
+                formData.append('subject', subject);
+                formData.append('body', body);
+                
+                const response = await fetch('/api/gmail/send_email.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('✅ Email enviado correctamente a ' + to, 'success');
+                    document.getElementById('emailForm').reset();
+                } else {
+                    showStatus('❌ Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Error de conexión', 'error');
+            }
+        });
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            const colors = {
+                success: 'bg-green-100 border-green-500 text-green-700',
+                error: 'bg-red-100 border-red-500 text-red-700',
+                info: 'bg-blue-100 border-blue-500 text-blue-700'
+            };
+            
+            statusDiv.className = `mt-6 p-4 rounded-lg border-l-4 ${colors[type]}`;
+            statusDiv.textContent = message;
+            statusDiv.classList.remove('hidden');
+            
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => {
+                    statusDiv.classList.add('hidden');
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>

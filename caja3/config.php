@@ -48,6 +48,10 @@ $config = [
         'admin' => getenv('CAJA_PASSWORD_ADMIN') ?: 'admin123'
     ],
     
+    'gmail_client_id' => getenv('GMAIL_CLIENT_ID'),
+    'gmail_client_secret' => getenv('GMAIL_CLIENT_SECRET'),
+    'gmail_sender_email' => getenv('GMAIL_SENDER_EMAIL'),
+    
     'external_credentials' => [
         'pedidosya' => [
             'platform' => 'PedidosYA (Gowin)',
