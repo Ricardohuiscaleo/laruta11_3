@@ -74,7 +74,9 @@ while ($row = $result->fetch_assoc()) {
             
             // Parsear customizaciones si existen
             if ($item['combo_data']) {
-                $combo_data = json_decode($item['combo_data'], true);
+                // Decodificar HTML entities primero
+                $decoded = html_entity_decode($item['combo_data'], ENT_QUOTES, 'UTF-8');
+                $combo_data = json_decode($decoded, true);
                 if (isset($combo_data['customizations']) && is_array($combo_data['customizations'])) {
                     foreach ($combo_data['customizations'] as $custom) {
                         $items[] = [
