@@ -55,7 +55,7 @@ const user_id = Astro.url.searchParams.get('user_id');
                 
                 <div id="paymentButton" class="hidden mt-4">
                     <button 
-                        onclick="pagarCredito()" 
+                        id="btnPagar"
                         class="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold py-3 px-6 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-md flex items-center justify-center gap-2"
                     >
                         <span style="font-size: 20px;">💳</span>
@@ -100,7 +100,7 @@ const user_id = Astro.url.searchParams.get('user_id');
         async function pagarCredito() {
             if (!confirm('¿Deseas proceder con el pago de tu crédito RL6?')) return;
             
-            const btn = event.target.closest('button');
+            const btn = document.getElementById('btnPagar');
             btn.disabled = true;
             btn.innerHTML = '<span class="animate-spin">⏳</span> Procesando...';
             
@@ -126,6 +126,14 @@ const user_id = Astro.url.searchParams.get('user_id');
                 btn.innerHTML = '<span style="font-size: 20px;">💳</span><span>Pagar con TUU</span>';
             }
         }
+        
+        // Agregar event listener al botón
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnPagar = document.getElementById('btnPagar');
+            if (btnPagar) {
+                btnPagar.addEventListener('click', pagarCredito);
+            }
+        });
         
         async function loadStatement(uid) {
             try {
