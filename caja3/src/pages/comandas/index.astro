@@ -546,9 +546,9 @@
 
             const checkTrashReminder = () => {
                 const now = new Date();
-                const hours = now.getHours();
+                const currentHours = now.getHours();
                 const minutes = now.getMinutes();
-                const currentTime = hours * 60 + minutes;
+                const currentTime = currentHours * 60 + minutes;
                 
                 const shouldShow = currentTime >= 1255 && currentTime < 1320;
                 if (!shouldShow) {
