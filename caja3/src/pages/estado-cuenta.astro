@@ -122,7 +122,12 @@ const user_id = Astro.url.searchParams.get('user_id');
                         grouped[key].push(tx);
                     });
                     
-                    container.innerHTML = Object.values(grouped).map(group => {
+                    // Ordenar grupos por fecha (más antiguas primero)
+                    const sortedGroups = Object.values(grouped).sort((a, b) => {
+                        return new Date(a[0].fecha) - new Date(b[0].fecha);
+                    });
+                    
+                    container.innerHTML = sortedGroups.map(group => {
                         const mainTx = group[0];
                         const hasRefund = group.length > 1;
                         const netAmount = group.reduce((sum, t) => sum + (t.tipo === 'debit' ? -t.monto : t.monto), 0);
@@ -170,7 +175,7 @@ const user_id = Astro.url.searchParams.get('user_id');
                     let totalSubtotal = 0;
                     let totalExtras = 0;
                     let totalDelivery = 0;
-                    Object.values(grouped).forEach(group => {
+                    sortedGroups.forEach(group => {
                         const mainTx = group[0];
                         const netAmount = group.reduce((sum, t) => sum + (t.tipo === 'debit' ? -t.monto : t.monto), 0);
                         const subtotalProd = mainTx.subtotal_productos || 0;
