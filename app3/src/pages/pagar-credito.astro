@@ -87,15 +87,38 @@ const user_id = Astro.url.searchParams.get('user_id');
         </div>
     </div>
 
-    <script define:vars={{ user_id }}>
-        const userId = user_id || new URLSearchParams(window.location.search).get('user_id');
+    <script>
+        // Obtener user_id desde la sesión del servidor
+        let userId = null;
         
-        if (!userId) {
-            alert('ID de usuario no proporcionado');
-            document.getElementById('loading').innerHTML = '<p class="text-red-600">Error: ID de usuario requerido</p>';
-        } else {
-            loadStatement(userId);
+        async function getUserId() {
+            try {
+                const response = await fetch('/api/auth/check_session.php');
+                const data = await response.json();
+                
+                if (data.authenticated && data.user && data.user.id) {
+                    return data.user.id;
+                }
+                return null;
+            } catch (e) {
+                console.error('Error obteniendo sesión:', e);
+                return null;
+            }
         }
+        
+        async function init() {
+            userId = await getUserId();
+            
+            if (!userId) {
+                alert('Debes iniciar sesión para ver tu estado de cuenta');
+                document.getElementById('loading').innerHTML = '<p class="text-red-600">Error: Debes iniciar sesión</p>';
+                setTimeout(() => window.location.href = '/', 2000);
+            } else {
+                loadStatement(userId);
+            }
+        }
+        
+        init();
         
         async function pagarCredito() {
             if (!confirm('¿Deseas proceder con el pago de tu crédito RL6?')) return;
