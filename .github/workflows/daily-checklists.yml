@@ -1,0 +1,26 @@
+name: Daily Checklists
+
+on:
+  schedule:
+    - cron: '0 11 * * *'  # 8 AM Chile (UTC-3) = 11:00 UTC
+  workflow_dispatch:  # Permite ejecución manual
+
+jobs:
+  create-checklists:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Daily Checklists
+        run: |
+          response=$(curl -s -w "\n%{http_code}" https://caja.laruta11.cl/api/cron/create_daily_checklists.php)
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+          
+          if [ "$http_code" -eq 200 ]; then
+            echo "✅ Checklists created successfully"
+          else
+            echo "❌ Failed with status $http_code"
+            exit 1
+          fi
