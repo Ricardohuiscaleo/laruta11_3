@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/../db_connect.php';
+$config = require_once __DIR__ . '/../../config.php';
 
 $user_id = $_GET['user_id'] ?? null;
 
@@ -10,7 +10,7 @@ if (!$user_id) {
     exit;
 }
 
-$conn = getDBConnection();
+$conn = new mysqli($config['app_db_host'], $config['app_db_user'], $config['app_db_pass'], $config['app_db_name']);
 
 if ($conn->connect_error) {
     echo json_encode(['success' => false, 'error' => 'Error de conexión']);
@@ -32,23 +32,18 @@ if (!$user) {
     exit;
 }
 
-// Obtener transacciones (ventas con crédito RL6)
+// Obtener transacciones de rl6_credit_transactions
 $stmt = $conn->prepare("
     SELECT 
-        v.id,
-        v.fecha_hora,
-        v.total,
-        v.estado,
-        v.metodo_pago,
-        v.tipo_pedido,
-        GROUP_CONCAT(CONCAT(vi.cantidad, 'x ', p.nombre) SEPARATOR ', ') as items
-    FROM ventas v
-    LEFT JOIN ventas_items vi ON v.id = vi.venta_id
-    LEFT JOIN productos p ON vi.producto_id = p.id
-    WHERE v.usuario_id = ? 
-    AND v.metodo_pago = 'credito_rl6'
-    GROUP BY v.id
-    ORDER BY v.fecha_hora DESC
+        id,
+        amount,
+        type,
+        description,
+        order_id,
+        created_at
+    FROM rl6_credit_transactions
+    WHERE user_id = ?
+    ORDER BY created_at DESC
 ");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -58,12 +53,11 @@ $transactions = [];
 while ($row = $result->fetch_assoc()) {
     $transactions[] = [
         'id' => $row['id'],
-        'fecha' => $row['fecha_hora'],
-        'monto' => floatval($row['total']),
-        'tipo' => 'compra',
-        'estado' => $row['estado'],
-        'descripcion' => $row['items'] ?: 'Compra',
-        'tipo_pedido' => $row['tipo_pedido']
+        'fecha' => $row['created_at'],
+        'monto' => floatval($row['amount']),
+        'tipo' => $row['type'],
+        'descripcion' => $row['description'],
+        'order_id' => $row['order_id']
     ];
 }
 
