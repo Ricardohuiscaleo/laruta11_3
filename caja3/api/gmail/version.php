@@ -1,6 +1,6 @@
 <?php
 // Verificar versión del código en producción
-echo "VERSION: v2 - Query directa sin prepared statement\n";
+echo "VERSION: v3 - Prepared statement con VALUES()\n";
 echo "TIMESTAMP: " . date('Y-m-d H:i:s') . "\n";
 echo "FILE: " . __FILE__ . "\n";
 
@@ -16,10 +16,12 @@ if (file_exists($callback_file)) {
     
     // Buscar si tiene el código nuevo
     $content = file_get_contents($callback_file);
-    if (strpos($content, 'real_escape_string') !== false) {
-        echo "\n✅ CÓDIGO NUEVO DETECTADO (usa real_escape_string)\n";
+    if (strpos($content, 'v3 - FINAL') !== false) {
+        echo "\n✅ CÓDIGO V3 DETECTADO (prepared statement con VALUES())\n";
+    } else if (strpos($content, 'real_escape_string') !== false) {
+        echo "\n⚠️ CÓDIGO V2 DETECTADO (query directa)\n";
     } else if (strpos($content, 'bind_param') !== false) {
-        echo "\n⚠️ CÓDIGO VIEJO DETECTADO (usa bind_param)\n";
+        echo "\n⚠️ CÓDIGO VIEJO DETECTADO (bind_param sin VALUES)\n";
     } else {
         echo "\n❓ NO SE PUDO DETERMINAR LA VERSIÓN\n";
     }
