@@ -142,6 +142,10 @@ $html = "
                     
                     <tr>
                         <td style='padding: 0 30px 30px 30px;' align='center'>
+                            <a href='https://app.laruta11.cl/estado-cuenta?user_id=$user_id' 
+                               style='display: inline-block; background: #6b7280; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; font-size: 14px; margin-bottom: 10px;'>
+                                📊 Ver Estado de Cuenta Detallado
+                            </a><br>
                             <a href='https://app.laruta11.cl/pagar-credito?user_id=$user_id&monto=$saldo_pagar' 
                                style='display: inline-block; background: #0074D9; color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
                                 💳 Pagar Ahora
