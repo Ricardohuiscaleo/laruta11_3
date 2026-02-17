@@ -162,26 +162,10 @@ const user_id = Astro.url.searchParams.get('user_id');
                         return '<div class="bg-white border border-gray-200 rounded p-3"><div class="flex items-center gap-2 mb-1"><span class="text-sm font-semibold text-gray-800">' + fechaStr + '</span>' + statusBadge + '</div><p class="text-xs text-gray-500">Orden #' + (mainTx.order_id || mainTx.id) + '</p>' + itemsHtml + resumenHtml + '</div>';
                     }).join('');
                     
-                    // Resumen General
-                    let totalSubtotal = 0, totalExtras = 0, totalDelivery = 0, totalDeliveryDiscount = 0;
-                    sortedGroups.forEach(group => {
-                        const mainTx = group[0];
-                        const netAmount = group.reduce((sum, t) => sum + (t.tipo === 'debit' ? -t.monto : t.monto), 0);
-                        if (netAmount < 0) {
-                            const subtotalProd = mainTx.subtotal_productos || 0;
-                            const deliveryFee = mainTx.delivery_fee || 0;
-                            const deliveryDiscount = mainTx.delivery_discount || 0;
-                            const totalReal = Math.abs(netAmount);
-                            const extras = totalReal - subtotalProd - deliveryFee + deliveryDiscount;
-                            totalSubtotal += subtotalProd;
-                            totalExtras += extras > 0 ? extras : 0;
-                            totalDelivery += deliveryFee;
-                            totalDeliveryDiscount += deliveryDiscount;
-                        }
-                    });
-                    const totalGeneral = totalSubtotal + totalExtras + totalDelivery - totalDeliveryDiscount;
+                    // Resumen General - Calcular directamente de credito_usado
+                    const totalGeneral = user.credito_usado;
                     
-                    container.innerHTML += '<div class="mt-6 pt-4 border-t-2 border-gray-300 bg-gray-50 rounded-lg p-4"><h4 class="text-sm font-bold text-gray-700 mb-3">Resumen General</h4><div class="space-y-2 text-sm"><div class="flex justify-between text-gray-700"><span>Subtotal pedidos:</span><span class="font-semibold">$' + Math.round(totalSubtotal).toLocaleString() + '</span></div>' + (totalExtras > 0 ? '<div class="flex justify-between text-gray-700"><span>Extras/Customizaciones:</span><span class="font-semibold">$' + Math.round(totalExtras).toLocaleString() + '</span></div>' : '') + (totalDelivery > 0 ? '<div class="flex justify-between text-gray-700"><span>Total delivery:</span><span class="font-semibold">$' + Math.round(totalDelivery).toLocaleString() + '</span></div>' : '') + (totalDeliveryDiscount > 0 ? '<div class="flex justify-between text-green-600"><span>Descuentos delivery:</span><span class="font-semibold">-$' + Math.round(totalDeliveryDiscount).toLocaleString() + '</span></div>' : '') + '<div class="flex justify-between text-lg font-bold text-orange-600 pt-2 border-t border-gray-300"><span>Total General:</span><span>$' + Math.round(totalGeneral).toLocaleString() + '</span></div></div></div>';
+                    container.innerHTML += '<div class="mt-6 pt-4 border-t-2 border-gray-300 bg-gray-50 rounded-lg p-4"><h4 class="text-sm font-bold text-gray-700 mb-3">Resumen General</h4><div class="space-y-2 text-sm"><div class="flex justify-between text-lg font-bold text-orange-600"><span>Total a Pagar:</span><span>$' + Math.round(totalGeneral).toLocaleString() + '</span></div><p class="text-xs text-gray-500 mt-2">Este monto refleja tu saldo actual de crédito usado</p></div></div>';
                 }
 
                 document.getElementById('loading').classList.add('hidden');
