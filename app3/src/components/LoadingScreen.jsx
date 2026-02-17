@@ -10,14 +10,31 @@ const LoadingScreen = ({ onComplete }) => {
       setCurrentText('Iniciando aplicación...');
       setProgress(5);
 
-      // 2. Simular carga (sin precargar imágenes)
-      setCurrentText('Preparando aplicación...');
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // 2. Precargar primeras 6 imágenes del menú
+      setCurrentText('Cargando imágenes...');
+      try {
+        const response = await fetch('/api/get_products.php');
+        const data = await response.json();
+        if (data.success && data.products) {
+          const firstImages = data.products.slice(0, 6).map(p => p.image).filter(Boolean);
+          const imagePromises = firstImages.map(src => {
+            return new Promise((resolve) => {
+              const img = new Image();
+              img.onload = () => resolve();
+              img.onerror = () => resolve(); // Continue even if image fails
+              img.src = src;
+            });
+          });
+          await Promise.all(imagePromises);
+        }
+      } catch (error) {
+        console.log('Error precargando imágenes:', error);
+      }
       setProgress(85);
 
       // 3. Verificar conectividad
       setCurrentText('Conectando servicios...');
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await new Promise(resolve => setTimeout(resolve, 200));
       setProgress(95);
 
       // 4. Finalizar
