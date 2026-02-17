@@ -24,10 +24,10 @@
         <div class="bg-white rounded-lg shadow-md mb-6">
             <div class="border-b border-gray-200">
                 <nav class="flex">
-                    <button onclick="showTab('users')" id="tab-users" class="tab-btn px-6 py-3 font-medium border-b-2 border-orange-500 text-orange-600">
+                    <button data-action="showTab" data-tab="users" id="tab-users" class="tab-btn px-6 py-3 font-medium border-b-2 border-orange-500 text-orange-600">
                         👥 Usuarios RL6
                     </button>
-                    <button onclick="showTab('test')" id="tab-test" class="tab-btn px-6 py-3 font-medium border-b-2 border-transparent text-gray-500">
+                    <button data-action="showTab" data-tab="test" id="tab-test" class="tab-btn px-6 py-3 font-medium border-b-2 border-transparent text-gray-500">
                         🧪 Email de Prueba
                     </button>
                 </nav>
@@ -36,7 +36,7 @@
             <div id="content-users" class="tab-content p-6">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-bold text-gray-800">📊 Usuarios con Crédito RL6</h3>
-                    <button onclick="sendMassive()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium">
+                    <button data-action="sendMassive" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium">
                         📤 Enviar a Todos
                     </button>
                 </div>
@@ -75,12 +75,12 @@
     <div class="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-auto">
         <div class="p-4 border-b border-gray-200 flex justify-between items-center">
             <h3 class="text-lg font-bold text-gray-800">👁️ Preview - Estado de Cuenta</h3>
-            <button onclick="closePreview()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            <button data-action="closePreview" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
         </div>
         <iframe id="previewFrame" class="w-full" style="height: 600px; border: none;"></iframe>
         <div class="p-4 border-t border-gray-200 flex gap-3">
-            <button onclick="closePreview()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded-lg">Cerrar</button>
-            <button onclick="sendFromPreview()" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-lg">📧 Enviar Email</button>
+            <button data-action="closePreview" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded-lg">Cerrar</button>
+            <button data-action="sendFromPreview" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-lg">📧 Enviar Email</button>
         </div>
     </div>
 </div>
@@ -89,9 +89,30 @@
 let currentUserId = null;
 let users = [];
 
+// Event listeners globales
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    if (action === 'showTab') showTab(btn.dataset.tab);
+    if (action === 'sendMassive') sendMassive();
+    if (action === 'closePreview') closePreview();
+    if (action === 'sendFromPreview') sendFromPreview();
+});
+
 window.addEventListener('DOMContentLoaded', () => {
     checkGmailStatus();
     loadUsers();
+    
+    // Event delegation para botones dinámicos
+    document.getElementById('usersList').addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+        const action = btn.dataset.action;
+        const userId = parseInt(btn.dataset.userId);
+        if (action === 'preview') previewEmail(userId);
+        if (action === 'send') sendEmail(userId);
+    });
 });
 
 async function checkGmailStatus() {
@@ -137,13 +158,13 @@ function renderUsers(userList) {
                     <p class="text-xs text-gray-500 mt-1">${user.grado_militar} - ${user.unidad_trabajo}</p>
                     <div class="mt-2 flex gap-4 text-sm">
                         <span class="text-gray-600">Crédito: <strong>$${user.credito_total.toLocaleString()}</strong></span>
-                        <span class="text-gray-600">Usado: <strong>$${user.credito_usado.toLocaleString()}</strong></span>
-                        <span class="text-red-600">Saldo: <strong>$${user.saldo_pagar.toLocaleString()}</strong></span>
+                        <span class="text-orange-600">Usado: <strong>$${user.credito_usado.toLocaleString()}</strong></span>
+                        <span class="text-green-600">Saldo: <strong>$${user.credito_disponible.toLocaleString()}</strong></span>
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="previewEmail(${user.id})" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">👁️ Preview</button>
-                    <button onclick="sendEmail(${user.id})" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm">📧 Enviar</button>
+                    <button data-action="preview" data-user-id="${user.id}" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">👁️ Preview</button>
+                    <button data-action="send" data-user-id="${user.id}" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm">📧 Enviar</button>
                 </div>
             </div>
         </div>
