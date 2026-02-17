@@ -639,7 +639,7 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
                 className="w-full h-full object-cover rounded-lg"
                 loading="lazy"
                 onLoad={() => setImageLoaded(true)}
-                style={{ opacity: imageLoaded ? 1 : 0, transition: 'opacity 0.3s' }}
+                style={{ opacity: imageLoaded ? 1 : 0, transition: 'opacity 0.15s ease-out' }}
               />
             </>
           ) : (
