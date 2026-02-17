@@ -151,33 +151,6 @@ while ($row = $result->fetch_assoc()) {
     ];
 }
 
-// Calcular crédito usado real desde transacciones
-// Agrupar por order_id para calcular neto (débito - refund del mismo pedido)
-$order_groups = [];
-foreach ($transactions as $tx) {
-    $key = $tx['order_id'] ?: 'tx_' . $tx['id'];
-    if (!isset($order_groups[$key])) {
-        $order_groups[$key] = [];
-    }
-    $order_groups[$key][] = $tx;
-}
-
-$credito_usado_real = 0;
-foreach ($order_groups as $group) {
-    $neto = 0;
-    foreach ($group as $tx) {
-        if ($tx['tipo'] === 'debit') {
-            $neto += $tx['monto'];
-        } else if ($tx['tipo'] === 'refund' || $tx['tipo'] === 'credit') {
-            $neto -= $tx['monto'];
-        }
-    }
-    // Solo sumar si el neto es positivo (compra real no reembolsada)
-    if ($neto > 0) {
-        $credito_usado_real += $neto;
-    }
-}
-
 echo json_encode([
     'success' => true,
     'user' => [
@@ -186,8 +159,8 @@ echo json_encode([
         'grado_militar' => $user['grado_militar'],
         'unidad_trabajo' => $user['unidad_trabajo'],
         'credito_total' => floatval($user['limite_credito']),
-        'credito_usado' => $credito_usado_real,
-        'credito_disponible' => floatval($user['limite_credito']) - $credito_usado_real,
+        'credito_usado' => floatval($user['credito_usado']),
+        'credito_disponible' => floatval($user['limite_credito']) - floatval($user['credito_usado']),
         'fecha_aprobacion' => $user['fecha_aprobacion_rl6']
     ],
     'transactions' => $transactions,
