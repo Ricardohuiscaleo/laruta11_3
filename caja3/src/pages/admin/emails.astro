@@ -185,7 +185,7 @@ function showTab(tab) {
 
 function previewEmail(userId) {
     currentUserId = userId;
-    document.getElementById('previewFrame').src = `/api/gmail/preview_credit_statement.php?user_id=${userId}`;
+    document.getElementById('previewFrame').src = `https://app.laruta11.cl/api/gmail/preview_credit_statement.php?user_id=${userId}`;
     document.getElementById('previewModal').classList.remove('hidden');
 }
 
