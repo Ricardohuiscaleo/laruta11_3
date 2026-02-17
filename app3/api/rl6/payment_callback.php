@@ -67,8 +67,12 @@ try {
         $refund_stmt = $pdo->prepare($refund_sql);
         $refund_stmt->execute([$order_data['user_id'], $order_data['product_price'], $order_id]);
         
-        // 2. Resetear credito_usado a 0
-        $reset_sql = "UPDATE usuarios SET credito_usado = 0 WHERE id = ?";
+        // 2. Resetear credito_usado a 0, actualizar fecha_ultimo_pago y desbloquear
+        $reset_sql = "UPDATE usuarios SET 
+                      credito_usado = 0, 
+                      fecha_ultimo_pago = CURDATE(),
+                      credito_bloqueado = 0
+                      WHERE id = ?";
         $reset_stmt = $pdo->prepare($reset_sql);
         $reset_stmt->execute([$order_data['user_id']]);
         
