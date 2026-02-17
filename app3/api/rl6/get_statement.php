@@ -151,6 +151,16 @@ while ($row = $result->fetch_assoc()) {
     ];
 }
 
+// Calcular crédito usado real desde transacciones (solo débitos no reembolsados)
+$credito_usado_real = 0;
+foreach ($transactions as $tx) {
+    if ($tx['tipo'] === 'debit') {
+        $credito_usado_real += abs($tx['monto']);
+    } else if ($tx['tipo'] === 'credit') {
+        $credito_usado_real -= abs($tx['monto']);
+    }
+}
+
 echo json_encode([
     'success' => true,
     'user' => [
@@ -159,8 +169,8 @@ echo json_encode([
         'grado_militar' => $user['grado_militar'],
         'unidad_trabajo' => $user['unidad_trabajo'],
         'credito_total' => floatval($user['limite_credito']),
-        'credito_usado' => floatval($user['credito_usado']),
-        'credito_disponible' => floatval($user['limite_credito']) - floatval($user['credito_usado']),
+        'credito_usado' => $credito_usado_real,
+        'credito_disponible' => floatval($user['limite_credito']) - $credito_usado_real,
         'fecha_aprobacion' => $user['fecha_aprobacion_rl6']
     ],
     'transactions' => $transactions,
