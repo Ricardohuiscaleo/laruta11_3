@@ -72,6 +72,7 @@ try {
             FROM order_notifications n
             LEFT JOIN tuu_orders o ON n.order_number = o.order_number
             WHERE n.customer_name = ?
+            AND n.order_number NOT LIKE 'RL6-%'
             ORDER BY n.created_at DESC
             LIMIT 50";
     
@@ -82,7 +83,7 @@ try {
     $notifications = $result->fetch_all(MYSQLI_ASSOC);
     
     // Contar notificaciones no leídas
-    $unread_sql = "SELECT COUNT(*) as unread_count FROM order_notifications WHERE customer_name = ? AND is_read = 0";
+    $unread_sql = "SELECT COUNT(*) as unread_count FROM order_notifications WHERE customer_name = ? AND is_read = 0 AND order_number NOT LIKE 'RL6-%'";
     $unread_stmt = $conn->prepare($unread_sql);
     $unread_stmt->bind_param('s', $customer_name);
     $unread_stmt->execute();

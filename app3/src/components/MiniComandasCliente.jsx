@@ -221,7 +221,8 @@ const MiniComandasCliente = ({ customerName, userId, onOrdersUpdate, isOpen, onC
 
   const activeOrders = orders.filter(o => 
     o.order_status !== 'cancelled' && 
-    o.order_status !== 'delivered'
+    o.order_status !== 'delivered' &&
+    !o.order_number.startsWith('RL6-')
   );
   
   // Mensaje para usuarios no logueados
