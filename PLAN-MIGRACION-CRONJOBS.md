@@ -7,17 +7,19 @@ Migrar los 2 cronjobs de Hostinger a VPS antes de cancelar el hosting.
 
 ## 📋 Cronjobs Actuales en Hostinger
 
-### 1. Gmail Token Refresh
-- **Frecuencia**: Cada 30 minutos (`0,30 * * * *`)
-- **Comando**: `/usr/bin/php /home/u958525313/domains/agenterag.com/public_html/ruta11app/api/cron/refresh_gmail_token.php`
-- **Nueva URL**: `https://app.laruta11.cl/api/cron/refresh_gmail_token.php`
+### 1. Gmail Token Refresh ✅ MIGRADO
+- **Frecuencia**: Cada 40 minutos (`*/40 * * * *`)
+- **Método**: GitHub Actions
+- **URL**: `https://caja.laruta11.cl/api/gmail/refresh_token_cron.php`
 - **Propósito**: Renovar token de Gmail OAuth para envío de emails
+- **Estado**: ✅ Funcionando correctamente desde 2026-02-17
 
-### 2. Daily Checklists
-- **Frecuencia**: Diario a las 8 AM (`0 8 * * *`)
-- **Comando**: `/usr/bin/php /home/u958525313/domains/laruta11.cl/public_html/caja/api/cron/create_daily_checklists.php`
-- **Nueva URL**: `https://caja.laruta11.cl/api/cron/create_daily_checklists.php`
+### 2. Daily Checklists ✅ MIGRADO
+- **Frecuencia**: Diario a las 8 AM Chile (`0 11 * * *` UTC)
+- **Método**: GitHub Actions
+- **URL**: `https://caja.laruta11.cl/api/cron/create_daily_checklists.php`
 - **Propósito**: Crear checklists diarios para operaciones de caja
+- **Estado**: ✅ Configurado correctamente desde 2026-02-17
 
 ---
 
@@ -170,10 +172,10 @@ curl https://caja.laruta11.cl/api/cron/create_daily_checklists.php
 
 ## 📅 Timeline
 
-**Día 1 (Hoy)**:
+**Día 1 (2026-02-17)**:
 - ✅ Documentar cronjobs actuales
-- ⏳ Elegir plataforma (Recomendado: cron-job.org)
-- ⏳ Configurar cronjobs en nueva plataforma
+- ✅ Gmail Token Refresh migrado a GitHub Actions
+- ✅ Daily Checklists migrado a GitHub Actions
 
 **Día 2**:
 - ⏳ Monitorear ejecuciones
@@ -201,5 +203,37 @@ curl https://caja.laruta11.cl/api/cron/create_daily_checklists.php
 ---
 
 **Fecha de creación**: 2026-02-12
+**Última actualización**: 2026-02-17
 **Responsable**: Ricardo
-**Estado**: 📝 Pendiente de implementación
+**Estado**: ✅ COMPLETADO (2/2 migrados)
+
+---
+
+## ✅ Progreso Actual
+
+### Gmail Token Refresh - ✅ COMPLETADO
+- **Plataforma**: GitHub Actions
+- **Archivo**: `.github/workflows/gmail-token-refresh.yml`
+- **Frecuencia**: Cada 40 minutos
+- **Última ejecución**: 2026-02-17 17:19:42 (exitosa)
+- **Próximos pasos**: Ninguno, funcionando correctamente
+
+### Daily Checklists - ✅ COMPLETADO
+- **Plataforma**: GitHub Actions
+- **Archivo**: `.github/workflows/daily-checklists.yml`
+- **Frecuencia**: Diario a las 8 AM Chile (11:00 UTC)
+- **Próxima ejecución**: Mañana a las 8:00 AM
+- **Próximos pasos**: Monitorear primera ejecución automática
+
+---
+
+## 🎉 Migración Completada
+
+**Ambos cronjobs migrados exitosamente a GitHub Actions:**
+1. ✅ Gmail Token Refresh (cada 40 min)
+2. ✅ Daily Checklists (8 AM diario)
+
+**Próximos pasos:**
+1. Monitorear ejecuciones durante 3 días
+2. Desactivar cronjobs en Hostinger
+3. Cancelar hosting Hostinger
