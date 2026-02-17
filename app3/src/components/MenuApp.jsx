@@ -632,7 +632,11 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
         >
           {product.image ? (
             <>
-              {!imageLoaded && <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-lg"></div>}
+              {!imageLoaded && (
+                <div className="absolute inset-0 rounded-lg overflow-hidden">
+                  <div className="w-[200%] h-full bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 animate-[shimmer_2s_infinite] blur-sm"></div>
+                </div>
+              )}
               <img 
                 src={product.image} 
                 alt={product.name} 
@@ -643,7 +647,9 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
               />
             </>
           ) : (
-            <div className="w-full h-full bg-gray-200 animate-pulse rounded-lg"></div>
+            <div className="w-full h-full rounded-lg overflow-hidden">
+              <div className="w-[200%] h-full bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 animate-[shimmer_2s_infinite] blur-sm"></div>
+            </div>
           )}
           
           <FloatingHeart 
@@ -1811,7 +1817,14 @@ export default function App() {
   }
 
   return (
-    <div className="bg-white font-sans min-h-screen w-full" style={{backgroundColor: '#ffffff', background: '#ffffff', boxShadow: 'none'}}>
+    <>
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
+      <div className="bg-white font-sans min-h-screen w-full" style={{backgroundColor: '#ffffff', background: '#ffffff', boxShadow: 'none'}}>
       {/* Sidebar PC - Fixed left */}
       <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-gray-200 z-40 overflow-y-auto">
         <div className="p-4 border-b flex-shrink-0">
@@ -3778,5 +3791,6 @@ export default function App() {
         </div>
       )}
     </div>
+    </>
   );
 }
