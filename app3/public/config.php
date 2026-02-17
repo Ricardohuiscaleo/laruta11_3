@@ -43,6 +43,11 @@ $config = [
     
     'ruta11_google_maps_api_key' => getenv('RUTA11_GOOGLE_MAPS_API_KEY'),
     
+    'ruta11_google_client_id' => getenv('RUTA11_GOOGLE_CLIENT_ID'),
+    'ruta11_google_client_secret' => getenv('RUTA11_GOOGLE_CLIENT_SECRET'),
+    'ruta11_google_redirect_uri' => getenv('RUTA11_GOOGLE_REDIRECT_URI'),
+    'ruta11_app_redirect_uri' => getenv('RUTA11_APP_REDIRECT_URI'),
+    
     'gmail_client_id' => getenv('GMAIL_CLIENT_ID') ?: getenv('RUTA11_GOOGLE_CLIENT_ID'),
     'gmail_client_secret' => getenv('GMAIL_CLIENT_SECRET') ?: getenv('RUTA11_GOOGLE_CLIENT_SECRET'),
     'gmail_redirect_uri' => getenv('GMAIL_REDIRECT_URI') ?: 'https://app.laruta11.cl/api/gmail/callback.php',
