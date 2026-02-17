@@ -53,8 +53,9 @@ $transactions = [];
 while ($row = $result->fetch_assoc()) {
     $items = [];
     
-    // Si tiene order_id, obtener items de la venta
+    // Si tiene order_id, obtener items de la venta y datos de delivery
     if ($row['order_id']) {
+        // Items de productos
         $stmt_items = $conn->prepare("
             SELECT product_name, quantity, product_price
             FROM tuu_order_items
@@ -70,6 +71,40 @@ while ($row = $result->fetch_assoc()) {
                 'cantidad' => intval($item['quantity']),
                 'precio' => floatval($item['product_price'])
             ];
+        }
+        
+        // Datos de delivery/extras
+        $stmt_order = $conn->prepare("
+            SELECT delivery_type, delivery_fee, delivery_extras, delivery_extras_items
+            FROM tuu_orders
+            WHERE order_number = ?
+        ");
+        $stmt_order->bind_param("s", $row['order_id']);
+        $stmt_order->execute();
+        $result_order = $stmt_order->get_result();
+        $order_data = $result_order->fetch_assoc();
+        
+        // Agregar delivery fee si existe
+        if ($order_data && floatval($order_data['delivery_fee']) > 0) {
+            $items[] = [
+                'nombre' => 'Delivery (' . ucfirst($order_data['delivery_type']) . ')',
+                'cantidad' => 1,
+                'precio' => floatval($order_data['delivery_fee'])
+            ];
+        }
+        
+        // Agregar extras de delivery si existen
+        if ($order_data && floatval($order_data['delivery_extras']) > 0 && $order_data['delivery_extras_items']) {
+            $extras = json_decode($order_data['delivery_extras_items'], true);
+            if ($extras && is_array($extras)) {
+                foreach ($extras as $extra) {
+                    $items[] = [
+                        'nombre' => $extra['name'] ?? 'Extra',
+                        'cantidad' => 1,
+                        'precio' => floatval($extra['price'] ?? 0)
+                    ];
+                }
+            }
         }
     }
     
