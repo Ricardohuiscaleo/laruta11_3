@@ -151,13 +151,30 @@ while ($row = $result->fetch_assoc()) {
     ];
 }
 
-// Calcular crédito usado real desde transacciones (solo débitos no reembolsados)
-$credito_usado_real = 0;
+// Calcular crédito usado real desde transacciones
+// Agrupar por order_id para calcular neto (débito - refund del mismo pedido)
+$order_groups = [];
 foreach ($transactions as $tx) {
-    if ($tx['tipo'] === 'debit') {
-        $credito_usado_real += abs($tx['monto']);
-    } else if ($tx['tipo'] === 'credit') {
-        $credito_usado_real -= abs($tx['monto']);
+    $key = $tx['order_id'] ?: 'tx_' . $tx['id'];
+    if (!isset($order_groups[$key])) {
+        $order_groups[$key] = [];
+    }
+    $order_groups[$key][] = $tx;
+}
+
+$credito_usado_real = 0;
+foreach ($order_groups as $group) {
+    $neto = 0;
+    foreach ($group as $tx) {
+        if ($tx['tipo'] === 'debit') {
+            $neto += $tx['monto'];
+        } else if ($tx['tipo'] === 'refund' || $tx['tipo'] === 'credit') {
+            $neto -= $tx['monto'];
+        }
+    }
+    // Solo sumar si el neto es positivo (compra real no reembolsada)
+    if ($neto > 0) {
+        $credito_usado_real += $neto;
     }
 }
 
