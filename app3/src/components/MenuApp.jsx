@@ -597,6 +597,7 @@ const NotificationsModal = ({ isOpen, onClose, notifications, onMarkAllRead }) =
 const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, type, isLiked, handleLike, setReviewsModalProduct, onShare, setQuickViewProduct }) => {
   const [showFloatingHeart, setShowFloatingHeart] = useState(false);
   const [heartPosition, setHeartPosition] = useState({ x: 0, y: 0 });
+  const [imageLoaded, setImageLoaded] = useState(false);
   const heartButtonRef = useRef(null);
   
   useEffect(() => {
@@ -630,13 +631,19 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
           onTouchStart={handleDoubleTap}
         >
           {product.image ? (
-            <img 
-              src={product.image} 
-              alt={product.name} 
-              className="w-full h-full object-cover rounded-lg"
-            />
+            <>
+              {!imageLoaded && <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-lg"></div>}
+              <img 
+                src={product.image} 
+                alt={product.name} 
+                className="w-full h-full object-cover rounded-lg"
+                loading="lazy"
+                onLoad={() => setImageLoaded(true)}
+                style={{ opacity: imageLoaded ? 1 : 0, transition: 'opacity 0.3s' }}
+              />
+            </>
           ) : (
-            <div className="w-full h-full bg-gray-200 animate-pulse"></div>
+            <div className="w-full h-full bg-gray-200 animate-pulse rounded-lg"></div>
           )}
           
           <FloatingHeart 
