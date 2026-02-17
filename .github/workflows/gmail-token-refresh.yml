@@ -2,7 +2,7 @@ name: Gmail Token Refresh
 
 on:
   schedule:
-    - cron: '*/40 * * * *'  # Cada 40 minutos
+    - cron: '*/30 * * * *'  # Cada 30 minutos
   workflow_dispatch:  # Permite ejecución manual
 
 jobs:
