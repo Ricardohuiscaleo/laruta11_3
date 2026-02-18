@@ -1591,7 +1591,7 @@ export default function App() {
 
   const loadUserOrders = async () => {
     if (!user?.email) {
-      console.log('No hay usuario logueado');
+      // Silenciar log en caja3 - los cajeros no cargan pedidos de usuario
       return;
     }
     
@@ -1620,7 +1620,7 @@ export default function App() {
 
   const loadNotifications = async () => {
     if (!user) {
-      console.log('No hay usuario logueado');
+      // Silenciar log en caja3 - los cajeros no cargan notificaciones de usuario
       return;
     }
     
