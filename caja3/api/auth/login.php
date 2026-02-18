@@ -42,6 +42,11 @@ $input = json_decode(file_get_contents('php://input'), true);
 $username = trim($input['username'] ?? '');
 $password = trim($input['password'] ?? '');
 
+// Debug
+error_log("[LOGIN DEBUG] Username: $username");
+error_log("[LOGIN DEBUG] Config path: $config_path_used");
+error_log("[LOGIN DEBUG] Valid users: " . print_r(array_keys($valid_users), true));
+
 if (isset($valid_users[$username]) && $valid_users[$username] === $password) {
     // Regenerar session_id por seguridad
     session_regenerate_id(true);
