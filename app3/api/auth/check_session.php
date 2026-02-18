@@ -1,4 +1,11 @@
 <?php
+// Configurar directorio de sesiones
+$session_path = __DIR__ . '/../../sessions';
+if (!file_exists($session_path)) {
+    mkdir($session_path, 0700, true);
+}
+session_save_path($session_path);
+
 // Configurar sesión persistente ANTES de session_start()
 session_set_cookie_params([
     'lifetime' => 2592000, // 30 días

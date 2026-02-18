@@ -1,5 +1,11 @@
 <?php
 // Test de persistencia de sesión
+$session_path = __DIR__ . '/../sessions';
+if (!file_exists($session_path)) {
+    mkdir($session_path, 0700, true);
+}
+session_save_path($session_path);
+
 session_set_cookie_params([
     'lifetime' => 2592000,
     'path' => '/',
