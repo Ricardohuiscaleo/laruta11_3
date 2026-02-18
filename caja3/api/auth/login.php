@@ -1,8 +1,11 @@
 <?php
+require_once __DIR__ . '/../session_config.php';
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Credentials: true');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -40,12 +43,18 @@ $username = trim($input['username'] ?? '');
 $password = trim($input['password'] ?? '');
 
 if (isset($valid_users[$username]) && $valid_users[$username] === $password) {
-    $token = bin2hex(random_bytes(32));
+    // Regenerar session_id por seguridad
+    session_regenerate_id(true);
+    
+    // Guardar usuario en sesión
+    $_SESSION['cashier'] = [
+        'username' => $username,
+        'login_time' => time()
+    ];
     
     echo json_encode([
         'success' => true,
         'user' => $username,
-        'token' => $token,
         'message' => 'Login exitoso'
     ]);
 } else {

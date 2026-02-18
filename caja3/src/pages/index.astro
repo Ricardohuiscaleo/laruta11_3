@@ -220,26 +220,28 @@ import MenuApp from '../components/MenuApp.jsx';
 			
 			// Auth Check
 			const AuthManager = {
-				checkAuth() {
-					const session = localStorage.getItem('caja_session');
-					if (!session) {
-						window.location.href = '/login';
-						return false;
-					}
-					
+				async checkAuth() {
 					try {
-						const sessionData = JSON.parse(session);
-						const isExpired = Date.now() - sessionData.timestamp > 8 * 60 * 60 * 1000; // 8 horas
+						const response = await fetch('/api/auth/check_session.php', {
+							credentials: 'include',
+							cache: 'no-cache'
+						});
 						
-						if (isExpired) {
-							localStorage.removeItem('caja_session');
+						if (!response.ok) {
+							window.location.href = '/login';
+							return false;
+						}
+						
+						const data = await response.json();
+						
+						if (!data.authenticated) {
 							window.location.href = '/login';
 							return false;
 						}
 						
 						return true;
-					} catch {
-						localStorage.removeItem('caja_session');
+					} catch (error) {
+						console.error('Auth check error:', error);
 						window.location.href = '/login';
 						return false;
 					}
@@ -254,8 +256,8 @@ import MenuApp from '../components/MenuApp.jsx';
 			};
 			
 			// Initialize app
-			const initApp = () => {
-				if (AuthManager.checkAuth()) {
+			const initApp = async () => {
+				if (await AuthManager.checkAuth()) {
 					AuthManager.showApp();
 					Analytics.init();
 				}
