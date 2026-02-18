@@ -4,16 +4,20 @@ class MySQLSessionHandler implements SessionHandlerInterface {
     private $conn;
     private $table = 'php_sessions';
     
-    public function __construct($db_config) {
+    public function __construct($config) {
+        if (!is_array($config)) {
+            throw new Exception('Config must be an array');
+        }
+        
         $this->conn = mysqli_connect(
-            $db_config['app_db_host'],
-            $db_config['app_db_user'],
-            $db_config['app_db_pass'],
-            $db_config['app_db_name']
+            $config['app_db_host'] ?? '',
+            $config['app_db_user'] ?? '',
+            $config['app_db_pass'] ?? '',
+            $config['app_db_name'] ?? ''
         );
         
         if (!$this->conn) {
-            throw new Exception('Database connection failed');
+            throw new Exception('Database connection failed: ' . mysqli_connect_error());
         }
         
         mysqli_set_charset($this->conn, 'utf8mb4');
