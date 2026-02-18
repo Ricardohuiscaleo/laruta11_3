@@ -1,39 +1,11 @@
 <?php
-// Configurar directorio de sesiones (crear si no existe)
-$session_path = __DIR__ . '/../../sessions';
-if (!file_exists($session_path)) {
-    mkdir($session_path, 0700, true);
-    file_put_contents($session_path . '/.gitkeep', '# Session files directory');
-}
-session_save_path($session_path);
+error_reporting(0);
+ini_set('display_errors', '0');
 
-// Configurar sesión persistente ANTES de session_start()
-session_set_cookie_params([
-    'lifetime' => 2592000, // 30 días
-    'path' => '/',
-    'domain' => '',
-    'secure' => true,
-    'httponly' => true,
-    'samesite' => 'Lax'
-]);
+// Usar configuración centralizada de sesión MySQL
+require_once __DIR__ . '/../session_config.php';
 
-ini_set('session.gc_maxlifetime', 2592000);
-session_start();
-
-// Configurar sesión persistente ANTES de session_start()
-session_set_cookie_params([
-    'lifetime' => 2592000, // 30 días
-    'path' => '/',
-    'domain' => '',
-    'secure' => true,
-    'httponly' => true,
-    'samesite' => 'Lax'
-]);
-
-ini_set('session.gc_maxlifetime', 2592000);
-session_start();
-
-$config = require_once __DIR__ . '/../../config.php';
+$config = require __DIR__ . '/../../config.php';
 
 header('Content-Type: application/json');
 

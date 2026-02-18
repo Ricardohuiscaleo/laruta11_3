@@ -65,22 +65,10 @@ try {
     error_log('🔍 [DEBUG] === LOGIN MANUAL EXITOSO ===');
     error_log('🔍 [DEBUG] Usuario: ' . $user['nombre'] . ' (' . $user['email'] . ')');
     
-    // Configurar sesión persistente (30 días)
-    ini_set('session.cookie_lifetime', 2592000);
-    ini_set('session.gc_maxlifetime', 2592000);
-    session_start();
+    // Usar sesión MySQL persistente
+    require_once __DIR__ . '/../session_config.php';
     
     error_log('🔍 [DEBUG] Session ID creado: ' . session_id());
-    error_log('🔍 [DEBUG] Session name: ' . session_name());
-    
-    // Renovar cookie de sesión
-    if (isset($_COOKIE[session_name()])) {
-        error_log('✅ [DEBUG] Cookie existe, renovando...');
-        setcookie(session_name(), session_id(), time() + 2592000, '/', '', true, true);
-    } else {
-        error_log('🔍 [DEBUG] Creando nueva cookie de sesión...');
-        setcookie(session_name(), session_id(), time() + 2592000, '/', '', true, true);
-    }
     
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['user_email'] = $user['email'];
