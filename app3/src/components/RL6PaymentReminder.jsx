@@ -90,8 +90,8 @@ const RL6PaymentReminder = ({ user }) => {
 
   if (!showReminder || !creditInfo) return null;
 
-  const hasDebt = parseFloat(creditInfo.credito_usado) > 0;
-  const availableCredit = parseFloat(creditInfo.limite_credito) - parseFloat(creditInfo.credito_usado);
+  const hasDebt = parseFloat(creditInfo.credit?.credito_usado || 0) > 0;
+  const availableCredit = parseFloat(creditInfo.credit?.credito_disponible || 0);
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
@@ -134,7 +134,7 @@ const RL6PaymentReminder = ({ user }) => {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-gray-600">Saldo pendiente:</span>
                   <span className="text-2xl font-bold text-red-600">
-                    ${parseFloat(creditInfo.credito_usado).toLocaleString('es-CL')}
+                    ${parseFloat(creditInfo.credit?.credito_usado || 0).toLocaleString('es-CL')}
                   </span>
                 </div>
               </div>
