@@ -8,7 +8,7 @@ const RL6PaymentReminder = ({ user }) => {
 
   useEffect(() => {
     // Solo mostrar para militares RL6
-    if (!user || user.es_militar_rl6 !== 1) return;
+    if (!user || (user.es_militar_rl6 !== 1 && user.es_militar_rl6 !== '1')) return;
 
     // Verificar si es día 18, 19, 20 o 21
     const today = new Date();
