@@ -20,8 +20,9 @@ mysqli_set_charset($conn, 'utf8');
 
 header('Content-Type: application/json');
 
+// Si no hay usuario, retornar success sin hacer nada (no es error)
 if (!isset($_SESSION['user']) || !isset($_SESSION['user']['id'])) {
-    echo json_encode(['success' => false, 'error' => 'Usuario no autenticado']);
+    echo json_encode(['success' => true, 'message' => 'No user session']);
     exit();
 }
 
