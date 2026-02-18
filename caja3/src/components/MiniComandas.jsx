@@ -615,16 +615,16 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                   <span className="text-xs text-orange-600 flex items-center gap-1">+ <Bike size={12} /> <span className="font-semibold">${parseInt(order.delivery_fee - (order.delivery_discount || 0)).toLocaleString('es-CL')}</span></span>
                 )}
                 {order.discount_10 > 0 && (
-                  <span className="text-xs text-green-600 flex items-center gap-1">- ⭐10% <span className="font-semibold">${parseInt(order.discount_10).toLocaleString('es-CL')}</span></span>
+                  <span className="text-xs text-green-600 flex items-center gap-1">- ⭐10% descuento <span className="font-semibold">${parseInt(order.discount_10).toLocaleString('es-CL')}</span></span>
                 )}
                 {order.discount_30 > 0 && (
-                  <span className="text-xs text-yellow-600 flex items-center gap-1">- ⭐30% <span className="font-semibold">${parseInt(order.discount_30).toLocaleString('es-CL')}</span></span>
+                  <span className="text-xs text-yellow-600 flex items-center gap-1">- ⭐30% descuento <span className="font-semibold">${parseInt(order.discount_30).toLocaleString('es-CL')}</span></span>
                 )}
                 {order.discount_birthday > 0 && (
-                  <span className="text-xs text-pink-600 flex items-center gap-1">- 🎂 <span className="font-semibold">${parseInt(order.discount_birthday).toLocaleString('es-CL')}</span></span>
+                  <span className="text-xs text-pink-600 flex items-center gap-1">- 🎂 Cumpleaños <span className="font-semibold">${parseInt(order.discount_birthday).toLocaleString('es-CL')}</span></span>
                 )}
                 {order.discount_pizza > 0 && (
-                  <span className="text-xs text-orange-600 flex items-center gap-1">- 🍕 <span className="font-semibold">${parseInt(order.discount_pizza).toLocaleString('es-CL')}</span></span>
+                  <span className="text-xs text-purple-600 flex items-center gap-1">- 🍕 Pizza <span className="font-semibold">${parseInt(order.discount_pizza).toLocaleString('es-CL')}</span></span>
                 )}
                 <span className="text-xs text-gray-400">→</span>
                 <span className="text-xs text-gray-600">Total: <span className="font-bold text-green-600">${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}</span></span>
