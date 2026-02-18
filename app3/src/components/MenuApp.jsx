@@ -14,6 +14,7 @@ import OrderNotifications from './OrderNotifications.jsx';
 import MiniComandasCliente from './MiniComandasCliente.jsx';
 import ProductDetailModal from './modals/ProductDetailModal.jsx';
 import ProfileModalModern from './modals/ProfileModalModern.jsx';
+import RL6PaymentReminder from './RL6PaymentReminder.jsx';
 import AuthModal from './modals/AuthModal.jsx';
 import SecurityModal from './modals/SecurityModal.jsx';
 import SaveChangesModal from './modals/SaveChangesModal.jsx';
@@ -3777,6 +3778,9 @@ export default function App() {
         
         html, body { background: #ffffff !important; }
       `}</style>
+
+      {/* RL6 Payment Reminder */}
+      <RL6PaymentReminder user={user} />
 
       {/* Checkout Modal */}
       {isCheckoutOpen && (
