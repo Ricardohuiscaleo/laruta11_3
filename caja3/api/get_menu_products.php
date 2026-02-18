@@ -144,7 +144,7 @@ try {
             'subcategory_id' => (int)$product['subcategory_id'],
             'subcategory_name' => $product['subcategory_name'],
             'active' => (int)$product['is_active'],
-            'category_name' => $product['category_id'] == 8 ? 'combos' : null
+            'category_name' => $product['category_id'] == 8 ? 'Combos' : null
         ];
     }
     
