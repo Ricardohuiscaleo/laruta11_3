@@ -2,7 +2,12 @@
 // Configuración centralizada de sesión PHP con MySQL
 // Duración: 30 días (2592000 segundos)
 
-$config = require_once __DIR__ . '/../config.php';
+$config_path = __DIR__ . '/../config.php';
+if (!file_exists($config_path)) {
+    die('Config file not found');
+}
+$config = require $config_path;
+
 require_once __DIR__ . '/MySQLSessionHandler.php';
 
 // Usar MySQL para almacenar sesiones
