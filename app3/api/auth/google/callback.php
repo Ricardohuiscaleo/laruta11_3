@@ -110,11 +110,6 @@ try {
     // Crear sesión persistente (30 días)
     require_once __DIR__ . '/../../session_config.php';
     $_SESSION['user'] = $user;
-    
-    // Renovar cookie de sesión para que persista
-    if (isset($_COOKIE[session_name()])) {
-        setcookie(session_name(), session_id(), time() + 2592000, '/', '', true, true);
-    }
 
     mysqli_close($app_conn);
 

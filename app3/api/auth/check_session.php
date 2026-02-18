@@ -1,31 +1,22 @@
 <?php
-error_log('🔍 [DEBUG] === CHECK SESSION INICIO ===');
-error_log('🔍 [DEBUG] User Agent: ' . ($_SERVER['HTTP_USER_AGENT'] ?? 'N/A'));
-error_log('🔍 [DEBUG] Cookies recibidas: ' . json_encode($_COOKIE));
+// Configurar sesión persistente ANTES de session_start()
+session_set_cookie_params([
+    'lifetime' => 2592000, // 30 días
+    'path' => '/',
+    'domain' => '',
+    'secure' => true,
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
 
-// Configurar sesión persistente (30 días)
-ini_set('session.cookie_lifetime', 2592000);
 ini_set('session.gc_maxlifetime', 2592000);
 session_start();
-
-error_log('🔍 [DEBUG] Session ID: ' . session_id());
-error_log('🔍 [DEBUG] Session name: ' . session_name());
-error_log('🔍 [DEBUG] Session data: ' . json_encode($_SESSION));
-
-// Renovar cookie de sesión
-if (isset($_COOKIE[session_name()])) {
-    error_log('✅ [DEBUG] Cookie de sesión existe, renovando...');
-    setcookie(session_name(), session_id(), time() + 2592000, '/', '', true, true);
-} else {
-    error_log('⚠️ [DEBUG] Cookie de sesión NO existe');
-}
 
 $config = require_once __DIR__ . '/../../config.php';
 
 header('Content-Type: application/json');
 
 if (isset($_SESSION['user'])) {
-    error_log('✅ [DEBUG] Usuario en sesión: ' . $_SESSION['user']['nombre']);
     // Recargar datos completos del usuario desde la DB
     try {
         $conn = mysqli_connect(
@@ -68,8 +59,6 @@ if (isset($_SESSION['user'])) {
         echo json_encode(['authenticated' => true, 'user' => $_SESSION['user']]);
     }
 } else {
-    error_log('❌ [DEBUG] NO hay usuario en sesión');
     echo json_encode(['authenticated' => false]);
 }
-error_log('🔍 [DEBUG] === CHECK SESSION FIN ===');
 ?>
