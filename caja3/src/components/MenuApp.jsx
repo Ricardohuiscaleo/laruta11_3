@@ -1988,52 +1988,8 @@ export default function App() {
     };
   }, []);
 
-  // Sistema de tracking de uso
-  useEffect(() => {
-    if (!user) return;
-    
-    // Iniciar sesión
-    const startSession = async () => {
-      try {
-        const formData = new FormData();
-        formData.append('action', 'start_session');
-        formData.append('session_id', sessionId);
-        const response = await fetch('/api/track_usage.php', { method: 'POST', body: formData });
-        const result = await response.json();
-        console.log('Start session result:', result);
-      } catch (error) {
-        console.error('Error iniciando sesión:', error);
-      }
-    };
-    
-    startSession();
-    
-    // Actualizar tiempo cada 30 segundos
-    const timeInterval = setInterval(() => {
-      setCurrentSessionTime(Math.floor((Date.now() - sessionStartTime) / 1000));
-      
-      const formData = new FormData();
-      formData.append('action', 'update_activity');
-      formData.append('session_id', sessionId);
-      fetch('/api/track_usage.php', { method: 'POST', body: formData }).catch(() => {});
-    }, 30000);
-    
-    // Finalizar sesión al cerrar
-    const endSession = () => {
-      const formData = new FormData();
-      formData.append('action', 'end_session');
-      formData.append('session_id', sessionId);
-      navigator.sendBeacon('/api/track_usage.php', formData);
-    };
-    
-    window.addEventListener('beforeunload', endSession);
-    
-    return () => {
-      clearInterval(timeInterval);
-      window.removeEventListener('beforeunload', endSession);
-      endSession();
-    };
-  }, [user, sessionId, sessionStartTime]);
+  // Sistema de tracking de uso - DESACTIVADO
+  // No se usa track_usage.php en caja3
 
   // Autocompletar campos del checkout cuando se abre el modal
   useEffect(() => {

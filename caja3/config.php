@@ -33,6 +33,11 @@ $config = [
     'app_db_user' => getenv('APP_DB_USER'),
     'app_db_pass' => getenv('APP_DB_PASS'),
     
+    'ruta11_db_host' => getenv('RUTA11_DB_HOST'),
+    'ruta11_db_name' => getenv('RUTA11_DB_NAME'),
+    'ruta11_db_user' => getenv('RUTA11_DB_USER'),
+    'ruta11_db_pass' => getenv('RUTA11_DB_PASS'),
+    
     'admin_users' => [
         getenv('ADMIN_USER') ?: 'admin' => getenv('ADMIN_PASS') ?: 'admin123',
         'ricardo' => getenv('RICARDO_PASSWORD'),
