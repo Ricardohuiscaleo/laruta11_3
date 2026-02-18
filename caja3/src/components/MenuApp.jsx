@@ -1746,7 +1746,7 @@ export default function App() {
   }, [activeCategory, menuWithImages, showInactiveProducts, cajaUser]);
 
   const handleAddToCart = (product) => {
-    if (product.type === 'combo' || product.category_name === 'Combos') {
+    if (product.type === 'combo' || product.category_name === 'combos' || product.category_name === 'Combos') {
       setComboModalProduct(product);
       return;
     }
