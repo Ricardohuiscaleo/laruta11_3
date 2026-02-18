@@ -1,15 +1,13 @@
 <?php
-// Configuración centralizada de sesión PHP
+// Configuración centralizada de sesión PHP con MySQL
 // Duración: 30 días (2592000 segundos)
 
-// Configurar directorio de sesiones (crear si no existe)
-$session_path = __DIR__ . '/../sessions';
-if (!file_exists($session_path)) {
-    mkdir($session_path, 0700, true);
-    // Crear .gitkeep para mantener directorio en git
-    file_put_contents($session_path . '/.gitkeep', '# Session files directory');
-}
-session_save_path($session_path);
+$config = require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/MySQLSessionHandler.php';
+
+// Usar MySQL para almacenar sesiones
+$handler = new MySQLSessionHandler($config);
+session_set_save_handler($handler, true);
 
 session_set_cookie_params([
     'lifetime' => 2592000, // 30 días

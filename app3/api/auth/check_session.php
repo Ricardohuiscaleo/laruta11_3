@@ -20,6 +20,19 @@ session_set_cookie_params([
 ini_set('session.gc_maxlifetime', 2592000);
 session_start();
 
+// Configurar sesión persistente ANTES de session_start()
+session_set_cookie_params([
+    'lifetime' => 2592000, // 30 días
+    'path' => '/',
+    'domain' => '',
+    'secure' => true,
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
+
+ini_set('session.gc_maxlifetime', 2592000);
+session_start();
+
 $config = require_once __DIR__ . '/../../config.php';
 
 header('Content-Type: application/json');
