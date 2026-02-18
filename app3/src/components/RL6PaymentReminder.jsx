@@ -7,39 +7,60 @@ const RL6PaymentReminder = ({ user }) => {
   const [timeRemaining, setTimeRemaining] = useState('');
 
   useEffect(() => {
+    console.log('🎖️ [RL6Reminder] Verificando condiciones...', {
+      hasUser: !!user,
+      es_militar_rl6: user?.es_militar_rl6,
+      credito_aprobado: user?.credito_aprobado
+    });
+    
     // Solo mostrar para militares RL6
-    if (!user || (user.es_militar_rl6 !== 1 && user.es_militar_rl6 !== '1')) return;
+    if (!user || (user.es_militar_rl6 != 1)) {
+      console.log('🎖️ [RL6Reminder] Usuario no es militar RL6');
+      return;
+    }
 
     // Verificar si es día 18, 19, 20 o 21
     const today = new Date();
     const dayOfMonth = today.getDate();
+    console.log('🎖️ [RL6Reminder] Día del mes:', dayOfMonth);
     
-    if (![18, 19, 20, 21].includes(dayOfMonth)) return;
+    if (![18, 19, 20, 21].includes(dayOfMonth)) {
+      console.log('🎖️ [RL6Reminder] No es día de recordatorio (18-21)');
+      return;
+    }
 
     // Verificar si ya se mostró hoy
     const lastShown = localStorage.getItem('rl6_reminder_shown');
     const todayStr = today.toDateString();
-    if (lastShown === todayStr) return;
+    console.log('🎖️ [RL6Reminder] Último mostrado:', lastShown, 'Hoy:', todayStr);
+    if (lastShown === todayStr) {
+      console.log('🎖️ [RL6Reminder] Ya se mostró hoy');
+      return;
+    }
 
+    console.log('🎖️ [RL6Reminder] ✅ Todas las condiciones cumplidas, obteniendo crédito...');
     // Obtener info de crédito
     fetchCreditInfo();
   }, [user]);
 
   const fetchCreditInfo = async () => {
     try {
+      console.log('🎖️ [RL6Reminder] Obteniendo info de crédito...');
       const response = await fetch('/api/rl6/get_credit.php', {
         credentials: 'include'
       });
       const data = await response.json();
+      console.log('🎖️ [RL6Reminder] Respuesta crédito:', data);
       
       if (data.success) {
         setCreditInfo(data);
         calculateTimeRemaining();
+        console.log('🎖️ [RL6Reminder] ✅ Mostrando popup en 2 segundos...');
         // Mostrar después de 2 segundos para que no moleste al cargar
         setTimeout(() => setShowReminder(true), 2000);
       }
     } catch (error) {
-      console.error('Error fetching credit info:', error);
+      console.error('🎖️ [RL6Reminder] ❌ Error fetching credit info:', error);
     }
   };
 
