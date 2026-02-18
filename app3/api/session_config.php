@@ -2,6 +2,9 @@
 // Configuración centralizada de sesión PHP con MySQL
 // Duración: 30 días (2592000 segundos)
 
+error_reporting(0); // Suprimir warnings para evitar romper JSON
+ini_set('display_errors', '0');
+
 $config_path = __DIR__ . '/../config.php';
 if (!file_exists($config_path)) {
     die('Config file not found');
