@@ -34,8 +34,9 @@ const RL6PaymentReminder = ({ user }) => {
       
       if (data.success) {
         setCreditInfo(data);
-        setShowReminder(true);
         calculateTimeRemaining();
+        // Mostrar después de 2 segundos para que no moleste al cargar
+        setTimeout(() => setShowReminder(true), 2000);
       }
     } catch (error) {
       console.error('Error fetching credit info:', error);

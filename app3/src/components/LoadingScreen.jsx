@@ -13,7 +13,7 @@ const LoadingScreen = ({ onComplete }) => {
       // 2. Precargar primeras 6 imágenes del menú
       setCurrentText('Cargando imágenes...');
       try {
-        const response = await fetch('/api/get_products.php');
+        const response = await fetch('/api/products/get_products.php');
         const data = await response.json();
         if (data.success && data.products) {
           const firstImages = data.products.slice(0, 6).map(p => p.image).filter(Boolean);
@@ -21,7 +21,7 @@ const LoadingScreen = ({ onComplete }) => {
             return new Promise((resolve) => {
               const img = new Image();
               img.onload = () => resolve();
-              img.onerror = () => resolve(); // Continue even if image fails
+              img.onerror = () => resolve();
               img.src = src;
             });
           });
