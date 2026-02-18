@@ -10,8 +10,6 @@ const ReviewsModal = ({ product, isOpen, onClose }) => {
     comment: ''
   });
   const [loading, setLoading] = useState(false);
-  
-  console.log('ReviewsModal render:', { product, isOpen });
 
   useEffect(() => {
     if (isOpen && product) {
@@ -23,7 +21,6 @@ const ReviewsModal = ({ product, isOpen, onClose }) => {
     try {
       const response = await fetch(`/api/get_reviews.php?product_id=${product.id}&t=${Date.now()}`);
       const data = await response.json();
-      console.log('Reviews response:', data);
       if (data.success) {
         setReviews(data.reviews);
         setStats(data.stats);
@@ -40,11 +37,6 @@ const ReviewsModal = ({ product, isOpen, onClose }) => {
     setLoading(true);
 
     try {
-      console.log('Sending review:', {
-        product_id: product.id,
-        ...newReview
-      });
-      
       const response = await fetch('/api/add_review.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,7 +47,6 @@ const ReviewsModal = ({ product, isOpen, onClose }) => {
       });
 
       const data = await response.json();
-      console.log('Add review response:', data);
       
       if (data.success) {
         setNewReview({ customer_name: '', rating: 5, comment: '' });
@@ -89,11 +80,8 @@ const ReviewsModal = ({ product, isOpen, onClose }) => {
   };
 
   if (!isOpen) {
-    console.log('ReviewsModal not open, returning null');
     return null;
   }
-  
-  console.log('ReviewsModal is open, rendering modal');
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
