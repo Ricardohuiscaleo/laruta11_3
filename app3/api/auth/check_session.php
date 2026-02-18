@@ -1,8 +1,9 @@
 <?php
-// Configurar directorio de sesiones
+// Configurar directorio de sesiones (crear si no existe)
 $session_path = __DIR__ . '/../../sessions';
 if (!file_exists($session_path)) {
     mkdir($session_path, 0700, true);
+    file_put_contents($session_path . '/.gitkeep', '# Session files directory');
 }
 session_save_path($session_path);
 
