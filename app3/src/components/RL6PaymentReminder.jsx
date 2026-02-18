@@ -46,7 +46,7 @@ const RL6PaymentReminder = ({ user }) => {
   const fetchCreditInfo = async () => {
     try {
       console.log('🎖️ [RL6Reminder] Obteniendo info de crédito...');
-      const response = await fetch('/api/rl6/get_credit.php', {
+      const response = await fetch(`/api/rl6/get_credit.php?user_id=${user.id}&t=${Date.now()}`, {
         credentials: 'include'
       });
       const data = await response.json();
