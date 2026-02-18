@@ -25,3 +25,9 @@ Thumbs.db
 
 # Vendor
 vendor/
+
+# Session files (keep directory, ignore session data)
+app3/sessions/*
+!app3/sessions/.gitkeep
+caja3/sessions/*
+!caja3/sessions/.gitkeep
