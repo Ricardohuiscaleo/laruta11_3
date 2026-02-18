@@ -5,11 +5,23 @@
 error_reporting(0); // Suprimir warnings para evitar romper JSON
 ini_set('display_errors', '0');
 
-$config_path = __DIR__ . '/../config.php';
-if (!file_exists($config_path)) {
+$config_paths = [
+    __DIR__ . '/../config.php',
+    __DIR__ . '/../../config.php',
+    __DIR__ . '/../../../config.php'
+];
+
+$config = null;
+foreach ($config_paths as $path) {
+    if (file_exists($path)) {
+        $config = require $path;
+        break;
+    }
+}
+
+if (!$config || !is_array($config)) {
     die('Config file not found');
 }
-$config = require $config_path;
 
 require_once __DIR__ . '/MySQLSessionHandler.php';
 
