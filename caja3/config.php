@@ -44,7 +44,8 @@ $config = [
     'inventario_password' => getenv('INVENTARIO_PASSWORD'),
     
     'caja_users' => [
-        (getenv('ADMIN_USER') ?: 'admin') => (getenv('ADMIN_PASS') ?: 'admin123')
+        'admin' => 'R11adm2025x7k9',
+        'cajera' => 'ruta11caja'
     ],
     
     'gmail_client_id' => getenv('GMAIL_CLIENT_ID'),
