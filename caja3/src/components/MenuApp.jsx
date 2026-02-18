@@ -2708,13 +2708,10 @@ export default function App() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo *</label>
                   <input
                     type="text"
-                    value={customerInfo.name || user?.nombre || ''}
+                    value={customerInfo.name || ''}
                     onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none ${
-                      user ? 'border-gray-200 bg-gray-50 text-gray-600 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-orange-500'
-                    }`}
-                    placeholder="Tu nombre completo"
-                    readOnly={!!user}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="Nombre del cliente"
                     required
                   />
                 </div>
@@ -2722,7 +2719,7 @@ export default function App() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
                   <input
                     type="tel"
-                    value={customerInfo.phone || user?.telefono || ''}
+                    value={customerInfo.phone || ''}
                     onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                     placeholder="+56 9 1234 5678"
