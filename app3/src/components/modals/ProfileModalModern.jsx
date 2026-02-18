@@ -648,12 +648,14 @@ const ProfileModalModern = ({
                       <>
                         {daysUntilPayment && (
                           <p className="text-center text-yellow-300 text-xs mt-3 font-bold">
-                            ⏰ Deberás pagar tu cuenta en {daysUntilPayment.days} días, {daysUntilPayment.hours} horas y {daysUntilPayment.minutes} minutos (hasta el 21 a las 11:59 PM)
+                            Paga el 21 de Febrero, te quedan {daysUntilPayment.days} días, {daysUntilPayment.hours} horas y {daysUntilPayment.minutes} minutos 😊
                           </p>
                         )}
-                        <p className="text-center text-green-300 text-xs mt-2">
-                          💳 Saldo pendiente: ${parseInt(rl6Credit.credit.credito_usado).toLocaleString('es-CL')}
-                        </p>
+                        <div className="mt-2 bg-black rounded-lg px-3 py-2">
+                          <p className="text-center text-green-400 text-xs font-bold">
+                            Saldo pendiente: ${parseInt(rl6Credit.credit.credito_usado).toLocaleString('es-CL')}
+                          </p>
+                        </div>
                       </>
                     ) : (
                       <p className="text-center text-green-300 text-xs mt-2">
