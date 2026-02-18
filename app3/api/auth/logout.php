@@ -26,6 +26,9 @@ if ($session_id) {
     }
 }
 
+// Invalidar cookie PHPSESSID
+setcookie('PHPSESSID', '', time() - 3600, '/', '', true, true);
+
 header('Location: https://app.laruta11.cl/?logout=success');
 exit();
 ?>
