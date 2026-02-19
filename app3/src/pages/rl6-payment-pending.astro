@@ -115,42 +115,64 @@
     </div>
 
     <script>
-        // Obtener order ID de la URL
+        // Obtener parámetros de la URL
         const urlParams = new URLSearchParams(window.location.search);
         const orderId = urlParams.get('order') || urlParams.get('x_reference');
+        const xResult = urlParams.get('x_result');
+        const xMessage = urlParams.get('x_message');
         
         if (orderId) {
             document.getElementById('order-id').textContent = orderId;
         }
         
-        // Auto-verificar estado cada 3 segundos
-        let checkCount = 0;
-        const maxChecks = 20; // 1 minuto máximo
-        
-        const checkInterval = setInterval(async () => {
-            checkCount++;
-            
-            if (checkCount > maxChecks) {
-                clearInterval(checkInterval);
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/api/rl6/check_payment_status.php?order=${orderId}`);
-                const data = await response.json();
-                
-                if (data.success && data.status === 'completed') {
-                    clearInterval(checkInterval);
-                    window.location.href = `/rl6-payment-success?order=${orderId}&amount=${data.amount}`;
-                } else if (data.status === 'failed' || data.status === 'cancelled') {
-                    clearInterval(checkInterval);
-                    alert('El pago no pudo ser procesado. Por favor intenta nuevamente.');
+        // Si ya viene con x_result=completed, procesar inmediatamente
+        if (xResult === 'completed' && orderId) {
+            // Llamar al callback para procesar el pago
+            fetch('/api/rl6/payment_callback.php?' + window.location.search.substring(1))
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = `/rl6-payment-success?order=${orderId}`;
+                    } else {
+                        alert('Error procesando el pago: ' + (data.error || 'Desconocido'));
+                        window.location.href = '/pagar-credito';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error procesando el pago');
                     window.location.href = '/pagar-credito';
+                });
+        } else {
+            // Auto-verificar estado cada 3 segundos
+            let checkCount = 0;
+            const maxChecks = 20; // 1 minuto máximo
+            
+            const checkInterval = setInterval(async () => {
+                checkCount++;
+                
+                if (checkCount > maxChecks) {
+                    clearInterval(checkInterval);
+                    return;
                 }
-            } catch (error) {
-                console.error('Error verificando estado:', error);
-            }
-        }, 3000);
+                
+                try {
+                    const response = await fetch(`/api/rl6/check_payment_status.php?order=${orderId}`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.status === 'completed') {
+                        clearInterval(checkInterval);
+                        window.location.href = `/rl6-payment-success?order=${orderId}&amount=${data.amount}`;
+                    } else if (data.status === 'failed' || data.status === 'cancelled') {
+                        clearInterval(checkInterval);
+                        alert('El pago no pudo ser procesado. Por favor intenta nuevamente.');
+                        window.location.href = '/pagar-credito';
+                    }
+                } catch (error) {
+                    console.error('Error verificando estado:', error);
+                }
+            }, 3000);
+        }
     </script>
 </body>
 </html>
