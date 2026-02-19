@@ -90,11 +90,14 @@ const user_id = Astro.url.searchParams.get('user_id');
         </div>
     </div>
 
-    <script>
-        // Obtener user_id desde la sesión del servidor
-        let userId = null;
+    <script define:vars={{ serverUserId: user_id }}>
+        // Obtener user_id desde URL o sesión
+        let userId = serverUserId; // Desde URL
         
         async function getUserId() {
+            // Si ya tenemos user_id desde URL, usarlo
+            if (userId) return userId;
+            
             try {
                 const response = await fetch('/api/auth/check_session.php');
                 const data = await response.json();
