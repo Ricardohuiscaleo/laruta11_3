@@ -1,5 +1,7 @@
 <?php
 header('Content-Type: application/json');
+error_reporting(0);
+ini_set('display_errors', 0);
 
 $config = require_once __DIR__ . '/../../config.php';
 
@@ -21,7 +23,7 @@ $query_pagos = "
     FROM tuu_orders
     WHERE order_number LIKE 'RL6-%'
     AND payment_status = 'paid'
-    AND DATE(payment_date) = ?
+    AND DATE(updated_at) = ?
 ";
 
 $stmt = $conn->prepare($query_pagos);
