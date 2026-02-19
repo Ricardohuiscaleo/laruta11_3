@@ -60,41 +60,52 @@ try {
     // VALIDACIÓN CRÍTICA: Solo ejecutar refund si pago aprobado
     if ($payment_status === 'paid' && $tuu_message === 'Transaccion aprobada') {
         
-        // 1. Insertar refund en rl6_credit_transactions
-        $refund_sql = "INSERT INTO rl6_credit_transactions 
-                      (user_id, amount, type, description, order_id) 
-                      VALUES (?, ?, 'refund', 'Reembolso - Crédito pagado', ?)";
-        $refund_stmt = $pdo->prepare($refund_sql);
-        $refund_stmt->execute([$order_data['user_id'], $order_data['product_price'], $order_id]);
+        // Verificar si ya existe el refund para evitar duplicados
+        $check_sql = "SELECT id FROM rl6_credit_transactions 
+                     WHERE user_id = ? AND order_id = ? AND type = 'refund'";
+        $check_stmt = $pdo->prepare($check_sql);
+        $check_stmt->execute([$order_data['user_id'], $order_id]);
+        $existing_refund = $check_stmt->fetch(PDO::FETCH_ASSOC);
         
-        // 2. Resetear credito_usado a 0, actualizar fecha_ultimo_pago y desbloquear
-        $reset_sql = "UPDATE usuarios SET 
-                      credito_usado = 0, 
-                      fecha_ultimo_pago = CURDATE(),
-                      credito_bloqueado = 0
-                      WHERE id = ?";
-        $reset_stmt = $pdo->prepare($reset_sql);
-        $reset_stmt->execute([$order_data['user_id']]);
-        
-        // 3. Enviar email de confirmación
-        try {
-            $ch = curl_init('https://caja.laruta11.cl/api/gmail/send_payment_confirmation.php');
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-                'user_id' => $order_data['user_id'],
-                'order_id' => $order_id,
-                'amount' => $order_data['product_price']
-            ]));
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-            curl_exec($ch);
-            curl_close($ch);
-        } catch (Exception $email_error) {
-            error_log("RL6 Payment - Error enviando email: " . $email_error->getMessage());
+        if (!$existing_refund) {
+            // 1. Insertar refund en rl6_credit_transactions
+            $refund_sql = "INSERT INTO rl6_credit_transactions 
+                          (user_id, amount, type, description, order_id) 
+                          VALUES (?, ?, 'refund', 'Pago de crédito RL6 vía TUU', ?)";
+            $refund_stmt = $pdo->prepare($refund_sql);
+            $refund_stmt->execute([$order_data['user_id'], $order_data['product_price'], $order_id]);
+            
+            // 2. Resetear credito_usado a 0, actualizar fecha_ultimo_pago y desbloquear
+            $reset_sql = "UPDATE usuarios SET 
+                          credito_usado = 0, 
+                          fecha_ultimo_pago = CURDATE(),
+                          credito_bloqueado = 0
+                          WHERE id = ?";
+            $reset_stmt = $pdo->prepare($reset_sql);
+            $reset_stmt->execute([$order_data['user_id']]);
+            
+            // 3. Enviar email de confirmación
+            try {
+                $ch = curl_init('https://caja.laruta11.cl/api/gmail/send_payment_confirmation.php');
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+                    'user_id' => $order_data['user_id'],
+                    'order_id' => $order_id,
+                    'amount' => $order_data['product_price']
+                ]));
+                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+                curl_exec($ch);
+                curl_close($ch);
+            } catch (Exception $email_error) {
+                error_log("RL6 Payment - Error enviando email: " . $email_error->getMessage());
+            }
+            
+            error_log("RL6 Payment SUCCESS - User: {$order_data['user_id']}, Order: $order_id, Amount: {$order_data['product_price']}");
+        } else {
+            error_log("RL6 Payment ALREADY PROCESSED - Order: $order_id");
         }
-        
-        error_log("RL6 Payment SUCCESS - User: {$order_data['user_id']}, Order: $order_id, Amount: {$order_data['product_price']}");
         
         // Redirigir a página de éxito
         header("Location: https://app.laruta11.cl/rl6-payment-success?order=$order_id&amount={$order_data['product_price']}");
