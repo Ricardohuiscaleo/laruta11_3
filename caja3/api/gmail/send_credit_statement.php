@@ -111,12 +111,10 @@ $html = "
                     
                     <tr>
                         <td style='padding: 0 20px 25px 20px;'>
-                            <table width='100%' cellpadding='0' cellspacing='0' style='background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;'>
-                                <tr>
-                                    <td style='padding: 20px;'>
-                                        <h3 style='color: #1f2937; margin: 0 0 18px 0; font-size: 16px; font-weight: 600;'>📊 Resumen de Cuenta</h3>
-                                        
-                                        <table width='100%' cellpadding='10' cellspacing='0'>
+                            <div style='background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;'>
+                                <h3 style='color: #1f2937; margin: 0 0 18px 0; font-size: 16px; font-weight: 600;'>📊 Resumen de Cuenta</h3>
+                                
+                                <table width='100%' cellpadding='10' cellspacing='0'>
                                             <tr>
                                                 <td style='color: #6b7280; font-size: 14px; border-bottom: 1px solid #e5e7eb;'>Crédito Total</td>
                                                 <td align='right' style='color: #1f2937; font-weight: 600; font-size: 15px; border-bottom: 1px solid #e5e7eb;'>$" . number_format($credito_total, 0, ',', '.') . "</td>
@@ -133,10 +131,8 @@ $html = "
                                                 <td style='color: #1f2937; font-size: 15px; font-weight: 600; padding-top: 12px;'>Saldo a Pagar</td>
                                                 <td align='right' style='color: #dc2626; font-weight: bold; font-size: 24px; padding-top: 12px;'>$" . number_format($saldo_pagar, 0, ',', '.') . "</td>
                                             </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </table>
+                                </table>
+                            </div>
                         </td>
                     </tr>
                     
