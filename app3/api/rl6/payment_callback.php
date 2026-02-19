@@ -84,30 +84,28 @@ try {
             $reset_stmt = $pdo->prepare($reset_sql);
             $reset_stmt->execute([$order_data['user_id']]);
             
-            // 3. Enviar email de confirmación
-            try {
-                $ch = curl_init('https://app.laruta11.cl/api/gmail/send_payment_confirmation.php');
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_POST, true);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-                    'user_id' => $order_data['user_id'],
-                    'order_id' => $order_id,
-                    'amount' => $order_data['product_price']
-                ]));
-                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-                curl_exec($ch);
-                curl_close($ch);
-            } catch (Exception $email_error) {
-                error_log("RL6 Payment - Error enviando email: " . $email_error->getMessage());
-            }
+            // 3. Enviar email de confirmación ANTES de redirect
+            $ch = curl_init('https://app.laruta11.cl/api/gmail/send_payment_confirmation.php');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+                'user_id' => $order_data['user_id'],
+                'order_id' => $order_id,
+                'amount' => $order_data['product_price']
+            ]));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+            $email_response = curl_exec($ch);
+            $email_http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
             
+            error_log("RL6 Payment - Email sent: HTTP $email_http_code - Response: $email_response");
             error_log("RL6 Payment SUCCESS - User: {$order_data['user_id']}, Order: $order_id, Amount: {$order_data['product_price']}");
         } else {
             error_log("RL6 Payment ALREADY PROCESSED - Order: $order_id");
         }
         
-        // Redirigir a página de éxito
+        // Redirigir DESPUÉS de enviar email
         header("Location: https://app.laruta11.cl/rl6-payment-success?order=$order_id&amount={$order_data['product_price']}");
         exit;
     } else {
