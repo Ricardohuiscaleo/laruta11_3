@@ -40,13 +40,15 @@ try {
     
     $order_id = 'RL6-' . time() . '-' . rand(1000, 9999);
     
-    // Guardar en tuu_orders
+    // Guardar en tuu_orders con campos TUU
     $order_sql = "INSERT INTO tuu_orders (
         order_number, user_id, customer_name, customer_phone, 
-        product_name, product_price, installment_amount, 
-        status, payment_status, payment_method, order_status,
-        pagado_con_credito_rl6, monto_credito_rl6
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', 'webpay', 'pending', 0, 0)";
+        product_name, product_price, installment_amount, delivery_fee,
+        status, payment_status, payment_method, order_status, delivery_type,
+        pagado_con_credito_rl6, monto_credito_rl6, subtotal,
+        discount_amount, discount_10, discount_30, discount_birthday, discount_pizza,
+        delivery_discount, delivery_extras, cashback_used
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 'pending', 'unpaid', 'webpay', 'pending', 'pickup', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)";
     
     $order_stmt = $pdo->prepare($order_sql);
     $order_stmt->execute([
