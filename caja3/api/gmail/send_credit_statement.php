@@ -159,7 +159,7 @@ $html = "
                                         <td style='padding: 8px 0;'>
                                             <div style='display: flex; align-items: start;'>
                                                 <span style='background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 50%; display: inline-block; text-align: center; line-height: 24px; font-weight: bold; font-size: 12px; margin-right: 12px; flex-shrink: 0;'>2</span>
-                                                <span style='color: #1e40af; font-size: 14px; line-height: 24px;'>Ve a tu <strong>Perfil</strong> y selecciona <strong>"Crédito"</strong></span>
+                                                <span style='color: #1e40af; font-size: 14px; line-height: 24px;'>Ve a tu <strong>Perfil</strong> y selecciona <strong>&quot;Crédito&quot;</strong></span>
                                             </div>
                                         </td>
                                     </tr>
@@ -167,7 +167,7 @@ $html = "
                                         <td style='padding: 8px 0;'>
                                             <div style='display: flex; align-items: start;'>
                                                 <span style='background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 50%; display: inline-block; text-align: center; line-height: 24px; font-weight: bold; font-size: 12px; margin-right: 12px; flex-shrink: 0;'>3</span>
-                                                <span style='color: #1e40af; font-size: 14px; line-height: 24px;'>Haz clic en <strong>"Pagar Crédito"</strong></span>
+                                                <span style='color: #1e40af; font-size: 14px; line-height: 24px;'>Haz clic en <strong>&quot;Pagar Crédito&quot;</strong></span>
                                             </div>
                                         </td>
                                     </tr>
@@ -255,7 +255,6 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
 
 $response = curl_exec($ch);
 $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
 
 $result = json_decode($response, true);
 
