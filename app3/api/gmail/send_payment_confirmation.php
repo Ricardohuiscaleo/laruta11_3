@@ -185,14 +185,12 @@ try {
                         <td style='background-color: #111827; padding: 40px 20px; text-align: center;'>
                             <table width='100%' cellpadding='0' cellspacing='0'>
                                 <tr>
-                                    <td width='33.33%' align='center' style='padding-bottom: 32px;'>
-                                        <a href='tel:+56936227422' style='color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;'>Soporte</a>
-                                    </td>
-                                    <td width='33.33%' align='center' style='padding-bottom: 32px;'>
-                                        <a href='tel:+56945392581' style='color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;'>Ventas</a>
-                                    </td>
-                                    <td width='33.33%' align='center' style='padding-bottom: 32px;'>
-                                        <a href='https://app.laruta11.cl' style='color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;'>App</a>
+                                    <td align='center' style='padding-bottom: 20px;'>
+                                        <a href='tel:+56936227422' style='display: inline-block; color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; padding: 0 12px;'>Soporte</a>
+                                        <span style='color: #4b5563;'>•</span>
+                                        <a href='tel:+56945392581' style='display: inline-block; color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; padding: 0 12px;'>Ventas</a>
+                                        <span style='color: #4b5563;'>•</span>
+                                        <a href='https://app.laruta11.cl' style='display: inline-block; color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; padding: 0 12px;'>App</a>
                                     </td>
                                 </tr>
                             </table>
