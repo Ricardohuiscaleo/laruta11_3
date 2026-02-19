@@ -111,27 +111,39 @@ $html = "
                     
                     <tr>
                         <td style='padding: 0 20px 25px 20px;'>
-                            <div style='background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);'>
-                                <h3 style='color: #111827; margin: 0 0 20px 0; font-size: 15px; font-weight: 700; letter-spacing: -0.01em;'>📊 Resumen de Cuenta</h3>
+                            <div style='background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);'>
+                                <h3 style='color: #111827; margin: 0 0 16px 0; font-size: 15px; font-weight: 700; text-align: center;'>📊 Resumen de Cuenta</h3>
                                 
-                                <div style='width: 100%;'>
-                                    <div style='display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f3f4f6;'>
-                                        <span style='color: #6b7280; font-size: 13px; font-weight: 500;'>Crédito Total</span>
-                                        <span style='color: #111827; font-weight: 600; font-size: 15px;'>$" . number_format($credito_total, 0, ',', '.') . "</span>
-                                    </div>
-                                    <div style='display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f3f4f6;'>
-                                        <span style='color: #6b7280; font-size: 13px; font-weight: 500;'>Consumido</span>
-                                        <span style='color: #111827; font-weight: 600; font-size: 15px;'>$" . number_format($credito_usado, 0, ',', '.') . "</span>
-                                    </div>
-                                    <div style='display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f3f4f6;'>
-                                        <span style='color: #6b7280; font-size: 13px; font-weight: 500;'>Disponible</span>
-                                        <span style='color: #059669; font-weight: 600; font-size: 15px;'>$" . number_format($credito_disponible, 0, ',', '.') . "</span>
-                                    </div>
-                                    <div style='display: flex; justify-content: space-between; align-items: center; padding: 16px 0 0 0;'>
-                                        <span style='color: #111827; font-size: 14px; font-weight: 700;'>Saldo a Pagar</span>
-                                        <span style='color: #dc2626; font-weight: 700; font-size: 22px; letter-spacing: -0.02em;'>$" . number_format($saldo_pagar, 0, ',', '.') . "</span>
-                                    </div>
-                                </div>
+                                <table width='100%' cellpadding='0' cellspacing='0'>
+                                    <tr>
+                                        <td width='50%' style='padding: 8px;'>
+                                            <div style='background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; text-align: center;'>
+                                                <p style='color: #6b7280; font-size: 11px; margin: 0 0 4px 0; font-weight: 500;'>Crédito Total</p>
+                                                <p style='color: #111827; font-size: 18px; font-weight: 700; margin: 0;'>$" . number_format($credito_total, 0, ',', '.') . "</p>
+                                            </div>
+                                        </td>
+                                        <td width='50%' style='padding: 8px;'>
+                                            <div style='background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; text-align: center;'>
+                                                <p style='color: #92400e; font-size: 11px; margin: 0 0 4px 0; font-weight: 500;'>Consumido</p>
+                                                <p style='color: #92400e; font-size: 18px; font-weight: 700; margin: 0;'>$" . number_format($credito_usado, 0, ',', '.') . "</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td width='50%' style='padding: 8px;'>
+                                            <div style='background: #d1fae5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px; text-align: center;'>
+                                                <p style='color: #065f46; font-size: 11px; margin: 0 0 4px 0; font-weight: 500;'>Disponible</p>
+                                                <p style='color: #065f46; font-size: 18px; font-weight: 700; margin: 0;'>$" . number_format($credito_disponible, 0, ',', '.') . "</p>
+                                            </div>
+                                        </td>
+                                        <td width='50%' style='padding: 8px;'>
+                                            <div style='background: #fee2e2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; text-align: center;'>
+                                                <p style='color: #991b1b; font-size: 11px; margin: 0 0 4px 0; font-weight: 500;'>Saldo a Pagar</p>
+                                                <p style='color: #991b1b; font-size: 20px; font-weight: 700; margin: 0;'>$" . number_format($saldo_pagar, 0, ',', '.') . "</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
                             </div>
                         </td>
                     </tr>
