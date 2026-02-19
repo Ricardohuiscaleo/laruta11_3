@@ -32,11 +32,13 @@ try {
     
     // Obtener token de Gmail
     require_once __DIR__ . '/get_token_db.php';
-    $token = get_gmail_token_from_db($config);
+    $token_result = getValidGmailToken();
     
-    if (!$token) {
-        throw new Exception('Token de Gmail no disponible');
+    if (isset($token_result['error'])) {
+        throw new Exception($token_result['error']);
     }
+    
+    $token = $token_result['access_token'];
     
     // Crear email HTML
     $subject = '✅ Pago de Crédito RL6 Confirmado - La Ruta 11';
