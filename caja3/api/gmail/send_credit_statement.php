@@ -91,7 +91,7 @@ $html = "
                             <div style='text-align: center; margin-bottom: 32px;'>
                                 <h2 style='color: #111827; margin: 0 0 12px 0; font-size: 24px; font-weight: 800;'>¡Hola, " . htmlspecialchars($user['nombre']) . "! 👋</h2>
                                 <p style='color: #6b7280; line-height: 1.6; margin: 0; font-size: 14px; font-weight: 500;'>
-                                    Aquí tienes el detalle de tu crédito <strong>RL6</strong>. ¡Gracias por ser parte de nuestra comunidad!
+                                    Aquí tienes el detalle de tu crédito <strong>RL6</strong>. ¡Gracias por tu confianza!
                                 </p>
                             </div>
                             
@@ -168,9 +168,61 @@ $html = "
                     </tr>
                     
                     <tr>
+                        <td style='padding: 0 20px 32px 20px;'>
+                            <div style='background: #fff7ed; border: 2px solid #fed7aa; border-radius: 24px; padding: 24px;'>
+                                <h3 style='color: #c2410c; margin: 0 0 20px 0; font-size: 16px; font-weight: 800; text-align: center;'>💡 Cómo Pagar tu Crédito</h3>
+                                <table width='100%' cellpadding='0' cellspacing='0'>
+                                    <tr>
+                                        <td style='padding: 10px 0;'>
+                                            <table width='100%' cellpadding='0' cellspacing='0'>
+                                                <tr>
+                                                    <td width='32' style='padding-right: 12px; vertical-align: top;'>
+                                                        <div style='background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); color: white; width: 32px; height: 32px; border-radius: 50%; text-align: center; line-height: 32px; font-weight: 800; font-size: 14px; box-shadow: 0 2px 8px rgba(247, 147, 30, 0.3);'>1</div>
+                                                    </td>
+                                                    <td style='vertical-align: top;'>
+                                                        <p style='color: #7c2d12; font-size: 14px; line-height: 32px; margin: 0; font-weight: 600;'>Inicia sesión en <strong>app.laruta11.cl</strong></p>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 10px 0;'>
+                                            <table width='100%' cellpadding='0' cellspacing='0'>
+                                                <tr>
+                                                    <td width='32' style='padding-right: 12px; vertical-align: top;'>
+                                                        <div style='background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); color: white; width: 32px; height: 32px; border-radius: 50%; text-align: center; line-height: 32px; font-weight: 800; font-size: 14px; box-shadow: 0 2px 8px rgba(247, 147, 30, 0.3);'>2</div>
+                                                    </td>
+                                                    <td style='vertical-align: top;'>
+                                                        <p style='color: #7c2d12; font-size: 14px; line-height: 32px; margin: 0; font-weight: 600;'>Ve a tu <strong>Perfil</strong> → <strong>Crédito</strong></p>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 10px 0;'>
+                                            <table width='100%' cellpadding='0' cellspacing='0'>
+                                                <tr>
+                                                    <td width='32' style='padding-right: 12px; vertical-align: top;'>
+                                                        <div style='background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); color: white; width: 32px; height: 32px; border-radius: 50%; text-align: center; line-height: 32px; font-weight: 800; font-size: 14px; box-shadow: 0 2px 8px rgba(247, 147, 30, 0.3);'>3</div>
+                                                    </td>
+                                                    <td style='vertical-align: top;'>
+                                                        <p style='color: #7c2d12; font-size: 14px; line-height: 32px; margin: 0; font-weight: 600;'>Haz clic en <strong>"Pagar Crédito"</strong></p>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <tr>
                         <td style='padding: 0 20px 35px 20px;' align='center'>
                             <a href='https://app.laruta11.cl/pagar-credito?user_id=$user_id&monto=$saldo_pagar' 
-                               style='display: inline-block; background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); color: #ffffff; text-decoration: none; padding: 24px 80px; border-radius: 32px; font-weight: 800; font-size: 20px; box-shadow: 0 10px 30px rgba(247, 147, 30, 0.3);'>
+                               style='display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 20px 40px; border-radius: 32px; font-weight: 800; font-size: clamp(16px, 4vw, 20px); box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3); white-space: nowrap;'>
                                 💳 PAGAR MI CRÉDITO
                             </a>
                             <p style='color: #9ca3af; font-size: 11px; margin: 24px 0 0 0; font-weight: 700;'>
