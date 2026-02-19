@@ -208,7 +208,7 @@ $html = "
                                                         <div style='background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); color: white; width: 32px; height: 32px; border-radius: 50%; text-align: center; line-height: 32px; font-weight: 800; font-size: 14px; box-shadow: 0 2px 8px rgba(247, 147, 30, 0.3);'>3</div>
                                                     </td>
                                                     <td style='vertical-align: top;'>
-                                                        <p style='color: #7c2d12; font-size: 14px; line-height: 32px; margin: 0; font-weight: 600;'>Haz clic en <strong>"Pagar Crédito"</strong></p>
+                                                        <p style='color: #7c2d12; font-size: 14px; line-height: 32px; margin: 0; font-weight: 600;'>Haz clic en <strong>&quot;Pagar Cr&eacute;dito&quot;</strong></p>
                                                     </td>
                                                 </tr>
                                             </table>
@@ -222,12 +222,12 @@ $html = "
                     <tr>
                         <td style='padding: 0 20px 35px 20px;' align='center'>
                             <a href='https://app.laruta11.cl/pagar-credito?user_id=$user_id&monto=$saldo_pagar' 
-                               style='display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 20px 40px; border-radius: 32px; font-weight: 800; font-size: clamp(16px, 4vw, 20px); box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3); white-space: nowrap;'>
-                                💳 PAGAR MI CRÉDITO
+                               style='display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 20px 40px; border-radius: 32px; font-weight: 800; font-size: 18px; box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3); white-space: nowrap;'>
+                                &#128179; PAGAR MI CR&Eacute;DITO
                             </a>
                             <p style='color: #9ca3af; font-size: 11px; margin: 24px 0 0 0; font-weight: 700;'>
                                 <span style='display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%; margin-right: 6px;'></span>
-                                PROCESO 100% SEGURO VÍA TUU.CL
+                                PROCESO 100% SEGURO V&Iacute;A TUU.CL
                             </p>
                         </td>
                     </tr>
