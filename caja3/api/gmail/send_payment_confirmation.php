@@ -126,11 +126,40 @@ try {
     curl_close($ch);
     
     if ($httpCode !== 200) {
+        // Registrar email fallido
+        $log_sql = "INSERT INTO email_logs (user_id, email_to, email_type, subject, order_id, amount, status, error_message) 
+                    VALUES (?, ?, 'payment_confirmation', ?, ?, ?, 'failed', ?)";
+        $log_stmt = $pdo->prepare($log_sql);
+        $log_stmt->execute([$user_id, $user['email'], $subject, $order_id, $amount, 'HTTP ' . $httpCode]);
+        
         throw new Exception('Error enviando email');
     }
     
-    echo json_encode(['success' => true]);
+    // Decodificar respuesta de Gmail para obtener message_id
+    $gmail_response = json_decode($response, true);
+    $message_id = $gmail_response['id'] ?? null;
+    $thread_id = $gmail_response['threadId'] ?? null;
+    
+    // Registrar email exitoso
+    $log_sql = "INSERT INTO email_logs (user_id, email_to, email_type, subject, order_id, amount, gmail_message_id, gmail_thread_id, status) 
+                VALUES (?, ?, 'payment_confirmation', ?, ?, ?, ?, ?, 'sent')";
+    $log_stmt = $pdo->prepare($log_sql);
+    $log_stmt->execute([$user_id, $user['email'], $subject, $order_id, $amount, $message_id, $thread_id]);
+    
+    echo json_encode(['success' => true, 'message_id' => $message_id]);
     
 } catch (Exception $e) {
+    // Registrar error si tenemos datos del usuario
+    if (isset($pdo) && isset($user_id) && isset($order_id)) {
+        try {
+            $log_sql = "INSERT INTO email_logs (user_id, email_to, email_type, subject, order_id, amount, status, error_message) 
+                        VALUES (?, ?, 'payment_confirmation', ?, ?, ?, 'failed', ?)";
+            $log_stmt = $pdo->prepare($log_sql);
+            $log_stmt->execute([$user_id, $user['email'] ?? 'unknown', $subject ?? 'Payment Confirmation', $order_id, $amount ?? 0, $e->getMessage()]);
+        } catch (Exception $log_error) {
+            error_log("Error logging failed email: " . $log_error->getMessage());
+        }
+    }
+    
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
