@@ -73,21 +73,29 @@ $html = "
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
 </head>
 <body style='margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;'>
-    <table width='100%' cellpadding='0' cellspacing='0' style='background-color: #f4f4f4; padding: 20px;'>
+    <table width='100%' cellpadding='0' cellspacing='0' style='background-color: #f4f4f4; padding: 5px;'>
         <tr>
             <td align='center'>
                 <table width='600' cellpadding='0' cellspacing='0' style='background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);'>
                     
                     <tr>
-                        <td style='background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); padding: 40px 30px; text-align: center;'>
-                            <img src='https://laruta11-images.s3.amazonaws.com/menu/logo.png' alt='La Ruta 11' style='width: 70px; height: 70px; margin: 0 auto 20px;'>
-                            <h1 style='color: #ffffff; margin: 0; font-size: 32px; font-weight: bold;'>La Ruta 11</h1>
-                            <p style='color: rgba(255,255,255,0.95); margin: 8px 0 0 0; font-size: 15px; font-weight: 500;'>Estado de Cuenta - Crédito RL6</p>
+                        <td style='background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); padding: 30px 20px; text-align: center;'>
+                            <table width='100%' cellpadding='0' cellspacing='0'>
+                                <tr>
+                                    <td align='center'>
+                                        <img src='https://laruta11-images.s3.amazonaws.com/menu/logo.png' alt='La Ruta 11' style='width: 50px; height: 50px; vertical-align: middle; margin-right: 15px;'>
+                                        <div style='display: inline-block; vertical-align: middle; text-align: left;'>
+                                            <h1 style='color: #ffffff; margin: 0; font-size: 28px; font-weight: bold; line-height: 1.2;'>La Ruta 11</h1>
+                                            <p style='color: rgba(255,255,255,0.95); margin: 0; font-size: 13px; font-weight: 500;'>Estado de Cuenta - Crédito RL6</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
                     
                     <tr>
-                        <td style='padding: 35px 30px 25px 30px;'>
+                        <td style='padding: 35px 20px 25px 20px;'>
                             <h2 style='color: #1f2937; margin: 0 0 8px 0; font-size: 22px;'>Hola, " . htmlspecialchars($user['nombre']) . " 👋</h2>
                             <p style='color: #6b7280; line-height: 1.6; margin: 0 0 20px 0; font-size: 15px;'>
                                 Te enviamos el detalle de tu crédito La Ruta 11. Gracias por confiar en nosotros.
@@ -102,7 +110,7 @@ $html = "
                     </tr>
                     
                     <tr>
-                        <td style='padding: 0 30px 25px 30px;'>
+                        <td style='padding: 0 20px 25px 20px;'>
                             <table width='100%' cellpadding='0' cellspacing='0' style='background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;'>
                                 <tr>
                                     <td style='padding: 20px;'>
@@ -133,7 +141,7 @@ $html = "
                     </tr>
                     
                     <tr>
-                        <td style='padding: 0 30px 25px 30px;'>
+                        <td style='padding: 0 20px 25px 20px;'>
                             <div style='background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 16px 18px; border-radius: 6px;'>
                                 <p style='margin: 0; color: #92400e; font-size: 14px; font-weight: 500;'>
                                     📅 <strong>Fecha de Vencimiento:</strong> $fecha_vencimiento
@@ -143,7 +151,7 @@ $html = "
                     </tr>
                     
                     <tr>
-                        <td style='padding: 0 30px 25px 30px;'>
+                        <td style='padding: 0 20px 25px 20px;'>
                             <div style='background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #93c5fd; border-radius: 8px; padding: 20px;'>
                                 <h3 style='color: #1e40af; margin: 0 0 15px 0; font-size: 16px; font-weight: 600;'>💡 Cómo Pagar tu Crédito</h3>
                                 <table width='100%' cellpadding='0' cellspacing='0'>
@@ -177,12 +185,12 @@ $html = "
                     </tr>
                     
                     <tr>
-                        <td style='padding: 0 30px 35px 30px;' align='center'>
+                        <td style='padding: 0 20px 35px 20px;' align='center'>
                             <p style='color: #6b7280; font-size: 14px; margin: 0 0 15px 0;'>
                                 ✨ <strong>¿Ya estás logueado?</strong> Haz clic aquí:
                             </p>
                             <a href='https://app.laruta11.cl/pagar-credito?user_id=$user_id&monto=$saldo_pagar' 
-                               style='display: inline-block; background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: #ffffff; text-decoration: none; padding: 18px 60px; border-radius: 8px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 14px rgba(255,107,53,0.4);'>
+                               style='display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 18px 60px; border-radius: 8px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 14px rgba(59,130,246,0.4);'>
                                 💳 Pagar Ahora
                             </a>
                             <p style='color: #9ca3af; font-size: 12px; margin: 15px 0 0 0;'>
