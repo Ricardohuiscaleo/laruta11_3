@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Email RL6</title>
+    <meta charset="utf-8">
+</head>
+<body>
+    <h1>Probar Envío de Email RL6</h1>
+    <button onclick="testEmail()">Enviar Email de Prueba</button>
+    <pre id="result"></pre>
+    
+    <script>
+    async function testEmail() {
+        const result = document.getElementById('result');
+        result.textContent = 'Enviando...';
+        
+        try {
+            const response = await fetch('https://app.laruta11.cl/api/gmail/send_payment_confirmation.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: 4,
+                    order_id: 'RL6-TEST-' + Date.now(),
+                    amount: 15000
+                })
+            });
+            
+            const data = await response.json();
+            result.textContent = 'HTTP ' + response.status + '\n\n' + JSON.stringify(data, null, 2);
+            
+            // Verificar log
+            setTimeout(async () => {
+                const logResponse = await fetch('https://app.laruta11.cl/api/rl6/check_email_logs.php');
+                const logText = await logResponse.text();
+                result.textContent += '\n\n--- LOGS ---\n' + logText;
+            }, 2000);
+            
+        } catch (error) {
+            result.textContent = 'Error: ' + error.message;
+        }
+    }
+    </script>
+</body>
+</html>
