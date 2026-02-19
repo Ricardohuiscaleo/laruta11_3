@@ -93,7 +93,7 @@
     </div>
 </div>
 
-<div id="previewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style="z-index: 1000;">
+<div id="previewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center p-4" style="z-index: 1000; display: none;">
     <div class="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-auto">
         <div class="p-4 border-b border-gray-200 flex justify-between items-center">
             <h3 class="text-lg font-bold text-gray-800">👁️ Preview - Estado de Cuenta</h3>
@@ -108,15 +108,27 @@
 </div>
 
 <script>
-let currentUserId = null;
-let users = [];
+interface User {
+    id: number;
+    nombre: string;
+    email: string;
+    grado_militar: string;
+    unidad_trabajo: string;
+    credito_total: number;
+    credito_usado: number;
+    credito_disponible: number;
+}
 
-// Event listeners globales
+let currentUserId: number | null = null;
+let users: User[] = [];
+
 document.addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-action]');
+    if (!e.target) return;
+    const btn = (e.target as HTMLElement).closest('button[data-action]');
     if (!btn) return;
-    const action = btn.dataset.action;
-    if (action === 'showTab') showTab(btn.dataset.tab);
+    const action = btn.getAttribute('data-action');
+    const tab = btn.getAttribute('data-tab');
+    if (action === 'showTab' && tab) showTab(tab);
     if (action === 'sendMassive') sendMassive();
     if (action === 'closePreview') closePreview();
     if (action === 'sendFromPreview') sendFromPreview();
@@ -126,19 +138,24 @@ window.addEventListener('DOMContentLoaded', () => {
     checkGmailStatus();
     loadUsers();
     
-    // Event delegation para botones dinámicos
-    document.getElementById('usersList').addEventListener('click', (e) => {
-        const btn = e.target.closest('button[data-action]');
-        if (!btn) return;
-        const action = btn.dataset.action;
-        const userId = parseInt(btn.dataset.userId);
-        if (action === 'preview') previewEmail(userId);
-        if (action === 'send') sendEmail(userId);
-    });
+    const usersList = document.getElementById('usersList');
+    if (usersList) {
+        usersList.addEventListener('click', (e) => {
+            if (!e.target) return;
+            const btn = (e.target as HTMLElement).closest('button[data-action]');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            const userIdStr = btn.getAttribute('data-user-id');
+            const userId = userIdStr ? parseInt(userIdStr) : 0;
+            if (action === 'preview') previewEmail(userId);
+            if (action === 'send') sendEmail(userId);
+        });
+    }
 });
 
 async function checkGmailStatus() {
     const statusDiv = document.getElementById('gmailStatus');
+    if (!statusDiv) return;
     try {
         const response = await fetch('/api/gmail/check_token.php');
         const result = await response.json();
@@ -161,28 +178,34 @@ async function loadUsers() {
             renderUsers(users);
         }
     } catch (error) {
-        document.getElementById('usersList').innerHTML = '<div class="text-center text-red-400 py-8">Error cargando usuarios</div>';
+        const usersList = document.getElementById('usersList');
+        if (usersList) usersList.innerHTML = '<div class="text-center text-red-400 py-8">Error cargando usuarios</div>';
     }
 }
 
 function renderUsers(userList) {
     const container = document.getElementById('usersList');
+    if (!container) return;
+    
     if (userList.length === 0) {
         container.innerHTML = '<div class="text-center text-gray-400 py-8">No hay usuarios con crédito RL6</div>';
         return;
     }
     
-    // Calcular estadísticas totales
     const totalClientes = userList.length;
     const totalCredito = userList.reduce((sum, u) => sum + u.credito_total, 0);
     const totalCobranza = userList.reduce((sum, u) => sum + u.credito_usado, 0);
     const totalDisponible = userList.reduce((sum, u) => sum + u.credito_disponible, 0);
     
-    // Actualizar estadísticas
-    document.getElementById('statClientes').textContent = totalClientes;
-    document.getElementById('statCreditoTotal').textContent = '$' + Math.round(totalCredito).toLocaleString('es-CL');
-    document.getElementById('statCobranza').textContent = '$' + Math.round(totalCobranza).toLocaleString('es-CL');
-    document.getElementById('statDisponible').textContent = '$' + Math.round(totalDisponible).toLocaleString('es-CL');
+    const statClientes = document.getElementById('statClientes');
+    const statCreditoTotal = document.getElementById('statCreditoTotal');
+    const statCobranza = document.getElementById('statCobranza');
+    const statDisponible = document.getElementById('statDisponible');
+    
+    if (statClientes) statClientes.textContent = totalClientes.toString();
+    if (statCreditoTotal) statCreditoTotal.textContent = '$' + Math.round(totalCredito).toLocaleString('es-CL');
+    if (statCobranza) statCobranza.textContent = '$' + Math.round(totalCobranza).toLocaleString('es-CL');
+    if (statDisponible) statDisponible.textContent = '$' + Math.round(totalDisponible).toLocaleString('es-CL');
     
     container.innerHTML = userList.map(user => `
         <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -211,21 +234,34 @@ function showTab(tab) {
         btn.classList.remove('border-orange-500', 'text-orange-600');
         btn.classList.add('border-transparent', 'text-gray-500');
     });
-    document.getElementById(`tab-${tab}`).classList.add('border-orange-500', 'text-orange-600');
-    document.getElementById(`tab-${tab}`).classList.remove('border-transparent', 'text-gray-500');
+    const tabBtn = document.getElementById(`tab-${tab}`);
+    if (tabBtn) {
+        tabBtn.classList.add('border-orange-500', 'text-orange-600');
+        tabBtn.classList.remove('border-transparent', 'text-gray-500');
+    }
     
     document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
-    document.getElementById(`content-${tab}`).classList.remove('hidden');
+    const tabContent = document.getElementById(`content-${tab}`);
+    if (tabContent) tabContent.classList.remove('hidden');
 }
 
 function previewEmail(userId) {
     currentUserId = userId;
-    document.getElementById('previewFrame').src = `https://caja.laruta11.cl/api/gmail/preview_credit_statement.php?user_id=${userId}`;
-    document.getElementById('previewModal').classList.remove('hidden');
+    const frame = document.getElementById('previewFrame') as HTMLIFrameElement;
+    const modal = document.getElementById('previewModal');
+    if (frame) frame.src = `https://caja.laruta11.cl/api/gmail/preview_credit_statement.php?user_id=${userId}`;
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+    }
 }
 
 function closePreview() {
-    document.getElementById('previewModal').classList.add('hidden');
+    const modal = document.getElementById('previewModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
     currentUserId = null;
 }
 
@@ -254,7 +290,9 @@ async function sendEmail(userId) {
 async function sendMassive() {
     if (!confirm(`¿Enviar estado de cuenta a ${users.length} usuarios?`)) return;
     
-    const btn = document.querySelector('button[data-action="sendMassive"]');
+    const btn = document.querySelector('button[data-action="sendMassive"]') as HTMLButtonElement;
+    if (!btn) return;
+    
     const originalText = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '⏳ Enviando...';
@@ -273,12 +311,10 @@ async function sendMassive() {
             } else {
                 failed++;
             }
-            // Actualizar progreso
             showStatus(`Enviando... ${sent + failed}/${users.length} (${sent} exitosos, ${failed} fallidos)`, 'info');
         } catch (error) {
             failed++;
         }
-        // Pausa de 500ms entre envíos para no saturar Gmail API
         await new Promise(resolve => setTimeout(resolve, 500));
     }
     
@@ -287,29 +323,39 @@ async function sendMassive() {
     showStatus(`✅ Proceso completado: ${sent} enviados, ${failed} fallidos de ${users.length} totales`, sent === users.length ? 'success' : 'error');
 }
 
-document.getElementById('emailForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append('to', document.getElementById('emailTo').value);
-    formData.append('subject', document.getElementById('emailSubject').value);
-    formData.append('body', document.getElementById('emailBody').value);
-    showStatus('Enviando email...', 'info');
-    try {
-        const response = await fetch('/api/gmail/send_email.php', { method: 'POST', body: formData });
-        const result = await response.json();
-        if (result.success) {
-            showStatus('✅ Email enviado', 'success');
-            document.getElementById('emailForm').reset();
-        } else {
-            showStatus(`❌ Error: ${result.error}`, 'error');
+const emailForm = document.getElementById('emailForm');
+if (emailForm) {
+    emailForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData();
+        const emailTo = document.getElementById('emailTo') as HTMLInputElement;
+        const emailSubject = document.getElementById('emailSubject') as HTMLInputElement;
+        const emailBody = document.getElementById('emailBody') as HTMLTextAreaElement;
+        
+        if (emailTo) formData.append('to', emailTo.value);
+        if (emailSubject) formData.append('subject', emailSubject.value);
+        if (emailBody) formData.append('body', emailBody.value);
+        
+        showStatus('Enviando email...', 'info');
+        try {
+            const response = await fetch('/api/gmail/send_email.php', { method: 'POST', body: formData });
+            const result = await response.json();
+            if (result.success) {
+                showStatus('✅ Email enviado', 'success');
+                const form = document.getElementById('emailForm') as HTMLFormElement;
+                if (form) form.reset();
+            } else {
+                showStatus(`❌ Error: ${result.error}`, 'error');
+            }
+        } catch (error) {
+            showStatus('❌ Error de conexión', 'error');
         }
-    } catch (error) {
-        showStatus('❌ Error de conexión', 'error');
-    }
-});
+    });
+}
 
 function showStatus(message, type) {
     const statusDiv = document.getElementById('statusMessage');
+    if (!statusDiv) return;
     const colors = { success: 'bg-green-100 border-green-500 text-green-700', error: 'bg-red-100 border-red-500 text-red-700', info: 'bg-blue-100 border-blue-500 text-blue-700' };
     statusDiv.className = `mt-6 p-4 rounded-lg border-l-4 ${colors[type]}`;
     statusDiv.textContent = message;
@@ -335,6 +381,7 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
 .mb-6 { margin-bottom: 1.5rem; }
 .mb-4 { margin-bottom: 1rem; }
 .mb-2 { margin-bottom: 0.5rem; }
+.mb-1 { margin-bottom: 0.25rem; }
 .mt-1 { margin-top: 0.25rem; }
 .mt-2 { margin-top: 0.5rem; }
 .mt-6 { margin-top: 1.5rem; }
@@ -350,33 +397,57 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
 .text-gray-500 { color: #6b7280; }
 .text-gray-400 { color: #9ca3af; }
 .text-orange-600 { color: #ea580c; }
+.text-orange-700 { color: #c2410c; }
 .text-red-600 { color: #dc2626; }
+.text-green-600 { color: #16a34a; }
 .text-green-700 { color: #15803d; }
 .text-red-700 { color: #b91c1c; }
 .text-white { color: white; }
+.text-blue-600 { color: #2563eb; }
+.text-blue-700 { color: #1d4ed8; }
+.text-purple-600 { color: #9333ea; }
+.text-purple-700 { color: #7e22ce; }
 .bg-gray-50 { background-color: #f9fafb; }
 .bg-yellow-500 { background-color: #eab308; }
 .bg-green-500 { background-color: #22c55e; }
 .bg-red-500 { background-color: #ef4444; }
+.bg-blue-50 { background-color: #eff6ff; }
+.bg-blue-100 { background-color: #dbeafe; }
 .bg-blue-500 { background-color: #3b82f6; }
 .bg-blue-600 { background-color: #2563eb; }
+.bg-green-50 { background-color: #f0fdf4; }
+.bg-green-100 { background-color: #dcfce7; }
+.bg-orange-50 { background-color: #fff7ed; }
+.bg-orange-100 { background-color: #ffedd5; }
 .bg-orange-500 { background-color: #f97316; }
 .bg-orange-600 { background-color: #ea580c; }
 .bg-orange-700 { background-color: #c2410c; }
+.bg-purple-50 { background-color: #faf5ff; }
+.bg-purple-100 { background-color: #f3e8ff; }
 .bg-gray-500 { background-color: #6b7280; }
 .bg-gray-600 { background-color: #4b5563; }
+.bg-black { background-color: black; }
+.bg-opacity-50 { background-color: rgba(0,0,0,0.5); }
 .border { border-width: 1px; }
 .border-b { border-bottom-width: 1px; }
 .border-b-2 { border-bottom-width: 2px; }
 .border-l-4 { border-left-width: 4px; }
+.border-t { border-top-width: 1px; }
 .border-gray-200 { border-color: #e5e7eb; }
 .border-gray-300 { border-color: #d1d5db; }
 .border-orange-500 { border-color: #f97316; }
 .border-transparent { border-color: transparent; }
+.border-blue-200 { border-color: #bfdbfe; }
+.border-green-200 { border-color: #bbf7d0; }
+.border-orange-200 { border-color: #fed7aa; }
+.border-purple-200 { border-color: #e9d5ff; }
 .flex { display: flex; }
+.grid { display: grid; }
+.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
 .items-center { align-items: center; }
 .items-start { align-items: flex-start; }
 .justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
 .gap-2 { gap: 0.5rem; }
 .gap-3 { gap: 0.75rem; }
 .gap-4 { gap: 1rem; }
@@ -393,34 +464,19 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
 .hidden { display: none; }
 .fixed { position: fixed; }
 .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
-.bg-black { background-color: black; }
-.bg-opacity-50 { background-color: rgba(0,0,0,0.5); }
 .flex-1 { flex: 1; }
 .overflow-auto { overflow: auto; }
 .max-h-screen { max-height: 100vh; }
 .text-center { text-align: center; }
-.text-blue-600 { color: #2563eb; }
-.text-blue-700 { color: #1d4ed8; }
-.text-purple-600 { color: #9333ea; }
-.text-purple-700 { color: #7e22ce; }
-.bg-blue-50 { background-color: #eff6ff; }
-.bg-blue-100 { background-color: #dbeafe; }
-.bg-green-50 { background-color: #f0fdf4; }
-.bg-green-100 { background-color: #dcfce7; }
-.bg-orange-50 { background-color: #fff7ed; }
-.bg-orange-100 { background-color: #ffedd5; }
-.bg-purple-50 { background-color: #faf5ff; }
-.bg-purple-100 { background-color: #f3e8ff; }
-.border-blue-200 { border-color: #bfdbfe; }
-.border-green-200 { border-color: #bbf7d0; }
-.border-orange-200 { border-color: #fed7aa; }
-.border-purple-200 { border-color: #e9d5ff; }
-.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.min-h-screen { min-height: 100vh; }
 button { cursor: pointer; border: none; }
 button:hover { opacity: 0.9; }
 input, textarea { outline: none; font-family: inherit; }
 .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+@media (min-width: 768px) {
+    .md\:grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+}
 </style>
 </body>
 </html>
