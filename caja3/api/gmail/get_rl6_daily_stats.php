@@ -46,12 +46,29 @@ $query_deuda = "
 $result_deuda = $conn->query($query_deuda);
 $deuda = $result_deuda->fetch_assoc();
 
+// Pagos históricos totales (todos los pagos RL6)
+$query_historico = "
+    SELECT 
+        COUNT(DISTINCT user_id) as usuarios_pagaron_total,
+        SUM(installment_amount) as monto_pagado_total
+    FROM tuu_orders
+    WHERE order_number LIKE 'RL6-%'
+    AND payment_status = 'paid'
+";
+
+$result_historico = $conn->query($query_historico);
+$historico = $result_historico->fetch_assoc();
+
 echo json_encode([
     'success' => true,
     'fecha' => $today,
     'pagos_hoy' => [
         'usuarios_pagaron' => intval($pagos['usuarios_pagaron']),
         'total_pagado' => floatval($pagos['total_pagado'] ?? 0)
+    ],
+    'pagos_historico' => [
+        'usuarios_pagaron_total' => intval($historico['usuarios_pagaron_total']),
+        'monto_pagado_total' => floatval($historico['monto_pagado_total'] ?? 0)
     ],
     'deuda_actual' => [
         'usuarios_con_deuda' => intval($deuda['usuarios_con_deuda']),

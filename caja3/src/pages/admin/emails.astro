@@ -50,6 +50,20 @@
         </div>
 
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">📈 Pagos Históricos</h2>
+            <div id="historicStatsGrid" class="grid grid-cols-2 gap-4">
+                <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 rounded-lg p-4">
+                    <p class="text-xs text-indigo-600 font-medium mb-1">👥 Usuarios Pagaron</p>
+                    <p id="statUsuariosPagaronTotal" class="text-2xl font-bold text-indigo-700">-</p>
+                </div>
+                <div class="bg-gradient-to-br from-cyan-50 to-cyan-100 border border-cyan-200 rounded-lg p-4">
+                    <p class="text-xs text-cyan-600 font-medium mb-1">💰 Monto Total</p>
+                    <p id="statMontoPagadoTotal" class="text-2xl font-bold text-cyan-700">-</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 class="text-lg font-bold text-gray-800 mb-4">🔑 Estado de Gmail API</h2>
             <div id="gmailStatus" class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
                 <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
@@ -205,9 +219,13 @@ async function loadDailyStats() {
         if (result.success) {
             const statPagaronHoy = document.getElementById('statPagaronHoy');
             const statTotalPagado = document.getElementById('statTotalPagado');
+            const statUsuariosPagaronTotal = document.getElementById('statUsuariosPagaronTotal');
+            const statMontoPagadoTotal = document.getElementById('statMontoPagadoTotal');
             
             if (statPagaronHoy) statPagaronHoy.textContent = result.pagos_hoy.usuarios_pagaron.toString();
             if (statTotalPagado) statTotalPagado.textContent = '$' + Math.round(result.pagos_hoy.total_pagado).toLocaleString('es-CL');
+            if (statUsuariosPagaronTotal) statUsuariosPagaronTotal.textContent = result.pagos_historico.usuarios_pagaron_total.toString();
+            if (statMontoPagadoTotal) statMontoPagadoTotal.textContent = '$' + Math.round(result.pagos_historico.monto_pagado_total).toLocaleString('es-CL');
         }
     } catch (error) {
         console.error('Error cargando estadísticas diarias:', error);
@@ -438,6 +456,16 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
 .text-blue-700 { color: #1d4ed8; }
 .text-purple-600 { color: #9333ea; }
 .text-purple-700 { color: #7e22ce; }
+.text-indigo-600 { color: #4f46e5; }
+.text-indigo-700 { color: #4338ca; }
+.text-cyan-600 { color: #0891b2; }
+.text-cyan-700 { color: #0e7490; }
+.bg-indigo-50 { background-color: #eef2ff; }
+.bg-indigo-100 { background-color: #e0e7ff; }
+.bg-cyan-50 { background-color: #ecfeff; }
+.bg-cyan-100 { background-color: #cffafe; }
+.border-indigo-200 { border-color: #c7d2fe; }
+.border-cyan-200 { border-color: #a5f3fc; }
 .text-emerald-600 { color: #059669; }
 .text-emerald-700 { color: #047857; }
 .text-teal-600 { color: #0d9488; }
