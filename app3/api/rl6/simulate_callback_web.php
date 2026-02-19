@@ -65,7 +65,8 @@ try {
         'x_reference' => $order_id,
         'x_result' => 'completed',
         'x_transaction_id' => 'SIM-' . time(),
-        'x_amount' => $amount
+        'x_amount' => $amount,
+        'simulate' => '1'
     ]);
     
     echo "🔄 Llamando callback...\n";

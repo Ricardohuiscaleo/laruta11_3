@@ -8,6 +8,7 @@ try {
     $result = $_GET['x_result'] ?? null;
     $transaction_id = $_GET['x_transaction_id'] ?? null;
     $amount = $_GET['x_amount'] ?? null;
+    $is_simulation = isset($_GET['simulate']) && $_GET['simulate'] === '1';
 
     if (!$order_id || !str_starts_with($order_id, 'RL6-')) {
         throw new Exception('Order ID RL6 requerido');
@@ -105,15 +106,19 @@ try {
             error_log("RL6 Payment ALREADY PROCESSED - Order: $order_id");
         }
         
-        // Redirigir DESPUÉS de enviar email
-        header("Location: https://app.laruta11.cl/rl6-payment-success?order=$order_id&amount={$order_data['product_price']}");
-        exit;
+        // Solo redirigir si NO es simulación
+        if (!$is_simulation) {
+            header("Location: https://app.laruta11.cl/rl6-payment-success?order=$order_id&amount={$order_data['product_price']}");
+            exit;
+        }
     } else {
         error_log("RL6 Payment FAILED - Order: $order_id, Status: $payment_status, Message: $tuu_message");
         
-        // Redirigir a página de error
-        header("Location: https://app.laruta11.cl/pagar-credito?error=1");
-        exit;
+        // Solo redirigir si NO es simulación
+        if (!$is_simulation) {
+            header("Location: https://app.laruta11.cl/pagar-credito?error=1");
+            exit;
+        }
     }
 
     echo json_encode([
