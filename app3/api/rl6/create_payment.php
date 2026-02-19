@@ -40,30 +40,6 @@ try {
     
     $order_id = 'RL6-' . time() . '-' . rand(1000, 9999);
     
-    // Guardar en tuu_orders con campos TUU completos
-    $order_sql = "INSERT INTO tuu_orders (
-        order_number, user_id, customer_name, customer_phone, 
-        product_name, product_price, installment_amount, delivery_fee,
-        status, payment_status, payment_method, order_status, delivery_type,
-        pagado_con_credito_rl6, monto_credito_rl6, subtotal,
-        discount_amount, discount_10, discount_30, discount_birthday, discount_pizza,
-        delivery_discount, delivery_extras, cashback_used,
-        tuu_account_id, tuu_currency, tuu_signature
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 'pending', 'unpaid', 'webpay', 'pending', 'pickup', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ?, 'CLP', ?)";
-    
-    $order_stmt = $pdo->prepare($order_sql);
-    $order_stmt->execute([
-        $order_id, 
-        $user_id, 
-        $user['nombre'], 
-        $user['telefono'],
-        'Pago Crédito RL6 - ' . $user['grado_militar'],
-        $amount, 
-        $amount,
-        $account_id,
-        $transaction_data['x_signature']
-    ]);
-    
     // PASO 1: Obtener Token TUU
     $url_base = 'https://core.payment.haulmer.com/api/v1/payment';
     $token_url = $url_base . '/token/' . $config['tuu_online_rut'];
@@ -145,6 +121,30 @@ try {
         'exempt_amount' => 1,
         'type' => 48
     ];
+    
+    // Guardar en tuu_orders DESPUÉS de obtener datos TUU
+    $order_sql = "INSERT INTO tuu_orders (
+        order_number, user_id, customer_name, customer_phone, 
+        product_name, product_price, installment_amount, delivery_fee,
+        status, payment_status, payment_method, order_status, delivery_type,
+        pagado_con_credito_rl6, monto_credito_rl6, subtotal,
+        discount_amount, discount_10, discount_30, discount_birthday, discount_pizza,
+        delivery_discount, delivery_extras, cashback_used,
+        tuu_account_id, tuu_currency, tuu_signature
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 'pending', 'unpaid', 'webpay', 'pending', 'pickup', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ?, 'CLP', ?)";
+    
+    $order_stmt = $pdo->prepare($order_sql);
+    $order_stmt->execute([
+        $order_id, 
+        $user_id, 
+        $user['nombre'], 
+        $user['telefono'],
+        'Pago Crédito RL6 - ' . $user['grado_militar'],
+        $amount, 
+        $amount,
+        $account_id,
+        $transaction_data['x_signature']
+    ]);
     
     // PASO 4: Envío a TUU
     $ch = curl_init($url_base);
