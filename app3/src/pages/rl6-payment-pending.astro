@@ -127,22 +127,8 @@
         
         // Si ya viene con x_result=completed, procesar inmediatamente
         if (xResult === 'completed' && orderId) {
-            // Llamar al callback para procesar el pago
-            fetch('/api/rl6/payment_callback.php?' + window.location.search.substring(1))
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        window.location.href = `/rl6-payment-success?order=${orderId}`;
-                    } else {
-                        alert('Error procesando el pago: ' + (data.error || 'Desconocido'));
-                        window.location.href = '/pagar-credito';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error procesando el pago');
-                    window.location.href = '/pagar-credito';
-                });
+            // Redirigir al callback con todos los parámetros para que procese el pago
+            window.location.href = '/api/rl6/payment_callback.php?' + window.location.search.substring(1);
         } else {
             // Auto-verificar estado cada 3 segundos
             let checkCount = 0;
