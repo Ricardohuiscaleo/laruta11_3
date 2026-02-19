@@ -133,7 +133,7 @@ $html = "
                     </tr>
                     
                     <tr>
-                        <td style='padding: 0 30px 30px 30px;'>
+                        <td style='padding: 0 30px 25px 30px;'>
                             <div style='background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 16px 18px; border-radius: 6px;'>
                                 <p style='margin: 0; color: #92400e; font-size: 14px; font-weight: 500;'>
                                     📅 <strong>Fecha de Vencimiento:</strong> $fecha_vencimiento
@@ -143,19 +143,50 @@ $html = "
                     </tr>
                     
                     <tr>
+                        <td style='padding: 0 30px 25px 30px;'>
+                            <div style='background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #93c5fd; border-radius: 8px; padding: 20px;'>
+                                <h3 style='color: #1e40af; margin: 0 0 15px 0; font-size: 16px; font-weight: 600;'>💡 Cómo Pagar tu Crédito</h3>
+                                <table width='100%' cellpadding='0' cellspacing='0'>
+                                    <tr>
+                                        <td style='padding: 8px 0;'>
+                                            <div style='display: flex; align-items: start;'>
+                                                <span style='background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 50%; display: inline-block; text-align: center; line-height: 24px; font-weight: bold; font-size: 12px; margin-right: 12px; flex-shrink: 0;'>1</span>
+                                                <span style='color: #1e40af; font-size: 14px; line-height: 24px;'>Inicia sesión en tu cuenta de <strong>app.laruta11.cl</strong></span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 8px 0;'>
+                                            <div style='display: flex; align-items: start;'>
+                                                <span style='background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 50%; display: inline-block; text-align: center; line-height: 24px; font-weight: bold; font-size: 12px; margin-right: 12px; flex-shrink: 0;'>2</span>
+                                                <span style='color: #1e40af; font-size: 14px; line-height: 24px;'>Ve a tu <strong>Perfil</strong> y selecciona <strong>"Crédito"</strong></span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 8px 0;'>
+                                            <div style='display: flex; align-items: start;'>
+                                                <span style='background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 50%; display: inline-block; text-align: center; line-height: 24px; font-weight: bold; font-size: 12px; margin-right: 12px; flex-shrink: 0;'>3</span>
+                                                <span style='color: #1e40af; font-size: 14px; line-height: 24px;'>Haz clic en <strong>"Pagar Crédito"</strong></span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <tr>
                         <td style='padding: 0 30px 35px 30px;' align='center'>
+                            <p style='color: #6b7280; font-size: 14px; margin: 0 0 15px 0;'>
+                                ✨ <strong>¿Ya estás logueado?</strong> Haz clic aquí:
+                            </p>
                             <a href='https://app.laruta11.cl/pagar-credito?user_id=$user_id&monto=$saldo_pagar' 
-                               style='display: inline-block; background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: #ffffff; text-decoration: none; padding: 18px 60px; border-radius: 8px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 14px rgba(255,107,53,0.4); margin-bottom: 15px;'>
+                               style='display: inline-block; background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: #ffffff; text-decoration: none; padding: 18px 60px; border-radius: 8px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 14px rgba(255,107,53,0.4);'>
                                 💳 Pagar Ahora
                             </a>
-                            <p style='color: #9ca3af; font-size: 12px; margin: 0 0 12px 0;'>
-                                Pago seguro procesado por TUU.cl
-                            </p>
-                            <p style='margin: 0;'>
-                                <a href='https://caja.laruta11.cl/estado-cuenta?user_id=$user_id' 
-                                   style='color: #6b7280; text-decoration: none; font-size: 14px; border-bottom: 1px solid #d1d5db;'>
-                                    📊 Ver estado de cuenta detallado
-                                </a>
+                            <p style='color: #9ca3af; font-size: 12px; margin: 15px 0 0 0;'>
+                                🔒 Pago seguro procesado por TUU.cl
                             </p>
                         </td>
                     </tr>
