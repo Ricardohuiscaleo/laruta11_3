@@ -42,6 +42,7 @@ try {
     
     // Crear email HTML con diseño moderno
     $subject = '✅ Pago de Crédito RL6 Confirmado - La Ruta 11';
+    date_default_timezone_set('America/Santiago');
     $fecha = date('d/m/Y H:i');
     
     $html = "
@@ -172,7 +173,7 @@ try {
                         <td style='padding: 0 20px 35px 20px;' align='center'>
                             <a href='https://app.laruta11.cl' 
                                style='display: inline-block; background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); color: #ffffff; text-decoration: none; padding: 20px 40px; border-radius: 32px; font-weight: 800; font-size: 18px; box-shadow: 0 10px 30px rgba(247, 147, 30, 0.3); white-space: nowrap;'>
-                                🍔 IR A LA APP
+                                IR A LA APP
                             </a>
                             <p style='color: #9ca3af; font-size: 11px; margin: 24px 0 0 0; font-weight: 700;'>
                                 Gracias por tu pago puntual
@@ -184,10 +185,14 @@ try {
                         <td style='background-color: #111827; padding: 40px 20px; text-align: center;'>
                             <table width='100%' cellpadding='0' cellspacing='0'>
                                 <tr>
-                                    <td align='center' style='padding-bottom: 32px;'>
-                                        <a href='tel:+56936227422' style='color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin: 0 16px;'>Soporte</a>
-                                        <a href='tel:+56945392581' style='color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin: 0 16px;'>Ventas</a>
-                                        <a href='https://app.laruta11.cl' style='color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin: 0 16px;'>App</a>
+                                    <td width='33.33%' align='center' style='padding-bottom: 32px;'>
+                                        <a href='tel:+56936227422' style='color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;'>Soporte</a>
+                                    </td>
+                                    <td width='33.33%' align='center' style='padding-bottom: 32px;'>
+                                        <a href='tel:+56945392581' style='color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;'>Ventas</a>
+                                    </td>
+                                    <td width='33.33%' align='center' style='padding-bottom: 32px;'>
+                                        <a href='https://app.laruta11.cl' style='color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;'>App</a>
                                     </td>
                                 </tr>
                             </table>
