@@ -198,7 +198,7 @@ $from = $config['gmail_sender_email'];
 $to = $user['email'];
 $subject = "💳 Estado de Cuenta - Crédito La Ruta 11";
 
-$message = "From: $from\r\n";
+$message = "From: La Ruta 11 <$from>\r\n";
 $message .= "To: $to\r\n";
 $message .= "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n";
 $message .= "MIME-Version: 1.0\r\n";

@@ -21,7 +21,7 @@ $body = $_POST['body'] ?? $_GET['body'] ?? 'Este es un email de prueba desde La 
 
 // Crear mensaje en formato RFC 2822
 $from = $config['gmail_sender_email'];
-$message = "From: $from\r\n";
+$message = "From: La Ruta 11 <$from>\r\n";
 $message .= "To: $to\r\n";
 $message .= "Subject: $subject\r\n";
 $message .= "Content-Type: text/html; charset=utf-8\r\n\r\n";
