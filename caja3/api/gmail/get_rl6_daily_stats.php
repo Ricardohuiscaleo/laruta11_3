@@ -13,15 +13,15 @@ if ($conn->connect_error) {
 // Obtener fecha de hoy
 $today = date('Y-m-d');
 
-// Pagos del día (refunds = pagos)
+// Pagos del día (desde tuu_orders con RL6-)
 $query_pagos = "
     SELECT 
         COUNT(DISTINCT user_id) as usuarios_pagaron,
-        SUM(amount) as total_pagado
-    FROM rl6_credit_transactions
-    WHERE type = 'refund' 
-    AND DATE(created_at) = ?
-    AND description LIKE '%Pago de crédito%'
+        SUM(installment_amount) as total_pagado
+    FROM tuu_orders
+    WHERE order_number LIKE 'RL6-%'
+    AND payment_status = 'paid'
+    AND DATE(payment_date) = ?
 ";
 
 $stmt = $conn->prepare($query_pagos);
