@@ -40,65 +40,170 @@ try {
     
     $token = $token_result['access_token'];
     
-    // Crear email HTML
+    // Crear email HTML con diseño moderno
     $subject = '✅ Pago de Crédito RL6 Confirmado - La Ruta 11';
     $fecha = date('d/m/Y H:i');
     
     $html = "
-    <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
-        <div style='background: linear-gradient(135deg, #f97316 0%, #dc2626 100%); padding: 30px; text-align: center;'>
-            <h1 style='color: white; margin: 0; font-size: 28px;'>🎉 ¡Pago Confirmado!</h1>
-        </div>
-        
-        <div style='padding: 30px; background: #f9fafb;'>
-            <p style='font-size: 16px; color: #374151;'>Hola <strong>{$user['nombre']}</strong>,</p>
-            
-            <p style='font-size: 16px; color: #374151;'>Tu pago de crédito RL6 ha sido procesado exitosamente.</p>
-            
-            <div style='background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #16a34a;'>
-                <h2 style='color: #16a34a; margin-top: 0;'>Detalles del Pago</h2>
-                <table style='width: 100%; border-collapse: collapse;'>
+<!DOCTYPE html>
+<html lang='es'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+</head>
+<body style='margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, sans-serif; background-color: #ecfdf5;'>
+    <table width='100%' cellpadding='0' cellspacing='0' style='background-color: #ecfdf5; padding: 10px;'>
+        <tr>
+            <td align='center'>
+                <table width='600' cellpadding='0' cellspacing='0' style='background-color: #ffffff; border-radius: 40px; overflow: hidden; box-shadow: 0 10px 40px -10px rgba(16, 185, 129, 0.2); border: 1px solid #a7f3d0;'>
+                    
                     <tr>
-                        <td style='padding: 8px 0; color: #6b7280;'>Orden:</td>
-                        <td style='padding: 8px 0; color: #111827; font-weight: bold; text-align: right;'>$order_id</td>
+                        <td style='background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 48px 20px; text-align: center;'>
+                            <img src='https://laruta11-images.s3.amazonaws.com/menu/logo.png' alt='La Ruta 11' style='width: 80px; height: 80px; margin: 0 auto 16px; display: block; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));'>
+                            <h1 style='color: #ffffff; margin: 0; font-size: 36px; font-weight: 800; letter-spacing: -0.5px;'>¡Pago Confirmado!</h1>
+                            <p style='color: #d1fae5; margin: 4px 0 0 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 4px;'>Crédito RL6</p>
+                        </td>
                     </tr>
+                    
                     <tr>
-                        <td style='padding: 8px 0; color: #6b7280;'>Monto Pagado:</td>
-                        <td style='padding: 8px 0; color: #16a34a; font-weight: bold; text-align: right; font-size: 20px;'>$" . number_format($amount, 0, ',', '.') . "</td>
+                        <td style='padding: 32px 20px 20px 20px; background: #ffffff;'>
+                            <div style='text-align: center; margin-bottom: 32px;'>
+                                <h2 style='color: #111827; margin: 0 0 12px 0; font-size: 24px; font-weight: 800;'>¡Hola, " . htmlspecialchars($user['nombre']) . "! 🎉</h2>
+                                <p style='color: #6b7280; line-height: 1.6; margin: 0; font-size: 14px; font-weight: 500;'>
+                                    Tu pago de crédito <strong>RL6</strong> ha sido procesado exitosamente.
+                                </p>
+                            </div>
+                            
+                            <table width='100%' cellpadding='0' cellspacing='0'>
+                                <tr>
+                                    <td align='center' style='padding-bottom: 32px;'>
+                                        <div style='display: inline-block; background: #d1fae5; padding: 8px 24px; border-radius: 999px; margin: 0 8px;'>
+                                            <p style='color: #065f46; margin: 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;'>" . htmlspecialchars($user['grado_militar']) . "</p>
+                                        </div>
+                                        <div style='display: inline-block; background: #f3f4f6; padding: 8px 24px; border-radius: 999px; margin: 0 8px;'>
+                                            <p style='color: #4b5563; margin: 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;'>Unidad " . htmlspecialchars($user['unidad_trabajo']) . "</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
                     </tr>
+                    
                     <tr>
-                        <td style='padding: 8px 0; color: #6b7280;'>Fecha:</td>
-                        <td style='padding: 8px 0; color: #111827; text-align: right;'>$fecha</td>
+                        <td style='padding: 0 20px 32px 20px;'>
+                            <div style='background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 32px; padding: 24px;'>
+                                <h3 style='text-align: center; font-size: 10px; font-weight: 900; color: #16a34a; text-transform: uppercase; letter-spacing: 3px; margin: 0 0 24px 0;'>Detalles del Pago</h3>
+                                
+                                <table width='100%' cellpadding='0' cellspacing='0'>
+                                    <tr>
+                                        <td style='padding: 12px 0; border-bottom: 1px solid #d1fae5;'>
+                                            <table width='100%' cellpadding='0' cellspacing='0'>
+                                                <tr>
+                                                    <td style='color: #6b7280; font-size: 13px; font-weight: 600;'>Orden:</td>
+                                                    <td style='color: #111827; font-size: 13px; font-weight: 700; text-align: right;'>$order_id</td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 12px 0; border-bottom: 1px solid #d1fae5;'>
+                                            <table width='100%' cellpadding='0' cellspacing='0'>
+                                                <tr>
+                                                    <td style='color: #6b7280; font-size: 13px; font-weight: 600;'>Monto Pagado:</td>
+                                                    <td style='color: #10b981; font-size: 24px; font-weight: 800; text-align: right;'>$" . number_format($amount, 0, ',', '.') . "</td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 12px 0; border-bottom: 1px solid #d1fae5;'>
+                                            <table width='100%' cellpadding='0' cellspacing='0'>
+                                                <tr>
+                                                    <td style='color: #6b7280; font-size: 13px; font-weight: 600;'>Fecha:</td>
+                                                    <td style='color: #111827; font-size: 13px; font-weight: 700; text-align: right;'>$fecha</td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 12px 0; border-bottom: 1px solid #d1fae5;'>
+                                            <table width='100%' cellpadding='0' cellspacing='0'>
+                                                <tr>
+                                                    <td style='color: #6b7280; font-size: 13px; font-weight: 600;'>Grado:</td>
+                                                    <td style='color: #111827; font-size: 13px; font-weight: 700; text-align: right;'>{$user['grado_militar']}</td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 12px 0;'>
+                                            <table width='100%' cellpadding='0' cellspacing='0'>
+                                                <tr>
+                                                    <td style='color: #6b7280; font-size: 13px; font-weight: 600;'>Unidad:</td>
+                                                    <td style='color: #111827; font-size: 13px; font-weight: 700; text-align: right;'>{$user['unidad_trabajo']}</td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
                     </tr>
+                    
                     <tr>
-                        <td style='padding: 8px 0; color: #6b7280;'>Grado:</td>
-                        <td style='padding: 8px 0; color: #111827; text-align: right;'>{$user['grado_militar']}</td>
+                        <td style='padding: 0 20px 32px 20px;'>
+                            <div style='background: #dbeafe; border-radius: 24px; padding: 20px; border: 2px solid #93c5fd;'>
+                                <table width='100%' cellpadding='0' cellspacing='0'>
+                                    <tr>
+                                        <td width='48' style='padding-right: 16px;'>
+                                            <div style='background: #3b82f6; color: #ffffff; width: 48px; height: 48px; border-radius: 16px; text-align: center; line-height: 48px; font-size: 20px; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);'>✅</div>
+                                        </td>
+                                        <td>
+                                            <p style='color: #1e40af; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 4px 0;'>Estado del Crédito</p>
+                                            <p style='color: #1e3a8a; font-size: 14px; font-weight: 700; margin: 0; line-height: 1.4;'>Tu crédito ha sido reestablecido completamente. Ya puedes volver a usar tu línea de crédito RL6.</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
                     </tr>
+                    
                     <tr>
-                        <td style='padding: 8px 0; color: #6b7280;'>Unidad:</td>
-                        <td style='padding: 8px 0; color: #111827; text-align: right;'>{$user['unidad_trabajo']}</td>
+                        <td style='padding: 0 20px 35px 20px;' align='center'>
+                            <a href='https://app.laruta11.cl' 
+                               style='display: inline-block; background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); color: #ffffff; text-decoration: none; padding: 20px 40px; border-radius: 32px; font-weight: 800; font-size: 18px; box-shadow: 0 10px 30px rgba(247, 147, 30, 0.3); white-space: nowrap;'>
+                                🍔 IR A LA APP
+                            </a>
+                            <p style='color: #9ca3af; font-size: 11px; margin: 24px 0 0 0; font-weight: 700;'>
+                                Gracias por tu pago puntual
+                            </p>
+                        </td>
                     </tr>
+                    
+                    <tr>
+                        <td style='background-color: #111827; padding: 40px 20px; text-align: center;'>
+                            <table width='100%' cellpadding='0' cellspacing='0'>
+                                <tr>
+                                    <td align='center' style='padding-bottom: 32px;'>
+                                        <a href='tel:+56936227422' style='color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin: 0 16px;'>Soporte</a>
+                                        <a href='tel:+56945392581' style='color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin: 0 16px;'>Ventas</a>
+                                        <a href='https://app.laruta11.cl' style='color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin: 0 16px;'>App</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style='color: #6b7280; margin: 0; font-size: 11px; line-height: 1.8; font-weight: 500;'>
+                                Yumbel 2629, Arica, Chile<br>
+                                <span style='color: #4b5563;'>© " . date('Y') . " La Ruta 11 SpA. Sabores con historia.</span>
+                            </p>
+                        </td>
+                    </tr>
+                    
                 </table>
-            </div>
-            
-            <div style='background: #dbeafe; border-radius: 8px; padding: 15px; margin: 20px 0;'>
-                <p style='margin: 0; color: #1e40af; font-size: 14px;'>
-                    ✅ Tu crédito ha sido reestablecido completamente<br>
-                    ✅ Ya puedes volver a usar tu línea de crédito RL6
-                </p>
-            </div>
-            
-            <p style='font-size: 14px; color: #6b7280; margin-top: 30px;'>
-                Gracias por tu pago puntual. Si tienes alguna consulta, no dudes en contactarnos.
-            </p>
-        </div>
-        
-        <div style='background: #111827; padding: 20px; text-align: center;'>
-            <p style='color: #9ca3af; font-size: 12px; margin: 5px 0;'>📍 Yumbel 2629, Arica, Chile</p>
-            <p style='color: #9ca3af; font-size: 12px; margin: 5px 0;'>📞 +56 9 3622 7422 | 📧 saboresdelaruta11@gmail.com</p>
-            <p style='color: #6b7280; font-size: 11px; margin: 15px 0 0 0;'>© " . date('Y') . " La Ruta 11 SpA</p>
-        </div>
-    </div>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
     ";
     
     // Enviar email
@@ -128,7 +233,6 @@ try {
     curl_close($ch);
     
     if ($httpCode !== 200) {
-        // Registrar email fallido
         $log_sql = "INSERT INTO email_logs (user_id, email_to, email_type, subject, order_id, amount, status, error_message) 
                     VALUES (?, ?, 'payment_confirmation', ?, ?, ?, 'failed', ?)";
         $log_stmt = $pdo->prepare($log_sql);
@@ -137,12 +241,10 @@ try {
         throw new Exception('Error enviando email');
     }
     
-    // Decodificar respuesta de Gmail para obtener message_id
     $gmail_response = json_decode($response, true);
     $message_id = $gmail_response['id'] ?? null;
     $thread_id = $gmail_response['threadId'] ?? null;
     
-    // Registrar email exitoso
     $log_sql = "INSERT INTO email_logs (user_id, email_to, email_type, subject, order_id, amount, gmail_message_id, gmail_thread_id, status) 
                 VALUES (?, ?, 'payment_confirmation', ?, ?, ?, ?, ?, 'sent')";
     $log_stmt = $pdo->prepare($log_sql);
@@ -151,7 +253,6 @@ try {
     echo json_encode(['success' => true, 'message_id' => $message_id]);
     
 } catch (Exception $e) {
-    // Registrar error si tenemos datos del usuario
     if (isset($pdo) && isset($user_id) && isset($order_id)) {
         try {
             $log_sql = "INSERT INTO email_logs (user_id, email_to, email_type, subject, order_id, amount, status, error_message) 
