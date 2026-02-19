@@ -72,21 +72,37 @@ $html = "
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
 </head>
-<body style='margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;'>
-    <table width='100%' cellpadding='0' cellspacing='0' style='background-color: #f4f4f4; padding: 5px;'>
+<body style='margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, sans-serif; background-color: #fff7ed;'>
+    <table width='100%' cellpadding='0' cellspacing='0' style='background-color: #fff7ed; padding: 10px;'>
         <tr>
             <td align='center'>
-                <table width='600' cellpadding='0' cellspacing='0' style='background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);'>
+                <table width='600' cellpadding='0' cellspacing='0' style='background-color: #ffffff; border-radius: 40px; overflow: hidden; box-shadow: 0 10px 40px -10px rgba(247, 147, 30, 0.2); border: 1px solid #fed7aa;'>
                     
                     <tr>
-                        <td style='background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); padding: 30px 20px; text-align: center;'>
+                        <td style='background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); padding: 48px 20px; text-align: center; position: relative;'>
+                            <img src='https://laruta11-images.s3.amazonaws.com/menu/logo.png' alt='La Ruta 11' style='width: 80px; height: 80px; margin: 0 auto 16px; display: block; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));'>
+                            <h1 style='color: #ffffff; margin: 0; font-size: 36px; font-weight: 800; letter-spacing: -0.5px;'>La Ruta 11</h1>
+                            <p style='color: #fed7aa; margin: 4px 0 0 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 4px;'>Estado de Cuenta</p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td style='padding: 32px 20px 20px 20px; background: #ffffff;'>
+                            <div style='text-align: center; margin-bottom: 32px;'>
+                                <h2 style='color: #111827; margin: 0 0 12px 0; font-size: 24px; font-weight: 800;'>¡Hola, " . htmlspecialchars($user['nombre']) . "! 👋</h2>
+                                <p style='color: #6b7280; line-height: 1.6; margin: 0; font-size: 14px; font-weight: 500;'>
+                                    Aquí tienes el detalle de tu crédito <strong>RL6</strong>. ¡Gracias por ser parte de nuestra comunidad!
+                                </p>
+                            </div>
+                            
                             <table width='100%' cellpadding='0' cellspacing='0'>
                                 <tr>
-                                    <td align='center'>
-                                        <img src='https://laruta11-images.s3.amazonaws.com/menu/logo.png' alt='La Ruta 11' style='width: 50px; height: 50px; vertical-align: middle; margin-right: 15px;'>
-                                        <div style='display: inline-block; vertical-align: middle; text-align: left;'>
-                                            <h1 style='color: #ffffff; margin: 0; font-size: 28px; font-weight: bold; line-height: 1.2;'>La Ruta 11</h1>
-                                            <p style='color: rgba(255,255,255,0.95); margin: 0; font-size: 13px; font-weight: 500;'>Estado de Cuenta - Crédito RL6</p>
+                                    <td align='center' style='padding-bottom: 32px;'>
+                                        <div style='display: inline-block; background: #fed7aa; padding: 8px 24px; border-radius: 999px; margin: 0 8px;'>
+                                            <p style='color: #c2410c; margin: 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;'>" . htmlspecialchars($user['grado_militar']) . "</p>
+                                        </div>
+                                        <div style='display: inline-block; background: #f3f4f6; padding: 8px 24px; border-radius: 999px; margin: 0 8px;'>
+                                            <p style='color: #4b5563; margin: 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;'>Unidad " . htmlspecialchars($user['unidad_trabajo']) . "</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -95,51 +111,36 @@ $html = "
                     </tr>
                     
                     <tr>
-                        <td style='padding: 35px 20px 25px 20px;'>
-                            <h2 style='color: #1f2937; margin: 0 0 8px 0; font-size: 22px;'>Hola, " . htmlspecialchars($user['nombre']) . " 👋</h2>
-                            <p style='color: #6b7280; line-height: 1.6; margin: 0 0 20px 0; font-size: 15px;'>
-                                Te enviamos el detalle de tu crédito La Ruta 11. Gracias por confiar en nosotros.
-                            </p>
-                            <div style='background-color: #f9fafb; border-left: 3px solid #ff6b35; padding: 12px 15px; border-radius: 4px;'>
-                                <p style='color: #4b5563; margin: 0; font-size: 14px; line-height: 1.5;'>
-                                    <strong style='color: #1f2937;'>" . htmlspecialchars($user['grado_militar']) . "</strong><br>
-                                    " . htmlspecialchars($user['unidad_trabajo']) . "
-                                </p>
-                            </div>
-                        </td>
-                    </tr>
-                    
-                    <tr>
-                        <td style='padding: 0 20px 25px 20px;' align='center'>
-                            <div style='background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 560px; margin: 0 auto;'>
-                                <h3 style='color: #111827; margin: 0 0 16px 0; font-size: 15px; font-weight: 700; text-align: center;'>📊 Resumen de Cuenta</h3>
+                        <td style='padding: 0 20px 32px 20px;'>
+                            <div style='background: #f9fafb; padding: 24px; border-radius: 32px;'>
+                                <h3 style='text-align: center; font-size: 10px; font-weight: 900; color: #9ca3af; text-transform: uppercase; letter-spacing: 3px; margin: 0 0 24px 0;'>Resumen Financiero</h3>
                                 
-                                <table width='100%' cellpadding='0' cellspacing='0' align='center'>
+                                <table width='100%' cellpadding='0' cellspacing='0'>
                                     <tr>
-                                        <td width='50%' style='padding: 8px;' align='center'>
-                                            <div style='background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; text-align: center;'>
-                                                <p style='color: #6b7280; font-size: 11px; margin: 0 0 4px 0; font-weight: 500;'>Crédito Total</p>
-                                                <p style='color: #111827; font-size: 18px; font-weight: 700; margin: 0;'>$" . number_format($credito_total, 0, ',', '.') . "</p>
+                                        <td width='50%' style='padding: 8px;'>
+                                            <div style='background: #ffffff; border: 2px solid #f8fafc; padding: 20px; border-radius: 24px; text-align: center;'>
+                                                <p style='color: #9ca3af; font-size: 9px; font-weight: 700; text-transform: uppercase; margin: 0 0 4px 0;'>Cupo Total</p>
+                                                <p style='color: #1f2937; font-size: 20px; font-weight: 800; margin: 0;'>$" . number_format($credito_total, 0, ',', '.') . "</p>
                                             </div>
                                         </td>
-                                        <td width='50%' style='padding: 8px;' align='center'>
-                                            <div style='background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; text-align: center;'>
-                                                <p style='color: #92400e; font-size: 11px; margin: 0 0 4px 0; font-weight: 500;'>Consumido</p>
-                                                <p style='color: #92400e; font-size: 18px; font-weight: 700; margin: 0;'>$" . number_format($credito_usado, 0, ',', '.') . "</p>
+                                        <td width='50%' style='padding: 8px;'>
+                                            <div style='background: #ffffff; border: 2px solid #f8fafc; padding: 20px; border-radius: 24px; text-align: center;'>
+                                                <p style='color: #fb923c; font-size: 9px; font-weight: 700; text-transform: uppercase; margin: 0 0 4px 0;'>Consumido</p>
+                                                <p style='color: #ea580c; font-size: 20px; font-weight: 800; margin: 0;'>$" . number_format($credito_usado, 0, ',', '.') . "</p>
                                             </div>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td width='50%' style='padding: 8px;' align='center'>
-                                            <div style='background: #d1fae5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px; text-align: center;'>
-                                                <p style='color: #065f46; font-size: 11px; margin: 0 0 4px 0; font-weight: 500;'>Disponible</p>
-                                                <p style='color: #065f46; font-size: 18px; font-weight: 700; margin: 0;'>$" . number_format($credito_disponible, 0, ',', '.') . "</p>
+                                        <td width='50%' style='padding: 8px;'>
+                                            <div style='background: #ffffff; border: 2px solid #f8fafc; padding: 20px; border-radius: 24px; text-align: center;'>
+                                                <p style='color: #34d399; font-size: 9px; font-weight: 700; text-transform: uppercase; margin: 0 0 4px 0;'>Disponible</p>
+                                                <p style='color: #059669; font-size: 20px; font-weight: 800; margin: 0;'>$" . number_format($credito_disponible, 0, ',', '.') . "</p>
                                             </div>
                                         </td>
-                                        <td width='50%' style='padding: 8px;' align='center'>
-                                            <div style='background: #fee2e2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; text-align: center;'>
-                                                <p style='color: #991b1b; font-size: 11px; margin: 0 0 4px 0; font-weight: 500;'>Saldo a Pagar</p>
-                                                <p style='color: #991b1b; font-size: 20px; font-weight: 700; margin: 0;'>$" . number_format($saldo_pagar, 0, ',', '.') . "</p>
+                                        <td width='50%' style='padding: 8px;'>
+                                            <div style='background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); padding: 20px; border-radius: 24px; text-align: center; box-shadow: 0 4px 14px rgba(249, 115, 22, 0.3);'>
+                                                <p style='color: #fed7aa; font-size: 9px; font-weight: 700; text-transform: uppercase; margin: 0 0 4px 0;'>Total a Pagar</p>
+                                                <p style='color: #ffffff; font-size: 20px; font-weight: 800; margin: 0;'>$" . number_format($saldo_pagar, 0, ',', '.') . "</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -149,42 +150,16 @@ $html = "
                     </tr>
                     
                     <tr>
-                        <td style='padding: 0 20px 25px 20px;'>
-                            <div style='background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 16px 18px; border-radius: 6px;'>
-                                <p style='margin: 0; color: #92400e; font-size: 14px; font-weight: 500;'>
-                                    📅 <strong>Fecha de Vencimiento:</strong> $fecha_vencimiento
-                                </p>
-                            </div>
-                        </td>
-                    </tr>
-                    
-                    <tr>
-                        <td style='padding: 0 20px 25px 20px;'>
-                            <div style='background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #93c5fd; border-radius: 8px; padding: 20px;'>
-                                <h3 style='color: #1e40af; margin: 0 0 15px 0; font-size: 16px; font-weight: 600;'>💡 Cómo Pagar tu Crédito</h3>
+                        <td style='padding: 0 20px 32px 20px;'>
+                            <div style='background: #fef2f2; border-radius: 24px; padding: 20px; border: 2px dashed #fecaca;'>
                                 <table width='100%' cellpadding='0' cellspacing='0'>
                                     <tr>
-                                        <td style='padding: 8px 0;'>
-                                            <div style='display: flex; align-items: start;'>
-                                                <span style='background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 50%; display: inline-block; text-align: center; line-height: 24px; font-weight: bold; font-size: 12px; margin-right: 12px; flex-shrink: 0;'>1</span>
-                                                <span style='color: #1e40af; font-size: 14px; line-height: 24px;'>Inicia sesión en tu cuenta de <strong>app.laruta11.cl</strong></span>
-                                            </div>
+                                        <td width='48' style='padding-right: 16px;'>
+                                            <div style='background: #ef4444; color: #ffffff; width: 48px; height: 48px; border-radius: 16px; text-align: center; line-height: 48px; font-size: 20px; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);'>🗓️</div>
                                         </td>
-                                    </tr>
-                                    <tr>
-                                        <td style='padding: 8px 0;'>
-                                            <div style='display: flex; align-items: start;'>
-                                                <span style='background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 50%; display: inline-block; text-align: center; line-height: 24px; font-weight: bold; font-size: 12px; margin-right: 12px; flex-shrink: 0;'>2</span>
-                                                <span style='color: #1e40af; font-size: 14px; line-height: 24px;'>Ve a tu <strong>Perfil</strong> y selecciona <strong>&quot;Crédito&quot;</strong></span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style='padding: 8px 0;'>
-                                            <div style='display: flex; align-items: start;'>
-                                                <span style='background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 50%; display: inline-block; text-align: center; line-height: 24px; font-weight: bold; font-size: 12px; margin-right: 12px; flex-shrink: 0;'>3</span>
-                                                <span style='color: #1e40af; font-size: 14px; line-height: 24px;'>Haz clic en <strong>&quot;Pagar Crédito&quot;</strong></span>
-                                            </div>
+                                        <td>
+                                            <p style='color: #991b1b; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 4px 0;'>Fecha Límite</p>
+                                            <p style='color: #7f1d1d; font-size: 18px; font-weight: 700; margin: 0;'>$fecha_vencimiento</p>
                                         </td>
                                     </tr>
                                 </table>
@@ -194,30 +169,31 @@ $html = "
                     
                     <tr>
                         <td style='padding: 0 20px 35px 20px;' align='center'>
-                            <p style='color: #6b7280; font-size: 14px; margin: 0 0 15px 0;'>
-                                ✨ <strong>¿Ya estás logueado?</strong> Haz clic aquí:
-                            </p>
                             <a href='https://app.laruta11.cl/pagar-credito?user_id=$user_id&monto=$saldo_pagar' 
-                               style='display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 18px 60px; border-radius: 8px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 14px rgba(59,130,246,0.4);'>
-                                💳 Pagar Ahora
+                               style='display: inline-block; background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); color: #ffffff; text-decoration: none; padding: 24px 80px; border-radius: 32px; font-weight: 800; font-size: 20px; box-shadow: 0 10px 30px rgba(247, 147, 30, 0.3);'>
+                                💳 PAGAR MI CRÉDITO
                             </a>
-                            <p style='color: #9ca3af; font-size: 12px; margin: 15px 0 0 0;'>
-                                🔒 Pago seguro procesado por TUU.cl
+                            <p style='color: #9ca3af; font-size: 11px; margin: 24px 0 0 0; font-weight: 700;'>
+                                <span style='display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%; margin-right: 6px;'></span>
+                                PROCESO 100% SEGURO VÍA TUU.CL
                             </p>
                         </td>
                     </tr>
                     
                     <tr>
-                        <td style='background-color: #f9fafb; padding: 25px 30px; text-align: center; border-top: 1px solid #e5e7eb;'>
-                            <p style='color: #6b7280; margin: 0 0 8px 0; font-size: 13px; line-height: 1.6;'>
-                                📍 Yumbel 2629, Arica, Chile<br>
-                                📞 Ventas: <a href='tel:+56936227422' style='color: #ff6b35; text-decoration: none;'>+56 9 3622 7422</a> | 
-                                🛠️ Soporte: <a href='tel:+56945392581' style='color: #ff6b35; text-decoration: none;'>+56 9 4539 2581</a><br>
-                                📧 <a href='mailto:saboresdelaruta11@gmail.com' style='color: #ff6b35; text-decoration: none;'>saboresdelaruta11@gmail.com</a><br>
-                                <a href='https://app.laruta11.cl' style='color: #ff6b35; text-decoration: none; font-weight: 500;'>app.laruta11.cl</a>
-                            </p>
-                            <p style='color: #d1d5db; margin: 15px 0 0 0; font-size: 11px;'>
-                                © " . date('Y') . " La Ruta 11 SpA. Todos los derechos reservados.
+                        <td style='background-color: #111827; padding: 40px 20px; text-align: center;'>
+                            <table width='100%' cellpadding='0' cellspacing='0'>
+                                <tr>
+                                    <td align='center' style='padding-bottom: 32px;'>
+                                        <a href='tel:+56936227422' style='color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin: 0 16px; transition: color 0.3s;'>Soporte</a>
+                                        <a href='tel:+56945392581' style='color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin: 0 16px; transition: color 0.3s;'>Ventas</a>
+                                        <a href='https://app.laruta11.cl' style='color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin: 0 16px; transition: color 0.3s;'>App</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style='color: #6b7280; margin: 0; font-size: 11px; line-height: 1.8; font-weight: 500;'>
+                                Yumbel 2629, Arica, Chile<br>
+                                <span style='color: #4b5563;'>© " . date('Y') . " La Ruta 11 SpA. Sabores con historia.</span>
                             </p>
                         </td>
                     </tr>
