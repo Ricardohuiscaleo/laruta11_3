@@ -14,6 +14,28 @@
         </div>
 
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">📊 Resumen General RL6</h2>
+            <div id="statsGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
+                    <p class="text-xs text-blue-600 font-medium mb-1">👥 Clientes</p>
+                    <p id="statClientes" class="text-2xl font-bold text-blue-700">-</p>
+                </div>
+                <div class="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
+                    <p class="text-xs text-green-600 font-medium mb-1">💰 Crédito Total</p>
+                    <p id="statCreditoTotal" class="text-2xl font-bold text-green-700">-</p>
+                </div>
+                <div class="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-4">
+                    <p class="text-xs text-orange-600 font-medium mb-1">📈 Cobranza</p>
+                    <p id="statCobranza" class="text-2xl font-bold text-orange-700">-</p>
+                </div>
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
+                    <p class="text-xs text-purple-600 font-medium mb-1">💎 Disponible</p>
+                    <p id="statDisponible" class="text-2xl font-bold text-purple-700">-</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 class="text-lg font-bold text-gray-800 mb-4">🔑 Estado de Gmail API</h2>
             <div id="gmailStatus" class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
                 <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
@@ -149,6 +171,19 @@ function renderUsers(userList) {
         container.innerHTML = '<div class="text-center text-gray-400 py-8">No hay usuarios con crédito RL6</div>';
         return;
     }
+    
+    // Calcular estadísticas totales
+    const totalClientes = userList.length;
+    const totalCredito = userList.reduce((sum, u) => sum + u.credito_total, 0);
+    const totalCobranza = userList.reduce((sum, u) => sum + u.credito_usado, 0);
+    const totalDisponible = userList.reduce((sum, u) => sum + u.credito_disponible, 0);
+    
+    // Actualizar estadísticas
+    document.getElementById('statClientes').textContent = totalClientes;
+    document.getElementById('statCreditoTotal').textContent = '$' + Math.round(totalCredito).toLocaleString('es-CL');
+    document.getElementById('statCobranza').textContent = '$' + Math.round(totalCobranza).toLocaleString('es-CL');
+    document.getElementById('statDisponible').textContent = '$' + Math.round(totalDisponible).toLocaleString('es-CL');
+    
     container.innerHTML = userList.map(user => `
         <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
             <div class="flex justify-between items-start">
@@ -364,6 +399,23 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
 .overflow-auto { overflow: auto; }
 .max-h-screen { max-height: 100vh; }
 .text-center { text-align: center; }
+.text-blue-600 { color: #2563eb; }
+.text-blue-700 { color: #1d4ed8; }
+.text-purple-600 { color: #9333ea; }
+.text-purple-700 { color: #7e22ce; }
+.bg-blue-50 { background-color: #eff6ff; }
+.bg-blue-100 { background-color: #dbeafe; }
+.bg-green-50 { background-color: #f0fdf4; }
+.bg-green-100 { background-color: #dcfce7; }
+.bg-orange-50 { background-color: #fff7ed; }
+.bg-orange-100 { background-color: #ffedd5; }
+.bg-purple-50 { background-color: #faf5ff; }
+.bg-purple-100 { background-color: #f3e8ff; }
+.border-blue-200 { border-color: #bfdbfe; }
+.border-green-200 { border-color: #bbf7d0; }
+.border-orange-200 { border-color: #fed7aa; }
+.border-purple-200 { border-color: #e9d5ff; }
+.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
 button { cursor: pointer; border: none; }
 button:hover { opacity: 0.9; }
 input, textarea { outline: none; font-family: inherit; }
