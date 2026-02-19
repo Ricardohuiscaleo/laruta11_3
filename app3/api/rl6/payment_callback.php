@@ -86,7 +86,7 @@ try {
             
             // 3. Enviar email de confirmación
             try {
-                $ch = curl_init('https://caja.laruta11.cl/api/gmail/send_payment_confirmation.php');
+                $ch = curl_init('https://app.laruta11.cl/api/gmail/send_payment_confirmation.php');
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($ch, CURLOPT_POST, true);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
