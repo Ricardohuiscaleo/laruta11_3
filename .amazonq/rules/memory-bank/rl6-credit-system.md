@@ -126,6 +126,21 @@ Usuario accede a estado de cuenta
 1. ✅ **Estado de cuenta mensual** (día 1-5 de cada mes)
 2. ✅ **Confirmación de pago** (al pagar con TUU)
 
+### Email Configuration:
+- **Sender Name**: "La Ruta 11 <saboresdelaruta11@gmail.com>" (includes name in From header)
+- **Gmail API**: OAuth tokens stored in MySQL (`gmail_tokens` table) for persistence
+- **Auto-refresh**: GitHub Actions renews tokens every 30 minutes
+- **CC**: Automatic copy to business email on critical emails (payments, failures)
+
+### Email Design Standards:
+- **Mobile-First**: Outer padding 5px, internal padding 20px for mobile optimization
+- **Layout**: Table-based with inline styles for email client compatibility
+- **Header**: Horizontal layout with logo and text inline (single row)
+- **Cards**: Consistent div-based structure with equal widths on mobile
+- **Buttons**: Blue gradient (#3b82f6 → #2563eb) for primary actions
+- **Instructions**: Step-by-step numbered circles for payment flows
+- **Escaping**: Use `&quot;` HTML entities for quotes in inline styles
+
 ### Emails Pendientes:
 3. ⏳ **Recordatorio de pago** (día 18-19)
 4. ⏳ **Aviso de bloqueo** (día 22 si no pagó)

@@ -67,6 +67,13 @@
 - **AWS SDK for PHP** - S3 image storage integration
 - **Composer** - PHP dependency management (landing3)
 - **vlucas/phpdotenv** - Environment variable management
+- **Gmail API** - Email sending via OAuth (tokens stored in MySQL)
+
+### Email Infrastructure
+- **Gmail API OAuth**: Tokens stored in `gmail_tokens` table (not filesystem)
+- **Auto-refresh**: GitHub Actions workflow renews tokens every 30 minutes
+- **Sender**: "La Ruta 11 <saboresdelaruta11@gmail.com>" with name in From header
+- **Templates**: Mobile-first HTML with inline styles, table-based layout
 
 ### Special Features
 - **tesseract.js** (^7.0.0) - OCR for receipt scanning (caja3 only)
@@ -91,6 +98,8 @@
 - compras, mermas
 - tuu_orders, tuu_pagos_online
 - notifications, reviews, visits
+- gmail_tokens (OAuth tokens for email sending)
+- rl6_credit_transactions (credit system transactions)
 
 ## External Services
 

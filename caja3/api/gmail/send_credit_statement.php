@@ -114,24 +114,24 @@ $html = "
                             <div style='background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;'>
                                 <h3 style='color: #1f2937; margin: 0 0 18px 0; font-size: 16px; font-weight: 600;'>📊 Resumen de Cuenta</h3>
                                 
-                                <table width='100%' cellpadding='8' cellspacing='0' style='width: 100%;'>
-                                            <tr>
-                                                <td style='color: #6b7280; font-size: 14px; border-bottom: 1px solid #e5e7eb;'>Crédito Total</td>
-                                                <td align='right' style='color: #1f2937; font-weight: 600; font-size: 15px; border-bottom: 1px solid #e5e7eb;'>$" . number_format($credito_total, 0, ',', '.') . "</td>
-                                            </tr>
-                                            <tr>
-                                                <td style='color: #6b7280; font-size: 14px; border-bottom: 1px solid #e5e7eb;'>Consumido</td>
-                                                <td align='right' style='color: #1f2937; font-weight: 600; font-size: 15px; border-bottom: 1px solid #e5e7eb;'>$" . number_format($credito_usado, 0, ',', '.') . "</td>
-                                            </tr>
-                                            <tr>
-                                                <td style='color: #6b7280; font-size: 14px; border-bottom: 1px solid #e5e7eb;'>Disponible</td>
-                                                <td align='right' style='color: #059669; font-weight: 600; font-size: 15px; border-bottom: 1px solid #e5e7eb;'>$" . number_format($credito_disponible, 0, ',', '.') . "</td>
-                                            </tr>
-                                            <tr>
-                                                <td style='color: #1f2937; font-size: 15px; font-weight: 600; padding-top: 12px;'>Saldo a Pagar</td>
-                                                <td align='right' style='color: #dc2626; font-weight: bold; font-size: 24px; padding-top: 12px;'>$" . number_format($saldo_pagar, 0, ',', '.') . "</td>
-                                            </tr>
-                                </table>
+                                <div style='width: 100%;'>
+                                    <div style='display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb;'>
+                                        <span style='color: #6b7280; font-size: 14px;'>Crédito Total</span>
+                                        <span style='color: #1f2937; font-weight: 600; font-size: 15px;'>$" . number_format($credito_total, 0, ',', '.') . "</span>
+                                    </div>
+                                    <div style='display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb;'>
+                                        <span style='color: #6b7280; font-size: 14px;'>Consumido</span>
+                                        <span style='color: #1f2937; font-weight: 600; font-size: 15px;'>$" . number_format($credito_usado, 0, ',', '.') . "</span>
+                                    </div>
+                                    <div style='display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb;'>
+                                        <span style='color: #6b7280; font-size: 14px;'>Disponible</span>
+                                        <span style='color: #059669; font-weight: 600; font-size: 15px;'>$" . number_format($credito_disponible, 0, ',', '.') . "</span>
+                                    </div>
+                                    <div style='display: flex; justify-content: space-between; padding: 12px 0 0 0;'>
+                                        <span style='color: #1f2937; font-size: 15px; font-weight: 600;'>Saldo a Pagar</span>
+                                        <span style='color: #dc2626; font-weight: bold; font-size: 24px;'>$" . number_format($saldo_pagar, 0, ',', '.') . "</span>
+                                    </div>
+                                </div>
                             </div>
                         </td>
                     </tr>

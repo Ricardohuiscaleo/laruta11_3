@@ -218,15 +218,38 @@ async function sendEmail(userId) {
 
 async function sendMassive() {
     if (!confirm(`¿Enviar estado de cuenta a ${users.length} usuarios?`)) return;
+    
+    const btn = document.querySelector('button[data-action="sendMassive"]');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Enviando...';
+    
     showStatus(`Enviando ${users.length} emails...`, 'info');
+    
     let sent = 0;
+    let failed = 0;
+    
     for (const user of users) {
         try {
-            await fetch(`/api/gmail/send_credit_statement.php?user_id=${user.id}`);
-            sent++;
-        } catch (error) {}
+            const response = await fetch(`/api/gmail/send_credit_statement.php?user_id=${user.id}`);
+            const result = await response.json();
+            if (result.success) {
+                sent++;
+            } else {
+                failed++;
+            }
+            // Actualizar progreso
+            showStatus(`Enviando... ${sent + failed}/${users.length} (${sent} exitosos, ${failed} fallidos)`, 'info');
+        } catch (error) {
+            failed++;
+        }
+        // Pausa de 500ms entre envíos para no saturar Gmail API
+        await new Promise(resolve => setTimeout(resolve, 500));
     }
-    showStatus(`✅ ${sent} de ${users.length} emails enviados`, 'success');
+    
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+    showStatus(`✅ Proceso completado: ${sent} enviados, ${failed} fallidos de ${users.length} totales`, sent === users.length ? 'success' : 'error');
 }
 
 document.getElementById('emailForm').addEventListener('submit', async (e) => {
