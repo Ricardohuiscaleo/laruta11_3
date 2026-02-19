@@ -114,7 +114,7 @@ $html = "
                             <div style='background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;'>
                                 <h3 style='color: #1f2937; margin: 0 0 18px 0; font-size: 16px; font-weight: 600;'>📊 Resumen de Cuenta</h3>
                                 
-                                <table width='100%' cellpadding='10' cellspacing='0'>
+                                <table width='100%' cellpadding='8' cellspacing='0' style='width: 100%;'>
                                             <tr>
                                                 <td style='color: #6b7280; font-size: 14px; border-bottom: 1px solid #e5e7eb;'>Crédito Total</td>
                                                 <td align='right' style='color: #1f2937; font-weight: 600; font-size: 15px; border-bottom: 1px solid #e5e7eb;'>$" . number_format($credito_total, 0, ',', '.') . "</td>
