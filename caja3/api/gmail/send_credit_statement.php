@@ -110,19 +110,19 @@ $html = "
                     </tr>
                     
                     <tr>
-                        <td style='padding: 0 20px 25px 20px;'>
-                            <div style='background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);'>
+                        <td style='padding: 0 20px 25px 20px;' align='center'>
+                            <div style='background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 560px; margin: 0 auto;'>
                                 <h3 style='color: #111827; margin: 0 0 16px 0; font-size: 15px; font-weight: 700; text-align: center;'>📊 Resumen de Cuenta</h3>
                                 
-                                <table width='100%' cellpadding='0' cellspacing='0'>
+                                <table width='100%' cellpadding='0' cellspacing='0' align='center'>
                                     <tr>
-                                        <td width='50%' style='padding: 8px;'>
+                                        <td width='50%' style='padding: 8px;' align='center'>
                                             <div style='background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; text-align: center;'>
                                                 <p style='color: #6b7280; font-size: 11px; margin: 0 0 4px 0; font-weight: 500;'>Crédito Total</p>
                                                 <p style='color: #111827; font-size: 18px; font-weight: 700; margin: 0;'>$" . number_format($credito_total, 0, ',', '.') . "</p>
                                             </div>
                                         </td>
-                                        <td width='50%' style='padding: 8px;'>
+                                        <td width='50%' style='padding: 8px;' align='center'>
                                             <div style='background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; text-align: center;'>
                                                 <p style='color: #92400e; font-size: 11px; margin: 0 0 4px 0; font-weight: 500;'>Consumido</p>
                                                 <p style='color: #92400e; font-size: 18px; font-weight: 700; margin: 0;'>$" . number_format($credito_usado, 0, ',', '.') . "</p>
@@ -130,13 +130,13 @@ $html = "
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td width='50%' style='padding: 8px;'>
+                                        <td width='50%' style='padding: 8px;' align='center'>
                                             <div style='background: #d1fae5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px; text-align: center;'>
                                                 <p style='color: #065f46; font-size: 11px; margin: 0 0 4px 0; font-weight: 500;'>Disponible</p>
                                                 <p style='color: #065f46; font-size: 18px; font-weight: 700; margin: 0;'>$" . number_format($credito_disponible, 0, ',', '.') . "</p>
                                             </div>
                                         </td>
-                                        <td width='50%' style='padding: 8px;'>
+                                        <td width='50%' style='padding: 8px;' align='center'>
                                             <div style='background: #fee2e2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; text-align: center;'>
                                                 <p style='color: #991b1b; font-size: 11px; margin: 0 0 4px 0; font-weight: 500;'>Saldo a Pagar</p>
                                                 <p style='color: #991b1b; font-size: 20px; font-weight: 700; margin: 0;'>$" . number_format($saldo_pagar, 0, ',', '.') . "</p>
