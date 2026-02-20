@@ -1010,6 +1010,11 @@ const SUBCATEGORY_ID_MAP = {
 
 export default function App() {
   const [activeCategory, setActiveCategory] = useState('hamburguesas');
+  const [showDispatchPopup] = useState(() => {
+    const d = new Date(), day = d.getDate(), m = d.getMonth() + 1, y = d.getFullYear();
+    return y === 2026 && m === 2 && (day === 20 || day === 21) && !sessionStorage.getItem('dispatch_popup_seen');
+  });
+  const [dispatchPopupOpen, setDispatchPopupOpen] = useState(showDispatchPopup);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [zoomedProduct, setZoomedProduct] = useState(null);
   const [cart, setCart] = useState([]);
@@ -2140,6 +2145,37 @@ export default function App() {
 
   return (
     <div className="bg-white font-sans min-h-screen w-full pb-24" style={{backgroundColor: '#ffffff', background: '#ffffff'}}>
+
+      {dispatchPopupOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-4 text-white">
+              <div className="text-2xl mb-1">📷 Nueva Funcionalidad</div>
+              <div className="font-bold text-lg">Foto de Despacho</div>
+            </div>
+            <div className="p-5 space-y-3 text-sm text-gray-700">
+              <p>A partir de hoy, antes de entregar un pedido debes:</p>
+              <ol className="space-y-2 list-none">
+                <li className="flex gap-2"><span className="font-bold text-blue-600">1.</span> Abrir las <strong>Comandas Activas</strong></li>
+                <li className="flex gap-2"><span className="font-bold text-blue-600">2.</span> Tocar el botón <strong>📷</strong> en el pedido listo</li>
+                <li className="flex gap-2"><span className="font-bold text-blue-600">3.</span> <strong>Verificar cada producto</strong> del checklist</li>
+                <li className="flex gap-2"><span className="font-bold text-blue-600">4.</span> <strong>Tomar una foto</strong> del pedido armado</li>
+                <li className="flex gap-2"><span className="font-bold text-blue-600">5.</span> Confirmar despacho ✅</li>
+              </ol>
+              <p className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">🛡️ Esto nos protege ante reclamos y asegura que el pedido salga completo.</p>
+            </div>
+            <div className="px-5 pb-5">
+              <button
+                onClick={() => { sessionStorage.setItem('dispatch_popup_seen', '1'); setDispatchPopupOpen(false); }}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm"
+              >
+                Entendido, vamos 🚀
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="px-4 py-2 sm:p-3 fixed top-0 left-0 right-0 bg-white z-40 shadow-sm">
         <div className="flex items-center justify-between w-full">
           {/* Logo */}

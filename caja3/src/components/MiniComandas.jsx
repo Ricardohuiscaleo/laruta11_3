@@ -8,6 +8,17 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [dispatchModal, setDispatchModal] = useState(null);
+  const [dispatchPhoto, setDispatchPhoto] = useState(null);
+  const [dispatchPreview, setDispatchPreview] = useState(null);
+  const [checkedItems, setCheckedItems] = useState({});
+  const [uploadingDispatch, setUploadingDispatch] = useState(false);
+  const [showNewFeaturePopup, setShowNewFeaturePopup] = useState(() => {
+    const today = new Date();
+    const d = today.getDate(), m = today.getMonth() + 1, y = today.getFullYear();
+    const isValidDay = y === 2026 && m === 2 && (d === 20 || d === 21);
+    return isValidDay && !sessionStorage.getItem('dispatch_feature_seen');
+  });
 
   useEffect(() => {
     // Cargar datos y quitar loading después
@@ -722,13 +733,106 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                 {processing === order.id ? '⏳' : '✅ ENTREGAR'}
               </button>
             )}
+            <button
+              onClick={() => { setDispatchModal({ order }); setDispatchPhoto(null); setDispatchPreview(null); setCheckedItems({}); }}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded text-xs flex items-center gap-1"
+              title="Checklist y foto de despacho"
+            >
+              📷
+            </button>
           </div>
         </div>
       </div>
     );
   };
 
+  // Construir lista de items para checklist
+  const buildChecklistItems = (order) => {
+    const items = [];
+    (order.items || []).forEach(item => {
+      items.push({ key: `item-${item.id}`, label: `${item.quantity}x ${item.product_name}` });
+      if (item.combo_data) {
+        try {
+          const cd = typeof item.combo_data === 'string' ? JSON.parse(item.combo_data) : item.combo_data;
+          (cd.fixed_items || []).forEach((f, i) => items.push({ key: `fixed-${item.id}-${i}`, label: `  └ ${item.quantity * f.quantity}x ${f.product_name}` }));
+          Object.entries(cd.selections || {}).forEach(([g, s]) => {
+            const sel = Array.isArray(s) ? s : [s];
+            sel.forEach((sv, i) => items.push({ key: `sel-${item.id}-${g}-${i}`, label: `  └ ${item.quantity}x ${sv.name} (${g})` }));
+          });
+          (cd.customizations || []).forEach((c, i) => items.push({ key: `cust-${item.id}-${i}`, label: `  └ ❗ ${c.quantity || item.quantity}x ${c.name}` }));
+        } catch {}
+      }
+    });
+    return items;
+  };
+
+  const handleDispatchConfirm = async () => {
+    if (!dispatchPhoto) { alert('Debes tomar una foto del pedido'); return; }
+    const order = dispatchModal.order;
+    const allChecked = buildChecklistItems(order).every(i => checkedItems[i.key]);
+    if (!allChecked) { alert('Debes marcar todos los productos como verificados'); return; }
+    setUploadingDispatch(true);
+    try {
+      const fd = new FormData();
+      fd.append('photo', dispatchPhoto);
+      fd.append('order_id', order.id);
+      const res = await fetch('/api/orders/save_dispatch_photo.php', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      setDispatchModal(null);
+      alert('✅ Foto guardada correctamente');
+    } catch (e) {
+      alert('Error: ' + e.message);
+    } finally {
+      setUploadingDispatch(false);
+    }
+  };
+
   return (
+    <>
+    {dispatchModal && (
+        <div className="bg-white rounded-xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
+          <div className="bg-blue-600 text-white px-4 py-3 rounded-t-xl flex justify-between items-center">
+            <span className="font-bold">📷 Despacho {dispatchModal.order.order_number}</span>
+            <button onClick={() => setDispatchModal(null)} className="text-white text-xl leading-none">×</button>
+          </div>
+          <div className="p-4 space-y-4">
+            <div>
+              <div className="font-bold text-sm mb-2">✅ Verificar productos:</div>
+              {buildChecklistItems(dispatchModal.order).map(item => (
+                <label key={item.key} className="flex items-center gap-2 py-1 cursor-pointer">
+                  <input type="checkbox" checked={!!checkedItems[item.key]}
+                    onChange={e => setCheckedItems(prev => ({ ...prev, [item.key]: e.target.checked }))}
+                    className="w-4 h-4 accent-green-600" />
+                  <span className={`text-sm ${checkedItems[item.key] ? 'line-through text-gray-400' : 'text-gray-800'}`}>{item.label}</span>
+                </label>
+              ))}
+            </div>
+            <div>
+              <div className="font-bold text-sm mb-2">📷 Foto del pedido:</div>
+              {dispatchPreview ? (
+                <div className="relative">
+                  <img src={dispatchPreview} className="w-full rounded-lg border-2 border-green-400" alt="preview" />
+                  <button onClick={() => { setDispatchPhoto(null); setDispatchPreview(null); }}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs font-bold">×</button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center border-2 border-dashed border-blue-300 rounded-lg p-6 cursor-pointer bg-blue-50 hover:bg-blue-100">
+                  <span className="text-3xl mb-1">📷</span>
+                  <span className="text-sm text-blue-700 font-medium">Tomar foto o subir imagen</span>
+                  <input type="file" accept="image/*" capture="environment" className="hidden"
+                    onChange={e => { const f = e.target.files[0]; if (f) { setDispatchPhoto(f); setDispatchPreview(URL.createObjectURL(f)); } }} />
+                </label>
+              )}
+            </div>
+            <button onClick={handleDispatchConfirm} disabled={uploadingDispatch}
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-3 rounded-lg text-sm">
+              {uploadingDispatch ? '⏳ Guardando...' : '✅ Confirmar Despacho'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     <div className="fixed inset-0 bg-white z-40 flex flex-col overflow-hidden">
       <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 shadow-lg flex items-center justify-between">
         <h2 className="text-xl font-bold flex items-center gap-2">
@@ -819,6 +923,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
         )}
       </div>
     </div>
+    </>
   );
 };
 
