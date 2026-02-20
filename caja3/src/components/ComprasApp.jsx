@@ -882,11 +882,11 @@ export default function ComprasApp() {
                   const textColor = isCritical ? '#dc2626' : isLow ? '#d97706' : '#6b7280';
                   const label = isCritical ? '¡Crítico!' : isLow ? 'Bajo' : '';
                   
-                  // Calcular uso desde última compra
+                  // Calcular uso desde última compra usando inventory_transactions
                   const stockDespuesCompra = parseFloat(ing.stock_despues_compra) || null;
-                  const usado = stockDespuesCompra !== null ? stockDespuesCompra - currentStock : null;
-                  const usadoValido = usado !== null && usado > 0 && usado <= (stockDespuesCompra || 0);
-                  const diferencia = stockDespuesCompra !== null ? currentStock - stockDespuesCompra : null;
+                  const vendidoReal = parseFloat(ing.vendido_desde_compra) || 0;
+                  const esperadoReal = stockDespuesCompra !== null ? stockDespuesCompra - vendidoReal : null;
+                  const usadoValido = vendidoReal > 0;
                   
                   return (
                     <div key={ing.id} style={{
@@ -930,12 +930,12 @@ export default function ComprasApp() {
                       )}
                       {usadoValido && (
                         <div style={{fontSize: '10px', color: '#ef4444', marginTop: '1px'}}>
-                          Vendido: {isBebida ? Math.round(usado) : usado.toFixed(1)} {ing.unit}
+                          Vendido: {isBebida ? Math.round(vendidoReal) : vendidoReal.toFixed(1)} {ing.unit}
                         </div>
                       )}
                       {usadoValido && (
-                        <div style={{fontSize: '10px', color: currentStock === (stockDespuesCompra - usado) ? '#10b981' : '#f59e0b', marginTop: '1px', fontWeight: '600'}}>
-                          {currentStock === (stockDespuesCompra - usado) ? '✓' : '⚠'} Esperado: {isBebida ? Math.round(stockDespuesCompra - usado) : (stockDespuesCompra - usado).toFixed(1)}
+                        <div style={{fontSize: '10px', color: currentStock === esperadoReal ? '#10b981' : '#f59e0b', marginTop: '1px', fontWeight: '600'}}>
+                          {currentStock === esperadoReal ? '✓' : '⚠'} Esperado: {isBebida ? Math.round(esperadoReal) : esperadoReal.toFixed(1)}
                         </div>
                       )}
                       </div>
