@@ -1031,6 +1031,10 @@ export default function ComprasApp() {
         </div>
       ) : activeTab === 'registro' ? (
         <form onSubmit={handleSubmit} className="compra-form">
+          <h3 style={{marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+            <FileText size={20} /> Datos de Compra
+          </h3>
+          
           {/* Fila Compacta: Proveedor | Fecha | Método Pago */}
           <div className="form-row-compact">
             <div className="form-group-compact" style={{flex: '2', position: 'relative'}}>
@@ -1056,6 +1060,7 @@ export default function ComprasApp() {
                 onBlur={() => setTimeout(() => setShowProveedorDropdown(false), 200)}
                 placeholder="Proveedor"
                 required
+                style={{height: '48px'}}
               />
               {showProveedorDropdown && filteredProveedores.length > 0 && (
                 <div style={{
@@ -1093,21 +1098,25 @@ export default function ComprasApp() {
                 </div>
               )}
             </div>
+          </div>
 
-            <div className="form-group-compact" style={{flex: '1.5'}}>
+          <div className="form-row-compact">
+            <div className="form-group-compact" style={{flex: '1'}}>
               <input
                 type="date"
                 value={formData.fecha_compra}
                 onChange={(e) => setFormData({...formData, fecha_compra: e.target.value})}
                 required
+                style={{height: '48px'}}
               />
             </div>
 
-            <div className="form-group-compact" style={{flex: '1.5'}}>
+            <div className="form-group-compact" style={{flex: '1'}}>
               <select
                 value={formData.metodo_pago}
                 onChange={(e) => setFormData({...formData, metodo_pago: e.target.value})}
                 required
+                style={{height: '48px'}}
               >
                 <option value="cash">💵 Efectivo</option>
                 <option value="transfer">🏦 Transferencia</option>
@@ -1781,7 +1790,7 @@ export default function ComprasApp() {
         .form-row-compact {
           display: flex;
           gap: 12px;
-          margin-bottom: 16px;
+          margin-bottom: 12px;
           align-items: stretch;
         }
         .form-group-compact {
@@ -1795,6 +1804,7 @@ export default function ComprasApp() {
           border-radius: 10px;
           font-size: 15px;
           min-height: 48px;
+          height: 48px;
           transition: all 0.2s;
           background: #f8fafc;
           width: 100%;
@@ -1806,57 +1816,9 @@ export default function ComprasApp() {
           background: white;
           box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
         }
-        .payment-icons {
-          display: flex;
-          gap: 6px;
-          align-items: stretch;
-        }
-        .payment-icon-btn {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 4px;
-          padding: 8px;
-          border: 2px solid #e2e8f0;
-          border-radius: 10px;
-          background: #f8fafc;
-          cursor: pointer;
-          transition: all 0.2s;
-          min-height: 48px;
-        }
-        .payment-icon-btn:hover {
-          border-color: #10b981;
-          background: #f0fdf4;
-        }
-        .payment-icon-btn.active {
-          border-color: #10b981;
-          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-        }
-        .payment-icon-btn .icon {
-          font-size: 20px;
-        }
-        .payment-icon-btn.active .icon {
-          filter: brightness(0) invert(1);
-        }
-        .payment-icon-btn .label {
-          font-size: 10px;
-          font-weight: 600;
-          color: white;
-          text-align: center;
-        }
         @media (max-width: 768px) {
           .form-row-compact {
-            flex-direction: column;
-            gap: 8px;
-          }
-          .payment-icons {
             flex-direction: row;
-          }
-          .payment-icon-btn {
-            min-width: 60px;
           }
         }
         .compras-header-compact {
