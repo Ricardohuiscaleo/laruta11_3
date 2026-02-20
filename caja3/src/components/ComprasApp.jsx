@@ -72,6 +72,8 @@ export default function ComprasApp() {
   const [historialSearchTerm, setHistorialSearchTerm] = useState('');
   const [showComprasSearch, setShowComprasSearch] = useState(false);
   const [comprasSearchTerm, setComprasSearchTerm] = useState('');
+  const [editingItem, setEditingItem] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     loadIngredientes();
@@ -892,8 +894,30 @@ export default function ComprasApp() {
                       borderRadius: '4px',
                       borderLeft: `3px solid ${borderColor}`,
                       fontSize: '12px',
-                      lineHeight: '1.3'
+                      lineHeight: '1.3',
+                      display: 'flex',
+                      gap: '4px'
                     }}>
+                      <button
+                        onClick={() => {
+                          setEditingItem(ing);
+                          setShowEditModal(true);
+                        }}
+                        style={{
+                          padding: '2px 4px',
+                          background: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '10px',
+                          alignSelf: 'flex-start'
+                        }}
+                        title="Editar"
+                      >
+                        ✏️
+                      </button>
+                      <div style={{flex: 1}}>
                       <div style={{fontWeight: '600', fontSize: '12px', marginBottom: '2px'}}>{ing.name}</div>
                       <div style={{color: textColor, fontSize: '11px', fontWeight: (isCritical || isLow) ? '600' : '400'}}>
                         {displayStock} / {displayMin} ({Math.round(percentage)}%) {label}
@@ -913,6 +937,7 @@ export default function ComprasApp() {
                           {currentStock === (stockDespuesCompra - usado) ? '✓' : '⚠'} Esperado: {isBebida ? Math.round(stockDespuesCompra - usado) : (stockDespuesCompra - usado).toFixed(1)}
                         </div>
                       )}
+                      </div>
                     </div>
                   );
                 })}
@@ -1695,6 +1720,100 @@ export default function ComprasApp() {
                 cursor: 'pointer',
                 fontWeight: '600'
               }}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Item */}
+      {showEditModal && editingItem && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>✏️ Editar {editingItem.name}</h3>
+            <div className="form-group">
+              <label>Stock Actual</label>
+              <input
+                type="number"
+                value={editingItem.current_stock}
+                onChange={(e) => setEditingItem({...editingItem, current_stock: e.target.value})}
+                step="0.01"
+              />
+            </div>
+            <div className="form-group">
+              <label>Stock Mínimo</label>
+              <input
+                type="number"
+                value={editingItem.min_stock_level}
+                onChange={(e) => setEditingItem({...editingItem, min_stock_level: e.target.value})}
+                step="0.01"
+              />
+            </div>
+            <div className="form-group">
+              <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
+                <input
+                  type="checkbox"
+                  checked={!editingItem.is_active}
+                  onChange={(e) => setEditingItem({...editingItem, is_active: e.target.checked ? 0 : 1})}
+                  style={{width: '18px', height: '18px'}}
+                />
+                Desactivar {editingItem.type === 'product' ? 'producto' : 'ingrediente'}
+              </label>
+            </div>
+            <div style={{display: 'flex', gap: '8px', marginTop: '16px'}}>
+              <button
+                onClick={async () => {
+                  try {
+                    const endpoint = editingItem.type === 'product' ? '/api/update_product.php' : '/api/save_ingrediente.php';
+                    const response = await fetch(endpoint, {
+                      method: 'POST',
+                      headers: {'Content-Type': 'application/json'},
+                      body: JSON.stringify({
+                        id: editingItem.id,
+                        current_stock: editingItem.current_stock,
+                        min_stock_level: editingItem.min_stock_level,
+                        is_active: editingItem.is_active
+                      })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                      alert('✅ Actualizado correctamente');
+                      setShowEditModal(false);
+                      loadIngredientes();
+                    } else {
+                      alert('❌ Error: ' + data.error);
+                    }
+                  } catch (error) {
+                    alert('❌ Error al actualizar');
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
+              >
+                Guardar
+              </button>
+              <button
+                onClick={() => setShowEditModal(false)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
+              >
+                Cancelar
+              </button>
             </div>
           </div>
         </div>
