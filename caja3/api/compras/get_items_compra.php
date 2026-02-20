@@ -59,7 +59,9 @@ try {
             c.name as category,
             'unidad' as unit,
             p.stock_quantity as current_stock,
-            'product' as type
+            'product' as type,
+            p.category_id,
+            p.subcategory_id
         FROM products p
         LEFT JOIN categories c ON p.category_id = c.id
         WHERE p.is_active = 1
