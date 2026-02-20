@@ -863,6 +863,7 @@ export default function ComprasApp() {
                   return 0;
                 })
                 .map(ing => {
+                  const itemKey = `${ing.type}-${ing.id}`;
                   const currentStock = parseFloat(ing.current_stock) || 0;
                   const minStock = parseFloat(ing.min_stock_level) || 1;
                   const percentage = (currentStock / minStock) * 100;
@@ -889,7 +890,7 @@ export default function ComprasApp() {
                   const usadoValido = vendidoReal > 0;
                   
                   return (
-                    <div key={ing.id} style={{
+                    <div key={itemKey} style={{
                       padding: '6px 8px',
                       background: bgColor,
                       borderRadius: '4px',
@@ -934,8 +935,8 @@ export default function ComprasApp() {
                         </div>
                       )}
                       {usadoValido && (
-                        <div style={{fontSize: '10px', color: currentStock === esperadoReal ? '#10b981' : '#f59e0b', marginTop: '1px', fontWeight: '600'}}>
-                          {currentStock === esperadoReal ? '✓' : '⚠'} Esperado: {isBebida ? Math.round(esperadoReal) : (esperadoReal || 0).toFixed(1)}
+                        <div style={{fontSize: '10px', color: Math.abs(currentStock - esperadoReal) <= 1 ? '#10b981' : '#f59e0b', marginTop: '1px', fontWeight: '600'}}>
+                          {Math.abs(currentStock - esperadoReal) <= 1 ? '✓' : '⚠'} Esperado: {isBebida ? Math.round(esperadoReal) : (esperadoReal || 0).toFixed(1)}
                         </div>
                       )}
                       </div>
