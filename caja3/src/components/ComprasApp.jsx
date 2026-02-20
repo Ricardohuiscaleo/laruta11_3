@@ -879,7 +879,7 @@ export default function ComprasApp() {
                     }}>
                       <div style={{fontWeight: '600', fontSize: '12px', marginBottom: '2px'}}>{ing.name}</div>
                       <div style={{color: textColor, fontSize: '11px', fontWeight: (isCritical || isLow) ? '600' : '400'}}>
-                        {displayStock} / {displayMin} {label}
+                        {displayStock} / {displayMin} ({Math.round(percentage)}%) {label}
                       </div>
                     </div>
                   );
