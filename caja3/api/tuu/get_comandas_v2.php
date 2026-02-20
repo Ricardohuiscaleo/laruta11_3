@@ -56,7 +56,8 @@ try {
                    special_instructions, rider_id, estimated_delivery_time, created_at, updated_at, 
                    tuu_transaction_id, tuu_amount, tuu_timestamp, tuu_message, 
                    tuu_account_id, tuu_currency, tuu_signature, delivery_fee, 
-                   scheduled_time, is_scheduled, reward_used, reward_stamps_consumed, reward_applied_at
+                   scheduled_time, is_scheduled, reward_used, reward_stamps_consumed, reward_applied_at,
+                   dispatch_photo_url
             FROM tuu_orders 
             {$where_clause}
             ORDER BY created_at DESC";

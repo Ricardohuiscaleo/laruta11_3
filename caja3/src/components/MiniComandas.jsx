@@ -9,10 +9,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
   const [processing, setProcessing] = useState(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [dispatchModal, setDispatchModal] = useState(null);
-  const [dispatchPhoto, setDispatchPhoto] = useState(null);
-  const [dispatchPreview, setDispatchPreview] = useState(null);
   const [checkedItems, setCheckedItems] = useState({});
-  const [uploadingDispatch, setUploadingDispatch] = useState(false);
   const [showNewFeaturePopup, setShowNewFeaturePopup] = useState(() => {
     const today = new Date();
     const d = today.getDate(), m = today.getMonth() + 1, y = today.getFullYear();
@@ -722,21 +719,45 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
           </div>
         )}
 
-        {order.dispatch_photo_url && (
-          <div className="mb-3 border border-blue-200 rounded-lg overflow-hidden">
-            <div className="bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700">📷 Evidencia de despacho</div>
-            <div className="flex gap-2 p-2">
-              <img src={order.dispatch_photo_url} alt="despacho" className="w-20 h-20 object-cover rounded border border-blue-200 flex-shrink-0" />
-              <div className="flex-1 overflow-y-auto max-h-20 space-y-0.5">
-                {buildChecklistItems(order).map(item => (
-                  <div key={item.key} className="text-xs text-gray-600 flex items-center gap-1">
-                    <span className="text-green-500">✓</span>{item.label}
-                  </div>
-                ))}
-              </div>
-            </div>
+        <div className="mb-3 border border-blue-200 rounded-lg overflow-hidden">
+          <div className="bg-blue-50 px-2 py-1.5 text-xs font-bold text-blue-700">📋 Checklist de despacho</div>
+          <div className="p-2 space-y-1">
+            {buildChecklistItems(order).map(item => (
+              <label key={item.key} className="flex items-start gap-2 cursor-pointer">
+                <input type="checkbox"
+                  checked={!!checkedItems[`${order.id}-${item.key}`]}
+                  onChange={e => setCheckedItems(prev => ({ ...prev, [`${order.id}-${item.key}`]: e.target.checked }))}
+                  className="w-4 h-4 mt-0.5 accent-green-600 flex-shrink-0" />
+                <span className={`text-xs leading-tight ${checkedItems[`${order.id}-${item.key}`] ? 'line-through text-gray-400' : 'text-gray-800'}`}>{item.label}</span>
+              </label>
+            ))}
           </div>
-        )}
+          <div className="border-t border-blue-100">
+            {order.dispatch_photo_url ? (
+              <div className="relative">
+                <img src={order.dispatch_photo_url} alt="despacho" className="w-full h-28 object-cover" />
+                <span className="absolute top-1 left-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">✅ Foto guardada</span>
+              </div>
+            ) : (
+              <label className="flex items-center gap-2 p-2 cursor-pointer hover:bg-blue-50">
+                <span className="text-xl">📷</span>
+                <span className="text-xs text-blue-700 font-medium">Tomar foto del pedido</span>
+                <input type="file" accept="image/*" className="hidden"
+                  onChange={e => {
+                    const f = e.target.files[0];
+                    if (!f) return;
+                    const fd = new FormData();
+                    fd.append('photo', f);
+                    fd.append('order_id', order.id);
+                    fetch('/api/orders/save_dispatch_photo.php', { method: 'POST', body: fd })
+                      .then(r => r.json())
+                      .then(d => { if (d.success) loadOrders(); else alert('Error: ' + d.error); })
+                      .catch(() => alert('Error al subir foto'));
+                  }} />
+              </label>
+            )}
+          </div>
+        </div>
 
         <div className="flex flex-col gap-2">
           <div className="flex gap-2">
@@ -749,13 +770,6 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                 {processing === order.id ? '⏳' : '✅ ENTREGAR'}
               </button>
             )}
-            <button
-              onClick={() => { setDispatchModal({ order }); setDispatchPhoto(null); setDispatchPreview(null); setCheckedItems({}); }}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded text-xs flex flex-col items-center gap-0.5 min-w-[72px]"
-            >
-              <span className="text-base leading-none">📷</span>
-              <span className="text-[10px] leading-none">Foto Despacho</span>
-            </button>
           </div>
         </div>
       </div>
@@ -782,80 +796,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
     return items;
   };
 
-  const handleDispatchConfirm = async () => {
-    if (!dispatchPhoto) { alert('Debes tomar una foto del pedido'); return; }
-    const order = dispatchModal.order;
-    const allChecked = buildChecklistItems(order).every(i => checkedItems[i.key]);
-    if (!allChecked) { alert('Debes marcar todos los productos como verificados'); return; }
-    setUploadingDispatch(true);
-    try {
-      const fd = new FormData();
-      fd.append('photo', dispatchPhoto);
-      fd.append('order_id', order.id);
-      const res = await fetch('/api/orders/save_dispatch_photo.php', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error);
-      setDispatchModal(null);
-      alert('✅ Foto guardada correctamente');
-    } catch (e) {
-      alert('Error: ' + e.message);
-    } finally {
-      setUploadingDispatch(false);
-    }
-  };
-
   return (
-    <>
-    {dispatchModal && (
-      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-3">
-        <div className="bg-white rounded-xl w-full max-w-lg shadow-2xl flex flex-col" style={{maxHeight:'92vh'}}>
-          <div className="bg-blue-600 text-white px-4 py-3 rounded-t-xl flex justify-between items-center flex-shrink-0">
-            <span className="font-bold text-sm">📷 Despacho {dispatchModal.order.order_number}</span>
-            <button onClick={() => setDispatchModal(null)} className="text-white text-xl leading-none">×</button>
-          </div>
-          <div className="flex gap-3 p-3 overflow-hidden flex-1 min-h-0">
-            {/* Columna izquierda: Foto */}
-            <div className="flex-1 flex flex-col gap-2">
-              <div className="font-bold text-xs text-gray-600 uppercase tracking-wide">📷 Foto del pedido</div>
-              {dispatchPreview ? (
-                <div className="relative flex-1">
-                  <img src={dispatchPreview} className="w-full h-full object-cover rounded-lg border-2 border-green-400" style={{maxHeight:'280px'}} alt="preview" />
-                  <button onClick={() => { setDispatchPhoto(null); setDispatchPreview(null); }}
-                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs font-bold">×</button>
-                </div>
-              ) : (
-                <label className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-blue-300 rounded-lg cursor-pointer bg-blue-50 hover:bg-blue-100 min-h-[160px]">
-                  <span className="text-4xl mb-2">📷</span>
-                  <span className="text-xs text-blue-700 font-semibold text-center px-2">Tomar foto o elegir de galería</span>
-                  <input type="file" accept="image/*" className="hidden"
-                    onChange={e => { const f = e.target.files[0]; if (f) { setDispatchPhoto(f); setDispatchPreview(URL.createObjectURL(f)); } }} />
-                </label>
-              )}
-            </div>
-            {/* Columna derecha: Checklist */}
-            <div className="flex-1 flex flex-col gap-2">
-              <div className="font-bold text-xs text-gray-600 uppercase tracking-wide">✅ Verificar productos</div>
-              <div className="overflow-y-auto flex-1 space-y-1 pr-1" style={{maxHeight:'280px'}}>
-                {buildChecklistItems(dispatchModal.order).map(item => (
-                  <label key={item.key} className="flex items-start gap-2 py-1 cursor-pointer">
-                    <input type="checkbox" checked={!!checkedItems[item.key]}
-                      onChange={e => setCheckedItems(prev => ({ ...prev, [item.key]: e.target.checked }))}
-                      className="w-4 h-4 mt-0.5 accent-green-600 flex-shrink-0" />
-                    <span className={`text-xs leading-tight ${checkedItems[item.key] ? 'line-through text-gray-400' : 'text-gray-800'}`}>{item.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="p-3 pt-0 flex-shrink-0">
-            <button onClick={handleDispatchConfirm} disabled={uploadingDispatch}
-              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-3 rounded-lg text-sm">
-              {uploadingDispatch ? '⏳ Guardando...' : '✅ Confirmar Despacho'}
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
     <div className="fixed inset-0 bg-white z-40 flex flex-col overflow-hidden">
       <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 shadow-lg flex items-center justify-between">
         <h2 className="text-xl font-bold flex items-center gap-2">
@@ -946,7 +887,6 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
         )}
       </div>
     </div>
-    </>
   );
 };
 
