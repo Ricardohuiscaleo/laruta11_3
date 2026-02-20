@@ -36,7 +36,14 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 
-    $stmt = $pdo->query("SELECT * FROM compras ORDER BY fecha_compra DESC LIMIT 50");
+    $limit = max(1, min(200, intval($_GET['limit'] ?? 50)));
+    $page = max(1, intval($_GET['page'] ?? 1));
+    $offset = ($page - 1) * $limit;
+
+    $total = $pdo->query("SELECT COUNT(*) FROM compras")->fetchColumn();
+
+    $stmt = $pdo->prepare("SELECT * FROM compras ORDER BY fecha_compra DESC LIMIT ? OFFSET ?");
+    $stmt->execute([$limit, $offset]);
     $compras = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Obtener items de cada compra
@@ -51,7 +58,10 @@ try {
     echo json_encode([
         'success' => true,
         'compras' => $compras,
-        'total_compras' => count($compras)
+        'total_compras' => intval($total),
+        'page' => $page,
+        'limit' => $limit,
+        'total_pages' => ceil($total / $limit)
     ]);
 
 } catch (Exception $e) {

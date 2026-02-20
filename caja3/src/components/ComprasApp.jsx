@@ -72,6 +72,9 @@ export default function ComprasApp() {
   const [historialSearchTerm, setHistorialSearchTerm] = useState('');
   const [showComprasSearch, setShowComprasSearch] = useState(false);
   const [comprasSearchTerm, setComprasSearchTerm] = useState('');
+  const [comprasPage, setComprasPage] = useState(1);
+  const [comprasTotalPages, setComprasTotalPages] = useState(1);
+  const [comprasTotal, setComprasTotal] = useState(0);
   const [editingItem, setEditingItem] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -96,19 +99,18 @@ export default function ComprasApp() {
     }
   };
 
-  const loadCompras = async () => {
+  const loadCompras = async (page = comprasPage) => {
     try {
-      const response = await fetch(`/api/compras/get_compras.php?t=${Date.now()}`, {
+      const response = await fetch(`/api/compras/get_compras.php?page=${page}&limit=50&t=${Date.now()}`, {
         cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache' }
       });
       const data = await response.json();
-      console.log('Compras cargadas:', data);
       if (data.success) {
         setCompras(data.compras || []);
-        console.log('Primera compra:', data.compras[0]);
-        console.log('Primera compra items:', data.compras[0]?.items);
-        console.log('Items count:', data.compras[0]?.items_count);
+        setComprasTotalPages(data.total_pages || 1);
+        setComprasTotal(data.total_compras || 0);
+        setComprasPage(page);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -361,7 +363,7 @@ export default function ComprasApp() {
         });
         setRespaldoFile(null);
         setRespaldoPreview(null);
-        loadCompras();
+        loadCompras(1);
         loadSaldoDisponible();
       } else {
         alert('Error: ' + data.error);
@@ -516,7 +518,7 @@ export default function ComprasApp() {
       const data = await response.json();
       if (data.success) {
         alert('✅ Compra eliminada');
-        loadCompras();
+        loadCompras(1);
         loadSaldoDisponible();
       } else {
         alert('❌ Error: ' + data.error);
@@ -574,7 +576,7 @@ export default function ComprasApp() {
           msg += `\n📊 Ahorro: ${data.savings}`;
         }
         alert(msg);
-        loadCompras();
+        loadCompras(1);
       } else {
         // Mostrar error completo con debug
         const debugStr = data.debug ? '\n\nDEBUG:\n' + JSON.stringify(data.debug, null, 2) : '';
@@ -758,7 +760,7 @@ export default function ComprasApp() {
             type="text"
             placeholder="Buscar por proveedor, producto, fecha..."
             value={comprasSearchTerm}
-            onChange={(e) => setComprasSearchTerm(e.target.value)}
+            onChange={(e) => { setComprasSearchTerm(e.target.value); }}
             style={{
               width: '100%',
               padding: '10px',
@@ -1106,6 +1108,23 @@ export default function ComprasApp() {
                 <X size={18} /> Limpiar Proyección
               </button>
             </>
+          )}
+          {comprasTotalPages > 1 && (
+            <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '16px 0', marginTop: '8px'}}>
+              <button
+                onClick={() => loadCompras(comprasPage - 1)}
+                disabled={comprasPage <= 1}
+                style={{padding: '8px 16px', border: '2px solid #e2e8f0', borderRadius: '8px', background: comprasPage <= 1 ? '#f1f5f9' : 'white', cursor: comprasPage <= 1 ? 'default' : 'pointer', fontWeight: '600', color: comprasPage <= 1 ? '#9ca3af' : '#374151'}}
+              >← Anterior</button>
+              <span style={{fontSize: '14px', color: '#6b7280', fontWeight: '600'}}>
+                Página {comprasPage} de {comprasTotalPages} ({comprasTotal} compras)
+              </span>
+              <button
+                onClick={() => loadCompras(comprasPage + 1)}
+                disabled={comprasPage >= comprasTotalPages}
+                style={{padding: '8px 16px', border: '2px solid #e2e8f0', borderRadius: '8px', background: comprasPage >= comprasTotalPages ? '#f1f5f9' : 'white', cursor: comprasPage >= comprasTotalPages ? 'default' : 'pointer', fontWeight: '600', color: comprasPage >= comprasTotalPages ? '#9ca3af' : '#374151'}}
+              >Siguiente →</button>
+            </div>
           )}
         </div>
       ) : activeTab === 'registro' ? (
