@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Package, DollarSign, TrendingUp, Calendar, User, FileText, Plus, Trash2, Edit, Check, X, PlusCircle, Paperclip, Image, Search, Banknote, Building2, CreditCard, Wallet } from 'lucide-react';
+import { ShoppingCart, Package, DollarSign, TrendingUp, Calendar, User, FileText, Plus, Trash2, Edit, Check, X, PlusCircle, Paperclip, Image, Search, Banknote, Building2, CreditCard, Wallet, History, AlertTriangle } from 'lucide-react';
 
 export default function ComprasApp() {
   const [activeTab, setActiveTab] = useState('registro');
+  const [stockTab, setStockTab] = useState('ingredientes');
+  const [stockFilter, setStockFilter] = useState('');
+  const [stockSort, setStockSort] = useState('criticidad');
   const [proyeccionItems, setProyeccionItems] = useState([]);
   const [compras, setCompras] = useState([]);
   const [ingredientes, setIngredientes] = useState([]);
@@ -665,16 +668,15 @@ export default function ComprasApp() {
 
   return (
     <div className="compras-container">
-      {/* Header Fijo con 2 Filas */}
+      {/* Header Fijo - 1 Fila */}
       <div className="compras-header-fixed">
-        {/* Fila 1: Resumen Financiero */}
-        <div className="header-row-1" onClick={loadHistorialSaldo}>
+        <div className="header-row-single">
           <div className="stat-mini">
-            <span className="stat-mini-label">VENTAS {new Date(new Date().setMonth(new Date().getMonth() - 1)).toLocaleDateString('es-CL', {month: 'long'}).toUpperCase()}</span>
+            <span className="stat-mini-label">ENE</span>
             <span className="stat-mini-value">${fmt(resumenFinanciero?.ventas_mes_anterior || 0)}</span>
           </div>
           <div className="stat-mini">
-            <span className="stat-mini-label">VENTAS AL {new Date().getDate()} {new Date().toLocaleDateString('es-CL', {month: 'short'}).toUpperCase()}</span>
+            <span className="stat-mini-label">FEB {new Date().getDate()}</span>
             <span className="stat-mini-value" style={{color: '#10b981'}}>${fmt(resumenFinanciero?.ventas_mes_actual || 0)}</span>
           </div>
           <div className="stat-mini">
@@ -684,13 +686,15 @@ export default function ComprasApp() {
           <div className="stat-mini stat-mini-highlight" style={{
             background: saldoDisponible < 0 ? '#fef2f2' : saldoDisponible < 200000 ? '#fffbeb' : '#f0fdf4'
           }}>
-            <span className="stat-mini-label">SALDO PARA COMPRAS</span>
+            <span className="stat-mini-label">DISPONIBLE</span>
             <span className="stat-mini-value" style={{color: saldoDisponible < 0 ? '#ef4444' : saldoDisponible < 200000 ? '#f59e0b' : '#10b981', fontSize: '18px', fontWeight: '800'}}>${fmt(saldoDisponible)}</span>
           </div>
-          <div className="stat-hint-mini">👆 Click para ver historial</div>
+          <button onClick={loadHistorialSaldo} className="history-btn">
+            <History size={18} />
+          </button>
         </div>
 
-        {/* Fila 2: Tabs */}
+        {/* Tabs */}
         <div className="header-row-2">
           <button 
             className={`tab ${activeTab === 'registro' ? 'active' : ''}`}
@@ -703,6 +707,12 @@ export default function ComprasApp() {
             onClick={() => setActiveTab('proyeccion')}
           >
             <TrendingUp size={18} /> Proyección
+          </button>
+          <button 
+            className={`tab ${activeTab === 'stock' ? 'active' : ''}`}
+            onClick={() => setActiveTab('stock')}
+          >
+            <Package size={18} /> Stock
           </button>
           <button 
             className={`tab ${activeTab === 'historial' ? 'active' : ''}`}
@@ -754,7 +764,130 @@ export default function ComprasApp() {
       )}
 
       {/* Contenido */}
-      {activeTab === 'proyeccion' ? (
+      {activeTab === 'stock' ? (
+        <div className="compra-form">
+          <div style={{display: 'flex', gap: '8px', marginBottom: '16px'}}>
+            <button
+              onClick={() => setStockTab('ingredientes')}
+              style={{
+                flex: 1,
+                padding: '12px',
+                border: 'none',
+                borderRadius: '8px',
+                background: stockTab === 'ingredientes' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : '#f1f5f9',
+                color: stockTab === 'ingredientes' ? 'white' : '#64748b',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              Ingredientes
+            </button>
+            <button
+              onClick={() => setStockTab('bebidas')}
+              style={{
+                flex: 1,
+                padding: '12px',
+                border: 'none',
+                borderRadius: '8px',
+                background: stockTab === 'bebidas' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : '#f1f5f9',
+                color: stockTab === 'bebidas' ? 'white' : '#64748b',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              Bebidas
+            </button>
+          </div>
+
+          <div style={{display: 'flex', gap: '8px', marginBottom: '16px'}}>
+            <input
+              type="text"
+              placeholder="Buscar..."
+              value={stockFilter}
+              onChange={(e) => setStockFilter(e.target.value)}
+              style={{
+                flex: 1,
+                padding: '12px',
+                border: '2px solid #e2e8f0',
+                borderRadius: '8px',
+                fontSize: '14px'
+              }}
+            />
+            <select
+              value={stockSort}
+              onChange={(e) => setStockSort(e.target.value)}
+              style={{
+                padding: '12px',
+                border: '2px solid #e2e8f0',
+                borderRadius: '8px',
+                fontSize: '14px',
+                background: 'white'
+              }}
+            >
+              <option value="criticidad">Criticidad</option>
+              <option value="nombre">Nombre</option>
+              <option value="stock">Stock</option>
+            </select>
+          </div>
+
+          <div style={{background: '#f8fafc', borderRadius: '12px', padding: '12px'}}>
+            {ingredientes
+              .filter(ing => {
+                if (stockTab === 'bebidas') return ing.category === 'Bebidas';
+                return ing.category !== 'Bebidas';
+              })
+              .filter(ing => ing.name.toLowerCase().includes(stockFilter.toLowerCase()))
+              .sort((a, b) => {
+                if (stockSort === 'criticidad') {
+                  const ratioA = a.current_stock / (a.min_stock_level || 1);
+                  const ratioB = b.current_stock / (b.min_stock_level || 1);
+                  return ratioA - ratioB;
+                }
+                if (stockSort === 'nombre') return a.name.localeCompare(b.name);
+                if (stockSort === 'stock') return a.current_stock - b.current_stock;
+                return 0;
+              })
+              .map(ing => {
+                const ratio = ing.current_stock / (ing.min_stock_level || 1);
+                const isCritical = ratio < 0.5;
+                const isLow = ratio >= 0.5 && ratio < 1;
+                return (
+                  <div key={ing.id} style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                    gap: '12px',
+                    padding: '12px',
+                    background: 'white',
+                    borderRadius: '8px',
+                    marginBottom: '8px',
+                    borderLeft: `4px solid ${isCritical ? '#ef4444' : isLow ? '#f59e0b' : '#10b981'}`,
+                    alignItems: 'center'
+                  }}>
+                    <div>
+                      <div style={{fontWeight: '600', fontSize: '14px'}}>{ing.name}</div>
+                      <div style={{fontSize: '11px', color: '#6b7280'}}>{ing.category}</div>
+                    </div>
+                    <div style={{textAlign: 'center'}}>
+                      <div style={{fontSize: '18px', fontWeight: '700', color: isCritical ? '#ef4444' : isLow ? '#f59e0b' : '#10b981'}}>
+                        {parseFloat(ing.current_stock).toFixed(2)}
+                      </div>
+                      <div style={{fontSize: '10px', color: '#6b7280'}}>{ing.unit}</div>
+                    </div>
+                    <div style={{textAlign: 'center'}}>
+                      <div style={{fontSize: '12px', color: '#6b7280'}}>Mín: {ing.min_stock_level}</div>
+                    </div>
+                    <div style={{textAlign: 'center'}}>
+                      {isCritical && <AlertTriangle size={20} color="#ef4444" />}
+                      {isLow && <AlertTriangle size={20} color="#f59e0b" />}
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      ) : activeTab === 'proyeccion' ? (
         <div className="compra-form">
           <h3 style={{marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px'}}>
             <TrendingUp size={20} /> Presupuesto de Compra
@@ -1580,7 +1713,7 @@ export default function ComprasApp() {
           max-width: 1200px;
           margin: 0 auto;
           padding: 20px;
-          padding-top: 140px;
+          padding-top: 100px;
           padding-bottom: 100px;
           background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
           min-height: 100vh;
@@ -1594,18 +1727,30 @@ export default function ComprasApp() {
           z-index: 100;
           box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
-        .header-row-1 {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
+        .header-row-single {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr) auto;
+          gap: 12px;
           padding: 12px 20px;
           background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
           border-bottom: 1px solid #e5e7eb;
+          align-items: center;
+        }
+        .history-btn {
+          padding: 8px;
+          border: none;
+          background: #f1f5f9;
+          color: #64748b;
+          border-radius: 8px;
           cursor: pointer;
           transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
-        .header-row-1:hover {
-          background: #f0fdf4;
+        .history-btn:hover {
+          background: #10b981;
+          color: white;
         }
         .stat-mini {
           display: flex;
@@ -1627,12 +1772,6 @@ export default function ComprasApp() {
           padding: 8px 12px;
           border-radius: 8px;
         }
-        .stat-hint-mini {
-          font-size: 9px;
-          color: #6b7280;
-          font-weight: 600;
-          margin-left: auto;
-        }
         .header-row-2 {
           display: flex;
           gap: 8px;
@@ -1640,25 +1779,23 @@ export default function ComprasApp() {
           background: white;
         }
         @media (max-width: 768px) {
-          .header-row-1 {
-            flex-wrap: wrap;
+          .header-row-single {
+            grid-template-columns: repeat(4, 1fr);
             gap: 8px;
             padding: 8px 12px;
           }
+          .history-btn {
+            grid-column: 1 / -1;
+            margin-top: 4px;
+          }
           .stat-mini {
-            flex: 1;
-            min-width: 80px;
+            min-width: 70px;
           }
           .stat-mini-label {
             font-size: 7px;
           }
           .stat-mini-value {
             font-size: 11px;
-          }
-          .stat-hint-mini {
-            width: 100%;
-            text-align: center;
-            font-size: 8px;
           }
         }
         .form-row-compact {
