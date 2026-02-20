@@ -791,6 +791,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
   return (
     <>
     {dispatchModal && (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
           <div className="bg-blue-600 text-white px-4 py-3 rounded-t-xl flex justify-between items-center">
             <span className="font-bold">📷 Despacho {dispatchModal.order.order_number}</span>
