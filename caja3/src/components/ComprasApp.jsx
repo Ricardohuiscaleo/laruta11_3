@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Package, DollarSign, TrendingUp, Calendar, User, FileText, Plus, Trash2, Edit, Check, X, PlusCircle, Paperclip, Image, Search, Banknote, Building2, CreditCard, Wallet, History, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, Package, DollarSign, TrendingUp, Calendar, User, FileText, Plus, Trash2, Edit, Check, X, PlusCircle, Paperclip, Image, Search, Banknote, Building2, CreditCard, Wallet, History, AlertTriangle, ChevronDown } from 'lucide-react';
 
 export default function ComprasApp() {
   const [activeTab, setActiveTab] = useState('registro');
+  const [showKpiMenu, setShowKpiMenu] = useState(false);
+  const [showTabMenu, setShowTabMenu] = useState(false);
   const [stockTab, setStockTab] = useState('ingredientes');
   const [stockFilter, setStockFilter] = useState('');
   const [stockSort, setStockSort] = useState('criticidad');
@@ -668,74 +670,65 @@ export default function ComprasApp() {
 
   return (
     <div className="compras-container">
-      {/* Header Fijo - 1 Fila */}
+      {/* Header Fijo - Compacto con Dropdowns */}
       <div className="compras-header-fixed">
-        <div className="header-row-single">
-          <div className="stat-mini">
-            <span className="stat-mini-label">ENE</span>
-            <span className="stat-mini-value">${fmt(resumenFinanciero?.ventas_mes_anterior || 0)}</span>
-          </div>
-          <div className="stat-mini">
-            <span className="stat-mini-label">FEB {new Date().getDate()}</span>
-            <span className="stat-mini-value" style={{color: '#10b981'}}>${fmt(resumenFinanciero?.ventas_mes_actual || 0)}</span>
-          </div>
-          <div className="stat-mini">
-            <span className="stat-mini-label">SUELDOS</span>
-            <span className="stat-mini-value" style={{color: '#dc2626'}}>-${fmt(resumenFinanciero?.sueldos || 0)}</span>
-          </div>
-          <div className="stat-mini stat-mini-highlight" style={{
-            background: saldoDisponible < 0 ? '#fef2f2' : saldoDisponible < 200000 ? '#fffbeb' : '#f0fdf4'
-          }}>
-            <span className="stat-mini-label">DISPONIBLE</span>
-            <span className="stat-mini-value" style={{color: saldoDisponible < 0 ? '#ef4444' : saldoDisponible < 200000 ? '#f59e0b' : '#10b981', fontSize: '18px', fontWeight: '800'}}>${fmt(saldoDisponible)}</span>
-          </div>
-          <button onClick={loadHistorialSaldo} className="history-btn">
-            <History size={18} />
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div className="header-row-2">
-          <button 
-            className={`tab ${activeTab === 'registro' ? 'active' : ''}`}
-            onClick={() => setActiveTab('registro')}
-          >
-            <Plus size={18} /> Registrar
-          </button>
-          <button 
-            className={`tab ${activeTab === 'proyeccion' ? 'active' : ''}`}
-            onClick={() => setActiveTab('proyeccion')}
-          >
-            <TrendingUp size={18} /> Proyección
-          </button>
-          <button 
-            className={`tab ${activeTab === 'stock' ? 'active' : ''}`}
-            onClick={() => setActiveTab('stock')}
-          >
-            <Package size={18} /> Stock
-          </button>
-          <button 
-            className={`tab ${activeTab === 'historial' ? 'active' : ''}`}
-            onClick={() => setActiveTab('historial')}
-          >
-            <FileText size={18} /> Historial
-          </button>
-          {activeTab === 'historial' && (
-            <button
-              onClick={() => setShowComprasSearch(!showComprasSearch)}
-              style={{
-                marginLeft: 'auto',
-                padding: '12px',
-                border: 'none',
-                background: 'none',
-                color: showComprasSearch ? '#10b981' : '#6b7280',
-                cursor: 'pointer',
-                transition: 'color 0.2s'
-              }}
-            >
-              <Search size={18} />
+        <div className="header-compact">
+          {/* KPIs Dropdown */}
+          <div className="dropdown-container">
+            <button onClick={() => setShowKpiMenu(!showKpiMenu)} className="dropdown-trigger">
+              ${fmt(saldoDisponible)} <ChevronDown size={16} />
             </button>
-          )}
+            {showKpiMenu && (
+              <div className="dropdown-menu" onClick={() => setShowKpiMenu(false)}>
+                <div className="dropdown-item">
+                  <span>ENE</span>
+                  <strong>${fmt(resumenFinanciero?.ventas_mes_anterior || 0)}</strong>
+                </div>
+                <div className="dropdown-item">
+                  <span>FEB {new Date().getDate()}</span>
+                  <strong style={{color: '#10b981'}}>${fmt(resumenFinanciero?.ventas_mes_actual || 0)}</strong>
+                </div>
+                <div className="dropdown-item">
+                  <span>SUELDOS</span>
+                  <strong style={{color: '#dc2626'}}>-${fmt(resumenFinanciero?.sueldos || 0)}</strong>
+                </div>
+                <div className="dropdown-item" style={{borderTop: '2px solid #e5e7eb', paddingTop: '8px', marginTop: '8px'}}>
+                  <span>DISPONIBLE</span>
+                  <strong style={{color: saldoDisponible < 0 ? '#ef4444' : saldoDisponible < 200000 ? '#f59e0b' : '#10b981', fontSize: '16px'}}>${fmt(saldoDisponible)}</strong>
+                </div>
+                <button onClick={loadHistorialSaldo} className="dropdown-item-btn">
+                  <History size={16} /> Ver Historial
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Tabs Dropdown */}
+          <div className="dropdown-container">
+            <button onClick={() => setShowTabMenu(!showTabMenu)} className="dropdown-trigger">
+              {activeTab === 'registro' && 'Registrar'}
+              {activeTab === 'proyeccion' && 'Proyección'}
+              {activeTab === 'stock' && 'Stock'}
+              {activeTab === 'historial' && 'Historial'}
+              <ChevronDown size={16} />
+            </button>
+            {showTabMenu && (
+              <div className="dropdown-menu" onClick={() => setShowTabMenu(false)}>
+                <button onClick={() => setActiveTab('registro')} className="dropdown-item-btn">
+                  <Plus size={16} /> Registrar
+                </button>
+                <button onClick={() => setActiveTab('proyeccion')} className="dropdown-item-btn">
+                  <TrendingUp size={16} /> Proyección
+                </button>
+                <button onClick={() => setActiveTab('stock')} className="dropdown-item-btn">
+                  <Package size={16} /> Stock
+                </button>
+                <button onClick={() => setActiveTab('historial')} className="dropdown-item-btn">
+                  <FileText size={16} /> Historial
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       {showComprasSearch && activeTab === 'historial' && (
@@ -1713,7 +1706,7 @@ export default function ComprasApp() {
           max-width: 1200px;
           margin: 0 auto;
           padding: 20px;
-          padding-top: 100px;
+          padding-top: 70px;
           padding-bottom: 100px;
           background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
           min-height: 100vh;
@@ -1727,76 +1720,77 @@ export default function ComprasApp() {
           z-index: 100;
           box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
-        .header-row-single {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr) auto;
+        .header-compact {
+          display: flex;
           gap: 12px;
           padding: 12px 20px;
           background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-          border-bottom: 1px solid #e5e7eb;
-          align-items: center;
         }
-        .history-btn {
-          padding: 8px;
-          border: none;
-          background: #f1f5f9;
-          color: #64748b;
+        .dropdown-container {
+          position: relative;
+          flex: 1;
+        }
+        .dropdown-trigger {
+          width: 100%;
+          padding: 12px 16px;
+          border: 2px solid #e2e8f0;
           border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.2s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .history-btn:hover {
-          background: #10b981;
-          color: white;
-        }
-        .stat-mini {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-        .stat-mini-label {
-          font-size: 9px;
-          color: #64748b;
-          font-weight: 700;
-          letter-spacing: 0.3px;
-        }
-        .stat-mini-value {
-          font-size: 14px;
-          font-weight: 800;
-          color: #0f172a;
-        }
-        .stat-mini-highlight {
-          padding: 8px 12px;
-          border-radius: 8px;
-        }
-        .header-row-2 {
-          display: flex;
-          gap: 8px;
-          padding: 8px;
           background: white;
+          cursor: pointer;
+          font-weight: 600;
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          transition: all 0.2s;
         }
-        @media (max-width: 768px) {
-          .header-row-single {
-            grid-template-columns: repeat(4, 1fr) auto;
-            gap: 6px;
-            padding: 8px;
-          }
-          .stat-mini {
-            min-width: 60px;
-          }
-          .stat-mini-label {
-            font-size: 7px;
-          }
-          .stat-mini-value {
-            font-size: 11px;
-          }
-          .history-btn {
-            padding: 6px;
-          }
+        .dropdown-trigger:hover {
+          border-color: #10b981;
+          background: #f0fdf4;
         }
+        .dropdown-menu {
+          position: absolute;
+          top: calc(100% + 4px);
+          left: 0;
+          right: 0;
+          background: white;
+          border: 2px solid #e2e8f0;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          z-index: 200;
+          padding: 8px;
+        }
+        .dropdown-item {
+          display: flex;
+          justify-content: space-between;
+          padding: 8px 12px;
+          font-size: 13px;
+        }
+        .dropdown-item span {
+          color: #6b7280;
+          font-size: 11px;
+        }
+        .dropdown-item-btn {
+          width: 100%;
+          padding: 10px 12px;
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          font-weight: 600;
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          border-radius: 6px;
+          transition: all 0.2s;
+          text-align: left;
+        }
+        .dropdown-item-btn:hover {
+          background: #f0fdf4;
+          color: #10b981;
+        }
+
         .form-row-compact {
           display: flex;
           gap: 12px;
@@ -1982,37 +1976,7 @@ export default function ComprasApp() {
           }
         }
 
-        .tabs {
-          display: flex;
-          gap: 8px;
-          margin-bottom: 24px;
-          background: white;
-          padding: 8px;
-          border-radius: 12px;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        }
-        .tab {
-          flex: 1;
-          padding: 12px 16px;
-          border: none;
-          background: transparent;
-          cursor: pointer;
-          font-weight: 600;
-          font-size: 14px;
-          color: #64748b;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          border-radius: 8px;
-          transition: all 0.2s;
-          min-height: 44px;
-        }
-        .tab.active {
-          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-          color: white;
-          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-        }
+
         .compra-form {
           background: white;
           padding: 16px;
