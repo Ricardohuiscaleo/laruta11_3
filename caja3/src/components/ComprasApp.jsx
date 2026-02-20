@@ -863,7 +863,7 @@ export default function ComprasApp() {
                   return 0;
                 })
                 .map(ing => {
-                  const currentStock = parseFloat(ing.current_stock);
+                  const currentStock = parseFloat(ing.current_stock) || 0;
                   const minStock = parseFloat(ing.min_stock_level) || 1;
                   const percentage = (currentStock / minStock) * 100;
                   
@@ -883,7 +883,7 @@ export default function ComprasApp() {
                   const label = isCritical ? '¡Crítico!' : isLow ? 'Bajo' : '';
                   
                   // Calcular uso desde última compra usando inventory_transactions
-                  const stockDespuesCompra = parseFloat(ing.stock_despues_compra) || null;
+                  const stockDespuesCompra = ing.stock_despues_compra != null ? parseFloat(ing.stock_despues_compra) : null;
                   const vendidoReal = parseFloat(ing.vendido_desde_compra) || 0;
                   const esperadoReal = stockDespuesCompra !== null ? stockDespuesCompra - vendidoReal : null;
                   const usadoValido = vendidoReal > 0;
@@ -930,12 +930,12 @@ export default function ComprasApp() {
                       )}
                       {usadoValido && (
                         <div style={{fontSize: '10px', color: '#ef4444', marginTop: '1px'}}>
-                          Vendido: {isBebida ? Math.round(vendidoReal) : vendidoReal.toFixed(1)} {ing.unit}
+                          Vendido: {isBebida ? Math.round(vendidoReal) : (vendidoReal || 0).toFixed(1)} {ing.unit}
                         </div>
                       )}
                       {usadoValido && (
                         <div style={{fontSize: '10px', color: currentStock === esperadoReal ? '#10b981' : '#f59e0b', marginTop: '1px', fontWeight: '600'}}>
-                          {currentStock === esperadoReal ? '✓' : '⚠'} Esperado: {isBebida ? Math.round(esperadoReal) : esperadoReal.toFixed(1)}
+                          {currentStock === esperadoReal ? '✓' : '⚠'} Esperado: {isBebida ? Math.round(esperadoReal) : (esperadoReal || 0).toFixed(1)}
                         </div>
                       )}
                       </div>
@@ -1551,8 +1551,8 @@ export default function ComprasApp() {
                         <div key={idx} className="compra-item">
                           <span className="item-nombre">{item.nombre_item}</span>
                           <span className="item-cantidad">{item.cantidad} {item.unidad}</span>
-                          <span className="item-precio">${fmt(parseFloat(item.precio_unitario))}</span>
-                          <span className="item-subtotal">${fmt(parseFloat(item.subtotal))}</span>
+                          <span className="item-precio">${fmt(parseFloat(item.precio_unitario) || 0)}</span>
+                          <span className="item-subtotal">${fmt(parseFloat(item.subtotal) || 0)}</span>
                           <span className="item-stock">
                             {hasSnapshot ? (
                               <span style={{fontSize: '11px'}}>
