@@ -148,17 +148,17 @@ rm app3/api/rl6/test_email.php
 ## 🔍 Checklist de Verificación
 
 ### Pre-Migración
-- [ ] Confirmar que `gmail_tokens` tiene token válido
-- [ ] Confirmar que `email_logs` tabla existe
-- [ ] Backup de archivos actuales de producción
-- [ ] Verificar que `getValidGmailToken()` funciona en test
+- [x] Confirmar que `gmail_tokens` tiene token válido
+- [x] Confirmar que `email_logs` tabla existe
+- [x] Backup de archivos actuales de producción
+- [x] Verificar que `getValidGmailToken()` funciona en test
 
 ### Durante Migración
-- [ ] Actualizar `send_credit_statement.php` con `getValidGmailToken()`
-- [ ] Agregar logging a `send_credit_statement.php`
-- [ ] Copiar/referenciar `get_token_db.php` en caja3
-- [ ] Actualizar `emails.astro` para usar endpoint real
-- [ ] Verificar que `payment_callback.php` no tiene `simulate=1`
+- [x] Actualizar `send_credit_statement.php` con `getValidGmailToken()` (ya estaba)
+- [x] Agregar logging a `send_credit_statement.php`
+- [x] Copiar/referenciar `get_token_db.php` en caja3 (ya estaba)
+- [x] Actualizar `emails.astro` para usar endpoint real (ya estaba)
+- [x] Verificar que `payment_callback.php` no tiene `simulate=1` (correcto)
 
 ### Post-Migración
 - [ ] Probar envío de estado de cuenta desde caja3
@@ -166,7 +166,7 @@ rm app3/api/rl6/test_email.php
 - [ ] Verificar logs en `email_logs` tabla
 - [ ] Verificar que no hay duplicados
 - [ ] Verificar que tokens se auto-refrescan
-- [ ] Eliminar archivos de test
+- [x] Eliminar archivos de test
 
 ### Monitoreo
 - [ ] Revisar logs de PHP por errores
