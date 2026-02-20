@@ -982,6 +982,32 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
   );
 };
 
+// Espejo de get_menu_products.php — actualizar ambos si cambian IDs en BD
+const CATEGORY_ID_MAP = {
+  1: 'la_ruta_11',
+  2: 'churrascos',
+  3: 'hamburguesas',
+  4: 'completos',
+  5: 'papas_y_snacks',
+  6: 'personalizar',
+  7: 'extras',
+  8: 'Combos',
+  12: 'papas',
+};
+
+const SUBCATEGORY_ID_MAP = {
+  9: 'papas',
+  10: 'jugos',
+  11: 'bebidas',
+  12: 'salsas',
+  26: 'empanadas',
+  27: 'café',
+  28: 'té',
+  29: 'personalizar',
+  30: 'extras',
+  57: 'papas',
+};
+
 export default function App() {
   const [activeCategory, setActiveCategory] = useState('hamburguesas');
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -1807,18 +1833,8 @@ export default function App() {
   };
   
   const handleCustomizeProduct = (item, itemIndex) => {
-    // Derivar la categoría correcta desde el producto para que el modal muestre las customizations correctas
-    const categoryMap = {
-      'Hamburguesas': 'hamburguesas',
-      'Hamburguesas (200g)': 'hamburguesas',
-      'Hamburguesas (100g)': 'hamburguesas',
-      'Churrascos': 'churrascos',
-      'Sandwiches': 'churrascos',
-      'Completos': 'completos',
-      'Papas': 'papas',
-      'Combos': 'Combos',
-    };
-    const productCategory = categoryMap[item.category_name] || item.category_key || activeCategory;
+    // Usar category_id del producto directamente — no depender de category_name string
+    const productCategory = CATEGORY_ID_MAP[item.category_id] || item.category_key || activeCategory;
     setSelectedProduct({
       ...item,
       isEditing: true,
@@ -1876,16 +1892,26 @@ export default function App() {
   const cartItemCount = useMemo(() => cart.length, [cart]);
   const getProductQuantity = (productId) => cart.filter(item => item.id === productId).length;
   
+  // Construir comboItems usando SUBCATEGORY_ID_MAP — sin strings hardcodeados
+  const getBySubcategoryId = (subId) => {
+    const subKey = SUBCATEGORY_ID_MAP[subId];
+    if (!subKey) return [];
+    for (const catData of Object.values(menuWithImages)) {
+      if (catData && typeof catData === 'object' && catData[subKey]) return catData[subKey];
+    }
+    return [];
+  };
+
   const comboItems = {
-      papas_y_snacks: menuWithImages.papas?.papas || [],
-      jugos: menuWithImages.papas_y_snacks?.jugos || [],
-      bebidas: menuWithImages.papas_y_snacks?.bebidas || [],
-      empanadas: menuWithImages.papas_y_snacks?.empanadas || [],
-      cafe: menuWithImages.papas_y_snacks?.café || [],
-      te: menuWithImages.papas_y_snacks?.té || [],
-      salsas: menuWithImages.papas_y_snacks?.salsas || [],
-      personalizar: (menuWithImages.personalizar?.personalizar || []).filter(p => p.active === 1),
-      extras: menuWithImages.papas_y_snacks?.extras || []
+    papas_y_snacks: getBySubcategoryId(9),
+    jugos: getBySubcategoryId(10),
+    bebidas: getBySubcategoryId(11),
+    salsas: getBySubcategoryId(12),
+    empanadas: getBySubcategoryId(26),
+    cafe: getBySubcategoryId(27),
+    te: getBySubcategoryId(28),
+    personalizar: getBySubcategoryId(29).filter(p => p.active === 1),
+    extras: getBySubcategoryId(30),
   };
   
   const generateWhatsAppMessage = (orderId) => {
