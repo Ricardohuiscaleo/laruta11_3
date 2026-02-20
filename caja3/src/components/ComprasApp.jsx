@@ -903,7 +903,7 @@ export default function ComprasApp() {
                           Últ. compra: {isBebida ? Math.round(ing.ultima_compra_cantidad) : ing.ultima_compra_cantidad} {ing.unit}
                         </div>
                       )}
-                      {usado !== null && usado > 0 && (
+                      {usadoValido && (
                         <div style={{fontSize: '10px', color: '#ef4444', marginTop: '1px'}}>
                           Usado: {isBebida ? Math.round(usado) : usado.toFixed(1)} {ing.unit}
                         </div>
