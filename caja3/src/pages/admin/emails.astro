@@ -1,551 +1,404 @@
+---
+---
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📧 Gestor de Correos - La Ruta 11</title>
+    <title>Gestor de Correos - La Ruta 11</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-<div class="min-h-screen p-6" style="background-color: #f3f4f6;">
-    <div class="max-w-6xl mx-auto">
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">📧 Gestor de Correos - Estados de Cuenta RL6</h1>
-            <p class="text-gray-600">Envío de estados de cuenta de crédito</p>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white border-b sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold text-gray-900">📧 Gestor de Correos</h1>
+                    <p class="text-sm text-gray-500 mt-1">Estados de cuenta RL6</p>
+                </div>
+                <div id="gmailStatus" class="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-full text-sm">
+                    <div class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                    <span class="hidden sm:inline text-gray-600">Verificando...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-lg">
+                <p class="text-xs opacity-90 mb-1">Clientes</p>
+                <p id="statClientes" class="text-2xl sm:text-3xl font-bold">-</p>
+            </div>
+            <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white shadow-lg">
+                <p class="text-xs opacity-90 mb-1">Crédito Total</p>
+                <p id="statCreditoTotal" class="text-2xl sm:text-3xl font-bold">-</p>
+            </div>
+            <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 text-white shadow-lg">
+                <p class="text-xs opacity-90 mb-1">Cobranza</p>
+                <p id="statCobranza" class="text-2xl sm:text-3xl font-bold">-</p>
+            </div>
+            <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white shadow-lg">
+                <p class="text-xs opacity-90 mb-1">Disponible</p>
+                <p id="statDisponible" class="text-2xl sm:text-3xl font-bold">-</p>
+            </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-lg font-bold text-gray-800 mb-4">📊 Resumen General RL6</h2>
-            <div id="statsGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
-                    <p class="text-xs text-blue-600 font-medium mb-1">👥 Clientes</p>
-                    <p id="statClientes" class="text-2xl font-bold text-blue-700">-</p>
+        <!-- Daily Stats -->
+        <div class="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">💳 Pagos de Hoy</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="text-center p-4 bg-emerald-50 rounded-lg">
+                    <p class="text-sm text-emerald-600 mb-1">Usuarios</p>
+                    <p id="statPagaronHoy" class="text-3xl font-bold text-emerald-700">-</p>
                 </div>
-                <div class="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
-                    <p class="text-xs text-green-600 font-medium mb-1">💰 Crédito Total</p>
-                    <p id="statCreditoTotal" class="text-2xl font-bold text-green-700">-</p>
-                </div>
-                <div class="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-4">
-                    <p class="text-xs text-orange-600 font-medium mb-1">📈 Cobranza</p>
-                    <p id="statCobranza" class="text-2xl font-bold text-orange-700">-</p>
-                </div>
-                <div class="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
-                    <p class="text-xs text-purple-600 font-medium mb-1">💎 Disponible</p>
-                    <p id="statDisponible" class="text-2xl font-bold text-purple-700">-</p>
+                <div class="text-center p-4 bg-teal-50 rounded-lg">
+                    <p class="text-sm text-teal-600 mb-1">Total</p>
+                    <p id="statTotalPagado" class="text-3xl font-bold text-teal-700">-</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-lg font-bold text-gray-800 mb-4">💳 Pagos de Hoy</h2>
-            <div id="dailyStatsGrid" class="grid grid-cols-2 gap-4">
-                <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 rounded-lg p-4">
-                    <p class="text-xs text-emerald-600 font-medium mb-1">✅ Pagaron Hoy</p>
-                    <p id="statPagaronHoy" class="text-2xl font-bold text-emerald-700">-</p>
+        <!-- Historic Stats -->
+        <div class="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">📈 Histórico</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="text-center p-4 bg-indigo-50 rounded-lg">
+                    <p class="text-sm text-indigo-600 mb-1">Usuarios</p>
+                    <p id="statUsuariosPagaronTotal" class="text-3xl font-bold text-indigo-700">-</p>
                 </div>
-                <div class="bg-gradient-to-br from-teal-50 to-teal-100 border border-teal-200 rounded-lg p-4">
-                    <p class="text-xs text-teal-600 font-medium mb-1">💵 Total Pagado</p>
-                    <p id="statTotalPagado" class="text-2xl font-bold text-teal-700">-</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-lg font-bold text-gray-800 mb-4">📈 Pagos Históricos</h2>
-            <div id="historicStatsGrid" class="grid grid-cols-2 gap-4">
-                <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 rounded-lg p-4">
-                    <p class="text-xs text-indigo-600 font-medium mb-1">👥 Usuarios Pagaron</p>
-                    <p id="statUsuariosPagaronTotal" class="text-2xl font-bold text-indigo-700">-</p>
-                </div>
-                <div class="bg-gradient-to-br from-cyan-50 to-cyan-100 border border-cyan-200 rounded-lg p-4">
-                    <p class="text-xs text-cyan-600 font-medium mb-1">💰 Monto Total</p>
-                    <p id="statMontoPagadoTotal" class="text-2xl font-bold text-cyan-700">-</p>
+                <div class="text-center p-4 bg-cyan-50 rounded-lg">
+                    <p class="text-sm text-cyan-600 mb-1">Monto</p>
+                    <p id="statMontoPagadoTotal" class="text-3xl font-bold text-cyan-700">-</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-lg font-bold text-gray-800 mb-4">🔑 Estado de Gmail API</h2>
-            <div id="gmailStatus" class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
-                <span class="text-gray-700">Verificando...</span>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-lg shadow-md mb-6">
-            <div class="border-b border-gray-200">
-                <nav class="flex">
-                    <button data-action="showTab" data-tab="users" id="tab-users" class="tab-btn px-6 py-3 font-medium border-b-2 border-orange-500 text-orange-600">
-                        👥 Usuarios RL6
+        <!-- Tabs -->
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="border-b">
+                <nav class="flex -mb-px overflow-x-auto">
+                    <button data-action="showTab" data-tab="users" id="tab-users" 
+                        class="tab-btn flex-1 sm:flex-none px-6 py-3 text-sm font-medium border-b-2 border-orange-500 text-orange-600 whitespace-nowrap">
+                        👥 Usuarios
                     </button>
-                    <button data-action="showTab" data-tab="test" id="tab-test" class="tab-btn px-6 py-3 font-medium border-b-2 border-transparent text-gray-500">
-                        🧪 Email de Prueba
+                    <button data-action="showTab" data-tab="test" id="tab-test" 
+                        class="tab-btn flex-1 sm:flex-none px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 whitespace-nowrap">
+                        🧪 Prueba
                     </button>
                 </nav>
             </div>
 
-            <div id="content-users" class="tab-content p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-gray-800">📊 Usuarios con Crédito RL6</h3>
-                    <button data-action="sendMassive" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium">
+            <!-- Users Tab -->
+            <div id="content-users" class="tab-content p-4 sm:p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Usuarios con Crédito</h3>
+                    <button data-action="sendMassive" 
+                        class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors w-full sm:w-auto">
                         📤 Enviar a Todos
                     </button>
                 </div>
                 <div id="usersList" class="space-y-3">
-                    <div class="text-center text-gray-400 py-8">Cargando usuarios...</div>
+                    <div class="text-center text-gray-400 py-12">
+                        <div class="animate-spin w-8 h-8 border-4 border-gray-200 border-t-orange-500 rounded-full mx-auto mb-3"></div>
+                        <p>Cargando usuarios...</p>
+                    </div>
                 </div>
             </div>
 
-            <div id="content-test" class="tab-content p-6 hidden">
-                <h3 class="text-lg font-bold text-gray-800 mb-4">📤 Enviar Email de Prueba</h3>
-                <form id="emailForm" class="space-y-4">
+            <!-- Test Tab -->
+            <div id="content-test" class="tab-content p-4 sm:p-6 hidden">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Enviar Email de Prueba</h3>
+                <form id="emailForm" class="space-y-4 max-w-2xl">
                     <div>
-                        <label class="block text-gray-700 font-medium mb-2">Para (Email)</label>
-                        <input type="email" id="emailTo" required class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="destinatario@example.com">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" id="emailTo" required 
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+                            placeholder="destinatario@example.com">
                     </div>
                     <div>
-                        <label class="block text-gray-700 font-medium mb-2">Asunto</label>
-                        <input type="text" id="emailSubject" required class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="Asunto del correo">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Asunto</label>
+                        <input type="text" id="emailSubject" required 
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+                            placeholder="Asunto del correo">
                     </div>
                     <div>
-                        <label class="block text-gray-700 font-medium mb-2">Mensaje</label>
-                        <textarea id="emailBody" rows="6" required class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="Escribe tu mensaje aquí..."></textarea>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Mensaje</label>
+                        <textarea id="emailBody" rows="6" required 
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+                            placeholder="Escribe tu mensaje aquí..."></textarea>
                     </div>
-                    <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg">
+                    <button type="submit" 
+                        class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-lg transition-colors">
                         📧 Enviar Email
                     </button>
                 </form>
             </div>
         </div>
 
-        <div id="statusMessage" class="hidden mt-6 p-4 rounded-lg"></div>
-    </div>
-</div>
+        <!-- Status Message -->
+        <div id="statusMessage" class="hidden"></div>
+    </main>
 
-<div id="previewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center p-4" style="z-index: 1000; display: none;">
-    <div class="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-auto">
-        <div class="p-4 border-b border-gray-200 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-gray-800">👁️ Preview - Estado de Cuenta</h3>
-            <button data-action="closePreview" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-        </div>
-        <iframe id="previewFrame" class="w-full" style="height: 600px; border: none;"></iframe>
-        <div class="p-4 border-t border-gray-200 flex gap-3">
-            <button data-action="closePreview" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded-lg">Cerrar</button>
-            <button data-action="sendFromPreview" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-lg">📧 Enviar Email</button>
-        </div>
-    </div>
-</div>
-
-<script>
-interface User {
-    id: number;
-    nombre: string;
-    email: string;
-    grado_militar: string;
-    unidad_trabajo: string;
-    credito_total: number;
-    credito_usado: number;
-    credito_disponible: number;
-}
-
-let currentUserId: number | null = null;
-let users: User[] = [];
-
-document.addEventListener('click', (e) => {
-    if (!e.target) return;
-    const btn = (e.target as HTMLElement).closest('button[data-action]');
-    if (!btn) return;
-    const action = btn.getAttribute('data-action');
-    const tab = btn.getAttribute('data-tab');
-    if (action === 'showTab' && tab) showTab(tab);
-    if (action === 'sendMassive') sendMassive();
-    if (action === 'closePreview') closePreview();
-    if (action === 'sendFromPreview') sendFromPreview();
-});
-
-window.addEventListener('DOMContentLoaded', () => {
-    checkGmailStatus();
-    loadUsers();
-    loadDailyStats();
-    
-    const usersList = document.getElementById('usersList');
-    if (usersList) {
-        usersList.addEventListener('click', (e) => {
-            if (!e.target) return;
-            const btn = (e.target as HTMLElement).closest('button[data-action]');
-            if (!btn) return;
-            const action = btn.getAttribute('data-action');
-            const userIdStr = btn.getAttribute('data-user-id');
-            const userId = userIdStr ? parseInt(userIdStr) : 0;
-            if (action === 'preview') previewEmail(userId);
-            if (action === 'send') sendEmail(userId);
-        });
-    }
-});
-
-async function checkGmailStatus() {
-    const statusDiv = document.getElementById('gmailStatus');
-    if (!statusDiv) return;
-    try {
-        const response = await fetch('/api/gmail/check_token.php');
-        const result = await response.json();
-        if (result.access_token) {
-            statusDiv.innerHTML = '<div class="w-3 h-3 bg-green-500 rounded-full"></div><span class="text-green-700 font-medium">✅ Gmail API configurado</span>';
-        } else {
-            statusDiv.innerHTML = '<div class="w-3 h-3 bg-red-500 rounded-full"></div><span class="text-red-700 font-medium">❌ Error: ' + (result.error || 'Token no encontrado') + '</span>';
-        }
-    } catch (error) {
-        statusDiv.innerHTML = '<div class="w-3 h-3 bg-red-500 rounded-full"></div><span class="text-red-700 font-medium">❌ Error de conexión</span>';
-    }
-}
-
-async function loadUsers() {
-    try {
-        const response = await fetch('/api/gmail/get_rl6_users.php');
-        const result = await response.json();
-        if (result.success) {
-            users = result.users;
-            renderUsers(users);
-        }
-    } catch (error) {
-        const usersList = document.getElementById('usersList');
-        if (usersList) usersList.innerHTML = '<div class="text-center text-red-400 py-8">Error cargando usuarios</div>';
-    }
-}
-
-async function loadDailyStats() {
-    try {
-        const response = await fetch('/api/gmail/get_rl6_daily_stats.php');
-        const result = await response.json();
-        if (result.success) {
-            const statPagaronHoy = document.getElementById('statPagaronHoy');
-            const statTotalPagado = document.getElementById('statTotalPagado');
-            const statUsuariosPagaronTotal = document.getElementById('statUsuariosPagaronTotal');
-            const statMontoPagadoTotal = document.getElementById('statMontoPagadoTotal');
-            
-            if (statPagaronHoy) statPagaronHoy.textContent = result.pagos_hoy.usuarios_pagaron.toString();
-            if (statTotalPagado) statTotalPagado.textContent = '$' + Math.round(result.pagos_hoy.total_pagado).toLocaleString('es-CL');
-            if (statUsuariosPagaronTotal) statUsuariosPagaronTotal.textContent = result.pagos_historico.usuarios_pagaron_total.toString();
-            if (statMontoPagadoTotal) statMontoPagadoTotal.textContent = '$' + Math.round(result.pagos_historico.monto_pagado_total).toLocaleString('es-CL');
-        }
-    } catch (error) {
-        console.error('Error cargando estadísticas diarias:', error);
-    }
-}
-
-function renderUsers(userList) {
-    const container = document.getElementById('usersList');
-    if (!container) return;
-    
-    if (userList.length === 0) {
-        container.innerHTML = '<div class="text-center text-gray-400 py-8">No hay usuarios con crédito RL6</div>';
-        return;
-    }
-    
-    const totalClientes = userList.length;
-    const totalCredito = userList.reduce((sum, u) => sum + u.credito_total, 0);
-    const totalCobranza = userList.reduce((sum, u) => sum + u.credito_usado, 0);
-    const totalDisponible = userList.reduce((sum, u) => sum + u.credito_disponible, 0);
-    
-    const statClientes = document.getElementById('statClientes');
-    const statCreditoTotal = document.getElementById('statCreditoTotal');
-    const statCobranza = document.getElementById('statCobranza');
-    const statDisponible = document.getElementById('statDisponible');
-    
-    if (statClientes) statClientes.textContent = totalClientes.toString();
-    if (statCreditoTotal) statCreditoTotal.textContent = '$' + Math.round(totalCredito).toLocaleString('es-CL');
-    if (statCobranza) statCobranza.textContent = '$' + Math.round(totalCobranza).toLocaleString('es-CL');
-    if (statDisponible) statDisponible.textContent = '$' + Math.round(totalDisponible).toLocaleString('es-CL');
-    
-    container.innerHTML = userList.map(user => `
-        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <div class="flex justify-between items-start">
-                <div class="flex-1">
-                    <h4 class="font-bold text-gray-800">${user.nombre}</h4>
-                    <p class="text-sm text-gray-600">${user.email}</p>
-                    <p class="text-xs text-gray-500 mt-1">${user.grado_militar} - ${user.unidad_trabajo}</p>
-                    <div class="mt-2 flex gap-4 text-sm">
-                        <span class="text-gray-600">Crédito: <strong>$${user.credito_total.toLocaleString()}</strong></span>
-                        <span class="text-orange-600">Usado: <strong>$${user.credito_usado.toLocaleString()}</strong></span>
-                        <span class="text-green-600">Saldo: <strong>$${user.credito_disponible.toLocaleString()}</strong></span>
-                    </div>
+    <!-- Preview Modal -->
+    <div id="previewModal" class="hidden fixed inset-0 bg-black/50 z-50 p-4 overflow-y-auto">
+        <div class="min-h-screen flex items-center justify-center">
+            <div class="bg-white rounded-xl w-full max-w-4xl shadow-2xl">
+                <div class="flex items-center justify-between p-4 border-b">
+                    <h3 class="text-lg font-semibold text-gray-900">👁️ Preview</h3>
+                    <button data-action="closePreview" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
                 </div>
-                <div class="flex gap-2">
-                    <button data-action="preview" data-user-id="${user.id}" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">👁️ Preview</button>
-                    <button data-action="send" data-user-id="${user.id}" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm">📧 Enviar</button>
+                <iframe id="previewFrame" class="w-full h-[60vh] sm:h-[70vh]"></iframe>
+                <div class="flex gap-3 p-4 border-t">
+                    <button data-action="closePreview" 
+                        class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2.5 rounded-lg transition-colors">
+                        Cerrar
+                    </button>
+                    <button data-action="sendFromPreview" 
+                        class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2.5 rounded-lg transition-colors">
+                        📧 Enviar
+                    </button>
                 </div>
             </div>
         </div>
-    `).join('');
-}
+    </div>
 
-function showTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('border-orange-500', 'text-orange-600');
-        btn.classList.add('border-transparent', 'text-gray-500');
-    });
-    const tabBtn = document.getElementById(`tab-${tab}`);
-    if (tabBtn) {
-        tabBtn.classList.add('border-orange-500', 'text-orange-600');
-        tabBtn.classList.remove('border-transparent', 'text-gray-500');
-    }
-    
-    document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
-    const tabContent = document.getElementById(`content-${tab}`);
-    if (tabContent) tabContent.classList.remove('hidden');
-}
+    <script>
+        let currentUserId = null;
+        let users = [];
 
-function previewEmail(userId) {
-    currentUserId = userId;
-    const frame = document.getElementById('previewFrame') as HTMLIFrameElement;
-    const modal = document.getElementById('previewModal');
-    if (frame) frame.src = `https://caja.laruta11.cl/api/gmail/preview_credit_statement.php?user_id=${userId}`;
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.style.display = 'flex';
-    }
-}
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            const tab = btn.getAttribute('data-tab');
+            const userId = btn.getAttribute('data-user-id');
+            
+            if (action === 'showTab' && tab) showTab(tab);
+            if (action === 'sendMassive') sendMassive();
+            if (action === 'closePreview') closePreview();
+            if (action === 'sendFromPreview') sendFromPreview();
+            if (action === 'preview' && userId) previewEmail(parseInt(userId));
+            if (action === 'send' && userId) sendEmail(parseInt(userId));
+        });
 
-function closePreview() {
-    const modal = document.getElementById('previewModal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.style.display = 'none';
-    }
-    currentUserId = null;
-}
+        window.addEventListener('DOMContentLoaded', () => {
+            checkGmailStatus();
+            loadUsers();
+            loadDailyStats();
+        });
 
-async function sendFromPreview() {
-    if (currentUserId) {
-        await sendEmail(currentUserId);
-        closePreview();
-    }
-}
-
-async function sendEmail(userId) {
-    showStatus('Enviando email...', 'info');
-    try {
-        const response = await fetch(`/api/gmail/send_credit_statement.php?user_id=${userId}`);
-        const result = await response.json();
-        if (result.success) {
-            showStatus(`✅ Email enviado a ${result.to}`, 'success');
-        } else {
-            showStatus(`❌ Error: ${result.error}`, 'error');
-        }
-    } catch (error) {
-        showStatus('❌ Error de conexión', 'error');
-    }
-}
-
-async function sendMassive() {
-    if (!confirm(`¿Enviar estado de cuenta a ${users.length} usuarios?`)) return;
-    
-    const btn = document.querySelector('button[data-action="sendMassive"]') as HTMLButtonElement;
-    if (!btn) return;
-    
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '⏳ Enviando...';
-    
-    showStatus(`Enviando ${users.length} emails...`, 'info');
-    
-    let sent = 0;
-    let failed = 0;
-    
-    for (const user of users) {
-        try {
-            const response = await fetch(`/api/gmail/send_credit_statement.php?user_id=${user.id}`);
-            const result = await response.json();
-            if (result.success) {
-                sent++;
-            } else {
-                failed++;
+        async function checkGmailStatus() {
+            const statusDiv = document.getElementById('gmailStatus');
+            try {
+                const response = await fetch('/api/gmail/check_token.php');
+                const result = await response.json();
+                if (result.access_token) {
+                    statusDiv.innerHTML = '<div class="w-2 h-2 bg-green-500 rounded-full"></div><span class="hidden sm:inline text-green-700 font-medium">Conectado</span>';
+                    statusDiv.className = 'flex items-center gap-2 px-3 py-2 bg-green-50 rounded-full text-sm';
+                } else {
+                    statusDiv.innerHTML = '<div class="w-2 h-2 bg-red-500 rounded-full"></div><span class="hidden sm:inline text-red-700 font-medium">Error</span>';
+                    statusDiv.className = 'flex items-center gap-2 px-3 py-2 bg-red-50 rounded-full text-sm';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<div class="w-2 h-2 bg-red-500 rounded-full"></div><span class="hidden sm:inline text-red-700 font-medium">Error</span>';
+                statusDiv.className = 'flex items-center gap-2 px-3 py-2 bg-red-50 rounded-full text-sm';
             }
-            showStatus(`Enviando... ${sent + failed}/${users.length} (${sent} exitosos, ${failed} fallidos)`, 'info');
-        } catch (error) {
-            failed++;
         }
-        await new Promise(resolve => setTimeout(resolve, 500));
-    }
-    
-    btn.disabled = false;
-    btn.innerHTML = originalText;
-    showStatus(`✅ Proceso completado: ${sent} enviados, ${failed} fallidos de ${users.length} totales`, sent === users.length ? 'success' : 'error');
-}
 
-const emailForm = document.getElementById('emailForm');
-if (emailForm) {
-    emailForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData();
-        const emailTo = document.getElementById('emailTo') as HTMLInputElement;
-        const emailSubject = document.getElementById('emailSubject') as HTMLInputElement;
-        const emailBody = document.getElementById('emailBody') as HTMLTextAreaElement;
-        
-        if (emailTo) formData.append('to', emailTo.value);
-        if (emailSubject) formData.append('subject', emailSubject.value);
-        if (emailBody) formData.append('body', emailBody.value);
-        
-        showStatus('Enviando email...', 'info');
-        try {
-            const response = await fetch('/api/gmail/send_email.php', { method: 'POST', body: formData });
-            const result = await response.json();
-            if (result.success) {
-                showStatus('✅ Email enviado', 'success');
-                const form = document.getElementById('emailForm') as HTMLFormElement;
-                if (form) form.reset();
-            } else {
-                showStatus(`❌ Error: ${result.error}`, 'error');
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/gmail/get_rl6_users.php');
+                const result = await response.json();
+                if (result.success) {
+                    users = result.users;
+                    renderUsers(users);
+                }
+            } catch (error) {
+                document.getElementById('usersList').innerHTML = '<div class="text-center text-red-500 py-12">Error cargando usuarios</div>';
             }
-        } catch (error) {
-            showStatus('❌ Error de conexión', 'error');
         }
-    });
-}
 
-function showStatus(message, type) {
-    const statusDiv = document.getElementById('statusMessage');
-    if (!statusDiv) return;
-    const colors = { success: 'bg-green-100 border-green-500 text-green-700', error: 'bg-red-100 border-red-500 text-red-700', info: 'bg-blue-100 border-blue-500 text-blue-700' };
-    statusDiv.className = `mt-6 p-4 rounded-lg border-l-4 ${colors[type]}`;
-    statusDiv.textContent = message;
-    statusDiv.classList.remove('hidden');
-    if (type !== 'info') setTimeout(() => statusDiv.classList.add('hidden'), 5000);
-}
-</script>
+        async function loadDailyStats() {
+            try {
+                const response = await fetch('/api/gmail/get_rl6_daily_stats.php');
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('statPagaronHoy').textContent = result.pagos_hoy.usuarios_pagaron;
+                    document.getElementById('statTotalPagado').textContent = '$' + Math.round(result.pagos_hoy.total_pagado).toLocaleString('es-CL');
+                    document.getElementById('statUsuariosPagaronTotal').textContent = result.pagos_historico.usuarios_pagaron_total;
+                    document.getElementById('statMontoPagadoTotal').textContent = '$' + Math.round(result.pagos_historico.monto_pagado_total).toLocaleString('es-CL');
+                }
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+            }
+        }
 
-<style>
-body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
-.bg-white { background-color: white; }
-.rounded-lg { border-radius: 0.5rem; }
-.shadow-md { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-.p-6 { padding: 1.5rem; }
-.p-4 { padding: 1rem; }
-.px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
-.px-4 { padding-left: 1rem; padding-right: 1rem; }
-.px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
-.py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
-.py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-.py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
-.py-8 { padding-top: 2rem; padding-bottom: 2rem; }
-.mb-6 { margin-bottom: 1.5rem; }
-.mb-4 { margin-bottom: 1rem; }
-.mb-2 { margin-bottom: 0.5rem; }
-.mb-1 { margin-bottom: 0.25rem; }
-.mt-1 { margin-top: 0.25rem; }
-.mt-2 { margin-top: 0.5rem; }
-.mt-6 { margin-top: 1.5rem; }
-.text-2xl { font-size: 1.5rem; }
-.text-lg { font-size: 1.125rem; }
-.text-sm { font-size: 0.875rem; }
-.text-xs { font-size: 0.75rem; }
-.font-bold { font-weight: 700; }
-.font-medium { font-weight: 500; }
-.text-gray-800 { color: #1f2937; }
-.text-gray-700 { color: #374151; }
-.text-gray-600 { color: #4b5563; }
-.text-gray-500 { color: #6b7280; }
-.text-gray-400 { color: #9ca3af; }
-.text-orange-600 { color: #ea580c; }
-.text-orange-700 { color: #c2410c; }
-.text-red-600 { color: #dc2626; }
-.text-green-600 { color: #16a34a; }
-.text-green-700 { color: #15803d; }
-.text-red-700 { color: #b91c1c; }
-.text-white { color: white; }
-.text-blue-600 { color: #2563eb; }
-.text-blue-700 { color: #1d4ed8; }
-.text-purple-600 { color: #9333ea; }
-.text-purple-700 { color: #7e22ce; }
-.text-indigo-600 { color: #4f46e5; }
-.text-indigo-700 { color: #4338ca; }
-.text-cyan-600 { color: #0891b2; }
-.text-cyan-700 { color: #0e7490; }
-.bg-indigo-50 { background-color: #eef2ff; }
-.bg-indigo-100 { background-color: #e0e7ff; }
-.bg-cyan-50 { background-color: #ecfeff; }
-.bg-cyan-100 { background-color: #cffafe; }
-.border-indigo-200 { border-color: #c7d2fe; }
-.border-cyan-200 { border-color: #a5f3fc; }
-.text-emerald-600 { color: #059669; }
-.text-emerald-700 { color: #047857; }
-.text-teal-600 { color: #0d9488; }
-.text-teal-700 { color: #0f766e; }
-.bg-gray-50 { background-color: #f9fafb; }
-.bg-yellow-500 { background-color: #eab308; }
-.bg-green-500 { background-color: #22c55e; }
-.bg-red-500 { background-color: #ef4444; }
-.bg-blue-50 { background-color: #eff6ff; }
-.bg-blue-100 { background-color: #dbeafe; }
-.bg-blue-500 { background-color: #3b82f6; }
-.bg-blue-600 { background-color: #2563eb; }
-.bg-green-50 { background-color: #f0fdf4; }
-.bg-green-100 { background-color: #dcfce7; }
-.bg-orange-50 { background-color: #fff7ed; }
-.bg-orange-100 { background-color: #ffedd5; }
-.bg-orange-500 { background-color: #f97316; }
-.bg-orange-600 { background-color: #ea580c; }
-.bg-orange-700 { background-color: #c2410c; }
-.bg-purple-50 { background-color: #faf5ff; }
-.bg-purple-100 { background-color: #f3e8ff; }
-.bg-emerald-50 { background-color: #ecfdf5; }
-.bg-emerald-100 { background-color: #d1fae5; }
-.bg-teal-50 { background-color: #f0fdfa; }
-.bg-teal-100 { background-color: #ccfbf1; }
-.bg-gray-500 { background-color: #6b7280; }
-.bg-gray-600 { background-color: #4b5563; }
-.bg-black { background-color: black; }
-.bg-opacity-50 { background-color: rgba(0,0,0,0.5); }
-.border { border-width: 1px; }
-.border-b { border-bottom-width: 1px; }
-.border-b-2 { border-bottom-width: 2px; }
-.border-l-4 { border-left-width: 4px; }
-.border-t { border-top-width: 1px; }
-.border-gray-200 { border-color: #e5e7eb; }
-.border-gray-300 { border-color: #d1d5db; }
-.border-orange-500 { border-color: #f97316; }
-.border-transparent { border-color: transparent; }
-.border-blue-200 { border-color: #bfdbfe; }
-.border-green-200 { border-color: #bbf7d0; }
-.border-orange-200 { border-color: #fed7aa; }
-.border-purple-200 { border-color: #e9d5ff; }
-.border-emerald-200 { border-color: #a7f3d0; }
-.border-teal-200 { border-color: #99f6e4; }
-.flex { display: flex; }
-.grid { display: grid; }
-.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-.items-center { align-items: center; }
-.items-start { align-items: flex-start; }
-.justify-between { justify-content: space-between; }
-.justify-center { justify-content: center; }
-.gap-2 { gap: 0.5rem; }
-.gap-3 { gap: 0.75rem; }
-.gap-4 { gap: 1rem; }
-.space-y-3 > * + * { margin-top: 0.75rem; }
-.space-y-4 > * + * { margin-top: 1rem; }
-.w-3 { width: 0.75rem; }
-.h-3 { height: 0.75rem; }
-.w-full { width: 100%; }
-.max-w-6xl { max-width: 72rem; }
-.max-w-4xl { max-width: 56rem; }
-.mx-auto { margin-left: auto; margin-right: auto; }
-.rounded-full { border-radius: 9999px; }
-.block { display: block; }
-.hidden { display: none; }
-.fixed { position: fixed; }
-.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
-.flex-1 { flex: 1; }
-.overflow-auto { overflow: auto; }
-.max-h-screen { max-height: 100vh; }
-.text-center { text-align: center; }
-.min-h-screen { min-height: 100vh; }
-button { cursor: pointer; border: none; }
-button:hover { opacity: 0.9; }
-input, textarea { outline: none; font-family: inherit; }
-.animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-@media (min-width: 768px) {
-    .md\:grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
-}
-</style>
+        function renderUsers(userList) {
+            const container = document.getElementById('usersList');
+            
+            if (userList.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-12">No hay usuarios con crédito RL6</div>';
+                return;
+            }
+            
+            const totalClientes = userList.length;
+            const totalCredito = userList.reduce((sum, u) => sum + u.credito_total, 0);
+            const totalCobranza = userList.reduce((sum, u) => sum + u.credito_usado, 0);
+            const totalDisponible = userList.reduce((sum, u) => sum + u.credito_disponible, 0);
+            
+            document.getElementById('statClientes').textContent = totalClientes;
+            document.getElementById('statCreditoTotal').textContent = '$' + Math.round(totalCredito).toLocaleString('es-CL');
+            document.getElementById('statCobranza').textContent = '$' + Math.round(totalCobranza).toLocaleString('es-CL');
+            document.getElementById('statDisponible').textContent = '$' + Math.round(totalDisponible).toLocaleString('es-CL');
+            
+            container.innerHTML = userList.map(user => `
+                <div class="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-semibold text-gray-900 truncate">${user.nombre}</h4>
+                            <p class="text-sm text-gray-600 truncate">${user.email}</p>
+                            <p class="text-xs text-gray-500 mt-1">${user.grado_militar} - ${user.unidad_trabajo}</p>
+                            <div class="mt-3 grid grid-cols-3 gap-2 text-xs">
+                                <div class="bg-gray-50 rounded p-2">
+                                    <p class="text-gray-500 mb-1">Crédito</p>
+                                    <p class="font-semibold text-gray-900">$${user.credito_total.toLocaleString('es-CL')}</p>
+                                </div>
+                                <div class="bg-orange-50 rounded p-2">
+                                    <p class="text-orange-600 mb-1">Usado</p>
+                                    <p class="font-semibold text-orange-700">$${user.credito_usado.toLocaleString('es-CL')}</p>
+                                </div>
+                                <div class="bg-green-50 rounded p-2">
+                                    <p class="text-green-600 mb-1">Saldo</p>
+                                    <p class="font-semibold text-green-700">$${user.credito_disponible.toLocaleString('es-CL')}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex sm:flex-col gap-2">
+                            <button data-action="preview" data-user-id="${user.id}" 
+                                class="flex-1 sm:flex-none bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                👁️
+                            </button>
+                            <button data-action="send" data-user-id="${user.id}" 
+                                class="flex-1 sm:flex-none bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                📧
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-orange-500', 'text-orange-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            document.getElementById(`tab-${tab}`).classList.add('border-orange-500', 'text-orange-600');
+            document.getElementById(`tab-${tab}`).classList.remove('border-transparent', 'text-gray-500');
+            
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+        }
+
+        function previewEmail(userId) {
+            currentUserId = userId;
+            document.getElementById('previewFrame').src = `https://caja.laruta11.cl/api/gmail/preview_credit_statement.php?user_id=${userId}`;
+            document.getElementById('previewModal').classList.remove('hidden');
+        }
+
+        function closePreview() {
+            document.getElementById('previewModal').classList.add('hidden');
+            currentUserId = null;
+        }
+
+        async function sendFromPreview() {
+            if (currentUserId) {
+                await sendEmail(currentUserId);
+                closePreview();
+            }
+        }
+
+        async function sendEmail(userId) {
+            showStatus('Enviando email...', 'info');
+            try {
+                const response = await fetch(`/api/gmail/send_credit_statement.php?user_id=${userId}`);
+                const result = await response.json();
+                if (result.success) {
+                    showStatus(`✅ Email enviado a ${result.to}`, 'success');
+                } else {
+                    showStatus(`❌ Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Error de conexión', 'error');
+            }
+        }
+
+        async function sendMassive() {
+            if (!confirm(`¿Enviar estado de cuenta a ${users.length} usuarios?`)) return;
+            
+            const btn = document.querySelector('button[data-action="sendMassive"]');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Enviando...';
+            
+            showStatus(`Enviando ${users.length} emails...`, 'info');
+            
+            let sent = 0, failed = 0;
+            
+            for (const user of users) {
+                try {
+                    const response = await fetch(`/api/gmail/send_credit_statement.php?user_id=${user.id}`);
+                    const result = await response.json();
+                    result.success ? sent++ : failed++;
+                    showStatus(`Enviando... ${sent + failed}/${users.length} (${sent} ✓, ${failed} ✗)`, 'info');
+                } catch (error) {
+                    failed++;
+                }
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            showStatus(`✅ Completado: ${sent} enviados, ${failed} fallidos`, sent === users.length ? 'success' : 'error');
+        }
+
+        document.getElementById('emailForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('to', document.getElementById('emailTo').value);
+            formData.append('subject', document.getElementById('emailSubject').value);
+            formData.append('body', document.getElementById('emailBody').value);
+            
+            showStatus('Enviando email...', 'info');
+            try {
+                const response = await fetch('/api/gmail/send_email.php', { method: 'POST', body: formData });
+                const result = await response.json();
+                if (result.success) {
+                    showStatus('✅ Email enviado', 'success');
+                    e.target.reset();
+                } else {
+                    showStatus(`❌ Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Error de conexión', 'error');
+            }
+        });
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            const colors = {
+                success: 'bg-green-50 border-l-4 border-green-500 text-green-700',
+                error: 'bg-red-50 border-l-4 border-red-500 text-red-700',
+                info: 'bg-blue-50 border-l-4 border-blue-500 text-blue-700'
+            };
+            statusDiv.className = `p-4 rounded-lg ${colors[type]}`;
+            statusDiv.textContent = message;
+            statusDiv.classList.remove('hidden');
+            if (type !== 'info') setTimeout(() => statusDiv.classList.add('hidden'), 5000);
+        }
+    </script>
 </body>
 </html>

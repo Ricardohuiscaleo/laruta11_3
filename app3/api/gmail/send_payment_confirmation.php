@@ -183,17 +183,13 @@ try {
                     
                     <tr>
                         <td style='background-color: #111827; padding: 40px 20px; text-align: center;'>
-                            <table width='100%' cellpadding='0' cellspacing='0'>
-                                <tr>
-                                    <td align='center' style='padding-bottom: 20px;'>
-                                        <a href='tel:+56936227422' style='display: inline-block; color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; padding: 0 12px;'>Soporte</a>
-                                        <span style='color: #4b5563;'>•</span>
-                                        <a href='tel:+56945392581' style='display: inline-block; color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; padding: 0 12px;'>Ventas</a>
-                                        <span style='color: #4b5563;'>•</span>
-                                        <a href='https://app.laruta11.cl' style='display: inline-block; color: #ffffff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; padding: 0 12px;'>App</a>
-                                    </td>
-                                </tr>
-                            </table>
+                            <p style='color: #9ca3af; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 20px 0; text-align: center;'>
+                                <a href='tel:+56936227422' style='color: #ffffff; text-decoration: none; margin: 0 16px;'>Soporte</a>
+                                <span style='color: #4b5563;'>•</span>
+                                <a href='tel:+56945392581' style='color: #ffffff; text-decoration: none; margin: 0 16px;'>Ventas</a>
+                                <span style='color: #4b5563;'>•</span>
+                                <a href='https://app.laruta11.cl' style='color: #ffffff; text-decoration: none; margin: 0 16px;'>App</a>
+                            </p>
                             <p style='color: #6b7280; margin: 0; font-size: 11px; line-height: 1.8; font-weight: 500;'>
                                 Yumbel 2629, Arica, Chile<br>
                                 <span style='color: #4b5563;'>© " . date('Y') . " La Ruta 11 SpA. Sabores con historia.</span>
