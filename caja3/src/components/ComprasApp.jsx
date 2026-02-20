@@ -1770,6 +1770,7 @@ export default function ComprasApp() {
                       headers: {'Content-Type': 'application/json'},
                       body: JSON.stringify({
                         id: editingItem.id,
+                        name: editingItem.name,
                         current_stock: editingItem.current_stock,
                         min_stock_level: editingItem.min_stock_level,
                         is_active: editingItem.is_active
