@@ -10,6 +10,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [dispatchModal, setDispatchModal] = useState(null);
   const [checkedItems, setCheckedItems] = useState({});
+  const [photoModal, setPhotoModal] = useState(null);
   const [showNewFeaturePopup, setShowNewFeaturePopup] = useState(() => {
     const today = new Date();
     const d = today.getDate(), m = today.getMonth() + 1, y = today.getFullYear();
@@ -734,7 +735,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
           </div>
           <div className="px-2 pb-2 pt-1">
             {order.dispatch_photo_url ? (
-              <div className="relative rounded-lg overflow-hidden border-2 border-green-400">
+              <div className="relative rounded-lg overflow-hidden border-2 border-green-400 cursor-pointer" onClick={() => setPhotoModal(order.dispatch_photo_url)}>
                 <img src={order.dispatch_photo_url} alt="despacho" className="w-full h-28 object-cover" />
                 <span className="absolute top-1 left-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-1"><CheckCircle size={10} /> Foto guardada</span>
               </div>
@@ -798,6 +799,16 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
 
   return (
     <div className="fixed inset-0 bg-white z-40 flex flex-col overflow-hidden">
+      {photoModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setPhotoModal(null)}>
+          <div className="relative max-w-full max-h-full" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setPhotoModal(null)} className="absolute -top-3 -right-3 bg-white rounded-full p-1 shadow-lg z-10">
+              <X size={20} className="text-gray-800" />
+            </button>
+            <img src={photoModal} alt="foto pedido" className="max-w-[90vw] max-h-[85vh] rounded-lg object-contain" />
+          </div>
+        </div>
+      )}
       <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 shadow-lg flex items-center justify-between">
         <h2 className="text-xl font-bold flex items-center gap-2">
           📋 Comandas Activas
