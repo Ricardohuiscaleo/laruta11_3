@@ -39,15 +39,40 @@ try {
     // Obtener ingredientes
     $stmt_ing = $pdo->query("
         SELECT 
-            id,
-            name,
-            category,
-            unit,
-            current_stock,
-            'ingredient' as type
-        FROM ingredients 
-        WHERE is_active = 1
-        ORDER BY name ASC
+            i.id,
+            i.name,
+            i.category,
+            i.unit,
+            i.current_stock,
+            i.min_stock_level,
+            'ingredient' as type,
+            (
+                SELECT cd.cantidad 
+                FROM compras_detalle cd
+                JOIN compras c ON cd.compra_id = c.id
+                WHERE cd.ingrediente_id = i.id
+                ORDER BY c.fecha_compra DESC
+                LIMIT 1
+            ) as ultima_compra_cantidad,
+            (
+                SELECT cd.stock_despues 
+                FROM compras_detalle cd
+                JOIN compras c ON cd.compra_id = c.id
+                WHERE cd.ingrediente_id = i.id
+                ORDER BY c.fecha_compra DESC
+                LIMIT 1
+            ) as stock_despues_compra,
+            (
+                SELECT c.fecha_compra 
+                FROM compras_detalle cd
+                JOIN compras c ON cd.compra_id = c.id
+                WHERE cd.ingrediente_id = i.id
+                ORDER BY c.fecha_compra DESC
+                LIMIT 1
+            ) as fecha_ultima_compra
+        FROM ingredients i
+        WHERE i.is_active = 1
+        ORDER BY i.name ASC
     ");
     $ingredientes = $stmt_ing->fetchAll(PDO::FETCH_ASSOC);
 
@@ -62,7 +87,31 @@ try {
             p.min_stock_level,
             'product' as type,
             p.category_id,
-            p.subcategory_id
+            p.subcategory_id,
+            (
+                SELECT cd.cantidad 
+                FROM compras_detalle cd
+                JOIN compras co ON cd.compra_id = co.id
+                WHERE cd.product_id = p.id
+                ORDER BY co.fecha_compra DESC
+                LIMIT 1
+            ) as ultima_compra_cantidad,
+            (
+                SELECT cd.stock_despues 
+                FROM compras_detalle cd
+                JOIN compras co ON cd.compra_id = co.id
+                WHERE cd.product_id = p.id
+                ORDER BY co.fecha_compra DESC
+                LIMIT 1
+            ) as stock_despues_compra,
+            (
+                SELECT co.fecha_compra 
+                FROM compras_detalle cd
+                JOIN compras co ON cd.compra_id = co.id
+                WHERE cd.product_id = p.id
+                ORDER BY co.fecha_compra DESC
+                LIMIT 1
+            ) as fecha_ultima_compra
         FROM products p
         LEFT JOIN categories c ON p.category_id = c.id
         WHERE p.is_active = 1

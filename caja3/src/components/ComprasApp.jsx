@@ -880,6 +880,12 @@ export default function ComprasApp() {
                   const textColor = isCritical ? '#dc2626' : isLow ? '#d97706' : '#6b7280';
                   const label = isCritical ? '¡Crítico!' : isLow ? 'Bajo' : '';
                   
+                  // Calcular ventas desde última compra
+                  const stockDespuesCompra = parseFloat(ing.stock_despues_compra) || null;
+                  const vendidoDespuesCompra = stockDespuesCompra !== null ? stockDespuesCompra - currentStock : null;
+                  const stockEsperado = stockDespuesCompra !== null ? stockDespuesCompra : null;
+                  const diferencia = stockEsperado !== null ? currentStock - stockEsperado : null;
+                  
                   return (
                     <div key={ing.id} style={{
                       padding: '6px 8px',
@@ -893,6 +899,21 @@ export default function ComprasApp() {
                       <div style={{color: textColor, fontSize: '11px', fontWeight: (isCritical || isLow) ? '600' : '400'}}>
                         {displayStock} / {displayMin} ({Math.round(percentage)}%) {label}
                       </div>
+                      {ing.ultima_compra_cantidad && (
+                        <div style={{fontSize: '10px', color: '#6b7280', marginTop: '2px'}}>
+                          Última compra: {isBebida ? Math.round(ing.ultima_compra_cantidad) : ing.ultima_compra_cantidad} {ing.unit}
+                        </div>
+                      )}
+                      {vendidoDespuesCompra !== null && vendidoDespuesCompra !== 0 && (
+                        <div style={{fontSize: '10px', color: '#ef4444', marginTop: '1px'}}>
+                          Vendido: {isBebida ? Math.round(Math.abs(vendidoDespuesCompra)) : Math.abs(vendidoDespuesCompra).toFixed(1)} {ing.unit}
+                        </div>
+                      )}
+                      {diferencia !== null && Math.abs(diferencia) > 0.01 && (
+                        <div style={{fontSize: '10px', color: diferencia > 0 ? '#10b981' : '#f59e0b', marginTop: '1px', fontWeight: '600'}}>
+                          {diferencia > 0 ? '✓' : '⚠'} Dif: {isBebida ? Math.round(diferencia) : diferencia.toFixed(1)}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
