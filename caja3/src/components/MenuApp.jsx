@@ -1807,10 +1807,23 @@ export default function App() {
   };
   
   const handleCustomizeProduct = (item, itemIndex) => {
+    // Derivar la categoría correcta desde el producto para que el modal muestre las customizations correctas
+    const categoryMap = {
+      'Hamburguesas': 'hamburguesas',
+      'Hamburguesas (200g)': 'hamburguesas',
+      'Hamburguesas (100g)': 'hamburguesas',
+      'Churrascos': 'churrascos',
+      'Sandwiches': 'churrascos',
+      'Completos': 'completos',
+      'Papas': 'papas',
+      'Combos': 'Combos',
+    };
+    const productCategory = categoryMap[item.category_name] || item.category_key || activeCategory;
     setSelectedProduct({
       ...item,
       isEditing: true,
-      cartIndex: itemIndex
+      cartIndex: itemIndex,
+      _overrideCategory: productCategory
     });
     setIsCartOpen(false);
   };

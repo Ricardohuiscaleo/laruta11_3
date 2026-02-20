@@ -167,7 +167,8 @@ const ProductDetailModal = ({
     }
   }, [showReviewForm, user]);
   
-  const showComboSection = ['churrascos', 'hamburguesas', 'completos', 'la_ruta_11', 'papas_y_snacks', 'papas', 'Combos'].includes(activeCategory);
+  const effectiveCategory = product._overrideCategory || activeCategory;
+  const showComboSection = ['churrascos', 'hamburguesas', 'completos', 'la_ruta_11', 'papas_y_snacks', 'papas', 'Combos'].includes(effectiveCategory);
   
   const handleScroll = () => {
     if (scrollRef.current) {
@@ -221,10 +222,10 @@ const ProductDetailModal = ({
                 <div className="border-t pt-4">
                     <h3 className="text-lg font-bold text-gray-800 mb-4">Combina tu Pedido</h3>
                     {/* Sección Personalizar solo para hamburguesas, churrascos, completos, tomahawks y subcategoría papas */}
-                    {(['hamburguesas', 'churrascos', 'completos', 'la_ruta_11', 'papas', 'Combos'].includes(activeCategory) || 
-                      (activeCategory === 'papas_y_snacks' && product.subcategory_name === 'Papas')) && (
+                    {(['hamburguesas', 'churrascos', 'completos', 'la_ruta_11', 'papas', 'Combos'].includes(effectiveCategory) || 
+                      (effectiveCategory === 'papas_y_snacks' && product.subcategory_name === 'Papas')) && (
                       <ComboSection 
-                        title={`Personaliza tu ${activeCategory === 'hamburguesas' ? 'Hamburguesa' : activeCategory === 'churrascos' ? 'Sandwich' : activeCategory === 'completos' ? 'Completo' : activeCategory === 'la_ruta_11' ? 'Tomahawk' : activeCategory === 'papas' ? 'Papas' : activeCategory === 'Combos' ? 'Combo' : 'Papas'}`} 
+                        title={`Personaliza tu ${effectiveCategory === 'hamburguesas' ? 'Hamburguesa' : effectiveCategory === 'churrascos' ? 'Sandwich' : effectiveCategory === 'completos' ? 'Completo' : effectiveCategory === 'la_ruta_11' ? 'Tomahawk' : effectiveCategory === 'papas' ? 'Papas' : effectiveCategory === 'Combos' ? 'Combo' : 'Papas'}`} 
                         items={comboItems.personalizar} 
                         isExtra={true} 
                         titleColor="text-orange-600"

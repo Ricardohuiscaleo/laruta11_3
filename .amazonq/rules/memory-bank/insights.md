@@ -9,7 +9,8 @@
   - Completos: category_id=4
   - Papas: category_id=12, subcategory_id=57
   - Pizzas: category_id=5, subcategory_id=60
-  - Bebidas: category_id=5, subcategory_ids=[11,10,27,28] (Bebidas, Jugos, Café, Té)
+  - Bebidas/Snacks: category_id=5 (categoría padre "Snacks"), subcategory_ids=[10,11,27,28] (Jugos, Bebidas, Café, Té)
+  - **IMPORTANTE**: El filtro de bebidas en ComprasApp usa subcategory_id, NO category_id
   - Combos: category_id=8
 
 ## Development Workflow
