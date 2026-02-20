@@ -830,8 +830,12 @@ export default function ComprasApp() {
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px'}}>
               {ingredientes
                 .filter(ing => {
-                  if (stockTab === 'bebidas') return ing.category === 'Bebidas';
-                  return ing.category !== 'Bebidas';
+                  if (stockTab === 'bebidas') {
+                    // Bebidas: products con category_id=5 y subcategory_id=11
+                    return ing.type === 'product' && ing.category_id === 5 && ing.subcategory_id === 11;
+                  }
+                  // Ingredientes: todos los ingredientes (type='ingredient')
+                  return ing.type === 'ingredient';
                 })
                 .filter(ing => ing.name.toLowerCase().includes(stockFilter.toLowerCase()))
                 .sort((a, b) => {
