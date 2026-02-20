@@ -1884,7 +1884,7 @@ export default function App() {
       cafe: menuWithImages.papas_y_snacks?.café || [],
       te: menuWithImages.papas_y_snacks?.té || [],
       salsas: menuWithImages.papas_y_snacks?.salsas || [],
-      personalizar: (menuWithImages.completos?.personalizar || []).filter(p => p.active === 1),
+      personalizar: (menuWithImages.personalizar?.personalizar || []).filter(p => p.active === 1),
       extras: menuWithImages.papas_y_snacks?.extras || []
   };
   
