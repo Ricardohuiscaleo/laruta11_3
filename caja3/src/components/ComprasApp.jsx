@@ -885,6 +885,7 @@ export default function ComprasApp() {
                   // Calcular uso desde última compra
                   const stockDespuesCompra = parseFloat(ing.stock_despues_compra) || null;
                   const usado = stockDespuesCompra !== null ? stockDespuesCompra - currentStock : null;
+                  const usadoValido = usado !== null && usado > 0 && usado <= (stockDespuesCompra || 0);
                   const diferencia = stockDespuesCompra !== null ? currentStock - stockDespuesCompra : null;
                   
                   return (
