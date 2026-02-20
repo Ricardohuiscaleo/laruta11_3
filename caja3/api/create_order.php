@@ -166,7 +166,8 @@ try {
             $combo_data = json_encode([
                 'fixed_items' => $item['fixed_items'] ?? [],
                 'selections' => $item['selections'] ?? [],
-                'combo_id' => $item['combo_id'] ?? null
+                'combo_id' => $item['combo_id'] ?? null,
+                'customizations' => $item['customizations'] ?? []
             ]);
         } else if (!empty($item['customizations']) && is_array($item['customizations'])) {
             $combo_data = json_encode([
