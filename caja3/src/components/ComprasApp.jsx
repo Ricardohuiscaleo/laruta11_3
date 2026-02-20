@@ -880,10 +880,10 @@ export default function ComprasApp() {
                   const textColor = isCritical ? '#dc2626' : isLow ? '#d97706' : '#6b7280';
                   const label = isCritical ? '¡Crítico!' : isLow ? 'Bajo' : '';
                   
-                  // Calcular diferencia de stock desde última compra
+                  // Calcular uso desde última compra
                   const stockDespuesCompra = parseFloat(ing.stock_despues_compra) || null;
-                  const diferenciaStock = stockDespuesCompra !== null ? currentStock - stockDespuesCompra : null;
-                  const stockDisminuido = diferenciaStock !== null && diferenciaStock < 0 ? Math.abs(diferenciaStock) : null;
+                  const usado = stockDespuesCompra !== null ? stockDespuesCompra - currentStock : null;
+                  const diferencia = stockDespuesCompra !== null ? currentStock - stockDespuesCompra : null;
                   
                   return (
                     <div key={ing.id} style={{
@@ -900,17 +900,17 @@ export default function ComprasApp() {
                       </div>
                       {ing.ultima_compra_cantidad && (
                         <div style={{fontSize: '10px', color: '#6b7280', marginTop: '2px'}}>
-                          Última compra: {isBebida ? Math.round(ing.ultima_compra_cantidad) : ing.ultima_compra_cantidad} {ing.unit}
+                          Últ. compra: {isBebida ? Math.round(ing.ultima_compra_cantidad) : ing.ultima_compra_cantidad} {ing.unit}
                         </div>
                       )}
-                      {stockDisminuido !== null && stockDisminuido > 0 && (
+                      {usado !== null && usado > 0 && (
                         <div style={{fontSize: '10px', color: '#ef4444', marginTop: '1px'}}>
-                          Usado: {isBebida ? Math.round(stockDisminuido) : stockDisminuido.toFixed(1)} {ing.unit}
+                          Usado: {isBebida ? Math.round(usado) : usado.toFixed(1)} {ing.unit}
                         </div>
                       )}
-                      {diferenciaStock !== null && Math.abs(diferenciaStock) > 0.01 && (
-                        <div style={{fontSize: '10px', color: diferenciaStock > 0 ? '#10b981' : '#ef4444', marginTop: '1px', fontWeight: '600'}}>
-                          {diferenciaStock > 0 ? '✓ +' : '⚠ '}{isBebida ? Math.round(Math.abs(diferenciaStock)) : Math.abs(diferenciaStock).toFixed(1)} vs compra
+                      {diferencia !== null && diferencia > 0 && (
+                        <div style={{fontSize: '10px', color: '#10b981', marginTop: '1px', fontWeight: '600'}}>
+                          ✓ +{isBebida ? Math.round(diferencia) : diferencia.toFixed(1)} extra
                         </div>
                       )}
                     </div>
