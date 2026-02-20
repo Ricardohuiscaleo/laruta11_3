@@ -1693,7 +1693,7 @@ export default function ComprasApp() {
           max-width: 1200px;
           margin: 0 auto;
           padding: 20px;
-          padding-top: 70px;
+          padding-top: 80px;
           padding-bottom: 100px;
           background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
           min-height: 100vh;
