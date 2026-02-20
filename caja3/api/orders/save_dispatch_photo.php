@@ -27,8 +27,8 @@ try {
     $url = $s3Manager->uploadFile($_FILES['photo'], $fileName);
 
     $pdo = new PDO(
-        "mysql:host={$config['ruta11_db_host']};dbname={$config['ruta11_db_name']};charset=utf8mb4",
-        $config['ruta11_db_user'], $config['ruta11_db_pass'],
+        "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
+        $config['app_db_user'], $config['app_db_pass'],
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
     $pdo->prepare("UPDATE tuu_orders SET dispatch_photo_url = ? WHERE id = ?")->execute([$url, $orderId]);
