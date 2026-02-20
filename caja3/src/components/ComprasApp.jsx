@@ -1780,22 +1780,21 @@ export default function ComprasApp() {
         }
         @media (max-width: 768px) {
           .header-row-single {
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            padding: 8px 12px;
-          }
-          .history-btn {
-            grid-column: 1 / -1;
-            margin-top: 4px;
+            grid-template-columns: repeat(4, 1fr) auto;
+            gap: 6px;
+            padding: 8px;
           }
           .stat-mini {
-            min-width: 70px;
+            min-width: 60px;
           }
           .stat-mini-label {
             font-size: 7px;
           }
           .stat-mini-value {
             font-size: 11px;
+          }
+          .history-btn {
+            padding: 6px;
           }
         }
         .form-row-compact {
