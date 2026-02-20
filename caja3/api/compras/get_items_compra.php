@@ -50,10 +50,12 @@ try {
             last_c.stock_despues_compra,
             last_c.fecha_ultima_compra,
             COALESCE((
-                SELECT SUM(ABS(it.quantity))
+                SELECT 
+                    SUM(CASE WHEN it.transaction_type = 'sale' AND it.previous_stock >= 0 THEN ABS(it.quantity) ELSE 0 END)
+                    - SUM(CASE WHEN it.transaction_type = 'return' THEN ABS(it.quantity) ELSE 0 END)
                 FROM inventory_transactions it
                 WHERE it.ingredient_id = i.id
-                AND it.transaction_type = 'sale'
+                AND it.transaction_type IN ('sale', 'return')
                 AND last_c.fecha_ultima_compra IS NOT NULL
                 AND it.created_at >= last_c.fecha_ultima_compra
             ), 0) as vendido_desde_compra
@@ -96,10 +98,12 @@ try {
             last_c.stock_despues_compra,
             last_c.fecha_ultima_compra,
             COALESCE((
-                SELECT SUM(ABS(it.quantity))
+                SELECT 
+                    SUM(CASE WHEN it.transaction_type = 'sale' AND it.previous_stock >= 0 THEN ABS(it.quantity) ELSE 0 END)
+                    - SUM(CASE WHEN it.transaction_type = 'return' THEN ABS(it.quantity) ELSE 0 END)
                 FROM inventory_transactions it
                 WHERE it.product_id = p.id
-                AND it.transaction_type = 'sale'
+                AND it.transaction_type IN ('sale', 'return')
                 AND last_c.fecha_ultima_compra IS NOT NULL
                 AND it.created_at >= last_c.fecha_ultima_compra
             ), 0) as vendido_desde_compra
