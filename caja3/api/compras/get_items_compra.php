@@ -61,20 +61,18 @@ try {
             ), 0) as vendido_desde_compra
         FROM ingredients i
         LEFT JOIN (
-            SELECT 
-                cd.ingrediente_id,
+            SELECT cd.ingrediente_id,
                 cd.cantidad as ultima_compra_cantidad,
                 cd.stock_despues as stock_despues_compra,
                 c.fecha_compra as fecha_ultima_compra
             FROM compras_detalle cd
             JOIN compras c ON cd.compra_id = c.id
-            WHERE cd.ingrediente_id IS NOT NULL
-            AND (cd.ingrediente_id, c.fecha_compra) IN (
-                SELECT cd2.ingrediente_id, MAX(c2.fecha_compra)
-                FROM compras_detalle cd2
+            WHERE cd.id = (
+                SELECT cd2.id FROM compras_detalle cd2
                 JOIN compras c2 ON cd2.compra_id = c2.id
-                WHERE cd2.ingrediente_id IS NOT NULL
-                GROUP BY cd2.ingrediente_id
+                WHERE cd2.ingrediente_id = cd.ingrediente_id
+                ORDER BY c2.fecha_compra DESC, cd2.id DESC
+                LIMIT 1
             )
         ) last_c ON last_c.ingrediente_id = i.id
         WHERE i.is_active = 1
@@ -110,20 +108,18 @@ try {
         FROM products p
         LEFT JOIN categories c ON p.category_id = c.id
         LEFT JOIN (
-            SELECT 
-                cd.product_id,
+            SELECT cd.product_id,
                 cd.cantidad as ultima_compra_cantidad,
                 cd.stock_despues as stock_despues_compra,
                 c.fecha_compra as fecha_ultima_compra
             FROM compras_detalle cd
             JOIN compras c ON cd.compra_id = c.id
-            WHERE cd.product_id IS NOT NULL
-            AND (cd.product_id, c.fecha_compra) IN (
-                SELECT cd2.product_id, MAX(c2.fecha_compra)
-                FROM compras_detalle cd2
+            WHERE cd.id = (
+                SELECT cd2.id FROM compras_detalle cd2
                 JOIN compras c2 ON cd2.compra_id = c2.id
-                WHERE cd2.product_id IS NOT NULL
-                GROUP BY cd2.product_id
+                WHERE cd2.product_id = cd.product_id
+                ORDER BY c2.fecha_compra DESC, cd2.id DESC
+                LIMIT 1
             )
         ) last_c ON last_c.product_id = p.id
         WHERE p.is_active = 1
