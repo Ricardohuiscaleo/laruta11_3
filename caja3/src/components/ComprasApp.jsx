@@ -827,7 +827,7 @@ export default function ComprasApp() {
           </div>
 
           <div style={{background: '#f8fafc', borderRadius: '12px', padding: '12px'}}>
-            <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px'}}>
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px'}}>
               {ingredientes
                 .filter(ing => {
                   if (stockTab === 'bebidas') return ing.category === 'Bebidas';
@@ -848,22 +848,19 @@ export default function ComprasApp() {
                   const ratio = ing.current_stock / (ing.min_stock_level || 1);
                   const isCritical = ratio < 0.5;
                   const isLow = ratio >= 0.5 && ratio < 1;
+                  const stockValue = parseFloat(ing.current_stock);
+                  const displayStock = Number.isInteger(stockValue) ? stockValue : stockValue.toFixed(1);
                   return (
                     <div key={ing.id} style={{
-                      padding: '8px',
+                      padding: '6px 8px',
                       background: 'white',
-                      borderRadius: '6px',
+                      borderRadius: '4px',
                       borderLeft: `3px solid ${isCritical ? '#ef4444' : isLow ? '#f59e0b' : '#10b981'}`,
-                      fontSize: '12px'
+                      fontSize: '12px',
+                      lineHeight: '1.3'
                     }}>
-                      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px'}}>
-                        <span style={{fontWeight: '600', fontSize: '13px'}}>{ing.name}</span>
-                        {(isCritical || isLow) && <AlertTriangle size={14} color={isCritical ? '#ef4444' : '#f59e0b'} />}
-                      </div>
-                      <div style={{display: 'flex', justifyContent: 'space-between', color: '#6b7280', fontSize: '11px'}}>
-                        <span>{parseFloat(ing.current_stock).toFixed(1)} {ing.unit}</span>
-                        <span>Mín: {ing.min_stock_level}</span>
-                      </div>
+                      <div style={{fontWeight: '600', fontSize: '12px', marginBottom: '2px'}}>{ing.name}</div>
+                      <div style={{color: '#6b7280', fontSize: '11px'}}>{displayStock} {ing.unit}</div>
                     </div>
                   );
                 })}
