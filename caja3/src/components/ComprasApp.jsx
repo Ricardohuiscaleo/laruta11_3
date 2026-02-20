@@ -730,9 +730,21 @@ export default function ComprasApp() {
               </div>
             )}
           </div>
+
+          {/* Botón Buscar (solo en Historial) */}
+          {activeTab === 'historial' && (
+            <button 
+              onClick={() => setShowComprasSearch(!showComprasSearch)} 
+              className="dropdown-trigger" 
+              style={{width: 'auto', padding: '12px', minWidth: '48px'}}
+              title="Buscar"
+            >
+              <Search size={18} />
+            </button>
+          )}
         </div>
       </div>
-      {showComprasSearch && activeTab === 'historial' && (
+      {showComprasSearch && (
         <div style={{
           marginBottom: '16px',
           padding: '12px',
