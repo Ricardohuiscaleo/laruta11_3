@@ -36,16 +36,27 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 
+    $search = trim($_GET['search'] ?? '');
     $limit = max(1, min(200, intval($_GET['limit'] ?? 50)));
     $page = max(1, intval($_GET['page'] ?? 1));
     $offset = ($page - 1) * $limit;
 
-    $total = $pdo->query("SELECT COUNT(*) FROM compras")->fetchColumn();
+    if ($search !== '') {
+        $like = '%' . $search . '%';
+        $total = $pdo->prepare("SELECT COUNT(*) FROM compras WHERE proveedor LIKE ? OR notas LIKE ?");
+        $total->execute([$like, $like]);
+        $total = $total->fetchColumn();
 
-    $stmt = $pdo->prepare("SELECT * FROM compras ORDER BY fecha_compra DESC LIMIT :limit OFFSET :offset");
-    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-    $stmt->execute();
+        $stmt = $pdo->prepare("SELECT * FROM compras WHERE proveedor LIKE ? OR notas LIKE ? ORDER BY fecha_compra DESC");
+        $stmt->execute([$like, $like]);
+    } else {
+        $total = $pdo->query("SELECT COUNT(*) FROM compras")->fetchColumn();
+
+        $stmt = $pdo->prepare("SELECT * FROM compras ORDER BY fecha_compra DESC LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+    }
     $compras = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Obtener items de cada compra

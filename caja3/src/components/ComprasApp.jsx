@@ -99,9 +99,12 @@ export default function ComprasApp() {
     }
   };
 
-  const loadCompras = async (page = comprasPage) => {
+  const loadCompras = async (page = comprasPage, search = comprasSearchTerm) => {
     try {
-      const response = await fetch(`/api/compras/get_compras.php?page=${page}&limit=50&t=${Date.now()}`, {
+      const url = search
+        ? `/api/compras/get_compras.php?search=${encodeURIComponent(search)}&t=${Date.now()}`
+        : `/api/compras/get_compras.php?page=${page}&limit=50&t=${Date.now()}`;
+      const response = await fetch(url, {
         cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache' }
       });
@@ -110,7 +113,7 @@ export default function ComprasApp() {
         setCompras(data.compras || []);
         setComprasTotalPages(data.total_pages || 1);
         setComprasTotal(data.total_compras || 0);
-        setComprasPage(page);
+        if (!search) setComprasPage(page);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -760,7 +763,12 @@ export default function ComprasApp() {
             type="text"
             placeholder="Buscar por proveedor, producto, fecha..."
             value={comprasSearchTerm}
-            onChange={(e) => { setComprasSearchTerm(e.target.value); }}
+            onChange={(e) => { 
+              const val = e.target.value;
+              setComprasSearchTerm(val);
+              clearTimeout(window._comprasSearchTimer);
+              window._comprasSearchTimer = setTimeout(() => loadCompras(1, val), 400);
+            }}
             style={{
               width: '100%',
               padding: '10px',
@@ -1109,7 +1117,7 @@ export default function ComprasApp() {
               </button>
             </>
           )}
-          {comprasTotalPages > 1 && (
+          {comprasTotalPages > 1 && !comprasSearchTerm && (
             <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '16px 0', marginTop: '8px'}}>
               <button
                 onClick={() => loadCompras(comprasPage - 1)}
@@ -1499,7 +1507,7 @@ export default function ComprasApp() {
               </button>
             </div>
           )}
-          {comprasTotalPages > 1 && (
+          {comprasTotalPages > 1 && !comprasSearchTerm && (
             <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '12px 0', marginBottom: '8px'}}>
               <button onClick={() => loadCompras(comprasPage - 1)} disabled={comprasPage <= 1}
                 style={{padding: '8px 16px', border: '2px solid #e2e8f0', borderRadius: '8px', background: comprasPage <= 1 ? '#f1f5f9' : 'white', cursor: comprasPage <= 1 ? 'default' : 'pointer', fontWeight: '600', color: comprasPage <= 1 ? '#9ca3af' : '#374151'}}
@@ -1511,18 +1519,9 @@ export default function ComprasApp() {
             </div>
           )}
           {compras.length === 0 ? (
-            <div className="empty-state">No hay compras registradas</div>
+            <div className="empty-state">{comprasSearchTerm ? `Sin resultados para "${comprasSearchTerm}"` : 'No hay compras registradas'}</div>
           ) : (
             compras
-              .filter(compra => {
-                if (!comprasSearchTerm) return true;
-                const term = comprasSearchTerm.toLowerCase();
-                return (
-                  compra.proveedor.toLowerCase().includes(term) ||
-                  (compra.items && compra.items.some(item => item.nombre_item.toLowerCase().includes(term))) ||
-                  new Date(compra.fecha_compra).toLocaleDateString('es-CL').includes(term)
-                );
-              })
               .map(compra => (
               <div key={compra.id} className="compra-card" style={{position: 'relative'}}>
                 <div style={{position: 'absolute', top: '20px', right: '50px', display: 'flex', gap: '6px'}}>
