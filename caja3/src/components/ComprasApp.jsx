@@ -900,17 +900,17 @@ export default function ComprasApp() {
                       </div>
                       {ing.ultima_compra_cantidad && (
                         <div style={{fontSize: '10px', color: '#6b7280', marginTop: '2px'}}>
-                          Últ. compra: {isBebida ? Math.round(ing.ultima_compra_cantidad) : ing.ultima_compra_cantidad} {ing.unit}
+                          Últ. compra: {isBebida ? Math.round(ing.ultima_compra_cantidad) : ing.ultima_compra_cantidad} {ing.unit} (quedó en {isBebida ? Math.round(stockDespuesCompra) : stockDespuesCompra})
                         </div>
                       )}
                       {usadoValido && (
                         <div style={{fontSize: '10px', color: '#ef4444', marginTop: '1px'}}>
-                          Usado: {isBebida ? Math.round(usado) : usado.toFixed(1)} {ing.unit}
+                          Vendido: {isBebida ? Math.round(usado) : usado.toFixed(1)} {ing.unit}
                         </div>
                       )}
-                      {diferencia !== null && diferencia > 0 && (
-                        <div style={{fontSize: '10px', color: '#10b981', marginTop: '1px', fontWeight: '600'}}>
-                          ✓ +{isBebida ? Math.round(diferencia) : diferencia.toFixed(1)} extra
+                      {usadoValido && (
+                        <div style={{fontSize: '10px', color: currentStock === (stockDespuesCompra - usado) ? '#10b981' : '#f59e0b', marginTop: '1px', fontWeight: '600'}}>
+                          {currentStock === (stockDespuesCompra - usado) ? '✓' : '⚠'} Esperado: {isBebida ? Math.round(stockDespuesCompra - usado) : (stockDespuesCompra - usado).toFixed(1)}
                         </div>
                       )}
                     </div>
