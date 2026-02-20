@@ -114,14 +114,14 @@ try {
                 cd.product_id,
                 cd.cantidad as ultima_compra_cantidad,
                 cd.stock_despues as stock_despues_compra,
-                co.fecha_compra as fecha_ultima_compra
+                c.fecha_compra as fecha_ultima_compra
             FROM compras_detalle cd
-            JOIN compras co ON cd.compra_id = co.id
+            JOIN compras c ON cd.compra_id = c.id
             WHERE cd.product_id IS NOT NULL
-            AND (cd.product_id, co.fecha_compra) IN (
-                SELECT cd2.product_id, MAX(co2.fecha_compra)
+            AND (cd.product_id, c.fecha_compra) IN (
+                SELECT cd2.product_id, MAX(c2.fecha_compra)
                 FROM compras_detalle cd2
-                JOIN compras co2 ON cd2.compra_id = co2.id
+                JOIN compras c2 ON cd2.compra_id = c2.id
                 WHERE cd2.product_id IS NOT NULL
                 GROUP BY cd2.product_id
             )
