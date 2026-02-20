@@ -1732,7 +1732,7 @@ export default function ComprasApp() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>✏️ Editar {editingItem.name}</h3>
             <div className="form-group">
-              <label>Stock Actual</label>
+              <label>Stock Actual ({editingItem.unit})</label>
               <input
                 type="number"
                 value={editingItem.current_stock}
@@ -1741,7 +1741,7 @@ export default function ComprasApp() {
               />
             </div>
             <div className="form-group">
-              <label>Stock Mínimo</label>
+              <label>Stock Mínimo ({editingItem.unit})</label>
               <input
                 type="number"
                 value={editingItem.min_stock_level}
