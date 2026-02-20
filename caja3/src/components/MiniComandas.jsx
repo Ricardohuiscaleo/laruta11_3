@@ -320,7 +320,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
           <div className="ml-3 mt-1 text-xs text-gray-600">
             <div className="font-medium mb-0.5">Incluye:</div>
             {comboData.customizations.map((custom, idx) => (
-              <div key={idx}>• {item.quantity}x {custom.name}</div>
+              <div key={idx}>• {custom.quantity || item.quantity}x {custom.name}</div>
             ))}
           </div>
         )}

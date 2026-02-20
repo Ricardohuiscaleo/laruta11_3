@@ -724,6 +724,7 @@
                                                                 const parsed = typeof item.combo_data === 'string' ? JSON.parse(item.combo_data) : item.combo_data;
                                                                 if (isCombo) {
                                                                     comboData = parsed;
+                                                                    customizations = parsed.customizations || null;
                                                                 } else if (parsed.customizations) {
                                                                     customizations = parsed.customizations;
                                                                 }
