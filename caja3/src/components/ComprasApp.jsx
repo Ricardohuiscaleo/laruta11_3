@@ -1455,11 +1455,26 @@ export default function ComprasApp() {
             )}
           </div>
 
-          <div className="btn-submit">
-            <button type="submit" disabled={loading}>
-              {loading ? 'Registrando...' : <><Check size={18} /> Registrar Compra</>}
-            </button>
-          </div>
+          <button type="submit" disabled={loading} style={{
+            width: '100%',
+            marginTop: '16px',
+            padding: '16px',
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '12px',
+            fontSize: '16px',
+            fontWeight: '700',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            minHeight: '56px',
+            opacity: loading ? 0.5 : 1
+          }}>
+            {loading ? 'Registrando...' : <><Check size={18} /> Registrar Compra</>}
+          </button>
         </form>
       ) : (
         <div className="historial-container">
@@ -2361,41 +2376,6 @@ export default function ComprasApp() {
           font-size: 20px;
           margin-top: 12px;
           box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-        .btn-submit {
-          position: fixed;
-          bottom: 20px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: calc(100% - 40px);
-          max-width: 1160px;
-          z-index: 50;
-        }
-        .btn-submit button {
-          width: 100%;
-          padding: 16px;
-          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-          color: white;
-          border: none;
-          border-radius: 12px;
-          font-size: 16px;
-          font-weight: 700;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          min-height: 56px;
-          transition: all 0.2s;
-          box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
-        }
-        .btn-submit button:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(16, 185, 129, 0.5);
-        }
-        .btn-submit button:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
         }
         .historial-container {
           display: flex;
