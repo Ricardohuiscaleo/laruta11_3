@@ -820,9 +820,9 @@ export default function ComprasApp() {
                 background: 'white'
               }}
             >
-              <option value="criticidad">Criticidad</option>
-              <option value="nombre">Nombre</option>
-              <option value="stock">Stock</option>
+              <option value="criticidad">🚦 Criticidad</option>
+              <option value="nombre">🔤 Nombre</option>
+              <option value="stock">📊 Stock</option>
             </select>
           </div>
 
@@ -849,22 +849,38 @@ export default function ComprasApp() {
                   return 0;
                 })
                 .map(ing => {
-                  const ratio = ing.current_stock / (ing.min_stock_level || 1);
-                  const isCritical = ratio < 0.5;
-                  const isLow = ratio >= 0.5 && ratio < 1;
-                  const stockValue = parseFloat(ing.current_stock);
-                  const displayStock = Number.isInteger(stockValue) ? stockValue : stockValue.toFixed(1);
+                  const currentStock = parseFloat(ing.current_stock);
+                  const minStock = parseFloat(ing.min_stock_level) || 1;
+                  const percentage = (currentStock / minStock) * 100;
+                  
+                  // Sistema semáforo: Verde >= 100%, Amarillo 50-99%, Rojo < 50%
+                  const isOk = percentage >= 100;
+                  const isLow = percentage >= 50 && percentage < 100;
+                  const isCritical = percentage < 50;
+                  
+                  // Bebidas: enteros, Ingredientes: decimales si necesario
+                  const isBebida = stockTab === 'bebidas';
+                  const displayStock = isBebida ? Math.round(currentStock) : (Number.isInteger(currentStock) ? currentStock : currentStock.toFixed(1));
+                  const displayMin = isBebida ? Math.round(minStock) : (Number.isInteger(minStock) ? minStock : minStock.toFixed(1));
+                  
+                  const bgColor = isCritical ? '#fee2e2' : isLow ? '#fef3c7' : 'white';
+                  const borderColor = isCritical ? '#ef4444' : isLow ? '#f59e0b' : '#10b981';
+                  const textColor = isCritical ? '#dc2626' : isLow ? '#d97706' : '#6b7280';
+                  const label = isCritical ? '¡Crítico!' : isLow ? 'Bajo' : '';
+                  
                   return (
                     <div key={ing.id} style={{
                       padding: '6px 8px',
-                      background: 'white',
+                      background: bgColor,
                       borderRadius: '4px',
-                      borderLeft: `3px solid ${isCritical ? '#ef4444' : isLow ? '#f59e0b' : '#10b981'}`,
+                      borderLeft: `3px solid ${borderColor}`,
                       fontSize: '12px',
                       lineHeight: '1.3'
                     }}>
                       <div style={{fontWeight: '600', fontSize: '12px', marginBottom: '2px'}}>{ing.name}</div>
-                      <div style={{color: '#6b7280', fontSize: '11px'}}>{displayStock} {ing.unit}</div>
+                      <div style={{color: textColor, fontSize: '11px', fontWeight: (isCritical || isLow) ? '600' : '400'}}>
+                        {displayStock} / {displayMin} {label}
+                      </div>
                     </div>
                   );
                 })}
