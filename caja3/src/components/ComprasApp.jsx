@@ -883,7 +883,7 @@ export default function ComprasApp() {
                   // Calcular ventas desde última compra
                   const stockDespuesCompra = parseFloat(ing.stock_despues_compra) || null;
                   const vendidoDespuesCompra = stockDespuesCompra !== null ? stockDespuesCompra - currentStock : null;
-                  const stockEsperado = stockDespuesCompra !== null ? stockDespuesCompra : null;
+                  const stockEsperado = stockDespuesCompra !== null && vendidoDespuesCompra !== null ? stockDespuesCompra - vendidoDespuesCompra : null;
                   const diferencia = stockEsperado !== null ? currentStock - stockEsperado : null;
                   
                   return (
