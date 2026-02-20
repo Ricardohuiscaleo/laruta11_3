@@ -6,214 +6,158 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestor de Correos - La Ruta 11</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: #f9fafb; min-height: 100vh; }
-        .container { max-width: 80rem; margin: 0 auto; padding: 0 1rem; }
-        header { background: white; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 40; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .header-content { display: flex; align-items: center; justify-content: space-between; padding: 1rem 0; }
-        h1 { font-size: 1.5rem; font-weight: 700; color: #111827; }
-        .subtitle { font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem; }
-        .status-badge { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: #f3f4f6; border-radius: 9999px; font-size: 0.875rem; }
-        .status-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; }
-        .pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        main { padding: 1.5rem 0; }
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
-        .stat-card { padding: 1rem; border-radius: 0.75rem; color: white; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-        .stat-label { font-size: 0.75rem; opacity: 0.9; margin-bottom: 0.25rem; }
-        .stat-value { font-size: 1.875rem; font-weight: 700; }
-        .card { background: white; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; margin-bottom: 1.5rem; }
-        .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; }
-        .card-title { font-size: 1.125rem; font-weight: 600; color: #111827; }
-        .card-body { padding: 1.5rem; }
-        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-        .stat-box { text-align: center; padding: 1rem; border-radius: 0.5rem; }
-        .tabs { display: flex; border-bottom: 1px solid #e5e7eb; overflow-x: auto; }
-        .tab { flex: 1; padding: 0.75rem 1.5rem; font-size: 0.875rem; font-weight: 500; border-bottom: 2px solid transparent; background: none; border-left: none; border-right: none; border-top: none; cursor: pointer; white-space: nowrap; }
-        .tab.active { border-bottom-color: #ea580c; color: #ea580c; }
-        .tab:not(.active) { color: #6b7280; }
-        .tab-content { padding: 1.5rem; }
-        .tab-content.hidden { display: none; }
-        .flex-between { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
-        .btn { padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; font-size: 0.875rem; border: none; cursor: pointer; transition: all 0.2s; }
-        .btn-primary { background: #ea580c; color: white; }
-        .btn-primary:hover { background: #c2410c; }
-        .btn-secondary { background: #6b7280; color: white; }
-        .btn-secondary:hover { background: #4b5563; }
-        .user-card { background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 0.75rem; transition: box-shadow 0.2s; }
-        .user-card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .user-header { display: flex; justify-content: space-between; gap: 0.75rem; }
-        .user-info { flex: 1; min-width: 0; }
-        .user-name { font-weight: 600; color: #111827; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .user-email { font-size: 0.875rem; color: #4b5563; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .user-meta { font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; }
-        .user-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.75rem; font-size: 0.75rem; }
-        .user-stat { padding: 0.5rem; border-radius: 0.25rem; }
-        .user-actions { display: flex; gap: 0.5rem; }
-        .btn-icon { padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s; }
-        .form-group { margin-bottom: 1rem; }
-        .form-label { display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem; }
-        .form-input { width: 100%; border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 0.625rem 1rem; font-size: 1rem; }
-        .form-input:focus { outline: none; border-color: #ea580c; box-shadow: 0 0 0 3px rgba(234,88,12,0.1); }
-        textarea.form-input { resize: vertical; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; padding: 1rem; overflow-y: auto; }
-        .modal.show { display: flex; align-items: center; justify-content: center; }
-        .modal-content { background: white; border-radius: 0.75rem; width: 100%; max-width: 56rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-        .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem; border-bottom: 1px solid #e5e7eb; }
-        .modal-title { font-size: 1.125rem; font-weight: 600; color: #111827; }
-        .modal-close { background: none; border: none; font-size: 1.5rem; color: #9ca3af; cursor: pointer; line-height: 1; }
-        .modal-close:hover { color: #4b5563; }
-        .modal-body iframe { width: 100%; height: 60vh; border: none; }
-        .modal-footer { display: flex; gap: 0.75rem; padding: 1rem; border-top: 1px solid #e5e7eb; }
-        .modal-footer .btn { flex: 1; padding: 0.625rem; }
-        .alert { padding: 1rem; border-radius: 0.5rem; border-left: 4px solid; margin-top: 1.5rem; }
-        .alert.hidden { display: none; }
-        .spinner { width: 2rem; height: 2rem; border: 4px solid #e5e7eb; border-top-color: #ea580c; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 0.75rem; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .text-center { text-align: center; }
-        .text-gray { color: #9ca3af; }
-        .py-12 { padding: 3rem 0; }
-        @media (min-width: 640px) {
-            h1 { font-size: 1.875rem; }
-            .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 1rem; }
-            .stat-value { font-size: 2.25rem; }
-            .card-body { padding: 1.5rem; }
-            .flex-between { flex-direction: row; }
-            .btn { width: auto; }
-            .user-header { flex-direction: row; align-items: flex-start; }
-            .user-actions { flex-direction: column; }
-            .modal-body iframe { height: 70vh; }
-            .status-badge span { display: inline; }
-        }
-        @media (max-width: 639px) {
-            .flex-between { flex-direction: column; align-items: stretch; }
-            .btn { width: 100%; }
-            .user-header { flex-direction: column; }
-            .user-actions { width: 100%; }
-            .user-actions .btn-icon { flex: 1; }
-            .status-badge span { display: none; }
-        }
-    </style>
 </head>
-<body>
-    <header>
-        <div class="container header-content">
-            <div>
-                <h1>📧 Gestor de Correos</h1>
-                <p class="subtitle">Estados de cuenta RL6</p>
-            </div>
-            <div id="gmailStatus" class="status-badge">
-                <div class="status-dot pulse" style="background:#eab308"></div>
-                <span style="color:#4b5563">Verificando...</span>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-white border-b sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold text-gray-900">📧 Gestor de Correos</h1>
+                    <p class="text-sm text-gray-500 mt-1">Estados de cuenta RL6</p>
+                </div>
+                <div id="gmailStatus" class="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-full text-sm">
+                    <div class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                    <span class="hidden sm:inline text-gray-600">Verificando...</span>
+                </div>
             </div>
         </div>
     </header>
 
-    <main class="container">
-        <div class="stats-grid">
-            <div class="stat-card" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">
-                <p class="stat-label">Clientes</p>
-                <p id="statClientes" class="stat-value">-</p>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
+                <p class="text-xs uppercase tracking-wide opacity-90 mb-2">Clientes</p>
+                <p id="statClientes" class="text-4xl font-bold">-</p>
             </div>
-            <div class="stat-card" style="background:linear-gradient(135deg,#10b981,#059669)">
-                <p class="stat-label">Crédito Total</p>
-                <p id="statCreditoTotal" class="stat-value">-</p>
+            <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
+                <p class="text-xs uppercase tracking-wide opacity-90 mb-2">Crédito Total</p>
+                <p id="statCreditoTotal" class="text-4xl font-bold">-</p>
             </div>
-            <div class="stat-card" style="background:linear-gradient(135deg,#f97316,#ea580c)">
-                <p class="stat-label">Cobranza</p>
-                <p id="statCobranza" class="stat-value">-</p>
+            <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg">
+                <p class="text-xs uppercase tracking-wide opacity-90 mb-2">Cobranza</p>
+                <p id="statCobranza" class="text-4xl font-bold">-</p>
             </div>
-            <div class="stat-card" style="background:linear-gradient(135deg,#a855f7,#9333ea)">
-                <p class="stat-label">Disponible</p>
-                <p id="statDisponible" class="stat-value">-</p>
+            <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
+                <p class="text-xs uppercase tracking-wide opacity-90 mb-2">Disponible</p>
+                <p id="statDisponible" class="text-4xl font-bold">-</p>
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-header"><h2 class="card-title">💳 Pagos de Hoy</h2></div>
-            <div class="card-body">
-                <div class="grid-2">
-                    <div class="stat-box" style="background:#ecfdf5">
-                        <p style="font-size:0.875rem;color:#059669;margin-bottom:0.25rem">Usuarios</p>
-                        <p id="statPagaronHoy" style="font-size:1.875rem;font-weight:700;color:#047857">-</p>
-                    </div>
-                    <div class="stat-box" style="background:#f0fdfa">
-                        <p style="font-size:0.875rem;color:#0d9488;margin-bottom:0.25rem">Total</p>
-                        <p id="statTotalPagado" style="font-size:1.875rem;font-weight:700;color:#0f766e">-</p>
-                    </div>
+        <!-- Daily Stats -->
+        <div class="bg-white rounded-xl shadow-sm border p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">💳 Pagos de Hoy</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="text-center p-6 bg-emerald-50 rounded-lg">
+                    <p class="text-sm font-medium text-emerald-600 mb-2">Usuarios</p>
+                    <p id="statPagaronHoy" class="text-4xl font-bold text-emerald-700">-</p>
+                </div>
+                <div class="text-center p-6 bg-teal-50 rounded-lg">
+                    <p class="text-sm font-medium text-teal-600 mb-2">Total</p>
+                    <p id="statTotalPagado" class="text-4xl font-bold text-teal-700">-</p>
                 </div>
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-header"><h2 class="card-title">📈 Histórico</h2></div>
-            <div class="card-body">
-                <div class="grid-2">
-                    <div class="stat-box" style="background:#eef2ff">
-                        <p style="font-size:0.875rem;color:#4f46e5;margin-bottom:0.25rem">Usuarios</p>
-                        <p id="statUsuariosPagaronTotal" style="font-size:1.875rem;font-weight:700;color:#4338ca">-</p>
-                    </div>
-                    <div class="stat-box" style="background:#ecfeff">
-                        <p style="font-size:0.875rem;color:#0891b2;margin-bottom:0.25rem">Monto</p>
-                        <p id="statMontoPagadoTotal" style="font-size:1.875rem;font-weight:700;color:#0e7490">-</p>
-                    </div>
+        <!-- Historic Stats -->
+        <div class="bg-white rounded-xl shadow-sm border p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">📈 Histórico</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="text-center p-6 bg-indigo-50 rounded-lg">
+                    <p class="text-sm font-medium text-indigo-600 mb-2">Usuarios</p>
+                    <p id="statUsuariosPagaronTotal" class="text-4xl font-bold text-indigo-700">-</p>
+                </div>
+                <div class="text-center p-6 bg-cyan-50 rounded-lg">
+                    <p class="text-sm font-medium text-cyan-600 mb-2">Monto</p>
+                    <p id="statMontoPagadoTotal" class="text-4xl font-bold text-cyan-700">-</p>
                 </div>
             </div>
         </div>
 
-        <div class="card">
-            <div class="tabs">
-                <button class="tab active" data-action="showTab" data-tab="users" id="tab-users">👥 Usuarios</button>
-                <button class="tab" data-action="showTab" data-tab="test" id="tab-test">🧪 Prueba</button>
+        <!-- Tabs -->
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="border-b">
+                <nav class="flex -mb-px overflow-x-auto">
+                    <button data-action="showTab" data-tab="users" id="tab-users" 
+                        class="tab-btn flex-1 sm:flex-none px-6 py-3 text-sm font-medium border-b-2 border-orange-500 text-orange-600 whitespace-nowrap">
+                        👥 Usuarios
+                    </button>
+                    <button data-action="showTab" data-tab="test" id="tab-test" 
+                        class="tab-btn flex-1 sm:flex-none px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 whitespace-nowrap">
+                        🧪 Prueba
+                    </button>
+                </nav>
             </div>
 
-            <div id="content-users" class="tab-content">
-                <div class="flex-between">
-                    <h3 class="card-title">Usuarios con Crédito</h3>
-                    <button data-action="sendMassive" class="btn btn-primary">📤 Enviar a Todos</button>
+            <!-- Users Tab -->
+            <div id="content-users" class="tab-content p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900">Usuarios con Crédito</h3>
+                    <button data-action="sendMassive" 
+                        class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-colors w-full sm:w-auto">
+                        📤 Enviar a Todos
+                    </button>
                 </div>
-                <div id="usersList">
-                    <div class="text-center text-gray py-12">
-                        <div class="spinner"></div>
+                <div id="usersList" class="space-y-3">
+                    <div class="text-center text-gray-400 py-12">
+                        <div class="animate-spin w-8 h-8 border-4 border-gray-200 border-t-orange-500 rounded-full mx-auto mb-3"></div>
                         <p>Cargando usuarios...</p>
                     </div>
                 </div>
             </div>
 
-            <div id="content-test" class="tab-content hidden">
-                <h3 class="card-title" style="margin-bottom:1rem">Enviar Email de Prueba</h3>
-                <form id="emailForm" style="max-width:42rem">
-                    <div class="form-group">
-                        <label class="form-label">Email</label>
-                        <input type="email" id="emailTo" required class="form-input" placeholder="destinatario@example.com">
+            <!-- Test Tab -->
+            <div id="content-test" class="tab-content p-6 hidden">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Enviar Email de Prueba</h3>
+                <form id="emailForm" class="space-y-4 max-w-2xl">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" id="emailTo" required 
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+                            placeholder="destinatario@example.com">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Asunto</label>
-                        <input type="text" id="emailSubject" required class="form-input" placeholder="Asunto del correo">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Asunto</label>
+                        <input type="text" id="emailSubject" required 
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+                            placeholder="Asunto del correo">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Mensaje</label>
-                        <textarea id="emailBody" rows="6" required class="form-input" placeholder="Escribe tu mensaje aquí..."></textarea>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Mensaje</label>
+                        <textarea id="emailBody" rows="6" required 
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+                            placeholder="Escribe tu mensaje aquí..."></textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width:100%;padding:0.75rem">📧 Enviar Email</button>
+                    <button type="submit" 
+                        class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-lg transition-colors">
+                        📧 Enviar Email
+                    </button>
                 </form>
             </div>
         </div>
 
-        <div id="statusMessage" class="alert hidden"></div>
+        <div id="statusMessage" class="hidden"></div>
     </main>
 
-    <div id="previewModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">👁️ Preview</h3>
-                <button data-action="closePreview" class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body"><iframe id="previewFrame"></iframe></div>
-            <div class="modal-footer">
-                <button data-action="closePreview" class="btn btn-secondary">Cerrar</button>
-                <button data-action="sendFromPreview" class="btn btn-primary">📧 Enviar</button>
+    <!-- Preview Modal -->
+    <div id="previewModal" class="hidden fixed inset-0 bg-black/50 z-50 p-4 overflow-y-auto">
+        <div class="min-h-screen flex items-center justify-center">
+            <div class="bg-white rounded-xl w-full max-w-4xl shadow-2xl">
+                <div class="flex items-center justify-between p-4 border-b">
+                    <h3 class="text-lg font-semibold text-gray-900">👁️ Preview</h3>
+                    <button data-action="closePreview" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                </div>
+                <iframe id="previewFrame" class="w-full h-[60vh] sm:h-[70vh]"></iframe>
+                <div class="flex gap-3 p-4 border-t">
+                    <button data-action="closePreview" 
+                        class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2.5 rounded-lg transition-colors">
+                        Cerrar
+                    </button>
+                    <button data-action="sendFromPreview" 
+                        class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2.5 rounded-lg transition-colors">
+                        📧 Enviar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -249,15 +193,15 @@
                 const response = await fetch('/api/gmail/check_token.php');
                 const result = await response.json();
                 if (result.access_token) {
-                    statusDiv.innerHTML = '<div class="status-dot" style="background:#22c55e"></div><span style="color:#15803d;font-weight:500">Conectado</span>';
-                    statusDiv.style.background = '#f0fdf4';
+                    statusDiv.innerHTML = '<div class="w-2 h-2 bg-green-500 rounded-full"></div><span class="hidden sm:inline text-green-700 font-medium">Conectado</span>';
+                    statusDiv.className = 'flex items-center gap-2 px-3 py-2 bg-green-50 rounded-full text-sm';
                 } else {
-                    statusDiv.innerHTML = '<div class="status-dot" style="background:#ef4444"></div><span style="color:#b91c1c;font-weight:500">Error</span>';
-                    statusDiv.style.background = '#fef2f2';
+                    statusDiv.innerHTML = '<div class="w-2 h-2 bg-red-500 rounded-full"></div><span class="hidden sm:inline text-red-700 font-medium">Error</span>';
+                    statusDiv.className = 'flex items-center gap-2 px-3 py-2 bg-red-50 rounded-full text-sm';
                 }
             } catch (error) {
-                statusDiv.innerHTML = '<div class="status-dot" style="background:#ef4444"></div><span style="color:#b91c1c;font-weight:500">Error</span>';
-                statusDiv.style.background = '#fef2f2';
+                statusDiv.innerHTML = '<div class="w-2 h-2 bg-red-500 rounded-full"></div><span class="hidden sm:inline text-red-700 font-medium">Error</span>';
+                statusDiv.className = 'flex items-center gap-2 px-3 py-2 bg-red-50 rounded-full text-sm';
             }
         }
 
@@ -308,30 +252,36 @@
             document.getElementById('statDisponible').textContent = '$' + Math.round(totalDisponible).toLocaleString('es-CL');
             
             container.innerHTML = userList.map(user => `
-                <div class="user-card">
-                    <div class="user-header">
-                        <div class="user-info">
-                            <h4 class="user-name">${user.nombre}</h4>
-                            <p class="user-email">${user.email}</p>
-                            <p class="user-meta">${user.grado_militar} - ${user.unidad_trabajo}</p>
-                            <div class="user-stats">
-                                <div class="user-stat" style="background:#f9fafb">
-                                    <p style="color:#6b7280;margin-bottom:0.25rem">Crédito</p>
-                                    <p style="font-weight:600;color:#111827">$${user.credito_total.toLocaleString('es-CL')}</p>
+                <div class="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-semibold text-gray-900 truncate">${user.nombre}</h4>
+                            <p class="text-sm text-gray-600 truncate">${user.email}</p>
+                            <p class="text-xs text-gray-500 mt-1">${user.grado_militar} - ${user.unidad_trabajo}</p>
+                            <div class="mt-3 grid grid-cols-3 gap-2 text-xs">
+                                <div class="bg-gray-50 rounded p-2">
+                                    <p class="text-gray-500 mb-1">Crédito</p>
+                                    <p class="font-semibold text-gray-900">$${user.credito_total.toLocaleString('es-CL')}</p>
                                 </div>
-                                <div class="user-stat" style="background:#fff7ed">
-                                    <p style="color:#ea580c;margin-bottom:0.25rem">Usado</p>
-                                    <p style="font-weight:600;color:#c2410c">$${user.credito_usado.toLocaleString('es-CL')}</p>
+                                <div class="bg-orange-50 rounded p-2">
+                                    <p class="text-orange-600 mb-1">Usado</p>
+                                    <p class="font-semibold text-orange-700">$${user.credito_usado.toLocaleString('es-CL')}</p>
                                 </div>
-                                <div class="user-stat" style="background:#f0fdf4">
-                                    <p style="color:#16a34a;margin-bottom:0.25rem">Saldo</p>
-                                    <p style="font-weight:600;color:#15803d">$${user.credito_disponible.toLocaleString('es-CL')}</p>
+                                <div class="bg-green-50 rounded p-2">
+                                    <p class="text-green-600 mb-1">Saldo</p>
+                                    <p class="font-semibold text-green-700">$${user.credito_disponible.toLocaleString('es-CL')}</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="user-actions">
-                            <button data-action="preview" data-user-id="${user.id}" class="btn-icon" style="background:#3b82f6;color:white">👁️</button>
-                            <button data-action="send" data-user-id="${user.id}" class="btn-icon" style="background:#f97316;color:white">📧</button>
+                        <div class="flex sm:flex-col gap-2">
+                            <button data-action="preview" data-user-id="${user.id}" 
+                                class="flex-1 sm:flex-none bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                👁️
+                            </button>
+                            <button data-action="send" data-user-id="${user.id}" 
+                                class="flex-1 sm:flex-none bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                📧
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -339,10 +289,12 @@
         }
 
         function showTab(tab) {
-            document.querySelectorAll('.tab').forEach(btn => {
-                btn.classList.remove('active');
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-orange-500', 'text-orange-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
             });
-            document.getElementById(`tab-${tab}`).classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('border-orange-500', 'text-orange-600');
+            document.getElementById(`tab-${tab}`).classList.remove('border-transparent', 'text-gray-500');
             
             document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
             document.getElementById(`content-${tab}`).classList.remove('hidden');
@@ -351,11 +303,11 @@
         function previewEmail(userId) {
             currentUserId = userId;
             document.getElementById('previewFrame').src = `https://caja.laruta11.cl/api/gmail/preview_credit_statement.php?user_id=${userId}`;
-            document.getElementById('previewModal').classList.add('show');
+            document.getElementById('previewModal').classList.remove('hidden');
         }
 
         function closePreview() {
-            document.getElementById('previewModal').classList.remove('show');
+            document.getElementById('previewModal').classList.add('hidden');
             currentUserId = null;
         }
 
@@ -435,11 +387,11 @@
         function showStatus(message, type) {
             const statusDiv = document.getElementById('statusMessage');
             const colors = {
-                success: 'background:#f0fdf4;border-color:#22c55e;color:#15803d',
-                error: 'background:#fef2f2;border-color:#ef4444;color:#b91c1c',
-                info: 'background:#eff6ff;border-color:#3b82f6;color:#1e40af'
+                success: 'bg-green-50 border-l-4 border-green-500 text-green-700',
+                error: 'bg-red-50 border-l-4 border-red-500 text-red-700',
+                info: 'bg-blue-50 border-l-4 border-blue-500 text-blue-700'
             };
-            statusDiv.style.cssText = colors[type];
+            statusDiv.className = `p-4 rounded-lg ${colors[type]}`;
             statusDiv.textContent = message;
             statusDiv.classList.remove('hidden');
             if (type !== 'info') setTimeout(() => statusDiv.classList.add('hidden'), 5000);

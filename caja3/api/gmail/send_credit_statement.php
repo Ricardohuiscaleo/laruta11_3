@@ -303,6 +303,34 @@ $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $result = json_decode($response, true);
 
 if ($http_code === 200) {
+    // Guardar en email_logs
+    try {
+        $pdo = new PDO(
+            "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
+            $config['app_db_user'],
+            $config['app_db_pass'],
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+        
+        $log_stmt = $pdo->prepare("
+            INSERT INTO email_logs (
+                user_id, email_to, email_type, subject, amount,
+                gmail_message_id, gmail_thread_id, status, sent_at
+            ) VALUES (?, ?, 'credit_statement', ?, ?, ?, ?, 'sent', NOW())
+        ");
+        
+        $log_stmt->execute([
+            $user_id,
+            $to,
+            $subject,
+            $saldo_pagar,
+            $result['id'] ?? null,
+            $result['threadId'] ?? null
+        ]);
+    } catch (Exception $e) {
+        error_log("Error logging email: " . $e->getMessage());
+    }
+    
     echo json_encode([
         'success' => true,
         'message' => 'Email enviado correctamente',
@@ -316,6 +344,33 @@ if ($http_code === 200) {
         ]
     ]);
 } else {
+    // Guardar error en email_logs
+    try {
+        $pdo = new PDO(
+            "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
+            $config['app_db_user'],
+            $config['app_db_pass'],
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+        
+        $log_stmt = $pdo->prepare("
+            INSERT INTO email_logs (
+                user_id, email_to, email_type, subject, amount,
+                status, error_message, sent_at
+            ) VALUES (?, ?, 'credit_statement', ?, ?, 'failed', ?, NOW())
+        ");
+        
+        $log_stmt->execute([
+            $user_id,
+            $to,
+            $subject,
+            $saldo_pagar,
+            json_encode($result)
+        ]);
+    } catch (Exception $e) {
+        error_log("Error logging email failure: " . $e->getMessage());
+    }
+    
     echo json_encode([
         'success' => false,
         'error' => 'Error al enviar email',
