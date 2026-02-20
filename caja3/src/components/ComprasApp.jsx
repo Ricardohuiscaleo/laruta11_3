@@ -676,6 +676,7 @@ export default function ComprasApp() {
           {/* KPIs Dropdown */}
           <div className="dropdown-container">
             <button onClick={() => setShowKpiMenu(!showKpiMenu)} className="dropdown-trigger">
+              <span style={{fontSize: '12px', color: '#6b7280', marginRight: '4px'}}>Disponible</span>
               ${fmt(saldoDisponible)} <ChevronDown size={16} />
             </button>
             {showKpiMenu && (
@@ -826,58 +827,47 @@ export default function ComprasApp() {
           </div>
 
           <div style={{background: '#f8fafc', borderRadius: '12px', padding: '12px'}}>
-            {ingredientes
-              .filter(ing => {
-                if (stockTab === 'bebidas') return ing.category === 'Bebidas';
-                return ing.category !== 'Bebidas';
-              })
-              .filter(ing => ing.name.toLowerCase().includes(stockFilter.toLowerCase()))
-              .sort((a, b) => {
-                if (stockSort === 'criticidad') {
-                  const ratioA = a.current_stock / (a.min_stock_level || 1);
-                  const ratioB = b.current_stock / (b.min_stock_level || 1);
-                  return ratioA - ratioB;
-                }
-                if (stockSort === 'nombre') return a.name.localeCompare(b.name);
-                if (stockSort === 'stock') return a.current_stock - b.current_stock;
-                return 0;
-              })
-              .map(ing => {
-                const ratio = ing.current_stock / (ing.min_stock_level || 1);
-                const isCritical = ratio < 0.5;
-                const isLow = ratio >= 0.5 && ratio < 1;
-                return (
-                  <div key={ing.id} style={{
-                    display: 'grid',
-                    gridTemplateColumns: '2fr 1fr 1fr 1fr',
-                    gap: '12px',
-                    padding: '12px',
-                    background: 'white',
-                    borderRadius: '8px',
-                    marginBottom: '8px',
-                    borderLeft: `4px solid ${isCritical ? '#ef4444' : isLow ? '#f59e0b' : '#10b981'}`,
-                    alignItems: 'center'
-                  }}>
-                    <div>
-                      <div style={{fontWeight: '600', fontSize: '14px'}}>{ing.name}</div>
-                      <div style={{fontSize: '11px', color: '#6b7280'}}>{ing.category}</div>
-                    </div>
-                    <div style={{textAlign: 'center'}}>
-                      <div style={{fontSize: '18px', fontWeight: '700', color: isCritical ? '#ef4444' : isLow ? '#f59e0b' : '#10b981'}}>
-                        {parseFloat(ing.current_stock).toFixed(2)}
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px'}}>
+              {ingredientes
+                .filter(ing => {
+                  if (stockTab === 'bebidas') return ing.category === 'Bebidas';
+                  return ing.category !== 'Bebidas';
+                })
+                .filter(ing => ing.name.toLowerCase().includes(stockFilter.toLowerCase()))
+                .sort((a, b) => {
+                  if (stockSort === 'criticidad') {
+                    const ratioA = a.current_stock / (a.min_stock_level || 1);
+                    const ratioB = b.current_stock / (b.min_stock_level || 1);
+                    return ratioA - ratioB;
+                  }
+                  if (stockSort === 'nombre') return a.name.localeCompare(b.name);
+                  if (stockSort === 'stock') return a.current_stock - b.current_stock;
+                  return 0;
+                })
+                .map(ing => {
+                  const ratio = ing.current_stock / (ing.min_stock_level || 1);
+                  const isCritical = ratio < 0.5;
+                  const isLow = ratio >= 0.5 && ratio < 1;
+                  return (
+                    <div key={ing.id} style={{
+                      padding: '8px',
+                      background: 'white',
+                      borderRadius: '6px',
+                      borderLeft: `3px solid ${isCritical ? '#ef4444' : isLow ? '#f59e0b' : '#10b981'}`,
+                      fontSize: '12px'
+                    }}>
+                      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px'}}>
+                        <span style={{fontWeight: '600', fontSize: '13px'}}>{ing.name}</span>
+                        {(isCritical || isLow) && <AlertTriangle size={14} color={isCritical ? '#ef4444' : '#f59e0b'} />}
                       </div>
-                      <div style={{fontSize: '10px', color: '#6b7280'}}>{ing.unit}</div>
+                      <div style={{display: 'flex', justifyContent: 'space-between', color: '#6b7280', fontSize: '11px'}}>
+                        <span>{parseFloat(ing.current_stock).toFixed(1)} {ing.unit}</span>
+                        <span>Mín: {ing.min_stock_level}</span>
+                      </div>
                     </div>
-                    <div style={{textAlign: 'center'}}>
-                      <div style={{fontSize: '12px', color: '#6b7280'}}>Mín: {ing.min_stock_level}</div>
-                    </div>
-                    <div style={{textAlign: 'center'}}>
-                      {isCritical && <AlertTriangle size={20} color="#ef4444" />}
-                      {isLow && <AlertTriangle size={20} color="#f59e0b" />}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+            </div>
           </div>
         </div>
       ) : activeTab === 'proyeccion' ? (
