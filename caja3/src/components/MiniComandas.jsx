@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Banknote, Smartphone, Store, Truck, Clock, XCircle, CheckCircle, X, Send, Bike } from 'lucide-react';
+import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Banknote, Smartphone, Store, Truck, Clock, XCircle, CheckCircle, X, Send, Bike, Camera } from 'lucide-react';
 import ChecklistCard from './ChecklistCard.jsx';
 
 const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
@@ -732,16 +732,16 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
               </label>
             ))}
           </div>
-          <div className="border-t border-blue-100">
+          <div className="px-2 pb-2 pt-1">
             {order.dispatch_photo_url ? (
-              <div className="relative">
+              <div className="relative rounded-lg overflow-hidden border-2 border-green-400">
                 <img src={order.dispatch_photo_url} alt="despacho" className="w-full h-28 object-cover" />
-                <span className="absolute top-1 left-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">✅ Foto guardada</span>
+                <span className="absolute top-1 left-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-1"><CheckCircle size={10} /> Foto guardada</span>
               </div>
             ) : (
-              <label className="flex items-center gap-2 p-2 cursor-pointer hover:bg-blue-50">
-                <span className="text-xl">📷</span>
-                <span className="text-xs text-blue-700 font-medium">Tomar foto del pedido</span>
+              <label className="flex flex-col items-center justify-center gap-1.5 p-3 cursor-pointer rounded-lg border-2 border-dashed border-green-400 bg-green-50 hover:bg-green-100 transition-colors">
+                <Camera size={22} className="text-green-600" />
+                <span className="text-xs text-green-700 font-semibold">Adjuntar foto del pedido</span>
                 <input type="file" accept="image/*" className="hidden"
                   onChange={e => {
                     const f = e.target.files[0];
