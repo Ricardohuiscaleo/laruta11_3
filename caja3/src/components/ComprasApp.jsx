@@ -1499,6 +1499,17 @@ export default function ComprasApp() {
               </button>
             </div>
           )}
+          {comprasTotalPages > 1 && (
+            <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '12px 0', marginBottom: '8px'}}>
+              <button onClick={() => loadCompras(comprasPage - 1)} disabled={comprasPage <= 1}
+                style={{padding: '8px 16px', border: '2px solid #e2e8f0', borderRadius: '8px', background: comprasPage <= 1 ? '#f1f5f9' : 'white', cursor: comprasPage <= 1 ? 'default' : 'pointer', fontWeight: '600', color: comprasPage <= 1 ? '#9ca3af' : '#374151'}}
+              >← Anterior</button>
+              <span style={{fontSize: '14px', color: '#6b7280', fontWeight: '600'}}>Página {comprasPage} de {comprasTotalPages} ({comprasTotal} compras)</span>
+              <button onClick={() => loadCompras(comprasPage + 1)} disabled={comprasPage >= comprasTotalPages}
+                style={{padding: '8px 16px', border: '2px solid #e2e8f0', borderRadius: '8px', background: comprasPage >= comprasTotalPages ? '#f1f5f9' : 'white', cursor: comprasPage >= comprasTotalPages ? 'default' : 'pointer', fontWeight: '600', color: comprasPage >= comprasTotalPages ? '#9ca3af' : '#374151'}}
+              >Siguiente →</button>
+            </div>
+          )}
           {compras.length === 0 ? (
             <div className="empty-state">No hay compras registradas</div>
           ) : (
