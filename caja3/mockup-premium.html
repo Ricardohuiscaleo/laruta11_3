@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compras Premium - Mockup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    
+    <!-- Header Sticky Premium (max 12% altura) -->
+    <div class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="grid grid-cols-4 gap-3 text-center">
+                <div>
+                    <p class="text-[10px] font-medium text-slate-400 uppercase tracking-wide">Ventas Ene</p>
+                    <p class="text-sm font-semibold text-slate-700">$2.362.469</p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-medium text-slate-400 uppercase tracking-wide">Ventas Feb</p>
+                    <p class="text-sm font-semibold text-emerald-600">$1.596.792</p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-medium text-slate-400 uppercase tracking-wide">Sueldos</p>
+                    <p class="text-sm font-semibold text-rose-500">-$1.590.000</p>
+                </div>
+                <div class="bg-emerald-50 rounded-xl px-2 py-1 border border-emerald-200">
+                    <p class="text-[10px] font-medium text-emerald-600 uppercase tracking-wide">Saldo</p>
+                    <p class="text-lg font-black text-emerald-600">$1.538.903</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs con transición suave -->
+    <div class="max-w-7xl mx-auto px-4 pt-4">
+        <div class="flex gap-2 border-b border-slate-200">
+            <button class="px-6 py-3 font-semibold text-emerald-600 border-b-2 border-emerald-600 transition-all">
+                Registrar
+            </button>
+            <button class="px-6 py-3 font-medium text-slate-400 hover:text-slate-600 transition-all">
+                Proyección
+            </button>
+            <button class="px-6 py-3 font-medium text-slate-400 hover:text-slate-600 transition-all">
+                Historial
+            </button>
+        </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <div class="max-w-7xl mx-auto px-4 py-6 space-y-4">
+        
+        <!-- Card de Formulario -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+            <h2 class="text-lg font-bold text-slate-800 mb-4">Agregar Item</h2>
+            
+            <!-- Fila 1: Ingrediente (75%) + Cantidad (25%) -->
+            <div class="flex gap-3 mb-3">
+                <input 
+                    type="text" 
+                    placeholder="Buscar ingrediente..." 
+                    class="flex-[3] h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                >
+                <input 
+                    type="number" 
+                    placeholder="Cantidad" 
+                    inputmode="numeric"
+                    class="flex-1 h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                >
+            </div>
+
+            <!-- Fila 2: Unidad (50%) + Precio (50%) -->
+            <div class="flex gap-3 mb-4">
+                <select class="flex-1 h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all">
+                    <option>kg</option>
+                    <option>unidad</option>
+                    <option>litro</option>
+                </select>
+                <input 
+                    type="number" 
+                    placeholder="Precio unitario" 
+                    inputmode="numeric"
+                    class="flex-1 h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                >
+            </div>
+
+            <!-- Botón Agregar (Thumb-Zone) -->
+            <button class="w-full h-12 bg-emerald-600 text-white font-semibold rounded-xl active:scale-95 transition-transform shadow-sm hover:bg-emerald-700">
+                + Agregar
+            </button>
+        </div>
+
+        <!-- Presupuesto Dinámico -->
+        <div class="bg-emerald-50 rounded-3xl border border-emerald-200 p-4">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-slate-600">Saldo Disponible</span>
+                <span class="text-base font-bold text-slate-700">$1.538.903</span>
+            </div>
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-slate-600">Costo Proyectado</span>
+                <span class="text-base font-bold text-rose-500">-$450.000</span>
+            </div>
+            <div class="border-t border-emerald-300 pt-2 mt-2 flex justify-between items-center">
+                <span class="text-base font-bold text-slate-800">Saldo Restante</span>
+                <span class="text-xl font-black text-emerald-600">$1.088.903</span>
+            </div>
+        </div>
+
+        <!-- Lista de Items (Clean) -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="divide-y divide-slate-100">
+                <!-- Item 1 -->
+                <div class="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                            <span class="text-emerald-600 font-bold">🥩</span>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-800">Carne Molida</p>
+                            <p class="text-xs text-slate-400">5 kg</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-black text-slate-800">$45.000</p>
+                        <button class="text-xs text-rose-500 font-medium mt-1">Eliminar</button>
+                    </div>
+                </div>
+
+                <!-- Item 2 -->
+                <div class="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                            <span class="text-amber-600 font-bold">🍞</span>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-800">Pan Hallulla</p>
+                            <p class="text-xs text-slate-400">100 unidades</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-black text-slate-800">$15.000</p>
+                        <button class="text-xs text-rose-500 font-medium mt-1">Eliminar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botón Guardar (Thumb-Zone, parte inferior) -->
+        <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-slate-100">
+            <div class="max-w-7xl mx-auto">
+                <button class="w-full h-14 bg-emerald-600 text-white font-bold text-lg rounded-2xl active:scale-95 transition-transform shadow-lg hover:bg-emerald-700">
+                    Registrar Compra
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Empty State Example -->
+    <div class="max-w-7xl mx-auto px-4 py-20 text-center hidden">
+        <div class="text-6xl mb-4">📦</div>
+        <p class="text-slate-400 font-medium">No hay items agregados</p>
+        <p class="text-sm text-slate-300 mt-1">Comienza buscando un ingrediente</p>
+    </div>
+
+</body>
+</html>

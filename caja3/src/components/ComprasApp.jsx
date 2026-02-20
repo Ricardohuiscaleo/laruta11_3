@@ -1521,58 +1521,71 @@ export default function ComprasApp() {
       )}
 
       <style jsx>{`
+        * {
+          -webkit-tap-highlight-color: transparent;
+        }
         .compras-container {
           max-width: 1200px;
           margin: 0 auto;
-          padding: 20px;
+          padding: 16px;
+          padding-bottom: 100px;
         }
         .compras-header-compact {
-          background: white;
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          background: rgba(255, 255, 255, 0.8);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
           padding: 16px;
-          border-radius: 12px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          margin-bottom: 20px;
+          border-radius: 24px;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+          margin-bottom: 24px;
           display: flex;
           align-items: center;
           gap: 16px;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          border: 1px solid rgba(255, 255, 255, 0.5);
         }
         .compras-header-compact:hover {
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+          transform: translateY(-2px);
         }
         .stat-item {
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          gap: 6px;
           flex: 1;
         }
         .stat-highlight {
-          padding: 12px;
-          border-radius: 8px;
-          border: 2px solid #10b981;
+          padding: 16px;
+          border-radius: 20px;
+          background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.1) 100%);
+          border: 2px solid rgba(16, 185, 129, 0.2);
         }
         .stat-label {
-          font-size: 11px;
-          color: #6b7280;
+          font-size: 10px;
+          color: #64748b;
           font-weight: 600;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.8px;
         }
         .stat-value {
-          font-size: 16px;
-          font-weight: 700;
-          color: #374151;
+          font-size: 18px;
+          font-weight: 900;
+          color: #0f172a;
         }
         .stat-hint {
           font-size: 9px;
-          color: #9ca3af;
-          margin-top: 2px;
+          color: #94a3b8;
+          margin-top: 4px;
+          font-weight: 500;
         }
         .stat-divider {
           width: 1px;
           height: 40px;
-          background: #e5e7eb;
+          background: linear-gradient(to bottom, transparent, #e2e8f0, transparent);
         }
         @media (max-width: 768px) {
           .compras-header-compact {
@@ -1627,46 +1640,54 @@ export default function ComprasApp() {
 
         .tabs {
           display: flex;
-          gap: 8px;
+          gap: 12px;
           margin-bottom: 24px;
-          border-bottom: 2px solid #e5e7eb;
+          padding: 6px;
+          background: rgba(248, 250, 252, 0.8);
+          backdrop-filter: blur(10px);
+          border-radius: 20px;
+          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
         }
         .tab {
-          padding: 12px 24px;
+          padding: 14px 24px;
           border: none;
-          background: none;
+          background: transparent;
           cursor: pointer;
           font-weight: 600;
-          color: #6b7280;
+          color: #64748b;
           display: flex;
           align-items: center;
           gap: 8px;
-          border-bottom: 3px solid transparent;
-          transition: all 0.2s;
+          border-radius: 16px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          min-height: 48px;
         }
         @media (max-width: 768px) {
           .tab {
-            padding: 10px 12px;
-            font-size: 13px;
-            gap: 4px;
+            padding: 12px 16px;
+            font-size: 14px;
+            gap: 6px;
           }
           .tab svg {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
           }
         }
         .tab.active {
-          color: #10b981;
-          border-bottom-color: #10b981;
-        }
-        .tab:hover {
           color: #059669;
+          background: white;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+        }
+        .tab:hover:not(.active) {
+          color: #059669;
+          background: rgba(255, 255, 255, 0.5);
         }
         .compra-form {
           background: white;
           padding: 24px;
-          border-radius: 12px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          border-radius: 24px;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+          border: 1px solid rgba(226, 232, 240, 0.8);
         }
         .form-grid {
           display: grid;
@@ -1690,16 +1711,22 @@ export default function ComprasApp() {
         .form-group input,
         .form-group select,
         .form-group textarea {
-          padding: 10px;
-          border: 2px solid #e5e7eb;
-          border-radius: 8px;
-          font-size: 14px;
+          padding: 14px 16px;
+          border: 2px solid #e2e8f0;
+          border-radius: 16px;
+          font-size: 15px;
+          min-height: 48px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          background: #f8fafc;
         }
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
           outline: none;
-          border-color: #10b981;
+          border-color: #059669;
+          background: white;
+          box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.1);
+          transform: translateY(-1px);
         }
         .items-section {
           margin-top: 24px;
@@ -1736,32 +1763,36 @@ export default function ComprasApp() {
         }
         .search-results {
           position: absolute;
-          top: 100%;
+          top: calc(100% + 8px);
           left: 0;
           right: 0;
           background: white;
-          border: 2px solid #e5e7eb;
-          border-top: none;
-          border-radius: 0 0 8px 8px;
-          max-height: 200px;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          max-height: 40vh;
           overflow-y: auto;
           z-index: 10;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
         }
         .search-result-item {
-          padding: 10px;
+          padding: 14px 16px;
           cursor: pointer;
-          border-bottom: 1px solid #f3f4f6;
-        }
-        .search-result-item:hover {
-          background: #f9fafb;
-        }
-        .create-new {
-          color: #10b981;
-          font-weight: 600;
+          border-bottom: 1px solid #f1f5f9;
+          transition: all 0.2s;
+          min-height: 48px;
           display: flex;
           align-items: center;
-          gap: 6px;
+        }
+        .search-result-item:hover {
+          background: #f8fafc;
+          padding-left: 20px;
+        }
+        .create-new {
+          color: #059669;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
         .modal-overlay {
           position: fixed;
@@ -1769,59 +1800,98 @@ export default function ComprasApp() {
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0,0,0,0.5);
+          background: rgba(15, 23, 42, 0.6);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 1000;
+          animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
         .modal-content {
           background: white;
-          padding: 24px;
-          border-radius: 12px;
+          padding: 32px;
+          border-radius: 24px;
           max-width: 500px;
           width: 90%;
           max-height: 90vh;
           overflow-y: auto;
+          box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+          animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes slideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
         }
         .modal-content h3 {
           margin-bottom: 16px;
         }
         .item-form select,
         .item-form input {
-          padding: 10px;
-          border: 2px solid #e5e7eb;
-          border-radius: 8px;
+          padding: 14px 16px;
+          border: 2px solid #e2e8f0;
+          border-radius: 16px;
+          min-height: 48px;
+          font-size: 15px;
+          transition: all 0.3s;
+          background: #f8fafc;
+        }
+        .item-form select:focus,
+        .item-form input:focus {
+          outline: none;
+          border-color: #059669;
+          background: white;
+          box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.1);
         }
         .btn-add {
-          padding: 10px 16px;
-          background: #10b981;
+          padding: 14px 20px;
+          background: linear-gradient(135deg, #059669 0%, #047857 100%);
           color: white;
           border: none;
-          border-radius: 8px;
+          border-radius: 16px;
           cursor: pointer;
           display: flex;
           align-items: center;
-          gap: 6px;
-          font-weight: 600;
+          justify-content: center;
+          gap: 8px;
+          font-weight: 700;
+          min-height: 48px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
         }
         .btn-add:hover {
-          background: #059669;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(5, 150, 105, 0.4);
+        }
+        .btn-add:active {
+          transform: translateY(0);
         }
         .items-list {
-          background: #f9fafb;
-          padding: 16px;
-          border-radius: 8px;
+          background: #f8fafc;
+          padding: 20px;
+          border-radius: 20px;
+          border: 1px solid #e2e8f0;
         }
         .item-row {
           display: grid;
           grid-template-columns: 2fr 1fr 1fr 1fr auto;
           gap: 12px;
-          padding: 12px;
+          padding: 16px;
           background: white;
-          border-radius: 6px;
-          margin-bottom: 8px;
+          border-radius: 16px;
+          margin-bottom: 12px;
           align-items: center;
+          transition: all 0.2s;
+          border: 1px solid #f1f5f9;
+        }
+        .item-row:hover {
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+          transform: translateX(4px);
         }
         @media (max-width: 768px) {
           .item-row {
@@ -1837,50 +1907,78 @@ export default function ComprasApp() {
           }
         }
         .subtotal {
-          font-weight: 600;
-          color: #10b981;
+          font-weight: 800;
+          color: #059669;
         }
         .btn-remove {
-          padding: 6px;
-          background: #ef4444;
+          padding: 10px;
+          background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
           color: white;
           border: none;
-          border-radius: 6px;
+          border-radius: 12px;
           cursor: pointer;
+          min-width: 44px;
+          min-height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 2px 8px rgba(244, 63, 94, 0.3);
+        }
+        .btn-remove:hover {
+          transform: scale(1.1);
+          box-shadow: 0 4px 12px rgba(244, 63, 94, 0.4);
+        }
+        .btn-remove:active {
+          transform: scale(0.95);
         }
         .total-row {
           display: flex;
           justify-content: space-between;
-          padding: 16px;
-          background: #10b981;
+          padding: 20px;
+          background: linear-gradient(135deg, #059669 0%, #047857 100%);
           color: white;
-          border-radius: 6px;
-          font-weight: bold;
-          font-size: 18px;
-          margin-top: 8px;
+          border-radius: 16px;
+          font-weight: 900;
+          font-size: 20px;
+          margin-top: 12px;
+          box-shadow: 0 8px 24px rgba(5, 150, 105, 0.3);
         }
         .btn-submit {
-          width: 100%;
-          padding: 16px;
-          background: #10b981;
+          position: fixed;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: calc(100% - 40px);
+          max-width: 1160px;
+          padding: 18px;
+          background: linear-gradient(135deg, #059669 0%, #047857 100%);
           color: white;
           border: none;
-          border-radius: 8px;
-          font-size: 16px;
-          font-weight: 600;
+          border-radius: 24px;
+          font-size: 17px;
+          font-weight: 800;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
-          margin-top: 24px;
+          gap: 10px;
+          min-height: 56px;
+          box-shadow: 0 12px 32px rgba(5, 150, 105, 0.4), 0 4px 12px rgba(0, 0, 0, 0.1);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          z-index: 50;
         }
         .btn-submit:hover:not(:disabled) {
-          background: #059669;
+          transform: translateX(-50%) translateY(-4px);
+          box-shadow: 0 16px 40px rgba(5, 150, 105, 0.5), 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+        .btn-submit:active:not(:disabled) {
+          transform: translateX(-50%) translateY(-2px);
         }
         .btn-submit:disabled {
           opacity: 0.5;
           cursor: not-allowed;
+          transform: translateX(-50%);
         }
         .historial-container {
           display: flex;
@@ -1889,9 +1987,15 @@ export default function ComprasApp() {
         }
         .compra-card {
           background: white;
-          padding: 20px;
-          border-radius: 12px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          padding: 24px;
+          border-radius: 24px;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+          border: 1px solid rgba(226, 232, 240, 0.8);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .compra-card:hover {
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+          transform: translateY(-2px);
         }
         .compra-header {
           display: flex;
@@ -1919,21 +2023,23 @@ export default function ComprasApp() {
           margin-top: 8px;
         }
         .badge {
-          padding: 4px 12px;
-          border-radius: 12px;
+          padding: 6px 14px;
+          border-radius: 16px;
           font-size: 12px;
-          font-weight: 600;
-          background: #e5e7eb;
-          color: #374151;
+          font-weight: 700;
+          background: #e2e8f0;
+          color: #475569;
+          letter-spacing: 0.3px;
         }
         .badge-ingredientes { background: #dbeafe; color: #1e40af; }
         .badge-insumos { background: #fef3c7; color: #92400e; }
         .badge-pagado { background: #d1fae5; color: #065f46; }
         .compra-items {
-          margin-top: 12px;
-          background: #f9fafb;
-          border-radius: 6px;
-          padding: 12px;
+          margin-top: 16px;
+          background: #f8fafc;
+          border-radius: 20px;
+          padding: 16px;
+          border: 1px solid #e2e8f0;
         }
         .items-header {
           display: grid;
@@ -2016,9 +2122,9 @@ export default function ComprasApp() {
         }
         .spinner {
           display: inline-block;
-          width: 14px;
-          height: 14px;
-          border: 2px solid rgba(255,255,255,0.3);
+          width: 16px;
+          height: 16px;
+          border: 3px solid rgba(255,255,255,0.3);
           border-top-color: white;
           border-radius: 50%;
           animation: spin 0.6s linear infinite;
@@ -2029,11 +2135,11 @@ export default function ComprasApp() {
         @keyframes pulse {
           0%, 100% {
             transform: scale(1);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
           }
           50% {
-            transform: scale(1.05);
-            box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+            transform: scale(1.02);
+            box-shadow: 0 8px 32px rgba(5, 150, 105, 0.2);
           }
         }
       `}</style>
