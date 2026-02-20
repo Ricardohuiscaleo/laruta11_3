@@ -1576,26 +1576,52 @@ export default function ComprasApp() {
         }
         @media (max-width: 768px) {
           .compras-header-compact {
-            flex-wrap: wrap;
-            gap: 12px;
-            padding: 12px;
+            flex-direction: column;
+            gap: 0;
+            padding: 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
           }
           .stat-item {
-            flex: 1 1 calc(50% - 12px);
-            min-width: 0;
+            flex: 0 0 auto;
+            min-width: 120px;
+            padding: 12px;
+            border-right: 1px solid #e5e7eb;
+          }
+          .stat-item:last-child {
+            border-right: none;
+          }
+          .compras-header-compact > * {
+            display: inline-flex;
+            flex-direction: column;
+          }
+          .compras-header-compact {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
           }
           .stat-divider {
             display: none;
           }
           .stat-label {
-            font-size: 9px;
+            font-size: 8px;
+            white-space: nowrap;
           }
           .stat-value {
-            font-size: 14px;
+            font-size: 13px;
+            white-space: nowrap;
           }
           .stat-highlight {
-            flex: 1 1 100%;
-            text-align: center;
+            flex: 0 0 auto;
+            min-width: 140px;
+            text-align: left;
+            padding: 12px;
+            border: none;
+            border-left: 3px solid #10b981;
+          }
+          .stat-hint {
+            font-size: 8px;
           }
         }
 
