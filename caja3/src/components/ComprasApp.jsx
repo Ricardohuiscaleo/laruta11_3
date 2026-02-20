@@ -30,7 +30,8 @@ export default function ComprasApp() {
     cantidad: '',
     unidad: 'kg',
     precio_total: '',
-    precio_unitario: ''
+    precio_unitario: '',
+    con_iva: true
   });
   const [proyeccionItem, setProyeccionItem] = useState({
     ingrediente_id: '',
@@ -177,7 +178,13 @@ export default function ComprasApp() {
     }
 
     const cantidad = parseFloat(currentItem.cantidad);
-    const precio_unitario = parseFloat(currentItem.precio_unitario);
+    let precio_unitario = parseFloat(currentItem.precio_unitario);
+    
+    // Si el precio NO tiene IVA, calcularlo
+    if (!currentItem.con_iva) {
+      precio_unitario = precio_unitario * 1.19;
+    }
+    
     const subtotal = cantidad * precio_unitario;
 
     // Si es producto, NO crear ingrediente
@@ -202,7 +209,8 @@ export default function ComprasApp() {
         cantidad: '',
         unidad: 'kg',
         precio_total: '',
-        precio_unitario: ''
+        precio_unitario: '',
+        con_iva: true
       });
       setSearchTerm('');
       return;
@@ -270,7 +278,8 @@ export default function ComprasApp() {
       cantidad: '',
       unidad: 'kg',
       precio_total: '',
-      precio_unitario: ''
+      precio_unitario: '',
+      con_iva: true
     });
     setSearchTerm('');
   };
@@ -644,70 +653,80 @@ export default function ComprasApp() {
     return labels[method] || method;
   };
 
+  const getPaymentIcon = (method) => {
+    const icons = {
+      'cash': '💵',
+      'transfer': '🏦',
+      'card': '💳',
+      'credit': '💳'
+    };
+    return icons[method] || '💰';
+  };
+
   return (
     <div className="compras-container">
-      {/* Header Compacto con Resumen */}
-      <div className="compras-header-compact" onClick={loadHistorialSaldo}>
-        <div className="stat-item">
-          <span className="stat-label">Ventas {new Date(new Date().setMonth(new Date().getMonth() - 1)).toLocaleDateString('es-CL', {month: 'long'}).charAt(0).toUpperCase() + new Date(new Date().setMonth(new Date().getMonth() - 1)).toLocaleDateString('es-CL', {month: 'long'}).slice(1)}</span>
-          <span className="stat-value">${fmt(resumenFinanciero?.ventas_mes_anterior || 0)}</span>
+      {/* Header Fijo con 2 Filas */}
+      <div className="compras-header-fixed">
+        {/* Fila 1: Resumen Financiero */}
+        <div className="header-row-1" onClick={loadHistorialSaldo}>
+          <div className="stat-mini">
+            <span className="stat-mini-label">VENTAS {new Date(new Date().setMonth(new Date().getMonth() - 1)).toLocaleDateString('es-CL', {month: 'long'}).toUpperCase()}</span>
+            <span className="stat-mini-value">${fmt(resumenFinanciero?.ventas_mes_anterior || 0)}</span>
+          </div>
+          <div className="stat-mini">
+            <span className="stat-mini-label">VENTAS AL {new Date().getDate()} {new Date().toLocaleDateString('es-CL', {month: 'short'}).toUpperCase()}</span>
+            <span className="stat-mini-value" style={{color: '#10b981'}}>${fmt(resumenFinanciero?.ventas_mes_actual || 0)}</span>
+          </div>
+          <div className="stat-mini">
+            <span className="stat-mini-label">SUELDOS</span>
+            <span className="stat-mini-value" style={{color: '#dc2626'}}>-${fmt(resumenFinanciero?.sueldos || 0)}</span>
+          </div>
+          <div className="stat-mini stat-mini-highlight" style={{
+            background: saldoDisponible < 0 ? '#fef2f2' : saldoDisponible < 200000 ? '#fffbeb' : '#f0fdf4'
+          }}>
+            <span className="stat-mini-label">SALDO PARA COMPRAS</span>
+            <span className="stat-mini-value" style={{color: saldoDisponible < 0 ? '#ef4444' : saldoDisponible < 200000 ? '#f59e0b' : '#10b981', fontSize: '18px', fontWeight: '800'}}>${fmt(saldoDisponible)}</span>
+          </div>
+          <div className="stat-hint-mini">👆 Click para ver historial</div>
         </div>
-        <div className="stat-divider"></div>
-        <div className="stat-item">
-          <span className="stat-label">Ventas al {new Date().getDate()} {new Date().toLocaleDateString('es-CL', {month: 'short'}).charAt(0).toUpperCase() + new Date().toLocaleDateString('es-CL', {month: 'short'}).slice(1)}</span>
-          <span className="stat-value" style={{color: '#10b981'}}>${fmt(resumenFinanciero?.ventas_mes_actual || 0)}</span>
-        </div>
-        <div className="stat-divider"></div>
-        <div className="stat-item">
-          <span className="stat-label">Sueldos</span>
-          <span className="stat-value" style={{color: '#dc2626'}}>-${fmt(resumenFinanciero?.sueldos || 0)}</span>
-        </div>
-        <div className="stat-divider"></div>
-        <div className="stat-item stat-highlight" style={{
-          background: saldoDisponible < 0 ? '#fef2f2' : saldoDisponible < 200000 ? '#fffbeb' : '#f0fdf4'
-        }}>
-          <span className="stat-label">Saldo para Compras</span>
-          <span className="stat-value" style={{color: saldoDisponible < 0 ? '#ef4444' : saldoDisponible < 200000 ? '#f59e0b' : '#10b981', fontSize: '20px'}}>${fmt(saldoDisponible)}</span>
-          <span className="stat-hint">👆 Click para ver historial</span>
-        </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="tabs">
-        <button 
-          className={`tab ${activeTab === 'registro' ? 'active' : ''}`}
-          onClick={() => setActiveTab('registro')}
-        >
-          <Plus size={18} /> Registrar
-        </button>
-        <button 
-          className={`tab ${activeTab === 'proyeccion' ? 'active' : ''}`}
-          onClick={() => setActiveTab('proyeccion')}
-        >
-          <TrendingUp size={18} /> Proyección
-        </button>
-        <button 
-          className={`tab ${activeTab === 'historial' ? 'active' : ''}`}
-          onClick={() => setActiveTab('historial')}
-        >
-          <FileText size={18} /> Historial
-        </button>
-        {activeTab === 'historial' && (
-          <button
-            onClick={() => setShowComprasSearch(!showComprasSearch)}
-            style={{
-              marginLeft: 'auto',
-              padding: '12px',
-              border: 'none',
-              background: 'none',
-              color: showComprasSearch ? '#10b981' : '#6b7280',
-              cursor: 'pointer',
-              transition: 'color 0.2s'
-            }}
+        {/* Fila 2: Tabs */}
+        <div className="header-row-2">
+          <button 
+            className={`tab ${activeTab === 'registro' ? 'active' : ''}`}
+            onClick={() => setActiveTab('registro')}
           >
-            <Search size={18} />
+            <Plus size={18} /> Registrar
           </button>
-        )}
+          <button 
+            className={`tab ${activeTab === 'proyeccion' ? 'active' : ''}`}
+            onClick={() => setActiveTab('proyeccion')}
+          >
+            <TrendingUp size={18} /> Proyección
+          </button>
+          <button 
+            className={`tab ${activeTab === 'historial' ? 'active' : ''}`}
+            onClick={() => setActiveTab('historial')}
+          >
+            <FileText size={18} /> Historial
+          </button>
+          {activeTab === 'historial' && (
+            <button
+              onClick={() => setShowComprasSearch(!showComprasSearch)}
+              style={{
+                marginLeft: 'auto',
+                padding: '12px',
+                border: 'none',
+                background: 'none',
+                color: showComprasSearch ? '#10b981' : '#6b7280',
+                cursor: 'pointer',
+                transition: 'color 0.2s'
+              }}
+            >
+              <Search size={18} />
+            </button>
+          )}
+        </div>
       </div>
       {showComprasSearch && activeTab === 'historial' && (
         <div style={{
@@ -899,73 +918,70 @@ export default function ComprasApp() {
         </div>
       ) : activeTab === 'registro' ? (
         <form onSubmit={handleSubmit} className="compra-form">
-          <div className="form-grid">
-            <div className="form-group">
-              <label><User size={16} /> Proveedor</label>
-              <div style={{position: 'relative'}}>
-                <input
-                  type="text"
-                  value={formData.proveedor}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setFormData({...formData, proveedor: value});
-                    if (value.trim()) {
-                      const filtered = proveedores
-                        .map(p => ({ name: p, score: fuzzyMatch(p, value) }))
-                        .filter(p => p.score > 0)
-                        .sort((a, b) => b.score - a.score)
-                        .slice(0, 5);
-                      setFilteredProveedores(filtered);
-                      setShowProveedorDropdown(true);
-                    } else {
-                      setFilteredProveedores([]);
-                      setShowProveedorDropdown(false);
-                    }
-                  }}
-                  onBlur={() => setTimeout(() => setShowProveedorDropdown(false), 200)}
-                  placeholder="Nombre del proveedor"
-                  required
-                />
-                {showProveedorDropdown && filteredProveedores.length > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    background: 'white',
-                    border: '2px solid #e5e7eb',
-                    borderTop: 'none',
-                    borderRadius: '0 0 8px 8px',
-                    maxHeight: '150px',
-                    overflowY: 'auto',
-                    zIndex: 10,
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                  }}>
-                    {filteredProveedores.map((prov, idx) => (
-                      <div
-                        key={idx}
-                        onMouseDown={() => {
-                          setFormData({...formData, proveedor: prov.name});
-                          setShowProveedorDropdown(false);
-                        }}
-                        style={{
-                          padding: '10px',
-                          cursor: 'pointer',
-                          borderBottom: '1px solid #f3f4f6'
-                        }}
-                        onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
-                        onMouseLeave={(e) => e.target.style.background = 'white'}
-                      >
-                        <strong>{prov.name}</strong>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+          {/* Fila Compacta: Proveedor | Fecha | Método Pago */}
+          <div className="form-row-compact">
+            <div className="form-group-compact" style={{flex: '2', position: 'relative'}}>
+              <input
+                type="text"
+                value={formData.proveedor}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFormData({...formData, proveedor: value});
+                  if (value.trim()) {
+                    const filtered = proveedores
+                      .map(p => ({ name: p, score: fuzzyMatch(p, value) }))
+                      .filter(p => p.score > 0)
+                      .sort((a, b) => b.score - a.score)
+                      .slice(0, 5);
+                    setFilteredProveedores(filtered);
+                    setShowProveedorDropdown(true);
+                  } else {
+                    setFilteredProveedores([]);
+                    setShowProveedorDropdown(false);
+                  }
+                }}
+                onBlur={() => setTimeout(() => setShowProveedorDropdown(false), 200)}
+                placeholder="Proveedor"
+                required
+              />
+              {showProveedorDropdown && filteredProveedores.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  background: 'white',
+                  border: '2px solid #e5e7eb',
+                  borderTop: 'none',
+                  borderRadius: '0 0 8px 8px',
+                  maxHeight: '150px',
+                  overflowY: 'auto',
+                  zIndex: 10,
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}>
+                  {filteredProveedores.map((prov, idx) => (
+                    <div
+                      key={idx}
+                      onMouseDown={() => {
+                        setFormData({...formData, proveedor: prov.name});
+                        setShowProveedorDropdown(false);
+                      }}
+                      style={{
+                        padding: '10px',
+                        cursor: 'pointer',
+                        borderBottom: '1px solid #f3f4f6'
+                      }}
+                      onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                      onMouseLeave={(e) => e.target.style.background = 'white'}
+                    >
+                      <strong>{prov.name}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="form-group">
-              <label><Calendar size={16} /> Fecha</label>
+            <div className="form-group-compact" style={{flex: '1.5'}}>
               <input
                 type="date"
                 value={formData.fecha_compra}
@@ -974,18 +990,21 @@ export default function ComprasApp() {
               />
             </div>
 
-            <div className="form-group">
-              <label><DollarSign size={16} /> Método de Pago</label>
-              <select
-                value={formData.metodo_pago}
-                onChange={(e) => setFormData({...formData, metodo_pago: e.target.value})}
-                required
-              >
-                <option value="cash">Efectivo</option>
-                <option value="transfer">Transferencia</option>
-                <option value="card">Débito</option>
-                <option value="credit">Crédito</option>
-              </select>
+            <div className="form-group-compact payment-icons" style={{flex: '1.5'}}>
+              {['cash', 'transfer', 'card', 'credit'].map(method => (
+                <button
+                  key={method}
+                  type="button"
+                  onClick={() => setFormData({...formData, metodo_pago: method})}
+                  className={`payment-icon-btn ${formData.metodo_pago === method ? 'active' : ''}`}
+                  title={getPaymentLabel(method)}
+                >
+                  <span className="icon">{getPaymentIcon(method)}</span>
+                  {formData.metodo_pago === method && (
+                    <span className="label">{getPaymentLabel(method)}</span>
+                  )}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -1065,8 +1084,9 @@ export default function ComprasApp() {
             <h3><ShoppingCart size={20} /> Items de Compra</h3>
             
             <div className="item-form">
+              {/* Fila 1: Buscar ingrediente */}
               <div className="item-form-row">
-                <div className="search-container" style={{flex: '3'}}>
+                <div className="search-container" style={{flex: '1'}}>
                   <input
                     type="text"
                     placeholder="Buscar ingrediente..."
@@ -1086,7 +1106,10 @@ export default function ComprasApp() {
                     </div>
                   )}
                 </div>
+              </div>
 
+              {/* Fila 2: Cantidad | Unidad | Precio | IVA */}
+              <div className="item-form-row">
                 <input
                   type="number"
                   placeholder="Cantidad"
@@ -1095,33 +1118,61 @@ export default function ComprasApp() {
                   step="0.01"
                   style={{flex: '1'}}
                 />
-              </div>
 
-              <div className="item-form-row">
                 <select
                   value={currentItem.unidad}
                   onChange={(e) => setCurrentItem({...currentItem, unidad: e.target.value})}
                   style={{flex: '1'}}
                 >
                   <option value="kg">kg</option>
-                  <option value="unidad">unidad</option>
-                  <option value="litro">litro</option>
-                  <option value="gramo">gramo</option>
+                  <option value="gramo">gr</option>
+                  <option value="litro">lt</option>
+                  <option value="unidad">un</option>
                 </select>
 
                 <input
                   type="number"
-                  placeholder="Precio Unit."
+                  placeholder={currentItem.con_iva ? "Precio c/IVA" : "Precio s/IVA"}
                   value={currentItem.precio_unitario}
                   onChange={(e) => setCurrentItem({...currentItem, precio_unitario: e.target.value})}
                   step="0.01"
-                  style={{background: currentItem.precio_unitario ? '#f0fdf4' : 'white', flex: '1'}}
+                  style={{background: currentItem.precio_unitario ? '#f0fdf4' : 'white', flex: '1.5'}}
                 />
+
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '0 12px',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                  whiteSpace: 'nowrap',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: currentItem.con_iva ? '#10b981' : '#6b7280'
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={currentItem.con_iva}
+                    onChange={(e) => setCurrentItem({...currentItem, con_iva: e.target.checked})}
+                    style={{width: '18px', height: '18px', cursor: 'pointer'}}
+                  />
+                  c/IVA
+                </label>
               </div>
 
               {currentItem.cantidad && currentItem.precio_unitario && (
-                <div style={{padding: '10px 12px', background: '#f0fdf4', borderRadius: '6px', border: '2px solid #10b981', fontSize: '14px', color: '#059669', fontWeight: '700', textAlign: 'center'}}>
-                  💰 Total: ${fmt(parseFloat(currentItem.cantidad) * parseFloat(currentItem.precio_unitario))}
+                <div style={{padding: '10px 12px', background: '#f0fdf4', borderRadius: '6px', border: '2px solid #10b981', fontSize: '13px', color: '#059669', fontWeight: '700'}}>
+                  <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '4px'}}>
+                    <span>Subtotal {currentItem.con_iva ? '(c/IVA)' : '(s/IVA)'}:</span>
+                    <span>${fmt(parseFloat(currentItem.cantidad) * parseFloat(currentItem.precio_unitario))}</span>
+                  </div>
+                  {!currentItem.con_iva && (
+                    <div style={{display: 'flex', justifyContent: 'space-between', paddingTop: '4px', borderTop: '1px solid #10b981'}}>
+                      <span>Total c/IVA:</span>
+                      <span style={{fontSize: '15px'}}>${fmt(parseFloat(currentItem.cantidad) * parseFloat(currentItem.precio_unitario) * 1.19)}</span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1527,9 +1578,167 @@ export default function ComprasApp() {
           max-width: 1200px;
           margin: 0 auto;
           padding: 20px;
+          padding-top: 140px;
           padding-bottom: 100px;
           background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
           min-height: 100vh;
+        }
+        .compras-header-fixed {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          background: white;
+          z-index: 100;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .header-row-1 {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 20px;
+          background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+          border-bottom: 1px solid #e5e7eb;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .header-row-1:hover {
+          background: #f0fdf4;
+        }
+        .stat-mini {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        .stat-mini-label {
+          font-size: 9px;
+          color: #64748b;
+          font-weight: 700;
+          letter-spacing: 0.3px;
+        }
+        .stat-mini-value {
+          font-size: 14px;
+          font-weight: 800;
+          color: #0f172a;
+        }
+        .stat-mini-highlight {
+          padding: 8px 12px;
+          border-radius: 8px;
+        }
+        .stat-hint-mini {
+          font-size: 9px;
+          color: #6b7280;
+          font-weight: 600;
+          margin-left: auto;
+        }
+        .header-row-2 {
+          display: flex;
+          gap: 8px;
+          padding: 8px;
+          background: white;
+        }
+        @media (max-width: 768px) {
+          .header-row-1 {
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 8px 12px;
+          }
+          .stat-mini {
+            flex: 1;
+            min-width: 80px;
+          }
+          .stat-mini-label {
+            font-size: 7px;
+          }
+          .stat-mini-value {
+            font-size: 11px;
+          }
+          .stat-hint-mini {
+            width: 100%;
+            text-align: center;
+            font-size: 8px;
+          }
+        }
+        .form-row-compact {
+          display: flex;
+          gap: 12px;
+          margin-bottom: 16px;
+          align-items: stretch;
+        }
+        .form-group-compact {
+          display: flex;
+          flex-direction: column;
+        }
+        .form-group-compact input,
+        .form-group-compact select {
+          padding: 12px 16px;
+          border: 2px solid #e2e8f0;
+          border-radius: 10px;
+          font-size: 15px;
+          min-height: 48px;
+          transition: all 0.2s;
+          background: #f8fafc;
+          width: 100%;
+        }
+        .form-group-compact input:focus,
+        .form-group-compact select:focus {
+          outline: none;
+          border-color: #10b981;
+          background: white;
+          box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        .payment-icons {
+          display: flex;
+          gap: 6px;
+          align-items: stretch;
+        }
+        .payment-icon-btn {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          padding: 8px;
+          border: 2px solid #e2e8f0;
+          border-radius: 10px;
+          background: #f8fafc;
+          cursor: pointer;
+          transition: all 0.2s;
+          min-height: 48px;
+        }
+        .payment-icon-btn:hover {
+          border-color: #10b981;
+          background: #f0fdf4;
+        }
+        .payment-icon-btn.active {
+          border-color: #10b981;
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+        .payment-icon-btn .icon {
+          font-size: 20px;
+        }
+        .payment-icon-btn.active .icon {
+          filter: brightness(0) invert(1);
+        }
+        .payment-icon-btn .label {
+          font-size: 10px;
+          font-weight: 600;
+          color: white;
+          text-align: center;
+        }
+        @media (max-width: 768px) {
+          .form-row-compact {
+            flex-direction: column;
+            gap: 8px;
+          }
+          .payment-icons {
+            flex-direction: row;
+          }
+          .payment-icon-btn {
+            min-width: 60px;
+          }
         }
         .compras-header-compact {
           background: white;
@@ -1668,7 +1877,7 @@ export default function ComprasApp() {
         }
         .compra-form {
           background: white;
-          padding: 24px;
+          padding: 10px;
           border-radius: 16px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         }
@@ -1958,7 +2167,7 @@ export default function ComprasApp() {
         }
         .compra-card {
           background: white;
-          padding: 20px;
+          padding: 10px;
           border-radius: 12px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.08);
           margin-bottom: 16px;
