@@ -59,6 +59,7 @@ try {
             c.name as category,
             'unidad' as unit,
             p.stock_quantity as current_stock,
+            p.min_stock_level,
             'product' as type,
             p.category_id,
             p.subcategory_id
