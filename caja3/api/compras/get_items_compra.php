@@ -71,12 +71,11 @@ try {
                 LIMIT 1
             ) as fecha_ultima_compra,
             (
-                SELECT COALESCE(SUM(ABS(it.quantity_change)), 0)
+                SELECT COALESCE(SUM(ABS(it.quantity)), 0)
                 FROM inventory_transactions it
-                WHERE it.item_id = i.id
-                AND it.item_type = 'ingredient'
+                WHERE it.ingredient_id = i.id
                 AND it.transaction_type = 'sale'
-                AND it.transaction_date >= (
+                AND it.created_at >= (
                     SELECT c.fecha_compra 
                     FROM compras_detalle cd
                     JOIN compras c ON cd.compra_id = c.id
@@ -128,12 +127,11 @@ try {
                 LIMIT 1
             ) as fecha_ultima_compra,
             (
-                SELECT COALESCE(SUM(ABS(it.quantity_change)), 0)
+                SELECT COALESCE(SUM(ABS(it.quantity)), 0)
                 FROM inventory_transactions it
-                WHERE it.item_id = p.id
-                AND it.item_type = 'product'
+                WHERE it.product_id = p.id
                 AND it.transaction_type = 'sale'
-                AND it.transaction_date >= (
+                AND it.created_at >= (
                     SELECT co.fecha_compra 
                     FROM compras_detalle cd
                     JOIN compras co ON cd.compra_id = co.id
