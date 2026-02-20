@@ -646,42 +646,29 @@ export default function ComprasApp() {
 
   return (
     <div className="compras-container">
-      {/* Header con Resumen */}
-      <div className="compras-header">
-        <div className="resumen-grid">
-          <div className="resumen-card">
-            <div className="card-header">
-              <TrendingUp size={18} />
-              <div className="resumen-label">Ventas {new Date(new Date().setMonth(new Date().getMonth() - 1)).toLocaleDateString('es-CL', {month: 'long'}).charAt(0).toUpperCase() + new Date(new Date().setMonth(new Date().getMonth() - 1)).toLocaleDateString('es-CL', {month: 'long'}).slice(1)}</div>
-            </div>
-            <div className="resumen-value">${fmt(resumenFinanciero?.ventas_mes_anterior || 0)}</div>
-          </div>
-          <div className="resumen-card" style={{borderLeft: '4px solid #10b981'}}>
-            <div className="card-header">
-              <TrendingUp size={18} />
-              <div className="resumen-label">Ventas al {new Date().getDate()} {new Date().toLocaleDateString('es-CL', {month: 'short'}).charAt(0).toUpperCase() + new Date().toLocaleDateString('es-CL', {month: 'short'}).slice(1)}</div>
-            </div>
-            <div className="resumen-value" style={{color: '#10b981'}}>${fmt(resumenFinanciero?.ventas_mes_actual || 0)}</div>
-          </div>
-          <div className="resumen-card" style={{borderLeft: '4px solid #dc2626'}}>
-            <div className="card-header">
-              <User size={18} />
-              <div className="resumen-label">Sueldos</div>
-            </div>
-            <div className="resumen-value" style={{color: '#dc2626'}}>-${fmt(resumenFinanciero?.sueldos || 0)}</div>
-          </div>
-          <div className="resumen-card" style={{
-            borderLeft: saldoDisponible < 0 ? '4px solid #ef4444' : saldoDisponible < 200000 ? '4px solid #f59e0b' : '4px solid #10b981',
-            background: saldoDisponible < 0 ? '#fef2f2' : saldoDisponible < 200000 ? '#fffbeb' : 'white',
-            cursor: 'pointer'
-          }} onClick={loadHistorialSaldo}>
-            <div className="card-header">
-              <DollarSign size={18} />
-              <div className="resumen-label">Saldo para Compras</div>
-            </div>
-            <div className="resumen-value" style={{color: saldoDisponible < 0 ? '#ef4444' : saldoDisponible < 200000 ? '#f59e0b' : '#10b981'}}>${fmt(saldoDisponible)}</div>
-            <div style={{fontSize: '9px', opacity: 0.7, marginTop: '2px'}}>👆 Click para ver historial</div>
-          </div>
+      {/* Header Compacto con Resumen */}
+      <div className="compras-header-compact" onClick={loadHistorialSaldo}>
+        <div className="stat-item">
+          <span className="stat-label">Ventas {new Date(new Date().setMonth(new Date().getMonth() - 1)).toLocaleDateString('es-CL', {month: 'long'}).charAt(0).toUpperCase() + new Date(new Date().setMonth(new Date().getMonth() - 1)).toLocaleDateString('es-CL', {month: 'long'}).slice(1)}</span>
+          <span className="stat-value">${fmt(resumenFinanciero?.ventas_mes_anterior || 0)}</span>
+        </div>
+        <div className="stat-divider"></div>
+        <div className="stat-item">
+          <span className="stat-label">Ventas al {new Date().getDate()} {new Date().toLocaleDateString('es-CL', {month: 'short'}).charAt(0).toUpperCase() + new Date().toLocaleDateString('es-CL', {month: 'short'}).slice(1)}</span>
+          <span className="stat-value" style={{color: '#10b981'}}>${fmt(resumenFinanciero?.ventas_mes_actual || 0)}</span>
+        </div>
+        <div className="stat-divider"></div>
+        <div className="stat-item">
+          <span className="stat-label">Sueldos</span>
+          <span className="stat-value" style={{color: '#dc2626'}}>-${fmt(resumenFinanciero?.sueldos || 0)}</span>
+        </div>
+        <div className="stat-divider"></div>
+        <div className="stat-item stat-highlight" style={{
+          background: saldoDisponible < 0 ? '#fef2f2' : saldoDisponible < 200000 ? '#fffbeb' : '#f0fdf4'
+        }}>
+          <span className="stat-label">Saldo para Compras</span>
+          <span className="stat-value" style={{color: saldoDisponible < 0 ? '#ef4444' : saldoDisponible < 200000 ? '#f59e0b' : '#10b981', fontSize: '20px'}}>${fmt(saldoDisponible)}</span>
+          <span className="stat-hint">👆 Click para ver historial</span>
         </div>
       </div>
 
@@ -755,50 +742,56 @@ export default function ComprasApp() {
           </h3>
           
           <div className="item-form">
-            <div className="search-container">
+            <div className="item-form-row">
+              <div className="search-container" style={{flex: '3'}}>
+                <input
+                  type="text"
+                  placeholder="Buscar ingrediente..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                />
+                {filteredIngredientes.length > 0 && (
+                  <div className="search-results">
+                    {filteredIngredientes.map(ing => (
+                      <div key={ing.id} className="search-result-item" onMouseDown={() => handleIngredienteSelect(ing, true)}>
+                        <strong>{ing.name}</strong> <span style={{color: '#999', fontSize: '12px'}}>({ing.unit} - {ing.category})</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <input
-                type="text"
-                placeholder="Buscar ingrediente..."
-                value={searchTerm}
-                onChange={handleSearchChange}
+                type="number"
+                placeholder="Cantidad"
+                value={proyeccionItem.cantidad}
+                onChange={(e) => setProyeccionItem({...proyeccionItem, cantidad: e.target.value})}
+                step="0.01"
+                style={{flex: '1'}}
               />
-              {filteredIngredientes.length > 0 && (
-                <div className="search-results">
-                  {filteredIngredientes.map(ing => (
-                    <div key={ing.id} className="search-result-item" onMouseDown={() => handleIngredienteSelect(ing, true)}>
-                      <strong>{ing.name}</strong> <span style={{color: '#999', fontSize: '12px'}}>({ing.unit} - {ing.category})</span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
-            <input
-              type="number"
-              placeholder="Cantidad"
-              value={proyeccionItem.cantidad}
-              onChange={(e) => setProyeccionItem({...proyeccionItem, cantidad: e.target.value})}
-              step="0.01"
-            />
+            <div className="item-form-row">
+              <select
+                value={proyeccionItem.unidad}
+                onChange={(e) => setProyeccionItem({...proyeccionItem, unidad: e.target.value})}
+                style={{flex: '1'}}
+              >
+                <option value="kg">kg</option>
+                <option value="unidad">unidad</option>
+                <option value="litro">litro</option>
+                <option value="gramo">gramo</option>
+              </select>
 
-            <select
-              value={proyeccionItem.unidad}
-              onChange={(e) => setProyeccionItem({...proyeccionItem, unidad: e.target.value})}
-            >
-              <option value="kg">kg</option>
-              <option value="unidad">unidad</option>
-              <option value="litro">litro</option>
-              <option value="gramo">gramo</option>
-            </select>
-
-            <input
-              type="number"
-              placeholder="Precio Unit."
-              value={proyeccionItem.precio_unitario}
-              onChange={(e) => setProyeccionItem({...proyeccionItem, precio_unitario: e.target.value})}
-              step="0.01"
-              style={{background: proyeccionItem.precio_unitario ? '#f0fdf4' : 'white'}}
-            />
+              <input
+                type="number"
+                placeholder="Precio Unit."
+                value={proyeccionItem.precio_unitario}
+                onChange={(e) => setProyeccionItem({...proyeccionItem, precio_unitario: e.target.value})}
+                step="0.01"
+                style={{background: proyeccionItem.precio_unitario ? '#f0fdf4' : 'white', flex: '1'}}
+              />
+            </div>
 
             {proyeccionItem.cantidad && proyeccionItem.precio_unitario && (
               <div style={{padding: '10px 12px', background: '#f0fdf4', borderRadius: '6px', border: '2px solid #10b981', fontSize: '14px', color: '#059669', fontWeight: '700', textAlign: 'center'}}>
@@ -1072,53 +1065,59 @@ export default function ComprasApp() {
             <h3><ShoppingCart size={20} /> Items de Compra</h3>
             
             <div className="item-form">
-              <div className="search-container">
-                <input
-                  type="text"
-                  placeholder="Buscar ingrediente..."
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                />
-                {filteredIngredientes.length > 0 && (
-                  <div className="search-results">
-                    {filteredIngredientes.map(ing => (
-                      <div key={ing.id} className="search-result-item" onMouseDown={() => handleIngredienteSelect(ing)}>
-                        <strong>{ing.name}</strong> <span style={{color: '#999', fontSize: '12px'}}>({ing.unit} - {ing.category})</span>
+              <div className="item-form-row">
+                <div className="search-container" style={{flex: '3'}}>
+                  <input
+                    type="text"
+                    placeholder="Buscar ingrediente..."
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                  />
+                  {filteredIngredientes.length > 0 && (
+                    <div className="search-results">
+                      {filteredIngredientes.map(ing => (
+                        <div key={ing.id} className="search-result-item" onMouseDown={() => handleIngredienteSelect(ing)}>
+                          <strong>{ing.name}</strong> <span style={{color: '#999', fontSize: '12px'}}>({ing.unit} - {ing.category})</span>
+                        </div>
+                      ))}
+                      <div className="search-result-item create-new" onMouseDown={() => { setNewIngredient({...newIngredient, name: searchTerm}); setShowNewIngredientModal(true); }}>
+                        <PlusCircle size={16} /> Crear "{searchTerm}"
                       </div>
-                    ))}
-                    <div className="search-result-item create-new" onMouseDown={() => { setNewIngredient({...newIngredient, name: searchTerm}); setShowNewIngredientModal(true); }}>
-                      <PlusCircle size={16} /> Crear "{searchTerm}"
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+
+                <input
+                  type="number"
+                  placeholder="Cantidad"
+                  value={currentItem.cantidad}
+                  onChange={(e) => setCurrentItem({...currentItem, cantidad: e.target.value})}
+                  step="0.01"
+                  style={{flex: '1'}}
+                />
               </div>
 
-              <input
-                type="number"
-                placeholder="Cantidad"
-                value={currentItem.cantidad}
-                onChange={(e) => setCurrentItem({...currentItem, cantidad: e.target.value})}
-                step="0.01"
-              />
+              <div className="item-form-row">
+                <select
+                  value={currentItem.unidad}
+                  onChange={(e) => setCurrentItem({...currentItem, unidad: e.target.value})}
+                  style={{flex: '1'}}
+                >
+                  <option value="kg">kg</option>
+                  <option value="unidad">unidad</option>
+                  <option value="litro">litro</option>
+                  <option value="gramo">gramo</option>
+                </select>
 
-              <select
-                value={currentItem.unidad}
-                onChange={(e) => setCurrentItem({...currentItem, unidad: e.target.value})}
-              >
-                <option value="kg">kg</option>
-                <option value="unidad">unidad</option>
-                <option value="litro">litro</option>
-                <option value="gramo">gramo</option>
-              </select>
-
-              <input
-                type="number"
-                placeholder="Precio Unit."
-                value={currentItem.precio_unitario}
-                onChange={(e) => setCurrentItem({...currentItem, precio_unitario: e.target.value})}
-                step="0.01"
-                style={{background: currentItem.precio_unitario ? '#f0fdf4' : 'white'}}
-              />
+                <input
+                  type="number"
+                  placeholder="Precio Unit."
+                  value={currentItem.precio_unitario}
+                  onChange={(e) => setCurrentItem({...currentItem, precio_unitario: e.target.value})}
+                  step="0.01"
+                  style={{background: currentItem.precio_unitario ? '#f0fdf4' : 'white', flex: '1'}}
+                />
+              </div>
 
               {currentItem.cantidad && currentItem.precio_unitario && (
                 <div style={{padding: '10px 12px', background: '#f0fdf4', borderRadius: '6px', border: '2px solid #10b981', fontSize: '14px', color: '#059669', fontWeight: '700', textAlign: 'center'}}>
@@ -1527,69 +1526,77 @@ export default function ComprasApp() {
           margin: 0 auto;
           padding: 20px;
         }
-        .compras-header {
-          margin-bottom: 24px;
-        }
-        .resumen-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 16px;
-        }
-        @media (max-width: 768px) {
-          .resumen-grid {
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-          }
-          .resumen-card {
-            padding: 10px;
-            gap: 4px;
-            min-width: 0;
-          }
-          .card-header svg {
-            width: 16px;
-            height: 16px;
-          }
-          .resumen-label {
-            font-size: clamp(8px, 2.2vw, 10px);
-          }
-          .resumen-value {
-            font-size: clamp(12px, 3vw, 16px);
-          }
-
-        }
-        .resumen-card {
+        .compras-header-compact {
           background: white;
-          padding: 20px;
+          padding: 16px;
           border-radius: 12px;
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          border-left: 4px solid #3b82f6;
-          min-width: 0;
-        }
-        .card-header {
+          margin-bottom: 20px;
           display: flex;
           align-items: center;
-          gap: 8px;
-          min-width: 0;
+          gap: 16px;
+          cursor: pointer;
+          transition: all 0.2s;
         }
-        .card-header svg {
-          flex-shrink: 0;
+        .compras-header-compact:hover {
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
-        .resumen-label {
-          font-size: 12px;
+        .stat-item {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          flex: 1;
+        }
+        .stat-highlight {
+          padding: 12px;
+          border-radius: 8px;
+          border: 2px solid #10b981;
+        }
+        .stat-label {
+          font-size: 11px;
           color: #6b7280;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
-        .resumen-value {
-          font-size: 24px;
-          font-weight: bold;
-          color: #3b82f6;
-          overflow: hidden;
-          text-overflow: ellipsis;
+        .stat-value {
+          font-size: 16px;
+          font-weight: 700;
+          color: #374151;
+        }
+        .stat-hint {
+          font-size: 9px;
+          color: #9ca3af;
+          margin-top: 2px;
+        }
+        .stat-divider {
+          width: 1px;
+          height: 40px;
+          background: #e5e7eb;
+        }
+        @media (max-width: 768px) {
+          .compras-header-compact {
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 12px;
+          }
+          .stat-item {
+            flex: 1 1 calc(50% - 12px);
+            min-width: 0;
+          }
+          .stat-divider {
+            display: none;
+          }
+          .stat-label {
+            font-size: 9px;
+          }
+          .stat-value {
+            font-size: 14px;
+          }
+          .stat-highlight {
+            flex: 1 1 100%;
+            text-align: center;
+          }
         }
 
         .tabs {
@@ -1680,14 +1687,22 @@ export default function ComprasApp() {
           margin-bottom: 16px;
         }
         .item-form {
-          display: grid;
-          grid-template-columns: 2fr 1fr 1fr 1fr auto;
-          gap: 8px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
           margin-bottom: 16px;
         }
+        .item-form-row {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
         @media (max-width: 768px) {
-          .item-form {
-            grid-template-columns: 1fr;
+          .item-form-row {
+            flex-wrap: wrap;
+          }
+          .item-form-row > * {
+            min-width: 0;
           }
         }
         .search-container {
