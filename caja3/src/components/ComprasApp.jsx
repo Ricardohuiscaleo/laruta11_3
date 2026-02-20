@@ -845,8 +845,8 @@ export default function ComprasApp() {
               {ingredientes
                 .filter(ing => {
                   if (stockTab === 'bebidas') {
-                    // Bebidas: products con category_id=5 y subcategory_id=11
-                    return ing.type === 'product' && ing.category_id === 5 && ing.subcategory_id === 11;
+                    // Bebidas: products con category_id=5 (Bebidas, Jugos, Café, Té)
+                    return ing.type === 'product' && parseInt(ing.category_id) === 5;
                   }
                   // Ingredientes: todos los ingredientes (type='ingredient')
                   return ing.type === 'ingredient';

@@ -46,45 +46,35 @@ try {
             i.current_stock,
             i.min_stock_level,
             'ingredient' as type,
-            (
-                SELECT cd.cantidad 
-                FROM compras_detalle cd
-                JOIN compras c ON cd.compra_id = c.id
-                WHERE cd.ingrediente_id = i.id
-                ORDER BY c.fecha_compra DESC
-                LIMIT 1
-            ) as ultima_compra_cantidad,
-            (
-                SELECT cd.stock_despues 
-                FROM compras_detalle cd
-                JOIN compras c ON cd.compra_id = c.id
-                WHERE cd.ingrediente_id = i.id
-                ORDER BY c.fecha_compra DESC
-                LIMIT 1
-            ) as stock_despues_compra,
-            (
-                SELECT c.fecha_compra 
-                FROM compras_detalle cd
-                JOIN compras c ON cd.compra_id = c.id
-                WHERE cd.ingrediente_id = i.id
-                ORDER BY c.fecha_compra DESC
-                LIMIT 1
-            ) as fecha_ultima_compra,
-            (
-                SELECT COALESCE(SUM(ABS(it.quantity)), 0)
+            last_c.ultima_compra_cantidad,
+            last_c.stock_despues_compra,
+            last_c.fecha_ultima_compra,
+            COALESCE((
+                SELECT SUM(ABS(it.quantity))
                 FROM inventory_transactions it
                 WHERE it.ingredient_id = i.id
                 AND it.transaction_type = 'sale'
-                AND it.created_at >= (
-                    SELECT c.fecha_compra 
-                    FROM compras_detalle cd
-                    JOIN compras c ON cd.compra_id = c.id
-                    WHERE cd.ingrediente_id = i.id
-                    ORDER BY c.fecha_compra DESC
-                    LIMIT 1
-                )
-            ) as vendido_desde_compra
+                AND last_c.fecha_ultima_compra IS NOT NULL
+                AND it.created_at >= last_c.fecha_ultima_compra
+            ), 0) as vendido_desde_compra
         FROM ingredients i
+        LEFT JOIN (
+            SELECT 
+                cd.ingrediente_id,
+                cd.cantidad as ultima_compra_cantidad,
+                cd.stock_despues as stock_despues_compra,
+                c.fecha_compra as fecha_ultima_compra
+            FROM compras_detalle cd
+            JOIN compras c ON cd.compra_id = c.id
+            WHERE cd.ingrediente_id IS NOT NULL
+            AND (cd.ingrediente_id, c.fecha_compra) IN (
+                SELECT cd2.ingrediente_id, MAX(c2.fecha_compra)
+                FROM compras_detalle cd2
+                JOIN compras c2 ON cd2.compra_id = c2.id
+                WHERE cd2.ingrediente_id IS NOT NULL
+                GROUP BY cd2.ingrediente_id
+            )
+        ) last_c ON last_c.ingrediente_id = i.id
         WHERE i.is_active = 1
         ORDER BY i.name ASC
     ");
@@ -102,46 +92,36 @@ try {
             'product' as type,
             p.category_id,
             p.subcategory_id,
-            (
-                SELECT cd.cantidad 
-                FROM compras_detalle cd
-                JOIN compras co ON cd.compra_id = co.id
-                WHERE cd.product_id = p.id
-                ORDER BY co.fecha_compra DESC
-                LIMIT 1
-            ) as ultima_compra_cantidad,
-            (
-                SELECT cd.stock_despues 
-                FROM compras_detalle cd
-                JOIN compras co ON cd.compra_id = co.id
-                WHERE cd.product_id = p.id
-                ORDER BY co.fecha_compra DESC
-                LIMIT 1
-            ) as stock_despues_compra,
-            (
-                SELECT co.fecha_compra 
-                FROM compras_detalle cd
-                JOIN compras co ON cd.compra_id = co.id
-                WHERE cd.product_id = p.id
-                ORDER BY co.fecha_compra DESC
-                LIMIT 1
-            ) as fecha_ultima_compra,
-            (
-                SELECT COALESCE(SUM(ABS(it.quantity)), 0)
+            last_c.ultima_compra_cantidad,
+            last_c.stock_despues_compra,
+            last_c.fecha_ultima_compra,
+            COALESCE((
+                SELECT SUM(ABS(it.quantity))
                 FROM inventory_transactions it
                 WHERE it.product_id = p.id
                 AND it.transaction_type = 'sale'
-                AND it.created_at >= (
-                    SELECT co.fecha_compra 
-                    FROM compras_detalle cd
-                    JOIN compras co ON cd.compra_id = co.id
-                    WHERE cd.product_id = p.id
-                    ORDER BY co.fecha_compra DESC
-                    LIMIT 1
-                )
-            ) as vendido_desde_compra
+                AND last_c.fecha_ultima_compra IS NOT NULL
+                AND it.created_at >= last_c.fecha_ultima_compra
+            ), 0) as vendido_desde_compra
         FROM products p
         LEFT JOIN categories c ON p.category_id = c.id
+        LEFT JOIN (
+            SELECT 
+                cd.product_id,
+                cd.cantidad as ultima_compra_cantidad,
+                cd.stock_despues as stock_despues_compra,
+                co.fecha_compra as fecha_ultima_compra
+            FROM compras_detalle cd
+            JOIN compras co ON cd.compra_id = co.id
+            WHERE cd.product_id IS NOT NULL
+            AND (cd.product_id, co.fecha_compra) IN (
+                SELECT cd2.product_id, MAX(co2.fecha_compra)
+                FROM compras_detalle cd2
+                JOIN compras co2 ON cd2.compra_id = co2.id
+                WHERE cd2.product_id IS NOT NULL
+                GROUP BY cd2.product_id
+            )
+        ) last_c ON last_c.product_id = p.id
         WHERE p.is_active = 1
         ORDER BY p.name ASC
     ");
