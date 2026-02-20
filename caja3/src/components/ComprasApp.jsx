@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Package, DollarSign, TrendingUp, Calendar, User, FileText, Plus, Trash2, Edit, Check, X, PlusCircle, Paperclip, Image, Search } from 'lucide-react';
+import { ShoppingCart, Package, DollarSign, TrendingUp, Calendar, User, FileText, Plus, Trash2, Edit, Check, X, PlusCircle, Paperclip, Image, Search, Banknote, Building2, CreditCard, Wallet } from 'lucide-react';
 
 export default function ComprasApp() {
   const [activeTab, setActiveTab] = useState('registro');
@@ -990,21 +990,17 @@ export default function ComprasApp() {
               />
             </div>
 
-            <div className="form-group-compact payment-icons" style={{flex: '1.5'}}>
-              {['cash', 'transfer', 'card', 'credit'].map(method => (
-                <button
-                  key={method}
-                  type="button"
-                  onClick={() => setFormData({...formData, metodo_pago: method})}
-                  className={`payment-icon-btn ${formData.metodo_pago === method ? 'active' : ''}`}
-                  title={getPaymentLabel(method)}
-                >
-                  <span className="icon">{getPaymentIcon(method)}</span>
-                  {formData.metodo_pago === method && (
-                    <span className="label">{getPaymentLabel(method)}</span>
-                  )}
-                </button>
-              ))}
+            <div className="form-group-compact" style={{flex: '1.5'}}>
+              <select
+                value={formData.metodo_pago}
+                onChange={(e) => setFormData({...formData, metodo_pago: e.target.value})}
+                required
+              >
+                <option value="cash">💵 Efectivo</option>
+                <option value="transfer">🏦 Transferencia</option>
+                <option value="card">💳 Débito</option>
+                <option value="credit">💳 Crédito</option>
+              </select>
             </div>
           </div>
 
@@ -1084,45 +1080,44 @@ export default function ComprasApp() {
             <h3><ShoppingCart size={20} /> Items de Compra</h3>
             
             <div className="item-form">
-              {/* Fila 1: Buscar ingrediente */}
-              <div className="item-form-row">
-                <div className="search-container" style={{flex: '1'}}>
-                  <input
-                    type="text"
-                    placeholder="Buscar ingrediente..."
-                    value={searchTerm}
-                    onChange={handleSearchChange}
-                  />
-                  {filteredIngredientes.length > 0 && (
-                    <div className="search-results">
-                      {filteredIngredientes.map(ing => (
-                        <div key={ing.id} className="search-result-item" onMouseDown={() => handleIngredienteSelect(ing)}>
-                          <strong>{ing.name}</strong> <span style={{color: '#999', fontSize: '12px'}}>({ing.unit} - {ing.category})</span>
-                        </div>
-                      ))}
-                      <div className="search-result-item create-new" onMouseDown={() => { setNewIngredient({...newIngredient, name: searchTerm}); setShowNewIngredientModal(true); }}>
-                        <PlusCircle size={16} /> Crear "{searchTerm}"
+              {/* Fila 1: Buscar ingrediente - ancho completo */}
+              <div className="search-container" style={{width: '100%'}}>
+                <input
+                  type="text"
+                  placeholder="Buscar ingrediente..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  style={{width: '100%'}}
+                />
+                {filteredIngredientes.length > 0 && (
+                  <div className="search-results">
+                    {filteredIngredientes.map(ing => (
+                      <div key={ing.id} className="search-result-item" onMouseDown={() => handleIngredienteSelect(ing)}>
+                        <strong>{ing.name}</strong> <span style={{color: '#999', fontSize: '12px'}}>({ing.unit} - {ing.category})</span>
                       </div>
+                    ))}
+                    <div className="search-result-item create-new" onMouseDown={() => { setNewIngredient({...newIngredient, name: searchTerm}); setShowNewIngredientModal(true); }}>
+                      <PlusCircle size={16} /> Crear "{searchTerm}"
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
 
-              {/* Fila 2: Cantidad | Unidad | Precio | IVA */}
-              <div className="item-form-row">
+              {/* Fila 2: Cantidad | Unidad | Precio | IVA - misma altura */}
+              <div className="item-form-row" style={{alignItems: 'stretch'}}>
                 <input
                   type="number"
                   placeholder="Cantidad"
                   value={currentItem.cantidad}
                   onChange={(e) => setCurrentItem({...currentItem, cantidad: e.target.value})}
                   step="0.01"
-                  style={{flex: '1'}}
+                  style={{flex: '1', height: '48px'}}
                 />
 
                 <select
                   value={currentItem.unidad}
                   onChange={(e) => setCurrentItem({...currentItem, unidad: e.target.value})}
-                  style={{flex: '1'}}
+                  style={{flex: '0.8', height: '48px'}}
                 >
                   <option value="kg">kg</option>
                   <option value="gramo">gr</option>
@@ -1136,20 +1131,27 @@ export default function ComprasApp() {
                   value={currentItem.precio_unitario}
                   onChange={(e) => setCurrentItem({...currentItem, precio_unitario: e.target.value})}
                   step="0.01"
-                  style={{background: currentItem.precio_unitario ? '#f0fdf4' : 'white', flex: '1.5'}}
+                  style={{background: currentItem.precio_unitario ? '#f0fdf4' : 'white', flex: '1.5', height: '48px'}}
                 />
 
                 <label style={{
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: '6px',
-                  padding: '0 12px',
+                  padding: '0 16px',
                   cursor: 'pointer',
                   userSelect: 'none',
                   whiteSpace: 'nowrap',
                   fontSize: '13px',
                   fontWeight: '600',
-                  color: currentItem.con_iva ? '#10b981' : '#6b7280'
+                  color: currentItem.con_iva ? '#10b981' : '#6b7280',
+                  border: '2px solid',
+                  borderColor: currentItem.con_iva ? '#10b981' : '#e2e8f0',
+                  borderRadius: '10px',
+                  background: currentItem.con_iva ? '#f0fdf4' : '#f8fafc',
+                  height: '48px',
+                  minWidth: '100px'
                 }}>
                   <input
                     type="checkbox"
@@ -1877,7 +1879,7 @@ export default function ComprasApp() {
         }
         .compra-form {
           background: white;
-          padding: 10px;
+          padding: 16px;
           border-radius: 16px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         }
@@ -2167,7 +2169,7 @@ export default function ComprasApp() {
         }
         .compra-card {
           background: white;
-          padding: 10px;
+          padding: 16px;
           border-radius: 12px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.08);
           margin-bottom: 16px;
