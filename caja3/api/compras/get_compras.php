@@ -42,8 +42,10 @@ try {
 
     $total = $pdo->query("SELECT COUNT(*) FROM compras")->fetchColumn();
 
-    $stmt = $pdo->prepare("SELECT * FROM compras ORDER BY fecha_compra DESC LIMIT ? OFFSET ?");
-    $stmt->execute([$limit, $offset]);
+    $stmt = $pdo->prepare("SELECT * FROM compras ORDER BY fecha_compra DESC LIMIT :limit OFFSET :offset");
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
     $compras = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Obtener items de cada compra

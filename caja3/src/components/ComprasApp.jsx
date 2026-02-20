@@ -1359,7 +1359,7 @@ export default function ComprasApp() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '6px',
-                  padding: '0 16px',
+                  padding: '0 12px',
                   cursor: 'pointer',
                   userSelect: 'none',
                   whiteSpace: 'nowrap',
@@ -1371,7 +1371,7 @@ export default function ComprasApp() {
                   borderRadius: '10px',
                   background: currentItem.con_iva ? '#f0fdf4' : '#f8fafc',
                   height: '48px',
-                  minWidth: '100px'
+                  minWidth: '80px'
                 }}>
                   <input
                     type="checkbox"
@@ -1381,6 +1381,10 @@ export default function ComprasApp() {
                   />
                   c/IVA
                 </label>
+
+                <button type="button" onClick={handleAddItem} className="btn-add" disabled={isCreatingItem} style={{height: '48px', minWidth: '48px', padding: '0 14px', flexShrink: 0}}>
+                  {isCreatingItem ? <span className="spinner"></span> : <Plus size={20} />}
+                </button>
               </div>
 
               {currentItem.cantidad && currentItem.precio_unitario && (
@@ -1398,17 +1402,6 @@ export default function ComprasApp() {
                 </div>
               )}
 
-              <button type="button" onClick={handleAddItem} className="btn-add" disabled={isCreatingItem}>
-                {isCreatingItem ? (
-                  <>
-                    <span className="spinner"></span> Creando...
-                  </>
-                ) : (
-                  <>
-                    <Plus size={18} /> Agregar
-                  </>
-                )}
-              </button>
             </div>
 
             {/* Preview de Stock */}
