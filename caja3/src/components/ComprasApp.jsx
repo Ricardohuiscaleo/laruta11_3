@@ -784,6 +784,25 @@ export default function ComprasApp() {
       {/* Contenido */}
       {activeTab === 'stock' ? (
         <div className="compra-form">
+          <a
+            href="/admin/ajuste-inventario"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '12px',
+              marginBottom: '16px',
+              background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+              color: 'white',
+              borderRadius: '10px',
+              fontWeight: '600',
+              fontSize: '14px',
+              textDecoration: 'none'
+            }}
+          >
+            📝 Ajuste masivo por Markdown
+          </a>
           <div style={{display: 'flex', gap: '8px', marginBottom: '16px'}}>
             <button
               onClick={() => setStockTab('ingredientes')}
