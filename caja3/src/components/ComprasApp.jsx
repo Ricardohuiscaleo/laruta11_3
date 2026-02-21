@@ -2029,10 +2029,10 @@ export default function ComprasApp() {
               )}
               <div className="form-group" style={{gridColumn: '1 / -1'}}>
                 <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
-                  <input type="checkbox" checked={!editingItem.is_active}
-                    onChange={(e) => setEditingItem({...editingItem, is_active: e.target.checked ? 0 : 1})}
+                  <input type="checkbox" checked={!!editingItem.is_active}
+                    onChange={(e) => setEditingItem({...editingItem, is_active: e.target.checked ? 1 : 0})}
                     style={{width: '18px', height: '18px'}} />
-                  {editingItem.is_active ? 'Activo — marcar para desactivar' : '⚠️ Desactivado — desmarcar para activar'}
+                  {editingItem.is_active ? '✅ Activo — desmarcar para desactivar' : '⚠️ Inactivo — marcar para activar'}
                 </label>
               </div>
             </div>
