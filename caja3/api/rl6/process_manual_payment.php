@@ -53,11 +53,13 @@ try {
     
     $pdo->commit();
     
-    $access_token = getValidGmailToken();
+    $token_result = getValidGmailToken();
     
-    if (!$access_token) {
-        throw new Exception('No se pudo obtener token de Gmail');
+    if (isset($token_result['error'])) {
+        throw new Exception('No se pudo obtener token de Gmail: ' . $token_result['error']);
     }
+    
+    $access_token = $token_result['access_token'];
     
     $credito_total = floatval($user['limite_credito']);
     $credito_usado = floatval($user['credito_usado']);
