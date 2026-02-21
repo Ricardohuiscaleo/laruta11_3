@@ -104,9 +104,11 @@ function buildDynamicEmailHtml($user, $credito_total, $credito_usado, $credito_d
       <table width='100%' cellpadding='0' cellspacing='0' style='margin-bottom:10px;'><tr>
         <td width='32' style='padding-right:12px;vertical-align:top;'><div style='background:{$t['grad']};color:white;width:32px;height:32px;border-radius:50%;text-align:center;line-height:32px;font-weight:800;font-size:14px;'>$n</div></td>
         <td style='vertical-align:top;'><p style='color:{$t['fecha_color']};font-size:14px;line-height:32px;margin:0;font-weight:600;'>$txt</p></td>
-      </tr></table>", [1,2,3], ['Inicia sesión en <strong>app.laruta11.cl</strong>', 'Ve a tu <strong>Perfil</strong> → <strong>Crédito</strong>', 'Haz clic en <strong>&quot;Pagar Crédito&quot;</strong>'])) . "
+      </tr></table>", [1,2,3], ['Inicia sesión en <strong>app.laruta11.cl</strong> &nbsp;<a href=\'https://app.laruta11.cl/pagar-credito?user_id=$uid\' style=\'color:{$t[\'badge_color\']};font-size:12px;font-weight:700;\'>¿Ya estás logueado? Haz clic acá →</a>', 'Ve a tu <strong>Perfil</strong> → <strong>Crédito</strong>', 'Haz clic en <strong>&quot;Pagar Crédito&quot;</strong>'])) . "
     </div>
   </td></tr>
+
+  <tr><td style='padding:0 20px 8px;text-align:center;'><p style='color:#9ca3af;font-size:11px;margin:0;font-weight:500;'>✨ Si ya iniciaste sesi&oacute;n haz clic ac&aacute; abajo 👇</p></td></tr>
 
   $cta_btn
 
