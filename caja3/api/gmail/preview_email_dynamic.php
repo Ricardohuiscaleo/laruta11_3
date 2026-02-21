@@ -149,8 +149,8 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $anio  = date('Y');
 
     if ($credito_usado <= 0)        { $tipo = 'sin_deuda';    $dias_restantes = 0;         $dias_mora = 0; }
-    elseif ($day <= 17)             { $tipo = 'recordatorio'; $dias_restantes = 21 - $day; $dias_mora = 0; }
-    elseif ($day <= 21)             { $tipo = 'urgente';      $dias_restantes = 21 - $day; $dias_mora = 0; }
+    elseif ($day <= 20)             { $tipo = 'recordatorio'; $dias_restantes = 21 - $day; $dias_mora = 0; }
+    elseif ($day === 21)            { $tipo = 'urgente';      $dias_restantes = 0;          $dias_mora = 0; }
     else                            { $tipo = 'moroso';       $dias_restantes = 0;         $dias_mora = $day - 21; }
 
     echo buildDynamicEmailHtml($user, $credito_total, $credito_usado, $credito_disponible, $mes, $anio, $dias_restantes, $dias_mora, $tipo);
