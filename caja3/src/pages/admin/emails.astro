@@ -162,9 +162,69 @@
         </div>
     </div>
 
+    <!-- Manual Payment Modal -->
+    <div id="paymentModal" class="hidden fixed inset-0 bg-black/50 z-50 p-4 overflow-y-auto">
+        <div class="min-h-screen flex items-center justify-center">
+            <div class="bg-white rounded-xl w-full max-w-md shadow-2xl">
+                <div class="flex items-center justify-between p-4 border-b">
+                    <h3 class="text-lg font-semibold text-gray-900">💰 Pago Manual</h3>
+                    <button data-action="closePayment" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                </div>
+                <div class="p-6">
+                    <div class="mb-6">
+                        <p class="text-sm text-gray-600 mb-2">Usuario</p>
+                        <p id="payUserName" class="text-lg font-semibold text-gray-900"></p>
+                    </div>
+                    <div class="mb-6">
+                        <p class="text-sm text-gray-600 mb-2">Monto a Pagar</p>
+                        <p id="payAmount" class="text-3xl font-bold text-green-600"></p>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Método de Pago</label>
+                        <select id="payMethod" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <option value="transfer">Transferencia Bancaria</option>
+                            <option value="cash">Efectivo</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Notas (opcional)</label>
+                        <textarea id="payNotes" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Ej: Transferencia desde cuenta corriente..."></textarea>
+                    </div>
+                    
+                    <!-- Process Steps -->
+                    <div id="processSteps" class="hidden mb-6 space-y-3">
+                        <div id="step1" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                            <div class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-white text-xs font-bold">1</div>
+                            <span class="text-sm text-gray-600">Registrando transacción...</span>
+                        </div>
+                        <div id="step2" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                            <div class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-white text-xs font-bold">2</div>
+                            <span class="text-sm text-gray-600">Actualizando crédito...</span>
+                        </div>
+                        <div id="step3" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                            <div class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-white text-xs font-bold">3</div>
+                            <span class="text-sm text-gray-600">Enviando email...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-3 p-4 border-t">
+                    <button data-action="closePayment" 
+                        class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2.5 rounded-lg transition-colors">
+                        Cancelar
+                    </button>
+                    <button data-action="confirmPayment" 
+                        class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 rounded-lg transition-colors">
+                        💰 Confirmar Pago
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let currentUserId = null;
         let users = [];
+        let currentPaymentData = null;
 
         document.addEventListener('click', (e) => {
             const btn = e.target.closest('button[data-action]');
@@ -179,6 +239,9 @@
             if (action === 'sendFromPreview') sendFromPreview();
             if (action === 'preview' && userId) previewEmail(parseInt(userId));
             if (action === 'send' && userId) sendEmail(parseInt(userId));
+            if (action === 'payManual') openPaymentModal(btn);
+            if (action === 'closePayment') closePaymentModal();
+            if (action === 'confirmPayment') processManualPayment();
         });
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -282,6 +345,12 @@
                                 class="flex-1 sm:flex-none bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                                 📧
                             </button>
+                            ${user.credito_usado > 0 ? `
+                            <button data-action="payManual" data-user-id="${user.id}" data-user-name="${user.nombre}" data-amount="${user.credito_usado}"
+                                class="flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                💰
+                            </button>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
@@ -309,6 +378,100 @@
         function closePreview() {
             document.getElementById('previewModal').classList.add('hidden');
             currentUserId = null;
+        }
+
+        function openPaymentModal(btn) {
+            const userId = parseInt(btn.getAttribute('data-user-id'));
+            const userName = btn.getAttribute('data-user-name');
+            const amount = parseFloat(btn.getAttribute('data-amount'));
+            
+            currentPaymentData = { userId, userName, amount };
+            
+            document.getElementById('payUserName').textContent = userName;
+            document.getElementById('payAmount').textContent = '$' + Math.round(amount).toLocaleString('es-CL');
+            document.getElementById('payMethod').value = 'transfer';
+            document.getElementById('payNotes').value = '';
+            document.getElementById('processSteps').classList.add('hidden');
+            
+            document.getElementById('paymentModal').classList.remove('hidden');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+            currentPaymentData = null;
+        }
+
+        async function processManualPayment() {
+            if (!currentPaymentData) return;
+            
+            const method = document.getElementById('payMethod').value;
+            const notes = document.getElementById('payNotes').value;
+            const confirmBtn = document.querySelector('button[data-action="confirmPayment"]');
+            const cancelBtn = document.querySelector('button[data-action="closePayment"]');
+            
+            confirmBtn.disabled = true;
+            cancelBtn.disabled = true;
+            confirmBtn.textContent = '⏳ Procesando...';
+            
+            document.getElementById('processSteps').classList.remove('hidden');
+            
+            try {
+                // Step 1: Registrar transacción
+                updateStep('step1', 'loading');
+                const response = await fetch('/api/rl6/process_manual_payment.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: currentPaymentData.userId,
+                        amount: currentPaymentData.amount,
+                        method: method,
+                        notes: notes
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    updateStep('step1', 'error');
+                    throw new Error(result.error || 'Error al procesar pago');
+                }
+                
+                updateStep('step1', 'success');
+                updateStep('step2', 'success');
+                updateStep('step3', 'success');
+                
+                setTimeout(() => {
+                    closePaymentModal();
+                    showStatus('✅ Pago procesado exitosamente. Email enviado.', 'success');
+                    loadUsers();
+                }, 1500);
+                
+            } catch (error) {
+                confirmBtn.disabled = false;
+                cancelBtn.disabled = false;
+                confirmBtn.textContent = '💰 Confirmar Pago';
+                showStatus('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        function updateStep(stepId, status) {
+            const step = document.getElementById(stepId);
+            const circle = step.querySelector('div');
+            const text = step.querySelector('span');
+            
+            if (status === 'loading') {
+                circle.className = 'w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center animate-pulse';
+                circle.innerHTML = '<div class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>';
+                text.className = 'text-sm text-blue-600 font-medium';
+            } else if (status === 'success') {
+                circle.className = 'w-6 h-6 rounded-full bg-green-500 flex items-center justify-center';
+                circle.textContent = '✓';
+                text.className = 'text-sm text-green-600 font-medium';
+            } else if (status === 'error') {
+                circle.className = 'w-6 h-6 rounded-full bg-red-500 flex items-center justify-center';
+                circle.textContent = '✗';
+                text.className = 'text-sm text-red-600 font-medium';
+            }
         }
 
         async function sendFromPreview() {
