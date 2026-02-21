@@ -791,13 +791,14 @@ export default function ComprasApp() {
       {activeTab === 'stock' ? (
         <div className="compra-form">
           {/* Panel ajuste markdown */}
-          <div style={{marginBottom: '16px', border: '2px solid #6366f1', borderRadius: '10px', overflow: 'hidden'}}>
+          <div style={{marginBottom: '16px', border: '2px solid #6366f1', borderRadius: '10px'}}>
             <button
               onClick={() => setShowAjusteMarkdown(!showAjusteMarkdown)}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '12px 16px', background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-                color: 'white', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '14px'
+                color: 'white', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '14px',
+                borderRadius: showAjusteMarkdown ? '8px 8px 0 0' : '8px'
               }}
             >
               <span>📝 Ajuste masivo por Markdown</span>
