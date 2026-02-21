@@ -438,7 +438,9 @@
                 }
                 
                 updateStep('step1', 'success');
+                await new Promise(r => setTimeout(r, 300));
                 updateStep('step2', 'success');
+                await new Promise(r => setTimeout(r, 300));
                 updateStep('step3', 'success');
                 
                 setTimeout(() => {
