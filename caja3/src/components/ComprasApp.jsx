@@ -1983,6 +1983,11 @@ export default function ComprasApp() {
               </div>
               {editingItem.type === 'ingredient' && (<>
                 <div className="form-group">
+                  <label>Costo por Unidad ($)</label>
+                  <input type="number" value={editingItem.cost_per_unit || ''}
+                    onChange={(e) => setEditingItem({...editingItem, cost_per_unit: e.target.value})} step="1" />
+                </div>
+                <div className="form-group">
                   <label>Unidad</label>
                   <select value={editingItem.unit} onChange={(e) => setEditingItem({...editingItem, unit: e.target.value})}>
                     <option value="kg">kg</option>
@@ -2050,6 +2055,7 @@ export default function ComprasApp() {
                         unit: editingItem.unit,
                         category: editingItem.category,
                         supplier: editingItem.supplier,
+                        cost_per_unit: editingItem.cost_per_unit,
                         subcategory_id: editingItem.subcategory_id,
                         current_stock: editingItem.current_stock,
                         min_stock_level: editingItem.min_stock_level,

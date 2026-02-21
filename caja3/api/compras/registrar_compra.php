@@ -99,9 +99,17 @@ try {
         // Actualizar inventario según el tipo
         if ($item_type === 'ingredient' && $item['ingrediente_id']) {
             $updateStmt = $pdo->prepare("UPDATE ingredients 
-                SET current_stock = current_stock + ? 
+                SET current_stock = current_stock + ?,
+                    cost_per_unit = ?,
+                    supplier = CASE WHEN ? != '' THEN ? ELSE supplier END
                 WHERE id = ?");
-            $updateStmt->execute([$item['cantidad'], $item['ingrediente_id']]);
+            $updateStmt->execute([
+                $item['cantidad'],
+                $item['precio_unitario'],
+                $input['proveedor'] ?? '',
+                $input['proveedor'] ?? '',
+                $item['ingrediente_id']
+            ]);
         } elseif ($item_type === 'product' && $item['product_id']) {
             $updateStmt = $pdo->prepare("UPDATE products 
                 SET stock_quantity = stock_quantity + ? 
