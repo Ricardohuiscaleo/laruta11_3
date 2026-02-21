@@ -2023,7 +2023,7 @@ export default function ComprasApp() {
               <button
                 onClick={async () => {
                   try {
-                    const endpoint = editingItem.type === 'product' ? '/api/update_product.php' : '/api/save_ingrediente.php';
+                    const endpoint = editingItem.type === 'product' ? '/api/update_product_stock.php' : '/api/save_ingrediente.php';
                     const response = await fetch(endpoint, {
                       method: 'POST',
                       headers: {'Content-Type': 'application/json'},
