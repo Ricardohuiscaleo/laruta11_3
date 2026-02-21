@@ -72,7 +72,8 @@ Base de datos MySQL compartida entre app3 (clientes) y caja3 (cajeros) con 80+ t
 - `price` (decimal 10,2, NOT NULL)
 - `cost_price` (decimal 10,2, default 0.00)
 - `image_url` (text)
-- `sku` (varchar 50, UNIQUE)
+- `sku` (varchar 50, UNIQUE) - Código interno
+- `barcode` (varchar 100, NULL) - Código de barras/QR
 - `stock_quantity` (int, default 0, indexed)
 - `min_stock_level` (int, default 5)
 - `is_active` (tinyint 1, default 1, indexed)
@@ -140,6 +141,8 @@ Base de datos MySQL compartida entre app3 (clientes) y caja3 (cajeros) con 80+ t
 - `current_stock` (decimal 10,2, default 0.00, indexed)
 - `min_stock_level` (decimal 10,2, default 1.00)
 - `supplier` (varchar 100)
+- `barcode` (varchar 100, NULL) - Código de barras/QR
+- `internal_code` (varchar 100, NULL) - Código interno proveedor (SAP, etc.)
 - `expiry_date` (date, indexed)
 - `is_active` (tinyint 1, default 1)
 - `created_at`, `updated_at` (timestamp)

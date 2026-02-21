@@ -13,18 +13,18 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 
-    $rows = $pdo->query("SELECT id, name, current_stock, unit, category FROM ingredients WHERE is_active = 1 ORDER BY category, name")->fetchAll(PDO::FETCH_ASSOC);
+    $ingredientes = $pdo->query("SELECT id, name, category, unit, current_stock, 'ingredient' as type FROM ingredients WHERE is_active = 1 ORDER BY category, name")->fetchAll(PDO::FETCH_ASSOC);
+    $productos = $pdo->query("SELECT p.id, p.name, c.name as category, 'unidad' as unit, p.stock_quantity as current_stock, 'product' as type FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_active = 1 AND p.subcategory_id IN (10,11,27,28) ORDER BY p.name")->fetchAll(PDO::FETCH_ASSOC);
 
-    // Agrupar por categoría
+    $date = date('Y-m-d');
+    $md = "# Ajuste Inventario $date\n\n";
+
+    // Ingredientes agrupados por categoría
     $groups = [];
-    foreach ($rows as $r) {
+    foreach ($ingredientes as $r) {
         $cat = $r['category'] ?: 'Ingredientes';
         $groups[$cat][] = $r;
     }
-
-    // Generar markdown
-    $date = date('Y-m-d');
-    $md = "# Ajuste Inventario $date\n\n";
     foreach ($groups as $cat => $items) {
         $md .= "## $cat\n";
         foreach ($items as $item) {
@@ -34,7 +34,15 @@ try {
         $md .= "\n";
     }
 
-    echo json_encode(['success' => true, 'markdown' => trim($md), 'items' => $rows]);
+    // Bebidas
+    if (!empty($productos)) {
+        $md .= "## Bebidas\n";
+        foreach ($productos as $item) {
+            $md .= "- {$item['name']}: {$item['current_stock']} unidad\n";
+        }
+    }
+
+    echo json_encode(['success' => true, 'markdown' => trim($md)]);
 } catch (Exception $e) {
     echo json_encode(['error' => $e->getMessage()]);
 }

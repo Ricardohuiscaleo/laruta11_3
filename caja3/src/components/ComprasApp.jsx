@@ -8,6 +8,11 @@ export default function ComprasApp() {
   const [stockTab, setStockTab] = useState('ingredientes');
   const [stockFilter, setStockFilter] = useState('');
   const [stockSort, setStockSort] = useState('criticidad');
+  const [showAjusteMarkdown, setShowAjusteMarkdown] = useState(false);
+  const [ajusteMarkdown, setAjusteMarkdown] = useState('');
+  const [ajustePreview, setAjustePreview] = useState(null);
+  const [ajusteLoading, setAjusteLoading] = useState(false);
+  const [ajusteCopyMsg, setAjusteCopyMsg] = useState('');
   const [proyeccionItems, setProyeccionItems] = useState([]);
   const [compras, setCompras] = useState([]);
   const [ingredientes, setIngredientes] = useState([]);
@@ -784,25 +789,140 @@ export default function ComprasApp() {
       {/* Contenido */}
       {activeTab === 'stock' ? (
         <div className="compra-form">
-          <a
-            href="/admin/ajuste-inventario"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '12px',
-              marginBottom: '16px',
-              background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-              color: 'white',
-              borderRadius: '10px',
-              fontWeight: '600',
-              fontSize: '14px',
-              textDecoration: 'none'
-            }}
-          >
-            📝 Ajuste masivo por Markdown
-          </a>
+          {/* Panel ajuste markdown */}
+          <div style={{marginBottom: '16px', border: '2px solid #6366f1', borderRadius: '10px', overflow: 'hidden'}}>
+            <button
+              onClick={() => setShowAjusteMarkdown(!showAjusteMarkdown)}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 16px', background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                color: 'white', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '14px'
+              }}
+            >
+              <span>📝 Ajuste masivo por Markdown</span>
+              <span>{showAjusteMarkdown ? '▲' : '▼'}</span>
+            </button>
+            {showAjusteMarkdown && (
+              <div style={{padding: '16px', background: '#fafafa'}}>
+                <button
+                  onClick={async () => {
+                    setAjusteLoading(true);
+                    try {
+                      const res = await fetch('/api/inventario_markdown_export.php');
+                      const data = await res.json();
+                      if (data.markdown) {
+                        setAjusteMarkdown(data.markdown);
+                        try { await navigator.clipboard.writeText(data.markdown); } catch(e) {}
+                        setAjusteCopyMsg('✅ Cargado y copiado al portapapeles');
+                        setTimeout(() => setAjusteCopyMsg(''), 3000);
+                      }
+                    } catch(e) { alert('Error al cargar inventario'); }
+                    finally { setAjusteLoading(false); }
+                  }}
+                  disabled={ajusteLoading}
+                  style={{
+                    width: '100%', padding: '10px', marginBottom: '8px',
+                    background: '#1e293b', color: 'white', border: 'none',
+                    borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px'
+                  }}
+                >
+                  {ajusteLoading ? '⏳ Cargando...' : '📋 Cargar inventario actual'}
+                </button>
+                {ajusteCopyMsg && <p style={{color: '#10b981', fontSize: '12px', margin: '0 0 8px'}}>{ajusteCopyMsg}</p>}
+                <textarea
+                  value={ajusteMarkdown}
+                  onChange={e => { setAjusteMarkdown(e.target.value); setAjustePreview(null); }}
+                  placeholder={'# Ajuste Inventario\n\n## Carnes\n- Carne molida: 5.5 kg\n- Pan hamburguesa: 80 unidad'}
+                  style={{
+                    width: '100%', height: '180px', fontFamily: 'monospace', fontSize: '12px',
+                    border: '2px solid #e2e8f0', borderRadius: '8px', padding: '10px',
+                    resize: 'vertical', boxSizing: 'border-box', background: 'white'
+                  }}
+                />
+                <button
+                  onClick={async () => {
+                    if (!ajusteMarkdown.trim()) return;
+                    setAjusteLoading(true);
+                    try {
+                      const res = await fetch('/api/inventario_markdown_apply.php', {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({markdown: ajusteMarkdown, apply: false})
+                      });
+                      const data = await res.json();
+                      if (data.error) return alert('Error: ' + data.error);
+                      setAjustePreview(data);
+                    } catch(e) { alert('Error al procesar'); }
+                    finally { setAjusteLoading(false); }
+                  }}
+                  disabled={ajusteLoading || !ajusteMarkdown.trim()}
+                  style={{
+                    width: '100%', padding: '10px', marginTop: '8px',
+                    background: '#f97316', color: 'white', border: 'none',
+                    borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px'
+                  }}
+                >
+                  👁 Ver Preview
+                </button>
+                {ajustePreview && (
+                  <div style={{marginTop: '12px'}}>
+                    {ajustePreview.not_found?.length > 0 && (
+                      <div style={{background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: '6px', padding: '8px', fontSize: '12px', marginBottom: '8px'}}>
+                        ⚠️ No encontrados: <strong>{ajustePreview.not_found.join(', ')}</strong>
+                      </div>
+                    )}
+                    <div style={{background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden'}}>
+                      {ajustePreview.changes?.filter(c => c.changed).map((c, i) => (
+                        <div key={i} style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontSize: '13px'
+                        }}>
+                          <span style={{fontWeight: '500'}}>{c.name}</span>
+                          <span style={{color: '#94a3b8'}}>{c.old_stock} → </span>
+                          <span style={{fontWeight: '700', color: c.new_stock > c.old_stock ? '#10b981' : '#ef4444'}}>
+                            {c.new_stock} {c.unit}
+                          </span>
+                        </div>
+                      ))}
+                      {ajustePreview.changes?.filter(c => c.changed).length === 0 && (
+                        <p style={{padding: '12px', color: '#94a3b8', fontSize: '13px', textAlign: 'center'}}>Sin cambios detectados</p>
+                      )}
+                    </div>
+                    <p style={{fontSize: '12px', color: '#64748b', margin: '6px 0'}}>
+                      {ajustePreview.changes?.filter(c => c.changed).length} cambio(s) de {ajustePreview.changes?.length} ingredientes
+                    </p>
+                    <button
+                      onClick={async () => {
+                        if (!window.confirm('¿Confirmas aplicar el ajuste?')) return;
+                        setAjusteLoading(true);
+                        try {
+                          const res = await fetch('/api/inventario_markdown_apply.php', {
+                            method: 'POST', headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({markdown: ajusteMarkdown, apply: true})
+                          });
+                          const data = await res.json();
+                          alert(`✅ ${data.updated} ingrediente(s) actualizados`);
+                          setAjustePreview(null);
+                          setAjusteMarkdown('');
+                          setShowAjusteMarkdown(false);
+                          loadIngredientes();
+                        } catch(e) { alert('Error al aplicar'); }
+                        finally { setAjusteLoading(false); }
+                      }}
+                      disabled={ajusteLoading}
+                      style={{
+                        width: '100%', padding: '10px', marginTop: '4px',
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        color: 'white', border: 'none', borderRadius: '8px',
+                        fontWeight: '700', cursor: 'pointer', fontSize: '13px'
+                      }}
+                    >
+                      ✅ Aplicar Ajuste
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <div style={{display: 'flex', gap: '8px', marginBottom: '16px'}}>
             <button
               onClick={() => setStockTab('ingredientes')}

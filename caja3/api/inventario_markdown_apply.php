@@ -19,14 +19,15 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 
-    // Cargar todos los ingredientes activos
-    $dbItems = $pdo->query("SELECT id, name, current_stock, unit FROM ingredients WHERE is_active = 1")->fetchAll(PDO::FETCH_ASSOC);
+    // Cargar todos los items (ingredientes + bebidas)
+    $ingredientes = $pdo->query("SELECT id, name, current_stock, unit, 'ingredient' as type FROM ingredients WHERE is_active = 1")->fetchAll(PDO::FETCH_ASSOC);
+    $productos = $pdo->query("SELECT id, name, stock_quantity as current_stock, 'unidad' as unit, 'product' as type FROM products WHERE is_active = 1 AND subcategory_id IN (10,11,27,28)")->fetchAll(PDO::FETCH_ASSOC);
+
     $byName = [];
-    foreach ($dbItems as $item) {
+    foreach (array_merge($ingredientes, $productos) as $item) {
         $byName[strtolower(trim($item['name']))] = $item;
     }
 
-    // Parsear markdown: líneas "- Nombre: cantidad unidad"
     $changes = [];
     $notFound = [];
 
@@ -34,29 +35,23 @@ try {
         $line = trim($line);
         if (!str_starts_with($line, '- ')) continue;
         $line = substr($line, 2);
-
-        if (!preg_match('/^(.+?):\s*([\d.]+)\s*(\S+)?$/', $line, $m)) continue;
+        if (!preg_match('/^(.+?):\s*([\d.]+)/', $line, $m)) continue;
 
         $name = trim($m[1]);
         $newStock = (float)$m[2];
-        $unit = trim($m[3] ?? '');
         $key = strtolower($name);
 
-        // Buscar exacto primero, luego fuzzy
         $match = $byName[$key] ?? null;
         if (!$match) {
-            // Fuzzy: buscar si el nombre de BD contiene el texto o viceversa
             foreach ($byName as $k => $item) {
-                if (str_contains($k, $key) || str_contains($key, $k)) {
-                    $match = $item;
-                    break;
-                }
+                if (str_contains($k, $key) || str_contains($key, $k)) { $match = $item; break; }
             }
         }
 
         if ($match) {
             $changes[] = [
                 'id'        => $match['id'],
+                'type'      => $match['type'],
                 'name'      => $match['name'],
                 'old_stock' => (float)$match['current_stock'],
                 'new_stock' => $newStock,
@@ -69,21 +64,18 @@ try {
     }
 
     if ($apply) {
-        $stmt = $pdo->prepare("UPDATE ingredients SET current_stock = ?, updated_at = NOW() WHERE id = ?");
+        $stmtIng  = $pdo->prepare("UPDATE ingredients SET current_stock = ?, updated_at = NOW() WHERE id = ?");
+        $stmtProd = $pdo->prepare("UPDATE products SET stock_quantity = ?, updated_at = NOW() WHERE id = ?");
         $updated = 0;
         foreach ($changes as $c) {
-            if ($c['changed']) {
-                $stmt->execute([$c['new_stock'], $c['id']]);
-                $updated++;
-            }
+            if (!$c['changed']) continue;
+            if ($c['type'] === 'ingredient') $stmtIng->execute([$c['new_stock'], $c['id']]);
+            else $stmtProd->execute([$c['new_stock'], $c['id']]);
+            $updated++;
         }
         echo json_encode(['success' => true, 'updated' => $updated]);
     } else {
-        echo json_encode([
-            'success'   => true,
-            'changes'   => $changes,
-            'not_found' => $notFound,
-        ]);
+        echo json_encode(['success' => true, 'changes' => $changes, 'not_found' => $notFound]);
     }
 } catch (Exception $e) {
     echo json_encode(['error' => $e->getMessage()]);
