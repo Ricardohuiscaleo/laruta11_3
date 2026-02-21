@@ -1,23 +1,19 @@
 <?php
-/**
- * Cron job para refrescar el token de Gmail cada 40 minutos
- * Ejecutar: cada 40 minutos
- */
+header('Content-Type: application/json');
 
-require_once __DIR__ . '/get_token.php';
-
-$config = require_once __DIR__ . '/../../config.php';
-
-echo "[" . date('Y-m-d H:i:s') . "] Iniciando refresh de token Gmail...\n";
+require_once __DIR__ . '/get_token_db.php';
 
 $token_result = getValidGmailToken();
 
 if (isset($token_result['error'])) {
-    echo "[ERROR] " . $token_result['error'] . "\n";
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => $token_result['error'], 'time' => date('Y-m-d H:i:s')]);
     exit(1);
 }
 
-echo "[OK] Token refrescado exitosamente\n";
-echo "Access token: " . substr($token_result['access_token'], 0, 20) . "...\n";
-exit(0);
-?>
+echo json_encode([
+    'success' => true,
+    'message' => 'Token refrescado exitosamente',
+    'token_preview' => substr($token_result['access_token'], 0, 20) . '...',
+    'time' => date('Y-m-d H:i:s')
+]);

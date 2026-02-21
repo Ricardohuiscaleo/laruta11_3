@@ -11,16 +11,18 @@ jobs:
     steps:
       - name: Refresh Gmail Token
         run: |
-          response=$(curl -s -w "\n%{http_code}" https://caja.laruta11.cl/api/gmail/refresh_token_cron.php)
-          http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | head -n-1)
-          
-          echo "HTTP Status: $http_code"
-          echo "Response: $body"
-          
-          if [ "$http_code" != "200" ]; then
-            echo "❌ Error refreshing token"
-            exit 1
-          fi
-          
-          echo "✅ Token refreshed successfully"
+          for i in 1 2; do
+            response=$(curl -s -w "\n%{http_code}" --max-time 15 --connect-timeout 10 https://caja.laruta11.cl/api/gmail/refresh_token_cron.php)
+            http_code=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | head -n-1)
+            echo "Attempt $i - HTTP Status: $http_code"
+            echo "Response: $body"
+            if [ "$http_code" = "200" ]; then
+              echo "✅ Token refreshed successfully"
+              exit 0
+            fi
+            echo "⚠️ Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "❌ Error refreshing token after 2 attempts"
+          exit 1
