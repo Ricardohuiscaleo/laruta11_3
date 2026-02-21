@@ -1,8 +1,9 @@
 <?php
+ob_start();
 header('Content-Type: application/json');
 require_once __DIR__ . '/../gmail/get_token_db.php';
 
-$config = require_once __DIR__ . '/../../config.php';
+$config = require __DIR__ . '/../../config.php';
 
 $input = json_decode(file_get_contents('php://input'), true);
 
@@ -64,7 +65,7 @@ try {
     
     $html = generatePaymentConfirmationEmail($user, $amount, $method_text, $notes, $credito_total, $credito_usado, $credito_disponible);
     
-    $from = $config['gmail_sender_email'];
+    $from = (string)($config['gmail_sender_email'] ?: 'saboresdelaruta11@gmail.com');
     $to = $user['email'];
     $cc = 'saboresdelaruta11@gmail.com';
     $subject = "✅ Pago Recibido - Crédito La Ruta 11";
@@ -113,6 +114,7 @@ try {
         error_log("Error logging email: " . $e->getMessage());
     }
     
+    ob_end_clean();
     echo json_encode([
         'success' => true,
         'message' => 'Pago procesado exitosamente',
@@ -127,6 +129,7 @@ try {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
+    ob_end_clean();
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
 
