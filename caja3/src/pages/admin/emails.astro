@@ -339,16 +339,16 @@
                         <div class="flex sm:flex-col gap-2">
                             <button data-action="preview" data-user-id="${user.id}" 
                                 class="flex-1 sm:flex-none bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                👁️
+                                <strong>Ver</strong>
                             </button>
                             <button data-action="send" data-user-id="${user.id}" 
                                 class="flex-1 sm:flex-none bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                📧
+                                <strong>Enviar</strong>
                             </button>
                             ${user.credito_usado > 0 ? `
                             <button data-action="payManual" data-user-id="${user.id}" data-user-name="${user.nombre}" data-amount="${user.credito_usado}"
                                 class="flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                💰
+                                <strong>Pagar</strong>
                             </button>
                             ` : ''}
                         </div>
