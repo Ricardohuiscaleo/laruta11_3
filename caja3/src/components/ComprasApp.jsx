@@ -1908,6 +1908,20 @@ export default function ComprasApp() {
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>✏️ Editar {editingItem.name}</h3>
+            {editingItem.type === 'ingredient' && (
+              <div className="form-group">
+                <label>Unidad de medida</label>
+                <select
+                  value={editingItem.unit}
+                  onChange={(e) => setEditingItem({...editingItem, unit: e.target.value})}
+                >
+                  <option value="kg">kg</option>
+                  <option value="unidad">unidad</option>
+                  <option value="litro">litro</option>
+                  <option value="gramo">gramo</option>
+                </select>
+              </div>
+            )}
             <div className="form-group">
               <label>Stock Actual ({editingItem.unit})</label>
               <input
@@ -1948,6 +1962,7 @@ export default function ComprasApp() {
                       body: JSON.stringify({
                         id: editingItem.id,
                         name: editingItem.name,
+                        unit: editingItem.unit,
                         current_stock: editingItem.current_stock,
                         min_stock_level: editingItem.min_stock_level,
                         is_active: editingItem.is_active
