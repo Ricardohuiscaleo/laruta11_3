@@ -1964,48 +1964,60 @@ export default function ComprasApp() {
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>✏️ Editar {editingItem.name}</h3>
-            {editingItem.type === 'ingredient' && (
+            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
               <div className="form-group">
-                <label>Unidad de medida</label>
-                <select
-                  value={editingItem.unit}
-                  onChange={(e) => setEditingItem({...editingItem, unit: e.target.value})}
-                >
-                  <option value="kg">kg</option>
-                  <option value="unidad">unidad</option>
-                  <option value="litro">litro</option>
-                  <option value="gramo">gramo</option>
-                </select>
+                <label>Stock Actual ({editingItem.unit})</label>
+                <input type="number" value={editingItem.current_stock}
+                  onChange={(e) => setEditingItem({...editingItem, current_stock: e.target.value})} step="0.01" />
               </div>
-            )}
-            <div className="form-group">
-              <label>Stock Actual ({editingItem.unit})</label>
-              <input
-                type="number"
-                value={editingItem.current_stock}
-                onChange={(e) => setEditingItem({...editingItem, current_stock: e.target.value})}
-                step="0.01"
-              />
-            </div>
-            <div className="form-group">
-              <label>Stock Mínimo ({editingItem.unit})</label>
-              <input
-                type="number"
-                value={editingItem.min_stock_level}
-                onChange={(e) => setEditingItem({...editingItem, min_stock_level: e.target.value})}
-                step="0.01"
-              />
-            </div>
-            <div className="form-group">
-              <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
-                <input
-                  type="checkbox"
-                  checked={!editingItem.is_active}
-                  onChange={(e) => setEditingItem({...editingItem, is_active: e.target.checked ? 0 : 1})}
-                  style={{width: '18px', height: '18px'}}
-                />
-                Desactivar {editingItem.type === 'product' ? 'producto' : 'ingrediente'}
-              </label>
+              <div className="form-group">
+                <label>Stock Mínimo ({editingItem.unit})</label>
+                <input type="number" value={editingItem.min_stock_level}
+                  onChange={(e) => setEditingItem({...editingItem, min_stock_level: e.target.value})} step="0.01" />
+              </div>
+              {editingItem.type === 'ingredient' && (<>
+                <div className="form-group">
+                  <label>Unidad</label>
+                  <select value={editingItem.unit} onChange={(e) => setEditingItem({...editingItem, unit: e.target.value})}>
+                    <option value="kg">kg</option>
+                    <option value="unidad">unidad</option>
+                    <option value="litro">litro</option>
+                    <option value="gramo">gramo</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Categoría</label>
+                  <select value={editingItem.category || ''} onChange={(e) => setEditingItem({...editingItem, category: e.target.value})}>
+                    <option value="Ingredientes">Ingredientes</option>
+                    <option value="Insumos">Insumos</option>
+                    <option value="Panes">Panes</option>
+                    <option value="Carnes">Carnes</option>
+                    <option value="Aves">Aves</option>
+                    <option value="Pescados">Pescados</option>
+                    <option value="Embutidos">Embutidos</option>
+                    <option value="Lácteos">Lácteos</option>
+                    <option value="Verduras">Verduras</option>
+                    <option value="Vegetales">Vegetales</option>
+                    <option value="Salsas">Salsas</option>
+                    <option value="Condimentos">Condimentos</option>
+                    <option value="Packaging">Packaging</option>
+                  </select>
+                </div>
+                <div className="form-group" style={{gridColumn: '1 / -1'}}>
+                  <label>Proveedor</label>
+                  <input value={editingItem.supplier || ''}
+                    onChange={(e) => setEditingItem({...editingItem, supplier: e.target.value})}
+                    placeholder="Nombre del proveedor" />
+                </div>
+              </>)}
+              <div className="form-group" style={{gridColumn: '1 / -1'}}>
+                <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
+                  <input type="checkbox" checked={!editingItem.is_active}
+                    onChange={(e) => setEditingItem({...editingItem, is_active: e.target.checked ? 0 : 1})}
+                    style={{width: '18px', height: '18px'}} />
+                  {editingItem.is_active ? 'Activo — marcar para desactivar' : '⚠️ Desactivado — desmarcar para activar'}
+                </label>
+              </div>
             </div>
             <div style={{display: 'flex', gap: '8px', marginTop: '16px'}}>
               <button
@@ -2019,6 +2031,8 @@ export default function ComprasApp() {
                         id: editingItem.id,
                         name: editingItem.name,
                         unit: editingItem.unit,
+                        category: editingItem.category,
+                        supplier: editingItem.supplier,
                         current_stock: editingItem.current_stock,
                         min_stock_level: editingItem.min_stock_level,
                         is_active: editingItem.is_active
