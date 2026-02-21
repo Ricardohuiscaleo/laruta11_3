@@ -13,6 +13,7 @@ export default function ComprasApp() {
   const [ajustePreview, setAjustePreview] = useState(null);
   const [ajusteLoading, setAjusteLoading] = useState(false);
   const [ajusteCopyMsg, setAjusteCopyMsg] = useState('');
+  const [ajusteCopyMenu, setAjusteCopyMenu] = useState(false);
   const [proyeccionItems, setProyeccionItems] = useState([]);
   const [compras, setCompras] = useState([]);
   const [ingredientes, setIngredientes] = useState([]);
@@ -839,30 +840,84 @@ export default function ComprasApp() {
                     resize: 'vertical', boxSizing: 'border-box', background: 'white'
                   }}
                 />
-                <button
-                  onClick={async () => {
-                    if (!ajusteMarkdown.trim()) return;
-                    setAjusteLoading(true);
-                    try {
-                      const res = await fetch('/api/inventario_markdown_apply.php', {
-                        method: 'POST', headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({markdown: ajusteMarkdown, apply: false})
-                      });
-                      const data = await res.json();
-                      if (data.error) return alert('Error: ' + data.error);
-                      setAjustePreview(data);
-                    } catch(e) { alert('Error al procesar'); }
-                    finally { setAjusteLoading(false); }
-                  }}
-                  disabled={ajusteLoading || !ajusteMarkdown.trim()}
-                  style={{
-                    width: '100%', padding: '10px', marginTop: '8px',
-                    background: '#f97316', color: 'white', border: 'none',
-                    borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px'
-                  }}
-                >
-                  👁 Ver Preview
-                </button>
+                <div style={{display: 'flex', gap: '6px', marginTop: '8px', position: 'relative'}}>
+                  <button
+                    onClick={async () => {
+                      if (!ajusteMarkdown.trim()) return;
+                      setAjusteLoading(true);
+                      try {
+                        const res = await fetch('/api/inventario_markdown_apply.php', {
+                          method: 'POST', headers: {'Content-Type': 'application/json'},
+                          body: JSON.stringify({markdown: ajusteMarkdown, apply: false})
+                        });
+                        const data = await res.json();
+                        if (data.error) return alert('Error: ' + data.error);
+                        setAjustePreview(data);
+                      } catch(e) { alert('Error al procesar'); }
+                      finally { setAjusteLoading(false); }
+                    }}
+                    disabled={ajusteLoading || !ajusteMarkdown.trim()}
+                    style={{
+                      flex: 1, padding: '10px',
+                      background: '#f97316', color: 'white', border: 'none',
+                      borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px'
+                    }}
+                  >
+                    👁 Ver Preview
+                  </button>
+                  <div style={{position: 'relative'}}>
+                    <button
+                      onClick={() => setAjusteCopyMenu(prev => !prev)}
+                      disabled={!ajusteMarkdown.trim()}
+                      style={{
+                        padding: '10px 12px', background: '#1e293b', color: 'white',
+                        border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', fontWeight: '600'
+                      }}
+                    >
+                      📋 <ChevronDown size={14} />
+                    </button>
+                    {ajusteCopyMenu && (
+                      <div style={{
+                        position: 'absolute', right: 0, top: 'calc(100% + 4px)',
+                        background: 'white', border: '2px solid #e2e8f0', borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 50, minWidth: '180px', padding: '4px'
+                      }}>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(ajusteMarkdown);
+                            setAjusteCopyMenu(false);
+                            setAjusteCopyMsg('✅ Todo copiado'); setTimeout(() => setAjusteCopyMsg(''), 2000);
+                          }}
+                          style={{width: '100%', padding: '8px 12px', border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left', fontSize: '13px', fontWeight: '600', borderRadius: '6px'}}
+                          onMouseEnter={e => e.target.style.background='#f1f5f9'}
+                          onMouseLeave={e => e.target.style.background='transparent'}
+                        >📋 Copiar todo</button>
+                        <hr style={{margin: '4px 0', border: 'none', borderTop: '1px solid #e2e8f0'}} />
+                        {ajusteMarkdown.split('\n').filter(l => l.startsWith('## ')).map(l => {
+                          const cat = l.replace('## ', '');
+                          return (
+                            <button
+                              key={cat}
+                              onClick={() => {
+                                const lines = ajusteMarkdown.split('\n');
+                                const start = lines.findIndex(l2 => l2 === `## ${cat}`);
+                                let end = lines.findIndex((l2, i) => i > start && l2.startsWith('## '));
+                                if (end === -1) end = lines.length;
+                                const section = lines.slice(start, end).filter(l2 => l2.trim()).join('\n');
+                                navigator.clipboard.writeText(section);
+                                setAjusteCopyMenu(false);
+                                setAjusteCopyMsg(`✅ ${cat} copiado`); setTimeout(() => setAjusteCopyMsg(''), 2000);
+                              }}
+                              style={{width: '100%', padding: '8px 12px', border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left', fontSize: '12px', borderRadius: '6px'}}
+                              onMouseEnter={e => e.target.style.background='#f1f5f9'}
+                              onMouseLeave={e => e.target.style.background='transparent'}
+                            >{cat}</button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
                 {ajustePreview && (
                   <div style={{marginTop: '12px'}}>
                     {ajustePreview.not_found?.length > 0 && (
