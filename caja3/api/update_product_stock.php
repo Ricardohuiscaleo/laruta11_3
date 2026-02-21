@@ -24,8 +24,8 @@ try {
     $id = $input['id'] ?? null;
     if (!$id) throw new Exception('ID requerido');
 
-    $pdo->prepare("UPDATE products SET stock_quantity=?, min_stock_level=?, is_active=? WHERE id=?")
-        ->execute([$input['current_stock'], $input['min_stock_level'], $input['is_active'] ?? 1, $id]);
+    $pdo->prepare("UPDATE products SET stock_quantity=?, min_stock_level=?, is_active=?, subcategory_id=? WHERE id=?")
+        ->execute([$input['current_stock'], $input['min_stock_level'], $input['is_active'] ?? 1, $input['subcategory_id'] ?? null, $id]);
 
     echo json_encode(['success' => true]);
 } catch (Exception $e) {

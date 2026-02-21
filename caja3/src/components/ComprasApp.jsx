@@ -14,6 +14,7 @@ export default function ComprasApp() {
   const [ajusteLoading, setAjusteLoading] = useState(false);
   const [ajusteCopyMsg, setAjusteCopyMsg] = useState('');
   const [ajusteCopyMenu, setAjusteCopyMenu] = useState(false);
+  const [ajusteCopyCats, setAjusteCopyCats] = useState([]);
   const [proyeccionItems, setProyeccionItems] = useState([]);
   const [compras, setCompras] = useState([]);
   const [ingredientes, setIngredientes] = useState([]);
@@ -881,40 +882,45 @@ export default function ComprasApp() {
                       <div style={{
                         position: 'absolute', right: 0, top: 'calc(100% + 4px)',
                         background: 'white', border: '2px solid #e2e8f0', borderRadius: '8px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 50, minWidth: '180px', padding: '4px'
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 50, minWidth: '200px', padding: '8px'
                       }}>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(ajusteMarkdown);
-                            setAjusteCopyMenu(false);
-                            setAjusteCopyMsg('✅ Todo copiado'); setTimeout(() => setAjusteCopyMsg(''), 2000);
-                          }}
-                          style={{width: '100%', padding: '8px 12px', border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left', fontSize: '13px', fontWeight: '600', borderRadius: '6px'}}
-                          onMouseEnter={e => e.target.style.background='#f1f5f9'}
-                          onMouseLeave={e => e.target.style.background='transparent'}
-                        >📋 Copiar todo</button>
-                        <hr style={{margin: '4px 0', border: 'none', borderTop: '1px solid #e2e8f0'}} />
                         {ajusteMarkdown.split('\n').filter(l => l.startsWith('## ')).map(l => {
                           const cat = l.replace('## ', '');
+                          const checked = ajusteCopyCats.includes(cat);
                           return (
-                            <button
-                              key={cat}
-                              onClick={() => {
-                                const lines = ajusteMarkdown.split('\n');
-                                const start = lines.findIndex(l2 => l2 === `## ${cat}`);
-                                let end = lines.findIndex((l2, i) => i > start && l2.startsWith('## '));
-                                if (end === -1) end = lines.length;
-                                const section = lines.slice(start, end).filter(l2 => l2.trim()).join('\n');
-                                navigator.clipboard.writeText(section);
-                                setAjusteCopyMenu(false);
-                                setAjusteCopyMsg(`✅ ${cat} copiado`); setTimeout(() => setAjusteCopyMsg(''), 2000);
-                              }}
-                              style={{width: '100%', padding: '8px 12px', border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left', fontSize: '12px', borderRadius: '6px'}}
-                              onMouseEnter={e => e.target.style.background='#f1f5f9'}
-                              onMouseLeave={e => e.target.style.background='transparent'}
-                            >{cat}</button>
+                            <label key={cat} style={{display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', cursor: 'pointer', borderRadius: '6px', fontSize: '13px'}}
+                              onMouseEnter={e => e.currentTarget.style.background='#f1f5f9'}
+                              onMouseLeave={e => e.currentTarget.style.background='transparent'}
+                            >
+                              <input type="checkbox" checked={checked}
+                                onChange={() => setAjusteCopyCats(prev => checked ? prev.filter(c => c !== cat) : [...prev, cat])}
+                                style={{width: '15px', height: '15px', cursor: 'pointer'}} />
+                              {cat}
+                            </label>
                           );
                         })}
+                        <hr style={{margin: '6px 0', border: 'none', borderTop: '1px solid #e2e8f0'}} />
+                        <button
+                          onClick={() => {
+                            const lines = ajusteMarkdown.split('\n');
+                            const cats = ajusteMarkdown.split('\n').filter(l => l.startsWith('## ')).map(l => l.replace('## ', ''));
+                            const toExport = ajusteCopyCats.length > 0 ? ajusteCopyCats : cats;
+                            const sections = toExport.map(cat => {
+                              const start = lines.findIndex(l => l === `## ${cat}`);
+                              let end = lines.findIndex((l, i) => i > start && l.startsWith('## '));
+                              if (end === -1) end = lines.length;
+                              return lines.slice(start, end).filter(l => l.trim()).join('\n');
+                            });
+                            navigator.clipboard.writeText(sections.join('\n\n'));
+                            setAjusteCopyMenu(false);
+                            setAjusteCopyCats([]);
+                            const msg = ajusteCopyCats.length > 0 ? `✅ ${ajusteCopyCats.length} categoría(s) copiadas` : '✅ Todo copiado';
+                            setAjusteCopyMsg(msg); setTimeout(() => setAjusteCopyMsg(''), 2000);
+                          }}
+                          style={{width: '100%', padding: '8px 12px', background: '#1e293b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px'}}
+                        >
+                          📋 {ajusteCopyCats.length > 0 ? `Copiar selección (${ajusteCopyCats.length})` : 'Copiar todo'}
+                        </button>
                       </div>
                     )}
                   </div>
@@ -2010,6 +2016,17 @@ export default function ComprasApp() {
                     placeholder="Nombre del proveedor" />
                 </div>
               </>)}
+              {editingItem.type === 'product' && (
+                <div className="form-group" style={{gridColumn: '1 / -1'}}>
+                  <label>Subcategoría</label>
+                  <select value={editingItem.subcategory_id || ''} onChange={(e) => setEditingItem({...editingItem, subcategory_id: e.target.value})}>
+                    <option value="10">Jugos</option>
+                    <option value="11">Bebidas</option>
+                    <option value="27">Café</option>
+                    <option value="28">Té</option>
+                  </select>
+                </div>
+              )}
               <div className="form-group" style={{gridColumn: '1 / -1'}}>
                 <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
                   <input type="checkbox" checked={!editingItem.is_active}
@@ -2033,6 +2050,7 @@ export default function ComprasApp() {
                         unit: editingItem.unit,
                         category: editingItem.category,
                         supplier: editingItem.supplier,
+                        subcategory_id: editingItem.subcategory_id,
                         current_stock: editingItem.current_stock,
                         min_stock_level: editingItem.min_stock_level,
                         is_active: editingItem.is_active
