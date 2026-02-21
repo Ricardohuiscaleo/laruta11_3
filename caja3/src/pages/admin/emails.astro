@@ -340,16 +340,16 @@
                         <div class="flex sm:flex-col gap-2">
                             <button data-action="preview" data-user-id="${user.id}" 
                                 class="flex-1 sm:flex-none bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                <strong>Ver</strong>
+                                <strong>Preview</strong>
                             </button>
                             <button data-action="send" data-user-id="${user.id}" 
                                 class="flex-1 sm:flex-none bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                <strong>Enviar</strong>
+                                <strong>Notificar</strong>
                             </button>
                             ${user.credito_usado > 0 ? `
                             <button data-action="payManual" data-user-id="${user.id}" data-user-name="${user.nombre}" data-amount="${user.credito_usado}"
                                 class="flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                <strong>Pagar</strong>
+                                <strong>Prepagar</strong>
                             </button>
                             ` : ''}
                         </div>
@@ -372,7 +372,7 @@
 
         function previewEmail(userId) {
             currentUserId = userId;
-            document.getElementById('previewFrame').src = `https://caja.laruta11.cl/api/gmail/preview_credit_statement.php?user_id=${userId}`;
+            document.getElementById('previewFrame').src = `/api/gmail/preview_email_dynamic.php?user_id=${userId}`;
             document.getElementById('previewModal').classList.remove('hidden');
         }
 
@@ -487,10 +487,11 @@
         async function sendEmail(userId) {
             showStatus('Enviando email...', 'info');
             try {
-                const response = await fetch(`/api/gmail/send_credit_statement.php?user_id=${userId}`);
+                const response = await fetch(`/api/gmail/send_dynamic_email.php?user_id=${userId}`);
                 const result = await response.json();
                 if (result.success) {
-                    showStatus(`✅ Email enviado a ${result.to}`, 'success');
+                    const tipos = { recordatorio: '📅 Recordatorio', moroso: '⚠️ Mora', sin_deuda: '✅ Al día' };
+                    showStatus(`✅ Email enviado a ${result.to} (${tipos[result.tipo] || result.tipo})`, 'success');
                 } else {
                     showStatus(`❌ Error: ${result.error}`, 'error');
                 }
