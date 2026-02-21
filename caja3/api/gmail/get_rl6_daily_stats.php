@@ -15,27 +15,19 @@ if ($conn->connect_error) {
 // Obtener fecha de hoy
 $today = date('Y-m-d');
 
-// Pagos del día (tuu_orders online + pagos manuales en rl6_credit_transactions)
+// Pagos del día (todos los RL6- en tuu_orders: online y manuales)
 $query_pagos = "
     SELECT 
         COUNT(DISTINCT user_id) as usuarios_pagaron,
-        SUM(total_pagado) as total_pagado
-    FROM (
-        SELECT user_id, installment_amount as total_pagado
-        FROM tuu_orders
-        WHERE order_number LIKE 'RL6-%'
-        AND payment_status = 'paid'
-        AND DATE(updated_at) = ?
-        UNION ALL
-        SELECT user_id, amount as total_pagado
-        FROM rl6_credit_transactions
-        WHERE type = 'refund'
-        AND DATE(created_at) = ?
-    ) AS pagos_combinados
+        SUM(installment_amount) as total_pagado
+    FROM tuu_orders
+    WHERE order_number LIKE 'RL6-%'
+    AND payment_status = 'paid'
+    AND DATE(updated_at) = ?
 ";
 
 $stmt = $conn->prepare($query_pagos);
-$stmt->bind_param("ss", $today, $today);
+$stmt->bind_param("s", $today);
 $stmt->execute();
 $result = $stmt->get_result();
 $pagos = $result->fetch_assoc();
@@ -54,21 +46,14 @@ $query_deuda = "
 $result_deuda = $conn->query($query_deuda);
 $deuda = $result_deuda->fetch_assoc();
 
-// Pagos históricos totales (online + manuales)
+// Pagos históricos totales
 $query_historico = "
     SELECT 
         COUNT(DISTINCT user_id) as usuarios_pagaron_total,
-        SUM(total_pagado) as monto_pagado_total
-    FROM (
-        SELECT user_id, installment_amount as total_pagado
-        FROM tuu_orders
-        WHERE order_number LIKE 'RL6-%'
-        AND payment_status = 'paid'
-        UNION ALL
-        SELECT user_id, amount as total_pagado
-        FROM rl6_credit_transactions
-        WHERE type = 'refund'
-    ) AS historico_combinado
+        SUM(installment_amount) as monto_pagado_total
+    FROM tuu_orders
+    WHERE order_number LIKE 'RL6-%'
+    AND payment_status = 'paid'
 ";
 
 $result_historico = $conn->query($query_historico);

@@ -50,7 +50,20 @@ try {
     ");
     $stmt->execute([$user_id]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
+    // Insertar en tuu_orders para que aparezca en stats
+    $order_number = 'RL6-MANUAL-' . time();
+    $payment_method_db = $method === 'transfer' ? 'transfer' : 'cash';
+    $stmt = $pdo->prepare("
+        INSERT INTO tuu_orders (
+            order_number, user_id, customer_name, product_name,
+            product_price, installment_amount, payment_method, payment_status,
+            pagado_con_credito_rl6, monto_credito_rl6, order_status, status,
+            created_at, updated_at
+        ) VALUES (?, ?, ?, 'Pago Crédito RL6', ?, ?, ?, 'paid', 1, ?, 'completed', 'completed', NOW(), NOW())
+    ");
+    $stmt->execute([$order_number, $user_id, $user['nombre'], $amount, $amount, $payment_method_db, $amount]);
+
     $pdo->commit();
     
     $token_result = getValidGmailToken();
