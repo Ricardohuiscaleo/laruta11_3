@@ -28,11 +28,12 @@ try {
     if ($credito_usado <= 0) {
         $tipo = 'sin_deuda'; $dias_restantes = 0; $dias_mora = 0;
         $subject = "✅ Tu crédito está al día - La Ruta 11";
-    } elseif ($day <= 21) {
+    } elseif ($day <= 17) {
         $tipo = 'recordatorio'; $dias_restantes = 21 - $day; $dias_mora = 0;
-        $subject = $dias_restantes <= 3
-            ? "🚨 ¡Último aviso! Tu pago vence pronto - La Ruta 11"
-            : "📅 Recordatorio de pago - Crédito RL6 La Ruta 11";
+        $subject = "📅 Recordatorio de pago - Crédito RL6 La Ruta 11";
+    } elseif ($day <= 21) {
+        $tipo = 'urgente'; $dias_restantes = 21 - $day; $dias_mora = 0;
+        $subject = "🚨 ¡Último aviso! Tu pago vence pronto - La Ruta 11";
     } else {
         $tipo = 'moroso'; $dias_mora = $day - 21; $dias_restantes = 0;
         $subject = "⚠️ Pago vencido ($dias_mora días en mora) - La Ruta 11";

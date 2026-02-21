@@ -514,7 +514,7 @@
             
             for (const user of users) {
                 try {
-                    const response = await fetch(`/api/gmail/send_credit_statement.php?user_id=${user.id}`);
+                    const response = await fetch(`/api/gmail/send_dynamic_email.php?user_id=${user.id}`);
                     const result = await response.json();
                     result.success ? sent++ : failed++;
                     showStatus(`Enviando... ${sent + failed}/${users.length} (${sent} ✓, ${failed} ✗)`, 'info');
