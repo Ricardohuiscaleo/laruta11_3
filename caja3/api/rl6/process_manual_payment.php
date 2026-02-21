@@ -95,6 +95,9 @@ try {
     
     if ($http_code !== 200) {
         error_log("Error sending email: " . $response);
+        ob_end_clean();
+        echo json_encode(['success' => false, 'error' => 'Gmail error ' . $http_code, 'detail' => json_decode($response, true)]);
+        exit;
     }
     
     try {
