@@ -21,31 +21,21 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 
-    // Bebidas: category_id=5, excluir té(28), café(27), jugos(10), aguas(154,155 por nombre)
+    // Bebidas: solo subcategory_id 11 (Bebidas) — excluye té(28), café(27), jugos(10), y cualquier otra subcategoría no bebida
     $stmt = $pdo->query("
         SELECT p.id, p.name, p.stock_quantity, p.min_stock_level, p.price, s.name as subcategory
         FROM products p
         LEFT JOIN subcategories s ON p.subcategory_id = s.id
         WHERE p.category_id = 5
-          AND p.subcategory_id NOT IN (10, 27, 28)
+          AND p.subcategory_id = 11
           AND p.is_active = 1
           AND p.name NOT LIKE '%Agua%'
-          AND p.name NOT LIKE '%Jugo%'
-          AND p.name NOT LIKE '%Nectar%'
-          AND p.name NOT LIKE '%NECTAR%'
-        ORDER BY s.name ASC, p.name ASC
+        ORDER BY p.stock_quantity ASC, p.name ASC
     ");
     $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $TARGET = 12;
     $fecha = date('d/m/Y');
-
-    // Agrupar por subcategoría
-    $grupos = [];
-    foreach ($productos as $p) {
-        $sub = $p['subcategory'] ?: 'Otras Bebidas';
-        $grupos[$sub][] = $p;
-    }
 
     $criticos = [];
     $comprar = [];
@@ -54,21 +44,17 @@ try {
     $md = "📦 *REPORTE BEBIDAS — $fecha*\n";
     $md .= "_(objetivo: $TARGET unidades por producto)_\n\n";
 
-    foreach ($grupos as $sub => $items) {
-        $md .= "*$sub*\n";
-        foreach ($items as $p) {
-            $stock = (int)$p['stock_quantity'];
-            $sugerido = max(0, $TARGET - $stock);
-            $emoji = $stock <= 2 ? '🔴' : ($stock <= 5 ? '🟡' : '🟢');
-            if ($sugerido > 0) {
-                $md .= "$emoji {$p['name']} — stock: $stock → comprar: *$sugerido*\n";
-            } else {
-                $md .= "$emoji {$p['name']} — stock: $stock ✓\n";
-            }
-            if ($stock <= 2) $criticos[] = $p['name'];
-            if ($sugerido > 0) $comprar[] = ['nombre' => $p['name'], 'cantidad' => $sugerido, 'precio' => (float)$p['price']];
+    foreach ($productos as $p) {
+        $stock = (int)$p['stock_quantity'];
+        $sugerido = max(0, $TARGET - $stock);
+        $emoji = $stock <= 2 ? '🔴' : ($stock <= 5 ? '🟡' : '🟢');
+        if ($sugerido > 0) {
+            $md .= "$emoji {$p['name']} — stock: $stock → comprar: *$sugerido*\n";
+        } else {
+            $md .= "$emoji {$p['name']} — stock: $stock ✓\n";
         }
-        $md .= "\n";
+        if ($stock <= 2) $criticos[] = $p['name'];
+        if ($sugerido > 0) $comprar[] = ['nombre' => $p['name'], 'cantidad' => $sugerido, 'precio' => (float)$p['price']];
     }
 
     // Resumen de compra
