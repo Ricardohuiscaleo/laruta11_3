@@ -152,21 +152,30 @@ try {
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($transaction_data));
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false); // No seguir redirect, capturar Location
+    curl_setopt($ch, CURLOPT_HEADER, true);
     
     $payment_response = curl_exec($ch);
     $payment_httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $payment_curl_error = curl_error($ch);
     curl_close($ch);
     
-    if ($payment_httpCode !== 200) {
+    // TUU puede responder 200 con URL o 302 con Location header
+    if ($payment_httpCode === 302 || $payment_httpCode === 301) {
+        preg_match('/Location:\s*(\S+)/i', $payment_response, $matches);
+        $webpay_url = trim($matches[1] ?? '');
+    } else if ($payment_httpCode === 200) {
+        // Separar headers del body
+        $header_size = strpos($payment_response, "\r\n\r\n");
+        $body = substr($payment_response, $header_size + 4);
+        $webpay_url = trim($body, '"');
+    } else {
         error_log("RL6 Payment Error - HTTP $payment_httpCode: $payment_response, CURL: $payment_curl_error");
         throw new Exception("Error creando pago TUU - HTTP $payment_httpCode");
     }
     
-    $webpay_url = trim($payment_response, '"');
-    
     if (!filter_var($webpay_url, FILTER_VALIDATE_URL)) {
-        error_log("RL6 Payment Response: $payment_response");
+        error_log("RL6 Payment Response ($payment_httpCode): $payment_response");
         throw new Exception('URL de pago inválida recibida de TUU');
     }
     
