@@ -1,7 +1,11 @@
 <?php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-$config = require __DIR__ . '/../../config.php';
+$config = null;
+foreach ([__DIR__.'/../config.php', __DIR__.'/../../config.php', __DIR__.'/../../../config.php'] as $p) {
+    if (file_exists($p)) { $config = require_once $p; break; }
+}
+if (!$config) { echo json_encode(['success'=>false,'error'=>'Config no encontrado']); exit; }
 $conn = mysqli_connect($config['ruta11_db_host'], $config['ruta11_db_user'], $config['ruta11_db_pass'], $config['ruta11_db_name']);
 if (!$conn) { echo json_encode(['success'=>false,'error'=>'DB error']); exit; }
 $mes = $_GET['mes'] ?? date('Y-m');
