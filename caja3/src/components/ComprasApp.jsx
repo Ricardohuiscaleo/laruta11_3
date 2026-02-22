@@ -47,7 +47,11 @@ export default function ComprasApp() {
     unidad: 'kg',
     precio_total: '',
     precio_unitario: '',
-    con_iva: true
+    con_iva: true,
+    category: 'Ingredientes',
+    min_stock_level: 1,
+    supplier: '',
+    stock_actual: 0
   });
   const [proyeccionItem, setProyeccionItem] = useState({
     ingrediente_id: '',
@@ -233,7 +237,11 @@ export default function ComprasApp() {
         unidad: 'kg',
         precio_total: '',
         precio_unitario: '',
-        con_iva: true
+        con_iva: true,
+        category: 'Ingredientes',
+        min_stock_level: 1,
+        supplier: '',
+        stock_actual: 0
       });
       setSearchTerm('');
       return;
@@ -253,11 +261,12 @@ export default function ComprasApp() {
           cache: 'no-store',
           body: JSON.stringify({
             name: nombre,
-            category: 'Ingredientes',
+            category: currentItem.category || 'Ingredientes',
             unit: currentItem.unidad || 'kg',
             cost_per_unit: precio_unitario,
             current_stock: 0,
-            min_stock_level: 1,
+            min_stock_level: currentItem.min_stock_level || 1,
+            supplier: currentItem.supplier || '',
             is_active: 1
           })
         });
@@ -302,7 +311,11 @@ export default function ComprasApp() {
       unidad: 'kg',
       precio_total: '',
       precio_unitario: '',
-      con_iva: true
+      con_iva: true,
+      category: 'Ingredientes',
+      min_stock_level: 1,
+      supplier: '',
+      stock_actual: 0
     });
     setSearchTerm('');
   };
@@ -445,7 +458,10 @@ export default function ComprasApp() {
       nombre_item: ingrediente.name,
       unidad: ingrediente.unit,
       stock_actual: ingrediente.current_stock,
-      precio_unitario: '',
+      category: ingrediente.category || 'Ingredientes',
+      min_stock_level: ingrediente.min_stock_level || 1,
+      supplier: ingrediente.supplier || '',
+      precio_unitario: ingrediente.cost_per_unit || '',
       cantidad: '',
       precio_total: ''
     };
@@ -1593,6 +1609,34 @@ export default function ComprasApp() {
                 )}
               </div>
 
+              {/* Fila 1b: Categoría | Stock mínimo | Proveedor */}
+              {currentItem.ingrediente_id && (
+                <div className="item-form-row" style={{alignItems: 'stretch', marginBottom: '8px'}}>
+                  <input
+                    type="text"
+                    placeholder="Categoría"
+                    value={currentItem.category}
+                    onChange={(e) => setCurrentItem({...currentItem, category: e.target.value})}
+                    style={{flex: '1', height: '40px', fontSize: '13px'}}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Stock mín."
+                    value={currentItem.min_stock_level}
+                    onChange={(e) => setCurrentItem({...currentItem, min_stock_level: e.target.value})}
+                    step="0.1"
+                    style={{flex: '0.6', height: '40px', fontSize: '13px'}}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Proveedor"
+                    value={currentItem.supplier}
+                    onChange={(e) => setCurrentItem({...currentItem, supplier: e.target.value})}
+                    style={{flex: '1.5', height: '40px', fontSize: '13px'}}
+                  />
+                </div>
+              )}
+
               {/* Fila 2: Cantidad | Unidad | Precio | IVA - misma altura */}
               <div className="item-form-row" style={{alignItems: 'stretch'}}>
                 <input
@@ -2227,6 +2271,13 @@ export default function ComprasApp() {
           background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
           min-height: 100vh;
         }
+        @media (max-width: 768px) {
+          .compras-container {
+            padding: 8px;
+            padding-top: 70px;
+            padding-bottom: 80px;
+          }
+        }
         .compras-header-fixed {
           position: fixed;
           top: 0;
@@ -2241,6 +2292,16 @@ export default function ComprasApp() {
           gap: 12px;
           padding: 12px 20px;
           background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        }
+        @media (max-width: 768px) {
+          .header-compact {
+            padding: 8px 10px;
+            gap: 8px;
+          }
+          .dropdown-trigger {
+            padding: 10px 12px;
+            font-size: 13px;
+          }
         }
         .dropdown-container {
           position: relative;
@@ -2338,7 +2399,12 @@ export default function ComprasApp() {
         }
         @media (max-width: 768px) {
           .form-row-compact {
-            flex-direction: row;
+            flex-direction: column;
+            gap: 8px;
+          }
+          .form-row-compact .form-group-compact {
+            flex: unset !important;
+            width: 100%;
           }
         }
         .compras-header-compact {
@@ -2452,6 +2518,12 @@ export default function ComprasApp() {
           border-radius: 16px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         }
+        @media (max-width: 768px) {
+          .compra-form {
+            padding: 12px;
+            border-radius: 10px;
+          }
+        }
         .form-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -2515,10 +2587,13 @@ export default function ComprasApp() {
         @media (max-width: 768px) {
           .item-form-row {
             flex-wrap: wrap;
+            gap: 6px;
           }
-          .item-form-row > * {
-            min-width: 0;
-          }
+          .item-form-row input[type="number"] { flex: 1 1 80px; min-width: 70px; }
+          .item-form-row select { flex: 0 0 60px; min-width: 55px; }
+          .item-form-row input[placeholder*="Precio"], .item-form-row input[placeholder*="precio"] { flex: 1 1 100px; }
+          .item-form-row label { flex: 0 0 auto; }
+          .item-form-row button { flex: 0 0 48px; }
         }
         .search-container {
           position: relative;
