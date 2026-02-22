@@ -44,6 +44,9 @@ function sendRL6Email($to, $nombre, $rut, $grado, $unidad, $tipo = 'registro') {
         ";
     } elseif ($tipo === 'aprobado') {
         $limite = func_get_arg(5) ?? 50000;
+        $meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        $mes_actual = $meses[date('n') - 1];
+        $dias_restantes = max(0, 21 - intval(date('j')));
         $subject = '🎉 Crédito RL6 Aprobado - La Ruta 11';
         $message = "
         <html>
@@ -65,7 +68,7 @@ function sendRL6Email($to, $nombre, $rut, $grado, $unidad, $tipo = 'registro') {
                     <li>Ingresa a tu perfil → pestaña \"Crédito\"</li>
                     <li>Selecciona tus productos favoritos</li>
                     <li>En el checkout, elige \"Pagar con Crédito RL6\"</li>
-                    <li>Paga el 21 de cada mes</li>
+                    <li>Paga el 21 de $mes_actual, te quedan $dias_restantes días 😊</li>
                 </ol>
                 
                 <p style='background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;'>
