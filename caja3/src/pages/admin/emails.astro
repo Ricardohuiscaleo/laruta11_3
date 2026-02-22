@@ -38,9 +38,9 @@
                 <p class="text-[10px] uppercase tracking-wide opacity-90 mb-1">Cobranza</p>
                 <p id="statCobranza" class="text-2xl sm:text-3xl font-bold truncate">-</p>
             </div>
-            <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white shadow-lg">
-                <p class="text-[10px] uppercase tracking-wide opacity-90 mb-1">Disponible</p>
-                <p id="statDisponible" class="text-2xl sm:text-3xl font-bold truncate">-</p>
+            <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-4 text-white shadow-lg">
+                <p class="text-[10px] uppercase tracking-wide opacity-90 mb-1">Morosos</p>
+                <p id="statMorosos" class="text-2xl sm:text-3xl font-bold truncate">-</p>
             </div>
         </div>
 
@@ -305,31 +305,39 @@
                 return;
             }
             
+            // Morosos primero
+            userList.sort((a, b) => (b.es_moroso ? 1 : 0) - (a.es_moroso ? 1 : 0));
+            
             const totalClientes = userList.length;
             const totalCredito = userList.reduce((sum, u) => sum + u.credito_total, 0);
             const totalCobranza = userList.reduce((sum, u) => sum + u.credito_usado, 0);
             const totalDisponible = userList.reduce((sum, u) => sum + u.credito_disponible, 0);
+            const totalMorosos = userList.filter(u => u.es_moroso).length;
             
             document.getElementById('statClientes').textContent = totalClientes;
             document.getElementById('statCreditoTotal').textContent = '$' + Math.round(totalCredito).toLocaleString('es-CL');
             document.getElementById('statCobranza').textContent = '$' + Math.round(totalCobranza).toLocaleString('es-CL');
-            document.getElementById('statDisponible').textContent = '$' + Math.round(totalDisponible).toLocaleString('es-CL');
+            document.getElementById('statMorosos').textContent = totalMorosos;
             
             container.innerHTML = userList.map(user => `
-                <div class="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div class="bg-white border ${user.es_moroso ? 'border-red-300 bg-red-50' : ''} rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                         <div class="flex-1 min-w-0">
-                            <h4 class="font-semibold text-gray-900 truncate">${user.nombre}</h4>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h4 class="font-semibold text-gray-900 truncate">${user.nombre}</h4>
+                                ${user.es_moroso ? '<span class="text-xs font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">🔴 MOROSO</span>' : ''}
+                            </div>
                             <p class="text-sm text-gray-600 truncate">${user.email}</p>
                             <p class="text-xs text-gray-500 mt-1">${user.grado_militar} - ${user.unidad_trabajo}</p>
+                            ${user.fecha_ultimo_pago ? `<p class="text-xs text-gray-400 mt-1">Último pago: ${user.fecha_ultimo_pago}</p>` : '<p class="text-xs text-red-400 mt-1">Sin pagos registrados</p>'}
                             <div class="mt-3 grid grid-cols-3 gap-2 text-xs">
                                 <div class="bg-gray-50 rounded p-2">
                                     <p class="text-gray-500 mb-1">Crédito</p>
                                     <p class="font-semibold text-gray-900">$${user.credito_total.toLocaleString('es-CL')}</p>
                                 </div>
-                                <div class="bg-orange-50 rounded p-2">
-                                    <p class="text-orange-600 mb-1">Usado</p>
-                                    <p class="font-semibold text-orange-700">$${user.credito_usado.toLocaleString('es-CL')}</p>
+                                <div class="${user.es_moroso ? 'bg-red-100' : 'bg-orange-50'} rounded p-2">
+                                    <p class="${user.es_moroso ? 'text-red-600' : 'text-orange-600'} mb-1">Debe</p>
+                                    <p class="font-semibold ${user.es_moroso ? 'text-red-700' : 'text-orange-700'}">$${user.credito_usado.toLocaleString('es-CL')}</p>
                                 </div>
                                 <div class="bg-green-50 rounded p-2">
                                     <p class="text-green-600 mb-1">Saldo</p>
@@ -343,8 +351,8 @@
                                 <strong>Preview</strong>
                             </button>
                             <button data-action="send" data-user-id="${user.id}" 
-                                class="flex-1 sm:flex-none bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                <strong>Notificar</strong>
+                                class="flex-1 sm:flex-none ${user.es_moroso ? 'bg-red-500 hover:bg-red-600' : 'bg-orange-500 hover:bg-orange-600'} text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                <strong>${user.es_moroso ? '⚠️ Cobrar' : 'Notificar'}</strong>
                             </button>
                             ${user.credito_usado > 0 ? `
                             <button data-action="payManual" data-user-id="${user.id}" data-user-name="${user.nombre}" data-amount="${user.credito_usado}"
