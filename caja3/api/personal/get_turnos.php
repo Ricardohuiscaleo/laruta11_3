@@ -2,7 +2,7 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 $config = null;
-foreach ([__DIR__.'/../config.php', __DIR__.'/../../config.php', __DIR__.'/../../../config.php'] as $p) {
+foreach ([__DIR__.'/../config.php', __DIR__.'/../../config.php', __DIR__.'/../../../config.php', __DIR__.'/../../../../config.php', __DIR__.'/../../../../../config.php'] as $p) {
     if (file_exists($p)) { $config = require_once $p; break; }
 }
 if (!$config) { echo json_encode(['success'=>false,'error'=>'Config no encontrado']); exit; }
