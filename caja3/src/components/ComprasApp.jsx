@@ -460,7 +460,7 @@ export default function ComprasApp() {
       stock_actual: ingrediente.current_stock,
       category: ingrediente.category || 'Ingredientes',
       min_stock_level: ingrediente.min_stock_level || 1,
-      supplier: ingrediente.supplier || '',
+      supplier: formData.proveedor || ingrediente.supplier || '',
       precio_unitario: ingrediente.cost_per_unit || '',
       cantidad: '',
       precio_total: ''
