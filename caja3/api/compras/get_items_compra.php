@@ -45,6 +45,8 @@ try {
             i.unit,
             i.current_stock,
             i.min_stock_level,
+            i.cost_per_unit,
+            i.supplier,
             'ingredient' as type,
             last_c.ultima_compra_cantidad,
             last_c.stock_despues_compra,

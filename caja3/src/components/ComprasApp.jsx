@@ -1612,28 +1612,40 @@ export default function ComprasApp() {
               {/* Fila 1b: Categoría | Stock mínimo | Proveedor */}
               {currentItem.ingrediente_id && (
                 <div className="item-form-row" style={{alignItems: 'stretch', marginBottom: '8px'}}>
-                  <input
-                    type="text"
-                    placeholder="Categoría"
-                    value={currentItem.category}
-                    onChange={(e) => setCurrentItem({...currentItem, category: e.target.value})}
-                    style={{flex: '1', height: '40px', fontSize: '13px'}}
-                  />
+                  <div style={{flex: '1', position: 'relative'}}>
+                    <input
+                      type="text"
+                      list="cat-suggestions"
+                      placeholder="Categoría"
+                      value={currentItem.category}
+                      onChange={(e) => setCurrentItem({...currentItem, category: e.target.value})}
+                      style={{width: '100%', height: '40px', fontSize: '13px', padding: '0 10px', border: '2px solid #e2e8f0', borderRadius: '10px', background: '#f8fafc', boxSizing: 'border-box'}}
+                    />
+                    <datalist id="cat-suggestions">
+                      {[...new Set(ingredientes.map(i => i.category).filter(Boolean))].map(c => <option key={c} value={c} />)}
+                    </datalist>
+                  </div>
                   <input
                     type="number"
                     placeholder="Stock mín."
                     value={currentItem.min_stock_level}
                     onChange={(e) => setCurrentItem({...currentItem, min_stock_level: e.target.value})}
                     step="0.1"
-                    style={{flex: '0.6', height: '40px', fontSize: '13px'}}
+                    style={{flex: '0.6', height: '40px', fontSize: '13px', padding: '0 10px', border: '2px solid #e2e8f0', borderRadius: '10px', background: '#f8fafc'}}
                   />
-                  <input
-                    type="text"
-                    placeholder="Proveedor"
-                    value={currentItem.supplier}
-                    onChange={(e) => setCurrentItem({...currentItem, supplier: e.target.value})}
-                    style={{flex: '1.5', height: '40px', fontSize: '13px'}}
-                  />
+                  <div style={{flex: '1.5', position: 'relative'}}>
+                    <input
+                      type="text"
+                      list="prov-suggestions"
+                      placeholder="Proveedor"
+                      value={currentItem.supplier}
+                      onChange={(e) => setCurrentItem({...currentItem, supplier: e.target.value})}
+                      style={{width: '100%', height: '40px', fontSize: '13px', padding: '0 10px', border: '2px solid #e2e8f0', borderRadius: '10px', background: '#f8fafc', boxSizing: 'border-box'}}
+                    />
+                    <datalist id="prov-suggestions">
+                      {proveedores.map(p => <option key={p} value={p} />)}
+                    </datalist>
+                  </div>
                 </div>
               )}
 
