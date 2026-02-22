@@ -47,22 +47,24 @@ try {
         $grupos[$sub][] = $p;
     }
 
-    // Generar markdown
-    $md = "# 📦 Reporte de Stock — Bebidas ($fecha)\n\n";
-    $md .= "> Objetivo: llevar cada producto a **$TARGET unidades**. Si stock ≥ $TARGET, no se sugiere compra.\n\n";
-
     $criticos = [];
     $comprar = [];
 
+    // Formato WhatsApp: negrita con *, sin tablas
+    $md = "📦 *REPORTE BEBIDAS — $fecha*\n";
+    $md .= "_(objetivo: $TARGET unidades por producto)_\n\n";
+
     foreach ($grupos as $sub => $items) {
-        $md .= "## $sub\n\n";
-        $md .= "| Producto | Stock | Comprar |\n";
-        $md .= "|----------|-------|----------|\n";
+        $md .= "*$sub*\n";
         foreach ($items as $p) {
             $stock = (int)$p['stock_quantity'];
             $sugerido = max(0, $TARGET - $stock);
-            $col = $sugerido > 0 ? "**$sugerido**" : "—";
-            $md .= "| {$p['name']} | $stock | $col |\n";
+            $emoji = $stock <= 2 ? '🔴' : ($stock <= 5 ? '🟡' : '🟢');
+            if ($sugerido > 0) {
+                $md .= "$emoji {$p['name']} — stock: $stock → comprar: *$sugerido*\n";
+            } else {
+                $md .= "$emoji {$p['name']} — stock: $stock ✓\n";
+            }
             if ($stock <= 2) $criticos[] = $p['name'];
             if ($sugerido > 0) $comprar[] = ['nombre' => $p['name'], 'cantidad' => $sugerido, 'precio' => (float)$p['price']];
         }
@@ -71,20 +73,19 @@ try {
 
     // Resumen de compra
     if (!empty($comprar)) {
-        $md .= "---\n\n## 🛒 Resumen de Compra Sugerida\n\n";
-        $md .= "| Producto | Comprar | Precio unit. | Subtotal |\n";
-        $md .= "|----------|---------|--------------|----------|\n";
         $total = 0;
+        $md .= "─────────────────\n";
+        $md .= "🛒 *COMPRA SUGERIDA*\n";
         foreach ($comprar as $c) {
             $sub = $c['cantidad'] * $c['precio'];
             $total += $sub;
-            $md .= "| {$c['nombre']} | {$c['cantidad']} | \$" . number_format($c['precio'], 0, ',', '.') . " | \$" . number_format($sub, 0, ',', '.') . " |\n";
+            $md .= "• {$c['nombre']}: *{$c['cantidad']} u* — \$" . number_format($sub, 0, ',', '.') . "\n";
         }
-        $md .= "\n**Total estimado: \$" . number_format($total, 0, ',', '.') . "**\n\n";
+        $md .= "\n*Total estimado: \$" . number_format($total, 0, ',', '.') . "*\n";
     }
 
     if (!empty($criticos)) {
-        $md .= "---\n\n> ⚠️ **Críticos (stock 0-2):** " . implode(', ', $criticos) . "\n";
+        $md .= "\n⚠️ *CRÍTICOS:* " . implode(', ', $criticos) . "\n";
     }
 
     echo json_encode(['success' => true, 'markdown' => $md]);
