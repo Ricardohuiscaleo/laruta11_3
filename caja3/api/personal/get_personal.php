@@ -1,0 +1,10 @@
+<?php
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+$config = require __DIR__ . '/../../config.php';
+$conn = mysqli_connect($config['ruta11_db_host'], $config['ruta11_db_user'], $config['ruta11_db_pass'], $config['ruta11_db_name']);
+if (!$conn) { echo json_encode(['success'=>false,'error'=>'DB error']); exit; }
+$res = mysqli_query($conn, "SELECT * FROM personal WHERE activo=1 ORDER BY rol, nombre");
+$data = [];
+while ($row = mysqli_fetch_assoc($res)) $data[] = $row;
+echo json_encode(['success'=>true,'data'=>$data]);
