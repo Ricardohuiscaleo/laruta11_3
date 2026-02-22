@@ -169,7 +169,7 @@ const ProfileModalModern = ({
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     
-    setDaysUntilPayment({ days, hours, minutes });
+    setDaysUntilPayment({ days, hours, minutes, month: paymentDate.toLocaleString('es-CL', { month: 'long' }) });
   };
   
   const handleRefreshProfile = async () => {
@@ -648,7 +648,7 @@ const ProfileModalModern = ({
                       <>
                         {daysUntilPayment && (
                           <p className="text-center text-yellow-300 text-xs mt-3 font-bold">
-                            Paga el 21 de Febrero, te quedan {daysUntilPayment.days} días, {daysUntilPayment.hours} horas y {daysUntilPayment.minutes} minutos 😊
+                            Paga el 21 de {daysUntilPayment.month}, te quedan {daysUntilPayment.days} días 😊
                           </p>
                         )}
                         <div className="mt-2 bg-black rounded-lg px-3 py-2">
