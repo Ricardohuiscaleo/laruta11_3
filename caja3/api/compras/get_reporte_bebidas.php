@@ -1,0 +1,94 @@
+<?php
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Cache-Control: no-store, no-cache');
+
+$config_paths = [
+    __DIR__ . '/../config.php',
+    __DIR__ . '/../../config.php',
+    __DIR__ . '/../../../config.php',
+];
+$config = null;
+foreach ($config_paths as $path) {
+    if (file_exists($path)) { $config = require_once $path; break; }
+}
+if (!$config) { echo json_encode(['success' => false, 'error' => 'Config no encontrado']); exit; }
+
+try {
+    $pdo = new PDO(
+        "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
+        $config['app_db_user'], $config['app_db_pass'],
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+
+    // Bebidas: category_id=5, excluir té(28), café(27), jugos(10), aguas(154,155 por nombre)
+    $stmt = $pdo->query("
+        SELECT p.id, p.name, p.stock_quantity, p.min_stock_level, p.price, s.name as subcategory
+        FROM products p
+        LEFT JOIN subcategories s ON p.subcategory_id = s.id
+        WHERE p.category_id = 5
+          AND p.subcategory_id NOT IN (10, 27, 28)
+          AND p.is_active = 1
+          AND p.name NOT LIKE '%Agua%'
+          AND p.name NOT LIKE '%Jugo%'
+          AND p.name NOT LIKE '%Nectar%'
+          AND p.name NOT LIKE '%NECTAR%'
+        ORDER BY s.name ASC, p.name ASC
+    ");
+    $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $TARGET = 12;
+    $fecha = date('d/m/Y');
+
+    // Agrupar por subcategoría
+    $grupos = [];
+    foreach ($productos as $p) {
+        $sub = $p['subcategory'] ?: 'Otras Bebidas';
+        $grupos[$sub][] = $p;
+    }
+
+    // Generar markdown
+    $md = "# 📦 Reporte de Stock — Bebidas ($fecha)\n\n";
+    $md .= "> Objetivo: llevar cada producto a **$TARGET unidades**. Si stock ≥ $TARGET, no se sugiere compra.\n\n";
+
+    $criticos = [];
+    $comprar = [];
+
+    foreach ($grupos as $sub => $items) {
+        $md .= "## $sub\n\n";
+        $md .= "| Producto | Stock | Comprar |\n";
+        $md .= "|----------|-------|----------|\n";
+        foreach ($items as $p) {
+            $stock = (int)$p['stock_quantity'];
+            $sugerido = max(0, $TARGET - $stock);
+            $col = $sugerido > 0 ? "**$sugerido**" : "—";
+            $md .= "| {$p['name']} | $stock | $col |\n";
+            if ($stock <= 2) $criticos[] = $p['name'];
+            if ($sugerido > 0) $comprar[] = ['nombre' => $p['name'], 'cantidad' => $sugerido, 'precio' => (float)$p['price']];
+        }
+        $md .= "\n";
+    }
+
+    // Resumen de compra
+    if (!empty($comprar)) {
+        $md .= "---\n\n## 🛒 Resumen de Compra Sugerida\n\n";
+        $md .= "| Producto | Comprar | Precio unit. | Subtotal |\n";
+        $md .= "|----------|---------|--------------|----------|\n";
+        $total = 0;
+        foreach ($comprar as $c) {
+            $sub = $c['cantidad'] * $c['precio'];
+            $total += $sub;
+            $md .= "| {$c['nombre']} | {$c['cantidad']} | \$" . number_format($c['precio'], 0, ',', '.') . " | \$" . number_format($sub, 0, ',', '.') . " |\n";
+        }
+        $md .= "\n**Total estimado: \$" . number_format($total, 0, ',', '.') . "**\n\n";
+    }
+
+    if (!empty($criticos)) {
+        $md .= "---\n\n> ⚠️ **Críticos (stock 0-2):** " . implode(', ', $criticos) . "\n";
+    }
+
+    echo json_encode(['success' => true, 'markdown' => $md]);
+
+} catch (Exception $e) {
+    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+}

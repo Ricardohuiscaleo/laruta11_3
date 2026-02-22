@@ -15,6 +15,10 @@ export default function ComprasApp() {
   const [ajusteCopyMsg, setAjusteCopyMsg] = useState('');
   const [ajusteCopyMenu, setAjusteCopyMenu] = useState(false);
   const [ajusteCopyCats, setAjusteCopyCats] = useState([]);
+  const [reporteBebidas, setReporteBebidas] = useState('');
+  const [reporteBebidasLoading, setReporteBebidasLoading] = useState(false);
+  const [reporteBebidasCopyMenu, setReporteBebidasCopyMenu] = useState(false);
+  const [reporteBebidasMsg, setReporteBebidasMsg] = useState('');
   const [proyeccionItems, setProyeccionItems] = useState([]);
   const [compras, setCompras] = useState([]);
   const [ingredientes, setIngredientes] = useState([]);
@@ -921,6 +925,63 @@ export default function ComprasApp() {
                         >
                           📋 {ajusteCopyCats.length > 0 ? `Copiar selección (${ajusteCopyCats.length})` : 'Copiar todo'}
                         </button>
+                      </div>
+                    )}
+                  </div>
+                  {/* Botón Reporte Bebidas */}
+                  <div style={{position: 'relative'}}>
+                    <button
+                      onClick={async () => {
+                        setReporteBebidasLoading(true);
+                        try {
+                          const res = await fetch('/api/compras/get_reporte_bebidas.php');
+                          const data = await res.json();
+                          if (data.success) {
+                            setReporteBebidas(data.markdown);
+                            setReporteBebidasCopyMenu(true);
+                          }
+                        } catch(e) { alert('Error al generar reporte'); }
+                        setReporteBebidasLoading(false);
+                      }}
+                      disabled={reporteBebidasLoading}
+                      style={{
+                        padding: '10px 12px', background: '#0ea5e9', color: 'white',
+                        border: 'none', borderRadius: '8px', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: '4px',
+                        fontSize: '13px', fontWeight: '600', whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {reporteBebidasLoading ? '⏳' : '🥤'} Bebidas
+                    </button>
+                    {reporteBebidasCopyMenu && reporteBebidas && (
+                      <div style={{
+                        position: 'absolute', right: 0, top: 'calc(100% + 4px)',
+                        background: 'white', border: '2px solid #e2e8f0', borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 50, minWidth: '260px', padding: '8px'
+                      }}>
+                        <textarea
+                          value={reporteBebidas}
+                          onChange={e => setReporteBebidas(e.target.value)}
+                          style={{
+                            width: '100%', height: '200px', fontSize: '11px', fontFamily: 'monospace',
+                            border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px',
+                            resize: 'vertical', boxSizing: 'border-box'
+                          }}
+                        />
+                        <div style={{display: 'flex', gap: '6px', marginTop: '6px'}}>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(reporteBebidas);
+                              setReporteBebidasMsg('✅ Copiado'); setTimeout(() => setReporteBebidasMsg(''), 2000);
+                            }}
+                            style={{flex: 1, padding: '7px', background: '#1e293b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600'}}
+                          >📋 Copiar WhatsApp</button>
+                          <button
+                            onClick={() => setReporteBebidasCopyMenu(false)}
+                            style={{padding: '7px 10px', background: '#f1f5f9', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px'}}
+                          >✕</button>
+                        </div>
+                        {reporteBebidasMsg && <p style={{color: '#10b981', fontSize: '11px', margin: '4px 0 0', textAlign: 'center'}}>{reporteBebidasMsg}</p>}
                       </div>
                     )}
                   </div>
