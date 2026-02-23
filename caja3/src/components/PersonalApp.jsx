@@ -113,13 +113,14 @@ export default function PersonalApp() {
   function getLiquidacion(p) {
     const tPersonal = turnos.filter(t => t.personal_id == p.id);
     const diasNormales = tPersonal.filter(t => t.tipo === 'normal').length;
-    const diasReemplazos = tPersonal.filter(t => t.tipo === 'reemplazo').length;
-    const diasTrabajados = diasNormales + diasReemplazos;
+    const diasReemplazados = tPersonal.filter(t => t.tipo === 'reemplazo').length; // días que NO trabajó
+    const reemplazosHechos = turnos.filter(t => t.reemplazado_por == p.id).length; // días extra trabajados
+    const diasTrabajados = diasNormales + reemplazosHechos;
     const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
     const totalAjustes = ajustesPer.reduce((s, a) => s + parseFloat(a.monto), 0);
     const sueldoBase = parseFloat(p.sueldo_base);
     const total = sueldoBase + totalAjustes;
-    return { diasTrabajados, diasNormales, diasReemplazos, ajustesPer, totalAjustes, sueldoBase, total };
+    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase, total };
   }
 
   const cajeros = personal.filter(p => p.rol === 'cajero');
@@ -501,7 +502,7 @@ function EquipoView({ personal, turnos, colores, getLiquidacion }) {
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
       {personal.map(p => {
         const c = colores[p.id];
-        const { diasNormales, diasReemplazos, diasTrabajados, total } = getLiquidacion(p);
+        const { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, total } = getLiquidacion(p);
         return (
           <div key={p.id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', border: `1px solid ${c?.border}` }}>
             <div style={{ height: 6, background: c?.bg }} />
@@ -513,11 +514,18 @@ function EquipoView({ personal, turnos, colores, getLiquidacion }) {
               <div style={{ fontSize: 13, color: '#64748b', textTransform: 'capitalize', marginBottom: 16 }}>{p.rol}</div>
               <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 12px', marginBottom: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b', marginBottom: 4 }}>
-                  <span>Normales</span><span style={{ fontWeight: 600, color: '#374151' }}>{diasNormales}</span>
+                  <span>Días normales</span><span style={{ fontWeight: 600, color: '#374151' }}>{diasNormales}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b', marginBottom: 4 }}>
-                  <span>Reemplazos</span><span style={{ fontWeight: 600, color: '#374151' }}>{diasReemplazos}</span>
-                </div>
+                {diasReemplazados > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#ef4444', marginBottom: 4 }}>
+                    <span>Reemplazado</span><span style={{ fontWeight: 600 }}>-{diasReemplazados}</span>
+                  </div>
+                )}
+                {reemplazosHechos > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#10b981', marginBottom: 4 }}>
+                    <span>Reemplazos extra</span><span style={{ fontWeight: 600 }}>+{reemplazosHechos}</span>
+                  </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, borderTop: '1px solid #e2e8f0', paddingTop: 4, marginTop: 4 }}>
                   <span style={{ fontWeight: 700 }}>Total días</span><span style={{ fontWeight: 800, color: c?.text }}>{diasTrabajados}</span>
                 </div>
