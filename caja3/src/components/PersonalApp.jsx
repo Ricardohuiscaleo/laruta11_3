@@ -24,6 +24,10 @@ export default function PersonalApp() {
   const [formAjuste, setFormAjuste] = useState({ monto: '', concepto: '' });
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
+  const [modalTurno, setModalTurno] = useState(null); // {dia, fecha}
+  const [formTurno, setFormTurno] = useState({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa' });
+  const [modalPersonal, setModalPersonal] = useState(null); // null | 'new' | persona
+  const [formPersonal, setFormPersonal] = useState({ nombre: '', rol: 'cajero', sueldo_base: '', activo: 1 });
 
   useEffect(() => { loadData(); }, [mes, anio]);
 
@@ -51,6 +55,59 @@ export default function PersonalApp() {
   function showToast(msg, type = 'success') {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
+  }
+
+  async function saveTurno() {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/personal/personal_api.php', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save_turno', ...formTurno, personal_id: parseInt(formTurno.personal_id), fecha: modalTurno.fecha }),
+      });
+      const data = await res.json();
+      if (data.success) { showToast('Turno guardado'); setModalTurno(null); loadData(); }
+      else showToast(data.error || 'Error', 'error');
+    } catch { showToast('Error de conexión', 'error'); }
+    setSaving(false);
+  }
+
+  async function deleteTurno(id) {
+    if (!confirm('¿Eliminar turno?')) return;
+    try {
+      const res = await fetch('/api/personal/personal_api.php', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete_turno', id }),
+      });
+      const data = await res.json();
+      if (data.success) { showToast('Turno eliminado'); loadData(); }
+    } catch { showToast('Error', 'error'); }
+  }
+
+  async function savePersonal() {
+    if (!formPersonal.nombre) return;
+    setSaving(true);
+    const isEdit = modalPersonal && modalPersonal !== 'new';
+    try {
+      const res = await fetch('/api/personal/personal_api.php', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: isEdit ? 'update_personal' : 'save_personal', ...formPersonal, id: isEdit ? modalPersonal.id : undefined }),
+      });
+      const data = await res.json();
+      if (data.success) { showToast(isEdit ? 'Actualizado' : 'Persona agregada'); setModalPersonal(null); loadData(); }
+      else showToast(data.error || 'Error', 'error');
+    } catch { showToast('Error de conexión', 'error'); }
+    setSaving(false);
+  }
+
+  async function savePresupuesto(monto) {
+    const mesStr = String(mes + 1).padStart(2, '0');
+    try {
+      await fetch('/api/personal/personal_api.php', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save_presupuesto', mes: `${anio}-${mesStr}-01`, monto }),
+      });
+      loadData();
+    } catch { showToast('Error', 'error'); }
   }
 
   async function saveAjuste() {
@@ -186,12 +243,107 @@ export default function PersonalApp() {
           </div>
         ) : (
           <>
-            {tab === 'calendario' && <CalendarioView diasEnMes={diasEnMes} primerDia={primerDia} turnosPorFecha={turnosPorFecha} personal={personal} colores={COLORES} />}
-            {tab === 'liquidacion' && <LiquidacionView personal={personal} cajeros={cajeros} plancheros={plancheros} getLiquidacion={getLiquidacion} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina} />}
-            {tab === 'equipo' && <EquipoView personal={personal} turnos={turnos} colores={COLORES} getLiquidacion={getLiquidacion} />}
+            {tab === 'calendario' && <CalendarioView diasEnMes={diasEnMes} primerDia={primerDia} turnosPorFecha={turnosPorFecha} personal={personal} colores={COLORES} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({dia, fecha}); setFormTurno({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa' }); }} onDeleteTurno={deleteTurno} />}
+            {tab === 'liquidacion' && <LiquidacionView personal={personal} cajeros={cajeros} plancheros={plancheros} getLiquidacion={getLiquidacion} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina} onSavePresupuesto={savePresupuesto} />}
+            {tab === 'equipo' && <EquipoView personal={personal} turnos={turnos} colores={COLORES} getLiquidacion={getLiquidacion} onAddPersonal={() => { setModalPersonal('new'); setFormPersonal({ nombre: '', rol: 'cajero', sueldo_base: '', activo: 1 }); }} onEditPersonal={(p) => { setModalPersonal(p); setFormPersonal({ nombre: p.nombre, rol: p.rol, sueldo_base: p.sueldo_base, activo: p.activo }); }} />}
           </>
         )}
       </div>
+
+      {/* Modal turno */}
+      {modalTurno && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <h3 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>Agregar Turno</h3>
+            <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: 13 }}>Día {modalTurno.dia} · {modalTurno.fecha}</p>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Persona</label>
+              <select value={formTurno.personal_id} onChange={e => setFormTurno(f => ({...f, personal_id: e.target.value}))}
+                style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }}>
+                <option value=''>Seleccionar...</option>
+                {personal.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+              </select>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Tipo</label>
+              <select value={formTurno.tipo} onChange={e => setFormTurno(f => ({...f, tipo: e.target.value}))}
+                style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }}>
+                <option value='normal'>Normal</option>
+                <option value='reemplazo'>Reemplazo</option>
+              </select>
+            </div>
+            {formTurno.tipo === 'reemplazo' && (<>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Reemplazado por</label>
+                <select value={formTurno.reemplazado_por} onChange={e => setFormTurno(f => ({...f, reemplazado_por: e.target.value}))}
+                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }}>
+                  <option value=''>Seleccionar...</option>
+                  {personal.filter(p => p.id != formTurno.personal_id).map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                </select>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Monto reemplazo</label>
+                <input type='number' value={formTurno.monto_reemplazo} onChange={e => setFormTurno(f => ({...f, monto_reemplazo: e.target.value}))}
+                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Pago por</label>
+                <select value={formTurno.pago_por} onChange={e => setFormTurno(f => ({...f, pago_por: e.target.value}))}
+                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }}>
+                  <option value='empresa'>Empresa</option>
+                  <option value='titular'>Titular (entre ellos)</option>
+                </select>
+              </div>
+            </>)}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setModalTurno(null)} style={{ flex: 1, padding: '10px', border: '1px solid #e2e8f0', borderRadius: 8, background: 'white', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
+              <button onClick={saveTurno} disabled={saving || !formTurno.personal_id} style={{ flex: 1, padding: '10px', border: 'none', borderRadius: 8, background: '#3b82f6', color: 'white', cursor: 'pointer', fontWeight: 600 }}>
+                {saving ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal personal */}
+      {modalPersonal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: 17, fontWeight: 700 }}>{modalPersonal === 'new' ? 'Agregar Persona' : 'Editar Persona'}</h3>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Nombre</label>
+              <input type='text' value={formPersonal.nombre} onChange={e => setFormPersonal(f => ({...f, nombre: e.target.value}))}
+                style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Rol</label>
+              <select value={formPersonal.rol} onChange={e => setFormPersonal(f => ({...f, rol: e.target.value}))}
+                style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }}>
+                <option value='cajero'>Cajero</option>
+                <option value='planchero'>Planchero</option>
+              </select>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Sueldo base</label>
+              <input type='number' value={formPersonal.sueldo_base} onChange={e => setFormPersonal(f => ({...f, sueldo_base: e.target.value}))}
+                placeholder='0 para externos'
+                style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer' }}>
+                <input type='checkbox' checked={formPersonal.activo == 1} onChange={e => setFormPersonal(f => ({...f, activo: e.target.checked ? 1 : 0}))} />
+                Activo (aparece en calendario y liquidación)
+              </label>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setModalPersonal(null)} style={{ flex: 1, padding: '10px', border: '1px solid #e2e8f0', borderRadius: 8, background: 'white', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
+              <button onClick={savePersonal} disabled={saving || !formPersonal.nombre} style={{ flex: 1, padding: '10px', border: 'none', borderRadius: 8, background: '#3b82f6', color: 'white', cursor: 'pointer', fontWeight: 600 }}>
+                {saving ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal ajuste */}
       {modalAjuste && (
@@ -236,7 +388,7 @@ export default function PersonalApp() {
   );
 }
 
-function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colores }) {
+function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colores, mes, anio, onAddTurno, onDeleteTurno }) {
   const celdas = [];
   for (let i = 0; i < primerDia; i++) celdas.push(null);
   for (let d = 1; d <= diasEnMes; d++) celdas.push(d);
@@ -275,7 +427,7 @@ function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colore
                   <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>{diaLabel}</div>
                   <div style={{ fontSize: 20, fontWeight: 800, color: esFinSemana ? '#94a3b8' : '#1e293b', lineHeight: 1.2 }}>{dia}</div>
                 </div>
-                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {trabajando.length === 0 ? (
                     <span style={{ fontSize: 12, color: '#cbd5e1' }}>—</span>
                   ) : trabajando.map(t => {
@@ -292,9 +444,11 @@ function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colore
                         <span style={{ fontSize: 13, fontWeight: 600, color: c?.text }}>
                           {p.nombre}{t.tipo === 'reemplazo' ? ' ↔' : ''}
                         </span>
+                        <button onClick={() => onDeleteTurno(t.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 14, padding: '0 0 0 2px', lineHeight: 1 }}>×</button>
                       </div>
                     );
                   })}
+                  <button onClick={() => onAddTurno(dia, `${anio}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`)} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, border: '1px dashed #cbd5e1', background: 'white', cursor: 'pointer', color: '#94a3b8' }}>+</button>
                 </div>
               </div>
             );
@@ -346,11 +500,13 @@ function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colore
   );
 }
 
-function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colores, onAjuste, onDeleteAjuste, mes, anio, pagosNomina, onReloadPagos, showToast, presupuesto }) {
+function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colores, onAjuste, onDeleteAjuste, mes, anio, pagosNomina, onReloadPagos, showToast, presupuesto, onSavePresupuesto }) {
   const MESES_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const [savingPago, setSavingPago] = useState(false);
   const [expandidos, setExpandidos] = useState({});
   const [copied, setCopied] = useState(false);
+  const [editPresupuesto, setEditPresupuesto] = useState(false);
+  const [presupuestoInput, setPresupuestoInput] = useState('');
 
   function toggleCard(id) { setExpandidos(e => ({ ...e, [id]: !e[id] })); }
 
@@ -436,7 +592,18 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
           <div>
             <div style={{ fontSize: 12, opacity: 0.6 }}>Presupuesto</div>
-            <div style={{ fontSize: 22, fontWeight: 800 }}>${presupuesto.toLocaleString('es-CL')}</div>
+            {editPresupuesto
+              ? <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <input type='number' value={presupuestoInput} onChange={e => setPresupuestoInput(e.target.value)}
+                    style={{ width: 120, padding: '4px 8px', borderRadius: 6, border: 'none', fontSize: 16, fontWeight: 700 }} />
+                  <button onClick={() => { onSavePresupuesto(parseFloat(presupuestoInput)); setEditPresupuesto(false); }} style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: '#4ade80', color: '#065f46', cursor: 'pointer', fontWeight: 700 }}>✓</button>
+                  <button onClick={() => setEditPresupuesto(false)} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer' }}>✕</button>
+                </div>
+              : <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ fontSize: 22, fontWeight: 800 }}>${presupuesto.toLocaleString('es-CL')}</div>
+                  <button onClick={() => { setPresupuestoInput(presupuesto); setEditPresupuesto(true); }} style={{ padding: '2px 8px', borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer', fontSize: 12 }}>✏️</button>
+                </div>
+            }
           </div>
           <div>
             <div style={{ fontSize: 12, opacity: 0.6 }}>{hayPagos ? 'Pagado real' : 'Calculado'}</div>
@@ -572,9 +739,13 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
   );
 }
 
-function EquipoView({ personal, turnos, colores, getLiquidacion }) {
+function EquipoView({ personal, turnos, colores, getLiquidacion, onAddPersonal, onEditPersonal }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+        <button onClick={onAddPersonal} style={{ padding: '10px 18px', border: 'none', borderRadius: 10, background: '#3b82f6', color: 'white', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>+ Agregar persona</button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
       {personal.map(p => {
         const c = colores[p.id];
         const { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, total } = getLiquidacion(p);
@@ -586,7 +757,8 @@ function EquipoView({ personal, turnos, colores, getLiquidacion }) {
                 {p.nombre[0]}
               </div>
               <div style={{ fontWeight: 700, fontSize: 18, color: '#1e293b' }}>{p.nombre}</div>
-              <div style={{ fontSize: 13, color: '#64748b', textTransform: 'capitalize', marginBottom: 16 }}>{p.rol}</div>
+              <div style={{ fontSize: 13, color: '#64748b', textTransform: 'capitalize', marginBottom: 8 }}>{p.rol} {p.activo == 0 ? <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 10, background: '#fef3c7', color: '#b45309' }}>externo</span> : ''}</div>
+              <button onClick={() => onEditPersonal(p)} style={{ marginBottom: 8, padding: '5px 12px', border: '1px solid #e2e8f0', borderRadius: 8, background: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#64748b' }}>✏️ Editar</button>
               <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 12px', marginBottom: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b', marginBottom: 4 }}>
                   <span>Días normales</span><span style={{ fontWeight: 600, color: '#374151' }}>{diasNormales}</span>
@@ -613,6 +785,7 @@ function EquipoView({ personal, turnos, colores, getLiquidacion }) {
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
