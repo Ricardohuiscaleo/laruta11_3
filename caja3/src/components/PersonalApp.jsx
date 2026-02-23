@@ -137,7 +137,9 @@ export default function PersonalApp() {
     const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
     const totalAjustes = ajustesPer.reduce((s, a) => s + parseFloat(a.monto), 0);
     const sueldoBase = parseFloat(p.sueldo_base);
-    const total = sueldoBase + totalAjustes;
+    const totalReemplazando = Object.values(gruposReemplazando).reduce((s, g) => s + g.monto, 0);
+    const totalReemplazados = Object.values(gruposReemplazados).reduce((s, g) => s + g.monto, 0);
+    const total = sueldoBase + totalReemplazando - totalReemplazados + totalAjustes;
     return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase, gruposReemplazados, gruposReemplazando, total };
   }
 
@@ -565,13 +567,13 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
                       </div>
                       {Object.values(gruposReemplazando).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                          <span style={{ fontSize: 13, color: '#64748b' }}>↔ Reemplazó a {g.persona?.nombre ?? '?'} (días {g.dias.sort((a,b)=>a-b).join(',')} feb) +$20.000 c/u</span>
+                          <span style={{ fontSize: 13, color: '#64748b' }}>↔ Reemplazó a {g.persona?.nombre ?? '?'} ({g.dias.sort((a,b)=>a-b).length} días: {g.dias.sort((a,b)=>a-b).join(',')})</span>
                           <span style={{ fontSize: 13, fontWeight: 600, color: '#10b981' }}>+${g.monto.toLocaleString('es-CL')}</span>
                         </div>
                       ))}
                       {Object.values(gruposReemplazados).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                          <span style={{ fontSize: 13, color: '#64748b' }}>{g.persona?.nombre ?? '?'} cubrió días {g.dias.sort((a,b)=>a-b).join(',')} feb (-$20.000 c/u)</span>
+                          <span style={{ fontSize: 13, color: '#64748b' }}>{g.persona?.nombre ?? '?'} cubrió días {g.dias.sort((a,b)=>a-b).join(',')}</span>
                           <span style={{ fontSize: 13, fontWeight: 600, color: '#ef4444' }}>-${g.monto.toLocaleString('es-CL')}</span>
                         </div>
                       ))}
