@@ -113,24 +113,32 @@ export default function PersonalApp() {
   function getLiquidacion(p) {
     const tPersonal = turnos.filter(t => t.personal_id == p.id);
     const diasNormales = tPersonal.filter(t => t.tipo === 'normal').length;
-    // Días que fue reemplazado (no trabajó) — con info de quién lo reemplazó
-    const turnosReemplazados = tPersonal.filter(t => t.tipo === 'reemplazo').map(t => ({
-      ...t,
-      reemplazante: personal.find(x => x.id == t.reemplazado_por) || { nombre: t.reemplazante_nombre || t.notas || '?' },
-    }));
-    const diasReemplazados = turnosReemplazados.length;
-    // Días que reemplazó a otro — con info de a quién reemplazó
-    const turnosReemplazando = turnos.filter(t => t.reemplazado_por == p.id).map(t => ({
-      ...t,
-      reemplazado: personal.find(x => x.id == t.personal_id),
-    }));
-    const reemplazosHechos = turnosReemplazando.length;
+    // Agrupado: días que fue reemplazado, por quien lo reemplazó
+    const rawReemplazados = tPersonal.filter(t => t.tipo === 'reemplazo');
+    const diasReemplazados = rawReemplazados.length;
+    const gruposReemplazados = {};
+    rawReemplazados.forEach(t => {
+      const key = t.reemplazado_por ?? 'ext';
+      if (!gruposReemplazados[key]) gruposReemplazados[key] = { persona: personal.find(x => x.id == t.reemplazado_por) || { nombre: t.reemplazante_nombre || '?' }, dias: [], monto: 0 };
+      gruposReemplazados[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
+      gruposReemplazados[key].monto += parseFloat(t.monto_reemplazo || 20000);
+    });
+    // Agrupado: días que reemplazó a otro, por a quién reemplazó
+    const rawReemplazando = turnos.filter(t => t.reemplazado_por == p.id);
+    const reemplazosHechos = rawReemplazando.length;
+    const gruposReemplazando = {};
+    rawReemplazando.forEach(t => {
+      const key = t.personal_id;
+      if (!gruposReemplazando[key]) gruposReemplazando[key] = { persona: personal.find(x => x.id == t.personal_id), dias: [], monto: 0 };
+      gruposReemplazando[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
+      gruposReemplazando[key].monto += parseFloat(t.monto_reemplazo || 20000);
+    });
     const diasTrabajados = diasNormales + reemplazosHechos;
     const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
     const totalAjustes = ajustesPer.reduce((s, a) => s + parseFloat(a.monto), 0);
     const sueldoBase = parseFloat(p.sueldo_base);
     const total = sueldoBase + totalAjustes;
-    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase, turnosReemplazados, turnosReemplazando, total };
+    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase, gruposReemplazados, gruposReemplazando, total };
   }
 
   const cajeros = personal.filter(p => p.rol === 'cajero' && p.activo == 1);
@@ -355,10 +363,10 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
     const mesLabel = `${MESES_L[mes]} ${anio}`;
     let md = `*💰 Liquidación Nómina — ${mesLabel}*\n━━━━━━━━━━━━━━━━━━━━\n`;
     personal.forEach(p => {
-      const { diasTrabajados, sueldoBase, ajustesPer, turnosReemplazando, turnosReemplazados, total } = getLiquidacion(p);
+      const { diasTrabajados, sueldoBase, ajustesPer, gruposReemplazando, gruposReemplazados, total } = getLiquidacion(p);
       md += `\n*${p.nombre}* (${p.rol})\n📅 Días: ${diasTrabajados}\nBase: $${sueldoBase.toLocaleString('es-CL')}\n`;
-      turnosReemplazando.forEach(t => { md += `↔ Reemplazó a ${t.reemplazado?.nombre ?? '?'} (día ${t.fecha?.split('T')[0].split('-')[2]}): +$20.000\n`; });
-      turnosReemplazados.forEach(t => { md += `↔ Reemplazado por ${t.reemplazante?.nombre ?? '?'} (día ${t.fecha?.split('T')[0].split('-')[2]}): -$20.000\n`; });
+      Object.values(gruposReemplazando).forEach(g => { md += `↔ Reemplazó a ${g.persona?.nombre ?? '?'} (días ${g.dias.sort((a,b)=>a-b).join(',')}): +$${g.monto.toLocaleString('es-CL')}\n`; });
+      Object.values(gruposReemplazados).forEach(g => { md += `↔ ${g.persona?.nombre ?? '?'} cubrió días ${g.dias.sort((a,b)=>a-b).join(',')}: -$${g.monto.toLocaleString('es-CL')}\n`; });
       ajustesPer.forEach(a => {
         const m = parseFloat(a.monto);
         md += `${m < 0 ? '🔻' : '🔺'} ${a.concepto}: ${m < 0 ? '-' : '+'}$${Math.abs(m).toLocaleString('es-CL')}\n`;
@@ -531,7 +539,7 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
           <h2 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700, color: '#1e293b' }}>{titulo}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
             {grupo.map(p => {
-              const { diasTrabajados, ajustesPer, sueldoBase, turnosReemplazados, turnosReemplazando, total } = getLiquidacion(p);
+              const { diasTrabajados, ajustesPer, sueldoBase, gruposReemplazados, gruposReemplazando, total } = getLiquidacion(p);
               const c = colores[p.id];
               const abierto = expandidos[p.id] !== false;
               return (
@@ -555,16 +563,16 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
                         <span style={{ fontSize: 14, color: '#64748b' }}>Sueldo base</span>
                         <span style={{ fontSize: 14, fontWeight: 600 }}>${sueldoBase.toLocaleString('es-CL')}</span>
                       </div>
-                      {turnosReemplazando.map(t => (
-                        <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                          <span style={{ fontSize: 13, color: '#64748b' }}>↔ Reemplazó a {t.reemplazado?.nombre ?? '?'} (día {t.fecha?.split('T')[0].split('-')[2]})</span>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#10b981' }}>+$20.000</span>
+                      {Object.values(gruposReemplazando).map((g, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+                          <span style={{ fontSize: 13, color: '#64748b' }}>↔ Reemplazó a {g.persona?.nombre ?? '?'} (días {g.dias.sort((a,b)=>a-b).join(',')} feb) +$20.000 c/u</span>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#10b981' }}>+${g.monto.toLocaleString('es-CL')}</span>
                         </div>
                       ))}
-                      {turnosReemplazados.map(t => (
-                        <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                          <span style={{ fontSize: 13, color: '#64748b' }}>↔ Reemplazado por {t.reemplazante?.nombre ?? '?'} (día {t.fecha?.split('T')[0].split('-')[2]})</span>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#ef4444' }}>-$20.000</span>
+                      {Object.values(gruposReemplazados).map((g, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+                          <span style={{ fontSize: 13, color: '#64748b' }}>{g.persona?.nombre ?? '?'} cubrió días {g.dias.sort((a,b)=>a-b).join(',')} feb (-$20.000 c/u)</span>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#ef4444' }}>-${g.monto.toLocaleString('es-CL')}</span>
                         </div>
                       ))}
                       {ajustesPer.map(a => (
