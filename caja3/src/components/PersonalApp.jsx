@@ -220,6 +220,7 @@ function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colore
   const celdas = [];
   for (let i = 0; i < primerDia; i++) celdas.push(null);
   for (let d = 1; d <= diasEnMes; d++) celdas.push(d);
+  const DIAS_LABEL = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
   return (
     <div>
@@ -227,65 +228,103 @@ function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colore
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
         {personal.map(p => (
           <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: colores[p.id]?.light, border: `1px solid ${colores[p.id]?.border}` }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: colores[p.id]?.bg, flexShrink: 0 }} />
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: colores[p.id]?.bg }} />
             <span style={{ fontSize: 12, fontWeight: 600, color: colores[p.id]?.text }}>{p.nombre}</span>
           </div>
         ))}
       </div>
 
-      {/* Grid */}
-      <div style={{ background: 'white', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#f1f5f9' }}>
-          {['D','L','M','X','J','V','S'].map(d => (
-            <div key={d} style={{ padding: '8px 2px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#64748b' }}>{d}</div>
-          ))}
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, background: '#e2e8f0' }}>
-          {celdas.map((dia, i) => {
-            const trabajando = dia ? (turnosPorFecha[dia] || []) : [];
+      {/* Vista lista móvil */}
+      <div style={{ display: 'block' }} className="cal-mobile">
+        <style>{`
+          @media (min-width: 640px) { .cal-mobile { display: none !important; } .cal-grid { display: block !important; } }
+          @media (max-width: 639px) { .cal-mobile { display: block !important; } .cal-grid { display: none !important; } }
+        `}</style>
+        <div style={{ background: 'white', borderRadius: 12, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+          {Array.from({ length: diasEnMes }, (_, i) => i + 1).map(dia => {
+            const trabajando = turnosPorFecha[dia] || [];
+            const diaSemana = new Date(new Date().getFullYear(), new Date().getMonth(), dia).getDay();
+            // Calcular día de semana real
+            const fecha = new Date();
+            fecha.setDate(1);
+            const primerDiaSemana = fecha.getDay();
+            const diaLabel = DIAS_LABEL[(primerDia + dia - 1) % 7];
+            const esFinSemana = (primerDia + dia - 1) % 7 === 0 || (primerDia + dia - 1) % 7 === 6;
             return (
-              <div key={i} style={{ background: dia ? 'white' : '#f8fafc', minHeight: 64, padding: '6px 4px' }}>
-                {dia && (
-                  <>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, textAlign: 'center' }}>{dia}</div>
-                    {/* Puntos de color en móvil, badges en desktop */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
-                      {trabajando.map(t => {
-                        const p = personal.find(p => p.id == t.personal_id);
-                        if (!p) return null;
-                        const c = colores[p.id];
-                        return (
-                          <div key={t.id} title={`${p.nombre}${t.tipo === 'reemplazo' ? ' (reemplazo)' : ''}`} style={{
-                            width: 10, height: 10, borderRadius: '50%',
-                            background: c?.bg,
-                            border: t.tipo === 'reemplazo' ? '2px dashed rgba(0,0,0,0.3)' : 'none',
-                            flexShrink: 0,
-                          }} />
-                        );
-                      })}
-                    </div>
-                    {/* Nombres solo si hay espacio (ocultos en pantallas muy pequeñas) */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 3 }}>
-                      {trabajando.map(t => {
-                        const p = personal.find(p => p.id == t.personal_id);
-                        if (!p) return null;
-                        const c = colores[p.id];
-                        return (
-                          <div key={t.id} style={{
-                            background: c?.light, borderLeft: `2px solid ${c?.bg}`,
-                            borderRadius: 3, padding: '1px 4px', fontSize: 10, fontWeight: 600,
-                            color: c?.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                          }}>
-                            {p.nombre.split(' ')[0]}{t.tipo === 'reemplazo' ? ' ↔' : ''}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
+              <div key={dia} style={{
+                display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+                borderBottom: '1px solid #f1f5f9',
+                background: esFinSemana ? '#fafafa' : 'white',
+              }}>
+                <div style={{ minWidth: 44, textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>{diaLabel}</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: esFinSemana ? '#94a3b8' : '#1e293b', lineHeight: 1.2 }}>{dia}</div>
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {trabajando.length === 0 ? (
+                    <span style={{ fontSize: 12, color: '#cbd5e1' }}>—</span>
+                  ) : trabajando.map(t => {
+                    const p = personal.find(p => p.id == t.personal_id);
+                    if (!p) return null;
+                    const c = colores[p.id];
+                    return (
+                      <div key={t.id} style={{
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        background: c?.light, border: `1px solid ${c?.border}`,
+                        borderRadius: 20, padding: '3px 10px',
+                      }}>
+                        <div style={{ width: 7, height: 7, borderRadius: '50%', background: c?.bg }} />
+                        <span style={{ fontSize: 13, fontWeight: 600, color: c?.text }}>
+                          {p.nombre}{t.tipo === 'reemplazo' ? ' ↔' : ''}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Vista grid desktop */}
+      <div style={{ display: 'none' }} className="cal-grid">
+        <div style={{ background: 'white', borderRadius: 12, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#f1f5f9' }}>
+            {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map(d => (
+              <div key={d} style={{ padding: '10px 4px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#64748b' }}>{d}</div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, background: '#e2e8f0' }}>
+            {celdas.map((dia, i) => {
+              const trabajando = dia ? (turnosPorFecha[dia] || []) : [];
+              return (
+                <div key={i} style={{ background: dia ? 'white' : '#f8fafc', minHeight: 80, padding: '6px 5px' }}>
+                  {dia && (
+                    <>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4 }}>{dia}</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {trabajando.map(t => {
+                          const p = personal.find(p => p.id == t.personal_id);
+                          if (!p) return null;
+                          const c = colores[p.id];
+                          return (
+                            <div key={t.id} style={{
+                              background: c?.light, borderLeft: `3px solid ${c?.bg}`,
+                              borderRadius: 3, padding: '1px 5px', fontSize: 11, fontWeight: 600,
+                              color: c?.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            }}>
+                              {p.nombre}{t.tipo === 'reemplazo' ? ' ↔' : ''}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
