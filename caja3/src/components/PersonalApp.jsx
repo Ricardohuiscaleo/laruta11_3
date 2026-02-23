@@ -561,7 +561,7 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
                       </div>
                       {Object.values(gruposReemplazando).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                          <span style={{ fontSize: 13, color: '#64748b' }}>↔ Reemplazó a {g.persona?.nombre ?? '?'} ({g.dias.sort((a,b)=>a-b).length} días: {g.dias.sort((a,b)=>a-b).join(',')})</span>
+                          <span style={{ fontSize: 13, color: '#64748b' }}>↔ Reemplazó a {g.persona?.nombre ?? '?'} ({g.dias.sort((a,b)=>a-b).length} {g.dias.length === 1 ? 'día' : 'días'}: {g.dias.sort((a,b)=>a-b).join(',')})</span>
                           <span style={{ fontSize: 13, fontWeight: 600, color: '#10b981' }}>+${g.monto.toLocaleString('es-CL')}</span>
                         </div>
                       ))}
@@ -569,7 +569,7 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', gap: 8 }}>
                           <span style={{ fontSize: 13, color: '#64748b' }}>
                             {g.persona?.nombre ?? '?'} cubrió días {g.dias.sort((a,b)=>a-b).join(',')}
-                            {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '1px 6px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 600 }}>entre ellos</span>}
+                            {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '1px 6px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 600 }}> entre ellos</span>}
                           </span>
                           {g.pago_por === 'empresa'
                             ? <span style={{ fontSize: 13, fontWeight: 600, color: '#ef4444' }}>-${g.monto.toLocaleString('es-CL')}</span>
