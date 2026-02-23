@@ -224,52 +224,59 @@ function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colore
   return (
     <div>
       {/* Leyenda */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
         {personal.map(p => (
-          <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 20, background: colores[p.id]?.light, border: `1px solid ${colores[p.id]?.border}` }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: colores[p.id]?.bg }} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: colores[p.id]?.text }}>{p.nombre}</span>
-            <span style={{ fontSize: 11, color: '#94a3b8', textTransform: 'capitalize' }}>({p.rol})</span>
+          <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: colores[p.id]?.light, border: `1px solid ${colores[p.id]?.border}` }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: colores[p.id]?.bg, flexShrink: 0 }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: colores[p.id]?.text }}>{p.nombre}</span>
           </div>
         ))}
       </div>
 
-      {/* Grid días semana */}
-      <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0' }}>
+      {/* Grid */}
+      <div style={{ background: 'white', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#f1f5f9' }}>
-          {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map(d => (
-            <div key={d} style={{ padding: '10px 4px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#64748b' }}>{d}</div>
+          {['D','L','M','X','J','V','S'].map(d => (
+            <div key={d} style={{ padding: '8px 2px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#64748b' }}>{d}</div>
           ))}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, background: '#e2e8f0' }}>
           {celdas.map((dia, i) => {
             const trabajando = dia ? (turnosPorFecha[dia] || []) : [];
             return (
-              <div key={i} style={{
-                background: dia ? 'white' : '#f8fafc',
-                minHeight: 90, padding: '8px 6px',
-              }}>
+              <div key={i} style={{ background: dia ? 'white' : '#f8fafc', minHeight: 64, padding: '6px 4px' }}>
                 {dia && (
                   <>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 4 }}>{dia}</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, textAlign: 'center' }}>{dia}</div>
+                    {/* Puntos de color en móvil, badges en desktop */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
+                      {trabajando.map(t => {
+                        const p = personal.find(p => p.id == t.personal_id);
+                        if (!p) return null;
+                        const c = colores[p.id];
+                        return (
+                          <div key={t.id} title={`${p.nombre}${t.tipo === 'reemplazo' ? ' (reemplazo)' : ''}`} style={{
+                            width: 10, height: 10, borderRadius: '50%',
+                            background: c?.bg,
+                            border: t.tipo === 'reemplazo' ? '2px dashed rgba(0,0,0,0.3)' : 'none',
+                            flexShrink: 0,
+                          }} />
+                        );
+                      })}
+                    </div>
+                    {/* Nombres solo si hay espacio (ocultos en pantallas muy pequeñas) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 3 }}>
                       {trabajando.map(t => {
                         const p = personal.find(p => p.id == t.personal_id);
                         if (!p) return null;
                         const c = colores[p.id];
                         return (
                           <div key={t.id} style={{
-                            background: c?.light, border: `1px solid ${c?.border}`,
-                            borderRadius: 4, padding: '2px 5px', fontSize: 11, fontWeight: 600,
-                            color: c?.text, display: 'flex', alignItems: 'center', gap: 3,
+                            background: c?.light, borderLeft: `2px solid ${c?.bg}`,
+                            borderRadius: 3, padding: '1px 4px', fontSize: 10, fontWeight: 600,
+                            color: c?.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                           }}>
-                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: c?.bg, flexShrink: 0 }} />
-                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nombre}</span>
-                            {t.tipo === 'reemplazo' && (
-                              <span title={t.notas} style={{ fontSize: 9, background: 'rgba(0,0,0,0.15)', borderRadius: 3, padding: '0 3px' }}>
-                                {t.reemplazante_nombre ? `↔${t.reemplazante_nombre}` : '↔'}
-                              </span>
-                            )}
+                            {p.nombre.split(' ')[0]}{t.tipo === 'reemplazo' ? ' ↔' : ''}
                           </div>
                         );
                       })}
