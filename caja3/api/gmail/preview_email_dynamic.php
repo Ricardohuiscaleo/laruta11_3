@@ -108,6 +108,8 @@ function buildDynamicEmailHtml($user, $credito_total, $credito_usado, $credito_d
     </div>
   </td></tr>
 
+  <tr><td style='padding:0 20px 8px;text-align:center;'><p style='color:#9ca3af;font-size:11px;margin:0;font-weight:500;'>✨ Si ya iniciaste sesi&oacute;n haz clic ac&aacute; abajo 👇</p></td></tr>
+
   $cta_btn
 
   <tr><td style='background-color:#111827;padding:40px 20px;text-align:center;'>
