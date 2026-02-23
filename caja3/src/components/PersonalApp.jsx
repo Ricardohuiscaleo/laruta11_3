@@ -111,12 +111,15 @@ export default function PersonalApp() {
 
   // Calcular liquidación por persona
   function getLiquidacion(p) {
-    const diasTrabajados = turnos.filter(t => t.personal_id == p.id).length;
+    const tPersonal = turnos.filter(t => t.personal_id == p.id);
+    const diasNormales = tPersonal.filter(t => t.tipo === 'normal').length;
+    const diasReemplazos = tPersonal.filter(t => t.tipo === 'reemplazo').length;
+    const diasTrabajados = diasNormales + diasReemplazos;
     const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
     const totalAjustes = ajustesPer.reduce((s, a) => s + parseFloat(a.monto), 0);
     const sueldoBase = parseFloat(p.sueldo_base);
     const total = sueldoBase + totalAjustes;
-    return { diasTrabajados, ajustesPer, totalAjustes, sueldoBase, total };
+    return { diasTrabajados, diasNormales, diasReemplazos, ajustesPer, totalAjustes, sueldoBase, total };
   }
 
   const cajeros = personal.filter(p => p.rol === 'cajero');
@@ -498,7 +501,7 @@ function EquipoView({ personal, turnos, colores, getLiquidacion }) {
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
       {personal.map(p => {
         const c = colores[p.id];
-        const { diasTrabajados, total } = getLiquidacion(p);
+        const { diasNormales, diasReemplazos, diasTrabajados, total } = getLiquidacion(p);
         return (
           <div key={p.id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', border: `1px solid ${c?.border}` }}>
             <div style={{ height: 6, background: c?.bg }} />
@@ -508,15 +511,20 @@ function EquipoView({ personal, turnos, colores, getLiquidacion }) {
               </div>
               <div style={{ fontWeight: 700, fontSize: 18, color: '#1e293b' }}>{p.nombre}</div>
               <div style={{ fontSize: 13, color: '#64748b', textTransform: 'capitalize', marginBottom: 16 }}>{p.rol}</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 12px' }}>
-                  <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>Días</div>
-                  <div style={{ fontWeight: 700, fontSize: 20, color: c?.text }}>{diasTrabajados}</div>
+              <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 12px', marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b', marginBottom: 4 }}>
+                  <span>Normales</span><span style={{ fontWeight: 600, color: '#374151' }}>{diasNormales}</span>
                 </div>
-                <div style={{ background: c?.light, borderRadius: 8, padding: '10px 12px' }}>
-                  <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>Sueldo</div>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: c?.text }}>${total.toLocaleString('es-CL')}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b', marginBottom: 4 }}>
+                  <span>Reemplazos</span><span style={{ fontWeight: 600, color: '#374151' }}>{diasReemplazos}</span>
                 </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, borderTop: '1px solid #e2e8f0', paddingTop: 4, marginTop: 4 }}>
+                  <span style={{ fontWeight: 700 }}>Total días</span><span style={{ fontWeight: 800, color: c?.text }}>{diasTrabajados}</span>
+                </div>
+              </div>
+              <div style={{ background: c?.light, borderRadius: 8, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: '#94a3b8' }}>Sueldo</span>
+                <span style={{ fontWeight: 700, fontSize: 15, color: c?.text }}>${total.toLocaleString('es-CL')}</span>
               </div>
             </div>
           </div>
