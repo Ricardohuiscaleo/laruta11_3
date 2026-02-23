@@ -290,6 +290,35 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
   const [modalPago, setModalPago] = useState(null); // null | 'nuevo'
   const [formPago, setFormPago] = useState({ nombre: '', monto: '', es_externo: false, personal_id: '', notas: '' });
   const [savingPago, setSavingPago] = useState(false);
+  const [expandidos, setExpandidos] = useState({});
+  const [copied, setCopied] = useState(false);
+
+  function toggleCard(id) { setExpandidos(e => ({ ...e, [id]: !e[id] })); }
+
+  function generarMarkdown() {
+    const mesLabel = `${MESES_L[mes]} ${anio}`;
+    let md = `*💰 Liquidación Nómina — ${mesLabel}*\n━━━━━━━━━━━━━━━━━━━━\n`;
+    personal.forEach(p => {
+      const { diasTrabajados, sueldoBase, ajustesPer, total } = getLiquidacion(p);
+      md += `\n*${p.nombre}* (${p.rol})\n📅 Días: ${diasTrabajados}\nBase: $${sueldoBase.toLocaleString('es-CL')}\n`;
+      ajustesPer.forEach(a => {
+        const m = parseFloat(a.monto);
+        md += `${m < 0 ? '🔻' : '🔺'} ${a.concepto}: ${m < 0 ? '-' : '+'}$${Math.abs(m).toLocaleString('es-CL')}\n`;
+      });
+      md += `*Total: $${total.toLocaleString('es-CL')}*\n`;
+    });
+    if (pagosNomina.length > 0) {
+      const tp = pagosNomina.reduce((s, p) => s + parseFloat(p.monto), 0);
+      md += `\n━━━━━━━━━━━━━━━━━━━━\n*💸 Pagos Reales*\n`;
+      pagosNomina.forEach(p => { md += `• ${p.nombre}${p.es_externo ? ' (ext)' : ''}: $${parseFloat(p.monto).toLocaleString('es-CL')}\n`; });
+      md += `*Total: $${tp.toLocaleString('es-CL')} / Presupuesto: $${presupuesto.toLocaleString('es-CL')}*\n`;
+    }
+    return md;
+  }
+
+  function copiarMarkdown() {
+    navigator.clipboard.writeText(generarMarkdown()).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); });
+  }
 
   const totalCalculado = personal.reduce((s, p) => s + getLiquidacion(p).total, 0);
   const totalPagado = pagosNomina.reduce((s, p) => s + parseFloat(p.monto), 0);
@@ -334,7 +363,7 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
       {/* Centro de costos */}
       <div style={{ background: 'linear-gradient(135deg, #1e293b, #334155)', borderRadius: 16, padding: '20px 24px', color: 'white' }}>
         <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 12 }}>💼 Centro de Costos — Nómina {MESES_L[mes]} {anio}</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
           <div>
             <div style={{ fontSize: 12, opacity: 0.6 }}>Presupuesto</div>
             <div style={{ fontSize: 22, fontWeight: 800 }}>${presupuesto.toLocaleString('es-CL')}</div>
@@ -350,6 +379,9 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
             </div>
           </div>
         </div>
+        <button onClick={copiarMarkdown} style={{ marginTop: 4, padding: '8px 16px', background: copied ? '#4ade80' : 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 8, color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+          {copied ? '✅ Copiado!' : '📱 Copiar para WhatsApp'}
+        </button>
       </div>
 
       {/* Pagos reales */}
@@ -443,50 +475,50 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
             {grupo.map(p => {
               const { diasTrabajados, ajustesPer, totalAjustes, sueldoBase, total } = getLiquidacion(p);
               const c = colores[p.id];
+              const abierto = expandidos[p.id] !== false;
               return (
                 <div key={p.id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', border: `1px solid ${c?.border}` }}>
-                  {/* Header tarjeta */}
-                  <div style={{ background: c?.bg, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div onClick={() => toggleCard(p.id)} style={{ background: c?.bg, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
                     <div>
                       <div style={{ color: 'white', fontWeight: 700, fontSize: 18 }}>{p.nombre}</div>
                       <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, textTransform: 'capitalize' }}>{p.rol} · {diasTrabajados} días trabajados</div>
                     </div>
-                    <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 10, padding: '8px 12px', textAlign: 'right' }}>
-                      <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11 }}>Total</div>
-                      <div style={{ color: 'white', fontWeight: 800, fontSize: 20 }}>${total.toLocaleString('es-CL')}</div>
-                    </div>
-                  </div>
-
-                  {/* Desglose */}
-                  <div style={{ padding: '16px 20px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                      <span style={{ fontSize: 14, color: '#64748b' }}>Sueldo base</span>
-                      <span style={{ fontSize: 14, fontWeight: 600 }}>${sueldoBase.toLocaleString('es-CL')}</span>
-                    </div>
-
-                    {ajustesPer.map(a => (
-                      <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f1f5f9', gap: 8 }}>
-                        <span style={{ fontSize: 13, color: '#64748b', flex: 1 }}>{a.concepto}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 14, fontWeight: 600, color: parseFloat(a.monto) < 0 ? '#ef4444' : '#10b981' }}>
-                            {parseFloat(a.monto) < 0 ? '-' : '+'}${Math.abs(parseFloat(a.monto)).toLocaleString('es-CL')}
-                          </span>
-                          <button onClick={() => onDeleteAjuste(a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 16, padding: 2 }}>×</button>
-                        </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 10, padding: '8px 12px', textAlign: 'right' }}>
+                        <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11 }}>Total</div>
+                        <div style={{ color: 'white', fontWeight: 800, fontSize: 20 }}>${total.toLocaleString('es-CL')}</div>
                       </div>
-                    ))}
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0 8px', fontWeight: 700 }}>
-                      <span style={{ fontSize: 15 }}>Total a pagar</span>
-                      <span style={{ fontSize: 18, color: c?.text }}>${total.toLocaleString('es-CL')}</span>
+                      <span style={{ color: 'white', fontSize: 18, opacity: 0.8 }}>{abierto ? '▾' : '▸'}</span>
                     </div>
-
-                    <button onClick={() => onAjuste(p)} style={{
-                      width: '100%', padding: '10px', border: `1px dashed ${c?.border}`,
-                      borderRadius: 8, background: c?.light, color: c?.text,
-                      cursor: 'pointer', fontSize: 13, fontWeight: 600, marginTop: 4,
-                    }}>+ Agregar ajuste / descuento</button>
                   </div>
+                  {abierto && (
+                    <div style={{ padding: '0 20px 16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9' }}>
+                        <span style={{ fontSize: 14, color: '#64748b' }}>Sueldo base</span>
+                        <span style={{ fontSize: 14, fontWeight: 600 }}>${sueldoBase.toLocaleString('es-CL')}</span>
+                      </div>
+                      {ajustesPer.map(a => (
+                        <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f1f5f9', gap: 8 }}>
+                          <span style={{ fontSize: 13, color: '#64748b', flex: 1 }}>{a.concepto}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: parseFloat(a.monto) < 0 ? '#ef4444' : '#10b981' }}>
+                              {parseFloat(a.monto) < 0 ? '-' : '+'}${Math.abs(parseFloat(a.monto)).toLocaleString('es-CL')}
+                            </span>
+                            <button onClick={() => onDeleteAjuste(a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 16, padding: 2 }}>×</button>
+                          </div>
+                        </div>
+                      ))}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0 8px', fontWeight: 700 }}>
+                        <span style={{ fontSize: 15 }}>Total a pagar</span>
+                        <span style={{ fontSize: 18, color: c?.text }}>${total.toLocaleString('es-CL')}</span>
+                      </div>
+                      <button onClick={() => onAjuste(p)} style={{
+                        width: '100%', padding: '10px', border: `1px dashed ${c?.border}`,
+                        borderRadius: 8, background: c?.light, color: c?.text,
+                        cursor: 'pointer', fontSize: 13, fontWeight: 600, marginTop: 4,
+                      }}>+ Agregar ajuste / descuento</button>
+                    </div>
+                  )}
                 </div>
               );
             })}

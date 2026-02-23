@@ -39,6 +39,29 @@
 - **Color Coding**: Pizza discount uses purple, others use orange/yellow
 - **RL6 Orders**: Filtered out from comandas and notifications (order_number NOT LIKE 'RL6-%')
 
+## caja3 API - Database Credentials
+- **SIEMPRE usar `app_db_*`** para conectar a la BD principal en APIs de caja3
+- `ruta11_db_*` existe en config.php pero sus variables de entorno (`RUTA11_DB_*`) NO están configuradas en el servidor → retorna vacío → error mysqli
+- `app_db_*` usa variables `APP_DB_*` que SÍ están configuradas en el servidor
+- **Config path**: caja3 busca config.php con foreach de 5 niveles (`__DIR__.'/../config.php'` hasta `__DIR__.'/../../../../../config.php'`)
+- El config.php real en servidor está en la raíz del dist (`/var/www/html/config.php`), encontrado con `../../config.php` desde `api/subcarpeta/`
+- **Patrón correcto** (igual que `get_compras.php` y otros APIs que funcionan):
+  ```php
+  $config_paths = [
+      __DIR__ . '/../config.php',
+      __DIR__ . '/../../config.php',
+      __DIR__ . '/../../../config.php',
+      __DIR__ . '/../../../../config.php',
+      __DIR__ . '/../../../../../config.php'
+  ];
+  $config = null;
+  foreach ($config_paths as $path) {
+      if (file_exists($path)) { $config = require_once $path; break; }
+  }
+  // Conexión:
+  $pdo = new PDO("mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4", $config['app_db_user'], $config['app_db_pass']);
+  ```
+
 ## Chilean Localization
 - **Number Format**: Use `toLocaleString('es-CL')` with dot (.) as thousands separator
 - **Currency**: Always show $ symbol before amount

@@ -87,6 +87,10 @@
                         class="tab-btn flex-1 sm:flex-none px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 whitespace-nowrap">
                         👺 Morosos <span id="morososBadge" class="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 hidden"></span>
                     </button>
+                    <button data-action="showTab" data-tab="personal" id="tab-personal" 
+                        class="tab-btn flex-1 sm:flex-none px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 whitespace-nowrap">
+                        👷 Personal
+                    </button>
                     <button data-action="showTab" data-tab="test" id="tab-test" 
                         class="tab-btn flex-1 sm:flex-none px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 whitespace-nowrap">
                         🧪 Prueba
@@ -134,6 +138,46 @@
                 <div id="morososList" class="space-y-3">
                     <div class="text-center text-gray-400 py-12">Cargando...</div>
                 </div>
+            </div>
+
+            <!-- Personal Tab -->
+            <div id="content-personal" class="tab-content p-6 hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">💰 Liquidación de Personal</h3>
+                        <p class="text-sm text-gray-500 mt-1">Envía confirmación de pago a colaboradores</p>
+                    </div>
+                </div>
+
+                <!-- Selector mes + colaborador -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Mes</label>
+                        <input type="month" id="personalMes" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Colaborador</label>
+                        <select id="personalSelector" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <button onclick="previewPersonalEmail()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">👁️ Preview</button>
+                        <button onclick="sendPersonalEmail()" id="btnSendPersonal" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">📧 Enviar</button>
+                    </div>
+                </div>
+
+                <!-- Preview inline -->
+                <div id="personalPreviewContainer" class="hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-sm font-semibold text-gray-700">Vista previa del email</p>
+                        <button onclick="document.getElementById('personalPreviewContainer').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-sm">✕ Cerrar</button>
+                    </div>
+                    <iframe id="personalPreviewFrame" class="w-full h-96 border border-gray-200 rounded-lg"></iframe>
+                </div>
+
+                <!-- Lista colaboradores con estado -->
+                <div id="personalList" class="space-y-3 mt-4"></div>
             </div>
 
             <!-- Test Tab -->
@@ -707,6 +751,109 @@
             statusDiv.classList.remove('hidden');
             if (type !== 'info') setTimeout(() => statusDiv.classList.add('hidden'), 5000);
         }
+        // ===== TAB PERSONAL =====
+        let personalData = [];
+
+        async function loadPersonalTab() {
+            const mesInput = document.getElementById('personalMes');
+            if (!mesInput.value) {
+                const now = new Date();
+                mesInput.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            }
+            try {
+                const [pRes, pnRes] = await Promise.all([
+                    fetch('/api/personal/get_personal.php'),
+                    fetch(`/api/personal/get_pagos_nomina.php?mes=${mesInput.value}`)
+                ]);
+                const [p, pn] = await Promise.all([pRes.json(), pnRes.json()]);
+                if (p.success) {
+                    personalData = p.data;
+                    const sel = document.getElementById('personalSelector');
+                    sel.innerHTML = '<option value="">Seleccionar...</option>';
+                    p.data.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.id;
+                        opt.textContent = `${c.nombre} (${c.rol})`;
+                        sel.appendChild(opt);
+                    });
+                }
+                if (pn.success) renderPersonalList(pn.data, pn.presupuesto);
+            } catch(e) { console.error(e); }
+        }
+
+        function renderPersonalList(pagos, presupuesto) {
+            const container = document.getElementById('personalList');
+            if (!pagos.length) { container.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">Sin pagos registrados para este mes</p>'; return; }
+            const total = pagos.reduce((s,p) => s + parseFloat(p.monto), 0);
+            container.innerHTML = `
+                <div class="bg-gray-50 rounded-lg p-3 mb-3 flex justify-between items-center">
+                    <span class="text-sm font-semibold text-gray-700">Total nómina</span>
+                    <span class="font-bold text-gray-900">$${total.toLocaleString('es-CL')} / $${presupuesto.toLocaleString('es-CL')}</span>
+                </div>
+                ${pagos.map(p => `
+                <div class="flex items-center justify-between p-3 bg-white border rounded-lg">
+                    <div>
+                        <span class="font-semibold text-sm text-gray-900">${p.nombre}</span>
+                        <span class="ml-2 text-xs px-2 py-0.5 rounded-full ${p.es_externo ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}">${p.es_externo ? 'Externo' : 'Titular'}</span>
+                        ${p.notas ? `<p class="text-xs text-gray-400 mt-0.5">${p.notas}</p>` : ''}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-green-600">$${parseFloat(p.monto).toLocaleString('es-CL')}</span>
+                        <button onclick="sendPersonalEmailById(${p.personal_id || 0}, '${p.nombre}')" class="text-xs bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg transition-colors">📧</button>
+                    </div>
+                </div>`).join('')}
+            `;
+        }
+
+        function previewPersonalEmail() {
+            const personalId = document.getElementById('personalSelector').value;
+            const mes = document.getElementById('personalMes').value;
+            if (!personalId || !mes) return showStatus('Selecciona mes y colaborador', 'error');
+            const container = document.getElementById('personalPreviewContainer');
+            document.getElementById('personalPreviewFrame').src = `/api/personal/preview_liquidacion_email.php?personal_id=${personalId}&mes=${mes}`;
+            container.classList.remove('hidden');
+        }
+
+        async function sendPersonalEmail() {
+            const personalId = document.getElementById('personalSelector').value;
+            const mes = document.getElementById('personalMes').value;
+            if (!personalId || !mes) return showStatus('Selecciona mes y colaborador', 'error');
+            await sendPersonalEmailById(parseInt(personalId), null, mes);
+        }
+
+        async function sendPersonalEmailById(personalId, nombre, mes) {
+            if (!mes) mes = document.getElementById('personalMes').value;
+            if (!mes) { showStatus('Selecciona el mes', 'error'); return; }
+            const btn = document.getElementById('btnSendPersonal');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Enviando...'; }
+            try {
+                const res = await fetch('/api/personal/send_liquidacion_email.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ personal_id: personalId, mes })
+                });
+                const r = await res.json();
+                showStatus(r.success ? `✅ Email enviado a ${r.email || nombre}` : `❌ ${r.error}`, r.success ? 'success' : 'error');
+            } catch { showStatus('❌ Error de conexión', 'error'); }
+            if (btn) { btn.disabled = false; btn.textContent = '📧 Enviar'; }
+        }
+
+        document.getElementById('personalMes')?.addEventListener('change', loadPersonalTab);
+
+        // Cargar tab personal cuando se activa
+        const origShowTab = window.showTab;
+        function showTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-orange-500', 'text-orange-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            document.getElementById(`tab-${tab}`).classList.add('border-orange-500', 'text-orange-600');
+            document.getElementById(`tab-${tab}`).classList.remove('border-transparent', 'text-gray-500');
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            if (tab === 'personal') loadPersonalTab();
+        }
+
     </script>
 </body>
 </html>
