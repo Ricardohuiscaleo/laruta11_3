@@ -347,8 +347,6 @@ function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colore
 
 function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colores, onAjuste, onDeleteAjuste, mes, anio, pagosNomina, onReloadPagos, showToast, presupuesto }) {
   const MESES_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  const [modalPago, setModalPago] = useState(null); // null | 'nuevo'
-  const [formPago, setFormPago] = useState({ nombre: '', monto: '', es_externo: false, personal_id: '', notas: '' });
   const [savingPago, setSavingPago] = useState(false);
   const [expandidos, setExpandidos] = useState({});
   const [copied, setCopied] = useState(false);
@@ -387,9 +385,18 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
   const diferencia = totalPagado - presupuesto;
   const hayPagos = pagosNomina.length > 0;
 
-  async function savePago() {
-    if (!formPago.nombre || !formPago.monto) return;
-    setSavingPago(true);
+  function generarNotas(p) {
+    const { sueldoBase, gruposReemplazando, gruposReemplazados, ajustesPer } = getLiquidacion(p);
+    const partes = [`Base $${(sueldoBase/1000).toFixed(0)}k`];
+    Object.values(gruposReemplazando).forEach(g => partes.push(`+${g.dias.length} días ${g.persona?.nombre ?? '?'} +$${(g.monto/1000).toFixed(0)}k`));
+    Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa').forEach(g => partes.push(`-${g.dias.length} días ${g.persona?.nombre ?? '?'} -$${(g.monto/1000).toFixed(0)}k`));
+    ajustesPer.forEach(a => partes.push(a.concepto));
+    return partes.join(' | ');
+  }
+
+  async function marcarPagado(p) {
+    const { total } = getLiquidacion(p);
+    setSavingPago(p.id);
     const mesStr = String(mes + 1).padStart(2, '0');
     try {
       const res = await fetch('/api/personal/save_pago_nomina.php', {
@@ -397,18 +404,18 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mes: `${anio}-${mesStr}`,
-          personal_id: formPago.personal_id || null,
-          nombre: formPago.nombre,
-          monto: parseFloat(formPago.monto),
-          es_externo: formPago.es_externo ? 1 : 0,
-          notas: formPago.notas,
+          personal_id: p.id,
+          nombre: p.nombre,
+          monto: total,
+          es_externo: p.activo == 0 ? 1 : 0,
+          notas: generarNotas(p),
         }),
       });
       const data = await res.json();
-      if (data.success) { showToast('Pago registrado'); setModalPago(null); setFormPago({ nombre: '', monto: '', es_externo: false, personal_id: '', notas: '' }); onReloadPagos(); }
+      if (data.success) { showToast(`${p.nombre} marcado como pagado`); onReloadPagos(); }
       else showToast(data.error || 'Error', 'error');
     } catch { showToast('Error de conexión', 'error'); }
-    setSavingPago(false);
+    setSavingPago(null);
   }
 
   async function deletePago(id) {
@@ -446,89 +453,44 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
         </button>
       </div>
 
-      {/* Pagos reales */}
+      {/* Pagos reales - tarjetas */}
       <div style={{ background: 'white', borderRadius: 16, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1e293b' }}>💸 Pagos Reales Registrados</h2>
-          <button onClick={() => setModalPago('nuevo')} style={{ padding: '8px 14px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>+ Agregar pago</button>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1e293b' }}>💸 Pagos del Mes</h2>
+          <span style={{ fontSize: 13, color: '#64748b' }}>Total: <strong>${totalPagado.toLocaleString('es-CL')}</strong></span>
         </div>
-        {pagosNomina.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8', fontSize: 14 }}>No hay pagos registrados para este mes</div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-            <thead>
-              <tr style={{ background: '#f8fafc' }}>
-                {['Nombre','Tipo','Monto','Notas',''].map(h => (
-                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: '#64748b', fontSize: 12 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {pagosNomina.map(p => (
-                <tr key={p.id} style={{ borderTop: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>{p.nombre}</td>
-                  <td style={{ padding: '10px 12px' }}>
-                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: p.es_externo ? '#fef3c7' : '#eff6ff', color: p.es_externo ? '#b45309' : '#1d4ed8', fontWeight: 600 }}>
-                      {p.es_externo ? 'Externo' : 'Titular'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '10px 12px', fontWeight: 700, color: '#10b981' }}>${parseFloat(p.monto).toLocaleString('es-CL')}</td>
-                  <td style={{ padding: '10px 12px', color: '#94a3b8', fontSize: 13 }}>{p.notas || '—'}</td>
-                  <td style={{ padding: '10px 12px' }}>
-                    <button onClick={() => deletePago(p.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 16 }}>×</button>
-                  </td>
-                </tr>
-              ))}
-              <tr style={{ borderTop: '2px solid #e2e8f0', background: '#f8fafc' }}>
-                <td colSpan={2} style={{ padding: '10px 12px', fontWeight: 700 }}>Total pagado</td>
-                <td style={{ padding: '10px 12px', fontWeight: 800, fontSize: 16, color: '#1e293b' }}>${totalPagado.toLocaleString('es-CL')}</td>
-                <td colSpan={2} />
-              </tr>
-            </tbody>
-          </table>
-        )}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+          {personal.map(p => {
+            const { total } = getLiquidacion(p);
+            if (total === 0) return null;
+            const pago = pagosNomina.find(pn => pn.personal_id == p.id);
+            const c = colores[p.id] || { bg: '#64748b', light: '#f8fafc', border: '#e2e8f0', text: '#374151' };
+            return (
+              <div key={p.id} style={{ border: `1px solid ${pago ? '#a7f3d0' : c.border}`, borderRadius: 12, padding: '14px 16px', background: pago ? '#f0fdf4' : c.light }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: '#1e293b' }}>{p.nombre}</div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'capitalize' }}>{p.rol}</div>
+                  </div>
+                  {pago
+                    ? <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: '#10b981', color: 'white', fontWeight: 600 }}>✓ Pagado</span>
+                    : <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: '#fef3c7', color: '#b45309', fontWeight: 600 }}>Pendiente</span>
+                  }
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: pago ? '#047857' : c.text, marginBottom: 10 }}>
+                  ${(pago ? parseFloat(pago.monto) : total).toLocaleString('es-CL')}
+                </div>
+                {pago
+                  ? <button onClick={() => deletePago(pago.id)} style={{ width: '100%', padding: '6px', border: '1px solid #fca5a5', borderRadius: 8, background: 'white', color: '#ef4444', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Desmarcar</button>
+                  : <button onClick={() => marcarPagado(p)} disabled={savingPago === p.id} style={{ width: '100%', padding: '6px', border: 'none', borderRadius: 8, background: c.bg, color: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                      {savingPago === p.id ? '...' : 'Marcar pagado'}
+                    </button>
+                }
+              </div>
+            );
+          })}
+        </div>
       </div>
-
-      {/* Modal nuevo pago */}
-      {modalPago && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-            <h3 style={{ margin: '0 0 20px', fontSize: 17, fontWeight: 700 }}>Registrar Pago Real</h3>
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: '#374151' }}>Nombre</label>
-              <input value={formPago.nombre} onChange={e => setFormPago(f => ({...f, nombre: e.target.value}))}
-                placeholder="Ej: Camila, Coni (externa)"
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
-            </div>
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: '#374151' }}>Monto</label>
-              <input type="number" value={formPago.monto} onChange={e => setFormPago(f => ({...f, monto: e.target.value}))}
-                placeholder="Ej: 360000"
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 15, boxSizing: 'border-box' }} />
-            </div>
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
-                <input type="checkbox" checked={formPago.es_externo} onChange={e => setFormPago(f => ({...f, es_externo: e.target.checked}))} />
-                Es trabajador externo
-              </label>
-            </div>
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: '#374151' }}>Notas (opcional)</label>
-              <input value={formPago.notas} onChange={e => setFormPago(f => ({...f, notas: e.target.value}))}
-                placeholder="Ej: Pagado el 5 de marzo"
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => { setModalPago(null); setFormPago({ nombre: '', monto: '', es_externo: false, personal_id: '', notas: '' }); }}
-                style={{ flex: 1, padding: '10px', border: '1px solid #e2e8f0', borderRadius: 8, background: 'white', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
-              <button onClick={savePago} disabled={savingPago}
-                style={{ flex: 1, padding: '10px', border: 'none', borderRadius: 8, background: '#3b82f6', color: 'white', cursor: 'pointer', fontWeight: 600 }}>
-                {savingPago ? 'Guardando...' : 'Guardar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {[['🧾 Cajeros', cajeros], ['🍳 Plancheros', plancheros]].map(([titulo, grupo]) => (
         <div key={titulo}>
