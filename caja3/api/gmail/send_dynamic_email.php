@@ -22,8 +22,14 @@ try {
     $credito_disponible = $credito_total - $credito_usado;
     $day   = intval(date('j'));
     $meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-    $mes   = $meses[date('n') - 1];
-    $anio  = date('Y');
+    $mes_idx = (int)date('n') - 1;
+    $anio  = (int)date('Y');
+    // Si pagó este mes, el vencimiento es el 21 del mes siguiente
+    if ($pago_este_mes) {
+        $mes_idx = ($mes_idx + 1) % 12;
+        if ($mes_idx === 0) $anio++;
+    }
+    $mes = $meses[$mes_idx];
 
     // Si pagó este mes y tiene deuda, es del ciclo nuevo → recordatorio
     $pago_este_mes = !empty($user['fecha_ultimo_pago']) && substr($user['fecha_ultimo_pago'], 0, 7) === date('Y-m');
