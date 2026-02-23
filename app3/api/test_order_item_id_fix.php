@@ -162,7 +162,7 @@ $test_orders = $pdo->query("
            COUNT(oi.id) as items,
            COUNT(it.id) as transactions,
            SUM(CASE WHEN it.order_item_id IS NOT NULL THEN 1 ELSE 0 END) as with_item_id,
-           SUM(CASE WHEN it.order_item_id IS NULL THEN 1 ELSE 0 END) as without_item_id
+           SUM(CASE WHEN it.id IS NOT NULL AND it.order_item_id IS NULL THEN 1 ELSE 0 END) as without_item_id
     FROM tuu_orders o
     LEFT JOIN tuu_order_items oi ON oi.order_reference = o.order_number
     LEFT JOIN inventory_transactions it ON it.order_reference = o.order_number
@@ -175,7 +175,7 @@ $prod_check = $pdo->query("
     SELECT o.order_number, o.payment_method,
            COUNT(it.id) as transactions,
            SUM(CASE WHEN it.order_item_id IS NOT NULL THEN 1 ELSE 0 END) as with_item_id,
-           SUM(CASE WHEN it.order_item_id IS NULL THEN 1 ELSE 0 END) as without_item_id
+           SUM(CASE WHEN it.id IS NOT NULL AND it.order_item_id IS NULL THEN 1 ELSE 0 END) as without_item_id
     FROM tuu_orders o
     LEFT JOIN inventory_transactions it ON it.order_reference = o.order_number
     WHERE o.payment_method IN ('webpay','rl6_credit')
