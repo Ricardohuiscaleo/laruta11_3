@@ -324,12 +324,12 @@ export default function VentasDetalle() {
                           <div className="text-xs text-gray-600">${Math.round(item.product_price || 0).toLocaleString('es-CL')}</div>
                         </div>
                       </div>
+                      {item.ingredients?.length > 0 && (
+                        <IngredientToggle ingredients={item.ingredients} />
+                      )}
                     </div>
                   ))}
-                  {/* Ingredientes a nivel de orden */}
-                  {order.order_ingredients?.length > 0 && (
-                    <IngredientToggle ingredients={order.order_ingredients} />
-                  )}
+                  {/* order_ingredients ya no se usa */}
                 </div>
               </div>
             ))
