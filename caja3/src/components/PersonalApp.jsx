@@ -116,7 +116,7 @@ export default function PersonalApp() {
     // Días que fue reemplazado (no trabajó) — con info de quién lo reemplazó
     const turnosReemplazados = tPersonal.filter(t => t.tipo === 'reemplazo').map(t => ({
       ...t,
-      reemplazante: personal.find(x => x.id == t.reemplazado_por),
+      reemplazante: personal.find(x => x.id == t.reemplazado_por) || { nombre: t.reemplazante_nombre || t.notas || '?' },
     }));
     const diasReemplazados = turnosReemplazados.length;
     // Días que reemplazó a otro — con info de a quién reemplazó
@@ -133,8 +133,8 @@ export default function PersonalApp() {
     return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase, turnosReemplazados, turnosReemplazando, total };
   }
 
-  const cajeros = personal.filter(p => p.rol === 'cajero');
-  const plancheros = personal.filter(p => p.rol === 'planchero');
+  const cajeros = personal.filter(p => p.rol === 'cajero' && p.activo == 1);
+  const plancheros = personal.filter(p => p.rol === 'planchero' && p.activo == 1);
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', minHeight: '100vh', background: '#f8fafc' }}>
@@ -236,7 +236,7 @@ function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colore
     <div>
       {/* Leyenda */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-        {personal.map(p => (
+        {personal.filter(p => p.activo == 1).map(p => (
           <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: colores[p.id]?.light, border: `1px solid ${colores[p.id]?.border}` }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: colores[p.id]?.bg }} />
             <span style={{ fontSize: 12, fontWeight: 600, color: colores[p.id]?.text }}>{p.nombre}</span>
