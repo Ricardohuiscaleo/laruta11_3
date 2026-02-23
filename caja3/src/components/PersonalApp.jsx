@@ -18,6 +18,8 @@ export default function PersonalApp() {
   const [turnos, setTurnos] = useState([]);
   const [ajustes, setAjustes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pagosNomina, setPagosNomina] = useState([]);
+  const [presupuestoNomina, setPresupuestoNomina] = useState(1200000);
   const [modalAjuste, setModalAjuste] = useState(null);
   const [formAjuste, setFormAjuste] = useState({ monto: '', concepto: '' });
   const [saving, setSaving] = useState(false);
@@ -29,15 +31,17 @@ export default function PersonalApp() {
     setLoading(true);
     try {
       const mesStr = String(mes + 1).padStart(2, '0');
-      const [pRes, tRes, aRes] = await Promise.all([
+      const [pRes, tRes, aRes, pnRes] = await Promise.all([
         fetch('/api/personal/get_personal.php'),
         fetch(`/api/personal/get_turnos.php?mes=${anio}-${mesStr}`),
         fetch(`/api/personal/get_ajustes.php?mes=${anio}-${mesStr}`),
+        fetch(`/api/personal/get_pagos_nomina.php?mes=${anio}-${mesStr}`),
       ]);
-      const [p, t, a] = await Promise.all([pRes.json(), tRes.json(), aRes.json()]);
+      const [p, t, a, pn] = await Promise.all([pRes.json(), tRes.json(), aRes.json(), pnRes.json()]);
       if (p.success) setPersonal(p.data);
       if (t.success) setTurnos(t.data);
       if (a.success) setAjustes(a.data);
+      if (pn.success) { setPagosNomina(pn.data); setPresupuestoNomina(pn.presupuesto ?? 1200000); }
     } catch (e) {
       showToast('Error cargando datos', 'error');
     }
@@ -159,7 +163,7 @@ export default function PersonalApp() {
         ) : (
           <>
             {tab === 'calendario' && <CalendarioView diasEnMes={diasEnMes} primerDia={primerDia} turnosPorFecha={turnosPorFecha} personal={personal} colores={COLORES} />}
-            {tab === 'liquidacion' && <LiquidacionView personal={personal} cajeros={cajeros} plancheros={plancheros} getLiquidacion={getLiquidacion} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} />}
+            {tab === 'liquidacion' && <LiquidacionView personal={personal} cajeros={cajeros} plancheros={plancheros} getLiquidacion={getLiquidacion} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina} />}
             {tab === 'equipo' && <EquipoView personal={personal} turnos={turnos} colores={COLORES} getLiquidacion={getLiquidacion} />}
           </>
         )}
@@ -277,9 +281,157 @@ function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colore
   );
 }
 
-function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colores, onAjuste, onDeleteAjuste, mes, anio }) {
+function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colores, onAjuste, onDeleteAjuste, mes, anio, pagosNomina, onReloadPagos, showToast, presupuesto }) {
+  const MESES_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const [modalPago, setModalPago] = useState(null); // null | 'nuevo'
+  const [formPago, setFormPago] = useState({ nombre: '', monto: '', es_externo: false, personal_id: '', notas: '' });
+  const [savingPago, setSavingPago] = useState(false);
+
+  const totalCalculado = personal.reduce((s, p) => s + getLiquidacion(p).total, 0);
+  const totalPagado = pagosNomina.reduce((s, p) => s + parseFloat(p.monto), 0);
+  const diferencia = totalPagado - presupuesto;
+  const hayPagos = pagosNomina.length > 0;
+
+  async function savePago() {
+    if (!formPago.nombre || !formPago.monto) return;
+    setSavingPago(true);
+    const mesStr = String(mes + 1).padStart(2, '0');
+    try {
+      const res = await fetch('/api/personal/save_pago_nomina.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mes: `${anio}-${mesStr}`,
+          personal_id: formPago.personal_id || null,
+          nombre: formPago.nombre,
+          monto: parseFloat(formPago.monto),
+          es_externo: formPago.es_externo ? 1 : 0,
+          notas: formPago.notas,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) { showToast('Pago registrado'); setModalPago(null); setFormPago({ nombre: '', monto: '', es_externo: false, personal_id: '', notas: '' }); onReloadPagos(); }
+      else showToast(data.error || 'Error', 'error');
+    } catch { showToast('Error de conexión', 'error'); }
+    setSavingPago(false);
+  }
+
+  async function deletePago(id) {
+    if (!confirm('¿Eliminar este pago?')) return;
+    try {
+      const res = await fetch('/api/personal/delete_pago_nomina.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+      const data = await res.json();
+      if (data.success) { showToast('Pago eliminado'); onReloadPagos(); }
+    } catch { showToast('Error', 'error'); }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Centro de costos */}
+      <div style={{ background: 'linear-gradient(135deg, #1e293b, #334155)', borderRadius: 16, padding: '20px 24px', color: 'white' }}>
+        <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 12 }}>💼 Centro de Costos — Nómina {MESES_L[mes]} {anio}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 12, opacity: 0.6 }}>Presupuesto</div>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>${presupuesto.toLocaleString('es-CL')}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 12, opacity: 0.6 }}>{hayPagos ? 'Pagado real' : 'Calculado'}</div>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>${(hayPagos ? totalPagado : totalCalculado).toLocaleString('es-CL')}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 12, opacity: 0.6 }}>Diferencia</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: diferencia > 0 ? '#f87171' : '#4ade80' }}>
+              {hayPagos ? (diferencia > 0 ? '+' : '') + '$' + diferencia.toLocaleString('es-CL') : '—'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Pagos reales */}
+      <div style={{ background: 'white', borderRadius: 16, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1e293b' }}>💸 Pagos Reales Registrados</h2>
+          <button onClick={() => setModalPago('nuevo')} style={{ padding: '8px 14px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>+ Agregar pago</button>
+        </div>
+        {pagosNomina.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8', fontSize: 14 }}>No hay pagos registrados para este mes</div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+            <thead>
+              <tr style={{ background: '#f8fafc' }}>
+                {['Nombre','Tipo','Monto','Notas',''].map(h => (
+                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: '#64748b', fontSize: 12 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {pagosNomina.map(p => (
+                <tr key={p.id} style={{ borderTop: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>{p.nombre}</td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: p.es_externo ? '#fef3c7' : '#eff6ff', color: p.es_externo ? '#b45309' : '#1d4ed8', fontWeight: 600 }}>
+                      {p.es_externo ? 'Externo' : 'Titular'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '10px 12px', fontWeight: 700, color: '#10b981' }}>${parseFloat(p.monto).toLocaleString('es-CL')}</td>
+                  <td style={{ padding: '10px 12px', color: '#94a3b8', fontSize: 13 }}>{p.notas || '—'}</td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <button onClick={() => deletePago(p.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 16 }}>×</button>
+                  </td>
+                </tr>
+              ))}
+              <tr style={{ borderTop: '2px solid #e2e8f0', background: '#f8fafc' }}>
+                <td colSpan={2} style={{ padding: '10px 12px', fontWeight: 700 }}>Total pagado</td>
+                <td style={{ padding: '10px 12px', fontWeight: 800, fontSize: 16, color: '#1e293b' }}>${totalPagado.toLocaleString('es-CL')}</td>
+                <td colSpan={2} />
+              </tr>
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Modal nuevo pago */}
+      {modalPago && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <h3 style={{ margin: '0 0 20px', fontSize: 17, fontWeight: 700 }}>Registrar Pago Real</h3>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: '#374151' }}>Nombre</label>
+              <input value={formPago.nombre} onChange={e => setFormPago(f => ({...f, nombre: e.target.value}))}
+                placeholder="Ej: Camila, Coni (externa)"
+                style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: '#374151' }}>Monto</label>
+              <input type="number" value={formPago.monto} onChange={e => setFormPago(f => ({...f, monto: e.target.value}))}
+                placeholder="Ej: 360000"
+                style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 15, boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
+                <input type="checkbox" checked={formPago.es_externo} onChange={e => setFormPago(f => ({...f, es_externo: e.target.checked}))} />
+                Es trabajador externo
+              </label>
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: '#374151' }}>Notas (opcional)</label>
+              <input value={formPago.notas} onChange={e => setFormPago(f => ({...f, notas: e.target.value}))}
+                placeholder="Ej: Pagado el 5 de marzo"
+                style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => { setModalPago(null); setFormPago({ nombre: '', monto: '', es_externo: false, personal_id: '', notas: '' }); }}
+                style={{ flex: 1, padding: '10px', border: '1px solid #e2e8f0', borderRadius: 8, background: 'white', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
+              <button onClick={savePago} disabled={savingPago}
+                style={{ flex: 1, padding: '10px', border: 'none', borderRadius: 8, background: '#3b82f6', color: 'white', cursor: 'pointer', fontWeight: 600 }}>
+                {savingPago ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {[['🧾 Cajeros', cajeros], ['🍳 Plancheros', plancheros]].map(([titulo, grupo]) => (
         <div key={titulo}>
           <h2 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700, color: '#1e293b' }}>{titulo}</h2>
