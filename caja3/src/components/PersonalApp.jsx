@@ -469,7 +469,7 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
                         <span style={{ fontSize: 13, color: '#64748b', flex: 1 }}>{a.concepto}</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ fontSize: 14, fontWeight: 600, color: parseFloat(a.monto) < 0 ? '#ef4444' : '#10b981' }}>
-                            {parseFloat(a.monto) > 0 ? '+' : ''}${Math.abs(parseFloat(a.monto)).toLocaleString('es-CL')}
+                            {parseFloat(a.monto) < 0 ? '-' : '+'}${Math.abs(parseFloat(a.monto)).toLocaleString('es-CL')}
                           </span>
                           <button onClick={() => onDeleteAjuste(a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 16, padding: 2 }}>×</button>
                         </div>
@@ -518,7 +518,7 @@ function EquipoView({ personal, turnos, colores, getLiquidacion }) {
                 </div>
                 {diasReemplazados > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#ef4444', marginBottom: 4 }}>
-                    <span>Reemplazado</span><span style={{ fontWeight: 600 }}>-{diasReemplazados}</span>
+                    <span>Reemplazado</span><span style={{ fontWeight: 600 }}>-{diasReemplazados} días</span>
                   </div>
                 )}
                 {reemplazosHechos > 0 && (
