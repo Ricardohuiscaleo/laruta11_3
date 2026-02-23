@@ -129,10 +129,8 @@ export default function PersonalApp() {
     const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
     const totalAjustes = ajustesPer.reduce((s, a) => s + parseFloat(a.monto), 0);
     const sueldoBase = parseFloat(p.sueldo_base);
-    // ±$20.000 por reemplazo: +20k por cada día que reemplazó, -20k por cada día que fue reemplazado
-    const montoReemplazos = (reemplazosHechos - diasReemplazados) * 20000;
-    const total = sueldoBase + totalAjustes + montoReemplazos;
-    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase, montoReemplazos, turnosReemplazados, turnosReemplazando, total };
+    const total = sueldoBase + totalAjustes;
+    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase, turnosReemplazados, turnosReemplazando, total };
   }
 
   const cajeros = personal.filter(p => p.rol === 'cajero');
@@ -357,7 +355,7 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
     const mesLabel = `${MESES_L[mes]} ${anio}`;
     let md = `*💰 Liquidación Nómina — ${mesLabel}*\n━━━━━━━━━━━━━━━━━━━━\n`;
     personal.forEach(p => {
-      const { diasTrabajados, sueldoBase, ajustesPer, montoReemplazos, turnosReemplazando, turnosReemplazados, total } = getLiquidacion(p);
+      const { diasTrabajados, sueldoBase, ajustesPer, turnosReemplazando, turnosReemplazados, total } = getLiquidacion(p);
       md += `\n*${p.nombre}* (${p.rol})\n📅 Días: ${diasTrabajados}\nBase: $${sueldoBase.toLocaleString('es-CL')}\n`;
       turnosReemplazando.forEach(t => { md += `↔ Reemplazó a ${t.reemplazado?.nombre ?? '?'} (día ${t.fecha?.split('T')[0].split('-')[2]}): +$20.000\n`; });
       turnosReemplazados.forEach(t => { md += `↔ Reemplazado por ${t.reemplazante?.nombre ?? '?'} (día ${t.fecha?.split('T')[0].split('-')[2]}): -$20.000\n`; });
@@ -533,7 +531,7 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
           <h2 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700, color: '#1e293b' }}>{titulo}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
             {grupo.map(p => {
-              const { diasTrabajados, ajustesPer, sueldoBase, montoReemplazos, turnosReemplazados, turnosReemplazando, total } = getLiquidacion(p);
+              const { diasTrabajados, ajustesPer, sueldoBase, turnosReemplazados, turnosReemplazando, total } = getLiquidacion(p);
               const c = colores[p.id];
               const abierto = expandidos[p.id] !== false;
               return (
