@@ -88,7 +88,7 @@ try {
         $itemsStmt->execute([$order['id']]);
         $order['items'] = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Obtener TODAS las transacciones de la orden por order_reference (no por item)
+        // Obtener TODAS las transacciones de la orden por order_reference
         $transSql = "
             SELECT 
                 it.quantity,
@@ -104,31 +104,32 @@ try {
         $transStmt->execute([$order['order_number']]);
         $transactions = $transStmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Asignar todas las transacciones al primer item, resto vacío
-        foreach ($order['items'] as $idx => &$item) {
+        // Limpiar ingredients de items (no se asignan por item)
+        foreach ($order['items'] as &$item) {
             $item['ingredients'] = [];
-            if ($idx === 0) {
-                foreach ($transactions as $trans) {
-                    $qtyUsed = abs(floatval($trans['quantity']));
-                    $unit = $trans['unit'];
-                    if ($unit === 'g' && $qtyUsed < 1) {
-                        $qtyUsed = $qtyUsed * 1000;
-                    } else if ($unit === 'kg') {
-                        $qtyUsed = $qtyUsed * 1000;
-                        $unit = 'g';
-                    }
-                    $item['ingredients'][] = [
-                        'ingredient_name' => $trans['ingredient_name'],
-                        'quantity_needed' => $qtyUsed,
-                        'unit' => $unit
-                    ];
-                    $ingKey = $trans['ingredient_name'];
-                    if (!isset($ingredient_consumption[$ingKey])) {
-                        $ingredient_consumption[$ingKey] = ['name' => $trans['ingredient_name'], 'total' => 0, 'unit' => $unit];
-                    }
-                    $ingredient_consumption[$ingKey]['total'] += $qtyUsed;
-                }
+        }
+        
+        // Asignar ingredientes a nivel de orden
+        $order['order_ingredients'] = [];
+        foreach ($transactions as $trans) {
+            $qtyUsed = abs(floatval($trans['quantity']));
+            $unit = $trans['unit'];
+            if ($unit === 'g' && $qtyUsed < 1) {
+                $qtyUsed = $qtyUsed * 1000;
+            } else if ($unit === 'kg') {
+                $qtyUsed = $qtyUsed * 1000;
+                $unit = 'g';
             }
+            $order['order_ingredients'][] = [
+                'ingredient_name' => $trans['ingredient_name'],
+                'quantity_needed' => $qtyUsed,
+                'unit' => $unit
+            ];
+            $ingKey = $trans['ingredient_name'];
+            if (!isset($ingredient_consumption[$ingKey])) {
+                $ingredient_consumption[$ingKey] = ['name' => $trans['ingredient_name'], 'total' => 0, 'unit' => $unit];
+            }
+            $ingredient_consumption[$ingKey]['total'] += $qtyUsed;
         }
     }
     unset($order); // Liberar referencia
