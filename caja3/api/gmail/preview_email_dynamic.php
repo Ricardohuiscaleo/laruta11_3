@@ -135,7 +135,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     if (!$user_id) die('user_id requerido');
 
     $conn = new mysqli($config['app_db_host'], $config['app_db_user'], $config['app_db_pass'], $config['app_db_name']);
-    $stmt = $conn->prepare("SELECT id, nombre, email, limite_credito, credito_usado, grado_militar, unidad_trabajo FROM usuarios WHERE id = ?");
+    $stmt = $conn->prepare("SELECT id, nombre, email, limite_credito, credito_usado, grado_militar, unidad_trabajo, fecha_ultimo_pago FROM usuarios WHERE id = ?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();
@@ -150,7 +150,9 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $mes   = $meses[date('n') - 1];
     $anio  = date('Y');
 
+    $pago_este_mes = !empty($user['fecha_ultimo_pago']) && substr($user['fecha_ultimo_pago'], 0, 7) === date('Y-m');
     if ($credito_usado <= 0)        { $tipo = 'sin_deuda';    $dias_restantes = 0;         $dias_mora = 0; }
+    elseif ($pago_este_mes)         { $tipo = 'recordatorio'; $dias_restantes = 21;         $dias_mora = 0; }
     elseif ($day <= 20)             { $tipo = 'recordatorio'; $dias_restantes = 21 - $day; $dias_mora = 0; }
     elseif ($day === 21)            { $tipo = 'urgente';      $dias_restantes = 0;          $dias_mora = 0; }
     else                            { $tipo = 'moroso';       $dias_restantes = 0;         $dias_mora = $day - 21; }
