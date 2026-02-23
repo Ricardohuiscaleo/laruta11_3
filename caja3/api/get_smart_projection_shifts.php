@@ -70,6 +70,7 @@ try {
                 o.payment_status
             FROM tuu_orders o
             WHERE o.payment_status = 'paid'
+            AND o.order_number NOT LIKE 'RL6-%'
             ORDER BY o.created_at ASC";
     
     $stmt = $pdo->prepare($sql);

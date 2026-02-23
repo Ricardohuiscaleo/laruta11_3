@@ -54,6 +54,7 @@ try {
         FROM tuu_orders o
         WHERE DATE(o.created_at) BETWEEN ? AND ?
         AND o.payment_status = 'paid'
+        AND o.order_number NOT LIKE 'RL6-%'
     ");
     $stmt->execute([$lastMonthStart, $lastMonthEnd]);
     $sales = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -73,6 +74,7 @@ try {
         JOIN tuu_orders o ON oi.order_reference = o.order_number
         WHERE DATE(o.created_at) BETWEEN ? AND ?
         AND o.payment_status = 'paid'
+        AND o.order_number NOT LIKE 'RL6-%'
     ");
     $stmt->execute([$lastMonthStart, $lastMonthEnd]);
     $cost = $stmt->fetch(PDO::FETCH_ASSOC);

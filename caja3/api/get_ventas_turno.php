@@ -100,6 +100,7 @@ $sql = "SELECT $selectFields
         WHERE created_at >= ? 
         AND created_at < ?
         AND payment_status = 'paid'
+        AND order_number NOT LIKE 'RL6-%'
         ORDER BY created_at DESC";
 
 $stmt = mysqli_prepare($conn, $sql);

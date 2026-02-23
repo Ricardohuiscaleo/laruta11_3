@@ -57,6 +57,7 @@ try {
         SUM(o.delivery_fee) as suma_delivery
     FROM tuu_orders o
     WHERE o.payment_status = 'paid' 
+    AND o.order_number NOT LIKE 'RL6-%'
     AND DATE_FORMAT(o.created_at, '%Y-%m') = '$previousMonthStr'";
     
     $stmt_current = $pdo->query($sql_current);
@@ -67,6 +68,7 @@ try {
     FROM tuu_order_items oi
     INNER JOIN tuu_orders o ON oi.order_reference = o.order_number
     WHERE o.payment_status = 'paid' 
+    AND o.order_number NOT LIKE 'RL6-%'
     AND DATE_FORMAT(o.created_at, '%Y-%m') = '$previousMonthStr'";
     
     $stmt_costo = $pdo->query($sql_costo);
@@ -87,6 +89,7 @@ try {
         SUM(o.installment_amount) - SUM(o.delivery_fee) as ventas_neto
     FROM tuu_orders o
     WHERE o.payment_status = 'paid' 
+    AND o.order_number NOT LIKE 'RL6-%'
     GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')
     ORDER BY mes DESC
     LIMIT 12";
@@ -101,6 +104,7 @@ try {
     FROM tuu_order_items oi
     INNER JOIN tuu_orders o ON oi.order_reference = o.order_number
     WHERE o.payment_status = 'paid' 
+    AND o.order_number NOT LIKE 'RL6-%'
     GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')";
     
     $stmt_costos = $pdo->query($sql_costos);
@@ -144,7 +148,7 @@ try {
         AVG(oi.subtotal) as precio_promedio
     FROM tuu_order_items oi
     INNER JOIN tuu_orders o ON oi.order_reference = o.order_number
-    WHERE o.payment_status = 'paid' AND o.created_at >= DATE_SUB(NOW(), INTERVAL 3 MONTH) AND oi.item_type = 'product'
+    WHERE o.payment_status = 'paid' AND o.order_number NOT LIKE 'RL6-%' AND o.created_at >= DATE_SUB(NOW(), INTERVAL 3 MONTH) AND oi.item_type = 'product'
     GROUP BY oi.product_name
     ORDER BY ingresos DESC
     LIMIT 10";
@@ -160,7 +164,7 @@ try {
         AVG(oi.subtotal) as precio_promedio
     FROM tuu_order_items oi
     INNER JOIN tuu_orders o ON oi.order_reference = o.order_number
-    WHERE o.payment_status = 'paid' AND o.created_at >= DATE_SUB(NOW(), INTERVAL 3 MONTH) AND oi.item_type = 'product'
+    WHERE o.payment_status = 'paid' AND o.order_number NOT LIKE 'RL6-%' AND o.created_at >= DATE_SUB(NOW(), INTERVAL 3 MONTH) AND oi.item_type = 'product'
     GROUP BY oi.product_name
     HAVING COUNT(*) > 0
     ORDER BY veces_vendido ASC
@@ -176,7 +180,7 @@ try {
         SUM(o.installment_amount) - SUM(COALESCE(o.delivery_fee, 0)) as ventas,
         AVG(o.installment_amount) as ticket_promedio
     FROM tuu_orders o
-    WHERE o.payment_status = 'paid' AND o.created_at >= DATE_SUB(NOW(), INTERVAL 3 MONTH)
+    WHERE o.payment_status = 'paid' AND o.order_number NOT LIKE 'RL6-%' AND o.created_at >= DATE_SUB(NOW(), INTERVAL 3 MONTH)
     GROUP BY o.payment_method
     ORDER BY ventas DESC";
     

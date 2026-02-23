@@ -99,6 +99,7 @@ try {
             WHERE created_at >= ? 
             AND created_at < ?
             AND payment_status = 'paid'
+            AND order_number NOT LIKE 'RL6-%'
             GROUP BY payment_method";
     
     $stmt = $pdo->prepare($sql);
@@ -134,6 +135,7 @@ try {
                     WHERE created_at >= ? 
                     AND created_at < ?
                     AND payment_status = 'paid'
+                    AND order_number NOT LIKE 'RL6-%'
                     AND delivery_type = 'delivery'
                     AND delivery_fee > 0";
     

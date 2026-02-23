@@ -55,6 +55,7 @@ try {
             FROM tuu_orders
             WHERE created_at >= ? AND created_at < ?
             AND payment_status = 'paid'
+            AND order_number NOT LIKE 'RL6-%'
             AND (order_status IS NULL OR order_status NOT IN ('cancelled', 'failed'))
             ORDER BY created_at DESC
             LIMIT 500";

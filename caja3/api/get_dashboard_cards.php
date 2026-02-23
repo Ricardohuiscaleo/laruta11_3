@@ -199,6 +199,7 @@ try {
         LEFT JOIN products p ON oi.product_id = p.id
         WHERE o.created_at >= ? AND o.created_at < ?
         AND o.payment_status = 'paid'
+        AND o.order_number NOT LIKE 'RL6-%'
     ");
     $stmtCostoVentas->execute([$firstShiftStartUTC, $lastShiftEndUTC]);
     $costoVentasData = $stmtCostoVentas->fetch(PDO::FETCH_ASSOC);
