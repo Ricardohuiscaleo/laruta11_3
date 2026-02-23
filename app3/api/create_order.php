@@ -118,6 +118,9 @@ try {
     
     $order_db_id = $pdo->lastInsertId();
     
+    // Mapa product_id → order_item_id para trazabilidad de inventario
+    $order_item_ids = [];
+    
     // Guardar items específicos
     foreach ($cart_items as $item) {
         $product_id = $item['id'] ?? null;
@@ -263,6 +266,7 @@ try {
             $order_db_id, $order_id, $product_id, $item_type, $combo_data,
             $product_name, $product_price, $item_cost, $quantity, $subtotal
         ]);
+        $order_item_ids[$product_id] = $pdo->lastInsertId();
     }
     
     // Descontar inventario para RL6 Credit ANTES de commit
@@ -274,6 +278,7 @@ try {
             foreach ($cart_items as $item) {
                 $product_id = $item['id'];
                 $quantity = $item['quantity'];
+                $current_order_item_id = $order_item_ids[$product_id] ?? null;
                 
                 error_log("RL6 Credit - Procesando producto ID: $product_id, cantidad: $quantity");
                 
@@ -303,8 +308,8 @@ try {
                         // Registrar transacción
                         $trans_stmt = $pdo->prepare("
                             INSERT INTO inventory_transactions 
-                            (transaction_type, ingredient_id, quantity, unit, previous_stock, new_stock, order_reference)
-                            VALUES ('sale', ?, ?, ?, ?, ?, ?)
+                            (transaction_type, ingredient_id, quantity, unit, previous_stock, new_stock, order_reference, order_item_id)
+                            VALUES ('sale', ?, ?, ?, ?, ?, ?, ?)
                         ");
                         $trans_stmt->execute([
                             $ingredient['ingredient_id'],
@@ -312,7 +317,8 @@ try {
                             $ingredient['unit'],
                             $ingredient['current_stock'],
                             $new_stock,
-                            $order_id
+                            $order_id,
+                            $current_order_item_id
                         ]);
                         
                         // Actualizar stock
@@ -359,10 +365,10 @@ try {
                     
                     $trans_stmt = $pdo->prepare("
                         INSERT INTO inventory_transactions 
-                        (transaction_type, product_id, quantity, unit, previous_stock, new_stock, order_reference)
-                        VALUES ('sale', ?, ?, 'unit', ?, ?, ?)
+                        (transaction_type, product_id, quantity, unit, previous_stock, new_stock, order_reference, order_item_id)
+                        VALUES ('sale', ?, ?, 'unit', ?, ?, ?, ?)
                     ");
-                    $trans_stmt->execute([$product_id, -$quantity, $prev_stock, $new_stock, $order_id]);
+                    $trans_stmt->execute([$product_id, -$quantity, $prev_stock, $new_stock, $order_id, $current_order_item_id]);
                     
                     $product_stmt = $pdo->prepare("
                         UPDATE products 

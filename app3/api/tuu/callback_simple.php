@@ -35,7 +35,7 @@ if (isset($_GET['x_reference']) && isset($_GET['x_result']) && $_GET['x_result']
         
         // Obtener items de la orden para procesar inventario
         $items_stmt = $pdo->prepare("
-            SELECT product_id, product_name, quantity, item_type, combo_data
+            SELECT id, product_id, product_name, quantity, item_type, combo_data
             FROM tuu_order_items 
             WHERE order_reference = ?
         ");
@@ -49,6 +49,7 @@ if (isset($_GET['x_reference']) && isset($_GET['x_result']) && $_GET['x_result']
                 // Es un combo
                 $combo_data = json_decode($item['combo_data'], true);
                 $inventory_items[] = [
+                    'order_item_id' => $item['id'],
                     'id' => $item['product_id'],
                     'name' => $item['product_name'],
                     'cantidad' => $item['quantity'],
@@ -60,6 +61,7 @@ if (isset($_GET['x_reference']) && isset($_GET['x_result']) && $_GET['x_result']
             } else {
                 // Producto normal
                 $inventory_item = [
+                    'order_item_id' => $item['id'],
                     'id' => $item['product_id'],
                     'name' => $item['product_name'],
                     'cantidad' => $item['quantity']
