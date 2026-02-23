@@ -519,18 +519,6 @@
         });
 
 
-        function showTab(tab) {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('border-orange-500', 'text-orange-600');
-                btn.classList.add('border-transparent', 'text-gray-500');
-            });
-            document.getElementById(`tab-${tab}`).classList.add('border-orange-500', 'text-orange-600');
-            document.getElementById(`tab-${tab}`).classList.remove('border-transparent', 'text-gray-500');
-            
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
-            document.getElementById(`content-${tab}`).classList.remove('hidden');
-        }
-
         function previewEmail(userId) {
             currentUserId = userId;
             document.getElementById('previewFrame').src = `/api/gmail/preview_email_dynamic.php?user_id=${userId}`;
@@ -841,7 +829,6 @@
         document.getElementById('personalMes')?.addEventListener('change', loadPersonalTab);
 
         // Cargar tab personal cuando se activa
-        const origShowTab = window.showTab;
         function showTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('border-orange-500', 'text-orange-600');
