@@ -460,7 +460,7 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
           <span style={{ fontSize: 13, color: '#64748b' }}>Total: <strong>${totalPagado.toLocaleString('es-CL')}</strong></span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-          {personal.map(p => {
+          {personal.filter(p => p.activo == 1).map(p => {
             const { total } = getLiquidacion(p);
             if (total === 0) return null;
             const pago = pagosNomina.find(pn => pn.personal_id == p.id);
