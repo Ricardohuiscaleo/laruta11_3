@@ -14,19 +14,28 @@ try {
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();
+    if (!$user) { $conn->close(); throw new Exception('Usuario no encontrado'); }
+
+    // Deuda del ciclo vencido: débitos entre día 22 mes anterior y día 21 mes actual
+    $inicio_ciclo_vencido = date('Y-m-22', strtotime('first day of last month'));
+    $fin_ciclo_vencido    = date('Y-m-21');
+    $stmt2 = $conn->prepare("SELECT COALESCE(SUM(amount),0) FROM rl6_credit_transactions WHERE user_id=? AND type='debit' AND created_at BETWEEN ? AND ?");
+    $fin_ciclo_vencido_ts = $fin_ciclo_vencido . ' 23:59:59';
+    $stmt2->bind_param("iss", $user_id, $inicio_ciclo_vencido, $fin_ciclo_vencido_ts);
+    $stmt2->execute();
+    $deuda_ciclo_vencido = floatval($stmt2->get_result()->fetch_row()[0]);
     $conn->close();
-    if (!$user) throw new Exception('Usuario no encontrado');
 
     $credito_total      = floatval($user['limite_credito']);
     $credito_usado      = floatval($user['credito_usado']);
     $credito_disponible = $credito_total - $credito_usado;
     $day   = intval(date('j'));
     $pago_este_mes = !empty($user['fecha_ultimo_pago']) && substr($user['fecha_ultimo_pago'], 0, 7) === date('Y-m');
+    $solo_deuda_ciclo_nuevo = ($credito_usado > 0 && $deuda_ciclo_vencido <= 0);
     $meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
     $mes_idx = (int)date('n') - 1;
     $anio  = (int)date('Y');
-    // Si pagó este mes, el vencimiento es el 21 del mes siguiente
-    if ($pago_este_mes) {
+    if ($pago_este_mes || $solo_deuda_ciclo_nuevo) {
         $mes_idx = ($mes_idx + 1) % 12;
         if ($mes_idx === 0) $anio++;
     }
@@ -35,7 +44,7 @@ try {
     if ($credito_usado <= 0) {
         $tipo = 'sin_deuda'; $dias_restantes = 0; $dias_mora = 0;
         $subject = "✅ Tu crédito está al día - La Ruta 11";
-    } elseif ($pago_este_mes) {
+    } elseif ($pago_este_mes || $solo_deuda_ciclo_nuevo) {
         $tipo = 'recordatorio'; $dias_restantes = 21; $dias_mora = 0;
         $subject = "📅 Recordatorio de pago - Crédito RL6 La Ruta 11";
     } elseif ($day <= 20) {
