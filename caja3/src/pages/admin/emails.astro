@@ -828,6 +828,10 @@
 
         document.getElementById('personalMes')?.addEventListener('change', loadPersonalTab);
 
+        window.previewPersonalEmail = previewPersonalEmail;
+        window.sendPersonalEmail = sendPersonalEmail;
+        window.sendPersonalEmailById = sendPersonalEmailById;
+
         // Cargar tab personal cuando se activa
         function showTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(btn => {
