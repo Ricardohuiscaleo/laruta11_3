@@ -12,8 +12,8 @@ const COLORES = {
 
 export default function PersonalApp() {
   const [tab, setTab] = useState('calendario');
-  const [mes, setMes] = useState(1); // 0-indexed, 1 = febrero
-  const [anio, setAnio] = useState(2025);
+  const [mes, setMes] = useState(() => new Date().getMonth());
+  const [anio, setAnio] = useState(() => new Date().getFullYear());
   const [personal, setPersonal] = useState([]);
   const [turnos, setTurnos] = useState([]);
   const [ajustes, setAjustes] = useState([]);
@@ -257,7 +257,11 @@ function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colore
                           }}>
                             <div style={{ width: 6, height: 6, borderRadius: '50%', background: c?.bg, flexShrink: 0 }} />
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nombre}</span>
-                            {t.tipo === 'reemplazo' && <span style={{ fontSize: 9, opacity: 0.7 }}>↔</span>}
+                            {t.tipo === 'reemplazo' && (
+                              <span title={t.notas} style={{ fontSize: 9, background: 'rgba(0,0,0,0.15)', borderRadius: 3, padding: '0 3px' }}>
+                                {t.reemplazante_nombre ? `↔${t.reemplazante_nombre}` : '↔'}
+                              </span>
+                            )}
                           </div>
                         );
                       })}

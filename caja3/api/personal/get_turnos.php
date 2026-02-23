@@ -23,7 +23,12 @@ $ciclos = [
 ];
 
 // Obtener excepciones de la BD (reemplazos, días especiales) para este mes
-$stmt = mysqli_prepare($conn, "SELECT * FROM turnos WHERE fecha BETWEEN ? AND ? AND tipo = 'reemplazo'");
+$stmt = mysqli_prepare($conn, "
+    SELECT t.*, r.nombre as reemplazante_nombre
+    FROM turnos t
+    LEFT JOIN personal r ON r.id = t.reemplazado_por
+    WHERE t.fecha BETWEEN ? AND ? AND t.tipo = 'reemplazo'
+");
 mysqli_stmt_bind_param($stmt, 'ss', $inicio, $fin);
 mysqli_stmt_execute($stmt);
 $res = mysqli_stmt_get_result($stmt);
