@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const DIAS_SEMANA = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
 const COLORES = {
   1: { bg: '#3b82f6', light: '#eff6ff', border: '#bfdbfe', text: '#1d4ed8' }, // Camila - azul
@@ -131,7 +130,7 @@ export default function PersonalApp() {
       const key = t.personal_id;
       if (!gruposReemplazando[key]) gruposReemplazando[key] = { persona: personal.find(x => x.id == t.personal_id), dias: [], monto: 0 };
       gruposReemplazando[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
-      gruposReemplazando[key].monto += parseFloat(t.monto_reemplazo || 20000);
+      gruposReemplazando[key].monto += parseFloat(t.monto_reemplazo);
     });
     const diasTrabajados = diasNormales + reemplazosHechos;
     const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
@@ -263,11 +262,6 @@ function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colore
         <div style={{ background: 'white', borderRadius: 12, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
           {Array.from({ length: diasEnMes }, (_, i) => i + 1).map(dia => {
             const trabajando = turnosPorFecha[dia] || [];
-            const diaSemana = new Date(new Date().getFullYear(), new Date().getMonth(), dia).getDay();
-            // Calcular día de semana real
-            const fecha = new Date();
-            fecha.setDate(1);
-            const primerDiaSemana = fecha.getDay();
             const diaLabel = DIAS_LABEL[(primerDia + dia - 1) % 7];
             const esFinSemana = (primerDia + dia - 1) % 7 === 0 || (primerDia + dia - 1) % 7 === 6;
             return (
