@@ -128,7 +128,7 @@ export default function PersonalApp() {
     const gruposReemplazando = {};
     rawReemplazando.forEach(t => {
       const key = t.personal_id;
-      if (!gruposReemplazando[key]) gruposReemplazando[key] = { persona: personal.find(x => x.id == t.personal_id), dias: [], monto: 0 };
+      if (!gruposReemplazando[key]) gruposReemplazando[key] = { persona: personal.find(x => x.id == t.personal_id), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
       gruposReemplazando[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
       gruposReemplazando[key].monto += parseFloat(t.monto_reemplazo);
     });
@@ -136,7 +136,7 @@ export default function PersonalApp() {
     const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
     const totalAjustes = ajustesPer.reduce((s, a) => s + parseFloat(a.monto), 0);
     const sueldoBase = parseFloat(p.sueldo_base);
-    const totalReemplazando = Object.values(gruposReemplazando).reduce((s, g) => s + g.monto, 0);
+    const totalReemplazando = Object.values(gruposReemplazando).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
     const totalReemplazados = Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
     const total = sueldoBase + totalReemplazando - totalReemplazados + totalAjustes;
     return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase, gruposReemplazados, gruposReemplazando, total };
