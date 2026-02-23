@@ -123,8 +123,8 @@
             <div id="content-morosos" class="tab-content p-6 hidden">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                     <div>
-                        <h3 class="text-lg font-semibold text-gray-900">Morosos del Mes Anterior</h3>
-                        <p class="text-sm text-gray-500 mt-1">Tienen deuda y no pagaron antes del día 21 del mes pasado</p>
+                        <h3 class="text-lg font-semibold text-gray-900">Morosos</h3>
+                        <p class="text-sm text-gray-500 mt-1">Deuda pendiente después del día 21 — <span id="avisoVencimiento" class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">cargando...</span></p>
                     </div>
                     <button data-action="sendMassiveMorosos"
                         class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-colors w-full sm:w-auto">
@@ -339,7 +339,17 @@
                 const result = await response.json();
                 if (result.success) {
                     users = result.users;
+                    window.vencioEsteMes = result.vencio_este_mes;
+                    window.diaVencimiento = result.dia_vencimiento;
                     renderUsers(users);
+                    // Mostrar aviso si aún no vence
+                    const aviso = document.getElementById('avisoVencimiento');
+                    if (aviso) {
+                        aviso.textContent = result.vencio_este_mes
+                            ? `⚠️ Venció el ${result.dia_vencimiento} — hay morosos`
+                            : `📅 Vence el ${result.dia_vencimiento} — sin morosos aún`;
+                        aviso.className = `text-xs px-3 py-1 rounded-full font-medium ${result.vencio_este_mes ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`;
+                    }
                 }
             } catch (error) {
                 document.getElementById('usersList').innerHTML = '<div class="text-center text-red-500 py-12">Error cargando usuarios</div>';

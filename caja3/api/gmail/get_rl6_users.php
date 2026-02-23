@@ -10,8 +10,11 @@ if ($conn->connect_error) {
     exit;
 }
 
-// Fecha límite del mes anterior (día 21)
-$mes_anterior_21 = date('Y-m-21', strtotime('first day of last month'));
+// Día 21 del mes actual = fecha límite de pago
+$dia_21_mes_actual = date('Y-m-21');
+$hoy = date('Y-m-d');
+// Solo puede haber morosos si ya pasó el día 21 de este mes
+$vencio_este_mes = ($hoy > $dia_21_mes_actual);
 
 $query = "
     SELECT 
@@ -30,8 +33,9 @@ $users = [];
 while ($row = $result->fetch_assoc()) {
     $credito_usado = floatval($row['credito_usado']);
     $fecha_pago = $row['fecha_ultimo_pago'];
-    // Moroso: tiene deuda Y no pagó antes del día 21 del mes anterior
-    $es_moroso = $credito_usado > 0 && ($fecha_pago === null || $fecha_pago < $mes_anterior_21);
+    // Moroso: ya pasó el día 21 + tiene deuda + no pagó este mes
+    $pago_este_mes = $fecha_pago && substr($fecha_pago, 0, 7) === date('Y-m');
+    $es_moroso = $vencio_este_mes && $credito_usado > 0 && !$pago_este_mes;
     $users[] = [
         'id' => $row['id'],
         'nombre' => $row['nombre'],
@@ -50,7 +54,9 @@ while ($row = $result->fetch_assoc()) {
 echo json_encode([
     'success' => true,
     'users' => $users,
-    'total' => count($users)
+    'total' => count($users),
+    'vencio_este_mes' => $vencio_este_mes,
+    'dia_vencimiento' => $dia_21_mes_actual
 ]);
 
 $conn->close();
