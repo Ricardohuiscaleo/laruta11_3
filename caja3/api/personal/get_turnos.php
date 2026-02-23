@@ -32,9 +32,15 @@ while ($row = mysqli_fetch_assoc($res)) {
     $excepciones[$row['personal_id'] . '_' . $row['fecha']] = $row;
 }
 
-// Obtener días excluidos de la BD (días que NO deben aparecer aunque el ciclo diga que sí)
-$stmt2 = mysqli_prepare($conn, "SELECT * FROM turnos_excluidos WHERE fecha BETWEEN ? AND ?");
-mysqli_stmt_execute($stmt2 ?? null); // tabla opcional, ignorar si no existe
+// Obtener días excluidos (tabla opcional)
+$excluidos = [];
+if (mysqli_query($conn, "SHOW TABLES LIKE 'turnos_excluidos'") && mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'turnos_excluidos'")) > 0) {
+    $stmt2 = mysqli_prepare($conn, "SELECT fecha FROM turnos_excluidos WHERE fecha BETWEEN ? AND ?");
+    mysqli_stmt_bind_param($stmt2, 'ss', $inicio, $fin);
+    mysqli_stmt_execute($stmt2);
+    $res2 = mysqli_stmt_get_result($stmt2);
+    while ($row = mysqli_fetch_assoc($res2)) $excluidos[] = $row['fecha'];
+}
 
 $data = [];
 $current = new DateTime($inicio);

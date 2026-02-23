@@ -11,7 +11,7 @@ if (!$conn) { echo json_encode(['success'=>false,'error'=>'DB error']); exit; }
 $mes = $_GET['mes'] ?? date('Y-m');
 $inicio = $mes . '-01';
 $fin = date('Y-m-t', strtotime($inicio));
-$stmt = mysqli_prepare($conn, "SELECT * FROM ajustes_sueldo WHERE mes BETWEEN ? AND ? ORDER BY personal_id, created_at");
+$stmt = mysqli_prepare($conn, "SELECT * FROM ajustes_sueldo WHERE mes >= ? AND mes <= ? ORDER BY personal_id, created_at");
 mysqli_stmt_bind_param($stmt, 'ss', $inicio, $fin);
 mysqli_stmt_execute($stmt);
 $res = mysqli_stmt_get_result($stmt);
