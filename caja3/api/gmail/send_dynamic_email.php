@@ -45,7 +45,7 @@ try {
         $tipo = 'sin_deuda'; $dias_restantes = 0; $dias_mora = 0;
         $subject = "✅ Tu crédito está al día - La Ruta 11";
     } elseif ($pago_este_mes || $solo_deuda_ciclo_nuevo) {
-        $tipo = 'recordatorio'; $dias_restantes = 21; $dias_mora = 0;
+        $tipo = 'recordatorio'; $dias_restantes = intval((strtotime(date('Y-m', strtotime('+1 month')) . '-21') - strtotime('today')) / 86400); $dias_mora = 0;
         $subject = "📅 Recordatorio de pago - Crédito RL6 La Ruta 11";
     } elseif ($day <= 20) {
         $tipo = 'recordatorio'; $dias_restantes = 21 - $day; $dias_mora = 0;
