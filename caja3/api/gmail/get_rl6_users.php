@@ -15,6 +15,8 @@ $dia_21_mes_actual = date('Y-m-21');
 $hoy = date('Y-m-d');
 // Solo puede haber morosos si ya pasó el día 21 de este mes
 $vencio_este_mes = ($hoy > $dia_21_mes_actual);
+// Inicio del ciclo actual: día 22 del mes anterior
+$inicio_ciclo_actual = date('Y-m-22', strtotime('first day of last month'));
 
 $query = "
     SELECT 
@@ -22,7 +24,8 @@ $query = "
         u.limite_credito, u.credito_usado,
         (u.limite_credito - u.credito_usado) as credito_disponible,
         u.fecha_ultimo_pago,
-        MIN(t.created_at) as primera_compra
+        MIN(t.created_at) as primera_compra_unused,
+        SUM(CASE WHEN t.type = 'debit' AND DATE(t.created_at) < '{$inicio_ciclo_actual}' THEN t.amount ELSE 0 END) as deuda_ciclo_anterior
     FROM usuarios u
     LEFT JOIN rl6_credit_transactions t ON t.user_id = u.id AND t.type = 'debit'
     WHERE u.es_militar_rl6 = 1 AND u.credito_aprobado = 1
@@ -36,12 +39,11 @@ $users = [];
 while ($row = $result->fetch_assoc()) {
     $credito_usado = floatval($row['credito_usado']);
     $fecha_pago = $row['fecha_ultimo_pago'];
-    // Moroso: ya pasó el día 21 + tiene deuda + no pagó este mes
-    // + su primera compra fue ANTES del día 21 (tuvo oportunidad de pagar)
+    // Moroso: ya pasó el día 21 + no pagó este mes + tiene deuda de ciclo anterior
+    // (deuda generada antes del día 22 del mes pasado = ya debía haberse pagado el 21 de este mes)
     $pago_este_mes = $fecha_pago && substr($fecha_pago, 0, 7) === date('Y-m');
-    $primera_compra = $row['primera_compra'];
-    $ingreso_antes_del_21 = $primera_compra && substr($primera_compra, 0, 10) <= $dia_21_mes_actual;
-    $es_moroso = $vencio_este_mes && $credito_usado > 0 && !$pago_este_mes && $ingreso_antes_del_21;
+    $deuda_ciclo_anterior = floatval($row['deuda_ciclo_anterior']);
+    $es_moroso = $vencio_este_mes && $deuda_ciclo_anterior > 0 && !$pago_este_mes;
     $users[] = [
         'id' => $row['id'],
         'nombre' => $row['nombre'],
