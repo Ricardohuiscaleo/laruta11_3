@@ -21,11 +21,13 @@ function IngredientToggle({ ingredients }) {
             let unit = ing.unit || '';
             if (unit === 'unidad') unit = 'U';
             if (unit === 'unit') unit = 'U';
-            const displayQty = Math.round(qty);
+            const displayQty = unit === 'g' && qty >= 1000
+              ? `${(qty / 1000).toFixed(2)} kg`
+              : `${Math.round(qty)} ${unit}`;
             return (
               <div key={idx} className="flex justify-between">
                 <span>• {ing.ingredient_name}</span>
-                <span className="font-semibold text-orange-600">{displayQty} {unit}</span>
+                <span className="font-semibold text-orange-600">{displayQty}</span>
               </div>
             );
           })}
@@ -171,7 +173,8 @@ export default function VentasDetalle() {
               { key: 'cash', icon: Banknote, label: 'Efectivo' },
               { key: 'card', icon: CreditCard, label: 'Tarjeta' },
               { key: 'transfer', icon: Smartphone, label: 'Transfer' },
-              { key: 'pedidosya', icon: Truck, label: 'PedidosYA' }
+              { key: 'pedidosya', icon: Truck, label: 'PedidosYA' },
+              { key: 'rl6_credit', icon: CreditCard, label: 'RL6' }
             ].map(filter => {
               const Icon = filter.icon;
               const isActive = currentFilter === filter.key;

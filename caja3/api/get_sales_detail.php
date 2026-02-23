@@ -88,54 +88,46 @@ try {
         $itemsStmt->execute([$order['id']]);
         $order['items'] = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Obtener transacciones de inventario REALES para cada item
-        foreach ($order['items'] as &$item) {
-            $transSql = "
-                SELECT 
-                    it.quantity,
-                    COALESCE(i.name, p.name) as ingredient_name,
-                    COALESCE(it.unit, i.unit, 'unidad') as unit,
-                    CASE WHEN it.ingredient_id IS NOT NULL THEN 'ingredient' ELSE 'product' END as item_type
-                FROM inventory_transactions it
-                LEFT JOIN ingredients i ON it.ingredient_id = i.id
-                LEFT JOIN products p ON it.product_id = p.id
-                WHERE it.order_item_id = ?
-                ORDER BY it.id ASC
-            ";
-            $transStmt = $pdo->prepare($transSql);
-            $transStmt->execute([$item['id']]);
-            $transactions = $transStmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            // Convertir a formato ingredients
+        // Obtener TODAS las transacciones de la orden por order_reference (no por item)
+        $transSql = "
+            SELECT 
+                it.quantity,
+                COALESCE(i.name, p.name) as ingredient_name,
+                COALESCE(it.unit, i.unit, 'unidad') as unit
+            FROM inventory_transactions it
+            LEFT JOIN ingredients i ON it.ingredient_id = i.id
+            LEFT JOIN products p ON it.product_id = p.id
+            WHERE it.order_reference = ?
+            ORDER BY it.id ASC
+        ";
+        $transStmt = $pdo->prepare($transSql);
+        $transStmt->execute([$order['order_number']]);
+        $transactions = $transStmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Asignar todas las transacciones al primer item, resto vacío
+        foreach ($order['items'] as $idx => &$item) {
             $item['ingredients'] = [];
-            foreach ($transactions as $trans) {
-                $qtyUsed = abs(floatval($trans['quantity']));
-                $unit = $trans['unit'];
-                
-                // Convertir kg a g para visualización (datos viejos con error)
-                if ($unit === 'g' && $qtyUsed < 1) {
-                    $qtyUsed = $qtyUsed * 1000;
-                } else if ($unit === 'kg') {
-                    $qtyUsed = $qtyUsed * 1000;
-                    $unit = 'g';
-                }
-                
-                $item['ingredients'][] = [
-                    'ingredient_name' => $trans['ingredient_name'],
-                    'quantity_needed' => $qtyUsed,
-                    'unit' => $unit
-                ];
-                
-                // Calcular consumo total
-                $key = $trans['ingredient_name'];
-                if (!isset($ingredient_consumption[$key])) {
-                    $ingredient_consumption[$key] = [
-                        'name' => $trans['ingredient_name'],
-                        'total' => 0,
+            if ($idx === 0) {
+                foreach ($transactions as $trans) {
+                    $qtyUsed = abs(floatval($trans['quantity']));
+                    $unit = $trans['unit'];
+                    if ($unit === 'g' && $qtyUsed < 1) {
+                        $qtyUsed = $qtyUsed * 1000;
+                    } else if ($unit === 'kg') {
+                        $qtyUsed = $qtyUsed * 1000;
+                        $unit = 'g';
+                    }
+                    $item['ingredients'][] = [
+                        'ingredient_name' => $trans['ingredient_name'],
+                        'quantity_needed' => $qtyUsed,
                         'unit' => $unit
                     ];
+                    $ingKey = $trans['ingredient_name'];
+                    if (!isset($ingredient_consumption[$ingKey])) {
+                        $ingredient_consumption[$ingKey] = ['name' => $trans['ingredient_name'], 'total' => 0, 'unit' => $unit];
+                    }
+                    $ingredient_consumption[$ingKey]['total'] += $qtyUsed;
                 }
-                $ingredient_consumption[$key]['total'] += $qtyUsed;
             }
         }
     }
