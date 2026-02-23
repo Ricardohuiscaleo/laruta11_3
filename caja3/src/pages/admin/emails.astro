@@ -98,9 +98,9 @@
             <div id="content-users" class="tab-content p-6">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                     <h3 class="text-lg font-semibold text-gray-900">Usuarios con Crédito</h3>
-                    <button data-action="sendMassive" 
+                    <button data-action="sendMassive" id="btnSendMassive"
                         class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-colors w-full sm:w-auto">
-                        📤 Enviar a Todos
+                        📤 Enviar a Todos (<span id="sendMassiveCount">0</span>)
                     </button>
                 </div>
                 <div class="flex gap-2 mb-4">
@@ -406,6 +406,7 @@
             }
             
             container.innerHTML = userList.map(renderUserCard).join('');
+            document.getElementById('sendMassiveCount').textContent = userList.length;
         }
 
         let activeFilter = 'todos';
@@ -470,6 +471,7 @@
                            : activeFilter === 'al_dia' ? users.filter(u => !u.es_moroso)
                            : users;
             document.getElementById('usersList').innerHTML = filtered.map(renderUserCard).join('');
+            document.getElementById('sendMassiveCount').textContent = filtered.length;
         });
 
 
@@ -640,18 +642,21 @@
         }
 
         async function sendMassive() {
-            if (!confirm(`¿Enviar estado de cuenta a ${users.length} usuarios?`)) return;
+            const filtered = activeFilter === 'morosos' ? users.filter(u => u.es_moroso)
+                           : activeFilter === 'al_dia' ? users.filter(u => !u.es_moroso)
+                           : users;
+            if (!confirm(`¿Enviar estado de cuenta a ${filtered.length} usuarios?`)) return;
             
             const btn = document.querySelector('button[data-action="sendMassive"]');
             const originalText = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '⏳ Enviando...';
             
-            showStatus(`Enviando ${users.length} emails...`, 'info');
+            showStatus(`Enviando ${filtered.length} emails...`, 'info');
             
             let sent = 0, failed = 0;
             
-            for (const user of users) {
+            for (const user of filtered) {
                 try {
                     const response = await fetch(`/api/gmail/send_dynamic_email.php?user_id=${user.id}`);
                     const result = await response.json();
