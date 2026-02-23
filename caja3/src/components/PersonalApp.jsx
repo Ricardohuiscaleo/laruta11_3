@@ -119,7 +119,7 @@ export default function PersonalApp() {
     const gruposReemplazados = {};
     rawReemplazados.forEach(t => {
       const key = t.reemplazado_por ?? 'ext';
-      if (!gruposReemplazados[key]) gruposReemplazados[key] = { persona: personal.find(x => x.id == t.reemplazado_por) || { nombre: t.reemplazante_nombre || '?' }, dias: [], monto: 0 };
+      if (!gruposReemplazados[key]) gruposReemplazados[key] = { persona: personal.find(x => x.id == t.reemplazado_por) || { nombre: t.reemplazante_nombre || '?' }, dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
       gruposReemplazados[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
       gruposReemplazados[key].monto += parseFloat(t.monto_reemplazo || 20000);
     });
@@ -138,7 +138,7 @@ export default function PersonalApp() {
     const totalAjustes = ajustesPer.reduce((s, a) => s + parseFloat(a.monto), 0);
     const sueldoBase = parseFloat(p.sueldo_base);
     const totalReemplazando = Object.values(gruposReemplazando).reduce((s, g) => s + g.monto, 0);
-    const totalReemplazados = Object.values(gruposReemplazados).reduce((s, g) => s + g.monto, 0);
+    const totalReemplazados = Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
     const total = sueldoBase + totalReemplazando - totalReemplazados + totalAjustes;
     return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase, gruposReemplazados, gruposReemplazando, total };
   }
@@ -572,9 +572,15 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
                         </div>
                       ))}
                       {Object.values(gruposReemplazados).map((g, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                          <span style={{ fontSize: 13, color: '#64748b' }}>{g.persona?.nombre ?? '?'} cubrió días {g.dias.sort((a,b)=>a-b).join(',')}</span>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#ef4444' }}>-${g.monto.toLocaleString('es-CL')}</span>
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', gap: 8 }}>
+                          <span style={{ fontSize: 13, color: '#64748b' }}>
+                            {g.persona?.nombre ?? '?'} cubrió días {g.dias.sort((a,b)=>a-b).join(',')}
+                            {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '1px 6px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 600 }}>entre ellos</span>}
+                          </span>
+                          {g.pago_por === 'empresa'
+                            ? <span style={{ fontSize: 13, fontWeight: 600, color: '#ef4444' }}>-${g.monto.toLocaleString('es-CL')}</span>
+                            : <span style={{ fontSize: 13, color: '#94a3b8' }}>—</span>
+                          }
                         </div>
                       ))}
                       {ajustesPer.map(a => (
