@@ -7,6 +7,7 @@ const COLORES = {
   2: { bg: '#8b5cf6', light: '#f5f3ff', border: '#ddd6fe', text: '#6d28d9' }, // Neit - violeta
   3: { bg: '#f59e0b', light: '#fffbeb', border: '#fde68a', text: '#b45309' }, // Andrés - amarillo
   4: { bg: '#10b981', light: '#ecfdf5', border: '#a7f3d0', text: '#047857' }, // Gabriel - verde
+  5: { bg: '#ef4444', light: '#fef2f2', border: '#fecaca', text: '#b91c1c' }, // Ricardo - rojo
 };
 
 export default function PersonalApp() {
