@@ -21,6 +21,7 @@ try {
     $credito_usado      = floatval($user['credito_usado']);
     $credito_disponible = $credito_total - $credito_usado;
     $day   = intval(date('j'));
+    $pago_este_mes = !empty($user['fecha_ultimo_pago']) && substr($user['fecha_ultimo_pago'], 0, 7) === date('Y-m');
     $meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
     $mes_idx = (int)date('n') - 1;
     $anio  = (int)date('Y');
@@ -30,9 +31,6 @@ try {
         if ($mes_idx === 0) $anio++;
     }
     $mes = $meses[$mes_idx];
-
-    // Si pagó este mes y tiene deuda, es del ciclo nuevo → recordatorio
-    $pago_este_mes = !empty($user['fecha_ultimo_pago']) && substr($user['fecha_ultimo_pago'], 0, 7) === date('Y-m');
 
     if ($credito_usado <= 0) {
         $tipo = 'sin_deuda'; $dias_restantes = 0; $dias_mora = 0;
