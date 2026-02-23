@@ -37,6 +37,7 @@
             <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 text-white shadow-lg">
                 <p class="text-[10px] uppercase tracking-wide opacity-90 mb-1">Cobranza</p>
                 <p id="statCobranza" class="text-2xl sm:text-3xl font-bold truncate">-</p>
+                <p class="text-[9px] opacity-75 mt-1">solo morosos</p>
             </div>
             <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-4 text-white shadow-lg">
                 <p class="text-[10px] uppercase tracking-wide opacity-90 mb-1">Morosos</p>
@@ -82,6 +83,10 @@
                         class="tab-btn flex-1 sm:flex-none px-6 py-3 text-sm font-medium border-b-2 border-orange-500 text-orange-600 whitespace-nowrap">
                         👥 Usuarios
                     </button>
+                    <button data-action="showTab" data-tab="morosos" id="tab-morosos" 
+                        class="tab-btn flex-1 sm:flex-none px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 whitespace-nowrap">
+                        👺 Morosos <span id="morososBadge" class="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 hidden"></span>
+                    </button>
                     <button data-action="showTab" data-tab="test" id="tab-test" 
                         class="tab-btn flex-1 sm:flex-none px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 whitespace-nowrap">
                         🧪 Prueba
@@ -91,18 +96,43 @@
 
             <!-- Users Tab -->
             <div id="content-users" class="tab-content p-6">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                     <h3 class="text-lg font-semibold text-gray-900">Usuarios con Crédito</h3>
                     <button data-action="sendMassive" 
                         class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-colors w-full sm:w-auto">
                         📤 Enviar a Todos
                     </button>
                 </div>
+                <div class="flex gap-2 mb-4">
+                    <button data-filter="todos" id="filter-todos"
+                        class="filter-btn px-3 py-1.5 rounded-full text-xs font-medium bg-gray-800 text-white">Todos</button>
+                    <button data-filter="morosos" id="filter-morosos"
+                        class="filter-btn px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700">🔴 Morosos</button>
+                    <button data-filter="al_dia" id="filter-al_dia"
+                        class="filter-btn px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700">✅ Al día</button>
+                </div>
                 <div id="usersList" class="space-y-3">
                     <div class="text-center text-gray-400 py-12">
                         <div class="animate-spin w-8 h-8 border-4 border-gray-200 border-t-orange-500 rounded-full mx-auto mb-3"></div>
                         <p>Cargando usuarios...</p>
                     </div>
+                </div>
+            </div>
+
+            <!-- Morosos Tab -->
+            <div id="content-morosos" class="tab-content p-6 hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Morosos del Mes Anterior</h3>
+                        <p class="text-sm text-gray-500 mt-1">Tienen deuda y no pagaron antes del día 21 del mes pasado</p>
+                    </div>
+                    <button data-action="sendMassiveMorosos"
+                        class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-colors w-full sm:w-auto">
+                        ⚠️ Cobrar a Todos
+                    </button>
+                </div>
+                <div id="morososList" class="space-y-3">
+                    <div class="text-center text-gray-400 py-12">Cargando...</div>
                 </div>
             </div>
 
@@ -227,6 +257,39 @@
         let users = [];
         let currentPaymentData = null;
 
+        function renderMorososCard(user) {
+            return `
+                <div class="bg-red-50 border border-red-300 rounded-lg p-4">
+                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-semibold text-gray-900">${user.nombre}</h4>
+                            <p class="text-sm text-gray-600">${user.email}</p>
+                            <p class="text-xs text-gray-500 mt-1">${user.grado_militar} - ${user.unidad_trabajo}</p>
+                            ${user.fecha_ultimo_pago ? `<p class="text-xs text-red-500 mt-1">Último pago: ${user.fecha_ultimo_pago}</p>` : '<p class="text-xs text-red-500 mt-1">Sin pagos registrados</p>'}
+                            <div class="mt-2 inline-flex items-center gap-2 bg-red-100 rounded px-3 py-1">
+                                <span class="text-xs text-red-600">Debe:</span>
+                                <span class="font-bold text-red-700">$${user.credito_usado.toLocaleString('es-CL')}</span>
+                            </div>
+                        </div>
+                        <div class="flex sm:flex-col gap-2">
+                            <button data-action="preview" data-user-id="${user.id}"
+                                class="flex-1 sm:flex-none bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                Preview
+                            </button>
+                            <button data-action="send" data-user-id="${user.id}"
+                                class="flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                ⚠️ Cobrar
+                            </button>
+                            <button data-action="payManual" data-user-id="${user.id}" data-user-name="${user.nombre}" data-amount="${user.credito_usado}"
+                                class="flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                💰 Pagar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         document.addEventListener('click', (e) => {
             const btn = e.target.closest('button[data-action]');
             if (!btn) return;
@@ -236,6 +299,7 @@
             
             if (action === 'showTab' && tab) showTab(tab);
             if (action === 'sendMassive') sendMassive();
+            if (action === 'sendMassiveMorosos') sendMassiveMorosos();
             if (action === 'closePreview') closePreview();
             if (action === 'sendFromPreview') sendFromPreview();
             if (action === 'preview' && userId) previewEmail(parseInt(userId));
@@ -310,16 +374,34 @@
             
             const totalClientes = userList.length;
             const totalCredito = userList.reduce((sum, u) => sum + u.credito_total, 0);
-            const totalCobranza = userList.reduce((sum, u) => sum + u.credito_usado, 0);
-            const totalDisponible = userList.reduce((sum, u) => sum + u.credito_disponible, 0);
-            const totalMorosos = userList.filter(u => u.es_moroso).length;
+            const morosos = userList.filter(u => u.es_moroso);
+            const totalCobranza = morosos.reduce((sum, u) => sum + u.credito_usado, 0);
+            const totalMorosos = morosos.length;
             
             document.getElementById('statClientes').textContent = totalClientes;
             document.getElementById('statCreditoTotal').textContent = '$' + Math.round(totalCredito).toLocaleString('es-CL');
             document.getElementById('statCobranza').textContent = '$' + Math.round(totalCobranza).toLocaleString('es-CL');
             document.getElementById('statMorosos').textContent = totalMorosos;
+
+            // Render morosos tab
+            const morososContainer = document.getElementById('morososList');
+            const badge = document.getElementById('morososBadge');
+            if (totalMorosos > 0) {
+                badge.textContent = totalMorosos;
+                badge.classList.remove('hidden');
+                morososContainer.innerHTML = morosos.map(renderMorososCard).join('');
+            } else {
+                badge.classList.add('hidden');
+                morososContainer.innerHTML = '<div class="text-center text-gray-400 py-12">✅ Sin morosos este mes</div>';
+            }
             
-            container.innerHTML = userList.map(user => `
+            container.innerHTML = userList.map(renderUserCard).join('');
+        }
+
+        let activeFilter = 'todos';
+
+        function renderUserCard(user) {
+            return `
                 <div class="bg-white border ${user.es_moroso ? 'border-red-300 bg-red-50' : ''} rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                         <div class="flex-1 min-w-0">
@@ -329,7 +411,7 @@
                             </div>
                             <p class="text-sm text-gray-600 truncate">${user.email}</p>
                             <p class="text-xs text-gray-500 mt-1">${user.grado_militar} - ${user.unidad_trabajo}</p>
-                            ${user.fecha_ultimo_pago ? `<p class="text-xs text-gray-400 mt-1">Último pago: ${user.fecha_ultimo_pago}</p>` : '<p class="text-xs text-red-400 mt-1">Sin pagos registrados</p>'}
+                            ${user.fecha_ultimo_pago ? `<span class="inline-block mt-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs font-bold rounded-full">✅ Pagó: ${user.fecha_ultimo_pago}</span>` : '<span class="inline-block mt-1 px-2 py-0.5 bg-red-100 text-red-700 text-xs font-bold rounded-full">⚠️ Sin pagos</span>'}
                             <div class="mt-3 grid grid-cols-3 gap-2 text-xs">
                                 <div class="bg-gray-50 rounded p-2">
                                     <p class="text-gray-500 mb-1">Crédito</p>
@@ -363,8 +445,23 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `;
         }
+
+        document.addEventListener('click', (e) => {
+            const filterBtn = e.target.closest('button[data-filter]');
+            if (!filterBtn) return;
+            activeFilter = filterBtn.getAttribute('data-filter');
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.className = 'filter-btn px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600';
+            });
+            filterBtn.className = 'filter-btn px-3 py-1.5 rounded-full text-xs font-medium bg-gray-800 text-white';
+            const filtered = activeFilter === 'morosos' ? users.filter(u => u.es_moroso)
+                           : activeFilter === 'al_dia' ? users.filter(u => !u.es_moroso)
+                           : users;
+            document.getElementById('usersList').innerHTML = filtered.map(renderUserCard).join('');
+        });
+
 
         function showTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -506,6 +603,30 @@
             } catch (error) {
                 showStatus('❌ Error de conexión', 'error');
             }
+        }
+
+        async function sendMassiveMorosos() {
+            const morosos = users.filter(u => u.es_moroso);
+            if (morosos.length === 0) return showStatus('No hay morosos', 'info');
+            if (!confirm(`¿Enviar cobro a ${morosos.length} morosos?`)) return;
+
+            const btn = document.querySelector('button[data-action="sendMassiveMorosos"]');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Enviando...';
+
+            let sent = 0, failed = 0;
+            for (const user of morosos) {
+                try {
+                    const res = await fetch(`/api/gmail/send_dynamic_email.php?user_id=${user.id}`);
+                    const r = await res.json();
+                    r.success ? sent++ : failed++;
+                } catch { failed++; }
+                await new Promise(r => setTimeout(r, 500));
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '⚠️ Cobrar a Todos';
+            showStatus(`✅ Completado: ${sent} enviados, ${failed} fallidos`, sent === morosos.length ? 'success' : 'error');
         }
 
         async function sendMassive() {
