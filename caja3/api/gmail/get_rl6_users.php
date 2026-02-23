@@ -18,13 +18,16 @@ $vencio_este_mes = ($hoy > $dia_21_mes_actual);
 
 $query = "
     SELECT 
-        id, nombre, email, grado_militar, unidad_trabajo,
-        limite_credito, credito_usado,
-        (limite_credito - credito_usado) as credito_disponible,
-        fecha_ultimo_pago
-    FROM usuarios
-    WHERE es_militar_rl6 = 1 AND credito_aprobado = 1
-    ORDER BY nombre ASC
+        u.id, u.nombre, u.email, u.grado_militar, u.unidad_trabajo,
+        u.limite_credito, u.credito_usado,
+        (u.limite_credito - u.credito_usado) as credito_disponible,
+        u.fecha_ultimo_pago,
+        MIN(t.created_at) as primera_compra
+    FROM usuarios u
+    LEFT JOIN rl6_credit_transactions t ON t.user_id = u.id AND t.type = 'debit'
+    WHERE u.es_militar_rl6 = 1 AND u.credito_aprobado = 1
+    GROUP BY u.id
+    ORDER BY u.nombre ASC
 ";
 
 $result = $conn->query($query);
@@ -34,8 +37,11 @@ while ($row = $result->fetch_assoc()) {
     $credito_usado = floatval($row['credito_usado']);
     $fecha_pago = $row['fecha_ultimo_pago'];
     // Moroso: ya pasó el día 21 + tiene deuda + no pagó este mes
+    // + su primera compra fue ANTES del día 21 (tuvo oportunidad de pagar)
     $pago_este_mes = $fecha_pago && substr($fecha_pago, 0, 7) === date('Y-m');
-    $es_moroso = $vencio_este_mes && $credito_usado > 0 && !$pago_este_mes;
+    $primera_compra = $row['primera_compra'];
+    $ingreso_antes_del_21 = $primera_compra && substr($primera_compra, 0, 10) <= $dia_21_mes_actual;
+    $es_moroso = $vencio_este_mes && $credito_usado > 0 && !$pago_este_mes && $ingreso_antes_del_21;
     $users[] = [
         'id' => $row['id'],
         'nombre' => $row['nombre'],
