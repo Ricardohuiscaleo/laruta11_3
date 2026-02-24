@@ -215,7 +215,7 @@ try {
         $where_sql = implode(' OR ', $where_clauses);
 
         $batchMaxSql = "
-            SELECT ingredient_id, product_id, MAX(daily_total) as max_daily
+            SELECT ingredient_id, product_id, AVG(daily_total) as avg_daily
             FROM (
                 SELECT ingredient_id, product_id, DATE(created_at) as day, SUM(ABS(quantity)) as daily_total
                 FROM inventory_transactions
@@ -231,7 +231,7 @@ try {
         $batchStmt->execute($params);
         while ($row = $batchStmt->fetch(PDO::FETCH_ASSOC)) {
             $key = $row['ingredient_id'] ? "ing_" . $row['ingredient_id'] : "prod_" . $row['product_id'];
-            $max_data_map[$key] = floatval($row['max_daily']);
+            $max_data_map[$key] = floatval($row['avg_daily']);
         }
     }
 

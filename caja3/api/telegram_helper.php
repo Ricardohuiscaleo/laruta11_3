@@ -127,7 +127,7 @@ function generateInventoryReport($pdo)
         }
         $where_sql = implode(' OR ', $where_clauses);
         $batchMaxSql = "
-            SELECT ingredient_id, product_id, MAX(daily_total) as max_daily
+            SELECT ingredient_id, product_id, AVG(daily_total) as avg_daily
             FROM (
                 SELECT ingredient_id, product_id, DATE(created_at) as day, SUM(ABS(quantity)) as daily_total
                 FROM inventory_transactions
@@ -142,7 +142,7 @@ function generateInventoryReport($pdo)
         $batchStmt->execute($params);
         while ($row = $batchStmt->fetch(PDO::FETCH_ASSOC)) {
             $key = $row['ingredient_id'] ? "ing_" . $row['ingredient_id'] : "prod_" . $row['product_id'];
-            $max_data_map[$key] = floatval($row['max_daily']);
+            $max_data_map[$key] = floatval($row['avg_daily']);
         }
     }
 
@@ -185,10 +185,10 @@ function generateInventoryReport($pdo)
     foreach ($all_items as $item) {
         $line = " *" . $item['name'] . "*: " . $formatVal($item['stock_norm'], $item['unit']);
         if ($item['criticidad'] == 2) {
-            $critical_items[] = "🔴" . $line . " (Max: " . $formatVal($item['max_daily'], $item['unit']) . ")";
+            $critical_items[] = "🔴" . $line . " (Prom: " . $formatVal($item['max_daily'], $item['unit']) . ")";
         }
         elseif ($item['criticidad'] == 1) {
-            $low_items[] = "🟡" . $line;
+            $low_items[] = "🟡" . $line . " (Prom: " . $formatVal($item['max_daily'], $item['unit']) . ")";
         }
         else {
             $healthy_items[] = "🟢" . $line;
@@ -196,20 +196,20 @@ function generateInventoryReport($pdo)
     }
 
     $msg = "📊 *REPORTE DE INVENTARIO Y VENTAS*\n";
-    $msg .= "🕒 *Turno:* " . $shift['label'] . "\n";
+    $msg .= "🕒 *Turno:* " . $shift['label'] . " (Uso Promedio)\n";
     $msg .= "------------------------------------------\n";
     $msg .= "💰 *Ventas del turno:* $" . number_format($salesStats['total'] ?: 0, 0, ',', '.') . " (" . ($salesStats['count'] ?: 0) . " pedidos)\n\n";
 
     if (!empty($critical_items)) {
-        $msg .= "🔥 *CRÍTICO (Stock < 1 día):*\n" . implode("\n", $critical_items) . "\n\n";
+        $msg .= "🔥 *CRÍTICO (Stock < Promedio Diario):*\n" . implode("\n", $critical_items) . "\n\n";
     }
 
     if (!empty($low_items)) {
-        $msg .= "⚠️ *BAJO (Stock < 3 días):*\n" . implode("\n", $low_items) . "\n\n";
+        $msg .= "⚠️ *BAJO (Stock < 3x Promedio):*\n" . implode("\n", $low_items) . "\n\n";
     }
 
     if (empty($critical_items) && empty($low_items)) {
-        $msg .= "✅ *Todo el stock se encuentra en niveles saludables.*\n";
+        $msg .= "✅ *Todo el stock se encuentra en niveles saludables (Promedio).* \n";
     }
 
     $msg .= "📅 " . date('d-m-Y H:i');
@@ -224,7 +224,7 @@ function generateInventoryReport($pdo)
  * Genera un reporte resumido del inventario actual de todos los ingredientes y productos con stock,
  * agrupados por categorías para mejor lectura.
  */
-function generateGeneralInventoryReport($pdo)
+function generateGeneralInventoryReport($pdo, $onlyCritical = false)
 {
     // 1. Obtener todos los ingredientes activos con su categoría
     $sqlIng = "SELECT id, name, current_stock as stock, unit, category FROM ingredients WHERE is_active = 1 ORDER BY category ASC, name ASC";
@@ -280,7 +280,7 @@ function generateGeneralInventoryReport($pdo)
         }
         $where_sql = implode(' OR ', $where_clauses);
         $batchMaxSql = "
-            SELECT ingredient_id, product_id, MAX(daily_total) as max_daily
+            SELECT ingredient_id, product_id, AVG(daily_total) as avg_daily
             FROM (
                 SELECT ingredient_id, product_id, DATE(created_at) as day, SUM(ABS(quantity)) as daily_total
                 FROM inventory_transactions
@@ -295,7 +295,7 @@ function generateGeneralInventoryReport($pdo)
         $batchStmt->execute($params);
         while ($row = $batchStmt->fetch(PDO::FETCH_ASSOC)) {
             $key = $row['ingredient_id'] ? "ing_" . $row['ingredient_id'] : "prod_" . $row['product_id'];
-            $max_data_map[$key] = floatval($row['max_daily']);
+            $max_data_map[$key] = floatval($row['avg_daily']);
         }
     }
 
@@ -322,23 +322,35 @@ function generateGeneralInventoryReport($pdo)
 
         $item['max_daily'] = $maxVal;
         $item['stock_norm'] = $stock;
-        $item['criticidad'] = ($maxVal > 0 && $stock < $maxVal) || ($maxVal == 0 && $stock <= 0) ? 2 : (($maxVal > 0 && $stock < $maxVal * 3) ? 1 : 0);
+        // Criticidad basada en promedio
+        $crit = ($maxVal > 0 && $stock < $maxVal) || ($maxVal == 0 && $stock <= 0) ? 2 : (($maxVal > 0 && $stock < $maxVal * 3) ? 1 : 0);
+        
+        if ($onlyCritical && $crit == 0) continue;
 
+        $item['criticidad'] = $crit;
+        
         $catName = $item['category'];
-        if (!isset($grouped[$catName]))
-            $grouped[$catName] = [];
+        if (!isset($grouped[$catName])) $grouped[$catName] = [];
         $grouped[$catName][] = $item;
     }
 
     // 5. Formatear Mensaje
-    $msg = "📋 *INVENTARIO GENERAL POR CATEGORÍA*\n";
+    $title = $onlyCritical ? "⚠️ *INVENTARIO CRÍTICO (Faltantes)*" : "📋 *INVENTARIO GENERAL (Proximidad)*";
+    $msg = $title . "\n";
+    $msg .= "_(Basado en promedio diario de 30 días)_\n";
     $msg .= "------------------------------------------\n";
 
     $formatVal = function ($val, $unit) {
         return $unit === 'g' && $val >= 1000 ? number_format($val / 1000, 1) . "kg" : round($val) . $unit;
     };
 
-    // Ordenar categorías (Bebidas y Carnes primero por ejemplo, o alfabético)
+    if (empty($grouped)) {
+        if ($onlyCritical) {
+            return "✅ *No hay items críticos actualmente (Stock > Promedio Diario).* \n📅 " . date('d-m-Y H:i');
+        }
+        return "❌ No se encontraron datos de inventario.";
+    }
+
     ksort($grouped);
 
     foreach ($grouped as $catName => $items) {
@@ -355,8 +367,7 @@ function generateGeneralInventoryReport($pdo)
         foreach ($items as $item) {
             $emoji = $item['criticidad'] == 2 ? "🔴" : ($item['criticidad'] == 1 ? "🟡" : "🟢");
             $msg .= "  {$emoji} *{$item['name']}*: " . $formatVal($item['stock_norm'], $item['unit']);
-            if ($item['criticidad'] == 2)
-                $msg .= " (Max: " . $formatVal($item['max_daily'], $item['unit']) . ")";
+            if ($item['criticidad'] >= 1) $msg .= " (Prom: " . $formatVal($item['max_daily'], $item['unit']) . ")";
             $msg .= "\n";
         }
     }

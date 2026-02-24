@@ -76,6 +76,7 @@ if ($chatId != $authorizedChatId) {
 // Definir Botones
 $mainButtons = [
     [['text' => '📊 Reporte del Turno', 'callback_data' => '/reporte']],
+    [['text' => '⚠️ Inventario Crítico', 'callback_data' => '/critico']],
     [['text' => '📋 Inventario General', 'callback_data' => '/inventario']]
 ];
 
@@ -100,12 +101,25 @@ switch (strtolower(trim($text))) {
         }
         break;
 
+    case '/critico':
+    case 'critico':
+        if (!$isCallback)
+            sendTelegramMessage($token, $chatId, "⏳ Filtrando items críticos...");
+        try {
+            $report = generateGeneralInventoryReport($pdo, true);
+            sendTelegramMessage($token, $chatId, $report, $mainButtons);
+        }
+        catch (Exception $e) {
+            logToTelegram($token, $chatId, "❌ Error Críticos: " . $e->getMessage());
+        }
+        break;
+
     case '/inventario':
     case 'inventario':
         if (!$isCallback)
             sendTelegramMessage($token, $chatId, "⏳ Consultando inventario general...");
         try {
-            $report = generateGeneralInventoryReport($pdo);
+            $report = generateGeneralInventoryReport($pdo, false);
 
             // Si el mensaje es muy largo, Telegram falla. Dividir si es necesario.
             if (strlen($report) > 4000) {
