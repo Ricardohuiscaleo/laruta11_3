@@ -146,6 +146,17 @@ function generateInventoryReport($pdo)
         }
     }
 
+    $calcCrit = function ($stock, $avg) {
+        if ($avg > 0) {
+            if ($stock < $avg)
+                return 2; // Rojo: Menos de 1 día
+            if ($stock < $avg * 3)
+                return 1; // Amarillo: Menos de 3 días
+            return 0; // Verde
+        }
+        return ($stock < 0) ? 2 : 0; // Si no se vende, solo rojo si es negativo (error data)
+    };
+
     // 5. Generar Bloques de Mensaje
     $all_items = [];
     foreach ($ingredient_consumption as &$ing) {
@@ -163,7 +174,7 @@ function generateInventoryReport($pdo)
 
         $ing['max_daily'] = $maxDaily;
         $ing['stock_norm'] = $stock;
-        $ing['criticidad'] = ($maxDaily > 0 && $stock < $maxDaily) || ($maxDaily == 0 && $stock <= 0) ? 2 : (($maxDaily > 0 && $stock < $maxDaily * 3) ? 1 : 0);
+        $ing['criticidad'] = $calcCrit($stock, $maxDaily);
         $all_items[] = $ing;
     }
 
@@ -322,15 +333,23 @@ function generateGeneralInventoryReport($pdo, $onlyCritical = false)
 
         $item['max_daily'] = $maxVal;
         $item['stock_norm'] = $stock;
-        // Criticidad basada en promedio
-        $crit = ($maxVal > 0 && $stock < $maxVal) || ($maxVal == 0 && $stock <= 0) ? 2 : (($maxVal > 0 && $stock < $maxVal * 3) ? 1 : 0);
-        
-        if ($onlyCritical && $crit == 0) continue;
+
+        // Criticidad basada en promedio (Calculado arriba en el script si estuviera disponible, pero lo re-definimos o usamos la lógica)
+        if ($maxVal > 0) {
+            $crit = ($stock < $maxVal) ? 2 : (($stock < $maxVal * 3) ? 1 : 0);
+        }
+        else {
+            $crit = ($stock < 0) ? 2 : 0;
+        }
+
+        if ($onlyCritical && $crit == 0)
+            continue;
 
         $item['criticidad'] = $crit;
-        
+
         $catName = $item['category'];
-        if (!isset($grouped[$catName])) $grouped[$catName] = [];
+        if (!isset($grouped[$catName]))
+            $grouped[$catName] = [];
         $grouped[$catName][] = $item;
     }
 
@@ -367,7 +386,8 @@ function generateGeneralInventoryReport($pdo, $onlyCritical = false)
         foreach ($items as $item) {
             $emoji = $item['criticidad'] == 2 ? "🔴" : ($item['criticidad'] == 1 ? "🟡" : "🟢");
             $msg .= "  {$emoji} *{$item['name']}*: " . $formatVal($item['stock_norm'], $item['unit']);
-            if ($item['criticidad'] >= 1) $msg .= " (Prom: " . $formatVal($item['max_daily'], $item['unit']) . ")";
+            if ($item['criticidad'] >= 1)
+                $msg .= " (Prom: " . $formatVal($item['max_daily'], $item['unit']) . ")";
             $msg .= "\n";
         }
     }

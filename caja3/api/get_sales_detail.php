@@ -290,8 +290,19 @@ try {
         $maxB = floatval($b['max_daily_consumption']);
 
         // Calcular nivel de criticidad (2: Rojo, 1: Amarillo, 0: Verde)
-        $critA = ($maxA > 0 && $stockA < $maxA) || ($maxA == 0 && $stockA <= 0) ? 2 : (($maxA > 0 && $stockA < $maxA * 3) ? 1 : 0);
-        $critB = ($maxB > 0 && $stockB < $maxB) || ($maxB == 0 && $stockB <= 0) ? 2 : (($maxB > 0 && $stockB < $maxB * 3) ? 1 : 0);
+        if ($maxA > 0) {
+            $critA = ($stockA < $maxA) ? 2 : (($stockA < $maxA * 3) ? 1 : 0);
+        }
+        else {
+            $critA = ($stockA < 0) ? 2 : 0;
+        }
+
+        if ($maxB > 0) {
+            $critB = ($stockB < $maxB) ? 2 : (($stockB < $maxB * 3) ? 1 : 0);
+        }
+        else {
+            $critB = ($stockB < 0) ? 2 : 0;
+        }
 
         if ($critA !== $critB) {
             return $critB <=> $critA;
