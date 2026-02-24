@@ -402,6 +402,51 @@ export default function VentasDetalle() {
                           <div className="text-xs text-gray-600">${Math.round(item.product_price || 0).toLocaleString('es-CL')}</div>
                         </div>
                       </div>
+                      {(() => {
+                        try {
+                          const combo = typeof item.combo_data === 'string' ? JSON.parse(item.combo_data) : item.combo_data;
+                          if (!combo) return null;
+
+                          return (
+                            <div className="mt-1 space-y-1">
+                              {/* Secciones del combo (ej: Bebidas) */}
+                              {combo.selections && Object.entries(combo.selections).map(([group, selection], idx) => {
+                                // Caso 1: Una selección única (ej: Bebidas: {id: 99, name: "Coca-Cola"})
+                                if (selection && typeof selection === 'object' && !Array.isArray(selection) && selection.name) {
+                                  return (
+                                    <div key={idx} className="flex items-center gap-1 text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded w-fit">
+                                      <Tag size={10} />
+                                      <span className="font-semibold">{group}:</span>
+                                      <span>{selection.name}</span>
+                                    </div>
+                                  );
+                                }
+                                // Caso 2: Múltiples selecciones (ej: Bebidas: [{name: "Coca-Cola"}, {name: "Fanta"}])
+                                if (Array.isArray(selection)) {
+                                  return selection.map((s, sIdx) => (
+                                    <div key={`${idx}-${sIdx}`} className="flex items-center gap-1 text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded w-fit">
+                                      <Tag size={10} />
+                                      <span className="font-semibold">{group}:</span>
+                                      <span>{s.name}</span>
+                                    </div>
+                                  ));
+                                }
+                                return null;
+                              })}
+
+                              {/* Personalizaciones del Item */}
+                              {combo.customizations && combo.customizations.length > 0 && (
+                                <div className="text-[10px] text-orange-700 bg-orange-50 px-2 py-0.5 rounded flex items-center gap-1 w-fit border border-orange-100 italic">
+                                  <Edit size={10} />
+                                  <span>{combo.customizations.join(', ')}</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        } catch (e) {
+                          return null;
+                        }
+                      })()}
                       {item.ingredients?.length > 0 && (
                         <IngredientToggle ingredients={item.ingredients} />
                       )}
