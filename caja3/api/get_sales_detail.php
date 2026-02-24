@@ -108,13 +108,18 @@ try {
         
         // Agrupar transacciones por order_item_id
         $trans_by_item = [];
+        $trans_unknown = [];
         foreach ($transactions as $trans) {
-            $item_id = $trans['order_item_id'] ?? 'unknown';
-            if (!isset($trans_by_item[$item_id])) $trans_by_item[$item_id] = [];
-            $trans_by_item[$item_id][] = $trans;
+            $item_id = $trans['order_item_id'];
+            if ($item_id !== null) {
+                if (!isset($trans_by_item[$item_id])) $trans_by_item[$item_id] = [];
+                $trans_by_item[$item_id][] = $trans;
+            } else {
+                $trans_unknown[] = $trans;
+            }
         }
         
-        // Asignar ingredientes a cada item (agrupados por nombre dentro del item)
+        // Asignar ingredientes a cada item (solo si tiene order_item_id propio)
         foreach ($order['items'] as &$item) {
             $item_trans = $trans_by_item[$item['id']] ?? [];
             $ing_map = [];
@@ -131,8 +136,18 @@ try {
         }
         unset($item);
         
-        // Consumo global (para stats) y order_ingredients vacío (ya no se usa)
-        $order['order_ingredients'] = [];
+        // Transacciones sin order_item_id → mostrar a nivel de orden
+        $order_ing_map = [];
+        foreach ($trans_unknown as $trans) {
+            $qtyUsed = abs(floatval($trans['quantity']));
+            $unit = $trans['unit'];
+            if ($unit === 'g' && $qtyUsed < 1) $qtyUsed *= 1000;
+            elseif ($unit === 'kg') { $qtyUsed *= 1000; $unit = 'g'; }
+            $k = $trans['ingredient_name'];
+            if (!isset($order_ing_map[$k])) $order_ing_map[$k] = ['ingredient_name' => $k, 'quantity_needed' => 0, 'unit' => $unit];
+            $order_ing_map[$k]['quantity_needed'] += $qtyUsed;
+        }
+        $order['order_ingredients'] = array_values($order_ing_map);
         foreach ($transactions as $trans) {
             $qtyUsed = abs(floatval($trans['quantity']));
             $unit = $trans['unit'];

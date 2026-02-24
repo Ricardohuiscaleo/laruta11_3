@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, BarChart3, Search, Banknote, CreditCard, Smartphone, Truck, Clock, User, Phone, MessageCircle, MapPin, ShoppingCart, FlaskConical, Store, Sparkles, Tag, Gift, MessageSquare, Edit, Trash2, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Bike, Home } from 'lucide-react';
 
 // Componente minimalista para ingredientes colapsables
-function IngredientToggle({ ingredients }) {
+function IngredientToggle({ ingredients, label }) {
   const [isOpen, setIsOpen] = useState(false);
   
   return (
@@ -12,7 +12,7 @@ function IngredientToggle({ ingredients }) {
         className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
       >
         {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        <span>Ingredientes ({ingredients.length})</span>
+        <span>{label || `Ingredientes (${ingredients.length})`}</span>
       </button>
       {isOpen && (
         <div className="ml-4 mt-1 text-xs text-gray-500">
@@ -329,7 +329,11 @@ export default function VentasDetalle() {
                       )}
                     </div>
                   ))}
-                  {/* order_ingredients ya no se usa */}
+                  {order.order_ingredients?.length > 0 && (
+                    <div style={{marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #e5e7eb'}}>
+                      <IngredientToggle ingredients={order.order_ingredients} label="Ingredientes totales (orden antigua)" />
+                    </div>
+                  )}
                 </div>
               </div>
             ))
