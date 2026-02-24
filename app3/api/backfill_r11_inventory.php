@@ -3,7 +3,7 @@
 // Ejecutar UNA VEZ para generar transacciones de inventario de órdenes R11- sin inventario
 
 $config_paths = [
-    __DIR__ . '/config.php',
+    __DIR__ . '/../config.php',
     __DIR__ . '/../config.php',
     __DIR__ . '/../../config.php',
 ];
@@ -13,7 +13,7 @@ foreach ($config_paths as $path) {
 }
 if (!$config) die("Config no encontrado\n");
 
-require_once __DIR__ . '/api/process_sale_inventory_fn.php';
+require_once __DIR__ . '/process_sale_inventory_fn.php';
 
 $pdo = new PDO(
     "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
