@@ -4,13 +4,53 @@
  * Returns the formatted report string.
  */
 
+/**
+ * Detecta el rango del turno actual basado en la hora de Chile (UTC-3).
+ * El turno va desde las 17:30 de un día hasta las 04:00 del día siguiente.
+ */
+function getCurrentShiftRange()
+{
+    // Establecer zona horaria de Chile para los cálculos
+    $tz = new DateTimeZone('America/Santiago');
+    $now = new DateTime('now', $tz);
+    $currentHour = (int)$now->format('H');
+    $currentMinute = (int)$now->format('i');
+
+    // Si es entre las 00:00 y las 04:00, estamos en la segunda parte del turno que empezó ayer
+    if ($currentHour < 4) {
+        $startDate = (clone $now)->modify('-1 day')->format('Y-m-d 17:30:00');
+        $endDate = $now->format('Y-m-d 04:00:00');
+    }
+    // Si es después de las 17:30, estamos en la primera parte del turno de hoy
+    else if ($currentHour > 17 || ($currentHour == 17 && $currentMinute >= 30)) {
+        $startDate = $now->format('Y-m-d 17:30:00');
+        $endDate = (clone $now)->modify('+1 day')->format('Y-m-d 04:00:00');
+    }
+    // En el "tiempo muerto" (04:00 a 17:30), mostramos el último turno completado
+    else {
+        $startDate = (clone $now)->modify('-1 day')->format('Y-m-d 17:30:00');
+        $endDate = $now->format('Y-m-d 04:00:00');
+    }
+
+    // Convertir a UTC para la base de datos (Chile UTC-3 -> UTC: sumar 3 horas)
+    $startUTC = date('Y-m-d H:i:s', strtotime($startDate . ' + 3 hours'));
+    $endUTC = date('Y-m-d H:i:s', strtotime($endDate . ' + 3 hours'));
+
+    return [
+        'start' => $startUTC,
+        'end' => $endUTC,
+        'label' => date('d/m H:i', strtotime($startDate)) . " al " . date('d/m H:i', strtotime($endDate))
+    ];
+}
+
 function generateInventoryReport($pdo)
 {
-    // 1. Rango de fechas (Hoy)
-    $startDate = date('Y-m-d 00:00:00');
-    $endDate = date('Y-m-d 23:59:59');
+    // 1. Obtener Rango del Turno
+    $shift = getCurrentShiftRange();
+    $startDate = $shift['start'];
+    $endDate = $shift['end'];
 
-    // 2. Ventas del día
+    // 2. Ventas del turno
     $salesSql = "SELECT COUNT(*) as count, SUM(installment_amount) as total 
                  FROM tuu_orders 
                  WHERE created_at >= ? AND created_at < ? 
@@ -20,7 +60,7 @@ function generateInventoryReport($pdo)
     $stmt->execute([$startDate, $endDate]);
     $salesStats = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // 3. Consumo de ingredientes del día
+    // 3. Consumo de ingredientes del turno
     $ordersSql = "SELECT order_number FROM tuu_orders 
                   WHERE created_at >= ? AND created_at < ? 
                   AND payment_status = 'paid'
@@ -140,8 +180,9 @@ function generateInventoryReport($pdo)
     }
 
     $msg = "📊 *REPORTE DE INVENTARIO Y VENTAS*\n";
+    $msg .= "🕒 *Turno:* " . $shift['label'] . "\n";
     $msg .= "------------------------------------------\n";
-    $msg .= "💰 *Ventas hoy:* $" . number_format($salesStats['total'] ?: 0, 0, ',', '.') . " (" . ($salesStats['count'] ?: 0) . " pedidos)\n\n";
+    $msg .= "💰 *Ventas del turno:* $" . number_format($salesStats['total'] ?: 0, 0, ',', '.') . " (" . ($salesStats['count'] ?: 0) . " pedidos)\n\n";
 
     if (!empty($critical_items)) {
         $msg .= "🔥 *CRÍTICO (Stock < 1 día):*\n" . implode("\n", $critical_items) . "\n\n";
