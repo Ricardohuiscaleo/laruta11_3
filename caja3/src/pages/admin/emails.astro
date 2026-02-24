@@ -324,6 +324,10 @@
                                 class="flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                                 ⚠️ Cobrar
                             </button>
+                            <button data-action="whatsapp" data-phone="${user.telefono || ''}" data-nombre="${user.nombre}" data-monto="${user.saldo_pagar}" data-grado="${user.grado_militar || ''}"
+                                class="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                💬 WhatsApp
+                            </button>
                             <button data-action="payManual" data-user-id="${user.id}" data-user-name="${user.nombre}" data-amount="${user.credito_usado}"
                                 class="flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                                 💰 Pagar
@@ -349,6 +353,17 @@
             if (action === 'preview' && userId) previewEmail(parseInt(userId));
             if (action === 'send' && userId) sendEmail(parseInt(userId));
             if (action === 'payManual') openPaymentModal(btn);
+            if (action === 'whatsapp') {
+                const phone = btn.dataset.phone?.replace(/[^0-9]/g, '');
+                const nombre = btn.dataset.nombre;
+                const monto = parseInt(btn.dataset.monto).toLocaleString('es-CL');
+                const grado = btn.dataset.grado ? btn.dataset.grado + ' ' : '';
+                const msg = `🔔 *Recordatorio de Pago - La Ruta 11*\n\nHola ${grado}${nombre} 👋\n\nTe informamos que tienes un saldo pendiente en tu crédito RL6:\n\n💰 *Monto a pagar: $${monto}*\n📅 Fecha límite: 21 de cada mes\n\nPuedes pagar fácilmente desde la app:\n👉 app.laruta11.cl → Perfil → Crédito → Pagar\n\n_La Ruta 11 SpA_`;
+                const url = phone
+                    ? `https://wa.me/56${phone}?text=${encodeURIComponent(msg)}`
+                    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+                window.open(url, '_blank');
+            }
             if (action === 'closePayment') closePaymentModal();
             if (action === 'confirmPayment') processManualPayment();
         });

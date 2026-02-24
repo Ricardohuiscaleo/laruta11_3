@@ -22,7 +22,7 @@ $fin_ciclo_vencido = $dia_21_mes_actual;
 
 $query = "
     SELECT 
-        u.id, u.nombre, u.email, u.grado_militar, u.unidad_trabajo,
+        u.id, u.nombre, u.email, u.telefono, u.grado_militar, u.unidad_trabajo,
         u.limite_credito, u.credito_usado,
         (u.limite_credito - u.credito_usado) as credito_disponible,
         u.fecha_ultimo_pago,
@@ -53,6 +53,7 @@ while ($row = $result->fetch_assoc()) {
         'id' => $row['id'],
         'nombre' => $row['nombre'],
         'email' => $row['email'],
+        'telefono' => $row['telefono'],
         'grado_militar' => $row['grado_militar'],
         'unidad_trabajo' => $row['unidad_trabajo'],
         'credito_total' => floatval($row['limite_credito']),
