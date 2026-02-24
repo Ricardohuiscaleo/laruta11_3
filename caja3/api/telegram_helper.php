@@ -147,14 +147,13 @@ function generateInventoryReport($pdo)
     }
 
     // 5. Generar Bloques de Mensaje
-    $critical_items = [];
-    $low_items = [];
-
+    $all_items = [];
     foreach ($ingredient_consumption as &$ing) {
         $key = $ing['ingredient_id'] ? "ing_" . $ing['ingredient_id'] : "prod_" . $ing['product_id'];
         $maxDaily = $max_data_map[$key] ?? 0;
 
         $stock = floatval($ing['stock_actual']);
+        // Normalización para el cálculo
         if ($ing['unit'] === 'g') {
             if ($stock < 100 && $stock > 0)
                 $stock *= 1000;
@@ -162,20 +161,37 @@ function generateInventoryReport($pdo)
                 $maxDaily *= 1000;
         }
 
-        $formatVal = function ($val, $unit) {
-            return $unit === 'g' && $val >= 1000 ? number_format($val / 1000, 1) . "kg" : round($val) . $unit;
-        };
+        $ing['max_daily'] = $maxDaily;
+        $ing['stock_norm'] = $stock;
+        $ing['criticidad'] = ($maxDaily > 0 && $stock < $maxDaily) || ($maxDaily == 0 && $stock <= 0) ? 2 : (($maxDaily > 0 && $stock < $maxDaily * 3) ? 1 : 0);
+        $all_items[] = $ing;
+    }
 
-        if ($maxDaily > 0) {
-            if ($stock < $maxDaily) {
-                $critical_items[] = "🔴 *" . $ing['name'] . "*: " . $formatVal($stock, $ing['unit']) . " (Max: " . $formatVal($maxDaily, $ing['unit']) . ")";
-            }
-            elseif ($stock < ($maxDaily * 3)) {
-                $low_items[] = "🟡 *" . $ing['name'] . "*: " . $formatVal($stock, $ing['unit']);
-            }
+    // Ordenar por criticidad
+    usort($all_items, function ($a, $b) {
+        if ($a['criticidad'] != $b['criticidad'])
+            return $b['criticidad'] - $a['criticidad'];
+        return strcmp($a['name'], $b['name']);
+    });
+
+    $critical_items = [];
+    $low_items = [];
+    $healthy_items = [];
+
+    $formatVal = function ($val, $unit) {
+        return $unit === 'g' && $val >= 1000 ? number_format($val / 1000, 1) . "kg" : round($val) . $unit;
+    };
+
+    foreach ($all_items as $item) {
+        $line = " *" . $item['name'] . "*: " . $formatVal($item['stock_norm'], $item['unit']);
+        if ($item['criticidad'] == 2) {
+            $critical_items[] = "🔴" . $line . " (Max: " . $formatVal($item['max_daily'], $item['unit']) . ")";
         }
-        elseif ($stock <= 0) {
-            $critical_items[] = "🔴 *" . $ing['name'] . "*: SIN STOCK";
+        elseif ($item['criticidad'] == 1) {
+            $low_items[] = "🟡" . $line;
+        }
+        else {
+            $healthy_items[] = "🟢" . $line;
         }
     }
 
@@ -201,7 +217,108 @@ function generateInventoryReport($pdo)
     return $msg;
 }
 
-function sendTelegramMessage($token, $chatId, $message)
+/**
+ * Genera un reporte resumido del inventario actual de todos los ingredientes y productos con stock.
+ */
+function generateGeneralInventoryReport($pdo)
+{
+    // 1. Obtener todos los ingredientes
+    $sqlIng = "SELECT id, name, current_stock as stock, unit FROM ingredients ORDER BY name ASC";
+    $ingredients = $pdo->query($sqlIng)->fetchAll(PDO::FETCH_ASSOC);
+
+    // 2. Obtener productos con stock (bebidas, etc) que no sean ingredientes
+    $sqlProd = "SELECT id, name, stock_quantity as stock, 'unit' as unit FROM products WHERE (is_ingredient = 0 OR is_ingredient IS NULL) AND stock_quantity IS NOT NULL ORDER BY name ASC";
+    $products = $pdo->query($sqlProd)->fetchAll(PDO::FETCH_ASSOC);
+
+    // Unificar
+    $all = [];
+    foreach ($ingredients as $i)
+        $all[] = ['name' => $i['name'], 'stock' => $i['stock'], 'unit' => $i['unit'], 'id' => $i['id'], 'type' => 'ing'];
+    foreach ($products as $p)
+        $all[] = ['name' => $p['name'], 'stock' => $p['stock'], 'unit' => $p['unit'], 'id' => $p['id'], 'type' => 'prod'];
+
+    // 3. Obtener Max Consumo para criticidad
+    $ing_ids = array_column($ingredients, 'id');
+    $prod_ids = array_column($products, 'id');
+    $max_data_map = [];
+
+    if (!empty($ing_ids) || !empty($prod_ids)) {
+        $where_clauses = [];
+        $params = [];
+        if (!empty($ing_ids)) {
+            $where_clauses[] = "ingredient_id IN (" . implode(',', array_fill(0, count($ing_ids), '?')) . ")";
+            $params = array_merge($params, array_values($ing_ids));
+        }
+        if (!empty($prod_ids)) {
+            $where_clauses[] = "product_id IN (" . implode(',', array_fill(0, count($prod_ids), '?')) . ")";
+            $params = array_merge($params, array_values($prod_ids));
+        }
+        $where_sql = implode(' OR ', $where_clauses);
+        $batchMaxSql = "
+            SELECT ingredient_id, product_id, MAX(daily_total) as max_daily
+            FROM (
+                SELECT ingredient_id, product_id, DATE(created_at) as day, SUM(ABS(quantity)) as daily_total
+                FROM inventory_transactions
+                WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                AND transaction_type = 'sale'
+                AND ($where_sql)
+                GROUP BY ingredient_id, product_id, DATE(created_at)
+            ) as daily_usage
+            GROUP BY ingredient_id, product_id
+        ";
+        $batchStmt = $pdo->prepare($batchMaxSql);
+        $batchStmt->execute($params);
+        while ($row = $batchStmt->fetch(PDO::FETCH_ASSOC)) {
+            $key = $row['ingredient_id'] ? "ing_" . $row['ingredient_id'] : "prod_" . $row['product_id'];
+            $max_data_map[$key] = floatval($row['max_daily']);
+        }
+    }
+
+    // 4. Calcular criticidad y ordenar
+    foreach ($all as &$item) {
+        $key = $item['type'] == 'ing' ? "ing_" . $item['id'] : "prod_" . $item['id'];
+        $maxVal = $max_data_map[$key] ?? 0;
+        $stock = floatval($item['stock']);
+
+        if ($item['unit'] === 'g') {
+            if ($stock < 100 && $stock > 0)
+                $stock *= 1000;
+            if ($maxVal < 100 && $maxVal > 0)
+                $maxVal *= 1000;
+        }
+
+        $item['max_daily'] = $maxVal;
+        $item['stock_norm'] = $stock;
+        $item['criticidad'] = ($maxVal > 0 && $stock < $maxVal) || ($maxVal == 0 && $stock <= 0) ? 2 : (($maxVal > 0 && $stock < $maxVal * 3) ? 1 : 0);
+    }
+
+    usort($all, function ($a, $b) {
+        if ($a['criticidad'] != $b['criticidad'])
+            return $b['criticidad'] - $a['criticidad'];
+        return strcmp($a['name'], $b['name']);
+    });
+
+    // 5. Formatear Mensaje
+    $msg = "📋 *INVENTARIO GENERAL (Full)*\n";
+    $msg .= "------------------------------------------\n";
+
+    $formatVal = function ($val, $unit) {
+        return $unit === 'g' && $val >= 1000 ? number_format($val / 1000, 1) . "kg" : round($val) . $unit;
+    };
+
+    foreach ($all as $item) {
+        $emoji = $item['criticidad'] == 2 ? "🔴" : ($item['criticidad'] == 1 ? "🟡" : "🟢");
+        $msg .= "{$emoji} *{$item['name']}*: " . $formatVal($item['stock_norm'], $item['unit']);
+        if ($item['criticidad'] == 2)
+            $msg .= " (Max: " . $formatVal($item['max_daily'], $item['unit']) . ")";
+        $msg .= "\n";
+    }
+
+    $msg .= "\n📅 " . date('d-m-Y H:i');
+    return $msg;
+}
+
+function sendTelegramMessage($token, $chatId, $message, $buttons = null)
 {
     $url = "https://api.telegram.org/bot{$token}/sendMessage";
     $data = [
@@ -209,6 +326,10 @@ function sendTelegramMessage($token, $chatId, $message)
         'text' => $message,
         'parse_mode' => 'Markdown'
     ];
+
+    if ($buttons) {
+        $data['reply_markup'] = json_encode(['inline_keyboard' => $buttons]);
+    }
 
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

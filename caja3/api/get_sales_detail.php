@@ -284,7 +284,21 @@ try {
     }
 
     uasort($ingredient_consumption, function ($a, $b) {
-        return $b['total'] <=> $a['total'];
+        $stockA = floatval($a['stock_actual']);
+        $maxA = floatval($a['max_daily_consumption']);
+        $stockB = floatval($b['stock_actual']);
+        $maxB = floatval($b['max_daily_consumption']);
+
+        // Calcular nivel de criticidad (2: Rojo, 1: Amarillo, 0: Verde)
+        $critA = ($maxA > 0 && $stockA < $maxA) || ($maxA == 0 && $stockA <= 0) ? 2 : (($maxA > 0 && $stockA < $maxA * 3) ? 1 : 0);
+        $critB = ($maxB > 0 && $stockB < $maxB) || ($maxB == 0 && $stockB <= 0) ? 2 : (($maxB > 0 && $stockB < $maxB * 3) ? 1 : 0);
+
+        if ($critA !== $critB) {
+            return $critB <=> $critA;
+        }
+
+        // Si tienen la misma criticidad, ordenar por nombre
+        return strcmp($a['name'], $b['name']);
     });
 
     echo json_encode([
