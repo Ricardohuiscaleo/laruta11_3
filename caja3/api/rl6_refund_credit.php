@@ -11,7 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Buscar config.php hasta 5 niveles
-function findConfig() {
+function findConfig()
+{
     $levels = ['', '../', '../../', '../../../', '../../../../', '../../../../../'];
     foreach ($levels as $level) {
         $configPath = __DIR__ . '/' . $level . 'config.php';
@@ -36,13 +37,14 @@ try {
         $config['app_db_user'],
         $config['app_db_pass'],
         $config['app_db_name']
-    );
+        );
     $conn->set_charset("utf8mb4");
-    
+
     if ($conn->connect_error) {
         throw new Exception('Error de conexión: ' . $conn->connect_error);
     }
-} catch (Exception $e) {
+}
+catch (Exception $e) {
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     exit;
 }
@@ -121,31 +123,34 @@ try {
         'inventory_restored' => $restoredCount
     ]);
 
-} catch (Exception $e) {
+}
+catch (Exception $e) {
     $conn->rollback();
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()
     ]);
-} finally {
+}
+finally {
     $conn->close();
 }
 
 function restoreInventory($conn, $order_number) {
     // Obtener todas las transacciones de venta de esta orden
     $stmt = $conn->prepare("
-        SELECT ingredient_id, product_id, quantity, unit, previous_stock, new_stock
+        SELECT ingredient_id, product_id, quantity, unit, previous_stock, new_stock, order_item_id
         FROM inventory_transactions 
         WHERE order_reference = ? AND transaction_type = 'sale'
     ");
     $stmt->bind_param("s", $order_number);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     $count = 0;
     while ($trans = $result->fetch_assoc()) {
         $restore_qty = abs($trans['quantity']);
-        
+        $order_item_id = $trans['order_item_id'];
+
         if ($trans['ingredient_id']) {
             // Devolver ingrediente
             $prev_stmt = $conn->prepare("SELECT current_stock FROM ingredients WHERE id = ?");
@@ -154,29 +159,30 @@ function restoreInventory($conn, $order_number) {
             $prev_result = $prev_stmt->get_result();
             $prev_stock = $prev_result->fetch_row()[0];
             $new_stock = $prev_stock + $restore_qty;
-            
+
             $update_stmt = $conn->prepare("UPDATE ingredients SET current_stock = ?, updated_at = NOW() WHERE id = ?");
             $update_stmt->bind_param("di", $new_stock, $trans['ingredient_id']);
             $update_stmt->execute();
-            
+
             // Registrar transacción de devolución
             $insert_stmt = $conn->prepare("
                 INSERT INTO inventory_transactions 
-                (transaction_type, ingredient_id, quantity, unit, previous_stock, new_stock, order_reference) 
-                VALUES ('return', ?, ?, ?, ?, ?, ?)
+                (transaction_type, ingredient_id, quantity, unit, previous_stock, new_stock, order_reference, order_item_id) 
+                VALUES ('return', ?, ?, ?, ?, ?, ?, ?)
             ");
-            $insert_stmt->bind_param("idsdds", 
-                $trans['ingredient_id'], 
-                $restore_qty, 
-                $trans['unit'], 
+            $insert_stmt->bind_param("idsddsi",
+                $trans['ingredient_id'],
+                $restore_qty,
+                $trans['unit'],
                 $prev_stock,
                 $new_stock,
-                $order_number
+                $order_number,
+                $order_item_id
             );
             $insert_stmt->execute();
             $count++;
-        } 
-        
+        }
+
         if ($trans['product_id']) {
             // Devolver producto
             $prev_stmt = $conn->prepare("SELECT stock_quantity FROM products WHERE id = ?");
@@ -185,29 +191,31 @@ function restoreInventory($conn, $order_number) {
             $prev_result = $prev_stmt->get_result();
             $prev_stock = $prev_result->fetch_row()[0];
             $new_stock = $prev_stock + $restore_qty;
-            
+
             $update_stmt = $conn->prepare("UPDATE products SET stock_quantity = ?, updated_at = NOW() WHERE id = ?");
             $update_stmt->bind_param("di", $new_stock, $trans['product_id']);
             $update_stmt->execute();
-            
+
             // Registrar transacción de devolución
             $insert_stmt = $conn->prepare("
                 INSERT INTO inventory_transactions 
-                (transaction_type, product_id, quantity, unit, previous_stock, new_stock, order_reference) 
-                VALUES ('return', ?, ?, 'unit', ?, ?, ?)
+                (transaction_type, product_id, quantity, unit, previous_stock, new_stock, order_reference, order_item_id) 
+                VALUES ('return', ?, ?, 'unit', ?, ?, ?, ?)
             ");
-            $insert_stmt->bind_param("iddds", 
-                $trans['product_id'], 
-                $restore_qty, 
+            $insert_stmt->bind_param("idddsi",
+                $trans['product_id'],
+                $restore_qty,
                 $prev_stock,
                 $new_stock,
-                $order_number
+                $order_number,
+                $order_item_id
             );
             $insert_stmt->execute();
             $count++;
         }
     }
-    
+
     return $count;
 }
+?>
 ?>
