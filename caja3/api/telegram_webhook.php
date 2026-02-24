@@ -77,7 +77,11 @@ if ($chatId != $authorizedChatId) {
 $mainButtons = [
     [['text' => '📊 Reporte del Turno', 'callback_data' => '/reporte']],
     [['text' => '⚠️ Inventario Crítico', 'callback_data' => '/critico']],
-    [['text' => '📋 Inventario General', 'callback_data' => '/inventario']]
+    [['text' => '📋 Inventario General', 'callback_data' => '/inventario']],
+    [
+        ['text' => '🛒 Comprar Ingredientes', 'callback_data' => '/comprar_ing'],
+        ['text' => '🥤 Comprar Bebidas', 'callback_data' => '/comprar_beb']
+    ]
 ];
 
 // 2. Manejar Comandos
@@ -104,7 +108,7 @@ switch (strtolower(trim($text))) {
     case '/critico':
     case 'critico':
         if (!$isCallback)
-            sendTelegramMessage($token, $chatId, "⏳ Filtrando items críticos...");
+            sendTelegramMessage($token, $chatId, "⏳ Filtrando items para reponer...");
         try {
             $report = generateGeneralInventoryReport($pdo, true);
             sendTelegramMessage($token, $chatId, $report, $mainButtons);
@@ -135,6 +139,32 @@ switch (strtolower(trim($text))) {
         }
         catch (Exception $e) {
             logToTelegram($token, $chatId, "❌ Error Inventario: " . $e->getMessage());
+        }
+        break;
+
+    case '/comprar_ing':
+    case 'comprar ingredientes':
+        if (!$isCallback)
+            sendTelegramMessage($token, $chatId, "⏳ Generando lista de compra de ingredientes...");
+        try {
+            $report = generateShoppingList($pdo, 'ingredientes');
+            sendTelegramMessage($token, $chatId, $report, $mainButtons);
+        }
+        catch (Exception $e) {
+            logToTelegram($token, $chatId, "❌ Error Compras Ing: " . $e->getMessage());
+        }
+        break;
+
+    case '/comprar_beb':
+    case 'comprar bebidas':
+        if (!$isCallback)
+            sendTelegramMessage($token, $chatId, "⏳ Generando lista de compra de bebidas...");
+        try {
+            $report = generateShoppingList($pdo, 'bebidas');
+            sendTelegramMessage($token, $chatId, $report, $mainButtons);
+        }
+        catch (Exception $e) {
+            logToTelegram($token, $chatId, "❌ Error Compras Beb: " . $e->getMessage());
         }
         break;
 

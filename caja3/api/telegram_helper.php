@@ -396,6 +396,114 @@ function generateGeneralInventoryReport($pdo, $onlyCritical = false)
     return $msg;
 }
 
+
+/**
+ * Genera una lista de compras sugerida.
+ * - Para 'ingredientes': items en 🔴 o 🟡. Calcula: (Promedio * 4) - Stock_Actual.
+ * - Para 'bebidas': items donde Stock < min_stock_level. Calcula: min_stock_level - Stock.
+ */
+function generateShoppingList($pdo, $type = 'ingredientes')
+{
+    $msg = "🛒 *LISTA DE COMPRA SUGERIDA (" . strtoupper($type) . ")*\n";
+    if ($type === 'ingredientes') {
+        $msg .= "_(Proyección para 4 días según consumo promedio)_\n";
+    }
+    else {
+        $msg .= "_(Reponer hasta nivel de stock mínimo)_\n";
+    }
+    $msg .= "------------------------------------------\n";
+
+    $itemsToBuy = [];
+
+    if ($type === 'ingredientes') {
+        // 1. Obtener ingredientes y su consumo promedio
+        $sql = "SELECT i.id, i.name, i.current_stock as stock, i.unit, i.category 
+                FROM ingredients i WHERE i.is_active = 1";
+        $ingredients = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+
+        $ing_ids = array_column($ingredients, 'id');
+        $avg_data = [];
+        if (!empty($ing_ids)) {
+            $batchAvgSql = "
+                SELECT ingredient_id, AVG(daily_total) as avg_daily
+                FROM (
+                    SELECT ingredient_id, DATE(created_at) as day, SUM(ABS(quantity)) as daily_total
+                    FROM inventory_transactions
+                    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                    AND transaction_type = 'sale'
+                    AND ingredient_id IN (" . implode(',', array_fill(0, count($ing_ids), '?')) . ")
+                    GROUP BY ingredient_id, DATE(created_at)
+                ) as daily_usage
+                GROUP BY ingredient_id
+            ";
+            $stmt = $pdo->prepare($batchAvgSql);
+            $stmt->execute($ing_ids);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $avg_data[$row['ingredient_id']] = floatval($row['avg_daily']);
+            }
+        }
+
+        foreach ($ingredients as $ing) {
+            $avg = $avg_data[$ing['id']] ?? 0;
+            $stock = floatval($ing['stock']);
+
+            // Lógica de criticidad para filtrar (Rojo < 1 prom, Amarillo < 3 prom)
+            $isCritical = ($avg > 0 && $stock < $avg * 3);
+            $isNegative = ($stock < 0);
+
+            if ($isCritical || $isNegative) {
+                $needed = ($avg * 4) - $stock;
+                if ($needed > 0) {
+                    $itemsToBuy[] = [
+                        'name' => $ing['name'],
+                        'buy' => $needed,
+                        'unit' => $ing['unit']
+                    ];
+                }
+            }
+        }
+    }
+    else {
+        // 2. Obtener productos (bebidas) comparando con min_stock_level
+        $sql = "SELECT name, stock_quantity as stock, min_stock_level 
+                FROM products 
+                WHERE is_active = 1 
+                AND (category_id = 5 OR stock_quantity < min_stock_level)";
+        $products = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($products as $p) {
+            $stock = floatval($p['stock']);
+            $min = floatval($p['min_stock_level']);
+            if ($stock < $min) {
+                $itemsToBuy[] = [
+                    'name' => $p['name'],
+                    'buy' => $min - $stock,
+                    'unit' => 'un'
+                ];
+            }
+        }
+    }
+
+    if (empty($itemsToBuy)) {
+        return "✅ *Tu stock actual es suficiente.* No se requieren compras urgentes para " . $type . ".";
+    }
+
+    $formatVal = function ($val, $unit) {
+        if ($unit === 'g' && $val >= 1000)
+            return number_format($val / 1000, 1) . "kg";
+        if ($unit === 'g')
+            return round($val) . "g";
+        return (fmod($val, 1) !== 0.0 ? number_format($val, 1) : round($val)) . $unit;
+    };
+
+    foreach ($itemsToBuy as $item) {
+        $msg .= "• *{$item['name']}*: Comprar " . $formatVal($item['buy'], $item['unit']) . "\n";
+    }
+
+    $msg .= "\n📅 " . date('d-m-Y H:i');
+    return $msg;
+}
+
 function sendTelegramMessage($token, $chatId, $message, $buttons = null)
 {
     $url = "https://api.telegram.org/bot{$token}/sendMessage";
