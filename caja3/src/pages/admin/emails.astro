@@ -452,11 +452,14 @@ _La Ruta 11 — Foodtruck_ ✨`;
                 }
 
                 if (pagaronEsteMes.length) {
+                    const totalPagado = pagaronEsteMes.reduce((s, u) => s + u.pagado_este_mes, 0);
                     lines.push(``, `*✅ Pagaron este mes*`);
                     pagaronEsteMes.forEach(u => {
                         const grado = u.grado_militar ? u.grado_militar + ' ' : '';
-                        lines.push(`- ${grado}${u.nombre} _(${u.fecha_ultimo_pago})_`);
+                        const monto = u.pagado_este_mes > 0 ? ` — $${u.pagado_este_mes.toLocaleString('es-CL')}` : '';
+                        lines.push(`- ${grado}${u.nombre} _(${u.fecha_ultimo_pago})_${monto}`);
                     });
+                    lines.push(`> *Total recaudado: $${totalPagado.toLocaleString('es-CL')}*`);
                 }
 
                 lines.push(``, `_La Ruta 11 — Foodtruck_ ✨`);

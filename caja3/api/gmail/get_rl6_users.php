@@ -31,7 +31,12 @@ $query = "
             AND DATE(t.created_at) >= '{$inicio_ciclo_vencido}' 
             AND DATE(t.created_at) <= '{$fin_ciclo_vencido}'
             THEN t.amount ELSE 0 
-        END), 0) as deuda_ciclo_vencido
+        END), 0) as deuda_ciclo_vencido,
+        COALESCE(SUM(CASE 
+            WHEN t.type = 'refund' 
+            AND DATE_FORMAT(t.created_at, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+            THEN t.amount ELSE 0 
+        END), 0) as pagado_este_mes
     FROM usuarios u
     LEFT JOIN rl6_credit_transactions t ON t.user_id = u.id
     WHERE u.es_militar_rl6 = 1 AND u.credito_aprobado = 1
@@ -61,6 +66,7 @@ while ($row = $result->fetch_assoc()) {
         'credito_disponible' => floatval($row['credito_disponible']),
         'saldo_pagar' => $deuda_ciclo_vencido,
         'fecha_ultimo_pago' => $fecha_pago,
+        'pagado_este_mes' => floatval($row['pagado_este_mes']),
         'es_moroso' => $es_moroso
     ];
 }
