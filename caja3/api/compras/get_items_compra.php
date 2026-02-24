@@ -2,10 +2,11 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Cache-Control');
-header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Access-Control-Allow-Headers: Content-Type, Cache-Control, Pragma');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0');
 header('Pragma: no-cache');
-header('Expires: 0');
+header('Expires: Mon, 26 Jul 1997 05:00:00 GMT'); // Fecha en el pasado
+header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
 
 $config_paths = [
     __DIR__ . '/../config.php',
@@ -33,8 +34,8 @@ try {
         "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
         $config['app_db_user'],
         $config['app_db_pass'],
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
 
     // Obtener ingredientes
     $stmt_ing = $pdo->query("
@@ -134,6 +135,7 @@ try {
 
     echo json_encode($items);
 
-} catch (Exception $e) {
+}
+catch (Exception $e) {
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }

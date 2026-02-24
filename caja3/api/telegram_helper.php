@@ -354,7 +354,7 @@ function generateGeneralInventoryReport($pdo, $onlyCritical = false)
     }
 
     // 5. Formatear Mensaje
-    $title = $onlyCritical ? "⚠️ *INVENTARIO CRÍTICO (Faltantes)*" : "📋 *INVENTARIO GENERAL (Proximidad)*";
+    $title = $onlyCritical ? "⚠️ *INVENTARIO CRÍTICO (Reponer)*" : "📋 *INVENTARIO GENERAL (Proximidad)*";
     $msg = $title . "\n";
     $msg .= "_(Basado en promedio diario de 30 días)_\n";
     $msg .= "------------------------------------------\n";
