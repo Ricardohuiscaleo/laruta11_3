@@ -417,8 +417,11 @@ _La Ruta 11 — Foodtruck_ ✨`;
                 if (!users.length) return alert('Cargando datos...');
                 const hoy = new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
                 const mesActual = new Date().toISOString().slice(0, 7);
+                const proximoMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 21)
+                    .toLocaleDateString('es-CL', { day: 'numeric', month: 'long' });
                 const morosos = users.filter(u => u.es_moroso);
                 const pagaronEsteMes = users.filter(u => !u.es_moroso && u.fecha_ultimo_pago?.startsWith(mesActual));
+                const conDeudaVigente = users.filter(u => !u.es_moroso && !u.fecha_ultimo_pago?.startsWith(mesActual) && u.credito_usado > 0);
                 const sinUso = users.filter(u => !u.es_moroso && u.credito_usado <= 0 && !u.fecha_ultimo_pago);
                 const totalDeuda = morosos.reduce((s, u) => s + u.saldo_pagar, 0);
                 const totalPagado = pagaronEsteMes.reduce((s, u) => s + u.pagado_este_mes, 0);
@@ -430,6 +433,7 @@ _La Ruta 11 — Foodtruck_ ✨`;
                 lines.push(`- Clientes activos: *${users.length}*`);
                 lines.push(`- Morosos: *${morosos.length}*`);
                 lines.push(`- Pagaron este mes: *${pagaronEsteMes.length}*`);
+                lines.push(`- Crédito vigente (cobrar 21/${proximoMes}): *${conDeudaVigente.length}*`);
                 lines.push(`- Sin uso de crédito: *${sinUso.length}*`);
                 lines.push(`- Total cobranza pendiente: *$${totalDeuda.toLocaleString('es-CL')}*`);
                 lines.push(`- Total recaudado este mes: *$${totalPagado.toLocaleString('es-CL')}*`);
@@ -447,10 +451,18 @@ _La Ruta 11 — Foodtruck_ ✨`;
                     pagaronEsteMes.forEach(u => {
                         const grado = u.grado_militar ? u.grado_militar + ' ' : '';
                         const monto = u.pagado_este_mes > 0 ? ` — $${u.pagado_este_mes.toLocaleString('es-CL')}` : '';
-                        const deuda = u.credito_usado > 0 ? ` _(debe $${u.credito_usado.toLocaleString('es-CL')})_` : '';
+                        const deuda = u.credito_usado > 0 ? ` _(cobrar el ${proximoMes} $${u.credito_usado.toLocaleString('es-CL')})_` : '';
                         lines.push(`- ${grado}${u.nombre} _(${u.fecha_ultimo_pago})_${monto}${deuda}`);
                     });
                     lines.push(`> *Total recaudado: $${totalPagado.toLocaleString('es-CL')}*`);
+                }
+
+                if (conDeudaVigente.length) {
+                    lines.push(``, `*🟡 Crédito vigente (cobrar el ${proximoMes})*`);
+                    conDeudaVigente.forEach(u => {
+                        const grado = u.grado_militar ? u.grado_militar + ' ' : '';
+                        lines.push(`- ${grado}${u.nombre}: $${u.credito_usado.toLocaleString('es-CL')}`);
+                    });
                 }
 
                 if (sinUso.length) {
