@@ -1,7 +1,7 @@
 <?php
 /**
  * Telegram Webhook Handler
- * Responds to commands and buttons
+ * Responds to commands and buttons with debug logging in chat
  */
 
 $config = require_once __DIR__ . '/../config.php';
@@ -10,6 +10,35 @@ require_once __DIR__ . '/telegram_helper.php';
 
 $token = $config['telegram_token'] ?? getenv('TELEGRAM_TOKEN');
 $authorizedChatId = $config['telegram_chat_id'] ?? getenv('TELEGRAM_CHAT_ID');
+
+// Función para loguear errores directamente al chat del usuario
+function logToTelegram($token, $chatId, $errorMsg)
+{
+    $debugMsg = "🔍 *LOG DE SISTEMA*:\n" . substr($errorMsg, 0, 3000);
+    $url = "https://api.telegram.org/bot{$token}/sendMessage";
+    $data = [
+        'chat_id' => $chatId,
+        'text' => $debugMsg,
+        'parse_mode' => 'Markdown'
+    ];
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_exec($ch);
+    curl_close($ch);
+}
+
+// Capturar errores fatales y enviarlos al chat
+register_shutdown_function(function () use ($token, $authorizedChatId) {
+    $error = error_get_last();
+    if ($error && ($error['type'] === E_ERROR || $error['type'] === E_PARSE || $error['type'] === E_CORE_ERROR || $error['type'] === E_COMPILE_ERROR)) {
+        logToTelegram($token, $authorizedChatId, "❌ FATAL ERROR: {$error['message']} en {$error['file']}:{$error['line']}");
+    }
+});
+
+set_exception_handler(function ($e) use ($token, $authorizedChatId) {
+    logToTelegram($token, $authorizedChatId, "❌ UNCAUGHT EXCEPTION: " . $e->getMessage() . "\nTrace: " . $e->getTraceAsString());
+});
 
 // Leer el JSON enviado por Telegram
 $content = file_get_contents("php://input");
@@ -39,7 +68,8 @@ if (!$chatId) {
 
 // 1. Validar Seguridad: Solo responder al dueño (Ricardo)
 if ($chatId != $authorizedChatId) {
-    sendTelegramMessage($token, $chatId, "🚫 No tienes autorización para usar este bot.");
+    // Si queremos debuggear intentos externos descomentar:
+    // logToTelegram($token, $authorizedChatId, "⚠️ Intento de acceso de ChatID desconocido: " . $chatId);
     exit;
 }
 
@@ -66,7 +96,7 @@ switch (strtolower(trim($text))) {
             sendTelegramMessage($token, $chatId, $report, $mainButtons);
         }
         catch (Exception $e) {
-            sendTelegramMessage($token, $chatId, "❌ Error: " . $e->getMessage());
+            logToTelegram($token, $chatId, "❌ Error Reporte: " . $e->getMessage());
         }
         break;
 
@@ -76,10 +106,21 @@ switch (strtolower(trim($text))) {
             sendTelegramMessage($token, $chatId, "⏳ Consultando inventario general...");
         try {
             $report = generateGeneralInventoryReport($pdo);
-            sendTelegramMessage($token, $chatId, $report, $mainButtons);
+
+            // Si el mensaje es muy largo, Telegram falla. Dividir si es necesario.
+            if (strlen($report) > 4000) {
+                $parts = str_split($report, 4000);
+                foreach ($parts as $p) {
+                    sendTelegramMessage($token, $chatId, $p);
+                }
+                sendTelegramMessage($token, $chatId, "✅ Fin de lista.", $mainButtons);
+            }
+            else {
+                sendTelegramMessage($token, $chatId, $report, $mainButtons);
+            }
         }
         catch (Exception $e) {
-            sendTelegramMessage($token, $chatId, "❌ Error: " . $e->getMessage());
+            logToTelegram($token, $chatId, "❌ Error Inventario: " . $e->getMessage());
         }
         break;
 
