@@ -416,9 +416,11 @@ _La Ruta 11 — Foodtruck_ ✨`;
                 menuDropdown.classList.add('hidden');
                 if (!users.length) return alert('Cargando datos...');
                 const hoy = new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+                const mesActual = new Date().toISOString().slice(0, 7);
                 const morosos = users.filter(u => u.es_moroso);
-                const alDia = users.filter(u => !u.es_moroso && u.credito_usado > 0);
-                const sinDeuda = users.filter(u => u.credito_usado <= 0);
+                const creditosActivos = users.filter(u => !u.es_moroso && u.credito_usado > 0);
+                const pagaronEsteMes = users.filter(u => !u.es_moroso && u.credito_usado <= 0 && u.fecha_ultimo_pago?.startsWith(mesActual));
+                const sinActividad = users.filter(u => !u.es_moroso && u.credito_usado <= 0 && !u.fecha_ultimo_pago?.startsWith(mesActual));
                 const totalDeuda = morosos.reduce((s, u) => s + u.saldo_pagar, 0);
                 const day = new Date().getDate();
                 const diasMora = Math.max(0, day - 21);
@@ -427,8 +429,9 @@ _La Ruta 11 — Foodtruck_ ✨`;
                 lines.push(`*Resumen General*`);
                 lines.push(`- Clientes activos: *${users.length}*`);
                 lines.push(`- Morosos: *${morosos.length}*`);
-                lines.push(`- Al día: *${alDia.length}*`);
-                lines.push(`- Sin deuda: *${sinDeuda.length}*`);
+                lines.push(`- Créditos activos: *${creditosActivos.length}*`);
+                lines.push(`- Pagaron este mes: *${pagaronEsteMes.length}*`);
+                lines.push(`- Sin actividad: *${sinActividad.length}*`);
                 lines.push(`- Total cobranza: *$${totalDeuda.toLocaleString('es-CL')}*`);
 
                 if (morosos.length) {
@@ -439,12 +442,20 @@ _La Ruta 11 — Foodtruck_ ✨`;
                     });
                 }
 
-                if (alDia.length) {
+                if (creditosActivos.length) {
                     lines.push(``, `*🟢 Créditos Activos*`);
-                    alDia.forEach(u => {
+                    creditosActivos.forEach(u => {
                         const grado = u.grado_militar ? u.grado_militar + ' ' : '';
                         const pago = u.fecha_ultimo_pago ? `últ. pago ${u.fecha_ultimo_pago}` : 'sin pagos';
                         lines.push(`- ${grado}${u.nombre}: $${u.credito_usado.toLocaleString('es-CL')} _(${pago})_`);
+                    });
+                }
+
+                if (pagaronEsteMes.length) {
+                    lines.push(``, `*✅ Pagaron este mes*`);
+                    pagaronEsteMes.forEach(u => {
+                        const grado = u.grado_militar ? u.grado_militar + ' ' : '';
+                        lines.push(`- ${grado}${u.nombre} _(${u.fecha_ultimo_pago})_`);
                     });
                 }
 
