@@ -468,7 +468,8 @@ function generateShoppingList($pdo, $type = 'ingredientes')
         $sql = "SELECT name, stock_quantity as stock, min_stock_level 
                 FROM products 
                 WHERE is_active = 1 
-                AND (category_id = 5 OR stock_quantity < min_stock_level)";
+                AND category_id = 5 
+                AND stock_quantity < min_stock_level";
         $products = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($products as $p) {
