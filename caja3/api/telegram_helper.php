@@ -222,12 +222,17 @@ function generateInventoryReport($pdo)
  */
 function generateGeneralInventoryReport($pdo)
 {
-    // 1. Obtener todos los ingredientes
-    $sqlIng = "SELECT id, name, current_stock as stock, unit FROM ingredients ORDER BY name ASC";
+    // 1. Obtener todos los ingredientes activos
+    $sqlIng = "SELECT id, name, current_stock as stock, unit FROM ingredients WHERE is_active = 1 ORDER BY name ASC";
     $ingredients = $pdo->query($sqlIng)->fetchAll(PDO::FETCH_ASSOC);
 
-    // 2. Obtener productos con stock (bebidas, etc) que no sean ingredientes
-    $sqlProd = "SELECT id, name, stock_quantity as stock, 'unit' as unit FROM products WHERE (is_ingredient = 0 OR is_ingredient IS NULL) AND stock_quantity IS NOT NULL ORDER BY name ASC";
+    // 2. Obtener productos con stock (habitualmente bebidas)
+    // Filtramos por category_id = 5 (Bebidas) o que tengan un stock definido mayor a 0
+    $sqlProd = "SELECT id, name, stock_quantity as stock, 'un' as unit 
+                FROM products 
+                WHERE is_active = 1 
+                AND (category_id = 5 OR stock_quantity > 0)
+                ORDER BY name ASC";
     $products = $pdo->query($sqlProd)->fetchAll(PDO::FETCH_ASSOC);
 
     // Unificar
