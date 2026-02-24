@@ -220,29 +220,49 @@ function generateInventoryReport($pdo)
 /**
  * Genera un reporte resumido del inventario actual de todos los ingredientes y productos con stock.
  */
+/**
+ * Genera un reporte resumido del inventario actual de todos los ingredientes y productos con stock,
+ * agrupados por categorías para mejor lectura.
+ */
 function generateGeneralInventoryReport($pdo)
 {
-    // 1. Obtener todos los ingredientes activos
-    $sqlIng = "SELECT id, name, current_stock as stock, unit FROM ingredients WHERE is_active = 1 ORDER BY name ASC";
+    // 1. Obtener todos los ingredientes activos con su categoría
+    $sqlIng = "SELECT id, name, current_stock as stock, unit, category FROM ingredients WHERE is_active = 1 ORDER BY category ASC, name ASC";
     $ingredients = $pdo->query($sqlIng)->fetchAll(PDO::FETCH_ASSOC);
 
-    // 2. Obtener productos con stock (habitualmente bebidas)
-    // Filtramos por category_id = 5 (Bebidas) o que tengan un stock definido mayor a 0
-    $sqlProd = "SELECT id, name, stock_quantity as stock, 'un' as unit 
-                FROM products 
-                WHERE is_active = 1 
-                AND (category_id = 5 OR stock_quantity > 0)
-                ORDER BY name ASC";
+    // 2. Obtener productos con stock (habitualmente bebidas) con el nombre de su categoría
+    $sqlProd = "SELECT p.id, p.name, p.stock_quantity as stock, 'un' as unit, c.name as category 
+                FROM products p
+                LEFT JOIN categories c ON p.category_id = c.id
+                WHERE p.is_active = 1 
+                AND (p.category_id = 5 OR p.stock_quantity > 0)
+                ORDER BY c.name ASC, p.name ASC";
     $products = $pdo->query($sqlProd)->fetchAll(PDO::FETCH_ASSOC);
 
-    // Unificar
+    // Unificar en una lista plana primero
     $all = [];
-    foreach ($ingredients as $i)
-        $all[] = ['name' => $i['name'], 'stock' => $i['stock'], 'unit' => $i['unit'], 'id' => $i['id'], 'type' => 'ing'];
-    foreach ($products as $p)
-        $all[] = ['name' => $p['name'], 'stock' => $p['stock'], 'unit' => $p['unit'], 'id' => $p['id'], 'type' => 'prod'];
+    foreach ($ingredients as $i) {
+        $all[] = [
+            'name' => $i['name'],
+            'stock' => $i['stock'],
+            'unit' => $i['unit'],
+            'category' => $i['category'] ?: 'Otros',
+            'id' => $i['id'],
+            'type' => 'ing'
+        ];
+    }
+    foreach ($products as $p) {
+        $all[] = [
+            'name' => $p['name'],
+            'stock' => $p['stock'],
+            'unit' => $p['unit'],
+            'category' => $p['category'] ?: 'Productos',
+            'id' => $p['id'],
+            'type' => 'prod'
+        ];
+    }
 
-    // 3. Obtener Max Consumo para criticidad
+    // 3. Obtener Max Consumo para criticidad (Batch)
     $ing_ids = array_column($ingredients, 'id');
     $prod_ids = array_column($products, 'id');
     $max_data_map = [];
@@ -279,13 +299,21 @@ function generateGeneralInventoryReport($pdo)
         }
     }
 
-    // 4. Calcular criticidad y ordenar
+    // 4. Calcular criticidad y agrupar por categoría
+    $grouped = [];
+    $categoryIcons = [
+        'Carnes' => '🥩', 'Aves' => '🍗', 'Panes' => '🍞', 'Vegetales' => '🥬',
+        'Salsas' => '🥫', 'Lácteos' => '🧀', 'Embutidos' => '🌭', 'Bebidas' => '🥤',
+        'Congelados' => '❄️', 'Pescados' => '🐟', 'Otros' => '📦'
+    ];
+
     foreach ($all as &$item) {
         $key = $item['type'] == 'ing' ? "ing_" . $item['id'] : "prod_" . $item['id'];
         $maxVal = $max_data_map[$key] ?? 0;
         $stock = floatval($item['stock']);
+        $unit = $item['unit'];
 
-        if ($item['unit'] === 'g') {
+        if ($unit === 'g') {
             if ($stock < 100 && $stock > 0)
                 $stock *= 1000;
             if ($maxVal < 100 && $maxVal > 0)
@@ -295,28 +323,42 @@ function generateGeneralInventoryReport($pdo)
         $item['max_daily'] = $maxVal;
         $item['stock_norm'] = $stock;
         $item['criticidad'] = ($maxVal > 0 && $stock < $maxVal) || ($maxVal == 0 && $stock <= 0) ? 2 : (($maxVal > 0 && $stock < $maxVal * 3) ? 1 : 0);
+
+        $catName = $item['category'];
+        if (!isset($grouped[$catName]))
+            $grouped[$catName] = [];
+        $grouped[$catName][] = $item;
     }
 
-    usort($all, function ($a, $b) {
-        if ($a['criticidad'] != $b['criticidad'])
-            return $b['criticidad'] - $a['criticidad'];
-        return strcmp($a['name'], $b['name']);
-    });
-
     // 5. Formatear Mensaje
-    $msg = "📋 *INVENTARIO GENERAL (Full)*\n";
+    $msg = "📋 *INVENTARIO GENERAL POR CATEGORÍA*\n";
     $msg .= "------------------------------------------\n";
 
     $formatVal = function ($val, $unit) {
         return $unit === 'g' && $val >= 1000 ? number_format($val / 1000, 1) . "kg" : round($val) . $unit;
     };
 
-    foreach ($all as $item) {
-        $emoji = $item['criticidad'] == 2 ? "🔴" : ($item['criticidad'] == 1 ? "🟡" : "🟢");
-        $msg .= "{$emoji} *{$item['name']}*: " . $formatVal($item['stock_norm'], $item['unit']);
-        if ($item['criticidad'] == 2)
-            $msg .= " (Max: " . $formatVal($item['max_daily'], $item['unit']) . ")";
-        $msg .= "\n";
+    // Ordenar categorías (Bebidas y Carnes primero por ejemplo, o alfabético)
+    ksort($grouped);
+
+    foreach ($grouped as $catName => $items) {
+        // Ordenar items por criticidad dentro de la categoría
+        usort($items, function ($a, $b) {
+            if ($a['criticidad'] != $b['criticidad'])
+                return $b['criticidad'] - $a['criticidad'];
+            return strcmp($a['name'], $b['name']);
+        });
+
+        $icon = $categoryIcons[$catName] ?? ($categoryIcons['Otros']);
+        $msg .= "\n" . $icon . " *" . strtoupper($catName) . "*\n";
+
+        foreach ($items as $item) {
+            $emoji = $item['criticidad'] == 2 ? "🔴" : ($item['criticidad'] == 1 ? "🟡" : "🟢");
+            $msg .= "  {$emoji} *{$item['name']}*: " . $formatVal($item['stock_norm'], $item['unit']);
+            if ($item['criticidad'] == 2)
+                $msg .= " (Max: " . $formatVal($item['max_daily'], $item['unit']) . ")";
+            $msg .= "\n";
+        }
     }
 
     $msg .= "\n📅 " . date('d-m-Y H:i');
