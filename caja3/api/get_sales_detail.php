@@ -27,12 +27,12 @@ try {
         "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
         $config['app_db_user'],
         $config['app_db_pass'],
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
-    
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+
     $start_date = $_GET['start_date'] ?? date('Y-m-d 00:00:00');
     $end_date = $_GET['end_date'] ?? date('Y-m-d 23:59:59');
-    
+
     $sql = "SELECT 
                 id,
                 order_number,
@@ -59,15 +59,15 @@ try {
             AND (order_status IS NULL OR order_status NOT IN ('cancelled', 'failed'))
             ORDER BY created_at DESC
             LIMIT 500";
-    
+
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$start_date, $end_date]);
     $all_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
     error_log("SALES_DETAIL - Query params: start=$start_date, end=$end_date");
     error_log("SALES_DETAIL - Found " . count($all_orders) . " orders");
     error_log("SALES_DETAIL - Order IDs: " . implode(', ', array_column($all_orders, 'id')));
-    
+
     // Eliminar duplicados por ID
     $orders = [];
     $seen_ids = [];
@@ -77,10 +77,10 @@ try {
             $seen_ids[] = $order['id'];
         }
     }
-    
+
     // Obtener items de cada pedido con transacciones de inventario REALES
     $ingredient_consumption = [];
-    
+
     foreach ($orders as $key => &$order) {
         $itemsSql = "SELECT id, product_name, quantity, product_price, item_type, combo_data, product_id 
                      FROM tuu_order_items 
@@ -88,14 +88,18 @@ try {
         $itemsStmt = $pdo->prepare($itemsSql);
         $itemsStmt->execute([$order['id']]);
         $order['items'] = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         // Obtener transacciones agrupadas por order_item_id
         $transSql = "
             SELECT 
                 it.order_item_id,
                 it.quantity,
+                it.ingredient_id,
+                it.product_id,
                 COALESCE(i.name, p.name) as ingredient_name,
-                COALESCE(it.unit, i.unit, 'unidad') as unit
+                COALESCE(it.unit, i.unit, 'unidad') as unit,
+                i.current_stock as ing_stock,
+                p.stock_quantity as prod_stock
             FROM inventory_transactions it
             LEFT JOIN ingredients i ON it.ingredient_id = i.id
             LEFT JOIN products p ON it.product_id = p.id
@@ -105,92 +109,175 @@ try {
         $transStmt = $pdo->prepare($transSql);
         $transStmt->execute([$order['order_number']]);
         $transactions = $transStmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         // Agrupar transacciones por order_item_id
         $trans_by_item = [];
         $trans_unknown = [];
         foreach ($transactions as $trans) {
             $item_id = $trans['order_item_id'];
             if ($item_id !== null) {
-                if (!isset($trans_by_item[$item_id])) $trans_by_item[$item_id] = [];
+                if (!isset($trans_by_item[$item_id]))
+                    $trans_by_item[$item_id] = [];
                 $trans_by_item[$item_id][] = $trans;
-            } else {
+            }
+            else {
                 $trans_unknown[] = $trans;
             }
         }
-        
-        // Asignar ingredientes a cada item (solo si tiene order_item_id propio)
+
+        // Asignar ingredientes a cada item
         foreach ($order['items'] as &$item) {
             $item_trans = $trans_by_item[$item['id']] ?? [];
             $ing_map = [];
             foreach ($item_trans as $trans) {
                 $qtyUsed = abs(floatval($trans['quantity']));
                 $unit = $trans['unit'];
-                if ($unit === 'g' && $qtyUsed < 1) $qtyUsed *= 1000;
-                elseif ($unit === 'kg') { $qtyUsed *= 1000; $unit = 'g'; }
+                if ($unit === 'g' && $qtyUsed < 1)
+                    $qtyUsed *= 1000;
+                elseif ($unit === 'kg') {
+                    $qtyUsed *= 1000;
+                    $unit = 'g';
+                }
                 $k = $trans['ingredient_name'];
-                if (!isset($ing_map[$k])) $ing_map[$k] = ['ingredient_name' => $k, 'quantity_needed' => 0, 'unit' => $unit];
+                if (!isset($ing_map[$k]))
+                    $ing_map[$k] = ['ingredient_name' => $k, 'quantity_needed' => 0, 'unit' => $unit];
                 $ing_map[$k]['quantity_needed'] += $qtyUsed;
             }
             $item['ingredients'] = array_values($ing_map);
         }
         unset($item);
-        
-        // Transacciones sin order_item_id → mostrar a nivel de orden
+
+        // Transacciones sin order_item_id
         $order_ing_map = [];
         foreach ($trans_unknown as $trans) {
             $qtyUsed = abs(floatval($trans['quantity']));
             $unit = $trans['unit'];
-            if ($unit === 'g' && $qtyUsed < 1) $qtyUsed *= 1000;
-            elseif ($unit === 'kg') { $qtyUsed *= 1000; $unit = 'g'; }
+            if ($unit === 'g' && $qtyUsed < 1)
+                $qtyUsed *= 1000;
+            elseif ($unit === 'kg') {
+                $qtyUsed *= 1000;
+                $unit = 'g';
+            }
             $k = $trans['ingredient_name'];
-            if (!isset($order_ing_map[$k])) $order_ing_map[$k] = ['ingredient_name' => $k, 'quantity_needed' => 0, 'unit' => $unit];
+            if (!isset($order_ing_map[$k]))
+                $order_ing_map[$k] = ['ingredient_name' => $k, 'quantity_needed' => 0, 'unit' => $unit];
             $order_ing_map[$k]['quantity_needed'] += $qtyUsed;
         }
         $order['order_ingredients'] = array_values($order_ing_map);
+
+        // Acumular consumo global con stock y tipo para indicadores
         foreach ($transactions as $trans) {
             $qtyUsed = abs(floatval($trans['quantity']));
             $unit = $trans['unit'];
-            if ($unit === 'g' && $qtyUsed < 1) $qtyUsed *= 1000;
-            elseif ($unit === 'kg') { $qtyUsed *= 1000; $unit = 'g'; }
+            if ($unit === 'g' && $qtyUsed < 1)
+                $qtyUsed *= 1000;
+            elseif ($unit === 'kg') {
+                $qtyUsed *= 1000;
+                $unit = 'g';
+            }
             $ingKey = $trans['ingredient_name'];
+
             if (!isset($ingredient_consumption[$ingKey])) {
-                $ingredient_consumption[$ingKey] = ['name' => $ingKey, 'total' => 0, 'unit' => $unit];
+                $stock = $trans['ingredient_id'] ? $trans['ing_stock'] : $trans['prod_stock'];
+                $ingredient_consumption[$ingKey] = [
+                    'name' => $ingKey,
+                    'total' => 0,
+                    'unit' => $unit,
+                    'stock_actual' => $stock,
+                    'ingredient_id' => $trans['ingredient_id'],
+                    'product_id' => $trans['product_id']
+                ];
             }
             $ingredient_consumption[$ingKey]['total'] += $qtyUsed;
         }
     }
-    unset($order); // Liberar referencia
+    unset($order);
+
+    // Optimización: Calcular Max Consumo Diario en un solo batch (últimos 30 días)
+    $ing_ids = array_filter(array_column($ingredient_consumption, 'ingredient_id'));
+    $prod_ids = array_filter(array_column($ingredient_consumption, 'product_id'));
     
+    $max_data_map = [];
+    
+    if (!empty($ing_ids) || !empty($prod_ids)) {
+        $where_clauses = [];
+        $params = [];
+        
+        if (!empty($ing_ids)) {
+            $where_clauses[] = "ingredient_id IN (" . implode(',', array_fill(0, count($ing_ids), '?')) . ")";
+            $params = array_merge($params, array_values($ing_ids));
+        }
+        if (!empty($prod_ids)) {
+            $where_clauses[] = "product_id IN (" . implode(',', array_fill(0, count($prod_ids), '?')) . ")";
+            $params = array_merge($params, array_values($prod_ids));
+        }
+        
+        $where_sql = implode(' OR ', $where_clauses);
+        
+        $batchMaxSql = "
+            SELECT ingredient_id, product_id, MAX(daily_total) as max_daily
+            FROM (
+                SELECT ingredient_id, product_id, DATE(created_at) as day, SUM(ABS(quantity)) as daily_total
+                FROM inventory_transactions
+                WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                AND transaction_type = 'sale'
+                AND ($where_sql)
+                GROUP BY ingredient_id, product_id, DATE(created_at)
+            ) as daily_usage
+            GROUP BY ingredient_id, product_id
+        ";
+        
+        $batchStmt = $pdo->prepare($batchMaxSql);
+        $batchStmt->execute($params);
+        while ($row = $batchStmt->fetch(PDO::FETCH_ASSOC)) {
+            $key = $row['ingredient_id'] ? "ing_" . $row['ingredient_id'] : "prod_" . $row['product_id'];
+            $max_data_map[$key] = floatval($row['max_daily']);
+        }
+    }
+
+    // Asignar Max Consumo a cada item de la lista
+    foreach ($ingredient_consumption as $ingKey => &$ing) {
+        $key = $ing['ingredient_id'] ? "ing_" . $ing['ingredient_id'] : "prod_" . $ing['product_id'];
+        $max_val = $max_data_map[$key] ?? 0;
+        
+        // Ajustar unidad si es gramos
+        if ($ing['unit'] === 'g' && $max_val < 1 && $max_val > 0)
+            $max_val *= 1000;
+        
+        $ing['max_daily_consumption'] = $max_val;
+    }
+    unset($ing);
+
     // Calcular estadísticas
     $total_sales = array_sum(array_column($orders, 'installment_amount'));
     $total_discounts = array_sum(array_column($orders, 'discount_amount'));
     $total_cashback = array_sum(array_column($orders, 'cashback_used'));
-    
+
     $payment_methods = [];
     $delivery_types = ['delivery' => 0, 'pickup' => 0];
     foreach ($orders as $order) {
         $method = $order['payment_method'];
         $payment_methods[$method] = ($payment_methods[$method] ?? 0) + floatval($order['installment_amount']);
-        
+
         $type = $order['delivery_type'] ?? 'pickup';
         $delivery_types[$type] = ($delivery_types[$type] ?? 0) + 1;
     }
-    
+
     // Convertir kg a g en consumo total y ordenar
     foreach ($ingredient_consumption as &$ing) {
         if ($ing['unit'] === 'g' && $ing['total'] < 1) {
             $ing['total'] = $ing['total'] * 1000;
-        } else if ($ing['unit'] === 'kg') {
+        }
+        else if ($ing['unit'] === 'kg') {
             $ing['total'] = $ing['total'] * 1000;
             $ing['unit'] = 'g';
         }
     }
-    
-    uasort($ingredient_consumption, function($a, $b) {
+
+    uasort($ingredient_consumption, function ($a, $b) {
         return $b['total'] <=> $a['total'];
     });
-    
+
     echo json_encode([
         'success' => true,
         'orders' => $orders,
@@ -209,8 +296,9 @@ try {
             'end' => $end_date
         ]
     ]);
-    
-} catch (Exception $e) {
+
+}
+catch (Exception $e) {
     error_log("Get Sales Detail Error: " . $e->getMessage());
     echo json_encode([
         'success' => false,
