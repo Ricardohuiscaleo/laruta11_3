@@ -34,8 +34,9 @@ $query = "
         END), 0) as deuda_ciclo_vencido,
         COALESCE(SUM(CASE 
             WHEN t.type = 'refund' 
-            AND t.order_id LIKE 'RL6-%'
             AND DATE_FORMAT(t.created_at, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+            AND (t.description IN ('Reembolso - Crédito pagado', 'Pago de crédito RL6 vía TUU')
+                 OR t.description LIKE 'Pago manual - Transferencia%')
             THEN t.amount ELSE 0 
         END), 0) as pagado_este_mes
     FROM usuarios u
