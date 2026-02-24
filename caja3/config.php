@@ -7,56 +7,56 @@ $config = [
     'google_calendar_api_key' => getenv('GOOGLE_CALENDAR_API_KEY'),
     'google_client_id' => getenv('GOOGLE_CLIENT_ID'),
     'google_client_secret' => getenv('GOOGLE_CLIENT_SECRET'),
-    
+
     'booking_db_host' => getenv('BOOKING_DB_HOST'),
     'booking_db_name' => getenv('BOOKING_DB_NAME'),
     'booking_db_user' => getenv('BOOKING_DB_USER'),
     'booking_db_pass' => getenv('BOOKING_DB_PASS'),
-    
+
     'rag_db_host' => getenv('RAG_DB_HOST'),
     'rag_db_name' => getenv('RAG_DB_NAME'),
     'rag_db_user' => getenv('RAG_DB_USER'),
     'rag_db_pass' => getenv('RAG_DB_PASS'),
-    
+
     'ruta11game_db_host' => getenv('RUTA11GAME_DB_HOST'),
     'ruta11game_db_name' => getenv('RUTA11GAME_DB_NAME'),
     'ruta11game_db_user' => getenv('RUTA11GAME_DB_USER'),
     'ruta11game_db_pass' => getenv('RUTA11GAME_DB_PASS'),
-    
+
     'Calcularuta11_db_host' => getenv('CALCULARUTA11_DB_HOST'),
     'Calcularuta11_db_name' => getenv('CALCULARUTA11_DB_NAME'),
     'Calcularuta11_db_user' => getenv('CALCULARUTA11_DB_USER'),
     'Calcularuta11_db_pass' => getenv('CALCULARUTA11_DB_PASS'),
-    
+
     'app_db_host' => getenv('APP_DB_HOST'),
     'app_db_name' => getenv('APP_DB_NAME'),
     'app_db_user' => getenv('APP_DB_USER'),
     'app_db_pass' => getenv('APP_DB_PASS'),
-    
+
     'ruta11_db_host' => getenv('RUTA11_DB_HOST'),
     'ruta11_db_name' => getenv('RUTA11_DB_NAME'),
     'ruta11_db_user' => getenv('RUTA11_DB_USER'),
     'ruta11_db_pass' => getenv('RUTA11_DB_PASS'),
-    
+
     'admin_users' => [
         getenv('ADMIN_USER') ?: 'admin' => getenv('ADMIN_PASS') ?: 'admin123',
         'ricardo' => getenv('RICARDO_PASSWORD'),
         'manager' => getenv('MANAGER_PASSWORD'),
         'ruta11' => getenv('RUTA11_PASSWORD')
     ],
-    
+
     'inventario_user' => getenv('INVENTARIO_USER'),
     'inventario_password' => getenv('INVENTARIO_PASSWORD'),
-    
+
     'caja_users' => [
         'admin' => 'R11adm2025x7k9',
         'cajera' => 'ruta11caja'
     ],
-    
+
     'gmail_client_id' => getenv('GMAIL_CLIENT_ID'),
     'gmail_client_secret' => getenv('GMAIL_CLIENT_SECRET'),
     'gmail_sender_email' => getenv('GMAIL_SENDER_EMAIL'),
-    
+
     'external_credentials' => [
         'pedidosya' => [
             'platform' => 'PedidosYA (Gowin)',
@@ -74,20 +74,24 @@ $config = [
             'password' => getenv('TUU_PLATFORM_PASSWORD')
         ]
     ],
-    
+
     'aws_access_key_id' => getenv('AWS_ACCESS_KEY_ID'),
     'aws_secret_access_key' => getenv('AWS_SECRET_ACCESS_KEY'),
     's3_bucket' => getenv('S3_BUCKET'),
     's3_region' => getenv('S3_REGION'),
     's3_url' => getenv('S3_URL'),
-    
+
     'discount_codes' => [
         'PIZZA11' => ['product_id' => 231, 'discount_percent' => 20, 'name' => 'Pizza 20% OFF', 'active' => true],
         'TENS' => ['product_id' => 213, 'discount_percent' => 30, 'name' => 'Tens 30% OFF', 'active' => true],
         'RL6' => ['type' => 'delivery', 'discount_percent' => 40, 'name' => 'Delivery 40% OFF', 'active' => true],
         'R11LOV' => ['type' => 'cart', 'discount_percent' => 10, 'name' => '10% OFF Total', 'active' => true],
         'TUAREG' => ['type' => 'cart', 'discount_percent' => 7, 'name' => '7% OFF Total', 'active' => true]
-    ]
+    ],
+
+    // Telegram Bot Configuration
+    'telegram_token' => getenv('TELEGRAM_TOKEN') ?: 'YOUR_BOT_TOKEN_HERE',
+    'telegram_chat_id' => getenv('TELEGRAM_CHAT_ID') ?: 'YOUR_CHAT_ID_HERE',
 ];
 
 return $config;
