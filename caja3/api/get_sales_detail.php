@@ -196,13 +196,13 @@ try {
     // Optimización: Calcular Max Consumo Diario en un solo batch (últimos 30 días)
     $ing_ids = array_filter(array_column($ingredient_consumption, 'ingredient_id'));
     $prod_ids = array_filter(array_column($ingredient_consumption, 'product_id'));
-    
+
     $max_data_map = [];
-    
+
     if (!empty($ing_ids) || !empty($prod_ids)) {
         $where_clauses = [];
         $params = [];
-        
+
         if (!empty($ing_ids)) {
             $where_clauses[] = "ingredient_id IN (" . implode(',', array_fill(0, count($ing_ids), '?')) . ")";
             $params = array_merge($params, array_values($ing_ids));
@@ -211,9 +211,9 @@ try {
             $where_clauses[] = "product_id IN (" . implode(',', array_fill(0, count($prod_ids), '?')) . ")";
             $params = array_merge($params, array_values($prod_ids));
         }
-        
+
         $where_sql = implode(' OR ', $where_clauses);
-        
+
         $batchMaxSql = "
             SELECT ingredient_id, product_id, MAX(daily_total) as max_daily
             FROM (
@@ -226,7 +226,7 @@ try {
             ) as daily_usage
             GROUP BY ingredient_id, product_id
         ";
-        
+
         $batchStmt = $pdo->prepare($batchMaxSql);
         $batchStmt->execute($params);
         while ($row = $batchStmt->fetch(PDO::FETCH_ASSOC)) {
@@ -235,15 +235,24 @@ try {
         }
     }
 
-    // Asignar Max Consumo a cada item de la lista
+    // Asignar Max Consumo a cada item de la lista y normalizar unidades
     foreach ($ingredient_consumption as $ingKey => &$ing) {
         $key = $ing['ingredient_id'] ? "ing_" . $ing['ingredient_id'] : "prod_" . $ing['product_id'];
         $max_val = $max_data_map[$key] ?? 0;
-        
-        // Ajustar unidad si es gramos
-        if ($ing['unit'] === 'g' && $max_val < 1 && $max_val > 0)
-            $max_val *= 1000;
-        
+
+        // Normalizar Stock y Max Consumo si la unidad es gramos
+        if ($ing['unit'] === 'g') {
+            // Si el stock viene en kilos (valor pequeño) pero la unidad es gramos, convertir
+            // OJO: Asumimos que si stock < 50 y unidad es 'g', probablemente esté en kilos en la DB
+            // Pero una forma más segura es ver si el valor de stock en DB vs transacciones difiere en escala
+            if ($ing['stock_actual'] < 100 && $ing['stock_actual'] > 0) {
+                $ing['stock_actual'] = $ing['stock_actual'] * 1000;
+            }
+            if ($max_val < 100 && $max_val > 0) {
+                $max_val = $max_val * 1000;
+            }
+        }
+
         $ing['max_daily_consumption'] = $max_val;
     }
     unset($ing);
