@@ -153,7 +153,8 @@ try {
                     if ($item['item_type'] === 'combo' && $item['combo_data']) {
                         $combo_data = json_decode($item['combo_data'], true);
                         $inventory_item['is_combo'] = true;
-                        $inventory_item['combo_id'] = $combo_data['combo_id'] ?? null;
+                        // combo_id real está en product_id del item, no en combo_data
+                        $inventory_item['combo_id'] = $item['product_id'];
                         $inventory_item['fixed_items'] = $combo_data['fixed_items'] ?? [];
                         $inventory_item['selections'] = $combo_data['selections'] ?? [];
                     }
@@ -175,20 +176,11 @@ try {
                     'order_reference' => $order_id
                 ];
                 
-                $ch = curl_init('https://app.laruta11.cl/api/process_sale_inventory.php');
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_POST, true);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($inventory_data));
-                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+                require_once __DIR__ . '/../process_sale_inventory_fn.php';
+                $inv_result = processSaleInventory($pdo, $inventory_data['items'], $inventory_data['order_reference']);
                 
-                $inventory_response = curl_exec($ch);
-                $inventory_result = json_decode($inventory_response, true);
-                curl_close($ch);
-                
-                if (!$inventory_result || !$inventory_result['success']) {
-                    error_log("TUU Callback - Error procesando inventario para orden $order_id: " . 
-                             ($inventory_result['error'] ?? 'Unknown error'));
+                if (!$inv_result['success']) {
+                    error_log("TUU Callback - Error procesando inventario para orden $order_id: " . ($inv_result['error'] ?? 'Unknown'));
                 } else {
                     error_log("TUU Callback - Inventario procesado exitosamente para orden $order_id");
                 }
