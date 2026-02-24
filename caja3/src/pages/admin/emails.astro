@@ -324,7 +324,7 @@
                                 class="flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                                 ⚠️ Cobrar
                             </button>
-                            <button data-action="whatsapp" data-nombre="${user.nombre}" data-monto="${user.saldo_pagar}" data-grado="${user.grado_militar || ''}"
+                            <button data-action="whatsapp" data-nombre="${user.nombre}" data-monto="${user.saldo_pagar}" data-grado="${user.grado_militar || ''}" data-dias-mora="${Math.max(0, new Date().getDate() - 21)}"
                                 class="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                                 💬 WhatsApp
                             </button>
@@ -357,6 +357,10 @@
                 const nombre = btn.dataset.nombre;
                 const monto = parseInt(btn.dataset.monto).toLocaleString('es-CL');
                 const grado = btn.dataset.grado ? btn.dataset.grado + ' ' : '';
+                const diasMora = parseInt(btn.dataset.diasMora || 0);
+                const moraLine = diasMora > 0
+                    ? `⚠️ *Vencido hace ${diasMora} día${diasMora === 1 ? '' : 's'}* — regulariza cuanto antes`
+                    : `⚠️ *Pago vencido* — regulariza cuanto antes`;
                 const msg = `🔔 *Recordatorio de Pago — La Ruta 11*
 
 Hola *${grado}${nombre}* 👋
@@ -364,14 +368,14 @@ Hola *${grado}${nombre}* 👋
 > Tienes un saldo pendiente en tu crédito RL6
 
 *Monto a pagar:* $${monto}
-*Fecha límite:* 21 de cada mes
+${moraLine}
 
 *Cómo pagar:*
 1. Ingresa a _app.laruta11.cl_
 2. Ve a Perfil → Crédito
 3. Haz clic en “Pagar Crédito”
 
-_La Ruta 11 SpA — Sabores con historia_ 🍔`;
+_La Ruta 11 — Foodtruck_ ✨`;
                 navigator.clipboard.writeText(msg).then(() => {
                     const orig = btn.innerHTML;
                     btn.innerHTML = '✅ Copiado';
