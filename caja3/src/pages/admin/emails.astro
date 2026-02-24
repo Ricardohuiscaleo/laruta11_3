@@ -15,9 +15,23 @@
                     <h1 class="text-xl sm:text-2xl font-bold text-gray-900">📧 Gestor de Correos</h1>
                     <p class="text-sm text-gray-500 mt-1">Estados de cuenta RL6</p>
                 </div>
-                <div id="gmailStatus" class="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-full text-sm">
-                    <div class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
-                    <span class="hidden sm:inline text-gray-600">Verificando...</span>
+                <div class="flex items-center gap-2">
+                    <div id="gmailStatus" class="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-full text-sm">
+                        <div class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                        <span class="hidden sm:inline text-gray-600">Verificando...</span>
+                    </div>
+                    <div class="relative">
+                        <button id="menuBtn" class="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Menú">
+                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                            </svg>
+                        </button>
+                        <div id="menuDropdown" class="hidden absolute right-0 mt-1 w-52 bg-white border rounded-xl shadow-lg z-50 py-1">
+                            <button id="btnInformeStatus" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                📋 Copiar Informe de Status
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -391,6 +405,57 @@ _La Ruta 11 — Foodtruck_ ✨`;
             checkGmailStatus();
             loadUsers();
             loadDailyStats();
+
+            // Hamburger menu
+            const menuBtn = document.getElementById('menuBtn');
+            const menuDropdown = document.getElementById('menuDropdown');
+            menuBtn.addEventListener('click', (e) => { e.stopPropagation(); menuDropdown.classList.toggle('hidden'); });
+            document.addEventListener('click', () => menuDropdown.classList.add('hidden'));
+
+            document.getElementById('btnInformeStatus').addEventListener('click', () => {
+                menuDropdown.classList.add('hidden');
+                if (!users.length) return alert('Cargando datos...');
+                const hoy = new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+                const morosos = users.filter(u => u.es_moroso);
+                const alDia = users.filter(u => !u.es_moroso && u.credito_usado > 0);
+                const sinDeuda = users.filter(u => u.credito_usado <= 0);
+                const totalDeuda = morosos.reduce((s, u) => s + u.saldo_pagar, 0);
+                const day = new Date().getDate();
+                const diasMora = Math.max(0, day - 21);
+
+                let lines = [`📊 *Informe RL6 — La Ruta 11*`, `_${hoy}_`, ``];
+                lines.push(`*Resumen General*`);
+                lines.push(`- Clientes activos: *${users.length}*`);
+                lines.push(`- Morosos: *${morosos.length}*`);
+                lines.push(`- Al día: *${alDia.length}*`);
+                lines.push(`- Sin deuda: *${sinDeuda.length}*`);
+                lines.push(`- Total cobranza: *$${totalDeuda.toLocaleString('es-CL')}*`);
+
+                if (morosos.length) {
+                    lines.push(``, `*🔴 Morosos (${diasMora} día${diasMora===1?'':'s'} en mora)*`);
+                    morosos.forEach(u => {
+                        const grado = u.grado_militar ? u.grado_militar + ' ' : '';
+                        lines.push(`- ${grado}${u.nombre}: *$${u.saldo_pagar.toLocaleString('es-CL')}*`);
+                    });
+                }
+
+                if (alDia.length) {
+                    lines.push(``, `*🟡 Con deuda vigente*`);
+                    alDia.forEach(u => {
+                        const grado = u.grado_militar ? u.grado_militar + ' ' : '';
+                        const pago = u.fecha_ultimo_pago ? `últ. pago ${u.fecha_ultimo_pago}` : 'sin pagos';
+                        lines.push(`- ${grado}${u.nombre}: $${u.credito_usado.toLocaleString('es-CL')} _(${pago})_`);
+                    });
+                }
+
+                lines.push(``, `_La Ruta 11 — Foodtruck_ ✨`);
+
+                navigator.clipboard.writeText(lines.join('\n')).then(() => {
+                    const btn = document.getElementById('btnInformeStatus');
+                    btn.textContent = '✅ Copiado';
+                    setTimeout(() => { btn.textContent = '📋 Copiar Informe de Status'; }, 2000);
+                });
+            });
         });
 
         async function checkGmailStatus() {
