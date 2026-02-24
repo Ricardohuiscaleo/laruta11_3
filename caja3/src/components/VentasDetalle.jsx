@@ -4,7 +4,7 @@ import { ArrowLeft, BarChart3, Search, Banknote, CreditCard, Smartphone, Truck, 
 // Componente minimalista para ingredientes colapsables
 function IngredientToggle({ ingredients, label }) {
   const [isOpen, setIsOpen] = useState(false);
-  
+
   return (
     <div className="mt-1">
       <button
@@ -51,7 +51,7 @@ export default function VentasDetalle() {
     const urlParams = new URLSearchParams(window.location.search);
     const startDate = urlParams.get('start');
     const endDate = urlParams.get('end');
-    
+
     if (startDate && endDate) {
       loadDetail(startDate, endDate);
     }
@@ -62,7 +62,7 @@ export default function VentasDetalle() {
       const url = `/api/get_sales_detail.php?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}&t=${Date.now()}`;
       const response = await fetch(url);
       const data = await response.json();
-      
+
       if (data.success) {
         const uniqueOrders = {};
         (data.orders || []).forEach(o => {
@@ -197,27 +197,105 @@ export default function VentasDetalle() {
       <div className="max-w-6xl mx-auto px-1 py-3 pb-20">
         {/* Ingredientes */}
         {stats?.ingredient_consumption?.length > 0 && (
-          <div className="bg-white rounded-lg mb-3">
-            <button onClick={() => setShowIngredients(!showIngredients)} className="w-full px-3 py-2 flex justify-between items-center text-left hover:bg-gray-50">
-              <span className="text-sm text-gray-700">Consumo de Ingredientes</span>
-              <span className="text-gray-400 text-sm">{showIngredients ? '▼' : '▶'}</span>
+          <div className="bg-white rounded-lg mb-3 shadow-md border-2 border-orange-200 overflow-hidden">
+            <button
+              onClick={() => setShowIngredients(!showIngredients)}
+              className="w-full px-4 py-3 flex justify-between items-center text-left hover:bg-orange-50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <BarChart3 size={18} className="text-orange-600" />
+                <span className="text-sm font-black text-gray-900 uppercase tracking-tighter">Inventario y Consumo (Control v4.3)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">
+                  {showIngredients ? 'OCULTAR' : 'VER DETALLE'}
+                </span>
+                <span className={`text-orange-400 transition-transform duration-300 ${showIngredients ? 'rotate-180' : ''}`}>▼</span>
+              </div>
             </button>
+
             {showIngredients && (
-              <div className="px-3 pb-3">
-                <div className="grid grid-cols-2 gap-1.5 text-xs">
-                  {stats.ingredient_consumption.map((ing, i) => {
-                    const qty = parseFloat(ing.total || 0);
-                    let unit = ing.unit || 'g';
-                    if (unit === 'unidad') unit = 'U';
-                    if (unit === 'unit') unit = 'U';
-                    const displayQty = unit === 'g' && qty >= 1000 ? `${(qty / 1000).toFixed(2)} kg` : `${Math.round(qty)} ${unit}`;
-                    return (
-                      <div key={i} className="flex justify-between items-center py-1">
-                        <span className="text-gray-700">{ing.name}</span>
-                        <span className="font-semibold text-orange-600 whitespace-nowrap">{displayQty}</span>
-                      </div>
-                    );
-                  })}
+              <div className="px-1 pb-3 overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 text-[10px] uppercase tracking-wider font-bold text-gray-500 border-b border-gray-100">
+                      <th className="px-3 py-2">Ingrediente/Insumo</th>
+                      <th className="px-2 py-2 text-right">Consumido</th>
+                      <th className="px-2 py-2 text-right">Stock Actual</th>
+                      <th className="px-2 py-2 text-right">Max Diarios</th>
+                      <th className="px-3 py-2 text-center">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {stats.ingredient_consumption.map((ing, i) => {
+                      const consumed = parseFloat(ing.total || 0);
+                      const stock = parseFloat(ing.stock_actual || 0);
+                      const maxDaily = parseFloat(ing.max_daily_consumption || 0);
+                      let unit = ing.unit || 'g';
+                      if (unit === 'unidad') unit = 'U';
+                      if (unit === 'unit') unit = 'U';
+
+                      const formatQty = (val) => {
+                        return unit === 'g' && val >= 1000
+                          ? `${(val / 1000).toFixed(2)} kg`
+                          : `${Math.round(val)} ${unit}`;
+                      };
+
+                      // Lógica de indicadores corregida (v4.3)
+                      // Rojo: Stock < 1 día de consumo máximo
+                      // Amarillo: Stock < 3 días de consumo máximo
+                      // Verde: Stock >= 3 días
+                      let statusColor = "bg-green-500";
+                      let statusText = "Suficiente";
+
+                      if (maxDaily > 0) {
+                        if (stock < maxDaily) {
+                          statusColor = "bg-red-500 animate-pulse";
+                          statusText = "Crítico";
+                        } else if (stock < (maxDaily * 3)) {
+                          statusColor = "bg-yellow-400";
+                          statusText = "Bajo";
+                        }
+                      } else if (stock <= 0) {
+                        statusColor = "bg-red-500";
+                        statusText = "Sin Stock";
+                      }
+
+                      return (
+                        <tr key={i} className="hover:bg-orange-50/30 transition-colors text-xs">
+                          <td className="px-3 py-2.5 font-medium text-gray-700 truncate max-w-[120px]">
+                            {ing.name}
+                          </td>
+                          <td className="px-2 py-2.5 text-right font-bold text-orange-600">
+                            {formatQty(consumed)}
+                          </td>
+                          <td className={`px-2 py-2.5 text-right font-semibold ${stock <= 0 ? 'text-red-500' : 'text-gray-600'}`}>
+                            {formatQty(stock)}
+                          </td>
+                          <td className="px-2 py-2.5 text-right text-gray-400 italic">
+                            {formatQty(maxDaily)}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <div className="flex flex-col items-center gap-0.5">
+                              <div className={`w-2.5 h-2.5 rounded-full ${statusColor} shadow-sm`}></div>
+                              <span className="text-[8px] font-bold text-gray-400 uppercase">{statusText}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <div className="mt-2 px-3 flex items-center justify-center gap-4 text-[9px] text-gray-400 border-t border-gray-50 pt-2">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-red-500"></div> Crítico (&lt;1d)
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-yellow-400"></div> Bajo (&lt;3d)
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div> Suficiente
+                  </div>
                 </div>
               </div>
             )}
@@ -330,7 +408,7 @@ export default function VentasDetalle() {
                     </div>
                   ))}
                   {order.order_ingredients?.length > 0 && (
-                    <div style={{marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #e5e7eb'}}>
+                    <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #e5e7eb' }}>
                       <IngredientToggle ingredients={order.order_ingredients} label="Ingredientes totales (orden antigua)" />
                     </div>
                   )}
