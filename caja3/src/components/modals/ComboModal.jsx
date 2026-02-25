@@ -306,8 +306,8 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                           <div
                             key={optionIndex}
                             className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${currentCount > 0
-                                ? 'border-orange-500 bg-orange-50'
-                                : 'border-gray-200'
+                              ? 'border-orange-500 bg-orange-50'
+                              : 'border-gray-200'
                               }`}
                           >
                             {option.image_url && (
@@ -342,9 +342,9 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                                 <button
                                   onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections, 'add')}
                                   disabled={totalSelectedInGroup >= maxSelections}
-                                  className="w-9 h-9 rounded-lg bg-green-500 hover:bg-green-600 disabled:bg-gray-200 text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all active:scale-90 shadow-sm"
+                                  className="w-9 h-9 rounded-lg bg-green-500 hover:bg-green-600 disabled:bg-gray-200 text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all active:scale-90 shadow-sm font-bold text-xl"
                                 >
-                                  <PlusCircle size={20} />
+                                  +
                                 </button>
                               </div>
                             ) : (
@@ -379,10 +379,9 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
           <button
             onClick={handleAddToCart}
             disabled={loading || !comboData}
-            className={`w-full font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 ${loading || !comboData ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600 text-white'
+            className={`w-full font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center shadow-lg active:scale-95 ${loading || !comboData ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600 text-white'
               }`}
           >
-            <PlusCircle size={20} />
             Agregar al Carrito - ${calculateTotalPrice().toLocaleString('es-CL')}
           </button>
         </div>

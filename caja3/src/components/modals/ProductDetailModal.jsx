@@ -46,9 +46,10 @@ const ComboItem = ({ item, isExtra = false, onAddToCart, onRemoveFromCart, getPr
         <button
           onClick={() => onAddToCart(item)}
           disabled={maxReached}
-          className={`p-1 rounded-lg transition-all active:scale-95 ${maxReached ? 'text-gray-300 bg-gray-100 cursor-not-allowed' : 'text-green-500 hover:text-green-700 bg-green-50'}`}
+          className={`px-2 rounded-lg transition-all active:scale-95 flex items-center justify-center font-bold text-xl ${maxReached ? 'text-gray-300 bg-gray-100 cursor-not-allowed' : 'text-green-500 hover:text-green-700 bg-green-50'}`}
+          style={{ height: '32px', minWidth: '32px' }}
         >
-          <PlusCircle size={22} />
+          +
         </button>
       </div>
     </div>
@@ -304,12 +305,11 @@ const ProductDetailModal = ({
               }
               onClose();
             }}
-            className={`w-full py-4 rounded-xl text-lg font-bold flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-lg ${product.isEditing
-                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                : 'bg-green-600 hover:bg-green-700 text-white'
+            className={`w-full py-4 rounded-xl text-lg font-bold flex items-center justify-center transition-transform active:scale-95 shadow-lg ${product.isEditing
+              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+              : 'bg-green-600 hover:bg-green-700 text-white'
               }`}
           >
-            <PlusCircle size={20} />
             {product.isEditing ? 'Actualizar Producto' : 'Agregar al Carro'}
           </button>
         </div>

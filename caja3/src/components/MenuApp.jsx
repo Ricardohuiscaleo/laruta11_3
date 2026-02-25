@@ -862,13 +862,12 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
             )}
             <button
               onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-              className={`flex-1 px-2 font-bold transition-all duration-200 flex items-center justify-center gap-1 rounded-lg shadow-sm active:scale-95 ${quantity > 0
+              className={`flex-1 px-2 font-bold transition-all duration-200 flex items-center justify-center rounded-lg shadow-sm active:scale-95 ${quantity > 0
                 ? 'bg-yellow-500 text-black hover:bg-yellow-600'
                 : 'bg-green-500 hover:bg-green-600 text-white'
                 }`}
               style={{ height: 'clamp(33.7px, 8.42vw, 43.8px)' }}
             >
-              <PlusCircle style={{ width: 'clamp(14.74px, 3.69vw, 19.16px)', height: 'clamp(14.74px, 3.69vw, 19.16px)' }} />
               <span className="font-bold whitespace-nowrap" style={{ fontSize: 'clamp(10px, 2.8vw, 14px)' }}>
                 {quantity > 0 ? 'Agregar más' : 'Agregar'}
               </span>
@@ -937,12 +936,11 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-                    className={`flex-1 px-6 font-bold transition-all duration-200 flex items-center justify-center gap-2 rounded-xl shadow-md active:scale-95 h-[44px] ${quantity > 0
+                    className={`flex-1 px-6 font-bold transition-all duration-200 flex items-center justify-center rounded-xl shadow-md active:scale-95 h-[44px] ${quantity > 0
                       ? 'bg-yellow-500 text-black hover:bg-yellow-600'
                       : 'bg-green-600 hover:bg-green-700 text-white'
                       }`}
                   >
-                    <PlusCircle size={20} />
                     <span className="text-sm font-bold">
                       {quantity > 0 ? 'Agregar más' : 'Agregar'}
                     </span>

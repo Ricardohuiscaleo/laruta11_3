@@ -55,32 +55,43 @@ export const playComandaSound = () => {
   }
 };
 
-// --- Nuevos Sonidos ---
+// --- Nuevos Sonidos con Pre-carga ---
+const addSound = typeof Audio !== 'undefined' ? new Audio('/blip.mp3') : null;
+const removeSound = typeof Audio !== 'undefined' ? new Audio('/damage.mp3') : null;
+const successSound = typeof Audio !== 'undefined' ? new Audio('/gg.mp3') : null;
+
+// Configurar volúmenes iniciales
+if (addSound) addSound.volume = 0.4;
+if (removeSound) removeSound.volume = 0.3;
+if (successSound) successSound.volume = 0.6;
 
 // Sonido al agregar al carrito (blip)
 export const playAddSound = () => {
   try {
-    const audio = new Audio('/blip.mp3');
-    audio.volume = 0.4;
-    audio.play().catch(() => { });
+    if (addSound) {
+      addSound.currentTime = 0;
+      addSound.play().catch(() => { });
+    }
   } catch (e) { }
 };
 
 // Sonido al quitar del carrito (damage/blip invertido)
 export const playRemoveSound = () => {
   try {
-    const audio = new Audio('/damage.mp3');
-    audio.volume = 0.3;
-    audio.play().catch(() => { });
+    if (removeSound) {
+      removeSound.currentTime = 0;
+      removeSound.play().catch(() => { });
+    }
   } catch (e) { }
 };
 
 // Sonido de éxito/pago (gg)
 export const playSuccessSound = () => {
   try {
-    const audio = new Audio('/gg.mp3');
-    audio.volume = 0.6;
-    audio.play().catch(() => { });
+    if (successSound) {
+      successSound.currentTime = 0;
+      successSound.play().catch(() => { });
+    }
   } catch (e) { }
 };
 
