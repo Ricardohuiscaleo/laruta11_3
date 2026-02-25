@@ -42,7 +42,7 @@ while ($row = mysqli_fetch_assoc($res)) {
 }
 
 // Generación Dinámica de Turnos de Seguridad (4x4)
-$res_personal = mysqli_query($conn, "SELECT id, nombre FROM personal WHERE rol = 'seguridad' OR nombre IN ('Ricardo', 'Claudio')");
+$res_personal = mysqli_query($conn, "SELECT id, nombre FROM personal WHERE FIND_IN_SET('seguridad', rol) > 0 OR nombre IN ('Ricardo', 'Claudio')");
 $ricardo_id = null;
 $claudio_id = null;
 while ($p_row = mysqli_fetch_assoc($res_personal)) {

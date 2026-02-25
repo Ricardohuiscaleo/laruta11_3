@@ -200,8 +200,8 @@ export default function PersonalApp() {
     return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase, gruposReemplazados, gruposReemplazando, total };
   }
 
-  const cajeros = personal.filter(p => p.rol === 'cajero' && p.activo == 1);
-  const plancheros = personal.filter(p => p.rol === 'planchero' && p.activo == 1);
+  const cajeros = personal.filter(p => p.rol?.includes('cajero') && p.activo == 1);
+  const plancheros = personal.filter(p => p.rol?.includes('planchero') && p.activo == 1);
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', minHeight: '100vh', background: '#f8fafc' }}>
@@ -260,7 +260,7 @@ export default function PersonalApp() {
               </>
             )}
             {tab === 'seguridad' && <SeguridadView mes={mes} anio={anio} />}
-            {tab === 'equipo' && <EquipoView personal={personal} onAddPersonal={() => { setModalPersonal('new'); setFormPersonal({ nombre: '', rol: 'cajero', sueldo_base: '', activo: 1 }); }} onEditPersonal={(p) => { setModalPersonal(p); setFormPersonal({ nombre: p.nombre, rol: p.rol, sueldo_base: p.sueldo_base, activo: p.activo }); }} />}
+            {tab === 'equipo' && <EquipoView personal={personal} onAddPersonal={() => { setModalPersonal('new'); setFormPersonal({ nombre: '', rol: ['cajero'], sueldo_base: '', activo: 1 }); }} onEditPersonal={(p) => { setModalPersonal(p); setFormPersonal({ nombre: p.nombre, rol: p.rol.split(','), sueldo_base: p.sueldo_base, activo: p.activo }); }} />}
           </>
         )}
       </div>
@@ -331,13 +331,26 @@ export default function PersonalApp() {
                 style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
             </div>
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Rol</label>
-              <select value={formPersonal.rol} onChange={e => setFormPersonal(f => ({ ...f, rol: e.target.value }))}
-                style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }}>
-                <option value='cajero'>Cajero</option>
-                <option value='planchero'>Planchero</option>
-                <option value='seguridad'>Seguridad</option>
-              </select>
+              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600, fontSize: 13, color: '#475569' }}>Roles (Múltiples)</label>
+              <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                {['cajero', 'planchero', 'seguridad'].map(r => (
+                  <label key={r} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: 14 }}>
+                    <input
+                      type="checkbox"
+                      checked={Array.isArray(formPersonal.rol) ? formPersonal.rol.includes(r) : formPersonal.rol === r}
+                      onChange={(e) => {
+                        const currentRoles = Array.isArray(formPersonal.rol) ? formPersonal.rol : [formPersonal.rol];
+                        if (e.target.checked) {
+                          setFormPersonal(f => ({ ...f, rol: [...currentRoles, r] }));
+                        } else {
+                          setFormPersonal(f => ({ ...f, rol: currentRoles.filter(role => role !== r) }));
+                        }
+                      }}
+                    />
+                    <span style={{ textTransform: 'capitalize' }}>{r}</span>
+                  </label>
+                ))}
+              </div>
             </div>
             <div style={{ marginBottom: 12 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Sueldo base</label>
@@ -496,7 +509,11 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
     let md = `*💰 Liquidación Nómina — ${mesLabel}*\n━━━━━━━━━━━━━━━━━━━━\n`;
     personal.forEach(p => {
       const { diasTrabajados, sueldoBase, ajustesPer, gruposReemplazando, gruposReemplazados, total } = getLiquidacion(p);
-      md += `\n*${p.nombre}* (${p.rol})\n📅 Días: ${diasTrabajados}\nBase: $${sueldoBase.toLocaleString('es-CL')}\n`;
+      let roles = p.rol;
+      if (typeof p.rol === 'string') {
+        roles = p.rol.split(',').map(r => r.trim()).join(', ');
+      }
+      md += `\n*${p.nombre}* (${roles})\n📅 Días: ${diasTrabajados}\nBase: $${sueldoBase.toLocaleString('es-CL')}\n`;
       Object.values(gruposReemplazando).forEach(g => { md += `↔ Reemplazó a ${g.persona?.nombre ?? '?'} (días ${g.dias.sort((a, b) => a - b).join(',')}): +$${g.monto.toLocaleString('es-CL')}\n`; });
       Object.values(gruposReemplazados).forEach(g => { md += `↔ ${g.persona?.nombre ?? '?'} cubrió días ${g.dias.sort((a, b) => a - b).join(',')}: -$${g.monto.toLocaleString('es-CL')}\n`; });
       ajustesPer.forEach(a => {
@@ -619,7 +636,7 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
                       {pagosNomina.find(pn => pn.personal_id == p.id) && <span style={{ fontSize: 18 }}>✅</span>}
                       <div>
                         <div style={{ color: 'white', fontWeight: 700, fontSize: 18 }}>{p.nombre}</div>
-                        <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, textTransform: 'capitalize' }}>{p.rol} · {diasTrabajados} días trabajados</div>
+                        <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, textTransform: 'capitalize' }}>{typeof p.rol === 'string' ? p.rol.split(',').join(', ') : p.rol} · {diasTrabajados} días trabajados</div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -727,7 +744,7 @@ function EquipoView({ personal, onAddPersonal, onEditPersonal }) {
             {personal.map(p => (
               <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                 <td style={{ padding: '16px', fontSize: 15, fontWeight: 700, color: '#1e293b' }}>{p.nombre}</td>
-                <td style={{ padding: '16px', fontSize: 14, color: '#64748b', textTransform: 'capitalize' }}>{p.rol}</td>
+                <td style={{ padding: '16px', fontSize: 14, color: '#64748b', textTransform: 'capitalize' }}>{typeof p.rol === 'string' ? p.rol.split(',').join(', ') : p.rol}</td>
                 <td style={{ padding: '16px', fontSize: 14, fontWeight: 600 }}>${parseFloat(p.sueldo_base).toLocaleString('es-CL')}</td>
                 <td style={{ padding: '16px' }}>
                   <span style={{
