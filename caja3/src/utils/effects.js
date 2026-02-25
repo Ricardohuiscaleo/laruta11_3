@@ -105,7 +105,6 @@ export const playRemoveSound = () => {
 // Sonido de éxito/pago (arpegio triunfal)
 export const playSuccessSound = () => {
   const ctx = getAudioContext();
-  const now = ctx.currentTime;
   const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
 
   notes.forEach((freq, i) => {
@@ -113,6 +112,11 @@ export const playSuccessSound = () => {
       synthesizeTone(freq, 0.3, 'sine', 0.15 - (i * 0.02));
     }, i * 80);
   });
+};
+
+// Alias para mantener compatibilidad si se invocan con otros nombres
+export const playCajaSound = () => {
+  synthesizeTone(600, 0.1, 'sine', 0.15, 900);
 };
 
 // Función de vibración para PWA

@@ -28,7 +28,7 @@ import ComboModal from './modals/ComboModal.jsx';
 import PaymentPendingModal from './modals/PaymentPendingModal.jsx';
 import SwipeToggle from './SwipeToggle.jsx';
 import useDoubleTap from '../hooks/useDoubleTap.js';
-import { vibrate, playNotificationSound, createConfetti, initAudio, playComandaSound, playAddSound, playRemoveSound, playSuccessSound } from '../utils/effects.js';
+import { vibrate, playNotificationSound, createConfetti, initAudio, playComandaSound, playAddSound, playRemoveSound, playSuccessSound, playCajaSound } from '../utils/effects.js';
 import { validateCheckoutForm, getFormDisabledState } from '../utils/validation.js';
 
 
@@ -2291,7 +2291,7 @@ export default function App() {
           </button>
 
           {/* Carrito */}
-          <button onClick={() => { vibrate(30); setShowCheckout(true); }} className="text-gray-600 hover:text-orange-500 relative">
+          <button onClick={() => { vibrate(30); playCajaSound(); setShowCheckout(true); }} className="text-gray-600 hover:text-orange-500 relative">
             <ShoppingCart size={20} />
             {cartItemCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center animate-fade-in" style={{ fontSize: 'clamp(9px, 2.2vw, 11px)', width: 'clamp(16px, 4vw, 20px)', height: 'clamp(16px, 4vw, 20px)' }}>
@@ -2316,7 +2316,7 @@ export default function App() {
           <div
             className="fixed left-0 right-0 z-30 bg-orange-50 border-b border-orange-200 px-3 py-1 cursor-pointer"
             style={{ top: 'calc(env(safe-area-inset-top, 0px) + 50px)' }}
-            onClick={() => { vibrate(30); setShowCheckout(true); }}
+            onClick={() => { vibrate(30); playCajaSound(); setShowCheckout(true); }}
           >
             <div className="flex items-center justify-between text-xs py-0.5">
               <span className="font-bold text-gray-800 flex-1 mr-2 leading-tight">🛒 {summaryText}</span>
@@ -2494,7 +2494,10 @@ export default function App() {
             )}
             {/* Sugerencias */}
             {showSuggestions && (
-              <div className="absolute bottom-full left-0 bg-white border border-gray-200 rounded-xl shadow-lg max-h-80 overflow-y-auto mb-2" style={{ right: '-16px', left: '-48px' }}>
+              <div
+                className="fixed md:absolute bottom-[110px] md:bottom-full left-0 right-0 md:left-[-48px] md:right-[-16px] bg-white border-t md:border border-gray-200 md:rounded-xl shadow-2xl max-h-[60vh] md:max-h-80 overflow-y-auto z-[40]"
+                style={{ height: 'auto' }}
+              >
                 {suggestions.map(product => {
                   const quantity = getProductQuantity(product.id);
                   return (
