@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, Plus } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 
 const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
   const [comboData, setComboData] = useState(null);
@@ -334,9 +334,9 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                                 <button
                                   onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections, 'remove')}
                                   disabled={currentCount === 0}
-                                  className="w-9 h-9 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                                  className="w-9 h-9 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors font-black text-xl"
                                 >
-                                  <MinusCircle size={20} />
+                                  -
                                 </button>
                                 <span className="w-8 text-center font-bold text-gray-800 text-lg">{currentCount}</span>
                                 <button

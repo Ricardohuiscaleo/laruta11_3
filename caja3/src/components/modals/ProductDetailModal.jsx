@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
-  PlusCircle, X, MinusCircle, ZoomIn, ChevronDown, ChevronUp, ChefHat
+  X, ZoomIn, ChevronDown, ChevronUp, ChefHat
 } from 'lucide-react';
 
 const ComboItem = ({ item, isExtra = false, onAddToCart, onRemoveFromCart, getProductQuantity }) => {
@@ -37,9 +37,9 @@ const ComboItem = ({ item, isExtra = false, onAddToCart, onRemoveFromCart, getPr
         {quantity > 0 && (
           <button
             onClick={() => onRemoveFromCart(item.id)}
-            className="text-red-500 hover:text-red-700 p-1 bg-red-50 rounded-lg transition-colors"
+            className="text-red-500 hover:text-red-700 w-8 h-8 bg-red-50 rounded-lg transition-colors flex items-center justify-center font-black text-xl"
           >
-            <MinusCircle size={22} />
+            -
           </button>
         )}
         {quantity > 0 && <span className="font-bold w-6 text-center text-lg">{quantity}</span>}
