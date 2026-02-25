@@ -2200,7 +2200,7 @@ export default function App() {
 
 
       <main className="pt-20 pb-24 px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={showSuggestions ? { filter: 'blur(2px)', pointerEvents: 'none' } : {}}>
-        <div className="space-y-8">
+        <div className="space-y-1">
           {mainCategories
             .filter(cat => cat !== 'personalizar' && cat !== 'extras')
             .map(catKey => {
@@ -2274,54 +2274,50 @@ export default function App() {
                 ];
               }
 
+              // Flatten all products from all subcategories into one array
+              const catColor = categoryColors[catKey] || '#e5e7eb';
+              const allCatProducts = orderedEntries
+                .filter(([, prods]) => prods && prods.length > 0)
+                .flatMap(([, prods]) => {
+                  const filtered = (!showInactiveProducts && cajaUser)
+                    ? prods.filter(p => p.active !== 0)
+                    : prods;
+                  return filtered;
+                });
+
+              if (allCatProducts.length === 0) return null;
+
               return (
                 <div
                   key={catKey}
                   id={`section-${catKey}`}
-                  className="scroll-mt-24 pt-1 first:pt-0"
+                  className="scroll-mt-24"
                   style={{
-                    border: `1px solid ${categoryColors[catKey] || '#e5e7eb'}`,
-                    borderLeftWidth: '6px',
-                    margin: '2px',
-                    borderRadius: '12px',
-                    backgroundColor: 'rgba(255,255,255,0.4)',
-                    overflow: 'hidden'
+                    borderLeft: `5px solid ${catColor}`,
+                    margin: '2px 2px',
+                    borderRadius: '10px',
+                    backgroundColor: `${catColor}18`,
+                    overflow: 'hidden',
+                    padding: '3px'
                   }}
                 >
-                  <div className="space-y-4">
-                    {orderedEntries
-                      .filter(([sub, products]) => products && products.length > 0)
-                      .map(([subCategory, products]) => {
-                        const filteredProducts = (!showInactiveProducts && cajaUser)
-                          ? products.filter(p => p.active !== 0)
-                          : products;
-
-                        if (filteredProducts.length === 0) return null;
-
-                        return (
-                          <div key={subCategory} className="p-1">
-                            {/* Subcategoría oculta para efecto Tetris */}
-                            <div className="grid grid-cols-3 gap-1">
-                              {filteredProducts.map(product => (
-                                <MenuItem
-                                  key={product.id}
-                                  product={product}
-                                  type={product.subcategory_name || subCategory}
-                                  onSelect={null}
-                                  onAddToCart={handleAddToCart}
-                                  onRemoveFromCart={handleRemoveFromCart}
-                                  quantity={getProductQuantity(product.id)}
-                                  isLiked={likedProducts.has(product.id)}
-                                  handleLike={handleLike}
-                                  setReviewsModalProduct={setReviewsModalProduct}
-                                  onShare={setShareModalProduct}
-                                  isCashier={!!cajaUser}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
+                  <div className="grid grid-cols-3 gap-1">
+                    {allCatProducts.map(product => (
+                      <MenuItem
+                        key={product.id}
+                        product={product}
+                        type={product.subcategory_name || catKey}
+                        onSelect={null}
+                        onAddToCart={handleAddToCart}
+                        onRemoveFromCart={handleRemoveFromCart}
+                        quantity={getProductQuantity(product.id)}
+                        isLiked={likedProducts.has(product.id)}
+                        handleLike={handleLike}
+                        setReviewsModalProduct={setReviewsModalProduct}
+                        onShare={setShareModalProduct}
+                        isCashier={!!cajaUser}
+                      />
+                    ))}
                   </div>
                 </div>
               );
