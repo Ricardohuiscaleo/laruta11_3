@@ -700,106 +700,27 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
   const [showImageModal, setShowImageModal] = useState(false);
   const [isActive, setIsActive] = useState(product.active !== 0);
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
-  const heartButtonRef = useRef(null);
 
-  // Track product view when component mounts
   useEffect(() => {
     if (window.Analytics) {
       window.Analytics.trackProductView(product.id, product.name);
     }
   }, [product.id, product.name]);
 
-  // Doble tap para me gusta
   const handleDoubleTap = useDoubleTap((e) => {
     e.stopPropagation();
     if (!isLiked) {
-      // Obtener posición del corazón en la tarjeta
       const rect = e.currentTarget.getBoundingClientRect();
       setHeartPosition({
-        x: rect.left + rect.width * 0.2, // Posición del corazón en la tarjeta
-        y: rect.bottom - 60 // Cerca del corazón de me gusta
+        x: rect.left + rect.width * 0.2,
+        y: rect.bottom - 60
       });
-
       handleLike(product.id);
       setShowFloatingHeart(true);
-      vibrate([50, 50, 50]); // Vibración triple
-
-
+      vibrate([50, 50, 50]);
     }
   });
-  const typeColors = {
-    // Churrascos/Sandwiches
-    'Carne': {
-      bg: 'bg-red-500',
-      text: 'text-white',
-      border: 'border-red-500'
-    },
-    'Pollo': {
-      bg: 'bg-yellow-500',
-      text: 'text-white',
-      border: 'border-yellow-500'
-    },
-    'Vegetariano': {
-      bg: 'bg-green-500',
-      text: 'text-white',
-      border: 'border-green-500'
-    },
-    // Hamburguesas
-    'Clásicas': {
-      bg: 'bg-orange-500',
-      text: 'text-white',
-      border: 'border-orange-500'
-    },
-    'Especiales': {
-      bg: 'bg-purple-500',
-      text: 'text-white',
-      border: 'border-purple-500'
-    },
-    // Completos
-    'Tradicionales': {
-      bg: 'bg-blue-500',
-      text: 'text-white',
-      border: 'border-blue-500'
-    },
-    'Al Vapor': {
-      bg: 'bg-cyan-500',
-      text: 'text-white',
-      border: 'border-cyan-500'
-    },
-    // Tomahawks
-    'Tomahawks': {
-      bg: 'bg-red-700',
-      text: 'text-white',
-      border: 'border-red-700'
-    },
-    // Snacks
-    'Papas': {
-      bg: 'bg-yellow-600',
-      text: 'text-white',
-      border: 'border-yellow-600'
-    },
-    'Jugos': {
-      bg: 'bg-green-400',
-      text: 'text-white',
-      border: 'border-green-400'
-    },
-    'Bebidas': {
-      bg: 'bg-blue-400',
-      text: 'text-white',
-      border: 'border-blue-400'
-    },
-    'Salsas': {
-      bg: 'bg-red-400',
-      text: 'text-white',
-      border: 'border-red-400'
-    },
-    'Empanadas': {
-      bg: 'bg-amber-500',
-      text: 'text-white',
-      border: 'border-amber-500'
-    }
-  };
-  const colorClasses = type ? typeColors[type] : null;
+
   const toggleProductStatus = async () => {
     setIsTogglingStatus(true);
     try {
@@ -819,27 +740,28 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
     setIsTogglingStatus(false);
   };
 
+  const catColor = categoryColors[product.category_name?.toLowerCase()] || categoryColors[product.category_key] || '#94a3b8';
+
   return (
     <>
-      <div className={`bg-white rounded-xl overflow-hidden animate-fade-in transition-all duration-300 flex flex-col relative ${!isActive && isCashier ? 'border-2 border-red-500' : ''}`} style={{ boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.05), -1px -1px 3px rgba(255, 255, 255, 0.5)' }}>
-        {/* Capa gris para productos inactivos */}
+      <div
+        className={`bg-white rounded-lg overflow-hidden animate-fade-in transition-all duration-300 flex flex-col relative ${!isActive && isCashier ? 'border-2 border-red-500' : ''}`}
+        style={{
+          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+          borderLeft: `3px solid ${catColor}`
+        }}
+      >
         {!isActive && isCashier && (
-          <div className="absolute inset-0 bg-gray-500 bg-opacity-60 z-10 rounded-xl"></div>
+          <div className="absolute inset-0 bg-gray-500 bg-opacity-60 z-10"></div>
         )}
 
-        {/* Header con el Título */}
-        <div className="p-2 border-b bg-gray-50/50">
-          <h3
-            className="font-bold text-[11px] sm:text-xs text-gray-800 cursor-pointer line-clamp-2 min-h-[32px] flex items-center justify-center text-center"
-            onClick={() => onSelect(product)}
-            title={product.name}
-          >
-            {product.name}
-          </h3>
+        <div className="absolute top-0.5 left-1 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-1 py-0.5 rounded text-[7px] font-bold uppercase tracking-tighter text-gray-500 border border-gray-100/50">
+          <span style={{ color: catColor }}>{categoryIcons[product.category_key] || categoryIcons[product.category_name?.toLowerCase()] || <Package size={8} />}</span>
+          {product.category_name || product.category_key}
         </div>
 
         <div
-          className="w-full relative aspect-square cursor-pointer overflow-hidden"
+          className="w-full relative aspect-square cursor-pointer overflow-hidden group"
           onTouchStart={handleDoubleTap}
           onClick={() => product.image && setShowImageModal(true)}
         >
@@ -847,74 +769,76 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
             <img
               src={product.image}
               alt={product.name}
-              className="w-full h-full object-cover transition-transform hover:scale-105"
+              className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
             />
           ) : (
-            <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-              <ChefHat className="text-gray-300" size={32} />
+            <div className="w-full h-full bg-gray-50 flex items-center justify-center">
+              <ChefHat className="text-gray-200" size={32} />
             </div>
           )}
-          <FloatingHeart
-            show={showFloatingHeart}
-            startPosition={heartPosition}
-            onAnimationEnd={() => setShowFloatingHeart(false)}
-          />
+
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-1 pt-3 flex justify-center">
+            <p className="text-[10px] font-black text-white bg-orange-600/90 px-1.5 py-0.5 rounded shadow-sm">
+              ${product.price ? product.price.toLocaleString('es-CL') : '0'}
+            </p>
+          </div>
+
+          <FloatingHeart show={showFloatingHeart} startPosition={heartPosition} onAnimationEnd={() => setShowFloatingHeart(false)} />
+
           {product.category_name === 'Combos' && (
-            <div className="absolute top-1 right-1 bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 z-20">
-              <GiHamburger size={8} />
-              <CupSoda size={8} />
+            <div className="absolute top-0.5 right-0.5 bg-white/90 p-0.5 rounded flex items-center gap-0.5 z-20">
+              <GiHamburger size={7} className="text-orange-500" />
+              <CupSoda size={7} className="text-orange-500" />
             </div>
           )}
         </div>
 
-        <div className="p-1.5 space-y-1.5 mt-auto">
-          <div className="flex items-center justify-center">
-            <p className="text-xs font-bold bg-yellow-400 text-black px-2 py-0.5 rounded-md">${product.price.toLocaleString('es-CL')}</p>
-          </div>
+        <div className="p-1 min-h-[38px] flex flex-col justify-center bg-gray-50/30">
+          <h3
+            className="font-bold text-[10px] leading-tight text-gray-800 cursor-pointer line-clamp-2 text-center"
+            onClick={() => onSelect(product)}
+            title={product.name}
+          >
+            {product.name}
+          </h3>
+        </div>
 
-          <div className="flex items-center gap-1">
-            {quantity > 0 && (
-              <button
-                onClick={() => onRemoveFromCart(product.id)}
-                className="text-red-600 rounded-full hover:bg-red-50 transition-colors p-0.5"
-              >
-                <MinusCircle size={18} />
-              </button>
-            )}
-            {quantity > 0 && <span className="font-bold text-xs text-gray-800 w-4 text-center">{quantity}</span>}
+        <div className="p-1 pb-1 px-1 flex items-center gap-1 mt-auto border-t border-gray-100">
+          {quantity > 0 && (
             <button
-              onClick={() => onAddToCart(product)}
-              className={`flex-1 text-white rounded-lg py-1.5 text-[10px] font-bold transition-all duration-300 flex items-center justify-center gap-1 ${quantity > 0 ? 'bg-blue-500 hover:bg-blue-600' : 'bg-green-500 hover:bg-green-600'
-                }`}
+              onClick={() => onRemoveFromCart(product.id)}
+              className="text-red-600 rounded-full hover:bg-red-50 p-0.5"
             >
-              <PlusCircle size={14} />
-              <span>Agregar</span>
+              <MinusCircle size={14} />
             </button>
-          </div>
+          )}
+          <button
+            onClick={() => onAddToCart(product)}
+            className={`flex-1 text-white rounded py-1 text-[9px] font-bold transition-all flex items-center justify-center gap-0.5 ${quantity > 0 ? 'bg-blue-600' : 'bg-green-600'
+              }`}
+          >
+            <PlusCircle size={10} />
+            <span>{quantity > 0 ? quantity : 'Agregar'}</span>
+          </button>
+          {isCashier && (
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleProductStatus(); }}
+              className={`p-1 rounded ${isActive ? 'text-green-500' : 'text-red-500'}`}
+            >
+              <Settings size={10} />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Modal de imagen completa */}
       {showImageModal && (
-        <div
-          className="fixed inset-0 bg-black/90 z-[70] flex items-center justify-center animate-fade-in"
-          onClick={() => setShowImageModal(false)}
-        >
-          <button
-            onClick={() => setShowImageModal(false)}
-            className="absolute top-4 right-4 bg-black/50 rounded-full p-2 text-white hover:bg-black/70 transition-all z-20"
-          >
-            <X size={24} />
-          </button>
-          <img
-            src={product.image}
-            alt={product.name}
-            className="max-w-full max-h-full object-contain"
-          />
-          <div className="absolute bottom-0 left-0 right-0 p-6 bg-black/60 backdrop-blur-md text-white">
-            <h3 className="text-2xl font-bold mb-2">{product.name}</h3>
-            <p className="text-sm text-gray-200 mb-3 line-clamp-2">{product.description}</p>
-            <p className="text-xl font-bold text-yellow-400">${product.price.toLocaleString('es-CL')}</p>
+        <div className="fixed inset-0 bg-black/90 z-[70] flex items-center justify-center animate-fade-in" onClick={() => setShowImageModal(false)}>
+          <button className="absolute top-4 right-4 text-white"><X size={24} /></button>
+          <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" />
+          <div className="absolute bottom-0 left-0 right-0 p-6 bg-black/60 text-white">
+            <h3 className="text-xl font-bold">{product.name}</h3>
+            <p className="text-sm text-gray-200 line-clamp-2">{product.description}</p>
+            <p className="text-lg font-bold text-yellow-400">${product.price ? product.price.toLocaleString('es-CL') : '0'}</p>
           </div>
         </div>
       )}
@@ -2319,11 +2243,8 @@ export default function App() {
               }
 
               return (
-                <div key={catKey} id={`section-${catKey}`} className="scroll-mt-24">
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-gray-800 capitalize border-b-2 border-orange-500 pb-1 px-2 mb-4 flex items-center gap-2">
-                    <span style={{ color: categoryColors[catKey] || '#f97316' }}>{categoryIcons[catKey]}</span>
-                    {categoryDisplayNames[catKey]}
-                  </h2>
+                <div key={catKey} id={`section-${catKey}`} className="scroll-mt-24 pt-2 first:pt-0">
+                  {/* Categoría oculta para efecto Tetris, manejada por tags individuales y color de borde */}
                   <div className="space-y-6">
                     {orderedEntries
                       .filter(([sub, products]) => products && products.length > 0)
@@ -2336,10 +2257,8 @@ export default function App() {
 
                         return (
                           <div key={subCategory}>
-                            {orderedEntries.length > 1 && (
-                              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2 px-2">{subCategory}</h3>
-                            )}
-                            <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+                            {/* Subcategoría oculta para efecto Tetris */}
+                            <div className="grid grid-cols-3 gap-1">
                               {filteredProducts.map(product => (
                                 <MenuItem
                                   key={product.id}
@@ -2469,49 +2388,32 @@ export default function App() {
       </div>
 
       <nav className="fixed bottom-0 left-0 right-0 z-40 lg:left-1/2 lg:transform lg:-translate-x-1/2 lg:max-w-4xl lg:rounded-t-2xl">
-        <div className="bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] rounded-t-xl">
-          <div className="flex items-center overflow-x-auto px-2 pt-0 pb-4 gap-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            {mainCategories.map(cat => (
-              <button
-                key={cat}
-                onClick={() => {
-                  vibrate(30);
-                  setActiveCategory(cat);
-                  const element = document.getElementById(`section-${cat}`);
-                  if (element) {
-                    element.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
-                className={`flex flex-col items-center justify-center flex-shrink-0 min-w-[70px] py-2 px-2 transition-colors duration-200 text-xs font-medium rounded-lg relative ${activeCategory === cat
-                    ? ''
-                    : 'text-gray-700 hover:text-orange-500 hover:bg-orange-50'
-                  }`}
-              >
-                {activeCategory === cat && (
-                  <div className="absolute -top-0 left-0 right-0 h-1 bg-orange-500"></div>
-                )}
-                <div
-                  className="flex items-center justify-center h-6 mb-1"
-                  style={{ color: activeCategory === cat ? categoryColors[cat] : '#374151' }}
-                >
-                  {categoryIcons[cat]}
-                </div>
-                <span
-                  className="text-[9px] sm:text-[10px] leading-tight text-center max-w-full break-words"
-                  style={activeCategory === cat ? (
-                    cat === 'la_ruta_11' ? {
-                      color: '#dc2626'
-                    } : {
-                      background: 'linear-gradient(135deg, #dc2626, #ea580c, #f97316)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text'
+        <div className="bg-white/95 backdrop-blur-md shadow-[0_-4px_10px_-2px_rgba(0,0,0,0.1)] rounded-t-2xl border-t border-gray-100">
+          <div
+            className="flex items-center overflow-x-auto px-4 py-3 gap-0"
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              WebkitOverflowScrolling: 'touch'
+            }}
+          >
+            {mainCategories.map((cat, index) => (
+              <React.Fragment key={cat}>
+                <button
+                  onClick={() => {
+                    const element = document.getElementById(`section-${cat}`);
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth' });
                     }
-                  ) : {}}
+                  }}
+                  className="flex-shrink-0 px-3 py-1 text-[11px] font-bold uppercase tracking-wide transition-all whitespace-nowrap text-gray-600 hover:text-orange-500 active:scale-95"
                 >
-                  {categoryDisplayNames[cat]}
-                </span>
-              </button>
+                  {categoryDisplayNames[cat] || cat}
+                </button>
+                {index < mainCategories.length - 1 && (
+                  <span className="text-gray-300 font-light select-none">|</span>
+                )}
+              </React.Fragment>
             ))}
           </div>
         </div>
