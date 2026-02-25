@@ -28,7 +28,7 @@ import ComboModal from './modals/ComboModal.jsx';
 import PaymentPendingModal from './modals/PaymentPendingModal.jsx';
 import SwipeToggle from './SwipeToggle.jsx';
 import useDoubleTap from '../hooks/useDoubleTap.js';
-import { vibrate, playNotificationSound, createConfetti, initAudio, playComandaSound } from '../utils/effects.js';
+import { vibrate, playNotificationSound, createConfetti, initAudio, playComandaSound, playAddSound, playRemoveSound, playSuccessSound } from '../utils/effects.js';
 import { validateCheckoutForm, getFormDisabledState } from '../utils/validation.js';
 
 
@@ -803,6 +803,18 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
           </div>
         )}
 
+        <div className="absolute top-1.5 right-1.5 z-20 flex flex-col items-end gap-1">
+          <span className="bg-white/95 px-1.5 py-0.5 rounded-lg font-black text-[10px] text-black shadow-sm backdrop-blur-sm border border-gray-100">
+            ${product.price ? product.price.toLocaleString('es-CL') : '0'}
+          </span>
+          {product.category_name === 'Combos' && (
+            <div className={`bg-white/90 p-0.5 rounded flex items-center gap-0.5 shadow-sm transition-opacity ${!isActive ? 'opacity-50' : ''}`}>
+              <GiHamburger size={7} className="text-orange-500" />
+              <CupSoda size={7} className="text-orange-500" />
+            </div>
+          )}
+        </div>
+
         <div
           className="w-full relative aspect-square cursor-pointer overflow-hidden group"
           onTouchStart={handleDoubleTap}
@@ -821,13 +833,6 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
           )}
 
           <FloatingHeart show={showFloatingHeart} startPosition={heartPosition} onAnimationEnd={() => setShowFloatingHeart(false)} />
-
-          {product.category_name === 'Combos' && (
-            <div className={`absolute top-1 right-1 bg-white/90 p-0.5 rounded flex items-center gap-0.5 z-20 shadow-sm transition-opacity ${!isActive ? 'opacity-50' : ''}`}>
-              <GiHamburger size={7} className="text-orange-500" />
-              <CupSoda size={7} className="text-orange-500" />
-            </div>
-          )}
         </div>
 
         <div className="px-1.5 pt-1 pb-0.5">
@@ -839,10 +844,7 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
           </h3>
         </div>
 
-        <div className="px-1.5 pb-1.5 flex items-center justify-between gap-1 mt-auto">
-          <span className="bg-white px-1.5 py-0.5 rounded-lg font-black text-[10px] text-black shadow-sm">
-            ${product.price ? product.price.toLocaleString('es-CL') : '0'}
-          </span>
+        <div className="px-1.5 pb-1.5 flex items-center justify-center gap-1 mt-auto">
           <div className="flex items-center gap-0.5">
             {quantity > 0 && (
               <button
@@ -855,9 +857,9 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
             {quantity > 0 && <span className="font-black text-[10px] text-black w-4 text-center">{quantity}</span>}
             <button
               onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-              className="bg-black text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold hover:scale-110 transition-transform active:scale-95 shadow-md"
+              className="bg-black text-white px-2 py-0.5 rounded-full flex items-center justify-center text-[10px] font-bold hover:scale-105 transition-transform active:scale-95 shadow-md"
             >
-              +
+              Agregar
             </button>
           </div>
         </div>
@@ -1143,6 +1145,7 @@ export default function App() {
     }
 
     if (numericAmount === finalTotal) {
+      playSuccessSound();
       processCashOrder();
     } else {
       setCashStep('confirm');
@@ -1200,6 +1203,7 @@ export default function App() {
       if (result.success) {
         localStorage.removeItem('ruta11_cart');
         localStorage.removeItem('ruta11_cart_total');
+        playSuccessSound();
         console.log('✅ Redirigiendo a /cash-pending?order=' + result.order_id);
         window.location.href = '/cash-pending?order=' + result.order_id;
       } else {
@@ -1236,7 +1240,7 @@ export default function App() {
 
   const handlePaymentSuccess = (paymentData) => {
     createConfetti();
-    playNotificationSound();
+    playSuccessSound();
     vibrate([200, 100, 200]);
 
     // Agregar notificación de pago exitoso
@@ -1416,109 +1420,109 @@ export default function App() {
     return;
     /* CÓDIGO DESACTIVADO
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      alert('Tu navegador no soporta geolocalización');
+        alert('Tu navegador no soporta geolocalización');
       return;
     }
 
-    setLocationPermission('requesting');
-    
-    navigator.geolocation.getCurrentPosition(
+      setLocationPermission('requesting');
+
+      navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude, longitude } = position.coords;
-        
-        // Obtener dirección usando Google Geocoding API
-        let addressInfo;
-        try {
+        const {latitude, longitude} = position.coords;
+
+      // Obtener dirección usando Google Geocoding API
+      let addressInfo;
+      try {
           const formData = new FormData();
-          formData.append('lat', latitude);
-          formData.append('lng', longitude);
-          
-          const response = await fetch('/api/location/geocode.php', {
-            method: 'POST',
-            body: formData
+      formData.append('lat', latitude);
+      formData.append('lng', longitude);
+
+      const response = await fetch('/api/location/geocode.php', {
+        method: 'POST',
+      body: formData
           });
-          
-          const text = await response.text();
-          
-          // Verificar si la respuesta es JSON válido
-          if (!text || text.trim().startsWith('<')) {
+
+      const text = await response.text();
+
+      // Verificar si la respuesta es JSON válido
+      if (!text || text.trim().startsWith('<')) {
             throw new Error('API returned HTML instead of JSON');
           }
-          
-          const data = JSON.parse(text);
-          
-          if (data.success) {
-            addressInfo = {
-              formatted_address: data.formatted_address,
-              street: data.readable.street,
-              city: data.readable.city,
-              region: data.readable.region,
-              country: data.readable.country,
-              components: data.components
-            };
+
+      const data = JSON.parse(text);
+
+      if (data.success) {
+        addressInfo = {
+          formatted_address: data.formatted_address,
+          street: data.readable.street,
+          city: data.readable.city,
+          region: data.readable.region,
+          country: data.readable.country,
+          components: data.components
+        };
           } else {
             throw new Error(data.error || 'Geocoding failed');
           }
         } catch (error) {
-          // Silenciar error de geocoding
-          addressInfo = {
-            formatted_address: `${latitude}, ${longitude}`,
-            street: 'Calle no disponible',
-            city: 'Ciudad no disponible',
-            region: 'Región no disponible',
-            country: 'País no disponible'
-          };
+        // Silenciar error de geocoding
+        addressInfo = {
+          formatted_address: `${latitude}, ${longitude}`,
+          street: 'Calle no disponible',
+          city: 'Ciudad no disponible',
+          region: 'Región no disponible',
+          country: 'País no disponible'
+        };
         }
-        
-        try {
+
+      try {
           
           const locationData = {
-            latitude,
-            longitude,
-            address: addressInfo.formatted_address,
-            addressInfo,
-            accuracy: position.coords.accuracy
+        latitude,
+        longitude,
+        address: addressInfo.formatted_address,
+      addressInfo,
+      accuracy: position.coords.accuracy
           };
-          
-          setUserLocation(locationData);
-          setLocationPermission('granted');
-          
-          // DISABLED FOR CAJA: Verificar zona de delivery
-          // checkDeliveryZone(latitude, longitude);
-          
-          // DISABLED FOR CAJA: Obtener productos cercanos
-          // getNearbyProducts(latitude, longitude);
-          
-          // Obtener food trucks cercanos
-          getNearbyTrucks(latitude, longitude);
-          
-          // Guardar en servidor si usuario está logueado
-          if (user) {
+
+      setUserLocation(locationData);
+      setLocationPermission('granted');
+
+      // DISABLED FOR CAJA: Verificar zona de delivery
+      // checkDeliveryZone(latitude, longitude);
+
+      // DISABLED FOR CAJA: Obtener productos cercanos
+      // getNearbyProducts(latitude, longitude);
+
+      // Obtener food trucks cercanos
+      getNearbyTrucks(latitude, longitude);
+
+      // Guardar en servidor si usuario está logueado
+      if (user) {
             const saveFormData = new FormData();
-            saveFormData.append('latitud', latitude);
-            saveFormData.append('longitud', longitude);
-            saveFormData.append('direccion', addressInfo.formatted_address);
-            saveFormData.append('precision', position.coords.accuracy);
-            
-            fetch('/api/location/save_location.php', {
-              method: 'POST',
-              body: saveFormData
-            }).catch(() => {});
+      saveFormData.append('latitud', latitude);
+      saveFormData.append('longitud', longitude);
+      saveFormData.append('direccion', addressInfo.formatted_address);
+      saveFormData.append('precision', position.coords.accuracy);
+
+      fetch('/api/location/save_location.php', {
+        method: 'POST',
+      body: saveFormData
+            }).catch(() => { });
           }
         } catch (error) {
-          // Silenciar error al guardar ubicación
-        }
+        // Silenciar error al guardar ubicación
+      }
       },
       (error) => {
         setLocationPermission('denied');
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000 // 5 minutos
+      timeout: 10000,
+      maximumAge: 300000 // 5 minutos
       }
-    );
-    */
+      );
+      */
   };
 
   const checkDeliveryZone = async (lat, lng) => {
@@ -1750,6 +1754,7 @@ export default function App() {
     }
 
     vibrate(50);
+    playAddSound();
 
     if (window.Analytics) {
       window.Analytics.trackAddToCart(product.id, product.name);
@@ -1779,6 +1784,7 @@ export default function App() {
         });
       }
       setCart(prevCart => prevCart.filter(item => item.cartItemId !== productIdOrCartItemId));
+      playRemoveSound();
     } else {
       // Si es product.id (desde MenuItem), eliminar el ÚLTIMO item agregado
       const productId = productIdOrCartItemId;
@@ -1800,6 +1806,7 @@ export default function App() {
         }
 
         setCart(prevCart => prevCart.filter(item => item.cartItemId !== lastItem.cartItemId));
+        playRemoveSound();
       }
     }
   };
@@ -2291,8 +2298,8 @@ export default function App() {
             style={{ top: 'calc(env(safe-area-inset-top, 0px) + 50px)' }}
             onClick={() => { vibrate(30); setShowCheckout(true); }}
           >
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-gray-800 truncate flex-1 mr-2">🛒 {summaryText}</span>
+            <div className="flex items-center justify-between text-xs py-0.5">
+              <span className="font-bold text-gray-800 flex-1 mr-2 leading-tight">🛒 {summaryText}</span>
             </div>
           </div>
         );
