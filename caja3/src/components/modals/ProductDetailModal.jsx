@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
-  PlusCircle, X, MinusCircle, ZoomIn, ChevronDown, ChevronUp
+  PlusCircle, X, MinusCircle, ZoomIn, ChevronDown, ChevronUp, ChefHat
 } from 'lucide-react';
 
 const ComboItem = ({ item, isExtra = false, onAddToCart, onRemoveFromCart, getProductQuantity }) => {

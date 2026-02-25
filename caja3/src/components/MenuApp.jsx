@@ -900,9 +900,7 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
                 </p>
               )}
 
-              {product.grams > 0 && (
-                <p className="text-xs text-gray-400 mb-4">{product.grams}g</p>
-              )}
+              {/* Removed {product.grams}g as requested */}
 
               {/* Price + Cart Controls */}
               <div className="flex items-center justify-between pt-3 border-t border-gray-100">
@@ -924,9 +922,9 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-                    className="bg-green-600 hover:bg-green-700 text-white rounded-full w-9 h-9 flex items-center justify-center font-bold text-lg shadow-md active:scale-95 transition-transform"
+                    className="bg-green-600 hover:bg-green-700 text-white rounded-full px-4 h-9 flex items-center justify-center font-bold text-sm shadow-md active:scale-95 transition-transform"
                   >
-                    +
+                    Agregar
                   </button>
                 </div>
               </div>
