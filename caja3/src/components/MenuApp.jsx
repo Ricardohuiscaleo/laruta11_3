@@ -72,11 +72,18 @@ var categoryIcons = {
 };
 
 var categoryColors = {
-  hamburguesas: '#D2691E', // Marrón dorado para hamburguesas
-  churrascos: '#FF6347', // Tomate rojo para sandwiches
-  completos: '#FF4500', // Naranja rojizo para completos
-  papas_y_snacks: '#FFD700', // Dorado para papas fritas
-  Combos: '#FF6B35' // Naranja para combos
+  hamburguesas: '#FFD700',      // Amarillo Canario
+  hamburguesas_100g: '#FFBF00', // Ámbar
+  churrascos: '#FF7F50',        // Coral Vivo
+  completos: '#FF4500',         // Naranja Vibrante
+  la_ruta_11: '#E0115F',        // Rojo Cereza
+  papas: '#9ACD32',             // Verde Manzana
+  papas_y_snacks: '#9ACD32',    // Verde Manzana
+  pizzas: '#FF69B4',            // Fucsia
+  bebidas: '#40E0D0',           // Azul Turquesa
+  Combos: '#FF8C00',            // Mandarina
+  personalizar: '#BA55D3',      // Morado Orquídea
+  extras: '#00CED1'             // Azul Cian
 };
 
 var CATEGORY_ID_MAP = {
@@ -769,23 +776,24 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
   return (
     <>
       <div
-        className={`bg-white rounded-lg overflow-hidden animate-fade-in transition-all duration-300 flex flex-col relative ${!isActive && isCashier ? 'border-2 border-red-500' : ''}`}
+        className={`rounded-2xl overflow-hidden animate-fade-in transition-all duration-300 flex flex-col relative ${!isActive && isCashier ? 'ring-2 ring-red-500' : ''}`}
         style={{
-          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-          borderLeft: `4px solid ${catColor}`
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          backgroundColor: 'rgba(255,255,255,0.85)',
+          backdropFilter: 'blur(4px)'
         }}
       >
         {!isActive && isCashier && (
-          <div className="absolute inset-0 bg-gray-500 bg-opacity-60 z-10 transition-opacity duration-300"></div>
+          <div className="absolute inset-0 bg-gray-500 bg-opacity-60 z-10 transition-opacity duration-300 rounded-2xl"></div>
         )}
 
         {isCashier && (
           <div className="absolute top-1 left-1.5 z-20">
             <button
               onClick={(e) => { e.stopPropagation(); toggleProductStatus(); }}
-              className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tighter transition-all shadow-sm border ${isActive
-                ? 'bg-green-100 text-green-700 border-green-200'
-                : 'bg-red-100 text-red-700 border-red-200 ring-2 ring-red-400 ring-offset-1'
+              className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase tracking-tighter transition-all shadow-sm border ${isActive
+                ? 'bg-green-100/90 text-green-700 border-green-300'
+                : 'bg-red-100/90 text-red-700 border-red-300 ring-2 ring-red-400 ring-offset-1'
                 }`}
               disabled={isTogglingStatus}
             >
@@ -804,19 +812,13 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
             <img
               src={product.image}
               alt={product.name}
-              className={`w-full h-full object-cover transition-transform group-hover:scale-110 duration-500 ${!isActive ? 'grayscale' : ''}`}
+              className={`w-full h-full object-cover transition-transform group-hover:scale-110 duration-500 rounded-t-2xl ${!isActive ? 'grayscale' : ''}`}
             />
           ) : (
-            <div className="w-full h-full bg-gray-50 flex items-center justify-center">
-              <ChefHat className="text-gray-200" size={32} />
+            <div className="w-full h-full bg-white/50 flex items-center justify-center rounded-t-2xl">
+              <ChefHat className="text-gray-300" size={28} />
             </div>
           )}
-
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-1 pt-3 flex justify-center">
-            <p className="text-[10px] font-black text-white bg-orange-600/90 px-1.5 py-0.5 rounded shadow-sm">
-              ${product.price ? product.price.toLocaleString('es-CL') : '0'}
-            </p>
-          </div>
 
           <FloatingHeart show={showFloatingHeart} startPosition={heartPosition} onAnimationEnd={() => setShowFloatingHeart(false)} />
 
@@ -828,33 +830,36 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
           )}
         </div>
 
-        <div className="p-1 min-h-[38px] flex flex-col justify-center bg-gray-50/20">
+        <div className="px-1.5 pt-1 pb-0.5">
           <h3
-            className={`font-bold text-[10px] leading-tight cursor-pointer line-clamp-2 text-center transition-colors ${!isActive ? 'text-gray-400' : 'text-gray-800'}`}
-            onClick={() => onSelect(product)}
+            className={`font-black text-[10px] leading-tight line-clamp-2 text-center transition-colors ${!isActive ? 'text-gray-400' : 'text-gray-900'}`}
             title={product.name}
           >
             {product.name}
           </h3>
         </div>
 
-        <div className="p-1 pb-1 px-1 flex items-center gap-1 mt-auto border-t border-gray-100 bg-white">
-          {quantity > 0 && (
+        <div className="px-1.5 pb-1.5 flex items-center justify-between gap-1 mt-auto">
+          <span className="bg-white px-1.5 py-0.5 rounded-lg font-black text-[10px] text-black shadow-sm">
+            ${product.price ? product.price.toLocaleString('es-CL') : '0'}
+          </span>
+          <div className="flex items-center gap-0.5">
+            {quantity > 0 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onRemoveFromCart(product.id); }}
+                className="text-red-600 hover:bg-red-100 p-0.5 rounded-full transition-colors"
+              >
+                <MinusCircle size={14} />
+              </button>
+            )}
+            {quantity > 0 && <span className="font-black text-[10px] text-black w-4 text-center">{quantity}</span>}
             <button
-              onClick={(e) => { e.stopPropagation(); onRemoveFromCart(product.id); }}
-              className="text-red-500 hover:bg-red-50 p-1 transition-colors"
+              onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+              className="bg-black text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold hover:scale-110 transition-transform active:scale-95 shadow-md"
             >
-              <MinusCircle size={16} />
+              +
             </button>
-          )}
-          <button
-            onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-            className={`flex-1 text-white rounded py-1.5 text-[9px] font-black tracking-widest uppercase transition-all flex items-center justify-center gap-1 active:scale-95 shadow-sm ${quantity > 0 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'
-              }`}
-          >
-            <PlusCircle size={10} />
-            <span>{quantity > 0 ? quantity : 'Add'}</span>
-          </button>
+          </div>
         </div>
       </div>
 
@@ -2199,8 +2204,8 @@ export default function App() {
 
 
 
-      <main className="pt-20 pb-24 px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={showSuggestions ? { filter: 'blur(2px)', pointerEvents: 'none' } : {}}>
-        <div className="space-y-1">
+      <main className="pt-20 pb-24 px-1.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={showSuggestions ? { filter: 'blur(2px)', pointerEvents: 'none' } : {}}>
+        <div className="masonry-layout">
           {mainCategories
             .filter(cat => cat !== 'personalizar' && cat !== 'extras')
             .map(catKey => {
@@ -2291,17 +2296,15 @@ export default function App() {
                 <div
                   key={catKey}
                   id={`section-${catKey}`}
-                  className="scroll-mt-24"
+                  className="masonry-brick scroll-mt-24"
                   style={{
-                    borderLeft: `5px solid ${catColor}`,
-                    margin: '2px 2px',
-                    borderRadius: '10px',
-                    backgroundColor: `${catColor}18`,
-                    overflow: 'hidden',
-                    padding: '3px'
+                    backgroundColor: catColor
                   }}
                 >
-                  <div className="grid grid-cols-3 gap-1">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-1.5 px-1">
+                    {categoryDisplayNames[catKey] || catKey}
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
                     {allCatProducts.map(product => (
                       <MenuItem
                         key={product.id}
@@ -3933,6 +3936,38 @@ export default function App() {
       )}
 
       <style>{`
+        /* ===== MASONRY LAYOUT ===== */
+        .masonry-layout {
+          column-count: 2;
+          column-gap: 10px;
+          padding: 0;
+        }
+        @media (min-width: 768px) {
+          .masonry-layout {
+            column-count: 3;
+          }
+        }
+        @media (min-width: 1280px) {
+          .masonry-layout {
+            column-count: 4;
+          }
+        }
+        .masonry-brick {
+          break-inside: avoid;
+          margin-bottom: 10px;
+          border-radius: 20px;
+          padding: 8px;
+          display: flex;
+          flex-direction: column;
+          transition: transform 0.2s ease;
+          position: relative;
+          box-shadow: 0 4px 12px -2px rgba(0,0,0,0.15);
+        }
+        .masonry-brick:hover {
+          transform: translateY(-2px);
+        }
+
+        /* ===== ANIMATIONS ===== */
         @keyframes fade-in {
           from { opacity: 0; transform: scale(0.95); }
           to { opacity: 1; transform: scale(1); }
@@ -3967,7 +4002,7 @@ export default function App() {
         
         nav > div > div::-webkit-scrollbar { display: none; }
         
-        html, body { background: #ffffff !important; }
+        html, body { background: #f5f5f5 !important; }
       `}</style>
     </div>
   );
