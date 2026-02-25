@@ -2077,7 +2077,7 @@ export default function App() {
         </div>
       )}
 
-      <header className="px-4 py-2 sm:p-3 fixed top-0 left-0 right-0 bg-white z-40 shadow-sm">
+      <header className="px-4 py-2 sm:p-3 fixed top-0 left-0 right-0 bg-white z-40 shadow-sm" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
         <div className="flex items-center justify-between w-full">
           {/* Logo */}
           <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" style={{ width: 'clamp(32px, 8vw, 40px)', height: 'clamp(32px, 8vw, 40px)' }} />
@@ -2204,7 +2204,7 @@ export default function App() {
 
 
 
-      <main className="pt-20 pb-40 px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={showSuggestions ? { filter: 'blur(2px)', pointerEvents: 'none' } : {}} onClick={() => showSuggestions && setShowSuggestions(false)}>
+      <main className="pb-40 px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 80px)', ...(showSuggestions ? { filter: 'blur(2px)', pointerEvents: 'none' } : {}) }} onClick={() => showSuggestions && setShowSuggestions(false)}>
         <div className="grid grid-cols-3 gap-1">
           {(() => {
             // Build a flat array of all products tagged with their category color and key
@@ -2337,7 +2337,7 @@ export default function App() {
       </main>
 
       {/* Barra de búsqueda con botones */}
-      <div className="fixed bottom-20 left-4 right-4 z-30 flex items-center gap-2 lg:left-1/2 lg:transform lg:-translate-x-1/2 lg:max-w-xl">
+      <div className="fixed left-4 right-4 flex items-center gap-2 lg:left-1/2 lg:transform lg:-translate-x-1/2 lg:max-w-xl" style={{ bottom: 'calc(env(safe-area-inset-bottom, 12px) + 60px)', zIndex: 35 }}>
         <button
           onClick={() => window.location.href = '/mermas'}
           className="bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg transition-all flex items-center justify-center flex-shrink-0"
@@ -2436,7 +2436,7 @@ export default function App() {
         </button>
       </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 lg:left-1/2 lg:transform lg:-translate-x-1/2 lg:max-w-4xl lg:rounded-t-2xl" style={{ paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}>
+      <nav className="fixed bottom-0 left-0 right-0 z-40 lg:left-1/2 lg:transform lg:-translate-x-1/2 lg:max-w-4xl lg:rounded-t-2xl" style={{ paddingBottom: 'env(safe-area-inset-bottom, 12px)', backgroundColor: '#000' }}>
         <div className="bg-black shadow-[0_-4px_10px_-2px_rgba(0,0,0,0.3)] rounded-t-2xl">
           <div
             className="flex items-center overflow-x-auto px-4 py-3 gap-0"
