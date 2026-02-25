@@ -155,6 +155,7 @@ export default function PersonalApp() {
 
   // Calcular días en el mes
   const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+  const primerDia = new Date(anio, mes, 1).getDay();
   const primerDiaLunes = (primerDia + 6) % 7;
 
   // Mapa de turnos divididos por calendario
