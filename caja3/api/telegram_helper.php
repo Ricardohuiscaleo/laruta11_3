@@ -5,6 +5,17 @@
  */
 
 /**
+ * Escapes special characters for Telegram Markdown V1.
+ * Characters to escape: _ * [ `
+ */
+function escapeMarkdown($text)
+{
+    if (!$text)
+        return '';
+    return str_replace(['_', '*', '[', '`'], ['\_', '\*', '\[', '\`'], $text);
+}
+
+/**
  * Detecta el rango del turno actual basado en la hora de Chile (UTC-3).
  * El turno va desde las 17:30 de un día hasta las 04:00 del día siguiente.
  */
@@ -194,7 +205,8 @@ function generateInventoryReport($pdo)
     };
 
     foreach ($all_items as $item) {
-        $line = " *" . $item['name'] . "*: " . $formatVal($item['stock_norm'], $item['unit']);
+        $itemName = escapeMarkdown($item['name']);
+        $line = " *" . $itemName . "*: " . $formatVal($item['stock_norm'], $item['unit']);
         if ($item['criticidad'] == 2) {
             $critical_items[] = "🔴" . $line . " (Prom: " . $formatVal($item['max_daily'], $item['unit']) . ")";
         }
@@ -381,11 +393,13 @@ function generateGeneralInventoryReport($pdo, $onlyCritical = false)
         });
 
         $icon = $categoryIcons[$catName] ?? ($categoryIcons['Otros']);
-        $msg .= "\n" . $icon . " *" . strtoupper($catName) . "*\n";
+        $catNameEscaped = escapeMarkdown(strtoupper($catName));
+        $msg .= "\n" . $icon . " *" . $catNameEscaped . "*\n";
 
         foreach ($items as $item) {
             $emoji = $item['criticidad'] == 2 ? "🔴" : ($item['criticidad'] == 1 ? "🟡" : "🟢");
-            $msg .= "  {$emoji} *{$item['name']}*: " . $formatVal($item['stock_norm'], $item['unit']);
+            $itemName = escapeMarkdown($item['name']);
+            $msg .= "  {$emoji} *{$itemName}*: " . $formatVal($item['stock_norm'], $item['unit']);
             if ($item['criticidad'] >= 1)
                 $msg .= " (Prom: " . $formatVal($item['max_daily'], $item['unit']) . ")";
             $msg .= "\n";
@@ -498,7 +512,8 @@ function generateShoppingList($pdo, $type = 'ingredientes')
     };
 
     foreach ($itemsToBuy as $item) {
-        $msg .= "• *{$item['name']}*: Comprar " . $formatVal($item['buy'], $item['unit']) . "\n";
+        $itemName = escapeMarkdown($item['name']);
+        $msg .= "• *{$itemName}*: Comprar " . $formatVal($item['buy'], $item['unit']) . "\n";
     }
 
     $msg .= "\n📅 " . date('d-m-Y H:i');

@@ -125,11 +125,21 @@ switch (strtolower(trim($text))) {
         try {
             $report = generateGeneralInventoryReport($pdo, false);
 
-            // Si el mensaje es muy largo, Telegram falla. Dividir si es necesario.
+            // Si el mensaje es muy largo, Telegram falla. Dividir de forma inteligente por líneas.
             if (strlen($report) > 4000) {
-                $parts = str_split($report, 4000);
-                foreach ($parts as $p) {
-                    sendTelegramMessage($token, $chatId, $p);
+                $lines = explode("\n", $report);
+                $currentPart = "";
+                foreach ($lines as $line) {
+                    if (strlen($currentPart) + strlen($line) + 1 > 4000) {
+                        sendTelegramMessage($token, $chatId, $currentPart);
+                        $currentPart = $line;
+                    }
+                    else {
+                        $currentPart .= ($currentPart === "" ? "" : "\n") . $line;
+                    }
+                }
+                if ($currentPart !== "") {
+                    sendTelegramMessage($token, $chatId, $currentPart);
                 }
                 sendTelegramMessage($token, $chatId, "✅ Fin de lista.", $mainButtons);
             }
