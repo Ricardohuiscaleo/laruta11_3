@@ -9,13 +9,13 @@
   "background_color": "#ffffff",
   "icons": [
     {
-      "src": "/icon-caja.png",
+      "src": "/11.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-caja.png",
+      "src": "/11.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
