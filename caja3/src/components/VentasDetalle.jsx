@@ -200,30 +200,30 @@ export default function VentasDetalle() {
           <div className="bg-white rounded-lg mb-3 shadow-md border-2 border-orange-200 overflow-hidden">
             <button
               onClick={() => setShowIngredients(!showIngredients)}
-              className="w-full px-4 py-3 flex justify-between items-center text-left hover:bg-orange-50 transition-colors"
+              className="w-full px-3 py-2 flex justify-between items-center text-left hover:bg-orange-50 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <BarChart3 size={18} className="text-orange-600" />
-                <span className="text-sm font-black text-gray-900 uppercase tracking-tighter">Inventario y Consumo (Control v4.3)</span>
+                <BarChart3 size={16} className="text-orange-600" />
+                <span className="text-xs font-black text-gray-900 uppercase tracking-tighter">Inventario y Consumo (Control v4.3)</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">
-                  {showIngredients ? 'OCULTAR' : 'VER DETALLE'}
+                <span className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full font-bold">
+                  {showIngredients ? 'OCULTAR' : 'VER'}
                 </span>
                 <span className={`text-orange-400 transition-transform duration-300 ${showIngredients ? 'rotate-180' : ''}`}>▼</span>
               </div>
             </button>
 
             {showIngredients && (
-              <div className="px-1 pb-3 overflow-x-auto">
+              <div className="px-0 pb-2 overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-gray-50 text-[10px] uppercase tracking-wider font-bold text-gray-500 border-b border-gray-100">
-                      <th className="px-3 py-2">Ingrediente/Insumo</th>
-                      <th className="px-2 py-2 text-right">Consumido</th>
-                      <th className="px-2 py-2 text-right">Stock Actual</th>
-                      <th className="px-2 py-2 text-right">Max Diarios</th>
-                      <th className="px-3 py-2 text-center">Estado</th>
+                    <tr className="bg-gray-50 text-[9px] uppercase tracking-wider font-bold text-gray-500 border-b border-gray-100">
+                      <th className="px-2 py-1.5">Insumo</th>
+                      <th className="px-1 py-1.5 text-right">Cons.</th>
+                      <th className="px-1 py-1.5 text-right">Stock</th>
+                      <th className="px-1 py-1.5 text-right">MaxD</th>
+                      <th className="px-2 py-1.5 text-center">Estado</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -237,16 +237,13 @@ export default function VentasDetalle() {
 
                       const formatQty = (val) => {
                         return unit === 'g' && val >= 1000
-                          ? `${(val / 1000).toFixed(2)} kg`
-                          : `${Math.round(val)} ${unit}`;
+                          ? `${(val / 1000).toFixed(1)}kg`
+                          : `${Math.round(val)}${unit}`;
                       };
 
                       // Lógica de indicadores corregida (v4.3)
-                      // Rojo: Stock < 1 día de consumo máximo
-                      // Amarillo: Stock < 3 días de consumo máximo
-                      // Verde: Stock >= 3 días
                       let statusColor = "bg-green-500";
-                      let statusText = "Suficiente";
+                      let statusText = "OK";
 
                       if (maxDaily > 0) {
                         if (stock < maxDaily) {
@@ -258,27 +255,27 @@ export default function VentasDetalle() {
                         }
                       } else if (stock <= 0) {
                         statusColor = "bg-red-500";
-                        statusText = "Sin Stock";
+                        statusText = "S/S";
                       }
 
                       return (
-                        <tr key={i} className="hover:bg-orange-50/30 transition-colors text-xs">
-                          <td className="px-3 py-2.5 font-medium text-gray-700 truncate max-w-[120px]">
+                        <tr key={i} className="hover:bg-orange-50/30 transition-colors text-[10px]">
+                          <td className="px-2 py-2 font-medium text-gray-700 truncate max-w-[100px]">
                             {ing.name}
                           </td>
-                          <td className="px-2 py-2.5 text-right font-bold text-orange-600">
+                          <td className="px-1 py-2 text-right font-bold text-orange-600">
                             {formatQty(consumed)}
                           </td>
-                          <td className={`px-2 py-2.5 text-right font-semibold ${stock <= 0 ? 'text-red-500' : 'text-gray-600'}`}>
+                          <td className={`px-1 py-2 text-right font-semibold ${stock <= 0 ? 'text-red-500' : 'text-gray-600'}`}>
                             {formatQty(stock)}
                           </td>
-                          <td className="px-2 py-2.5 text-right text-gray-400 italic">
+                          <td className="px-1 py-2 text-right text-gray-400 italic">
                             {formatQty(maxDaily)}
                           </td>
-                          <td className="px-3 py-2.5">
-                            <div className="flex flex-col items-center gap-0.5">
-                              <div className={`w-2.5 h-2.5 rounded-full ${statusColor} shadow-sm`}></div>
-                              <span className="text-[8px] font-bold text-gray-400 uppercase">{statusText}</span>
+                          <td className="px-2 py-2">
+                            <div className="flex flex-col items-center gap-0">
+                              <div className={`w-2 h-2 rounded-full ${statusColor} shadow-sm`}></div>
+                              <span className="text-[7px] font-bold text-gray-400 uppercase leading-none">{statusText}</span>
                             </div>
                           </td>
                         </tr>
@@ -286,15 +283,15 @@ export default function VentasDetalle() {
                     })}
                   </tbody>
                 </table>
-                <div className="mt-2 px-3 flex items-center justify-center gap-4 text-[9px] text-gray-400 border-t border-gray-50 pt-2">
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-red-500"></div> Crítico (&lt;1d)
+                <div className="mt-1 px-2 flex items-center justify-center gap-2 text-[8px] text-gray-400 border-t border-gray-50 pt-1">
+                  <div className="flex items-center gap-0.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div> Crítico (&lt;1d)
                   </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-yellow-400"></div> Bajo (&lt;3d)
+                  <div className="flex items-center gap-0.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div> Bajo (&lt;3d)
                   </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div> Suficiente
+                  <div className="flex items-center gap-0.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> OK
                   </div>
                 </div>
               </div>
