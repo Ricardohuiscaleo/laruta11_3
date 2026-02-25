@@ -204,10 +204,12 @@ const ProductDetailModal = ({
 
   const displayTotal = useMemo(() => product.price + comboSubtotal, [product.price, comboSubtotal]);
 
+  const filterActive = (items) => (items || []).filter(item => item.active === 1 || item.is_active === 1 || item.active === true);
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-[100] flex justify-center items-center animate-fade-in" onClick={onClose}>
-      <div className="bg-white w-full max-w-2xl mx-4 rounded-2xl flex flex-col max-h-[90vh] animate-slide-up" onClick={(e) => e.stopPropagation()}>
-        <div className="bg-white border-b p-4 flex justify-between items-center flex-shrink-0 rounded-t-2xl">
+    <div className="fixed inset-0 bg-white z-[100] flex flex-col animate-slide-up">
+      <div className="bg-white w-full h-full flex flex-col">
+        <div className="bg-white border-b p-4 flex justify-between items-center flex-shrink-0" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}>
           <h2 className="text-lg font-bold text-gray-800">Personalizando {product.name} ${displayTotal.toLocaleString('es-CL')}</h2>
           <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600">
             <X size={24} />
@@ -235,7 +237,7 @@ const ProductDetailModal = ({
                   (effectiveCategory === 'papas_y_snacks' && product.subcategory_name === 'Papas')) && (
                     <ComboSection
                       title={`Personaliza tu ${effectiveCategory === 'hamburguesas' ? 'Hamburguesa' : effectiveCategory === 'churrascos' ? 'Sandwich' : effectiveCategory === 'completos' ? 'Completo' : effectiveCategory === 'la_ruta_11' ? 'Tomahawk' : effectiveCategory === 'papas' ? 'Papas' : effectiveCategory === 'Combos' ? 'Combo' : 'Papas'}`}
-                      items={comboItems.personalizar}
+                      items={filterActive(comboItems.personalizar)}
                       isExtra={true}
                       titleColor="text-orange-600"
                       sectionKey="personalizar"
@@ -247,12 +249,12 @@ const ProductDetailModal = ({
                       useTempCart={true}
                     />
                   )}
-                <ComboSection title="Jugos" items={comboItems.jugos} sectionKey="jugos" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getTempQuantity} useTempCart={true} />
-                <ComboSection title="Bebidas" items={comboItems.bebidas} sectionKey="bebidas" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getTempQuantity} useTempCart={true} />
-                <ComboSection title="Café" items={comboItems.cafe} sectionKey="cafe" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getTempQuantity} useTempCart={true} />
-                <ComboSection title="Té" items={comboItems.te} sectionKey="te" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getTempQuantity} useTempCart={true} />
-                <ComboSection title="Salsas" items={comboItems.salsas} sectionKey="salsas" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getTempQuantity} useTempCart={true} />
-                <ComboSection title="Extras" items={comboItems.extras} isExtra={true} titleColor="text-red-600" sectionKey="extras" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getTempQuantity} useTempCart={true} />
+                <ComboSection title="Jugos" items={filterActive(comboItems.jugos)} sectionKey="jugos" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getTempQuantity} useTempCart={true} />
+                <ComboSection title="Bebidas" items={filterActive(comboItems.bebidas)} sectionKey="bebidas" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getTempQuantity} useTempCart={true} />
+                <ComboSection title="Café" items={filterActive(comboItems.cafe)} sectionKey="cafe" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getTempQuantity} useTempCart={true} />
+                <ComboSection title="Té" items={filterActive(comboItems.te)} sectionKey="te" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getTempQuantity} useTempCart={true} />
+                <ComboSection title="Salsas" items={filterActive(comboItems.salsas)} sectionKey="salsas" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getTempQuantity} useTempCart={true} />
+                <ComboSection title="Extras" items={filterActive(comboItems.extras)} isExtra={true} titleColor="text-red-600" sectionKey="extras" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getTempQuantity} useTempCart={true} />
                 {comboSubtotal > 0 &&
                   <div className="mt-4 pt-4 border-t flex justify-between items-center">
                     <h4 className="font-bold text-gray-800">Subtotal Acompañamientos</h4>
