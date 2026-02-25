@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Banknote, Smartphone, Store, Truck, Clock, XCircle, CheckCircle, X, Send, Bike, Camera } from 'lucide-react';
 import ChecklistCard from './ChecklistCard.jsx';
 
-const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
+function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const [orders, setOrders] = useState([]);
   const [checklists, setChecklists] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +23,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
     Promise.all([loadOrders(), loadChecklists()]).finally(() => {
       setLoading(false);
     });
-    
+
     const interval = setInterval(() => {
       loadOrders();
       loadChecklists();
@@ -55,18 +55,18 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
       const hours = now.getHours();
       const minutes = now.getMinutes();
       const currentTime = hours * 60 + minutes;
-      
+
       const shouldLoadApertura = currentTime >= 1020 && currentTime < 1140;
       const shouldLoadCierre = currentTime >= 30 && currentTime < 105;
-      
+
       const results = [];
-      
+
       // Checklists normales
       if (shouldLoadApertura || shouldLoadCierre) {
         const types = [];
         if (shouldLoadApertura) types.push('apertura');
         if (shouldLoadCierre) types.push('cierre');
-        
+
         for (const type of types) {
           const res = await fetch(`/api/checklist.php?action=get_active&type=${type}&date=${now.toISOString().split('T')[0]}`);
           const data = await res.json();
@@ -75,17 +75,17 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
           }
         }
       }
-      
+
       // Recordatorio de basura (8:55 PM - 10:00 PM)
       const shouldShowTrash = currentTime >= 1255 && currentTime < 1320; // 20:55 - 22:00
       if (shouldShowTrash) {
         const dayOfWeek = now.getDay(); // 0=Domingo, 1=Lunes, etc.
         const location = [2, 4, 6].includes(dayOfWeek) ? 'Codpa' : 'Tucapel'; // Mar, Jue, Sab = Codpa
-        
+
         // Verificar si ya fue marcado como listo hoy
         const today = now.toISOString().split('T')[0];
         const trashDone = localStorage.getItem(`trash_done_${today}`);
-        
+
         if (!trashDone) {
           // Calcular tiempo restante hasta las 9:30 PM
           const targetTime = new Date(now);
@@ -95,7 +95,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
           const hours = Math.floor(diffMins / 60);
           const mins = diffMins % 60;
           const countdown = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-          
+
           results.push({
             id: 'trash_reminder',
             type: 'trash',
@@ -106,7 +106,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
           });
         }
       }
-      
+
       setChecklists(results);
     } catch (error) {
       console.error('Error cargando checklists:', error);
@@ -219,11 +219,11 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
   const cancelOrder = async (orderId, orderNumber) => {
     const order = orders.find(o => o.id === orderId);
     const isRL6 = order?.payment_method === 'rl6_credit';
-    
-    const confirmMsg = isRL6 
+
+    const confirmMsg = isRL6
       ? `⚠️ ¿ANULAR el pedido ${orderNumber}?\n\n✅ Se reintegrará el crédito RL6 automáticamente.\n\nEsta acción no se puede deshacer.`
       : `⚠️ ¿ANULAR el pedido ${orderNumber}?\n\nEsta acción no se puede deshacer.`;
-    
+
     if (!confirm(confirmMsg)) return;
 
     setProcessing(orderId);
@@ -233,13 +233,13 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
         const refundResponse = await fetch('/api/rl6_refund_credit.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             order_number: orderNumber,
             admin_id: 1,
             reason: 'Pedido anulado desde comandas'
           })
         });
-        
+
         const refundResult = await refundResponse.json();
         if (refundResult.success) {
           alert('✅ Pedido anulado y crédito RL6 reintegrado');
@@ -284,7 +284,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
             <div className="text-xs text-gray-600">${parseInt(item.product_price || item.price || 0).toLocaleString('es-CL')}</div>
           </div>
         </div>
-        
+
         {isCombo && (
           <>
             {comboData.fixed_items && comboData.fixed_items.length > 0 && (
@@ -324,7 +324,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
             )}
           </>
         )}
-        
+
         {comboData && comboData.customizations && comboData.customizations.length > 0 && (
           <div className="ml-2 mt-2 rounded-md border border-orange-300 bg-orange-50 px-2 py-1.5">
             <div className="text-xs font-bold text-orange-700 mb-1">❗ Extras del cliente:</div>
@@ -339,11 +339,11 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
 
   const renderDeliveryExtras = (order) => {
     if (!order.delivery_extras_items) return null;
-    
+
     try {
       const extras = JSON.parse(order.delivery_extras_items);
       if (!Array.isArray(extras) || extras.length === 0) return null;
-      
+
       return (
         <div className="mb-3 bg-orange-50 border border-orange-200 rounded p-2">
           <div className="text-xs font-semibold text-orange-800 mb-1">✨ Extras de Delivery:</div>
@@ -361,7 +361,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
   };
 
   const getPaymentIcon = (method) => {
-    switch(method) {
+    switch (method) {
       case 'card': return <CreditCard size={14} />;
       case 'cash': return <Banknote size={14} />;
       case 'transfer': return <Smartphone size={14} />;
@@ -371,7 +371,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
   };
 
   const getPaymentText = (method) => {
-    switch(method) {
+    switch (method) {
       case 'card': return 'Tarjeta';
       case 'cash': return 'Efectivo';
       case 'transfer': return 'Transferencia';
@@ -380,9 +380,9 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
     }
   };
 
-  const activeOrders = orders.filter(o => 
-    o.order_status !== 'delivered' && 
-    o.order_status !== 'cancelled' && 
+  const activeOrders = orders.filter(o =>
+    o.order_status !== 'delivered' &&
+    o.order_status !== 'cancelled' &&
     !o.order_number.startsWith('RL6-') // Ocultar pagos de crédito RL6
   );
   const activeChecklists = checklists.filter(c => c.status !== 'completed' && c.status !== 'missed');
@@ -391,14 +391,14 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
 
   const renderOrderCard = (order, isScheduled = false) => {
     // Validar pago: para webpay/credit debe tener tuu_message === "Transaccion aprobada"
-    const isPaid = order.payment_status === 'paid' && 
-      (order.payment_method === 'webpay' || order.payment_method === 'credit' 
+    const isPaid = order.payment_status === 'paid' &&
+      (order.payment_method === 'webpay' || order.payment_method === 'credit'
         ? order.tuu_message === 'Transaccion aprobada'
         : true);
-    
+
     // Detectar si el callback de TUU falló
-    const tuuCallbackFailed = (order.payment_method === 'webpay' || order.payment_method === 'credit') && 
-      order.payment_status === 'paid' && 
+    const tuuCallbackFailed = (order.payment_method === 'webpay' || order.payment_method === 'credit') &&
+      order.payment_status === 'paid' &&
       order.tuu_message !== 'Transaccion aprobada';
     const seconds = isScheduled ? 0 : getTimeElapsed(order.created_at);
     const timeAlert = isScheduled ? null : getTimeAlert(seconds);
@@ -410,8 +410,8 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-lg">{isScheduled ? '🕐' : timeAlert.icon}</span>
             <span className="text-xs font-mono">{order.order_number}</span>
-            <button 
-              onClick={() => cancelOrder(order.id, order.order_number)} 
+            <button
+              onClick={() => cancelOrder(order.id, order.order_number)}
               disabled={processing === order.id}
               className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white font-bold py-0.5 px-2 rounded text-xs"
             >
@@ -480,7 +480,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                   <Bike size={12} className="flex-shrink-0" />
                   <span className="font-medium">Delivery</span>
                   {!isScheduled && order.created_at && (
-                    <><Clock size={12} /><span>{new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}</span></>
+                    <><Clock size={12} /><span>{new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span></>
                   )}
                   {order.delivery_address && <span className="font-semibold">• {order.delivery_address}</span>}
                 </div>
@@ -507,7 +507,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                         normalizedAddress = `${normalizedAddress}, Arica, Chile`;
                       }
                     }
-                    
+
                     const address = encodeURIComponent(normalizedAddress);
                     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${address}`;
                     // Calcular delivery fee real (con descuento aplicado)
@@ -515,12 +515,12 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                     const subtotal = parseInt(order.subtotal || 0).toLocaleString('es-CL');
                     const deliveryFee = deliveryFeeReal.toLocaleString('es-CL');
                     const total = parseInt(order.installment_amount || 0).toLocaleString('es-CL');
-                    
+
                     // Construir lista de productos desde items array
                     const items = order.items?.map(item => {
                       const isCombo = item.item_type === 'combo' && item.combo_data;
                       let itemText = `${item.quantity}x ${item.product_name}`;
-                      
+
                       if (isCombo) {
                         try {
                           const comboData = JSON.parse(item.combo_data);
@@ -541,17 +541,17 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                           // Si falla el parsing, usar solo el nombre del producto
                         }
                       }
-                      
+
                       return itemText;
                     }).join('\n\n') || order.product_name;
-                    
+
                     // Determinar instrucción de pago
                     let paymentInstruction = '';
                     const isPaid = order.payment_status === 'paid';
                     if (isPaid) {
                       paymentInstruction = '✅ *YA ESTÁ PAGADO*';
                     } else {
-                      switch(order.payment_method) {
+                      switch (order.payment_method) {
                         case 'card':
                           paymentInstruction = '💳 *Tarjeta* - No olvides llevar máquina de pagos';
                           break;
@@ -571,15 +571,15 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                           paymentInstruction = `💰 *${order.payment_method}*`;
                       }
                     }
-                    
+
                     const message = `🚚 *Pedido ${order.order_number}*\n\n👤 *Cliente:* ${order.customer_name}\n📞 *Teléfono:* ${order.customer_phone || 'No disponible'}\n\n📦 *Productos:*\n${items}\n\n💰 *Montos:*\nSubtotal: $${subtotal}\nDelivery: $${deliveryFee}\n*Total: $${total}*\n\n${paymentInstruction}\n\n📍 *Dirección:*\n${order.delivery_address}\n\n🗺️ Ver en mapa:\n${mapsUrl}`;
-                    
+
                     // Debug: mostrar el mensaje completo antes de enviarlo
                     console.log('=== MENSAJE COMPLETO PARA RIDER ===');
                     console.log(message);
                     console.log('=== LONGITUD DEL MENSAJE ===');
                     console.log(message.length);
-                    
+
                     window.location.href = `whatsapp://send?text=${encodeURIComponent(message)}`;
                   }}
                   className="flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
@@ -595,7 +595,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
             <div className="flex items-center gap-2 text-green-800">
               <span className="font-medium">🎖️ Retirado en Cuartel RL6</span>
               {!isScheduled && order.created_at && (
-                <><Clock size={12} /><span>{new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}</span></>
+                <><Clock size={12} /><span>{new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span></>
               )}
             </div>
           </div>
@@ -608,7 +608,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
                 {order.pickup_time ? (
                   <><Clock size={14} className="text-orange-600" /><span className="font-bold text-orange-600">{order.pickup_time.substring(0, 5)}</span></>
                 ) : order.created_at && (
-                  <><Clock size={14} className="text-gray-500" /><span>{new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}</span></>
+                  <><Clock size={14} className="text-gray-500" /><span>{new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span></>
                 )}
               </>
             )}
@@ -791,7 +791,7 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
             sel.forEach((sv, i) => items.push({ key: `sel-${item.id}-${g}-${i}`, label: `  └ ${item.quantity}x ${sv.name} (${g})` }));
           });
           (cd.customizations || []).forEach((c, i) => items.push({ key: `cust-${item.id}-${i}`, label: `  └ ❗ ${c.quantity || item.quantity}x ${c.name}` }));
-        } catch {}
+        } catch { }
       }
     });
     return items;
@@ -818,14 +818,14 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
             </span>
           )}
         </h2>
-        <button 
+        <button
           onClick={onClose}
           className="bg-white/20 hover:bg-white/30 p-2 rounded-full transition-colors"
         >
           <X size={24} />
         </button>
       </div>
-      
+
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="p-4 space-y-4">
@@ -899,6 +899,6 @@ const MiniComandas = ({ onOrdersUpdate, onClose, activeOrdersCount }) => {
       </div>
     </div>
   );
-};
+}
 
 export default MiniComandas;

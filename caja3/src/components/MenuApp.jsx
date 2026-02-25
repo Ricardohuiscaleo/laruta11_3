@@ -40,7 +40,7 @@ import { validateCheckoutForm, getFormDisabledState } from '../utils/validation.
 
 // Datos del menú - se cargarán dinámicamente desde MySQL
 // Datos del menú - se cargarán dinámicamente desde MySQL
-let menuData = {
+var menuData = {
   la_ruta_11: { tomahawks: [] },
   churrascos: { carne: [], pollo: [], vegetariano: [] },
   hamburguesas: { clasicas: [], especiales: [] },
@@ -49,7 +49,7 @@ let menuData = {
   Combos: { hamburguesas: [], sandwiches: [], completos: [] }
 };
 
-const categoryIcons = {
+var categoryIcons = {
   hamburguesas: <GiHamburger style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
   hamburguesas_100g: <GiHamburger style={{ width: 'clamp(13.2px, 3.36vw, 16.8px)', height: 'clamp(13.2px, 3.36vw, 16.8px)' }} />,
   churrascos: <GiSandwich style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
@@ -71,7 +71,7 @@ const categoryIcons = {
   )
 };
 
-const categoryColors = {
+var categoryColors = {
   hamburguesas: '#D2691E', // Marrón dorado para hamburguesas
   churrascos: '#FF6347', // Tomate rojo para sandwiches
   completos: '#FF4500', // Naranja rojizo para completos
@@ -79,7 +79,7 @@ const categoryColors = {
   Combos: '#FF6B35' // Naranja para combos
 };
 
-const CATEGORY_ID_MAP = {
+var CATEGORY_ID_MAP = {
   1: 'la_ruta_11',
   2: 'churrascos',
   3: 'hamburguesas',
@@ -91,7 +91,7 @@ const CATEGORY_ID_MAP = {
   12: 'papas',
 };
 
-const SUBCATEGORY_ID_MAP = {
+var SUBCATEGORY_ID_MAP = {
   9: 'papas',
   10: 'jugos',
   11: 'bebidas',
