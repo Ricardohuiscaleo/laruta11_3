@@ -75,7 +75,7 @@ var categoryColors = {
   hamburguesas: '#FFD700',      // Amarillo Canario
   hamburguesas_100g: '#FFBF00', // Ámbar
   churrascos: '#FF7F50',        // Coral Vivo
-  completos: '#FF4500',         // Naranja Vibrante
+  completos: '#FF00FF',         // Magenta
   la_ruta_11: '#E0115F',        // Rojo Cereza
   papas: '#9ACD32',             // Verde Manzana
   papas_y_snacks: '#9ACD32',    // Verde Manzana
