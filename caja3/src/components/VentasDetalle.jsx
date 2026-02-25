@@ -440,7 +440,13 @@ export default function VentasDetalle() {
                               {combo.customizations && combo.customizations.length > 0 && (
                                 <div className="text-[10px] text-orange-700 bg-orange-50 px-2 py-0.5 rounded flex items-center gap-1 w-fit border border-orange-100 italic">
                                   <Edit size={10} />
-                                  <span>{combo.customizations.join(', ')}</span>
+                                  <span>
+                                    {combo.customizations.map(c => {
+                                      const name = typeof c === 'string' ? c : (c.name || 'Extra');
+                                      const qty = c.quantity || 1;
+                                      return qty > 1 ? `${qty}x ${name}` : name;
+                                    }).join(', ')}
+                                  </span>
                                 </div>
                               )}
                             </div>
