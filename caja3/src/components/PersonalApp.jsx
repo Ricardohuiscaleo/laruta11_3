@@ -298,7 +298,7 @@ export default function PersonalApp() {
 
                   if (titular?.rol?.includes('seguridad')) {
                     if (personaR && personaR.rol?.includes('seguridad')) {
-                      monto = 17966; // Entre guardias
+                      monto = 17966.666; // Entre guardias exacto
                     } else {
                       monto = 30000; // Externo u otro rol cubriendo a seguridad
                     }
