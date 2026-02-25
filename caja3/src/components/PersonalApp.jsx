@@ -155,15 +155,24 @@ export default function PersonalApp() {
 
   // Calcular días en el mes
   const diasEnMes = new Date(anio, mes + 1, 0).getDate();
-  const primerDia = new Date(anio, mes, 1).getDay();
+  const primerDiaLunes = (primerDia + 6) % 7;
 
-  // Mapa de turnos por fecha
-  const turnosPorFecha = {};
+  // Mapa de turnos divididos por calendario
+  const turnosNoSeguridad = {};
+  const turnosSeguridad = {};
   turnos.forEach(t => {
     const d = t.fecha.split('T')[0].split('-')[2];
     const dia = parseInt(d);
-    if (!turnosPorFecha[dia]) turnosPorFecha[dia] = [];
-    turnosPorFecha[dia].push(t);
+    const p = personal.find(x => x.id == t.personal_id);
+    const esSeguridad = p?.rol?.includes('seguridad') || t.tipo === 'seguridad';
+
+    if (esSeguridad) {
+      if (!turnosSeguridad[dia]) turnosSeguridad[dia] = [];
+      turnosSeguridad[dia].push(t);
+    } else {
+      if (!turnosNoSeguridad[dia]) turnosNoSeguridad[dia] = [];
+      turnosNoSeguridad[dia].push(t);
+    }
   });
 
   // Calcular liquidación por persona
@@ -249,17 +258,19 @@ export default function PersonalApp() {
           </div>
         ) : (
           <>
-            {tab === 'calendario' && <CalendarioView diasEnMes={diasEnMes} primerDia={primerDia} turnosPorFecha={turnosPorFecha} personal={personal} colores={COLORES} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({ dia, fecha }); setFormTurno({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa' }); }} onDeleteTurno={deleteTurno} />}
+            {tab === 'calendario' && <CalendarioView diasEnMes={diasEnMes} primerDia={primerDia} turnosPorFecha={turnosNoSeguridad} personal={personal} colores={COLORES} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({ dia, fecha }); setFormTurno({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa' }); }} onDeleteTurno={deleteTurno} />}
             {tab === 'liquidacion' && (
               <>
                 <LiquidacionView personal={personal} cajeros={cajeros} plancheros={plancheros} getLiquidacion={getLiquidacion} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina} onSavePresupuesto={savePresupuesto} />
                 <div style={{ marginTop: 40, borderTop: '2px solid #e2e8f0', paddingTop: 24 }}>
-                  <h2 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 700, color: '#1e293b' }}>📅 Calendario de Turnos</h2>
-                  <CalendarioView diasEnMes={diasEnMes} primerDia={primerDia} turnosPorFecha={turnosPorFecha} personal={personal} colores={COLORES} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({ dia, fecha }); setFormTurno({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa' }); }} onDeleteTurno={deleteTurno} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#1e293b' }}>📅 Calendario de Turnos (La Ruta 11)</h2>
+                  </div>
+                  <CalendarioView diasEnMes={diasEnMes} primerDia={primerDia} turnosPorFecha={turnosNoSeguridad} personal={personal} colores={COLORES} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({ dia, fecha }); setFormTurno({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa' }); }} onDeleteTurno={deleteTurno} />
                 </div>
               </>
             )}
-            {tab === 'seguridad' && <SeguridadView mes={mes} anio={anio} />}
+            {tab === 'seguridad' && <CalendarioSeguridad diasEnMes={diasEnMes} primerDiaLunes={primerDiaLunes} turnosSeguridad={turnosSeguridad} personal={personal} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({ dia, fecha }); setFormTurno({ personal_id: '', tipo: 'reemplazo', reemplazado_por: '', monto_reemplazo: 17966.666, pago_por: 'empresa' }); }} onDeleteTurno={deleteTurno} />}
             {tab === 'equipo' && <EquipoView personal={personal} onAddPersonal={() => { setModalPersonal('new'); setFormPersonal({ nombre: '', rol: ['cajero'], sueldo_base: '', activo: 1 }); }} onEditPersonal={(p) => { setModalPersonal(p); setFormPersonal({ nombre: p.nombre, rol: p.rol.split(','), sueldo_base: p.sueldo_base, activo: p.activo }); }} />}
           </>
         )}
@@ -782,51 +793,99 @@ function EquipoView({ personal, onAddPersonal, onEditPersonal }) {
   );
 }
 
-function SeguridadView({ mes, anio }) {
-  // Ricardo (Jan 26-29), Claudio (Jan 30 - Feb 02)
-  const baseDate = new Date(2026, 0, 26); // 26 de Enero 2026
+function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, personal, mes, anio, onAddTurno, onDeleteTurno }) {
+  const DIAS_LABEL = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  const celdas = [];
+  for (let i = 0; i < primerDiaLunes; i++) celdas.push(null);
+  for (let d = 1; d <= diasEnMes; d++) celdas.push(d);
 
-  function getShift(fecha) {
-    const diff = Math.floor((fecha - baseDate) / (1000 * 60 * 60 * 24));
-    const cycle = 8;
-    const pos = ((diff % cycle) + cycle) % cycle;
-    return pos < 4 ? 'Ricardo' : 'Claudio';
-  }
+  // Colores dedicados a seguridad
+  const seguridadColors = {
+    'Ricardo': { bg: '#bae6fd', border: '#7dd3fc', text: '#0369a1', line: '#0ea5e9' },
+    'Claudio': { bg: '#ddd6fe', border: '#c4b5fd', text: '#5b21b6', line: '#8b5cf6' },
+    'default': { bg: '#fef08a', border: '#fde047', text: '#a16207', line: '#eab308' }
+  };
 
-  const days = [];
-  const diasEnMes = new Date(anio, mes + 1, 0).getDate();
-  for (let d = 1; d <= diasEnMes; d++) {
-    const date = new Date(anio, mes, d);
-    days.push({ dia: d, persona: getShift(date) });
-  }
+  const guardias = personal.filter(p => p.rol?.includes('seguridad') && p.activo == 1);
 
   return (
-    <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0' }}>
+    <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)', border: '1px solid #e0e7ff' }}>
       <div style={{ marginBottom: 20 }}>
-        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1e293b' }}>🛡️ Club de Yates</h2>
-        <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 14 }}>Control de Rondas y Seguridad · Turnos 4x4</p>
+        <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#1e1b4b' }}>🛡️ Club de Yates</h2>
+        <p style={{ margin: '4px 0 16px', color: '#4f46e5', fontSize: 14, fontWeight: 600 }}>Calendario de Rondas y Seguridad · Turnos 4x4 (Lunes - Domingo)</p>
+
+        {/* Leyenda */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          {guardias.map(p => {
+            const c = seguridadColors[p.nombre] || seguridadColors['default'];
+            return (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, background: c.bg, border: `1px solid ${c.border}` }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: c.line }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: c.text }}>{p.nombre}</span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
-        {days.map(d => (
-          <div key={d.dia} style={{
-            padding: '12px', borderRadius: 12, border: '1px solid #e2e8f0',
-            background: d.persona === 'Ricardo' ? '#f0f9ff' : '#f5f3ff',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', marginBottom: 4 }}>Día {d.dia}</div>
-            <div style={{ fontWeight: 800, color: d.persona === 'Ricardo' ? '#0369a1' : '#6d28d9', fontSize: 15 }}>{d.persona}</div>
-          </div>
-        ))}
-      </div>
+      <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #c7d2fe', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#4f46e5', color: 'white' }}>
+          {DIAS_LABEL.map(d => (
+            <div key={d} style={{ padding: '12px 4px', textAlign: 'center', fontSize: 13, fontWeight: 800 }}>{d}</div>
+          ))}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, background: '#c7d2fe' }}>
+          {celdas.map((dia, i) => {
+            const trabajando = dia ? (turnosSeguridad[dia] || []) : [];
+            const fecha = dia ? `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}` : '';
+            return (
+              <div key={i} style={{
+                background: dia ? 'white' : '#f8fafc',
+                minHeight: 110, padding: '8px 6px',
+                display: 'flex', flexDirection: 'column',
+                transition: 'background 0.2s',
+              }}>
+                {dia && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: '#312e81' }}>{dia}</span>
+                      <button onClick={() => onAddTurno(dia, fecha)} style={{
+                        fontSize: 14, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6,
+                        border: '1px solid #a5b4fc', background: '#e0e7ff', cursor: 'pointer', color: '#4f46e5', fontWeight: 800
+                      }} title="Agregar Reemplazo">+</button>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+                      {trabajando.map(t => {
+                        const p = personal.find(x => x.id == t.personal_id);
+                        if (!p) return null;
+                        const c = seguridadColors[p.nombre] || seguridadColors['default'];
+                        const isDynamic = t.is_dynamic;
+                        const isReemplazo = t.tipo === 'reemplazo';
 
-      <div style={{ marginTop: 24, padding: 16, background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
-        <h3 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 700 }}>Proyección Anual</h3>
-        <p style={{ margin: 0, fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
-          El calendario muestra la rotación automática de 4 días por persona. <br />
-          <b>Ricardo:</b> 26-29 Ene, 03-06 Feb, 11-14 Feb... <br />
-          <b>Claudio:</b> 30 Ene - 02 Feb, 07-10 Feb, 15-18 Feb...
-        </p>
+                        return (
+                          <div key={t.id || (dia + p.id)} style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            background: c.bg, borderLeft: `4px solid ${c.line}`,
+                            borderRadius: 4, padding: '4px 6px',
+                            opacity: isDynamic && !isReemplazo ? 0.8 : 1,
+                            boxShadow: isReemplazo ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
+                          }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: c.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                              {p.nombre}{isReemplazo ? ' (R)' : ''}
+                            </span>
+                            {!isDynamic && (
+                              <button onClick={() => onDeleteTurno(t.id)} style={{ background: 'white', border: 'none', borderRadius: '50%', width: 16, height: 16, display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', color: '#ef4444', fontSize: 13, padding: 0, fontWeight: 800, marginLeft: 2 }} title="Eliminar Reemplazo">×</button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
