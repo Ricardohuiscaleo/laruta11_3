@@ -2146,151 +2146,151 @@ export default function App() {
       <header className="px-4 py-2 sm:p-3 fixed top-0 left-0 right-0 bg-white z-40 shadow-sm" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
         <div className="flex items-center justify-between w-full">
           {/* Logo */}
-          <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" style={{ width: 'clamp(32px, 8vw, 40px)', height: 'clamp(32px, 8vw, 40px)', flexShrink: 0 }} />
+          <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" style={{ width: 'clamp(32px, 8vw, 40px)', height: 'clamp(32px, 8vw, 40px)' }} />
 
-          {/* Grouped Icons for Mobile Overflow */}
-          <div className="flex items-center gap-4 overflow-x-auto no-scrollbar ml-4 justify-end flex-1" style={{ touchAction: 'pan-x' }}>
-            {/* Checklist */}
-            {cajaUser && (
-              <button
-                onClick={() => { vibrate(30); window.location.href = '/checklist'; }}
-                className="text-gray-600 hover:text-orange-500 transition-colors flex-shrink-0"
-                title="Checklist"
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 11l3 3L22 4"></path>
-                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                </svg>
-              </button>
-            )}
-
-            {/* Toggle Productos Inactivos */}
-            {cajaUser && (
-              <button
-                onClick={() => { vibrate(30); setShowInactiveProducts(!showInactiveProducts); }}
-                className={`p-1.5 rounded-lg transition-all flex-shrink-0 ${showInactiveProducts
-                  ? 'bg-red-500 text-white'
-                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                  }`}
-                title={showInactiveProducts ? 'Ocultar inactivos' : 'Mostrar inactivos'}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  {showInactiveProducts ? (
-                    <>
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                      <circle cx="12" cy="12" r="3"></circle>
-                    </>
-                  ) : (
-                    <>
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                      <line x1="1" y1="1" x2="23" y2="23"></line>
-                    </>
-                  )}
-                </svg>
-              </button>
-            )}
-
-            {/* Perfil Cajera */}
-            {cajaUser && (
-              <button
-                onClick={() => { vibrate(30); setIsProfileOpen(true); }}
-                className="flex items-center gap-1.5 text-gray-600 hover:text-orange-500 p-1 rounded-lg hover:bg-gray-100 transition-all flex-shrink-0"
-                title="Perfil Cajera"
-              >
-                <User size={22} className="text-orange-500" />
-                <span className="font-medium whitespace-nowrap" style={{ fontSize: 'clamp(12px, 3vw, 14px)' }}>{cajaUser.fullName || cajaUser.user}</span>
-              </button>
-            )}
-
-            {/* Configuración */}
-            {cajaUser && (
-              <button
-                onClick={async () => {
-                  vibrate(30);
-                  setShowStatusModal(true);
-                  const res = await fetch('/api/get_truck_status.php?truckId=4');
-                  const data = await res.json();
-                  if (data.success) setTruckStatus(data.truck);
-
-                  const schedRes = await fetch('/api/get_truck_schedules.php?truckId=4');
-                  const schedData = await schedRes.json();
-                  if (schedData.success) {
-                    setSchedules(schedData.schedules);
-                    setCurrentDayOfWeek(schedData.currentDayOfWeek);
-                  }
-
-                  const catRes = await fetch('/api/get_menu_structure.php');
-                  const catData = await catRes.json();
-                  if (catData.success) setMenuCategories(catData.categories);
-                }}
-                className="text-gray-600 hover:text-orange-500 transition-colors flex-shrink-0"
-                title="Configuración"
-              >
-                <Settings size={22} />
-              </button>
-            )}
-
-            {/* Compartir */}
+          {/* Checklist */}
+          {cajaUser && (
             <button
-              onClick={() => { vibrate(30); setShowQRModal(true); }}
-              className="text-gray-600 hover:text-orange-500 transition-colors flex-shrink-0"
-              title="Compartir App"
+              onClick={() => { vibrate(30); window.location.href = '/checklist'; }}
+              className="text-gray-600 hover:text-orange-500 transition-colors"
+              title="Checklist"
             >
-              <Share2 size={22} />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 11l3 3L22 4"></path>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+              </svg>
             </button>
+          )}
 
-            {/* Notificaciones */}
+          {/* Toggle Productos Inactivos */}
+          {cajaUser && (
             <button
-              onClick={() => { vibrate(30); setIsNotificationsOpen(true); }}
-              className="text-gray-600 hover:text-orange-500 relative flex-shrink-0"
-              title="Notificaciones"
+              onClick={() => { vibrate(30); setShowInactiveProducts(!showInactiveProducts); }}
+              className={`p-1.5 rounded-lg transition-all ${showInactiveProducts
+                ? 'bg-red-500 text-white'
+                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                }`}
+              title={showInactiveProducts ? 'Ocultar inactivos' : 'Mostrar inactivos'}
             >
-              <NotificationIcon size={22} />
-              {activeOrdersCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full flex items-center justify-center" style={{ fontSize: 'clamp(8px, 2vw, 10px)', width: 'clamp(14px, 3.5vw, 16px)', height: 'clamp(14px, 3.5vw, 16px)' }}>
-                  {activeOrdersCount}
-                </span>
-              )}
-              {activeChecklistsCount > 0 && (
-                <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full flex items-center justify-center" style={{ fontSize: 'clamp(8px, 2vw, 10px)', width: 'clamp(14px, 3.5vw, 16px)', height: 'clamp(14px, 3.5vw, 16px)' }}>
-                  {activeChecklistsCount}
-                </span>
-              )}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {showInactiveProducts ? (
+                  <>
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </>
+                ) : (
+                  <>
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </>
+                )}
+              </svg>
             </button>
+          )}
 
-            {/* Carrito */}
-            <button onClick={() => { vibrate(30); setShowCheckout(true); }} className="text-gray-600 hover:text-orange-500 relative flex-shrink-0">
-              <ShoppingCart size={22} />
-              {cartItemCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center animate-fade-in" style={{ fontSize: 'clamp(9px, 2.2vw, 11px)', width: 'clamp(16px, 4vw, 20px)', height: 'clamp(16px, 4vw, 20px)' }}>
-                  {cartItemCount}
-                </span>
-              )}
+          {/* Perfil Cajera */}
+          {cajaUser && (
+            <button
+              onClick={() => { vibrate(30); setIsProfileOpen(true); }}
+              className="flex items-center gap-2 text-gray-600 hover:text-orange-500 p-1 rounded-lg hover:bg-gray-100 transition-all"
+              title="Perfil Cajera"
+            >
+              <User size={20} className="text-orange-500" />
+              <span className="font-medium" style={{ fontSize: 'clamp(12px, 3vw, 14px)' }}>{cajaUser.fullName || cajaUser.user}</span>
             </button>
-          </div>
+          )}
+
+          {/* Configuración */}
+          {cajaUser && (
+            <button
+              onClick={async () => {
+                vibrate(30);
+                setShowStatusModal(true);
+                const res = await fetch('/api/get_truck_status.php?truckId=4');
+                const data = await res.json();
+                if (data.success) setTruckStatus(data.truck);
+
+                const schedRes = await fetch('/api/get_truck_schedules.php?truckId=4');
+                const schedData = await schedRes.json();
+                if (schedData.success) {
+                  setSchedules(schedData.schedules);
+                  setCurrentDayOfWeek(schedData.currentDayOfWeek);
+                }
+
+                const catRes = await fetch('/api/get_menu_structure.php');
+                const catData = await catRes.json();
+                if (catData.success) setMenuCategories(catData.categories);
+              }}
+              className="text-gray-600 hover:text-orange-500 transition-colors"
+              title="Configuración"
+            >
+              <Settings size={20} />
+            </button>
+          )}
+
+          {/* Compartir */}
+          <button
+            onClick={() => { vibrate(30); setShowQRModal(true); }}
+            className="text-gray-600 hover:text-orange-500 transition-colors"
+            title="Compartir App"
+          >
+            <Share2 size={20} />
+          </button>
+
+          {/* Notificaciones */}
+          <button
+            onClick={() => { vibrate(30); setIsNotificationsOpen(true); }}
+            className="text-gray-600 hover:text-orange-500 relative"
+            title="Notificaciones"
+          >
+            <NotificationIcon size={20} />
+            {activeOrdersCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full flex items-center justify-center" style={{ fontSize: 'clamp(8px, 2vw, 10px)', width: 'clamp(14px, 3.5vw, 16px)', height: 'clamp(14px, 3.5vw, 16px)' }}>
+                {activeOrdersCount}
+              </span>
+            )}
+            {activeChecklistsCount > 0 && (
+              <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full flex items-center justify-center" style={{ fontSize: 'clamp(8px, 2vw, 10px)', width: 'clamp(14px, 3.5vw, 16px)', height: 'clamp(14px, 3.5vw, 16px)' }}>
+                {activeChecklistsCount}
+              </span>
+            )}
+          </button>
+
+          {/* Carrito */}
+          <button onClick={() => { vibrate(30); setShowCheckout(true); }} className="text-gray-600 hover:text-orange-500 relative">
+            <ShoppingCart size={20} />
+            {cartItemCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center animate-fade-in" style={{ fontSize: 'clamp(9px, 2.2vw, 11px)', width: 'clamp(16px, 4vw, 20px)', height: 'clamp(16px, 4vw, 20px)' }}>
+                {cartItemCount}
+              </span>
+            )}
+          </button>
         </div>
       </header>
 
-
-      <div className="h-2 bg-transparent" />
-
-      {/* DYNAMIC CART BANNER (Resumen Total Rápido) */}
-      {cartItemCount > 0 && (
-        <div
-          className="fixed left-0 right-0 z-30 bg-orange-500 text-white px-4 py-2 flex justify-between items-center shadow-md cursor-pointer animate-slide-down"
-          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 54px)' }}
-          onClick={() => { vibrate(30); setShowCheckout(true); }}
-        >
-          <div className="flex items-center gap-2">
-            <ShoppingCart size={18} />
-            <span className="font-bold">{cartItemCount} {cartItemCount === 1 ? 'producto' : 'productos'}</span>
+      {/* CART SUMMARY FRANJA - style like comandas: shows grouped product names + total */}
+      {cartItemCount > 0 && (() => {
+        const productSummary = cart.reduce((acc, item) => {
+          const key = item.name;
+          acc[key] = (acc[key] || 0) + (item.quantity || 1);
+          return acc;
+        }, {});
+        const summaryText = Object.entries(productSummary)
+          .map(([name, qty]) => `${qty} ${name}`)
+          .join(', ');
+        return (
+          <div
+            className="fixed left-0 right-0 z-30 bg-orange-50 border-b border-orange-200 px-3 py-1 cursor-pointer"
+            style={{ top: 'calc(env(safe-area-inset-top, 0px) + 50px)' }}
+            onClick={() => { vibrate(30); setShowCheckout(true); }}
+          >
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-gray-800 truncate flex-1 mr-2">🛒 {summaryText}</span>
+              <span className="font-black text-orange-600 whitespace-nowrap">${cartTotal.toLocaleString('es-CL')}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="font-black text-lg">Ver Carrito</span>
-            <span className="bg-white text-orange-600 px-2 py-1 rounded-md font-bold">${cartTotal.toLocaleString('es-CL')}</span>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       <main className="pb-40 px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={{ paddingTop: `calc(env(safe-area-inset-top, 0px) + ${cartItemCount > 0 ? '110px' : '70px'})`, ...(showSuggestions ? { filter: 'blur(2px)', pointerEvents: 'none' } : {}) }} onClick={() => showSuggestions && setShowSuggestions(false)}>
         <div className="grid grid-cols-3 gap-1">
