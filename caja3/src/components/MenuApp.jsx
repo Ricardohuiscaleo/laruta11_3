@@ -748,17 +748,28 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
         className={`bg-white rounded-lg overflow-hidden animate-fade-in transition-all duration-300 flex flex-col relative ${!isActive && isCashier ? 'border-2 border-red-500' : ''}`}
         style={{
           boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-          borderLeft: `3px solid ${catColor}`
+          borderLeft: `4px solid ${catColor}`
         }}
       >
         {!isActive && isCashier && (
-          <div className="absolute inset-0 bg-gray-500 bg-opacity-60 z-10"></div>
+          <div className="absolute inset-0 bg-gray-500 bg-opacity-60 z-10 transition-opacity duration-300"></div>
         )}
 
-        <div className="absolute top-0.5 left-1 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-1 py-0.5 rounded text-[7px] font-bold uppercase tracking-tighter text-gray-500 border border-gray-100/50">
-          <span style={{ color: catColor }}>{categoryIcons[product.category_key] || categoryIcons[product.category_name?.toLowerCase()] || <Package size={8} />}</span>
-          {product.category_name || product.category_key}
-        </div>
+        {isCashier && (
+          <div className="absolute top-1 left-1.5 z-20">
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleProductStatus(); }}
+              className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tighter transition-all shadow-sm border ${isActive
+                ? 'bg-green-100 text-green-700 border-green-200'
+                : 'bg-red-100 text-red-700 border-red-200 ring-2 ring-red-400 ring-offset-1'
+                }`}
+              disabled={isTogglingStatus}
+            >
+              <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+              {isTogglingStatus ? '...' : (isActive ? 'ON' : 'OFF')}
+            </button>
+          </div>
+        )}
 
         <div
           className="w-full relative aspect-square cursor-pointer overflow-hidden group"
@@ -769,7 +780,7 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
             <img
               src={product.image}
               alt={product.name}
-              className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
+              className={`w-full h-full object-cover transition-transform group-hover:scale-110 duration-500 ${!isActive ? 'grayscale' : ''}`}
             />
           ) : (
             <div className="w-full h-full bg-gray-50 flex items-center justify-center">
@@ -786,16 +797,16 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
           <FloatingHeart show={showFloatingHeart} startPosition={heartPosition} onAnimationEnd={() => setShowFloatingHeart(false)} />
 
           {product.category_name === 'Combos' && (
-            <div className="absolute top-0.5 right-0.5 bg-white/90 p-0.5 rounded flex items-center gap-0.5 z-20">
+            <div className={`absolute top-1 right-1 bg-white/90 p-0.5 rounded flex items-center gap-0.5 z-20 shadow-sm transition-opacity ${!isActive ? 'opacity-50' : ''}`}>
               <GiHamburger size={7} className="text-orange-500" />
               <CupSoda size={7} className="text-orange-500" />
             </div>
           )}
         </div>
 
-        <div className="p-1 min-h-[38px] flex flex-col justify-center bg-gray-50/30">
+        <div className="p-1 min-h-[38px] flex flex-col justify-center bg-gray-50/20">
           <h3
-            className="font-bold text-[10px] leading-tight text-gray-800 cursor-pointer line-clamp-2 text-center"
+            className={`font-bold text-[10px] leading-tight cursor-pointer line-clamp-2 text-center transition-colors ${!isActive ? 'text-gray-400' : 'text-gray-800'}`}
             onClick={() => onSelect(product)}
             title={product.name}
           >
@@ -803,31 +814,23 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
           </h3>
         </div>
 
-        <div className="p-1 pb-1 px-1 flex items-center gap-1 mt-auto border-t border-gray-100">
+        <div className="p-1 pb-1 px-1 flex items-center gap-1 mt-auto border-t border-gray-100 bg-white">
           {quantity > 0 && (
             <button
-              onClick={() => onRemoveFromCart(product.id)}
-              className="text-red-600 rounded-full hover:bg-red-50 p-0.5"
+              onClick={(e) => { e.stopPropagation(); onRemoveFromCart(product.id); }}
+              className="text-red-500 hover:bg-red-50 p-1 transition-colors"
             >
-              <MinusCircle size={14} />
+              <MinusCircle size={16} />
             </button>
           )}
           <button
-            onClick={() => onAddToCart(product)}
-            className={`flex-1 text-white rounded py-1 text-[9px] font-bold transition-all flex items-center justify-center gap-0.5 ${quantity > 0 ? 'bg-blue-600' : 'bg-green-600'
+            onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+            className={`flex-1 text-white rounded py-1.5 text-[9px] font-black tracking-widest uppercase transition-all flex items-center justify-center gap-1 active:scale-95 shadow-sm ${quantity > 0 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'
               }`}
           >
             <PlusCircle size={10} />
-            <span>{quantity > 0 ? quantity : 'Agregar'}</span>
+            <span>{quantity > 0 ? quantity : 'Add'}</span>
           </button>
-          {isCashier && (
-            <button
-              onClick={(e) => { e.stopPropagation(); toggleProductStatus(); }}
-              className={`p-1 rounded ${isActive ? 'text-green-500' : 'text-red-500'}`}
-            >
-              <Settings size={10} />
-            </button>
-          )}
         </div>
       </div>
 
@@ -880,6 +883,34 @@ export default function App() {
   });
   const [dispatchPopupOpen, setDispatchPopupOpen] = useState(showDispatchPopup);
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // Intersection Observer para detectar sección activa al hacer scroll
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: '-10% 0px -80% 0px', // Detectar cuando está cerca de la parte superior
+      threshold: 0
+    };
+
+    const handleIntersect = (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const sectionId = entry.target.id;
+          const catKey = sectionId.replace('section-', '');
+          setActiveCategory(catKey);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(handleIntersect, observerOptions);
+    mainCategories.forEach(cat => {
+      const element = document.getElementById(`section-${cat}`);
+      if (element) observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, [mainCategories, searchQuery]);
+
   const [zoomedProduct, setZoomedProduct] = useState(null);
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -2243,9 +2274,20 @@ export default function App() {
               }
 
               return (
-                <div key={catKey} id={`section-${catKey}`} className="scroll-mt-24 pt-2 first:pt-0">
-                  {/* Categoría oculta para efecto Tetris, manejada por tags individuales y color de borde */}
-                  <div className="space-y-6">
+                <div
+                  key={catKey}
+                  id={`section-${catKey}`}
+                  className="scroll-mt-24 pt-1 first:pt-0"
+                  style={{
+                    border: `1px solid ${categoryColors[catKey] || '#e5e7eb'}`,
+                    borderLeftWidth: '6px',
+                    margin: '2px',
+                    borderRadius: '12px',
+                    backgroundColor: 'rgba(255,255,255,0.4)',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <div className="space-y-4">
                     {orderedEntries
                       .filter(([sub, products]) => products && products.length > 0)
                       .map(([subCategory, products]) => {
@@ -2256,7 +2298,7 @@ export default function App() {
                         if (filteredProducts.length === 0) return null;
 
                         return (
-                          <div key={subCategory}>
+                          <div key={subCategory} className="p-1">
                             {/* Subcategoría oculta para efecto Tetris */}
                             <div className="grid grid-cols-3 gap-1">
                               {filteredProducts.map(product => (
@@ -2397,24 +2439,31 @@ export default function App() {
               WebkitOverflowScrolling: 'touch'
             }}
           >
-            {mainCategories.map((cat, index) => (
-              <React.Fragment key={cat}>
-                <button
-                  onClick={() => {
-                    const element = document.getElementById(`section-${cat}`);
-                    if (element) {
-                      element.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                  className="flex-shrink-0 px-3 py-1 text-[11px] font-bold uppercase tracking-wide transition-all whitespace-nowrap text-gray-600 hover:text-orange-500 active:scale-95"
-                >
-                  {categoryDisplayNames[cat] || cat}
-                </button>
-                {index < mainCategories.length - 1 && (
-                  <span className="text-gray-300 font-light select-none">|</span>
-                )}
-              </React.Fragment>
-            ))}
+            {mainCategories.map((cat, index) => {
+              const isActive = activeCategory === cat;
+              const catColor = categoryColors[cat] || '#f97316';
+              return (
+                <React.Fragment key={cat}>
+                  <button
+                    onClick={() => {
+                      const element = document.getElementById(`section-${cat}`);
+                      if (element) {
+                        element.scrollIntoView({ behavior: 'smooth' });
+                      }
+                      setActiveCategory(cat);
+                    }}
+                    className={`flex-shrink-0 px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap active:scale-95 ${isActive ? '' : 'text-gray-400 hover:text-gray-600'
+                      }`}
+                    style={{ color: isActive ? catColor : undefined }}
+                  >
+                    {categoryDisplayNames[cat] || cat}
+                  </button>
+                  {index < mainCategories.length - 1 && (
+                    <span className="text-gray-200 font-light select-none">|</span>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </div>
         </div>
       </nav>
