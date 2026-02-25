@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { 
-    PlusCircle, X, Star, ShoppingCart, MinusCircle, User, ZoomIn,
-    Award, ChefHat, GlassWater, CupSoda, Droplets,
-    Eye, Heart, MessageSquare, Calendar, Search, Bike, Caravan, ChevronDown, ChevronUp, Package,
-    Truck, TruckIcon, Navigation, MapPin, Clock, CheckCircle2, XCircle, CreditCard, Banknote, Smartphone, Percent, Tag, Pizza, Share2, Settings
+import {
+  PlusCircle, X, Star, ShoppingCart, MinusCircle, User, ZoomIn,
+  Award, ChefHat, GlassWater, CupSoda, Droplets,
+  Eye, Heart, MessageSquare, Calendar, Search, Bike, Caravan, ChevronDown, ChevronUp, Package,
+  Truck, TruckIcon, Navigation, MapPin, Clock, CheckCircle2, XCircle, CreditCard, Banknote, Smartphone, Percent, Tag, Pizza, Share2, Settings
 } from 'lucide-react';
 import { GiHamburger, GiHotDog, GiFrenchFries, GiMeat, GiSandwich, GiSteak } from 'react-icons/gi';
 import OnboardingModal from './OnboardingModal.jsx';
@@ -51,23 +51,23 @@ let menuData = {
 
 
 const categoryIcons = {
-  hamburguesas: <GiHamburger style={{width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)'}} />,
-  hamburguesas_100g: <GiHamburger style={{width: 'clamp(13.2px, 3.36vw, 16.8px)', height: 'clamp(13.2px, 3.36vw, 16.8px)'}} />,
-  churrascos: <GiSandwich style={{width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)'}} />,
-  completos: <GiHotDog style={{width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)'}} />,
-  papas: <GiFrenchFries style={{width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)'}} />,
-  pizzas: <Pizza style={{width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)'}} />,
-  bebidas: <CupSoda style={{width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)'}} />,
+  hamburguesas: <GiHamburger style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
+  hamburguesas_100g: <GiHamburger style={{ width: 'clamp(13.2px, 3.36vw, 16.8px)', height: 'clamp(13.2px, 3.36vw, 16.8px)' }} />,
+  churrascos: <GiSandwich style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
+  completos: <GiHotDog style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
+  papas: <GiFrenchFries style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
+  pizzas: <Pizza style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
+  bebidas: <CupSoda style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
   combos: (
-    <div style={{display: 'flex', alignItems: 'center', gap: '2px'}}>
-      <GiHamburger style={{width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)'}} />
-      <CupSoda style={{width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)'}} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+      <GiHamburger style={{ width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)' }} />
+      <CupSoda style={{ width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)' }} />
     </div>
   ),
   Combos: (
-    <div style={{display: 'flex', alignItems: 'center', gap: '2px'}}>
-      <GiHamburger style={{width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)'}} />
-      <CupSoda style={{width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)'}} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+      <GiHamburger style={{ width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)' }} />
+      <CupSoda style={{ width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)' }} />
     </div>
   )
 };
@@ -85,612 +85,610 @@ const categoryColors = {
 
 
 const ImageFullscreenModal = ({ product, total, onClose }) => {
-    if (!product) return null;
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key === 'Escape') {
-                onClose();
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [onClose]);
-    return (
-        <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center animate-fade-in" onClick={onClose}>
-            <button onClick={onClose} className="absolute top-4 right-4 bg-black/50 rounded-full p-2 text-white hover:bg-black/70 transition-all z-20">
-                <X size={24} />
-            </button>
-            <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" loading="lazy" decoding="async" />
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/40 backdrop-blur-sm text-white text-center">
-                <h3 className="text-xl font-bold">{product.name}</h3>
-                <p className="text-lg text-orange-400 font-semibold">${total.toLocaleString('es-CL')}</p>
-            </div>
-        </div>
-    );
+  if (!product) return null;
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center animate-fade-in" onClick={onClose}>
+      <button onClick={onClose} className="absolute top-4 right-4 bg-black/50 rounded-full p-2 text-white hover:bg-black/70 transition-all z-20">
+        <X size={24} />
+      </button>
+      <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" loading="lazy" decoding="async" />
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/40 backdrop-blur-sm text-white text-center">
+        <h3 className="text-xl font-bold">{product.name}</h3>
+        <p className="text-lg text-orange-400 font-semibold">${total.toLocaleString('es-CL')}</p>
+      </div>
+    </div>
+  );
 };
 
 
 
 const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartTotal, onCheckout, onCustomizeProduct, showCheckoutSection, setShowCheckoutSection, customerInfo, setCustomerInfo, user, nearbyTrucks, cartSubtotal, onPaymentMethodSelect }) => {
-    if (!isOpen) return null;
-    
-    const currentDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 
-      ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) 
-      : 0;
-    const finalTotal = cartSubtotal + currentDeliveryFee;
-    
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-end animate-fade-in" onClick={onClose}>
-            <div className="bg-white w-full max-w-2xl max-h-[85vh] rounded-t-2xl flex flex-col animate-slide-up" onClick={(e) => e.stopPropagation()}>
-                <div className="border-b flex justify-between items-center" style={{padding: 'clamp(12px, 3vw, 16px)'}}>
-                    <h2 className="font-bold text-gray-800" style={{fontSize: 'clamp(16px, 4vw, 20px)'}}>Tu Pedido</h2>
-                    <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-800"><X size={24} /></button>
-                </div>
-                {cart.length === 0 ? (
-                    <div className="flex-grow flex flex-col justify-center items-center text-gray-500">
-                        <ShoppingCart size={48} className="mb-4" />
-                        <p>Tu carrito está vacío.</p>
-                    </div>
-                ) : (
-                    <div className="flex-grow overflow-y-auto space-y-3" style={{padding: 'clamp(12px, 3vw, 16px)'}}>
-                        {cart.map((item, itemIndex) => {
-                            const displayPrice = item.price;
-                            const isCombo = item.type === 'combo' || item.category_name === 'Combos' || item.selections;
-                            return (
-                                <div key={item.cartItemId} className="border rounded-lg p-3 bg-gray-50">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-3">
-                                            {item.image ? (
-                                                <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-md" loading="lazy" decoding="async" />
-                                            ) : (
-                                                <div className="w-16 h-16 bg-gray-200 rounded-md animate-pulse"></div>
-                                            )}
-                                            <div>
-                                                <p className="font-semibold">{item.name}</p>
-                                                <p className="text-orange-500 font-medium">${displayPrice.toLocaleString('es-CL')}</p>
-                                            </div>
-                                        </div>
-                                        <button onClick={() => onRemoveFromCart(item.cartItemId)} className="bg-red-500 rounded-full p-1.5 text-white hover:bg-red-600"><X size={20} /></button>
-                                    </div>
-                                    {(() => {
-                                      // Ocultar botón personalizar para bebidas, jugos, té, café, salsas
-                                      const nonPersonalizableCategories = ['Bebidas', 'Jugos', 'Té', 'Café', 'Salsas'];
-                                      const shouldShowPersonalizeButton = !nonPersonalizableCategories.includes(item.subcategory_name);
-                                      
-                                      if (!shouldShowPersonalizeButton) return null;
-                                      
-                                      return (
-                                        <button
-                                          onClick={() => {
-                                            onClose();
-                                            onCustomizeProduct(item, itemIndex);
-                                          }}
-                                          className="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors flex items-center justify-center gap-1.5"
-                                        >
-                                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-                                            <path d="m15 5 4 4"/>
-                                          </svg>
-                                          Personalizar
-                                        </button>
-                                      );
-                                    })()}
-                                    {item.customizations && item.customizations.length > 0 && (
-                                      <div className="mt-2 pt-2 border-t border-gray-200">
-                                        <p className="text-xs font-medium text-gray-700 mb-1">Incluye:</p>
-                                        <div className="space-y-1">
-                                          {item.customizations.map((custom, idx) => (
-                                            <p key={idx} className="text-xs text-blue-600 font-medium">
-                                              • {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')})
-                                            </p>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                    {isCombo && item.selections && (
-                                        <div className="mt-2 pt-2 border-t border-gray-200">
-                                            <p className="text-xs font-medium text-gray-700 mb-1">Incluye:</p>
-                                            <div className="space-y-1">
-                                                {item.fixed_items && item.fixed_items.map((fixedItem, idx) => (
-                                                    <p key={idx} className="text-xs text-gray-600">• {fixedItem.quantity || 1}x {fixedItem.product_name || fixedItem.name}</p>
-                                                ))}
-                                                {Object.entries(item.selections || {}).map(([group, selection]) => {
-                                                    if (Array.isArray(selection)) {
-                                                        return selection.map((sel, idx) => (
-                                                            <p key={`${group}-${idx}`} className="text-xs text-blue-600 font-medium">• 1x {sel.name}</p>
-                                                        ));
-                                                    } else {
-                                                        return (
-                                                            <p key={group} className="text-xs text-blue-600 font-medium">• 1x {selection.name}</p>
-                                                        );
-                                                    }
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-                
-                {/* Checkout Section */}
-                {showCheckoutSection && cart.length > 0 && (
-                    <div className="border-t bg-gray-50 p-4 space-y-4">
-                        <h3 className="font-bold text-gray-800 text-lg">Datos de Entrega</h3>
-                        
-                        {/* Delivery Type */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <button
-                                onClick={() => setCustomerInfo({...customerInfo, deliveryType: 'delivery'})}
-                                className={`p-3 border-2 rounded-lg text-center transition-colors ${customerInfo.deliveryType === 'delivery' ? 'border-orange-500 bg-orange-50' : 'border-gray-300'}`}
-                            >
-                                <div className="text-2xl mb-1">🚚</div>
-                                <div className="text-sm font-semibold">Delivery</div>
-                            </button>
-                            <button
-                                onClick={() => setCustomerInfo({...customerInfo, deliveryType: 'pickup'})}
-                                className={`p-3 border-2 rounded-lg text-center transition-colors ${customerInfo.deliveryType === 'pickup' ? 'border-orange-500 bg-orange-50' : 'border-gray-300'}`}
-                            >
-                                <div className="text-2xl mb-1">🏪</div>
-                                <div className="text-sm font-semibold">Retiro</div>
-                            </button>
-                        </div>
-                        
-                        {/* Customer Info */}
-                        <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Nombre completo *</label>
-                            <input
-                                type="text"
-                                placeholder="Tu nombre completo"
-                                value={customerInfo.name || user?.nombre || ''}
-                                onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
-                                className={`w-full px-3 py-2 border rounded-lg text-sm ${user ? 'bg-gray-50 text-gray-600 cursor-not-allowed' : ''}`}
-                                readOnly={!!user}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Teléfono</label>
-                            <input
-                                type="tel"
-                                placeholder="+56 9 1234 5678"
-                                value={customerInfo.phone || ''}
-                                onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
-                                className="w-full px-3 py-2 border rounded-lg text-sm"
-                            />
-                        </div>
-                        
-                        {customerInfo.deliveryType === 'delivery' && (
-                            <>
-                                <div>
-                                    <label className="flex items-center gap-2 cursor-pointer mb-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={customerInfo.deliveryDiscount}
-                                            onChange={(e) => {
-                                                const isChecked = e.target.checked;
-                                                setCustomerInfo({
-                                                    ...customerInfo,
-                                                    deliveryDiscount: isChecked,
-                                                    address: isChecked ? '' : customerInfo.address
-                                                });
-                                            }}
-                                            className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                                        />
-                                        <span className="text-xs font-medium text-gray-700">Descuento Delivery (40%)</span>
-                                    </label>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">Dirección de entrega *</label>
-                                    {customerInfo.deliveryDiscount ? (
-                                        <select
-                                            value={customerInfo.address}
-                                            onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
-                                            className="w-full px-3 py-2 border rounded-lg text-sm"
-                                            required
-                                        >
-                                            <option value="">Seleccionar dirección con descuento</option>
-                                            <option value="Ctel. Oscar Quina 1333">Ctel. Oscar Quina 1333</option>
-                                            <option value="Ctel. Domeyco 1540">Ctel. Domeyco 1540</option>
-                                            <option value="Ctel. Av. Santa María 3000">Ctel. Av. Santa María 3000</option>
-                                        </select>
-                                    ) : (
-                                        <input
-                                            type="text"
-                                            value={customerInfo.address}
-                                            onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
-                                            className="w-full px-3 py-2 border rounded-lg text-sm"
-                                            placeholder="Ingresa tu dirección..."
-                                            required
-                                        />
-                                    )}
-                                </div>
-                            </>
-                        )}
-                        
-                        {customerInfo.deliveryType === 'pickup' && (
-                            <>
-                                <div>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={customerInfo.pickupDiscount}
-                                            onChange={(e) => setCustomerInfo({...customerInfo, pickupDiscount: e.target.checked})}
-                                            className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                                        />
-                                        <span className="text-xs font-medium text-gray-700">Descuento R11 (10% en total)</span>
-                                    </label>
-                                    {customerInfo.pickupDiscount && (
-                                        <p className="text-xs text-green-600 bg-green-50 p-2 rounded mt-2">
-                                            ✓ Descuento del 10% aplicado en el total de tu compra
-                                        </p>
-                                    )}
-                                </div>
-                            </>
-                        )}
-                        
-                        <div>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={customerInfo.birthdayDiscount}
-                                    onChange={(e) => setCustomerInfo({...customerInfo, birthdayDiscount: e.target.checked})}
-                                    className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                                    disabled={!cart.some(item => item.id === 9)}
-                                />
-                                <span className="text-xs font-medium text-gray-700">🎂 Descuento Cumpleaños (Hamburguesa gratis)</span>
-                            </label>
-                            {customerInfo.birthdayDiscount && (
-                                <p className="text-xs text-green-600 bg-green-50 p-2 rounded mt-2">
-                                    ✓ Hamburguesa Clásica gratis por cumpleaños
-                                </p>
-                            )}
-                            {!cart.some(item => item.id === 9) && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Agrega una Hamburguesa Clásica para aplicar descuento
-                                </p>
-                            )}
-                        </div>
-                        
-                        {customerInfo.deliveryType === 'pickup' && (
-                            <select
-                                value={customerInfo.pickupTime || ''}
-                                onChange={(e) => setCustomerInfo({...customerInfo, pickupTime: e.target.value})}
-                                className="w-full px-3 py-2 border rounded-lg text-sm"
-                            >
-                                <option value=""></option>
-                                <option value="15:00">15:00 - 15:30</option>
-                                <option value="15:30">15:30 - 16:00</option>
-                                <option value="16:00">16:00 - 16:30</option>
-                                <option value="16:30">16:30 - 17:00</option>
-                                <option value="17:00">17:00 - 17:30</option>
-                                <option value="17:30">17:30 - 18:00</option>
-                                <option value="18:00">18:00 - 18:30</option>
-                                <option value="18:30">18:30 - 19:00</option>
-                                <option value="19:00">19:00 - 19:30</option>
-                                <option value="19:30">19:30 - 20:00</option>
-                                <option value="20:00">20:00 - 20:30</option>
-                                <option value="20:30">20:30 - 21:00</option>
-                                <option value="21:00">21:00 - 21:30</option>
-                            </select>
-                        )}
-                        
-                        {/* Notas adicionales */}
-                        <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Notas adicionales (opcional)</label>
-                            <textarea
-                                placeholder="Ej: sin cebolla, sin tomate, extra salsa..."
-                                value={customerInfo.notes || ''}
-                                onChange={(e) => setCustomerInfo({...customerInfo, notes: e.target.value})}
-                                className="w-full px-3 py-2 border rounded-lg text-sm resize-none"
-                                rows="3"
-                                maxLength="400"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">Máximo 400 caracteres</p>
-                        </div>
-                        
-                        {/* Payment Methods */}
-                        <div>
-                            <h4 className="font-semibold text-gray-800 mb-2 text-sm">Método de Pago</h4>
-                            <div className="space-y-2">
-                                <button
-                                    onClick={() => onPaymentMethodSelect('cash')}
-                                    disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                                    className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-2 px-3 rounded-lg text-sm transition-colors"
-                                >
-                                    💵 Pago en Efectivo
-                                </button>
-                                <button
-                                    onClick={() => onPaymentMethodSelect('card')}
-                                    disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                                    className="w-full bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-2 px-3 rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <CreditCard size={18} />
-                                    Pago con Tarjeta (POS)
-                                </button>
-                                <button
-                                    onClick={() => onPaymentMethodSelect('transfer')}
-                                    disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                                    className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-2 px-3 rounded-lg text-sm transition-colors"
-                                >
-                                    🏦 Pago con Transferencia
-                                </button>
-                                <button
-                                    onClick={() => onPaymentMethodSelect('pedidosya')}
-                                    disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                                    className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-2 px-3 rounded-lg text-sm transition-colors"
-                                >
-                                    🛵 Pago en PedidosYA
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                            <p className="text-xs text-gray-600 text-center font-medium">
-                                ⚠️ App Caja - Todos estos pagos se registran.
-                            </p>
-                        </div>
-                    </div>
-                )}
-                
-                <div className="bg-white border-t sticky bottom-0" style={{padding: 'clamp(12px, 3vw, 16px)'}}>
-                    {customerInfo.deliveryType === 'delivery' && currentDeliveryFee > 0 && (
-                        <div className="mb-2 space-y-1">
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-600">Subtotal</span>
-                                <span className="font-medium">${cartSubtotal.toLocaleString('es-CL')}</span>
-                            </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-600 flex items-center gap-1">
-                                    <Truck size={14} />
-                                    Delivery
-                                </span>
-                                <span className="font-medium text-blue-600">${currentDeliveryFee.toLocaleString('es-CL')}</span>
-                            </div>
-                        </div>
-                    )}
-                    <div className="flex justify-between items-center mb-3 pt-2 border-t">
-                        <span className="font-medium text-gray-600" style={{fontSize: 'clamp(14px, 3.5vw, 18px)'}}>Total</span>
-                        <span className="font-bold text-gray-800" style={{fontSize: 'clamp(18px, 5vw, 24px)'}}>${finalTotal.toLocaleString('es-CL')}</span>
-                    </div>
-                    
-                    {!showCheckoutSection ? (
-                        <button 
-                            disabled={cart.length === 0} 
-                            onClick={() => setShowCheckoutSection(true)}
-                            className="w-full bg-orange-500 text-white rounded-full font-bold flex items-center justify-center gap-2 hover:bg-orange-600 transition-transform active:scale-95 shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed" 
-                            style={{padding: 'clamp(12px, 3vw, 16px)', fontSize: 'clamp(14px, 3.5vw, 18px)'}}
-                        >
-                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/>
-                                <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd"/>
-                            </svg>
-                            Finalizar Pedido
-                        </button>
-                    ) : (
-                        <button 
-                            onClick={() => setShowCheckoutSection(false)}
-                            className="w-full bg-gray-500 text-white rounded-full font-bold flex items-center justify-center gap-2 hover:bg-gray-600 transition-colors" 
-                            style={{padding: 'clamp(10px, 2.5vw, 12px)', fontSize: 'clamp(13px, 3.2vw, 16px)'}}
-                        >
-                            Ocultar Checkout
-                        </button>
-                    )}
-                </div>
-            </div>
+  if (!isOpen) return null;
+
+  const currentDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0
+    ? parseInt(nearbyTrucks[0].tarifa_delivery || 0)
+    : 0;
+  const finalTotal = cartSubtotal + currentDeliveryFee;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-end animate-fade-in" onClick={onClose}>
+      <div className="bg-white w-full max-w-2xl max-h-[85vh] rounded-t-2xl flex flex-col animate-slide-up" onClick={(e) => e.stopPropagation()}>
+        <div className="border-b flex justify-between items-center" style={{ padding: 'clamp(12px, 3vw, 16px)' }}>
+          <h2 className="font-bold text-gray-800" style={{ fontSize: 'clamp(16px, 4vw, 20px)' }}>Tu Pedido</h2>
+          <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-800"><X size={24} /></button>
         </div>
-    );
+        {cart.length === 0 ? (
+          <div className="flex-grow flex flex-col justify-center items-center text-gray-500">
+            <ShoppingCart size={48} className="mb-4" />
+            <p>Tu carrito está vacío.</p>
+          </div>
+        ) : (
+          <div className="flex-grow overflow-y-auto space-y-3" style={{ padding: 'clamp(12px, 3vw, 16px)' }}>
+            {cart.map((item, itemIndex) => {
+              const displayPrice = item.price;
+              const isCombo = item.type === 'combo' || item.category_name === 'Combos' || item.selections;
+              return (
+                <div key={item.cartItemId} className="border rounded-lg p-3 bg-gray-50">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      {item.image ? (
+                        <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-md" loading="lazy" decoding="async" />
+                      ) : (
+                        <div className="w-16 h-16 bg-gray-200 rounded-md animate-pulse"></div>
+                      )}
+                      <div>
+                        <p className="font-semibold">{item.name}</p>
+                        <p className="text-orange-500 font-medium">${displayPrice.toLocaleString('es-CL')}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => onRemoveFromCart(item.cartItemId)} className="bg-red-500 rounded-full p-1.5 text-white hover:bg-red-600"><X size={20} /></button>
+                  </div>
+                  {(() => {
+                    // Ocultar botón personalizar para bebidas, jugos, té, café, salsas
+                    const nonPersonalizableCategories = ['Bebidas', 'Jugos', 'Té', 'Café', 'Salsas'];
+                    const shouldShowPersonalizeButton = !nonPersonalizableCategories.includes(item.subcategory_name);
+
+                    if (!shouldShowPersonalizeButton) return null;
+
+                    return (
+                      <button
+                        onClick={() => {
+                          onClose();
+                          onCustomizeProduct(item, itemIndex);
+                        }}
+                        className="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                          <path d="m15 5 4 4" />
+                        </svg>
+                        Personalizar
+                      </button>
+                    );
+                  })()}
+                  {item.customizations && item.customizations.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <p className="text-xs font-medium text-gray-700 mb-1">Incluye:</p>
+                      <div className="space-y-1">
+                        {item.customizations.map((custom, idx) => (
+                          <p key={idx} className="text-xs text-blue-600 font-medium">
+                            • {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')})
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {isCombo && item.selections && (
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <p className="text-xs font-medium text-gray-700 mb-1">Incluye:</p>
+                      <div className="space-y-1">
+                        {item.fixed_items && item.fixed_items.map((fixedItem, idx) => (
+                          <p key={idx} className="text-xs text-gray-600">• {fixedItem.quantity || 1}x {fixedItem.product_name || fixedItem.name}</p>
+                        ))}
+                        {Object.entries(item.selections || {}).map(([group, selection]) => {
+                          if (Array.isArray(selection)) {
+                            return selection.map((sel, idx) => (
+                              <p key={`${group}-${idx}`} className="text-xs text-blue-600 font-medium">• 1x {sel.name}</p>
+                            ));
+                          } else {
+                            return (
+                              <p key={group} className="text-xs text-blue-600 font-medium">• 1x {selection.name}</p>
+                            );
+                          }
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Checkout Section */}
+        {showCheckoutSection && cart.length > 0 && (
+          <div className="border-t bg-gray-50 p-4 space-y-4">
+            <h3 className="font-bold text-gray-800 text-lg">Datos de Entrega</h3>
+
+            {/* Delivery Type */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setCustomerInfo({ ...customerInfo, deliveryType: 'delivery' })}
+                className={`p-3 border-2 rounded-lg text-center transition-colors ${customerInfo.deliveryType === 'delivery' ? 'border-orange-500 bg-orange-50' : 'border-gray-300'}`}
+              >
+                <div className="text-2xl mb-1">🚚</div>
+                <div className="text-sm font-semibold">Delivery</div>
+              </button>
+              <button
+                onClick={() => setCustomerInfo({ ...customerInfo, deliveryType: 'pickup' })}
+                className={`p-3 border-2 rounded-lg text-center transition-colors ${customerInfo.deliveryType === 'pickup' ? 'border-orange-500 bg-orange-50' : 'border-gray-300'}`}
+              >
+                <div className="text-2xl mb-1">🏪</div>
+                <div className="text-sm font-semibold">Retiro</div>
+              </button>
+            </div>
+
+            {/* Customer Info */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Nombre completo *</label>
+              <input
+                type="text"
+                placeholder="Tu nombre completo"
+                value={customerInfo.name || user?.nombre || ''}
+                onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
+                className={`w-full px-3 py-2 border rounded-lg text-sm ${user ? 'bg-gray-50 text-gray-600 cursor-not-allowed' : ''}`}
+                readOnly={!!user}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Teléfono</label>
+              <input
+                type="tel"
+                placeholder="+56 9 1234 5678"
+                value={customerInfo.phone || ''}
+                onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg text-sm"
+              />
+            </div>
+
+            {customerInfo.deliveryType === 'delivery' && (
+              <>
+                <div>
+                  <label className="flex items-center gap-2 cursor-pointer mb-2">
+                    <input
+                      type="checkbox"
+                      checked={customerInfo.deliveryDiscount}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+                        setCustomerInfo({
+                          ...customerInfo,
+                          deliveryDiscount: isChecked,
+                          address: isChecked ? '' : customerInfo.address
+                        });
+                      }}
+                      className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                    />
+                    <span className="text-xs font-medium text-gray-700">Descuento Delivery (40%)</span>
+                  </label>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Dirección de entrega *</label>
+                  {customerInfo.deliveryDiscount ? (
+                    <select
+                      value={customerInfo.address}
+                      onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg text-sm"
+                      required
+                    >
+                      <option value="">Seleccionar dirección con descuento</option>
+                      <option value="Ctel. Oscar Quina 1333">Ctel. Oscar Quina 1333</option>
+                      <option value="Ctel. Domeyco 1540">Ctel. Domeyco 1540</option>
+                      <option value="Ctel. Av. Santa María 3000">Ctel. Av. Santa María 3000</option>
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={customerInfo.address}
+                      onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg text-sm"
+                      placeholder="Ingresa tu dirección..."
+                      required
+                    />
+                  )}
+                </div>
+              </>
+            )}
+
+            {customerInfo.deliveryType === 'pickup' && (
+              <>
+                <div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={customerInfo.pickupDiscount}
+                      onChange={(e) => setCustomerInfo({ ...customerInfo, pickupDiscount: e.target.checked })}
+                      className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                    />
+                    <span className="text-xs font-medium text-gray-700">Descuento R11 (10% en total)</span>
+                  </label>
+                  {customerInfo.pickupDiscount && (
+                    <p className="text-xs text-green-600 bg-green-50 p-2 rounded mt-2">
+                      ✓ Descuento del 10% aplicado en el total de tu compra
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={customerInfo.birthdayDiscount}
+                  onChange={(e) => setCustomerInfo({ ...customerInfo, birthdayDiscount: e.target.checked })}
+                  className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                  disabled={!cart.some(item => item.id === 9)}
+                />
+                <span className="text-xs font-medium text-gray-700">🎂 Descuento Cumpleaños (Hamburguesa gratis)</span>
+              </label>
+              {customerInfo.birthdayDiscount && (
+                <p className="text-xs text-green-600 bg-green-50 p-2 rounded mt-2">
+                  ✓ Hamburguesa Clásica gratis por cumpleaños
+                </p>
+              )}
+              {!cart.some(item => item.id === 9) && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Agrega una Hamburguesa Clásica para aplicar descuento
+                </p>
+              )}
+            </div>
+
+            {customerInfo.deliveryType === 'pickup' && (
+              <select
+                value={customerInfo.pickupTime || ''}
+                onChange={(e) => setCustomerInfo({ ...customerInfo, pickupTime: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg text-sm"
+              >
+                <option value=""></option>
+                <option value="15:00">15:00 - 15:30</option>
+                <option value="15:30">15:30 - 16:00</option>
+                <option value="16:00">16:00 - 16:30</option>
+                <option value="16:30">16:30 - 17:00</option>
+                <option value="17:00">17:00 - 17:30</option>
+                <option value="17:30">17:30 - 18:00</option>
+                <option value="18:00">18:00 - 18:30</option>
+                <option value="18:30">18:30 - 19:00</option>
+                <option value="19:00">19:00 - 19:30</option>
+                <option value="19:30">19:30 - 20:00</option>
+                <option value="20:00">20:00 - 20:30</option>
+                <option value="20:30">20:30 - 21:00</option>
+                <option value="21:00">21:00 - 21:30</option>
+              </select>
+            )}
+
+            {/* Notas adicionales */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Notas adicionales (opcional)</label>
+              <textarea
+                placeholder="Ej: sin cebolla, sin tomate, extra salsa..."
+                value={customerInfo.notes || ''}
+                onChange={(e) => setCustomerInfo({ ...customerInfo, notes: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg text-sm resize-none"
+                rows="3"
+                maxLength="400"
+              />
+              <p className="text-xs text-gray-500 mt-1">Máximo 400 caracteres</p>
+            </div>
+
+            {/* Payment Methods */}
+            <div>
+              <h4 className="font-semibold text-gray-800 mb-2 text-sm">Método de Pago</h4>
+              <div className="space-y-2">
+                <button
+                  onClick={() => onPaymentMethodSelect('cash')}
+                  disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
+                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-2 px-3 rounded-lg text-sm transition-colors"
+                >
+                  💵 Pago en Efectivo
+                </button>
+                <button
+                  onClick={() => onPaymentMethodSelect('card')}
+                  disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
+                  className="w-full bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-2 px-3 rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
+                >
+                  <CreditCard size={18} />
+                  Pago con Tarjeta (POS)
+                </button>
+                <button
+                  onClick={() => onPaymentMethodSelect('transfer')}
+                  disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
+                  className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-2 px-3 rounded-lg text-sm transition-colors"
+                >
+                  🏦 Pago con Transferencia
+                </button>
+                <button
+                  onClick={() => onPaymentMethodSelect('pedidosya')}
+                  disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
+                  className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-2 px-3 rounded-lg text-sm transition-colors"
+                >
+                  🛵 Pago en PedidosYA
+                </button>
+              </div>
+            </div>
+
+            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-xs text-gray-600 text-center font-medium">
+                ⚠️ App Caja - Todos estos pagos se registran.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-white border-t sticky bottom-0" style={{ padding: 'clamp(12px, 3vw, 16px)' }}>
+          {customerInfo.deliveryType === 'delivery' && currentDeliveryFee > 0 && (
+            <div className="mb-2 space-y-1">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600">Subtotal</span>
+                <span className="font-medium">${cartSubtotal.toLocaleString('es-CL')}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600 flex items-center gap-1">
+                  <Truck size={14} />
+                  Delivery
+                </span>
+                <span className="font-medium text-blue-600">${currentDeliveryFee.toLocaleString('es-CL')}</span>
+              </div>
+            </div>
+          )}
+          <div className="flex justify-between items-center mb-3 pt-2 border-t">
+            <span className="font-medium text-gray-600" style={{ fontSize: 'clamp(14px, 3.5vw, 18px)' }}>Total</span>
+            <span className="font-bold text-gray-800" style={{ fontSize: 'clamp(18px, 5vw, 24px)' }}>${finalTotal.toLocaleString('es-CL')}</span>
+          </div>
+
+          {!showCheckoutSection ? (
+            <button
+              disabled={cart.length === 0}
+              onClick={() => setShowCheckoutSection(true)}
+              className="w-full bg-orange-500 text-white rounded-full font-bold flex items-center justify-center gap-2 hover:bg-orange-600 transition-transform active:scale-95 shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
+              style={{ padding: 'clamp(12px, 3vw, 16px)', fontSize: 'clamp(14px, 3.5vw, 18px)' }}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+                <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd" />
+              </svg>
+              Finalizar Pedido
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowCheckoutSection(false)}
+              className="w-full bg-gray-500 text-white rounded-full font-bold flex items-center justify-center gap-2 hover:bg-gray-600 transition-colors"
+              style={{ padding: 'clamp(10px, 2.5vw, 12px)', fontSize: 'clamp(13px, 3.2vw, 16px)' }}
+            >
+              Ocultar Checkout
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 
 
 const LoginModal = ({ isOpen, onClose }) => {
-    if (!isOpen) return null;
-    const handleGoogleLogin = () => {
-        const authUrl = 'https://accounts.google.com/o/oauth2/auth?' + new URLSearchParams({
-            client_id: '531902921465-1l4fa0esvcbhdlq4btejp7d1thdtj4a7.apps.googleusercontent.com',
-            redirect_uri: 'https://app.laruta11.cl/api/auth/google/app_callback.php',
-            scope: 'email profile',
-            response_type: 'code'
-        });
-        window.location.href = authUrl;
-    };
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center animate-fade-in" onClick={onClose}>
-            <div className="bg-white w-full max-w-sm mx-2 sm:m-4 rounded-2xl flex flex-col animate-slide-up text-center" style={{padding: 'clamp(20px, 5vw, 32px)'}} onClick={(e) => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute top-3 right-3 p-1 text-gray-400 hover:text-gray-600"><X size={24} /></button>
-                <h2 className="font-bold text-gray-800 mb-2" style={{fontSize: 'clamp(18px, 5vw, 24px)'}}>Acceso / Registro</h2>
-                <p className="text-gray-500 mb-6" style={{fontSize: 'clamp(13px, 3.5vw, 16px)'}}>Ingresa a tu cuenta para guardar tus pedidos y reseñas.</p>
-                <button 
-                    onClick={handleGoogleLogin}
-                    className="w-full bg-white border border-gray-300 text-gray-700 font-semibold rounded-full flex items-center justify-center gap-2 sm:gap-3 hover:bg-gray-50 transition-colors shadow-sm"
-                    style={{padding: 'clamp(10px, 2.5vw, 12px)', fontSize: 'clamp(13px, 3.5vw, 16px)'}}
-                >
-                    <GoogleLogo />
-                    Continuar con Google
-                </button>
-            </div>
-        </div>
-    );
+  if (!isOpen) return null;
+  const handleGoogleLogin = () => {
+    const authUrl = 'https://accounts.google.com/o/oauth2/auth?' + new URLSearchParams({
+      client_id: '531902921465-1l4fa0esvcbhdlq4btejp7d1thdtj4a7.apps.googleusercontent.com',
+      redirect_uri: 'https://app.laruta11.cl/api/auth/google/app_callback.php',
+      scope: 'email profile',
+      response_type: 'code'
+    });
+    window.location.href = authUrl;
+  };
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center animate-fade-in" onClick={onClose}>
+      <div className="bg-white w-full max-w-sm mx-2 sm:m-4 rounded-2xl flex flex-col animate-slide-up text-center" style={{ padding: 'clamp(20px, 5vw, 32px)' }} onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-3 right-3 p-1 text-gray-400 hover:text-gray-600"><X size={24} /></button>
+        <h2 className="font-bold text-gray-800 mb-2" style={{ fontSize: 'clamp(18px, 5vw, 24px)' }}>Acceso / Registro</h2>
+        <p className="text-gray-500 mb-6" style={{ fontSize: 'clamp(13px, 3.5vw, 16px)' }}>Ingresa a tu cuenta para guardar tus pedidos y reseñas.</p>
+        <button
+          onClick={handleGoogleLogin}
+          className="w-full bg-white border border-gray-300 text-gray-700 font-semibold rounded-full flex items-center justify-center gap-2 sm:gap-3 hover:bg-gray-50 transition-colors shadow-sm"
+          style={{ padding: 'clamp(10px, 2.5vw, 12px)', fontSize: 'clamp(13px, 3.5vw, 16px)' }}
+        >
+          <GoogleLogo />
+          Continuar con Google
+        </button>
+      </div>
+    </div>
+  );
 };
 
 const FoodTrucksModal = ({ isOpen, onClose, trucks, userLocation, deliveryZone }) => {
-    if (!isOpen) return null;
-    
-    const openDirections = (truck) => {
-        const url = `https://www.google.com/maps/dir/${userLocation?.latitude},${userLocation?.longitude}/${truck.latitud},${truck.longitud}`;
-        window.open(url, '_blank');
-    };
-    
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center animate-fade-in" onClick={onClose}>
-            <div className="bg-white w-full h-full flex flex-col animate-slide-up" onClick={(e) => e.stopPropagation()}>
-                <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white flex justify-between items-center" style={{padding: 'clamp(12px, 3vw, 16px)'}}>
-                    <h2 className="font-bold flex items-center gap-2" style={{fontSize: 'clamp(16px, 4vw, 20px)'}}>
-                        <Truck size={22} />
-                        Food Trucks Cercanos
-                        {deliveryZone && (
-                            <span className={`ml-2 text-xs px-2 py-1 rounded-full ${
-                                deliveryZone.in_delivery_zone 
-                                    ? 'bg-white/20 text-white' 
-                                    : 'bg-red-500 text-white'
-                            }`}>
-                                {deliveryZone.in_delivery_zone 
-                                    ? (
-                                        <span className="flex items-center gap-1">
-                                            <TruckIcon size={12} />
-                                            {deliveryZone.zones[0]?.tiempo_estimado}min
-                                        </span>
-                                    ) : (
-                                        <span className="flex items-center gap-1">
-                                            <XCircle size={12} />
-                                            Sin delivery
-                                        </span>
-                                    )
-                                }
-                            </span>
-                        )}
-                    </h2>
-                    <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition-colors"><X size={20} /></button>
-                </div>
-                
-                <div className="flex-grow overflow-y-auto">
-                    {trucks.length > 0 && userLocation ? (
-                        <div className="flex flex-col h-full">
-                            {/* Mapa */}
-                            <div className="h-64 bg-gray-200 relative rounded-t-lg overflow-hidden">
-                                <iframe
-                                    width="100%"
-                                    height="100%"
-                                    frameBorder="0"
-                                    src={`https://www.google.com/maps/embed/v1/directions?key=AIzaSyAcK15oZ84Puu5Nc4wDQT_Wyht0xqkbO-A&origin=${userLocation.latitude},${userLocation.longitude}&destination=${trucks[0]?.latitud},${trucks[0]?.longitud}&mode=driving&zoom=14`}
-                                    allowFullScreen
-                                    loading="lazy"
-                                    referrerPolicy="no-referrer-when-downgrade"
-                                    title="Mapa de Food Trucks"
-                                ></iframe>
-                            </div>
-                            
-                            {/* Lista de trucks */}
-                            <div className="p-4 space-y-3">
-                                {trucks.map(truck => {
-                                    // Verificar si está abierto según horario actual (Chile)
-                                    const now = new Date();
-                                    const chileTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Santiago' }));
-                                    const hours = chileTime.getHours().toString().padStart(2, '0');
-                                    const minutes = chileTime.getMinutes().toString().padStart(2, '0');
-                                    const seconds = chileTime.getSeconds().toString().padStart(2, '0');
-                                    const currentTime = `${hours}:${minutes}:${seconds}`;
-                                    
-                                    // Manejar horarios que cruzan medianoche (ej: 18:00 - 00:30)
-                                    let isOpen;
-                                    if (truck.horario_inicio > truck.horario_fin) {
-                                        // Cruza medianoche: abierto si hora >= inicio O hora <= fin
-                                        isOpen = truck.activo && (currentTime >= truck.horario_inicio || currentTime <= truck.horario_fin);
-                                    } else {
-                                        // Normal: abierto si hora >= inicio Y hora <= fin
-                                        isOpen = truck.activo && currentTime >= truck.horario_inicio && currentTime <= truck.horario_fin;
-                                    }
-                                    
-                                    return (
-                                        <div key={truck.id} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow bg-white">
-                                            <div className="flex justify-between items-start mb-3">
-                                                <div className="flex items-start gap-2">
-                                                    <div className="bg-orange-100 p-2 rounded-lg">
-                                                        <Truck size={18} className="text-orange-600" />
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="font-bold text-gray-800 text-sm">{truck.nombre}</h3>
-                                                        <p className="text-xs text-gray-500 mt-0.5">{truck.descripcion}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-1 text-orange-600 font-semibold text-sm bg-orange-50 px-2 py-1 rounded-lg">
-                                                    <Navigation size={12} />
-                                                    {truck.distance ? `${truck.distance.toFixed(1)} km` : '...'}
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="flex items-center gap-1.5 text-xs text-gray-600 mb-3">
-                                                <MapPin size={12} className="text-gray-400" />
-                                                <p className="line-clamp-1">{truck.direccion}</p>
-                                            </div>
-                                            
-                                            <div className="flex flex-wrap items-center gap-2 mb-3">
-                                                <div className="flex items-center gap-1 text-xs bg-gray-50 px-2 py-1.5 rounded-lg">
-                                                    <Clock size={12} className="text-gray-500" />
-                                                    <span className="text-gray-700 font-medium">
-                                                        {truck.horario_inicio.slice(0,5)} - {truck.horario_fin.slice(0,5)}
-                                                    </span>
-                                                </div>
-                                                <span className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 ${
-                                                    isOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                                }`}>
-                                                    {isOpen ? (
-                                                        <><CheckCircle2 size={12} /> Abierto</>
-                                                    ) : (
-                                                        <><XCircle size={12} /> Cerrado</>
-                                                    )}
-                                                </span>
-                                                {truck.tarifa_delivery && (
-                                                    <div className="flex items-center gap-1 text-xs bg-blue-50 px-2 py-1.5 rounded-lg">
-                                                        <TruckIcon size={12} className="text-blue-600" />
-                                                        <span className="text-blue-700 font-medium">
-                                                            ${parseInt(truck.tarifa_delivery).toLocaleString('es-CL')}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            
-                                            <button 
-                                                onClick={() => openDirections(truck)}
-                                                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center gap-2 shadow-sm"
-                                            >
-                                                <Navigation size={16} />
-                                                Cómo llegar
-                                            </button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="text-center py-12 p-4">
-                            <div className="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Truck size={40} className="text-gray-400" />
-                            </div>
-                            <p className="text-gray-700 font-medium text-lg">No hay food trucks cerca</p>
-                            <p className="text-sm text-gray-500 mt-2 flex items-center justify-center gap-1">
-                                {!userLocation ? (
-                                    <><MapPin size={14} /> Activa tu ubicación para encontrar trucks cercanos</>
-                                ) : (
-                                    <><Navigation size={14} /> No hay trucks en un radio de 10km</>
-                                )}
-                            </p>
-                        </div>
-                    )}
-                </div>
-            </div>
+  if (!isOpen) return null;
+
+  const openDirections = (truck) => {
+    const url = `https://www.google.com/maps/dir/${userLocation?.latitude},${userLocation?.longitude}/${truck.latitud},${truck.longitud}`;
+    window.open(url, '_blank');
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center animate-fade-in" onClick={onClose}>
+      <div className="bg-white w-full h-full flex flex-col animate-slide-up" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white flex justify-between items-center" style={{ padding: 'clamp(12px, 3vw, 16px)' }}>
+          <h2 className="font-bold flex items-center gap-2" style={{ fontSize: 'clamp(16px, 4vw, 20px)' }}>
+            <Truck size={22} />
+            Food Trucks Cercanos
+            {deliveryZone && (
+              <span className={`ml-2 text-xs px-2 py-1 rounded-full ${deliveryZone.in_delivery_zone
+                ? 'bg-white/20 text-white'
+                : 'bg-red-500 text-white'
+                }`}>
+                {deliveryZone.in_delivery_zone
+                  ? (
+                    <span className="flex items-center gap-1">
+                      <TruckIcon size={12} />
+                      {deliveryZone.zones[0]?.tiempo_estimado}min
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      <XCircle size={12} />
+                      Sin delivery
+                    </span>
+                  )
+                }
+              </span>
+            )}
+          </h2>
+          <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition-colors"><X size={20} /></button>
         </div>
-    );
+
+        <div className="flex-grow overflow-y-auto">
+          {trucks.length > 0 && userLocation ? (
+            <div className="flex flex-col h-full">
+              {/* Mapa */}
+              <div className="h-64 bg-gray-200 relative rounded-t-lg overflow-hidden">
+                <iframe
+                  width="100%"
+                  height="100%"
+                  frameBorder="0"
+                  src={`https://www.google.com/maps/embed/v1/directions?key=AIzaSyAcK15oZ84Puu5Nc4wDQT_Wyht0xqkbO-A&origin=${userLocation.latitude},${userLocation.longitude}&destination=${trucks[0]?.latitud},${trucks[0]?.longitud}&mode=driving&zoom=14`}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Mapa de Food Trucks"
+                ></iframe>
+              </div>
+
+              {/* Lista de trucks */}
+              <div className="p-4 space-y-3">
+                {trucks.map(truck => {
+                  // Verificar si está abierto según horario actual (Chile)
+                  const now = new Date();
+                  const chileTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Santiago' }));
+                  const hours = chileTime.getHours().toString().padStart(2, '0');
+                  const minutes = chileTime.getMinutes().toString().padStart(2, '0');
+                  const seconds = chileTime.getSeconds().toString().padStart(2, '0');
+                  const currentTime = `${hours}:${minutes}:${seconds}`;
+
+                  // Manejar horarios que cruzan medianoche (ej: 18:00 - 00:30)
+                  let isOpen;
+                  if (truck.horario_inicio > truck.horario_fin) {
+                    // Cruza medianoche: abierto si hora >= inicio O hora <= fin
+                    isOpen = truck.activo && (currentTime >= truck.horario_inicio || currentTime <= truck.horario_fin);
+                  } else {
+                    // Normal: abierto si hora >= inicio Y hora <= fin
+                    isOpen = truck.activo && currentTime >= truck.horario_inicio && currentTime <= truck.horario_fin;
+                  }
+
+                  return (
+                    <div key={truck.id} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow bg-white">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-start gap-2">
+                          <div className="bg-orange-100 p-2 rounded-lg">
+                            <Truck size={18} className="text-orange-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-gray-800 text-sm">{truck.nombre}</h3>
+                            <p className="text-xs text-gray-500 mt-0.5">{truck.descripcion}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 text-orange-600 font-semibold text-sm bg-orange-50 px-2 py-1 rounded-lg">
+                          <Navigation size={12} />
+                          {truck.distance ? `${truck.distance.toFixed(1)} km` : '...'}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-xs text-gray-600 mb-3">
+                        <MapPin size={12} className="text-gray-400" />
+                        <p className="line-clamp-1">{truck.direccion}</p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <div className="flex items-center gap-1 text-xs bg-gray-50 px-2 py-1.5 rounded-lg">
+                          <Clock size={12} className="text-gray-500" />
+                          <span className="text-gray-700 font-medium">
+                            {truck.horario_inicio.slice(0, 5)} - {truck.horario_fin.slice(0, 5)}
+                          </span>
+                        </div>
+                        <span className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 ${isOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}>
+                          {isOpen ? (
+                            <><CheckCircle2 size={12} /> Abierto</>
+                          ) : (
+                            <><XCircle size={12} /> Cerrado</>
+                          )}
+                        </span>
+                        {truck.tarifa_delivery && (
+                          <div className="flex items-center gap-1 text-xs bg-blue-50 px-2 py-1.5 rounded-lg">
+                            <TruckIcon size={12} className="text-blue-600" />
+                            <span className="text-blue-700 font-medium">
+                              ${parseInt(truck.tarifa_delivery).toLocaleString('es-CL')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => openDirections(truck)}
+                        className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center gap-2 shadow-sm"
+                      >
+                        <Navigation size={16} />
+                        Cómo llegar
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12 p-4">
+              <div className="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Truck size={40} className="text-gray-400" />
+              </div>
+              <p className="text-gray-700 font-medium text-lg">No hay food trucks cerca</p>
+              <p className="text-sm text-gray-500 mt-2 flex items-center justify-center gap-1">
+                {!userLocation ? (
+                  <><MapPin size={14} /> Activa tu ubicación para encontrar trucks cercanos</>
+                ) : (
+                  <><Navigation size={14} /> No hay trucks en un radio de 10km</>
+                )}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const NotificationsModal = ({ isOpen, onClose, onOrdersUpdate, activeOrdersCount }) => {
-    useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
-        return () => {
-            document.body.style.overflow = '';
-        };
-    }, [isOpen]);
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
-    if (!isOpen) return null;
-    
-    return (
-        <MiniComandas onOrdersUpdate={onOrdersUpdate} onClose={onClose} activeOrdersCount={activeOrdersCount} />
-    );
+  if (!isOpen) return null;
+
+  return (
+    <MiniComandas onOrdersUpdate={onOrdersUpdate} onClose={onClose} activeOrdersCount={activeOrdersCount} />
+  );
 };
 
 
@@ -703,14 +701,14 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
   const [isActive, setIsActive] = useState(product.active !== 0);
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
   const heartButtonRef = useRef(null);
-  
+
   // Track product view when component mounts
   useEffect(() => {
     if (window.Analytics) {
       window.Analytics.trackProductView(product.id, product.name);
     }
   }, [product.id, product.name]);
-  
+
   // Doble tap para me gusta
   const handleDoubleTap = useDoubleTap((e) => {
     e.stopPropagation();
@@ -721,87 +719,87 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
         x: rect.left + rect.width * 0.2, // Posición del corazón en la tarjeta
         y: rect.bottom - 60 // Cerca del corazón de me gusta
       });
-      
+
       handleLike(product.id);
       setShowFloatingHeart(true);
       vibrate([50, 50, 50]); // Vibración triple
-      
+
 
     }
   });
-    const typeColors = {
-        // Churrascos/Sandwiches
-        'Carne': {
-            bg: 'bg-red-500',
-            text: 'text-white',
-            border: 'border-red-500'
-        },
-        'Pollo': {
-            bg: 'bg-yellow-500',
-            text: 'text-white',
-            border: 'border-yellow-500'
-        },
-        'Vegetariano': {
-            bg: 'bg-green-500',
-            text: 'text-white',
-            border: 'border-green-500'
-        },
-        // Hamburguesas
-        'Clásicas': {
-            bg: 'bg-orange-500',
-            text: 'text-white',
-            border: 'border-orange-500'
-        },
-        'Especiales': {
-            bg: 'bg-purple-500',
-            text: 'text-white',
-            border: 'border-purple-500'
-        },
-        // Completos
-        'Tradicionales': {
-            bg: 'bg-blue-500',
-            text: 'text-white',
-            border: 'border-blue-500'
-        },
-        'Al Vapor': {
-            bg: 'bg-cyan-500',
-            text: 'text-white',
-            border: 'border-cyan-500'
-        },
-        // Tomahawks
-        'Tomahawks': {
-            bg: 'bg-red-700',
-            text: 'text-white',
-            border: 'border-red-700'
-        },
-        // Snacks
-        'Papas': {
-            bg: 'bg-yellow-600',
-            text: 'text-white',
-            border: 'border-yellow-600'
-        },
-        'Jugos': {
-            bg: 'bg-green-400',
-            text: 'text-white',
-            border: 'border-green-400'
-        },
-        'Bebidas': {
-            bg: 'bg-blue-400',
-            text: 'text-white',
-            border: 'border-blue-400'
-        },
-        'Salsas': {
-            bg: 'bg-red-400',
-            text: 'text-white',
-            border: 'border-red-400'
-        },
-        'Empanadas': {
-            bg: 'bg-amber-500',
-            text: 'text-white',
-            border: 'border-amber-500'
-        }
-    };
-    const colorClasses = type ? typeColors[type] : null;
+  const typeColors = {
+    // Churrascos/Sandwiches
+    'Carne': {
+      bg: 'bg-red-500',
+      text: 'text-white',
+      border: 'border-red-500'
+    },
+    'Pollo': {
+      bg: 'bg-yellow-500',
+      text: 'text-white',
+      border: 'border-yellow-500'
+    },
+    'Vegetariano': {
+      bg: 'bg-green-500',
+      text: 'text-white',
+      border: 'border-green-500'
+    },
+    // Hamburguesas
+    'Clásicas': {
+      bg: 'bg-orange-500',
+      text: 'text-white',
+      border: 'border-orange-500'
+    },
+    'Especiales': {
+      bg: 'bg-purple-500',
+      text: 'text-white',
+      border: 'border-purple-500'
+    },
+    // Completos
+    'Tradicionales': {
+      bg: 'bg-blue-500',
+      text: 'text-white',
+      border: 'border-blue-500'
+    },
+    'Al Vapor': {
+      bg: 'bg-cyan-500',
+      text: 'text-white',
+      border: 'border-cyan-500'
+    },
+    // Tomahawks
+    'Tomahawks': {
+      bg: 'bg-red-700',
+      text: 'text-white',
+      border: 'border-red-700'
+    },
+    // Snacks
+    'Papas': {
+      bg: 'bg-yellow-600',
+      text: 'text-white',
+      border: 'border-yellow-600'
+    },
+    'Jugos': {
+      bg: 'bg-green-400',
+      text: 'text-white',
+      border: 'border-green-400'
+    },
+    'Bebidas': {
+      bg: 'bg-blue-400',
+      text: 'text-white',
+      border: 'border-blue-400'
+    },
+    'Salsas': {
+      bg: 'bg-red-400',
+      text: 'text-white',
+      border: 'border-red-400'
+    },
+    'Empanadas': {
+      bg: 'bg-amber-500',
+      text: 'text-white',
+      border: 'border-amber-500'
+    }
+  };
+  const colorClasses = type ? typeColors[type] : null;
   const toggleProductStatus = async () => {
     setIsTogglingStatus(true);
     try {
@@ -823,161 +821,103 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
 
   return (
     <>
-    <div className={`bg-white rounded-xl overflow-hidden animate-fade-in transition-all duration-300 flex min-h-[160px] relative ${!isActive && isCashier ? 'border-2 border-red-500' : ''}`} style={{boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.1), -2px -2px 6px rgba(255, 255, 255, 0.7)'}}>
+      <div className={`bg-white rounded-xl overflow-hidden animate-fade-in transition-all duration-300 flex flex-col relative ${!isActive && isCashier ? 'border-2 border-red-500' : ''}`} style={{ boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.05), -1px -1px 3px rgba(255, 255, 255, 0.5)' }}>
         {/* Capa gris para productos inactivos */}
         {!isActive && isCashier && (
-            <div className="absolute inset-0 bg-gray-500 bg-opacity-60 z-10 rounded-xl"></div>
+          <div className="absolute inset-0 bg-gray-500 bg-opacity-60 z-10 rounded-xl"></div>
         )}
-        
-        <div 
-            className="w-32 flex-shrink-0 relative aspect-[4/5] cursor-pointer" 
-            onTouchStart={handleDoubleTap}
-            onClick={() => product.image && setShowImageModal(true)}
+
+        {/* Header con el Título */}
+        <div className="p-2 border-b bg-gray-50/50">
+          <h3
+            className="font-bold text-[11px] sm:text-xs text-gray-800 cursor-pointer line-clamp-2 min-h-[32px] flex items-center justify-center text-center"
+            onClick={() => onSelect(product)}
+            title={product.name}
+          >
+            {product.name}
+          </h3>
+        </div>
+
+        <div
+          className="w-full relative aspect-square cursor-pointer overflow-hidden"
+          onTouchStart={handleDoubleTap}
+          onClick={() => product.image && setShowImageModal(true)}
         >
-            {product.image ? (
-                <img 
-                    src={product.image} 
-                    alt={product.name} 
-                    className="w-full h-full object-cover"
-                />
-            ) : (
-                <div className="w-full h-full bg-gray-200 animate-pulse"></div>
-            )}
-            <FloatingHeart 
-                show={showFloatingHeart} 
-                startPosition={heartPosition}
-                onAnimationEnd={() => setShowFloatingHeart(false)}
+          {product.image ? (
+            <img
+              src={product.image}
+              alt={product.name}
+              className="w-full h-full object-cover transition-transform hover:scale-105"
             />
+          ) : (
+            <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+              <ChefHat className="text-gray-300" size={32} />
+            </div>
+          )}
+          <FloatingHeart
+            show={showFloatingHeart}
+            startPosition={heartPosition}
+            onAnimationEnd={() => setShowFloatingHeart(false)}
+          />
+          {product.category_name === 'Combos' && (
+            <div className="absolute top-1 right-1 bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 z-20">
+              <GiHamburger size={8} />
+              <CupSoda size={8} />
+            </div>
+          )}
         </div>
-        
-        <div className="flex-1 p-2 flex flex-col justify-between min-h-[160px]">
-            {isCashier && (
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        toggleProductStatus();
-                    }}
-                    disabled={isTogglingStatus}
-                    className={`absolute top-1 left-1 z-20 px-2 py-1 rounded-md text-[10px] font-bold transition-all shadow-lg ${isActive ? 'bg-green-500 text-white' : 'bg-red-500 text-white'} ${isTogglingStatus ? 'opacity-50' : 'hover:scale-105'}`}
-                >
-                    {isActive ? 'ACTIVO' : 'INACTIVO'}
-                </button>
+
+        <div className="p-1.5 space-y-1.5 mt-auto">
+          <div className="flex items-center justify-center">
+            <p className="text-xs font-bold bg-yellow-400 text-black px-2 py-0.5 rounded-md">${product.price.toLocaleString('es-CL')}</p>
+          </div>
+
+          <div className="flex items-center gap-1">
+            {quantity > 0 && (
+              <button
+                onClick={() => onRemoveFromCart(product.id)}
+                className="text-red-600 rounded-full hover:bg-red-50 transition-colors p-0.5"
+              >
+                <MinusCircle size={18} />
+              </button>
             )}
-            <div className="flex-1">
-                <div className="flex items-start justify-between gap-2 mb-1">
-                    <h3 
-                        className="font-bold text-sm text-gray-800 cursor-pointer line-clamp-2 flex-1"
-                        onClick={() => onSelect(product)}
-                        title={product.name}
-                    >
-                        {product.name}
-                    </h3>
-                    {product.category_name === 'Combos' && (
-                        <div className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 flex-shrink-0">
-                            <GiHamburger size={10} />
-                            <CupSoda size={10} />
-                        </div>
-                    )}
-                </div>
-                <p className="text-xs text-gray-600 mb-2 line-clamp-3">
-                    {product.description}
-                </p>
-            </div>
-            
-            <div className="space-y-2 flex-shrink-0">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <div className="flex items-center gap-0.5"><Eye size={12} /><span>{product.views}</span></div>
-                        <button 
-                            ref={heartButtonRef}
-                            onClick={(e) => {
-                                if (!isLiked) {
-                                    const rect = e.currentTarget.getBoundingClientRect();
-                                    setHeartPosition({
-                                        x: rect.left + rect.width / 2,
-                                        y: rect.top + rect.height / 2
-                                    });
-                                    setShowFloatingHeart(true);
-                                    vibrate(50);
-                                }
-                                handleLike(product.id);
-                            }} 
-                            className={`flex items-center gap-0.5 ${isLiked ? 'text-red-500' : ''}`}
-                        >
-                            <Heart size={12} className={isLiked ? 'fill-current' : ''} /><span>{product.likes}</span>
-                        </button>
-                        <button 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setReviewsModalProduct(product);
-                            }}
-                            className="flex items-center gap-0.5"
-                        >
-                            <MessageSquare size={12} /><span>{product.reviews.count || 0}</span>
-                        </button>
-                        <button 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onShare(product);
-                            }}
-                            className="flex items-center"
-                        >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <p className="text-sm font-bold bg-yellow-400 text-black px-2 py-1 rounded-md flex-shrink-0">${product.price.toLocaleString('es-CL')}</p>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                    {quantity > 0 && (
-                        <button
-                            onClick={() => onRemoveFromCart(product.id)}
-                            className="text-red-600 rounded-full hover:bg-red-100 transition-colors p-1 flex-shrink-0"
-                        >
-                            <MinusCircle size={20} />
-                        </button>
-                    )}
-                    {quantity > 0 && <span className="font-bold text-sm text-gray-800 w-6 text-center flex-shrink-0">{quantity}</span>}
-                    <button 
-                        onClick={() => onAddToCart(product)} 
-                        className={`flex-1 text-white rounded-lg py-2 font-bold transition-all duration-300 flex items-center justify-center gap-1 min-w-0 ${
-                            quantity > 0 ? 'bg-blue-500 hover:bg-blue-600' : 'bg-green-500 hover:bg-green-600'
-                        }`}
-                    >
-                        <PlusCircle size={18} className="flex-shrink-0" />
-                        <span className="truncate">Agregar</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    {/* Modal de imagen completa */}
-    {showImageModal && (
-      <div 
-        className="fixed inset-0 bg-black/90 z-[70] flex items-center justify-center animate-fade-in" 
-        onClick={() => setShowImageModal(false)}
-      >
-        <button 
-          onClick={() => setShowImageModal(false)} 
-          className="absolute top-4 right-4 bg-black/50 rounded-full p-2 text-white hover:bg-black/70 transition-all z-20"
-        >
-          <X size={24} />
-        </button>
-        <img 
-          src={product.image} 
-          alt={product.name} 
-          className="max-w-full max-h-full object-contain" 
-        />
-        <div className="absolute bottom-0 left-0 right-0 p-6 bg-black/60 backdrop-blur-md text-white">
-          <h3 className="text-2xl font-bold mb-2">{product.name}</h3>
-          <p className="text-sm text-gray-200 mb-3 line-clamp-2">{product.description}</p>
-          <p className="text-xl font-bold text-yellow-400">${product.price.toLocaleString('es-CL')}</p>
+            {quantity > 0 && <span className="font-bold text-xs text-gray-800 w-4 text-center">{quantity}</span>}
+            <button
+              onClick={() => onAddToCart(product)}
+              className={`flex-1 text-white rounded-lg py-1.5 text-[10px] font-bold transition-all duration-300 flex items-center justify-center gap-1 ${quantity > 0 ? 'bg-blue-500 hover:bg-blue-600' : 'bg-green-500 hover:bg-green-600'
+                }`}
+            >
+              <PlusCircle size={14} />
+              <span>Agregar</span>
+            </button>
+          </div>
         </div>
       </div>
-    )}
+
+      {/* Modal de imagen completa */}
+      {showImageModal && (
+        <div
+          className="fixed inset-0 bg-black/90 z-[70] flex items-center justify-center animate-fade-in"
+          onClick={() => setShowImageModal(false)}
+        >
+          <button
+            onClick={() => setShowImageModal(false)}
+            className="absolute top-4 right-4 bg-black/50 rounded-full p-2 text-white hover:bg-black/70 transition-all z-20"
+          >
+            <X size={24} />
+          </button>
+          <img
+            src={product.image}
+            alt={product.name}
+            className="max-w-full max-h-full object-contain"
+          />
+          <div className="absolute bottom-0 left-0 right-0 p-6 bg-black/60 backdrop-blur-md text-white">
+            <h3 className="text-2xl font-bold mb-2">{product.name}</h3>
+            <p className="text-sm text-gray-200 mb-3 line-clamp-2">{product.description}</p>
+            <p className="text-xl font-bold text-yellow-400">${product.price.toLocaleString('es-CL')}</p>
+          </div>
+        </div>
+      )}
     </>
   );
 };
@@ -1081,7 +1021,7 @@ export default function App() {
   const [schedules, setSchedules] = useState([]);
   const [menuCategories, setMenuCategories] = useState([]);
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
-  
+
   // Generar mainCategories dinámicamente desde menuCategories
   const mainCategories = useMemo(() => {
     if (menuCategories.length === 0) return [];
@@ -1090,7 +1030,7 @@ export default function App() {
       .sort((a, b) => a.sort_order - b.sort_order)
       .map(cat => cat.category_key);
   }, [menuCategories]);
-  
+
   // Generar categoryDisplayNames dinámicamente desde menuCategories
   const categoryDisplayNames = useMemo(() => {
     const names = {};
@@ -1099,7 +1039,7 @@ export default function App() {
     });
     return names;
   }, [menuCategories]);
-  
+
   // Generar categoryFilters dinámicamente desde menuCategories
   const categoryFilters = useMemo(() => {
     const filters = {};
@@ -1161,20 +1101,20 @@ export default function App() {
     const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
     const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
     const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
-    
+
     const numericAmount = parseInt(cashAmount.replace(/\./g, ''));
-    
+
     if (!numericAmount || numericAmount === 0) {
       alert('⚠️ Debe ingresar un monto o seleccionar "Monto Exacto"');
       return;
     }
-    
+
     if (numericAmount < finalTotal) {
       const faltante = finalTotal - numericAmount;
       alert(`⚠️ Monto insuficiente. Faltan $${faltante.toLocaleString('es-CL')}`);
       return;
     }
-    
+
     if (numericAmount === finalTotal) {
       processCashOrder();
     } else {
@@ -1195,13 +1135,13 @@ export default function App() {
       const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
       const numericAmount = parseInt(cashAmount.replace(/\./g, ''));
       const vuelto = numericAmount - finalTotal;
-      
+
       // Agregar mensaje estructurado a las notas
       const paymentNote = `💵 EFECTIVO | Paga con: $${numericAmount.toLocaleString('es-CL')} | Vuelto: $${vuelto.toLocaleString('es-CL')}`;
-      const finalNotes = customerInfo.customerNotes 
-        ? `${customerInfo.customerNotes}\n\n${paymentNote}` 
+      const finalNotes = customerInfo.customerNotes
+        ? `${customerInfo.customerNotes}\n\n${paymentNote}`
         : paymentNote;
-      
+
       const orderData = {
         amount: finalTotal,
         customer_name: customerInfo.name,
@@ -1220,14 +1160,14 @@ export default function App() {
         delivery_address: customerInfo.address || null,
         payment_method: 'cash'
       };
-      
+
       console.log('📤 Enviando orden:', orderData);
       const response = await fetch('/api/create_order.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)
       });
-      
+
       const result = await response.json();
       console.log('📥 Respuesta:', result);
       if (result.success) {
@@ -1271,7 +1211,7 @@ export default function App() {
     createConfetti();
     playNotificationSound();
     vibrate([200, 100, 200]);
-    
+
     // Agregar notificación de pago exitoso
     const newNotification = {
       titulo: '✅ Pago Exitoso',
@@ -1279,7 +1219,7 @@ export default function App() {
       leida: false
     };
     setNotifications(prev => [newNotification, ...prev]);
-    
+
     // Notificar al admin
     fetch('/api/notify_admin_payment.php', {
       method: 'POST',
@@ -1289,14 +1229,14 @@ export default function App() {
         amount: cartTotal,
         customer_name: customerInfo.name || user?.nombre || 'Cliente'
       })
-    }).catch(() => {});
-    
+    }).catch(() => { });
+
     // Limpiar carrito
     setCart([]);
     setShowPayment(false);
     setCurrentOrder(null);
     setCustomerInfo({ name: '', phone: '', email: '', address: '' });
-    
+
     if (paymentData && paymentData.payment_url) {
       alert(`¡Pedido #${currentOrder?.order_number} enviado a TUU para pago online!`);
     } else {
@@ -1311,26 +1251,26 @@ export default function App() {
 
   const handleLike = async (productId) => {
     if (likedProducts.has(productId)) return;
-    
+
     try {
       const response = await fetch('/api/toggle_like.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ product_id: productId })
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setMenuWithImages(prevMenu => {
           const updatedMenu = { ...prevMenu };
           Object.keys(updatedMenu).forEach(category => {
             if (Array.isArray(updatedMenu[category])) {
-              updatedMenu[category] = updatedMenu[category].map(product => 
+              updatedMenu[category] = updatedMenu[category].map(product =>
                 product.id === productId ? { ...product, likes: data.likes } : product
               );
             } else {
               Object.keys(updatedMenu[category]).forEach(subcat => {
-                updatedMenu[category][subcat] = updatedMenu[category][subcat].map(product => 
+                updatedMenu[category][subcat] = updatedMenu[category][subcat].map(product =>
                   product.id === productId ? { ...product, likes: data.likes } : product
                 );
               });
@@ -1378,18 +1318,18 @@ export default function App() {
       setShowSuggestions(false);
       return;
     }
-    
+
     const allProducts = [];
     const seenIds = new Set();
-    
+
     Object.entries(menuWithImages).forEach(([categoryKey, category]) => {
       // Excluir categorías personalizar y extras de la vista principal
       if (categoryKey === 'personalizar' || categoryKey === 'extras') return;
-      
+
       if (Array.isArray(category)) {
         category.forEach(p => {
           if (!seenIds.has(p.id)) {
-            allProducts.push({...p, category: categoryKey});
+            allProducts.push({ ...p, category: categoryKey });
             seenIds.add(p.id);
           }
         });
@@ -1397,41 +1337,41 @@ export default function App() {
         Object.entries(category).forEach(([subKey, products]) => {
           products.forEach(p => {
             if (!seenIds.has(p.id)) {
-              allProducts.push({...p, category: categoryKey, subcategory: subKey});
+              allProducts.push({ ...p, category: categoryKey, subcategory: subKey });
               seenIds.add(p.id);
             }
           });
         });
       }
     });
-    
+
     const filtered = allProducts.filter(product => {
       // Excluir productos de categorías personalizar y extras de búsquedas
       if (product.category === 'personalizar' || product.category === 'extras') return false;
-      
+
       // Solo mostrar productos activos (active !== 0)
       if (product.active === 0) return false;
-      
+
       // Buscar solo por nombre y descripción del producto
       return product.name.toLowerCase().includes(query.toLowerCase()) ||
         product.description.toLowerCase().includes(query.toLowerCase());
     });
-    
+
     setFilteredProducts(filtered);
     setSuggestions(filtered.slice(0, 8));
     setShowSuggestions(query.length >= 2 && filtered.length > 0);
   };
-  
+
   const selectSuggestion = (product) => {
     setShowSuggestions(false);
     setSearchQuery('');
     setFilteredProducts([]);
-    
+
     // Change to product's category
     if (product.category) {
       setActiveCategory(product.category);
     }
-    
+
     // Wait for category change and then scroll to product
     setTimeout(() => {
       const productElement = document.getElementById(`product-${product.id}`);
@@ -1559,24 +1499,24 @@ export default function App() {
       const formData = new FormData();
       formData.append('lat', lat);
       formData.append('lng', lng);
-      
+
       const response = await fetch('/api/location/check_delivery_zone.php', {
         method: 'POST',
         body: formData
       });
-      
+
       if (!response.ok) return;
-      
+
       const data = await response.json();
       if (data.error) {
         setDeliveryZone({ in_delivery_zone: false, zones: [] });
       } else {
         setDeliveryZone(data);
       }
-      
+
       if (data.in_delivery_zone && data.zones.length > 0 && nearbyTrucks.length > 0) {
         const closestTruck = nearbyTrucks[0];
-        calculateRealDeliveryTime(lat, lng, closestTruck.latitud, closestTruck.longitud).catch(() => {});
+        calculateRealDeliveryTime(lat, lng, closestTruck.latitud, closestTruck.longitud).catch(() => { });
       }
     } catch (error) {
       // Silenciar errores de API no disponible
@@ -1588,12 +1528,12 @@ export default function App() {
       const formData = new FormData();
       formData.append('lat', lat);
       formData.append('lng', lng);
-      
+
       const response = await fetch('/api/location/get_nearby_products.php', {
         method: 'POST',
         body: formData
       });
-      
+
       if (!response.ok) return;
       const data = await response.json();
       setNearbyProducts(data);
@@ -1606,7 +1546,7 @@ export default function App() {
     try {
       const response = await fetch('/api/get_truck_status.php?truckId=4');
       const data = await response.json();
-      
+
       if (data.success && data.truck) {
         setNearbyTrucks([{
           id: data.truck.id,
@@ -1625,7 +1565,7 @@ export default function App() {
       // Silenciar log en caja3 - los cajeros no cargan pedidos de usuario
       return;
     }
-    
+
     try {
       console.log('Cargando pedidos del usuario:', user.email);
       const response = await fetch('/api/get_user_orders.php', {
@@ -1635,7 +1575,7 @@ export default function App() {
       });
       const data = await response.json();
       console.log('Respuesta API pedidos:', data);
-      
+
       if (data.success) {
         console.log('Pedidos encontrados:', data.orders?.length || 0);
         setUserOrders(data.orders || []);
@@ -1654,11 +1594,11 @@ export default function App() {
       // Silenciar log en caja3 - los cajeros no cargan notificaciones de usuario
       return;
     }
-    
+
     try {
       const response = await fetch('/api/get_order_notifications.php');
       const data = await response.json();
-      
+
       if (data.success && data.notifications) {
         setNotifications(data.notifications);
         setUnreadCount(data.unread_count || 0);
@@ -1681,12 +1621,12 @@ export default function App() {
       formData.append('user_lng', userLng);
       formData.append('truck_lat', truckLat);
       formData.append('truck_lng', truckLng);
-      
+
       const response = await fetch('/api/location/calculate_delivery_time.php', {
         method: 'POST',
         body: formData
       });
-      
+
       if (!response.ok) return;
       const data = await response.json();
       if (data.success) {
@@ -1712,7 +1652,7 @@ export default function App() {
         const cashierParam = isCashier ? '&cashier=1' : '';
         const response = await fetch('/api/get_menu_products.php?v=' + Date.now() + cashierParam);
         const data = await response.json();
-        
+
         if (data.success && data.menuData) {
           setMenuWithImages(data.menuData);
         } else {
@@ -1724,7 +1664,7 @@ export default function App() {
         setMenuWithImages({});
       }
     };
-    
+
     const loadMenuCategories = async () => {
       try {
         const response = await fetch('/api/get_menu_structure.php');
@@ -1736,7 +1676,7 @@ export default function App() {
         console.error('Error cargando categorías del menú:', error);
       }
     };
-    
+
     loadMenuFromDatabase();
     loadDeliveryFee();
     loadMenuCategories();
@@ -1745,7 +1685,7 @@ export default function App() {
   const productsToShow = useMemo(() => {
     const filter = categoryFilters[activeCategory];
     if (!filter) return [];
-    
+
     const allProducts = [];
     Object.values(menuWithImages).forEach(category => {
       if (Array.isArray(category)) {
@@ -1758,7 +1698,7 @@ export default function App() {
         });
       }
     });
-    
+
     let filtered = allProducts.filter(p => {
       if (filter.subcategory_id) {
         return p.category_id === filter.category_id && p.subcategory_id === filter.subcategory_id;
@@ -1768,11 +1708,11 @@ export default function App() {
       }
       return false;
     });
-    
+
     if (!showInactiveProducts && cajaUser) {
       filtered = filtered.filter(p => p.active !== 0);
     }
-    
+
     return filtered;
   }, [activeCategory, menuWithImages, showInactiveProducts, cajaUser]);
 
@@ -1781,16 +1721,16 @@ export default function App() {
       setComboModalProduct(product);
       return;
     }
-    
+
     vibrate(50);
-    
+
     if (window.Analytics) {
       window.Analytics.trackAddToCart(product.id, product.name);
     }
-    
-    setCart(prevCart => [...prevCart, { 
-      ...product, 
-      quantity: 1, 
+
+    setCart(prevCart => [...prevCart, {
+      ...product,
+      quantity: 1,
       customizations: null,
       cartItemId: Date.now() + Math.random(),
       category_id: product.category_id,
@@ -1798,7 +1738,7 @@ export default function App() {
       subcategory_name: product.subcategory_name
     }]);
   };
-  
+
   const handleRemoveFromCart = (productIdOrCartItemId) => {
     // Si es cartItemId (desde CartModal), eliminar ese item específico
     if (typeof productIdOrCartItemId === 'number' && productIdOrCartItemId > 1000000000000) {
@@ -1816,13 +1756,13 @@ export default function App() {
       // Si es product.id (desde MenuItem), eliminar el ÚLTIMO item agregado
       const productId = productIdOrCartItemId;
       const itemsOfProduct = cart.filter(item => item.id === productId);
-      
+
       if (itemsOfProduct.length > 0) {
         // Encontrar el último item agregado (mayor cartItemId)
-        const lastItem = itemsOfProduct.reduce((latest, current) => 
+        const lastItem = itemsOfProduct.reduce((latest, current) =>
           current.cartItemId > latest.cartItemId ? current : latest
         );
-        
+
         if (window.Analytics) {
           window.Analytics.trackInteraction({
             action_type: 'remove_from_cart',
@@ -1831,12 +1771,12 @@ export default function App() {
             product_name: lastItem.name
           });
         }
-        
+
         setCart(prevCart => prevCart.filter(item => item.cartItemId !== lastItem.cartItemId));
       }
     }
   };
-  
+
   const handleCustomizeProduct = (item, itemIndex) => {
     // Usar category_id del producto directamente — no depender de category_name string
     const productCategory = CATEGORY_ID_MAP[item.category_id] || item.category_key || activeCategory;
@@ -1848,7 +1788,7 @@ export default function App() {
     });
     setIsCartOpen(false);
   };
-  
+
   const handleUpdateCartItem = (cartIndex, updatedProduct, newCustomizations) => {
     setCart(prevCart => {
       const newCart = [...prevCart];
@@ -1864,7 +1804,7 @@ export default function App() {
   const cartSubtotal = useMemo(() => {
     return cart.reduce((total, item) => {
       let itemPrice = item.price;
-      
+
       if (item.customizations && item.customizations.length > 0) {
         const customizationsPrice = item.customizations.reduce((sum, c) => {
           let price = c.price * c.quantity;
@@ -1875,7 +1815,7 @@ export default function App() {
         }, 0);
         itemPrice += customizationsPrice;
       }
-      
+
       return total + itemPrice;
     }, 0);
   }, [cart]);
@@ -1888,15 +1828,15 @@ export default function App() {
   }, [customerInfo.deliveryType, nearbyTrucks]);
 
   const cartTotal = useMemo(() => {
-    const currentDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 
-      ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) 
+    const currentDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0
+      ? parseInt(nearbyTrucks[0].tarifa_delivery || 0)
       : 0;
     return cartSubtotal + currentDeliveryFee;
   }, [cartSubtotal, customerInfo.deliveryType, nearbyTrucks]);
 
   const cartItemCount = useMemo(() => cart.length, [cart]);
   const getProductQuantity = (productId) => cart.filter(item => item.id === productId).length;
-  
+
   // Construir comboItems usando SUBCATEGORY_ID_MAP — sin strings hardcodeados
   const getBySubcategoryId = (subId) => {
     const subKey = SUBCATEGORY_ID_MAP[subId];
@@ -1918,7 +1858,7 @@ export default function App() {
     personalizar: getBySubcategoryId(29).filter(p => p.active === 1),
     extras: getBySubcategoryId(30),
   };
-  
+
   const generateWhatsAppMessage = (orderId) => {
     const currentDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
     let message = `*NUEVO PEDIDO - LA RUTA 11*\n\n`;
@@ -1926,19 +1866,19 @@ export default function App() {
     message += `*Cliente:* ${customerInfo.name}\n`;
     message += `*Teléfono:* ${customerInfo.phone || 'No especificado'}\n`;
     message += `*Tipo de entrega:* ${customerInfo.deliveryType === 'delivery' ? 'Delivery' : 'Retiro'}\n`;
-    
+
     if (customerInfo.deliveryType === 'delivery' && customerInfo.address) {
       message += `*Dirección:* ${customerInfo.address}\n`;
     }
     if (customerInfo.deliveryType === 'pickup' && customerInfo.pickupTime) {
       message += `*Hora de retiro:* ${customerInfo.pickupTime}\n`;
     }
-    
+
     message += `\n*PRODUCTOS:*\n`;
     cart.forEach((item, index) => {
       const isCombo = item.type === 'combo' || item.category_name === 'Combos' || item.selections;
       message += `${index + 1}. ${item.name} x${item.quantity} - $${(item.price * item.quantity).toLocaleString('es-CL')}\n`;
-      
+
       if (isCombo && (item.fixed_items || item.selections)) {
         message += `   Incluye:\n`;
         if (item.fixed_items) {
@@ -1958,21 +1898,21 @@ export default function App() {
           });
         }
       }
-      
+
       if (item.customizations && item.customizations.length > 0) {
         item.customizations.forEach(custom => {
           message += `   + ${custom.quantity}x ${custom.name} (+$${(custom.price * custom.quantity).toLocaleString('es-CL')})\n`;
         });
       }
     });
-    
+
     message += `\n*Subtotal:* $${cartSubtotal.toLocaleString('es-CL')}\n`;
     if (currentDeliveryFee > 0) {
       message += `*Delivery:* $${currentDeliveryFee.toLocaleString('es-CL')}\n`;
     }
     message += `*Total:* $${cartTotal.toLocaleString('es-CL')}\n\n`;
     message += `Pedido realizado desde la app web.`;
-    
+
     return message;
   };
 
@@ -2006,9 +1946,9 @@ export default function App() {
   useEffect(() => {
     // Registrar Service Worker para PWA badge
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+      navigator.serviceWorker.register('/sw.js').catch(() => { });
     }
-    
+
     // Desbloquear audio con primera interacción del usuario
     const unlockAudio = () => {
       initAudio();
@@ -2018,13 +1958,13 @@ export default function App() {
     };
     document.addEventListener('click', unlockAudio, { once: true });
     document.addEventListener('touchstart', unlockAudio, { once: true });
-    
+
     // Mostrar loader por 1.5 segundos
     setIsLoading(true);
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1500);
-    
+
     return () => {
       clearTimeout(timer);
       document.removeEventListener('click', unlockAudio);
@@ -2059,7 +1999,7 @@ export default function App() {
         localStorage.removeItem('caja_session');
       }
     }
-    
+
     // Verificar si usuario está logueado
     fetch('/api/auth/check_session.php')
       .then(response => {
@@ -2081,11 +2021,11 @@ export default function App() {
           // Silenciar errores de parsing
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     // Detectar parámetros de URL para login/logout/producto compartido
     const urlParams = new URLSearchParams(window.location.search);
-    
+
     // Producto compartido
     const sharedProductId = urlParams.get('product');
     if (sharedProductId) {
@@ -2103,7 +2043,7 @@ export default function App() {
             });
           }
         });
-        
+
         const sharedProduct = allProducts.find(p => p.id == sharedProductId);
         if (sharedProduct) {
           setSelectedProduct(sharedProduct);
@@ -2112,7 +2052,7 @@ export default function App() {
         }
       }, 1000);
     }
-    
+
     if (urlParams.get('login') === 'success') {
       // Limpiar URL y recargar sesión
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -2124,7 +2064,7 @@ export default function App() {
             setUser(data.user);
             loadNotifications();
             loadUserOrders();
-            
+
             // DISABLED: Onboarding no necesario en caja3
             // if (data.user.is_new_user && !localStorage.getItem('onboarding_completed')) {
             //   setTimeout(() => setShowOnboarding(true), 500);
@@ -2144,7 +2084,7 @@ export default function App() {
   }
 
   return (
-    <div className="bg-white font-sans min-h-screen w-full pb-24" style={{backgroundColor: '#ffffff', background: '#ffffff'}}>
+    <div className="bg-white font-sans min-h-screen w-full pb-24" style={{ backgroundColor: '#ffffff', background: '#ffffff' }}>
 
       {dispatchPopupOpen && (
         <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4">
@@ -2179,270 +2119,253 @@ export default function App() {
       <header className="px-4 py-2 sm:p-3 fixed top-0 left-0 right-0 bg-white z-40 shadow-sm">
         <div className="flex items-center justify-between w-full">
           {/* Logo */}
-          <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" style={{width: 'clamp(32px, 8vw, 40px)', height: 'clamp(32px, 8vw, 40px)'}} />
-          
+          <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" style={{ width: 'clamp(32px, 8vw, 40px)', height: 'clamp(32px, 8vw, 40px)' }} />
+
           {/* Checklist */}
           {cajaUser && (
-            <button 
-                onClick={() => { vibrate(30); window.location.href = '/checklist'; }} 
-                className="text-gray-600 hover:text-orange-500 transition-colors"
-                title="Checklist"
+            <button
+              onClick={() => { vibrate(30); window.location.href = '/checklist'; }}
+              className="text-gray-600 hover:text-orange-500 transition-colors"
+              title="Checklist"
             >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 11l3 3L22 4"></path>
-                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                </svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 11l3 3L22 4"></path>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+              </svg>
             </button>
           )}
-          
+
           {/* Toggle Productos Inactivos */}
           {cajaUser && (
-            <button 
-                onClick={() => { vibrate(30); setShowInactiveProducts(!showInactiveProducts); }} 
-                className={`p-1.5 rounded-lg transition-all ${
-                  showInactiveProducts 
-                    ? 'bg-red-500 text-white' 
-                    : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+            <button
+              onClick={() => { vibrate(30); setShowInactiveProducts(!showInactiveProducts); }}
+              className={`p-1.5 rounded-lg transition-all ${showInactiveProducts
+                ? 'bg-red-500 text-white'
+                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                 }`}
-                title={showInactiveProducts ? 'Ocultar inactivos' : 'Mostrar inactivos'}
+              title={showInactiveProducts ? 'Ocultar inactivos' : 'Mostrar inactivos'}
             >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  {showInactiveProducts ? (
-                    <>
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                      <circle cx="12" cy="12" r="3"></circle>
-                    </>
-                  ) : (
-                    <>
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                      <line x1="1" y1="1" x2="23" y2="23"></line>
-                    </>
-                  )}
-                </svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {showInactiveProducts ? (
+                  <>
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </>
+                ) : (
+                  <>
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </>
+                )}
+              </svg>
             </button>
           )}
-          
+
           {/* Perfil Cajera */}
           {cajaUser && (
-            <button 
-                onClick={() => { vibrate(30); setIsProfileOpen(true); }} 
-                className="flex items-center gap-2 text-gray-600 hover:text-orange-500 p-1 rounded-lg hover:bg-gray-100 transition-all"
-                title="Perfil Cajera"
+            <button
+              onClick={() => { vibrate(30); setIsProfileOpen(true); }}
+              className="flex items-center gap-2 text-gray-600 hover:text-orange-500 p-1 rounded-lg hover:bg-gray-100 transition-all"
+              title="Perfil Cajera"
             >
-                <User size={20} className="text-orange-500" />
-                <span className="font-medium" style={{fontSize: 'clamp(12px, 3vw, 14px)'}}>{cajaUser.fullName || cajaUser.user}</span>
+              <User size={20} className="text-orange-500" />
+              <span className="font-medium" style={{ fontSize: 'clamp(12px, 3vw, 14px)' }}>{cajaUser.fullName || cajaUser.user}</span>
             </button>
           )}
-          
+
           {/* Configuración */}
           {cajaUser && (
-            <button 
-                onClick={async () => { 
-                  vibrate(30); 
-                  setShowStatusModal(true);
-                  const res = await fetch('/api/get_truck_status.php?truckId=4');
-                  const data = await res.json();
-                  if (data.success) setTruckStatus(data.truck);
-                  
-                  const schedRes = await fetch('/api/get_truck_schedules.php?truckId=4');
-                  const schedData = await schedRes.json();
-                  if (schedData.success) {
-                    setSchedules(schedData.schedules);
-                    setCurrentDayOfWeek(schedData.currentDayOfWeek);
-                  }
-                  
-                  const catRes = await fetch('/api/get_menu_structure.php');
-                  const catData = await catRes.json();
-                  if (catData.success) setMenuCategories(catData.categories);
-                }}
-                className="text-gray-600 hover:text-orange-500 transition-colors"
-                title="Configuración"
+            <button
+              onClick={async () => {
+                vibrate(30);
+                setShowStatusModal(true);
+                const res = await fetch('/api/get_truck_status.php?truckId=4');
+                const data = await res.json();
+                if (data.success) setTruckStatus(data.truck);
+
+                const schedRes = await fetch('/api/get_truck_schedules.php?truckId=4');
+                const schedData = await schedRes.json();
+                if (schedData.success) {
+                  setSchedules(schedData.schedules);
+                  setCurrentDayOfWeek(schedData.currentDayOfWeek);
+                }
+
+                const catRes = await fetch('/api/get_menu_structure.php');
+                const catData = await catRes.json();
+                if (catData.success) setMenuCategories(catData.categories);
+              }}
+              className="text-gray-600 hover:text-orange-500 transition-colors"
+              title="Configuración"
             >
-                <Settings size={20} />
+              <Settings size={20} />
             </button>
           )}
-          
+
           {/* Compartir */}
-          <button 
-              onClick={() => { vibrate(30); setShowQRModal(true); }}
-              className="text-gray-600 hover:text-orange-500 transition-colors"
-              title="Compartir App"
+          <button
+            onClick={() => { vibrate(30); setShowQRModal(true); }}
+            className="text-gray-600 hover:text-orange-500 transition-colors"
+            title="Compartir App"
           >
-              <Share2 size={20} />
+            <Share2 size={20} />
           </button>
-          
+
           {/* Notificaciones */}
-          <button 
-              onClick={() => { vibrate(30); setIsNotificationsOpen(true); }}
-              className="text-gray-600 hover:text-orange-500 relative" 
-              title="Notificaciones"
+          <button
+            onClick={() => { vibrate(30); setIsNotificationsOpen(true); }}
+            className="text-gray-600 hover:text-orange-500 relative"
+            title="Notificaciones"
           >
-              <NotificationIcon size={20} />
-              {activeOrdersCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full flex items-center justify-center" style={{fontSize: 'clamp(8px, 2vw, 10px)', width: 'clamp(14px, 3.5vw, 16px)', height: 'clamp(14px, 3.5vw, 16px)'}}>
-                      {activeOrdersCount}
-                  </span>
-              )}
-              {activeChecklistsCount > 0 && (
-                  <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full flex items-center justify-center" style={{fontSize: 'clamp(8px, 2vw, 10px)', width: 'clamp(14px, 3.5vw, 16px)', height: 'clamp(14px, 3.5vw, 16px)'}}>
-                      {activeChecklistsCount}
-                  </span>
-              )}
+            <NotificationIcon size={20} />
+            {activeOrdersCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full flex items-center justify-center" style={{ fontSize: 'clamp(8px, 2vw, 10px)', width: 'clamp(14px, 3.5vw, 16px)', height: 'clamp(14px, 3.5vw, 16px)' }}>
+                {activeOrdersCount}
+              </span>
+            )}
+            {activeChecklistsCount > 0 && (
+              <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full flex items-center justify-center" style={{ fontSize: 'clamp(8px, 2vw, 10px)', width: 'clamp(14px, 3.5vw, 16px)', height: 'clamp(14px, 3.5vw, 16px)' }}>
+                {activeChecklistsCount}
+              </span>
+            )}
           </button>
-          
+
           {/* Carrito */}
           <button onClick={() => { vibrate(30); setShowCheckout(true); }} className="text-gray-600 hover:text-orange-500 relative">
-              <ShoppingCart size={20}/>
-              {cartItemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center animate-fade-in" style={{fontSize: 'clamp(9px, 2.2vw, 11px)', width: 'clamp(16px, 4vw, 20px)', height: 'clamp(16px, 4vw, 20px)'}}>
-                      {cartItemCount}
-                  </span>
-              )}
+            <ShoppingCart size={20} />
+            {cartItemCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center animate-fade-in" style={{ fontSize: 'clamp(9px, 2.2vw, 11px)', width: 'clamp(16px, 4vw, 20px)', height: 'clamp(16px, 4vw, 20px)' }}>
+                {cartItemCount}
+              </span>
+            )}
           </button>
         </div>
       </header>
-      
 
-      
-      <main className="pt-20 pb-24 px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={showSuggestions ? {filter: 'blur(2px)', pointerEvents: 'none'} : {}}>
-        {(activeCategory === 'churrascos' || activeCategory === 'completos' || activeCategory === 'Combos') ? (
-            <div className="space-y-8">
-                {(() => {
-                  let categoryData = menuWithImages[activeCategory];
-                  if (!categoryData) return null;
-                  
-                  // Filtro para hamburguesas 100g (solo clásicas)
-                  if (activeCategory === 'hamburguesas_100g') {
-                    categoryData = {};
-                    Object.entries(menuWithImages.hamburguesas || {}).forEach(([subCat, products]) => {
-                      const filtered = products.filter(p => p.subcategory_id === 5);
-                      if (filtered.length > 0) categoryData[subCat] = filtered;
-                    });
-                  }
-                  
-                  // Filtro para hamburguesas 200g (excluir clásicas)
-                  if (activeCategory === 'hamburguesas') {
-                    categoryData = {};
-                    Object.entries(menuWithImages.hamburguesas || {}).forEach(([subCat, products]) => {
-                      const filtered = products.filter(p => p.subcategory_id !== 5);
-                      if (filtered.length > 0) categoryData[subCat] = filtered;
-                    });
-                  }
-                  
-                  // Filtro para Papas
-                  if (activeCategory === 'papas') {
-                    categoryData = { papas: menuWithImages.papas?.papas?.filter(p => p.category_id === 12) || [] };
-                  }
-                  
-                  // Filtro para Pizzas (Cat 5, Subcat 60)
-                  if (activeCategory === 'pizzas') {
-                    categoryData = { pizzas: [] };
-                    Object.values(menuWithImages).forEach(category => {
-                      if (Array.isArray(category)) {
-                        categoryData.pizzas.push(...category.filter(p => p.category_id === 5 && p.subcategory_id === 60));
-                      } else {
-                        Object.values(category).forEach(subcat => {
-                          if (Array.isArray(subcat)) {
-                            categoryData.pizzas.push(...subcat.filter(p => p.category_id === 5 && p.subcategory_id === 60));
-                          }
-                        });
+
+
+      <main className="pt-20 pb-24 px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={showSuggestions ? { filter: 'blur(2px)', pointerEvents: 'none' } : {}}>
+        <div className="space-y-8">
+          {mainCategories
+            .filter(cat => cat !== 'personalizar' && cat !== 'extras')
+            .map(catKey => {
+              let categoryData = menuWithImages[catKey];
+              if (!categoryData) return null;
+
+              // Lógica de filtrado por categoría (Hamburguesas 100g, 200g, Papas, Pizzas, Bebidas)
+              let displayData = {};
+
+              if (catKey === 'hamburguesas_100g') {
+                Object.entries(menuWithImages.hamburguesas || {}).forEach(([subCat, products]) => {
+                  const filtered = products.filter(p => p.subcategory_id === 5);
+                  if (filtered.length > 0) displayData[subCat] = filtered;
+                });
+              } else if (catKey === 'hamburguesas') {
+                Object.entries(menuWithImages.hamburguesas || {}).forEach(([subCat, products]) => {
+                  const filtered = products.filter(p => p.subcategory_id !== 5);
+                  if (filtered.length > 0) displayData[subCat] = filtered;
+                });
+              } else if (catKey === 'papas') {
+                displayData = { papas: menuWithImages.papas?.papas?.filter(p => p.category_id === 12) || [] };
+              } else if (catKey === 'pizzas') {
+                displayData = { pizzas: [] };
+                Object.values(menuWithImages).forEach(category => {
+                  if (Array.isArray(category)) {
+                    displayData.pizzas.push(...category.filter(p => p.category_id === 5 && p.subcategory_id === 60));
+                  } else {
+                    Object.values(category).forEach(subcat => {
+                      if (Array.isArray(subcat)) {
+                        displayData.pizzas.push(...subcat.filter(p => p.category_id === 5 && p.subcategory_id === 60));
                       }
                     });
                   }
-                  
-                  // Filtro para Bebidas (Cat 5, Subcat 11, 10, 28, 27)
-                  if (activeCategory === 'bebidas') {
-                    categoryData = {};
-                    const bebidasSubcats = { 11: 'bebidas', 10: 'jugos', 28: 'té', 27: 'café' };
-                    Object.values(menuWithImages).forEach(category => {
-                      if (Array.isArray(category)) {
-                        category.filter(p => p.category_id === 5 && [11, 10, 28, 27].includes(p.subcategory_id)).forEach(p => {
+                });
+              } else if (catKey === 'bebidas') {
+                const bebidasSubcats = { 11: 'bebidas', 10: 'jugos', 28: 'té', 27: 'café' };
+                Object.values(menuWithImages).forEach(category => {
+                  if (Array.isArray(category)) {
+                    category.filter(p => p.category_id === 5 && [11, 10, 28, 27].includes(p.subcategory_id)).forEach(p => {
+                      const subName = bebidasSubcats[p.subcategory_id];
+                      if (!displayData[subName]) displayData[subName] = [];
+                      displayData[subName].push(p);
+                    });
+                  } else {
+                    Object.values(category).forEach(subcat => {
+                      if (Array.isArray(subcat)) {
+                        subcat.filter(p => p.category_id === 5 && [11, 10, 28, 27].includes(p.subcategory_id)).forEach(p => {
                           const subName = bebidasSubcats[p.subcategory_id];
-                          if (!categoryData[subName]) categoryData[subName] = [];
-                          categoryData[subName].push(p);
-                        });
-                      } else {
-                        Object.values(category).forEach(subcat => {
-                          if (Array.isArray(subcat)) {
-                            subcat.filter(p => p.category_id === 5 && [11, 10, 28, 27].includes(p.subcategory_id)).forEach(p => {
-                              const subName = bebidasSubcats[p.subcategory_id];
-                              if (!categoryData[subName]) categoryData[subName] = [];
-                              categoryData[subName].push(p);
-                            });
-                          }
+                          if (!displayData[subName]) displayData[subName] = [];
+                          displayData[subName].push(p);
                         });
                       }
                     });
                   }
-                  
-                  let orderedEntries = Object.entries(categoryData);
-                  
-                  // Orden específico para completos
-                  if (activeCategory === 'completos') {
-                    orderedEntries = [
-                      ['tradicionales', categoryData.tradicionales || []],
-                      ['especiales', categoryData.especiales || []],
-                      ['al vapor', categoryData['al vapor'] || []]
-                    ];
-                  }
-                  
-                  return orderedEntries
-                    .filter(([subCategory, products]) => products && products.length > 0)
-                    .map(([subCategory, products]) => {
-                      // Filtrar productos inactivos si el toggle está desactivado
-                      const filteredProducts = (!showInactiveProducts && cajaUser) 
-                        ? products.filter(p => p.active !== 0) 
-                        : products;
-                      
-                      if (filteredProducts.length === 0) return null;
-                      
-                      return (
-                    <section key={subCategory} id={subCategory}>
-                        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-800 capitalize border-b-2 border-orange-500 pb-2 px-2 mb-2">{subCategory === 'papas' ? 'Papas Fritas ❤️' : subCategory === 'sandwiches' ? 'Sándwiches' : subCategory}</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 xl:gap-6 mt-4">
-                            {filteredProducts.map(product => (
-                                <div key={product.id} id={`product-${product.id}`} className={highlightedProductId === product.id ? 'border-4 border-orange-500 rounded-xl transition-all duration-300' : ''}>
-                                  <MenuItem
-                                      product={product}
-                                      type={product.subcategory_name || subCategory}
-                                      onSelect={null}
-                                      onAddToCart={handleAddToCart}
-                                      onRemoveFromCart={handleRemoveFromCart}
-                                      quantity={getProductQuantity(product.id)}
-                                      isLiked={likedProducts.has(product.id)}
-                                      handleLike={handleLike}
-                                      setReviewsModalProduct={setReviewsModalProduct}
-                                      onShare={setShareModalProduct}
-                                      isCashier={!!cajaUser}
-                                  />
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                      );
-                    }).filter(Boolean);
-                })()}
-            </div>
-        ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 xl:gap-6">
-                {productsToShow.map(product => (
-                    <div key={product.id} id={`product-${product.id}`} className={highlightedProductId === product.id ? 'border-4 border-orange-500 rounded-xl transition-all duration-300' : ''}>
-                      <MenuItem
-                          product={product}
-                          onSelect={null}
-                          onAddToCart={handleAddToCart}
-                          onRemoveFromCart={handleRemoveFromCart}
-                          quantity={getProductQuantity(product.id)}
-                          isLiked={likedProducts.has(product.id)}
-                          handleLike={handleLike}
-                          setReviewsModalProduct={setReviewsModalProduct}
-                          onShare={setShareModalProduct}
-                          isCashier={!!cajaUser}
-                      />
-                    </div>
-                ))}
-            </div>
-        )}
+                });
+              } else {
+                // Categoría normal (pueden ser arrays o subcategorías)
+                if (Array.isArray(categoryData)) {
+                  displayData = { [catKey]: categoryData };
+                } else {
+                  displayData = categoryData;
+                }
+              }
+
+              let orderedEntries = Object.entries(displayData);
+              if (catKey === 'completos') {
+                orderedEntries = [
+                  ['tradicionales', displayData.tradicionales || []],
+                  ['especiales', displayData.especiales || []],
+                  ['al vapor', displayData['al vapor'] || []]
+                ];
+              }
+
+              return (
+                <div key={catKey} id={`section-${catKey}`} className="scroll-mt-24">
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-gray-800 capitalize border-b-2 border-orange-500 pb-1 px-2 mb-4 flex items-center gap-2">
+                    <span style={{ color: categoryColors[catKey] || '#f97316' }}>{categoryIcons[catKey]}</span>
+                    {categoryDisplayNames[catKey]}
+                  </h2>
+                  <div className="space-y-6">
+                    {orderedEntries
+                      .filter(([sub, products]) => products && products.length > 0)
+                      .map(([subCategory, products]) => {
+                        const filteredProducts = (!showInactiveProducts && cajaUser)
+                          ? products.filter(p => p.active !== 0)
+                          : products;
+
+                        if (filteredProducts.length === 0) return null;
+
+                        return (
+                          <div key={subCategory}>
+                            {orderedEntries.length > 1 && (
+                              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2 px-2">{subCategory}</h3>
+                            )}
+                            <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+                              {filteredProducts.map(product => (
+                                <MenuItem
+                                  key={product.id}
+                                  product={product}
+                                  type={product.subcategory_name || subCategory}
+                                  onSelect={null}
+                                  onAddToCart={handleAddToCart}
+                                  onRemoveFromCart={handleRemoveFromCart}
+                                  quantity={getProductQuantity(product.id)}
+                                  isLiked={likedProducts.has(product.id)}
+                                  handleLike={handleLike}
+                                  setReviewsModalProduct={setReviewsModalProduct}
+                                  onShare={setShareModalProduct}
+                                  isCashier={!!cajaUser}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              );
+            })
+          }
+        </div>
       </main>
 
       {/* Barra de búsqueda con botones */}
@@ -2454,7 +2377,7 @@ export default function App() {
           title="Mermas"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
           </svg>
         </button>
         <div className="flex-1 bg-white border border-gray-200 rounded-full shadow-lg">
@@ -2490,7 +2413,7 @@ export default function App() {
                       key={product.id}
                       className="w-full px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 flex items-center gap-2"
                     >
-                      <div 
+                      <div
                         className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer"
                         onClick={() => selectSuggestion(product)}
                       >
@@ -2547,74 +2470,80 @@ export default function App() {
 
       <nav className="fixed bottom-0 left-0 right-0 z-40 lg:left-1/2 lg:transform lg:-translate-x-1/2 lg:max-w-4xl lg:rounded-t-2xl">
         <div className="bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] rounded-t-xl">
-          <div className="flex items-center overflow-x-auto px-2 pt-0 pb-4 gap-1" style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
-          {mainCategories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => { vibrate(30); setActiveCategory(cat); }}
-              className={`flex flex-col items-center justify-center flex-shrink-0 min-w-[70px] py-2 px-2 transition-colors duration-200 text-xs font-medium rounded-lg relative ${
-                activeCategory === cat
-                  ? ''
-                  : 'text-gray-700 hover:text-orange-500 hover:bg-orange-50'
-              }`}
-            >
-              {activeCategory === cat && (
-                <div className="absolute -top-0 left-0 right-0 h-1 bg-orange-500"></div>
-              )}
-              <div 
-                className="flex items-center justify-center h-6 mb-1"
-                style={{color: activeCategory === cat ? categoryColors[cat] : '#374151'}}
-              >
-                {categoryIcons[cat]}
-              </div>
-              <span 
-                className="text-[9px] sm:text-[10px] leading-tight text-center max-w-full break-words"
-                style={activeCategory === cat ? (
-                  cat === 'la_ruta_11' ? {
-                    color: '#dc2626'
-                  } : {
-                    background: 'linear-gradient(135deg, #dc2626, #ea580c, #f97316)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text'
+          <div className="flex items-center overflow-x-auto px-2 pt-0 pb-4 gap-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {mainCategories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => {
+                  vibrate(30);
+                  setActiveCategory(cat);
+                  const element = document.getElementById(`section-${cat}`);
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
                   }
-                ) : {}}
+                }}
+                className={`flex flex-col items-center justify-center flex-shrink-0 min-w-[70px] py-2 px-2 transition-colors duration-200 text-xs font-medium rounded-lg relative ${activeCategory === cat
+                    ? ''
+                    : 'text-gray-700 hover:text-orange-500 hover:bg-orange-50'
+                  }`}
               >
-                {categoryDisplayNames[cat]}
-              </span>
-            </button>
-          ))}
+                {activeCategory === cat && (
+                  <div className="absolute -top-0 left-0 right-0 h-1 bg-orange-500"></div>
+                )}
+                <div
+                  className="flex items-center justify-center h-6 mb-1"
+                  style={{ color: activeCategory === cat ? categoryColors[cat] : '#374151' }}
+                >
+                  {categoryIcons[cat]}
+                </div>
+                <span
+                  className="text-[9px] sm:text-[10px] leading-tight text-center max-w-full break-words"
+                  style={activeCategory === cat ? (
+                    cat === 'la_ruta_11' ? {
+                      color: '#dc2626'
+                    } : {
+                      background: 'linear-gradient(135deg, #dc2626, #ea580c, #f97316)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text'
+                    }
+                  ) : {}}
+                >
+                  {categoryDisplayNames[cat]}
+                </span>
+              </button>
+            ))}
           </div>
         </div>
       </nav>
 
       <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
-      <FoodTrucksModal 
-        isOpen={isFoodTrucksOpen} 
+      <FoodTrucksModal
+        isOpen={isFoodTrucksOpen}
         onClose={() => setIsFoodTrucksOpen(false)}
         trucks={nearbyTrucks}
         userLocation={userLocation}
         deliveryZone={deliveryZone}
       />
-      <NotificationsModal 
-        isOpen={isNotificationsOpen} 
+      <NotificationsModal
+        isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
         onOrdersUpdate={(count) => setActiveOrdersCount(count)}
         activeOrdersCount={activeOrdersCount}
       />
-      <SecurityModal 
+      <SecurityModal
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}
         type="logout"
         onConfirm={handleLogout}
       />
-      <SecurityModal 
+      <SecurityModal
         isOpen={isDeleteAccountModalOpen}
         onClose={() => setIsDeleteAccountModalOpen(false)}
         type="delete"
         onConfirm={handleDeleteAccount}
       />
-      <SaveChangesModal 
+      <SaveChangesModal
         isOpen={isSaveChangesModalOpen}
         onClose={() => setIsSaveChangesModalOpen(false)}
         onSave={handleSaveChanges}
@@ -2631,7 +2560,7 @@ export default function App() {
                   <X size={24} />
                 </button>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
@@ -2642,40 +2571,40 @@ export default function App() {
                     className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
                   <input
                     type="text"
                     value={cajaUser.fullName || ''}
-                    onChange={(e) => setCajaUser({...cajaUser, fullName: e.target.value})}
+                    onChange={(e) => setCajaUser({ ...cajaUser, fullName: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                     placeholder="Tu nombre completo"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
                   <input
                     type="tel"
                     value={cajaUser.phone || ''}
-                    onChange={(e) => setCajaUser({...cajaUser, phone: e.target.value})}
+                    onChange={(e) => setCajaUser({ ...cajaUser, phone: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                     placeholder="+56 9 1234 5678"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                   <input
                     type="email"
                     value={cajaUser.email || ''}
-                    onChange={(e) => setCajaUser({...cajaUser, email: e.target.value})}
+                    onChange={(e) => setCajaUser({ ...cajaUser, email: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                     placeholder="tu@email.com"
                   />
                 </div>
-                
+
                 <button
                   onClick={async () => {
                     try {
@@ -2711,8 +2640,8 @@ export default function App() {
           </div>
         </div>
       )}
-      <ProductDetailModal 
-        product={selectedProduct} 
+      <ProductDetailModal
+        product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
         onAddToCart={handleAddToCart}
         onRemoveFromCart={handleRemoveFromCart}
@@ -2725,13 +2654,13 @@ export default function App() {
         user={user}
         onUpdateCartItem={handleUpdateCartItem}
       />
-       <ImageFullscreenModal 
-        product={zoomedProduct?.product} 
+      <ImageFullscreenModal
+        product={zoomedProduct?.product}
         total={zoomedProduct?.total}
-        onClose={() => setZoomedProduct(null)} 
+        onClose={() => setZoomedProduct(null)}
       />
       {/* CartModal eliminado - ahora se usa directamente showCheckout */}
-      
+
       {/* Checkout Modal */}
       {showCheckout && (
         <div className="fixed inset-0 bg-white z-40 flex flex-col overflow-hidden">
@@ -2743,40 +2672,38 @@ export default function App() {
                 <X size={24} />
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-6">
-              
+
               {/* Tipo de entrega */}
               <div className="mb-4">
                 <h3 className="text-sm font-semibold text-gray-800 mb-2">Tipo de Entrega</h3>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => setCustomerInfo({...customerInfo, deliveryType: 'delivery'})}
-                    className={`p-2 border-2 rounded-lg transition-colors flex items-center gap-2 ${
-                      customerInfo.deliveryType === 'delivery' 
-                        ? 'border-orange-500 bg-orange-50 text-orange-700' 
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
+                    onClick={() => setCustomerInfo({ ...customerInfo, deliveryType: 'delivery' })}
+                    className={`p-2 border-2 rounded-lg transition-colors flex items-center gap-2 ${customerInfo.deliveryType === 'delivery'
+                      ? 'border-orange-500 bg-orange-50 text-orange-700'
+                      : 'border-gray-300 hover:border-gray-400'
+                      }`}
                   >
                     <Bike size={20} className="text-red-500 flex-shrink-0" />
                     <span className="font-semibold text-sm">Delivery</span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => setCustomerInfo({...customerInfo, deliveryType: 'pickup'})}
-                    className={`p-2 border-2 rounded-lg transition-colors flex items-center gap-2 ${
-                      customerInfo.deliveryType === 'pickup' 
-                        ? 'border-orange-500 bg-orange-50 text-orange-700' 
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
+                    onClick={() => setCustomerInfo({ ...customerInfo, deliveryType: 'pickup' })}
+                    className={`p-2 border-2 rounded-lg transition-colors flex items-center gap-2 ${customerInfo.deliveryType === 'pickup'
+                      ? 'border-orange-500 bg-orange-50 text-orange-700'
+                      : 'border-gray-300 hover:border-gray-400'
+                      }`}
                   >
                     <Caravan size={20} className="text-red-500 flex-shrink-0" />
                     <span className="font-semibold text-sm">Retiro</span>
                   </button>
                 </div>
               </div>
-              
+
               <div className="space-y-4 mb-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-3">Datos del Cliente</h3>
                 <div>
@@ -2784,7 +2711,7 @@ export default function App() {
                   <input
                     type="text"
                     value={customerInfo.name || ''}
-                    onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
+                    onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                     placeholder="Nombre del cliente"
                     required
@@ -2795,12 +2722,12 @@ export default function App() {
                   <input
                     type="tel"
                     value={customerInfo.phone || ''}
-                    onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
+                    onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                     placeholder="+56 9 1234 5678"
                   />
                 </div>
-                
+
                 {/* Descuentos */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   {customerInfo.deliveryType === 'delivery' && (
@@ -2809,17 +2736,16 @@ export default function App() {
                         if (!customerInfo.deliveryDiscount) {
                           const confirmed = window.confirm('🚚 Descuento Delivery (40%)\n\nSe aplicará un 40% de descuento en el costo de delivery. Solo válido para direcciones específicas.\n\n¿Aplicar descuento?');
                           if (confirmed) {
-                            setCustomerInfo({...customerInfo, deliveryDiscount: true, address: ''});
+                            setCustomerInfo({ ...customerInfo, deliveryDiscount: true, address: '' });
                           }
                         } else {
-                          setCustomerInfo({...customerInfo, deliveryDiscount: false});
+                          setCustomerInfo({ ...customerInfo, deliveryDiscount: false });
                         }
                       }}
-                      className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all ${
-                        customerInfo.deliveryDiscount 
-                          ? 'bg-green-500 text-white' 
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all ${customerInfo.deliveryDiscount
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
                     >
                       <Bike size={14} />
                       <input
@@ -2837,17 +2763,16 @@ export default function App() {
                         if (!customerInfo.pickupDiscount) {
                           const confirmed = window.confirm('🏪 Descuento R11 (10%)\n\nSe aplicará un 10% de descuento en el total de tu compra por retiro en local.\n\n¿Aplicar descuento?');
                           if (confirmed) {
-                            setCustomerInfo({...customerInfo, pickupDiscount: true});
+                            setCustomerInfo({ ...customerInfo, pickupDiscount: true });
                           }
                         } else {
-                          setCustomerInfo({...customerInfo, pickupDiscount: false});
+                          setCustomerInfo({ ...customerInfo, pickupDiscount: false });
                         }
                       }}
-                      className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all ${
-                        customerInfo.pickupDiscount 
-                          ? 'bg-green-500 text-white' 
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all ${customerInfo.pickupDiscount
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
                     >
                       <Percent size={14} />
                       <input
@@ -2868,17 +2793,16 @@ export default function App() {
                       if (!customerInfo.birthdayDiscount) {
                         const confirmed = window.confirm('🎂 Descuento Cumpleaños\n\nHamburguesa Clásica GRATIS por tu cumpleaños.\n\n¿Aplicar descuento?');
                         if (confirmed) {
-                          setCustomerInfo({...customerInfo, birthdayDiscount: true});
+                          setCustomerInfo({ ...customerInfo, birthdayDiscount: true });
                         }
                       } else {
-                        setCustomerInfo({...customerInfo, birthdayDiscount: false});
+                        setCustomerInfo({ ...customerInfo, birthdayDiscount: false });
                       }
                     }}
-                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                      customerInfo.birthdayDiscount 
-                        ? 'bg-green-500 text-white' 
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${customerInfo.birthdayDiscount
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
                   >
                     <Tag size={14} />
                     <input
@@ -2894,17 +2818,16 @@ export default function App() {
                       if (!customerInfo.discount30) {
                         const confirmed = window.confirm('⭐ Descuento 30%\n\nSe aplicará un 30% de descuento en productos seleccionados.\n\n¿Aplicar descuento?');
                         if (confirmed) {
-                          setCustomerInfo({...customerInfo, discount30: true});
+                          setCustomerInfo({ ...customerInfo, discount30: true });
                         }
                       } else {
-                        setCustomerInfo({...customerInfo, discount30: false});
+                        setCustomerInfo({ ...customerInfo, discount30: false });
                       }
                     }}
-                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                      customerInfo.discount30 
-                        ? 'bg-yellow-400 text-black' 
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${customerInfo.discount30
+                      ? 'bg-yellow-400 text-black'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
                   >
                     <Percent size={14} />
                     <input
@@ -2927,7 +2850,7 @@ export default function App() {
                     />
                   </div>
                 </div>
-                
+
                 {/* Dirección para delivery */}
                 {customerInfo.deliveryType === 'delivery' && (
                   <>
@@ -2936,7 +2859,7 @@ export default function App() {
                       {customerInfo.deliveryDiscount ? (
                         <select
                           value={customerInfo.address}
-                          onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
+                          onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                           required
                         >
@@ -2950,7 +2873,7 @@ export default function App() {
                           type="text"
                           id="deliveryAddress"
                           value={customerInfo.address || ''}
-                          onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
+                          onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                           placeholder="Ingresa tu dirección..."
                           required
@@ -2969,7 +2892,7 @@ export default function App() {
                     </div>
                   </>
                 )}
-                
+
                 {/* Notas adicionales */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
@@ -2980,7 +2903,7 @@ export default function App() {
                   </div>
                   <textarea
                     value={customerInfo.customerNotes}
-                    onChange={(e) => setCustomerInfo({...customerInfo, customerNotes: e.target.value})}
+                    onChange={(e) => setCustomerInfo({ ...customerInfo, customerNotes: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 resize-y"
                     placeholder="Ej: sin cebolla, sin tomate, extra salsa..."
                     rows="1"
@@ -2988,7 +2911,7 @@ export default function App() {
                   />
                 </div>
               </div>
-              
+
               <div className="border-t pt-4 mb-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <ShoppingCart size={20} className="text-orange-500" />
@@ -2998,12 +2921,12 @@ export default function App() {
                   {cart.map((item, index) => {
                     const isCombo = item.type === 'combo' || item.category_name === 'Combos' || item.selections;
                     let itemTotal = item.price * item.quantity;
-                    
+
                     // Sumar personalizaciones regulares
                     if (item.customizations && item.customizations.length > 0) {
                       itemTotal += item.customizations.reduce((sum, c) => sum + (c.price * c.quantity), 0);
                     }
-                    
+
                     // Sumar costos adicionales de selecciones de combo
                     if (isCombo && item.selections) {
                       Object.values(item.selections).forEach(selection => {
@@ -3018,14 +2941,14 @@ export default function App() {
                         }
                       });
                     }
-                    
+
                     return (
                       <div key={item.cartItemId || item.id} className="border-b border-gray-100 pb-3 last:border-b-0">
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex-1">
                             <p className="font-medium text-gray-800 text-sm">{item.name}</p>
                             <p className="text-xs text-gray-500">Cantidad: {item.quantity}</p>
-                            
+
                             {item.customizations && item.customizations.length > 0 && (
                               <div className="mt-1 text-xs">
                                 <span className="font-medium text-gray-700">Incluye:</span>
@@ -3036,7 +2959,7 @@ export default function App() {
                                 ))}
                               </div>
                             )}
-                            
+
                             {isCombo && (item.fixed_items || item.selections) && (
                               <div className="mt-1 text-xs text-gray-600">
                                 <span className="font-medium">Incluye: </span>
@@ -3148,7 +3071,7 @@ export default function App() {
                   </div>
                 </div>
               </div>
-              
+
               <div>
                 <h4 className="text-sm font-bold bg-yellow-400 text-black px-3 py-2 rounded-lg mb-3">Finaliza Eligiendo Método de Pago</h4>
                 <div className="grid grid-cols-4 gap-2 mb-3">
@@ -3161,11 +3084,10 @@ export default function App() {
                       setCashStep('input');
                     }}
                     disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${
-                      selectedPaymentMethod === 'cash'
-                        ? 'bg-green-500 hover:bg-green-600 text-white border-green-500'
-                        : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
-                    }`}
+                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${selectedPaymentMethod === 'cash'
+                      ? 'bg-green-500 hover:bg-green-600 text-white border-green-500'
+                      : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                      }`}
                   >
                     <Banknote size={16} />
                     <span>Efectivo</span>
@@ -3188,7 +3110,7 @@ export default function App() {
                         const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                         const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
                         const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
-                        
+
                         const orderData = {
                           amount: finalTotal,
                           customer_name: customerInfo.name,
@@ -3231,11 +3153,10 @@ export default function App() {
                       }
                     }}
                     disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${
-                      selectedPaymentMethod === 'card'
-                        ? 'bg-purple-500 hover:bg-purple-600 text-white border-purple-500'
-                        : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
-                    }`}
+                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${selectedPaymentMethod === 'card'
+                      ? 'bg-purple-500 hover:bg-purple-600 text-white border-purple-500'
+                      : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                      }`}
                   >
                     <CreditCard size={16} />
                     <span>Tarjeta</span>
@@ -3258,7 +3179,7 @@ export default function App() {
                         const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                         const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
                         const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
-                        
+
                         const orderData = {
                           amount: finalTotal,
                           customer_name: customerInfo.name,
@@ -3301,11 +3222,10 @@ export default function App() {
                       }
                     }}
                     disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${
-                      selectedPaymentMethod === 'transfer'
-                        ? 'bg-blue-500 hover:bg-blue-600 text-white border-blue-500'
-                        : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
-                    }`}
+                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${selectedPaymentMethod === 'transfer'
+                      ? 'bg-blue-500 hover:bg-blue-600 text-white border-blue-500'
+                      : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                      }`}
                   >
                     <Smartphone size={16} />
                     <span>Transfer.</span>
@@ -3328,7 +3248,7 @@ export default function App() {
                         const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                         const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
                         const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
-                        
+
                         const orderData = {
                           amount: finalTotal,
                           customer_name: customerInfo.name,
@@ -3371,23 +3291,22 @@ export default function App() {
                       }
                     }}
                     disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${
-                      selectedPaymentMethod === 'pedidosya'
-                        ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500'
-                        : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
-                    }`}
+                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${selectedPaymentMethod === 'pedidosya'
+                      ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500'
+                      : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                      }`}
                   >
                     <Bike size={16} />
                     <span>PedidosYA</span>
                   </button>
                 </div>
-                
+
               </div>
             </div>
           </div>
         </div>
       )}
-      
+
       {/* Payment Modal with TUU Integration */}
       {showPayment && currentOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center animate-fade-in">
@@ -3398,7 +3317,7 @@ export default function App() {
                 <X size={24} />
               </button>
             </div>
-            
+
             <div className="flex-grow overflow-y-auto p-4">
               <TUUPaymentIntegration
                 cartItems={cart}
@@ -3416,11 +3335,11 @@ export default function App() {
           </div>
         </div>
       )}
-      <OnboardingModal 
+      <OnboardingModal
         isOpen={showOnboarding}
         onComplete={() => setShowOnboarding(false)}
       />
-      <ReviewsModal 
+      <ReviewsModal
         product={reviewsModalProduct}
         isOpen={!!reviewsModalProduct}
         onClose={() => {
@@ -3428,20 +3347,20 @@ export default function App() {
           setReviewsModalProduct(null);
         }}
       />
-      <ShareProductModal 
+      <ShareProductModal
         product={shareModalProduct}
         isOpen={!!shareModalProduct}
         onClose={() => setShareModalProduct(null)}
       />
-      <ComboModal 
+      <ComboModal
         combo={comboModalProduct}
         isOpen={!!comboModalProduct}
         onClose={() => setComboModalProduct(null)}
         quantity={1}
         onAddToCart={(comboWithSelections) => {
           vibrate(50);
-          setCart(prevCart => [...prevCart, { 
-            ...comboWithSelections, 
+          setCart(prevCart => [...prevCart, {
+            ...comboWithSelections,
             quantity: 1,
             cartItemId: `combo-${Date.now()}-${Math.random()}`
           }]);
@@ -3454,14 +3373,14 @@ export default function App() {
       }} />}
       <OrdersListener onOrdersUpdate={(count) => setActiveOrdersCount(count)} />
       <ChecklistsListener onChecklistsUpdate={(count) => setActiveChecklistsCount(count)} />
-      
+
       {showCashModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             {cashStep === 'input' ? (
               <>
                 <h3 className="text-xl font-bold text-gray-800 mb-4">💵 Pago en Efectivo</h3>
-                
+
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
                   <p className="text-sm text-gray-600 mb-1">Total a pagar:</p>
                   <p className="text-3xl font-bold text-orange-600">${(() => {
@@ -3538,7 +3457,7 @@ export default function App() {
             ) : (
               <>
                 <h3 className="text-xl font-bold text-gray-800 mb-4">💰 Confirmar Vuelto</h3>
-                
+
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-gray-600">Total:</span>
@@ -3627,7 +3546,7 @@ export default function App() {
               </button>
             </div>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
             <div className="max-w-3xl mx-auto space-y-6">
               {/* Información del Local */}
@@ -3643,11 +3562,10 @@ export default function App() {
                       <p className="text-sm text-gray-600">Datos y configuración del food truck</p>
                     </div>
                   </div>
-                  <ChevronDown size={24} className={`text-gray-400 transition-transform ${
-                    infoExpanded ? 'rotate-180' : ''
-                  }`} />
+                  <ChevronDown size={24} className={`text-gray-400 transition-transform ${infoExpanded ? 'rotate-180' : ''
+                    }`} />
                 </button>
-                
+
                 {infoExpanded && (
                   <div className="p-6 pt-0">
                     <div className="flex items-center justify-between mb-6">
@@ -3663,132 +3581,132 @@ export default function App() {
                       <button
                         onClick={() => {
                           setEditMode(!editMode);
-                          if (!editMode) setTempTruckData({...truckStatus});
+                          if (!editMode) setTempTruckData({ ...truckStatus });
                         }}
                         className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
                       >
-                        {editMode ? <X size={18} /> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>}
+                        {editMode ? <X size={18} /> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>}
                         {editMode ? 'Cancelar' : 'Editar'}
                       </button>
                     </div>
-                {!editMode ? (
-                  <div className="space-y-3 text-sm">
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <MapPin size={16} className="text-gray-400" />
-                      <span>{truckStatus.direccion}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Clock size={16} className="text-gray-400" />
-                      <span>Horario: {truckStatus.horario_inicio.slice(0,5)} - {truckStatus.horario_fin.slice(0,5)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <TruckIcon size={16} className="text-gray-400" />
-                      <span>Tarifa delivery: ${parseInt(truckStatus.tarifa_delivery).toLocaleString('es-CL')}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Dirección</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={tempTruckData?.direccion || ''}
-                          onChange={(e) => setTempTruckData({...tempTruckData, direccion: e.target.value})}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        />
-                        <button
-                          onClick={() => {
-                            if (navigator.geolocation) {
-                              navigator.geolocation.getCurrentPosition(async (pos) => {
-                                const { latitude, longitude } = pos.coords;
-                                try {
-                                  const formData = new FormData();
-                                  formData.append('lat', latitude);
-                                  formData.append('lng', longitude);
-                                  const res = await fetch('/api/location/geocode.php', { method: 'POST', body: formData });
-                                  const data = await res.json();
-                                  if (data.success) {
-                                    setTempTruckData({
-                                      ...tempTruckData,
-                                      direccion: data.formatted_address,
-                                      latitud: latitude,
-                                      longitud: longitude
-                                    });
-                                    vibrate(50);
-                                  }
-                                } catch (error) {
-                                  console.error('Error:', error);
+                    {!editMode ? (
+                      <div className="space-y-3 text-sm">
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <MapPin size={16} className="text-gray-400" />
+                          <span>{truckStatus.direccion}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <Clock size={16} className="text-gray-400" />
+                          <span>Horario: {truckStatus.horario_inicio.slice(0, 5)} - {truckStatus.horario_fin.slice(0, 5)}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <TruckIcon size={16} className="text-gray-400" />
+                          <span>Tarifa delivery: ${parseInt(truckStatus.tarifa_delivery).toLocaleString('es-CL')}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Dirección</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={tempTruckData?.direccion || ''}
+                              onChange={(e) => setTempTruckData({ ...tempTruckData, direccion: e.target.value })}
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            />
+                            <button
+                              onClick={() => {
+                                if (navigator.geolocation) {
+                                  navigator.geolocation.getCurrentPosition(async (pos) => {
+                                    const { latitude, longitude } = pos.coords;
+                                    try {
+                                      const formData = new FormData();
+                                      formData.append('lat', latitude);
+                                      formData.append('lng', longitude);
+                                      const res = await fetch('/api/location/geocode.php', { method: 'POST', body: formData });
+                                      const data = await res.json();
+                                      if (data.success) {
+                                        setTempTruckData({
+                                          ...tempTruckData,
+                                          direccion: data.formatted_address,
+                                          latitud: latitude,
+                                          longitud: longitude
+                                        });
+                                        vibrate(50);
+                                      }
+                                    } catch (error) {
+                                      console.error('Error:', error);
+                                    }
+                                  });
                                 }
+                              }}
+                              className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                              title="Usar mi ubicación actual"
+                            >
+                              <Navigation size={18} />
+                              GPS
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Hora Inicio</label>
+                            <input
+                              type="time"
+                              value={tempTruckData?.horario_inicio?.slice(0, 5) || ''}
+                              onChange={(e) => setTempTruckData({ ...tempTruckData, horario_inicio: e.target.value + ':00' })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Hora Fin</label>
+                            <input
+                              type="time"
+                              value={tempTruckData?.horario_fin?.slice(0, 5) || ''}
+                              onChange={(e) => setTempTruckData({ ...tempTruckData, horario_fin: e.target.value + ':00' })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Tarifa Delivery ($)</label>
+                          <input
+                            type="number"
+                            value={tempTruckData?.tarifa_delivery || ''}
+                            onChange={(e) => setTempTruckData({ ...tempTruckData, tarifa_delivery: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          />
+                        </div>
+
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await fetch('/api/update_truck_config.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ truckId: 4, ...tempTruckData })
                               });
+                              const data = await res.json();
+                              if (data.success) {
+                                setTruckStatus(tempTruckData);
+                                setEditMode(false);
+                                vibrate(50);
+                                alert('✅ Configuración actualizada exitosamente');
+                              }
+                            } catch (error) {
+                              console.error('Error:', error);
+                              alert('❌ Error al actualizar');
                             }
                           }}
-                          className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-                          title="Usar mi ubicación actual"
+                          className="w-full px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold transition-colors"
                         >
-                          <Navigation size={18} />
-                          GPS
+                          Guardar Cambios
                         </button>
                       </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Hora Inicio</label>
-                        <input
-                          type="time"
-                          value={tempTruckData?.horario_inicio?.slice(0,5) || ''}
-                          onChange={(e) => setTempTruckData({...tempTruckData, horario_inicio: e.target.value + ':00'})}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Hora Fin</label>
-                        <input
-                          type="time"
-                          value={tempTruckData?.horario_fin?.slice(0,5) || ''}
-                          onChange={(e) => setTempTruckData({...tempTruckData, horario_fin: e.target.value + ':00'})}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Tarifa Delivery ($)</label>
-                      <input
-                        type="number"
-                        value={tempTruckData?.tarifa_delivery || ''}
-                        onChange={(e) => setTempTruckData({...tempTruckData, tarifa_delivery: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      />
-                    </div>
-                    
-                    <button
-                      onClick={async () => {
-                        try {
-                          const res = await fetch('/api/update_truck_config.php', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ truckId: 4, ...tempTruckData })
-                          });
-                          const data = await res.json();
-                          if (data.success) {
-                            setTruckStatus(tempTruckData);
-                            setEditMode(false);
-                            vibrate(50);
-                            alert('✅ Configuración actualizada exitosamente');
-                          }
-                        } catch (error) {
-                          console.error('Error:', error);
-                          alert('❌ Error al actualizar');
-                        }
-                      }}
-                      className="w-full px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold transition-colors"
-                    >
-                      Guardar Cambios
-                    </button>
-                  </div>
-                )}
+                    )}
                   </div>
                 )}
               </div>
@@ -3806,36 +3724,35 @@ export default function App() {
                       <p className="text-sm text-gray-600">Desliza para cambiar el estado del local</p>
                     </div>
                   </div>
-                  <ChevronDown size={24} className={`text-gray-400 transition-transform ${
-                    statusExpanded ? 'rotate-180' : ''
-                  }`} />
+                  <ChevronDown size={24} className={`text-gray-400 transition-transform ${statusExpanded ? 'rotate-180' : ''
+                    }`} />
                 </button>
-                
+
                 {statusExpanded && (
                   <div className="p-6 pt-0">
-                <SwipeToggle
-                  isActive={truckStatus.activo === 1}
-                  onChange={async (newStatus) => {
-                    setIsUpdatingStatus(true);
-                    try {
-                      const res = await fetch('/api/update_truck_status.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ truckId: 4, activo: newStatus ? 1 : 0 })
-                      });
-                      const data = await res.json();
-                      if (data.success) {
-                        setTruckStatus({...truckStatus, activo: newStatus ? 1 : 0});
-                        vibrate(50);
-                      }
-                    } catch (error) {
-                      console.error('Error:', error);
-                    }
-                    setIsUpdatingStatus(false);
-                  }}
-                  disabled={isUpdatingStatus}
-                  label="Desliza para cambiar el estado"
-                />
+                    <SwipeToggle
+                      isActive={truckStatus.activo === 1}
+                      onChange={async (newStatus) => {
+                        setIsUpdatingStatus(true);
+                        try {
+                          const res = await fetch('/api/update_truck_status.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ truckId: 4, activo: newStatus ? 1 : 0 })
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setTruckStatus({ ...truckStatus, activo: newStatus ? 1 : 0 });
+                            vibrate(50);
+                          }
+                        } catch (error) {
+                          console.error('Error:', error);
+                        }
+                        setIsUpdatingStatus(false);
+                      }}
+                      disabled={isUpdatingStatus}
+                      label="Desliza para cambiar el estado"
+                    />
                   </div>
                 )}
               </div>
@@ -3853,11 +3770,10 @@ export default function App() {
                       <p className="text-sm text-gray-600">Configura horarios específicos para cada día</p>
                     </div>
                   </div>
-                  <ChevronDown size={24} className={`text-gray-400 transition-transform ${
-                    schedulesExpanded ? 'rotate-180' : ''
-                  }`} />
+                  <ChevronDown size={24} className={`text-gray-400 transition-transform ${schedulesExpanded ? 'rotate-180' : ''
+                    }`} />
                 </button>
-                
+
                 {schedulesExpanded && (
                   <div className="p-6 pt-0">
                     <div className="flex items-center justify-end mb-4">
@@ -3869,91 +3785,89 @@ export default function App() {
                         {editingSchedules ? 'Cancelar' : 'Editar'}
                       </button>
                     </div>
-                <div className="space-y-2">
-                  {schedules.map((schedule) => {
-                    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-                    const dayName = dayNames[schedule.day_of_week];
-                    const isToday = schedule.day_of_week === currentDayOfWeek;
-                    
-                    return (
-                      <div key={schedule.day_of_week} className={`p-3 rounded-lg border-2 transition-all ${
-                        isToday ? 'border-orange-500 bg-orange-50' : 'border-gray-200 bg-gray-50'
-                      }`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className={`font-semibold ${
-                              isToday ? 'text-orange-600' : 'text-gray-800'
+                    <div className="space-y-2">
+                      {schedules.map((schedule) => {
+                        const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                        const dayName = dayNames[schedule.day_of_week];
+                        const isToday = schedule.day_of_week === currentDayOfWeek;
+
+                        return (
+                          <div key={schedule.day_of_week} className={`p-3 rounded-lg border-2 transition-all ${isToday ? 'border-orange-500 bg-orange-50' : 'border-gray-200 bg-gray-50'
                             }`}>
-                              {dayName}
-                              {isToday && <span className="ml-2 text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full">HOY</span>}
-                            </span>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className={`font-semibold ${isToday ? 'text-orange-600' : 'text-gray-800'
+                                  }`}>
+                                  {dayName}
+                                  {isToday && <span className="ml-2 text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full">HOY</span>}
+                                </span>
+                              </div>
+
+                              {!editingSchedules ? (
+                                <div className="flex items-center gap-2 text-sm text-gray-700">
+                                  <Clock size={14} />
+                                  <span>{schedule.horario_inicio.slice(0, 5)} - {schedule.horario_fin.slice(0, 5)}</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="time"
+                                    value={schedule.horario_inicio.slice(0, 5)}
+                                    onChange={(e) => {
+                                      const newSchedules = [...schedules];
+                                      newSchedules[schedule.day_of_week].horario_inicio = e.target.value + ':00';
+                                      setSchedules(newSchedules);
+                                    }}
+                                    className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                  />
+                                  <span className="text-gray-500">-</span>
+                                  <input
+                                    type="time"
+                                    value={schedule.horario_fin.slice(0, 5)}
+                                    onChange={(e) => {
+                                      const newSchedules = [...schedules];
+                                      newSchedules[schedule.day_of_week].horario_fin = e.target.value + ':00';
+                                      setSchedules(newSchedules);
+                                    }}
+                                    className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                  />
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          
-                          {!editingSchedules ? (
-                            <div className="flex items-center gap-2 text-sm text-gray-700">
-                              <Clock size={14} />
-                              <span>{schedule.horario_inicio.slice(0,5)} - {schedule.horario_fin.slice(0,5)}</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="time"
-                                value={schedule.horario_inicio.slice(0,5)}
-                                onChange={(e) => {
-                                  const newSchedules = [...schedules];
-                                  newSchedules[schedule.day_of_week].horario_inicio = e.target.value + ':00';
-                                  setSchedules(newSchedules);
-                                }}
-                                className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                              />
-                              <span className="text-gray-500">-</span>
-                              <input
-                                type="time"
-                                value={schedule.horario_fin.slice(0,5)}
-                                onChange={(e) => {
-                                  const newSchedules = [...schedules];
-                                  newSchedules[schedule.day_of_week].horario_fin = e.target.value + ':00';
-                                  setSchedules(newSchedules);
-                                }}
-                                className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                {editingSchedules && (
-                  <button
-                    onClick={async () => {
-                      try {
-                        for (const schedule of schedules) {
-                          await fetch('/api/update_truck_schedule.php', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              truckId: 4,
-                              dayOfWeek: schedule.day_of_week,
-                              horarioInicio: schedule.horario_inicio,
-                              horarioFin: schedule.horario_fin
-                            })
-                          });
-                        }
-                        setEditingSchedules(false);
-                        vibrate(50);
-                        alert('✅ Horarios actualizados exitosamente');
-                      } catch (error) {
-                        console.error('Error:', error);
-                        alert('❌ Error al actualizar horarios');
-                      }
-                    }}
-                    className="w-full mt-4 px-4 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-bold transition-colors"
-                  >
-                    Guardar Horarios
-                  </button>
-                )}
+                        );
+                      })}
+                    </div>
+
+                    {editingSchedules && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            for (const schedule of schedules) {
+                              await fetch('/api/update_truck_schedule.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  truckId: 4,
+                                  dayOfWeek: schedule.day_of_week,
+                                  horarioInicio: schedule.horario_inicio,
+                                  horarioFin: schedule.horario_fin
+                                })
+                              });
+                            }
+                            setEditingSchedules(false);
+                            vibrate(50);
+                            alert('✅ Horarios actualizados exitosamente');
+                          } catch (error) {
+                            console.error('Error:', error);
+                            alert('❌ Error al actualizar horarios');
+                          }
+                        }}
+                        className="w-full mt-4 px-4 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-bold transition-colors"
+                      >
+                        Guardar Horarios
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -3971,11 +3885,10 @@ export default function App() {
                       <p className="text-sm text-gray-600">Controla las categorías visibles en el menú</p>
                     </div>
                   </div>
-                  <ChevronDown size={24} className={`text-gray-400 transition-transform ${
-                    categoriesExpanded ? 'rotate-180' : ''
-                  }`} />
+                  <ChevronDown size={24} className={`text-gray-400 transition-transform ${categoriesExpanded ? 'rotate-180' : ''
+                    }`} />
                 </button>
-                
+
                 {categoriesExpanded && (
                   <div className="p-6 pt-0 space-y-3">
                     {menuCategories.map(cat => (
@@ -3991,9 +3904,9 @@ export default function App() {
                                 const res = await fetch('/api/update_menu_categories.php', {
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ 
-                                    category_id: cat.id, 
-                                    is_active: cat.is_active ? 0 : 1 
+                                  body: JSON.stringify({
+                                    category_id: cat.id,
+                                    is_active: cat.is_active ? 0 : 1
                                   })
                                 });
                                 const data = await res.json();
@@ -4007,11 +3920,10 @@ export default function App() {
                                 console.error('Error:', error);
                               }
                             }}
-                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                              cat.is_active 
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                            }`}
+                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${cat.is_active
+                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                              }`}
                           >
                             {cat.is_active ? 'Visible' : 'Oculta'}
                           </button>
@@ -4021,9 +3933,8 @@ export default function App() {
                             {cat.subcategories.map(sub => (
                               <div key={sub.id} className="flex items-center justify-between text-sm py-1">
                                 <span className="text-gray-600">{sub.display_name}</span>
-                                <span className={`px-2 py-1 rounded text-xs ${
-                                  sub.is_active ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-400'
-                                }`}>
+                                <span className={`px-2 py-1 rounded text-xs ${sub.is_active ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-400'
+                                  }`}>
                                   {sub.is_active ? 'Activa' : 'Inactiva'}
                                 </span>
                               </div>
@@ -4057,13 +3968,13 @@ export default function App() {
                 <X size={24} />
               </button>
             </div>
-            
+
             <div className="text-center">
               <p className="text-gray-600 mb-4">Escanea el código QR para acceder a la app</p>
               <div className="bg-white p-4 rounded-lg inline-block">
-                <img 
-                  src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://app.laruta11.cl" 
-                  alt="QR Code" 
+                <img
+                  src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://app.laruta11.cl"
+                  alt="QR Code"
                   className="w-48 h-48"
                 />
               </div>
