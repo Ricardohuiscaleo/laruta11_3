@@ -11,6 +11,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const [dispatchModal, setDispatchModal] = useState(null);
   const [checkedItems, setCheckedItems] = useState({});
   const [photoModal, setPhotoModal] = useState(null);
+  const [viewingOrderPhotos, setViewingOrderPhotos] = useState(null); // { photos: [], currentIndex: 0 }
   const [showNewFeaturePopup, setShowNewFeaturePopup] = useState(() => {
     const today = new Date();
     const d = today.getDate(), m = today.getMonth() + 1, y = today.getFullYear();
@@ -271,15 +272,27 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
     }
   };
 
-  const renderProductDetails = (item) => {
+  const renderProductDetails = (item, orderId) => {
     const comboData = item.combo_data ? JSON.parse(item.combo_data) : null;
     const isCombo = item.item_type === 'combo' && comboData;
 
     return (
       <div key={item.id} className="mb-3 pb-3 border-b border-gray-200 last:border-0">
         <div className="flex justify-between items-start mb-1">
-          <span className="font-medium text-sm">{item.product_name}</span>
-          <div className="text-right">
+          <label className="flex items-start gap-2 cursor-pointer flex-1">
+            <input
+              type="checkbox"
+              checked={!!checkedItems[`${orderId}-${item.id}`]}
+              onChange={e => setCheckedItems(prev => ({ ...prev, [`${orderId}-${item.id}`]: e.target.checked }))}
+              className="w-4 h-4 mt-1 accent-green-600 flex-shrink-0"
+            />
+            <div className="flex-1">
+              <span className={`font-semibold text-sm ${checkedItems[`${item.order_id || 'order'}-${item.id}`] ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+                {item.product_name}
+              </span>
+            </div>
+          </label>
+          <div className="text-right ml-2">
             <div className="text-sm font-bold">x{item.quantity}</div>
             <div className="text-xs text-gray-600">${parseInt(item.product_price || item.price || 0).toLocaleString('es-CL')}</div>
           </div>
@@ -288,37 +301,52 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
         {isCombo && (
           <>
             {comboData.fixed_items && comboData.fixed_items.length > 0 && (
-              <div className="ml-3 mt-1 text-xs text-gray-600">
-                <div className="font-medium mb-0.5">Incluye:</div>
-                {comboData.fixed_items.map((fixed, idx) => (
-                  <div key={idx}>• {item.quantity}x {fixed.product_name || fixed.name}</div>
-                ))}
+              <div className="ml-6 mt-1 text-xs text-gray-600 space-y-1">
+                <div className="font-bold mb-0.5 text-gray-500 uppercase text-[10px]">Incluye:</div>
+                {comboData.fixed_items.map((fixed, idx) => {
+                  const itemKey = `${orderId}-fixed-${item.id}-${idx}`;
+                  return (
+                    <label key={idx} className="flex items-center gap-2 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={!!checkedItems[itemKey]}
+                        onChange={e => setCheckedItems(prev => ({ ...prev, [itemKey]: e.target.checked }))}
+                        className="w-3.5 h-3.5 accent-blue-500 flex-shrink-0"
+                      />
+                      <span className={`${checkedItems[itemKey] ? 'line-through text-gray-300' : 'text-gray-600'}`}>
+                        {item.quantity * (fixed.quantity || 1)}x {fixed.product_name || fixed.name}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             )}
             {comboData.selections && Object.keys(comboData.selections).length > 0 && (
-              <div className="ml-3 mt-1 space-y-1">
-                <div className="font-medium mb-0.5 text-xs text-gray-600">Seleccionado:</div>
+              <div className="ml-6 mt-2 space-y-1.5">
+                <div className="font-bold mb-0.5 text-gray-500 uppercase text-[10px]">Seleccionado:</div>
                 {Object.entries(comboData.selections).map(([group, selection], idx) => {
-                  if (Array.isArray(selection)) {
-                    return selection.map((sel, sidx) => {
-                      const imageUrl = sel.image_url || sel.image || 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png';
-                      return (
-                        <div key={`${idx}-${sidx}`} className="flex items-center gap-2 bg-blue-50 p-1.5 rounded border border-blue-200">
-                          <img src={imageUrl} alt={sel.name} className="w-10 h-10 object-cover rounded border border-blue-300" onError={(e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png'; }} />
-                          <span className="text-xs text-gray-700">{item.quantity}x {sel.name}</span>
-                        </div>
-                      );
-                    });
-                  } else if (selection && selection.name) {
-                    const imageUrl = selection.image_url || selection.image || 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png';
+                  const selectionsArray = Array.isArray(selection) ? selection : [selection];
+                  return selectionsArray.map((sel, sidx) => {
+                    if (!sel || !sel.name) return null;
+                    const itemKey = `${orderId}-sel-${item.id}-${group}-${sidx}`;
+                    const imageUrl = sel.image_url || sel.image || 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png';
                     return (
-                      <div key={idx} className="flex items-center gap-2 bg-blue-50 p-1.5 rounded border border-blue-200">
-                        <img src={imageUrl} alt={selection.name} className="w-10 h-10 object-cover rounded border border-blue-300" onError={(e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png'; }} />
-                        <span className="text-xs text-gray-700">{item.quantity}x {selection.name}</span>
-                      </div>
+                      <label key={`${idx}-${sidx}`} className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={!!checkedItems[itemKey]}
+                          onChange={e => setCheckedItems(prev => ({ ...prev, [itemKey]: e.target.checked }))}
+                          className="w-3.5 h-3.5 accent-blue-500 flex-shrink-0"
+                        />
+                        <div className={`flex items-center gap-2 p-1.5 rounded border flex-1 transition-colors ${checkedItems[itemKey] ? 'bg-gray-100 border-gray-200 opacity-50' : 'bg-blue-50 border-blue-200'}`}>
+                          <img src={imageUrl} alt={sel.name} className="w-8 h-8 object-cover rounded border border-blue-300" onError={(e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png'; }} />
+                          <span className={`text-xs font-medium ${checkedItems[itemKey] ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                            {item.quantity}x {sel.name}
+                          </span>
+                        </div>
+                      </label>
                     );
-                  }
-                  return null;
+                  });
                 })}
               </div>
             )}
@@ -326,11 +354,24 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
         )}
 
         {comboData && comboData.customizations && comboData.customizations.length > 0 && (
-          <div className="ml-2 mt-2 rounded-md border border-orange-300 bg-orange-50 px-2 py-1.5">
-            <div className="text-xs font-bold text-orange-700 mb-1">❗ Extras del cliente:</div>
-            {comboData.customizations.map((custom, idx) => (
-              <div key={idx} className="text-xs font-semibold text-orange-800">• {custom.quantity || item.quantity}x {custom.name}</div>
-            ))}
+          <div className="ml-6 mt-2 rounded-md border border-orange-300 bg-orange-50 px-2 py-1.5">
+            <div className="text-[10px] font-black text-orange-700 mb-1 uppercase tracking-wider">❗ Extras del cliente:</div>
+            {comboData.customizations.map((custom, idx) => {
+              const itemKey = `${orderId}-cust-${item.id}-${idx}`;
+              return (
+                <label key={idx} className="flex items-center gap-2 cursor-pointer py-0.5">
+                  <input
+                    type="checkbox"
+                    checked={!!checkedItems[itemKey]}
+                    onChange={e => setCheckedItems(prev => ({ ...prev, [itemKey]: e.target.checked }))}
+                    className="w-3.5 h-3.5 accent-orange-600 flex-shrink-0"
+                  />
+                  <div className={`text-xs font-bold ${checkedItems[itemKey] ? 'line-through text-orange-300' : 'text-orange-800'}`}>
+                    • {custom.quantity || item.quantity}x {custom.name}
+                  </div>
+                </label>
+              );
+            })}
           </div>
         )}
       </div>
@@ -467,7 +508,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
         </div>
 
         <div className="bg-gray-50 rounded p-3 mb-3">
-          {order.items && order.items.map(item => renderProductDetails(item))}
+          {order.items && order.items.map(item => renderProductDetails(item, order.id))}
         </div>
 
         {renderDeliveryExtras(order)}
@@ -720,29 +761,42 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           </div>
         )}
 
-        <div className="mb-3 border border-blue-200 rounded-lg overflow-hidden">
-          <div className="bg-blue-50 px-2 py-1.5 text-xs font-bold text-blue-700">📋 Checklist de despacho</div>
-          <div className="p-2 space-y-1">
-            {buildChecklistItems(order).map(item => (
-              <label key={item.key} className="flex items-start gap-2 cursor-pointer">
-                <input type="checkbox"
-                  checked={!!checkedItems[`${order.id}-${item.key}`]}
-                  onChange={e => setCheckedItems(prev => ({ ...prev, [`${order.id}-${item.key}`]: e.target.checked }))}
-                  className="w-4 h-4 mt-0.5 accent-green-600 flex-shrink-0" />
-                <span className={`text-xs leading-tight ${checkedItems[`${order.id}-${item.key}`] ? 'line-through text-gray-400' : 'text-gray-800'}`}>{item.label}</span>
-              </label>
-            ))}
+        <div className="mb-3 border border-blue-200 rounded-lg overflow-hidden bg-white shadow-sm">
+          <div className="bg-blue-600 px-3 py-1.5 text-xs font-black text-white flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Camera size={14} /> FOTOS DEL PEDIDO
+            </span>
           </div>
-          <div className="px-2 pb-2 pt-1">
-            {order.dispatch_photo_url ? (
-              <div className="relative rounded-lg overflow-hidden border-2 border-green-400 cursor-pointer" onClick={() => setPhotoModal(order.dispatch_photo_url)}>
-                <img src={order.dispatch_photo_url} alt="despacho" className="w-full h-28 object-cover" />
-                <span className="absolute top-1 left-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-1"><CheckCircle size={10} /> Foto guardada</span>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center gap-1.5 p-3 cursor-pointer rounded-lg border-2 border-dashed border-green-400 bg-green-50 hover:bg-green-100 transition-colors">
-                <Camera size={22} className="text-green-600" />
-                <span className="text-xs text-green-700 font-semibold">Adjuntar foto del pedido</span>
+
+          <div className="p-3">
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {(() => {
+                let photos = [];
+                try {
+                  const url = order.dispatch_photo_url;
+                  if (url) {
+                    const decoded = JSON.parse(url);
+                    photos = Array.isArray(decoded) ? decoded : [url];
+                  }
+                } catch (e) {
+                  photos = [order.dispatch_photo_url];
+                }
+
+                return photos.map((url, idx) => (
+                  <div
+                    key={idx}
+                    className="aspect-square rounded-lg overflow-hidden border-2 border-gray-100 relative group cursor-pointer shadow-sm active:scale-95 transition-all"
+                    onClick={() => setViewingOrderPhotos({ photos, currentIndex: idx })}
+                  >
+                    <img src={url} alt={`foto-${idx}`} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors" />
+                  </div>
+                ));
+              })()}
+
+              <label className="aspect-square flex flex-col items-center justify-center gap-1 cursor-pointer rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-orange-50 hover:border-orange-300 text-gray-400 hover:text-orange-500 transition-all active:scale-95">
+                <Camera size={24} />
+                <span className="text-[10px] font-black uppercase">Subir</span>
                 <input type="file" accept="image/*" className="hidden"
                   onChange={e => {
                     const f = e.target.files[0];
@@ -756,7 +810,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                       .catch(() => alert('Error al subir foto'));
                   }} />
               </label>
-            )}
+            </div>
           </div>
         </div>
 
@@ -777,35 +831,67 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
     );
   };
 
-  // Construir lista de items para checklist
-  const buildChecklistItems = (order) => {
-    const items = [];
-    (order.items || []).forEach(item => {
-      items.push({ key: `item-${item.id}`, label: `${item.quantity}x ${item.product_name}` });
-      if (item.combo_data) {
-        try {
-          const cd = typeof item.combo_data === 'string' ? JSON.parse(item.combo_data) : item.combo_data;
-          (cd.fixed_items || []).forEach((f, i) => items.push({ key: `fixed-${item.id}-${i}`, label: `  └ ${item.quantity * f.quantity}x ${f.product_name}` }));
-          Object.entries(cd.selections || {}).forEach(([g, s]) => {
-            const sel = Array.isArray(s) ? s : [s];
-            sel.forEach((sv, i) => items.push({ key: `sel-${item.id}-${g}-${i}`, label: `  └ ${item.quantity}x ${sv.name} (${g})` }));
-          });
-          (cd.customizations || []).forEach((c, i) => items.push({ key: `cust-${item.id}-${i}`, label: `  └ ❗ ${c.quantity || item.quantity}x ${c.name}` }));
-        } catch { }
-      }
-    });
-    return items;
-  };
+
 
   return (
     <div className="fixed inset-0 bg-white z-40 flex flex-col overflow-hidden">
-      {photoModal && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setPhotoModal(null)}>
-          <div className="relative max-w-full max-h-full" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setPhotoModal(null)} className="absolute -top-3 -right-3 bg-white rounded-full p-1 shadow-lg z-10">
-              <X size={20} className="text-gray-800" />
+      {/* Visor de Fotos Pro */}
+      {viewingOrderPhotos && (
+        <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center p-4 select-none" onClick={() => setViewingOrderPhotos(null)}>
+          <div className="absolute top-4 right-4 z-10 flex gap-2">
+            <button className="bg-white/20 hover:bg-white/40 text-white p-3 rounded-full backdrop-blur-lg transition-all active:scale-90">
+              <X size={28} />
             </button>
-            <img src={photoModal} alt="foto pedido" className="max-w-[90vw] max-h-[85vh] rounded-lg object-contain" />
+          </div>
+
+          <div className="w-full h-[70vh] flex items-center justify-center relative px-2" onClick={e => e.stopPropagation()}>
+            {viewingOrderPhotos.photos.length > 1 && (
+              <button
+                onClick={() => setViewingOrderPhotos(prev => ({ ...prev, currentIndex: (prev.currentIndex - 1 + prev.photos.length) % prev.photos.length }))}
+                className="absolute left-2 bg-white/10 hover:bg-white/20 text-white p-5 rounded-full z-10 transition-colors"
+              >
+                <X size={24} className="rotate-45" /> {/* Generic arrow-like or use a real icon if preferred, but X is already imported. I'll use text or Chevron if available */}
+                <span className="text-2xl font-black">{"<"}</span>
+              </button>
+            )}
+
+            <img
+              src={viewingOrderPhotos.photos[viewingOrderPhotos.currentIndex]}
+              alt="full photo"
+              className="max-w-full max-h-full object-contain rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/10"
+            />
+
+            {viewingOrderPhotos.photos.length > 1 && (
+              <button
+                onClick={() => setViewingOrderPhotos(prev => ({ ...prev, currentIndex: (prev.currentIndex + 1) % prev.photos.length }))}
+                className="absolute right-2 bg-white/10 hover:bg-white/20 text-white p-5 rounded-full z-10 transition-colors"
+              >
+                <span className="text-2xl font-black">{">"}</span>
+              </button>
+            )}
+          </div>
+
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <div className="text-white/90 font-black text-xs uppercase tracking-[0.2em] bg-white/10 px-6 py-2 rounded-full border border-white/5 backdrop-blur-md">
+              Archivo {viewingOrderPhotos.currentIndex + 1} de {viewingOrderPhotos.photos.length}
+            </div>
+            <div className="flex gap-1.5">
+              {viewingOrderPhotos.photos.map((_, i) => (
+                <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i === viewingOrderPhotos.currentIndex ? 'w-8 bg-orange-500' : 'w-2 bg-white/20'}`} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Visor Legacy (para compatibilidad) */}
+      {photoModal && (
+        <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4" onClick={() => setPhotoModal(null)}>
+          <div className="max-w-4xl w-full relative">
+            <button className="absolute -top-12 right-0 text-white" onClick={() => setPhotoModal(null)}>
+              <X size={32} />
+            </button>
+            <img src={photoModal} alt="Despacho" className="w-full h-auto rounded-lg shadow-2xl" />
           </div>
         </div>
       )}

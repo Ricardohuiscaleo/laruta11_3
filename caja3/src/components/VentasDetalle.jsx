@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, BarChart3, Search, Banknote, CreditCard, Smartphone, Truck, Clock, User, Phone, MessageCircle, MapPin, ShoppingCart, FlaskConical, Store, Sparkles, Tag, Gift, MessageSquare, Edit, Trash2, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Bike, Home } from 'lucide-react';
+import { ArrowLeft, BarChart3, Search, Banknote, CreditCard, Smartphone, Truck, Clock, User, Phone, MessageCircle, MapPin, ShoppingCart, FlaskConical, Store, Sparkles, Tag, Gift, MessageSquare, Edit, Trash2, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Bike, Home, Camera, Check, X } from 'lucide-react';
 
 // Componente minimalista para ingredientes colapsables
 function IngredientToggle({ ingredients, label }) {
@@ -46,6 +46,7 @@ export default function VentasDetalle() {
   const [currentFilter, setCurrentFilter] = useState('all');
   const [showIngredients, setShowIngredients] = useState(false);
   const [period, setPeriod] = useState('');
+  const [viewingPhotos, setViewingPhotos] = useState(null); // { photos: [], currentIndex: 0 }
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -392,11 +393,43 @@ export default function VentasDetalle() {
                   </div>
                   {order.items?.map((item, i) => (
                     <div key={i} className="mb-2 pb-2 border-b border-gray-200 last:border-0">
-                      <div className="flex justify-between items-start">
-                        <span className="text-sm font-medium text-gray-800">{item.product_name}</span>
-                        <div className="text-right">
-                          <div className="text-sm font-bold">x{item.quantity}</div>
-                          <div className="text-xs text-gray-600">${Math.round(item.product_price || 0).toLocaleString('es-CL')}</div>
+                      <div className="flex gap-3">
+                        {(() => {
+                          let photos = [];
+                          try {
+                            if (order.dispatch_photo_url) {
+                              const decoded = JSON.parse(order.dispatch_photo_url);
+                              photos = Array.isArray(decoded) ? decoded : [order.dispatch_photo_url];
+                            }
+                          } catch (e) {
+                            photos = [order.dispatch_photo_url];
+                          }
+
+                          if (photos.length === 0) return null;
+
+                          return (
+                            <div
+                              className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity relative group"
+                              onClick={() => setViewingPhotos({ photos, currentIndex: 0 })}
+                            >
+                              <img src={photos[0]} alt="order" className="w-full h-full object-cover" />
+                              {photos.length > 1 && (
+                                <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[8px] text-white font-black text-center py-0.5">
+                                  +{photos.length - 1}
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors" />
+                            </div>
+                          );
+                        })()}
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <span className="text-sm font-medium text-gray-800">{item.product_name}</span>
+                            <div className="text-right">
+                              <div className="text-sm font-bold">x{item.quantity}</div>
+                              <div className="text-xs text-gray-600">${Math.round(item.product_price || 0).toLocaleString('es-CL')}</div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       {(() => {
@@ -460,6 +493,52 @@ export default function VentasDetalle() {
           )}
         </div>
       </div>
+
+      {/* Visor de Fotos */}
+      {viewingPhotos && (
+        <div className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center p-4 animate-in fade-in duration-300" onClick={() => setViewingPhotos(null)}>
+          <button className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors">
+            <X size={32} />
+          </button>
+
+          <div className="w-full max-w-4xl aspect-square md:aspect-video flex items-center justify-center relative" onClick={e => e.stopPropagation()}>
+            {viewingPhotos.photos.length > 1 && (
+              <button
+                onClick={() => setViewingPhotos(prev => ({ ...prev, currentIndex: (prev.currentIndex - 1 + prev.photos.length) % prev.photos.length }))}
+                className="absolute left-0 bg-white/10 hover:bg-white/20 text-white p-4 rounded-full z-10 transition-colors"
+              >
+                <span className="text-2xl font-black">{"<"}</span>
+              </button>
+            )}
+
+            <img
+              src={viewingPhotos.photos[viewingPhotos.currentIndex]}
+              alt="full photo"
+              className="max-w-full max-h-full object-contain rounded-xl shadow-2xl border border-white/5"
+            />
+
+            {viewingPhotos.photos.length > 1 && (
+              <button
+                onClick={() => setViewingPhotos(prev => ({ ...prev, currentIndex: (prev.currentIndex + 1) % prev.photos.length }))}
+                className="absolute right-0 bg-white/10 hover:bg-white/20 text-white p-4 rounded-full z-10 transition-colors"
+              >
+                <span className="text-2xl font-black">{">"}</span>
+              </button>
+            )}
+          </div>
+
+          <div className="mt-8 flex flex-col items-center gap-2">
+            <span className="text-white/80 font-bold text-xs bg-white/10 px-4 py-1.5 rounded-full border border-white/5 backdrop-blur-md">
+              Foto {viewingPhotos.currentIndex + 1} de {viewingPhotos.photos.length}
+            </span>
+            <div className="flex gap-1.5">
+              {viewingPhotos.photos.map((_, i) => (
+                <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i === viewingPhotos.currentIndex ? 'w-8 bg-orange-500' : 'w-2 bg-white/20'}`} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -49,6 +49,7 @@ try {
                 pickup_time,
                 customer_notes,
                 delivery_extras_items,
+                dispatch_photo_url,
                 DATE_FORMAT(DATE_SUB(created_at, INTERVAL 3 HOUR), '%d-%m-%Y %H:%i') as hora_chile,
                 DATE_FORMAT(DATE_SUB(created_at, INTERVAL 3 HOUR), '%H:%i') as hora_corta,
                 created_at
