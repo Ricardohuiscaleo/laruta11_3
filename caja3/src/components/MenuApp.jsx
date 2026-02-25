@@ -875,6 +875,39 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
 
 
 export default function App() {
+  const [menuCategories, setMenuCategories] = useState([]);
+  const [menuCategoriesExpanded, setMenuCategoriesExpanded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Generar mainCategories dinámicamente desde menuCategories
+  const mainCategories = useMemo(() => {
+    if (menuCategories.length === 0) return [];
+    return menuCategories
+      .filter(cat => cat.is_active === 1)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(cat => cat.category_key);
+  }, [menuCategories]);
+
+  // Generar categoryDisplayNames dinámicamente desde menuCategories
+  const categoryDisplayNames = useMemo(() => {
+    const names = {};
+    menuCategories.forEach(cat => {
+      names[cat.category_key] = cat.display_name;
+    });
+    return names;
+  }, [menuCategories]);
+
+  // Generar categoryFilters dinámicamente desde menuCategories
+  const categoryFilters = useMemo(() => {
+    const filters = {};
+    menuCategories.forEach(cat => {
+      if (cat.filter_config) {
+        filters[cat.category_key] = cat.filter_config;
+      }
+    });
+    return filters;
+  }, [menuCategories]);
+
   const [activeCategory, setActiveCategory] = useState('hamburguesas');
   const [showDispatchPopup] = useState(() => {
     const d = new Date(), day = d.getDate(), m = d.getMonth() + 1, y = d.getFullYear();
@@ -949,7 +982,6 @@ export default function App() {
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
@@ -973,41 +1005,11 @@ export default function App() {
   const [editMode, setEditMode] = useState(false);
   const [tempTruckData, setTempTruckData] = useState(null);
   const [schedules, setSchedules] = useState([]);
-  const [menuCategories, setMenuCategories] = useState([]);
-  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
 
-  // Generar mainCategories dinámicamente desde menuCategories
-  const mainCategories = useMemo(() => {
-    if (menuCategories.length === 0) return [];
-    return menuCategories
-      .filter(cat => cat.is_active === 1)
-      .sort((a, b) => a.sort_order - b.sort_order)
-      .map(cat => cat.category_key);
-  }, [menuCategories]);
-
-  // Generar categoryDisplayNames dinámicamente desde menuCategories
-  const categoryDisplayNames = useMemo(() => {
-    const names = {};
-    menuCategories.forEach(cat => {
-      names[cat.category_key] = cat.display_name;
-    });
-    return names;
-  }, [menuCategories]);
-
-  // Generar categoryFilters dinámicamente desde menuCategories
-  const categoryFilters = useMemo(() => {
-    const filters = {};
-    menuCategories.forEach(cat => {
-      if (cat.filter_config) {
-        filters[cat.category_key] = cat.filter_config;
-      }
-    });
-    return filters;
-  }, [menuCategories]);
   const [infoExpanded, setInfoExpanded] = useState(true);
   const [statusExpanded, setStatusExpanded] = useState(false);
   const [schedulesExpanded, setSchedulesExpanded] = useState(false);
-  const [menuCategoriesExpanded, setMenuCategoriesExpanded] = useState(false);
+  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   const [currentDayOfWeek, setCurrentDayOfWeek] = useState(null);
   const [editingSchedules, setEditingSchedules] = useState(false);
   const [showInactiveProducts, setShowInactiveProducts] = useState(false);
