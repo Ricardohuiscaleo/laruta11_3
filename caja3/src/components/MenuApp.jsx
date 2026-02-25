@@ -864,13 +864,81 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
       </div>
 
       {showImageModal && (
-        <div className="fixed inset-0 bg-black/90 z-[70] flex items-center justify-center animate-fade-in" onClick={() => setShowImageModal(false)}>
-          <button className="absolute top-4 right-4 text-white"><X size={24} /></button>
-          <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" />
-          <div className="absolute bottom-0 left-0 right-0 p-6 bg-black/60 text-white">
-            <h3 className="text-xl font-bold">{product.name}</h3>
-            <p className="text-sm text-gray-200 line-clamp-2">{product.description}</p>
-            <p className="text-lg font-bold text-yellow-400">${product.price ? product.price.toLocaleString('es-CL') : '0'}</p>
+        <div className="fixed inset-0 bg-black/80 z-[70] flex items-end justify-center animate-fade-in" onClick={() => setShowImageModal(false)}>
+          <div
+            className="bg-white w-full max-w-lg rounded-t-3xl overflow-hidden animate-slide-up"
+            style={{ maxHeight: '92vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              className="absolute top-3 right-3 z-10 bg-black/50 text-white rounded-full w-8 h-8 flex items-center justify-center"
+              onClick={() => setShowImageModal(false)}
+            >
+              <X size={18} />
+            </button>
+
+            {/* Product Image */}
+            {product.image && (
+              <div className="w-full" style={{ maxHeight: '40vh' }}>
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                  style={{ maxHeight: '40vh' }}
+                />
+              </div>
+            )}
+
+            {/* Product Info */}
+            <div className="p-5 overflow-y-auto" style={{ maxHeight: '50vh' }}>
+              <h3 className="text-xl font-black text-gray-900 leading-tight mb-2">{product.name}</h3>
+
+              {product.description && (
+                <p className="text-sm text-gray-600 leading-relaxed mb-4">
+                  {product.description}
+                </p>
+              )}
+
+              {product.grams > 0 && (
+                <p className="text-xs text-gray-400 mb-4">{product.grams}g</p>
+              )}
+
+              {/* Price + Cart Controls */}
+              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                <span className="bg-yellow-400 text-black px-4 py-2 rounded-xl font-black text-lg shadow-sm">
+                  ${product.price ? product.price.toLocaleString('es-CL') : '0'}
+                </span>
+
+                <div className="flex items-center gap-2">
+                  {quantity > 0 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onRemoveFromCart(product.id); }}
+                      className="bg-red-500 hover:bg-red-600 text-white rounded-full w-9 h-9 flex items-center justify-center font-bold text-lg shadow-md active:scale-95 transition-transform"
+                    >
+                      −
+                    </button>
+                  )}
+                  {quantity > 0 && (
+                    <span className="font-black text-lg text-gray-900 w-8 text-center">{quantity}</span>
+                  )}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+                    className="bg-green-600 hover:bg-green-700 text-white rounded-full w-9 h-9 flex items-center justify-center font-bold text-lg shadow-md active:scale-95 transition-transform"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {quantity > 0 && (
+                <div className="mt-3 bg-blue-50 rounded-xl p-2 text-center">
+                  <span className="text-xs font-bold text-blue-700">
+                    {quantity} en carrito — Subtotal: ${(product.price * quantity).toLocaleString('es-CL')}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
