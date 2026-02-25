@@ -844,35 +844,38 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
           </h3>
         </div>
 
-        <div className="px-1.5 pb-1.5 flex items-center justify-center gap-1 mt-auto">
-          <div className="flex items-center w-full">
-            {quantity > 0 && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onRemoveFromCart(product.id); }}
-                className="text-red-500 hover:text-red-600 transition-colors flex items-center justify-center rounded-lg px-1"
-                style={{ height: 'clamp(33.7px, 8.42vw, 43.8px)' }}
-              >
-                <MinusCircle style={{ width: 'clamp(16.85px, 4.21vw, 21.9px)', height: 'clamp(16.85px, 4.21vw, 21.9px)' }} />
-              </button>
-            )}
-            {quantity > 0 && (
-              <div className="text-gray-900 px-1 flex items-center justify-center min-w-[20px]" style={{ height: 'clamp(33.7px, 8.42vw, 43.8px)' }}>
-                <span className="font-bold text-[12px]">{quantity}</span>
-              </div>
-            )}
+        <div className="px-1.5 pb-1.5 flex items-center justify-center mt-auto">
+          {quantity === 0 ? (
             <button
               onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-              className={`flex-1 px-2 font-bold transition-all duration-200 flex items-center justify-center rounded-lg shadow-sm active:scale-95 ${quantity > 0
-                ? 'bg-yellow-500 text-black hover:bg-yellow-600'
-                : 'bg-green-500 hover:bg-green-600 text-white'
-                }`}
+              className="w-full font-bold transition-all duration-200 flex items-center justify-center rounded-lg shadow-sm active:scale-95 bg-green-500 hover:bg-green-600 text-white"
               style={{ height: 'clamp(33.7px, 8.42vw, 43.8px)' }}
             >
               <span className="font-bold whitespace-nowrap" style={{ fontSize: 'clamp(10px, 2.8vw, 14px)' }}>
-                {quantity > 0 ? 'Agregar más' : 'Agregar'}
+                Agregar
               </span>
             </button>
-          </div>
+          ) : (
+            <div className="flex items-center w-full bg-gray-50 rounded-lg border border-gray-100 shadow-inner" style={{ height: 'clamp(33.7px, 8.42vw, 43.8px)' }}>
+              <button
+                onClick={(e) => { e.stopPropagation(); onRemoveFromCart(product.id); }}
+                className="flex-1 h-full text-red-500 hover:bg-red-50 transition-colors flex items-center justify-center rounded-l-lg"
+              >
+                <MinusCircle style={{ width: 'clamp(16.85px, 4.21vw, 21.9px)', height: 'clamp(16.85px, 4.21vw, 21.9px)' }} />
+              </button>
+
+              <div className="flex-1 h-full flex items-center justify-center text-gray-900 border-x border-gray-100">
+                <span className="font-black text-[13px]">{quantity}</span>
+              </div>
+
+              <button
+                onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+                className="flex-1 h-full bg-yellow-500 text-black hover:bg-yellow-600 transition-colors flex items-center justify-center rounded-r-lg font-black text-xl"
+              >
+                +
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -2322,7 +2325,7 @@ export default function App() {
         );
       })()}
 
-      <main className="pb-40 px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={{ paddingTop: `calc(env(safe-area-inset-top, 0px) + ${cartItemCount > 0 ? '110px' : '70px'})`, ...(showSuggestions ? { filter: 'blur(2px)', pointerEvents: 'none' } : {}) }} onClick={() => showSuggestions && setShowSuggestions(false)}>
+      <main className="pb-40 px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 110px)', ...(showSuggestions ? { filter: 'blur(2px)', pointerEvents: 'none' } : {}) }} onClick={() => showSuggestions && setShowSuggestions(false)}>
         <div className="grid grid-cols-3 gap-1">
           {(() => {
             // Build a flat array of all products tagged with their category color and key
