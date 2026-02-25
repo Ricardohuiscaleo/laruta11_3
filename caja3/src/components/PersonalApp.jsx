@@ -290,7 +290,12 @@ export default function PersonalApp() {
             {formTurno.tipo === 'reemplazo' && (<>
               <div style={{ marginBottom: 12 }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Reemplazado por</label>
-                <select value={formTurno.reemplazado_por} onChange={e => setFormTurno(f => ({ ...f, reemplazado_por: e.target.value }))}
+                <select value={formTurno.reemplazado_por} onChange={e => {
+                  const newId = e.target.value;
+                  const personaR = personal.find(x => x.id == newId);
+                  const monto = personaR && personaR.rol?.includes('seguridad') ? 17966 : 20000;
+                  setFormTurno(f => ({ ...f, reemplazado_por: newId, monto_reemplazo: monto }));
+                }}
                   style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }}>
                   <option value=''>Seleccionar...</option>
                   {personal.filter(p => p.id != formTurno.personal_id).map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
