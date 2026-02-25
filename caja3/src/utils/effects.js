@@ -55,44 +55,64 @@ export const playComandaSound = () => {
   }
 };
 
-// --- Nuevos Sonidos con Pre-carga ---
-const addSound = typeof Audio !== 'undefined' ? new Audio('/blip.mp3') : null;
-const removeSound = typeof Audio !== 'undefined' ? new Audio('/damage.mp3') : null;
-const successSound = typeof Audio !== 'undefined' ? new Audio('/gg.mp3') : null;
+// --- Motor de Síntesis de Audio (AI-Generated) ---
 
-// Configurar volúmenes iniciales
-if (addSound) addSound.volume = 0.4;
-if (removeSound) removeSound.volume = 0.3;
-if (successSound) successSound.volume = 0.6;
+// Obtener o crear el AudioContext de forma segura
+const getAudioContext = () => {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioContext;
+};
 
-// Sonido al agregar al carrito (blip)
+// Función maestra para sintetizar tonos
+const synthesizeTone = (freq, duration, type = 'sine', volume = 0.1, sweepFreq = null) => {
+  try {
+    const ctx = getAudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+    if (sweepFreq) {
+      osc.frequency.exponentialRampToValueAtTime(sweepFreq, ctx.currentTime + duration);
+    }
+
+    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) {
+    console.warn('Audio synthesis failed:', e);
+  }
+};
+
+// Sonido al agregar al carrito (blip cristalino)
 export const playAddSound = () => {
-  try {
-    if (addSound) {
-      addSound.currentTime = 0;
-      addSound.play().catch(() => { });
-    }
-  } catch (e) { }
+  synthesizeTone(800, 0.1, 'sine', 0.2, 1200);
 };
 
-// Sonido al quitar del carrito (damage/blip invertido)
+// Sonido al quitar del carrito (thud descendente)
 export const playRemoveSound = () => {
-  try {
-    if (removeSound) {
-      removeSound.currentTime = 0;
-      removeSound.play().catch(() => { });
-    }
-  } catch (e) { }
+  synthesizeTone(400, 0.15, 'sawtooth', 0.1, 150);
 };
 
-// Sonido de éxito/pago (gg)
+// Sonido de éxito/pago (arpegio triunfal)
 export const playSuccessSound = () => {
-  try {
-    if (successSound) {
-      successSound.currentTime = 0;
-      successSound.play().catch(() => { });
-    }
-  } catch (e) { }
+  const ctx = getAudioContext();
+  const now = ctx.currentTime;
+  const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+
+  notes.forEach((freq, i) => {
+    setTimeout(() => {
+      synthesizeTone(freq, 0.3, 'sine', 0.15 - (i * 0.02));
+    }, i * 80);
+  });
 };
 
 // Función de vibración para PWA
