@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ShoppingCart, User, MapPin, CreditCard, Bike, Caravan } from 'lucide-react';
+import { vibrate, playSuccessSound } from '../utils/effects.js';
 import TUUPaymentIntegration from './TUUPaymentIntegration.jsx';
 import TUUPaymentFrame from './TUUPaymentFrame.jsx';
 
@@ -294,6 +295,8 @@ const CheckoutApp = () => {
 
       const result = await response.json();
       if (result.success) {
+        vibrate(50);
+        playSuccessSound();
         localStorage.removeItem('ruta11_cart');
         localStorage.removeItem('ruta11_cart_total');
         window.location.href = '/cash-pending?order=' + result.order_id;
@@ -555,8 +558,8 @@ const CheckoutApp = () => {
                     type="button"
                     onClick={() => setCustomerInfo({ ...customerInfo, deliveryType: 'delivery' })}
                     className={`p-3 border-2 rounded-lg text-center transition-colors ${customerInfo.deliveryType === 'delivery'
-                        ? 'border-orange-500 bg-orange-50 text-orange-700'
-                        : 'border-gray-300 hover:border-gray-400'
+                      ? 'border-orange-500 bg-orange-50 text-orange-700'
+                      : 'border-gray-300 hover:border-gray-400'
                       }`}
                   >
                     <div className="flex justify-center mb-2">
@@ -574,8 +577,8 @@ const CheckoutApp = () => {
                     type="button"
                     onClick={() => setCustomerInfo({ ...customerInfo, deliveryType: 'pickup' })}
                     className={`p-3 border-2 rounded-lg text-center transition-colors ${customerInfo.deliveryType === 'pickup'
-                        ? 'border-orange-500 bg-orange-50 text-orange-700'
-                        : 'border-gray-300 hover:border-gray-400'
+                      ? 'border-orange-500 bg-orange-50 text-orange-700'
+                      : 'border-gray-300 hover:border-gray-400'
                       }`}
                   >
                     <div className="flex justify-center mb-2">

@@ -2495,7 +2495,7 @@ export default function App() {
             {/* Sugerencias */}
             {showSuggestions && (
               <div
-                className="fixed md:absolute bottom-[110px] md:bottom-full left-0 right-0 md:left-[-48px] md:right-[-16px] bg-white border-t md:border border-gray-200 md:rounded-xl shadow-2xl max-h-[60vh] md:max-h-80 overflow-y-auto z-[40]"
+                className="fixed md:absolute bottom-[105px] md:bottom-full left-0 right-0 md:left-[-48px] md:right-[-16px] bg-white/95 backdrop-blur-md border-t md:border border-gray-200 md:rounded-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.15)] max-h-[55vh] md:max-h-80 overflow-y-auto z-[40]"
                 style={{ height: 'auto' }}
               >
                 {suggestions.map(product => {
@@ -2525,6 +2525,8 @@ export default function App() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              vibrate(30);
+                              playRemoveSound();
                               handleRemoveFromCart(product.id);
                             }}
                             className="bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center font-bold text-lg"
@@ -2536,6 +2538,8 @@ export default function App() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
+                            vibrate(30);
+                            playAddSound();
                             handleAddToCart(product);
                           }}
                           className="bg-green-500 hover:bg-green-600 text-white rounded-full w-7 h-7 flex items-center justify-center font-bold text-lg"
