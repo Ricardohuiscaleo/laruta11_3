@@ -845,21 +845,33 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
         </div>
 
         <div className="px-1.5 pb-1.5 flex items-center justify-center gap-1 mt-auto">
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center w-full">
             {quantity > 0 && (
               <button
                 onClick={(e) => { e.stopPropagation(); onRemoveFromCart(product.id); }}
-                className="text-red-600 hover:bg-red-100 p-0.5 rounded-full transition-colors"
+                className="text-red-500 hover:text-red-600 transition-colors flex items-center justify-center rounded-lg px-1"
+                style={{ height: 'clamp(33.7px, 8.42vw, 43.8px)' }}
               >
-                <MinusCircle size={14} />
+                <MinusCircle style={{ width: 'clamp(16.85px, 4.21vw, 21.9px)', height: 'clamp(16.85px, 4.21vw, 21.9px)' }} />
               </button>
             )}
-            {quantity > 0 && <span className="font-black text-[10px] text-black w-4 text-center">{quantity}</span>}
+            {quantity > 0 && (
+              <div className="text-gray-900 px-1 flex items-center justify-center min-w-[20px]" style={{ height: 'clamp(33.7px, 8.42vw, 43.8px)' }}>
+                <span className="font-bold text-[12px]">{quantity}</span>
+              </div>
+            )}
             <button
               onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-              className="bg-black text-white px-2 py-0.5 rounded-full flex items-center justify-center text-[10px] font-bold hover:scale-105 transition-transform active:scale-95 shadow-md"
+              className={`flex-1 px-2 font-bold transition-all duration-200 flex items-center justify-center gap-1 rounded-lg shadow-sm active:scale-95 ${quantity > 0
+                ? 'bg-yellow-500 text-black hover:bg-yellow-600'
+                : 'bg-green-500 hover:bg-green-600 text-white'
+                }`}
+              style={{ height: 'clamp(33.7px, 8.42vw, 43.8px)' }}
             >
-              Agregar
+              <PlusCircle style={{ width: 'clamp(14.74px, 3.69vw, 19.16px)', height: 'clamp(14.74px, 3.69vw, 19.16px)' }} />
+              <span className="font-bold whitespace-nowrap" style={{ fontSize: 'clamp(10px, 2.8vw, 14px)' }}>
+                {quantity > 0 ? 'Agregar más' : 'Agregar'}
+              </span>
             </button>
           </div>
         </div>
@@ -914,19 +926,26 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
                   {quantity > 0 && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onRemoveFromCart(product.id); }}
-                      className="bg-red-500 hover:bg-red-600 text-white rounded-full w-9 h-9 flex items-center justify-center font-bold text-lg shadow-md active:scale-95 transition-transform"
+                      className="text-red-500 hover:text-red-700 transition-colors flex items-center justify-center rounded-lg p-2 bg-red-50"
+                      style={{ height: '44px', width: '44px' }}
                     >
-                      −
+                      <MinusCircle size={24} />
                     </button>
                   )}
                   {quantity > 0 && (
-                    <span className="font-black text-lg text-gray-900 w-8 text-center">{quantity}</span>
+                    <span className="font-black text-xl text-gray-900 w-10 text-center">{quantity}</span>
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-                    className="bg-green-600 hover:bg-green-700 text-white rounded-full px-4 h-9 flex items-center justify-center font-bold text-sm shadow-md active:scale-95 transition-transform"
+                    className={`flex-1 px-6 font-bold transition-all duration-200 flex items-center justify-center gap-2 rounded-xl shadow-md active:scale-95 h-[44px] ${quantity > 0
+                      ? 'bg-yellow-500 text-black hover:bg-yellow-600'
+                      : 'bg-green-600 hover:bg-green-700 text-white'
+                      }`}
                   >
-                    Agregar
+                    <PlusCircle size={20} />
+                    <span className="text-sm font-bold">
+                      {quantity > 0 ? 'Agregar más' : 'Agregar'}
+                    </span>
                   </button>
                 </div>
               </div>

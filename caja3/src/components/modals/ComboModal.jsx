@@ -29,19 +29,19 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
     try {
       console.log('Loading combo with ID:', combo.id);
       console.log('Full combo object:', combo);
-      
+
       // Map product names to real combo IDs
       const comboMapping = {
         'Combo Doble Mixta': 1,
-        'Combo Completo': 2, 
+        'Combo Completo': 2,
         'Combo Gorda': 3,
         'Combo Dupla': 4,
         'Combo Salchipapas x2': 234
       };
-      
+
       const realComboId = comboMapping[combo.name] || combo.id;
       console.log('Using combo ID:', realComboId);
-      
+
       const response = await fetch(`/api/get_combos.php?combo_id=${realComboId}&v=${Date.now()}&_=${Math.random()}`, {
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -50,9 +50,9 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
         }
       });
       const data = await response.json();
-      
+
       console.log('Combo data received:', data);
-      
+
       if (data.success && data.combos.length > 0) {
         const comboDetails = data.combos[0];
         console.log('Fixed items:', comboDetails.fixed_items);
@@ -79,7 +79,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
   const handleSelectionChange = (groupName, productId, maxSelections, action = 'toggle') => {
     setSelections(prev => {
       const currentSelections = prev[groupName] || [];
-      
+
       if (maxSelections === 1) {
         // Single selection
         const isSelected = currentSelections === productId;
@@ -91,7 +91,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
         // Multiple selection with quantities
         const currentArray = Array.isArray(currentSelections) ? currentSelections : [];
         const totalCount = currentArray.length;
-        
+
         if (action === 'add') {
           // Add one more of this product
           if (totalCount < maxSelections) {
@@ -119,9 +119,9 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
 
   const calculateTotalPrice = () => {
     if (!comboData) return parseInt(combo.price || 0);
-    
+
     let totalPrice = parseInt(combo.price || 0);
-    
+
     // Add additional prices from selections
     Object.entries(selections).forEach(([groupName, selection]) => {
       const options = comboData.selection_groups?.[groupName];
@@ -141,13 +141,13 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
         }
       }
     });
-    
+
     return totalPrice;
   };
 
   const handleAddToCart = () => {
     if (!comboData) return;
-    
+
     // Validate all required selections are made
     const invalidGroups = [];
     Object.entries(comboData.selection_groups || {}).forEach(([groupName, options]) => {
@@ -157,12 +157,12 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
         invalidGroups.push(`${groupName} (${totalSelected}/${maxSelections})`);
       }
     });
-    
+
     if (invalidGroups.length > 0) {
       alert(`Por favor completa las selecciones:\n${invalidGroups.join('\n')}`);
       return;
     }
-    
+
     // Build selections object with product details
     const detailedSelections = {};
     Object.entries(selections).forEach(([groupName, selection]) => {
@@ -189,9 +189,9 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
         }
       }
     });
-    
+
     const finalPrice = calculateTotalPrice();
-    
+
     const comboWithSelections = {
       ...combo,
       price: finalPrice,
@@ -200,14 +200,14 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
       displayName: getComboDisplayName(),
       quantity: 1
     };
-    
+
     onAddToCart(comboWithSelections);
     onClose();
   };
 
   const getComboDisplayName = () => {
     if (!comboData) return combo.name;
-    
+
     let name = combo.name;
     Object.entries(selections).forEach(([groupName, productId]) => {
       const options = comboData.selection_groups?.[groupName];
@@ -242,10 +242,10 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
               {/* Combo Header */}
               <div className="text-center">
                 {(combo.image_url || comboData.image_url) && (
-                  <img 
-                    src={combo.image_url || comboData.image_url} 
-                    alt={combo.name} 
-                    className="w-32 h-32 object-cover rounded-lg mx-auto mb-4" 
+                  <img
+                    src={combo.image_url || comboData.image_url}
+                    alt={combo.name}
+                    className="w-32 h-32 object-cover rounded-lg mx-auto mb-4"
                     onError={(e) => {
                       console.log('Error loading combo image:', e.target.src);
                       e.target.style.display = 'none';
@@ -265,10 +265,10 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                     {comboData.fixed_items.map((item, index) => (
                       <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                         {item.image_url && (
-                          <img 
-                            src={item.image_url} 
-                            alt={item.product_name} 
-                            className="w-12 h-12 object-cover rounded" 
+                          <img
+                            src={item.image_url}
+                            alt={item.product_name}
+                            className="w-12 h-12 object-cover rounded"
                             onError={(e) => {
                               console.log('Error loading item image:', e.target.src);
                               e.target.style.display = 'none';
@@ -297,25 +297,24 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {options.map((option, optionIndex) => {
-                        const currentCount = maxSelections === 1 
+                        const currentCount = maxSelections === 1
                           ? (selections[groupName] === option.product_id ? 1 : 0)
                           : (Array.isArray(selections[groupName]) ? selections[groupName].filter(id => id === option.product_id).length : 0);
                         const totalSelectedInGroup = getTotalSelected(groupName);
-                        
+
                         return (
                           <div
                             key={optionIndex}
-                            className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
-                              currentCount > 0
+                            className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${currentCount > 0
                                 ? 'border-orange-500 bg-orange-50'
                                 : 'border-gray-200'
-                            }`}
+                              }`}
                           >
                             {option.image_url && (
-                              <img 
-                                src={option.image_url} 
-                                alt={option.product_name} 
-                                className="w-12 h-12 object-cover rounded" 
+                              <img
+                                src={option.image_url}
+                                alt={option.product_name}
+                                className="w-12 h-12 object-cover rounded"
                                 onError={(e) => {
                                   console.log('Error loading option image:', e.target.src);
                                   e.target.style.display = 'none';
@@ -335,28 +334,29 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                                 <button
                                   onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections, 'remove')}
                                   disabled={currentCount === 0}
-                                  className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-gray-700"
+                                  className="w-9 h-9 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
                                 >
-                                  -
+                                  <MinusCircle size={20} />
                                 </button>
-                                <span className="w-8 text-center font-bold text-gray-800">{currentCount}</span>
+                                <span className="w-8 text-center font-bold text-gray-800 text-lg">{currentCount}</span>
                                 <button
                                   onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections, 'add')}
                                   disabled={totalSelectedInGroup >= maxSelections}
-                                  className="w-8 h-8 rounded-full bg-orange-500 hover:bg-orange-600 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-white"
+                                  className="w-9 h-9 rounded-lg bg-green-500 hover:bg-green-600 disabled:bg-gray-200 text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all active:scale-90 shadow-sm"
                                 >
-                                  +
+                                  <PlusCircle size={20} />
                                 </button>
                               </div>
                             ) : (
                               <button
                                 onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections)}
-                                className="w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all hover:bg-orange-50"
+                                className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center transition-all ${currentCount > 0 ? 'bg-green-500 border-green-500 text-white' : 'border-gray-200 hover:bg-gray-50'
+                                  }`}
                               >
                                 {currentCount > 0 ? (
-                                  <Check className="text-orange-500" size={24} />
+                                  <Check size={24} />
                                 ) : (
-                                  <div className="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+                                  <div className="w-5 h-5 rounded-md border-2 border-gray-300"></div>
                                 )}
                               </button>
                             )}
@@ -379,9 +379,10 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
           <button
             onClick={handleAddToCart}
             disabled={loading || !comboData}
-            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+            className={`w-full font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 ${loading || !comboData ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600 text-white'
+              }`}
           >
-            <Plus size={20} />
+            <PlusCircle size={20} />
             Agregar al Carrito - ${calculateTotalPrice().toLocaleString('es-CL')}
           </button>
         </div>
