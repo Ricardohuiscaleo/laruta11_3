@@ -394,34 +394,6 @@ export default function VentasDetalle() {
                   {order.items?.map((item, i) => (
                     <div key={i} className="mb-2 pb-2 border-b border-gray-200 last:border-0">
                       <div className="flex gap-3">
-                        {(() => {
-                          let photos = [];
-                          try {
-                            if (order.dispatch_photo_url) {
-                              const decoded = JSON.parse(order.dispatch_photo_url);
-                              photos = Array.isArray(decoded) ? decoded : [order.dispatch_photo_url];
-                            }
-                          } catch (e) {
-                            photos = [order.dispatch_photo_url];
-                          }
-
-                          if (photos.length === 0) return null;
-
-                          return (
-                            <div
-                              className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity relative group"
-                              onClick={() => setViewingPhotos({ photos, currentIndex: 0 })}
-                            >
-                              <img src={photos[0]} alt="order" className="w-full h-full object-cover" />
-                              {photos.length > 1 && (
-                                <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[8px] text-white font-black text-center py-0.5">
-                                  +{photos.length - 1}
-                                </div>
-                              )}
-                              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors" />
-                            </div>
-                          );
-                        })()}
                         <div className="flex-1">
                           <div className="flex justify-between items-start">
                             <span className="text-sm font-medium text-gray-800">{item.product_name}</span>
@@ -487,6 +459,40 @@ export default function VentasDetalle() {
                       <IngredientToggle ingredients={order.order_ingredients} label="Ingredientes totales (orden antigua)" />
                     </div>
                   )}
+
+                  {/* Galería de Fotos del Pedido (Pie) */}
+                  {(() => {
+                    let photos = [];
+                    try {
+                      if (order.dispatch_photo_url) {
+                        const decoded = JSON.parse(order.dispatch_photo_url);
+                        photos = Array.isArray(decoded) ? decoded : [order.dispatch_photo_url];
+                      }
+                    } catch (e) {
+                      photos = [order.dispatch_photo_url];
+                    }
+
+                    if (photos.length === 0) return null;
+
+                    return (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                          <Camera size={12} /> Fotos de Entrega:
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {photos.map((url, idx) => (
+                            <div
+                              key={idx}
+                              className="w-14 h-14 rounded-lg overflow-hidden border-2 border-white shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                              onClick={() => setViewingPhotos({ photos, currentIndex: idx })}
+                            >
+                              <img src={url} alt={`entrega-${idx}`} className="w-full h-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             ))
