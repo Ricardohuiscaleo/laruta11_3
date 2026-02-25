@@ -24,8 +24,8 @@ export default function PersonalApp() {
   const [formAjuste, setFormAjuste] = useState({ monto: '', concepto: '' });
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
-  const [modalTurno, setModalTurno] = useState(null); // {dia, fecha}
-  const [formTurno, setFormTurno] = useState({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa' });
+  const [modalTurno, setModalTurno] = useState(null); // {dia, fecha, isSeguridad, titularId}
+  const [formTurno, setFormTurno] = useState({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa', fecha_fin: '' });
   const [modalPersonal, setModalPersonal] = useState(null); // null | 'new' | persona
   const [formPersonal, setFormPersonal] = useState({ nombre: '', rol: 'cajero', sueldo_base: '', activo: 1 });
 
@@ -60,13 +60,28 @@ export default function PersonalApp() {
   async function saveTurno() {
     setSaving(true);
     try {
-      const res = await fetch('/api/personal/personal_api.php', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'save_turno', ...formTurno, personal_id: parseInt(formTurno.personal_id), fecha: modalTurno.fecha }),
-      });
-      const data = await res.json();
-      if (data.success) { showToast('Turno guardado'); setModalTurno(null); loadData(); }
-      else showToast(data.error || 'Error', 'error');
+      const fechaInicio = new Date(modalTurno.fecha);
+      const fechaFin = formTurno.fecha_fin ? new Date(formTurno.fecha_fin) : fechaInicio;
+
+      const requests = [];
+      let currentDate = new Date(fechaInicio);
+
+      while (currentDate <= fechaFin) {
+        const fechaStr = currentDate.toISOString().split('T')[0];
+        requests.push(
+          fetch('/api/personal/personal_api.php', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'save_turno', ...formTurno, personal_id: parseInt(formTurno.personal_id), fecha: fechaStr }),
+          }).then(res => res.json())
+        );
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      const results = await Promise.all(requests);
+      const allSuccess = results.every(r => r.success);
+
+      if (allSuccess) { showToast('Turnos guardados'); setModalTurno(null); loadData(); }
+      else showToast('Error al guardar algunos turnos', 'error');
     } catch { showToast('Error de conexión', 'error'); }
     setSaving(false);
   }
@@ -259,7 +274,7 @@ export default function PersonalApp() {
           </div>
         ) : (
           <>
-            {tab === 'calendario' && <CalendarioView diasEnMes={diasEnMes} primerDia={primerDia} turnosPorFecha={turnosNoSeguridad} personal={personal} colores={COLORES} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({ dia, fecha }); setFormTurno({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa' }); }} onDeleteTurno={deleteTurno} />}
+            {tab === 'calendario' && <CalendarioView diasEnMes={diasEnMes} primerDia={primerDia} turnosPorFecha={turnosNoSeguridad} personal={personal} colores={COLORES} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({ dia, fecha }); setFormTurno({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa', fecha_fin: fecha }); }} onDeleteTurno={deleteTurno} />}
             {tab === 'liquidacion' && (
               <>
                 <LiquidacionView personal={personal} cajeros={cajeros} plancheros={plancheros} getLiquidacion={getLiquidacion} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina} onSavePresupuesto={savePresupuesto} />
@@ -267,11 +282,11 @@ export default function PersonalApp() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                     <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#1e293b' }}>📅 Calendario de Turnos (La Ruta 11)</h2>
                   </div>
-                  <CalendarioView diasEnMes={diasEnMes} primerDia={primerDia} turnosPorFecha={turnosNoSeguridad} personal={personal} colores={COLORES} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({ dia, fecha }); setFormTurno({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa' }); }} onDeleteTurno={deleteTurno} />
+                  <CalendarioView diasEnMes={diasEnMes} primerDia={primerDia} turnosPorFecha={turnosNoSeguridad} personal={personal} colores={COLORES} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({ dia, fecha }); setFormTurno({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa', fecha_fin: fecha }); }} onDeleteTurno={deleteTurno} />
                 </div>
               </>
             )}
-            {tab === 'seguridad' && <CalendarioSeguridad diasEnMes={diasEnMes} primerDiaLunes={primerDiaLunes} turnosSeguridad={turnosSeguridad} personal={personal} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({ dia, fecha }); setFormTurno({ personal_id: '', tipo: 'reemplazo', reemplazado_por: '', monto_reemplazo: 17966.666, pago_por: 'empresa' }); }} onDeleteTurno={deleteTurno} />}
+            {tab === 'seguridad' && <CalendarioSeguridad diasEnMes={diasEnMes} primerDiaLunes={primerDiaLunes} turnosSeguridad={turnosSeguridad} personal={personal} mes={mes} anio={anio} onAddTurno={(params) => { setModalTurno(params); setFormTurno({ personal_id: '', tipo: 'reemplazo', reemplazado_por: params.titularId || '', monto_reemplazo: 17966.666, pago_por: 'empresa', fecha_fin: params.fecha }); }} onDeleteTurno={deleteTurno} />}
             {tab === 'equipo' && <EquipoView personal={personal} onAddPersonal={() => { setModalPersonal('new'); setFormPersonal({ nombre: '', rol: ['cajero'], sueldo_base: '', activo: 1 }); }} onEditPersonal={(p) => { setModalPersonal(p); setFormPersonal({ nombre: p.nombre, rol: p.rol.split(','), sueldo_base: p.sueldo_base, activo: p.activo }); }} />}
           </>
         )}
@@ -281,38 +296,54 @@ export default function PersonalApp() {
       {modalTurno && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div style={{ background: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-            <h3 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>Agregar Turno</h3>
-            <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: 13 }}>Día {modalTurno.dia} · {modalTurno.fecha}</p>
+            <h3 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>{modalTurno.isSeguridad ? 'Reemplazo Seguridad' : 'Agregar Turno'}</h3>
+            <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: 13 }}>{modalTurno.isSeguridad ? 'Seleccione rango de fechas' : `Día ${modalTurno.dia} · ${modalTurno.fecha}`}</p>
+
+            <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Desde</label>
+                <input type='date' value={modalTurno.fecha} readOnly style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', background: '#f8fafc', color: '#64748b' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Hasta</label>
+                <input type='date' value={formTurno.fecha_fin} min={modalTurno.fecha} onChange={e => setFormTurno(f => ({ ...f, fecha_fin: e.target.value }))} style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+              </div>
+            </div>
+
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Persona</label>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Persona (Reemplazante)</label>
               <select value={formTurno.personal_id} onChange={e => setFormTurno(f => ({ ...f, personal_id: e.target.value }))}
                 style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }}>
                 <option value=''>Seleccionar...</option>
                 {personal.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
               </select>
             </div>
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Tipo</label>
-              <select value={formTurno.tipo} onChange={e => setFormTurno(f => ({ ...f, tipo: e.target.value }))}
-                style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }}>
-                <option value='normal'>Normal</option>
-                <option value='reemplazo'>Reemplazo</option>
-              </select>
-            </div>
+
+            {!modalTurno.isSeguridad && (
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Tipo</label>
+                <select value={formTurno.tipo} onChange={e => setFormTurno(f => ({ ...f, tipo: e.target.value }))}
+                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }}>
+                  <option value='normal'>Normal</option>
+                  <option value='reemplazo'>Reemplazo</option>
+                </select>
+              </div>
+            )}
+
             {formTurno.tipo === 'reemplazo' && (<>
               <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Reemplazado por</label>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Reemplazado por (Faltante)</label>
                 <select value={formTurno.reemplazado_por} onChange={e => {
                   const newId = e.target.value;
                   const personaR = personal.find(x => x.id == newId);
                   const titular = personal.find(x => x.id == formTurno.personal_id);
-                  let monto = 20000; // Default company-wide
+                  let monto = 20000;
 
-                  if (titular?.rol?.includes('seguridad')) {
+                  if (titular?.rol?.includes('seguridad') || modalTurno.isSeguridad) {
                     if (personaR && personaR.rol?.includes('seguridad')) {
-                      monto = 17966.666; // Entre guardias exacto
+                      monto = 17966.666;
                     } else {
-                      monto = 30000; // Externo u otro rol cubriendo a seguridad
+                      monto = 30000;
                     }
                   }
 
@@ -325,8 +356,16 @@ export default function PersonalApp() {
               </div>
               <div style={{ marginBottom: 12 }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Monto reemplazo</label>
-                <input type='number' value={formTurno.monto_reemplazo} onChange={e => setFormTurno(f => ({ ...f, monto_reemplazo: e.target.value }))}
-                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                {modalTurno.isSeguridad ? (
+                  <select value={formTurno.monto_reemplazo} onChange={e => setFormTurno(f => ({ ...f, monto_reemplazo: parseFloat(e.target.value) }))}
+                    style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }}>
+                    <option value={17966.666}>Turno 4x4 ($17.966)</option>
+                    <option value={30000}>El Día ($30.000)</option>
+                  </select>
+                ) : (
+                  <input type='number' value={formTurno.monto_reemplazo} onChange={e => setFormTurno(f => ({ ...f, monto_reemplazo: e.target.value }))}
+                    style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                )}
               </div>
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Pago por</label>
@@ -850,7 +889,11 @@ function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, perso
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                       <span style={{ fontSize: 14, fontWeight: 800, color: '#312e81' }}>{dia}</span>
-                      <button onClick={() => onAddTurno(dia, fecha)} style={{
+                      <button onClick={() => {
+                        const titularObj = trabajando.find(t => t.is_dynamic);
+                        const titularId = titularObj ? titularObj.personal_id : '';
+                        onAddTurno({ dia, fecha, isSeguridad: true, titularId });
+                      }} style={{
                         fontSize: 14, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6,
                         border: '1px solid #a5b4fc', background: '#e0e7ff', cursor: 'pointer', color: '#4f46e5', fontWeight: 800
                       }} title="Agregar Reemplazo">+</button>
