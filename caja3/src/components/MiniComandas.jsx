@@ -796,15 +796,15 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           </div>
         )}
 
-        <div className="mb-3 border border-blue-200 rounded-lg overflow-hidden bg-white shadow-sm">
-          <div className="bg-blue-600 px-3 py-1.5 text-xs font-black text-white flex items-center justify-between">
-            <span className="flex items-center gap-1.5">
-              <Camera size={14} /> FOTOS DEL PEDIDO
+        <div className="mb-2 border border-blue-200 rounded-lg overflow-hidden bg-white shadow-sm">
+          <div className="bg-blue-600 px-2 py-1 text-[10px] font-black text-white flex items-center justify-between">
+            <span className="flex items-center gap-1">
+              <Camera size={12} /> FOTOS DEL PEDIDO
             </span>
           </div>
 
-          <div className="p-3">
-            <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className="p-1.5">
+            <div className="grid grid-cols-3 gap-1.5">
               {(() => {
                 let photos = [];
                 try {
@@ -820,7 +820,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                 return photos.map((url, idx) => (
                   <div
                     key={idx}
-                    className="aspect-square rounded-lg overflow-hidden border-2 border-gray-100 relative group cursor-pointer shadow-sm active:scale-95 transition-all"
+                    className="aspect-square rounded-md overflow-hidden border border-gray-100 relative group cursor-pointer shadow-sm active:scale-95 transition-all"
                     onClick={() => setViewingOrderPhotos({ photos, currentIndex: idx })}
                   >
                     <img src={url} alt={`foto-${idx}`} className="w-full h-full object-cover" />
@@ -829,9 +829,9 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                 ));
               })()}
 
-              <label className="aspect-square flex flex-col items-center justify-center gap-1 cursor-pointer rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-orange-50 hover:border-orange-300 text-gray-400 hover:text-orange-500 transition-all active:scale-95">
-                <Camera size={24} />
-                <span className="text-[10px] font-black uppercase">Subir</span>
+              <label className="aspect-square flex flex-col items-center justify-center gap-0.5 cursor-pointer rounded-md border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-orange-50 hover:border-orange-300 text-gray-400 hover:text-orange-500 transition-all active:scale-95">
+                <Camera size={18} />
+                <span className="text-[9px] font-black uppercase">Subir</span>
                 <input type="file" accept="image/*" className="hidden"
                   onChange={e => {
                     const f = e.target.files[0];
