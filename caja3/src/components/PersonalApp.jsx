@@ -286,7 +286,14 @@ export default function PersonalApp() {
                 </div>
               </>
             )}
-            {tab === 'seguridad' && <CalendarioSeguridad diasEnMes={diasEnMes} primerDiaLunes={primerDiaLunes} turnosSeguridad={turnosSeguridad} personal={personal} mes={mes} anio={anio} onAddTurno={(params) => { setModalTurno(params); setFormTurno({ personal_id: '', tipo: 'reemplazo', reemplazado_por: params.titularId || '', monto_reemplazo: 17966.666, pago_por: 'empresa', fecha_fin: params.fecha }); }} onDeleteTurno={deleteTurno} />}
+            {tab === 'seguridad' && (
+              <>
+                <LiquidacionSeguridad guardias={guardias} getLiquidacion={getLiquidacion} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina} onSavePresupuesto={savePresupuesto} />
+                <div style={{ marginTop: 40, borderTop: '2px solid #e0e7ff', paddingTop: 24 }}>
+                  <CalendarioSeguridad diasEnMes={diasEnMes} primerDiaLunes={primerDiaLunes} turnosSeguridad={turnosSeguridad} personal={personal} mes={mes} anio={anio} onAddTurno={(params) => { setModalTurno(params); setFormTurno({ personal_id: '', tipo: 'reemplazo', reemplazado_por: params.titularId || '', monto_reemplazo: 17966.666, pago_por: 'empresa', fecha_fin: params.fecha }); }} onDeleteTurno={deleteTurno} />
+                </div>
+              </>
+            )}
             {tab === 'equipo' && <EquipoView personal={personal} onAddPersonal={() => { setModalPersonal('new'); setFormPersonal({ nombre: '', rol: ['cajero'], sueldo_base: '', activo: 1 }); }} onEditPersonal={(p) => { setModalPersonal(p); setFormPersonal({ nombre: p.nombre, rol: p.rol.split(','), sueldo_base: p.sueldo_base, activo: p.activo }); }} />}
           </>
         )}
@@ -538,13 +545,14 @@ function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colore
                         return (
                           <div key={t.id} style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            background: c?.light, borderLeft: `3px solid ${c?.bg}`,
+                            background: t.tipo === 'reemplazo' ? '#fee2e2' : c?.light,
+                            borderLeft: `3px solid ${t.tipo === 'reemplazo' ? '#ef4444' : c?.bg}`,
                             borderRadius: 3, padding: '2px 4px',
                           }}>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: c?.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: t.tipo === 'reemplazo' ? '#b91c1c' : c?.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
                               {p.nombre}{t.tipo === 'reemplazo' ? ' ↔' : ''}
                             </span>
-                            <button onClick={() => onDeleteTurno(t.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 12, padding: '0 0 0 2px', lineHeight: 1, flexShrink: 0 }}>×</button>
+                            <button onClick={() => onDeleteTurno(t.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.tipo === 'reemplazo' ? '#f87171' : '#94a3b8', fontSize: 12, padding: '0 0 0 2px', lineHeight: 1, flexShrink: 0 }}>×</button>
                           </div>
                         );
                       })}
@@ -756,6 +764,232 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
                         <button onClick={() => onAjuste(p)} style={{
                           flex: 1, padding: '10px', border: `1px dashed ${c?.border}`,
                           borderRadius: 8, background: c?.light, color: c?.text,
+                          cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                        }}>+ Ajuste / Descuento</button>
+
+                        {pagosNomina.find(pn => pn.personal_id == p.id) ? (
+                          <button onClick={() => deletePago(pagosNomina.find(pn => pn.personal_id == p.id).id)} style={{
+                            flex: 1, padding: '10px', border: '1px solid #fca5a5',
+                            borderRadius: 8, background: '#fef2f2', color: '#ef4444',
+                            cursor: 'pointer', fontSize: 13, fontWeight: 700,
+                          }}>Desmarcar Pago</button>
+                        ) : (
+                          <button onClick={() => marcarPagado(p)} disabled={savingPago === p.id} style={{
+                            flex: 1, padding: '10px', border: 'none',
+                            borderRadius: 8, background: '#10b981', color: 'white',
+                            cursor: 'pointer', fontSize: 13, fontWeight: 700,
+                          }}>
+                            {savingPago === p.id ? 'Cargando...' : 'Marcar Pagado'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onDeleteAjuste, mes, anio, pagosNomina, onReloadPagos, showToast, presupuesto, onSavePresupuesto }) {
+  const MESES_L = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const [savingPago, setSavingPago] = useState(false);
+  const [expandidos, setExpandidos] = useState({});
+  const [copied, setCopied] = useState(false);
+  const [editPresupuesto, setEditPresupuesto] = useState(false);
+  const [presupuestoInput, setPresupuestoInput] = useState('');
+
+  function toggleCard(id) { setExpandidos(e => ({ ...e, [id]: !e[id] })); }
+
+  function generarMarkdown() {
+    const mesLabel = `${MESES_L[mes]} ${anio}`;
+    let md = `*🛡️ Liquidación Seguridad — ${mesLabel}*\n━━━━━━━━━━━━━━━━━━━━\n`;
+    guardias.forEach(p => {
+      const { diasTrabajados, sueldoBase, ajustesPer, gruposReemplazando, gruposReemplazados, total } = getLiquidacion(p);
+      let roles = p.rol;
+      if (typeof p.rol === 'string') {
+        roles = p.rol.split(',').map(r => r.trim()).join(', ');
+      }
+      md += `\n*${p.nombre}* (${roles})\n📅 Días: ${diasTrabajados}\nBase: $${sueldoBase.toLocaleString('es-CL')}\n`;
+      Object.values(gruposReemplazando).forEach(g => { md += `↔ Reemplazó a ${g.persona?.nombre ?? '?'} (días ${g.dias.sort((a, b) => a - b).join(',')}): +$${g.monto.toLocaleString('es-CL')}\n`; });
+      Object.values(gruposReemplazados).forEach(g => { md += `↔ ${g.persona?.nombre ?? '?'} cubrió días ${g.dias.sort((a, b) => a - b).join(',')}: -$${g.monto.toLocaleString('es-CL')}\n`; });
+      ajustesPer.forEach(a => {
+        const m = parseFloat(a.monto);
+        md += `${m < 0 ? '🔻' : '🔺'} ${a.concepto}: ${m < 0 ? '-' : '+'}$${Math.abs(m).toLocaleString('es-CL')}\n`;
+      });
+      md += `*Total: $${total.toLocaleString('es-CL')}*\n`;
+    });
+    if (pagosNomina.length > 0) {
+      const tp = pagosNomina.reduce((s, p) => s + parseFloat(p.monto), 0);
+      md += `\n━━━━━━━━━━━━━━━━━━━━\n*💸 Pagos Reales*\n`;
+      pagosNomina.forEach(p => { md += `• ${p.nombre}${p.es_externo ? ' (ext)' : ''}: $${parseFloat(p.monto).toLocaleString('es-CL')}\n`; });
+      md += `*Total: $${tp.toLocaleString('es-CL')} / Presupuesto: $${presupuesto.toLocaleString('es-CL')}*\n`;
+    }
+    return md;
+  }
+
+  function copiarMarkdown() {
+    navigator.clipboard.writeText(generarMarkdown()).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); });
+  }
+
+  const totalCalculado = guardias.reduce((s, p) => s + getLiquidacion(p).total, 0);
+  const pagosGuardias = pagosNomina.filter(pn => guardias.some(g => g.id == pn.personal_id));
+  const totalPagado = pagosGuardias.reduce((s, p) => s + parseFloat(p.monto), 0);
+  const diferencia = totalPagado - presupuesto;
+  const hayPagos = pagosGuardias.length > 0;
+
+  function generarNotas(p) {
+    const { sueldoBase, gruposReemplazando, gruposReemplazados, ajustesPer } = getLiquidacion(p);
+    const partes = [`Base $${(sueldoBase / 1000).toFixed(0)}k`];
+    Object.values(gruposReemplazando).forEach(g => partes.push(`+${g.dias.length} días ${g.persona?.nombre ?? '?'} +$${(g.monto / 1000).toFixed(0)}k`));
+    Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa').forEach(g => partes.push(`-${g.dias.length} días ${g.persona?.nombre ?? '?'} -$${(g.monto / 1000).toFixed(0)}k`));
+    ajustesPer.forEach(a => partes.push(a.concepto));
+    return partes.join(' | ');
+  }
+
+  async function marcarPagado(p) {
+    const { total } = getLiquidacion(p);
+    setSavingPago(p.id);
+    const mesStr = String(mes + 1).padStart(2, '0');
+    try {
+      const res = await fetch('/api/personal/save_pago_nomina.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mes: `${anio}-${mesStr}`,
+          personal_id: p.id,
+          nombre: p.nombre,
+          monto: total,
+          es_externo: p.activo == 0 ? 1 : 0,
+          notas: generarNotas(p),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) { showToast(`${p.nombre} marcado como pagado`); onReloadPagos(); }
+      else showToast(data.error || 'Error', 'error');
+    } catch { showToast('Error de conexión', 'error'); }
+    setSavingPago(null);
+  }
+
+  async function deletePago(id) {
+    if (!confirm('¿Eliminar este pago?')) return;
+    try {
+      const res = await fetch('/api/personal/delete_pago_nomina.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+      const data = await res.json();
+      if (data.success) { showToast('Pago eliminado'); onReloadPagos(); }
+    } catch { showToast('Error', 'error'); }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Centro de costos */}
+      <div style={{ background: 'linear-gradient(135deg, #1e1b4b, #312e81)', borderRadius: 16, padding: '20px 24px', color: 'white' }}>
+        <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 12 }}>💼 Centro de Costos — Seguridad {MESES_L[mes]} {anio}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 12, opacity: 0.6 }}>Presupuesto</div>
+            {editPresupuesto
+              ? <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input type='number' value={presupuestoInput} onChange={e => setPresupuestoInput(e.target.value)}
+                  style={{ width: 120, padding: '4px 8px', borderRadius: 6, border: 'none', fontSize: 16, fontWeight: 700, color: '#1e293b', background: 'white' }} />
+                <button onClick={() => { onSavePresupuesto(parseFloat(presupuestoInput)); setEditPresupuesto(false); }} style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: '#4ade80', color: '#065f46', cursor: 'pointer', fontWeight: 700 }}>✓</button>
+                <button onClick={() => setEditPresupuesto(false)} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer' }}>✕</button>
+              </div>
+              : <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ fontSize: 22, fontWeight: 800 }}>${presupuesto.toLocaleString('es-CL')}</div>
+                <button onClick={() => { setPresupuestoInput(presupuesto); setEditPresupuesto(true); }} style={{ padding: '2px 8px', borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer', fontSize: 12 }}>✏️</button>
+              </div>
+            }
+          </div>
+          <div>
+            <div style={{ fontSize: 12, opacity: 0.6 }}>{hayPagos ? 'Pagado real' : 'Calculado'}</div>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>${(hayPagos ? totalPagado : totalCalculado).toLocaleString('es-CL')}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 12, opacity: 0.6 }}>Diferencia</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: diferencia > 0 ? '#f87171' : '#4ade80' }}>
+              {hayPagos ? (diferencia > 0 ? '+' : '') + '$' + diferencia.toLocaleString('es-CL') : '—'}
+            </div>
+          </div>
+        </div>
+        <button onClick={copiarMarkdown} style={{ marginTop: 4, padding: '8px 16px', background: copied ? '#4ade80' : 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 8, color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+          {copied ? '✅ Copiado!' : '📱 Copiar para WhatsApp'}
+        </button>
+      </div>
+
+      {[['🛡️ Guardias', guardias]].map(([titulo, grupo]) => (
+        <div key={titulo}>
+          <h2 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700, color: '#1e293b' }}>{titulo}</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+            {grupo.map(p => {
+              const { diasTrabajados, ajustesPer, sueldoBase, gruposReemplazados, gruposReemplazando, total } = getLiquidacion(p);
+              const c = colores[p.id] || { bg: '#e0e7ff', border: '#c7d2fe', light: '#eef2ff', text: '#3730a3' };
+              const abierto = expandidos[p.id] !== false;
+              return (
+                <div key={p.id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', border: `1px solid ${c.border}` }}>
+                  <div onClick={() => toggleCard(p.id)} style={{ background: c.bg, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {pagosNomina.find(pn => pn.personal_id == p.id) && <span style={{ fontSize: 18 }}>✅</span>}
+                      <div>
+                        <div style={{ color: 'white', fontWeight: 700, fontSize: 18 }}>{p.nombre}</div>
+                        <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, textTransform: 'capitalize' }}>{typeof p.rol === 'string' ? p.rol.split(',').join(', ') : p.rol} · {diasTrabajados} días trabajados</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 10, padding: '8px 12px', textAlign: 'right' }}>
+                        <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11 }}>Total</div>
+                        <div style={{ color: 'white', fontWeight: 800, fontSize: 20 }}>${total.toLocaleString('es-CL')}</div>
+                      </div>
+                      <span style={{ color: 'white', fontSize: 18, opacity: 0.8 }}>{abierto ? '▾' : '▸'}</span>
+                    </div>
+                  </div>
+                  {abierto && (
+                    <div style={{ padding: '0 20px 16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9' }}>
+                        <span style={{ fontSize: 14, color: '#64748b' }}>Sueldo base</span>
+                        <span style={{ fontSize: 14, fontWeight: 600 }}>${sueldoBase.toLocaleString('es-CL')}</span>
+                      </div>
+                      {Object.values(gruposReemplazando).map((g, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+                          <span style={{ fontSize: 13, color: '#64748b' }}>↔ Reemplazó a {g.persona?.nombre ?? '?'} ({g.dias.sort((a, b) => a - b).length} {g.dias.length === 1 ? 'día' : 'días'}: {g.dias.sort((a, b) => a - b).join(',')})</span>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#10b981' }}>+${g.monto.toLocaleString('es-CL')}</span>
+                        </div>
+                      ))}
+                      {Object.values(gruposReemplazados).map((g, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', gap: 8 }}>
+                          <span style={{ fontSize: 13, color: '#64748b' }}>
+                            {g.persona?.nombre ?? '?'} cubrió días {g.dias.sort((a, b) => a - b).join(',')}
+                            {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '1px 6px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 600 }}> entre ellos</span>}
+                          </span>
+                          {g.pago_por === 'empresa'
+                            ? <span style={{ fontSize: 13, fontWeight: 600, color: '#ef4444' }}>-${g.monto.toLocaleString('es-CL')}</span>
+                            : <span style={{ fontSize: 13, color: '#94a3b8' }}>—</span>
+                          }
+                        </div>
+                      ))}
+                      {ajustesPer.map(a => (
+                        <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f1f5f9', gap: 8 }}>
+                          <span style={{ fontSize: 13, color: '#64748b', flex: 1 }}>{a.concepto}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: parseFloat(a.monto) < 0 ? '#ef4444' : '#10b981' }}>
+                              {parseFloat(a.monto) < 0 ? '-' : '+'}${Math.abs(parseFloat(a.monto)).toLocaleString('es-CL')}
+                            </span>
+                            <button onClick={() => onDeleteAjuste(a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 16, padding: 2 }}>×</button>
+                          </div>
+                        </div>
+                      ))}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0 8px', fontWeight: 700 }}>
+                        <span style={{ fontSize: 15 }}>Total a pagar</span>
+                        <span style={{ fontSize: 18, color: c.text }}>${total.toLocaleString('es-CL')}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                        <button onClick={() => onAjuste(p)} style={{
+                          flex: 1, padding: '10px', border: `1px dashed ${c.border}`,
+                          borderRadius: 8, background: c.light, color: c.text,
                           cursor: 'pointer', fontSize: 13, fontWeight: 600,
                         }}>+ Ajuste / Descuento</button>
 
