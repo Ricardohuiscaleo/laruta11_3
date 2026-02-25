@@ -2204,128 +2204,133 @@ export default function App() {
 
 
 
-      <main className="pt-20 pb-24 px-1.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={showSuggestions ? { filter: 'blur(2px)', pointerEvents: 'none' } : {}}>
-        <div className="masonry-layout">
-          {mainCategories
-            .filter(cat => cat !== 'personalizar' && cat !== 'extras')
-            .map(catKey => {
-              let categoryData = menuWithImages[catKey];
-              if (!categoryData) return null;
+      <main className="pt-20 pb-24 px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={showSuggestions ? { filter: 'blur(2px)', pointerEvents: 'none' } : {}}>
+        <div className="grid grid-cols-3 gap-1">
+          {(() => {
+            // Build a flat array of all products tagged with their category color and key
+            const allItems = [];
+            mainCategories
+              .filter(cat => cat !== 'personalizar' && cat !== 'extras')
+              .forEach(catKey => {
+                let categoryData = menuWithImages[catKey];
+                if (!categoryData) return;
 
-              // Lógica de filtrado por categoría (Hamburguesas 100g, 200g, Papas, Pizzas, Bebidas)
-              let displayData = {};
+                let displayData = {};
 
-              if (catKey === 'hamburguesas_100g') {
-                Object.entries(menuWithImages.hamburguesas || {}).forEach(([subCat, products]) => {
-                  const filtered = products.filter(p => p.subcategory_id === 5);
-                  if (filtered.length > 0) displayData[subCat] = filtered;
-                });
-              } else if (catKey === 'hamburguesas') {
-                Object.entries(menuWithImages.hamburguesas || {}).forEach(([subCat, products]) => {
-                  const filtered = products.filter(p => p.subcategory_id !== 5);
-                  if (filtered.length > 0) displayData[subCat] = filtered;
-                });
-              } else if (catKey === 'papas') {
-                displayData = { papas: menuWithImages.papas?.papas?.filter(p => p.category_id === 12) || [] };
-              } else if (catKey === 'pizzas') {
-                displayData = { pizzas: [] };
-                Object.values(menuWithImages).forEach(category => {
-                  if (Array.isArray(category)) {
-                    displayData.pizzas.push(...category.filter(p => p.category_id === 5 && p.subcategory_id === 60));
-                  } else {
-                    Object.values(category).forEach(subcat => {
-                      if (Array.isArray(subcat)) {
-                        displayData.pizzas.push(...subcat.filter(p => p.category_id === 5 && p.subcategory_id === 60));
-                      }
-                    });
-                  }
-                });
-              } else if (catKey === 'bebidas') {
-                const bebidasSubcats = { 11: 'bebidas', 10: 'jugos', 28: 'té', 27: 'café' };
-                Object.values(menuWithImages).forEach(category => {
-                  if (Array.isArray(category)) {
-                    category.filter(p => p.category_id === 5 && [11, 10, 28, 27].includes(p.subcategory_id)).forEach(p => {
-                      const subName = bebidasSubcats[p.subcategory_id];
-                      if (!displayData[subName]) displayData[subName] = [];
-                      displayData[subName].push(p);
-                    });
-                  } else {
-                    Object.values(category).forEach(subcat => {
-                      if (Array.isArray(subcat)) {
-                        subcat.filter(p => p.category_id === 5 && [11, 10, 28, 27].includes(p.subcategory_id)).forEach(p => {
-                          const subName = bebidasSubcats[p.subcategory_id];
-                          if (!displayData[subName]) displayData[subName] = [];
-                          displayData[subName].push(p);
-                        });
-                      }
-                    });
-                  }
-                });
-              } else {
-                // Categoría normal (pueden ser arrays o subcategorías)
-                if (Array.isArray(categoryData)) {
-                  displayData = { [catKey]: categoryData };
+                if (catKey === 'hamburguesas_100g') {
+                  Object.entries(menuWithImages.hamburguesas || {}).forEach(([subCat, products]) => {
+                    const filtered = products.filter(p => p.subcategory_id === 5);
+                    if (filtered.length > 0) displayData[subCat] = filtered;
+                  });
+                } else if (catKey === 'hamburguesas') {
+                  Object.entries(menuWithImages.hamburguesas || {}).forEach(([subCat, products]) => {
+                    const filtered = products.filter(p => p.subcategory_id !== 5);
+                    if (filtered.length > 0) displayData[subCat] = filtered;
+                  });
+                } else if (catKey === 'papas') {
+                  displayData = { papas: menuWithImages.papas?.papas?.filter(p => p.category_id === 12) || [] };
+                } else if (catKey === 'pizzas') {
+                  displayData = { pizzas: [] };
+                  Object.values(menuWithImages).forEach(category => {
+                    if (Array.isArray(category)) {
+                      displayData.pizzas.push(...category.filter(p => p.category_id === 5 && p.subcategory_id === 60));
+                    } else {
+                      Object.values(category).forEach(subcat => {
+                        if (Array.isArray(subcat)) {
+                          displayData.pizzas.push(...subcat.filter(p => p.category_id === 5 && p.subcategory_id === 60));
+                        }
+                      });
+                    }
+                  });
+                } else if (catKey === 'bebidas') {
+                  const bebidasSubcats = { 11: 'bebidas', 10: 'jugos', 28: 'té', 27: 'café' };
+                  Object.values(menuWithImages).forEach(category => {
+                    if (Array.isArray(category)) {
+                      category.filter(p => p.category_id === 5 && [11, 10, 28, 27].includes(p.subcategory_id)).forEach(p => {
+                        const subName = bebidasSubcats[p.subcategory_id];
+                        if (!displayData[subName]) displayData[subName] = [];
+                        displayData[subName].push(p);
+                      });
+                    } else {
+                      Object.values(category).forEach(subcat => {
+                        if (Array.isArray(subcat)) {
+                          subcat.filter(p => p.category_id === 5 && [11, 10, 28, 27].includes(p.subcategory_id)).forEach(p => {
+                            const subName = bebidasSubcats[p.subcategory_id];
+                            if (!displayData[subName]) displayData[subName] = [];
+                            displayData[subName].push(p);
+                          });
+                        }
+                      });
+                    }
+                  });
                 } else {
-                  displayData = categoryData;
+                  if (Array.isArray(categoryData)) {
+                    displayData = { [catKey]: categoryData };
+                  } else {
+                    displayData = categoryData;
+                  }
                 }
-              }
 
-              let orderedEntries = Object.entries(displayData);
-              if (catKey === 'completos') {
-                orderedEntries = [
-                  ['tradicionales', displayData.tradicionales || []],
-                  ['especiales', displayData.especiales || []],
-                  ['al vapor', displayData['al vapor'] || []]
-                ];
-              }
+                let orderedEntries = Object.entries(displayData);
+                if (catKey === 'completos') {
+                  orderedEntries = [
+                    ['tradicionales', displayData.tradicionales || []],
+                    ['especiales', displayData.especiales || []],
+                    ['al vapor', displayData['al vapor'] || []]
+                  ];
+                }
 
-              // Flatten all products from all subcategories into one array
-              const catColor = categoryColors[catKey] || '#e5e7eb';
-              const allCatProducts = orderedEntries
-                .filter(([, prods]) => prods && prods.length > 0)
-                .flatMap(([, prods]) => {
-                  const filtered = (!showInactiveProducts && cajaUser)
-                    ? prods.filter(p => p.active !== 0)
-                    : prods;
-                  return filtered;
+                const catColor = categoryColors[catKey] || '#94a3b8';
+                const catProducts = orderedEntries
+                  .filter(([, prods]) => prods && prods.length > 0)
+                  .flatMap(([, prods]) => {
+                    const filtered = (!showInactiveProducts && cajaUser)
+                      ? prods.filter(p => p.active !== 0)
+                      : prods;
+                    return filtered;
+                  });
+
+                if (catProducts.length === 0) return;
+
+                // Tag each product with its category color and key, mark the first one
+                catProducts.forEach((product, idx) => {
+                  allItems.push({
+                    product,
+                    catKey,
+                    catColor,
+                    isFirstInCategory: idx === 0
+                  });
                 });
+              });
 
-              if (allCatProducts.length === 0) return null;
-
-              return (
-                <div
-                  key={catKey}
-                  id={`section-${catKey}`}
-                  className="masonry-brick scroll-mt-24"
-                  style={{
-                    backgroundColor: catColor
-                  }}
-                >
-                  <div className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-1.5 px-1">
-                    {categoryDisplayNames[catKey] || catKey}
-                  </div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {allCatProducts.map(product => (
-                      <MenuItem
-                        key={product.id}
-                        product={product}
-                        type={product.subcategory_name || catKey}
-                        onSelect={null}
-                        onAddToCart={handleAddToCart}
-                        onRemoveFromCart={handleRemoveFromCart}
-                        quantity={getProductQuantity(product.id)}
-                        isLiked={likedProducts.has(product.id)}
-                        handleLike={handleLike}
-                        setReviewsModalProduct={setReviewsModalProduct}
-                        onShare={setShareModalProduct}
-                        isCashier={!!cajaUser}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })
-          }
+            // Render the single continuous grid
+            return allItems.map(({ product, catKey, catColor, isFirstInCategory }) => (
+              <div
+                key={product.id}
+                id={isFirstInCategory ? `section-${catKey}` : undefined}
+                className="scroll-mt-24"
+                style={{
+                  backgroundColor: catColor,
+                  borderRadius: '16px',
+                  padding: '3px'
+                }}
+              >
+                <MenuItem
+                  product={product}
+                  type={product.subcategory_name || catKey}
+                  onSelect={null}
+                  onAddToCart={handleAddToCart}
+                  onRemoveFromCart={handleRemoveFromCart}
+                  quantity={getProductQuantity(product.id)}
+                  isLiked={likedProducts.has(product.id)}
+                  handleLike={handleLike}
+                  setReviewsModalProduct={setReviewsModalProduct}
+                  onShare={setShareModalProduct}
+                  isCashier={!!cajaUser}
+                />
+              </div>
+            ));
+          })()}
         </div>
       </main>
 
@@ -3936,37 +3941,6 @@ export default function App() {
       )}
 
       <style>{`
-        /* ===== MASONRY LAYOUT ===== */
-        .masonry-layout {
-          column-count: 2;
-          column-gap: 10px;
-          padding: 0;
-        }
-        @media (min-width: 768px) {
-          .masonry-layout {
-            column-count: 3;
-          }
-        }
-        @media (min-width: 1280px) {
-          .masonry-layout {
-            column-count: 4;
-          }
-        }
-        .masonry-brick {
-          break-inside: avoid;
-          margin-bottom: 10px;
-          border-radius: 20px;
-          padding: 8px;
-          display: flex;
-          flex-direction: column;
-          transition: transform 0.2s ease;
-          position: relative;
-          box-shadow: 0 4px 12px -2px rgba(0,0,0,0.15);
-        }
-        .masonry-brick:hover {
-          transform: translateY(-2px);
-        }
-
         /* ===== ANIMATIONS ===== */
         @keyframes fade-in {
           from { opacity: 0; transform: scale(0.95); }
