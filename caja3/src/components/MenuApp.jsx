@@ -39,6 +39,7 @@ import { validateCheckoutForm, getFormDisabledState } from '../utils/validation.
 // ============================================
 
 // Datos del menú - se cargarán dinámicamente desde MySQL
+// Datos del menú - se cargarán dinámicamente desde MySQL
 let menuData = {
   la_ruta_11: { tomahawks: [] },
   churrascos: { carne: [], pollo: [], vegetariano: [] },
@@ -47,8 +48,6 @@ let menuData = {
   papas_y_snacks: { papas: [], empanadas: [], jugos: [], bebidas: [], salsas: [] },
   Combos: { hamburguesas: [], sandwiches: [], completos: [] }
 };
-
-
 
 const categoryIcons = {
   hamburguesas: <GiHamburger style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
@@ -80,11 +79,36 @@ const categoryColors = {
   Combos: '#FF6B35' // Naranja para combos
 };
 
+const CATEGORY_ID_MAP = {
+  1: 'la_ruta_11',
+  2: 'churrascos',
+  3: 'hamburguesas',
+  4: 'completos',
+  5: 'papas_y_snacks',
+  6: 'personalizar',
+  7: 'extras',
+  8: 'Combos',
+  12: 'papas',
+};
+
+const SUBCATEGORY_ID_MAP = {
+  9: 'papas',
+  10: 'jugos',
+  11: 'bebidas',
+  12: 'salsas',
+  26: 'empanadas',
+  27: 'café',
+  28: 'té',
+  29: 'personalizar',
+  30: 'extras',
+  57: 'papas',
+};
 
 
 
 
-const ImageFullscreenModal = ({ product, total, onClose }) => {
+
+function ImageFullscreenModal({ product, total, onClose }) {
   if (!product) return null;
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -111,7 +135,7 @@ const ImageFullscreenModal = ({ product, total, onClose }) => {
 
 
 
-const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartTotal, onCheckout, onCustomizeProduct, showCheckoutSection, setShowCheckoutSection, customerInfo, setCustomerInfo, user, nearbyTrucks, cartSubtotal, onPaymentMethodSelect }) => {
+function CartModal({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartTotal, onCheckout, onCustomizeProduct, showCheckoutSection, setShowCheckoutSection, customerInfo, setCustomerInfo, user, nearbyTrucks, cartSubtotal, onPaymentMethodSelect }) {
   if (!isOpen) return null;
 
   const currentDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0
@@ -484,7 +508,7 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
 
 
 
-const LoginModal = ({ isOpen, onClose }) => {
+function LoginModal({ isOpen, onClose }) {
   if (!isOpen) return null;
   const handleGoogleLogin = () => {
     const authUrl = 'https://accounts.google.com/o/oauth2/auth?' + new URLSearchParams({
@@ -514,7 +538,7 @@ const LoginModal = ({ isOpen, onClose }) => {
   );
 };
 
-const FoodTrucksModal = ({ isOpen, onClose, trucks, userLocation, deliveryZone }) => {
+function FoodTrucksModal({ isOpen, onClose, trucks, userLocation, deliveryZone }) {
   if (!isOpen) return null;
 
   const openDirections = (truck) => {
@@ -672,7 +696,7 @@ const FoodTrucksModal = ({ isOpen, onClose, trucks, userLocation, deliveryZone }
   );
 };
 
-const NotificationsModal = ({ isOpen, onClose, onOrdersUpdate, activeOrdersCount }) => {
+function NotificationsModal({ isOpen, onClose, onOrdersUpdate, activeOrdersCount }) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -694,7 +718,7 @@ const NotificationsModal = ({ isOpen, onClose, onOrdersUpdate, activeOrdersCount
 
 
 
-const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, type, isLiked, handleLike, setReviewsModalProduct, onShare, isCashier }) => {
+function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, type, isLiked, handleLike, setReviewsModalProduct, onShare, isCashier }) {
   const [showFloatingHeart, setShowFloatingHeart] = useState(false);
   const [heartPosition, setHeartPosition] = useState({ x: 0, y: 0 });
   const [showImageModal, setShowImageModal] = useState(false);
@@ -849,31 +873,6 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
   );
 };
 
-// Espejo de get_menu_products.php — actualizar ambos si cambian IDs en BD
-const CATEGORY_ID_MAP = {
-  1: 'la_ruta_11',
-  2: 'churrascos',
-  3: 'hamburguesas',
-  4: 'completos',
-  5: 'papas_y_snacks',
-  6: 'personalizar',
-  7: 'extras',
-  8: 'Combos',
-  12: 'papas',
-};
-
-const SUBCATEGORY_ID_MAP = {
-  9: 'papas',
-  10: 'jugos',
-  11: 'bebidas',
-  12: 'salsas',
-  26: 'empanadas',
-  27: 'café',
-  28: 'té',
-  29: 'personalizar',
-  30: 'extras',
-  57: 'papas',
-};
 
 export default function App() {
   const [activeCategory, setActiveCategory] = useState('hamburguesas');
