@@ -832,7 +832,7 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
 
         <div className="px-1.5 pt-1 pb-0.5">
           <h3
-            className={`font-black text-[10px] leading-tight line-clamp-2 text-center transition-colors ${!isActive ? 'text-gray-400' : 'text-gray-900'}`}
+            className={`font-black text-[8px] leading-tight line-clamp-2 text-center transition-colors ${!isActive ? 'text-gray-400' : 'text-gray-900'}`}
             title={product.name}
           >
             {product.name}
@@ -2204,7 +2204,7 @@ export default function App() {
 
 
 
-      <main className="pt-20 pb-24 px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={showSuggestions ? { filter: 'blur(2px)', pointerEvents: 'none' } : {}}>
+      <main className="pt-20 pb-40 px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={showSuggestions ? { filter: 'blur(2px)', pointerEvents: 'none' } : {}} onClick={() => showSuggestions && setShowSuggestions(false)}>
         <div className="grid grid-cols-3 gap-1">
           {(() => {
             // Build a flat array of all products tagged with their category color and key
@@ -2373,7 +2373,7 @@ export default function App() {
             )}
             {/* Sugerencias */}
             {showSuggestions && (
-              <div className="absolute bottom-full left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-lg max-h-80 overflow-y-auto mb-2">
+              <div className="absolute bottom-full left-0 bg-white border border-gray-200 rounded-xl shadow-lg max-h-80 overflow-y-auto mb-2" style={{ right: '-16px', left: '-48px' }}>
                 {suggestions.map(product => {
                   const quantity = getProductQuantity(product.id);
                   return (
@@ -2436,8 +2436,8 @@ export default function App() {
         </button>
       </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 lg:left-1/2 lg:transform lg:-translate-x-1/2 lg:max-w-4xl lg:rounded-t-2xl">
-        <div className="bg-white/95 backdrop-blur-md shadow-[0_-4px_10px_-2px_rgba(0,0,0,0.1)] rounded-t-2xl border-t border-gray-100">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 lg:left-1/2 lg:transform lg:-translate-x-1/2 lg:max-w-4xl lg:rounded-t-2xl" style={{ paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}>
+        <div className="bg-black shadow-[0_-4px_10px_-2px_rgba(0,0,0,0.3)] rounded-t-2xl">
           <div
             className="flex items-center overflow-x-auto px-4 py-3 gap-0"
             style={{
@@ -2459,7 +2459,7 @@ export default function App() {
                       }
                       setActiveCategory(cat);
                     }}
-                    className={`flex-shrink-0 px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap active:scale-95 ${isActive ? '' : 'text-gray-400 hover:text-gray-600'
+                    className={`flex-shrink-0 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap active:scale-95 ${isActive ? '' : 'text-gray-500 hover:text-gray-300'
                       }`}
                     style={{ color: isActive ? catColor : undefined }}
                   >
