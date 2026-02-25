@@ -2031,24 +2031,31 @@ export default function App() {
     fetch('/api/auth/check_session.php')
       .then(response => {
         if (!response.ok) return null;
-        return response.text();
+        return response.json();
       })
-      .then(text => {
-        if (!text || text.trim().startsWith('<')) return;
-        try {
-          const data = JSON.parse(text);
-          if (data.authenticated) {
-            setUser(data.user);
-            setTimeout(() => {
-              loadNotifications();
-              loadUserOrders();
-            }, 100);
+      .then(data => {
+        if (!data) return;
+
+        // 1. Manejar Sesión de CAJERA (Sync con LocalStorage para PWA)
+        if (data.cashier) {
+          setCajaUser(data.cashier);
+          // Si localStorage está vacío (común en PWA instalada), lo restauramos
+          if (!localStorage.getItem('caja_session')) {
+            console.log('Restoring caja_session from server...');
+            localStorage.setItem('caja_session', JSON.stringify(data.cashier));
           }
-        } catch (e) {
-          // Silenciar errores de parsing
+        }
+
+        // 2. Manejar Sesión de CLIENTE
+        if (data.authenticated && data.user) {
+          setUser(data.user);
+          setTimeout(() => {
+            loadNotifications();
+            loadUserOrders();
+          }, 100);
         }
       })
-      .catch(() => { });
+      .catch((err) => { console.error('Error sync session:', err); });
 
     // Detectar parámetros de URL para login/logout/producto compartido
     const urlParams = new URLSearchParams(window.location.search);
