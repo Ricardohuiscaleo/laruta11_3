@@ -2,7 +2,8 @@
 require_once __DIR__ . '/../session_config.php';
 
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+$origin = $_SERVER['HTTP_ORIGIN'] ?? 'https://app.laruta11.cl';
+header("Access-Control-Allow-Origin: $origin");
 header('Access-Control-Allow-Credentials: true');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 
@@ -11,7 +12,8 @@ if (isset($_SESSION['cashier'])) {
         'authenticated' => true,
         'user' => $_SESSION['cashier']
     ]);
-} else {
+}
+else {
     echo json_encode([
         'authenticated' => false
     ]);

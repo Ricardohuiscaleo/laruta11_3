@@ -32,7 +32,7 @@ session_set_save_handler($handler, true);
 session_set_cookie_params([
     'lifetime' => 2592000, // 30 días
     'path' => '/',
-    'domain' => '',
+    'domain' => '.laruta11.cl',
     'secure' => true,
     'httponly' => true,
     'samesite' => 'Lax'

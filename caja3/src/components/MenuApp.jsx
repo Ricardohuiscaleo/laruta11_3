@@ -2286,7 +2286,6 @@ export default function App() {
           >
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-gray-800 truncate flex-1 mr-2">🛒 {summaryText}</span>
-              <span className="font-black text-orange-600 whitespace-nowrap">${cartTotal.toLocaleString('es-CL')}</span>
             </div>
           </div>
         );
