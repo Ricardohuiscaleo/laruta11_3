@@ -9,19 +9,22 @@
   "background_color": "#ffffff",
   "icons": [
     {
-      "src": "https://laruta11-images.s3.amazonaws.com/menu/logo.png",
+      "src": "/icon-caja.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "https://laruta11-images.s3.amazonaws.com/menu/logo.png",
+      "src": "/icon-caja.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-  "categories": ["food", "business"],
+  "categories": [
+    "food",
+    "business"
+  ],
   "lang": "es",
   "scope": "/",
   "prefer_related_applications": false
