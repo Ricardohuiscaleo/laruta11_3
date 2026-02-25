@@ -275,20 +275,50 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const renderProductDetails = (item, orderId) => {
     const comboData = item.combo_data ? JSON.parse(item.combo_data) : null;
     const isCombo = item.item_type === 'combo' && comboData;
+    const isChecked = !!checkedItems[`${orderId}-${item.id}`];
+
+    const toggleAll = (checked) => {
+      const updates = { [`${orderId}-${item.id}`]: checked };
+
+      if (isCombo) {
+        if (comboData.fixed_items) {
+          comboData.fixed_items.forEach((_, idx) => {
+            updates[`${orderId}-fixed-${item.id}-${idx}`] = checked;
+          });
+        }
+        if (comboData.selections) {
+          Object.entries(comboData.selections).forEach(([group, selection]) => {
+            const selectionsArray = Array.isArray(selection) ? selection : [selection];
+            selectionsArray.forEach((_, sidx) => {
+              updates[`${orderId}-sel-${item.id}-${group}-${sidx}`] = checked;
+            });
+          });
+        }
+      }
+
+      if (comboData && comboData.customizations) {
+        comboData.customizations.forEach((_, idx) => {
+          updates[`${orderId}-cust-${item.id}-${idx}`] = checked;
+        });
+      }
+
+      setCheckedItems(prev => ({ ...prev, ...updates }));
+    };
 
     return (
-      <div key={item.id} className="mb-3 pb-3 border-b border-gray-200 last:border-0">
+      <div key={item.id} className="mb-3 pb-3 border-b border-gray-200 last:border-0 transition-all">
         <div className="flex justify-between items-start mb-1">
-          <label className="flex items-start gap-2 cursor-pointer flex-1">
+          <label className="flex items-start gap-2 cursor-pointer flex-1 group">
             <input
               type="checkbox"
-              checked={!!checkedItems[`${orderId}-${item.id}`]}
-              onChange={e => setCheckedItems(prev => ({ ...prev, [`${orderId}-${item.id}`]: e.target.checked }))}
+              checked={isChecked}
+              onChange={e => toggleAll(e.target.checked)}
               className="w-4 h-4 mt-1 accent-green-600 flex-shrink-0"
             />
             <div className="flex-1">
-              <span className={`font-semibold text-sm ${checkedItems[`${item.order_id || 'order'}-${item.id}`] ? 'line-through text-gray-400' : 'text-gray-800'}`}>
-                {item.product_name}
+              <span className={`font-semibold text-sm transition-all ${isChecked ? 'text-green-600 bg-green-50 px-1 rounded' : 'text-gray-800'}`}>
+                {isChecked && <span className="font-black mr-1 animate-bounce inline-block">👈😊 Todo ok:</span>}
+                <span className={isChecked ? 'line-through opacity-70' : ''}>{item.product_name}</span>
               </span>
             </div>
           </label>
