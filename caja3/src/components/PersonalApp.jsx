@@ -751,8 +751,8 @@ function EquipoView({ personal, onAddPersonal, onEditPersonal }) {
 }
 
 function SeguridadView({ mes, anio }) {
-  // Ricardo (Mar 26-29), Claudio (Mar 30 - Apr 02)
-  const baseDate = new Date(2026, 2, 26); // 26 de Marzo 2026
+  // Ricardo (Jan 26-29), Claudio (Jan 30 - Feb 02)
+  const baseDate = new Date(2026, 0, 26); // 26 de Enero 2026
 
   function getShift(fecha) {
     const diff = Math.floor((fecha - baseDate) / (1000 * 60 * 60 * 24));
@@ -792,8 +792,8 @@ function SeguridadView({ mes, anio }) {
         <h3 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 700 }}>Proyección Anual</h3>
         <p style={{ margin: 0, fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
           El calendario muestra la rotación automática de 4 días por persona. <br />
-          <b>Ricardo:</b> 26-29 Mar, 03-06 Abr, 11-14 Abr... <br />
-          <b>Claudio:</b> 30 Mar - 02 Abr, 07-10 Abr, 15-18 Abr...
+          <b>Ricardo:</b> 26-29 Ene, 03-06 Feb, 11-14 Feb... <br />
+          <b>Claudio:</b> 30 Ene - 02 Feb, 07-10 Feb, 15-18 Feb...
         </p>
       </div>
     </div>
