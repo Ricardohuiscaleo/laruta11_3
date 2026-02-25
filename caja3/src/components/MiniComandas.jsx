@@ -316,9 +316,14 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
               className="w-4 h-4 mt-1 accent-green-600 flex-shrink-0"
             />
             <div className="flex-1">
-              <span className={`font-semibold text-sm transition-all ${isChecked ? 'text-green-600 bg-green-50 px-1 rounded' : 'text-gray-800'}`}>
-                {isChecked && <span className="font-black mr-1 animate-bounce inline-block">👈😊 Todo ok:</span>}
-                <span className={isChecked ? 'line-through opacity-70' : ''}>{item.product_name}</span>
+              <span className={`font-semibold text-sm transition-all ${isChecked ? 'text-gray-400' : 'text-gray-800'}`}>
+                <span className="mr-1">👈😊</span>
+                <span className={isChecked ? 'line-through opacity-50' : ''}>{item.product_name}</span>
+                {isChecked && (
+                  <span className="text-green-600 font-bold ml-1 animate-in fade-in duration-300">
+                    , Todo Bien
+                  </span>
+                )}
               </span>
             </div>
           </label>
