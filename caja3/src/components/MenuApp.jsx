@@ -2213,7 +2213,9 @@ export default function App() {
               .filter(cat => cat !== 'personalizar' && cat !== 'extras')
               .forEach(catKey => {
                 let categoryData = menuWithImages[catKey];
-                if (!categoryData) return;
+                // Virtual categories (bebidas, hamburguesas_100g, pizzas) pull data from other keys
+                const virtualCategories = ['bebidas', 'hamburguesas_100g', 'pizzas'];
+                if (!categoryData && !virtualCategories.includes(catKey)) return;
 
                 let displayData = {};
 
