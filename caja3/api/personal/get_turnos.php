@@ -65,8 +65,8 @@ if ($ricardo_id && $claudio_id) {
 
     $current = clone $startDate;
     while ($current <= $endDate) {
-        $diff = $current->diff($baseDate);
-        $days = (int)$diff->format("%r%a");
+        $diff = $baseDate->diff($current);
+        $days = (int)$diff->format("%r%a"); // positive = $current is after $baseDate
         $pos = (($days % 8) + 8) % 8;
 
         $pId = ($pos < 4) ? $ricardo_id : $claudio_id;
@@ -129,7 +129,7 @@ foreach ($ciclos_ruta11 as $ciclo) {
 
     $current = clone $startDate;
     while ($current <= $endDate) {
-        $diff = $current->diff($baseCiclo);
+        $diff = $baseCiclo->diff($current);
         $days = (int)$diff->format("%r%a");
         $pos = (($days % 8) + 8) % 8;
 
