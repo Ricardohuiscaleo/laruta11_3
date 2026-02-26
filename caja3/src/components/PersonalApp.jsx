@@ -297,10 +297,13 @@ export default function PersonalApp() {
       // Guardias puros (solo seguridad) en Ruta 11 → 0
     }
 
+    Object.keys(gruposReemplazados).forEach(k => gruposReemplazados[k].monto = Math.round(gruposReemplazados[k].monto));
+    Object.keys(gruposReemplazando).forEach(k => gruposReemplazando[k].monto = Math.round(gruposReemplazando[k].monto));
+
     const totalReemplazando = Object.values(gruposReemplazando).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
     const totalReemplazados = Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
-    const total = sueldoBase + totalReemplazando - totalReemplazados + totalAjustes;
-    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase, gruposReemplazados, gruposReemplazando, total };
+    const total = Math.round(sueldoBase + totalReemplazando - totalReemplazados + totalAjustes);
+    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplazados, gruposReemplazando, total };
   }
 
   const administradores = personal.filter(p => p.rol?.includes('administrador') && p.activo == 1);
@@ -552,7 +555,7 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
         <StatCard title="Total a Pagar" value={stats.totalAPagar} icon={<FileText size={20} />} color="#1a73e8" />
         <StatCard title="Pagado hasta ahora" value={stats.totalPagado} icon={<ShieldCheck size={20} />} color="#1e8e3e" />
-        <StatCard title="Presupuesto Restante" value={stats.presupuesto - stats.totalAPagar} icon={<DollarSign size={20} />} color="#f29900" />
+        <StatCard title="Presupuesto Restante" value={stats.presupuesto - stats.totalPagado} icon={<DollarSign size={20} />} color="#f29900" />
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
@@ -582,16 +585,16 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 20 }}>
           <div>
             <div style={{ opacity: 0.8, fontSize: 14, marginBottom: 8 }}>Monto Total de Operación</div>
-            <div style={{ fontSize: 32, fontWeight: 700 }}>{new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(stats.totalAPagar)}</div>
+            <div style={{ fontSize: 32, fontWeight: 700 }}>${Math.round(stats.totalAPagar).toLocaleString('es-CL')}</div>
           </div>
           <div style={{ display: 'flex', gap: 24 }}>
             <div style={{ textAlign: 'right' }}>
               <div style={{ opacity: 0.8, fontSize: 12 }}>Presupuesto</div>
-              <div style={{ fontSize: 18, fontWeight: 600 }}>{new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(stats.presupuesto)}</div>
+              <div style={{ fontSize: 18, fontWeight: 600 }}>${Math.round(stats.presupuesto).toLocaleString('es-CL')}</div>
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ opacity: 0.8, fontSize: 12 }}>Diferencia</div>
-              <div style={{ fontSize: 18, fontWeight: 600 }}>{new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(stats.presupuesto - stats.totalAPagar)}</div>
+              <div style={{ fontSize: 18, fontWeight: 600 }}>${Math.round(stats.presupuesto - stats.totalPagado).toLocaleString('es-CL')}</div>
             </div>
           </div>
         </div>
@@ -611,7 +614,7 @@ function StatCard({ title, value, icon, color }) {
       <div>
         <div style={{ fontSize: 13, color: '#70757a', marginBottom: 4 }}>{title}</div>
         <div style={{ fontSize: 20, fontWeight: 600, color: '#1f1f1f' }}>
-          {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value)}
+          ${Math.round(value).toLocaleString('es-CL')}
         </div>
       </div>
     </div>
