@@ -966,31 +966,33 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
               const roles = typeof p.rol === 'string' ? p.rol.split(',').map(r => r.trim()) : (Array.isArray(p.rol) ? p.rol : []);
               const rolLabel = roles.includes('administrador') ? 'Administrador' : roles.includes('cajero') ? 'Cajero/a' : roles.includes('planchero') ? 'Planchero/a' : '';
               return (
-                <div key={p.id} style={{ background: 'white', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.07)', border: `1px solid ${c?.border || '#e2e8f0'}` }}>
+                <div key={p.id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: `1px solid ${c?.border || '#e2e8f0'}`, marginBottom: 4 }}>
                   {/* Header row */}
-                  <div onClick={() => toggleCard(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', cursor: 'pointer', background: c?.light || '#f8fafc', borderBottom: abierto ? `1px solid ${c?.border || '#e2e8f0'}` : 'none' }}>
-                    {/* Color accent */}
-                    <div style={{ width: 4, height: 36, borderRadius: 4, background: c?.bg || '#e2e8f0', flexShrink: 0 }} />
+                  <div onClick={() => toggleCard(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', cursor: 'pointer', background: c?.light || '#f8fafc', borderBottom: abierto ? `2px solid ${c?.border || '#e2e8f0'}` : 'none', transition: 'all 0.2s' }}>
+                    {/* Color accent bar */}
+                    <div style={{ width: 6, height: 40, borderRadius: 3, background: c?.bg || '#cbd5e1', flexShrink: 0 }} />
                     {/* Name + meta */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 700, fontSize: 15, color: '#1e293b' }}>{p.nombre}</span>
-                        {pagado && <ShieldCheck size={14} style={{ color: '#1e8e3e' }} />}
-                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: c?.bg || '#e2e8f0', color: 'white', fontWeight: 600, textTransform: 'capitalize' }}>{rolLabel}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 800, fontSize: 17, color: '#0f172a', letterSpacing: '-0.3px' }}>{p.nombre}</span>
+                        {pagado && <ShieldCheck size={18} style={{ color: '#059669' }} />}
+                        <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: c?.bg || '#94a3b8', color: 'white', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{rolLabel}</span>
                       </div>
-                      <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{diasTrabajados} días trabajados</div>
+                      <div style={{ fontSize: 13, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{diasTrabajados} días trabajados</div>
                     </div>
                     {/* Salary summary inline */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 11, color: '#94a3b8' }}>Base {rolLabel}</div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: '#334155' }}>${sueldoBase.toLocaleString('es-CL')}</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>Base {rolLabel}</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: '#475569' }}>${sueldoBase.toLocaleString('es-CL')}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 11, color: '#94a3b8' }}>Total</div>
-                        <div style={{ fontSize: 16, fontWeight: 800, color: c?.text || '#1e293b' }}>${total.toLocaleString('es-CL')}</div>
+                        <div style={{ fontSize: 10, fontWeight: 800, color: c?.text || '#64748b', textTransform: 'uppercase', marginBottom: 2 }}>Saldo Final</div>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: c?.text || '#1e293b' }}>${total.toLocaleString('es-CL')}</div>
                       </div>
-                      {abierto ? <ChevronUp size={20} style={{ color: '#94a3b8' }} /> : <ChevronDown size={20} style={{ color: '#94a3b8' }} />}
+                      <div style={{ marginLeft: 4 }}>
+                        {abierto ? <ChevronUp size={24} style={{ color: c?.text || '#94a3b8' }} /> : <ChevronDown size={24} style={{ color: c?.text || '#94a3b8' }} />}
+                      </div>
                     </div>
                   </div>
                   {/* Expanded detail */}
@@ -1001,22 +1003,22 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                         <span style={{ fontSize: 13, fontWeight: 600 }}>${sueldoBase.toLocaleString('es-CL')}</span>
                       </div>
                       {Object.values(gruposReemplazando).map((g, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', borderBottom: '1px solid #bbf7d0', backgroundColor: '#f0fdf4', borderRadius: 8, marginTop: 4, marginBottom: 4 }}>
-                          <span style={{ fontSize: 13, color: '#166534', fontWeight: 500 }}>
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #86efac', backgroundColor: '#dcfce7', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                          <span style={{ fontSize: 13, color: '#14532d', fontWeight: 600 }}>
                             ↔ Reemplazaste a {g.persona?.nombre ?? '?'} ({g.dias.length} {g.dias.length === 1 ? 'día' : 'días'}: {g.dias.sort((a, b) => a - b).join(', ')})
                           </span>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>+${g.monto.toLocaleString('es-CL')}</span>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: '#166534' }}>+${g.monto.toLocaleString('es-CL')}</span>
                         </div>
                       ))}
                       {Object.values(gruposReemplazados).map((g, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', borderBottom: '1px solid #fbd5d5', backgroundColor: '#fef2f2', borderRadius: 8, marginTop: 4, marginBottom: 4, gap: 8 }}>
-                          <span style={{ fontSize: 13, color: '#991b1b', fontWeight: 500 }}>
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #fca5a5', backgroundColor: '#fee2e2', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: 8 }}>
+                          <span style={{ fontSize: 13, color: '#7f1d1d', fontWeight: 600 }}>
                             {g.persona?.nombre ?? '?'} cubrió {g.dias.length} de tus días ({g.dias.sort((a, b) => a - b).join(', ')})
-                            {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 700 }}> PAGO DIRECTO</span>}
+                            {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 800, border: '1px solid #fcd34d' }}> PAGO DIRECTO</span>}
                           </span>
                           {g.pago_por === 'empresa'
-                            ? <span style={{ fontSize: 13, fontWeight: 700, color: '#b91c1c' }}>-${g.monto.toLocaleString('es-CL')}</span>
-                            : <span style={{ fontSize: 13, color: '#94a3b8' }}>—</span>
+                            ? <span style={{ fontSize: 13, fontWeight: 800, color: '#991b1b' }}>-${g.monto.toLocaleString('es-CL')}</span>
+                            : <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>—</span>
                           }
                         </div>
                       ))}{ajustesPer.map(a => (
@@ -1032,9 +1034,9 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                           </div>
                         </div>
                       ))}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 8px', fontWeight: 700 }}>
-                        <span style={{ fontSize: 14 }}>Total a pagar</span>
-                        <span style={{ fontSize: 16, color: c?.text }}>${total.toLocaleString('es-CL')}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0 12px', borderTop: '2px solid #f1f5f9', marginTop: 12 }}>
+                        <span style={{ fontSize: 16, fontWeight: 800, color: '#1e293b' }}>Total Líquido a Pagar</span>
+                        <span style={{ fontSize: 20, fontWeight: 900, color: c?.text || '#1e293b' }}>${total.toLocaleString('es-CL')}</span>
                       </div>
                       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                         <button onClick={() => onAjuste(p)} style={{ flex: 1, padding: '9px', border: `1px dashed ${c?.border}`, borderRadius: 8, background: c?.light, color: c?.text, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>+ Ajuste</button>
@@ -1203,27 +1205,29 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
               const c = colores[p.id] || { bg: '#e0e7ff', border: '#c7d2fe', light: '#eef2ff', text: '#3730a3' };
               const abierto = expandidos[p.id] !== false;
               return (
-                <div key={p.id} style={{ background: 'white', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.07)', border: `1px solid ${c.border}` }}>
-                  <div onClick={() => toggleCard(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', cursor: 'pointer', background: c.light, borderBottom: abierto ? `1px solid ${c.border}` : 'none' }}>
-                    <div style={{ width: 4, height: 36, borderRadius: 4, background: c.bg, flexShrink: 0 }} />
+                <div key={p.id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: `1px solid ${c.border}`, marginBottom: 4 }}>
+                  <div onClick={() => toggleCard(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', cursor: 'pointer', background: c.light, borderBottom: abierto ? `2px solid ${c.border}` : 'none', transition: 'all 0.2s' }}>
+                    <div style={{ width: 6, height: 40, borderRadius: 3, background: c.bg, flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 700, fontSize: 15, color: '#1e293b' }}>{p.nombre}</span>
-                        {pagosNomina.find(pn => pn.personal_id == p.id) && <ShieldCheck size={14} style={{ color: '#10b981' }} />}
-                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: c.bg, color: 'white', fontWeight: 600 }}>Seguridad</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 800, fontSize: 17, color: '#0f172a', letterSpacing: '-0.3px' }}>{p.nombre}</span>
+                        {pagosNomina.find(pn => pn.personal_id == p.id) && <ShieldCheck size={18} style={{ color: '#059669' }} />}
+                        <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: c.bg, color: 'white', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Seguridad</span>
                       </div>
-                      <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{diasTrabajados} días trabajados</div>
+                      <div style={{ fontSize: 13, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{diasTrabajados} días trabajados</div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 11, color: '#94a3b8' }}>Base Seguridad</div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: '#334155' }}>${sueldoBase.toLocaleString('es-CL')}</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>Base Seguridad</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: '#475569' }}>${sueldoBase.toLocaleString('es-CL')}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 11, color: '#94a3b8' }}>Total</div>
-                        <div style={{ fontSize: 16, fontWeight: 800, color: c.text }}>${total.toLocaleString('es-CL')}</div>
+                        <div style={{ fontSize: 10, fontWeight: 800, color: c.text, textTransform: 'uppercase', marginBottom: 2 }}>Saldo Final</div>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: c.text }}>${total.toLocaleString('es-CL')}</div>
                       </div>
-                      {abierto ? <ChevronUp size={20} style={{ color: '#94a3b8' }} /> : <ChevronDown size={20} style={{ color: '#94a3b8' }} />}
+                      <div style={{ marginLeft: 4 }}>
+                        {abierto ? <ChevronUp size={24} style={{ color: c.text }} /> : <ChevronDown size={24} style={{ color: c.text }} />}
+                      </div>
                     </div>
                   </div>
                   {abierto && (
@@ -1233,22 +1237,22 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                         <span style={{ fontSize: 13, fontWeight: 600 }}>${sueldoBase.toLocaleString('es-CL')}</span>
                       </div>
                       {Object.values(gruposReemplazando).map((g, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', borderBottom: '1px solid #bbf7d0', backgroundColor: '#f0fdf4', borderRadius: 8, marginTop: 4, marginBottom: 4 }}>
-                          <span style={{ fontSize: 13, color: '#166534', fontWeight: 500 }}>
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #86efac', backgroundColor: '#dcfce7', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                          <span style={{ fontSize: 13, color: '#14532d', fontWeight: 600 }}>
                             ↔ Reemplazaste a {g.persona?.nombre ?? '?'} ({g.dias.length} {g.dias.length === 1 ? 'día' : 'días'}: {g.dias.sort((a, b) => a - b).join(', ')})
                           </span>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>+${g.monto.toLocaleString('es-CL')}</span>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: '#166534' }}>+${g.monto.toLocaleString('es-CL')}</span>
                         </div>
                       ))}
                       {Object.values(gruposReemplazados).map((g, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', borderBottom: '1px solid #fbd5d5', backgroundColor: '#fef2f2', borderRadius: 8, marginTop: 4, marginBottom: 4, gap: 8 }}>
-                          <span style={{ fontSize: 13, color: '#991b1b', fontWeight: 500 }}>
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #fca5a5', backgroundColor: '#fee2e2', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: 8 }}>
+                          <span style={{ fontSize: 13, color: '#7f1d1d', fontWeight: 600 }}>
                             {g.persona?.nombre ?? '?'} cubrió {g.dias.length} de tus días ({g.dias.sort((a, b) => a - b).join(', ')})
-                            {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 700 }}> PAGO DIRECTO</span>}
+                            {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 800, border: '1px solid #fcd34d' }}> PAGO DIRECTO</span>}
                           </span>
                           {g.pago_por === 'empresa'
-                            ? <span style={{ fontSize: 13, fontWeight: 700, color: '#b91c1c' }}>-${g.monto.toLocaleString('es-CL')}</span>
-                            : <span style={{ fontSize: 13, color: '#94a3b8' }}>—</span>
+                            ? <span style={{ fontSize: 13, fontWeight: 800, color: '#991b1b' }}>-${g.monto.toLocaleString('es-CL')}</span>
+                            : <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>—</span>
                           }
                         </div>
                       ))}
@@ -1265,9 +1269,9 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                           </div>
                         </div>
                       ))}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0 8px', fontWeight: 700 }}>
-                        <span style={{ fontSize: 15 }}>Total a pagar</span>
-                        <span style={{ fontSize: 18, color: c.text }}>${total.toLocaleString('es-CL')}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0 12px', borderTop: '2px solid #f1f5f9', marginTop: 12 }}>
+                        <span style={{ fontSize: 16, fontWeight: 800, color: '#1e293b' }}>Total Líquido a Pagar</span>
+                        <span style={{ fontSize: 20, fontWeight: 900, color: c.text }}>${total.toLocaleString('es-CL')}</span>
                       </div>
                       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                         <button onClick={() => onAjuste(p)} style={{ flex: 1, padding: '9px', border: `1px dashed ${c.border}`, borderRadius: 8, background: c.light, color: c.text, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>+ Ajuste</button>
