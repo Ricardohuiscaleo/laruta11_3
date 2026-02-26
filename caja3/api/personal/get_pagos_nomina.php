@@ -2,24 +2,39 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 $config = null;
-foreach ([__DIR__.'/../../public/config.php', __DIR__.'/../config.php', __DIR__.'/../../config.php', __DIR__.'/../../../config.php', __DIR__.'/../../../../config.php'] as $p) {
-    if (file_exists($p)) { $config = require_once $p; break; }
+foreach ([__DIR__ . '/../../public/config.php', __DIR__ . '/../config.php', __DIR__ . '/../../config.php', __DIR__ . '/../../../config.php', __DIR__ . '/../../../../config.php'] as $p) {
+    if (file_exists($p)) {
+        $config = require_once $p;
+        break;
+    }
 }
-if (!$config) { echo json_encode(['success'=>false,'error'=>'Config no encontrado']); exit; }
+if (!$config) {
+    echo json_encode(['success' => false, 'error' => 'Config no encontrado']);
+    exit;
+}
 $conn = mysqli_connect($config['app_db_host'], $config['app_db_user'], $config['app_db_pass'], $config['app_db_name']);
-if (!$conn) { echo json_encode(['success'=>false,'error'=>'DB error']); exit; }
+if (!$conn) {
+    echo json_encode(['success' => false, 'error' => 'DB error']);
+    exit;
+}
+
 $mes = $_GET['mes'] ?? date('Y-m');
 $mesDate = $mes . '-01';
-$stmt = mysqli_prepare($conn, "SELECT * FROM pagos_nomina WHERE mes = ? ORDER BY es_externo, nombre");
-mysqli_stmt_bind_param($stmt, 's', $mesDate);
+$centroCosto = $_GET['centro_costo'] ?? 'ruta11';
+
+$stmt = mysqli_prepare($conn, "SELECT * FROM pagos_nomina WHERE mes = ? AND centro_costo = ? ORDER BY es_externo, nombre");
+mysqli_stmt_bind_param($stmt, 'ss', $mesDate, $centroCosto);
 mysqli_stmt_execute($stmt);
 $res = mysqli_stmt_get_result($stmt);
 $data = [];
-while ($row = mysqli_fetch_assoc($res)) $data[] = $row;
-$cfgStmt = mysqli_prepare($conn, "SELECT monto FROM presupuesto_nomina WHERE mes = ?");
-mysqli_stmt_bind_param($cfgStmt, 's', $mesDate);
+while ($row = mysqli_fetch_assoc($res))
+    $data[] = $row;
+
+$cfgStmt = mysqli_prepare($conn, "SELECT monto FROM presupuesto_nomina WHERE mes = ? AND centro_costo = ?");
+mysqli_stmt_bind_param($cfgStmt, 'ss', $mesDate, $centroCosto);
 mysqli_stmt_execute($cfgStmt);
 $cfgRes = mysqli_stmt_get_result($cfgStmt);
 $cfgRow = mysqli_fetch_assoc($cfgRes);
 $presupuesto = $cfgRow ? floatval($cfgRow['monto']) : 1200000;
-echo json_encode(['success'=>true,'data'=>$data,'presupuesto'=>$presupuesto]);
+
+echo json_encode(['success' => true, 'data' => $data, 'presupuesto' => $presupuesto]);

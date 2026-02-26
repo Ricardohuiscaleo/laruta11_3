@@ -18,8 +18,8 @@ export default function PersonalApp() {
   const [turnos, setTurnos] = useState([]);
   const [ajustes, setAjustes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [pagosNomina, setPagosNomina] = useState([]);
-  const [presupuestoNomina, setPresupuestoNomina] = useState(1200000);
+  const [pagosNomina, setPagosNomina] = useState({ ruta11: [], seguridad: [] });
+  const [presupuestoNomina, setPresupuestoNomina] = useState({ ruta11: 1200000, seguridad: 1200000 });
   const [modalAjuste, setModalAjuste] = useState(null);
   const [formAjuste, setFormAjuste] = useState({ monto: '', concepto: '' });
   const [saving, setSaving] = useState(false);
@@ -35,17 +35,21 @@ export default function PersonalApp() {
     setLoading(true);
     try {
       const mesStr = String(mes + 1).padStart(2, '0');
-      const [pRes, tRes, aRes, pnRes] = await Promise.all([
+      const [pRes, tRes, aRes, pnRes, pnSegRes] = await Promise.all([
         fetch('/api/personal/get_personal.php'),
         fetch(`/api/personal/get_turnos.php?mes=${anio}-${mesStr}`),
         fetch(`/api/personal/get_ajustes.php?mes=${anio}-${mesStr}`),
-        fetch(`/api/personal/get_pagos_nomina.php?mes=${anio}-${mesStr}`),
+        fetch(`/api/personal/get_pagos_nomina.php?mes=${anio}-${mesStr}&centro_costo=ruta11`),
+        fetch(`/api/personal/get_pagos_nomina.php?mes=${anio}-${mesStr}&centro_costo=seguridad`),
       ]);
-      const [p, t, a, pn] = await Promise.all([pRes.json(), tRes.json(), aRes.json(), pnRes.json()]);
+      const [p, t, a, pn, pnSeg] = await Promise.all([pRes.json(), tRes.json(), aRes.json(), pnRes.json(), pnSegRes.json()]);
       if (p.success) setPersonal(p.data);
       if (t.success) setTurnos(t.data);
       if (a.success) setAjustes(a.data);
-      if (pn.success) { setPagosNomina(pn.data); setPresupuestoNomina(pn.presupuesto ?? 1200000); }
+      if (pn.success && pnSeg.success) {
+        setPagosNomina({ ruta11: pn.data, seguridad: pnSeg.data });
+        setPresupuestoNomina({ ruta11: pn.presupuesto ?? 1200000, seguridad: pnSeg.presupuesto ?? 1200000 });
+      }
     } catch (e) {
       showToast('Error cargando datos', 'error');
     }
@@ -114,12 +118,12 @@ export default function PersonalApp() {
     setSaving(false);
   }
 
-  async function savePresupuesto(monto) {
+  async function savePresupuesto(monto, centro_costo = 'ruta11') {
     const mesStr = String(mes + 1).padStart(2, '0');
     try {
       await fetch('/api/personal/personal_api.php', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'save_presupuesto', mes: `${anio}-${mesStr}-01`, monto }),
+        body: JSON.stringify({ action: 'save_presupuesto', mes: `${anio}-${mesStr}-01`, monto, centro_costo }),
       });
       loadData();
     } catch { showToast('Error', 'error'); }
@@ -315,7 +319,7 @@ export default function PersonalApp() {
             {tab === 'calendario' && <CalendarioView diasEnMes={diasEnMes} primerDia={primerDia} turnosPorFecha={turnosNoSeguridad} personal={personal} colores={COLORES} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({ dia, fecha }); setFormTurno({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa', fecha_fin: fecha }); }} onDeleteTurno={deleteTurno} />}
             {tab === 'liquidacion' && (
               <>
-                <LiquidacionView personal={personal} cajeros={cajeros} plancheros={plancheros} getLiquidacion={(p) => getLiquidacion(p, 'ruta11')} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina} onSavePresupuesto={savePresupuesto} />
+                <LiquidacionView personal={personal} cajeros={cajeros} plancheros={plancheros} getLiquidacion={(p) => getLiquidacion(p, 'ruta11')} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina.ruta11} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina.ruta11} onSavePresupuesto={(monto) => savePresupuesto(monto, 'ruta11')} centroCosto="ruta11" />
                 <div style={{ marginTop: 40, borderTop: '2px solid #e2e8f0', paddingTop: 24 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                     <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#1e293b' }}>📅 Calendario de Turnos (La Ruta 11)</h2>
@@ -326,7 +330,7 @@ export default function PersonalApp() {
             )}
             {tab === 'seguridad' && (
               <>
-                <LiquidacionSeguridad guardias={guardias} getLiquidacion={(p) => getLiquidacion(p, 'seguridad')} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina} onSavePresupuesto={savePresupuesto} />
+                <LiquidacionSeguridad guardias={guardias} getLiquidacion={(p) => getLiquidacion(p, 'seguridad')} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina.seguridad} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina.seguridad} onSavePresupuesto={(monto) => savePresupuesto(monto, 'seguridad')} centroCosto="seguridad" />
                 <div style={{ marginTop: 40, borderTop: '2px solid #e0e7ff', paddingTop: 24 }}>
                   <CalendarioSeguridad diasEnMes={diasEnMes} primerDiaLunes={primerDiaLunes} turnosSeguridad={turnosSeguridad} personal={personal} mes={mes} anio={anio} onAddTurno={(params) => { setModalTurno(params); setFormTurno({ personal_id: '', tipo: 'reemplazo', reemplazado_por: params.titularId || '', monto_reemplazo: 17966.666, pago_por: 'empresa', fecha_fin: params.fecha }); }} onDeleteTurno={deleteTurno} />
                 </div>
@@ -606,7 +610,7 @@ function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colore
   );
 }
 
-function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colores, onAjuste, onDeleteAjuste, mes, anio, pagosNomina, onReloadPagos, showToast, presupuesto, onSavePresupuesto }) {
+function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colores, onAjuste, onDeleteAjuste, mes, anio, pagosNomina, onReloadPagos, showToast, presupuesto, onSavePresupuesto, centroCosto = 'ruta11' }) {
   const MESES_L = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const [savingPago, setSavingPago] = useState(false);
   const [expandidos, setExpandidos] = useState({});
@@ -833,7 +837,7 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
   );
 }
 
-function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onDeleteAjuste, mes, anio, pagosNomina, onReloadPagos, showToast, presupuesto, onSavePresupuesto }) {
+function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onDeleteAjuste, mes, anio, pagosNomina, onReloadPagos, showToast, presupuesto, onSavePresupuesto, centroCosto = 'seguridad' }) {
   const MESES_L = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const [savingPago, setSavingPago] = useState(false);
   const [expandidos, setExpandidos] = useState({});

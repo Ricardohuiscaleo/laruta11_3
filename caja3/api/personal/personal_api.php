@@ -98,12 +98,13 @@ switch ($action) {
     case 'save_presupuesto': {
             $mes = $input['mes'] ?? '';
             $monto = floatval($input['monto'] ?? 0);
+            $centro_costo = $input['centro_costo'] ?? 'ruta11';
             if (!$mes || !$monto) {
                 echo json_encode(['success' => false, 'error' => 'Datos incompletos']);
                 exit;
             }
-            $stmt = mysqli_prepare($conn, "INSERT INTO presupuesto_nomina (mes, monto) VALUES (?,?) ON DUPLICATE KEY UPDATE monto=?");
-            mysqli_stmt_bind_param($stmt, 'sdd', $mes, $monto, $monto);
+            $stmt = mysqli_prepare($conn, "INSERT INTO presupuesto_nomina (mes, monto, centro_costo) VALUES (?,?,?) ON DUPLICATE KEY UPDATE monto=?");
+            mysqli_stmt_bind_param($stmt, 'sdsd', $mes, $monto, $centro_costo, $monto);
             mysqli_stmt_execute($stmt);
             echo json_encode(['success' => true]);
             break;
