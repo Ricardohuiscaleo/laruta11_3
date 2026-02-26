@@ -27,7 +27,7 @@ export default function PersonalApp() {
   const [modalTurno, setModalTurno] = useState(null); // {dia, fecha, isSeguridad, titularId}
   const [formTurno, setFormTurno] = useState({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa', fecha_fin: '' });
   const [modalPersonal, setModalPersonal] = useState(null); // null | 'new' | persona
-  const [formPersonal, setFormPersonal] = useState({ nombre: '', rol: 'cajero', sueldo_base: '', activo: 1 });
+  const [formPersonal, setFormPersonal] = useState({ nombre: '', rol: 'cajero', sueldo_base: '', sueldo_base_seguridad: '', activo: 1 });
 
   useEffect(() => { loadData(); }, [mes, anio]);
 
@@ -244,20 +244,14 @@ export default function PersonalApp() {
     const primerRol = typeof p.rol === 'string' ? p.rol.split(',')[0].trim() : (Array.isArray(p.rol) ? p.rol[0] : '');
     const isMainSeguridad = primerRol === 'seguridad';
 
-    // Default base salary
-    let sueldoBase = parseFloat(p.sueldo_base) || 0;
-
-    // Dual role hardcodes (since the DB only stores one `sueldo_base` per user but Ricardo works 2 distinct jobs)
-    if (p.nombre.toLowerCase() === 'ricardo') {
-      if (modoContexto === 'seguridad') {
-        sueldoBase = 539000;
-      } else if (modoContexto === 'ruta11') {
-        sueldoBase = 300000;
-      }
+    // Asignar el sueldo de acuerdo al contexto de la vista (La Ruta 11 vs Seguridad)
+    let sueldoBase = 0;
+    if (modoContexto === 'seguridad') {
+      sueldoBase = parseFloat(p.sueldo_base_seguridad) || 0;
     } else {
-      // Normal behavior for single-role users
-      if (modoContexto === 'seguridad' && !isMainSeguridad) sueldoBase = 0;
-      if (modoContexto === 'ruta11' && isMainSeguridad) sueldoBase = 0;
+      sueldoBase = parseFloat(p.sueldo_base) || 0;
+      // Normal behavior for single-role users showing up in Ruta 11
+      if (isMainSeguridad) sueldoBase = 0;
     }
 
     const totalReemplazando = Object.values(gruposReemplazando).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
@@ -336,7 +330,7 @@ export default function PersonalApp() {
                 </div>
               </>
             )}
-            {tab === 'equipo' && <EquipoView personal={personal} onAddPersonal={() => { setModalPersonal('new'); setFormPersonal({ nombre: '', rol: ['cajero'], sueldo_base: '', activo: 1 }); }} onEditPersonal={(p) => { setModalPersonal(p); setFormPersonal({ nombre: p.nombre, rol: p.rol.split(','), sueldo_base: p.sueldo_base, activo: p.activo }); }} />}
+            {tab === 'equipo' && <EquipoView personal={personal} onAddPersonal={() => { setModalPersonal('new'); setFormPersonal({ nombre: '', rol: ['cajero'], sueldo_base: '', sueldo_base_seguridad: '', activo: 1 }); }} onEditPersonal={(p) => { setModalPersonal(p); setFormPersonal({ nombre: p.nombre, rol: typeof p.rol === 'string' ? p.rol.split(',') : p.rol, sueldo_base: p.sueldo_base, sueldo_base_seguridad: p.sueldo_base_seguridad || '', activo: p.activo }); }} />}
           </>
         )}
       </div>
@@ -468,11 +462,19 @@ export default function PersonalApp() {
               </div>
             </div>
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Sueldo base</label>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Sueldo base (La Ruta 11)</label>
               <input type='number' value={formPersonal.sueldo_base} onChange={e => setFormPersonal(f => ({ ...f, sueldo_base: e.target.value }))}
                 placeholder='0 para externos'
                 style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
             </div>
+            {((Array.isArray(formPersonal.rol) ? formPersonal.rol : [formPersonal.rol]).includes('seguridad')) && (
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Sueldo base (Seguridad)</label>
+                <input type='number' value={formPersonal.sueldo_base_seguridad} onChange={e => setFormPersonal(f => ({ ...f, sueldo_base_seguridad: e.target.value }))}
+                  placeholder='Sueldo Club de Yates'
+                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+              </div>
+            )}
             <div style={{ marginBottom: 20 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer' }}>
                 <input type='checkbox' checked={formPersonal.activo == 1} onChange={e => setFormPersonal(f => ({ ...f, activo: e.target.checked ? 1 : 0 }))} />

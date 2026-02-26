@@ -32,13 +32,14 @@ switch ($action) {
             $rol_input = $input['rol'] ?? 'cajero';
             $rol = is_array($rol_input) ? implode(',', $rol_input) : $rol_input;
             $sueldo = floatval($input['sueldo_base'] ?? 0);
+            $sueldo_seguridad = floatval($input['sueldo_base_seguridad'] ?? 0);
             $activo = intval($input['activo'] ?? 1);
             if (!$nombre) {
                 echo json_encode(['success' => false, 'error' => 'Nombre requerido']);
                 exit;
             }
-            $stmt = mysqli_prepare($conn, "INSERT INTO personal (nombre, rol, sueldo_base, activo) VALUES (?,?,?,?)");
-            mysqli_stmt_bind_param($stmt, 'ssdi', $nombre, $rol, $sueldo, $activo);
+            $stmt = mysqli_prepare($conn, "INSERT INTO personal (nombre, rol, sueldo_base, sueldo_base_seguridad, activo) VALUES (?,?,?,?,?)");
+            mysqli_stmt_bind_param($stmt, 'ssddi', $nombre, $rol, $sueldo, $sueldo_seguridad, $activo);
             mysqli_stmt_execute($stmt);
             echo json_encode(['success' => true, 'id' => mysqli_insert_id($conn)]);
             break;
@@ -50,13 +51,14 @@ switch ($action) {
             $rol_input = $input['rol'] ?? 'cajero';
             $rol = is_array($rol_input) ? implode(',', $rol_input) : $rol_input;
             $sueldo = floatval($input['sueldo_base'] ?? 0);
+            $sueldo_seguridad = floatval($input['sueldo_base_seguridad'] ?? 0);
             $activo = intval($input['activo'] ?? 1);
             if (!$id || !$nombre) {
                 echo json_encode(['success' => false, 'error' => 'Datos incompletos']);
                 exit;
             }
-            $stmt = mysqli_prepare($conn, "UPDATE personal SET nombre=?, rol=?, sueldo_base=?, activo=? WHERE id=?");
-            mysqli_stmt_bind_param($stmt, 'ssdii', $nombre, $rol, $sueldo, $activo, $id);
+            $stmt = mysqli_prepare($conn, "UPDATE personal SET nombre=?, rol=?, sueldo_base=?, sueldo_base_seguridad=?, activo=? WHERE id=?");
+            mysqli_stmt_bind_param($stmt, 'ssddii', $nombre, $rol, $sueldo, $sueldo_seguridad, $activo, $id);
             mysqli_stmt_execute($stmt);
             echo json_encode(['success' => true]);
             break;
