@@ -309,6 +309,29 @@ export default function PersonalApp() {
     Object.keys(gruposReemplazados).forEach(k => gruposReemplazados[k].monto = Math.round(gruposReemplazados[k].monto));
     Object.keys(gruposReemplazando).forEach(k => gruposReemplazando[k].monto = Math.round(gruposReemplazando[k].monto));
 
+    // Ajuste legal 30 días: en meses con menos de 30 días (Feb), agregar el monto de los días legales extra
+    if (modoContexto === 'seguridad' && diasReemplazoLegal > 0 && sueldoBase > 0) {
+      const valorDiario = Math.round(sueldoBase / 30);
+      const ajusteLegal = diasReemplazoLegal * valorDiario;
+      // Distribuir proporcionalmente entre los grupos de reemplazo
+      const keysReemplazados = Object.keys(gruposReemplazados);
+      const keysReemplazando = Object.keys(gruposReemplazando);
+      if (keysReemplazados.length > 0) {
+        const totalActual = keysReemplazados.reduce((s, k) => s + gruposReemplazados[k].monto, 0) || 1;
+        keysReemplazados.forEach(k => {
+          const proporcion = gruposReemplazados[k].monto / totalActual;
+          gruposReemplazados[k].monto += Math.round(ajusteLegal * proporcion);
+        });
+      }
+      if (keysReemplazando.length > 0) {
+        const totalActual = keysReemplazando.reduce((s, k) => s + gruposReemplazando[k].monto, 0) || 1;
+        keysReemplazando.forEach(k => {
+          const proporcion = gruposReemplazando[k].monto / totalActual;
+          gruposReemplazando[k].monto += Math.round(ajusteLegal * proporcion);
+        });
+      }
+    }
+
     const totalReemplazando = Object.values(gruposReemplazando).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
     const totalReemplazados = Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
     const total = Math.round(sueldoBase + totalReemplazando - totalReemplazados + totalAjustes);
