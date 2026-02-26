@@ -83,14 +83,74 @@ if ($ricardo_id && $claudio_id) {
 
         $current->modify('+1 day');
     }
-
-    // Ordenar de nuevo por fecha para que se mezclen bien con los turnos manuales
-    usort($data, function ($a, $b) {
-        if ($a['fecha'] === $b['fecha']) {
-            return $a['personal_id'] <=> $b['personal_id'];
-        }
-        return strcmp($a['fecha'], $b['fecha']);
-    });
 }
+
+// Generación Dinámica de Turnos La Ruta 11 (4x4 — 2 ciclos independientes)
+// Ciclo 1: Cajero — Camila (pos 0-3) / Neit (pos 4-7), base: 2026-02-09
+// Ciclo 2: Planchero — Andrés (pos 0-3) / Gabriel (pos 4-7), base: 2026-02-15
+$res_ruta = mysqli_query($conn, "SELECT id, nombre FROM personal WHERE nombre IN ('Camila', 'Neit', 'Andrés', 'Gabriel')");
+$ruta_ids = [];
+while ($p_row = mysqli_fetch_assoc($res_ruta)) {
+    $nombre_lower = strtolower(trim($p_row['nombre']));
+    $ruta_ids[$nombre_lower] = $p_row['id'];
+}
+
+// Track existing normal shifts to avoid duplicates
+$turnos_normal_existentes = [];
+foreach ($data as $t) {
+    if ($t['tipo'] === 'normal') {
+        $turnos_normal_existentes[$t['fecha'] . '_' . $t['personal_id']] = true;
+    }
+}
+
+$ciclos_ruta11 = [
+    ['base' => '2026-02-09', 'a' => 'camila', 'b' => 'neit'],
+    ['base' => '2026-02-15', 'a' => 'andrés', 'b' => 'gabriel'],
+];
+
+foreach ($ciclos_ruta11 as $ciclo) {
+    $idA = $ruta_ids[$ciclo['a']] ?? null;
+    $idB = $ruta_ids[$ciclo['b']] ?? null;
+    if (!$idA || !$idB)
+        continue;
+
+    $baseCiclo = new DateTime($ciclo['base']);
+    $startDate = new DateTime($inicio);
+    $endDate = new DateTime($fin);
+
+    $current = clone $startDate;
+    while ($current <= $endDate) {
+        $diff = $current->diff($baseCiclo);
+        $days = (int)$diff->format("%r%a");
+        $pos = (($days % 8) + 8) % 8;
+
+        $pId = ($pos < 4) ? $idA : $idB;
+        $fecha_str = $current->format('Y-m-d');
+
+        if (!isset($turnos_normal_existentes[$fecha_str . '_' . $pId])) {
+            $data[] = [
+                'id' => 'dyn_ruta_' . $fecha_str . '_' . $pId,
+                'personal_id' => $pId,
+                'fecha' => $fecha_str,
+                'tipo' => 'normal',
+                'reemplazado_por' => null,
+                'reemplazante_nombre' => null,
+                'monto_reemplazo' => null,
+                'pago_por' => 'empresa',
+                'is_dynamic' => true
+            ];
+        }
+
+        $current->modify('+1 day');
+    }
+}
+
+// Ordenar de nuevo por fecha para que se mezclen bien con los turnos manuales
+usort($data, function ($a, $b) {
+    if ($a['fecha'] === $b['fecha']) {
+        return $a['personal_id'] <=> $b['personal_id'];
+    }
+    return strcmp($a['fecha'], $b['fecha']);
+});
 
 echo json_encode(['success' => true, 'data' => $data]);
