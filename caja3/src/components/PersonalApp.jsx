@@ -282,7 +282,7 @@ export default function PersonalApp() {
     const diasTrabajados = modoContexto === 'seguridad'
       ? (diasReemplazados > 0 ? (diasEnMes - diasReemplazados) : 30)
       : (diasNormales + reemplazosHechos);
-    const diasReemplazoLegal = Math.max(0, 30 - diasEnMes); // Feb: 2 extra legal days
+
 
     // Ajustes per context object... just leave them global or split them?
     const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
@@ -311,33 +311,10 @@ export default function PersonalApp() {
     Object.keys(gruposReemplazados).forEach(k => gruposReemplazados[k].monto = Math.round(gruposReemplazados[k].monto));
     Object.keys(gruposReemplazando).forEach(k => gruposReemplazando[k].monto = Math.round(gruposReemplazando[k].monto));
 
-    // Ajuste legal 30 días: en meses con menos de 30 días (Feb), agregar el monto de los días legales extra
-    if (modoContexto === 'seguridad' && diasReemplazoLegal > 0 && sueldoBase > 0) {
-      const valorDiario = Math.round(sueldoBase / 30);
-      const ajusteLegal = diasReemplazoLegal * valorDiario;
-      // Distribuir proporcionalmente entre los grupos de reemplazo
-      const keysReemplazados = Object.keys(gruposReemplazados);
-      const keysReemplazando = Object.keys(gruposReemplazando);
-      if (keysReemplazados.length > 0) {
-        const totalActual = keysReemplazados.reduce((s, k) => s + gruposReemplazados[k].monto, 0) || 1;
-        keysReemplazados.forEach(k => {
-          const proporcion = gruposReemplazados[k].monto / totalActual;
-          gruposReemplazados[k].monto += Math.round(ajusteLegal * proporcion);
-        });
-      }
-      if (keysReemplazando.length > 0) {
-        const totalActual = keysReemplazando.reduce((s, k) => s + gruposReemplazando[k].monto, 0) || 1;
-        keysReemplazando.forEach(k => {
-          const proporcion = gruposReemplazando[k].monto / totalActual;
-          gruposReemplazando[k].monto += Math.round(ajusteLegal * proporcion);
-        });
-      }
-    }
-
     const totalReemplazando = Object.values(gruposReemplazando).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
     const totalReemplazados = Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
     const total = Math.round(sueldoBase + totalReemplazando - totalReemplazados + totalAjustes);
-    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, diasReemplazoLegal, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplazados, gruposReemplazando, total };
+    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplazados, gruposReemplazando, total };
   }
 
   const administradores = personal.filter(p => p.rol?.includes('administrador') && p.activo == 1);
@@ -1071,7 +1048,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
           <h2 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>{titulo}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {grupo.map(p => {
-              const { diasTrabajados, diasReemplazados, diasReemplazoLegal, ajustesPer, sueldoBase, gruposReemplazados, gruposReemplazando, total } = getLiquidacion(p);
+              const { diasTrabajados, diasReemplazados, ajustesPer, sueldoBase, gruposReemplazados, gruposReemplazando, total } = getLiquidacion(p);
               const c = colores[p.id];
               const abierto = expandidos[p.id] !== false;
               const pagado = pagosNomina.find(pn => pn.personal_id == p.id);
@@ -1326,7 +1303,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
           <h2 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>{titulo}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {grupo.map(p => {
-              const { diasTrabajados, diasReemplazados, diasReemplazoLegal, ajustesPer, sueldoBase, gruposReemplazados, gruposReemplazando, total } = getLiquidacion(p);
+              const { diasTrabajados, diasReemplazados, ajustesPer, sueldoBase, gruposReemplazados, gruposReemplazando, total } = getLiquidacion(p);
               const c = colores[p.id] || { bg: '#e0e7ff', border: '#c7d2fe', light: '#eef2ff', text: '#3730a3' };
               const abierto = expandidos[p.id] !== false;
               return (
@@ -1364,7 +1341,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                       {Object.values(gruposReemplazando).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #86efac', backgroundColor: '#dcfce7', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                           <span style={{ fontSize: 13, color: '#14532d', fontWeight: 600 }}>
-                            ↔ Reemplazó a {g.persona?.nombre ?? '?'} {g.dias.length + diasReemplazoLegal} de 30 días
+                            ↔ Reemplazó a {g.persona?.nombre ?? '?'} {g.dias.length} de 30 días
                           </span>
                           <span style={{ fontSize: 13, fontWeight: 800, color: '#166534' }}>+${g.monto.toLocaleString('es-CL')}</span>
                         </div>
@@ -1372,7 +1349,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                       {Object.values(gruposReemplazados).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #fca5a5', backgroundColor: '#fee2e2', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: 8 }}>
                           <span style={{ fontSize: 13, color: '#7f1d1d', fontWeight: 600 }}>
-                            {g.persona?.nombre ?? '?'} cubrió {g.dias.length + diasReemplazoLegal} de 30 días
+                            {g.persona?.nombre ?? '?'} cubrió {g.dias.length} de 30 días
                             {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 800, border: '1px solid #fcd34d' }}> PAGO DIRECTO</span>}
                           </span>
                           {g.pago_por === 'empresa'
