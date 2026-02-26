@@ -301,18 +301,25 @@ export default function PersonalApp() {
       <div style={{ background: 'white', borderBottom: '1px solid #e2e8f0', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 0, overflowX: 'auto', whiteSpace: 'nowrap' }}>
           {[
-            ['calendario', '📅 Calendario'],
-            ['liquidacion', '🇨🇱 La Ruta 11'],
-            ['seguridad', '📷 Cam Seguridad'],
-            ['equipo', '👤 Equipo']
-          ].map(([key, label]) => (
+            ['calendario', '📅', 'Calendario'],
+            ['liquidacion', '/11.png', 'La Ruta 11'],
+            ['seguridad', '/camicono.png', 'Cam Seguridad'],
+            ['equipo', '👤', 'Equipo']
+          ].map(([key, icon, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{
               padding: '14px 20px', border: 'none', background: 'none', cursor: 'pointer',
               fontSize: 14, fontWeight: 600,
-              color: tab === key ? '#3b82f6' : '#64748b',
-              borderBottom: tab === key ? '2px solid #3b82f6' : '2px solid transparent',
-              flexShrink: 0
-            }}>{label}</button>
+              color: tab === key ? '#1a73e8' : '#64748b',
+              borderBottom: tab === key ? '2px solid #1a73e8' : '2px solid transparent',
+              flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              {icon.endsWith('.png') ? (
+                <img src={icon} alt={label} style={{ width: 20, height: 20, objectFit: 'contain' }} />
+              ) : (
+                <span>{icon}</span>
+              )}
+              {label}
+            </button>
           ))}
         </div>
       </div>
