@@ -551,15 +551,8 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, animation: 'fadeIn 0.4s ease-out' }}>
-      {/* Stats Board */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
-        <StatCard title="Costo Total Nómina" value={stats.totalAPagar} icon={<FileText size={20} />} color="#1a73e8" />
-        <StatCard title="Total Pagado" value={stats.totalPagado} icon={<ShieldCheck size={20} />} color="#1e8e3e" />
-        <StatCard title="Saldo por Pagar" value={stats.totalAPagar - stats.totalPagado} icon={<AlertCircle size={20} />} color="#f29900" />
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
-        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 500, color: '#444746' }}>Resumen Individual</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#1a73e8' }}>Nómina del Mes</h2>
         <button
           onClick={() => setModalEmail({ type: 'massive' })}
           style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid #1a73e8', background: 'transparent', color: '#1a73e8', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
@@ -630,50 +623,49 @@ function NominaCard({ item, onNotify, onEdit }) {
     <div style={{
       background: 'white',
       borderRadius: 16,
-      padding: '16px 24px',
+      padding: '16px',
       border: '1px solid #e3e3e3',
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      flexWrap: 'wrap',
+      flexDirection: 'column',
       gap: 16,
       transition: 'transform 0.2s',
       cursor: 'pointer'
     }} onClick={onEdit}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 200 }}>
-        <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#f1f3f4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: '#1a73e8' }}>
-          {item.persona.nombre[0]}
-        </div>
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 600, color: '#1f1f1f' }}>{item.persona.nombre}</div>
-          <div style={{ fontSize: 12, color: '#70757a', textTransform: 'capitalize' }}>
-            {Array.isArray(item.persona.rol) ? item.persona.rol.join(', ') : item.persona.rol}
+
+      {/* Header Profile + Actions */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#f1f3f4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: '#1a73e8' }}>
+            {item.persona.nombre[0]}
+          </div>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 600, color: '#1f1f1f' }}>{item.persona.nombre}</div>
+            <div style={{ fontSize: 12, color: '#70757a', textTransform: 'capitalize' }}>
+              {Array.isArray(item.persona.rol) ? item.persona.rol.join(', ') : item.persona.rol}
+            </div>
           </div>
         </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={(e) => { e.stopPropagation(); onNotify(); }} style={{ border: 'none', background: '#f8fafd', color: '#1a73e8', padding: '8px', borderRadius: 8, cursor: 'pointer', display: 'flex' }} title="Notificar Pago">
+            <Mail size={18} />
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
+      {/* Grid for Details */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 16, background: '#f8fafd', padding: 12, borderRadius: 12 }}>
+        <div>
           <div style={{ fontSize: 10, color: '#70757a', textTransform: 'uppercase', letterSpacing: 0.5 }}>Ruta 11</div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: item.pagado11 ? '#1e8e3e' : '#1f1f1f' }}>{item.total11 > 0 ? `$${item.total11.toLocaleString()}` : '—'}</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: item.pagado11 ? '#1e8e3e' : '#1f1f1f' }}>{item.total11 > 0 ? `$${item.total11.toLocaleString('es-CL')}` : '—'}</div>
         </div>
-        <div style={{ textAlign: 'center' }}>
+        <div>
           <div style={{ fontSize: 10, color: '#70757a', textTransform: 'uppercase', letterSpacing: 0.5 }}>Seguridad</div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: item.pagadoSeg ? '#1e8e3e' : '#1f1f1f' }}>{item.totalSeg > 0 ? `$${item.totalSeg.toLocaleString()}` : '—'}</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: item.pagadoSeg ? '#1e8e3e' : '#1f1f1f' }}>{item.totalSeg > 0 ? `$${item.totalSeg.toLocaleString('es-CL')}` : '—'}</div>
         </div>
-        <div style={{ textAlign: 'right', minWidth: 100 }}>
-          <div style={{ fontSize: 10, color: '#70757a', textTransform: 'uppercase', fontWeight: 700 }}>A Pagar</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#1a73e8' }}>${item.granTotal.toLocaleString()}</div>
+        <div>
+          <div style={{ fontSize: 10, color: '#1a73e8', textTransform: 'uppercase', fontWeight: 700 }}>A Pagar</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#1a73e8' }}>${item.granTotal.toLocaleString('es-CL')}</div>
         </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={(e) => { e.stopPropagation(); onNotify(); }} style={{ border: 'none', background: '#f8fafd', color: '#1a73e8', padding: '8px 12px', borderRadius: 8, cursor: 'pointer', display: 'flex' }} title="Notificar Pago">
-          <Mail size={18} />
-        </button>
-        <button onClick={(e) => { e.stopPropagation(); onEdit(); }} style={{ border: 'none', background: '#f8fafd', color: '#70757a', padding: '8px 12px', borderRadius: 8, cursor: 'pointer', display: 'flex' }}>
-          <Edit size={18} />
-        </button>
       </div>
     </div>
   );
