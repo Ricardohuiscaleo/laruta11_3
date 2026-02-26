@@ -216,7 +216,18 @@ export default function PersonalApp() {
   const primerDiaLunes = (primerDia + 6) % 7;
 
   // Helpers de seguridad
-  const isShiftSeguridad = (t) => t.tipo === 'seguridad' || t.tipo === 'reemplazo_seguridad';
+  // tipo='seguridad' → turno 4x4 dinámico
+  // tipo='reemplazo_seguridad' → reemplazo nuevo (creado desde el modal de Seguridad)
+  // tipo='reemplazo' + titular con rol seguridad → reemplazo viejo en DB que pertenece a Seguridad
+  // tipo='normal' → NUNCA es seguridad (esto causaba el bug de 36 días)
+  const isShiftSeguridad = (t) => {
+    if (t.tipo === 'seguridad' || t.tipo === 'reemplazo_seguridad') return true;
+    if (t.tipo === 'reemplazo') {
+      const titular = personal.find(x => x.id == t.personal_id);
+      return titular?.rol?.includes('seguridad') || false;
+    }
+    return false;
+  };
 
   // Mapa de turnos divididos por calendario
   const turnosNoSeguridad = {};
