@@ -992,35 +992,41 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
 
       {[['🛡️ Guardias', guardias]].map(([titulo, grupo]) => (
         <div key={titulo}>
-          <h2 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700, color: '#1e293b' }}>{titulo}</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+          <h2 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>{titulo}</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {grupo.map(p => {
               const { diasTrabajados, ajustesPer, sueldoBase, gruposReemplazados, gruposReemplazando, total } = getLiquidacion(p);
               const c = colores[p.id] || { bg: '#e0e7ff', border: '#c7d2fe', light: '#eef2ff', text: '#3730a3' };
               const abierto = expandidos[p.id] !== false;
               return (
-                <div key={p.id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', border: `1px solid ${c.border}` }}>
-                  <div onClick={() => toggleCard(p.id)} style={{ background: c.bg, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {pagosNomina.find(pn => pn.personal_id == p.id) && <span style={{ fontSize: 18 }}>✅</span>}
-                      <div>
-                        <div style={{ color: 'white', fontWeight: 700, fontSize: 18 }}>{p.nombre}</div>
-                        <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, textTransform: 'capitalize' }}>{typeof p.rol === 'string' ? p.rol.split(',').join(', ') : p.rol} · {diasTrabajados} días trabajados</div>
+                <div key={p.id} style={{ background: 'white', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.07)', border: `1px solid ${c.border}` }}>
+                  <div onClick={() => toggleCard(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', cursor: 'pointer', background: c.light, borderBottom: abierto ? `1px solid ${c.border}` : 'none' }}>
+                    <div style={{ width: 4, height: 36, borderRadius: 4, background: c.bg, flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 700, fontSize: 15, color: '#1e293b' }}>{p.nombre}</span>
+                        {pagosNomina.find(pn => pn.personal_id == p.id) && <span style={{ fontSize: 12 }}>✅</span>}
+                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: c.bg, color: 'white', fontWeight: 600 }}>Seguridad</span>
                       </div>
+                      <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{diasTrabajados} días trabajados</div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 10, padding: '8px 12px', textAlign: 'right' }}>
-                        <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11 }}>Total</div>
-                        <div style={{ color: 'white', fontWeight: 800, fontSize: 20 }}>${total.toLocaleString('es-CL')}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 11, color: '#94a3b8' }}>Base Seguridad</div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: '#334155' }}>${sueldoBase.toLocaleString('es-CL')}</div>
                       </div>
-                      <span style={{ color: 'white', fontSize: 18, opacity: 0.8 }}>{abierto ? '▾' : '▸'}</span>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 11, color: '#94a3b8' }}>Total</div>
+                        <div style={{ fontSize: 16, fontWeight: 800, color: c.text }}>${total.toLocaleString('es-CL')}</div>
+                      </div>
+                      <span style={{ color: '#94a3b8', fontSize: 16 }}>{abierto ? '▾' : '▸'}</span>
                     </div>
                   </div>
                   {abierto && (
-                    <div style={{ padding: '0 20px 16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9' }}>
-                        <span style={{ fontSize: 14, color: '#64748b' }}>Sueldo base</span>
-                        <span style={{ fontSize: 14, fontWeight: 600 }}>${sueldoBase.toLocaleString('es-CL')}</span>
+                    <div style={{ padding: '4px 16px 14px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+                        <span style={{ fontSize: 13, color: '#64748b' }}>Sueldo base (Seguridad)</span>
+                        <span style={{ fontSize: 13, fontWeight: 600 }}>${sueldoBase.toLocaleString('es-CL')}</span>
                       </div>
                       {Object.values(gruposReemplazando).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
@@ -1055,13 +1061,8 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                         <span style={{ fontSize: 15 }}>Total a pagar</span>
                         <span style={{ fontSize: 18, color: c.text }}>${total.toLocaleString('es-CL')}</span>
                       </div>
-                      <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-                        <button onClick={() => onAjuste(p)} style={{
-                          flex: 1, padding: '10px', border: `1px dashed ${c.border}`,
-                          borderRadius: 8, background: c.light, color: c.text,
-                          cursor: 'pointer', fontSize: 13, fontWeight: 600,
-                        }}>+ Ajuste / Descuento</button>
-
+                      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                        <button onClick={() => onAjuste(p)} style={{ flex: 1, padding: '9px', border: `1px dashed ${c.border}`, borderRadius: 8, background: c.light, color: c.text, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>+ Ajuste</button>
                         {pagosNomina.find(pn => pn.personal_id == p.id) ? (
                           <button onClick={() => deletePago(pagosNomina.find(pn => pn.personal_id == p.id).id)} style={{
                             flex: 1, padding: '10px', border: '1px solid #fca5a5',
