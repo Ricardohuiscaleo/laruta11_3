@@ -1500,105 +1500,87 @@ function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, perso
         </div>
       </div>
 
-      {window.innerWidth < 768 ? (
-        <MobileScheduleView diasEnMes={diasEnMes} turnosSeguridad={turnosSeguridad} personal={personal} mes={mes} anio={anio} onAddTurno={onAddTurno} onDeleteTurno={onDeleteTurno} seguridadColors={seguridadColors} />
-      ) : (
-        <>
-          {/* Day headers */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 8 }}>
-            {DIAS_LABEL.map(d => (
-              <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 800, color: '#70757a', textTransform: 'uppercase', letterSpacing: 1, padding: '8px 0' }}>{d}</div>
-            ))}
-          </div>
+      {/* CSS injected to handle responsive text truncation and sizing if needed */}
+      <style>{`
+        .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .grid-cell { background: white; border-radius: 12px; min-height: clamp(60px, 15vw, 120px); padding: clamp(2px, 1vw, 8px); display: flex; flex-direction: column; transition: all 0.2s ease; border: 1px solid #e3e3e380; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .grid-cell.hoy { border: 2px solid #1a73e8; box-shadow: 0 4px 16px rgba(26,115,232,0.12); }
+        .grid-cell.empty { background: transparent; border: none; box-shadow: none; min-height: auto; }
+        .day-num { font-size: clamp(11px, 2.5vw, 13px); font-weight: 700; width: clamp(20px, 5vw, 28px); height: clamp(20px, 5vw, 28px); display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #444746; }
+        .day-num.hoy-num { background: #1a73e8; color: white; }
+        .guard-pill { display: flex; align-items: center; gap: 2px; color: white; border-radius: 8px; padding: 2px 4px; font-size: clamp(8px, 1.8vw, 10px); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px; }
+        .repl-pill { display: flex; align-items: center; justify-content: space-between; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 2px 4px; font-size: clamp(8px, 1.8vw, 10px); font-weight: 700; color: #c2410c; margin-bottom: 2px; }
+      `}</style>
 
-          {/* Card grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
-            {celdas.map((dia, i) => {
-              const trabajando = dia ? (turnosSeguridad[dia] || []) : [];
-              const fecha = dia ? `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}` : '';
-              const esHoy = dia === hoyDia;
-              const dynamicIds = new Set(trabajando.filter(t => t.is_dynamic).map(t => String(t.personal_id)));
-              const reemplazos = trabajando.filter(t => !t.is_dynamic && t.tipo === 'reemplazo');
+      {/* Day headers */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 8 }}>
+        {DIAS_LABEL.map(d => (
+          <div key={d} style={{ textAlign: 'center', fontSize: 'clamp(9px, 2vw, 11px)', fontWeight: 800, color: '#70757a', textTransform: 'uppercase', letterSpacing: 0.5, padding: '8px 0' }}>{d}</div>
+        ))}
+      </div>
 
-              return (
-                <div key={i} style={{
-                  background: dia ? 'white' : 'transparent',
-                  borderRadius: 20,
-                  minHeight: 120, padding: dia ? '10px 10px 8px' : 0,
-                  display: 'flex', flexDirection: 'column',
-                  border: dia ? (esHoy ? '2px solid #1a73e8' : '1px solid #e3e3e380') : 'none',
-                  boxShadow: dia ? (esHoy ? '0 4px 16px rgba(26,115,232,0.12)' : '0 1px 2px rgba(0,0,0,0.03)') : 'none',
-                  transition: 'all 0.2s ease',
-                }}>
-                  {dia && (
-                    <>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                        <span style={{
-                          fontSize: 13, fontWeight: 700,
-                          width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
-                          background: esHoy ? '#1a73e8' : 'transparent',
-                          color: esHoy ? 'white' : '#444746',
-                        }}>{dia}</span>
-                        <button onClick={() => {
-                          const titularObj = trabajando.find(t => t.is_dynamic);
-                          const titularId = titularObj ? titularObj.personal_id : '';
-                          onAddTurno({ dia, fecha, isSeguridad: true, titularId });
-                        }} style={{
-                          fontSize: 16, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
-                          border: 'none', background: 'transparent', cursor: 'pointer', color: '#70757a', fontWeight: 400, opacity: 0.3,
-                        }} title="Agregar Reemplazo">+</button>
-                      </div>
+      {/* Card grid */}
+      <div className="month-grid">
+        {celdas.map((dia, i) => {
+          const trabajando = dia ? (turnosSeguridad[dia] || []) : [];
+          const fecha = dia ? `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}` : '';
+          const esHoy = dia === hoyDia;
+          const dynamicIds = new Set(trabajando.filter(t => t.is_dynamic).map(t => String(t.personal_id)));
+          const reemplazos = trabajando.filter(t => !t.is_dynamic && t.tipo === 'reemplazo');
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1 }}>
-                        {/* Guard pills - only show who's on duty */}
-                        {guardias.map(g => {
-                          const c = seguridadColors[g.nombre] || seguridadColors['default'];
-                          const enGuardia = dynamicIds.has(String(g.id));
-                          if (!enGuardia) return null;
-                          return (
-                            <div key={g.id} style={{
-                              display: 'flex', alignItems: 'center', gap: 4,
-                              background: c.line, color: 'white',
-                              borderRadius: 10, padding: '3px 8px',
-                              fontSize: 10, fontWeight: 700,
-                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                            }}>
-                              {g.nombre}
-                            </div>
-                          );
-                        })}
+          return (
+            <div key={i} className={`grid-cell ${dia ? '' : 'empty'} ${esHoy ? 'hoy' : ''}`}>
+              {dia && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span className={`day-num ${esHoy ? 'hoy-num' : ''}`}>{dia}</span>
+                    <button onClick={() => {
+                      const titularObj = trabajando.find(t => t.is_dynamic);
+                      const titularId = titularObj ? titularObj.personal_id : '';
+                      onAddTurno({ dia, fecha, isSeguridad: true, titularId });
+                    }} style={{
+                      fontSize: 14, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
+                      border: 'none', background: 'transparent', cursor: 'pointer', color: '#70757a', fontWeight: 700, opacity: 0.4, padding: 0,
+                    }} title="Agregar Reemplazo">+</button>
+                  </div>
 
-                        {/* Replacement pills */}
-                        {reemplazos.map(t => {
-                          const replacer = personal.find(x => x.id == t.personal_id);
-                          const titular = personal.find(x => x.id == t.reemplazado_por);
-                          if (!replacer) return null;
-                          return (
-                            <div key={t.id} style={{
-                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                              background: '#fff7ed', border: '1px solid #fed7aa',
-                              borderRadius: 10, padding: '3px 6px',
-                              fontSize: 10, fontWeight: 700, color: '#c2410c',
-                            }}>
-                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {replacer.nombre} ↔ {titular ? titular.nombre : '?'}
-                              </span>
-                              <button onClick={() => onDeleteTurno(t.id)} style={{
-                                background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444',
-                                fontSize: 12, fontWeight: 800, padding: 0, marginLeft: 2, lineHeight: 1,
-                              }}>×</button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
+                  <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                    {/* Guard pills - only show who's on duty */}
+                    {guardias.map(g => {
+                      const c = seguridadColors[g.nombre] || seguridadColors['default'];
+                      const enGuardia = dynamicIds.has(String(g.id));
+                      if (!enGuardia) return null;
+                      return (
+                        <div key={g.id} className="guard-pill" style={{ background: c.line }}>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{window.innerWidth < 400 ? g.nombre.slice(0, 3) + '.' : g.nombre}</span>
+                        </div>
+                      );
+                    })}
+
+                    {/* Replacement pills */}
+                    {reemplazos.map(t => {
+                      const replacer = personal.find(x => x.id == t.personal_id);
+                      const titular = personal.find(x => x.id == t.reemplazado_por);
+                      if (!replacer) return null;
+                      return (
+                        <div key={t.id} className="repl-pill">
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {window.innerWidth < 400 ? `${replacer.nombre[0]}↔${titular ? titular.nombre[0] : '?'}` : `${replacer.nombre}↔${titular ? titular.nombre : '?'}`}
+                          </span>
+                          <button onClick={() => onDeleteTurno(t.id)} style={{
+                            background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444',
+                            fontSize: 12, fontWeight: 800, padding: 0, marginLeft: 2, lineHeight: 1,
+                          }}>×</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
