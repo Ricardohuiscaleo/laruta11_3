@@ -582,20 +582,24 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
 
       {/* Massive Summary Card */}
       <div style={{ background: '#1a73e8', borderRadius: 24, padding: 32, color: 'white', marginTop: 24, boxShadow: '0 12px 32px rgba(26,115,232,0.3)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 20 }}>
-          <div>
-            <div style={{ opacity: 0.8, fontSize: 14, marginBottom: 8 }}>Costo Total Nómina (Mes)</div>
-            <div style={{ fontSize: 32, fontWeight: 700 }}>${Math.round(stats.totalAPagar).toLocaleString('es-CL')}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap-reverse', gap: 16 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, opacity: 0.9, fontWeight: 500 }}>
+              {stats.totalAPagar <= stats.presupuesto ? (
+                <>Costo Total Nómina es el esperado. <ShieldCheck size={20} color="#4ade80" /></>
+              ) : (
+                <>Costo Total Nómina excede el presupuesto. <AlertCircle size={20} color="#fba918" /></>
+              )}
+            </div>
+            <div style={{ fontSize: 40, fontWeight: 800, marginTop: 4 }}>
+              ${Math.round(stats.totalAPagar).toLocaleString('es-CL')}
+            </div>
+            <div style={{ fontSize: 16, opacity: 0.8, fontWeight: 500, marginTop: 8 }}>
+              Pagos realizados: ${Math.round(stats.totalPagado).toLocaleString('es-CL')}
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 24 }}>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ opacity: 0.8, fontSize: 12 }}>Presupuesto Asignado</div>
-              <div style={{ fontSize: 18, fontWeight: 600 }}>${Math.round(stats.presupuesto).toLocaleString('es-CL')}</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ opacity: 0.8, fontSize: 12 }}>Diferencia (Presupuesto - Costo)</div>
-              <div style={{ fontSize: 18, fontWeight: 600 }}>${Math.round(stats.presupuesto - stats.totalAPagar).toLocaleString('es-CL')}</div>
-            </div>
+          <div style={{ background: 'rgba(255,255,255,0.15)', padding: '6px 14px', borderRadius: 16, fontSize: 14, fontWeight: 600 }}>
+            Presupuesto: ${Math.round(stats.presupuesto - stats.totalPagado).toLocaleString('es-CL')}
           </div>
         </div>
       </div>
