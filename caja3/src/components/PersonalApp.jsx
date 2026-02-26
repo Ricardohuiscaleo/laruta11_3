@@ -1266,6 +1266,18 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
         </button>
       </div>
 
+      {mes === 1 && (
+        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <span style={{ fontSize: 16, flexShrink: 0 }}>⚖️</span>
+          <div style={{ fontSize: 11, color: '#92400e', lineHeight: 1.5 }}>
+            <strong>Nota legal — Febrero:</strong> El mes laboral es siempre de 30 días, sin importar que febrero tenga 28 (o 29 en bisiesto). El empleador paga los 30 días completos y el valor diario se calcula dividiendo por 30.
+            <br />
+            <span style={{ opacity: 0.7 }}>Art. 42 y 55, Código del Trabajo · </span>
+            <a href="https://www.dt.gob.cl/legislacion/1624/w3-propertyvalue-145761.html" target="_blank" rel="noopener noreferrer" style={{ color: '#b45309', fontWeight: 600, textDecoration: 'underline', opacity: 0.8 }}>Dirección del Trabajo</a>
+          </div>
+        </div>
+      )}
+
       {[['Guardias', guardias]].map(([titulo, grupo]) => (
         <div key={titulo}>
           <h2 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>{titulo}</h2>
