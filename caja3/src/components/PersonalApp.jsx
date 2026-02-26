@@ -24,11 +24,14 @@ import {
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 const COLORES = {
-  1: { bg: '#3b82f6', light: '#eff6ff', border: '#bfdbfe', text: '#1d4ed8' }, // Camila - azul
-  2: { bg: '#8b5cf6', light: '#f5f3ff', border: '#ddd6fe', text: '#6d28d9' }, // Neit - violeta
-  3: { bg: '#f59e0b', light: '#fffbeb', border: '#fde68a', text: '#b45309' }, // Andrés - amarillo
-  4: { bg: '#10b981', light: '#ecfdf5', border: '#a7f3d0', text: '#047857' }, // Gabriel - verde
-  5: { bg: '#ef4444', light: '#fef2f2', border: '#fecaca', text: '#b91c1c' }, // Ricardo - rojo
+  1: { bg: '#d946ef', light: '#fdf4ff', border: '#f5d0fe', text: '#a21caf' }, // Camila - Rosa Fucsia
+  2: { bg: '#0ea5e9', light: '#f0f9ff', border: '#bae6fd', text: '#0369a1' }, // Neit - Azul Cian
+  3: { bg: '#eab308', light: '#fefce8', border: '#fef08a', text: '#a16207' }, // Andrés - Amarillo Sol
+  4: { bg: '#84cc16', light: '#f7fee7', border: '#d9f99d', text: '#4d7c0f' }, // Gabriel - Verde Lima
+  5: { bg: '#8b5cf6', light: '#f5f3ff', border: '#ddd6fe', text: '#6d28d9' }, // Ricardo - Morado Eléctrico
+  6: { bg: '#f97316', light: '#fff7ed', border: '#fed7aa', text: '#c2410c' }, // Claudio - Naranja Vitamínico
+  7: { bg: '#f43f5e', light: '#fff1f2', border: '#fecdd3', text: '#be123c' }, // Rojo Coral
+  8: { bg: '#14b8a6', light: '#f0fdfa', border: '#99f6e4', text: '#0f766e' }, // Azul Turquesa
 };
 
 function useWindowWidth() {
@@ -345,21 +348,24 @@ export default function PersonalApp() {
           .nav-tab svg, .nav-tab img { transform: scale(0.9); }
           
           /* Tarjetas Nómina (Resumen) */
-          .nomina-card-header { flex-direction: column; align-items: flex-start !important; gap: 12px !important; }
-          .nomina-card-actions { width: 100%; justify-content: flex-end; }
-          .nomina-card-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 8px !important; padding: 10px !important; }
-          .nomina-card-grid > div > div:nth-child(1) { font-size: 9px !important; }
-          .nomina-card-grid > div > div:nth-child(2) { font-size: 13px !important; }
+          .nomina-card-header { flex-wrap: nowrap !important; align-items: flex-start !important; gap: 6px !important; }
+          .nomina-card-actions { margin-left: auto; flex-shrink: 0; }
+          .nomina-card-grid { grid-template-columns: 1fr 1fr 1fr !important; gap: 4px !important; padding: 10px !important; }
+          .nomina-card-grid > div > div:nth-child(1) { font-size: 8px !important; letter-spacing: 0 !important; }
+          .nomina-card-grid > div > div:nth-child(2) { font-size: 12px !important; }
+          .nomina-card-name { font-size: 14px !important; white-space: normal !important; word-wrap: break-word !important; line-height: 1.2; }
+          .nomina-card-rol { font-size: 10px !important; white-space: normal !important; word-break: break-all; }
+          .nomina-card-avatar { width: 36px !important; height: 36px !important; font-size: 14px !important; }
           
           /* Tarjetas Detalle (Ruta 11 y Seguridad) */
           .detail-card-header { padding: 12px 14px !important; align-items: stretch !important; flex-direction: column; gap: 12px !important; }
-          .detail-card-name-section { gap: 8px !important; }
-          .detail-card-name-text { font-size: 16px !important; }
+          .detail-card-name-section { gap: 6px !important; }
+          .detail-card-name-text { font-size: 15px !important; }
           .detail-card-meta { flex-direction: row !important; justify-content: space-between; align-items: center; width: 100%; border-top: 1px dashed #e2e8f0; padding-top: 12px; }
           .detail-card-base-col, .detail-card-total-col { text-align: left !important; }
           .detail-card-base-col > div:first-child, .detail-card-total-col > div:first-child { font-size: 9px !important; }
-          .detail-card-base-col > div:last-child { font-size: 14px !important; }
-          .detail-card-total-col > div:last-child { font-size: 16px !important; }
+          .detail-card-base-col > div:last-child { font-size: 13px !important; }
+          .detail-card-total-col > div:last-child { font-size: 15px !important; }
         }
       `}</style>
 
@@ -595,6 +601,7 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
           <NominaCard
             key={item.persona.id}
             item={item}
+            colorObj={COLORES[item.persona.id] || COLORES[((item.persona.id % 8) + 1)]}
             onNotify={() => setModalEmail({ type: 'individual', persona: item.persona, total: item.granTotal })}
             onEdit={() => onEditPersonal(item.persona)}
           />
@@ -646,13 +653,16 @@ function StatCard({ title, value, icon, color }) {
   );
 }
 
-function NominaCard({ item, onNotify, onEdit }) {
+function NominaCard({ item, colorObj, onNotify, onEdit }) {
+  const c = colorObj || { bg: '#1a73e8', text: '#1a73e8', light: '#f8fafd' };
+
   return (
     <div style={{
       background: 'white',
       borderRadius: 16,
       padding: '16px',
-      border: '1px solid #e3e3e3',
+      border: `1px solid ${c.border || '#e3e3e3'}`,
+      boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
       display: 'flex',
       flexDirection: 'column',
       gap: 16,
@@ -661,20 +671,20 @@ function NominaCard({ item, onNotify, onEdit }) {
     }} onClick={onEdit}>
 
       {/* Header Profile + Actions */}
-      <div className="nomina-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#f1f3f4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: '#1a73e8', flexShrink: 0 }}>
+      <div className="nomina-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+          <div className="nomina-card-avatar" style={{ width: 44, height: 44, borderRadius: '50%', background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: 'white', flexShrink: 0 }}>
             {item.persona.nombre[0]}
           </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 16, fontWeight: 600, color: '#1f1f1f', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.persona.nombre}</div>
-            <div style={{ fontSize: 12, color: '#70757a', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div className="nomina-card-name" style={{ fontSize: 16, fontWeight: 700, color: '#1f1f1f', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.persona.nombre}</div>
+            <div className="nomina-card-rol" style={{ fontSize: 12, color: c.text, fontWeight: 600, textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {Array.isArray(item.persona.rol) ? item.persona.rol.join(', ') : item.persona.rol}
             </div>
           </div>
         </div>
         <div className="nomina-card-actions" style={{ display: 'flex', gap: 8 }}>
-          <button onClick={(e) => { e.stopPropagation(); onNotify(); }} style={{ border: 'none', background: '#f8fafd', color: '#1a73e8', padding: '8px', borderRadius: 8, cursor: 'pointer', display: 'flex' }} title="Notificar Pago">
+          <button onClick={(e) => { e.stopPropagation(); onNotify(); }} style={{ border: 'none', background: c.light, color: c.text, padding: '8px', borderRadius: 8, cursor: 'pointer', display: 'flex' }} title="Notificar Pago">
             <Mail size={18} />
           </button>
         </div>
@@ -684,15 +694,15 @@ function NominaCard({ item, onNotify, onEdit }) {
       <div className="nomina-card-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 16, background: '#f8fafd', padding: 12, borderRadius: 12 }}>
         <div>
           <div style={{ fontSize: 10, color: '#70757a', textTransform: 'uppercase', letterSpacing: 0.5 }}>Ruta 11</div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: item.pagado11 ? '#1e8e3e' : '#1f1f1f' }}>{item.total11 > 0 ? `$${item.total11.toLocaleString('es-CL')}` : '—'}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: item.pagado11 ? '#1e8e3e' : '#1f1f1f' }}>{item.total11 > 0 ? `$${item.total11.toLocaleString('es-CL')}` : '—'}</div>
         </div>
         <div>
           <div style={{ fontSize: 10, color: '#70757a', textTransform: 'uppercase', letterSpacing: 0.5 }}>Seguridad</div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: item.pagadoSeg ? '#1e8e3e' : '#1f1f1f' }}>{item.totalSeg > 0 ? `$${item.totalSeg.toLocaleString('es-CL')}` : '—'}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: item.pagadoSeg ? '#1e8e3e' : '#1f1f1f' }}>{item.totalSeg > 0 ? `$${item.totalSeg.toLocaleString('es-CL')}` : '—'}</div>
         </div>
         <div>
-          <div style={{ fontSize: 10, color: '#1a73e8', textTransform: 'uppercase', fontWeight: 700 }}>A Pagar</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: '#1a73e8' }}>${item.granTotal.toLocaleString('es-CL')}</div>
+          <div style={{ fontSize: 10, color: c.text, textTransform: 'uppercase', fontWeight: 800 }}>A Pagar</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: c.text }}>${item.granTotal.toLocaleString('es-CL')}</div>
         </div>
       </div>
     </div>
