@@ -251,24 +251,24 @@ export default function PersonalApp() {
 
     const tPersonal = turnosFiltrados.filter(t => t.personal_id == p.id);
     const diasNormales = tPersonal.filter(t => t.tipo === 'normal' || t.tipo === 'seguridad').length;
-    // Agrupado: días que FUE reemplazado (p is titular -> t.personal_id == p.id)
-    const rawReemplazados = turnosFiltrados.filter(t => t.tipo === 'reemplazo' && t.personal_id == p.id);
+    // Agrupado: días que FUE reemplazado (p is titular -> t.reemplazado_por == p.id)
+    const rawReemplazados = turnosFiltrados.filter(t => t.tipo === 'reemplazo' && t.reemplazado_por == p.id);
     const diasReemplazados = rawReemplazados.length;
     const gruposReemplazados = {};
     rawReemplazados.forEach(t => {
-      const key = t.reemplazado_por ?? 'ext'; // replacer's id
-      if (!gruposReemplazados[key]) gruposReemplazados[key] = { persona: personal.find(x => x.id == t.reemplazado_por), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
+      const key = t.personal_id ?? 'ext'; // replacer's id
+      if (!gruposReemplazados[key]) gruposReemplazados[key] = { persona: personal.find(x => x.id == t.personal_id), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
       gruposReemplazados[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
       gruposReemplazados[key].monto += parseFloat(t.monto_reemplazo || 20000);
     });
 
-    // Agrupado: días que REEMPLAZÓ a otro (p is replacer -> t.reemplazado_por == p.id)
-    const rawReemplazando = turnosFiltrados.filter(t => t.tipo === 'reemplazo' && t.reemplazado_por == p.id);
+    // Agrupado: días que REEMPLAZÓ a otro (p is replacer -> t.personal_id == p.id)
+    const rawReemplazando = turnosFiltrados.filter(t => t.tipo === 'reemplazo' && t.personal_id == p.id);
     const reemplazosHechos = rawReemplazando.length;
     const gruposReemplazando = {};
     rawReemplazando.forEach(t => {
-      const key = t.personal_id; // titular's id
-      if (!gruposReemplazando[key]) gruposReemplazando[key] = { persona: personal.find(x => x.id == t.personal_id), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
+      const key = t.reemplazado_por; // titular's id
+      if (!gruposReemplazando[key]) gruposReemplazando[key] = { persona: personal.find(x => x.id == t.reemplazado_por), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
       gruposReemplazando[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
       gruposReemplazando[key].monto += parseFloat(t.monto_reemplazo);
     });
@@ -469,7 +469,12 @@ export default function PersonalApp() {
                   <div>
                     <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#9a3412', textTransform: 'uppercase', marginBottom: 4 }}>Monto del Reemplazo</label>
                     <input type="number" value={formTurno.monto_reemplazo} onChange={e => setFormTurno(f => ({ ...f, monto_reemplazo: e.target.value }))}
-                      style={{ width: '100%', padding: '8px 12px', border: '1px solid #fdba74', borderRadius: 10, fontSize: 13, background: 'white' }} />
+                      style={{ width: '100%', padding: '8px 12px', border: '1px solid #fdba74', borderRadius: 10, fontSize: 13, background: 'white', marginBottom: 8 }} />
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button type="button" onClick={() => setFormTurno(f => ({ ...f, monto_reemplazo: 17966.666 }))} style={{ flex: 1, padding: '6px', fontSize: 11, fontWeight: 700, color: '#c2410c', background: '#ffedd5', border: '1px solid #fdba74', borderRadius: 8, cursor: 'pointer' }}>$17.967</button>
+                      <button type="button" onClick={() => setFormTurno(f => ({ ...f, monto_reemplazo: 20000 }))} style={{ flex: 1, padding: '6px', fontSize: 11, fontWeight: 700, color: '#c2410c', background: '#ffedd5', border: '1px solid #fdba74', borderRadius: 8, cursor: 'pointer' }}>$20.000</button>
+                      <button type="button" onClick={() => setFormTurno(f => ({ ...f, monto_reemplazo: 30000 }))} style={{ flex: 1, padding: '6px', fontSize: 11, fontWeight: 700, color: '#c2410c', background: '#ffedd5', border: '1px solid #fdba74', borderRadius: 8, cursor: 'pointer' }}>$30.000</button>
+                    </div>
                   </div>
                 </div>
               </div>
