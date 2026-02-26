@@ -278,8 +278,9 @@ export default function PersonalApp() {
       gruposReemplazando[key].monto += parseFloat(t.monto_reemplazo);
     });
     const diasTrabajados = modoContexto === 'seguridad'
-      ? (diasEnMes - diasReemplazados)
+      ? (diasReemplazados > 0 ? (diasEnMes - diasReemplazados) : 30)
       : (diasNormales + reemplazosHechos);
+    const diasReemplazoLegal = Math.max(0, 30 - diasEnMes); // Feb: 2 extra legal days
 
     // Ajustes per context object... just leave them global or split them?
     const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
@@ -311,7 +312,7 @@ export default function PersonalApp() {
     const totalReemplazando = Object.values(gruposReemplazando).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
     const totalReemplazados = Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
     const total = Math.round(sueldoBase + totalReemplazando - totalReemplazados + totalAjustes);
-    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplazados, gruposReemplazando, total };
+    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, diasReemplazoLegal, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplazados, gruposReemplazando, total };
   }
 
   const administradores = personal.filter(p => p.rol?.includes('administrador') && p.activo == 1);
@@ -1028,7 +1029,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
           <h2 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>{titulo}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {grupo.map(p => {
-              const { diasTrabajados, ajustesPer, sueldoBase, gruposReemplazados, gruposReemplazando, total } = getLiquidacion(p);
+              const { diasTrabajados, diasReemplazados, diasReemplazoLegal, ajustesPer, sueldoBase, gruposReemplazados, gruposReemplazando, total } = getLiquidacion(p);
               const c = colores[p.id];
               const abierto = expandidos[p.id] !== false;
               const pagado = pagosNomina.find(pn => pn.personal_id == p.id);
@@ -1048,7 +1049,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                         {pagado && <ShieldCheck size={18} style={{ color: '#059669' }} />}
                         <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: c?.light || '#f1f5f9', color: c?.text || '#475569', border: `1px solid ${c?.border || '#e2e8f0'}`, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{rolLabel}</span>
                       </div>
-                      <div style={{ fontSize: 13, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{diasTrabajados} de 30 días trabajados</div>
+                      <div style={{ fontSize: 13, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{diasReemplazados > 0 ? `${diasTrabajados} de 30` : '30'} días trabajados</div>
                     </div>
                     {/* Salary summary inline */}
                     <div className="detail-card-meta" style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
@@ -1075,7 +1076,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                       {Object.values(gruposReemplazando).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #86efac', backgroundColor: '#dcfce7', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                           <span style={{ fontSize: 13, color: '#14532d', fontWeight: 600 }}>
-                            ↔ Reemplazó a {g.persona?.nombre ?? '?'} {g.dias.length} de 30 días
+                            ↔ Reemplazó a {g.persona?.nombre ?? '?'} {g.dias.length + diasReemplazoLegal} de 30 días
                           </span>
                           <span style={{ fontSize: 13, fontWeight: 800, color: '#166534' }}>+${g.monto.toLocaleString('es-CL')}</span>
                         </div>
@@ -1083,7 +1084,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                       {Object.values(gruposReemplazados).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #fca5a5', backgroundColor: '#fee2e2', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: 8 }}>
                           <span style={{ fontSize: 13, color: '#7f1d1d', fontWeight: 600 }}>
-                            {g.persona?.nombre ?? '?'} cubrió {g.dias.length} de 30 días
+                            {g.persona?.nombre ?? '?'} cubrió {g.dias.length + diasReemplazoLegal} de 30 días
                             {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 800, border: '1px solid #fcd34d' }}> PAGO DIRECTO</span>}
                           </span>
                           {g.pago_por === 'empresa'
@@ -1283,7 +1284,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
           <h2 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>{titulo}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {grupo.map(p => {
-              const { diasTrabajados, ajustesPer, sueldoBase, gruposReemplazados, gruposReemplazando, total } = getLiquidacion(p);
+              const { diasTrabajados, diasReemplazados, diasReemplazoLegal, ajustesPer, sueldoBase, gruposReemplazados, gruposReemplazando, total } = getLiquidacion(p);
               const c = colores[p.id] || { bg: '#e0e7ff', border: '#c7d2fe', light: '#eef2ff', text: '#3730a3' };
               const abierto = expandidos[p.id] !== false;
               return (
@@ -1296,7 +1297,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                         {pagosNomina.find(pn => pn.personal_id == p.id) && <ShieldCheck size={18} style={{ color: '#059669' }} />}
                         <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: c.light, color: c.text, border: `1px solid ${c.border}`, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Seguridad</span>
                       </div>
-                      <div style={{ fontSize: 13, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{diasTrabajados} de 30 días trabajados</div>
+                      <div style={{ fontSize: 13, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{diasReemplazados > 0 ? `${diasTrabajados} de 30` : '30'} días trabajados</div>
                     </div>
                     <div className="detail-card-meta" style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
                       <div className="detail-card-base-col" style={{ textAlign: 'right' }}>
@@ -1321,7 +1322,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                       {Object.values(gruposReemplazando).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #86efac', backgroundColor: '#dcfce7', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                           <span style={{ fontSize: 13, color: '#14532d', fontWeight: 600 }}>
-                            ↔ Reemplazó a {g.persona?.nombre ?? '?'} {g.dias.length} de 30 días
+                            ↔ Reemplazó a {g.persona?.nombre ?? '?'} {g.dias.length + diasReemplazoLegal} de 30 días
                           </span>
                           <span style={{ fontSize: 13, fontWeight: 800, color: '#166534' }}>+${g.monto.toLocaleString('es-CL')}</span>
                         </div>
@@ -1329,7 +1330,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                       {Object.values(gruposReemplazados).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #fca5a5', backgroundColor: '#fee2e2', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: 8 }}>
                           <span style={{ fontSize: 13, color: '#7f1d1d', fontWeight: 600 }}>
-                            {g.persona?.nombre ?? '?'} cubrió {g.dias.length} de 30 días
+                            {g.persona?.nombre ?? '?'} cubrió {g.dias.length + diasReemplazoLegal} de 30 días
                             {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 800, border: '1px solid #fcd34d' }}> PAGO DIRECTO</span>}
                           </span>
                           {g.pago_por === 'empresa'
