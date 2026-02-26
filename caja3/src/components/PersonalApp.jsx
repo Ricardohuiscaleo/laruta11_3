@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
@@ -10,10 +10,24 @@ const COLORES = {
   5: { bg: '#ef4444', light: '#fef2f2', border: '#fecaca', text: '#b91c1c' }, // Ricardo - rojo
 };
 
+function useWindowWidth() {
+  const [width, setWidth] = React.useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+  React.useEffect(() => {
+    const handleResize = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  return width;
+}
+
+
+
 export default function PersonalApp() {
   const [tab, setTab] = useState('calendario');
   const [mes, setMes] = useState(() => new Date().getMonth());
-  const [anio, setAnio] = useState(() => new Date().getFullYear());
+  const [anio, setAnio] = useState(new Date().getFullYear());
+  const width = useWindowWidth();
+  const isMobile = width < 768;
   const [personal, setPersonal] = useState([]);
   const [turnos, setTurnos] = useState([]);
   const [ajustes, setAjustes] = useState([]);
@@ -706,6 +720,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
           monto: total,
           es_externo: p.activo == 0 ? 1 : 0,
           notas: generarNotas(p),
+          centro_costo: centroCosto,
         }),
       });
       const data = await res.json();
@@ -935,6 +950,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
           monto: total,
           es_externo: p.activo == 0 ? 1 : 0,
           notas: generarNotas(p),
+          centro_costo: centroCosto,
         }),
       });
       const data = await res.json();
@@ -1137,6 +1153,84 @@ function EquipoView({ personal, onAddPersonal, onEditPersonal }) {
   );
 }
 
+
+function MobileScheduleView({ diasEnMes, turnosSeguridad, personal, mes, anio, onAddTurno, onDeleteTurno, seguridadColors }) {
+  const DIAS_LABEL_L = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const days = Array.from({ length: diasEnMes }, (_, i) => i + 1);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {days.map(dia => {
+        const trabajando = turnosSeguridad[dia] || [];
+        const date = new Date(anio, mes, dia);
+        const dayLabel = DIAS_LABEL_L[date.getDay()];
+        const fecha = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+        const esHoy = new Date().toDateString() === date.toDateString();
+
+        return (
+          <div key={dia} style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+            {/* Date column */}
+            <div style={{ width: 45, textAlign: 'center', flexShrink: 0 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: esHoy ? '#4f46e5' : '#94a3b8', textTransform: 'uppercase' }}>{dayLabel.slice(0, 3)}</div>
+              <div style={{
+                fontSize: 18, fontWeight: 800, color: esHoy ? 'white' : '#1e1b4b',
+                background: esHoy ? '#4f46e5' : 'transparent',
+                width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: '50%', margin: '2px auto'
+              }}>{dia}</div>
+            </div>
+
+            {/* Content column */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>Agenda</span>
+                <button onClick={() => {
+                  const titularObj = trabajando.find(t => t.is_dynamic);
+                  const titularId = titularObj ? titularObj.personal_id : '';
+                  onAddTurno({ dia, fecha, isSeguridad: true, titularId });
+                }} style={{
+                  fontSize: 12, padding: '2px 8px', borderRadius: 4,
+                  border: '1px solid #c7d2fe', background: '#f5f7ff', color: '#4f46e5', fontWeight: 700
+                }}>+ Reemplazo</button>
+              </div>
+
+              {trabajando.length === 0 ? (
+                <div style={{ fontSize: 13, color: '#cbd5e1', fontStyle: 'italic' }}>Sin turnos asignados</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {trabajando.map(t => {
+                    const p = personal.find(x => x.id == t.personal_id);
+                    if (!p) return null;
+                    const c = seguridadColors[p.nombre] || seguridadColors['default'];
+                    const isReemplazo = t.tipo === 'reemplazo';
+
+                    return (
+                      <div key={t.id || (dia + p.id)} style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        background: c.bg, borderLeft: `4px solid ${c.line}`,
+                        borderRadius: 6, padding: '8px 10px',
+                        boxShadow: isReemplazo ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
+                      }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: c.text }}>{p.nombre}</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: c.text, opacity: 0.8 }}>{isReemplazo ? '➡️ Reemplazo Especial' : '🛡️ Guardia 4x4'}</span>
+                        </div>
+                        {!t.is_dynamic && (
+                          <button onClick={() => onDeleteTurno(t.id)} style={{ background: 'white', border: 'none', borderRadius: '50%', width: 22, height: 22, display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', color: '#ef4444', fontSize: 16, fontWeight: 800 }}>×</button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, personal, mes, anio, onAddTurno, onDeleteTurno }) {
   const DIAS_LABEL = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
   const celdas = [];
@@ -1169,70 +1263,74 @@ function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, perso
           })}
         </div>
       </div>
+      {/* Vista condicional: Grid para Desktop / Schedule para Mobile */}
+      {window.innerWidth < 768 ? (
+        <MobileScheduleView diasEnMes={diasEnMes} turnosSeguridad={turnosSeguridad} personal={personal} mes={mes} anio={anio} onAddTurno={onAddTurno} onDeleteTurno={onDeleteTurno} seguridadColors={seguridadColors} />
+      ) : (
+        <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #c7d2fe', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#4f46e5', color: 'white' }}>
+            {DIAS_LABEL.map(d => (
+              <div key={d} style={{ padding: '12px 4px', textAlign: 'center', fontSize: 13, fontWeight: 800 }}>{d}</div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, background: '#c7d2fe' }}>
+            {celdas.map((dia, i) => {
+              const trabajando = dia ? (turnosSeguridad[dia] || []) : [];
+              const fecha = dia ? `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}` : '';
+              return (
+                <div key={i} style={{
+                  background: dia ? 'white' : '#f8fafc',
+                  minHeight: 110, padding: '8px 6px',
+                  display: 'flex', flexDirection: 'column',
+                  transition: 'background 0.2s',
+                }}>
+                  {dia && (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: '#312e81' }}>{dia}</span>
+                        <button onClick={() => {
+                          const titularObj = trabajando.find(t => t.is_dynamic);
+                          const titularId = titularObj ? titularObj.personal_id : '';
+                          onAddTurno({ dia, fecha, isSeguridad: true, titularId });
+                        }} style={{
+                          fontSize: 14, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6,
+                          border: '1px solid #a5b4fc', background: '#e0e7ff', cursor: 'pointer', color: '#4f46e5', fontWeight: 800
+                        }} title="Agregar Reemplazo">+</button>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+                        {trabajando.map(t => {
+                          const p = personal.find(x => x.id == t.personal_id);
+                          if (!p) return null;
+                          const c = seguridadColors[p.nombre] || seguridadColors['default'];
+                          const isDynamic = t.is_dynamic;
+                          const isReemplazo = t.tipo === 'reemplazo';
 
-      <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #c7d2fe', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#4f46e5', color: 'white' }}>
-          {DIAS_LABEL.map(d => (
-            <div key={d} style={{ padding: '12px 4px', textAlign: 'center', fontSize: 13, fontWeight: 800 }}>{d}</div>
-          ))}
+                          return (
+                            <div key={t.id || (dia + p.id)} style={{
+                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                              background: c.bg, borderLeft: `4px solid ${c.line}`,
+                              borderRadius: 4, padding: '4px 6px',
+                              opacity: isDynamic && !isReemplazo ? 0.8 : 1,
+                              boxShadow: isReemplazo ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
+                            }}>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: c.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                                {p.nombre}{isReemplazo ? ' (R)' : ''}
+                              </span>
+                              {!isDynamic && (
+                                <button onClick={() => onDeleteTurno(t.id)} style={{ background: 'white', border: 'none', borderRadius: '50%', width: 16, height: 16, display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', color: '#ef4444', fontSize: 13, padding: 0, fontWeight: 800, marginLeft: 2 }} title="Eliminar Reemplazo">×</button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, background: '#c7d2fe' }}>
-          {celdas.map((dia, i) => {
-            const trabajando = dia ? (turnosSeguridad[dia] || []) : [];
-            const fecha = dia ? `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}` : '';
-            return (
-              <div key={i} style={{
-                background: dia ? 'white' : '#f8fafc',
-                minHeight: 110, padding: '8px 6px',
-                display: 'flex', flexDirection: 'column',
-                transition: 'background 0.2s',
-              }}>
-                {dia && (
-                  <>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <span style={{ fontSize: 14, fontWeight: 800, color: '#312e81' }}>{dia}</span>
-                      <button onClick={() => {
-                        const titularObj = trabajando.find(t => t.is_dynamic);
-                        const titularId = titularObj ? titularObj.personal_id : '';
-                        onAddTurno({ dia, fecha, isSeguridad: true, titularId });
-                      }} style={{
-                        fontSize: 14, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6,
-                        border: '1px solid #a5b4fc', background: '#e0e7ff', cursor: 'pointer', color: '#4f46e5', fontWeight: 800
-                      }} title="Agregar Reemplazo">+</button>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-                      {trabajando.map(t => {
-                        const p = personal.find(x => x.id == t.personal_id);
-                        if (!p) return null;
-                        const c = seguridadColors[p.nombre] || seguridadColors['default'];
-                        const isDynamic = t.is_dynamic;
-                        const isReemplazo = t.tipo === 'reemplazo';
-
-                        return (
-                          <div key={t.id || (dia + p.id)} style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            background: c.bg, borderLeft: `4px solid ${c.line}`,
-                            borderRadius: 4, padding: '4px 6px',
-                            opacity: isDynamic && !isReemplazo ? 0.8 : 1,
-                            boxShadow: isReemplazo ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
-                          }}>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: c.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                              {p.nombre}{isReemplazo ? ' (R)' : ''}
-                            </span>
-                            {!isDynamic && (
-                              <button onClick={() => onDeleteTurno(t.id)} style={{ background: 'white', border: 'none', borderRadius: '50%', width: 16, height: 16, display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', color: '#ef4444', fontSize: 13, padding: 0, fontWeight: 800, marginLeft: 2 }} title="Eliminar Reemplazo">×</button>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
