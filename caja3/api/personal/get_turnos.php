@@ -35,6 +35,12 @@ $res = mysqli_stmt_get_result($stmt);
 $data = [];
 $turnos_existentes = []; // Keep track of manually added security shifts to avoid duplicates
 while ($row = mysqli_fetch_assoc($res)) {
+    // Omitir los turnos normales ingresados manualmente en la BD para La Ruta 11,
+    // así no necesitas borrarlos de la BD, simplemente no los mostramos y usamos los autogenerados.
+    if ($row['tipo'] === 'normal' && empty($row['reemplazado_por']) && in_array((int)$row['personal_id'], [1, 2, 3, 4])) {
+        continue;
+    }
+
     $data[] = $row;
     if ($row['tipo'] === 'seguridad') {
         $turnos_existentes[$row['fecha'] . '_' . $row['personal_id']] = true;
@@ -99,12 +105,16 @@ $turnos_ruta_existentes = [];
 foreach ($data as $t) {
     if ($t['tipo'] !== 'seguridad' && $t['tipo'] !== 'reemplazo_seguridad') {
         $turnos_ruta_existentes[$t['fecha'] . '_' . $t['personal_id']] = true;
+        // Si alguien está siendo reemplazado, NO generar turno normal automático para esa persona ese día
+        if (!empty($t['reemplazado_por'])) {
+            $turnos_ruta_existentes[$t['fecha'] . '_' . $t['reemplazado_por']] = true;
+        }
     }
 }
 
 $ciclos_ruta11 = [
-    ['base' => '2026-02-01', 'a' => 'Camila', 'b' => 'Neit'],
-    ['base' => '2026-02-07', 'a' => 'Andrés', 'b' => 'Gabriel'],
+    ['base' => '2026-02-05', 'a' => 'Camila', 'b' => 'Neit'],
+    ['base' => '2026-02-03', 'a' => 'Andrés', 'b' => 'Gabriel'],
 ];
 
 foreach ($ciclos_ruta11 as $ciclo) {
