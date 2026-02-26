@@ -192,9 +192,25 @@ export default function PersonalApp() {
   });
 
   // Calcular liquidación por persona
-  function getLiquidacion(p) {
-    const tPersonal = turnos.filter(t => t.personal_id == p.id);
-    const diasNormales = tPersonal.filter(t => t.tipo === 'normal').length;
+  function getLiquidacion(p, modoContexto = 'all') {
+    const isShiftSeguridad = (t) => {
+      if (t.tipo === 'seguridad') return true;
+      if (t.tipo === 'reemplazo') {
+        const titular = personal.find(x => x.id == t.reemplazado_por);
+        return titular?.rol?.includes('seguridad') || false;
+      }
+      const tPersona = personal.find(x => x.id == t.personal_id);
+      return tPersona?.rol?.includes('seguridad') && (!tPersona?.rol?.includes('cajero') && !tPersona?.rol?.includes('planchero'));
+    };
+
+    const turnosFiltrados = turnos.filter(t => {
+      if (modoContexto === 'seguridad') return isShiftSeguridad(t);
+      if (modoContexto === 'ruta11') return !isShiftSeguridad(t);
+      return true;
+    });
+
+    const tPersonal = turnosFiltrados.filter(t => t.personal_id == p.id);
+    const diasNormales = tPersonal.filter(t => t.tipo === 'normal' || t.tipo === 'seguridad').length;
     // Agrupado: días que fue reemplazado, por quien lo reemplazó
     const rawReemplazados = tPersonal.filter(t => t.tipo === 'reemplazo');
     const diasReemplazados = rawReemplazados.length;
@@ -206,7 +222,7 @@ export default function PersonalApp() {
       gruposReemplazados[key].monto += parseFloat(t.monto_reemplazo || 20000);
     });
     // Agrupado: días que reemplazó a otro, por a quién reemplazó
-    const rawReemplazando = turnos.filter(t => t.reemplazado_por == p.id);
+    const rawReemplazando = turnosFiltrados.filter(t => t.reemplazado_por == p.id);
     const reemplazosHechos = rawReemplazando.length;
     const gruposReemplazando = {};
     rawReemplazando.forEach(t => {
@@ -216,9 +232,17 @@ export default function PersonalApp() {
       gruposReemplazando[key].monto += parseFloat(t.monto_reemplazo);
     });
     const diasTrabajados = diasNormales + reemplazosHechos;
+
+    // Ajustes per context object... just leave them global or split them?
     const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
     const totalAjustes = ajustesPer.reduce((s, a) => s + parseFloat(a.monto), 0);
-    const sueldoBase = parseFloat(p.sueldo_base);
+
+    const primerRol = typeof p.rol === 'string' ? p.rol.split(',')[0].trim() : (Array.isArray(p.rol) ? p.rol[0] : '');
+    const isMainSeguridad = primerRol === 'seguridad';
+    let sueldoBase = parseFloat(p.sueldo_base) || 0;
+    if (modoContexto === 'seguridad' && !isMainSeguridad) sueldoBase = 0;
+    if (modoContexto === 'ruta11' && isMainSeguridad) sueldoBase = 0;
+
     const totalReemplazando = Object.values(gruposReemplazando).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
     const totalReemplazados = Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
     const total = sueldoBase + totalReemplazando - totalReemplazados + totalAjustes;
@@ -278,7 +302,7 @@ export default function PersonalApp() {
             {tab === 'calendario' && <CalendarioView diasEnMes={diasEnMes} primerDia={primerDia} turnosPorFecha={turnosNoSeguridad} personal={personal} colores={COLORES} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({ dia, fecha }); setFormTurno({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa', fecha_fin: fecha }); }} onDeleteTurno={deleteTurno} />}
             {tab === 'liquidacion' && (
               <>
-                <LiquidacionView personal={personal} cajeros={cajeros} plancheros={plancheros} getLiquidacion={getLiquidacion} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina} onSavePresupuesto={savePresupuesto} />
+                <LiquidacionView personal={personal} cajeros={cajeros} plancheros={plancheros} getLiquidacion={(p) => getLiquidacion(p, 'ruta11')} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina} onSavePresupuesto={savePresupuesto} />
                 <div style={{ marginTop: 40, borderTop: '2px solid #e2e8f0', paddingTop: 24 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                     <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#1e293b' }}>📅 Calendario de Turnos (La Ruta 11)</h2>
@@ -289,7 +313,7 @@ export default function PersonalApp() {
             )}
             {tab === 'seguridad' && (
               <>
-                <LiquidacionSeguridad guardias={guardias} getLiquidacion={getLiquidacion} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina} onSavePresupuesto={savePresupuesto} />
+                <LiquidacionSeguridad guardias={guardias} getLiquidacion={(p) => getLiquidacion(p, 'seguridad')} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina} onSavePresupuesto={savePresupuesto} />
                 <div style={{ marginTop: 40, borderTop: '2px solid #e0e7ff', paddingTop: 24 }}>
                   <CalendarioSeguridad diasEnMes={diasEnMes} primerDiaLunes={primerDiaLunes} turnosSeguridad={turnosSeguridad} personal={personal} mes={mes} anio={anio} onAddTurno={(params) => { setModalTurno(params); setFormTurno({ personal_id: '', tipo: 'reemplazo', reemplazado_por: params.titularId || '', monto_reemplazo: 17966.666, pago_por: 'empresa', fecha_fin: params.fecha }); }} onDeleteTurno={deleteTurno} />
                 </div>
