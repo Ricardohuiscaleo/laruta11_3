@@ -1274,92 +1274,131 @@ function MobileScheduleView({ diasEnMes, turnosSeguridad, personal, mes, anio, o
 
 function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, personal, mes, anio, onAddTurno, onDeleteTurno }) {
   const DIAS_LABEL = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  const MESES_FULL = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const celdas = [];
   for (let i = 0; i < primerDiaLunes; i++) celdas.push(null);
   for (let d = 1; d <= diasEnMes; d++) celdas.push(d);
 
-  // Colores dedicados a seguridad
   const seguridadColors = {
-    'Ricardo': { bg: '#bae6fd', border: '#7dd3fc', text: '#0369a1', line: '#0ea5e9' },
-    'Claudio': { bg: '#ddd6fe', border: '#c4b5fd', text: '#5b21b6', line: '#8b5cf6' },
-    'default': { bg: '#fef08a', border: '#fde047', text: '#a16207', line: '#eab308' }
+    'Ricardo': { bg: '#dbeafe', border: '#93c5fd', text: '#1e40af', line: '#3b82f6' },
+    'Claudio': { bg: '#ede9fe', border: '#c4b5fd', text: '#5b21b6', line: '#8b5cf6' },
+    'default': { bg: '#fef9c3', border: '#fde047', text: '#a16207', line: '#eab308' }
   };
 
-  return (
-    <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)', border: '1px solid #e0e7ff' }}>
-      <div style={{ marginBottom: 20 }}>
-        <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#1e1b4b' }}>🛡️ Club de Yates</h2>
-        <p style={{ margin: '4px 0 16px', color: '#4f46e5', fontSize: 14, fontWeight: 600 }}>Calendario de Rondas y Seguridad · Turnos 4x4 (Lunes - Domingo)</p>
+  const guardias = personal.filter(p =>
+    (typeof p.rol === 'string' ? p.rol.includes('seguridad') : Array.isArray(p.rol) ? p.rol.includes('seguridad') : false) && p.activo == 1
+  );
+  const hoy = new Date();
+  const hoyDia = hoy.getMonth() === mes && hoy.getFullYear() === anio ? hoy.getDate() : -1;
 
-        {/* Leyenda */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          {personal.filter(p => (typeof p.rol === 'string' ? p.rol.includes('seguridad') : Array.isArray(p.rol) ? p.rol.includes('seguridad') : false) && p.activo == 1).map(p => {
+  return (
+    <div style={{ background: '#f8fafd', borderRadius: 24, padding: 28, border: '1px solid #e3e3e3' }}>
+      {/* Header Google Calendar Style */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 400, color: '#1f1f1f', letterSpacing: '-0.3px' }}>🛡️ {MESES_FULL[mes]} {anio}</h2>
+          <p style={{ margin: '4px 0 0', color: '#70757a', fontSize: 13, fontWeight: 500 }}>Turnos 4×4 · Club de Yates</p>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {guardias.map(p => {
             const c = seguridadColors[p.nombre] || seguridadColors['default'];
             return (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, background: c.bg, border: `1px solid ${c.border}` }}>
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, background: 'white', border: '1px solid #e3e3e3', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: c.line }} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: c.text }}>{p.nombre}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#444746' }}>{p.nombre}</span>
               </div>
             );
           })}
         </div>
       </div>
-      {/* Vista condicional: Grid para Desktop / Schedule para Mobile */}
+
       {window.innerWidth < 768 ? (
         <MobileScheduleView diasEnMes={diasEnMes} turnosSeguridad={turnosSeguridad} personal={personal} mes={mes} anio={anio} onAddTurno={onAddTurno} onDeleteTurno={onDeleteTurno} seguridadColors={seguridadColors} />
       ) : (
-        <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #c7d2fe', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#4f46e5', color: 'white' }}>
+        <>
+          {/* Day headers */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 8 }}>
             {DIAS_LABEL.map(d => (
-              <div key={d} style={{ padding: '12px 4px', textAlign: 'center', fontSize: 13, fontWeight: 800 }}>{d}</div>
+              <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 800, color: '#70757a', textTransform: 'uppercase', letterSpacing: 1, padding: '8px 0' }}>{d}</div>
             ))}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, background: '#c7d2fe' }}>
+
+          {/* Card grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
             {celdas.map((dia, i) => {
               const trabajando = dia ? (turnosSeguridad[dia] || []) : [];
               const fecha = dia ? `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}` : '';
+              const esHoy = dia === hoyDia;
+              const dynamicIds = new Set(trabajando.filter(t => t.is_dynamic).map(t => String(t.personal_id)));
+              const reemplazos = trabajando.filter(t => !t.is_dynamic && t.tipo === 'reemplazo');
+
               return (
                 <div key={i} style={{
-                  background: dia ? 'white' : '#f8fafc',
-                  minHeight: 110, padding: '8px 6px',
+                  background: dia ? 'white' : 'transparent',
+                  borderRadius: 20,
+                  minHeight: 120, padding: dia ? '10px 10px 8px' : 0,
                   display: 'flex', flexDirection: 'column',
-                  transition: 'background 0.2s',
+                  border: dia ? (esHoy ? '2px solid #1a73e8' : '1px solid #e3e3e380') : 'none',
+                  boxShadow: dia ? (esHoy ? '0 4px 16px rgba(26,115,232,0.12)' : '0 1px 2px rgba(0,0,0,0.03)') : 'none',
+                  transition: 'all 0.2s ease',
                 }}>
                   {dia && (
                     <>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: '#312e81' }}>{dia}</span>
+                        <span style={{
+                          fontSize: 13, fontWeight: 700,
+                          width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
+                          background: esHoy ? '#1a73e8' : 'transparent',
+                          color: esHoy ? 'white' : '#444746',
+                        }}>{dia}</span>
                         <button onClick={() => {
                           const titularObj = trabajando.find(t => t.is_dynamic);
                           const titularId = titularObj ? titularObj.personal_id : '';
                           onAddTurno({ dia, fecha, isSeguridad: true, titularId });
                         }} style={{
-                          fontSize: 14, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6,
-                          border: '1px solid #a5b4fc', background: '#e0e7ff', cursor: 'pointer', color: '#4f46e5', fontWeight: 800
+                          fontSize: 16, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
+                          border: 'none', background: 'transparent', cursor: 'pointer', color: '#70757a', fontWeight: 400, opacity: 0.3,
                         }} title="Agregar Reemplazo">+</button>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-                        {trabajando.map(t => {
-                          const p = personal.find(x => x.id == t.personal_id);
-                          if (!p) return null;
-                          const c = seguridadColors[p.nombre] || seguridadColors['default'];
-                          const isDynamic = t.is_dynamic;
-                          const isReemplazo = t.tipo === 'reemplazo';
 
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1 }}>
+                        {/* Guard pills - only show who's on duty */}
+                        {guardias.map(g => {
+                          const c = seguridadColors[g.nombre] || seguridadColors['default'];
+                          const enGuardia = dynamicIds.has(String(g.id));
+                          if (!enGuardia) return null;
                           return (
-                            <div key={t.id || (dia + p.id)} style={{
-                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                              background: c.bg, borderLeft: `4px solid ${c.line}`,
-                              borderRadius: 4, padding: '4px 6px',
-                              opacity: isDynamic && !isReemplazo ? 0.8 : 1,
-                              boxShadow: isReemplazo ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
+                            <div key={g.id} style={{
+                              display: 'flex', alignItems: 'center', gap: 4,
+                              background: c.line, color: 'white',
+                              borderRadius: 10, padding: '3px 8px',
+                              fontSize: 10, fontWeight: 700,
+                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                             }}>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: c.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                                {p.nombre}{isReemplazo ? ' (R)' : ''}
+                              {g.nombre}
+                            </div>
+                          );
+                        })}
+
+                        {/* Replacement pills */}
+                        {reemplazos.map(t => {
+                          const replacer = personal.find(x => x.id == t.personal_id);
+                          const titular = personal.find(x => x.id == t.reemplazado_por);
+                          if (!replacer) return null;
+                          return (
+                            <div key={t.id} style={{
+                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                              background: '#fff7ed', border: '1px solid #fed7aa',
+                              borderRadius: 10, padding: '3px 6px',
+                              fontSize: 10, fontWeight: 700, color: '#c2410c',
+                            }}>
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {replacer.nombre} ↔ {titular ? titular.nombre : '?'}
                               </span>
-                              {!isDynamic && (
-                                <button onClick={() => onDeleteTurno(t.id)} style={{ background: 'white', border: 'none', borderRadius: '50%', width: 16, height: 16, display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', color: '#ef4444', fontSize: 13, padding: 0, fontWeight: 800, marginLeft: 2 }} title="Eliminar Reemplazo">×</button>
-                              )}
+                              <button onClick={() => onDeleteTurno(t.id)} style={{
+                                background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444',
+                                fontSize: 12, fontWeight: 800, padding: 0, marginLeft: 2, lineHeight: 1,
+                              }}>×</button>
                             </div>
                           );
                         })}
@@ -1370,7 +1409,7 @@ function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, perso
               );
             })}
           </div>
-        </div>
+        </>
       )}
     </div>
   );
