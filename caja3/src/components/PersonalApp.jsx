@@ -251,23 +251,23 @@ export default function PersonalApp() {
 
     const tPersonal = turnosFiltrados.filter(t => t.personal_id == p.id);
     const diasNormales = tPersonal.filter(t => t.tipo === 'normal' || t.tipo === 'seguridad').length;
-    // Agrupado: días que fue reemplazado, por quien lo reemplazó
-    const rawReemplazados = tPersonal.filter(t => t.tipo === 'reemplazo');
+    // Agrupado: días que FUE reemplazado (p is titular -> t.reemplazado_por == p.id)
+    const rawReemplazados = turnosFiltrados.filter(t => t.tipo === 'reemplazo' && t.reemplazado_por == p.id);
     const diasReemplazados = rawReemplazados.length;
     const gruposReemplazados = {};
     rawReemplazados.forEach(t => {
-      const key = t.reemplazado_por ?? 'ext';
-      if (!gruposReemplazados[key]) gruposReemplazados[key] = { persona: personal.find(x => x.id == t.reemplazado_por) || { nombre: t.reemplazante_nombre || '?' }, dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
+      const key = t.personal_id; // replacer's id
+      if (!gruposReemplazados[key]) gruposReemplazados[key] = { persona: personal.find(x => x.id == t.personal_id), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
       gruposReemplazados[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
       gruposReemplazados[key].monto += parseFloat(t.monto_reemplazo || 20000);
     });
-    // Agrupado: días que reemplazó a otro, por a quién reemplazó
-    const rawReemplazando = turnosFiltrados.filter(t => t.reemplazado_por == p.id);
+    // Agrupado: días que REEMPLAZÓ a otro (p is replacer -> t.personal_id == p.id)
+    const rawReemplazando = tPersonal.filter(t => t.tipo === 'reemplazo');
     const reemplazosHechos = rawReemplazando.length;
     const gruposReemplazando = {};
     rawReemplazando.forEach(t => {
-      const key = t.personal_id;
-      if (!gruposReemplazando[key]) gruposReemplazando[key] = { persona: personal.find(x => x.id == t.personal_id), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
+      const key = t.reemplazado_por ?? 'ext';
+      if (!gruposReemplazando[key]) gruposReemplazando[key] = { persona: personal.find(x => x.id == t.reemplazado_por), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
       gruposReemplazando[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
       gruposReemplazando[key].monto += parseFloat(t.monto_reemplazo);
     });
@@ -376,7 +376,7 @@ export default function PersonalApp() {
         </div>
       </nav>
 
-      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
+      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 4px' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: 120 }}>
             <Calendar size={48} className="animate-spin" style={{ margin: '0 auto 16px', opacity: 0.1, color: '#1a73e8' }} />
@@ -990,23 +990,25 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                         <span style={{ fontSize: 13, fontWeight: 600 }}>${sueldoBase.toLocaleString('es-CL')}</span>
                       </div>
                       {Object.values(gruposReemplazando).map((g, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #f1f5f9' }}>
-                          <span style={{ fontSize: 13, color: '#64748b' }}>↔ Reemplazó a {g.persona?.nombre ?? '?'} ({g.dias.length} {g.dias.length === 1 ? 'día' : 'días'}: {g.dias.sort((a, b) => a - b).join(',')})</span>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#10b981' }}>+${g.monto.toLocaleString('es-CL')}</span>
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', borderBottom: '1px solid #bbf7d0', backgroundColor: '#f0fdf4', borderRadius: 8, marginTop: 4, marginBottom: 4 }}>
+                          <span style={{ fontSize: 13, color: '#166534', fontWeight: 500 }}>
+                            ↔ Reemplazaste a {g.persona?.nombre ?? '?'} ({g.dias.length} {g.dias.length === 1 ? 'día' : 'días'}: {g.dias.sort((a, b) => a - b).join(', ')})
+                          </span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>+${g.monto.toLocaleString('es-CL')}</span>
                         </div>
                       ))}
                       {Object.values(gruposReemplazados).map((g, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #f1f5f9', gap: 8 }}>
-                          <span style={{ fontSize: 13, color: '#64748b' }}>
-                            {g.persona?.nombre ?? '?'} cubrió días {g.dias.sort((a, b) => a - b).join(',')}
-                            {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '1px 6px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 600 }}>entre ellos</span>}
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', borderBottom: '1px solid #fbd5d5', backgroundColor: '#fef2f2', borderRadius: 8, marginTop: 4, marginBottom: 4, gap: 8 }}>
+                          <span style={{ fontSize: 13, color: '#991b1b', fontWeight: 500 }}>
+                            {g.persona?.nombre ?? '?'} cubrió {g.dias.length} de tus días ({g.dias.sort((a, b) => a - b).join(', ')})
+                            {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 700 }}> PAGO DIRECTO</span>}
                           </span>
                           {g.pago_por === 'empresa'
-                            ? <span style={{ fontSize: 13, fontWeight: 600, color: '#ef4444' }}>-${g.monto.toLocaleString('es-CL')}</span>
-                            : <span style={{ fontSize: 13, color: '#94a3b8' }}>—</span>}
+                            ? <span style={{ fontSize: 13, fontWeight: 700, color: '#b91c1c' }}>-${g.monto.toLocaleString('es-CL')}</span>
+                            : <span style={{ fontSize: 13, color: '#94a3b8' }}>—</span>
+                          }
                         </div>
-                      ))}
-                      {ajustesPer.map(a => (
+                      ))}{ajustesPer.map(a => (
                         <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #f1f5f9', gap: 8 }}>
                           <span style={{ fontSize: 13, color: '#64748b', flex: 1 }}>{a.concepto}</span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1220,19 +1222,21 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                         <span style={{ fontSize: 13, fontWeight: 600 }}>${sueldoBase.toLocaleString('es-CL')}</span>
                       </div>
                       {Object.values(gruposReemplazando).map((g, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                          <span style={{ fontSize: 13, color: '#64748b' }}>↔ Reemplazó a {g.persona?.nombre ?? '?'} ({g.dias.sort((a, b) => a - b).length} {g.dias.length === 1 ? 'día' : 'días'}: {g.dias.sort((a, b) => a - b).join(',')})</span>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#10b981' }}>+${g.monto.toLocaleString('es-CL')}</span>
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', borderBottom: '1px solid #bbf7d0', backgroundColor: '#f0fdf4', borderRadius: 8, marginTop: 4, marginBottom: 4 }}>
+                          <span style={{ fontSize: 13, color: '#166534', fontWeight: 500 }}>
+                            ↔ Reemplazaste a {g.persona?.nombre ?? '?'} ({g.dias.length} {g.dias.length === 1 ? 'día' : 'días'}: {g.dias.sort((a, b) => a - b).join(', ')})
+                          </span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>+${g.monto.toLocaleString('es-CL')}</span>
                         </div>
                       ))}
                       {Object.values(gruposReemplazados).map((g, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', gap: 8 }}>
-                          <span style={{ fontSize: 13, color: '#64748b' }}>
-                            {g.persona?.nombre ?? '?'} cubrió días {g.dias.sort((a, b) => a - b).join(',')}
-                            {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '1px 6px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 600 }}> entre ellos</span>}
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', borderBottom: '1px solid #fbd5d5', backgroundColor: '#fef2f2', borderRadius: 8, marginTop: 4, marginBottom: 4, gap: 8 }}>
+                          <span style={{ fontSize: 13, color: '#991b1b', fontWeight: 500 }}>
+                            {g.persona?.nombre ?? '?'} cubrió {g.dias.length} de tus días ({g.dias.sort((a, b) => a - b).join(', ')})
+                            {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 700 }}> PAGO DIRECTO</span>}
                           </span>
                           {g.pago_por === 'empresa'
-                            ? <span style={{ fontSize: 13, fontWeight: 600, color: '#ef4444' }}>-${g.monto.toLocaleString('es-CL')}</span>
+                            ? <span style={{ fontSize: 13, fontWeight: 700, color: '#b91c1c' }}>-${g.monto.toLocaleString('es-CL')}</span>
                             : <span style={{ fontSize: 13, color: '#94a3b8' }}>—</span>
                           }
                         </div>
