@@ -503,7 +503,24 @@ export default function PersonalApp() {
               </select>
             </div>
 
-            {formTurno.tipo === 'reemplazo' && (
+            {/* Tipo selector — solo para La Ruta 11 */}
+            {!modalTurno?.isSeguridad && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Tipo de Turno</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" onClick={() => setFormTurno(f => ({ ...f, tipo: 'normal', reemplazado_por: '' }))}
+                    style={{ flex: 1, padding: '10px', borderRadius: 12, border: formTurno.tipo === 'normal' ? '2px solid #1a73e8' : '1px solid #e3e3e3', background: formTurno.tipo === 'normal' ? '#e8f0fe' : 'white', color: formTurno.tipo === 'normal' ? '#1a73e8' : '#444746', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                    📅 Normal
+                  </button>
+                  <button type="button" onClick={() => setFormTurno(f => ({ ...f, tipo: 'reemplazo' }))}
+                    style={{ flex: 1, padding: '10px', borderRadius: 12, border: formTurno.tipo === 'reemplazo' ? '2px solid #ea580c' : '1px solid #e3e3e3', background: formTurno.tipo === 'reemplazo' ? '#fff7ed' : 'white', color: formTurno.tipo === 'reemplazo' ? '#ea580c' : '#444746', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                    ↔ Reemplazo
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {formTurno.tipo.includes('reemplazo') && (
               <div style={{ background: '#fef7ed', padding: 16, borderRadius: 16, marginBottom: 24, border: '1px solid #fdba74' }}>
                 <div style={{ fontSize: 13, color: '#9a3412', marginBottom: 12 }}>Detalles del Reemplazo</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
