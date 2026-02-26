@@ -268,7 +268,8 @@ export default function PersonalApp() {
     return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase, gruposReemplazados, gruposReemplazando, total };
   }
 
-  const cajeros = personal.filter(p => p.rol?.includes('cajero') && p.activo == 1);
+  const administradores = personal.filter(p => p.rol?.includes('administrador') && p.activo == 1);
+  const cajeros = personal.filter(p => p.rol?.includes('cajero') && !p.rol?.includes('administrador') && p.activo == 1);
   const plancheros = personal.filter(p => p.rol?.includes('planchero') && p.activo == 1);
   const guardias = personal.filter(p => p.rol?.includes('seguridad') && p.activo == 1);
 
@@ -321,7 +322,7 @@ export default function PersonalApp() {
             {tab === 'calendario' && <CalendarioView diasEnMes={diasEnMes} primerDia={primerDia} turnosPorFecha={turnosNoSeguridad} personal={personal} colores={COLORES} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({ dia, fecha }); setFormTurno({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa', fecha_fin: fecha }); }} onDeleteTurno={deleteTurno} />}
             {tab === 'liquidacion' && (
               <>
-                <LiquidacionView personal={personal} cajeros={cajeros} plancheros={plancheros} getLiquidacion={(p) => getLiquidacion(p, 'ruta11')} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina.ruta11} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina.ruta11} onSavePresupuesto={(monto) => savePresupuesto(monto, 'ruta11')} centroCosto="ruta11" />
+                <LiquidacionView personal={personal} cajeros={cajeros} plancheros={plancheros} administradores={administradores} getLiquidacion={(p) => getLiquidacion(p, 'ruta11')} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina.ruta11} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina.ruta11} onSavePresupuesto={(monto) => savePresupuesto(monto, 'ruta11')} centroCosto="ruta11" />
                 <div style={{ marginTop: 40, borderTop: '2px solid #e2e8f0', paddingTop: 24 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                     <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#1e293b' }}>📅 Calendario de Turnos (La Ruta 11)</h2>
@@ -635,7 +636,7 @@ function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colore
   );
 }
 
-function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colores, onAjuste, onDeleteAjuste, mes, anio, pagosNomina, onReloadPagos, showToast, presupuesto, onSavePresupuesto, centroCosto = 'ruta11' }) {
+function LiquidacionView({ personal, cajeros, plancheros, administradores = [], getLiquidacion, colores, onAjuste, onDeleteAjuste, mes, anio, pagosNomina, onReloadPagos, showToast, presupuesto, onSavePresupuesto, centroCosto = 'ruta11' }) {
   const MESES_L = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const [savingPago, setSavingPago] = useState(false);
   const [expandidos, setExpandidos] = useState({});
@@ -762,7 +763,7 @@ function LiquidacionView({ personal, cajeros, plancheros, getLiquidacion, colore
 
       {/* Liquidación agrupada por roles */}
 
-      {[['🧾 Cajeros', cajeros], ['🍳 Plancheros', plancheros]].map(([titulo, grupo]) => (
+      {[['👔 Administradores', administradores], ['🧾 Cajeros', cajeros], ['🍳 Plancheros', plancheros]].filter(([, grupo]) => grupo.length > 0).map(([titulo, grupo]) => (
         <div key={titulo}>
           <h2 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>{titulo}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
