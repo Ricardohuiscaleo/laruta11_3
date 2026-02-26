@@ -215,16 +215,17 @@ export default function PersonalApp() {
   const primerDia = new Date(anio, mes, 1).getDay();
   const primerDiaLunes = (primerDia + 6) % 7;
 
+  // Helpers de seguridad
+  const isShiftSeguridad = (t) => t.tipo === 'seguridad' || t.tipo === 'reemplazo_seguridad';
+
   // Mapa de turnos divididos por calendario
   const turnosNoSeguridad = {};
   const turnosSeguridad = {};
   turnos.forEach(t => {
     const d = t.fecha.split('T')[0].split('-')[2];
     const dia = parseInt(d);
-    const p = personal.find(x => x.id == t.personal_id);
-    const esSeguridad = p?.rol?.includes('seguridad') || t.tipo === 'seguridad';
 
-    if (esSeguridad) {
+    if (isShiftSeguridad(t)) {
       if (!turnosSeguridad[dia]) turnosSeguridad[dia] = [];
       turnosSeguridad[dia].push(t);
     } else {
@@ -235,12 +236,6 @@ export default function PersonalApp() {
 
   // Calcular liquidación por persona
   function getLiquidacion(p, modoContexto = 'all') {
-    const isShiftSeguridad = (t) => {
-      if (t.tipo === 'seguridad') return true;
-      if (t.tipo === 'reemplazo_seguridad') return true;
-      return false;
-    };
-
     const turnosFiltrados = turnos.filter(t => {
       if (modoContexto === 'seguridad') return isShiftSeguridad(t);
       if (modoContexto === 'ruta11') return !isShiftSeguridad(t);
