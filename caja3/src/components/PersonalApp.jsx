@@ -251,23 +251,24 @@ export default function PersonalApp() {
 
     const tPersonal = turnosFiltrados.filter(t => t.personal_id == p.id);
     const diasNormales = tPersonal.filter(t => t.tipo === 'normal' || t.tipo === 'seguridad').length;
-    // Agrupado: días que FUE reemplazado (p is titular -> t.reemplazado_por == p.id)
-    const rawReemplazados = turnosFiltrados.filter(t => t.tipo === 'reemplazo' && t.reemplazado_por == p.id);
+    // Agrupado: días que FUE reemplazado (p is titular -> t.personal_id == p.id)
+    const rawReemplazados = turnosFiltrados.filter(t => t.tipo === 'reemplazo' && t.personal_id == p.id);
     const diasReemplazados = rawReemplazados.length;
     const gruposReemplazados = {};
     rawReemplazados.forEach(t => {
-      const key = t.personal_id; // replacer's id
-      if (!gruposReemplazados[key]) gruposReemplazados[key] = { persona: personal.find(x => x.id == t.personal_id), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
+      const key = t.reemplazado_por ?? 'ext'; // replacer's id
+      if (!gruposReemplazados[key]) gruposReemplazados[key] = { persona: personal.find(x => x.id == t.reemplazado_por), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
       gruposReemplazados[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
       gruposReemplazados[key].monto += parseFloat(t.monto_reemplazo || 20000);
     });
-    // Agrupado: días que REEMPLAZÓ a otro (p is replacer -> t.personal_id == p.id)
-    const rawReemplazando = tPersonal.filter(t => t.tipo === 'reemplazo');
+
+    // Agrupado: días que REEMPLAZÓ a otro (p is replacer -> t.reemplazado_por == p.id)
+    const rawReemplazando = turnosFiltrados.filter(t => t.tipo === 'reemplazo' && t.reemplazado_por == p.id);
     const reemplazosHechos = rawReemplazando.length;
     const gruposReemplazando = {};
     rawReemplazando.forEach(t => {
-      const key = t.reemplazado_por ?? 'ext';
-      if (!gruposReemplazando[key]) gruposReemplazando[key] = { persona: personal.find(x => x.id == t.reemplazado_por), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
+      const key = t.personal_id; // titular's id
+      if (!gruposReemplazando[key]) gruposReemplazando[key] = { persona: personal.find(x => x.id == t.personal_id), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
       gruposReemplazando[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
       gruposReemplazando[key].monto += parseFloat(t.monto_reemplazo);
     });
