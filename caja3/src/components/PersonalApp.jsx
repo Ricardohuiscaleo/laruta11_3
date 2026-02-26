@@ -391,7 +391,7 @@ export default function PersonalApp() {
             style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: 4, display: 'flex', color: '#444746' }}><ChevronRight size={20} /></button>
         </div>
 
-        <div className="profile-bubble">R</div>
+
       </header>
 
       {/* Navigation Tabs */}
