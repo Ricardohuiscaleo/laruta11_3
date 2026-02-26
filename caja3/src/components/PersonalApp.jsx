@@ -315,61 +315,64 @@ export default function PersonalApp() {
 
   return (
     <div style={{ fontFamily: 'Inter, system-ui, sans-serif', minHeight: '100vh', background: '#f8fafd', color: '#1f1f1f' }}>
+      <style>{`
+        .app-header { background: white; border-bottom: 1px solid #e3e3e3; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; height: 64px; }
+        .header-title-container { display: flex; align-items: center; gap: 16px; }
+        .header-icon { background: #1a73e8; color: white; padding: 8px; border-radius: 12px; display: flex; }
+        .header-title { margin: 0; font-size: 20px; font-weight: 500; color: #444746; }
+        
+        .date-nav { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; background: #f1f3f4; padding: 4px 8px; border-radius: 20px; }
+        .date-text { font-weight: 600; font-size: 14px; min-width: 140px; text-align: center; color: #1f1f1f; }
+        .profile-bubble { width: 40px; height: 40px; border-radius: 50%; background: #4285f4; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; flex-shrink: 0; }
+        
+        .main-nav { background: white; border-bottom: 1px solid #e3e3e3; position: sticky; top: 64px; z-index: 90; }
+        .nav-container { max-width: 1100px; margin: 0 auto; display: flex; gap: 0; padding: 0 12px; overflow-x: auto; }
+        .nav-tab { padding: 16px 20px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 500; flex-shrink: 0; display: flex; align-items: center; gap: 8px; transition: all 0.2s; white-space: nowrap; color: #444746; border-bottom: 3px solid transparent; }
+        .nav-tab.active { color: #1a73e8; border-bottom-color: #1a73e8; }
+        
+        @media (max-width: 450px) {
+          .app-header { padding: 8px 12px; height: auto; min-height: 56px; gap: 8px; flex-wrap: wrap; }
+          .header-title-container { gap: 8px; }
+          .header-icon { padding: 6px; transform: scale(0.85); }
+          .header-title { font-size: 16px; }
+          .date-nav { padding: 2px 4px; gap: 4px; }
+          .date-text { min-width: 100px; font-size: 13px; }
+          .profile-bubble { width: 32px; height: 32px; font-size: 12px; }
+          .main-nav { top: 56px; }
+          .nav-container { padding: 0 6px; }
+          .nav-tab { padding: 12px 14px; font-size: 13px; gap: 6px; }
+          .nav-tab svg, .nav-tab img { transform: scale(0.9); }
+        }
+      `}</style>
+
       {/* Header Premium */}
-      <header style={{
-        background: 'white',
-        borderBottom: '1px solid #e3e3e3',
-        padding: '12px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        height: 64
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ background: '#1a73e8', color: 'white', padding: 8, borderRadius: 12, display: 'flex' }}>
-            <Users size={24} />
-          </div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 500, color: '#444746' }}>Gestión de Personal</h1>
+      <header className="app-header">
+        <div className="header-title-container">
+          <div className="header-icon"><Users size={24} /></div>
+          <h1 className="header-title">Gestión de Personal</h1>
         </div>
 
         {/* Date Navigation in Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f1f3f4', padding: '4px 8px', borderRadius: 20 }}>
+        <div className="date-nav">
           <button onClick={() => { if (mes === 0) { setMes(11); setAnio(a => a - 1); } else setMes(m => m - 1); }}
             style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: 4, display: 'flex', color: '#444746' }}><ChevronLeft size={20} /></button>
-          <span style={{ fontWeight: 600, fontSize: 14, minWidth: 140, textAlign: 'center', color: '#1f1f1f' }}>{MESES[mes]} {anio}</span>
+          <span className="date-text">{MESES[mes]} {anio}</span>
           <button onClick={() => { if (mes === 11) { setMes(0); setAnio(a => a + 1); } else setMes(m => m + 1); }}
             style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: 4, display: 'flex', color: '#444746' }}><ChevronRight size={20} /></button>
         </div>
 
-        <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#4285f4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>R</div>
+        <div className="profile-bubble">R</div>
       </header>
 
       {/* Navigation Tabs */}
-      <nav style={{ background: 'white', borderBottom: '1px solid #e3e3e3', position: 'sticky', top: 64, zIndex: 90 }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 0, padding: '0 12px', overflowX: 'auto' }}>
+      <nav className="main-nav">
+        <div className="nav-container">
           {[
             ['nomina', <FileText size={18} />, 'Nómina'],
             ['liquidacion', <img src="/11.png" style={{ width: 18, height: 18 }} />, 'La Ruta 11'],
             ['seguridad', <img src="/camicono.png" style={{ width: 18, height: 18 }} />, 'Cam Seguridad'],
           ].map(([key, icon, label]) => (
-            <button key={key} onClick={() => setTab(key)} style={{
-              padding: '16px 20px',
-              border: 'none',
-              background: 'none',
-              cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: 500,
-              color: tab === key ? '#1a73e8' : '#444746',
-              borderBottom: tab === key ? '3px solid #1a73e8' : '3px solid transparent',
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              transition: 'all 0.2s'
-            }}>
+            <button key={key} onClick={() => setTab(key)} className={`nav-tab ${tab === key ? 'active' : ''}`}>
               {icon}
               {label}
             </button>
@@ -1480,7 +1483,7 @@ function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, perso
   const hoyDia = hoy.getMonth() === mes && hoy.getFullYear() === anio ? hoy.getDate() : -1;
 
   return (
-    <div style={{ background: '#f8fafd', borderRadius: 24, padding: 28, border: '1px solid #e3e3e3' }}>
+    <div className="cal-container" style={{ background: '#f8fafd', border: '1px solid #e3e3e3' }}>
       {/* Header Google Calendar Style */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
@@ -1500,22 +1503,41 @@ function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, perso
         </div>
       </div>
 
-      {/* CSS injected to handle responsive text truncation and sizing if needed */}
+      {/* CSS injected to handle responsive text truncation and sizing flawlessly */}
       <style>{`
+        .cal-container { border-radius: 24px; padding: 28px; }
         .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-        .grid-cell { background: white; border-radius: 12px; min-height: clamp(60px, 15vw, 120px); padding: clamp(2px, 1vw, 8px); display: flex; flex-direction: column; transition: all 0.2s ease; border: 1px solid #e3e3e380; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .grid-cell { background: white; border-radius: 12px; min-height: 100px; padding: 6px; display: flex; flex-direction: column; transition: all 0.2s ease; border: 1px solid #e3e3e380; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
         .grid-cell.hoy { border: 2px solid #1a73e8; box-shadow: 0 4px 16px rgba(26,115,232,0.12); }
         .grid-cell.empty { background: transparent; border: none; box-shadow: none; min-height: auto; }
-        .day-num { font-size: clamp(11px, 2.5vw, 13px); font-weight: 700; width: clamp(20px, 5vw, 28px); height: clamp(20px, 5vw, 28px); display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #444746; }
+        
+        .header-day { text-align: center; font-size: 11px; font-weight: 800; color: #70757a; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 0; }
+        .day-num { font-size: 13px; font-weight: 700; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #444746; }
         .day-num.hoy-num { background: #1a73e8; color: white; }
-        .guard-pill { display: flex; align-items: center; gap: 2px; color: white; border-radius: 8px; padding: 2px 4px; font-size: clamp(8px, 1.8vw, 10px); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px; }
-        .repl-pill { display: flex; align-items: center; justify-content: space-between; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 2px 4px; font-size: clamp(8px, 1.8vw, 10px); font-weight: 700; color: #c2410c; margin-bottom: 2px; }
+        
+        .guard-pill { display: flex; justify-content: center; color: white; border-radius: 8px; padding: 3px 6px; font-size: 10px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 3px; }
+        .repl-pill { display: flex; align-items: center; justify-content: space-between; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 3px 6px; font-size: 10px; font-weight: 700; color: #c2410c; margin-bottom: 3px; }
+        .repl-btn { background: none; border: none; cursor: pointer; color: #ef4444; font-size: 12px; font-weight: 800; padding: 0; margin-left: 2px; line-height: 1; }
+        .add-btn { font-size: 14px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: none; background: transparent; cursor: pointer; color: #70757a; font-weight: 700; opacity: 0.5; padding: 0; }
+
+        @media (max-width: 450px) {
+          .cal-container { padding: 14px 4px; border-radius: 12px; }
+          .month-grid { gap: 2px; }
+          .grid-cell { padding: 2px; min-height: 60px; border-radius: 6px; }
+          .header-day { font-size: 9px; padding: 4px 0; }
+          .day-num { width: 18px; height: 18px; font-size: 10px; }
+          .guard-pill { padding: 1.5px 2px; font-size: 8.5px; border-radius: 4px; margin-bottom: 2px; letter-spacing: -0.3px; }
+          .repl-pill { padding: 1.5px 2px; font-size: 8.5px; border-radius: 4px; margin-bottom: 2px; letter-spacing: -0.3px; }
+          .repl-btn { font-size: 10px; }
+          .add-btn { width: 16px; height: 16px; font-size: 12px; }
+          .mobile-short-name { max-width: 100%; display: inline-block; overflow: hidden; text-overflow: ellipsis; }
+        }
       `}</style>
 
       {/* Day headers */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 8 }}>
         {DIAS_LABEL.map(d => (
-          <div key={d} style={{ textAlign: 'center', fontSize: 'clamp(9px, 2vw, 11px)', fontWeight: 800, color: '#70757a', textTransform: 'uppercase', letterSpacing: 0.5, padding: '8px 0' }}>{d}</div>
+          <div key={d} className="header-day">{d}</div>
         ))}
       </div>
 
@@ -1534,13 +1556,10 @@ function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, perso
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                     <span className={`day-num ${esHoy ? 'hoy-num' : ''}`}>{dia}</span>
-                    <button onClick={() => {
+                    <button className="add-btn" onClick={() => {
                       const titularObj = trabajando.find(t => t.is_dynamic);
                       const titularId = titularObj ? titularObj.personal_id : '';
                       onAddTurno({ dia, fecha, isSeguridad: true, titularId });
-                    }} style={{
-                      fontSize: 14, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
-                      border: 'none', background: 'transparent', cursor: 'pointer', color: '#70757a', fontWeight: 700, opacity: 0.4, padding: 0,
                     }} title="Agregar Reemplazo">+</button>
                   </div>
 
@@ -1550,9 +1569,10 @@ function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, perso
                       const c = seguridadColors[g.nombre] || seguridadColors['default'];
                       const enGuardia = dynamicIds.has(String(g.id));
                       if (!enGuardia) return null;
+                      // Display full name on desktop, first 3 letters on extreme mobile width via media queries (handled visually via container limit if needed, or by explicit slicing)
                       return (
                         <div key={g.id} className="guard-pill" style={{ background: c.line }}>
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{window.innerWidth < 400 ? g.nombre.slice(0, 3) + '.' : g.nombre}</span>
+                          <span className="mobile-short-name">{g.nombre.slice(0, 3)}.</span>
                         </div>
                       );
                     })}
@@ -1564,13 +1584,10 @@ function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, perso
                       if (!replacer) return null;
                       return (
                         <div key={t.id} className="repl-pill">
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {window.innerWidth < 400 ? `${replacer.nombre[0]}↔${titular ? titular.nombre[0] : '?'}` : `${replacer.nombre}↔${titular ? titular.nombre : '?'}`}
+                          <span className="mobile-short-name">
+                            {replacer.nombre[0]}↔{titular ? titular.nombre[0] : '?'}
                           </span>
-                          <button onClick={() => onDeleteTurno(t.id)} style={{
-                            background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444',
-                            fontSize: 12, fontWeight: 800, padding: 0, marginLeft: 2, lineHeight: 1,
-                          }}>×</button>
+                          <button onClick={() => onDeleteTurno(t.id)} className="repl-btn">×</button>
                         </div>
                       );
                     })}
