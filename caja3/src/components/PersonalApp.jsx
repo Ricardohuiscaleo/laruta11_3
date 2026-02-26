@@ -37,8 +37,9 @@ const COLORES = {
 };
 
 function useWindowWidth() {
-  const [width, setWidth] = React.useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+  const [width, setWidth] = React.useState(1200);
   React.useEffect(() => {
+    setWidth(window.innerWidth);
     const handleResize = () => setWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -52,8 +53,13 @@ export default function PersonalApp() {
   const [tab, setTab] = useState('nomina');
   const [mes, setMes] = useState(() => new Date().getMonth());
   const [anio, setAnio] = useState(new Date().getFullYear());
+  const [hasMounted, setHasMounted] = useState(false);
   const width = useWindowWidth();
-  const isMobile = width < 768;
+  const isMobile = hasMounted && width < 768;
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
   const [personal, setPersonal] = useState([]);
   const [turnos, setTurnos] = useState([]);
   const [ajustes, setAjustes] = useState([]);
