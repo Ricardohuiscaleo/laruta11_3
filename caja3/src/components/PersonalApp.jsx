@@ -239,9 +239,22 @@ export default function PersonalApp() {
 
     const primerRol = typeof p.rol === 'string' ? p.rol.split(',')[0].trim() : (Array.isArray(p.rol) ? p.rol[0] : '');
     const isMainSeguridad = primerRol === 'seguridad';
+
+    // Default base salary
     let sueldoBase = parseFloat(p.sueldo_base) || 0;
-    if (modoContexto === 'seguridad' && !isMainSeguridad) sueldoBase = 0;
-    if (modoContexto === 'ruta11' && isMainSeguridad) sueldoBase = 0;
+
+    // Dual role hardcodes (since the DB only stores one `sueldo_base` per user but Ricardo works 2 distinct jobs)
+    if (p.nombre.toLowerCase() === 'ricardo') {
+      if (modoContexto === 'seguridad') {
+        sueldoBase = 539000;
+      } else if (modoContexto === 'ruta11') {
+        sueldoBase = 300000;
+      }
+    } else {
+      // Normal behavior for single-role users
+      if (modoContexto === 'seguridad' && !isMainSeguridad) sueldoBase = 0;
+      if (modoContexto === 'ruta11' && isMainSeguridad) sueldoBase = 0;
+    }
 
     const totalReemplazando = Object.values(gruposReemplazando).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
     const totalReemplazados = Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
