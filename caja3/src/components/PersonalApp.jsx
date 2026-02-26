@@ -343,6 +343,23 @@ export default function PersonalApp() {
           .nav-container { padding: 0 6px; }
           .nav-tab { padding: 12px 14px; font-size: 13px; gap: 6px; }
           .nav-tab svg, .nav-tab img { transform: scale(0.9); }
+          
+          /* Tarjetas Nómina (Resumen) */
+          .nomina-card-header { flex-direction: column; align-items: flex-start !important; gap: 12px !important; }
+          .nomina-card-actions { width: 100%; justify-content: flex-end; }
+          .nomina-card-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 8px !important; padding: 10px !important; }
+          .nomina-card-grid > div > div:nth-child(1) { font-size: 9px !important; }
+          .nomina-card-grid > div > div:nth-child(2) { font-size: 13px !important; }
+          
+          /* Tarjetas Detalle (Ruta 11 y Seguridad) */
+          .detail-card-header { padding: 12px 14px !important; align-items: stretch !important; flex-direction: column; gap: 12px !important; }
+          .detail-card-name-section { gap: 8px !important; }
+          .detail-card-name-text { font-size: 16px !important; }
+          .detail-card-meta { flex-direction: row !important; justify-content: space-between; align-items: center; width: 100%; border-top: 1px dashed #e2e8f0; padding-top: 12px; }
+          .detail-card-base-col, .detail-card-total-col { text-align: left !important; }
+          .detail-card-base-col > div:first-child, .detail-card-total-col > div:first-child { font-size: 9px !important; }
+          .detail-card-base-col > div:last-child { font-size: 14px !important; }
+          .detail-card-total-col > div:last-child { font-size: 16px !important; }
         }
       `}</style>
 
@@ -644,19 +661,19 @@ function NominaCard({ item, onNotify, onEdit }) {
     }} onClick={onEdit}>
 
       {/* Header Profile + Actions */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="nomina-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#f1f3f4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: '#1a73e8' }}>
+          <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#f1f3f4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: '#1a73e8', flexShrink: 0 }}>
             {item.persona.nombre[0]}
           </div>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 600, color: '#1f1f1f' }}>{item.persona.nombre}</div>
-            <div style={{ fontSize: 12, color: '#70757a', textTransform: 'capitalize' }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: '#1f1f1f', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.persona.nombre}</div>
+            <div style={{ fontSize: 12, color: '#70757a', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {Array.isArray(item.persona.rol) ? item.persona.rol.join(', ') : item.persona.rol}
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="nomina-card-actions" style={{ display: 'flex', gap: 8 }}>
           <button onClick={(e) => { e.stopPropagation(); onNotify(); }} style={{ border: 'none', background: '#f8fafd', color: '#1a73e8', padding: '8px', borderRadius: 8, cursor: 'pointer', display: 'flex' }} title="Notificar Pago">
             <Mail size={18} />
           </button>
@@ -664,7 +681,7 @@ function NominaCard({ item, onNotify, onEdit }) {
       </div>
 
       {/* Grid for Details */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 16, background: '#f8fafd', padding: 12, borderRadius: 12 }}>
+      <div className="nomina-card-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 16, background: '#f8fafd', padding: 12, borderRadius: 12 }}>
         <div>
           <div style={{ fontSize: 10, color: '#70757a', textTransform: 'uppercase', letterSpacing: 0.5 }}>Ruta 11</div>
           <div style={{ fontSize: 14, fontWeight: 600, color: item.pagado11 ? '#1e8e3e' : '#1f1f1f' }}>{item.total11 > 0 ? `$${item.total11.toLocaleString('es-CL')}` : '—'}</div>
@@ -968,25 +985,25 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
               return (
                 <div key={p.id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: `1px solid ${c?.border || '#e2e8f0'}`, marginBottom: 4 }}>
                   {/* Header row */}
-                  <div onClick={() => toggleCard(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', cursor: 'pointer', background: c?.light || '#f8fafc', borderBottom: abierto ? `2px solid ${c?.border || '#e2e8f0'}` : 'none', transition: 'all 0.2s' }}>
+                  <div className="detail-card-header" onClick={() => toggleCard(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', cursor: 'pointer', background: c?.light || '#f8fafc', borderBottom: abierto ? `2px solid ${c?.border || '#e2e8f0'}` : 'none', transition: 'all 0.2s' }}>
                     {/* Color accent bar */}
                     <div style={{ width: 6, height: 40, borderRadius: 3, background: c?.bg || '#cbd5e1', flexShrink: 0 }} />
                     {/* Name + meta */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 800, fontSize: 17, color: '#0f172a', letterSpacing: '-0.3px' }}>{p.nombre}</span>
+                      <div className="detail-card-name-section" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        <span className="detail-card-name-text" style={{ fontWeight: 800, fontSize: 17, color: '#0f172a', letterSpacing: '-0.3px' }}>{p.nombre}</span>
                         {pagado && <ShieldCheck size={18} style={{ color: '#059669' }} />}
                         <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: c?.bg || '#94a3b8', color: 'white', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{rolLabel}</span>
                       </div>
                       <div style={{ fontSize: 13, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{diasTrabajados} días trabajados</div>
                     </div>
                     {/* Salary summary inline */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
-                      <div style={{ textAlign: 'right' }}>
+                    <div className="detail-card-meta" style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
+                      <div className="detail-card-base-col" style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>Base {rolLabel}</div>
                         <div style={{ fontSize: 15, fontWeight: 700, color: '#475569' }}>${sueldoBase.toLocaleString('es-CL')}</div>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
+                      <div className="detail-card-total-col" style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 10, fontWeight: 800, color: c?.text || '#64748b', textTransform: 'uppercase', marginBottom: 2 }}>Saldo Final</div>
                         <div style={{ fontSize: 18, fontWeight: 900, color: c?.text || '#1e293b' }}>${total.toLocaleString('es-CL')}</div>
                       </div>
@@ -1206,22 +1223,22 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
               const abierto = expandidos[p.id] !== false;
               return (
                 <div key={p.id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: `1px solid ${c.border}`, marginBottom: 4 }}>
-                  <div onClick={() => toggleCard(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', cursor: 'pointer', background: c.light, borderBottom: abierto ? `2px solid ${c.border}` : 'none', transition: 'all 0.2s' }}>
+                  <div className="detail-card-header" onClick={() => toggleCard(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', cursor: 'pointer', background: c.light, borderBottom: abierto ? `2px solid ${c.border}` : 'none', transition: 'all 0.2s' }}>
                     <div style={{ width: 6, height: 40, borderRadius: 3, background: c.bg, flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 800, fontSize: 17, color: '#0f172a', letterSpacing: '-0.3px' }}>{p.nombre}</span>
+                      <div className="detail-card-name-section" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        <span className="detail-card-name-text" style={{ fontWeight: 800, fontSize: 17, color: '#0f172a', letterSpacing: '-0.3px' }}>{p.nombre}</span>
                         {pagosNomina.find(pn => pn.personal_id == p.id) && <ShieldCheck size={18} style={{ color: '#059669' }} />}
                         <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: c.bg, color: 'white', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Seguridad</span>
                       </div>
                       <div style={{ fontSize: 13, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{diasTrabajados} días trabajados</div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
-                      <div style={{ textAlign: 'right' }}>
+                    <div className="detail-card-meta" style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
+                      <div className="detail-card-base-col" style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>Base Seguridad</div>
                         <div style={{ fontSize: 15, fontWeight: 700, color: '#475569' }}>${sueldoBase.toLocaleString('es-CL')}</div>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
+                      <div className="detail-card-total-col" style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 10, fontWeight: 800, color: c.text, textTransform: 'uppercase', marginBottom: 2 }}>Saldo Final</div>
                         <div style={{ fontSize: 18, fontWeight: 900, color: c.text }}>${total.toLocaleString('es-CL')}</div>
                       </div>
