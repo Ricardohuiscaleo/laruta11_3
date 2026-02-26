@@ -1033,7 +1033,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                       {Object.values(gruposReemplazando).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #86efac', backgroundColor: '#dcfce7', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                           <span style={{ fontSize: 13, color: '#14532d', fontWeight: 600 }}>
-                            ↔ Reemplazaste a {g.persona?.nombre ?? '?'} ({g.dias.length} {g.dias.length === 1 ? 'día' : 'días'}: {g.dias.sort((a, b) => a - b).join(', ')})
+                            ↔ Reemplazó a {g.persona?.nombre ?? '?'} {g.dias.length} {g.dias.length === 1 ? 'día:' : 'días:'} ({g.dias.sort((a, b) => a - b).join(', ')})
                           </span>
                           <span style={{ fontSize: 13, fontWeight: 800, color: '#166534' }}>+${g.monto.toLocaleString('es-CL')}</span>
                         </div>
@@ -1041,7 +1041,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                       {Object.values(gruposReemplazados).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #fca5a5', backgroundColor: '#fee2e2', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: 8 }}>
                           <span style={{ fontSize: 13, color: '#7f1d1d', fontWeight: 600 }}>
-                            {g.persona?.nombre ?? '?'} cubrió {g.dias.length} de tus días ({g.dias.sort((a, b) => a - b).join(', ')})
+                            {g.persona?.nombre ?? '?'} cubrió {g.dias.length} de sus días ({g.dias.sort((a, b) => a - b).join(', ')})
                             {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 800, border: '1px solid #fcd34d' }}> PAGO DIRECTO</span>}
                           </span>
                           {g.pago_por === 'empresa'
@@ -1267,7 +1267,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                       {Object.values(gruposReemplazando).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #86efac', backgroundColor: '#dcfce7', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                           <span style={{ fontSize: 13, color: '#14532d', fontWeight: 600 }}>
-                            ↔ Reemplazaste a {g.persona?.nombre ?? '?'} ({g.dias.length} {g.dias.length === 1 ? 'día' : 'días'}: {g.dias.sort((a, b) => a - b).join(', ')})
+                            ↔ Reemplazó a {g.persona?.nombre ?? '?'} {g.dias.length} {g.dias.length === 1 ? 'día:' : 'días:'} ({g.dias.sort((a, b) => a - b).join(', ')})
                           </span>
                           <span style={{ fontSize: 13, fontWeight: 800, color: '#166534' }}>+${g.monto.toLocaleString('es-CL')}</span>
                         </div>
@@ -1275,7 +1275,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                       {Object.values(gruposReemplazados).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #fca5a5', backgroundColor: '#fee2e2', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: 8 }}>
                           <span style={{ fontSize: 13, color: '#7f1d1d', fontWeight: 600 }}>
-                            {g.persona?.nombre ?? '?'} cubrió {g.dias.length} de tus días ({g.dias.sort((a, b) => a - b).join(', ')})
+                            {g.persona?.nombre ?? '?'} cubrió {g.dias.length} de sus días ({g.dias.sort((a, b) => a - b).join(', ')})
                             {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 800, border: '1px solid #fcd34d' }}> PAGO DIRECTO</span>}
                           </span>
                           {g.pago_por === 'empresa'
