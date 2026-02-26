@@ -88,11 +88,10 @@ if ($ricardo_id && $claudio_id) {
 // Generación Dinámica de Turnos La Ruta 11 (4x4 — 2 ciclos independientes)
 // Ciclo 1: Cajero — Camila (pos 0-3) / Neit (pos 4-7), base: 2026-02-01
 // Ciclo 2: Planchero — Andrés (pos 0-3) / Gabriel (pos 4-7), base: 2026-02-07
-$res_ruta = mysqli_query($conn, "SELECT id, nombre FROM personal WHERE nombre IN ('Camila', 'Neit', 'Andrés', 'Gabriel')");
+$res_ruta = mysqli_query($conn, "SELECT id, nombre FROM personal WHERE id IN (1,2,3,4) OR nombre IN ('Camila', 'Neit', 'Andrés', 'Gabriel')");
 $ruta_ids = [];
 while ($p_row = mysqli_fetch_assoc($res_ruta)) {
-    $nombre_lower = strtolower(trim($p_row['nombre']));
-    $ruta_ids[$nombre_lower] = $p_row['id'];
+    $ruta_ids[trim($p_row['nombre'])] = $p_row['id'];
 }
 
 // Track ALL existing shifts (normal + replacement) to avoid duplicates
@@ -104,8 +103,8 @@ foreach ($data as $t) {
 }
 
 $ciclos_ruta11 = [
-    ['base' => '2026-02-01', 'a' => 'camila', 'b' => 'neit'],
-    ['base' => '2026-02-07', 'a' => 'andrés', 'b' => 'gabriel'],
+    ['base' => '2026-02-01', 'a' => 'Camila', 'b' => 'Neit'],
+    ['base' => '2026-02-07', 'a' => 'Andrés', 'b' => 'Gabriel'],
 ];
 
 foreach ($ciclos_ruta11 as $ciclo) {
