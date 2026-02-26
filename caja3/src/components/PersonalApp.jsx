@@ -200,11 +200,12 @@ export default function PersonalApp() {
     const isShiftSeguridad = (t) => {
       if (t.tipo === 'seguridad') return true;
       if (t.tipo === 'reemplazo') {
-        const titular = personal.find(x => x.id == t.reemplazado_por);
+        // Usar personal_id = el dueño del turno original (no el que cubrió)
+        const titular = personal.find(x => x.id == t.personal_id);
         return titular?.rol?.includes('seguridad') || false;
       }
       const tPersona = personal.find(x => x.id == t.personal_id);
-      return tPersona?.rol?.includes('seguridad') && (!tPersona?.rol?.includes('cajero') && !tPersona?.rol?.includes('planchero'));
+      return tPersona?.rol?.includes('seguridad') && (!tPersona?.rol?.includes('cajero') && !tPersona?.rol?.includes('planchero') && !tPersona?.rol?.includes('administrador'));
     };
 
     const turnosFiltrados = turnos.filter(t => {
