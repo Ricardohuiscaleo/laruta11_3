@@ -1158,6 +1158,11 @@ function MobileScheduleView({ diasEnMes, turnosSeguridad, personal, mes, anio, o
   const DIAS_CORTO = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   const days = Array.from({ length: diasEnMes }, (_, i) => i + 1);
 
+  // Get all security guards
+  const guardias = personal.filter(p =>
+    (typeof p.rol === 'string' ? p.rol.includes('seguridad') : Array.isArray(p.rol) ? p.rol.includes('seguridad') : false) && p.activo == 1
+  );
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       {days.map(dia => {
@@ -1168,30 +1173,20 @@ function MobileScheduleView({ diasEnMes, turnosSeguridad, personal, mes, anio, o
         const esHoy = new Date().toDateString() === date.toDateString();
         const esFinde = date.getDay() === 0 || date.getDay() === 6;
 
-        // Deduplicate: if someone has both a dynamic shift and a replacement, only show the replacement
-        const personIds = new Set();
-        const filteredTurnos = [];
-        // Prioritize replacements over dynamic shifts
-        const sorted = [...trabajando].sort((a, b) => (a.is_dynamic ? 1 : 0) - (b.is_dynamic ? 1 : 0));
-        for (const t of sorted) {
-          if (!personIds.has(t.personal_id)) {
-            personIds.add(t.personal_id);
-            filteredTurnos.push(t);
-          }
-        }
+        // Who has a dynamic (4x4) shift today?
+        const dynamicShifts = trabajando.filter(t => t.is_dynamic);
+        const dynamicIds = new Set(dynamicShifts.map(t => String(t.personal_id)));
 
-        // Find the main guard on duty (the one with a dynamic shift)
-        const guardia = filteredTurnos.find(t => t.is_dynamic);
-        const reemplazos = filteredTurnos.filter(t => !t.is_dynamic);
-        const guardiaPersona = guardia ? personal.find(x => x.id == guardia.personal_id) : null;
+        // Manual replacement shifts
+        const reemplazos = trabajando.filter(t => !t.is_dynamic && t.tipo === 'reemplazo');
 
         return (
           <div key={dia} style={{
-            display: 'flex', alignItems: 'stretch', gap: 0,
+            display: 'flex', alignItems: 'stretch',
             borderBottom: '1px solid #eef2ff',
-            background: esHoy ? '#f0f0ff' : (esFinde ? '#fafafe' : 'white'),
+            background: esHoy ? '#eef0ff' : (esFinde ? '#fafaff' : 'white'),
           }}>
-            {/* Date column - compact */}
+            {/* Date column */}
             <div style={{
               width: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               padding: '10px 4px', borderRight: '1px solid #eef2ff', flexShrink: 0,
@@ -1205,36 +1200,49 @@ function MobileScheduleView({ diasEnMes, turnosSeguridad, personal, mes, anio, o
               }}>{dia}</div>
             </div>
 
-            {/* Content column - single row per guard */}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '8px 10px', gap: 8, minHeight: 48 }}>
-              {guardiaPersona ? (() => {
-                const c = seguridadColors[guardiaPersona.nombre] || seguridadColors['default'];
+            {/* Content column */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '6px 10px', gap: 4, justifyContent: 'center' }}>
+              {/* Show each guard's status */}
+              {guardias.map(g => {
+                const c = seguridadColors[g.nombre] || seguridadColors['default'];
+                const enGuardia = dynamicIds.has(String(g.id));
                 return (
-                  <div style={{
-                    flex: 1, display: 'flex', alignItems: 'center', gap: 8,
-                    background: c.bg, borderLeft: `3px solid ${c.line}`,
-                    borderRadius: 6, padding: '6px 10px',
+                  <div key={g.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '4px 10px', borderRadius: 6,
+                    background: enGuardia ? c.bg : '#f8fafc',
+                    borderLeft: `3px solid ${enGuardia ? c.line : '#e2e8f0'}`,
+                    opacity: enGuardia ? 1 : 0.6,
                   }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: c.line, flexShrink: 0 }} />
-                    <span style={{ fontSize: 14, fontWeight: 700, color: c.text, flex: 1 }}>{guardiaPersona.nombre}</span>
+                    <span style={{
+                      fontSize: 13, fontWeight: 700,
+                      color: enGuardia ? c.text : '#94a3b8',
+                      flex: 1,
+                    }}>{g.nombre}</span>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                      background: enGuardia ? '#dcfce7' : '#f1f5f9',
+                      color: enGuardia ? '#15803d' : '#94a3b8',
+                      textTransform: 'uppercase', letterSpacing: 0.3,
+                    }}>{enGuardia ? 'Guardia' : 'Descanso'}</span>
                   </div>
                 );
-              })() : (
-                <span style={{ fontSize: 13, color: '#cbd5e1', fontStyle: 'italic' }}>—</span>
-              )}
+              })}
 
-              {/* Replacement badges */}
+              {/* Replacement shifts */}
               {reemplazos.map(t => {
-                const p = personal.find(x => x.id == t.personal_id);
-                if (!p) return null;
-                const c = seguridadColors[p.nombre] || seguridadColors['default'];
+                const replacer = personal.find(x => x.id == t.personal_id);
+                const titular = personal.find(x => x.id == t.reemplazado_por);
+                if (!replacer) return null;
                 return (
                   <div key={t.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 4,
-                    background: '#fef2f2', border: '1px solid #fecaca',
-                    borderRadius: 6, padding: '4px 8px',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '4px 10px', borderRadius: 6,
+                    background: '#fff7ed', borderLeft: '3px solid #f97316',
                   }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#dc2626' }}>{p.nombre}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#c2410c', flex: 1 }}>
+                      {replacer.nombre} ↔ {titular ? titular.nombre : '?'}
+                    </span>
                     <button onClick={() => onDeleteTurno(t.id)} style={{
                       background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444',
                       fontSize: 14, fontWeight: 800, padding: 0, lineHeight: 1,
@@ -1242,8 +1250,10 @@ function MobileScheduleView({ diasEnMes, turnosSeguridad, personal, mes, anio, o
                   </div>
                 );
               })}
+            </div>
 
-              {/* Add replacement - just a small + icon */}
+            {/* Add button */}
+            <div style={{ display: 'flex', alignItems: 'center', padding: '0 8px', flexShrink: 0 }}>
               <button onClick={() => {
                 const titularObj = trabajando.find(t => t.is_dynamic);
                 const titularId = titularObj ? titularObj.personal_id : '';
@@ -1252,7 +1262,7 @@ function MobileScheduleView({ diasEnMes, turnosSeguridad, personal, mes, anio, o
                 width: 24, height: 24, borderRadius: 6, border: '1px solid #e0e7ff',
                 background: '#f5f7ff', color: '#4f46e5', fontSize: 16, fontWeight: 800,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', flexShrink: 0,
+                cursor: 'pointer',
               }}>+</button>
             </div>
           </div>
