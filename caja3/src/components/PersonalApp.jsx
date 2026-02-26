@@ -366,6 +366,7 @@ export default function PersonalApp() {
           .detail-card-base-col > div:first-child, .detail-card-total-col > div:first-child { font-size: 9px !important; }
           .detail-card-base-col > div:last-child { font-size: 13px !important; }
           .detail-card-total-col > div:last-child { font-size: 15px !important; }
+          .detail-card-accent { display: none !important; }
         }
       `}</style>
 
@@ -997,13 +998,13 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                   {/* Header row */}
                   <div className="detail-card-header" onClick={() => toggleCard(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', cursor: 'pointer', background: c?.light || '#f8fafc', borderBottom: abierto ? `2px solid ${c?.border || '#e2e8f0'}` : 'none', transition: 'all 0.2s' }}>
                     {/* Color accent bar */}
-                    <div style={{ width: 6, height: 40, borderRadius: 3, background: c?.bg || '#cbd5e1', flexShrink: 0 }} />
+                    <div className="detail-card-accent" style={{ width: 6, height: 40, borderRadius: 3, background: c?.bg || '#cbd5e1', flexShrink: 0 }} />
                     {/* Name + meta */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="detail-card-name-section" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                         <span className="detail-card-name-text" style={{ fontWeight: 800, fontSize: 17, color: '#0f172a', letterSpacing: '-0.3px' }}>{p.nombre}</span>
                         {pagado && <ShieldCheck size={18} style={{ color: '#059669' }} />}
-                        <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: c?.bg || '#94a3b8', color: 'white', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{rolLabel}</span>
+                        <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: c?.light || '#f1f5f9', color: c?.text || '#475569', border: `1px solid ${c?.border || '#e2e8f0'}`, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{rolLabel}</span>
                       </div>
                       <div style={{ fontSize: 13, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{diasTrabajados} días trabajados</div>
                     </div>
@@ -1234,12 +1235,12 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
               return (
                 <div key={p.id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: `1px solid ${c.border}`, marginBottom: 4 }}>
                   <div className="detail-card-header" onClick={() => toggleCard(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', cursor: 'pointer', background: c.light, borderBottom: abierto ? `2px solid ${c.border}` : 'none', transition: 'all 0.2s' }}>
-                    <div style={{ width: 6, height: 40, borderRadius: 3, background: c.bg, flexShrink: 0 }} />
+                    <div className="detail-card-accent" style={{ width: 6, height: 40, borderRadius: 3, background: c.bg, flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="detail-card-name-section" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                         <span className="detail-card-name-text" style={{ fontWeight: 800, fontSize: 17, color: '#0f172a', letterSpacing: '-0.3px' }}>{p.nombre}</span>
                         {pagosNomina.find(pn => pn.personal_id == p.id) && <ShieldCheck size={18} style={{ color: '#059669' }} />}
-                        <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: c.bg, color: 'white', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Seguridad</span>
+                        <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: c.light, color: c.text, border: `1px solid ${c.border}`, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Seguridad</span>
                       </div>
                       <div style={{ fontSize: 13, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{diasTrabajados} días trabajados</div>
                     </div>
