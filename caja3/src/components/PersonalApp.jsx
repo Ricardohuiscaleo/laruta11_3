@@ -237,10 +237,7 @@ export default function PersonalApp() {
   function getLiquidacion(p, modoContexto = 'all') {
     const isShiftSeguridad = (t) => {
       if (t.tipo === 'seguridad') return true;
-      if (t.tipo === 'reemplazo') {
-        const titular = personal.find(x => x.id == t.personal_id);
-        return titular?.rol?.includes('seguridad') || false;
-      }
+      if (t.tipo === 'reemplazo_seguridad') return true;
       return false;
     };
 
@@ -254,7 +251,7 @@ export default function PersonalApp() {
     const diasNormales = tPersonal.filter(t => t.tipo === 'normal' || t.tipo === 'seguridad').length;
     // DB CONVENTION: personal_id = TITULAR (absent), reemplazado_por = REPLACER (worker)
     // Agrupado: días que FUE reemplazado (p is titular -> t.personal_id == p.id)
-    const rawReemplazados = turnosFiltrados.filter(t => t.tipo === 'reemplazo' && t.personal_id == p.id);
+    const rawReemplazados = turnosFiltrados.filter(t => (t.tipo === 'reemplazo' || t.tipo === 'reemplazo_seguridad') && t.personal_id == p.id);
     const diasReemplazados = rawReemplazados.length;
     const gruposReemplazados = {};
     rawReemplazados.forEach(t => {
@@ -265,7 +262,7 @@ export default function PersonalApp() {
     });
 
     // Agrupado: días que REEMPLAZÓ a otro (p is replacer -> t.reemplazado_por == p.id)
-    const rawReemplazando = turnosFiltrados.filter(t => t.tipo === 'reemplazo' && t.reemplazado_por == p.id);
+    const rawReemplazando = turnosFiltrados.filter(t => (t.tipo === 'reemplazo' || t.tipo === 'reemplazo_seguridad') && t.reemplazado_por == p.id);
     const reemplazosHechos = rawReemplazando.length;
     const gruposReemplazando = {};
     rawReemplazando.forEach(t => {
@@ -437,7 +434,7 @@ export default function PersonalApp() {
             {tab === 'seguridad' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 48 }}>
                 <LiquidacionSeguridad guardias={guardias} getLiquidacion={(p) => getLiquidacion(p, 'seguridad')} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina.seguridad} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina.seguridad} onSavePresupuesto={(monto) => savePresupuesto(monto, 'seguridad')} centroCosto="seguridad" />
-                <CalendarioSeguridad diasEnMes={diasEnMes} primerDiaLunes={primerDiaLunes} turnosSeguridad={turnosSeguridad} personal={personal} mes={mes} anio={anio} onAddTurno={(params) => { setModalTurno(params); setFormTurno({ personal_id: params.titularId || '', tipo: 'reemplazo', reemplazado_por: '', monto_reemplazo: 17966.666, pago_por: 'empresa', fecha_fin: params.fecha }); }} onDeleteTurno={deleteTurno} />
+                <CalendarioSeguridad diasEnMes={diasEnMes} primerDiaLunes={primerDiaLunes} turnosSeguridad={turnosSeguridad} personal={personal} mes={mes} anio={anio} onAddTurno={(params) => { setModalTurno(params); setFormTurno({ personal_id: params.titularId || '', tipo: 'reemplazo_seguridad', reemplazado_por: '', monto_reemplazo: 17966.666, pago_por: 'empresa', fecha_fin: params.fecha }); }} onDeleteTurno={deleteTurno} />
               </div>
             )}
           </div>
@@ -849,7 +846,7 @@ function CalendarioView({ diasEnMes, primerDiaLunes, turnosPorFecha, personal, c
                       if (!p) return null;
                       const c = colores[p.id];
 
-                      if (t.tipo === 'reemplazo') {
+                      if (t.tipo.includes('reemplazo')) {
                         const replacer = personal.find(x => x.id == t.reemplazado_por);
                         if (!replacer) return null;
                         return (
@@ -1445,7 +1442,7 @@ function MobileScheduleView({ diasEnMes, turnosSeguridad, personal, mes, anio, o
         const dynamicIds = new Set(dynamicShifts.map(t => String(t.personal_id)));
 
         // Manual replacement shifts
-        const reemplazos = trabajando.filter(t => !t.is_dynamic && t.tipo === 'reemplazo');
+        const reemplazos = trabajando.filter(t => !t.is_dynamic && t.tipo.includes('reemplazo'));
 
         return (
           <div key={dia} style={{
@@ -1624,7 +1621,7 @@ function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, perso
           const fecha = dia ? `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}` : '';
           const esHoy = dia === hoyDia;
           const dynamicIds = new Set(trabajando.filter(t => t.is_dynamic).map(t => String(t.personal_id)));
-          const reemplazos = trabajando.filter(t => !t.is_dynamic && t.tipo === 'reemplazo');
+          const reemplazos = trabajando.filter(t => !t.is_dynamic && t.tipo.includes('reemplazo'));
 
           return (
             <div key={i} className={`grid-cell ${dia ? '' : 'empty'} ${esHoy ? 'hoy' : ''}`}>
