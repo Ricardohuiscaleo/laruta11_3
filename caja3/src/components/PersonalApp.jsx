@@ -266,7 +266,9 @@ export default function PersonalApp() {
       gruposReemplazando[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
       gruposReemplazando[key].monto += parseFloat(t.monto_reemplazo);
     });
-    const diasTrabajados = diasNormales + reemplazosHechos;
+    const diasTrabajados = modoContexto === 'seguridad'
+      ? (30 - diasReemplazados)
+      : (diasNormales + reemplazosHechos);
 
     // Ajustes per context object... just leave them global or split them?
     const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
