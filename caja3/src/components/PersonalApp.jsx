@@ -251,24 +251,25 @@ export default function PersonalApp() {
 
     const tPersonal = turnosFiltrados.filter(t => t.personal_id == p.id);
     const diasNormales = tPersonal.filter(t => t.tipo === 'normal' || t.tipo === 'seguridad').length;
-    // Agrupado: días que FUE reemplazado (p is titular -> t.reemplazado_por == p.id)
-    const rawReemplazados = turnosFiltrados.filter(t => t.tipo === 'reemplazo' && t.reemplazado_por == p.id);
+    // DB CONVENTION: personal_id = TITULAR (absent), reemplazado_por = REPLACER (worker)
+    // Agrupado: días que FUE reemplazado (p is titular -> t.personal_id == p.id)
+    const rawReemplazados = turnosFiltrados.filter(t => t.tipo === 'reemplazo' && t.personal_id == p.id);
     const diasReemplazados = rawReemplazados.length;
     const gruposReemplazados = {};
     rawReemplazados.forEach(t => {
-      const key = t.personal_id ?? 'ext'; // replacer's id
-      if (!gruposReemplazados[key]) gruposReemplazados[key] = { persona: personal.find(x => x.id == t.personal_id), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
+      const key = t.reemplazado_por ?? 'ext'; // replacer's id
+      if (!gruposReemplazados[key]) gruposReemplazados[key] = { persona: personal.find(x => x.id == t.reemplazado_por), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
       gruposReemplazados[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
       gruposReemplazados[key].monto += parseFloat(t.monto_reemplazo || 20000);
     });
 
-    // Agrupado: días que REEMPLAZÓ a otro (p is replacer -> t.personal_id == p.id)
-    const rawReemplazando = turnosFiltrados.filter(t => t.tipo === 'reemplazo' && t.personal_id == p.id);
+    // Agrupado: días que REEMPLAZÓ a otro (p is replacer -> t.reemplazado_por == p.id)
+    const rawReemplazando = turnosFiltrados.filter(t => t.tipo === 'reemplazo' && t.reemplazado_por == p.id);
     const reemplazosHechos = rawReemplazando.length;
     const gruposReemplazando = {};
     rawReemplazando.forEach(t => {
-      const key = t.reemplazado_por; // titular's id
-      if (!gruposReemplazando[key]) gruposReemplazando[key] = { persona: personal.find(x => x.id == t.reemplazado_por), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
+      const key = t.personal_id; // titular's id
+      if (!gruposReemplazando[key]) gruposReemplazando[key] = { persona: personal.find(x => x.id == t.personal_id), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
       gruposReemplazando[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
       gruposReemplazando[key].monto += parseFloat(t.monto_reemplazo);
     });
@@ -418,7 +419,7 @@ export default function PersonalApp() {
             {tab === 'seguridad' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 48 }}>
                 <LiquidacionSeguridad guardias={guardias} getLiquidacion={(p) => getLiquidacion(p, 'seguridad')} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina.seguridad} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina.seguridad} onSavePresupuesto={(monto) => savePresupuesto(monto, 'seguridad')} centroCosto="seguridad" />
-                <CalendarioSeguridad diasEnMes={diasEnMes} primerDiaLunes={primerDiaLunes} turnosSeguridad={turnosSeguridad} personal={personal} mes={mes} anio={anio} onAddTurno={(params) => { setModalTurno(params); setFormTurno({ personal_id: '', tipo: 'reemplazo', reemplazado_por: params.titularId || '', monto_reemplazo: 17966.666, pago_por: 'empresa', fecha_fin: params.fecha }); }} onDeleteTurno={deleteTurno} />
+                <CalendarioSeguridad diasEnMes={diasEnMes} primerDiaLunes={primerDiaLunes} turnosSeguridad={turnosSeguridad} personal={personal} mes={mes} anio={anio} onAddTurno={(params) => { setModalTurno(params); setFormTurno({ personal_id: params.titularId || '', tipo: 'reemplazo', reemplazado_por: '', monto_reemplazo: 17966.666, pago_por: 'empresa', fecha_fin: params.fecha }); }} onDeleteTurno={deleteTurno} />
               </div>
             )}
           </div>
@@ -446,9 +447,10 @@ export default function PersonalApp() {
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Persona</label>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>{modalTurno?.isSeguridad ? 'Guardia Titular (Ausente)' : 'Persona'}</label>
               <select value={formTurno.personal_id} onChange={e => setFormTurno(f => ({ ...f, personal_id: e.target.value }))}
-                style={{ width: '100%', padding: '10px 14px', border: '1px solid #e3e3e3', borderRadius: 12, fontSize: 14, outline: 'none' }}>
+                style={{ width: '100%', padding: '10px 14px', border: '1px solid #e3e3e3', borderRadius: 12, fontSize: 14, outline: 'none', background: modalTurno?.isSeguridad && formTurno.personal_id ? '#f8f9fa' : 'white' }}
+                disabled={modalTurno?.isSeguridad && !!formTurno.personal_id}>
                 <option value="">Seleccionar trabajador...</option>
                 {personal.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
               </select>
@@ -459,7 +461,7 @@ export default function PersonalApp() {
                 <div style={{ fontSize: 13, color: '#9a3412', marginBottom: 12 }}>Detalles del Reemplazo</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#9a3412', textTransform: 'uppercase', marginBottom: 4 }}>¿A quién reemplaza?</label>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#9a3412', textTransform: 'uppercase', marginBottom: 4 }}>{modalTurno?.isSeguridad ? '¿Quién lo reemplaza?' : '¿A quién reemplaza?'}</label>
                     <select value={formTurno.reemplazado_por} onChange={e => setFormTurno(f => ({ ...f, reemplazado_por: e.target.value }))}
                       style={{ width: '100%', padding: '8px 12px', border: '1px solid #fdba74', borderRadius: 10, fontSize: 13, background: 'white' }}>
                       <option value="">Seleccionar...</option>
@@ -1582,10 +1584,10 @@ function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, perso
                       );
                     })}
 
-                    {/* Replacement pills */}
+                    {/* Replacement pills — personal_id=titular, reemplazado_por=replacer */}
                     {reemplazos.map(t => {
-                      const replacer = personal.find(x => x.id == t.personal_id);
-                      const titular = personal.find(x => x.id == t.reemplazado_por);
+                      const titular = personal.find(x => x.id == t.personal_id);
+                      const replacer = personal.find(x => x.id == t.reemplazado_por);
                       if (!replacer) return null;
                       return (
                         <div key={t.id} className="repl-pill">
