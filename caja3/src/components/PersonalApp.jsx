@@ -252,7 +252,7 @@ export default function PersonalApp() {
       if (modoContexto === 'seguridad') {
         sueldoBase = 539000;
       } else if (modoContexto === 'ruta11') {
-        sueldoBase = 0; // Ricardo confirm that he doesn't have a base salary for Ruta 11, only replacements
+        sueldoBase = 300000;
       }
     } else {
       // Normal behavior for single-role users
