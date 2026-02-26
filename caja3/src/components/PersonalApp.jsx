@@ -227,6 +227,7 @@ export default function PersonalApp() {
 
   const cajeros = personal.filter(p => p.rol?.includes('cajero') && p.activo == 1);
   const plancheros = personal.filter(p => p.rol?.includes('planchero') && p.activo == 1);
+  const guardias = personal.filter(p => p.rol?.includes('seguridad') && p.activo == 1);
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', minHeight: '100vh', background: '#f8fafc' }}>
@@ -1080,8 +1081,6 @@ function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, perso
     'default': { bg: '#fef08a', border: '#fde047', text: '#a16207', line: '#eab308' }
   };
 
-  const guardias = personal.filter(p => p.rol?.includes('seguridad') && p.activo == 1);
-
   return (
     <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)', border: '1px solid #e0e7ff' }}>
       <div style={{ marginBottom: 20 }}>
@@ -1090,7 +1089,7 @@ function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, perso
 
         {/* Leyenda */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          {guardias.map(p => {
+          {personal.filter(p => (typeof p.rol === 'string' ? p.rol.includes('seguridad') : Array.isArray(p.rol) ? p.rol.includes('seguridad') : false) && p.activo == 1).map(p => {
             const c = seguridadColors[p.nombre] || seguridadColors['default'];
             return (
               <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, background: c.bg, border: `1px solid ${c.border}` }}>
