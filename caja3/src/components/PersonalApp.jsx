@@ -18,7 +18,9 @@ import {
   Image as ImageIcon,
   ShieldCheck,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Shield,
+  Store
 } from 'lucide-react';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -819,7 +821,7 @@ function CalendarioView({ diasEnMes, primerDiaLunes, turnosPorFecha, personal, c
       {/* Header Google Calendar Style */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 400, color: '#1f1f1f', letterSpacing: '-0.3px' }}>🏪 {MESES_FULL[mes]} {anio}</h2>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 400, color: '#1f1f1f', letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', gap: 8 }}><Store size={22} style={{ color: '#1a73e8' }} /> {MESES_FULL[mes]} {anio}</h2>
           <p style={{ margin: '4px 0 0', color: '#70757a', fontSize: 13, fontWeight: 500 }}>Turnos Fijos y Reemplazos · La Ruta 11</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -1621,7 +1623,7 @@ function CalendarioSeguridad({ diasEnMes, primerDiaLunes, turnosSeguridad, perso
       {/* Header Google Calendar Style */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 400, color: '#1f1f1f', letterSpacing: '-0.3px' }}>🛡️ {MESES_FULL[mes]} {anio}</h2>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 400, color: '#1f1f1f', letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', gap: 8 }}><Shield size={22} style={{ color: '#8b5cf6' }} /> {MESES_FULL[mes]} {anio}</h2>
           <p style={{ margin: '4px 0 0', color: '#70757a', fontSize: 13, fontWeight: 500 }}>Turnos 4×4 · Club de Yates</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
