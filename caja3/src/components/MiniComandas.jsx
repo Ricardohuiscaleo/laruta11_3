@@ -648,7 +648,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                       }
                     }
 
-                    const message = `🚚 *Pedido ${order.order_number}*\n\n👤 *Cliente:* ${order.customer_name}\n📞 *Teléfono:* ${order.customer_phone || 'No disponible'}\n\n📦 *Productos:*\n${items}\n\n💰 *Montos:*\nSubtotal: $${subtotal}\nDelivery: $${deliveryFee}\n*Total: $${total}*\n\n${paymentInstruction}\n\n📍 *Dirección:*\n${order.delivery_address}\n\n🗺️ Ver en mapa:\n${mapsUrl}`;
+                    const message = `> 🚚 *Pedido ${order.order_number}*\n\n*👤 Cliente:*\n- *Nombre:* ${order.customer_name}\n- *Teléfono:* ${order.customer_phone || 'No disponible'}\n\n*📦 Productos:*\n${items}\n\n*💰 Montos:*\n- Subtotal: $${subtotal}\n- Delivery: $${deliveryFee}\n\n> *💰 TOTAL: $${total}*\n\n${paymentInstruction}\n\n*📍 Dirección:*\n> ${order.delivery_address}\n\n🗺️ Ver en mapa:\n${mapsUrl}`;
 
                     // Debug: mostrar el mensaje completo antes de enviarlo
                     console.log('=== MENSAJE COMPLETO PARA RIDER ===');
@@ -733,7 +733,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                 </div>
                 <button
                   onClick={() => {
-                    const message = `Hola ${order.customer_name}, somos *La Ruta 11 Food Truck* 🍔\n\nTe contactamos porque tu pago online del pedido *${order.order_number}* no fue procesado por Transbank.\n\n❌ *Tu pedido NO ha sido cobrado*\n\nPara continuar con tu pedido, puedes pagar con:\n\n💳 *Transferencia bancaria*\nTitular: La Ruta once Spa\nRUT: 78.194.739-3\nBanco: Banco BCI\nCuenta Corriente: 97618110\nEmail: SABORESDELARUTA11@GMAIL.COM\nMonto: $${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}\n\n💵 *Efectivo al recibir*\n\n💳 *Tarjeta al recibir*\n\n¡Disculpa las molestias! 🙏`;
+                    const message = `Hola ${order.customer_name}, somos *La Ruta 11 Food Truck* 🍔\n\nTe contactamos porque tu pago online del pedido *${order.order_number}* no fue procesado por Transbank.\n\n❌ *Tu pedido NO ha sido cobrado*\n\nPara continuar con tu pedido, puedes pagar con:\n\n💳 *Transferencia bancaria:*\n> Titular: La Ruta once Spa\n> RUT: 78.194.739-3\n> Banco: Banco BCI\n> Cuenta Corriente: 97618110\n> Email: SABORESDELARUTA11@GMAIL.COM\n> *Monto: $${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}*\n\n_Otras opciones de pago:_\n- 💵 Efectivo al recibir\n- 💳 Tarjeta al recibir\n\n_¡Disculpa las molestias!_ 🙏`;
                     navigator.clipboard.writeText(message);
                     alert('✓ Mensaje copiado al portapapeles');
                   }}

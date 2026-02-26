@@ -402,17 +402,17 @@ const CheckoutApp = () => {
 
       const result = await response.json();
       if (result.success) {
-        // Construir mensaje de WhatsApp usando formato estándar
-        let whatsappMessage = `*PEDIDO PENDIENTE - LA RUTA 11*\n\n` +
-          `*Pedido:* ${result.order_id}\n` +
-          `*Cliente:* ${customerInfo.name}\n` +
-          `*Estado:* Pendiente de transferencia\n` +
-          `*Total:* $${cartTotal.toLocaleString('es-CL')}\n` +
-          `*Método:* Transferencia bancaria\n\n`;
+        // Construir mensaje de WhatsApp usando formato 2026
+        let whatsappMessage = `> 🏦 *PEDIDO PENDIENTE - LA RUTA 11*\n\n`;
+        whatsappMessage += `*📋 Datos del pedido:*\n`;
+        whatsappMessage += `- *Pedido:* ${result.order_id}\n`;
+        whatsappMessage += `- *Cliente:* ${customerInfo.name}\n`;
+        whatsappMessage += `- *Estado:* Pendiente de transferencia\n`;
+        whatsappMessage += `- *Método:* Transferencia bancaria\n\n`;
 
         // Agregar productos
         if (cart.length > 0) {
-          whatsappMessage += `*PRODUCTOS:*\n`;
+          whatsappMessage += `*📦 Productos:*\n`;
           cart.forEach((item, index) => {
             const isCombo = item.type === 'combo' || item.category_name === 'Combos' || item.selections;
             let itemTotal = item.price * item.quantity;
@@ -421,26 +421,21 @@ const CheckoutApp = () => {
               itemTotal += item.customizations.reduce((sum, c) => sum + (c.price * c.quantity), 0);
             }
 
-            whatsappMessage += `${index + 1}. ${item.name} x${item.quantity}\n`;
+            whatsappMessage += `${index + 1}. ${item.name} x${item.quantity} - $${itemTotal.toLocaleString('es-CL')}\n`;
 
             // Mostrar personalizaciones
             if (item.customizations && item.customizations.length > 0) {
-              whatsappMessage += `   Incluye:\n`;
               item.customizations.forEach(custom => {
-                whatsappMessage += `   • ${custom.quantity}x ${custom.name} (+$${(custom.price * custom.quantity).toLocaleString('es-CL')})\n`;
+                whatsappMessage += `   - ${custom.quantity}x ${custom.name} (+$${(custom.price * custom.quantity).toLocaleString('es-CL')})\n`;
               });
             }
 
             // Mostrar productos incluidos en el combo
             if (isCombo && (item.fixed_items || item.selections)) {
-              if (!item.customizations || item.customizations.length === 0) {
-                whatsappMessage += `   Incluye:\n`;
-              }
-
               // Productos fijos del combo
               if (item.fixed_items) {
                 item.fixed_items.forEach(fixedItem => {
-                  whatsappMessage += `   • ${item.quantity}x ${fixedItem.product_name || fixedItem.name}\n`;
+                  whatsappMessage += `   - ${item.quantity}x ${fixedItem.product_name || fixedItem.name}\n`;
                 });
               }
 
@@ -449,44 +444,43 @@ const CheckoutApp = () => {
                 Object.values(item.selections).forEach(selection => {
                   if (Array.isArray(selection)) {
                     selection.forEach(sel => {
-                      whatsappMessage += `   • ${item.quantity}x ${sel.name}\n`;
+                      whatsappMessage += `   - ${item.quantity}x ${sel.name}\n`;
                     });
                   } else {
-                    whatsappMessage += `   • ${item.quantity}x ${selection.name}\n`;
+                    whatsappMessage += `   - ${item.quantity}x ${selection.name}\n`;
                   }
                 });
               }
             }
-
-            whatsappMessage += `Precio: $${itemTotal.toLocaleString('es-CL')}\n\n`;
           });
           whatsappMessage += `\n`;
         }
 
         // Agregar información de entrega
-        whatsappMessage += `*TIPO DE ENTREGA:* ${customerInfo.deliveryType === 'delivery' ? '🚴 Delivery' : '🏪 Retiro en local'}\n`;
+        whatsappMessage += `*🚚 Entrega:*\n`;
+        whatsappMessage += `- *Tipo:* ${customerInfo.deliveryType === 'delivery' ? '🚴 Delivery' : '🏪 Retiro en local'}\n`;
 
         if (customerInfo.deliveryType === 'delivery' && customerInfo.address) {
-          whatsappMessage += `*DIRECCIÓN:* ${customerInfo.address}\n`;
+          whatsappMessage += `- *Dirección:* ${customerInfo.address}\n`;
         }
 
         if (customerInfo.deliveryType === 'pickup' && customerInfo.pickupTime) {
-          whatsappMessage += `*HORARIO RETIRO:* ${customerInfo.pickupTime}\n`;
+          whatsappMessage += `- *Horario retiro:* ${customerInfo.pickupTime}\n`;
         }
 
         if (deliveryFee > 0) {
-          whatsappMessage += `*COSTO DELIVERY:* $${deliveryFee.toLocaleString('es-CL')}\n`;
+          whatsappMessage += `- *Costo delivery:* $${deliveryFee.toLocaleString('es-CL')}\n`;
         }
         whatsappMessage += `\n`;
 
         // Agregar notas del cliente
         if (customerInfo.customerNotes && customerInfo.customerNotes.trim()) {
-          whatsappMessage += `*NOTAS DEL CLIENTE:*\n${customerInfo.customerNotes.trim()}\n\n`;
+          whatsappMessage += `*📝 Notas del cliente:*\n> ${customerInfo.customerNotes.trim()}\n\n`;
         }
 
-        whatsappMessage += `*Pago con Transferencia*\n\n`;
-        whatsappMessage += `Pedido realizado desde la app web.\n`;
-        whatsappMessage += `Por favor confirmar recepción del comprobante de transferencia.`;
+        whatsappMessage += `> *💰 TOTAL: $${cartTotal.toLocaleString('es-CL')}*\n\n`;
+        whatsappMessage += `_Pago con Transferencia - Pedido desde la app web._\n`;
+        whatsappMessage += `_Por favor confirmar recepción del comprobante._`;
 
         const whatsappUrl = `https://wa.me/56936227422?text=${encodeURIComponent(whatsappMessage)}`;
 

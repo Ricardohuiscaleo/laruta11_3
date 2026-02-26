@@ -1915,39 +1915,39 @@ export default function App() {
 
   const generateWhatsAppMessage = (orderId) => {
     const currentDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-    let message = `*NUEVO PEDIDO - LA RUTA 11*\n\n`;
-    message += `*Pedido:* ${orderId}\n`;
-    message += `*Cliente:* ${customerInfo.name}\n`;
-    message += `*Teléfono:* ${customerInfo.phone || 'No especificado'}\n`;
-    message += `*Tipo de entrega:* ${customerInfo.deliveryType === 'delivery' ? 'Delivery' : 'Retiro'}\n`;
+    let message = `> 🍔 *NUEVO PEDIDO - LA RUTA 11*\n\n`;
+    message += `*📋 Datos del pedido:*\n`;
+    message += `- *Pedido:* ${orderId}\n`;
+    message += `- *Cliente:* ${customerInfo.name}\n`;
+    message += `- *Teléfono:* ${customerInfo.phone || 'No especificado'}\n`;
+    message += `- *Tipo:* ${customerInfo.deliveryType === 'delivery' ? '🚴 Delivery' : '🏪 Retiro'}\n`;
 
     if (customerInfo.deliveryType === 'delivery' && customerInfo.address) {
-      message += `*Dirección:* ${customerInfo.address}\n`;
+      message += `- *Dirección:* ${customerInfo.address}\n`;
     }
     if (customerInfo.deliveryType === 'pickup' && customerInfo.pickupTime) {
-      message += `*Hora de retiro:* ${customerInfo.pickupTime}\n`;
+      message += `- *Hora de retiro:* ${customerInfo.pickupTime}\n`;
     }
 
-    message += `\n*PRODUCTOS:*\n`;
+    message += `\n*📦 Productos:*\n`;
     cart.forEach((item, index) => {
       const isCombo = item.type === 'combo' || item.category_name === 'Combos' || item.selections;
       message += `${index + 1}. ${item.name} x${item.quantity} - $${(item.price * item.quantity).toLocaleString('es-CL')}\n`;
 
       if (isCombo && (item.fixed_items || item.selections)) {
-        message += `   Incluye:\n`;
         if (item.fixed_items) {
           item.fixed_items.forEach(fixedItem => {
-            message += `   • ${item.quantity}x ${fixedItem.product_name || fixedItem.name}\n`;
+            message += `   - ${item.quantity}x ${fixedItem.product_name || fixedItem.name}\n`;
           });
         }
         if (item.selections) {
           Object.entries(item.selections).forEach(([group, selection]) => {
             if (Array.isArray(selection)) {
               selection.forEach(sel => {
-                message += `   • ${item.quantity}x ${sel.name}\n`;
+                message += `   - ${item.quantity}x ${sel.name}\n`;
               });
             } else if (selection) {
-              message += `   • ${item.quantity}x ${selection.name}\n`;
+              message += `   - ${item.quantity}x ${selection.name}\n`;
             }
           });
         }
@@ -1955,17 +1955,18 @@ export default function App() {
 
       if (item.customizations && item.customizations.length > 0) {
         item.customizations.forEach(custom => {
-          message += `   + ${custom.quantity}x ${custom.name} (+$${(custom.price * custom.quantity).toLocaleString('es-CL')})\n`;
+          message += `   - ${custom.quantity}x ${custom.name} (+$${(custom.price * custom.quantity).toLocaleString('es-CL')})\n`;
         });
       }
     });
 
-    message += `\n*Subtotal:* $${cartSubtotal.toLocaleString('es-CL')}\n`;
+    message += `\n*💰 Totales:*\n`;
+    message += `- *Subtotal:* $${cartSubtotal.toLocaleString('es-CL')}\n`;
     if (currentDeliveryFee > 0) {
-      message += `*Delivery:* $${currentDeliveryFee.toLocaleString('es-CL')}\n`;
+      message += `- *Delivery:* $${currentDeliveryFee.toLocaleString('es-CL')}\n`;
     }
-    message += `*Total:* $${cartTotal.toLocaleString('es-CL')}\n\n`;
-    message += `Pedido realizado desde la app web.`;
+    message += `\n> *💰 TOTAL: $${cartTotal.toLocaleString('es-CL')}*\n\n`;
+    message += `_Pedido realizado desde la app web._`;
 
     return message;
   };

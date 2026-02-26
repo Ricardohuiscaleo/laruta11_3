@@ -1155,74 +1155,105 @@ function EquipoView({ personal, onAddPersonal, onEditPersonal }) {
 
 
 function MobileScheduleView({ diasEnMes, turnosSeguridad, personal, mes, anio, onAddTurno, onDeleteTurno, seguridadColors }) {
-  const DIAS_LABEL_L = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const DIAS_CORTO = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   const days = Array.from({ length: diasEnMes }, (_, i) => i + 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
       {days.map(dia => {
         const trabajando = turnosSeguridad[dia] || [];
         const date = new Date(anio, mes, dia);
-        const dayLabel = DIAS_LABEL_L[date.getDay()];
+        const dayLabel = DIAS_CORTO[date.getDay()];
         const fecha = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
         const esHoy = new Date().toDateString() === date.toDateString();
+        const esFinde = date.getDay() === 0 || date.getDay() === 6;
+
+        // Deduplicate: if someone has both a dynamic shift and a replacement, only show the replacement
+        const personIds = new Set();
+        const filteredTurnos = [];
+        // Prioritize replacements over dynamic shifts
+        const sorted = [...trabajando].sort((a, b) => (a.is_dynamic ? 1 : 0) - (b.is_dynamic ? 1 : 0));
+        for (const t of sorted) {
+          if (!personIds.has(t.personal_id)) {
+            personIds.add(t.personal_id);
+            filteredTurnos.push(t);
+          }
+        }
+
+        // Find the main guard on duty (the one with a dynamic shift)
+        const guardia = filteredTurnos.find(t => t.is_dynamic);
+        const reemplazos = filteredTurnos.filter(t => !t.is_dynamic);
+        const guardiaPersona = guardia ? personal.find(x => x.id == guardia.personal_id) : null;
 
         return (
-          <div key={dia} style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-            {/* Date column */}
-            <div style={{ width: 45, textAlign: 'center', flexShrink: 0 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: esHoy ? '#4f46e5' : '#94a3b8', textTransform: 'uppercase' }}>{dayLabel.slice(0, 3)}</div>
+          <div key={dia} style={{
+            display: 'flex', alignItems: 'stretch', gap: 0,
+            borderBottom: '1px solid #eef2ff',
+            background: esHoy ? '#f0f0ff' : (esFinde ? '#fafafe' : 'white'),
+          }}>
+            {/* Date column - compact */}
+            <div style={{
+              width: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              padding: '10px 4px', borderRight: '1px solid #eef2ff', flexShrink: 0,
+            }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: esHoy ? '#4f46e5' : '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5 }}>{dayLabel}</div>
               <div style={{
-                fontSize: 18, fontWeight: 800, color: esHoy ? 'white' : '#1e1b4b',
+                fontSize: 17, fontWeight: 800, color: esHoy ? 'white' : '#312e81',
                 background: esHoy ? '#4f46e5' : 'transparent',
-                width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                borderRadius: '50%', margin: '2px auto'
+                width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: '50%', marginTop: 1,
               }}>{dia}</div>
             </div>
 
-            {/* Content column */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>Agenda</span>
-                <button onClick={() => {
-                  const titularObj = trabajando.find(t => t.is_dynamic);
-                  const titularId = titularObj ? titularObj.personal_id : '';
-                  onAddTurno({ dia, fecha, isSeguridad: true, titularId });
-                }} style={{
-                  fontSize: 12, padding: '2px 8px', borderRadius: 4,
-                  border: '1px solid #c7d2fe', background: '#f5f7ff', color: '#4f46e5', fontWeight: 700
-                }}>+ Reemplazo</button>
-              </div>
-
-              {trabajando.length === 0 ? (
-                <div style={{ fontSize: 13, color: '#cbd5e1', fontStyle: 'italic' }}>Sin turnos asignados</div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {trabajando.map(t => {
-                    const p = personal.find(x => x.id == t.personal_id);
-                    if (!p) return null;
-                    const c = seguridadColors[p.nombre] || seguridadColors['default'];
-                    const isReemplazo = t.tipo === 'reemplazo';
-
-                    return (
-                      <div key={t.id || (dia + p.id)} style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        background: c.bg, borderLeft: `4px solid ${c.line}`,
-                        borderRadius: 6, padding: '8px 10px',
-                        boxShadow: isReemplazo ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
-                      }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: c.text }}>{p.nombre}</span>
-                          <span style={{ fontSize: 11, fontWeight: 600, color: c.text, opacity: 0.8 }}>{isReemplazo ? '➡️ Reemplazo Especial' : '🛡️ Guardia 4x4'}</span>
-                        </div>
-                        {!t.is_dynamic && (
-                          <button onClick={() => onDeleteTurno(t.id)} style={{ background: 'white', border: 'none', borderRadius: '50%', width: 22, height: 22, display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', color: '#ef4444', fontSize: 16, fontWeight: 800 }}>×</button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+            {/* Content column - single row per guard */}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '8px 10px', gap: 8, minHeight: 48 }}>
+              {guardiaPersona ? (() => {
+                const c = seguridadColors[guardiaPersona.nombre] || seguridadColors['default'];
+                return (
+                  <div style={{
+                    flex: 1, display: 'flex', alignItems: 'center', gap: 8,
+                    background: c.bg, borderLeft: `3px solid ${c.line}`,
+                    borderRadius: 6, padding: '6px 10px',
+                  }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: c.line, flexShrink: 0 }} />
+                    <span style={{ fontSize: 14, fontWeight: 700, color: c.text, flex: 1 }}>{guardiaPersona.nombre}</span>
+                  </div>
+                );
+              })() : (
+                <span style={{ fontSize: 13, color: '#cbd5e1', fontStyle: 'italic' }}>—</span>
               )}
+
+              {/* Replacement badges */}
+              {reemplazos.map(t => {
+                const p = personal.find(x => x.id == t.personal_id);
+                if (!p) return null;
+                const c = seguridadColors[p.nombre] || seguridadColors['default'];
+                return (
+                  <div key={t.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 4,
+                    background: '#fef2f2', border: '1px solid #fecaca',
+                    borderRadius: 6, padding: '4px 8px',
+                  }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#dc2626' }}>{p.nombre}</span>
+                    <button onClick={() => onDeleteTurno(t.id)} style={{
+                      background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444',
+                      fontSize: 14, fontWeight: 800, padding: 0, lineHeight: 1,
+                    }}>×</button>
+                  </div>
+                );
+              })}
+
+              {/* Add replacement - just a small + icon */}
+              <button onClick={() => {
+                const titularObj = trabajando.find(t => t.is_dynamic);
+                const titularId = titularObj ? titularObj.personal_id : '';
+                onAddTurno({ dia, fecha, isSeguridad: true, titularId });
+              }} style={{
+                width: 24, height: 24, borderRadius: 6, border: '1px solid #e0e7ff',
+                background: '#f5f7ff', color: '#4f46e5', fontSize: 16, fontWeight: 800,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', flexShrink: 0,
+              }}>+</button>
             </div>
           </div>
         );

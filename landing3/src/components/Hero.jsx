@@ -15,7 +15,7 @@ export default function Hero() {
     duration: '',
     additionalInfo: ''
   });
-  
+
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
     setIsModalOpen(false);
@@ -31,42 +31,43 @@ export default function Hero() {
       additionalInfo: ''
     });
   };
-  
+
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
   };
-  
+
   const sendWhatsApp = () => {
     const whatsappNumber = '56922504275';
     const months = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    const eventDate = formData.eventDay && formData.eventMonth && formData.eventYear 
+    const eventDate = formData.eventDay && formData.eventMonth && formData.eventYear
       ? `${formData.eventDay} de ${months[parseInt(formData.eventMonth)]} de ${formData.eventYear}`
       : 'Por definir';
-    
-    const message = `*COTIZACION LA RUTA11*
 
-*Cliente:* ${formData.name}
+    const message = `> 🎉 *COTIZACIÓN LA RUTA 11*
 
-*Tipo de Evento:* ${formData.eventType}
-*Fecha:* ${eventDate}
-*Invitados:* ${formData.guestCount}
-*Ubicacion:* ${formData.location}
-*Duracion:* ${formData.duration}
+*👤 Cliente:* ${formData.name}
 
-*Informacion adicional:*
-${formData.additionalInfo || 'Sin informacion adicional'}
+*📋 Detalles del evento:*
+- *Tipo:* ${formData.eventType}
+- *Fecha:* ${eventDate}
+- *Invitados:* ${formData.guestCount}
+- *Ubicación:* ${formData.location}
+- *Duración:* ${formData.duration}
 
-Gracias por contactar La Ruta11!`;
-    
+*📝 Información adicional:*
+> ${formData.additionalInfo || 'Sin información adicional'}
+
+_¡Gracias por contactar La Ruta 11!_ 🍔`;
+
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
     window.open(whatsappUrl, '_blank');
     closeModal();
   };
-  
+
   useEffect(() => {
     const img = new Image();
     img.onload = () => {
@@ -77,8 +78,8 @@ Gracias por contactar La Ruta11!`;
   }, []);
 
   return (
-    <section 
-      id="inicio" 
+    <section
+      id="inicio"
       className="relative min-h-screen flex items-center pt-20 overflow-hidden"
       style={{
         backgroundImage: `linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.4)), url('https://laruta11-images.s3.amazonaws.com/menu/1755574768_tomahawk-full-ig-portrait-1080-1350-2.png')`,
@@ -88,17 +89,16 @@ Gracias por contactar La Ruta11!`;
       }}
     >
       {/* Overlay de transición */}
-      <div className={`absolute inset-0 bg-black transition-opacity duration-[2000ms] ease-out ${
-        imageLoaded ? 'opacity-0' : 'opacity-100'
-      }`}></div>
-      
+      <div className={`absolute inset-0 bg-black transition-opacity duration-[2000ms] ease-out ${imageLoaded ? 'opacity-0' : 'opacity-100'
+        }`}></div>
+
       {/* Overlay animado adicional */}
       <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/20 animate-pulse"></div>
-      
+
       <div className="container mx-auto px-6 relative z-10">
         <div className="flex justify-center items-center">
           <div className="text-ruta-white text-center max-w-4xl">
-            
+
             <div className="mb-4">
               <span className="inline-block bg-yellow-400 text-ruta-black px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide">
                 Food Trucks Gourmet
@@ -113,7 +113,7 @@ Gracias por contactar La Ruta11!`;
             <p className="text-sm sm:text-base md:text-lg mb-6 md:mb-8 opacity-75 px-4 sm:px-0">
               Los mejores food trucks de Arica • Ingredientes frescos • Sabores únicos
             </p>
-            
+
 
             <div className="flex flex-row gap-2 sm:gap-4 justify-center px-2 sm:px-0">
               <div className="relative group">
@@ -126,7 +126,7 @@ Gracias por contactar La Ruta11!`;
                 </div>
               </div>
               <div className="relative group">
-                <button 
+                <button
                   onClick={openModal}
                   className="flex-1 sm:w-auto bg-white/[0.01] backdrop-blur-md border-2 border-yellow-400 text-yellow-400 px-3 sm:px-8 py-3 sm:py-4 rounded-full font-semibold text-sm sm:text-lg hover:bg-yellow-400 hover:text-ruta-black transition-all flex items-center gap-1 sm:gap-2 justify-center cursor-pointer"
                 >
@@ -138,12 +138,12 @@ Gracias por contactar La Ruta11!`;
                 </div>
               </div>
             </div>
-            
+
 
           </div>
         </div>
       </div>
-      
+
       {/* Modern Quotation Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
@@ -152,9 +152,9 @@ Gracias por contactar La Ruta11!`;
             <div className="sticky top-0 bg-gradient-to-r from-ruta-red to-ruta-orange text-white p-4 sm:p-6 rounded-t-2xl sm:rounded-t-3xl">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                  <img 
-                    src="https://laruta11-images.s3.amazonaws.com/menu/1755571382_test.jpg" 
-                    alt="La Ruta11 Logo" 
+                  <img
+                    src="https://laruta11-images.s3.amazonaws.com/menu/1755571382_test.jpg"
+                    alt="La Ruta11 Logo"
                     className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-white/30"
                   />
                   <div>
@@ -162,7 +162,7 @@ Gracias por contactar La Ruta11!`;
                     <p className="text-white/90 text-xs sm:text-sm">Cuéntanos sobre tu evento</p>
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={closeModal}
                   className="text-white/80 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full"
                 >
@@ -170,7 +170,7 @@ Gracias por contactar La Ruta11!`;
                 </button>
               </div>
             </div>
-            
+
             {/* Form */}
             <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
               {/* Personal Info */}
@@ -185,7 +185,7 @@ Gracias por contactar La Ruta11!`;
                   className="w-full p-3 sm:p-4 border-2 border-gray-200 rounded-xl focus:border-ruta-red focus:outline-none transition-colors text-sm sm:text-base"
                 />
               </div>
-              
+
               {/* Event Details */}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
@@ -223,7 +223,7 @@ Gracias por contactar La Ruta11!`;
                         className="w-full p-2 sm:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl sm:rounded-2xl focus:border-blue-500 focus:from-blue-100 focus:to-indigo-100 focus:outline-none transition-all duration-300 shadow-sm hover:shadow-md appearance-none cursor-pointer font-medium text-center text-xs sm:text-base"
                       >
                         <option value="">Día</option>
-                        {Array.from({length: 31}, (_, i) => i + 1).map(day => (
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
                           <option key={day} value={day}>{day}</option>
                         ))}
                       </select>
@@ -268,7 +268,7 @@ Gracias por contactar La Ruta11!`;
                         className="w-full p-2 sm:p-4 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl sm:rounded-2xl focus:border-purple-500 focus:from-purple-100 focus:to-pink-100 focus:outline-none transition-all duration-300 shadow-sm hover:shadow-md appearance-none cursor-pointer font-medium text-center text-xs sm:text-base"
                       >
                         <option value="">Año</option>
-                        {Array.from({length: 3}, (_, i) => new Date().getFullYear() + i).map(year => (
+                        {Array.from({ length: 3 }, (_, i) => new Date().getFullYear() + i).map(year => (
                           <option key={year} value={year}>{year}</option>
                         ))}
                       </select>
@@ -281,7 +281,7 @@ Gracias por contactar La Ruta11!`;
                   </div>
                 </div>
               </div>
-              
+
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-gray-700 font-semibold mb-2 sm:mb-3 text-sm sm:text-base">👥 Número de invitados</label>
@@ -329,7 +329,7 @@ Gracias por contactar La Ruta11!`;
                   </div>
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-gray-700 font-semibold mb-2 text-sm sm:text-base">📍 Ubicación del evento</label>
                 <input
@@ -341,7 +341,7 @@ Gracias por contactar La Ruta11!`;
                   className="w-full p-3 sm:p-4 border-2 border-gray-200 rounded-xl focus:border-ruta-red focus:outline-none transition-colors text-sm sm:text-base"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-gray-700 font-semibold mb-2 text-sm sm:text-base">💬 Información adicional</label>
                 <textarea
@@ -353,7 +353,7 @@ Gracias por contactar La Ruta11!`;
                 />
               </div>
             </div>
-            
+
             {/* Footer */}
             <div className="p-4 sm:p-6 bg-gray-50 rounded-b-2xl sm:rounded-b-3xl">
               <div className="flex flex-col sm:flex-row gap-3">

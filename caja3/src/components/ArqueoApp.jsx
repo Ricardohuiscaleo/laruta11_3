@@ -83,13 +83,13 @@ export default function ArqueoApp() {
     const totalRuta11 = salesData.total_general - (salesData.delivery_fees || 0);
     const reportUrl = `https://caja.laruta11.cl/arqueo-resumen?days_ago=${currentDaysAgo}`;
 
-    let message = `*ARQUEO DE CAJA - LA RUTA 11*%0A%0A`;
-    message += `*Fecha:* ${new Date().toLocaleDateString('es-CL')}%0A`;
-    message += `*Hora:* ${new Date().toLocaleTimeString('es-CL')}%0A%0A`;
-    message += `*💰 TOTAL VENTAS:* $${fmt(totalRuta11)}%0A`;
-    message += `*Total Pedidos:* ${salesData.total_orders}%0A%0A`;
-    message += `*💵 SALDO EN CAJA:* $${fmt(saldoCaja)}%0A%0A`;
-    message += `📄 Ver reporte completo:%0A${reportUrl}`;
+    let message = `> 📊 *ARQUEO DE CAJA - LA RUTA 11*%0A%0A`;
+    message += `_${new Date().toLocaleDateString('es-CL')} - ${new Date().toLocaleTimeString('es-CL')}__%0A%0A`;
+    message += `*💰 Resumen de ventas:*%0A`;
+    message += `- *Total Ventas:* $${fmt(totalRuta11)}%0A`;
+    message += `- *Pedidos:* ${salesData.total_orders}%0A`;
+    message += `- *Saldo en Caja:* $${fmt(saldoCaja)}%0A%0A`;
+    message += `> 📄 Ver reporte completo:%0A> ${reportUrl}`;
 
     window.open(`https://wa.me/56936227422?text=${message}`, '_blank');
   };
@@ -253,8 +253,8 @@ export default function ArqueoApp() {
         <button className="btn btn-nav" onClick={() => setCurrentDaysAgo(currentDaysAgo + 1)}>
           <ChevronLeft size={20} /> Ayer
         </button>
-        <button 
-          className="btn btn-nav" 
+        <button
+          className="btn btn-nav"
           onClick={() => currentDaysAgo > 0 && setCurrentDaysAgo(currentDaysAgo - 1)}
           disabled={currentDaysAgo === 0}
         >
