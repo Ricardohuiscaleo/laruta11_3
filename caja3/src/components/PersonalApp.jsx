@@ -431,11 +431,7 @@ export default function PersonalApp() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 48 }}>
                 <LiquidacionView personal={personal} cajeros={cajeros} plancheros={plancheros} administradores={administradores} getLiquidacion={(p) => getLiquidacion(p, 'ruta11')} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina.ruta11} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina.ruta11} onSavePresupuesto={(monto) => savePresupuesto(monto, 'ruta11')} centroCosto="ruta11" />
                 <div style={{ background: 'white', borderRadius: 28, padding: 28, border: '1px solid #e3e3e3' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-                    <Calendar size={20} style={{ color: '#1a73e8' }} />
-                    <h2 style={{ margin: 0, fontSize: 18, fontWeight: 500 }}>Calendario de Turnos</h2>
-                  </div>
-                  <CalendarioView diasEnMes={diasEnMes} primerDia={primerDia} turnosPorFecha={turnosNoSeguridad} personal={personal} colores={COLORES} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({ dia, fecha }); setFormTurno({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa', fecha_fin: fecha }); }} onDeleteTurno={deleteTurno} />
+                  <CalendarioView diasEnMes={diasEnMes} primerDiaLunes={primerDiaLunes} turnosPorFecha={turnosNoSeguridad} personal={personal} colores={COLORES} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({ dia, fecha }); setFormTurno({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa', fecha_fin: fecha }); }} onDeleteTurno={deleteTurno} />
                 </div>
               </div>
             )}
@@ -763,82 +759,125 @@ function EmailPreviewModal({ config, onClose, mes, anio }) {
 }
 
 
-function CalendarioView({ diasEnMes, primerDia, turnosPorFecha, personal, colores, mes, anio, onAddTurno, onDeleteTurno }) {
-  const DIAS_LABEL = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+function CalendarioView({ diasEnMes, primerDiaLunes, turnosPorFecha, personal, colores, mes, anio, onAddTurno, onDeleteTurno }) {
+  const DIAS_LABEL = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  const MESES_FULL = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const celdas = [];
-  for (let i = 0; i < primerDia; i++) celdas.push(null);
+  for (let i = 0; i < primerDiaLunes; i++) celdas.push(null);
   for (let d = 1; d <= diasEnMes; d++) celdas.push(d);
 
-  return (
-    <div>
-      {/* Leyenda */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-        {personal.filter(p => p.activo == 1).map(p => (
-          <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: colores[p.id]?.light, border: `1px solid ${colores[p.id]?.border}` }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: colores[p.id]?.bg }} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: colores[p.id]?.text }}>{p.nombre}</span>
-          </div>
-        ))}
-      </div>
+  const activos = personal.filter(p => p.activo == 1 && !p.rol?.includes('seguridad'));
+  const hoy = new Date();
+  const hoyDia = hoy.getMonth() === mes && hoy.getFullYear() === anio ? hoy.getDate() : -1;
 
-      {/* Grid calendario — funciona en móvil y desktop */}
-      <div style={{ background: 'white', borderRadius: 12, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-        {/* Header días */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#f1f5f9', borderBottom: '1px solid #e2e8f0' }}>
-          {DIAS_LABEL.map(d => (
-            <div key={d} style={{ padding: '10px 4px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#64748b' }}>{d}</div>
-          ))}
+  return (
+    <div className="cal-container" style={{ background: '#f8fafd', border: '1px solid #e3e3e3', margin: '-28px' /* Negating parent padding to make it flush */ }}>
+      {/* Header Google Calendar Style */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 400, color: '#1f1f1f', letterSpacing: '-0.3px' }}>🏪 {MESES_FULL[mes]} {anio}</h2>
+          <p style={{ margin: '4px 0 0', color: '#70757a', fontSize: 13, fontWeight: 500 }}>Turnos Fijos y Reemplazos · La Ruta 11</p>
         </div>
-        {/* Celdas */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, background: '#e2e8f0' }}>
-          {celdas.map((dia, i) => {
-            const trabajando = dia ? (turnosPorFecha[dia] || []) : [];
-            const esFinSemana = i % 7 === 0 || i % 7 === 6;
-            const fecha = dia ? `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}` : '';
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {activos.map(p => {
+            const c = colores[p.id] || { bg: '#cbd5e1', light: '#f8fafc', border: '#e2e8f0', text: '#475569' };
             return (
-              <div key={i} style={{
-                background: dia ? (esFinSemana ? '#fafafa' : 'white') : '#f8fafc',
-                minHeight: 90, padding: '6px 5px',
-                display: 'flex', flexDirection: 'column',
-              }}>
-                {dia && (
-                  <>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: esFinSemana ? '#94a3b8' : '#374151' }}>{dia}</span>
-                      <button onClick={() => onAddTurno(dia, fecha)} style={{
-                        padding: 4, borderRadius: 6,
-                        border: '1px dashed #cbd5e1', background: 'transparent', cursor: 'pointer', color: '#94a3b8',
-                        display: 'flex'
-                      }}><Plus size={14} /></button>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
-                      {trabajando.map(t => {
-                        const p = personal.find(x => x.id == t.personal_id);
-                        if (!p) return null;
-                        const c = colores[p.id];
-                        return (
-                          <div key={t.id} style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            background: t.tipo === 'reemplazo' ? '#fee2e2' : c?.light,
-                            borderLeft: `3px solid ${t.tipo === 'reemplazo' ? '#ef4444' : c?.bg}`,
-                            borderRadius: 3, padding: '2px 4px',
-                          }}>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: t.tipo === 'reemplazo' ? '#b91c1c' : c?.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                              {p.nombre}{t.tipo === 'reemplazo' ? ' ↔' : ''}
-                            </span>
-                            <button onClick={() => onDeleteTurno(t.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.tipo === 'reemplazo' ? '#f87171' : '#94a3b8', display: 'flex', padding: 2 }}>
-                              <Trash2 size={12} />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, background: 'white', border: '1px solid #e3e3e3', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: c.bg }} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#444746' }}>{p.nombre}</span>
               </div>
             );
           })}
         </div>
+      </div>
+
+      <style>{`
+        .cal-container { border-radius: 28px; padding: 28px; }
+        .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .grid-cell { background: white; border-radius: 12px; min-height: 100px; padding: 6px; display: flex; flex-direction: column; transition: all 0.2s ease; border: 1px solid #e3e3e380; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .grid-cell.hoy { border: 2px solid #1a73e8; box-shadow: 0 4px 16px rgba(26,115,232,0.12); }
+        .grid-cell.empty { background: transparent; border: none; box-shadow: none; min-height: auto; }
+        
+        .header-day { text-align: center; font-size: 11px; font-weight: 800; color: #70757a; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 0; }
+        .day-num { font-size: 13px; font-weight: 700; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #444746; }
+        .day-num.hoy-num { background: #1a73e8; color: white; }
+        
+        .guard-pill { display: flex; justify-content: center; color: white; border-radius: 8px; padding: 3px 6px; font-size: 10px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 3px; }
+        .repl-pill { display: flex; align-items: center; justify-content: space-between; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 3px 6px; font-size: 10px; font-weight: 700; color: #c2410c; margin-bottom: 3px; }
+        .repl-btn { background: none; border: none; cursor: pointer; color: #ef4444; font-size: 12px; font-weight: 800; padding: 0; margin-left: 2px; line-height: 1; }
+        .normal-btn { background: none; border: none; cursor: pointer; color: inherit; font-size: 12px; font-weight: 800; padding: 0; margin-left: 2px; line-height: 1; }
+        .add-btn { font-size: 14px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: none; background: transparent; cursor: pointer; color: #70757a; font-weight: 700; opacity: 0.5; padding: 0; }
+
+        @media (max-width: 450px) {
+          .cal-container { padding: 14px 4px; border-radius: 12px; margin: -28px !important; }
+          .month-grid { gap: 2px; }
+          .grid-cell { padding: 2px; min-height: 60px; border-radius: 6px; }
+          .header-day { font-size: 9px; padding: 4px 0; }
+          .day-num { width: 18px; height: 18px; font-size: 10px; }
+          .guard-pill { padding: 1.5px 2px; font-size: 8.5px; border-radius: 4px; margin-bottom: 2px; letter-spacing: -0.3px; }
+          .repl-pill { padding: 1.5px 2px; font-size: 8.5px; border-radius: 4px; margin-bottom: 2px; letter-spacing: -0.3px; }
+          .repl-btn, .normal-btn { font-size: 10px; }
+          .add-btn { width: 16px; height: 16px; font-size: 12px; }
+          .mobile-short-name { max-width: 100%; display: inline-block; overflow: hidden; text-overflow: ellipsis; }
+        }
+      `}</style>
+
+      {/* Day headers */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 8 }}>
+        {DIAS_LABEL.map(d => (
+          <div key={d} className="header-day">{d}</div>
+        ))}
+      </div>
+
+      {/* Card grid */}
+      <div className="month-grid">
+        {celdas.map((dia, i) => {
+          const trabajando = dia ? (turnosPorFecha[dia] || []) : [];
+          const fecha = dia ? `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}` : '';
+          const esHoy = dia === hoyDia;
+
+          return (
+            <div key={i} className={`grid-cell ${dia ? '' : 'empty'} ${esHoy ? 'hoy' : ''}`}>
+              {dia && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span className={`day-num ${esHoy ? 'hoy-num' : ''}`}>{dia}</span>
+                    <button className="add-btn" onClick={() => onAddTurno(dia, fecha)} title="Agregar Turno">+</button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                    {trabajando.map(t => {
+                      const p = personal.find(x => x.id == t.personal_id);
+                      if (!p) return null;
+                      const c = colores[p.id];
+
+                      if (t.tipo === 'reemplazo') {
+                        const replacer = personal.find(x => x.id == t.reemplazado_por);
+                        if (!replacer) return null;
+                        return (
+                          <div key={t.id} className="repl-pill">
+                            <span className="mobile-short-name">
+                              {replacer.nombre[0]}↔{p.nombre[0]}
+                            </span>
+                            <button onClick={() => onDeleteTurno(t.id)} className="repl-btn">×</button>
+                          </div>
+                        );
+                      }
+
+                      // Normal shift pill
+                      return (
+                        <div key={t.id} className="guard-pill" style={{ background: c?.bg, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span className="mobile-short-name">{p.nombre.slice(0, 4)}.</span>
+                          <button onClick={() => onDeleteTurno(t.id)} className="normal-btn">×</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
