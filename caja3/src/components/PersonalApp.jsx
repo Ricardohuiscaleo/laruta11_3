@@ -278,7 +278,7 @@ export default function PersonalApp() {
       gruposReemplazando[key].monto += parseFloat(t.monto_reemplazo);
     });
     const diasTrabajados = modoContexto === 'seguridad'
-      ? (30 - diasReemplazados)
+      ? (diasEnMes - diasReemplazados)
       : (diasNormales + reemplazosHechos);
 
     // Ajustes per context object... just leave them global or split them?
