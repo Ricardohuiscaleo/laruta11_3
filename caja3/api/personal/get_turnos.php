@@ -86,8 +86,8 @@ if ($ricardo_id && $claudio_id) {
 }
 
 // Generación Dinámica de Turnos La Ruta 11 (4x4 — 2 ciclos independientes)
-// Ciclo 1: Cajero — Camila (pos 0-3) / Neit (pos 4-7), base: 2026-02-09
-// Ciclo 2: Planchero — Andrés (pos 0-3) / Gabriel (pos 4-7), base: 2026-02-15
+// Ciclo 1: Cajero — Camila (pos 0-3) / Neit (pos 4-7), base: 2026-02-01
+// Ciclo 2: Planchero — Andrés (pos 0-3) / Gabriel (pos 4-7), base: 2026-02-07
 $res_ruta = mysqli_query($conn, "SELECT id, nombre FROM personal WHERE nombre IN ('Camila', 'Neit', 'Andrés', 'Gabriel')");
 $ruta_ids = [];
 while ($p_row = mysqli_fetch_assoc($res_ruta)) {
@@ -95,17 +95,17 @@ while ($p_row = mysqli_fetch_assoc($res_ruta)) {
     $ruta_ids[$nombre_lower] = $p_row['id'];
 }
 
-// Track existing normal shifts to avoid duplicates
-$turnos_normal_existentes = [];
+// Track ALL existing shifts (normal + replacement) to avoid duplicates
+$turnos_ruta_existentes = [];
 foreach ($data as $t) {
-    if ($t['tipo'] === 'normal') {
-        $turnos_normal_existentes[$t['fecha'] . '_' . $t['personal_id']] = true;
+    if ($t['tipo'] !== 'seguridad' && $t['tipo'] !== 'reemplazo_seguridad') {
+        $turnos_ruta_existentes[$t['fecha'] . '_' . $t['personal_id']] = true;
     }
 }
 
 $ciclos_ruta11 = [
-    ['base' => '2026-02-09', 'a' => 'camila', 'b' => 'neit'],
-    ['base' => '2026-02-15', 'a' => 'andrés', 'b' => 'gabriel'],
+    ['base' => '2026-02-01', 'a' => 'camila', 'b' => 'neit'],
+    ['base' => '2026-02-07', 'a' => 'andrés', 'b' => 'gabriel'],
 ];
 
 foreach ($ciclos_ruta11 as $ciclo) {
@@ -127,7 +127,7 @@ foreach ($ciclos_ruta11 as $ciclo) {
         $pId = ($pos < 4) ? $idA : $idB;
         $fecha_str = $current->format('Y-m-d');
 
-        if (!isset($turnos_normal_existentes[$fecha_str . '_' . $pId])) {
+        if (!isset($turnos_ruta_existentes[$fecha_str . '_' . $pId])) {
             $data[] = [
                 'id' => 'dyn_ruta_' . $fecha_str . '_' . $pId,
                 'personal_id' => $pId,
