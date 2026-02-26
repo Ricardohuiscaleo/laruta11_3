@@ -280,7 +280,7 @@ export default function PersonalApp() {
       gruposReemplazando[key].monto += parseFloat(t.monto_reemplazo);
     });
     const diasTrabajados = modoContexto === 'seguridad'
-      ? (diasReemplazados > 0 ? (diasEnMes - diasReemplazados) : 30)
+      ? (30 - diasReemplazados)
       : (diasNormales + reemplazosHechos);
 
 
