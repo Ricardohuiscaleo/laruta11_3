@@ -335,17 +335,17 @@ export default function PersonalApp() {
         .nav-tab.active { color: #1a73e8; border-bottom-color: #1a73e8; }
         
         @media (max-width: 450px) {
-          .app-header { padding: 8px 12px; height: auto; min-height: 56px; gap: 8px; flex-wrap: wrap; }
-          .header-title-container { gap: 8px; }
-          .header-icon { padding: 6px; transform: scale(0.85); }
-          .header-title { font-size: 16px; }
-          .date-nav { padding: 2px 4px; gap: 4px; }
-          .date-text { min-width: 100px; font-size: 13px; }
-          .profile-bubble { width: 32px; height: 32px; font-size: 12px; }
+          .app-header { padding: 8px 12px; height: auto; min-height: 56px; flex-wrap: nowrap; gap: 4px; overflow-x: auto; }
+          .header-title-container { gap: 6px; flex-shrink: 0; }
+          .header-icon { padding: 4px; transform: scale(0.8); }
+          .header-title { font-size: 15px; white-space: nowrap; }
+          .date-nav { padding: 2px 4px; gap: 2px; flex-shrink: 0; margin-left: auto; }
+          .date-text { min-width: 85px; font-size: 12px; white-space: nowrap; }
+          .profile-bubble { display: none; }
           .main-nav { top: 56px; }
-          .nav-container { padding: 0 6px; }
-          .nav-tab { padding: 12px 14px; font-size: 13px; gap: 6px; }
-          .nav-tab svg, .nav-tab img { transform: scale(0.9); }
+          .nav-container { padding: 0 4px; justify-content: space-between; }
+          .nav-tab { padding: 12px 4px; font-size: 12px; gap: 4px; flex: 1; justify-content: center; }
+          .nav-tab svg, .nav-tab img { transform: scale(0.85); flex-shrink: 0; }
           
           /* Tarjetas Nómina (Resumen) */
           .nomina-card-header { flex-wrap: nowrap !important; align-items: flex-start !important; gap: 6px !important; }
