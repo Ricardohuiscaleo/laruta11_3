@@ -1,6 +1,16 @@
 <?php
 header('Content-Type: application/json');
-require_once dirname(dirname(__DIR__)) . '/api/config.php';
+$config = null;
+foreach ([__DIR__ . '/../../public/config.php', __DIR__ . '/../config.php', __DIR__ . '/../../config.php', __DIR__ . '/../../../config.php', __DIR__ . '/../../../../config.php'] as $p) {
+    if (file_exists($p)) {
+        $config = require_once $p;
+        break;
+    }
+}
+if (!$config) {
+    echo json_encode(['success' => false, 'error' => 'Config no encontrado']);
+    exit;
+}
 
 $mes = $_GET['mes'] ?? date('Y-m');
 $year = explode('-', $mes)[0];
