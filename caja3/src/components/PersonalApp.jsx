@@ -587,6 +587,34 @@ export default function PersonalApp() {
         </div>
       )}
 
+      {/* Modal Ajuste */}
+      {modalAjuste && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: 'white', borderRadius: 24, padding: 32, width: '100%', maxWidth: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 600 }}>Agregar Ajuste</h3>
+            <p style={{ margin: '0 0 24px', fontSize: 13, color: '#64748b' }}>Para {modalAjuste.nombre}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Monto (positivo o negativo)</label>
+                <input type="number" value={formAjuste.monto} onChange={e => setFormAjuste(f => ({ ...f, monto: e.target.value }))} placeholder="Ej: 5000 o -2000"
+                  style={{ width: '100%', padding: '10px 14px', border: '1px solid #e3e3e3', borderRadius: 12, fontSize: 14 }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Concepto / Motivo</label>
+                <input type="text" value={formAjuste.concepto} onChange={e => setFormAjuste(f => ({ ...f, concepto: e.target.value }))} placeholder="Ej: Bono puntual, Descuento pérdida..."
+                  style={{ width: '100%', padding: '10px 14px', border: '1px solid #e3e3e3', borderRadius: 12, fontSize: 14 }} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>
+              <button onClick={() => { setModalAjuste(null); setFormAjuste({ monto: '', concepto: '' }); }} style={{ flex: 1, padding: '12px', border: 'none', background: '#f1f3f4', borderRadius: 12, cursor: 'pointer', fontWeight: 600, color: '#444746' }}>Cancelar</button>
+              <button onClick={saveAjuste} disabled={saving || !formAjuste.monto || !formAjuste.concepto} style={{ flex: 1, padding: '12px', border: 'none', background: '#10b981', borderRadius: 12, cursor: 'pointer', fontWeight: 600, color: 'white', opacity: (saving || !formAjuste.monto || !formAjuste.concepto) ? 0.6 : 1 }}>
+                {saving ? 'Guardando...' : 'Guardar Ajuste'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toast Notification */}
       {toast && (
         <div style={{
