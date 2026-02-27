@@ -45,21 +45,23 @@ if ($isMonthView) {
         $month = (int)$_GET['month'];
         $firstDay = new DateTime("$year-$month-01", new DateTimeZone('America/Santiago'));
         $lastDay = new DateTime($firstDay->format('Y-m-t'), new DateTimeZone('America/Santiago'));
-        
-        $start_date_chile = $firstDay->format('Y-m-d') . ' 17:30:00';
+
+        $start_date_chile = $firstDay->format('Y-m-d') . ' 17:00:00';
         $end_date_chile = $lastDay->format('Y-m-d') . ' 23:59:59';
-    } else {
+    }
+    else {
         // Mes actual
         $now = new DateTime('now', new DateTimeZone('America/Santiago'));
         $firstDay = new DateTime($now->format('Y-m-01'), new DateTimeZone('America/Santiago'));
-        
-        $start_date_chile = $firstDay->format('Y-m-d') . ' 17:30:00';
+
+        $start_date_chile = $firstDay->format('Y-m-d') . ' 17:00:00';
         $end_date_chile = $now->format('Y-m-d H:i:s');
     }
-    
+
     $start_date = date('Y-m-d H:i:s', strtotime($start_date_chile . ' +3 hours'));
     $end_date = date('Y-m-d H:i:s', strtotime($end_date_chile . ' +3 hours'));
-} else {
+}
+else {
     $daysAgo = isset($_GET['days_ago']) ? (int)$_GET['days_ago'] : 0;
 
     $now = new DateTime('now', new DateTimeZone('America/Santiago'));
@@ -74,7 +76,7 @@ if ($isMonthView) {
         $shiftStartDate = date('Y-m-d', strtotime($shiftStartDate . ' -' . $daysAgo . ' days'));
     }
 
-    $start_date_chile = $shiftStartDate . ' 17:30:00';
+    $start_date_chile = $shiftStartDate . ' 17:00:00';
     $end_date_chile = date('Y-m-d', strtotime($shiftStartDate . ' +1 day')) . ' 04:00:00';
 
     $start_date = date('Y-m-d H:i:s', strtotime($start_date_chile . ' +3 hours'));
@@ -92,8 +94,10 @@ $hasDeliveryFee = in_array('delivery_fee', $columns);
 $hasTotalCost = in_array('total_cost', $columns);
 
 $selectFields = "order_number, customer_name, product_name, installment_amount, payment_method, created_at, customer_notes, delivery_type";
-if ($hasDeliveryFee) $selectFields .= ", delivery_fee";
-if ($hasTotalCost) $selectFields .= ", total_cost";
+if ($hasDeliveryFee)
+    $selectFields .= ", delivery_fee";
+if ($hasTotalCost)
+    $selectFields .= ", total_cost";
 
 $sql = "SELECT $selectFields 
         FROM tuu_orders 
@@ -112,8 +116,10 @@ $ventas = [];
 if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {
         // Asegurar que siempre existan estos campos
-        if (!isset($row['delivery_fee'])) $row['delivery_fee'] = 0;
-        if (!isset($row['total_cost'])) $row['total_cost'] = 0;
+        if (!isset($row['delivery_fee']))
+            $row['delivery_fee'] = 0;
+        if (!isset($row['total_cost']))
+            $row['total_cost'] = 0;
         $ventas[] = $row;
     }
 }
@@ -127,10 +133,10 @@ foreach ($ventas as &$venta) {
         mysqli_stmt_execute($orderIdStmt);
         $orderIdResult = mysqli_stmt_get_result($orderIdStmt);
         $orderRow = mysqli_fetch_assoc($orderIdResult);
-        
+
         if ($orderRow) {
             $orderId = $orderRow['id'];
-            
+
             // Sumar item_cost de todos los items de la orden
             $costSql = "SELECT COALESCE(SUM(item_cost * quantity), 0) as total_cost FROM tuu_order_items WHERE order_id = ?";
             $costStmt = mysqli_prepare($conn, $costSql);
@@ -153,7 +159,8 @@ $totalCost = 0;
 foreach ($ventas as $v) {
     if (isset($v['delivery_type']) && $v['delivery_type'] === 'delivery') {
         $deliveryCount++;
-    } else {
+    }
+    else {
         $pickupCount++;
     }
     $totalCost += floatval($v['total_cost']);

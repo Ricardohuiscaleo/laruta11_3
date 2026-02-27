@@ -78,10 +78,33 @@ try {
     $totalOrdenes = (int)($ordenesData['total_ordenes'] ?? 0);
     $ticketPromedio = (float)($ordenesData['ticket_promedio'] ?? 0);
 
-    // Meta mensual (ejemplo: $2.4M)
-    $metaMensual = 2400000;
-    $porcentajeMeta = $ventasProyectado > 0 ? ($ventasReal / $metaMensual) * 100 : 0;
-    $esperadoHoy = ($metaMensual / 30) * $currentDay;
+    // Meta mensual dinámica: Punto de Equilibrio + 5% de seguridad
+    // Margen real del mes (Ventas Netas - CMV)
+    $costoVentasUrl = "http://" . $_SERVER['HTTP_HOST'] . "/api/get_sales_analytics.php?period=month";
+    $costoVentasDataRaw = @file_get_contents($costoVentasUrl);
+    $costoVentasData = json_decode($costoVentasDataRaw, true);
+
+    $marginPercent = 0.44; // Default 44%
+    if ($costoVentasData && $costoVentasData['success']) {
+        $marginPercent = ($costoVentasData['data']['summary_kpis']['avg_margin'] ?? 44) / 100;
+    }
+
+    // Sueldos dinámicos
+    $stmtSueldos = $pdo->query("
+        SELECT SUM(sueldo_base_cajero + sueldo_base_planchero + sueldo_base_admin) as total_sueldos
+        FROM personal 
+        WHERE rol != 'seguridad'
+    ");
+    $sueldosData = $stmtSueldos->fetch(PDO::FETCH_ASSOC);
+    $totalSueldosRuta11 = (float)($sueldosData['total_sueldos'] ?? 0);
+
+    // Meta = (Sueldos / Margen) * 1.05
+    $metaMensual = $marginPercent > 0 ? ($totalSueldosRuta11 / $marginPercent) * 1.05 : 2400000;
+
+    $porcentajeMeta = $metaMensual > 0 ? ($ventasReal / $metaMensual) * 100 : 0;
+
+    $daysInMonth = (int)$shiftToday->format('t');
+    $esperadoHoy = ($metaMensual / $daysInMonth) * $currentDay;
     $porcentajeEsperado = $esperadoHoy > 0 ? ($ventasReal / $esperadoHoy) * 100 : 0;
 
     // ========== TARJETA 2: COMPRAS ==========
@@ -240,17 +263,11 @@ try {
     }
 
     // ========== MARGEN OPERATIVO (Ventas - Compras) ==========
+    // Nota: Esto es flujo de caja de inventario, no margen operativo real
     $margenOperativo = $ventasReal - $totalCompras;
     $porcentajeMargen = $ventasReal > 0 ? ($margenOperativo / $ventasReal) * 100 : 0;
 
-    // ========== NUEVO: SUELDOS RUTA 11 (DINÁMICO) ==========
-    $stmtSueldos = $pdo->query("
-        SELECT SUM(sueldo_base_cajero + sueldo_base_planchero + sueldo_base_admin) as total_sueldos
-        FROM personal 
-        WHERE rol != 'seguridad'
-    ");
-    $sueldosData = $stmtSueldos->fetch(PDO::FETCH_ASSOC);
-    $totalSueldosRuta11 = (float)($sueldosData['total_sueldos'] ?? 0);
+    // SUELDOS RUTA 11 (DINÁMICO) - Ya calculado arriba
 
     echo json_encode([
         'success' => true,
