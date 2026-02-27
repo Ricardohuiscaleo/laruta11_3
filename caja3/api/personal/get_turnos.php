@@ -59,7 +59,7 @@ while ($p_row = mysqli_fetch_assoc($res_personal)) {
 }
 
 if ($ricardo_id && $claudio_id) {
-    $baseDate = new DateTime("2026-03-26"); // Ricardo empieza su ciclo de 4
+    $baseDate = new DateTime("2026-02-11"); // Ricardo empieza su ciclo de 4
     $startDate = new DateTime($inicio);
     $endDate = new DateTime($fin);
 
