@@ -30,55 +30,28 @@ try {
     $lastShiftEnd = "$dayAfter 04:00:00";
     $lastShiftEndUTC = date('Y-m-d H:i:s', strtotime($lastShiftEnd . ' +3 hours'));
 
-    // 1. Total Ventas (TUU) - Copiando exactamente el mismo bucle PHP del Dashboard (Shift Logic)
-    $stmtVentas = $pdo->prepare("
-        SELECT 
-            installment_amount as amount,
-            tuu_amount,
-            product_price,
-            delivery_fee,
-            created_at,
-            payment_status
-        FROM tuu_orders 
-        WHERE payment_status = 'paid' AND order_number NOT LIKE 'RL6-%'
-    ");
-    $stmtVentas->execute();
-    $transactions = $stmtVentas->fetchAll(PDO::FETCH_ASSOC);
+    // 1. Total Ventas (TUU) - Copiando la lógica exacta de get_sales_analytics.php que alimenta la tarjeta principal del Dashboard
+    $revenue_sql = "SELECT SUM(o.installment_amount) as total_revenue
+                    FROM tuu_orders o
+                    WHERE o.created_at >= ? AND o.created_at < ?
+                    AND o.payment_status = 'paid'";
 
-    $ventas = 0;
-    $targetMonth = "$year-$month";
+    $revenue_stmt = $pdo->prepare($revenue_sql);
+    $revenue_stmt->execute([$firstShiftStartUTC, $lastShiftEndUTC]);
+    $revenue_result = $revenue_stmt->fetch(PDO::FETCH_ASSOC);
+    $total_revenue = floatval($revenue_result['total_revenue'] ?? 0);
 
-    foreach ($transactions as $transaction) {
-        // La misma precedencia estricta que usa la API central
-        $amount = (float)($transaction['amount'] ?? 0);
-        if ($amount <= 0) {
-            $amount = (float)($transaction['tuu_amount'] ?? 0);
-        }
-        if ($amount <= 0) {
-            $amount = (float)($transaction['product_price'] ?? 0);
-        }
+    $delivery_sql = "SELECT SUM(o.delivery_fee) as total_delivery
+                     FROM tuu_orders o
+                     WHERE o.created_at >= ? AND o.created_at < ?
+                     AND o.payment_status = 'paid'";
 
-        $deliveryFee = (float)($transaction['delivery_fee'] ?? 0);
+    $delivery_stmt = $pdo->prepare($delivery_sql);
+    $delivery_stmt->execute([$firstShiftStartUTC, $lastShiftEndUTC]);
+    $delivery_result = $delivery_stmt->fetch(PDO::FETCH_ASSOC);
+    $total_delivery = floatval($delivery_result['total_delivery'] ?? 0);
 
-        if ($amount <= 0)
-            continue;
-        $netAmount = $amount - $deliveryFee;
-
-        // Conversión horaria exacta a Santiago
-        $transDate = new DateTime($transaction['created_at'], new DateTimeZone('UTC'));
-        $transDate->setTimezone(new DateTimeZone('America/Santiago'));
-        $hour = (int)$transDate->format('G');
-
-        // Desfase de madrugada (03:59 AM)
-        $shiftDate = clone $transDate;
-        if ($hour >= 0 && $hour < 4) {
-            $shiftDate->modify('-1 day');
-        }
-
-        if ($shiftDate->format('Y-m') === $targetMonth) {
-            $ventas += $netAmount;
-        }
-    }
+    $ventas = $total_revenue - $total_delivery;
 
     // 2. Total Compras
     $stmtCompras = $pdo->prepare("
