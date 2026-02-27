@@ -30,29 +30,29 @@ try {
     $lastShiftEnd = "$dayAfter 04:00:00";
     $lastShiftEndUTC = date('Y-m-d H:i:s', strtotime($lastShiftEnd . ' +3 hours'));
 
-    // 1. Total Ventas (TUU)
+    // 1. Total Ventas (TUU) - EXACT math from Dashboard (Minus delivery fee, ignoring RL6)
     $stmtVentas = $pdo->prepare("
-        SELECT SUM(COALESCE(tuu_amount, installment_amount, product_price)) as total_ventas
+        SELECT COALESCE(SUM(installment_amount - delivery_fee), 0) as total_ventas
         FROM tuu_orders 
-        WHERE created_at >= ? AND created_at < ? AND payment_status = 'paid'
+        WHERE created_at >= ? AND created_at < ? AND payment_status = 'paid' AND order_number NOT LIKE 'RL6-%'
     ");
     $stmtVentas->execute([$firstShiftStartUTC, $lastShiftEndUTC]);
     $ventas = (float)($stmtVentas->fetchColumn() ?? 0);
 
     // 2. Total Compras
     $stmtCompras = $pdo->prepare("
-        SELECT SUM(monto_total) as total_compras
+        SELECT COALESCE(SUM(monto_total), 0) as total_compras
         FROM compras 
         WHERE DATE_FORMAT(fecha_compra, '%Y-%m') = ?
     ");
     $stmtCompras->execute([$mes]);
     $compras = (float)($stmtCompras->fetchColumn() ?? 0);
 
-    // 3. Total Sueldos Base (solo ruta11, excluyendo a Yojhans)
+    // 3. Total Sueldos Base (solo ruta11)
     $stmtSueldos = $pdo->query("
-        SELECT SUM(sueldo_base_cajero + sueldo_base_planchero + sueldo_base_admin) as total_sueldos
+        SELECT COALESCE(SUM(sueldo_base_cajero + sueldo_base_planchero + sueldo_base_admin), 0) as total_sueldos
         FROM personal 
-        WHERE rol NOT LIKE '%seguridad%' AND nombre != 'Yojhans' AND activo = 1
+        WHERE rol != 'seguridad' AND nombre != 'Yojhans' AND activo = 1
     ");
     $sueldos = (float)($stmtSueldos->fetchColumn() ?? 0);
 
