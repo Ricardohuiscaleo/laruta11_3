@@ -712,7 +712,7 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
       const primerNombre = nombre.split(' ')[0];
       const emoji = emojis[nombre] || emojis[primerNombre] || '👤';
       const montoPad = montosStr[idx].padStart(maxLen, ' ');
-      md += `- ${emoji} _${nombre.toUpperCase()}:_ \`\`\`${montoPad}\`\`\`\n`;
+      md += `> - ${emoji} _${nombre.toUpperCase()}:_ \`\`\`${montoPad}\`\`\`\n`;
       sum += item.granTotal;
     });
     md += `━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
@@ -1101,7 +1101,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
       const { total } = getLiquidacion(p);
       const emoji = emojis[p.nombre] || emojis[p.nombre.split(' ')[0]] || '👤';
       const montoPad = montosStr[idx].padStart(maxLen, ' ');
-      md += `- ${emoji} _${p.nombre.toUpperCase()}:_ \`\`\`${montoPad}\`\`\`\n`;
+      md += `> - ${emoji} _${p.nombre.toUpperCase()}:_ \`\`\`${montoPad}\`\`\`\n`;
       sum += total;
     });
     md += `━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
@@ -1384,7 +1384,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
       const { total } = getLiquidacion(p);
       const emoji = emojis[p.nombre] || emojis[p.nombre.split(' ')[0]] || '👤';
       const montoPad = montosStr[idx].padStart(maxLen, ' ');
-      md += `- ${emoji} _${p.nombre.toUpperCase()}:_ \`\`\`${montoPad}\`\`\`\n`;
+      md += `> - ${emoji} _${p.nombre.toUpperCase()}:_ \`\`\`${montoPad}\`\`\`\n`;
       sum += total;
     });
     md += `━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
