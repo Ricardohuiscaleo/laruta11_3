@@ -320,10 +320,12 @@ export default function PersonalApp() {
     // Reemplazando: solo sumar si pago_por='empresa' (fin de mes, aún no pagado)
     // empresa_adelanto = ya se pagó por adelantado, no sumar al reemplazante
     const totalReemplazando = Object.values(gruposReemplazando).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
+    const totalReemplazandoCosto = Object.values(gruposReemplazando).filter(g => g.pago_por === 'empresa' || g.pago_por === 'empresa_adelanto').reduce((s, g) => s + g.monto, 0);
     // Reemplazados: descontar si empresa O empresa_adelanto (en ambos casos el titular pierde ese dinero)
     const totalReemplazados = Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa' || g.pago_por === 'empresa_adelanto').reduce((s, g) => s + g.monto, 0);
     const total = Math.round(sueldoBase + totalReemplazando - totalReemplazados + totalAjustes);
-    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplazados, gruposReemplazando, total };
+    const costoEmpresa = Math.round(sueldoBase + totalReemplazandoCosto - totalReemplazados + totalAjustes);
+    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplazados, gruposReemplazando, total, costoEmpresa };
   }
 
   const administradores = personal.filter(p => p.rol?.includes('administrador') && p.activo == 1);
@@ -1036,7 +1038,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
     navigator.clipboard.writeText(generarMarkdown()).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); });
   }
 
-  const totalCalculado = personal.reduce((s, p) => s + getLiquidacion(p).total, 0);
+  const totalCalculado = personal.reduce((s, p) => s + getLiquidacion(p).costoEmpresa, 0);
   const totalPagado = pagosNomina.reduce((s, p) => s + parseFloat(p.monto), 0);
   const diferencia = totalPagado - presupuesto;
   const hayPagos = pagosNomina.length > 0;
@@ -1285,7 +1287,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
     navigator.clipboard.writeText(generarMarkdown()).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); });
   }
 
-  const totalCalculado = guardias.reduce((s, p) => s + getLiquidacion(p).total, 0);
+  const totalCalculado = guardias.reduce((s, p) => s + getLiquidacion(p).costoEmpresa, 0);
   const pagosGuardias = pagosNomina.filter(pn => guardias.some(g => g.id == pn.personal_id));
   const totalPagado = pagosGuardias.reduce((s, p) => s + parseFloat(p.monto), 0);
   const diferencia = totalPagado - presupuesto;
