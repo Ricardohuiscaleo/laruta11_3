@@ -67,7 +67,7 @@ export default function PersonalApp() {
   const [pagosNomina, setPagosNomina] = useState({ ruta11: [], seguridad: [] });
   const [presupuestoNomina, setPresupuestoNomina] = useState({ ruta11: 1200000, seguridad: 1200000 });
   const [modalAjuste, setModalAjuste] = useState(null);
-  const [formAjuste, setFormAjuste] = useState({ monto: '', concepto: '' });
+  const [formAjuste, setFormAjuste] = useState({ monto: '', concepto: '', notas: '', tipo: '-' });
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
   const [modalTurno, setModalTurno] = useState(null); // {dia, fecha, isSeguridad, titularId}
@@ -186,15 +186,16 @@ export default function PersonalApp() {
         body: JSON.stringify({
           personal_id: modalAjuste.id,
           mes: `${anio}-${mesStr}-01`,
-          monto: parseFloat(formAjuste.monto),
+          monto: parseFloat(formAjuste.monto) * (formAjuste.tipo === '-' ? -1 : 1),
           concepto: formAjuste.concepto,
+          notas: formAjuste.notas || '',
         }),
       });
       const data = await res.json();
       if (data.success) {
         showToast('Ajuste guardado');
         setModalAjuste(null);
-        setFormAjuste({ monto: '', concepto: '' });
+        setFormAjuste({ monto: '', concepto: '', notas: '', tipo: '-' });
         loadData();
       } else {
         showToast(data.error || 'Error', 'error');
@@ -590,24 +591,54 @@ export default function PersonalApp() {
       {/* Modal Ajuste */}
       {modalAjuste && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: 'white', borderRadius: 24, padding: 32, width: '100%', maxWidth: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 600 }}>Agregar Ajuste</h3>
+          <div style={{ background: 'white', borderRadius: 24, padding: 32, width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 600 }}>Cargar Ajuste</h3>
             <p style={{ margin: '0 0 24px', fontSize: 13, color: '#64748b' }}>Para {modalAjuste.nombre}</p>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Monto (positivo o negativo)</label>
-                <input type="number" value={formAjuste.monto} onChange={e => setFormAjuste(f => ({ ...f, monto: e.target.value }))} placeholder="Ej: 5000 o -2000"
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Motivo / Concepto Rápido</label>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                  <button type="button" onClick={() => setFormAjuste(f => ({ ...f, concepto: 'Adelanto de sueldo', tipo: '-' }))} style={{ padding: '8px 12px', borderRadius: 20, border: '1px solid #e2e8f0', background: formAjuste.concepto === 'Adelanto de sueldo' ? '#fee2e2' : 'white', color: formAjuste.concepto === 'Adelanto de sueldo' ? '#b91c1c' : '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Adelanto de sueldo</button>
+                  <button type="button" onClick={() => setFormAjuste(f => ({ ...f, concepto: 'Descuento por pérdida', tipo: '-' }))} style={{ padding: '8px 12px', borderRadius: 20, border: '1px solid #e2e8f0', background: formAjuste.concepto === 'Descuento por pérdida' ? '#fee2e2' : 'white', color: formAjuste.concepto === 'Descuento por pérdida' ? '#b91c1c' : '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Descuento por pérdida</button>
+                  <button type="button" onClick={() => setFormAjuste(f => ({ ...f, concepto: 'Bono extra', tipo: '+' }))} style={{ padding: '8px 12px', borderRadius: 20, border: '1px solid #e2e8f0', background: formAjuste.concepto === 'Bono extra' ? '#dcfce7' : 'white', color: formAjuste.concepto === 'Bono extra' ? '#15803d' : '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Bono extra</button>
+                </div>
+                <input type="text" value={formAjuste.concepto} onChange={e => setFormAjuste(f => ({ ...f, concepto: e.target.value }))} placeholder="O escribe otro concepto..."
                   style={{ width: '100%', padding: '10px 14px', border: '1px solid #e3e3e3', borderRadius: 12, fontSize: 14 }} />
               </div>
+
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Concepto / Motivo</label>
-                <input type="text" value={formAjuste.concepto} onChange={e => setFormAjuste(f => ({ ...f, concepto: e.target.value }))} placeholder="Ej: Bono puntual, Descuento pérdida..."
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Dirección del ajuste</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" onClick={() => setFormAjuste(f => ({ ...f, tipo: '-' }))} style={{ flex: 1, padding: '10px', borderRadius: 12, border: formAjuste.tipo === '-' ? '2px solid #ef4444' : '1px solid #e3e3e3', background: formAjuste.tipo === '-' ? '#fef2f2' : 'white', color: formAjuste.tipo === '-' ? '#b91c1c' : '#444746', fontWeight: 700, cursor: 'pointer' }}>➖ Descontar Saldo</button>
+                  <button type="button" onClick={() => setFormAjuste(f => ({ ...f, tipo: '+' }))} style={{ flex: 1, padding: '10px', borderRadius: 12, border: formAjuste.tipo === '+' ? '2px solid #10b981' : '1px solid #e3e3e3', background: formAjuste.tipo === '+' ? '#ecfdf5' : 'white', color: formAjuste.tipo === '+' ? '#047857' : '#444746', fontWeight: 700, cursor: 'pointer' }}>➕ Sumar Saldo</button>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Cantidad (sin signos)</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontWeight: 800, fontSize: 18, color: formAjuste.tipo === '-' ? '#ef4444' : '#10b981' }}>{formAjuste.tipo} $</span>
+                  <input type="number" min="0" value={formAjuste.monto} onChange={e => setFormAjuste(f => ({ ...f, monto: Math.abs(parseFloat(e.target.value) || 0) || '' }))} placeholder="0"
+                    style={{ width: '100%', padding: '12px 14px 12px 42px', border: '1px solid #e3e3e3', borderRadius: 12, fontSize: 18, fontWeight: 700 }} />
+                </div>
+                {formAjuste.monto && (
+                  <div style={{ fontSize: 12, color: formAjuste.tipo === '-' ? '#ef4444' : '#10b981', marginTop: 4, fontWeight: 600 }}>
+                    Se va a {formAjuste.tipo === '-' ? 'descontar' : 'sumar'} ${parseFloat(formAjuste.monto).toLocaleString('es-CL')}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Notas Adicionales (Opcional)</label>
+                <input type="text" value={formAjuste.notas || ''} onChange={e => setFormAjuste(f => ({ ...f, notas: e.target.value }))} placeholder="Detalles extra, motivos..."
                   style={{ width: '100%', padding: '10px 14px', border: '1px solid #e3e3e3', borderRadius: 12, fontSize: 14 }} />
               </div>
             </div>
+
             <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>
-              <button onClick={() => { setModalAjuste(null); setFormAjuste({ monto: '', concepto: '' }); }} style={{ flex: 1, padding: '12px', border: 'none', background: '#f1f3f4', borderRadius: 12, cursor: 'pointer', fontWeight: 600, color: '#444746' }}>Cancelar</button>
-              <button onClick={saveAjuste} disabled={saving || !formAjuste.monto || !formAjuste.concepto} style={{ flex: 1, padding: '12px', border: 'none', background: '#10b981', borderRadius: 12, cursor: 'pointer', fontWeight: 600, color: 'white', opacity: (saving || !formAjuste.monto || !formAjuste.concepto) ? 0.6 : 1 }}>
+              <button onClick={() => { setModalAjuste(null); setFormAjuste({ monto: '', concepto: '', notas: '', tipo: '-' }); }} style={{ flex: 1, padding: '12px', border: 'none', background: '#f1f3f4', borderRadius: 12, cursor: 'pointer', fontWeight: 600, color: '#444746' }}>Cancelar</button>
+              <button onClick={saveAjuste} disabled={saving || !formAjuste.monto || !formAjuste.concepto} style={{ flex: 1, padding: '12px', border: 'none', background: '#1a73e8', borderRadius: 12, cursor: 'pointer', fontWeight: 600, color: 'white', opacity: (saving || !formAjuste.monto || !formAjuste.concepto) ? 0.6 : 1 }}>
                 {saving ? 'Guardando...' : 'Guardar Ajuste'}
               </button>
             </div>
