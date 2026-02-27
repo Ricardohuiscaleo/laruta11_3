@@ -52,7 +52,7 @@ try {
     $stmtSueldos = $pdo->query("
         SELECT SUM(sueldo_base_cajero + sueldo_base_planchero + sueldo_base_admin) as total_sueldos
         FROM personal 
-        WHERE rol NOT LIKE '%seguridad%' AND nombre != 'Yojhans' AND estado = 'activo'
+        WHERE rol NOT LIKE '%seguridad%' AND nombre != 'Yojhans' AND activo = 1
     ");
     $sueldos = (float)($stmtSueldos->fetchColumn() ?? 0);
 
