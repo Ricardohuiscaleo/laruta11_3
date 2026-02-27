@@ -557,8 +557,8 @@
                 <div id="month-notice" style="font-size: 12px; color: #666; background: #fef3c7; padding: 6px 12px; border-radius: 6px; border: 1px solid #fbbf24;"></div>
               </div>
             </div>
-            <div class="card-content">
-              <canvas id="paymentMethodsChart" width="400" height="250"></canvas>
+            <div class="card-content" style="position: relative; height: 250px; width: 100%;">
+              <canvas id="paymentMethodsChart"></canvas>
             </div>
           </div>
           
@@ -568,8 +568,8 @@
                 <h3 class="card-title"><i data-lucide="trending-up" style="width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: 6px;"></i>Proyección de Ventas Mes Actual</h3>
               </div>
             </div>
-            <div class="card-content">
-              <canvas id="projectionChart" width="400" height="200"></canvas>
+            <div class="card-content" style="position: relative; height: 200px; width: 100%;">
+              <canvas id="projectionChart"></canvas>
             </div>
           </div>
           
@@ -587,8 +587,8 @@
               <div class="card-header">
                 <h3 class="card-title"><i data-lucide="bar-chart-2" style="width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: 6px;"></i>Comparativa Mensual</h3>
               </div>
-              <div class="card-content">
-                <canvas id="monthComparisonChart" width="400" height="200"></canvas>
+              <div class="card-content" style="position: relative; height: 200px; width: 100%;">
+                <canvas id="monthComparisonChart"></canvas>
               </div>
             </div>
             
@@ -605,8 +605,8 @@
                   </div>
                 </div>
               </div>
-              <div class="card-content">
-                <canvas id="salesChart2" width="400" height="200"></canvas>
+              <div class="card-content" style="position: relative; height: 200px; width: 100%;">
+                <canvas id="salesChart2"></canvas>
               </div>
             </div>
           </div>
@@ -616,8 +616,8 @@
             <div class="card-header">
               <h3 class="card-title"><i data-lucide="map-pin" style="width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: 6px;"></i>Ventas por Dirección (Top 10)</h3>
             </div>
-            <div class="card-content">
-              <canvas id="salesByAddressChart" width="400" height="300"></canvas>
+            <div class="card-content" style="position: relative; height: 300px; width: 100%;">
+              <canvas id="salesByAddressChart"></canvas>
             </div>
           </div>
         </div>
@@ -1584,7 +1584,8 @@
             'transfer': {icon:'building-2',label:'Transferencia'},
             'card': {icon:'credit-card',label:'Tarjeta'},
             'cash': {icon:'banknote',label:'Efectivo'},
-            'pedidosya': {icon:'bike',label:'PedidosYA'}
+            'pedidosya': {icon:'bike',label:'PedidosYA'},
+            'credito rl6': {icon:'credit-card',label:'Crédito RL6'}
           };
           
           const paymentMethods = {};
@@ -5027,7 +5028,8 @@
               'transfer':{icon:'building-2',label:'Transferencia',sales:0,cost:0,orders:0,delivery:0},
               'card':{icon:'credit-card',label:'Tarjeta',sales:0,cost:0,orders:0,delivery:0},
               'cash':{icon:'banknote',label:'Efectivo',sales:0,cost:0,orders:0,delivery:0},
-              'pedidosya':{icon:'bike',label:'PedidosYA',sales:0,cost:0,orders:0,delivery:0}
+              'pedidosya':{icon:'bike',label:'PedidosYA',sales:0,cost:0,orders:0,delivery:0},
+              'credito rl6':{icon:'credit-card',label:'Crédito RL6',sales:0,cost:0,orders:0,delivery:0}
             };
             
             transactions.forEach(t => {
