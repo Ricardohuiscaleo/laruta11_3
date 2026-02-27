@@ -1356,7 +1356,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
     });
     const tp = pagosNomina.filter(pn => guardias.some(g => g.id == pn.personal_id)).reduce((s, p) => s + parseFloat(p.monto), 0);
     if (tp > 0) {
-      md += `\n━━━━━━━━━━━━━━━━━━━━\n*RESUMEN PAGOS REALIZADOS*\n`;
+      md += `\n━━━━━━━━━━━━━━\n*RESUMEN PAGOS REALIZADOS*\n`;
       pagosNomina.filter(pn => guardias.some(g => g.id == pn.personal_id)).forEach(p => { md += `• ${p.nombre}${p.es_externo ? ' (ext)' : ''}: *$${parseFloat(p.monto).toLocaleString('es-CL')}*\n`; });
       md += `\n*Total Pagado:* $${tp.toLocaleString('es-CL')}\n*Presupuesto:* $${presupuesto.toLocaleString('es-CL')}\n`;
     }
@@ -1380,7 +1380,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
         sum += total;
       }
     });
-    md += `━━━━━━━━━━━━━━━━━━━━\n💰 *Total a Transferir: $${sum.toLocaleString('es-CL')}*\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
+    md += `━━━━━━━━━━━━━━\n💰 *Total a Transferir: $${sum.toLocaleString('es-CL')}*\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
     return md.split('\n').map(l => l ? `> ${l}` : '>').join('\n');
   }
 
