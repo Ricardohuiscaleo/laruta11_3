@@ -74,6 +74,7 @@ export default function PersonalApp() {
   const [formTurno, setFormTurno] = useState({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa', fecha_fin: '' });
   const [modalPersonal, setModalPersonal] = useState(null); // null | 'new' | persona
   const [formPersonal, setFormPersonal] = useState({ nombre: '', rol: ['cajero'], sueldo_base_cajero: '', sueldo_base_planchero: '', sueldo_base_admin: '', sueldo_base_seguridad: '', activo: 1 });
+  const [cashflowMes, setCashflowMes] = useState({ ventas: 0, compras: 0, sueldos: 0, liquidez: 0 });
 
   useEffect(() => { loadData(); }, [mes, anio]);
 
@@ -81,14 +82,15 @@ export default function PersonalApp() {
     setLoading(true);
     try {
       const mesStr = String(mes + 1).padStart(2, '0');
-      const [pRes, tRes, aRes, pnRes, pnSegRes] = await Promise.all([
+      const [pRes, tRes, aRes, pnRes, pnSegRes, cfRes] = await Promise.all([
         fetch('/api/personal/get_personal.php'),
         fetch(`/api/personal/get_turnos.php?mes=${anio}-${mesStr}`),
         fetch(`/api/personal/get_ajustes.php?mes=${anio}-${mesStr}`),
         fetch(`/api/personal/get_pagos_nomina.php?mes=${anio}-${mesStr}&centro_costo=ruta11`),
         fetch(`/api/personal/get_pagos_nomina.php?mes=${anio}-${mesStr}&centro_costo=seguridad`),
+        fetch(`/api/personal/get_monthly_cashflow.php?mes=${anio}-${mesStr}`)
       ]);
-      const [p, t, a, pn, pnSeg] = await Promise.all([pRes.json(), tRes.json(), aRes.json(), pnRes.json(), pnSegRes.json()]);
+      const [p, t, a, pn, pnSeg, cf] = await Promise.all([pRes.json(), tRes.json(), aRes.json(), pnRes.json(), pnSegRes.json(), cfRes.json()]);
       if (p.success) setPersonal(p.data);
       if (t.success) setTurnos(t.data);
       if (a.success) setAjustes(a.data);
@@ -96,6 +98,7 @@ export default function PersonalApp() {
         setPagosNomina({ ruta11: pn.data, seguridad: pnSeg.data });
         setPresupuestoNomina({ ruta11: pn.presupuesto ?? 1200000, seguridad: pnSeg.presupuesto ?? 1200000 });
       }
+      if (cf.success) setCashflowMes(cf.data);
     } catch (e) {
       showToast('Error cargando datos', 'error');
     }
@@ -291,7 +294,14 @@ export default function PersonalApp() {
 
     // Salarios Base
     let sueldoBase = 0;
-    if (modoContexto === 'seguridad') {
+
+    // 🔥 LÓGICA DUEÑO: SUELDO = LIQUIDEZ DEL MES 
+    const rolesBase = typeof p.rol === 'string' ? p.rol.split(',').map(r => r.trim()) : (Array.isArray(p.rol) ? p.rol : []);
+    const isOwner = rolesBase.includes('dueño');
+
+    if (isOwner) {
+      sueldoBase = cashflowMes.liquidez || 0;
+    } else if (modoContexto === 'seguridad') {
       sueldoBase = parseFloat(p.sueldo_base_seguridad) || 0;
     } else if (modoContexto === 'ruta11') {
       const roles = typeof p.rol === 'string' ? p.rol.split(',').map(r => r.trim()) : (Array.isArray(p.rol) ? p.rol : []);
@@ -1248,8 +1258,10 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                     {/* Salary summary inline */}
                     <div className="detail-card-meta" style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
                       <div className="detail-card-base-col" style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>Base {rolLabel}</div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: '#475569' }}>${sueldoBase.toLocaleString('es-CL')}</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>{roles.includes('dueño') ? '💵 Liquidez' : `Base ${rolLabel}`}</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: roles.includes('dueño') ? (sueldoBase >= 0 ? '#10b981' : '#dc2626') : '#475569' }}>
+                          {roles.includes('dueño') ? (sueldoBase >= 0 ? `+$${sueldoBase.toLocaleString('es-CL')} ✅` : `-$${Math.abs(sueldoBase).toLocaleString('es-CL')} 🚨`) : `$${sueldoBase.toLocaleString('es-CL')}`}
+                        </div>
                       </div>
                       <div className="detail-card-total-col" style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 10, fontWeight: 800, color: c?.text || '#64748b', textTransform: 'uppercase', marginBottom: 2 }}>Saldo Final</div>
@@ -1264,8 +1276,10 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                   {abierto && (
                     <div style={{ padding: '4px 16px 14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                        <span style={{ fontSize: 13, color: '#64748b' }}>Sueldo base ({rolLabel})</span>
-                        <span style={{ fontSize: 13, fontWeight: 600 }}>${sueldoBase.toLocaleString('es-CL')}</span>
+                        <span style={{ fontSize: 13, color: '#64748b' }}>{roles.includes('dueño') ? '💵 Liquidez (Dueño)' : `Sueldo base (${rolLabel})`}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: roles.includes('dueño') ? (sueldoBase >= 0 ? '#10b981' : '#dc2626') : 'inherit' }}>
+                          {roles.includes('dueño') ? (sueldoBase >= 0 ? `+$${sueldoBase.toLocaleString('es-CL')} ✅` : `-$${Math.abs(sueldoBase).toLocaleString('es-CL')} 🚨`) : `$${sueldoBase.toLocaleString('es-CL')}`}
+                        </span>
                       </div>
                       {Object.values(gruposReemplazando).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', border: `1px solid ${g.pago_por === 'empresa_adelanto' ? '#a5b4fc' : '#86efac'}`, backgroundColor: g.pago_por === 'empresa_adelanto' ? '#eef2ff' : '#dcfce7', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
@@ -1512,6 +1526,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {grupo.map(p => {
               const { diasTrabajados, diasReemplazados, ajustesPer, sueldoBase, gruposReemplazados, gruposReemplazando, total } = getLiquidacion(p);
+              const roles = typeof p.rol === 'string' ? p.rol.split(',').map(r => r.trim()) : (Array.isArray(p.rol) ? p.rol : []);
               const c = colores[p.id] || { bg: '#e0e7ff', border: '#c7d2fe', light: '#eef2ff', text: '#3730a3' };
               const abierto = expandidos[p.id] !== false;
               return (
@@ -1528,8 +1543,10 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                     </div>
                     <div className="detail-card-meta" style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
                       <div className="detail-card-base-col" style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>Base Seguridad</div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: '#475569' }}>${sueldoBase.toLocaleString('es-CL')}</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>{roles.includes('dueño') ? '💵 Liquidez' : 'Base Seguridad'}</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: roles.includes('dueño') ? (sueldoBase >= 0 ? '#10b981' : '#dc2626') : '#475569' }}>
+                          {roles.includes('dueño') ? (sueldoBase >= 0 ? `+$${sueldoBase.toLocaleString('es-CL')} ✅` : `-$${Math.abs(sueldoBase).toLocaleString('es-CL')} 🚨`) : `$${sueldoBase.toLocaleString('es-CL')}`}
+                        </div>
                       </div>
                       <div className="detail-card-total-col" style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 10, fontWeight: 800, color: c.text, textTransform: 'uppercase', marginBottom: 2 }}>Saldo Final</div>
@@ -1543,8 +1560,10 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                   {abierto && (
                     <div style={{ padding: '4px 16px 14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                        <span style={{ fontSize: 13, color: '#64748b' }}>Sueldo base (Seguridad)</span>
-                        <span style={{ fontSize: 13, fontWeight: 600 }}>${sueldoBase.toLocaleString('es-CL')}</span>
+                        <span style={{ fontSize: 13, color: '#64748b' }}>{roles.includes('dueño') ? '💵 Liquidez (Dueño)' : 'Sueldo base (Seguridad)'}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: roles.includes('dueño') ? (sueldoBase >= 0 ? '#10b981' : '#dc2626') : 'inherit' }}>
+                          {roles.includes('dueño') ? (sueldoBase >= 0 ? `+$${sueldoBase.toLocaleString('es-CL')} ✅` : `-$${Math.abs(sueldoBase).toLocaleString('es-CL')} 🚨`) : `$${sueldoBase.toLocaleString('es-CL')}`}
+                        </span>
                       </div>
                       {Object.values(gruposReemplazando).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', border: `1px solid ${g.pago_por === 'empresa_adelanto' ? '#a5b4fc' : '#86efac'}`, backgroundColor: g.pago_por === 'empresa_adelanto' ? '#eef2ff' : '#dcfce7', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
