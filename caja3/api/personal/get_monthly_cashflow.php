@@ -30,44 +30,34 @@ try {
     $lastShiftEnd = "$dayAfter 04:00:00";
     $lastShiftEndUTC = date('Y-m-d H:i:s', strtotime($lastShiftEnd . ' +3 hours'));
 
-    // 1. Total Ventas (TUU) - EXACT math from Dashboard (Minus delivery fee, ignoring RL6, Shift Logic)
-    $stmtVentas = $pdo->prepare("
-        SELECT 
-            installment_amount as amount,
-            tuu_amount,
-            product_price,
-            delivery_fee,
-            created_at,
-            payment_status
-        FROM tuu_orders 
-        WHERE payment_status = 'paid' AND order_number NOT LIKE 'RL6-%'
-    ");
-    $stmtVentas->execute();
-    $transactions = $stmtVentas->fetchAll(PDO::FETCH_ASSOC);
+    // 1. Total Ventas (TUU) - Fetching directly from the same exact API as the Dashboard
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+    // Check if we are querying the current month
+    $now = new DateTime('now', new DateTimeZone('America/Santiago'));
+    $currentMonth = $now->format('Y-m');
+    $queryMonth = "$year-$month";
 
     $ventas = 0;
-    $targetMonth = "$year-$month";
 
-    foreach ($transactions as $transaction) {
-        $amount = (float)($transaction['amount'] ?? $transaction['tuu_amount'] ?? $transaction['product_price'] ?? 0);
-        $deliveryFee = (float)($transaction['delivery_fee'] ?? 0);
-
-        if ($amount <= 0)
-            continue;
-        $netAmount = $amount - $deliveryFee;
-
-        $transDate = new DateTime($transaction['created_at'], new DateTimeZone('UTC'));
-        $transDate->setTimezone(new DateTimeZone('America/Santiago'));
-        $hour = (int)$transDate->format('G');
-
-        $shiftDate = clone $transDate;
-        if ($hour >= 0 && $hour < 4) {
-            $shiftDate->modify('-1 day');
+    if ($queryMonth === $currentMonth) {
+        $projectionUrl = $protocol . $host . "/api/get_smart_projection_shifts.php";
+        $projectionDataRaw = @file_get_contents($projectionUrl);
+        if ($projectionDataRaw) {
+            $projection = json_decode($projectionDataRaw, true);
+            $ventas = (float)($projection['data']['totalReal'] ?? 0);
         }
-
-        if ($shiftDate->format('Y-m') === $targetMonth) {
-            $ventas += $netAmount;
-        }
+    }
+    else {
+        // Para meses históricos, usamos la sumatoria robusta anterior
+        $stmtVentas = $pdo->prepare("
+            SELECT COALESCE(SUM(COALESCE(tuu_amount, installment_amount, product_price) - COALESCE(delivery_fee, 0)), 0) as total_ventas
+            FROM tuu_orders 
+            WHERE created_at >= ? AND created_at < ? AND payment_status = 'paid' AND order_number NOT LIKE 'RL6-%'
+        ");
+        $stmtVentas->execute([$firstShiftStartUTC, $lastShiftEndUTC]);
+        $ventas = (float)($stmtVentas->fetchColumn() ?? 0);
     }
 
     // 2. Total Compras
@@ -83,7 +73,7 @@ try {
     $stmtSueldos = $pdo->query("
         SELECT COALESCE(SUM(sueldo_base_cajero + sueldo_base_planchero + sueldo_base_admin), 0) as total_sueldos
         FROM personal 
-        WHERE rol != 'seguridad' AND nombre != 'Yojhans' AND activo = 1
+        WHERE (rol NOT LIKE '%seguridad%' OR rol IS NULL) AND nombre != 'Yojhans' AND activo = 1
     ");
     $sueldos = (float)($stmtSueldos->fetchColumn() ?? 0);
 
