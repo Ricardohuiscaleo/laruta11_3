@@ -475,7 +475,7 @@
                   </div>
                   <div style="font-size: 28px; font-weight: 700; margin-bottom: 12px;" id="dash-breakeven-amount-main">$0</div>
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; font-size: 12px; opacity: 0.9;">
-                    <div><span style="opacity: 0.7;">👥 Sueldos:</span> <strong>$1,59M</strong></div>
+                    <div><span style="opacity: 0.7;">👥 Sueldos:</span> <strong id="dash-sueldos-amount">$0</strong></div>
                     <div><span style="opacity: 0.7;">📊 Margen:</span> <strong id="dash-breakeven-margin">0%</strong></div>
                     <div><span style="opacity: 0.7;">Progreso:</span> <strong id="dash-breakeven-percent-main">0%</strong></div>
                     <div><span style="opacity: 0.7;">💵 Liquidez:</span> <strong id="dash-cashflow-status-short">-</strong></div>
@@ -1210,6 +1210,7 @@
     // Variables globales
     let currentViewMonth = null; // null = mes actual, {month, year} = mes específico
     let dashboardAutoRefreshInterval = null;
+    window.MONTHLY_SALARIES = 1590000;
     
     // Declarar funciones globalmente
     window.isAppOrder = function(id) {
@@ -1357,7 +1358,7 @@
     
     window.loadDashboardTUU = async function() {
       try {
-        const MONTHLY_SALARIES = 1590000;
+        const MONTHLY_SALARIES = window.MONTHLY_SALARIES || 1590000;
         
         // 🔥 INYECCIÓN HARDCODEADA OCTUBRE 2025 - SOLO TPV FALTANTE
         const OCTOBER_2025_TPV_INJECTION = {
@@ -1593,7 +1594,8 @@
                   const comprasM = (totalCompras / 1000000).toFixed(2).replace('.', ',');
                   const resultM = Math.abs(cashFlow / 1000000).toFixed(2).replace('.', ',');
                   const sign = cashFlow >= 0 ? '+' : '-';
-                  cashflowFormula.textContent = `$${salesM}M - $${comprasM}M - $1,59M = ${sign}$${resultM}M`;
+                  const sueldosM = (MONTHLY_SALARIES / 1000000).toFixed(2).replace('.', ',');
+                  cashflowFormula.textContent = `$${salesM}M - $${comprasM}M - $${sueldosM}M = ${sign}$${resultM}M`;
                 }
               }, 500); // Esperar a que se calcule el margen
               
@@ -1870,6 +1872,19 @@
           }
           
           const cards = data.data;
+          
+          if (cards.total_sueldos_ruta11) {
+            window.MONTHLY_SALARIES = cards.total_sueldos_ruta11;
+            const sueldosEl = document.getElementById('dash-sueldos-amount');
+            if (sueldosEl) {
+                if (window.MONTHLY_SALARIES >= 1000000) {
+                    sueldosEl.textContent = `$${(window.MONTHLY_SALARIES/1000000).toFixed(2)}M`;
+                } else {
+                    sueldosEl.textContent = `$${new Intl.NumberFormat('es-CL').format(Math.round(window.MONTHLY_SALARIES/1000))}K`;
+                }
+            }
+          }
+
           
 
           
@@ -4953,7 +4968,7 @@
         .then(data => {
           if (data.success && data.data) {
             // Usar la misma lógica de loadDashboardTUU pero con datos del mes específico
-            const MONTHLY_SALARIES = 1590000;
+            const MONTHLY_SALARIES = window.MONTHLY_SALARIES || 1590000;
             
             // 🔥 INYECCIÓN HARDCODEADA OCTUBRE 2025 - SOLO TPV FALTANTE
             const OCTOBER_2025_TPV_INJECTION = {
