@@ -32,7 +32,7 @@ try {
 
     // 1. Total Ventas (TUU) - EXACT math from Dashboard (Minus delivery fee, ignoring RL6)
     $stmtVentas = $pdo->prepare("
-        SELECT COALESCE(SUM(installment_amount - delivery_fee), 0) as total_ventas
+        SELECT COALESCE(SUM(COALESCE(tuu_amount, installment_amount, product_price) - COALESCE(delivery_fee, 0)), 0) as total_ventas
         FROM tuu_orders 
         WHERE created_at >= ? AND created_at < ? AND payment_status = 'paid' AND order_number NOT LIKE 'RL6-%'
     ");
