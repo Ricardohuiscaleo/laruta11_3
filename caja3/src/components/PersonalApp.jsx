@@ -699,16 +699,27 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
 
   function copiarResumenGlobal() {
     const MESES_L = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    let md = `*RESUMEN GLOBAL PAGOS — ${MESES_L[mes].toUpperCase()} ${anio}*\n━━━━━━━━━━━━━━━━━━━━\n`;
+    const emojis = {
+      'Ricardo': '👨🏻‍💻', 'Andrés': '🧑🏻‍🍳', 'Andres': '🧑🏻🍳',
+      'Camila': '👩🏽‍💼', 'Neit': '👩🏻💼', 'Gabriel': '🧑🏾🍳', 'Claudio': '👨🏻💼'
+    };
+
+    let md = `🏦 *RESUMEN GLOBAL PAGOS*\n📅 _${MESES_L[mes] ? MESES_L[mes].toUpperCase() : ''} ${anio}_\n━━━━━━━━━━━━━━━━━━━━\n`;
     let sum = 0;
     allData.forEach(item => {
       if (item.granTotal > 0) {
-        md += `▪ ${item.persona.nombre.toUpperCase()}: *$${item.granTotal.toLocaleString('es-CL')}*\n`;
+        const nombre = item.persona.nombre;
+        const primerNombre = nombre.split(' ')[0];
+        const emoji = emojis[nombre] || emojis[primerNombre] || '👤';
+        md += `- ${emoji} _${nombre.toUpperCase()}:_ *$${item.granTotal.toLocaleString('es-CL')}*\n`;
         sum += item.granTotal;
       }
     });
-    md += `━━━━━━━━━━━━━━━━━━━━\n> *Total a Transferir: $${sum.toLocaleString('es-CL')} *`;
-    navigator.clipboard.writeText(md).then(() => {
+    md += `━━━━━━━━━━━━━━━━━━━━\n💰 *Total a Transferir: $${sum.toLocaleString('es-CL')}*\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
+
+    const quotedMd = md.split('\n').map(l => l ? `> ${l}` : '>').join('\n');
+
+    navigator.clipboard.writeText(quotedMd).then(() => {
       setCopiedGlobal(true);
       setTimeout(() => setCopiedGlobal(false), 2500);
       showToast('Copiado global para WhatsApp');
@@ -1080,18 +1091,20 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
   }
 
   function generarResumenPagos() {
+    const emojis = { 'Ricardo': '👨🏻💻', 'Andrés': '🧑🏻🍳', 'Andres': '🧑🏻🍳', 'Camila': '👩🏽💼', 'Neit': '👩🏻💼', 'Gabriel': '🧑🏾🍳', 'Claudio': '👨🏻💼' };
     const mesLabel = `${MESES_L[mes]} ${anio}`;
-    let md = `*RESUMEN PAGOS NÓMINA — ${mesLabel}*\n━━━━━━━━━━━━━━━━━━━━\n`;
+    let md = `🏦 *RESUMEN PAGOS NÓMINA*\n📅 _${mesLabel.toUpperCase()}_\n━━━━━━━━━━━━━━━━━━━━\n`;
     let sum = 0;
     personal.forEach(p => {
       const { total } = getLiquidacion(p);
       if (total > 0) {
-        md += `▪ ${p.nombre.toUpperCase()}: *$${total.toLocaleString('es-CL')}*\n`;
+        const emoji = emojis[p.nombre] || emojis[p.nombre.split(' ')[0]] || '👤';
+        md += `- ${emoji} _${p.nombre.toUpperCase()}:_ *$${total.toLocaleString('es-CL')}*\n`;
         sum += total;
       }
     });
-    md += `━━━━━━━━━━━━━━━━━━━━\n> *Total a Transferir: $${sum.toLocaleString('es-CL')} *`;
-    return md;
+    md += `━━━━━━━━━━━━━━━━━━━━\n💰 *Total a Transferir: $${sum.toLocaleString('es-CL')}*\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
+    return md.split('\n').map(l => l ? `> ${l}` : '>').join('\n');
   }
 
   const [copiedResumen, setCopiedResumen] = useState(false);
@@ -1358,18 +1371,20 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
   }
 
   function generarResumenPagos() {
+    const emojis = { 'Ricardo': '👨🏻💻', 'Andrés': '🧑🏻🍳', 'Andres': '🧑🏻🍳', 'Camila': '👩🏽💼', 'Neit': '👩🏻💼', 'Gabriel': '🧑🏾🍳', 'Claudio': '👨🏻💼' };
     const mesLabel = `${MESES_L[mes]} ${anio}`;
-    let md = `*RESUMEN PAGOS SEGURIDAD — ${mesLabel}*\n━━━━━━━━━━━━━━━━━━━━\n`;
+    let md = `🏦 *RESUMEN PAGOS SEGURIDAD*\n📅 _${mesLabel.toUpperCase()}_\n━━━━━━━━━━━━━━━━━━━━\n`;
     let sum = 0;
     guardias.forEach(p => {
       const { total } = getLiquidacion(p);
       if (total > 0) {
-        md += `▪ ${p.nombre.toUpperCase()}: *$${total.toLocaleString('es-CL')}*\n`;
+        const emoji = emojis[p.nombre] || emojis[p.nombre.split(' ')[0]] || '👤';
+        md += `- ${emoji} _${p.nombre.toUpperCase()}:_ *$${total.toLocaleString('es-CL')}*\n`;
         sum += total;
       }
     });
-    md += `━━━━━━━━━━━━━━━━━━━━\n> *Total a Transferir: $${sum.toLocaleString('es-CL')} *`;
-    return md;
+    md += `━━━━━━━━━━━━━━━━━━━━\n💰 *Total a Transferir: $${sum.toLocaleString('es-CL')}*\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
+    return md.split('\n').map(l => l ? `> ${l}` : '>').join('\n');
   }
 
   const [copiedResumen, setCopiedResumen] = useState(false);
