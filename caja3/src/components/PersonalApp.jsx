@@ -316,8 +316,11 @@ export default function PersonalApp() {
     Object.keys(gruposReemplazados).forEach(k => gruposReemplazados[k].monto = Math.round(gruposReemplazados[k].monto));
     Object.keys(gruposReemplazando).forEach(k => gruposReemplazando[k].monto = Math.round(gruposReemplazando[k].monto));
 
+    // Reemplazando: solo sumar si pago_por='empresa' (fin de mes, aún no pagado)
+    // empresa_adelanto = ya se pagó por adelantado, no sumar al reemplazante
     const totalReemplazando = Object.values(gruposReemplazando).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
-    const totalReemplazados = Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
+    // Reemplazados: descontar si empresa O empresa_adelanto (en ambos casos el titular pierde ese dinero)
+    const totalReemplazados = Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa' || g.pago_por === 'empresa_adelanto').reduce((s, g) => s + g.monto, 0);
     const total = Math.round(sueldoBase + totalReemplazando - totalReemplazados + totalAjustes);
     return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplazados, gruposReemplazando, total };
   }
@@ -524,6 +527,28 @@ export default function PersonalApp() {
                       <button type="button" onClick={() => setFormTurno(f => ({ ...f, monto_reemplazo: 17966.666 }))} style={{ flex: 1, padding: '6px', fontSize: 11, fontWeight: 700, color: '#c2410c', background: '#ffedd5', border: '1px solid #fdba74', borderRadius: 8, cursor: 'pointer' }}>$17.967</button>
                       <button type="button" onClick={() => setFormTurno(f => ({ ...f, monto_reemplazo: 20000 }))} style={{ flex: 1, padding: '6px', fontSize: 11, fontWeight: 700, color: '#c2410c', background: '#ffedd5', border: '1px solid #fdba74', borderRadius: 8, cursor: 'pointer' }}>$20.000</button>
                       <button type="button" onClick={() => setFormTurno(f => ({ ...f, monto_reemplazo: 30000 }))} style={{ flex: 1, padding: '6px', fontSize: 11, fontWeight: 700, color: '#c2410c', background: '#ffedd5', border: '1px solid #fdba74', borderRadius: 8, cursor: 'pointer' }}>$30.000</button>
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#9a3412', textTransform: 'uppercase', marginBottom: 4 }}>¿Quién paga al reemplazante?</label>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button type="button" onClick={() => setFormTurno(f => ({ ...f, pago_por: 'empresa' }))}
+                        style={{ flex: 1, padding: '8px 4px', fontSize: 11, fontWeight: 700, borderRadius: 8, cursor: 'pointer', border: formTurno.pago_por === 'empresa' ? '2px solid #2563eb' : '1px solid #d1d5db', background: formTurno.pago_por === 'empresa' ? '#dbeafe' : 'white', color: formTurno.pago_por === 'empresa' ? '#1d4ed8' : '#6b7280' }}>
+                        📅 Fin de mes
+                      </button>
+                      <button type="button" onClick={() => setFormTurno(f => ({ ...f, pago_por: 'empresa_adelanto' }))}
+                        style={{ flex: 1, padding: '8px 4px', fontSize: 11, fontWeight: 700, borderRadius: 8, cursor: 'pointer', border: formTurno.pago_por === 'empresa_adelanto' ? '2px solid #059669' : '1px solid #d1d5db', background: formTurno.pago_por === 'empresa_adelanto' ? '#d1fae5' : 'white', color: formTurno.pago_por === 'empresa_adelanto' ? '#065f46' : '#6b7280' }}>
+                        💰 Adelanto
+                      </button>
+                      <button type="button" onClick={() => setFormTurno(f => ({ ...f, pago_por: 'titular' }))}
+                        style={{ flex: 1, padding: '8px 4px', fontSize: 11, fontWeight: 700, borderRadius: 8, cursor: 'pointer', border: formTurno.pago_por === 'titular' ? '2px solid #d97706' : '1px solid #d1d5db', background: formTurno.pago_por === 'titular' ? '#fef3c7' : 'white', color: formTurno.pago_por === 'titular' ? '#92400e' : '#6b7280' }}>
+                        🤝 Titular paga
+                      </button>
+                    </div>
+                    <div style={{ fontSize: 10, color: '#78716c', marginTop: 4, fontStyle: 'italic' }}>
+                      {formTurno.pago_por === 'empresa' && 'Se suma al reemplazante y se descuenta al titular a fin de mes'}
+                      {formTurno.pago_por === 'empresa_adelanto' && 'Ya se pagó al reemplazante. Solo se descuenta al titular a fin de mes'}
+                      {formTurno.pago_por === 'titular' && 'El titular pagó directo al reemplazante. Sin efecto en nómina'}
                     </div>
                   </div>
                 </div>
@@ -1098,11 +1123,15 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                         <span style={{ fontSize: 13, fontWeight: 600 }}>${sueldoBase.toLocaleString('es-CL')}</span>
                       </div>
                       {Object.values(gruposReemplazando).map((g, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #86efac', backgroundColor: '#dcfce7', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                          <span style={{ fontSize: 13, color: '#14532d', fontWeight: 600 }}>
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', border: `1px solid ${g.pago_por === 'empresa_adelanto' ? '#a5b4fc' : '#86efac'}`, backgroundColor: g.pago_por === 'empresa_adelanto' ? '#eef2ff' : '#dcfce7', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                          <span style={{ fontSize: 13, color: g.pago_por === 'empresa_adelanto' ? '#3730a3' : '#14532d', fontWeight: 600 }}>
                             ↔ Reemplazó a {g.persona?.nombre ?? '?'} {g.dias.length} días
+                            {g.pago_por === 'empresa_adelanto' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#c7d2fe', color: '#4338ca', fontWeight: 800, border: '1px solid #a5b4fc' }}>✅ YA PAGADO</span>}
                           </span>
-                          <span style={{ fontSize: 13, fontWeight: 800, color: '#166534' }}>+${g.monto.toLocaleString('es-CL')}</span>
+                          {g.pago_por === 'empresa_adelanto'
+                            ? <span style={{ fontSize: 13, color: '#6366f1', fontWeight: 600 }}>${g.monto.toLocaleString('es-CL')}</span>
+                            : <span style={{ fontSize: 13, fontWeight: 800, color: '#166534' }}>+${g.monto.toLocaleString('es-CL')}</span>
+                          }
                         </div>
                       ))}
                       {Object.values(gruposReemplazados).map((g, i) => (
@@ -1110,8 +1139,9 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                           <span style={{ fontSize: 13, color: '#7f1d1d', fontWeight: 600 }}>
                             {g.persona?.nombre ?? '?'} cubrió {g.dias.length} días
                             {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 800, border: '1px solid #fcd34d' }}> PAGO DIRECTO</span>}
+                            {g.pago_por === 'empresa_adelanto' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#c7d2fe', color: '#4338ca', fontWeight: 800, border: '1px solid #a5b4fc' }}>ADELANTO</span>}
                           </span>
-                          {g.pago_por === 'empresa'
+                          {(g.pago_por === 'empresa' || g.pago_por === 'empresa_adelanto')
                             ? <span style={{ fontSize: 13, fontWeight: 800, color: '#991b1b' }}>-${g.monto.toLocaleString('es-CL')}</span>
                             : <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>—</span>
                           }
