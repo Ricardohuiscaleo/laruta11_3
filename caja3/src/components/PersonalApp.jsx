@@ -295,26 +295,23 @@ export default function PersonalApp() {
     // Salarios Base
     let sueldoBase = 0;
 
-    // 🔥 LÓGICA DUEÑO: SUELDO = LIQUIDEZ DEL MES 
     const rolesBase = typeof p.rol === 'string' ? p.rol.split(',').map(r => r.trim()) : (Array.isArray(p.rol) ? p.rol : []);
     const isOwner = rolesBase.includes('dueño');
 
-    if (isOwner) {
-      sueldoBase = cashflowMes.liquidez || 0;
-    } else if (modoContexto === 'seguridad') {
+    if (modoContexto === 'seguridad') {
       sueldoBase = parseFloat(p.sueldo_base_seguridad) || 0;
     } else if (modoContexto === 'ruta11') {
-      const roles = typeof p.rol === 'string' ? p.rol.split(',').map(r => r.trim()) : (Array.isArray(p.rol) ? p.rol : []);
-      if (roles.includes('administrador')) sueldoBase = parseFloat(p.sueldo_base_admin) || 0;
-      else if (roles.includes('cajero')) sueldoBase = parseFloat(p.sueldo_base_cajero) || 0;
-      else if (roles.includes('planchero')) sueldoBase = parseFloat(p.sueldo_base_planchero) || 0;
+      if (isOwner) sueldoBase = cashflowMes.liquidez || 0;
+      else if (rolesBase.includes('administrador')) sueldoBase = parseFloat(p.sueldo_base_admin) || 0;
+      else if (rolesBase.includes('cajero')) sueldoBase = parseFloat(p.sueldo_base_cajero) || 0;
+      else if (rolesBase.includes('planchero')) sueldoBase = parseFloat(p.sueldo_base_planchero) || 0;
     } else {
       // modoContexto === 'all'
-      const roles = typeof p.rol === 'string' ? p.rol.split(',').map(r => r.trim()) : (Array.isArray(p.rol) ? p.rol : []);
       let b11 = 0;
-      if (roles.includes('administrador')) b11 = parseFloat(p.sueldo_base_admin) || 0;
-      else if (roles.includes('cajero')) b11 = parseFloat(p.sueldo_base_cajero) || 0;
-      else if (roles.includes('planchero')) b11 = parseFloat(p.sueldo_base_planchero) || 0;
+      if (isOwner) b11 = cashflowMes.liquidez || 0;
+      else if (rolesBase.includes('administrador')) b11 = parseFloat(p.sueldo_base_admin) || 0;
+      else if (rolesBase.includes('cajero')) b11 = parseFloat(p.sueldo_base_cajero) || 0;
+      else if (rolesBase.includes('planchero')) b11 = parseFloat(p.sueldo_base_planchero) || 0;
       sueldoBase = b11 + (parseFloat(p.sueldo_base_seguridad) || 0);
     }
 
@@ -713,16 +710,38 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
 
     let md = `🏦 *RESUMEN GLOBAL PAGOS*\n📅 _${MESES_L[mes] ? MESES_L[mes].toUpperCase() : ''} ${anio}_\n━━━━━━━━━━━━\n`;
     let sum = 0;
-    const items = allData.filter(item => item.granTotal > 0);
-    const montosStr = items.map(item => `$${item.granTotal.toLocaleString('es-CL')}`);
+    // Solo ignorar empleados normales con total 0, pero incluir dueño aunque tenga pérdida.
+    const items = allData.filter(item => {
+      const isOwner = item.persona.rol && item.persona.rol.includes('dueño');
+      return isOwner || item.granTotal > 0;
+    });
+
+    // Preparar el maxLength para alinear bien
+    const montosStr = items.map(item => `$${item.granTotal >= 0 ? item.granTotal.toLocaleString('es-CL') : '-' + Math.abs(item.granTotal).toLocaleString('es-CL')}`);
     const maxLen = Math.max(...montosStr.map(s => s.length), 0);
 
     items.forEach((item, idx) => {
+      const isOwner = item.persona.rol && item.persona.rol.includes('dueño');
       const nombre = item.persona.nombre;
       const primerNombre = nombre.split(' ')[0];
       const emoji = emojis[nombre] || emojis[primerNombre] || '👤';
-      const montoPad = montosStr[idx].padStart(maxLen, ' ');
-      md += `> - ${emoji} _${nombre.toUpperCase()}:_ \`\`\`${montoPad}\`\`\`\n`;
+
+      if (isOwner) {
+        md += `\n> - ${emoji} _${nombre.toUpperCase()} (Dueño)_\n`;
+        md += `> \`\`\`\n`;
+        md += `> RUTA 11\n`;
+        md += `> ${item.total11 >= 0 ? '+' : '-'}$${Math.abs(item.total11).toLocaleString('es-CL')}\n`;
+        md += `> —\n`;
+        md += `> SEGURIDAD\n`;
+        md += `> ${item.totalSeg >= 0 ? '+' : '-'}$${Math.abs(item.totalSeg).toLocaleString('es-CL')}\n`;
+        md += `> —\n`;
+        md += `> A PAGAR\n`;
+        md += `> ${item.granTotal >= 0 ? '' : '-'}$${Math.abs(item.granTotal).toLocaleString('es-CL')}\n`;
+        md += `> \`\`\`\n\n`;
+      } else {
+        const montoPad = montosStr[idx].padStart(maxLen, ' ');
+        md += `> - ${emoji} _${nombre.toUpperCase()}:_ \`\`\`${montoPad}\`\`\`\n`;
+      }
       sum += item.granTotal;
     });
     md += `━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
@@ -864,8 +883,14 @@ function NominaCard({ item, colorObj, onNotify, onEdit }) {
       {/* Grid for Details */}
       <div className="nomina-card-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 16, background: '#f8fafd', padding: 12, borderRadius: 12 }}>
         <div>
-          <div style={{ fontSize: 10, color: '#70757a', textTransform: 'uppercase', letterSpacing: 0.5 }}>Ruta 11</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: item.pagado11 ? '#1e8e3e' : '#1f1f1f' }}>{item.total11 > 0 ? `$${item.total11.toLocaleString('es-CL')}` : '—'}</div>
+          <div style={{ fontSize: 10, color: '#70757a', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            {item.persona.rol && item.persona.rol.includes('dueño') ? '💵 Liquidez' : 'Ruta 11'}
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: item.persona.rol && item.persona.rol.includes('dueño') ? (item.total11 >= 0 ? '#1e8e3e' : '#dc2626') : (item.pagado11 ? '#1e8e3e' : '#1f1f1f') }}>
+            {item.persona.rol && item.persona.rol.includes('dueño')
+              ? `${item.total11 >= 0 ? '+' : '-'}$${Math.abs(item.total11).toLocaleString('es-CL')} ${item.total11 >= 0 ? '✅' : '🚨'}`
+              : (item.total11 > 0 ? `$${item.total11.toLocaleString('es-CL')}` : '—')}
+          </div>
         </div>
         <div>
           <div style={{ fontSize: 10, color: '#70757a', textTransform: 'uppercase', letterSpacing: 0.5 }}>Seguridad</div>
@@ -873,7 +898,11 @@ function NominaCard({ item, colorObj, onNotify, onEdit }) {
         </div>
         <div>
           <div style={{ fontSize: 10, color: c.text, textTransform: 'uppercase', fontWeight: 800 }}>A Pagar</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: c.text }}>${item.granTotal.toLocaleString('es-CL')}</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: c.text }}>
+            {item.persona.rol && item.persona.rol.includes('dueño')
+              ? `${item.granTotal >= 0 ? '' : '-'}$${Math.abs(item.granTotal).toLocaleString('es-CL')}`
+              : `$${item.granTotal.toLocaleString('es-CL')}`}
+          </div>
         </div>
       </div>
     </div>
