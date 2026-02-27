@@ -1211,6 +1211,77 @@
     let currentViewMonth = null; // null = mes actual, {month, year} = mes específico
     let dashboardAutoRefreshInterval = null;
     window.MONTHLY_SALARIES = 1590000;
+    window.dashTotalSales = 0;
+    window.dashTotalCompras = 0;
+    window.dashMargenBruto = 0.441;
+
+    window.updateBreakevenUI = function() {
+      const totalSales = window.dashTotalSales || 0;
+      const totalCompras = window.dashTotalCompras || 0;
+      const monthlySalaries = window.MONTHLY_SALARIES || 1590000;
+      const marginPercent = window.dashMargenBruto || 0.441;
+      
+      // PUNTO DE EQUILIBRIO REAL (Rentabilidad)
+      const breakevenSales = marginPercent > 0 ? monthlySalaries / marginPercent : 0;
+      const additionalSalesNeeded = Math.max(0, breakevenSales - totalSales);
+      const percentOfBreakeven = breakevenSales > 0 ? (totalSales / breakevenSales) * 100 : 0;
+      
+      // Meta Mensual = Equilibrio + 5%
+      const monthlyGoal = breakevenSales * 1.05;
+      const percentOfMonthlyGoal = monthlyGoal > 0 ? (totalSales / monthlyGoal) * 100 : 0;
+      
+      // FLUJO DE CAJA (Liquidez)
+      const cashFlow = totalSales - totalCompras - monthlySalaries;
+      
+      // Actualizar UI - Punto de Equilibrio
+      const breakevenCardMain = document.getElementById('dash-breakeven-card-main');
+      const breakevenAmountMain = document.getElementById('dash-breakeven-amount-main');
+      const breakevenPercentMain = document.getElementById('dash-breakeven-percent-main');
+      const breakevenMargin = document.getElementById('dash-breakeven-margin');
+      const breakevenProgressBar = document.getElementById('dash-breakeven-progress-bar');
+      
+      if (breakevenCardMain) {
+        breakevenCardMain.style.background = additionalSalesNeeded > 0 ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+      }
+      if (breakevenAmountMain) {
+        breakevenAmountMain.textContent = additionalSalesNeeded > 0 ? '$' + new Intl.NumberFormat('es-CL').format(Math.round(additionalSalesNeeded)) : '✅ $0';
+      }
+      if (breakevenPercentMain) {
+        breakevenPercentMain.textContent = percentOfBreakeven.toFixed(1) + '%';
+      }
+      if (breakevenMargin) {
+        breakevenMargin.textContent = (marginPercent * 100).toFixed(1) + '%';
+      }
+      if (breakevenProgressBar) {
+        breakevenProgressBar.style.width = Math.min(100, percentOfBreakeven).toFixed(1) + '%';
+      }
+      
+      // Actualizar flujo de caja compacto
+      const cashflowStatusShort = document.getElementById('dash-cashflow-status-short');
+      const cashflowFormula = document.getElementById('dash-cashflow-formula');
+      
+      if (cashflowStatusShort) {
+        const cashFlowAbsM = Math.abs(cashFlow / 1000000).toFixed(2).replace('.', ',');
+        const cashFlowText = (cashFlow >= 0 ? '+$' : '-$') + cashFlowAbsM + 'M';
+        const cashFlowEmoji = cashFlow >= 0 ? ' ✅' : ' 🚨';
+        cashflowStatusShort.innerHTML = cashFlowText + cashFlowEmoji;
+      }
+      
+      if (cashflowFormula) {
+        const salesM = (totalSales / 1000000).toFixed(2).replace('.', ',');
+        const comprasM = (totalCompras / 1000000).toFixed(2).replace('.', ',');
+        const sueldosM = (monthlySalaries / 1000000).toFixed(2).replace('.', ',');
+        const resultM = Math.abs(cashFlow / 1000000).toFixed(2).replace('.', ',');
+        const sign = cashFlow >= 0 ? '+' : '-';
+        cashflowFormula.textContent = `$${salesM}M - $${comprasM}M - $${sueldosM}M = ${sign}$${resultM}M`;
+      }
+      
+      // Actualizar Meta Mensual en tarjeta Ventas
+      const salesLabelEl = document.getElementById('dash-sales-label');
+      if (salesLabelEl) {
+        salesLabelEl.textContent = `Ventas (${percentOfMonthlyGoal.toFixed(1)}% meta mes)`;
+      }
+    };
     
     // Declarar funciones globalmente
     window.isAppOrder = function(id) {
@@ -1393,6 +1464,13 @@
           
           // Guardar globalmente para cálculo de margen operativo
           window.dashTotalSales = totalSales;
+          window.dashGrossProfit = data.data.summary_kpis.total_profit || 0;
+          if (totalSales > 0) {
+            window.dashMargenBruto = window.dashGrossProfit / totalSales;
+          }
+          
+          // Recalcular UI con los nuevos datos de ventas/margen
+          if (window.updateBreakevenUI) window.updateBreakevenUI();
           
           // Actualizar top producto en tarjeta Ventas
           const topProductEl = document.getElementById('dash-main-top-product');
@@ -1539,75 +1617,21 @@
           fetch(`/api/get_dashboard_cards.php?t=${Date.now()}`)
             .then(r => r.json())
             .then(cardsData => {
-              const totalCompras = cardsData.success && cardsData.data.compras ? cardsData.data.compras.total_mes : 0;
+              window.dashTotalCompras = cardsData.success && cardsData.data.compras ? cardsData.data.compras.total_mes : 0;
               
-              // Esperar a que se calcule el margen bruto real
-              setTimeout(() => {
-                const marginPercent = window.dashMargenBruto || 0.441; // Usar margen calculado o default
-                
-                // PUNTO DE EQUILIBRIO REAL (Rentabilidad)
-                // Punto de equilibrio = Sueldos / Margen Bruto %
-                const breakevenSales = marginPercent > 0 ? MONTHLY_SALARIES / marginPercent : 0;
-                const additionalSalesNeeded = Math.max(0, breakevenSales - totalSales);
-                const percentOfBreakeven = breakevenSales > 0 ? (totalSales / breakevenSales) * 100 : 0;
-                
-                // FLUJO DE CAJA (Liquidez)
-                const totalIngresos = totalSales;
-                const totalEgresos = totalCompras + MONTHLY_SALARIES;
-                const cashFlow = totalIngresos - totalEgresos;
-                
-                const breakevenCardMain = document.getElementById('dash-breakeven-card-main');
-                const breakevenAmountMain = document.getElementById('dash-breakeven-amount-main');
-                const breakevenPercentMain = document.getElementById('dash-breakeven-percent-main');
-                const breakevenMargin = document.getElementById('dash-breakeven-margin');
-                const breakevenProgressBar = document.getElementById('dash-breakeven-progress-bar');
-                const cashflowStatus = document.getElementById('dash-cashflow-status');
-                
-                if (breakevenCardMain) {
-                  breakevenCardMain.style.background = additionalSalesNeeded > 0 ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-                }
-                if (breakevenAmountMain) {
-                  breakevenAmountMain.textContent = additionalSalesNeeded > 0 ? '$' + new Intl.NumberFormat('es-CL').format(Math.round(additionalSalesNeeded)) : '✅ $0';
-                }
-                if (breakevenPercentMain) {
-                  breakevenPercentMain.textContent = percentOfBreakeven.toFixed(1) + '%';
-                }
-                if (breakevenMargin) {
-                  breakevenMargin.textContent = (marginPercent * 100).toFixed(1) + '%';
-                }
-                if (breakevenProgressBar) {
-                  breakevenProgressBar.style.width = Math.min(100, percentOfBreakeven).toFixed(1) + '%';
-                }
-                // Actualizar flujo de caja compacto
-                const cashflowStatusShort = document.getElementById('dash-cashflow-status-short');
-                const cashflowFormula = document.getElementById('dash-cashflow-formula');
-                
-                if (cashflowStatusShort) {
-                  const cashFlowAbsM = Math.abs(cashFlow / 1000000).toFixed(2).replace('.', ',');
-                  const cashFlowText = (cashFlow >= 0 ? '+$' : '-$') + cashFlowAbsM + 'M';
-                  const cashFlowEmoji = cashFlow >= 0 ? ' ✅' : ' 🚨';
-                  cashflowStatusShort.innerHTML = cashFlowText + cashFlowEmoji;
-                }
-                
-                if (cashflowFormula) {
-                  const salesM = (totalSales / 1000000).toFixed(2).replace('.', ',');
-                  const comprasM = (totalCompras / 1000000).toFixed(2).replace('.', ',');
-                  const resultM = Math.abs(cashFlow / 1000000).toFixed(2).replace('.', ',');
-                  const sign = cashFlow >= 0 ? '+' : '-';
-                  const sueldosM = (MONTHLY_SALARIES / 1000000).toFixed(2).replace('.', ',');
-                  cashflowFormula.textContent = `$${salesM}M - $${comprasM}M - $${sueldosM}M = ${sign}$${resultM}M`;
-                }
-              }, 500); // Esperar a que se calcule el margen
+              const totalSales = window.dashTotalSales || 0;
+              const MONTHLY_SALARIES = window.MONTHLY_SALARIES || 1590000;
+              const marginPercent = window.dashMargenBruto || 0.441;
+
+              // Recalcular todo
+              if (window.updateBreakevenUI) window.updateBreakevenUI();
               
-              // Calcular punto de equilibrio real y meta mensual
-              const grossProfit = data.data.summary_kpis.total_profit || 0;
-              const marginPercentForGoal = totalSales > 0 ? (grossProfit / totalSales) : 0.441; // Default 44.1%
-              const breakevenSalesGoal = marginPercentForGoal > 0 ? MONTHLY_SALARIES / marginPercentForGoal : 0;
-              const breakEvenWith10Percent = breakevenSalesGoal * 1.05; // Meta = Equilibrio + 5%
+              // Calcular punto de equilibrio real y meta mensual para detalles adicionales
+              const breakevenSalesGoal = marginPercent > 0 ? MONTHLY_SALARIES / marginPercent : 0;
+              const breakEvenWith10Percent = breakevenSalesGoal * 1.05; 
               const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
               const daysPassed = today.getDate();
               const dailyGoal = breakEvenWith10Percent / daysInMonth;
-              const dailyAverage = totalSales / daysPassed;
               const expectedToDate = dailyGoal * daysPassed;
               const deviation = totalSales - expectedToDate;
               const deviationPercent = ((deviation / expectedToDate) * 100).toFixed(1);
@@ -1635,9 +1659,7 @@
                 salesEl.textContent = percentageOfExpected + '%';
                 salesEl.style.color = salesColor;
               }
-              if (salesLabelEl) {
-                salesLabelEl.textContent = `Ventas (${percentOfMonthlyGoal}% meta mes)`;
-              }
+              // salesLabelEl se actualiza en updateBreakevenUI()
               if (salesPercentageEl) {
                 salesPercentageEl.innerHTML = `<span style="color: #666;">$${new Intl.NumberFormat('es-CL').format(Math.round(totalSales))}</span><br><span style="color: #999; font-size: 0.9em;">Esperado hoy: $${new Intl.NumberFormat('es-CL').format(Math.round(expectedToDate))} (${daysPassed}d)</span>`;
               }
@@ -1883,6 +1905,8 @@
                     sueldosEl.textContent = `$${new Intl.NumberFormat('es-CL').format(Math.round(window.MONTHLY_SALARIES/1000))}K`;
                 }
             }
+            // Recalcular todo con el nuevo sueldo
+            if (window.updateBreakevenUI) window.updateBreakevenUI();
           }
 
           
@@ -1908,6 +1932,9 @@
                 
                 // Guardar margen globalmente para otros cálculos
                 window.dashMargenBruto = parseFloat(porcentajeMargen) / 100;
+                
+                // Recalcular todo con el nuevo margen
+                if (window.updateBreakevenUI) window.updateBreakevenUI();
                 
                 // Actualizar mini KPI de Margen Operativo
                 const marginPercentEl = document.getElementById('dash-margin-percent');
