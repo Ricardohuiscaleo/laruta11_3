@@ -1261,8 +1261,7 @@
       const cashflowFormula = document.getElementById('dash-cashflow-formula');
       
       if (cashflowStatusShort) {
-        const cashFlowAbsM = Math.abs(cashFlow / 1000000).toFixed(2).replace('.', ',');
-        const cashFlowText = (cashFlow >= 0 ? '+$' : '-$') + cashFlowAbsM + 'M';
+        const cashFlowText = (cashFlow >= 0 ? '+$' : '-$') + new Intl.NumberFormat('es-CL').format(Math.round(Math.abs(cashFlow)));
         const cashFlowEmoji = cashFlow >= 0 ? ' ✅' : ' 🚨';
         cashflowStatusShort.innerHTML = cashFlowText + cashFlowEmoji;
       }
@@ -1585,7 +1584,7 @@
             'card': {icon:'credit-card',label:'Tarjeta'},
             'cash': {icon:'banknote',label:'Efectivo'},
             'pedidosya': {icon:'bike',label:'PedidosYA'},
-            'credito rl6': {icon:'credit-card',label:'Crédito RL6'}
+            'rl6_credit': {icon:'credit-card',label:'Crédito RL6'}
           };
           
           const paymentMethods = {};
@@ -5029,7 +5028,7 @@
               'card':{icon:'credit-card',label:'Tarjeta',sales:0,cost:0,orders:0,delivery:0},
               'cash':{icon:'banknote',label:'Efectivo',sales:0,cost:0,orders:0,delivery:0},
               'pedidosya':{icon:'bike',label:'PedidosYA',sales:0,cost:0,orders:0,delivery:0},
-              'credito rl6':{icon:'credit-card',label:'Crédito RL6',sales:0,cost:0,orders:0,delivery:0}
+              'rl6_credit':{icon:'credit-card',label:'Crédito RL6',sales:0,cost:0,orders:0,delivery:0}
             };
             
             transactions.forEach(t => {
