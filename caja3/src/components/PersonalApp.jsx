@@ -700,7 +700,7 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
       granAdelantos: lRuta11.montoAdelantos + lSeguridad.montoAdelantos,
       pagado11: !!pago11,
       pagadoSeg: !!pagoSeg,
-      totalPagado: (pago11 ? lRuta11.total : 0) + (pagoSeg ? lSeguridad.total : 0)
+      totalPagado: (pago11 ? parseFloat(pago11.monto) : 0) + (pagoSeg ? parseFloat(pagoSeg.monto) : 0)
     };
   }).sort((a, b) => b.granTotal - a.granTotal);
 
@@ -730,7 +730,7 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
     presupuesto: (presupuestoNomina.ruta11 || 0) + (presupuestoNomina.seguridad || 0)
   };
 
-  const diferenciaGlobal = stats.totalCosto - stats.presupuesto;
+  const saldoGlobal = stats.presupuesto - stats.totalCosto;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, animation: 'fadeIn 0.4s ease-out' }}>
@@ -767,11 +767,11 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
             <div style={{ fontSize: 10, opacity: 0.7 }}>Comprometido: ${stats.totalCosto.toLocaleString('es-CL')}</div>
           </div>
           <div>
-            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>{diferenciaGlobal > 0 ? 'Exceso' : 'Presupuesto Libre'}</div>
-            <div style={{ fontSize: 24, fontWeight: 900, color: diferenciaGlobal > 0 ? '#fca5a5' : '#4ade80' }}>
-              ${Math.abs(diferenciaGlobal).toLocaleString('es-CL')}
+            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>{saldoGlobal < 0 ? 'Exceso' : 'Saldo presupuesto'}</div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: saldoGlobal < 0 ? '#fca5a5' : '#4ade80' }}>
+              ${Math.abs(saldoGlobal).toLocaleString('es-CL')}
             </div>
-            <div style={{ fontSize: 10, opacity: 0.7 }}>{diferenciaGlobal > 0 ? 'Sobre el límite' : 'Disponible'}</div>
+            <div style={{ fontSize: 10, opacity: 0.7 }}>{saldoGlobal < 0 ? 'Sobre el límite' : 'Disponible'}</div>
           </div>
         </div>
       </div>
@@ -1109,7 +1109,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
   const totalCalculado = personal.reduce((s, p) => s + getLiquidacion(p).costoEmpresa, 0);
   const totalAdelantos = personal.reduce((s, p) => s + getLiquidacion(p).montoAdelantos, 0);
   const totalPagado = pagosNomina.reduce((s, p) => s + parseFloat(p.monto), 0);
-  const diferencia = totalCalculado - presupuesto;
+  const saldo = presupuesto - totalCalculado;
   const hayPagos = pagosNomina.length > 0;
 
   function generarNotas(p) {
@@ -1190,11 +1190,11 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
             <div style={{ fontSize: 10, opacity: 0.6 }}>Calculado: ${totalCalculado.toLocaleString('es-CL')}</div>
           </div>
           <div>
-            <div style={{ fontSize: 12, opacity: 0.6 }}>{diferencia > 0 ? 'Exceso' : 'Ahorro'}</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: diferencia > 0 ? '#f87171' : '#4ade80' }}>
-              ${Math.abs(diferencia).toLocaleString('es-CL')}
+            <div style={{ fontSize: 12, opacity: 0.6 }}>{saldo < 0 ? 'Exceso' : 'Saldo presupuesto'}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: saldo < 0 ? '#f87171' : '#4ade80' }}>
+              ${Math.abs(saldo).toLocaleString('es-CL')}
             </div>
-            <div style={{ fontSize: 10, opacity: 0.6 }}>{diferencia > 0 ? 'Sobre el presupuesto' : 'Bajo el presupuesto'}</div>
+            <div style={{ fontSize: 10, opacity: 0.6 }}>{saldo < 0 ? 'Sobre el presupuesto' : 'Disponible'}</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
@@ -1388,7 +1388,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
   const totalAdelantos = guardias.reduce((s, p) => s + getLiquidacion(p).montoAdelantos, 0);
   const pagosGuardias = pagosNomina.filter(pn => guardias.some(g => g.id == pn.personal_id));
   const totalPagado = pagosGuardias.reduce((s, p) => s + parseFloat(p.monto), 0);
-  const diferencia = totalCalculado - presupuesto;
+  const saldo = presupuesto - totalCalculado;
   const hayPagos = pagosGuardias.length > 0;
 
   function generarNotas(p) {
@@ -1469,11 +1469,11 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
             <div style={{ fontSize: 10, opacity: 0.6 }}>Calculado: ${totalCalculado.toLocaleString('es-CL')}</div>
           </div>
           <div>
-            <div style={{ fontSize: 12, opacity: 0.6 }}>{diferencia > 0 ? 'Exceso' : 'Ahorro'}</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: diferencia > 0 ? '#f87171' : '#4ade80' }}>
-              ${Math.abs(diferencia).toLocaleString('es-CL')}
+            <div style={{ fontSize: 12, opacity: 0.6 }}>{saldo < 0 ? 'Exceso' : 'Saldo presupuesto'}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: saldo < 0 ? '#f87171' : '#4ade80' }}>
+              ${Math.abs(saldo).toLocaleString('es-CL')}
             </div>
-            <div style={{ fontSize: 10, opacity: 0.6 }}>{diferencia > 0 ? 'Sobre el presupuesto' : 'Bajo el presupuesto'}</div>
+            <div style={{ fontSize: 10, opacity: 0.6 }}>{saldo < 0 ? 'Sobre el presupuesto' : 'Disponible'}</div>
           </div>
         </div>
         <button onClick={copiarMarkdown} style={{ marginTop: 4, padding: '8px 16px', background: copied ? '#4ade80' : 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 8, color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
