@@ -298,6 +298,14 @@ export default function PersonalApp() {
     // Ajustes per context object... just leave them global or split them?
     const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
     const totalAjustes = ajustesPer.reduce((s, a) => s + parseFloat(a.monto), 0);
+    const costoAjustes = ajustesPer.reduce((s, a) => {
+      const m = parseFloat(a.monto);
+      if (m > 0) return s + m; // Bonos, etc. (company spends more)
+      const desc = (a.concepto || '').toLowerCase();
+      // Si es un adelanto o préstamo, la empresa igual gastó esa plata (solo que antes). NO RESTAR DEL PRESUPUESTO GLOBAL.
+      if (desc.includes('adelanto') || desc.includes('anticipo') || desc.includes('prestamo') || desc.includes('préstamo')) return s;
+      return s + m; // Multas o descuentos reales (la plata se queda en la caja de la empresa). RESTAR DEL PRESUPUESTO.
+    }, 0);
 
     const primerRol = typeof p.rol === 'string' ? p.rol.split(',')[0].trim() : (Array.isArray(p.rol) ? p.rol[0] : '');
     const isMainSeguridad = primerRol === 'seguridad';
@@ -329,7 +337,7 @@ export default function PersonalApp() {
     // Reemplazados: descontar si empresa O empresa_adelanto (en ambos casos el titular pierde ese dinero)
     const totalReemplazados = Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa' || g.pago_por === 'empresa_adelanto').reduce((s, g) => s + g.monto, 0);
     const total = Math.round(sueldoBase + totalReemplazando - totalReemplazados + totalAjustes);
-    const costoEmpresa = Math.round(sueldoBase + totalReemplazandoCosto - totalReemplazados + totalAjustes);
+    const costoEmpresa = Math.round(sueldoBase + totalReemplazandoCosto - totalReemplazados + costoAjustes);
     return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplazados, gruposReemplazando, total, costoEmpresa };
   }
 
