@@ -703,16 +703,19 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
 
     let md = `🏦 *RESUMEN GLOBAL PAGOS*\n📅 _${MESES_L[mes] ? MESES_L[mes].toUpperCase() : ''} ${anio}_\n━━━━━━━━━━━━━━━━━━━━\n`;
     let sum = 0;
-    allData.forEach(item => {
-      if (item.granTotal > 0) {
-        const nombre = item.persona.nombre;
-        const primerNombre = nombre.split(' ')[0];
-        const emoji = emojis[nombre] || emojis[primerNombre] || '👤';
-        md += `- ${emoji} _${nombre.toUpperCase()}:_ *$${item.granTotal.toLocaleString('es-CL')}*\n`;
-        sum += item.granTotal;
-      }
+    const items = allData.filter(item => item.granTotal > 0);
+    const montosStr = items.map(item => `$${item.granTotal.toLocaleString('es-CL')}`);
+    const maxLen = Math.max(...montosStr.map(s => s.length), 0);
+
+    items.forEach((item, idx) => {
+      const nombre = item.persona.nombre;
+      const primerNombre = nombre.split(' ')[0];
+      const emoji = emojis[nombre] || emojis[primerNombre] || '👤';
+      const montoPad = montosStr[idx].padStart(maxLen, ' ');
+      md += `- ${emoji} _${nombre.toUpperCase()}:_ \`\`\`${montoPad}\`\`\`\n`;
+      sum += item.granTotal;
     });
-    md += `━━━━━━━━━━━━━━━━━━━━\n💰 *Total a Transferir: $${sum.toLocaleString('es-CL')}*\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
+    md += `━━━━━━━━━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
 
     const quotedMd = md.split('\n').map(l => l ? `> ${l}` : '>').join('\n');
 
@@ -1092,15 +1095,18 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
     const mesLabel = `${MESES_L[mes]} ${anio}`;
     let md = `🏦 *RESUMEN PAGOS NÓMINA*\n📅 _${mesLabel.toUpperCase()}_\n━━━━━━━━━━━━━━━━━━━━\n`;
     let sum = 0;
-    personal.forEach(p => {
+    const items = personal.filter(p => getLiquidacion(p).total > 0);
+    const montosStr = items.map(p => `$${getLiquidacion(p).total.toLocaleString('es-CL')}`);
+    const maxLen = Math.max(...montosStr.map(s => s.length), 0);
+
+    items.forEach((p, idx) => {
       const { total } = getLiquidacion(p);
-      if (total > 0) {
-        const emoji = emojis[p.nombre] || emojis[p.nombre.split(' ')[0]] || '👤';
-        md += `- ${emoji} _${p.nombre.toUpperCase()}:_ *$${total.toLocaleString('es-CL')}*\n`;
-        sum += total;
-      }
+      const emoji = emojis[p.nombre] || emojis[p.nombre.split(' ')[0]] || '👤';
+      const montoPad = montosStr[idx].padStart(maxLen, ' ');
+      md += `- ${emoji} _${p.nombre.toUpperCase()}:_ \`\`\`${montoPad}\`\`\`\n`;
+      sum += total;
     });
-    md += `━━━━━━━━━━━━━━━━━━━━\n💰 *Total a Transferir: $${sum.toLocaleString('es-CL')}*\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
+    md += `━━━━━━━━━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
     return md.split('\n').map(l => l ? `> ${l}` : '>').join('\n');
   }
 
@@ -1372,15 +1378,18 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
     const mesLabel = `${MESES_L[mes]} ${anio}`;
     let md = `🏦 *RESUMEN PAGOS SEGURIDAD*\n📅 _${mesLabel.toUpperCase()}_\n━━━━━━━━━━━━━━\n`;
     let sum = 0;
-    guardias.forEach(p => {
+    const items = guardias.filter(p => getLiquidacion(p).total > 0);
+    const montosStr = items.map(p => `$${getLiquidacion(p).total.toLocaleString('es-CL')}`);
+    const maxLen = Math.max(...montosStr.map(s => s.length), 0);
+
+    items.forEach((p, idx) => {
       const { total } = getLiquidacion(p);
-      if (total > 0) {
-        const emoji = emojis[p.nombre] || emojis[p.nombre.split(' ')[0]] || '👤';
-        md += `- ${emoji} _${p.nombre.toUpperCase()}:_ *$${total.toLocaleString('es-CL')}*\n`;
-        sum += total;
-      }
+      const emoji = emojis[p.nombre] || emojis[p.nombre.split(' ')[0]] || '👤';
+      const montoPad = montosStr[idx].padStart(maxLen, ' ');
+      md += `- ${emoji} _${p.nombre.toUpperCase()}:_ \`\`\`${montoPad}\`\`\`\n`;
+      sum += total;
     });
-    md += `━━━━━━━━━━━━━━\n💰 *Total a Transferir: $${sum.toLocaleString('es-CL')}*\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
+    md += `━━━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
     return md.split('\n').map(l => l ? `> ${l}` : '>').join('\n');
   }
 
