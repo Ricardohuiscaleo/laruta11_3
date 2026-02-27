@@ -696,6 +696,7 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
       total11: lRuta11.total,
       totalSeg: lSeguridad.total,
       granTotal: lRuta11.total + lSeguridad.total,
+      granCosto: lRuta11.costoEmpresa + lSeguridad.costoEmpresa,
       pagado11: !!pago11,
       pagadoSeg: !!pagoSeg,
       totalPagado: (pago11 ? lRuta11.total : 0) + (pagoSeg ? lSeguridad.total : 0)
@@ -723,6 +724,7 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
   const stats = {
     totalAPagar: allData.reduce((s, i) => s + i.granTotal, 0),
     totalPagado: allData.reduce((s, i) => s + i.totalPagado, 0),
+    totalCosto: allData.reduce((s, i) => s + i.granCosto, 0),
     presupuesto: (presupuestoNomina.ruta11 || 0) + (presupuestoNomina.seguridad || 0)
   };
 
@@ -764,21 +766,21 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap-reverse', gap: 16 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, opacity: 0.9, fontWeight: 500 }}>
-              {stats.totalAPagar <= stats.presupuesto ? (
+              {stats.totalCosto <= stats.presupuesto ? (
                 <>Costo Total Nómina es el esperado. <ShieldCheck size={20} color="#4ade80" /></>
               ) : (
                 <>Costo Total Nómina excede el presupuesto. <AlertCircle size={20} color="#fba918" /></>
               )}
             </div>
             <div style={{ fontSize: 40, fontWeight: 800, marginTop: 4 }}>
-              ${Math.round(stats.totalAPagar).toLocaleString('es-CL')}
+              ${Math.round(stats.totalCosto).toLocaleString('es-CL')}
             </div>
             <div style={{ fontSize: 16, opacity: 0.8, fontWeight: 500, marginTop: 8 }}>
               Pagos realizados: ${Math.round(stats.totalPagado).toLocaleString('es-CL')}
             </div>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.15)', padding: '6px 14px', borderRadius: 16, fontSize: 14, fontWeight: 600 }}>
-            Presupuesto: ${Math.round(stats.presupuesto - stats.totalPagado).toLocaleString('es-CL')}
+            {stats.presupuesto - stats.totalCosto >= 0 ? 'Presupuesto disponible:' : 'Exceso sobre presupuesto:'} ${Math.abs(Math.round(stats.presupuesto - stats.totalCosto)).toLocaleString('es-CL')}
           </div>
         </div>
       </div>
@@ -1100,7 +1102,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
 
   const totalCalculado = personal.reduce((s, p) => s + getLiquidacion(p).costoEmpresa, 0);
   const totalPagado = pagosNomina.reduce((s, p) => s + parseFloat(p.monto), 0);
-  const diferencia = totalPagado - presupuesto;
+  const diferencia = totalCalculado - presupuesto;
   const hayPagos = pagosNomina.length > 0;
 
   function generarNotas(p) {
@@ -1335,12 +1337,12 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
       }
       md += `\n*${p.nombre.toUpperCase()}*\n_${roles}_\n▪ *Días:* ${diasTrabajados}\n▪ *Base:* $${sueldoBase.toLocaleString('es-CL')}\n`;
       Object.values(gruposReemplazando).forEach(g => { md += `▪ *Reemplazó a ${g.persona?.nombre ?? '?'}* (días ${g.dias.sort((a, b) => a - b).join(',')}): +$${g.monto.toLocaleString('es-CL')}\n`; });
-      Object.values(gruposReemplazados).forEach(g => { md += `- ${g.persona?.nombre ?? '?'} cubrió días ${g.dias.sort((a, b) => a - b).join(',')}: -$${g.monto.toLocaleString('es-CL')}\n`; });
+      Object.values(gruposReemplazados).forEach(g => { md += `▪ *${g.persona?.nombre ?? '?'} cubrió días* ${g.dias.sort((a, b) => a - b).join(',')}: -$${g.monto.toLocaleString('es-CL')}\n`; });
       ajustesPer.forEach(a => {
         const m = parseFloat(a.monto);
-        md += `- ${a.concepto}: ${m < 0 ? '-' : '+'}$${Math.abs(m).toLocaleString('es-CL')}\n`;
+        md += `▪ ${a.concepto}: *${m < 0 ? '-' : '+'}$${Math.abs(m).toLocaleString('es-CL')}*\n`;
       });
-      md += `*Total: $${total.toLocaleString('es-CL')}*\n`;
+      md += `> *Total a Pagar:* $${total.toLocaleString('es-CL')}*\n`;
     });
     const tp = pagosNomina.filter(pn => guardias.some(g => g.id == pn.personal_id)).reduce((s, p) => s + parseFloat(p.monto), 0);
     if (tp > 0) {
@@ -1378,7 +1380,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
   const totalCalculado = guardias.reduce((s, p) => s + getLiquidacion(p).costoEmpresa, 0);
   const pagosGuardias = pagosNomina.filter(pn => guardias.some(g => g.id == pn.personal_id));
   const totalPagado = pagosGuardias.reduce((s, p) => s + parseFloat(p.monto), 0);
-  const diferencia = totalPagado - presupuesto;
+  const diferencia = totalCalculado - presupuesto;
   const hayPagos = pagosGuardias.length > 0;
 
   function generarNotas(p) {
