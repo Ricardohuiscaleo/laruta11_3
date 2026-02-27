@@ -699,10 +699,7 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
 
   function copiarResumenGlobal() {
     const MESES_L = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    const emojis = {
-      'Ricardo': '👨🏻‍💻', 'Andrés': '🧑🏻‍🍳', 'Andres': '🧑🏻🍳',
-      'Camila': '👩🏽‍💼', 'Neit': '👩🏻💼', 'Gabriel': '🧑🏾🍳', 'Claudio': '👨🏻💼'
-    };
+    const emojis = { 'Ricardo': '👨🏻‍💻', 'Andrés': '🧑🏻‍🍳', 'Camila': '👩🏽‍💼', 'Neit': '👩🏻‍💼', 'Gabriel': '🧑🏾‍🍳', 'Claudio': '👨🏻‍💼' };
 
     let md = `🏦 *RESUMEN GLOBAL PAGOS*\n📅 _${MESES_L[mes] ? MESES_L[mes].toUpperCase() : ''} ${anio}_\n━━━━━━━━━━━━━━━━━━━━\n`;
     let sum = 0;
@@ -1091,7 +1088,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
   }
 
   function generarResumenPagos() {
-    const emojis = { 'Ricardo': '👨🏻💻', 'Andrés': '🧑🏻🍳', 'Andres': '🧑🏻🍳', 'Camila': '👩🏽💼', 'Neit': '👩🏻💼', 'Gabriel': '🧑🏾🍳', 'Claudio': '👨🏻💼' };
+    const emojis = { 'Ricardo': '👨🏻‍💻', 'Andrés': '🧑🏻‍🍳', 'Camila': '👩🏽‍💼', 'Neit': '👩🏻‍💼', 'Gabriel': '🧑🏾‍🍳', 'Claudio': '👨🏻‍💼' };
     const mesLabel = `${MESES_L[mes]} ${anio}`;
     let md = `🏦 *RESUMEN PAGOS NÓMINA*\n📅 _${mesLabel.toUpperCase()}_\n━━━━━━━━━━━━━━━━━━━━\n`;
     let sum = 0;
@@ -1371,7 +1368,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
   }
 
   function generarResumenPagos() {
-    const emojis = { 'Ricardo': '👨🏻💻', 'Andrés': '🧑🏻🍳', 'Andres': '🧑🏻🍳', 'Camila': '👩🏽💼', 'Neit': '👩🏻💼', 'Gabriel': '🧑🏾🍳', 'Claudio': '👨🏻💼' };
+    const emojis = { 'Ricardo': '👨🏻‍💻', 'Andrés': '🧑🏻‍🍳', 'Camila': '👩🏽‍💼', 'Neit': '👩🏻‍💼', 'Gabriel': '🧑🏾‍🍳', 'Claudio': '👨🏻‍💼' };
     const mesLabel = `${MESES_L[mes]} ${anio}`;
     let md = `🏦 *RESUMEN PAGOS SEGURIDAD*\n📅 _${mesLabel.toUpperCase()}_\n━━━━━━━━━━━━━━━━━━━━\n`;
     let sum = 0;
