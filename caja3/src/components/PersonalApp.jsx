@@ -682,6 +682,7 @@ export default function PersonalApp() {
 
 function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupuestoNomina, onReloadPagos, showToast, onEditPersonal }) {
   const [modalEmail, setModalEmail] = useState(null);
+  const [copiedGlobal, setCopiedGlobal] = useState(false);
 
   const allData = personal.filter(p => p.activo == 1).map(p => {
     const lRuta11 = getLiquidacion(p, 'ruta11');
@@ -701,6 +702,24 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
     };
   }).sort((a, b) => b.granTotal - a.granTotal);
 
+  function copiarResumenGlobal() {
+    const MESES_L = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    let md = `*RESUMEN GLOBAL PAGOS — ${MESES_L[mes].toUpperCase()} ${anio}*\n━━━━━━━━━━━━━━━━━━━━\n`;
+    let sum = 0;
+    allData.forEach(item => {
+      if (item.granTotal > 0) {
+        md += `▪ ${item.persona.nombre.toUpperCase()}: *$${item.granTotal.toLocaleString('es-CL')}*\n`;
+        sum += item.granTotal;
+      }
+    });
+    md += `━━━━━━━━━━━━━━━━━━━━\n> *Total a Transferir: $${sum.toLocaleString('es-CL')} *`;
+    navigator.clipboard.writeText(md).then(() => {
+      setCopiedGlobal(true);
+      setTimeout(() => setCopiedGlobal(false), 2500);
+      showToast('Copiado global para WhatsApp');
+    });
+  }
+
   const stats = {
     totalAPagar: allData.reduce((s, i) => s + i.granTotal, 0),
     totalPagado: allData.reduce((s, i) => s + i.totalPagado, 0),
@@ -709,14 +728,22 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, animation: 'fadeIn 0.4s ease-out' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#1a73e8' }}>Nómina del Mes</h2>
-        <button
-          onClick={() => setModalEmail({ type: 'massive' })}
-          style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid #1a73e8', background: 'transparent', color: '#1a73e8', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
-        >
-          <Mail size={16} /> Notificar Masivo
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={copiarResumenGlobal}
+            style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid #f59e0b', background: copiedGlobal ? '#fbbf24' : 'transparent', color: copiedGlobal ? 'white' : '#d97706', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+          >
+            {copiedGlobal ? <Check size={16} /> : <DollarSign size={16} />} Solo Nombres y Totales
+          </button>
+          <button
+            onClick={() => setModalEmail({ type: 'massive' })}
+            style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid #1a73e8', background: 'transparent', color: '#1a73e8', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+          >
+            <Mail size={16} /> Notificar Masivo
+          </button>
+        </div>
       </div>
 
       {/* Nomina Cards */}
@@ -1029,20 +1056,20 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
       if (typeof p.rol === 'string') {
         roles = p.rol.split(',').map(r => r.trim()).join(', ');
       }
-      md += `\n*${p.nombre}* (${roles})\n- Días: ${diasTrabajados}\n- Base: $${sueldoBase.toLocaleString('es-CL')}\n`;
-      Object.values(gruposReemplazando).forEach(g => { md += `- Reemplazó a ${g.persona?.nombre ?? '?'} (días ${g.dias.sort((a, b) => a - b).join(',')}): +$${g.monto.toLocaleString('es-CL')}\n`; });
-      Object.values(gruposReemplazados).forEach(g => { md += `- ${g.persona?.nombre ?? '?'} cubrió días ${g.dias.sort((a, b) => a - b).join(',')}: -$${g.monto.toLocaleString('es-CL')}\n`; });
+      md += `\n*${p.nombre.toUpperCase()}*\n_${roles}_\n▪ *Días:* ${diasTrabajados}\n▪ *Base:* $${sueldoBase.toLocaleString('es-CL')}\n`;
+      Object.values(gruposReemplazando).forEach(g => { md += `▪ *Reemplazó a ${g.persona?.nombre ?? '?'}* (días ${g.dias.sort((a, b) => a - b).join(',')}): +$${g.monto.toLocaleString('es-CL')}\n`; });
+      Object.values(gruposReemplazados).forEach(g => { md += `▪ *${g.persona?.nombre ?? '?'} cubrió días* ${g.dias.sort((a, b) => a - b).join(',')}: -$${g.monto.toLocaleString('es-CL')}\n`; });
       ajustesPer.forEach(a => {
         const m = parseFloat(a.monto);
-        md += `- ${a.concepto}: ${m < 0 ? '-' : '+'}$${Math.abs(m).toLocaleString('es-CL')}\n`;
+        md += `▪ ${a.concepto}: *${m < 0 ? '-' : '+'}$${Math.abs(m).toLocaleString('es-CL')}*\n`;
       });
-      md += `*Total: $${total.toLocaleString('es-CL')}*\n`;
+      md += `> *Total a Pagar:* $${total.toLocaleString('es-CL')}*\n`;
     });
     if (pagosNomina.length > 0) {
       const tp = pagosNomina.reduce((s, p) => s + parseFloat(p.monto), 0);
-      md += `\n━━━━━━━━━━━━━━━━━━━━\n*Pagos Reales*\n`;
-      pagosNomina.forEach(p => { md += `• ${p.nombre}${p.es_externo ? ' (ext)' : ''}: $${parseFloat(p.monto).toLocaleString('es-CL')}\n`; });
-      md += `*Total: $${tp.toLocaleString('es-CL')} / Presupuesto: $${presupuesto.toLocaleString('es-CL')}*\n`;
+      md += `\n━━━━━━━━━━━━━━━━━━━━\n*RESUMEN PAGOS REALIZADOS*\n`;
+      pagosNomina.forEach(p => { md += `• ${p.nombre}${p.es_externo ? ' (ext)' : ''}: *$${parseFloat(p.monto).toLocaleString('es-CL')}*\n`; });
+      md += `\n*Total Pagado:* $${tp.toLocaleString('es-CL')}\n*Presupuesto:* $${presupuesto.toLocaleString('es-CL')}\n`;
     }
     return md;
   }
@@ -1058,11 +1085,11 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
     personal.forEach(p => {
       const { total } = getLiquidacion(p);
       if (total > 0) {
-        md += `▪ ${p.nombre}: *$${total.toLocaleString('es-CL')}*\n`;
+        md += `▪ ${p.nombre.toUpperCase()}: *$${total.toLocaleString('es-CL')}*\n`;
         sum += total;
       }
     });
-    md += `━━━━━━━━━━━━━━━━━━━━\n*Total a Transferir: $${sum.toLocaleString('es-CL')}*`;
+    md += `━━━━━━━━━━━━━━━━━━━━\n> *Total a Transferir: $${sum.toLocaleString('es-CL')} *`;
     return md;
   }
 
@@ -1149,14 +1176,16 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
             }
           </div>
           <div>
-            <div style={{ fontSize: 12, opacity: 0.6 }}>{hayPagos ? 'Pagado real' : 'Calculado'}</div>
-            <div style={{ fontSize: 22, fontWeight: 800 }}>${(hayPagos ? totalPagado : totalCalculado).toLocaleString('es-CL')}</div>
+            <div style={{ fontSize: 12, opacity: 0.6 }}>Pagos realizados</div>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>${totalPagado.toLocaleString('es-CL')}</div>
+            <div style={{ fontSize: 10, opacity: 0.6 }}>Calculado: ${totalCalculado.toLocaleString('es-CL')}</div>
           </div>
           <div>
-            <div style={{ fontSize: 12, opacity: 0.6 }}>Diferencia</div>
+            <div style={{ fontSize: 12, opacity: 0.6 }}>{diferencia > 0 ? 'Exceso' : 'Ahorro'}</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: diferencia > 0 ? '#f87171' : '#4ade80' }}>
-              {hayPagos ? (diferencia > 0 ? '+' : '') + '$' + diferencia.toLocaleString('es-CL') : '—'}
+              ${Math.abs(diferencia).toLocaleString('es-CL')}
             </div>
+            <div style={{ fontSize: 10, opacity: 0.6 }}>{diferencia > 0 ? 'Sobre el presupuesto' : 'Bajo el presupuesto'}</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
@@ -1304,8 +1333,8 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
       if (typeof p.rol === 'string') {
         roles = p.rol.split(',').map(r => r.trim()).join(', ');
       }
-      md += `\n*${p.nombre}* (${roles})\n- Días: ${diasTrabajados}\n- Base: $${sueldoBase.toLocaleString('es-CL')}\n`;
-      Object.values(gruposReemplazando).forEach(g => { md += `- Reemplazó a ${g.persona?.nombre ?? '?'} (días ${g.dias.sort((a, b) => a - b).join(',')}): +$${g.monto.toLocaleString('es-CL')}\n`; });
+      md += `\n*${p.nombre.toUpperCase()}*\n_${roles}_\n▪ *Días:* ${diasTrabajados}\n▪ *Base:* $${sueldoBase.toLocaleString('es-CL')}\n`;
+      Object.values(gruposReemplazando).forEach(g => { md += `▪ *Reemplazó a ${g.persona?.nombre ?? '?'}* (días ${g.dias.sort((a, b) => a - b).join(',')}): +$${g.monto.toLocaleString('es-CL')}\n`; });
       Object.values(gruposReemplazados).forEach(g => { md += `- ${g.persona?.nombre ?? '?'} cubrió días ${g.dias.sort((a, b) => a - b).join(',')}: -$${g.monto.toLocaleString('es-CL')}\n`; });
       ajustesPer.forEach(a => {
         const m = parseFloat(a.monto);
@@ -1313,11 +1342,11 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
       });
       md += `*Total: $${total.toLocaleString('es-CL')}*\n`;
     });
-    if (pagosNomina.length > 0) {
-      const tp = pagosNomina.reduce((s, p) => s + parseFloat(p.monto), 0);
-      md += `\n━━━━━━━━━━━━━━━━━━━━\n*Pagos Reales*\n`;
-      pagosNomina.forEach(p => { md += `• ${p.nombre}${p.es_externo ? ' (ext)' : ''}: $${parseFloat(p.monto).toLocaleString('es-CL')}\n`; });
-      md += `*Total: $${tp.toLocaleString('es-CL')} / Presupuesto: $${presupuesto.toLocaleString('es-CL')}*\n`;
+    const tp = pagosNomina.filter(pn => guardias.some(g => g.id == pn.personal_id)).reduce((s, p) => s + parseFloat(p.monto), 0);
+    if (tp > 0) {
+      md += `\n━━━━━━━━━━━━━━━━━━━━\n*RESUMEN PAGOS REALIZADOS*\n`;
+      pagosNomina.filter(pn => guardias.some(g => g.id == pn.personal_id)).forEach(p => { md += `• ${p.nombre}${p.es_externo ? ' (ext)' : ''}: *$${parseFloat(p.monto).toLocaleString('es-CL')}*\n`; });
+      md += `\n*Total Pagado:* $${tp.toLocaleString('es-CL')}\n*Presupuesto:* $${presupuesto.toLocaleString('es-CL')}\n`;
     }
     return md;
   }
@@ -1333,11 +1362,11 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
     guardias.forEach(p => {
       const { total } = getLiquidacion(p);
       if (total > 0) {
-        md += `▪ ${p.nombre}: *$${total.toLocaleString('es-CL')}*\n`;
+        md += `▪ ${p.nombre.toUpperCase()}: *$${total.toLocaleString('es-CL')}*\n`;
         sum += total;
       }
     });
-    md += `━━━━━━━━━━━━━━━━━━━━\n*Total a Transferir: $${sum.toLocaleString('es-CL')}*`;
+    md += `━━━━━━━━━━━━━━━━━━━━\n> *Total a Transferir: $${sum.toLocaleString('es-CL')} *`;
     return md;
   }
 
@@ -1425,14 +1454,16 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
             }
           </div>
           <div>
-            <div style={{ fontSize: 12, opacity: 0.6 }}>{hayPagos ? 'Pagado real' : 'Calculado'}</div>
-            <div style={{ fontSize: 22, fontWeight: 800 }}>${(hayPagos ? totalPagado : totalCalculado).toLocaleString('es-CL')}</div>
+            <div style={{ fontSize: 12, opacity: 0.6 }}>Pagos realizados</div>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>${totalPagado.toLocaleString('es-CL')}</div>
+            <div style={{ fontSize: 10, opacity: 0.6 }}>Calculado: ${totalCalculado.toLocaleString('es-CL')}</div>
           </div>
           <div>
-            <div style={{ fontSize: 12, opacity: 0.6 }}>Diferencia</div>
+            <div style={{ fontSize: 12, opacity: 0.6 }}>{diferencia > 0 ? 'Exceso' : 'Ahorro'}</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: diferencia > 0 ? '#f87171' : '#4ade80' }}>
-              {hayPagos ? (diferencia > 0 ? '+' : '') + '$' + diferencia.toLocaleString('es-CL') : '—'}
+              ${Math.abs(diferencia).toLocaleString('es-CL')}
             </div>
+            <div style={{ fontSize: 10, opacity: 0.6 }}>{diferencia > 0 ? 'Sobre el presupuesto' : 'Bajo el presupuesto'}</div>
           </div>
         </div>
         <button onClick={copiarMarkdown} style={{ marginTop: 4, padding: '8px 16px', background: copied ? '#4ade80' : 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 8, color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
