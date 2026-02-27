@@ -1038,6 +1038,26 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
     navigator.clipboard.writeText(generarMarkdown()).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); });
   }
 
+  function generarResumenPagos() {
+    const mesLabel = `${MESES_L[mes]} ${anio}`;
+    let md = `*RESUMEN PAGOS NÓMINA — ${mesLabel}*\n━━━━━━━━━━━━━━━━━━━━\n`;
+    let sum = 0;
+    personal.forEach(p => {
+      const { total } = getLiquidacion(p);
+      if (total > 0) {
+        md += `▪ ${p.nombre}: *$${total.toLocaleString('es-CL')}*\n`;
+        sum += total;
+      }
+    });
+    md += `━━━━━━━━━━━━━━━━━━━━\n*Total a Transferir: $${sum.toLocaleString('es-CL')}*`;
+    return md;
+  }
+
+  const [copiedResumen, setCopiedResumen] = useState(false);
+  function copiarResumenPagos() {
+    navigator.clipboard.writeText(generarResumenPagos()).then(() => { setCopiedResumen(true); setTimeout(() => setCopiedResumen(false), 2500); });
+  }
+
   const totalCalculado = personal.reduce((s, p) => s + getLiquidacion(p).costoEmpresa, 0);
   const totalPagado = pagosNomina.reduce((s, p) => s + parseFloat(p.monto), 0);
   const diferencia = totalPagado - presupuesto;
@@ -1126,10 +1146,16 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
             </div>
           </div>
         </div>
-        <button onClick={copiarMarkdown} style={{ marginTop: 4, padding: '8px 16px', background: copied ? '#4ade80' : 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 8, color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-          {copied ? <ShieldCheck size={16} /> : <ImageIcon size={16} />}
-          {copied ? 'Copiado!' : 'Copiar para WhatsApp'}
-        </button>
+        <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+          <button onClick={copiarMarkdown} style={{ flex: 1, padding: '10px 16px', background: copied ? '#4ade80' : 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 10, color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            {copied ? <ShieldCheck size={16} /> : <ImageIcon size={16} />}
+            {copied ? 'Copiado!' : 'Detalle Completo'}
+          </button>
+          <button onClick={copiarResumenPagos} style={{ flex: 1, padding: '10px 16px', background: copiedResumen ? '#fbbf24' : '#f59e0b', border: '1px solid #d97706', borderRadius: 10, color: '#fffbeb', cursor: 'pointer', fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 12px rgba(245, 158, 11, 0.4)' }}>
+            {copiedResumen ? <Check size={16} /> : <DollarSign size={16} />}
+            {copiedResumen ? 'Copiado!' : 'Solo Nombres y Totales'}
+          </button>
+        </div>
       </div>
 
       {/* Liquidación agrupada por roles */}
@@ -1285,6 +1311,26 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
 
   function copiarMarkdown() {
     navigator.clipboard.writeText(generarMarkdown()).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); });
+  }
+
+  function generarResumenPagos() {
+    const mesLabel = `${MESES_L[mes]} ${anio}`;
+    let md = `*RESUMEN PAGOS SEGURIDAD — ${mesLabel}*\n━━━━━━━━━━━━━━━━━━━━\n`;
+    let sum = 0;
+    guardias.forEach(p => {
+      const { total } = getLiquidacion(p);
+      if (total > 0) {
+        md += `▪ ${p.nombre}: *$${total.toLocaleString('es-CL')}*\n`;
+        sum += total;
+      }
+    });
+    md += `━━━━━━━━━━━━━━━━━━━━\n*Total a Transferir: $${sum.toLocaleString('es-CL')}*`;
+    return md;
+  }
+
+  const [copiedResumen, setCopiedResumen] = useState(false);
+  function copiarResumenPagos() {
+    navigator.clipboard.writeText(generarResumenPagos()).then(() => { setCopiedResumen(true); setTimeout(() => setCopiedResumen(false), 2500); });
   }
 
   const totalCalculado = guardias.reduce((s, p) => s + getLiquidacion(p).costoEmpresa, 0);
