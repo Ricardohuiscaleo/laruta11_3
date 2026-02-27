@@ -264,27 +264,32 @@ export default function PersonalApp() {
 
     const tPersonal = turnosFiltrados.filter(t => t.personal_id == p.id);
     const diasNormales = tPersonal.filter(t => t.tipo === 'normal' || t.tipo === 'seguridad').length;
-    // DB CONVENTION: personal_id = TITULAR (absent), reemplazado_por = REPLACER (worker)
-    // Agrupado: días que FUE reemplazado (p is titular -> t.personal_id == p.id)
-    const rawReemplazados = turnosFiltrados.filter(t => (t.tipo === 'reemplazo' || t.tipo === 'reemplazo_seguridad') && t.personal_id == p.id);
+    // Helpers para desentrañar la lógica dividida entre módulos:
+    // Ruta 11 (normal): form Turno guarda personal_id = Replacer, reemplazado_por = Titular
+    // Seguridad (reemplazo_seguridad): modal Turno guarda personal_id = Titular, reemplazado_por = Replacer
+    const asTitular = (t) => t.tipo === 'reemplazo_seguridad' ? t.personal_id : t.reemplazado_por;
+    const asReplacer = (t) => t.tipo === 'reemplazo_seguridad' ? t.reemplazado_por : t.personal_id;
+
+    // Agrupado: días que FUE reemplazado (p is titular)
+    const rawReemplazados = turnosFiltrados.filter(t => (t.tipo === 'reemplazo' || t.tipo === 'reemplazo_seguridad') && asTitular(t) == p.id);
     const diasReemplazados = rawReemplazados.length;
     const gruposReemplazados = {};
     rawReemplazados.forEach(t => {
-      const key = t.reemplazado_por ?? 'ext'; // replacer's id
-      if (!gruposReemplazados[key]) gruposReemplazados[key] = { persona: personal.find(x => x.id == t.reemplazado_por), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
+      const key = asReplacer(t) ?? 'ext'; // ID del replacer
+      if (!gruposReemplazados[key]) gruposReemplazados[key] = { persona: personal.find(x => x.id == asReplacer(t)), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
       gruposReemplazados[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
       gruposReemplazados[key].monto += parseFloat(t.monto_reemplazo || 20000);
     });
 
-    // Agrupado: días que REEMPLAZÓ a otro (p is replacer -> t.reemplazado_por == p.id)
-    const rawReemplazando = turnosFiltrados.filter(t => (t.tipo === 'reemplazo' || t.tipo === 'reemplazo_seguridad') && t.reemplazado_por == p.id);
+    // Agrupado: días que REEMPLAZÓ a otro (p is replacer)
+    const rawReemplazando = turnosFiltrados.filter(t => (t.tipo === 'reemplazo' || t.tipo === 'reemplazo_seguridad') && asReplacer(t) == p.id);
     const reemplazosHechos = rawReemplazando.length;
     const gruposReemplazando = {};
     rawReemplazando.forEach(t => {
-      const key = t.personal_id; // titular's id
-      if (!gruposReemplazando[key]) gruposReemplazando[key] = { persona: personal.find(x => x.id == t.personal_id), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
+      const key = asTitular(t) ?? 'err'; // ID del titular
+      if (!gruposReemplazando[key]) gruposReemplazando[key] = { persona: personal.find(x => x.id == asTitular(t)), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
       gruposReemplazando[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
-      gruposReemplazando[key].monto += parseFloat(t.monto_reemplazo);
+      gruposReemplazando[key].monto += parseFloat(t.monto_reemplazo || 20000);
     });
     const diasTrabajados = modoContexto === 'seguridad'
       ? (30 - diasReemplazados)
@@ -560,7 +565,7 @@ export default function PersonalApp() {
 
             <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>
               <button onClick={() => setModalTurno(null)} style={{ flex: 1, padding: '12px', border: 'none', background: '#f1f3f4', borderRadius: 12, cursor: 'pointer', fontWeight: 600, color: '#444746' }}>Cancelar</button>
-              <button onClick={saveTurno} disabled={saving || !formTurno.personal_id} style={{ flex: 1, padding: '12px', border: 'none', background: '#1a73e8', borderRadius: 12, cursor: 'pointer', fontWeight: 600, color: 'white', opacity: (saving || !formTurno.personal_id) ? 0.6 : 1 }}>
+              <button onClick={saveTurno} disabled={saving || !formTurno.personal_id || (formTurno.tipo.includes('reemplazo') && !formTurno.reemplazado_por)} style={{ flex: 1, padding: '12px', border: 'none', background: '#1a73e8', borderRadius: 12, cursor: 'pointer', fontWeight: 600, color: 'white', opacity: (saving || !formTurno.personal_id || (formTurno.tipo.includes('reemplazo') && !formTurno.reemplazado_por)) ? 0.6 : 1 }}>
                 {saving ? 'Guardando...' : 'Guardar'}
               </button>
             </div>
