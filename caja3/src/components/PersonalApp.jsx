@@ -701,7 +701,7 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
     const MESES_L = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     const emojis = { 'Ricardo': '🤖', 'Andrés': '🧑🏻', 'Andres': '🧑🏻', 'Camila': '👩🏽', 'Neit': '👩🏻', 'Gabriel': '🧑🏿', 'Claudio': '🧓🏽' };
 
-    let md = `🏦 *RESUMEN GLOBAL PAGOS*\n📅 _${MESES_L[mes] ? MESES_L[mes].toUpperCase() : ''} ${anio}_\n━━━━━━━━━━━━━━━━━━━━\n`;
+    let md = `🏦 *RESUMEN GLOBAL PAGOS*\n📅 _${MESES_L[mes] ? MESES_L[mes].toUpperCase() : ''} ${anio}_\n━━━━━━━━━━━━\n`;
     let sum = 0;
     const items = allData.filter(item => item.granTotal > 0);
     const montosStr = items.map(item => `$${item.granTotal.toLocaleString('es-CL')}`);
@@ -715,11 +715,9 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
       md += `- ${emoji} _${nombre.toUpperCase()}:_ \`\`\`${montoPad}\`\`\`\n`;
       sum += item.granTotal;
     });
-    md += `━━━━━━━━━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
+    md += `━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
 
-    const quotedMd = md.split('\n').map(l => l ? `> ${l}` : '>').join('\n');
-
-    navigator.clipboard.writeText(quotedMd).then(() => {
+    navigator.clipboard.writeText(md).then(() => {
       setCopiedGlobal(true);
       setTimeout(() => setCopiedGlobal(false), 2500);
       showToast('Copiado global para WhatsApp');
@@ -1093,7 +1091,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
   function generarResumenPagos() {
     const emojis = { 'Ricardo': '🤖', 'Andrés': '🧑🏻', 'Andres': '🧑🏻', 'Camila': '👩🏽', 'Neit': '👩🏻', 'Gabriel': '🧑🏿', 'Claudio': '🧓🏽' };
     const mesLabel = `${MESES_L[mes]} ${anio}`;
-    let md = `🏦 *RESUMEN PAGOS NÓMINA*\n📅 _${mesLabel.toUpperCase()}_\n━━━━━━━━━━━━━━━━━━━━\n`;
+    let md = `🏦 *RESUMEN PAGOS NÓMINA*\n📅 _${mesLabel.toUpperCase()}_\n━━━━━━━━━━━━\n`;
     let sum = 0;
     const items = personal.filter(p => getLiquidacion(p).total > 0);
     const montosStr = items.map(p => `$${getLiquidacion(p).total.toLocaleString('es-CL')}`);
@@ -1106,8 +1104,8 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
       md += `- ${emoji} _${p.nombre.toUpperCase()}:_ \`\`\`${montoPad}\`\`\`\n`;
       sum += total;
     });
-    md += `━━━━━━━━━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
-    return md.split('\n').map(l => l ? `> ${l}` : '>').join('\n');
+    md += `━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
+    return md;
   }
 
   const [copiedResumen, setCopiedResumen] = useState(false);
@@ -1376,7 +1374,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
   function generarResumenPagos() {
     const emojis = { 'Ricardo': '🤖', 'Andrés': '🧑🏻', 'Andres': '🧑🏻', 'Camila': '👩🏽', 'Neit': '👩🏻', 'Gabriel': '🧑🏿', 'Claudio': '🧓🏽' };
     const mesLabel = `${MESES_L[mes]} ${anio}`;
-    let md = `🏦 *RESUMEN PAGOS SEGURIDAD*\n📅 _${mesLabel.toUpperCase()}_\n━━━━━━━━━━━━━━\n`;
+    let md = `🏦 *RESUMEN PAGOS SEGURIDAD*\n📅 _${mesLabel.toUpperCase()}_\n━━━━━━━━━━━━\n`;
     let sum = 0;
     const items = guardias.filter(p => getLiquidacion(p).total > 0);
     const montosStr = items.map(p => `$${getLiquidacion(p).total.toLocaleString('es-CL')}`);
@@ -1389,8 +1387,8 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
       md += `- ${emoji} _${p.nombre.toUpperCase()}:_ \`\`\`${montoPad}\`\`\`\n`;
       sum += total;
     });
-    md += `━━━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
-    return md.split('\n').map(l => l ? `> ${l}` : '>').join('\n');
+    md += `━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
+    return md;
   }
 
   const [copiedResumen, setCopiedResumen] = useState(false);
