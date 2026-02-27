@@ -1402,11 +1402,15 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                         <span style={{ fontSize: 13, fontWeight: 600 }}>${sueldoBase.toLocaleString('es-CL')}</span>
                       </div>
                       {Object.values(gruposReemplazando).map((g, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #86efac', backgroundColor: '#dcfce7', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                          <span style={{ fontSize: 13, color: '#14532d', fontWeight: 600 }}>
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', border: `1px solid ${g.pago_por === 'empresa_adelanto' ? '#a5b4fc' : '#86efac'}`, backgroundColor: g.pago_por === 'empresa_adelanto' ? '#eef2ff' : '#dcfce7', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                          <span style={{ fontSize: 13, color: g.pago_por === 'empresa_adelanto' ? '#3730a3' : '#14532d', fontWeight: 600 }}>
                             ↔ Reemplazó a {g.persona?.nombre ?? '?'} {g.dias.length} días
+                            {g.pago_por === 'empresa_adelanto' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#c7d2fe', color: '#4338ca', fontWeight: 800, border: '1px solid #a5b4fc' }}>✅ YA PAGADO</span>}
                           </span>
-                          <span style={{ fontSize: 13, fontWeight: 800, color: '#166534' }}>+${g.monto.toLocaleString('es-CL')}</span>
+                          {g.pago_por === 'empresa_adelanto'
+                            ? <span style={{ fontSize: 13, color: '#6366f1', fontWeight: 600 }}>${g.monto.toLocaleString('es-CL')}</span>
+                            : <span style={{ fontSize: 13, fontWeight: 800, color: '#166534' }}>+${g.monto.toLocaleString('es-CL')}</span>
+                          }
                         </div>
                       ))}
                       {Object.values(gruposReemplazados).map((g, i) => (
@@ -1414,8 +1418,9 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                           <span style={{ fontSize: 13, color: '#7f1d1d', fontWeight: 600 }}>
                             {g.persona?.nombre ?? '?'} cubrió {g.dias.length} días
                             {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 800, border: '1px solid #fcd34d' }}> PAGO DIRECTO</span>}
+                            {g.pago_por === 'empresa_adelanto' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#c7d2fe', color: '#4338ca', fontWeight: 800, border: '1px solid #a5b4fc' }}>ADELANTO</span>}
                           </span>
-                          {g.pago_por === 'empresa'
+                          {(g.pago_por === 'empresa' || g.pago_por === 'empresa_adelanto')
                             ? <span style={{ fontSize: 13, fontWeight: 800, color: '#991b1b' }}>-${g.monto.toLocaleString('es-CL')}</span>
                             : <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>—</span>
                           }
