@@ -264,77 +264,68 @@ export default function PersonalApp() {
 
     const tPersonal = turnosFiltrados.filter(t => t.personal_id == p.id);
     const diasNormales = tPersonal.filter(t => t.tipo === 'normal' || t.tipo === 'seguridad').length;
-    // Lógica Unificada: personal_id = Titular (Ausente), reemplazado_por = Replacer (Trabaja)
-    // Se aplica tanto a Ruta 11 como a Seguridad para evitar inversiones en el cálculo.
     const asTitular = (t) => t.personal_id;
     const asReplacer = (t) => t.reemplazado_por;
 
-    // Agrupado: días que FUE reemplazado (p is titular)
     const rawReemplazados = turnosFiltrados.filter(t => (t.tipo === 'reemplazo' || t.tipo === 'reemplazo_seguridad') && asTitular(t) == p.id);
     const diasReemplazados = rawReemplazados.length;
     const gruposReemplazados = {};
     rawReemplazados.forEach(t => {
-      const key = asReplacer(t) ?? 'ext'; // ID del replacer
+      const key = asReplacer(t) ?? 'ext';
       if (!gruposReemplazados[key]) gruposReemplazados[key] = { persona: personal.find(x => x.id == asReplacer(t)), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
       gruposReemplazados[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
       gruposReemplazados[key].monto += parseFloat(t.monto_reemplazo || 20000);
     });
 
-    // Agrupado: días que REEMPLAZÓ a otro (p is replacer)
     const rawReemplazando = turnosFiltrados.filter(t => (t.tipo === 'reemplazo' || t.tipo === 'reemplazo_seguridad') && asReplacer(t) == p.id);
     const reemplazosHechos = rawReemplazando.length;
     const gruposReemplazando = {};
     rawReemplazando.forEach(t => {
-      const key = asTitular(t) ?? 'err'; // ID del titular
+      const key = asTitular(t) ?? 'err';
       if (!gruposReemplazando[key]) gruposReemplazando[key] = { persona: personal.find(x => x.id == asTitular(t)), dias: [], monto: 0, pago_por: t.pago_por || 'empresa' };
       gruposReemplazando[key].dias.push(parseInt(t.fecha.split('T')[0].split('-')[2]));
       gruposReemplazando[key].monto += parseFloat(t.monto_reemplazo || 20000);
     });
-    const diasTrabajados = modoContexto === 'seguridad'
-      ? (30 - diasReemplazados)
-      : (diasNormales + reemplazosHechos);
 
-    // Ajustes per context object... just leave them global or split them?
-    const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
-    const totalAjustes = ajustesPer.reduce((s, a) => s + parseFloat(a.monto), 0);
-    const costoAjustes = ajustesPer.reduce((s, a) => {
-      const m = parseFloat(a.monto);
-      if (m > 0) return s + m; // Bonos, etc. (company spends more)
-      const desc = (a.concepto || '').toLowerCase();
-      // Si es un adelanto o préstamo, la empresa igual gastó esa plata (solo que antes). NO RESTAR DEL PRESUPUESTO GLOBAL.
-      if (desc.includes('adelanto') || desc.includes('anticipo') || desc.includes('prestamo') || desc.includes('préstamo')) return s;
-      return s + m; // Multas o descuentos reales (la plata se queda en la caja de la empresa). RESTAR DEL PRESUPUESTO.
-    }, 0);
+    const diasTrabajados = modoContexto === 'seguridad' ? (30 - diasReemplazados) : (diasNormales + reemplazosHechos);
 
-    const primerRol = typeof p.rol === 'string' ? p.rol.split(',')[0].trim() : (Array.isArray(p.rol) ? p.rol[0] : '');
-    const isMainSeguridad = primerRol === 'seguridad';
-
-    // Asignar el sueldo de acuerdo al contexto de la vista (La Ruta 11 vs Seguridad)
+    // Salarios Base
     let sueldoBase = 0;
     if (modoContexto === 'seguridad') {
       sueldoBase = parseFloat(p.sueldo_base_seguridad) || 0;
-    } else {
-      // Para Ruta 11: buscar el primer sueldo base de rol que tenga valor (admin > cajero > planchero)
+    } else if (modoContexto === 'ruta11') {
       const roles = typeof p.rol === 'string' ? p.rol.split(',').map(r => r.trim()) : (Array.isArray(p.rol) ? p.rol : []);
-      if (roles.includes('administrador') && parseFloat(p.sueldo_base_admin) > 0) {
-        sueldoBase = parseFloat(p.sueldo_base_admin);
-      } else if (roles.includes('cajero') && parseFloat(p.sueldo_base_cajero) > 0) {
-        sueldoBase = parseFloat(p.sueldo_base_cajero);
-      } else if (roles.includes('planchero') && parseFloat(p.sueldo_base_planchero) > 0) {
-        sueldoBase = parseFloat(p.sueldo_base_planchero);
-      }
-      // Guardias puros (solo seguridad) en Ruta 11 → 0
+      if (roles.includes('administrador')) sueldoBase = parseFloat(p.sueldo_base_admin) || 0;
+      else if (roles.includes('cajero')) sueldoBase = parseFloat(p.sueldo_base_cajero) || 0;
+      else if (roles.includes('planchero')) sueldoBase = parseFloat(p.sueldo_base_planchero) || 0;
+    } else {
+      // modoContexto === 'all'
+      const roles = typeof p.rol === 'string' ? p.rol.split(',').map(r => r.trim()) : (Array.isArray(p.rol) ? p.rol : []);
+      let b11 = 0;
+      if (roles.includes('administrador')) b11 = parseFloat(p.sueldo_base_admin) || 0;
+      else if (roles.includes('cajero')) b11 = parseFloat(p.sueldo_base_cajero) || 0;
+      else if (roles.includes('planchero')) b11 = parseFloat(p.sueldo_base_planchero) || 0;
+      sueldoBase = b11 + (parseFloat(p.sueldo_base_seguridad) || 0);
     }
 
-    Object.keys(gruposReemplazados).forEach(k => gruposReemplazados[k].monto = Math.round(gruposReemplazados[k].monto));
-    Object.keys(gruposReemplazando).forEach(k => gruposReemplazando[k].monto = Math.round(gruposReemplazando[k].monto));
+    // Ajustes: Solo restar una vez. Por defecto en 'all' o 'ruta11'.
+    const hasRuta11 = (typeof p.rol === 'string' ? p.rol : '').match(/administrador|cajero|planchero/);
+    const includeAjustes = modoContexto === 'all' || modoContexto === 'ruta11' || (modoContexto === 'seguridad' && !hasRuta11);
 
-    // Reemplazando: solo sumar si pago_por='empresa' (fin de mes, aún no pagado)
-    // empresa_adelanto = ya se pagó por adelantado, no sumar al reemplazante
+    const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
+    const totalAjustes = includeAjustes ? ajustesPer.reduce((s, a) => s + parseFloat(a.monto), 0) : 0;
+    const costoAjustes = includeAjustes ? ajustesPer.reduce((s, a) => {
+      const m = parseFloat(a.monto);
+      if (m > 0) return s + m;
+      const desc = (a.concepto || '').toLowerCase();
+      if (desc.includes('adelanto') || desc.includes('anticipo') || desc.includes('prestamo')) return s;
+      return s + m;
+    }, 0) : 0;
+
     const totalReemplazando = Object.values(gruposReemplazando).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
     const totalReemplazandoCosto = Object.values(gruposReemplazando).filter(g => g.pago_por === 'empresa' || g.pago_por === 'empresa_adelanto').reduce((s, g) => s + g.monto, 0);
-    // Reemplazados: descontar si empresa O empresa_adelanto (en ambos casos el titular pierde ese dinero)
     const totalReemplazados = Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa' || g.pago_por === 'empresa_adelanto').reduce((s, g) => s + g.monto, 0);
+
     const total = Math.round(sueldoBase + totalReemplazando - totalReemplazados + totalAjustes);
     const costoEmpresa = Math.round(sueldoBase + totalReemplazandoCosto - totalReemplazados + costoAjustes);
     const montoAdelantos = Math.max(0, costoEmpresa - total);
@@ -691,13 +682,15 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
     const pago11 = pagosNomina.ruta11.find(x => x.personal_id == p.id);
     const pagoSeg = pagosNomina.seguridad.find(x => x.personal_id == p.id);
 
+    const lAll = getLiquidacion(p, 'all');
+
     return {
       persona: p,
       total11: lRuta11.total,
       totalSeg: lSeguridad.total,
-      granTotal: lRuta11.total + lSeguridad.total,
-      granCosto: lRuta11.costoEmpresa + lSeguridad.costoEmpresa,
-      granAdelantos: lRuta11.montoAdelantos + lSeguridad.montoAdelantos,
+      granTotal: lAll.total,
+      granCosto: lAll.costoEmpresa,
+      granAdelantos: lAll.montoAdelantos,
       pagado11: !!pago11,
       pagadoSeg: !!pagoSeg,
       totalPagado: (pago11 ? parseFloat(pago11.monto) : 0) + (pagoSeg ? parseFloat(pagoSeg.monto) : 0)
@@ -730,7 +723,7 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
     presupuesto: (presupuestoNomina.ruta11 || 0) + (presupuestoNomina.seguridad || 0)
   };
 
-  const saldoGlobal = stats.presupuesto - stats.totalCosto;
+  const saldoGlobal = stats.presupuesto - (stats.totalPagado + stats.totalAdelantos);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, animation: 'fadeIn 0.4s ease-out' }}>
@@ -1109,7 +1102,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
   const totalCalculado = personal.reduce((s, p) => s + getLiquidacion(p).costoEmpresa, 0);
   const totalAdelantos = personal.reduce((s, p) => s + getLiquidacion(p).montoAdelantos, 0);
   const totalPagado = pagosNomina.reduce((s, p) => s + parseFloat(p.monto), 0);
-  const saldo = presupuesto - totalCalculado;
+  const saldo = presupuesto - (totalPagado + totalAdelantos);
   const hayPagos = pagosNomina.length > 0;
 
   function generarNotas(p) {
@@ -1388,7 +1381,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
   const totalAdelantos = guardias.reduce((s, p) => s + getLiquidacion(p).montoAdelantos, 0);
   const pagosGuardias = pagosNomina.filter(pn => guardias.some(g => g.id == pn.personal_id));
   const totalPagado = pagosGuardias.reduce((s, p) => s + parseFloat(p.monto), 0);
-  const saldo = presupuesto - totalCalculado;
+  const saldo = presupuesto - (totalPagado + totalAdelantos);
   const hayPagos = pagosGuardias.length > 0;
 
   function generarNotas(p) {
