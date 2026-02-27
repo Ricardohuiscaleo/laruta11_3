@@ -1632,6 +1632,7 @@
               const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
               const daysPassed = today.getDate();
               const dailyGoal = breakEvenWith10Percent / daysInMonth;
+              const dailyAverage = totalSales / daysPassed;
               const expectedToDate = dailyGoal * daysPassed;
               const deviation = totalSales - expectedToDate;
               const deviationPercent = ((deviation / expectedToDate) * 100).toFixed(1);
@@ -1673,25 +1674,11 @@
               const dailyAvgEl = document.getElementById('dash-daily-avg');
               const dailyMetaEl = document.getElementById('dash-daily-meta');
               
-              // Actualizar tarjeta de Punto de Equilibrio
-              const breakevenCard = document.getElementById('dash-breakeven-card');
-              const breakevenAmount = document.getElementById('dash-breakeven-amount');
-              const breakevenPercent = document.getElementById('dash-breakeven-percent');
-              
-              if (breakevenAmount) {
-                breakevenAmount.textContent = additionalSalesNeeded > 0 ? '⚠️ $' + new Intl.NumberFormat('es-CL').format(Math.round(additionalSalesNeeded)) : '✅ $0';
-                breakevenAmount.style.color = additionalSalesNeeded > 0 ? '#dc2626' : '#10b981';
-              }
-              if (breakevenPercent) {
-                breakevenPercent.textContent = percentOfBreakeven.toFixed(1) + '% del equilibrio alcanzado';
-              }
-              if (breakevenCard) {
-                breakevenCard.style.borderLeftColor = percentOfBreakeven >= 100 ? '#10b981' : percentOfBreakeven >= 80 ? '#f59e0b' : '#dc2626';
-              }
+              // (La actualización de la tarjeta principal de punto de equilibrio ahora la maneja updateBreakevenUI)
               
               // Actualizar 6 mini KPIs con porcentajes
               const dailyPercent = dailyGoal > 0 ? ((dailyAverage / dailyGoal) * 100).toFixed(1) : 0;
-              const comprasPercent = totalSales > 0 ? ((totalCompras / totalSales) * 100).toFixed(1) : 0;
+              const comprasPercent = totalSales > 0 ? (((window.dashTotalCompras || 0) / totalSales) * 100).toFixed(1) : 0;
               // Margen Operativo se actualiza desde loadOperationalCards() con datos de API
               const monthlyProgress = breakEvenWith10Percent > 0 ? ((totalSales / breakEvenWith10Percent) * 100).toFixed(1) : 0;
               const effectiveness = expectedToDate > 0 ? ((totalSales / expectedToDate) * 100).toFixed(1) : 0;
