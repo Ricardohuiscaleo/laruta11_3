@@ -5301,9 +5301,12 @@
     };
     
     window.createAnalyticsCharts = function(data) {
-      // Destruir gráficos existentes
-      Object.values(charts).forEach(chart => {
-        if (chart) chart.destroy();
+      // Destruir solo los gráficos de analytics
+      ['visits', 'interactions', 'products', 'hourly', 'devices', 'conversion'].forEach(key => {
+        if (charts[key]) {
+          charts[key].destroy();
+          charts[key] = null;
+        }
       });
       
       // 1. Gráfico de visitas últimos 7 días
