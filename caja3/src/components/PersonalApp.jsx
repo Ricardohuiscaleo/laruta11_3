@@ -338,7 +338,8 @@ export default function PersonalApp() {
     const totalReemplazados = Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa' || g.pago_por === 'empresa_adelanto').reduce((s, g) => s + g.monto, 0);
     const total = Math.round(sueldoBase + totalReemplazando - totalReemplazados + totalAjustes);
     const costoEmpresa = Math.round(sueldoBase + totalReemplazandoCosto - totalReemplazados + costoAjustes);
-    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplazados, gruposReemplazando, total, costoEmpresa };
+    const montoAdelantos = Math.max(0, costoEmpresa - total);
+    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplazados, gruposReemplazando, total, costoEmpresa, montoAdelantos };
   }
 
   const administradores = personal.filter(p => p.rol?.includes('administrador') && p.activo == 1);
@@ -697,6 +698,7 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
       totalSeg: lSeguridad.total,
       granTotal: lRuta11.total + lSeguridad.total,
       granCosto: lRuta11.costoEmpresa + lSeguridad.costoEmpresa,
+      granAdelantos: lRuta11.montoAdelantos + lSeguridad.montoAdelantos,
       pagado11: !!pago11,
       pagadoSeg: !!pagoSeg,
       totalPagado: (pago11 ? lRuta11.total : 0) + (pagoSeg ? lSeguridad.total : 0)
@@ -725,26 +727,53 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
     totalAPagar: allData.reduce((s, i) => s + i.granTotal, 0),
     totalPagado: allData.reduce((s, i) => s + i.totalPagado, 0),
     totalCosto: allData.reduce((s, i) => s + i.granCosto, 0),
+    totalAdelantos: allData.reduce((s, i) => s + i.granAdelantos, 0),
     presupuesto: (presupuestoNomina.ruta11 || 0) + (presupuestoNomina.seguridad || 0)
   };
 
+  const diferenciaGlobal = stats.totalCosto - stats.presupuesto;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, animation: 'fadeIn 0.4s ease-out' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#1a73e8' }}>Nómina del Mes</h2>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            onClick={copiarResumenGlobal}
-            style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid #f59e0b', background: copiedGlobal ? '#fbbf24' : 'transparent', color: copiedGlobal ? 'white' : '#d97706', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
-          >
-            {copiedGlobal ? <Check size={16} /> : <DollarSign size={16} />} Solo Nombres y Totales
-          </button>
-          <button
-            onClick={() => setModalEmail({ type: 'massive' })}
-            style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid #1a73e8', background: 'transparent', color: '#1a73e8', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
-          >
-            <Mail size={16} /> Notificar Masivo
-          </button>
+      {/* Global Header Similar to Ruta 11 */}
+      <div style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)', borderRadius: 24, padding: '24px 28px', color: 'white', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 12px 32px rgba(30,64,175,0.2)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ background: 'rgba(255,255,255,0.2)', padding: 10, borderRadius: 14 }}>
+              <Users size={24} />
+            </div>
+            <div>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: '-0.3px' }}>Resumen Nómina General</h2>
+              <div style={{ fontSize: 13, opacity: 0.8 }}>Febrero 2026 · {allData.length} Trabajadores Activos</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={copiarResumenGlobal} style={{ padding: '10px 18px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.3)', background: copiedGlobal ? '#4ade80' : 'rgba(255,255,255,0.15)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}>
+              {copiedGlobal ? <Check size={16} /> : <DollarSign size={16} />} {copiedGlobal ? 'Copiado!' : 'Solo Nombres y Totales'}
+            </button>
+            <button onClick={() => setModalEmail({ type: 'massive' })} style={{ padding: '10px 18px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.15)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}>
+              <Mail size={16} /> Notificar Masivo
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 20 }}>
+          <div>
+            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>Presupuesto Global</div>
+            <div style={{ fontSize: 24, fontWeight: 900 }}>${stats.presupuesto.toLocaleString('es-CL')}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>Pagos realizados</div>
+            <div style={{ fontSize: 24, fontWeight: 900 }}>${(stats.totalPagado + stats.totalAdelantos).toLocaleString('es-CL')}</div>
+            <div style={{ fontSize: 10, opacity: 0.7 }}>Comprometido: ${stats.totalCosto.toLocaleString('es-CL')}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>{diferenciaGlobal > 0 ? 'Exceso' : 'Presupuesto Libre'}</div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: diferenciaGlobal > 0 ? '#fca5a5' : '#4ade80' }}>
+              ${Math.abs(diferenciaGlobal).toLocaleString('es-CL')}
+            </div>
+            <div style={{ fontSize: 10, opacity: 0.7 }}>{diferenciaGlobal > 0 ? 'Sobre el límite' : 'Disponible'}</div>
+          </div>
         </div>
       </div>
 
@@ -761,29 +790,7 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
         ))}
       </div>
 
-      {/* Massive Summary Card */}
-      <div style={{ background: '#1a73e8', borderRadius: 24, padding: 32, color: 'white', marginTop: 24, boxShadow: '0 12px 32px rgba(26,115,232,0.3)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap-reverse', gap: 16 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, opacity: 0.9, fontWeight: 500 }}>
-              {stats.totalCosto <= stats.presupuesto ? (
-                <>Costo Total Nómina es el esperado. <ShieldCheck size={20} color="#4ade80" /></>
-              ) : (
-                <>Costo Total Nómina excede el presupuesto. <AlertCircle size={20} color="#fba918" /></>
-              )}
-            </div>
-            <div style={{ fontSize: 40, fontWeight: 800, marginTop: 4 }}>
-              ${Math.round(stats.totalCosto).toLocaleString('es-CL')}
-            </div>
-            <div style={{ fontSize: 16, opacity: 0.8, fontWeight: 500, marginTop: 8 }}>
-              Pagos realizados: ${Math.round(stats.totalPagado).toLocaleString('es-CL')}
-            </div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.15)', padding: '6px 14px', borderRadius: 16, fontSize: 14, fontWeight: 600 }}>
-            {stats.presupuesto - stats.totalCosto >= 0 ? 'Presupuesto disponible:' : 'Exceso sobre presupuesto:'} ${Math.abs(Math.round(stats.presupuesto - stats.totalCosto)).toLocaleString('es-CL')}
-          </div>
-        </div>
-      </div>
+
 
       {modalEmail && <EmailPreviewModal config={modalEmail} onClose={() => setModalEmail(null)} mes={mes} anio={anio} />}
     </div>
@@ -1101,6 +1108,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
   }
 
   const totalCalculado = personal.reduce((s, p) => s + getLiquidacion(p).costoEmpresa, 0);
+  const totalAdelantos = personal.reduce((s, p) => s + getLiquidacion(p).montoAdelantos, 0);
   const totalPagado = pagosNomina.reduce((s, p) => s + parseFloat(p.monto), 0);
   const diferencia = totalCalculado - presupuesto;
   const hayPagos = pagosNomina.length > 0;
@@ -1179,7 +1187,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
           </div>
           <div>
             <div style={{ fontSize: 12, opacity: 0.6 }}>Pagos realizados</div>
-            <div style={{ fontSize: 22, fontWeight: 800 }}>${totalPagado.toLocaleString('es-CL')}</div>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>${(totalPagado + totalAdelantos).toLocaleString('es-CL')}</div>
             <div style={{ fontSize: 10, opacity: 0.6 }}>Calculado: ${totalCalculado.toLocaleString('es-CL')}</div>
           </div>
           <div>
@@ -1378,6 +1386,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
   }
 
   const totalCalculado = guardias.reduce((s, p) => s + getLiquidacion(p).costoEmpresa, 0);
+  const totalAdelantos = guardias.reduce((s, p) => s + getLiquidacion(p).montoAdelantos, 0);
   const pagosGuardias = pagosNomina.filter(pn => guardias.some(g => g.id == pn.personal_id));
   const totalPagado = pagosGuardias.reduce((s, p) => s + parseFloat(p.monto), 0);
   const diferencia = totalCalculado - presupuesto;
@@ -1457,7 +1466,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
           </div>
           <div>
             <div style={{ fontSize: 12, opacity: 0.6 }}>Pagos realizados</div>
-            <div style={{ fontSize: 22, fontWeight: 800 }}>${totalPagado.toLocaleString('es-CL')}</div>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>${(totalPagado + totalAdelantos).toLocaleString('es-CL')}</div>
             <div style={{ fontSize: 10, opacity: 0.6 }}>Calculado: ${totalCalculado.toLocaleString('es-CL')}</div>
           </div>
           <div>
