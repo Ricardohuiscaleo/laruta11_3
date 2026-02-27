@@ -264,11 +264,10 @@ export default function PersonalApp() {
 
     const tPersonal = turnosFiltrados.filter(t => t.personal_id == p.id);
     const diasNormales = tPersonal.filter(t => t.tipo === 'normal' || t.tipo === 'seguridad').length;
-    // Helpers para desentrañar la lógica dividida entre módulos:
-    // Ruta 11 (normal): form Turno guarda personal_id = Replacer, reemplazado_por = Titular
-    // Seguridad (reemplazo_seguridad): modal Turno guarda personal_id = Titular, reemplazado_por = Replacer
-    const asTitular = (t) => t.tipo === 'reemplazo_seguridad' ? t.personal_id : t.reemplazado_por;
-    const asReplacer = (t) => t.tipo === 'reemplazo_seguridad' ? t.reemplazado_por : t.personal_id;
+    // Lógica Unificada: personal_id = Titular (Ausente), reemplazado_por = Replacer (Trabaja)
+    // Se aplica tanto a Ruta 11 como a Seguridad para evitar inversiones en el cálculo.
+    const asTitular = (t) => t.personal_id;
+    const asReplacer = (t) => t.reemplazado_por;
 
     // Agrupado: días que FUE reemplazado (p is titular)
     const rawReemplazados = turnosFiltrados.filter(t => (t.tipo === 'reemplazo' || t.tipo === 'reemplazo_seguridad') && asTitular(t) == p.id);
@@ -498,7 +497,7 @@ export default function PersonalApp() {
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>{modalTurno?.isSeguridad ? 'Guardia Titular (Ausente)' : 'Persona'}</label>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Titular (Ausente)</label>
               <select value={formTurno.personal_id} onChange={e => setFormTurno(f => ({ ...f, personal_id: e.target.value }))}
                 style={{ width: '100%', padding: '10px 14px', border: '1px solid #e3e3e3', borderRadius: 12, fontSize: 14, outline: 'none', background: modalTurno?.isSeguridad && formTurno.personal_id ? '#f8f9fa' : 'white' }}
                 disabled={modalTurno?.isSeguridad && !!formTurno.personal_id}>
@@ -529,7 +528,7 @@ export default function PersonalApp() {
                 <div style={{ fontSize: 13, color: '#9a3412', marginBottom: 12 }}>Detalles del Reemplazo</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#9a3412', textTransform: 'uppercase', marginBottom: 4 }}>{modalTurno?.isSeguridad ? '¿Quién lo reemplaza?' : '¿A quién reemplaza?'}</label>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#9a3412', textTransform: 'uppercase', marginBottom: 4 }}>¿Quién lo reemplaza? (Reemplazante)</label>
                     <select value={formTurno.reemplazado_por} onChange={e => setFormTurno(f => ({ ...f, reemplazado_por: e.target.value }))}
                       style={{ width: '100%', padding: '8px 12px', border: '1px solid #fdba74', borderRadius: 10, fontSize: 13, background: 'white' }}>
                       <option value="">Seleccionar...</option>
