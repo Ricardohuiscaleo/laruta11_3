@@ -7,22 +7,31 @@ header('Access-Control-Allow-Headers: Content-Type');
 require_once __DIR__ . '/../gmail/get_token_db.php';
 
 $config = null;
-foreach ([__DIR__.'/../../public/config.php', __DIR__.'/../config.php', __DIR__.'/../../config.php', __DIR__.'/../../../config.php', __DIR__.'/../../../../config.php'] as $p) {
-    if (file_exists($p)) { $config = require_once $p; break; }
+foreach ([__DIR__ . '/../../public/config.php', __DIR__ . '/../config.php', __DIR__ . '/../../config.php', __DIR__ . '/../../../config.php', __DIR__ . '/../../../../config.php'] as $p) {
+  if (file_exists($p)) {
+    $config = require_once $p;
+    break;
+  }
 }
-if (!$config) { echo json_encode(['success'=>false,'error'=>'Config no encontrado']); exit; }
+if (!$config) {
+  echo json_encode(['success' => false, 'error' => 'Config no encontrado']);
+  exit;
+}
 
 $input = json_decode(file_get_contents('php://input'), true);
 $personal_id = intval($input['personal_id'] ?? 0);
 $mes = $input['mes'] ?? date('Y-m'); // YYYY-MM
 
 if (!$personal_id || !$mes) {
-    echo json_encode(['success'=>false,'error'=>'personal_id y mes requeridos']);
-    exit;
+  echo json_encode(['success' => false, 'error' => 'personal_id y mes requeridos']);
+  exit;
 }
 
 $conn = mysqli_connect($config['app_db_host'], $config['app_db_user'], $config['app_db_pass'], $config['app_db_name']);
-if (!$conn) { echo json_encode(['success'=>false,'error'=>'Error BD']); exit; }
+if (!$conn) {
+  echo json_encode(['success' => false, 'error' => 'Error BD']);
+  exit;
+}
 
 // Datos del colaborador
 $stmt = mysqli_prepare($conn, "SELECT * FROM personal WHERE id = ?");
@@ -31,8 +40,8 @@ mysqli_stmt_execute($stmt);
 $persona = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 
 if (!$persona || !$persona['email']) {
-    echo json_encode(['success'=>false,'error'=>'Colaborador no encontrado o sin email']);
-    exit;
+  echo json_encode(['success' => false, 'error' => 'Colaborador no encontrado o sin email']);
+  exit;
 }
 
 $mesDate = $mes . '-01';
@@ -43,7 +52,8 @@ mysqli_stmt_bind_param($stmt2, 'is', $personal_id, $mesDate);
 mysqli_stmt_execute($stmt2);
 $ajustes = mysqli_stmt_get_result($stmt2);
 $ajustesList = [];
-while ($row = mysqli_fetch_assoc($ajustes)) $ajustesList[] = $row;
+while ($row = mysqli_fetch_assoc($ajustes))
+  $ajustesList[] = $row;
 
 // Pago real registrado (si existe)
 $stmt3 = mysqli_prepare($conn, "SELECT * FROM pagos_nomina WHERE personal_id = ? AND mes = ? LIMIT 1");
@@ -51,12 +61,12 @@ mysqli_stmt_bind_param($stmt3, 'is', $personal_id, $mesDate);
 mysqli_stmt_execute($stmt3);
 $pagoReal = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt3));
 
-$sueldoBase = floatval($persona['sueldo_base']);
+$sueldoBase = floatval($persona['sueldo_base_cajero'] ?? 0) + floatval($persona['sueldo_base_planchero'] ?? 0) + floatval($persona['sueldo_base_admin'] ?? 0) + floatval($persona['sueldo_base_seguridad'] ?? 0);
 $totalAjustes = array_reduce($ajustesList, fn($s, $a) => $s + floatval($a['monto']), 0);
 $total = $sueldoBase + $totalAjustes;
 $montoFinal = $pagoReal ? floatval($pagoReal['monto']) : $total;
 
-$mesesNombres = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+$mesesNombres = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 $mesNum = intval(substr($mes, 5, 2));
 $anio = substr($mes, 0, 4);
 $mesLabel = ucfirst($mesesNombres[$mesNum - 1]) . ' ' . $anio;
@@ -67,10 +77,10 @@ $rolLabel = ucfirst($persona['rol']);
 // Filas de ajustes
 $ajustesHtml = '';
 foreach ($ajustesList as $a) {
-    $m = floatval($a['monto']);
-    $color = $m < 0 ? '#ef4444' : '#10b981';
-    $signo = $m < 0 ? '-' : '+';
-    $ajustesHtml .= "
+  $m = floatval($a['monto']);
+  $color = $m < 0 ? '#ef4444' : '#10b981';
+  $signo = $m < 0 ? '-' : '+';
+  $ajustesHtml .= "
     <tr>
         <td style='padding:8px 0;border-bottom:1px solid #f1f5f9;color:#64748b;font-size:13px;'>" . htmlspecialchars($a['concepto']) . "</td>
         <td style='padding:8px 0;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:600;color:{$color};font-size:13px;'>{$signo}\$" . number_format(abs($m), 0, ',', '.') . "</td>
@@ -138,8 +148,8 @@ $html = "<!DOCTYPE html>
 // Obtener token Gmail
 $token_result = getValidGmailToken();
 if (isset($token_result['error'])) {
-    echo json_encode(['success'=>false,'error'=>$token_result['error']]);
-    exit;
+  echo json_encode(['success' => false, 'error' => $token_result['error']]);
+  exit;
 }
 $access_token = $token_result['access_token'];
 
@@ -147,7 +157,7 @@ $from = $config['gmail_sender_email'];
 $to = $persona['email'];
 $subject = "💰 Liquidación {$mesLabel} — La Ruta 11";
 
-$message  = "From: La Ruta 11 <{$from}>\r\n";
+$message = "From: La Ruta 11 <{$from}>\r\n";
 $message .= "To: {$to}\r\n";
 $message .= "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n";
 $message .= "MIME-Version: 1.0\r\n";
@@ -159,13 +169,13 @@ $encoded = rtrim(strtr(base64_encode($message), '+/', '-_'), '=');
 
 $ch = curl_init('https://gmail.googleapis.com/gmail/v1/users/me/messages/send');
 curl_setopt_array($ch, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_POST => true,
-    CURLOPT_POSTFIELDS => json_encode(['raw' => $encoded]),
-    CURLOPT_HTTPHEADER => [
-        'Authorization: Bearer ' . $access_token,
-        'Content-Type: application/json'
-    ]
+  CURLOPT_RETURNTRANSFER => true,
+  CURLOPT_POST => true,
+  CURLOPT_POSTFIELDS => json_encode(['raw' => $encoded]),
+  CURLOPT_HTTPHEADER => [
+    'Authorization: Bearer ' . $access_token,
+    'Content-Type: application/json'
+  ]
 ]);
 $response = curl_exec($ch);
 $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -174,18 +184,19 @@ $result = json_decode($response, true);
 mysqli_close($conn);
 
 if ($http_code === 200) {
-    echo json_encode([
-        'success' => true,
-        'email' => $to,
-        'nombre' => $persona['nombre'],
-        'monto' => $montoFinal,
-        'message_id' => $result['id'] ?? null
-    ]);
-} else {
-    echo json_encode([
-        'success' => false,
-        'error' => 'Error Gmail API (HTTP ' . $http_code . ')',
-        'details' => $result
-    ]);
+  echo json_encode([
+    'success' => true,
+    'email' => $to,
+    'nombre' => $persona['nombre'],
+    'monto' => $montoFinal,
+    'message_id' => $result['id'] ?? null
+  ]);
+}
+else {
+  echo json_encode([
+    'success' => false,
+    'error' => 'Error Gmail API (HTTP ' . $http_code . ')',
+    'details' => $result
+  ]);
 }
 ?>

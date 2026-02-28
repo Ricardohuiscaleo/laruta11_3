@@ -1,24 +1,39 @@
 <?php
 $config = null;
-foreach ([__DIR__.'/../../public/config.php', __DIR__.'/../config.php', __DIR__.'/../../config.php', __DIR__.'/../../../config.php', __DIR__.'/../../../../config.php'] as $p) {
-    if (file_exists($p)) { $config = require_once $p; break; }
+foreach ([__DIR__ . '/../../public/config.php', __DIR__ . '/../config.php', __DIR__ . '/../../config.php', __DIR__ . '/../../../config.php', __DIR__ . '/../../../../config.php'] as $p) {
+  if (file_exists($p)) {
+    $config = require_once $p;
+    break;
+  }
 }
-if (!$config) { echo '<p>Config no encontrado</p>'; exit; }
+if (!$config) {
+  echo '<p>Config no encontrado</p>';
+  exit;
+}
 
 $personal_id = intval($_GET['personal_id'] ?? 0);
 $mes = $_GET['mes'] ?? date('Y-m'); // formato YYYY-MM
 
-if (!$personal_id) { echo '<p>personal_id requerido</p>'; exit; }
+if (!$personal_id) {
+  echo '<p>personal_id requerido</p>';
+  exit;
+}
 
 $conn = mysqli_connect($config['app_db_host'], $config['app_db_user'], $config['app_db_pass'], $config['app_db_name']);
-if (!$conn) { echo '<p>Error BD</p>'; exit; }
+if (!$conn) {
+  echo '<p>Error BD</p>';
+  exit;
+}
 
 // Datos del colaborador
 $stmt = mysqli_prepare($conn, "SELECT * FROM personal WHERE id = ?");
 mysqli_stmt_bind_param($stmt, 'i', $personal_id);
 mysqli_stmt_execute($stmt);
 $persona = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
-if (!$persona) { echo '<p>Colaborador no encontrado</p>'; exit; }
+if (!$persona) {
+  echo '<p>Colaborador no encontrado</p>';
+  exit;
+}
 
 $mesDate = $mes . '-01';
 
@@ -28,7 +43,8 @@ mysqli_stmt_bind_param($stmt2, 'is', $personal_id, $mesDate);
 mysqli_stmt_execute($stmt2);
 $ajustes = mysqli_stmt_get_result($stmt2);
 $ajustesList = [];
-while ($row = mysqli_fetch_assoc($ajustes)) $ajustesList[] = $row;
+while ($row = mysqli_fetch_assoc($ajustes))
+  $ajustesList[] = $row;
 
 // Pago real registrado (si existe)
 $stmt3 = mysqli_prepare($conn, "SELECT * FROM pagos_nomina WHERE personal_id = ? AND mes = ? LIMIT 1");
@@ -36,12 +52,12 @@ mysqli_stmt_bind_param($stmt3, 'is', $personal_id, $mesDate);
 mysqli_stmt_execute($stmt3);
 $pagoReal = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt3));
 
-$sueldoBase = floatval($persona['sueldo_base']);
+$sueldoBase = floatval($persona['sueldo_base_cajero'] ?? 0) + floatval($persona['sueldo_base_planchero'] ?? 0) + floatval($persona['sueldo_base_admin'] ?? 0) + floatval($persona['sueldo_base_seguridad'] ?? 0);
 $totalAjustes = array_reduce($ajustesList, fn($s, $a) => $s + floatval($a['monto']), 0);
 $total = $sueldoBase + $totalAjustes;
 $montoFinal = $pagoReal ? floatval($pagoReal['monto']) : $total;
 
-$mesesNombres = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+$mesesNombres = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 $mesNum = intval(substr($mes, 5, 2));
 $anio = substr($mes, 0, 4);
 $mesLabel = ucfirst($mesesNombres[$mesNum - 1]) . ' ' . $anio;
@@ -52,10 +68,10 @@ $nombre = htmlspecialchars($persona['nombre']);
 // Filas de ajustes
 $ajustesHtml = '';
 foreach ($ajustesList as $a) {
-    $m = floatval($a['monto']);
-    $color = $m < 0 ? '#ef4444' : '#10b981';
-    $signo = $m < 0 ? '-' : '+';
-    $ajustesHtml .= "
+  $m = floatval($a['monto']);
+  $color = $m < 0 ? '#ef4444' : '#10b981';
+  $signo = $m < 0 ? '-' : '+';
+  $ajustesHtml .= "
     <tr>
         <td style='padding:8px 0;border-bottom:1px solid #f1f5f9;color:#64748b;font-size:13px;'>" . htmlspecialchars($a['concepto']) . "</td>
         <td style='padding:8px 0;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:600;color:{$color};font-size:13px;'>{$signo}\$" . number_format(abs($m), 0, ',', '.') . "</td>
