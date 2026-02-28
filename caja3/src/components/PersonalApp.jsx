@@ -72,8 +72,57 @@ export default function PersonalApp() {
   const [showToastMsg, setShowToastMsg] = useState('');
   const [toastType, setToastType] = useState('success');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState('');
+  const [previewHtml, setPreviewHtml] = useState('');
   const [sendingProgress, setSendingProgress] = useState(null);
+
+  const formatMonto = (m) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(m);
+
+  function buildEmailPayloadFn(p, getLiq, anio, mes) {
+    const mesStr = String(mes + 1).padStart(2, '0');
+    const lr11 = getLiq(p, 'ruta11');
+    const lseg = getLiq(p, 'seguridad');
+    const lall = getLiq(p, 'all');
+
+    const payload = {
+      personal_id: p.id,
+      mes: `${anio}-${mesStr}`,
+      nombre: p.nombre,
+      email: p.email,
+      roles: Array.isArray(p.rol) ? p.rol.join(', ') : p.rol,
+      granTotal: lall.total,
+      secciones: []
+    };
+
+    const addSection = (titulo, obj, totalObj) => {
+      if (totalObj <= 0 && obj.sueldoBase <= 0 && obj.ajustesPer.length === 0 && Object.keys(obj.gruposReemplazando).length === 0 && Object.keys(obj.gruposReemplazados).length === 0) return;
+
+      const detalles = [];
+      Object.values(obj.gruposReemplazando).forEach(g => {
+        detalles.push({ texto: `Reemplazó a ${g.persona?.nombre ?? '?'} (${g.dias.length} días)`, monto: `+${formatMonto(g.monto)}`, color: '#10b981' });
+      });
+      Object.values(obj.gruposReemplazados).forEach(g => {
+        detalles.push({ texto: `${g.persona?.nombre ?? '?'} cubrió (${g.dias.length} días)`, monto: `-${formatMonto(g.monto)}`, color: '#ef4444' });
+      });
+      obj.ajustesPer.forEach(a => {
+        const m = parseFloat(a.monto);
+        const isNeg = m < 0;
+        detalles.push({ texto: a.concepto, monto: `${isNeg ? '-' : '+'}${formatMonto(Math.abs(m))}`, color: isNeg ? '#ef4444' : '#10b981' });
+      });
+
+      payload.secciones.push({
+        titulo,
+        sueldoBase: obj.sueldoBase,
+        diasTrabajados: obj.diasTrabajados,
+        total: totalObj,
+        detalles
+      });
+    };
+
+    addSection(p.rol?.includes('dueño') ? '💵 Liquidez (Dueño)' : 'Ruta 11', lr11, lr11.total);
+    addSection('Seguridad', lseg, lseg.total);
+
+    return payload;
+  }
   const [modalTurno, setModalTurno] = useState(null); // {dia, fecha, isSeguridad, titularId}
   const [formTurno, setFormTurno] = useState({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa', fecha_fin: '' });
   const [modalPersonal, setModalPersonal] = useState(null); // null | 'new' | persona
@@ -468,19 +517,29 @@ export default function PersonalApp() {
                 onReloadPagos={loadData}
                 showToast={showToast}
                 onEditPersonal={(p) => { setModalPersonal(p); setFormPersonal({ nombre: p.nombre, rol: typeof p.rol === 'string' ? p.rol.split(',') : p.rol, sueldo_base_cajero: p.sueldo_base_cajero || '', sueldo_base_planchero: p.sueldo_base_planchero || '', sueldo_base_admin: p.sueldo_base_admin || '', sueldo_base_seguridad: p.sueldo_base_seguridad || '', activo: p.activo }); }}
-                previewPersonalEmail={(personalId) => {
-                  const mesStr = String(mes + 1).padStart(2, '0');
-                  setPreviewUrl(`/api/personal/preview_liquidacion_email.php?personal_id=${personalId}&mes=${anio}-${mesStr}`);
-                  setShowPreviewModal(true);
+                previewPersonalEmail={async (personalId) => {
+                  try {
+                    const p = personal.find(x => x.id == personalId);
+                    const payload = buildEmailPayloadFn(p, getLiquidacion, anio, mes);
+                    const res = await fetch('/api/personal/preview_liquidacion_email.php', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(payload)
+                    });
+                    const html = await res.text();
+                    setPreviewHtml(html);
+                    setShowPreviewModal(true);
+                  } catch (e) { showToast('Error cargando preview', 'error'); }
                 }}
                 sendPersonalEmail={async (personalId, nombre, btnEl) => {
                   if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⏳...'; }
-                  const mesStr = String(mes + 1).padStart(2, '0');
                   try {
+                    const p = personal.find(x => x.id == personalId);
+                    const payload = buildEmailPayloadFn(p, getLiquidacion, anio, mes);
                     const res = await fetch('/api/personal/send_liquidacion_email.php', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ personal_id: personalId, mes: `${anio}-${mesStr}` })
+                      body: JSON.stringify(payload)
                     });
                     const r = await res.json();
                     showToast(r.success ? `✅ Email enviado a ${r.email || nombre}` : `❌ ${r.error}`, r.success ? 'success' : 'error');
@@ -512,10 +571,11 @@ export default function PersonalApp() {
                     const persona = personalActivo.find(x => x.id == pago.personal_id);
                     setSendingProgress(`Enviando ${i + 1} de ${pagadosConEmail.length}: ${persona.nombre}...`);
                     try {
+                      const payload = buildEmailPayloadFn(persona, getLiquidacion, anio, mes);
                       const res = await fetch('/api/personal/send_liquidacion_email.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ personal_id: pago.personal_id, mes: `${anio}-${mesStr}` })
+                        body: JSON.stringify(payload)
                       });
                       const r = await res.json();
                       r.success ? sent++ : failed++;
@@ -755,8 +815,8 @@ export default function PersonalApp() {
               <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#1e293b' }}>👁️ Vista Previa del Email</h3>
               <button onClick={() => setShowPreviewModal(false)} style={{ background: 'none', border: 'none', fontSize: 28, lineHeight: 1, color: '#94a3b8', cursor: 'pointer' }}>&times;</button>
             </div>
-            <div style={{ flex: 1, overflow: 'hidden' }}>
-              <iframe src={previewUrl} style={{ width: '100%', height: '100%', minHeight: '60vh', border: 'none' }} />
+            <div style={{ flex: 1, overflow: 'hidden', padding: '16px 24px' }}>
+              <iframe srcDoc={previewHtml} style={{ width: '100%', height: '100%', minHeight: '60vh', border: '1px solid #e2e8f0', borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }} />
             </div>
             <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowPreviewModal(false)} style={{ padding: '10px 24px', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cerrar</button>
