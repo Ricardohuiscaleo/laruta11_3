@@ -112,7 +112,7 @@ const ImageFullscreenModal = ({ product, total, onClose }) => {
 
 
 
-const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartTotal, onCheckout, onCustomizeProduct, nearbyTrucks = [] }) => {
+const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartTotal, onCheckout, onCustomizeProduct, statusData, nearbyTrucks = [] }) => {
   const [shake, setShake] = useState(false);
   const [lastDeleted, setLastDeleted] = useState(null);
   const [showUndo, setShowUndo] = useState(false);
@@ -800,9 +800,11 @@ export default function App() {
   const [schedulesLoading, setSchedulesLoading] = useState(true);
   const [statusData, setStatusData] = useState({
     is_open: false,
+    is_active: true,
     current_time: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' }),
     today_schedule: null
   });
+  const [isClosedPopupOpen, setIsClosedPopupOpen] = useState(false);
   const [discountCode, setDiscountCode] = useState('');
   const [pizzaDiscount, setPizzaDiscount] = useState(0);
   const [isShareAppOpen, setIsShareAppOpen] = useState(false);
@@ -1600,6 +1602,13 @@ export default function App() {
       endSession();
     };
   }, [user, sessionId, sessionStartTime]);
+
+  // Trigger popup when truck is inactive
+  useEffect(() => {
+    if (statusData && statusData.is_active === false) {
+      setIsClosedPopupOpen(true);
+    }
+  }, [statusData.is_active]);
 
   // Autocompletar campos del checkout cuando se abre el modal
   useEffect(() => {
@@ -2645,6 +2654,7 @@ export default function App() {
           onCustomizeProduct={(item, itemIndex) => {
             setSelectedProduct({ ...item, cartIndex: itemIndex, isEditing: true });
           }}
+          statusData={statusData}
           nearbyTrucks={nearbyTrucks}
         />
 
@@ -3769,6 +3779,34 @@ export default function App() {
         {isCheckoutOpen && (
           <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
             <CheckoutApp onClose={() => setIsCheckoutOpen(false)} />
+          </div>
+        )}
+
+        {/* Closed for Maintenance Popup */}
+        {isClosedPopupOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex justify-center items-center p-4 animate-fade-in" onClick={() => setIsClosedPopupOpen(false)}>
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up" onClick={(e) => e.stopPropagation()}>
+              <div className="p-8 text-center">
+                <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Clock size={40} className="text-orange-600" />
+                </div>
+                <h2 className="text-2xl font-black text-gray-800 mb-4">
+                  Hola 👋 {user?.nombre || 'Estimado cliente'}
+                </h2>
+                <p className="text-gray-600 text-lg leading-relaxed mb-8">
+                  Hoy <span className="font-bold text-orange-600">{new Intl.DateTimeFormat('es-CL', { weekday: 'long' }).format(new Date())}</span> no atenderemos por <span className="font-bold">mantenimiento programado</span>.
+                </p>
+                <div className="space-y-4">
+                  <p className="font-bold text-gray-800 italic">La Ruta 11</p>
+                  <button
+                    onClick={() => setIsClosedPopupOpen(false)}
+                    className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all"
+                  >
+                    Entendido
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
