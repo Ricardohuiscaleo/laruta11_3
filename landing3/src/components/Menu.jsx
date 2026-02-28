@@ -1,53 +1,47 @@
-import { GlassWater, Smartphone, ChevronRight } from 'lucide-react';
-import { GiHamburger, GiHotDog, GiFrenchFries, GiMeat, GiSaucepan } from 'react-icons/gi';
+import { Smartphone, ChevronRight, Star } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function Menu() {
-  const menuItems = [
-    {
-      icon: GiMeat,
-      title: "Tomahawk Gourmet",
-      description: "Nuestra pieza maestra: corte premium asado a fuego lento con costra de sal de mar y hierbas ahumadas.",
-      gradient: "from-red-900/40 to-orange-900/40",
-      accent: "text-red-500",
-      image: "https://laruta11-images.s3.amazonaws.com/menu/1755574768_tomahawk-full-ig-portrait-1080-1350-2.png"
-    },
-    {
-      icon: GiHamburger,
-      title: "Burger Signature",
-      description: "Carne premium seleccionada, queso fundido y pan artesanal sellado en mantequilla.",
-      gradient: "from-amber-900/40 to-red-900/40",
-      accent: "text-amber-500",
-      image: "https://laruta11-images.s3.amazonaws.com/menu/1755571382_test.jpg"
-    },
-    {
-      icon: GiHotDog,
-      title: "Completos Premium",
-      description: "El clásico chileno elevado a nivel gourmet con ingredientes frescos y pan al vapor.",
-      gradient: "from-yellow-900/40 to-orange-900/40",
-      accent: "text-yellow-500"
-    },
-    {
-      icon: GiFrenchFries,
-      title: "Papas Rústicas",
-      description: "Corte grueso, doble cocción para máxima crocancia y especias de la casa.",
-      gradient: "from-orange-900/40 to-yellow-900/40",
-      accent: "text-orange-500"
-    },
-    {
-      icon: GlassWater,
-      title: "Mixología Natural",
-      description: "Jugos de fruta natural y preparaciones refrescantes del día.",
-      gradient: "from-green-900/40 to-emerald-900/40",
-      accent: "text-green-500"
-    },
-    {
-      icon: GiSaucepan,
-      title: "Salsas de Autor",
-      description: "Salsas artesanales preparadas diariamente en nuestro food truck.",
-      gradient: "from-red-900/40 to-pink-900/40",
-      accent: "text-pink-500"
-    }
-  ];
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMenu = async () => {
+      try {
+        const response = await fetch('https://app.laruta11.cl/api/get_menu_products.php');
+        const data = await response.json();
+
+        if (data.success && data.menuData) {
+          // Flatten the nested menu structure to get a pool of products
+          let allProducts = [];
+          Object.values(data.menuData).forEach(subs => {
+            Object.values(subs).forEach(prods => {
+              allProducts = [...allProducts, ...prods];
+            });
+          });
+
+          // Filter out inactive products and get a diverse selection of high-quality items
+          // E.g., items with images and good reviews
+          const featuredProducts = allProducts
+            .filter(p => p.active === 1 && p.image && p.image !== 'https://laruta11-images.s3.amazonaws.com/menu/default-product.jpg')
+            .sort((a, b) => b.likes - a.likes || b.reviews.average - a.reviews.average) // Prioritize liked/highly rated
+            .slice(0, 6); // Take top 6 for the landing page grid
+
+          setProducts(featuredProducts);
+        }
+      } catch (error) {
+        console.error('Error fetching menu:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMenu();
+  }, []);
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(price);
+  };
 
   return (
     <section id="menu" className="py-32 bg-ruta-dark relative overflow-hidden">
@@ -74,46 +68,61 @@ export default function Menu() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-10">
-          {menuItems.map((item, index) => (
-            <div
-              key={index}
-              className="group relative h-[450px] rounded-[2.5rem] overflow-hidden bg-ruta-black border border-white/5 transition-all duration-500 hover:border-ruta-yellow/30 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
-            >
-              {/* Image Background or Gradient */}
-              <div className="absolute inset-0 z-0 transition-transform duration-700 group-hover:scale-110">
-                {item.image ? (
-                  <>
-                    <img src={item.image} alt={item.title} className="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-ruta-black via-ruta-black/60 to-transparent"></div>
-                  </>
-                ) : (
-                  <div className={`w-full h-full bg-gradient-to-br ${item.gradient}`}></div>
-                )}
-              </div>
-
-              {/* Content */}
-              <div className="absolute inset-0 p-8 flex flex-col justify-end z-10">
-                <div className={`mb-6 p-4 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 w-fit transition-transform duration-500 group-hover:-translate-y-2 ${item.accent}`}>
-                  <item.icon className="w-8 h-8" />
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-ruta-yellow"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-10">
+            {products.map((item, index) => (
+              <div
+                key={item.id || index}
+                className="group relative h-[450px] rounded-[2.5rem] overflow-hidden bg-ruta-black border border-white/5 transition-all duration-500 hover:border-ruta-yellow/30 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+              >
+                {/* Image Background */}
+                <div className="absolute inset-0 z-0 transition-transform duration-700 group-hover:scale-110">
+                  <img src={item.image} alt={item.name} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ruta-black via-ruta-black/80 to-transparent"></div>
                 </div>
 
-                <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-ruta-yellow transition-colors">
-                  {item.title}
-                </h3>
+                {/* Content */}
+                <div className="absolute inset-0 p-8 flex flex-col justify-end z-10">
+                  {/* Rating / Likes Badge */}
+                  {(item.reviews.average > 0 || item.likes > 0) && (
+                    <div className="absolute top-6 right-6 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10">
+                      <Star className="w-3.5 h-3.5 text-ruta-yellow fill-ruta-yellow" />
+                      <span className="text-white text-xs font-bold">{item.reviews.average > 0 ? item.reviews.average.toFixed(1) : item.likes}</span>
+                    </div>
+                  )}
 
-                <p className="text-ruta-white/60 text-sm leading-relaxed mb-8 transform transition-all duration-500 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100">
-                  {item.description}
-                </p>
+                  <div className="transform transition-all duration-500 translate-y-4 group-hover:translate-y-0">
+                    <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-ruta-yellow transition-colors line-clamp-2">
+                      {item.name}
+                    </h3>
 
-                <div className="flex items-center gap-2 text-ruta-yellow text-sm font-bold uppercase tracking-widest cursor-pointer group/link">
-                  <span>Saber más</span>
-                  <ChevronRight className="w-4 h-4 transition-transform group-hover/link:translate-x-1" />
+                    <p className="text-ruta-yellow font-black text-xl mb-4">
+                      {formatPrice(item.price)}
+                    </p>
+
+                    <p className="text-ruta-white/70 text-sm leading-relaxed mb-6 opacity-0 group-hover:opacity-100 transition-opacity duration-500 line-clamp-3">
+                      {item.description}
+                    </p>
+
+                    <a
+                      href="https://app.laruta11.cl"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-white text-sm font-bold uppercase tracking-widest cursor-pointer group/link hover:text-ruta-yellow transition-colors"
+                    >
+                      <span>Pedir Ahora</span>
+                      <ChevronRight className="w-4 h-4 transition-transform group-hover/link:translate-x-1" />
+                    </a>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Modernized CTA */}
         <div className="mt-24 text-center">
@@ -121,10 +130,11 @@ export default function Menu() {
             <a
               href="https://app.laruta11.cl"
               target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center gap-3 bg-ruta-dark px-10 py-5 rounded-full font-bold text-lg text-white hover:bg-transparent transition-all duration-300 no-underline"
             >
               <Smartphone className="w-5 h-5 text-ruta-yellow" />
-              Realizar Pedido Online
+              Ver Menú Completo
             </a>
           </div>
           <p className="mt-6 text-ruta-white/30 text-xs font-medium uppercase tracking-[0.2em]">

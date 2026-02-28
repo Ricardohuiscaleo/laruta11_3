@@ -89,9 +89,6 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
             backgroundImage: `url('https://laruta11-images.s3.amazonaws.com/menu/1755574768_tomahawk-full-ig-portrait-1080-1350-2.png')`,
           }}
         />
-        {/* Animated Orbs for Depth */}
-        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-ruta-yellow/10 rounded-full blur-[120px] animate-slow-pulse"></div>
-        <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-ruta-red/10 rounded-full blur-[100px] animate-slow-pulse animation-delay-2000"></div>
 
         {/* Gradients */}
         <div className="absolute inset-0 bg-gradient-to-b from-ruta-dark/80 via-ruta-dark/40 to-ruta-dark"></div>

@@ -47,10 +47,9 @@ export default function Services() {
     <section id="servicios" className="py-32 bg-ruta-dark">
       <div className="container mx-auto px-6">
         <div className="text-center mb-24">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-ruta-yellow/20 bg-ruta-yellow/5 text-ruta-yellow text-[10px] uppercase tracking-[0.3em] font-bold mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-ruta-yellow/20 bg-ruta-yellow/5 text-ruta-yellow text-[10px] uppercase tracking-[0.3em] font-bold mb-6">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ruta-yellow opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-ruta-yellow"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-ruta-yellow/80"></span>
             </span>
             Nuestras Soluciones
           </div>
