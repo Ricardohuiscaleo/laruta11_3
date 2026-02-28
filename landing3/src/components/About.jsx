@@ -11,13 +11,13 @@ export default function About() {
           <div className="relative order-2 lg:order-1">
             <div className="relative z-10 rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl">
               <img
-                src="https://laruta11-images.s3.amazonaws.com/menu/1755631926_WhatsApp%20Image%202025-07-06%20at%2015.34.52.jpeg"
+                src="https://laruta11-images.s3.amazonaws.com/menu/1755574768_tomahawk-full-ig-portrait-1080-1350-2.png"
                 alt="Nuestro Food Truck"
                 className="w-full h-auto object-cover scale-105 hover:scale-100 transition-transform duration-1000"
               />
             </div>
             {/* Animated Badge */}
-            <div className="absolute -bottom-10 -right-10 bg-ruta-yellow p-8 rounded-[2rem] shadow-2xl z-20 hidden md:block animate-bounce duration-[4000ms]">
+            <div className="absolute -bottom-10 -right-10 bg-ruta-yellow p-8 rounded-[2rem] shadow-2xl z-20 hidden md:block transition-transform duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(250,204,21,0.3)]">
               <div className="text-ruta-black font-extrabold text-4xl leading-none">100%</div>
               <div className="text-ruta-black/60 font-bold uppercase tracking-tighter text-xs">Artesanal</div>
             </div>
@@ -35,7 +35,7 @@ export default function About() {
               <span className="text-ruta-yellow font-bold uppercase tracking-widest text-xs">Nuestra Esencia</span>
             </div>
 
-            <h2 className="text-4xl md:text-6xl font-extrabold text-white tracking-tighter mb-8 italic">
+            <h2 className="text-4xl md:text-6xl font-extrabold text-white tracking-tighter mb-8">
               Pasión por el <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-ruta-yellow to-ruta-orange">Sabor Real</span>
             </h2>

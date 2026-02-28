@@ -16,7 +16,7 @@ export default function Contact() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-ruta-yellow/20 bg-ruta-yellow/5 text-ruta-yellow text-[10px] uppercase tracking-[0.3em] font-bold mb-6">
             Social & Feedback
           </div>
-          <h2 className="text-4xl md:text-6xl font-extrabold text-white tracking-tighter mb-6 italic">
+          <h2 className="text-4xl md:text-6xl font-extrabold text-white tracking-tighter mb-6">
             Mantente <span className="text-transparent bg-clip-text bg-gradient-to-r from-ruta-yellow to-ruta-orange">Conectado</span>
           </h2>
           <p className="text-lg text-ruta-white/40 max-w-xl mx-auto font-light">
@@ -57,11 +57,9 @@ export default function Contact() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-10">
 
             <div className="flex items-center gap-4">
-              <img
-                src="https://laruta11-images.s3.amazonaws.com/menu/1755571382_test.jpg"
-                alt="Logo"
-                className="w-12 h-12 rounded-full object-cover grayscale opacity-50"
-              />
+              <div className="w-12 h-12 rounded-xl bg-ruta-yellow flex items-center justify-center font-black text-ruta-black text-xl shadow-lg border border-white/10">
+                11
+              </div>
               <div>
                 <div className="text-lg font-black text-white px-1">LA RUTA<span className="text-ruta-yellow">11</span></div>
                 <p className="text-[10px] text-ruta-white/30 uppercase tracking-[0.2em] px-1 font-bold">Arica • Chile • Premium Food Trucks</p>

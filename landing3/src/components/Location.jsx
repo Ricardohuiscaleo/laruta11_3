@@ -19,7 +19,7 @@ export default function Location() {
               <span className="text-ruta-yellow font-bold uppercase tracking-widest text-xs">Encuéntranos</span>
             </div>
 
-            <h2 className="text-4xl md:text-6xl font-extrabold text-white tracking-tighter mb-8 italic">
+            <h2 className="text-4xl md:text-6xl font-extrabold text-white tracking-tighter mb-8">
               Donde la <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-ruta-yellow to-ruta-orange">Ruta nos Lleve</span>
             </h2>
@@ -67,14 +67,14 @@ export default function Location() {
           {/* Visual Column (Placeholder for Map/Truck Photo) */}
           <div className="lg:col-span-7 relative h-full min-h-[500px]">
             <div className="absolute inset-0 rounded-[3rem] overflow-hidden border border-white/10 bg-ruta-black">
-              {/* Simulated Map / High-end Photo */}
-              <div className="absolute inset-0 opacity-40 bg-[url('https://laruta11-images.s3.amazonaws.com/menu/1755631926_WhatsApp%20Image%202025-07-06%20at%2015.34.52.jpeg')] bg-cover bg-center grayscale contrast-125"></div>
-              <div className="absolute inset-0 bg-gradient-to-tr from-ruta-dark via-transparent to-ruta-dark/20"></div>
+              {/* Simulated Map / Abstract Pattern */}
+              <div className="absolute inset-0 opacity-40 bg-[url('https://laruta11-images.s3.amazonaws.com/menu/1755574768_tomahawk-full-ig-portrait-1080-1350-2.png')] bg-cover bg-center grayscale contrast-125 blur-sm"></div>
+              <div className="absolute inset-0 bg-gradient-to-tr from-ruta-dark via-ruta-dark/80 to-ruta-dark/20"></div>
 
               {/* Floating Map Pin Effect */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-ruta-yellow blur-xl opacity-60 animate-ping"></div>
+                  <div className="absolute inset-0 bg-ruta-yellow blur-xl opacity-40 animate-pulse"></div>
                   <div className="relative bg-ruta-yellow p-4 rounded-2xl border-4 border-ruta-dark shadow-2xl">
                     <MapPin className="w-8 h-8 text-ruta-black fill-current" />
                   </div>

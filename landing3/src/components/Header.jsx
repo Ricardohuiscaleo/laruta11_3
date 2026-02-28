@@ -38,19 +38,17 @@ export default function Header() {
     <header className={`fixed w-full z-[100] transition-all duration-500 transform ${isVisible ? 'translate-y-0' : '-translate-y-full'
       } pt-4 md:pt-6 px-4 md:px-6`}>
       <div className={`container mx-auto max-w-7xl transition-all duration-500 rounded-[2rem] border border-white/5 ${isScrolled
-          ? 'bg-ruta-black/60 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] py-3'
-          : 'bg-transparent py-4'
+        ? 'bg-ruta-black/60 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] py-3'
+        : 'bg-transparent py-4'
         }`}>
         <nav className="flex justify-between items-center px-6 md:px-10">
           {/* Logo Section */}
           <div className="flex items-center gap-3 group cursor-pointer">
             <div className="relative">
               <div className="absolute inset-0 bg-ruta-yellow blur-md opacity-0 group-hover:opacity-40 transition-opacity"></div>
-              <img
-                src="https://laruta11-images.s3.amazonaws.com/menu/1755571382_test.jpg"
-                alt="La Ruta 11"
-                className="relative w-8 h-8 md:w-10 md:h-10 rounded-full object-cover border border-white/10"
-              />
+              <div className="relative w-8 h-8 md:w-10 md:h-10 rounded-xl bg-ruta-yellow flex items-center justify-center font-black text-ruta-black shadow-[0_0_15px_rgba(250,204,21,0.3)]">
+                11
+              </div>
             </div>
             <div className="text-lg md:text-xl font-extrabold tracking-tighter text-ruta-white uppercase">
               La Ruta<span className="text-ruta-yellow">11</span>
