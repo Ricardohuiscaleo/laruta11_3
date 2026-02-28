@@ -1387,16 +1387,6 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
             <div style={{ fontSize: 10, opacity: 0.6 }}>{saldo < 0 ? 'Sobre el presupuesto' : 'Disponible'}</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
-          <button onClick={copiarMarkdown} style={{ flex: 1, padding: '10px 16px', background: copied ? '#4ade80' : 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 10, color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            {copied ? <ShieldCheck size={16} /> : <ImageIcon size={16} />}
-            {copied ? 'Copiado!' : 'Detalle Completo'}
-          </button>
-          <button onClick={copiarResumenPagos} style={{ flex: 1, padding: '10px 16px', background: copiedResumen ? '#fbbf24' : '#f59e0b', border: '1px solid #d97706', borderRadius: 10, color: '#fffbeb', cursor: 'pointer', fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 12px rgba(245, 158, 11, 0.4)' }}>
-            {copiedResumen ? <Check size={16} /> : <DollarSign size={16} />}
-            {copiedResumen ? 'Copiado!' : 'Solo Nombres y Totales'}
-          </button>
-        </div>
       </div>
 
       {/* Liquidación agrupada por roles */}
@@ -1498,15 +1488,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                         <button onClick={() => onAjuste(p)} style={{ flex: 1, padding: '9px', border: `1px dashed ${c?.border}`, borderRadius: 8, background: c?.light, color: c?.text, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>+ Ajuste</button>
                         {pagado ? (
-                          <>
-                            <button onClick={() => deletePago(pagado.id)} style={{ flex: 1, padding: '9px', border: '1px solid #fca5a5', borderRadius: 8, background: '#fef2f2', color: '#ef4444', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>Desmarcar Pago</button>
-                            <button onClick={() => previewPersonalEmail(p.id)} style={{ padding: '9px 12px', border: 'none', borderRadius: 8, background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>👁️</button>
-                            {!p.email ? (
-                              <button style={{ padding: '9px 12px', border: 'none', borderRadius: 8, background: '#f1f5f9', color: '#94a3b8', cursor: 'not-allowed', fontSize: 13, fontWeight: 700 }} title="Sin correo electrónico registrado">📧</button>
-                            ) : (
-                              <button onClick={(e) => sendPersonalEmail(p.id, p.nombre, e.target)} style={{ padding: '9px 12px', border: 'none', borderRadius: 8, background: '#ea580c', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }} title={`Enviar a: ${p.email}`}>📧</button>
-                            )}
-                          </>
+                          <button onClick={() => deletePago(pagado.id)} style={{ flex: 1, padding: '9px', border: '1px solid #fca5a5', borderRadius: 8, background: '#fef2f2', color: '#ef4444', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>Desmarcar Pago</button>
                         ) : (
                           <button onClick={() => marcarPagado(p)} disabled={savingPago === p.id} style={{ flex: 1, padding: '9px', border: 'none', borderRadius: 8, background: '#10b981', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
                             {savingPago === p.id ? 'Cargando...' : 'Marcar Pagado'}
@@ -1520,8 +1502,9 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
             })}
           </div>
         </div>
-      ))}
-    </div>
+      ))
+      }
+    </div >
   );
 }
 
@@ -1683,10 +1666,6 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
             <div style={{ fontSize: 10, opacity: 0.6 }}>{saldo < 0 ? 'Sobre el presupuesto' : 'Disponible'}</div>
           </div>
         </div>
-        <button onClick={copiarMarkdown} style={{ marginTop: 4, padding: '8px 16px', background: copied ? '#4ade80' : 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 8, color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-          {copied ? <ShieldCheck size={16} /> : <ImageIcon size={16} />}
-          {copied ? 'Copiado!' : 'Copiar para WhatsApp'}
-        </button>
       </div>
 
       {mes === 1 && (
