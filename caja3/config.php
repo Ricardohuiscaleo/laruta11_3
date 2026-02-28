@@ -40,9 +40,9 @@ $config = [
 
     'admin_users' => [
         getenv('ADMIN_USER') ?: 'admin' => getenv('ADMIN_PASS') ?: 'admin123',
-        'ricardo' => getenv('RICARDO_PASSWORD'),
-        'manager' => getenv('MANAGER_PASSWORD'),
-        'ruta11' => getenv('RUTA11_PASSWORD')
+        'ricardo' => getenv('RICARDO_PASS'),
+        'manager' => getenv('MANAGER_PASS'),
+        'ruta11' => getenv('RUTA11_PASS')
     ],
 
     'inventario_user' => getenv('INVENTARIO_USER'),

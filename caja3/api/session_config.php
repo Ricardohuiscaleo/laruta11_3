@@ -32,8 +32,8 @@ session_set_save_handler($handler, true);
 session_set_cookie_params([
     'lifetime' => 2592000, // 30 días
     'path' => '/',
-    'domain' => '.laruta11.cl',
-    'secure' => true,
+    'domain' => strpos($_SERVER['HTTP_HOST'], 'sslip.io') !== false ? '' : '.laruta11.cl',
+    'secure' => (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'),
     'httponly' => true,
     'samesite' => 'Lax'
 ]);
