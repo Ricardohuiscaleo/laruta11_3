@@ -73,6 +73,7 @@ export default function PersonalApp() {
   const [toastType, setToastType] = useState('success');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
+  const [sendingProgress, setSendingProgress] = useState(null);
   const [modalTurno, setModalTurno] = useState(null); // {dia, fecha, isSeguridad, titularId}
   const [formTurno, setFormTurno] = useState({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa', fecha_fin: '' });
   const [modalPersonal, setModalPersonal] = useState(null); // null | 'new' | persona
@@ -448,6 +449,14 @@ export default function PersonalApp() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+            {/* Sending Progress */}
+            {sendingProgress && (
+              <div style={{ position: 'fixed', top: 80, right: 20, zIndex: 9999, background: '#1a73e8', color: 'white', padding: '16px 24px', borderRadius: 12, boxShadow: '0 8px 24px rgba(26,115,232,0.3)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 12, animation: 'slideDown 0.3s ease-out' }}>
+                <div style={{ width: 18, height: 18, border: '3px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                {sendingProgress}
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
+              </div>
+            )}
             {tab === 'nomina' && (
               <NominaView
                 personal={personal}
@@ -485,10 +494,23 @@ export default function PersonalApp() {
                   const pagados = pagosNomina.ruta11.filter(pn => personalActivo.some(p => p.id == pn.personal_id))
                     .concat(pagosNomina.seguridad.filter(pn => personalActivo.some(p => p.id == pn.personal_id)));
 
-                  if (pagados.length === 0) return showToast('No hay personal pagado', 'error');
+                  const pagadosConEmail = pagados.filter(pn => {
+                    const p = personalActivo.find(x => x.id == pn.personal_id);
+                    return p && p.email && p.email.trim() !== '';
+                  });
+
+                  if (pagadosConEmail.length === 0) return showToast('No hay personal pagado con correo registrado', 'error');
+                  if (pagadosConEmail.length < pagados.length) {
+                    if (!confirm(`Hay ${pagados.length - pagadosConEmail.length} trabajadores sin correo. Se enviarán ${pagadosConEmail.length} correos. ¿Continuar?`)) return;
+                  }
+
+                  setSendingProgress(`Iniciando envío (${pagadosConEmail.length} correos)...`);
 
                   let sent = 0, failed = 0;
-                  for (const pago of pagados) {
+                  for (let i = 0; i < pagadosConEmail.length; i++) {
+                    const pago = pagadosConEmail[i];
+                    const persona = personalActivo.find(x => x.id == pago.personal_id);
+                    setSendingProgress(`Enviando ${i + 1} de ${pagadosConEmail.length}: ${persona.nombre}...`);
                     try {
                       const res = await fetch('/api/personal/send_liquidacion_email.php', {
                         method: 'POST',
@@ -500,6 +522,8 @@ export default function PersonalApp() {
                     } catch { failed++; }
                     await new Promise(r => setTimeout(r, 600)); // Rate limit 
                   }
+
+                  setSendingProgress(null);
                   showToast(`Enviados: ${sent}, Fallidos: ${failed}`, failed === 0 ? 'success' : 'error');
                 }}
               />
@@ -934,9 +958,15 @@ function NominaCard({ item, colorObj, onNotify, onEdit, onPreviewEmail, onSendEm
           <button onClick={(e) => { e.stopPropagation(); onPreviewEmail(item.persona.id); }} style={{ border: 'none', background: c.light, color: c.text, padding: '8px', borderRadius: 8, cursor: 'pointer', display: 'flex' }} title="Previsualizar Email">
             <Eye size={18} />
           </button>
-          <button onClick={(e) => { e.stopPropagation(); onSendEmail(item.persona.id, item.persona.nombre, e.currentTarget); }} style={{ border: 'none', background: c.light, color: c.text, padding: '8px', borderRadius: 8, cursor: 'pointer', display: 'flex' }} title="Enviar Email">
-            <Mail size={18} />
-          </button>
+          {!item.persona.email ? (
+            <button onClick={(e) => { e.stopPropagation(); }} style={{ border: 'none', background: '#f1f5f9', color: '#94a3b8', padding: '8px', borderRadius: 8, cursor: 'not-allowed', display: 'flex' }} title="Sin correo electrónico registrado">
+              <Mail size={18} />
+            </button>
+          ) : (
+            <button onClick={(e) => { e.stopPropagation(); onSendEmail(item.persona.id, item.persona.nombre, e.currentTarget); }} style={{ border: 'none', background: c.light, color: c.text, padding: '8px', borderRadius: 8, cursor: 'pointer', display: 'flex' }} title={`Enviar a: ${item.persona.email}`}>
+              <Mail size={18} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -1364,7 +1394,11 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                           <>
                             <button onClick={() => deletePago(pagado.id)} style={{ flex: 1, padding: '9px', border: '1px solid #fca5a5', borderRadius: 8, background: '#fef2f2', color: '#ef4444', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>Desmarcar Pago</button>
                             <button onClick={() => previewPersonalEmail(p.id)} style={{ padding: '9px 12px', border: 'none', borderRadius: 8, background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>👁️</button>
-                            <button onClick={(e) => sendPersonalEmail(p.id, p.nombre, e.target)} style={{ padding: '9px 12px', border: 'none', borderRadius: 8, background: '#ea580c', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>📧</button>
+                            {!p.email ? (
+                              <button style={{ padding: '9px 12px', border: 'none', borderRadius: 8, background: '#f1f5f9', color: '#94a3b8', cursor: 'not-allowed', fontSize: 13, fontWeight: 700 }} title="Sin correo electrónico registrado">📧</button>
+                            ) : (
+                              <button onClick={(e) => sendPersonalEmail(p.id, p.nombre, e.target)} style={{ padding: '9px 12px', border: 'none', borderRadius: 8, background: '#ea580c', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }} title={`Enviar a: ${p.email}`}>📧</button>
+                            )}
                           </>
                         ) : (
                           <button onClick={() => marcarPagado(p)} disabled={savingPago === p.id} style={{ flex: 1, padding: '9px', border: 'none', borderRadius: 8, background: '#10b981', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
