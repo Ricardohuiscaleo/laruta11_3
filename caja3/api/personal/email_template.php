@@ -1,57 +1,56 @@
 <?php
 function buildPayrollEmailHtml($data)
 {
-    if (!$data)
-        return '';
+  if (!$data)
+    return '';
 
-    $mesesNombres = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-    $mes = $data['mes'] ?? date('Y-m');
-    $mesNum = intval(substr($mes, 5, 2));
-    $anio = substr($mes, 0, 4);
-    $mesLabel = ucfirst($mesesNombres[$mesNum - 1] ?? '') . ' ' . $anio;
+  $mesesNombres = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  $mes = $data['mes'] ?? date('Y-m');
+  $mesNum = intval(substr($mes, 5, 2));
+  $anio = substr($mes, 0, 4);
+  $mesLabel = ucfirst($mesesNombres[$mesNum - 1] ?? '') . ' ' . $anio;
 
-    $nombre = htmlspecialchars($data['nombre'] ?? 'Notificación');
-    $rolLabel = htmlspecialchars(ucfirst($data['roles'] ?? ''));
+  $nombre = htmlspecialchars($data['nombre'] ?? 'Notificación');
+  $rolLabel = htmlspecialchars(ucfirst($data['roles'] ?? ''));
 
-    $sectionsHtml = '';
-    $secciones = is_array($data['secciones'] ?? null) ? $data['secciones'] : [];
+  $sectionsHtml = '';
+  $secciones = is_array($data['secciones'] ?? null) ? $data['secciones'] : [];
 
-    foreach ($secciones as $sec) {
-        $title = htmlspecialchars($sec['titulo'] ?? '');
-        $sueldoBase = floatval($sec['sueldoBase'] ?? 0);
-        $diasTrabajados = intval($sec['diasTrabajados'] ?? 0);
-        $total = floatval($sec['total'] ?? 0);
+  foreach ($secciones as $sec) {
+    $title = htmlspecialchars($sec['titulo'] ?? '');
+    $sueldoBase = floatval($sec['sueldoBase'] ?? 0);
+    $diasTrabajados = intval($sec['diasTrabajados'] ?? 0);
+    $total = floatval($sec['total'] ?? 0);
+    $baseLabel = (strpos(strtolower($title), 'liquidez') !== false) ? 'Tu Liquidez Base' : "Tu Sueldo Base";
 
-        $baseLabel = (strpos(strtolower($title), 'liquidez') !== false) ? 'Liquidez Base' : "Sueldo Base ({$diasTrabajados} días)";
-
-        $sectionsHtml .= "
+    $sectionsHtml .= "
         <tr><td colspan='2' style='padding:16px 0 8px;font-weight:800;color:#334155;font-size:14px;text-transform:uppercase;border-bottom:2px solid #e2e8f0;'>{$title}</td></tr>
         <tr>
             <td style='padding:10px 0;border-bottom:1px solid #f1f5f9;color:#475569;font-size:14px;font-weight:600;'>{$baseLabel}</td>
             <td style='padding:10px 0;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:700;color:#1e293b;font-size:14px;'>" . ($sueldoBase < 0 ? "-" : "") . "\$" . number_format(abs($sueldoBase), 0, ',', '.') . "</td>
         </tr>";
 
-        $detalles = is_array($sec['detalles'] ?? null) ? $sec['detalles'] : [];
-        foreach ($detalles as $det) {
-            $t = htmlspecialchars($det['texto'] ?? '');
-            $m = htmlspecialchars($det['monto'] ?? '');
-            $c = htmlspecialchars($det['color'] ?? '#64748b');
-            $sectionsHtml .= "
+    $detalles = is_array($sec['detalles'] ?? null) ? $sec['detalles'] : [];
+    foreach ($detalles as $det) {
+      $t = htmlspecialchars($det['texto'] ?? '');
+      $m = htmlspecialchars($det['monto'] ?? '');
+      $c = htmlspecialchars($det['color'] ?? '#64748b');
+      $sectionsHtml .= "
             <tr>
                 <td style='padding:8px 0;border-bottom:1px solid #f1f5f9;color:#64748b;font-size:13px;'>{$t}</td>
                 <td style='padding:8px 0;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:700;color:{$c};font-size:13px;'>{$m}</td>
             </tr>";
-        }
-        $sectionsHtml .= "
+    }
+    $sectionsHtml .= "
         <tr>
             <td style='padding:12px 0 24px;color:#64748b;font-size:12px;font-weight:800;text-align:right;text-transform:uppercase;'>Subtotal {$title}</td>
             <td style='padding:12px 0 24px;text-align:right;font-weight:800;color:#1e293b;font-size:16px;'>" . ($total < 0 ? "-" : "") . "\$" . number_format(abs($total), 0, ',', '.') . "</td>
         </tr>";
-    }
+  }
 
-    $montoFinal = floatval($data['granTotal'] ?? 0);
+  $montoFinal = floatval($data['granTotal'] ?? 0);
 
-    return "<!DOCTYPE html>
+  return "<!DOCTYPE html>
 <html lang='es'>
 <head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'></head>
 <body style='margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:#f8fafc;'>

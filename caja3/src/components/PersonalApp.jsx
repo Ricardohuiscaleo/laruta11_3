@@ -88,7 +88,19 @@ export default function PersonalApp() {
       mes: `${anio}-${mesStr}`,
       nombre: p.nombre,
       email: p.email,
-      roles: Array.isArray(p.rol) ? p.rol.join(', ') : p.rol,
+      roles: (() => {
+        let rols = Array.isArray(p.rol) ? [...p.rol] : (p.rol || '').split(',');
+        // Ajustes manuales solicitados por el dueño:
+        const nLower = p.nombre.toLowerCase();
+        if (nLower.includes('neit') || nLower.includes('camila')) {
+          if (!rols.includes('cajera') && !rols.includes('cajero')) rols.push('cajera');
+          rols = rols.map(r => r === 'cajero' ? 'cajera' : r); // force feminine
+        }
+        if (nLower.includes('gabriel') || nLower.includes('andres')) {
+          if (!rols.includes('planchero')) rols.push('planchero');
+        }
+        return [...new Set(rols)].filter(x => x).join(', ');
+      })(),
       granTotal: lall.total,
       secciones: []
     };
@@ -97,11 +109,11 @@ export default function PersonalApp() {
       if (totalObj <= 0 && obj.sueldoBase <= 0 && obj.ajustesPer.length === 0 && Object.keys(obj.gruposReemplazando).length === 0 && Object.keys(obj.gruposReemplazados).length === 0) return;
 
       const detalles = [];
-      Object.values(obj.gruposReemplazando).forEach(g => {
-        detalles.push({ texto: `Reemplazó a ${g.persona?.nombre ?? '?'} (${g.dias.length} días)`, monto: `+${formatMonto(g.monto)}`, color: '#10b981' });
+      Object.values(obj.gruposReemplando || obj.gruposReemplazando).forEach(g => {
+        detalles.push({ texto: `Reemplazaste a ${g.persona?.nombre ?? '?'} (${g.dias.length} días)`, monto: `+${formatMonto(g.monto)}`, color: '#10b981' });
       });
       Object.values(obj.gruposReemplazados).forEach(g => {
-        detalles.push({ texto: `${g.persona?.nombre ?? '?'} cubrió (${g.dias.length} días)`, monto: `-${formatMonto(g.monto)}`, color: '#ef4444' });
+        detalles.push({ texto: `${g.persona?.nombre ?? '?'} te cubrió (${g.dias.length} días)`, monto: `-${formatMonto(g.monto)}`, color: '#ef4444' });
       });
       obj.ajustesPer.forEach(a => {
         const m = parseFloat(a.monto);
