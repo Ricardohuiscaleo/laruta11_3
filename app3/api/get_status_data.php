@@ -28,19 +28,19 @@ try {
         "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
         $config['app_db_user'],
         $config['app_db_pass'],
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
 
     // Obtener food truck principal (ID 4)
     $stmt = $pdo->prepare("SELECT * FROM food_trucks WHERE id = 4 LIMIT 1");
     $stmt->execute();
     $truck = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     // Obtener horarios personalizados de la tabla food_truck_schedules
     $stmt = $pdo->prepare("SELECT * FROM food_truck_schedules WHERE food_truck_id = 4 AND activo = 1 ORDER BY day_of_week");
     $stmt->execute();
     $customSchedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
     // Crear mapa de horarios por día
     $schedulesByDay = [];
     foreach ($customSchedules as $schedule) {
@@ -65,18 +65,20 @@ try {
         if (isset($schedulesByDay[$dayOfWeek])) {
             $openTime = $schedulesByDay[$dayOfWeek]['start'];
             $closeTime = $schedulesByDay[$dayOfWeek]['end'];
-        } else {
+        }
+        else {
             // Fallback a horario general
             $openTime = $truck['horario_inicio'];
             $closeTime = $truck['horario_fin'];
         }
-        
+
         // Verificar si está abierto
         if ($truck['activo']) {
             if ($closeTime < $openTime) {
                 // Horario cruza medianoche (ej: 18:00 - 03:00)
                 $isOpen = ($currentTime >= $openTime || $currentTime <= $closeTime);
-            } else {
+            }
+            else {
                 $isOpen = ($currentTime >= $openTime && $currentTime <= $closeTime);
             }
         }
@@ -97,7 +99,7 @@ try {
     // Generar horarios de la semana desde food_truck_schedules
     $schedules = [];
     $days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    
+
     for ($i = 0; $i < 7; $i++) {
         if (isset($schedulesByDay[$i])) {
             $schedules[] = [
@@ -106,7 +108,8 @@ try {
                 'end' => substr($schedulesByDay[$i]['end'], 0, 5),
                 'is_today' => $i === $dayOfWeek
             ];
-        } else {
+        }
+        else {
             // Fallback al horario general
             $schedules[] = [
                 'day' => $days[$i],
@@ -126,6 +129,7 @@ try {
         'success' => true,
         'status' => [
             'is_open' => $isOpen,
+            'is_active' => $truck ? (bool)$truck['activo'] : true,
             'current_time' => $now->format('H:i'),
             'today_schedule' => $todaySchedule,
             'status' => $isOpen ? 'open' : ($nextOpenTime ? 'opens_today' : 'closed'),
@@ -135,7 +139,8 @@ try {
         'trucks' => $trucks
     ]);
 
-} catch (Exception $e) {
+}
+catch (Exception $e) {
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
 ?>

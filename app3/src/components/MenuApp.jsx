@@ -298,9 +298,9 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
 
         {/* Footer Sticky */}
         <div className="bg-white border-t sticky bottom-0 px-4 py-4">
-          {nearbyTrucks.length > 0 && !nearbyTrucks[0].activo && (
+          {!statusData.is_active && (
             <div className="bg-red-100 border border-red-300 rounded-lg p-3 text-center mb-3">
-              <p className="text-red-800 font-bold text-sm">⚠️ Cerrado por implementación de mejoras</p>
+              <p className="text-red-800 font-bold text-sm">⚠️ Cerrado por mantenimiento programado</p>
               <p className="text-red-600 text-xs mt-1">
                 Contáctanos:
                 <a href="https://wa.me/56936227422" target="_blank" rel="noopener noreferrer" className="underline font-semibold">WhatsApp</a>
@@ -311,13 +311,13 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
           )}
           <button
             onClick={handleCheckout}
-            disabled={nearbyTrucks.length > 0 && !nearbyTrucks[0].activo}
-            className={`w-full rounded-md font-black flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg relative overflow-hidden py-4 text-lg ${nearbyTrucks.length > 0 && !nearbyTrucks[0].activo
-                ? 'bg-gray-400 cursor-not-allowed text-white'
-                : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'
+            disabled={!statusData.is_active}
+            className={`w-full rounded-md font-black flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg relative overflow-hidden py-4 text-lg ${!statusData.is_active
+              ? 'bg-gray-400 cursor-not-allowed text-white'
+              : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'
               }`}
           >
-            {!(nearbyTrucks.length > 0 && !nearbyTrucks[0].activo) && (
+            {statusData.is_active && (
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
             )}
             <svg className="w-6 h-6 relative z-10" fill="currentColor" viewBox="0 0 20 20">
@@ -731,8 +731,8 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
             <button
               onClick={() => onAddToCart(product)}
               className={`flex-1 px-2 font-bold transition-all duration-200 flex items-center justify-center gap-1 rounded-lg ${quantity > 0
-                  ? 'bg-yellow-500 text-black hover:bg-yellow-600'
-                  : 'bg-green-500 hover:bg-green-600 text-white'
+                ? 'bg-yellow-500 text-black hover:bg-yellow-600'
+                : 'bg-green-500 hover:bg-green-600 text-white'
                 }`}
               style={{ height: 'clamp(33.7px, 8.42vw, 43.8px)' }}
               aria-label={`Agregar ${product.name} al carro`}
@@ -869,7 +869,7 @@ export default function App() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   const handleCheckout = () => {
-    const isClosed = nearbyTrucks.length > 0 && nearbyTrucks[0].activo === false;
+    const isClosed = !statusData.is_active;
     if (isClosed) {
       return;
     }
@@ -1824,7 +1824,7 @@ export default function App() {
                   return null;
                 }
 
-                const isActive = nearbyTrucks.length > 0 ? nearbyTrucks[0].activo : true;
+                const isActive = statusData.is_active ?? true;
                 const finalStatus = isActive && statusData.is_open;
 
                 let statusText = '';
@@ -1860,8 +1860,8 @@ export default function App() {
                 key={cat}
                 onClick={() => { vibrate(30); setActiveCategory(cat); }}
                 className={`w-full flex items-start gap-3 px-4 py-3 rounded-lg transition-all duration-200 mb-1.5 text-sm ${activeCategory === cat
-                    ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-md'
-                    : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600'
+                  ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-md'
+                  : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600'
                   }`}
               >
                 <div className="flex items-center justify-center w-6 h-6 flex-shrink-0 mt-0.5" style={{ color: activeCategory === cat ? 'white' : categoryColors[cat] }}>
@@ -1927,7 +1927,7 @@ export default function App() {
                       );
                     }
 
-                    const isActive = nearbyTrucks.length > 0 ? nearbyTrucks[0].activo : true;
+                    const isActive = statusData.is_active ?? true;
                     const finalStatus = isActive && statusData.is_open;
 
                     let statusText = '';
@@ -2020,8 +2020,8 @@ export default function App() {
                         key={cat}
                         onClick={() => { vibrate(30); setActiveCategory(cat); }}
                         className={`flex flex-col items-center justify-center px-3 py-2 transition-all duration-200 text-xs font-bold min-h-[60px] min-w-[80px] rounded-lg ${activeCategory === cat
-                            ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-md'
-                            : 'text-gray-700 hover:text-orange-500 hover:bg-white bg-white border border-gray-200'
+                          ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-md'
+                          : 'text-gray-700 hover:text-orange-500 hover:bg-white bg-white border border-gray-200'
                           }`}
                       >
                         <div
@@ -2274,17 +2274,17 @@ export default function App() {
                   </div>
                 </div>
 
-                {nearbyTrucks.length > 0 && !nearbyTrucks[0].activo && (
+                {!statusData.is_active && (
                   <div className="bg-red-100 border border-red-300 rounded-lg p-2 text-center mb-3">
-                    <p className="text-red-800 font-bold text-xs">⚠️ Cerrado por mejoras</p>
+                    <p className="text-red-800 font-bold text-xs">⚠️ Cerrado por mantenimiento programado</p>
                   </div>
                 )}
                 <button
                   onClick={handleCheckout}
-                  disabled={nearbyTrucks.length > 0 && !nearbyTrucks[0].activo}
-                  className={`w-full rounded-lg font-bold py-3 text-base transition-all flex items-center justify-center gap-2 ${nearbyTrucks.length > 0 && !nearbyTrucks[0].activo
-                      ? 'bg-gray-400 cursor-not-allowed text-white'
-                      : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'
+                  disabled={!statusData.is_active}
+                  className={`w-full rounded-lg font-bold py-3 text-base transition-all flex items-center justify-center gap-2 ${!statusData.is_active
+                    ? 'bg-gray-400 cursor-not-allowed text-white'
+                    : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'
                     }`}
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -2668,8 +2668,8 @@ export default function App() {
                       type="button"
                       onClick={() => setCustomerInfo({ ...customerInfo, deliveryType: 'delivery' })}
                       className={`p-3 border-2 rounded-lg text-center transition-colors ${customerInfo.deliveryType === 'delivery'
-                          ? 'border-orange-500 bg-orange-50 text-orange-700'
-                          : 'border-gray-300 hover:border-gray-400'
+                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                        : 'border-gray-300 hover:border-gray-400'
                         }`}
                     >
                       <div className="flex justify-center mb-2">
@@ -2682,8 +2682,8 @@ export default function App() {
                       type="button"
                       onClick={() => setCustomerInfo({ ...customerInfo, deliveryType: 'pickup' })}
                       className={`p-3 border-2 rounded-lg text-center transition-colors ${customerInfo.deliveryType === 'pickup'
-                          ? 'border-orange-500 bg-orange-50 text-orange-700'
-                          : 'border-gray-300 hover:border-gray-400'
+                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                        : 'border-gray-300 hover:border-gray-400'
                         }`}
                     >
                       <div className="flex justify-center mb-2">
