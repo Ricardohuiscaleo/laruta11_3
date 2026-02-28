@@ -546,12 +546,23 @@ export default function PersonalApp() {
                   } catch { showToast('❌ Error de conexión', 'error'); }
                   if (btnEl) { btnEl.disabled = false; btnEl.textContent = '📧'; }
                 }}
-                sendMassiveEmails={async () => {
-                  if (!confirm(`¿Enviar a TODOS los pagados de ${MESES[mes]}?`)) return;
+                sendMassiveEmails={async (ids = null) => {
+                  if (!confirm(ids && ids.length > 0 ? `¿Enviar a los ${ids.length} seleccionados de ${MESES[mes]}?` : `¿Enviar a TODOS los pagados de ${MESES[mes]}?`)) return;
                   const mesStr = String(mes + 1).padStart(2, '0');
                   const personalActivo = personal.filter(p => p.activo == 1);
-                  const pagados = pagosNomina.ruta11.filter(pn => personalActivo.some(p => p.id == pn.personal_id))
+                  let pagados = pagosNomina.ruta11.filter(pn => personalActivo.some(p => p.id == pn.personal_id))
                     .concat(pagosNomina.seguridad.filter(pn => personalActivo.some(p => p.id == pn.personal_id)));
+
+                  const uniqueIds = new Set();
+                  pagados = pagados.filter(p => {
+                    if (uniqueIds.has(p.personal_id)) return false;
+                    uniqueIds.add(p.personal_id);
+                    return true;
+                  });
+
+                  if (ids && ids.length > 0) {
+                    pagados = pagados.filter(p => ids.includes(p.personal_id));
+                  }
 
                   const pagadosConEmail = pagados.filter(pn => {
                     const p = personalActivo.find(x => x.id == pn.personal_id);
@@ -832,6 +843,7 @@ export default function PersonalApp() {
 
 function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupuestoNomina, onReloadPagos, showToast, onEditPersonal, previewPersonalEmail, sendPersonalEmail, sendMassiveEmails }) {
   const [copiedGlobal, setCopiedGlobal] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
 
   const allData = personal.filter(p => p.activo == 1).map(p => {
     const lRuta11 = getLiquidacion(p, 'ruta11');
@@ -855,17 +867,21 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
     };
   }).sort((a, b) => b.granTotal - a.granTotal);
 
-  function copiarResumenGlobal() {
+  function copiarResumenGlobal(ids = []) {
     const MESES_L = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     const emojis = { 'Ricardo': '🤖', 'Andrés': '🧑🏻', 'Andres': '🧑🏻', 'Camila': '👩🏽', 'Neit': '👩🏻', 'Gabriel': '🧑🏿', 'Claudio': '🧓🏽', 'Yojhans': '👺' };
 
     let md = `🏦 *RESUMEN GLOBAL PAGOS*\n📅 _${MESES_L[mes] ? MESES_L[mes].toUpperCase() : ''} ${anio}_\n━━━━━━━━━━━━\n`;
     let sum = 0;
     // Solo ignorar empleados normales con total 0, pero incluir dueño aunque tenga pérdida.
-    const items = allData.filter(item => {
+    let items = allData.filter(item => {
       const isOwner = item.persona.rol && item.persona.rol.includes('dueño');
       return isOwner || item.granTotal > 0;
     });
+
+    if (ids && ids.length > 0) {
+      items = items.filter(item => ids.includes(item.persona.id));
+    }
 
     // Preparar el maxLength para alinear bien
     const montosStr = items.map(item => `$${item.granTotal >= 0 ? item.granTotal.toLocaleString('es-CL') : '-' + Math.abs(item.granTotal).toLocaleString('es-CL')}`);
@@ -917,16 +933,8 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
             </div>
             <div>
               <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: '-0.3px' }}>Resumen Nómina General</h2>
-              <div style={{ fontSize: 13, opacity: 0.8 }}>Febrero 2026 · {allData.length} Trabajadores Activos</div>
+              <div style={{ fontSize: 13, opacity: 0.8 }}>{MESES[mes]} {anio} · {allData.length} Trabajadores Activos</div>
             </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={copiarResumenGlobal} style={{ padding: '10px 18px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.3)', background: copiedGlobal ? '#4ade80' : 'rgba(255,255,255,0.15)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}>
-              {copiedGlobal ? <Check size={16} /> : <DollarSign size={16} />} {copiedGlobal ? 'Copiado!' : 'Solo Nombres y Totales'}
-            </button>
-            <button onClick={sendMassiveEmails} style={{ padding: '10px 18px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.15)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}>
-              <Mail size={16} /> Notificar Masivo
-            </button>
           </div>
         </div>
 
@@ -948,6 +956,23 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
             <div style={{ fontSize: 10, opacity: 0.7 }}>{saldoGlobal < 0 ? 'Sobre el límite' : 'Disponible'}</div>
           </div>
         </div>
+
+        {/* Global Footer Actions */}
+        <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setSelectedIds(selectedIds.length === allData.length ? [] : allData.map(i => i.persona.id))}>
+            <input type="checkbox" checked={selectedIds.length === allData.length && allData.length > 0} readOnly style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#10b981' }} />
+            <span style={{ fontSize: 14, fontWeight: 600 }}>Seleccionar Todos ({selectedIds.length}/{allData.length})</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => copiarResumenGlobal(selectedIds)} style={{ padding: '10px 18px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.3)', background: copiedGlobal ? '#4ade80' : 'rgba(255,255,255,0.15)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}>
+              {copiedGlobal ? <Check size={16} /> : <DollarSign size={16} />}
+              {copiedGlobal ? 'Copiado!' : `Nombres y Totales ${selectedIds.length > 0 ? `(${selectedIds.length})` : ''}`}
+            </button>
+            <button onClick={() => sendMassiveEmails(selectedIds.length > 0 ? selectedIds : null)} style={{ padding: '10px 18px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.15)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}>
+              <Mail size={16} /> Notificar Masivo {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Nomina Cards */}
@@ -961,10 +986,12 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
             onEdit={() => onEditPersonal(item.persona)}
             onPreviewEmail={previewPersonalEmail}
             onSendEmail={sendPersonalEmail}
+            isSelected={selectedIds.includes(item.persona.id)}
+            onToggleSelection={(e) => { e.stopPropagation(); setSelectedIds(prev => prev.includes(item.persona.id) ? prev.filter(id => id !== item.persona.id) : [...prev, item.persona.id]); }}
           />
         ))}
       </div>
-    </div>
+    </div >
   );
 }
 
@@ -984,16 +1011,16 @@ function StatCard({ title, value, icon, color }) {
   );
 }
 
-function NominaCard({ item, colorObj, onNotify, onEdit, onPreviewEmail, onSendEmail }) {
+function NominaCard({ item, colorObj, onNotify, onEdit, onPreviewEmail, onSendEmail, isSelected, onToggleSelection }) {
   const c = colorObj || { bg: '#1a73e8', text: '#1a73e8', light: '#f8fafd' };
 
   return (
     <div style={{
-      background: 'white',
+      background: isSelected ? '#f0fdf4' : 'white',
       borderRadius: 16,
       padding: '16px',
-      border: `1px solid ${c.border || '#e3e3e3'}`,
-      boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
+      border: isSelected ? `2px solid #10b981` : `1px solid ${c.border || '#e3e3e3'}`,
+      boxShadow: isSelected ? '0 4px 12px rgba(16,185,129,0.15)' : '0 4px 12px rgba(0,0,0,0.04)',
       display: 'flex',
       flexDirection: 'column',
       gap: 16,
@@ -1004,6 +1031,13 @@ function NominaCard({ item, colorObj, onNotify, onEdit, onPreviewEmail, onSendEm
       {/* Header Profile + Actions */}
       <div className="nomina-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+          <input
+            type="checkbox"
+            checked={!!isSelected}
+            onChange={onToggleSelection}
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: 20, height: 20, cursor: 'pointer', accentColor: '#10b981', flexShrink: 0 }}
+          />
           <div className="nomina-card-avatar" style={{ width: 44, height: 44, borderRadius: '50%', background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: 'white', flexShrink: 0 }}>
             {item.persona.nombre[0]}
           </div>
