@@ -1335,17 +1335,18 @@ export default function App() {
       try {
         console.log('🔄 Cargando status en background...');
         const statusResponse = await fetch('/api/get_status_data.php?v=' + Date.now());
-        const statusData = await statusResponse.json();
+        const data = await statusResponse.json();
 
-        if (statusData.success) {
+        if (data.success) {
           console.log('✅ Status cargado exitosamente');
-          setSchedules(statusData.schedules || []);
-          setStatusData(statusData.status || {
+          setSchedules(data.schedules || []);
+          setStatusData(data.status || {
             is_open: false,
+            is_active: true,
             current_time: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' }),
             today_schedule: null
           });
-          setNearbyTrucks(statusData.trucks || []);
+          setNearbyTrucks(data.trucks || []);
         }
       } catch (error) {
         console.error('⚠️ Error cargando status (no crítico):', error);
