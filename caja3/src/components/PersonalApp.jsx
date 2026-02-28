@@ -562,36 +562,37 @@ export default function PersonalApp() {
                   if (!confirm(ids && ids.length > 0 ? `¿Enviar a los ${ids.length} seleccionados de ${MESES[mes]}?` : `¿Enviar a TODOS los pagados de ${MESES[mes]}?`)) return;
                   const mesStr = String(mes + 1).padStart(2, '0');
                   const personalActivo = personal.filter(p => p.activo == 1);
-                  let pagados = pagosNomina.ruta11.filter(pn => personalActivo.some(p => p.id == pn.personal_id))
-                    .concat(pagosNomina.seguridad.filter(pn => personalActivo.some(p => p.id == pn.personal_id)));
 
-                  const uniqueIds = new Set();
-                  pagados = pagados.filter(p => {
-                    if (uniqueIds.has(p.personal_id)) return false;
-                    uniqueIds.add(p.personal_id);
-                    return true;
-                  });
-
+                  let personasAEnviar = [];
                   if (ids && ids.length > 0) {
-                    pagados = pagados.filter(p => ids.includes(p.personal_id));
+                    // Si el usuario seleccionó checkboxes manualmente, iteramos directos sobre ellos.
+                    personasAEnviar = personalActivo.filter(p => ids.includes(p.id));
+                  } else {
+                    // Si hace click directo y sin selección (masivo), buscamos a los pagados (ruta11 o seguridad).
+                    const pagados = pagosNomina.ruta11.filter(pn => personalActivo.some(p => p.id == pn.personal_id))
+                      .concat(pagosNomina.seguridad.filter(pn => personalActivo.some(p => p.id == pn.personal_id)));
+
+                    const uniqueIds = new Set();
+                    const pagadosIds = pagados.filter(p => {
+                      if (uniqueIds.has(p.personal_id)) return false;
+                      uniqueIds.add(p.personal_id);
+                      return true;
+                    }).map(p => p.personal_id);
+                    personasAEnviar = personalActivo.filter(p => pagadosIds.includes(p.id));
                   }
 
-                  const pagadosConEmail = pagados.filter(pn => {
-                    const p = personalActivo.find(x => x.id == pn.personal_id);
-                    return p && p.email && p.email.trim() !== '';
-                  });
+                  const pagadosConEmail = personasAEnviar.filter(p => p && p.email && p.email.trim() !== '');
 
-                  if (pagadosConEmail.length === 0) return showToast('No hay personal pagado con correo registrado', 'error');
-                  if (pagadosConEmail.length < pagados.length) {
-                    if (!confirm(`Hay ${pagados.length - pagadosConEmail.length} trabajadores sin correo. Se enviarán ${pagadosConEmail.length} correos. ¿Continuar?`)) return;
+                  if (pagadosConEmail.length === 0) return showToast('No hay personal seleccionado/pagado con correo registrado', 'error');
+                  if (pagadosConEmail.length < personasAEnviar.length) {
+                    if (!confirm(`Hay ${personasAEnviar.length - pagadosConEmail.length} trabajadores sin correo. Se enviarán ${pagadosConEmail.length} correos. ¿Continuar?`)) return;
                   }
 
                   setSendingProgress(`Iniciando envío (${pagadosConEmail.length} correos)...`);
 
                   let sent = 0, failed = 0;
                   for (let i = 0; i < pagadosConEmail.length; i++) {
-                    const pago = pagadosConEmail[i];
-                    const persona = personalActivo.find(x => x.id == pago.personal_id);
+                    const persona = pagadosConEmail[i];
                     setSendingProgress(`Enviando ${i + 1} de ${pagadosConEmail.length}: ${persona.nombre}...`);
                     try {
                       const payload = buildEmailPayloadFn(persona, getLiquidacion, anio, mes);
