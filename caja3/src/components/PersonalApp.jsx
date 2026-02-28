@@ -69,7 +69,10 @@ export default function PersonalApp() {
   const [modalAjuste, setModalAjuste] = useState(null);
   const [formAjuste, setFormAjuste] = useState({ monto: '', concepto: '', notas: '', tipo: '-' });
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState(null);
+  const [showToastMsg, setShowToastMsg] = useState('');
+  const [toastType, setToastType] = useState('success');
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState('');
   const [modalTurno, setModalTurno] = useState(null); // {dia, fecha, isSeguridad, titularId}
   const [formTurno, setFormTurno] = useState({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa', fecha_fin: '' });
   const [modalPersonal, setModalPersonal] = useState(null); // null | 'new' | persona
@@ -106,8 +109,12 @@ export default function PersonalApp() {
   }
 
   function showToast(msg, type = 'success') {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    setShowToastMsg(msg);
+    setToastType(type);
+    setTimeout(() => {
+      setShowToastMsg('');
+      setToastType('success');
+    }, 3000);
   }
 
   async function saveTurno() {
@@ -452,6 +459,49 @@ export default function PersonalApp() {
                 onReloadPagos={loadData}
                 showToast={showToast}
                 onEditPersonal={(p) => { setModalPersonal(p); setFormPersonal({ nombre: p.nombre, rol: typeof p.rol === 'string' ? p.rol.split(',') : p.rol, sueldo_base_cajero: p.sueldo_base_cajero || '', sueldo_base_planchero: p.sueldo_base_planchero || '', sueldo_base_admin: p.sueldo_base_admin || '', sueldo_base_seguridad: p.sueldo_base_seguridad || '', activo: p.activo }); }}
+                previewPersonalEmail={(personalId) => {
+                  const mesStr = String(mes + 1).padStart(2, '0');
+                  setPreviewUrl(`/api/personal/preview_liquidacion_email.php?personal_id=${personalId}&mes=${anio}-${mesStr}`);
+                  setShowPreviewModal(true);
+                }}
+                sendPersonalEmail={async (personalId, nombre, btnEl) => {
+                  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⏳...'; }
+                  const mesStr = String(mes + 1).padStart(2, '0');
+                  try {
+                    const res = await fetch('/api/personal/send_liquidacion_email.php', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ personal_id: personalId, mes: `${anio}-${mesStr}` })
+                    });
+                    const r = await res.json();
+                    showToast(r.success ? `✅ Email enviado a ${r.email || nombre}` : `❌ ${r.error}`, r.success ? 'success' : 'error');
+                  } catch { showToast('❌ Error de conexión', 'error'); }
+                  if (btnEl) { btnEl.disabled = false; btnEl.textContent = '📧'; }
+                }}
+                sendMassiveEmails={async () => {
+                  if (!confirm(`¿Enviar a TODOS los pagados de ${MESES[mes]}?`)) return;
+                  const mesStr = String(mes + 1).padStart(2, '0');
+                  const personalActivo = personal.filter(p => p.activo == 1);
+                  const pagados = pagosNomina.ruta11.filter(pn => personalActivo.some(p => p.id == pn.personal_id))
+                    .concat(pagosNomina.seguridad.filter(pn => personalActivo.some(p => p.id == pn.personal_id)));
+
+                  if (pagados.length === 0) return showToast('No hay personal pagado', 'error');
+
+                  let sent = 0, failed = 0;
+                  for (const pago of pagados) {
+                    try {
+                      const res = await fetch('/api/personal/send_liquidacion_email.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ personal_id: pago.personal_id, mes: `${anio}-${mesStr}` })
+                      });
+                      const r = await res.json();
+                      r.success ? sent++ : failed++;
+                    } catch { failed++; }
+                    await new Promise(r => setTimeout(r, 600)); // Rate limit 
+                  }
+                  showToast(`Enviados: ${sent}, Fallidos: ${failed}`, failed === 0 ? 'success' : 'error');
+                }}
               />
             )}
 
@@ -660,16 +710,34 @@ export default function PersonalApp() {
       )}
 
       {/* Toast Notification */}
-      {toast && (
+      {showToastMsg && (
         <div style={{
           position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
-          background: toast.type === 'error' ? '#d93025' : '#202124',
+          background: toastType === 'error' ? '#d93025' : '#202124',
           color: 'white', padding: '12px 24px', borderRadius: 12, fontSize: 14, fontWeight: 500,
           boxShadow: '0 4px 12px rgba(0,0,0,0.3)', zIndex: 2000,
           display: 'flex', alignItems: 'center', gap: 8, animation: 'slideUp 0.3s ease-out'
         }}>
-          {toast.type === 'error' ? <AlertCircle size={18} /> : <ShieldCheck size={18} />}
-          {toast.msg}
+          {toastType === 'error' ? <AlertCircle size={18} /> : <ShieldCheck size={18} />}
+          {showToastMsg}
+        </div>
+      )}
+
+      {/* Email Preview Modal */}
+      {showPreviewModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 800, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#1e293b' }}>👁️ Vista Previa del Email</h3>
+              <button onClick={() => setShowPreviewModal(false)} style={{ background: 'none', border: 'none', fontSize: 28, lineHeight: 1, color: '#94a3b8', cursor: 'pointer' }}>&times;</button>
+            </div>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <iframe src={previewUrl} style={{ width: '100%', height: '100%', minHeight: '60vh', border: 'none' }} />
+            </div>
+            <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowPreviewModal(false)} style={{ padding: '10px 24px', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cerrar</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -678,8 +746,7 @@ export default function PersonalApp() {
 
 // --- SUBRECUROS Y COMPONENTES ---
 
-function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupuestoNomina, onReloadPagos, showToast, onEditPersonal }) {
-  const [modalEmail, setModalEmail] = useState(null);
+function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupuestoNomina, onReloadPagos, showToast, onEditPersonal, previewPersonalEmail, sendPersonalEmail, sendMassiveEmails }) {
   const [copiedGlobal, setCopiedGlobal] = useState(false);
 
   const allData = personal.filter(p => p.activo == 1).map(p => {
@@ -773,7 +840,7 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
             <button onClick={copiarResumenGlobal} style={{ padding: '10px 18px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.3)', background: copiedGlobal ? '#4ade80' : 'rgba(255,255,255,0.15)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}>
               {copiedGlobal ? <Check size={16} /> : <DollarSign size={16} />} {copiedGlobal ? 'Copiado!' : 'Solo Nombres y Totales'}
             </button>
-            <button onClick={() => setModalEmail({ type: 'massive' })} style={{ padding: '10px 18px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.15)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}>
+            <button onClick={sendMassiveEmails} style={{ padding: '10px 18px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.15)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}>
               <Mail size={16} /> Notificar Masivo
             </button>
           </div>
@@ -806,15 +873,13 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
             key={item.persona.id}
             item={item}
             colorObj={COLORES[item.persona.id] || COLORES[((item.persona.id % 8) + 1)]}
-            onNotify={() => setModalEmail({ type: 'individual', persona: item.persona, total: item.granTotal })}
+            onNotify={() => { }} // This is now handled by individual buttons
             onEdit={() => onEditPersonal(item.persona)}
+            onPreviewEmail={previewPersonalEmail}
+            onSendEmail={sendPersonalEmail}
           />
         ))}
       </div>
-
-
-
-      {modalEmail && <EmailPreviewModal config={modalEmail} onClose={() => setModalEmail(null)} mes={mes} anio={anio} />}
     </div>
   );
 }
@@ -835,7 +900,7 @@ function StatCard({ title, value, icon, color }) {
   );
 }
 
-function NominaCard({ item, colorObj, onNotify, onEdit }) {
+function NominaCard({ item, colorObj, onNotify, onEdit, onPreviewEmail, onSendEmail }) {
   const c = colorObj || { bg: '#1a73e8', text: '#1a73e8', light: '#f8fafd' };
 
   return (
@@ -866,7 +931,10 @@ function NominaCard({ item, colorObj, onNotify, onEdit }) {
           </div>
         </div>
         <div className="nomina-card-actions" style={{ display: 'flex', gap: 8 }}>
-          <button onClick={(e) => { e.stopPropagation(); onNotify(); }} style={{ border: 'none', background: c.light, color: c.text, padding: '8px', borderRadius: 8, cursor: 'pointer', display: 'flex' }} title="Notificar Pago">
+          <button onClick={(e) => { e.stopPropagation(); onPreviewEmail(item.persona.id); }} style={{ border: 'none', background: c.light, color: c.text, padding: '8px', borderRadius: 8, cursor: 'pointer', display: 'flex' }} title="Previsualizar Email">
+            <Eye size={18} />
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); onSendEmail(item.persona.id, item.persona.nombre, e.currentTarget); }} style={{ border: 'none', background: c.light, color: c.text, padding: '8px', borderRadius: 8, cursor: 'pointer', display: 'flex' }} title="Enviar Email">
             <Mail size={18} />
           </button>
         </div>
@@ -900,59 +968,6 @@ function NominaCard({ item, colorObj, onNotify, onEdit }) {
     </div>
   );
 }
-
-function EmailPreviewModal({ config, onClose, mes, anio }) {
-  const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div style={{ background: '#f8f9fa', borderRadius: 28, width: '100%', maxWidth: 600, maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 64px rgba(0,0,0,0.4)' }}>
-        <header style={{ padding: '24px 32px', background: 'white', borderBottom: '1px solid #e3e3e3', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>Vista Previa de Notificación</h3>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#70757a' }}>{config.type === 'massive' ? 'Envío masivo a todo el personal activo' : `Enviando a ${config.persona.nombre}`}</p>
-          </div>
-          <button onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: 8 }}>✕</button>
-        </header>
-
-        <div style={{ flex: 1, padding: 32, overflowY: 'auto' }}>
-          <div style={{ background: 'white', borderRadius: 16, padding: 32, border: '1px solid #e3e3e3', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-            {/* Email Body Mockup */}
-            <div style={{ textAlign: 'center', marginBottom: 32 }}>
-              <img src="/11.png" style={{ width: 48, marginBottom: 16 }} />
-              <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Comprobante de Pago</h2>
-              <p style={{ color: '#70757a' }}>Nómina {MESES[mes]} {anio}</p>
-            </div>
-
-            <p style={{ fontSize: 16, lineHeight: 1.6 }}>Hola <strong>{config.type === 'massive' ? '[Nombre Trabajador]' : config.persona.nombre}</strong>,</p>
-            <p style={{ fontSize: 16, lineHeight: 1.6 }}>Te informamos que tu liquidación correspondiente al mes de <strong>{MESES[mes]}</strong> ha sido procesada con éxito.</p>
-
-            <div style={{ background: '#f8fafd', borderRadius: 16, padding: 24, margin: '24px 0', border: '1px dashed #1a73e8' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ color: '#70757a' }}>Monto total transferido:</span>
-                <span style={{ fontWeight: 700, color: '#1a73e8', fontSize: 18 }}>{config.type === 'massive' ? '$[Monto Total]' : new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(config.total)}</span>
-              </div>
-              <div style={{ fontSize: 12, color: '#70757a' }}>* El detalle desglosado está disponible en tu panel personal.</div>
-            </div>
-
-            <p style={{ fontSize: 14, color: '#70757a', textAlign: 'center', marginTop: 32, borderTop: '1px solid #f1f3f4', paddingTop: 24 }}>
-              Gracias por tu compromiso con <strong>La Ruta 11</strong>.<br />
-              <em>Este es un correo automático, por favor no respondas.</em>
-            </p>
-          </div>
-        </div>
-
-        <footer style={{ padding: '24px 32px', background: 'white', borderTop: '1px solid #e3e3e3', display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-          <button onClick={onClose} style={{ padding: '12px 24px', border: 'none', background: '#f1f3f4', borderRadius: 14, fontWeight: 600, cursor: 'pointer' }}>Cerrar</button>
-          <button style={{ padding: '12px 32px', border: 'none', background: '#1a73e8', color: 'white', borderRadius: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Send size={18} /> {config.type === 'massive' ? 'Enviar a todos' : 'Enviar ahora'}
-          </button>
-        </footer>
-      </div>
-    </div>
-  );
-}
-
 
 function CalendarioView({ diasEnMes, primerDiaLunes, turnosPorFecha, personal, colores, mes, anio, onAddTurno, onDeleteTurno }) {
   const DIAS_LABEL = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -1092,14 +1107,14 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
     const mesLabel = `${MESES_L[mes]} ${anio}`;
     let md = `*Liquidación Nómina — ${mesLabel}*\n━━━━━━━━━━━━━━━━━━━━\n`;
     personal.forEach(p => {
-      const { diasTrabajados, sueldoBase, ajustesPer, gruposReemplazando, gruposReemplazados, total } = getLiquidacion(p);
+      const { diasTrabajados, diasReemplazados, ajustesPer, sueldoBase, gruposReemplazando, gruposReemplazados, total } = getLiquidacion(p);
       let roles = p.rol;
       if (typeof p.rol === 'string') {
         roles = p.rol.split(',').map(r => r.trim()).join(', ');
       }
       md += `\n*${p.nombre.toUpperCase()}*\n_${roles}_\n▪ *Días:* ${diasTrabajados}\n▪ *Base:* $${sueldoBase.toLocaleString('es-CL')}\n`;
-      Object.values(gruposReemplazando).forEach(g => { md += `▪ *Reemplazó a ${g.persona?.nombre ?? '?'}* (días ${g.dias.sort((a, b) => a - b).join(',')}): +$${g.monto.toLocaleString('es-CL')}\n`; });
-      Object.values(gruposReemplazados).forEach(g => { md += `▪ *${g.persona?.nombre ?? '?'} cubrió días* ${g.dias.sort((a, b) => a - b).join(',')}: -$${g.monto.toLocaleString('es-CL')}\n`; });
+      Object.values(gruposReemplazando).forEach(g => { md += `▪ *Reemplazó a ${g.persona?.nombre ?? '?'}* (días ${g.dias.sort((a, b) => a - b).join(',') || 'N/A'}): +$${g.monto.toLocaleString('es-CL')}\n`; });
+      Object.values(gruposReemplazados).forEach(g => { md += `▪ *${g.persona?.nombre ?? '?'} cubrió días* ${g.dias.sort((a, b) => a - b).join(',') || 'N/A'}: -$${g.monto.toLocaleString('es-CL')}\n`; });
       ajustesPer.forEach(a => {
         const m = parseFloat(a.monto);
         md += `▪ ${a.concepto}: *${m < 0 ? '-' : '+'}$${Math.abs(m).toLocaleString('es-CL')}*\n`;
@@ -1346,7 +1361,11 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                         <button onClick={() => onAjuste(p)} style={{ flex: 1, padding: '9px', border: `1px dashed ${c?.border}`, borderRadius: 8, background: c?.light, color: c?.text, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>+ Ajuste</button>
                         {pagado ? (
-                          <button onClick={() => deletePago(pagado.id)} style={{ flex: 1, padding: '9px', border: '1px solid #fca5a5', borderRadius: 8, background: '#fef2f2', color: '#ef4444', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>Desmarcar Pago</button>
+                          <>
+                            <button onClick={() => deletePago(pagado.id)} style={{ flex: 1, padding: '9px', border: '1px solid #fca5a5', borderRadius: 8, background: '#fef2f2', color: '#ef4444', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>Desmarcar Pago</button>
+                            <button onClick={() => previewPersonalEmail(p.id)} style={{ padding: '9px 12px', border: 'none', borderRadius: 8, background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>👁️</button>
+                            <button onClick={(e) => sendPersonalEmail(p.id, p.nombre, e.target)} style={{ padding: '9px 12px', border: 'none', borderRadius: 8, background: '#ea580c', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>📧</button>
+                          </>
                         ) : (
                           <button onClick={() => marcarPagado(p)} disabled={savingPago === p.id} style={{ flex: 1, padding: '9px', border: 'none', borderRadius: 8, background: '#10b981', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
                             {savingPago === p.id ? 'Cargando...' : 'Marcar Pagado'}
