@@ -1,192 +1,134 @@
-import { Truck, UtensilsCrossed, Smartphone, TrendingUp, ChefHat, Leaf, X } from 'lucide-react';
+import { Truck, UtensilsCrossed, Smartphone, TrendingUp, ChefHat, Leaf, X, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Services() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState('');
-  
+
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
     setIsModalOpen(false);
     setMessage('');
   };
-  
+
   const sendWhatsApp = () => {
     const whatsappNumber = '56922504275';
-    const encodedMessage = encodeURIComponent(message || 'Hola, me interesa cotizar un servicio de La Ruta11');
+    const encodedMessage = encodeURIComponent(message || 'Hola, me interesa cotizar un servicio de La Ruta 11');
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
     window.open(whatsappUrl, '_blank');
     closeModal();
   };
+
   const services = [
     {
       icon: Truck,
-      title: "Food Trucks Premium",
-      description: "Flota moderna de food trucks con cocinas gourmet y estándares de calidad superiores",
-      features: ["Cocinas profesionales", "Equipos certificados", "Diseño moderno"],
-      gradient: "from-ruta-red to-ruta-orange"
+      title: "Catering Eventos",
+      description: "Llevamos la experiencia del food truck a tu fiesta, matrimonio o evento corporativo.",
+      gradient: "from-ruta-red/20 to-ruta-orange/20",
+      accent: "text-ruta-red"
     },
     {
       icon: UtensilsCrossed,
-      title: "Catering Eventos",
-      description: "Servicio de catering para eventos corporativos, matrimonios y celebraciones",
-      features: ["Eventos corporativos", "Matrimonios", "Fiestas privadas"],
-      gradient: "from-blue-500 to-purple-600"
+      title: "Chef a Domicilio",
+      description: "Servicio exclusivo de cocina gourmet en la comodidad de tu espacio.",
+      gradient: "from-ruta-yellow/10 to-transparent",
+      accent: "text-ruta-yellow"
     },
     {
       icon: Smartphone,
-      title: "Pedidos Online",
-      description: "App móvil y plataforma web para pedidos anticipados y seguimiento en tiempo real",
-      features: ["App móvil", "Pedidos anticipados", "Seguimiento GPS"],
-      gradient: "from-green-500 to-teal-600"
-    },
-    {
-      icon: TrendingUp,
-      title: "Asesoría Personalizada",
-      description: "Acompañamiento especializado para elegir el mejor menú y servicio para tu evento",
-      features: ["Selección de menú", "Planificación de evento", "Recomendaciones personalizadas"],
-      gradient: "from-pink-500 to-rose-600"
-    },
-    {
-      icon: ChefHat,
-      title: "Chefs Especializados",
-      description: "Equipo de chefs con experiencia en gastronomía gourmet y cocina internacional",
-      features: ["Chefs certificados", "Cocina internacional", "Recetas exclusivas"],
-      gradient: "from-indigo-500 to-blue-600"
-    },
-    {
-      icon: Leaf,
-      title: "Ingredientes Premium",
-      description: "Selección cuidadosa de ingredientes frescos y proveedores locales certificados",
-      features: ["Ingredientes frescos", "Proveedores locales", "Calidad garantizada"],
-      gradient: "from-emerald-500 to-green-600"
+      title: "Smart Ordering",
+      description: "Pide a través de nuestra App y evita esperas. Rastreo en tiempo real.",
+      gradient: "from-blue-900/20 to-transparent",
+      accent: "text-blue-400"
     }
   ];
 
   return (
-    <section id="servicios" className="py-20 bg-white">
+    <section id="servicios" className="py-32 bg-ruta-dark">
       <div className="container mx-auto px-6">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <span className="inline-block bg-ruta-red text-white px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide mb-4">
-            Nuestros Servicios
-          </span>
-          <h2 className="text-4xl md:text-5xl font-bold text-ruta-black mb-6">
-            Experiencia <span className="text-yellow-400">Completa</span>
+        <div className="text-center mb-24">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-ruta-yellow/20 bg-ruta-yellow/5 text-ruta-yellow text-[10px] uppercase tracking-[0.3em] font-bold mb-6">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ruta-yellow opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-ruta-yellow"></span>
+            </span>
+            Nuestras Soluciones
+          </div>
+          <h2 className="text-4xl md:text-6xl font-extrabold text-white tracking-tighter mb-6">
+            Experiencia <span className="text-transparent bg-clip-text bg-gradient-to-r from-ruta-yellow to-ruta-orange">Sin Límites</span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Ofrecemos una gama completa de servicios gastronómicos premium para satisfacer todas tus necesidades culinarias
+          <p className="text-lg text-ruta-white/60 max-w-2xl mx-auto font-light leading-relaxed">
+            Más que comida, ofrecemos una infraestructura gastronómica completa para cualquier ocasión.
           </p>
         </div>
 
-        {/* Services Cards */}
-        <div className="space-y-8">
+        <div className="grid md:grid-cols-3 gap-8">
           {services.map((service, index) => (
             <div
               key={index}
-              className="sticky top-20"
-              style={{ zIndex: index + 1 }}
+              className="group p-10 rounded-[2rem] bg-ruta-black border border-white/5 transition-all duration-500 hover:bg-white/5 hover:-translate-y-2"
             >
-              <div 
-                className={`bg-gradient-to-br ${service.gradient} text-white rounded-2xl md:rounded-3xl p-6 md:p-12 shadow-2xl min-h-[300px] md:h-80 flex flex-col justify-center items-center text-center max-w-7xl mx-auto transform transition-transform duration-300 hover:scale-105`}
-                style={{
-                  transform: `translateY(${index * 10}px) scale(${1 + index * 0.01})`,
-                }}
-              >
-                <div className="mb-6">
-                  <service.icon className="w-16 h-16 md:w-20 md:h-20 mx-auto text-yellow-400" />
-                </div>
-                <h3 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 leading-tight">
-                  {service.title}
-                </h3>
-                <p className="text-lg md:text-xl leading-relaxed opacity-90 max-w-2xl mb-6">
-                  {service.description}
-                </p>
-                
-                {/* Features */}
-                <div className="flex flex-wrap justify-center gap-2 mb-6">
-                  {service.features.map((feature, idx) => (
-                    <span key={idx} className="bg-yellow-400 text-ruta-black px-3 py-1 rounded-full text-sm font-semibold">
-                      {feature}
-                    </span>
-                  ))}
-                </div>
+              <div className={`w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-8 border border-white/10 ${service.accent}`}>
+                <service.icon className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-4">{service.title}</h3>
+              <p className="text-ruta-white/50 text-sm leading-relaxed mb-6">
+                {service.description}
+              </p>
+              <div className="flex items-center gap-2 text-ruta-yellow text-xs font-bold uppercase tracking-widest cursor-pointer group-hover:gap-4 transition-all" onClick={openModal}>
+                Consultar <ChevronRight className="w-4 h-4" />
               </div>
             </div>
           ))}
-          
-          {/* CTA Card */}
-          <div
-            className="sticky top-20"
-            style={{ zIndex: services.length + 1 }}
-          >
-            <div 
-              className="bg-gradient-to-br from-yellow-400 to-orange-500 text-ruta-black rounded-2xl md:rounded-3xl p-6 md:p-12 shadow-2xl min-h-[300px] md:h-80 flex flex-col justify-center items-center text-center max-w-7xl mx-auto transform transition-transform duration-300 hover:scale-105"
-              style={{
-                transform: `translateY(${services.length * 10}px) scale(${1 + services.length * 0.01})`,
-              }}
-            >
-              <h3 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 leading-tight">
-                ¿Necesitas un servicio personalizado?
-              </h3>
-              <p className="text-lg md:text-xl leading-relaxed opacity-90 max-w-2xl mb-8">
-                Contáctanos para crear una propuesta a medida para tu evento o necesidad específica
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button 
-                  onClick={openModal}
-                  className="bg-ruta-red text-white px-8 py-4 rounded-full font-bold hover:bg-ruta-orange transition-all transform hover:scale-105 cursor-pointer"
-                >
-                  📞 Cotizar Servicio
-                </button>
-                <button 
-                  onClick={() => window.open('https://wa.me/56922504275', '_blank')}
-                  className="border-2 border-ruta-red text-ruta-red px-8 py-4 rounded-full font-semibold hover:bg-ruta-red hover:text-white transition-all transform hover:scale-105 cursor-pointer"
-                >
-                  💬 Chat WhatsApp
-                </button>
-              </div>
+        </div>
+
+        {/* Dynamic CTA */}
+        <div className="mt-16 p-1 rounded-[2.5rem] bg-gradient-to-r from-ruta-yellow/20 via-white/5 to-ruta-red/20">
+          <div className="bg-ruta-black rounded-[2.4rem] p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10">
+            <div className="text-center md:text-left">
+              <h3 className="text-3xl font-bold text-white mb-2">¿Tienes un evento especial?</h3>
+              <p className="text-ruta-white/50 font-light">Diseñamos una propuesta gastronómica a tu medida.</p>
             </div>
+            <button
+              onClick={openModal}
+              className="bg-ruta-yellow text-ruta-black px-10 py-5 rounded-full font-bold text-lg hover:scale-105 transition-all shadow-[0_10px_30px_rgba(250,204,21,0.2)] whitespace-nowrap"
+            >
+              Cotizar Ahora
+            </button>
           </div>
         </div>
       </div>
-      
-      {/* WhatsApp Modal */}
+
+      {/* Reusable Premium Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-gray-800">💬 Enviar Mensaje</h3>
-              <button 
-                onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-              >
-                <X className="w-6 h-6" />
+        <div className="fixed inset-0 bg-ruta-dark/95 backdrop-blur-md flex items-center justify-center z-[150] p-4">
+          <div className="bg-ruta-black rounded-[2rem] max-w-md w-full p-8 border border-white/10 shadow-2xl">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-2xl font-extrabold tracking-tight text-white">Mensaje Directo</h3>
+              <button onClick={closeModal} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+                <X className="w-6 h-6 text-white/40" />
               </button>
             </div>
-            
-            <div className="mb-6">
-              <label className="block text-gray-700 font-semibold mb-3">Tu mensaje:</label>
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Hola, me interesa cotizar un servicio de La Ruta11..."
-                className="w-full p-4 border-2 border-gray-200 rounded-xl resize-none h-32 focus:border-ruta-red focus:outline-none transition-colors"
-              />
-            </div>
-            
-            <div className="flex gap-3">
+
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Hola, me gustaría saber más sobre..."
+              className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 h-40 focus:border-ruta-yellow focus:outline-none text-white transition-all resize-none mb-8"
+            />
+
+            <div className="flex gap-4">
               <button
                 onClick={closeModal}
-                className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-300 transition-colors cursor-pointer"
+                className="flex-1 px-6 py-4 rounded-xl border border-white/10 text-white font-bold hover:bg-white/5 transition-all"
               >
-                Cancelar
+                Cerrar
               </button>
               <button
                 onClick={sendWhatsApp}
-                className="flex-1 bg-green-500 text-white py-3 px-6 rounded-xl font-semibold hover:bg-green-600 transition-colors cursor-pointer"
+                className="flex-1 px-6 py-4 rounded-xl bg-ruta-yellow text-ruta-black font-bold hover:shadow-[0_0_20px_rgba(250,204,21,0.3)] transition-all"
               >
-                📱 Enviar WhatsApp
+                Enviar
               </button>
             </div>
           </div>
