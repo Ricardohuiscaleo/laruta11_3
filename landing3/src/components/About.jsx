@@ -11,7 +11,7 @@ export default function About() {
           <div className="relative order-2 lg:order-1">
             <div className="relative z-10 rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl">
               <img
-                src="https://laruta11-images.s3.amazonaws.com/menu/1755574768_tomahawk-full-ig-portrait-1080-1350-2.png"
+                src="https://laruta11-images.s3.amazonaws.com/menu/laruta11foodtruck.JPEG"
                 alt="Nuestro Food Truck"
                 className="w-full h-auto object-cover scale-105 hover:scale-100 transition-transform duration-1000"
               />
