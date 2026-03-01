@@ -23,7 +23,7 @@ if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < $cacheTime)) {
 }
 
 // Fetch from Google Places API (New)
-$url = "https://places.googleapis.com/v1/places/{$placeId}";
+$url = "https://places.googleapis.com/v1/places/{$placeId}?languageCode=es";
 $fields = 'reviews,rating,userRatingCount,displayName';
 
 $ch = curl_init();
