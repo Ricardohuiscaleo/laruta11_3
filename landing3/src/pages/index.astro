@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Hero from '../components/Hero.jsx';
+import GoogleReviews from '../components/GoogleReviews.jsx';
 import About from '../components/About.jsx';
 import Services from '../components/Services.jsx';
 import Menu from '../components/Menu.jsx';
@@ -12,6 +13,7 @@ import Header from '../components/Header.jsx';
 <Layout title="La Ruta11 - Food Trucks">
   <Header client:load />
   <Hero client:load />
+  <GoogleReviews client:visible />
   <Services client:visible />
   <About client:visible />
   <Menu client:visible />
