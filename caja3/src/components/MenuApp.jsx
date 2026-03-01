@@ -1,11 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
-  PlusCircle, X, Star, ShoppingCart, MinusCircle, User, ZoomIn,
+  PlusCircle, X, Star, MinusCircle, ZoomIn,
   Award, ChefHat, GlassWater, CupSoda, Droplets,
-  Eye, Heart, MessageSquare, Calendar, Search, Bike, Caravan, ChevronDown, ChevronUp, Package,
-  Truck, TruckIcon, Navigation, MapPin, Clock, CheckCircle2, XCircle, CreditCard, Banknote, Smartphone, Percent, Tag, Pizza, Share2, Settings
+  Eye, Heart, MessageSquare, Calendar, Bike, Caravan, ChevronDown, ChevronUp, Package,
+  Truck, TruckIcon, Navigation, MapPin, Clock, CheckCircle2, XCircle, CreditCard, Banknote, Smartphone, Percent, Tag, Pizza, Settings
 } from 'lucide-react';
-import { GiHamburger, GiHotDog, GiFrenchFries, GiMeat, GiSandwich, GiSteak } from 'react-icons/gi';
 import OnboardingModal from './OnboardingModal.jsx';
 import LoadingScreen from './LoadingScreen.jsx';
 import TUUPaymentIntegration from './TUUPaymentIntegration.jsx';
@@ -22,8 +21,14 @@ import FloatingHeart from './ui/FloatingHeart.jsx';
 import StarRating from './ui/StarRating.jsx';
 import GoogleLogo from './ui/GoogleLogo.jsx';
 import HotdogIcon from './ui/HotdogIcon.jsx';
-import NotificationIcon from './ui/NotificationIcon.jsx';
 import ShareProductModal from './modals/ShareProductModal.jsx';
+// Animated Icons
+import { BellIcon } from './icons/BellIcon.jsx';
+import { ShoppingCartIcon } from './icons/ShoppingCartIcon.jsx';
+import { SearchIcon } from './icons/SearchIcon.jsx';
+import { UserIcon } from './icons/UserIcon.jsx';
+import { ShareIcon } from './icons/ShareIcon.jsx';
+
 import ComboModal from './modals/ComboModal.jsx';
 import PaymentPendingModal from './modals/PaymentPendingModal.jsx';
 import SwipeToggle from './SwipeToggle.jsx';
@@ -50,22 +55,22 @@ var menuData = {
 };
 
 var categoryIcons = {
-  hamburguesas: <GiHamburger style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
-  hamburguesas_100g: <GiHamburger style={{ width: 'clamp(13.2px, 3.36vw, 16.8px)', height: 'clamp(13.2px, 3.36vw, 16.8px)' }} />,
-  churrascos: <GiSandwich style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
-  completos: <GiHotDog style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
-  papas: <GiFrenchFries style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
+  hamburguesas: <PlusCircle style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
+  hamburguesas_100g: <PlusCircle style={{ width: 'clamp(13.2px, 3.36vw, 16.8px)', height: 'clamp(13.2px, 3.36vw, 16.8px)' }} />,
+  churrascos: <PlusCircle style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
+  completos: <PlusCircle style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
+  papas: <PlusCircle style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
   pizzas: <Pizza style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
   bebidas: <CupSoda style={{ width: 'clamp(19.2px, 4.8vw, 24px)', height: 'clamp(19.2px, 4.8vw, 24px)' }} />,
   combos: (
     <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-      <GiHamburger style={{ width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)' }} />
+      <PlusCircle style={{ width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)' }} />
       <CupSoda style={{ width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)' }} />
     </div>
   ),
   Combos: (
     <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-      <GiHamburger style={{ width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)' }} />
+      <PlusCircle style={{ width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)' }} />
       <CupSoda style={{ width: 'clamp(12px, 3vw, 16.8px)', height: 'clamp(12px, 3vw, 16.8px)' }} />
     </div>
   )
@@ -966,6 +971,61 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
   );
 };
 
+
+// Sub-component for Header Actions
+const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsNotificationsOpen, activeOrdersCount, activeChecklistsCount, setShowCheckout, cartItemCount, playCajaSound }) => (
+  <div className="flex items-center gap-1 sm:gap-2">
+    {/* Perfil Cajera */}
+    {cajaUser && (
+      <button
+        onClick={() => { vibrate(30); setIsProfileOpen(true); }}
+        className="flex items-center gap-2 text-gray-600 hover:text-orange-500 p-1 rounded-lg hover:bg-gray-100 transition-all"
+        title="Perfil Cajera"
+      >
+        <UserIcon size={20} className="text-orange-500" />
+        <span className="font-medium text-[clamp(12px,3vw,14px)]">{cajaUser.fullName || cajaUser.user}</span>
+      </button>
+    )}
+
+    {/* Compartir */}
+    <button
+      onClick={() => { vibrate(30); setShowQRModal(true); }}
+      className="text-gray-600 hover:text-orange-500 transition-colors"
+      title="Compartir App"
+    >
+      <ShareIcon size={20} />
+    </button>
+
+    {/* Notificaciones */}
+    <button
+      onClick={() => { vibrate(30); setIsNotificationsOpen(true); }}
+      className="text-gray-600 hover:text-orange-500 relative"
+      title="Notificaciones"
+    >
+      <BellIcon size={20} />
+      {activeOrdersCount > 0 && (
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full flex items-center justify-center text-[clamp(8px,2vw,10px)] w-[clamp(14px,3.5vw,16px)] h-[clamp(14px,3.5vw,16px)]">
+          {activeOrdersCount}
+        </span>
+      )}
+      {activeChecklistsCount > 0 && (
+        <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full flex items-center justify-center text-[clamp(8px,2vw,10px)] w-[clamp(14px,3.5vw,16px)] h-[clamp(14px,3.5vw,16px)]">
+          {activeChecklistsCount}
+        </span>
+      )}
+    </button>
+
+    {/* Carrito */}
+    <button onClick={() => { vibrate(30); playCajaSound(); setShowCheckout(true); }} className="text-gray-600 hover:text-orange-500 relative">
+      <ShoppingCartIcon size={20} />
+      {cartItemCount > 0 && (
+        <span className="absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center animate-fade-in text-[clamp(9px,2.2vw,11px)] w-[clamp(16px,4vw,20px)] h-[clamp(16px,4vw,20px)]">
+          {cartItemCount}
+        </span>
+      )}
+    </button>
+  </div>
+);
 
 export default function App() {
   const [menuCategories, setMenuCategories] = useState([]);
@@ -2223,83 +2283,17 @@ export default function App() {
             </button>
           )}
 
-          {/* Perfil Cajera */}
-          {cajaUser && (
-            <button
-              onClick={() => { vibrate(30); setIsProfileOpen(true); }}
-              className="flex items-center gap-2 text-gray-600 hover:text-orange-500 p-1 rounded-lg hover:bg-gray-100 transition-all"
-              title="Perfil Cajera"
-            >
-              <User size={20} className="text-orange-500" />
-              <span className="font-medium" style={{ fontSize: 'clamp(12px, 3vw, 14px)' }}>{cajaUser.fullName || cajaUser.user}</span>
-            </button>
-          )}
-
-          {/* Configuración */}
-          {cajaUser && (
-            <button
-              onClick={async () => {
-                vibrate(30);
-                setShowStatusModal(true);
-                const res = await fetch('/api/get_truck_status.php?truckId=4');
-                const data = await res.json();
-                if (data.success) setTruckStatus(data.truck);
-
-                const schedRes = await fetch('/api/get_truck_schedules.php?truckId=4');
-                const schedData = await schedRes.json();
-                if (schedData.success) {
-                  setSchedules(schedData.schedules);
-                  setCurrentDayOfWeek(schedData.currentDayOfWeek);
-                }
-
-                const catRes = await fetch('/api/get_menu_structure.php');
-                const catData = await catRes.json();
-                if (catData.success) setMenuCategories(catData.categories);
-              }}
-              className="text-gray-600 hover:text-orange-500 transition-colors"
-              title="Configuración"
-            >
-              <Settings size={20} />
-            </button>
-          )}
-
-          {/* Compartir */}
-          <button
-            onClick={() => { vibrate(30); setShowQRModal(true); }}
-            className="text-gray-600 hover:text-orange-500 transition-colors"
-            title="Compartir App"
-          >
-            <Share2 size={20} />
-          </button>
-
-          {/* Notificaciones */}
-          <button
-            onClick={() => { vibrate(30); setIsNotificationsOpen(true); }}
-            className="text-gray-600 hover:text-orange-500 relative"
-            title="Notificaciones"
-          >
-            <NotificationIcon size={20} />
-            {activeOrdersCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full flex items-center justify-center" style={{ fontSize: 'clamp(8px, 2vw, 10px)', width: 'clamp(14px, 3.5vw, 16px)', height: 'clamp(14px, 3.5vw, 16px)' }}>
-                {activeOrdersCount}
-              </span>
-            )}
-            {activeChecklistsCount > 0 && (
-              <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full flex items-center justify-center" style={{ fontSize: 'clamp(8px, 2vw, 10px)', width: 'clamp(14px, 3.5vw, 16px)', height: 'clamp(14px, 3.5vw, 16px)' }}>
-                {activeChecklistsCount}
-              </span>
-            )}
-          </button>
-
-          {/* Carrito */}
-          <button onClick={() => { vibrate(30); playCajaSound(); setShowCheckout(true); }} className="text-gray-600 hover:text-orange-500 relative">
-            <ShoppingCart size={20} />
-            {cartItemCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center animate-fade-in" style={{ fontSize: 'clamp(9px, 2.2vw, 11px)', width: 'clamp(16px, 4vw, 20px)', height: 'clamp(16px, 4vw, 20px)' }}>
-                {cartItemCount}
-              </span>
-            )}
-          </button>
+          <HeaderRightActions
+            cajaUser={cajaUser}
+            setIsProfileOpen={setIsProfileOpen}
+            setShowQRModal={setShowQRModal}
+            setIsNotificationsOpen={setIsNotificationsOpen}
+            activeOrdersCount={activeOrdersCount}
+            activeChecklistsCount={activeChecklistsCount}
+            setShowCheckout={setShowCheckout}
+            cartItemCount={cartItemCount}
+            playCajaSound={playCajaSound}
+          />
         </div>
       </header>
 
@@ -2472,7 +2466,7 @@ export default function App() {
         </button>
         <div className="flex-1 bg-white border border-gray-200 rounded-full shadow-lg">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
             <input
               type="text"
               placeholder="Buscar productos..."
