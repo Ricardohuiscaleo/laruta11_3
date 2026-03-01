@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Heart, Calculator, X, Calendar, Users, MapPin, Clock, ChevronRight, Play } from 'lucide-react';
+import SocialProofTicker from './SocialProofTicker';
 
 export default function Hero() {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -137,6 +138,11 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
               <p className="text-lg md:text-xl text-ruta-white/80 max-w-2xl mb-10 leading-relaxed font-light">
                 La mejor experiencia gourmet urbana de la ciudad. Hamburguesas premium, completos y churrascos con procesos 100% artesanales y locales.
               </p>
+
+              {/* Social Proof Stats */}
+              <div className="mb-10">
+                <SocialProofTicker />
+              </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <a

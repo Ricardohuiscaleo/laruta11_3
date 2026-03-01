@@ -368,40 +368,75 @@ export const StaggeredMenu = ({
                     return arr.map((c, i) => <div key={i} className="sm-prelayer" style={{ background: c }} />);
                 })()}
             </div>
-            <header className="staggered-menu-header" aria-label="Main navigation header">
-                <div className="sm-logo" aria-label="Logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                    <img
-                        src={logoUrl}
-                        alt="Logo"
-                        className="sm-logo-img"
-                        draggable={false}
-                        width={110}
-                        height={24}
-                    />
+            <header className={`staggered-menu-header ${open ? '' : 'backdrop-blur-xl bg-ruta-black/60 border-b border-white/5'}`} aria-label="Main navigation header">
+                <div className="sm-logo gap-3 group" aria-label="Logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-ruta-yellow blur-md opacity-0 group-hover:opacity-40 transition-opacity"></div>
+                        <img
+                            src={logoUrl}
+                            alt="Logo"
+                            className="relative sm-logo-img drop-shadow-[0_0_10px_rgba(250,204,21,0.2)]"
+                            draggable={false}
+                        />
+                    </div>
+                    <div className="text-lg md:text-xl font-extrabold tracking-tighter text-ruta-white uppercase hidden sm:block">
+                        La Ruta <span className="text-ruta-yellow">11</span>
+                    </div>
                 </div>
-                <button
-                    ref={toggleBtnRef}
-                    className="sm-toggle"
-                    aria-label={open ? 'Close menu' : 'Open menu'}
-                    aria-expanded={open}
-                    aria-controls="staggered-menu-panel"
-                    onClick={toggleMenu}
-                    type="button"
-                >
-                    <span ref={textWrapRef} className="sm-toggle-textWrap" aria-hidden="true">
-                        <span ref={textInnerRef} className="sm-toggle-textInner">
-                            {textLines.map((l, i) => (
-                                <span className="sm-toggle-line" key={i}>
-                                    {l}
-                                </span>
-                            ))}
+
+                {/* Desktop and Tablet Links (Hidden on small screens) */}
+                {!open && (
+                    <div className="hidden lg:flex items-center space-x-8">
+                        {items && items.map((link) => (
+                            <a
+                                key={link.label}
+                                href={link.link}
+                                className="text-[10px] font-bold uppercase tracking-[0.2em] text-ruta-white/60 hover:text-ruta-yellow transition-all relative group py-2"
+                            >
+                                {link.label}
+                                <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-ruta-yellow transition-all duration-300 group-hover:w-full"></span>
+                            </a>
+                        ))}
+                    </div>
+                )}
+
+                <div className="flex items-center gap-4">
+                    {/* Pedir Ahora Button (Visible on Desktop) */}
+                    {!open && (
+                        <a
+                            href="https://app.laruta11.cl"
+                            target="_blank"
+                            className="hidden md:flex bg-ruta-yellow text-ruta-black px-5 py-2 rounded-full font-bold text-[10px] uppercase tracking-widest hover:bg-white transition-all transform hover:scale-105 shadow-lg items-center gap-2 no-underline"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-smartphone"><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" /></svg>
+                            Pedir Ahora
+                        </a>
+                    )}
+
+                    <button
+                        ref={toggleBtnRef}
+                        className="sm-toggle"
+                        aria-label={open ? 'Close menu' : 'Open menu'}
+                        aria-expanded={open}
+                        aria-controls="staggered-menu-panel"
+                        onClick={toggleMenu}
+                        type="button"
+                    >
+                        <span ref={textWrapRef} className="sm-toggle-textWrap" aria-hidden="true">
+                            <span ref={textInnerRef} className="sm-toggle-textInner">
+                                {textLines.map((l, i) => (
+                                    <span className="sm-toggle-line" key={i}>
+                                        {l}
+                                    </span>
+                                ))}
+                            </span>
                         </span>
-                    </span>
-                    <span ref={iconRef} className="sm-icon" aria-hidden="true">
-                        <span ref={plusHRef} className="sm-icon-line" />
-                        <span ref={plusVRef} className="sm-icon-line sm-icon-line-v" />
-                    </span>
-                </button>
+                        <span ref={iconRef} className="sm-icon" aria-hidden="true">
+                            <span ref={plusHRef} className="sm-icon-line" />
+                            <span ref={plusVRef} className="sm-icon-line sm-icon-line-v" />
+                        </span>
+                    </button>
+                </div>
             </header>
 
             <aside id="staggered-menu-panel" ref={panelRef} className="staggered-menu-panel" aria-hidden={!open}>
