@@ -23,7 +23,11 @@ import FloatingHeart from './ui/FloatingHeart.jsx';
 import StarRating from './ui/StarRating.jsx';
 import GoogleLogo from './ui/GoogleLogo.jsx';
 import HotdogIcon from './ui/HotdogIcon.jsx';
-import NotificationIcon from './ui/NotificationIcon.jsx';
+import { BellIcon } from './icons/BellIcon.jsx';
+import { ShoppingCartIcon } from './icons/ShoppingCartIcon.jsx';
+import { SearchIcon } from './icons/SearchIcon.jsx';
+import { UserIcon } from './icons/UserIcon.jsx';
+import { ShareIcon } from './icons/ShareIcon.jsx';
 import DynamicStatusMessage from './ui/DynamicStatusMessage.jsx';
 import ShareProductModal from './modals/ShareProductModal.jsx';
 import ComboModal from './modals/ComboModal.jsx';
@@ -519,7 +523,7 @@ const NotificationsModal = ({ isOpen, onClose, notifications, onMarkAllRead }) =
         <div className="flex flex-col h-full">
           <div className="border-b flex justify-between items-center p-4 bg-gradient-to-r from-orange-500 to-orange-600">
             <h2 className="font-bold text-white flex items-center gap-2 text-lg">
-              <NotificationIcon size={20} />
+              <BellIcon size={20} />
               Notificaciones
             </h2>
             <button onClick={onClose} className="p-1 text-white hover:text-orange-100"><X size={24} /></button>
@@ -563,7 +567,7 @@ const NotificationsModal = ({ isOpen, onClose, notifications, onMarkAllRead }) =
               </div>
             ) : (
               <div className="text-center py-8">
-                <NotificationIcon size={44} className="text-gray-400 mx-auto mb-4" />
+                <BellIcon size={44} className="text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600">No tienes notificaciones</p>
                 <p className="text-sm text-gray-500 mt-1">Te notificaremos sobre el estado de tus pedidos</p>
               </div>
@@ -1975,7 +1979,7 @@ export default function App() {
                     className="text-gray-600 hover:text-orange-500 transition-all p-1"
                     title="Compartir app"
                   >
-                    <Share2 size={24} />
+                    <ShareIcon size={24} />
                   </button>
 
                   {/* Búsqueda */}
@@ -1984,7 +1988,7 @@ export default function App() {
                     className="text-gray-600 hover:text-orange-500 transition-all p-1"
                     title="Buscar"
                   >
-                    <Search size={24} />
+                    <SearchIcon size={24} />
                   </button>
 
                   {/* Notificaciones */}
@@ -1993,7 +1997,7 @@ export default function App() {
                     className="text-gray-600 hover:text-orange-500 transition-all relative p-1"
                     title="Notificaciones"
                   >
-                    <NotificationIcon size={24} />
+                    <BellIcon size={24} />
                     {user && myOrdersCount > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold">
                         {myOrdersCount}
@@ -2003,7 +2007,7 @@ export default function App() {
 
                   {/* Carrito */}
                   <button onClick={() => { vibrate(30); setIsCartOpen(true); }} className="text-gray-600 hover:text-orange-500 transition-all relative p-1">
-                    <ShoppingCart size={24} />
+                    <ShoppingCartIcon size={24} />
                     {cartItemCount > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold">
                         {cartItemCount}
@@ -2062,7 +2066,7 @@ export default function App() {
                   <div className="hidden lg:flex items-center gap-3 mr-4 pr-4 border-r border-gray-200">
                     {/* Mi Perfil */}
                     <button onClick={() => { vibrate(30); if (user) { setIsProfileOpen(true); } else { setIsLoginOpen(true); } }} className="text-gray-600 hover:text-orange-500 transition-all p-2 flex-shrink-0" title="Mi Perfil">
-                      {user?.foto_perfil ? (<img src={user.foto_perfil} alt={user.nombre} className="w-5 h-5 rounded-full object-cover border border-gray-400" />) : (<User size={20} />)}
+                      {user?.foto_perfil ? (<img src={user.foto_perfil} alt={user.nombre} className="w-5 h-5 rounded-full object-cover border border-gray-400" />) : (<UserIcon size={20} />)}
                     </button>
 
                     {/* Información */}
@@ -2090,7 +2094,7 @@ export default function App() {
                     className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg text-gray-600 hover:text-orange-500 transition-all hover:bg-gray-50 flex-shrink-0"
                     title="Buscar"
                   >
-                    <Search size={20} />
+                    <SearchIcon size={20} />
                     <span className="text-sm font-semibold">Buscar</span>
                   </button>
 
@@ -2100,7 +2104,7 @@ export default function App() {
                     className="text-gray-600 hover:text-orange-500 transition-all p-1 flex-shrink-0"
                     title="Compartir app"
                   >
-                    <Share2 size={20} />
+                    <ShareIcon size={20} />
                   </button>
 
                   {/* Búsqueda móvil */}
@@ -2109,7 +2113,7 @@ export default function App() {
                     className="lg:hidden text-gray-600 hover:text-orange-500 transition-all p-1 flex-shrink-0"
                     title="Buscar"
                   >
-                    <Search size={20} />
+                    <SearchIcon size={20} />
                   </button>
 
                   {/* Notificaciones */}
@@ -2118,7 +2122,7 @@ export default function App() {
                     className="text-gray-600 hover:text-orange-500 transition-all relative p-1 flex-shrink-0"
                     title="Notificaciones"
                   >
-                    <NotificationIcon size={20} />
+                    <BellIcon size={20} />
                     {user && myOrdersCount > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold">
                         {myOrdersCount}
@@ -2128,7 +2132,7 @@ export default function App() {
 
                   {/* Carrito */}
                   <button onClick={() => { vibrate(30); setIsCartOpen(true); }} className="text-gray-600 hover:text-orange-500 transition-all relative p-1 flex-shrink-0">
-                    <ShoppingCart size={20} />
+                    <ShoppingCartIcon size={20} />
                     {cartItemCount > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold">
                         {cartItemCount}
