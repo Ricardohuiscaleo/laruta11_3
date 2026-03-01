@@ -42,10 +42,7 @@ export default function About() {
 
             <div className="space-y-6 text-ruta-white/70 text-lg font-light leading-relaxed">
               <p>
-                La Ruta 11 nace de la necesidad de elevar el concepto de comida rápida en el norte de Chile. No solo servimos comida; creamos momentos memorables a través de una cocina honesta, de fuego directo y técnica gourmet.
-              </p>
-              <p>
-                Cada uno de nuestros productos ha sido seleccionado bajo los más altos estándares, trabajando con productores locales para asegurar frescura y apoyar nuestra comunidad.
+                Somos La Ruta 11, food trucks especializados en completos, hamburguesas y churrascos artesanales. Nos dedicamos a ofrecer la mejor experiencia gastronómica con ingredientes frescos y sabores únicos.
               </p>
             </div>
 

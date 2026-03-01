@@ -46,12 +46,14 @@ export default function Header() {
           <div className="flex items-center gap-3 group cursor-pointer">
             <div className="relative">
               <div className="absolute inset-0 bg-ruta-yellow blur-md opacity-0 group-hover:opacity-40 transition-opacity"></div>
-              <div className="relative w-8 h-8 md:w-10 md:h-10 rounded-xl bg-ruta-yellow flex items-center justify-center font-black text-ruta-black shadow-[0_0_15px_rgba(250,204,21,0.3)]">
-                11
-              </div>
+              <img
+                src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png"
+                alt="La Ruta 11 Logo"
+                className="relative w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-[0_0_10px_rgba(250,204,21,0.2)]"
+              />
             </div>
             <div className="text-lg md:text-xl font-extrabold tracking-tighter text-ruta-white uppercase">
-              La Ruta<span className="text-ruta-yellow">11</span>
+              La Ruta <span className="text-ruta-yellow">11</span>
             </div>
           </div>
 
@@ -74,7 +76,7 @@ export default function Header() {
               className="bg-ruta-yellow text-ruta-black px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-widest hover:bg-white hover:text-ruta-black transition-all transform hover:scale-105 shadow-lg flex items-center gap-2 no-underline"
             >
               <Smartphone className="w-3.5 h-3.5" />
-              Order Now
+              Pedir Ahora
             </a>
           </div>
 
@@ -115,8 +117,9 @@ export default function Header() {
             href="https://app.laruta11.cl"
             target="_blank"
             className="w-full bg-ruta-yellow text-ruta-black py-5 rounded-[2rem] font-bold text-center text-lg shadow-xl no-underline"
+            onClick={() => setIsMenuOpen(false)}
           >
-            Go to App
+            Ir a la App
           </a>
         </div>
       </div>

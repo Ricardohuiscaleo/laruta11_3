@@ -57,11 +57,13 @@ export default function Contact() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-10">
 
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-ruta-yellow flex items-center justify-center font-black text-ruta-black text-xl shadow-lg border border-white/10">
-                11
-              </div>
+              <img
+                src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png"
+                alt="La Ruta 11 Logo"
+                className="w-12 h-12 object-contain drop-shadow-[0_0_10px_rgba(250,204,21,0.2)]"
+              />
               <div>
-                <div className="text-lg font-black text-white px-1">LA RUTA<span className="text-ruta-yellow">11</span></div>
+                <div className="text-lg font-black text-white px-1">LA RUTA <span className="text-ruta-yellow">11</span></div>
                 <p className="text-[10px] text-ruta-white/30 uppercase tracking-[0.2em] px-1 font-bold">Arica • Chile • Premium Food Trucks</p>
               </div>
             </div>
