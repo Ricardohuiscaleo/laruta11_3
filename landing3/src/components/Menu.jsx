@@ -101,9 +101,6 @@ export default function Menu() {
                       {item.name}
                     </h3>
 
-                    <p className="text-ruta-yellow font-black text-xl mb-4">
-                      {formatPrice(item.price)}
-                    </p>
 
                     <p className="text-ruta-white/70 text-sm leading-relaxed mb-6 opacity-0 group-hover:opacity-100 transition-opacity duration-500 line-clamp-3">
                       {item.description}

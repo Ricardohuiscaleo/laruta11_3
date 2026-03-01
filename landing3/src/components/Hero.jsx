@@ -200,10 +200,7 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
                 </div>
 
                 <div className="absolute bottom-6 left-6 right-6 p-6 bg-ruta-dark/80 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-bold text-lg tracking-tight">Doble Mixta (580g)</h4>
-                    <span className="text-ruta-yellow font-bold text-lg">$9.990</span>
-                  </div>
+                  <h4 className="font-bold text-lg tracking-tight">Doble Mixta (580g)</h4>
                   <p className="text-xs text-ruta-white/60 mb-4 font-light leading-relaxed">
                     400g carne premium, pollo filete, doble cheddar, tomate y cebolla caramelizada en pan brioche artesanal.
                   </p>
