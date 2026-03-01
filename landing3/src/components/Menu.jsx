@@ -1,4 +1,5 @@
 import { Smartphone, ChevronRight, Star } from 'lucide-react';
+import { LoaderIcon } from './ui/LoaderIcon.jsx';
 import { useState, useEffect } from 'react';
 
 export default function Menu() {
@@ -70,7 +71,7 @@ export default function Menu() {
 
         {isLoading ? (
           <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-ruta-yellow"></div>
+            <LoaderIcon size={48} className="text-ruta-yellow" />
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-10">
