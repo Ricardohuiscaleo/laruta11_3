@@ -4,7 +4,7 @@ import './StaggeredMenu.css';
 
 export const StaggeredMenu = ({
     position = 'right',
-    colors = ['#1e1e22', '#35353c'],
+    colors = ['#0a0a0b', '#1a1a1c', '#fac815'],
     items = [],
     socialItems = [],
     displaySocials = true,
@@ -359,7 +359,7 @@ export const StaggeredMenu = ({
         >
             <div ref={preLayersRef} className="sm-prelayers" aria-hidden="true">
                 {(() => {
-                    const raw = colors && colors.length ? colors.slice(0, 4) : ['#1e1e22', '#35353c'];
+                    const raw = colors && colors.length ? colors.slice(0, 4) : ['#0a0a0b', '#1a1a1c', '#fac815'];
                     let arr = [...raw];
                     if (arr.length >= 3) {
                         const mid = Math.floor(arr.length / 2);
@@ -369,7 +369,7 @@ export const StaggeredMenu = ({
                 })()}
             </div>
             <header className="staggered-menu-header" aria-label="Main navigation header">
-                <div className="sm-logo" aria-label="Logo">
+                <div className="sm-logo" aria-label="Logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
                     <img
                         src={logoUrl}
                         alt="Logo"

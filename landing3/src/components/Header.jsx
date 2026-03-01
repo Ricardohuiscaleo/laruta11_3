@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Smartphone, Menu as MenuIcon, X } from 'lucide-react';
+import { Smartphone } from 'lucide-react';
 import StaggeredMenu from './StaggeredMenu';
 
 export default function Header() {
@@ -35,14 +35,16 @@ export default function Header() {
   ];
 
   const socialItems = [
-    { label: 'Pedido Online', link: 'https://app.laruta11.cl' },
-    { label: 'WhatsApp', link: 'https://wa.me/56922504275' }
+    { label: 'Instagram', link: 'https://www.instagram.com/laruta11foodtruck/' },
+    { label: 'WhatsApp', link: 'https://wa.me/56922504275' },
+    { label: 'App', link: 'https://app.laruta11.cl' }
   ];
 
   return (
     <>
+      {/* Desktop Header Only */}
       <header className={`fixed w-full z-[100] transition-all duration-500 transform ${isVisible ? 'translate-y-0' : '-translate-y-full'
-        } pt-4 md:pt-6 px-4 md:px-6`}>
+        } pt-4 md:pt-6 px-4 md:px-6 hidden lg:block`}>
         <div className={`container mx-auto max-w-7xl transition-all duration-500 rounded-[2rem] border border-white/5 ${isScrolled
           ? 'bg-ruta-black/60 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] py-3'
           : 'bg-transparent py-4'
@@ -64,7 +66,7 @@ export default function Header() {
             </div>
 
             {/* Desktop Nav */}
-            <div className="hidden lg:flex items-center space-x-10">
+            <div className="flex items-center space-x-10">
               {navLinks.map((link) => (
                 <a
                   key={link.label}
@@ -85,15 +87,11 @@ export default function Header() {
                 Pedir Ahora
               </a>
             </div>
-
-            {/* Mobile Nav Button (Empty space for StaggeredMenu trigger) */}
-            <div className="lg:hidden">
-            </div>
           </nav>
         </div>
       </header>
 
-      {/* Premium Mobile Menu Overlay */}
+      {/* Unified Mobile Header (StaggeredMenu Takes Control) */}
       <div className="lg:hidden">
         <StaggeredMenu
           isFixed={true}
