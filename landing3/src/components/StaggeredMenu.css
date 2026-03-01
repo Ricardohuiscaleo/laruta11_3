@@ -275,7 +275,7 @@
   content: counter(smItem, decimal-leading-zero);
   position: absolute;
   top: 0.1em;
-  right: 2.8em;
+  right: 1.5em;
   font-size: 14px;
   font-weight: 400;
   color: var(--sm-accent, #fac815);
