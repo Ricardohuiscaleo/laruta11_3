@@ -1,3 +1,4 @@
+import { ActivityIcon } from './icons/ActivityIcon';
 import { Truck, Smartphone, X, ChevronRight, Coins, BadgePercent } from 'lucide-react';
 import { useState } from 'react';
 
@@ -21,7 +22,7 @@ export default function Services() {
 
   const services = [
     {
-      icon: Truck,
+      icon: ActivityIcon,
       title: "Catering & Eventos",
       description: "Llevamos la experiencia del food truck a tu fiesta, matrimonio o evento corporativo con propuestas a medida.",
       accent: "text-ruta-red"
@@ -65,7 +66,7 @@ export default function Services() {
               className="group p-10 rounded-[2rem] bg-ruta-black border border-white/5 transition-all duration-500 hover:bg-white/5 hover:-translate-y-2"
             >
               <div className={`w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-8 border border-white/10 ${service.accent}`}>
-                <service.icon className="w-8 h-8" />
+                <service.icon size={32} />
               </div>
               <h3 className="text-2xl font-bold text-white mb-4">{service.title}</h3>
               <p className="text-ruta-white/50 text-sm leading-relaxed mb-6">
