@@ -14,7 +14,7 @@ export default function Contact() {
 
         <div className="text-center mb-24">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-ruta-yellow/20 bg-ruta-yellow/5 text-ruta-yellow text-[10px] uppercase tracking-[0.3em] font-bold mb-6">
-            Social & Feedback
+            Redes y Feedback
           </div>
           <h2 className="text-4xl md:text-6xl font-extrabold text-white tracking-tighter mb-6">
             Mantente <span className="text-transparent bg-clip-text bg-gradient-to-r from-ruta-yellow to-ruta-orange">Conectado</span>

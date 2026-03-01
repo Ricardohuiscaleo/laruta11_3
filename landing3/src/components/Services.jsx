@@ -1,4 +1,4 @@
-import { Truck, UtensilsCrossed, Smartphone, TrendingUp, ChefHat, Leaf, X, ChevronRight } from 'lucide-react';
+import { Truck, UtensilsCrossed, Smartphone, TrendingUp, ChefHat, Leaf, X, ChevronRight, Gamepad2 } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Services() {
@@ -22,22 +22,22 @@ export default function Services() {
   const services = [
     {
       icon: Truck,
-      title: "Catering Eventos",
-      description: "Llevamos la experiencia del food truck a tu fiesta, matrimonio o evento corporativo.",
+      title: "Catering & Eventos",
+      description: "Llevamos la experiencia del food truck a tu fiesta, matrimonio o evento corporativo con propuestas a medida.",
       gradient: "from-ruta-red/20 to-ruta-orange/20",
       accent: "text-ruta-red"
     },
     {
-      icon: UtensilsCrossed,
-      title: "Chef a Domicilio",
-      description: "Servicio exclusivo de cocina gourmet en la comodidad de tu espacio.",
+      icon: Gamepad2,
+      title: "Juega y Gana",
+      description: "Accede a descuentos exclusivos en nuestra App superando récords en Galaga y Pacman mientras esperas tu pedido.",
       gradient: "from-ruta-yellow/10 to-transparent",
       accent: "text-ruta-yellow"
     },
     {
       icon: Smartphone,
-      title: "Smart Ordering",
-      description: "Pide a través de nuestra App y evita esperas. Rastreo en tiempo real.",
+      title: "Sáltate la Fila",
+      description: "Pide desde tu móvil, paga de forma segura y recibe notificaciones en tiempo real cuando tu pedido esté listo.",
       gradient: "from-blue-900/20 to-transparent",
       accent: "text-blue-400"
     }

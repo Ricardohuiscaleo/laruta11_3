@@ -108,14 +108,14 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
                 </span>
               </div>
 
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold leading-[1.1] mb-8 tracking-tighter">
-                Savor the <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-ruta-yellow via-ruta-orange to-ruta-red">Revolution</span><br />
-                on the Go
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold leading-[1.1] mb-8 tracking-tighter uppercase">
+                Sabor <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-ruta-yellow via-ruta-orange to-ruta-red">Artesanal,</span><br />
+                Tecnología <span className="text-ruta-yellow italic">Urbana</span>
               </h1>
 
               <p className="text-lg md:text-xl text-ruta-white/80 max-w-2xl mb-10 leading-relaxed font-light">
-                Discover Arica's finest gourmet street food. Expertly grilled over live fire and embers, bringing you flavors that redefine the mobile dining experience.
+                La mejor comida callejera gourmet de Arica. Expertos en brasas y sabores únicos, ahora con pedidos en vivo y juegos retro directo en nuestra App.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
@@ -124,7 +124,7 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
                   target="_blank"
                   className="group relative px-8 py-4 bg-ruta-yellow text-ruta-black rounded-full font-bold text-lg transition-all duration-300 hover:pr-12 hover:shadow-[0_0_30px_rgba(250,204,21,0.4)] flex items-center justify-center no-underline"
                 >
-                  Explore the Menu
+                  Ver Menú Completo
                   <ChevronRight className="absolute right-4 w-5 h-5 opacity-0 group-hover:opacity-100 transition-all duration-300" />
                 </a>
 
@@ -133,7 +133,7 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
                   className="group px-8 py-4 bg-white/5 backdrop-blur-md border border-white/10 text-white rounded-full font-semibold text-lg hover:bg-white/10 transition-all duration-300 flex items-center justify-center gap-3"
                 >
                   <Calculator className="w-5 h-5 text-ruta-yellow transition-transform duration-500 group-hover:rotate-12" />
-                  Get a Free Quote
+                  Cotizar Evento
                 </button>
               </div>
 
@@ -141,15 +141,15 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
               <div className="grid grid-cols-3 gap-8 mt-16 pt-10 border-t border-white/5 max-w-xl">
                 <div>
                   <div className="text-3xl font-bold text-ruta-white mb-1">2k+</div>
-                  <div className="text-xs uppercase tracking-widest text-ruta-white/40">Happy Clients</div>
+                  <div className="text-xs uppercase tracking-widest text-ruta-white/40">Clientes Felices</div>
                 </div>
                 <div>
                   <div className="text-3xl font-bold text-ruta-white mb-1">11+</div>
-                  <div className="text-xs uppercase tracking-widest text-ruta-white/40">Signature Dishes</div>
+                  <div className="text-xs uppercase tracking-widest text-ruta-white/40">Platos de Autor</div>
                 </div>
                 <div>
                   <div className="text-3xl font-bold text-ruta-white mb-1">4.9/5</div>
-                  <div className="text-xs uppercase tracking-widest text-ruta-white/40">User Rating</div>
+                  <div className="text-xs uppercase tracking-widest text-ruta-white/40">Valoración</div>
                 </div>
               </div>
             </div>
@@ -176,11 +176,11 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
                     <span className="text-ruta-yellow font-bold text-lg">$18.990</span>
                   </div>
                   <p className="text-sm text-ruta-white/60 mb-4 font-light leading-relaxed">
-                    Our signature cut, grilled to perfection with secret sea salt rub and smoked herbs.
+                    Nuestro corte estrella, asado a la perfección con sal de mar y hierbas ahumadas.
                   </p>
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map(i => <Heart key={i} className="w-3 h-3 text-ruta-red fill-current" />)}
-                    <span className="ml-2 text-[10px] uppercase tracking-widest text-ruta-white/40 font-bold">580+ Likes</span>
+                    <span className="ml-2 text-[10px] uppercase tracking-widest text-ruta-white/40 font-bold">580+ Recomiendan</span>
                   </div>
                 </div>
               </div>
@@ -203,8 +203,8 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
             <div className="sticky top-0 z-10 bg-gradient-to-r from-ruta-red/20 to-ruta-orange/20 border-b border-white/10 p-6 md:p-8 backdrop-blur-xl">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-2xl font-extrabold tracking-tight mb-1">🍴 Book the Experience</h3>
-                  <p className="text-ruta-white/60 text-sm">Let us bring the fire to your special event.</p>
+                  <h3 className="text-2xl font-extrabold tracking-tight mb-1">🍴 Reserva la Experiencia</h3>
+                  <p className="text-ruta-white/60 text-sm">Llevamos todo el sabor del food truck a tu evento.</p>
                 </div>
                 <button
                   onClick={closeModal}
@@ -274,15 +274,23 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
               </div>
 
               <div className="space-y-4 pt-4">
-                <button
-                  onClick={sendWhatsApp}
-                  className="w-full bg-gradient-to-r from-ruta-yellow to-ruta-orange hover:from-ruta-yellow/90 hover:to-ruta-orange/90 text-ruta-black py-5 rounded-2xl font-bold text-lg shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3"
-                >
-                  Confirm and Send via WhatsApp
-                  <Play className="w-4 h-4 fill-current rotate-12" />
-                </button>
+                <div className="flex gap-4 pt-4">
+                  <button
+                    onClick={closeModal}
+                    className="flex-1 px-6 py-4 rounded-2xl border border-white/10 text-white font-bold hover:bg-white/5 transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={sendWhatsApp}
+                    className="flex-2 bg-gradient-to-r from-ruta-yellow to-ruta-orange hover:from-ruta-yellow/90 hover:to-ruta-orange/90 text-ruta-black px-8 py-5 rounded-2xl font-bold text-lg shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3"
+                  >
+                    Enviar Cotización
+                    <Play className="w-4 h-4 fill-current rotate-12" />
+                  </button>
+                </div>
                 <p className="text-[10px] text-center text-ruta-white/20 uppercase tracking-widest">
-                  Secure booking via WhatsApp Real-time Sync
+                  Conexión segura vía WhatsApp Real-time Sync
                 </p>
               </div>
             </div>
