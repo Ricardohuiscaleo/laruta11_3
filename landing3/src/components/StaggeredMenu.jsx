@@ -379,7 +379,7 @@ export const StaggeredMenu = ({
                             draggable={false}
                         />
                     </div>
-                    <div className="text-lg md:text-xl font-extrabold tracking-tighter text-ruta-white uppercase">
+                    <div className="text-sm sm:text-lg md:text-xl font-extrabold tracking-tighter text-ruta-white uppercase">
                         La Ruta <span className="text-ruta-yellow">11</span>
                     </div>
                 </div>
