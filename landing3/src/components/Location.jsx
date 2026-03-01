@@ -55,7 +55,7 @@ export default function Location() {
               </div>
 
               <a
-                href="https://maps.app.goo.gl/8RM68ErBdwgl3pkUE"
+                href="https://www.google.com/maps/place/?q=place_id:ChIJx1qbNL6pWpERZwHfDe5eN1o"
                 target="_blank"
                 className="block w-full text-center py-5 bg-white/5 border border-white/10 rounded-2xl font-bold text-ruta-white hover:bg-ruta-yellow hover:text-ruta-black transition-all no-underline"
               >
