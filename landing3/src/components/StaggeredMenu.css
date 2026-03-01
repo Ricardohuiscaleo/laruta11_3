@@ -16,6 +16,28 @@
   overflow: hidden;
 }
 
+.sm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 4;
+  transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+  pointer-events: auto;
+}
+
+.sm-backdrop.invisible {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.sm-backdrop.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
 .staggered-menu-header {
   position: absolute;
   top: 0;

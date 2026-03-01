@@ -357,6 +357,13 @@ export const StaggeredMenu = ({
             data-position={position}
             data-open={open || undefined}
         >
+            {/* Dark Blurred Backdrop */}
+            <div
+                className={`sm-backdrop ${open ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+                onClick={() => closeMenu()}
+                aria-hidden="true"
+            />
+
             <div ref={preLayersRef} className="sm-prelayers" aria-hidden="true">
                 {(() => {
                     const raw = colors && colors.length ? colors.slice(0, 4) : ['#0a0a0b', '#1a1a1c', '#fac815'];
