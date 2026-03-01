@@ -1,3 +1,6 @@
+---
+import HeaderActions from '../../components/HeaderActions.jsx';
+---
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -320,15 +323,7 @@
           <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
           <h1 class="page-title" id="page-title">Dashboard</h1>
         </div>
-        <div class="user-info">
-          <div id="header-actions" style="display: flex; align-items: center; gap: 12px;">
-            <div id="month-year-display" style="display: none; font-size: 14px; font-weight: 600; color: #0a0a0a; padding: 6px 12px; background: #f3f4f6; border-radius: 6px;"></div>
-            <button class="btn btn-secondary" onclick="loadPreviousMonth()" id="prev-month-btn" style="display: none; font-size: 12px;">⏪ Mes Anterior</button>
-            <button class="btn btn-primary" onclick="loadCurrentMonth()" id="current-month-btn" style="display: none; font-size: 12px;">📅 Mes Actual</button>
-          </div>
-          <span id="username">Admin</span>
-          <button onclick="logout()" class="btn btn-secondary">Salir</button>
-        </div>
+        <HeaderActions client:load initialUsername="Admin" />
       </header>
       
       <div class="content">
