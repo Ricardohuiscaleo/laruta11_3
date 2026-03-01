@@ -73,7 +73,7 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
     img.onload = () => {
       setImageLoaded(true);
     };
-    img.src = 'https://laruta11-images.s3.amazonaws.com/menu/1755574768_tomahawk-full-ig-portrait-1080-1350-2.png';
+    img.src = 'https://laruta11-images.s3.amazonaws.com/products/68d1fd67a7e42_WhatsApp%2520Image%25202025-09-22%2520at%252022.51.41.webp';
   }, []);
 
   return (
@@ -86,7 +86,7 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
         <div
           className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-[2000ms] ease-in-out scale-110 ${imageLoaded ? 'opacity-40 scale-100 blur-none' : 'opacity-0 scale-125 blur-xl'}`}
           style={{
-            backgroundImage: `url('https://laruta11-images.s3.amazonaws.com/menu/1755574768_tomahawk-full-ig-portrait-1080-1350-2.png')`,
+            backgroundImage: `url('https://laruta11-images.s3.amazonaws.com/products/68d1fd67a7e42_WhatsApp%2520Image%25202025-09-22%2520at%252022.51.41.webp')`,
           }}
         />
 
@@ -111,11 +111,11 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold leading-[1.1] mb-8 tracking-tighter uppercase">
                 Sabor <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-ruta-yellow via-ruta-orange to-ruta-red">Artesanal,</span><br />
-                Tecnología <span className="text-ruta-yellow italic">Urbana</span>
+                Hecho en <span className="text-ruta-yellow italic text-4xl md:text-6xl lg:text-7xl">Arica</span>
               </h1>
 
               <p className="text-lg md:text-xl text-ruta-white/80 max-w-2xl mb-10 leading-relaxed font-light">
-                La mejor comida callejera gourmet de Arica. Expertos en brasas y sabores únicos, ahora con pedidos en vivo y juegos retro directo en nuestra App.
+                La mejor experiencia gourmet urbana de la ciudad. Hamburguesas premium, completos y churrascos con procesos 100% artesanales y locales.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
@@ -160,23 +160,23 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
             <div className={`transition-all duration-[1500ms] delay-500 transform ${imageLoaded ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-20 opacity-0 scale-95'}`}>
               <div className="relative p-2 rounded-[2.5rem] bg-gradient-to-br from-white/10 to-transparent border border-white/10 shadow-2xl backdrop-blur-sm overflow-hidden">
                 <img
-                  src="https://laruta11-images.s3.amazonaws.com/menu/1755574768_tomahawk-full-ig-portrait-1080-1350-2.png"
-                  alt="Our Signature Dish"
+                  src="https://laruta11-images.s3.amazonaws.com/products/68d1fd67a7e42_WhatsApp%2520Image%25202025-09-22%2520at%252022.51.41.webp"
+                  alt="Doble Mixta (580g)"
                   className="w-full h-auto rounded-[2.2rem] object-cover transition-transform duration-700 hover:scale-105"
                 />
 
                 {/* Floating Tags */}
-                <div className="absolute top-6 right-6 px-4 py-2 bg-ruta-dark/60 backdrop-blur-md rounded-xl border border-white/20 text-xs font-bold uppercase tracking-widest">
-                  🔥 Live Fire Grill
+                <div className="absolute top-6 right-6 px-4 py-2 bg-ruta-dark/60 backdrop-blur-md rounded-xl border border-white/20 text-xs font-bold uppercase tracking-widest text-ruta-yellow">
+                  ⭐ Favorita de Arica
                 </div>
 
                 <div className="absolute bottom-6 left-6 right-6 p-6 bg-ruta-dark/80 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl">
                   <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-bold text-lg tracking-tight">Tomahawk Premium</h4>
-                    <span className="text-ruta-yellow font-bold text-lg">$18.990</span>
+                    <h4 className="font-bold text-lg tracking-tight">Doble Mixta (580g)</h4>
+                    <span className="text-ruta-yellow font-bold text-lg">$9.990</span>
                   </div>
-                  <p className="text-sm text-ruta-white/60 mb-4 font-light leading-relaxed">
-                    Nuestro corte estrella, asado a la perfección con sal de mar y hierbas ahumadas.
+                  <p className="text-xs text-ruta-white/60 mb-4 font-light leading-relaxed">
+                    400g carne premium, pollo filete, doble cheddar, tomate y cebolla caramelizada en pan brioche artesanal.
                   </p>
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map(i => <Heart key={i} className="w-3 h-3 text-ruta-red fill-current" />)}

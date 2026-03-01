@@ -18,8 +18,8 @@ export default function About() {
             </div>
             {/* Animated Badge */}
             <div className="absolute -bottom-10 -right-10 bg-ruta-yellow p-8 rounded-[2rem] shadow-2xl z-20 hidden md:block transition-transform duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(250,204,21,0.3)]">
-              <div className="text-ruta-black font-extrabold text-4xl leading-none">100%</div>
-              <div className="text-ruta-black/60 font-bold uppercase tracking-tighter text-xs">Artesanal</div>
+              <div className="text-ruta-black font-extrabold text-2xl leading-none">HECHO EN</div>
+              <div className="text-ruta-black/60 font-extrabold uppercase tracking-tighter text-4xl">ARICA</div>
             </div>
 
             {/* Outline Text */}
@@ -42,18 +42,21 @@ export default function About() {
 
             <div className="space-y-6 text-ruta-white/70 text-lg font-light leading-relaxed">
               <p>
-                Somos La Ruta 11, food trucks especializados en completos, hamburguesas y churrascos artesanales. Nos dedicamos a ofrecer la mejor experiencia gastronómica con ingredientes frescos y sabores únicos.
+                Somos La Ruta 11, un emprendimiento nacido y criado en Arica. Nos especializamos en comida urbana de alta calidad: completos, hamburguesas premium y churrascos artesanales con el sello local que nos caracteriza.
+              </p>
+              <p>
+                Al elegirnos, no solo disfrutas de un sabor superior, sino que apoyas directamente el crecimiento de la economía local de nuestra ciudad.
               </p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 mt-12">
               <div className="p-6 rounded-2xl bg-white/5 border border-white/5">
-                <h4 className="font-bold text-white mb-2 tracking-tight">Misión Premium</h4>
-                <p className="text-sm text-ruta-white/40 leading-relaxed">Transformar lo cotidiano en extraordinario con estándares de chef internacional.</p>
+                <h4 className="font-bold text-white mb-2 tracking-tight">Orgullo Local</h4>
+                <p className="text-sm text-ruta-white/40 leading-relaxed">Cada ingrediente y proceso es manejado por manos ariqueñas, garantizando frescura y calidad total.</p>
               </div>
               <div className="p-6 rounded-2xl bg-white/5 border border-white/5">
-                <h4 className="font-bold text-white mb-2 tracking-tight">Visión de Ruta</h4>
-                <p className="text-sm text-ruta-white/40 leading-relaxed">Ser el referente indiscutido de food trucks de lujo en todo el país.</p>
+                <h4 className="font-bold text-white mb-2 tracking-tight">Sin Comisiones</h4>
+                <p className="text-sm text-ruta-white/40 leading-relaxed">Pide directo en nuestra App y ahorra hasta un 45% comparado con las grandes plataformas de delivery.</p>
               </div>
             </div>
           </div>

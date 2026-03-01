@@ -1,4 +1,4 @@
-import { Truck, UtensilsCrossed, Smartphone, TrendingUp, ChefHat, Leaf, X, ChevronRight, Gamepad2 } from 'lucide-react';
+import { Truck, Smartphone, X, ChevronRight, Coins, BadgePercent } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Services() {
@@ -24,21 +24,18 @@ export default function Services() {
       icon: Truck,
       title: "Catering & Eventos",
       description: "Llevamos la experiencia del food truck a tu fiesta, matrimonio o evento corporativo con propuestas a medida.",
-      gradient: "from-ruta-red/20 to-ruta-orange/20",
       accent: "text-ruta-red"
     },
     {
-      icon: Gamepad2,
-      title: "Juega y Gana",
-      description: "Accede a descuentos exclusivos en nuestra App superando récords en Galaga y Pacman mientras esperas tu pedido.",
-      gradient: "from-ruta-yellow/10 to-transparent",
+      icon: Coins,
+      title: "Cashback Real",
+      description: "Acumula dinero en cada pedido realizado a través de nuestra App para usarlo como descuento en tu siguiente bocado.",
       accent: "text-ruta-yellow"
     },
     {
-      icon: Smartphone,
-      title: "Sáltate la Fila",
-      description: "Pide desde tu móvil, paga de forma segura y recibe notificaciones en tiempo real cuando tu pedido esté listo.",
-      gradient: "from-blue-900/20 to-transparent",
+      icon: BadgePercent,
+      title: "Ahorra un 45%",
+      description: "Al pedir directo por nuestra App, ahorras hasta un 45% comparado con PedidosYa o UberEats. Más comida, menos comisiones.",
       accent: "text-blue-400"
     }
   ];

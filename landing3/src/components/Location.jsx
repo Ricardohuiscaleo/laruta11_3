@@ -2,7 +2,7 @@ import { MapPin, Clock, Calendar } from 'lucide-react';
 
 export default function Location() {
   const currentHour = new Date().getHours();
-  const isOpen = currentHour >= 19 || currentHour < 1; // 7 PM to 1 AM
+  const isOpen = currentHour >= 18 || currentHour < 3;
 
   return (
     <section id="ubicacion" className="py-32 bg-ruta-dark relative overflow-hidden">
@@ -36,11 +36,11 @@ export default function Location() {
                 <div className="flex items-start gap-4">
                   <Clock className="w-6 h-6 text-ruta-yellow mt-1" />
                   <div>
-                    <h4 className="font-bold text-white mb-2">Horarios de Servicio</h4>
+                    <h4 className="font-bold text-white mb-2">Horarios de Atención</h4>
                     <div className="space-y-2 text-sm text-ruta-white/50">
-                      <p className="flex justify-between w-full border-b border-white/5 pb-2"><span>Lunes - Jueves</span> <span className="text-white">19:00 - 01:00</span></p>
-                      <p className="flex justify-between w-full border-b border-white/5 pb-2"><span>Viernes - Sábado</span> <span className="text-white">19:00 - 06:00</span></p>
-                      <p className="flex justify-between w-full"><span>Domingo</span> <span className="text-ruta-red font-bold">CERRADO</span></p>
+                      <p className="flex justify-between w-full border-b border-white/5 pb-2"><span>Lunes - Jueves</span> <span className="text-white">18:00 - 00:30</span></p>
+                      <p className="flex justify-between w-full border-b border-white/5 pb-2"><span>Viernes - Sábado</span> <span className="text-white">18:00 - 03:00</span></p>
+                      <p className="flex justify-between w-full"><span>Domingo</span> <span className="text-white">18:00 - 00:00</span></p>
                     </div>
                   </div>
                 </div>
@@ -49,37 +49,38 @@ export default function Location() {
                   <MapPin className="w-6 h-6 text-ruta-yellow mt-1" />
                   <div>
                     <h4 className="font-bold text-white mb-2">Ubicación Actual</h4>
-                    <p className="text-sm text-ruta-white/50 font-light">Actualizamos nuestra ubicación diariamente en nuestras redes sociales y App.</p>
+                    <p className="text-sm text-ruta-white/50 font-light">Actualizamos nuestra ubicación dinámicamente. Visítanos en nuestra ubicación principal en Arica.</p>
                   </div>
                 </div>
               </div>
 
               <a
-                href="https://app.laruta11.cl"
+                href="https://maps.app.goo.gl/8RM68ErBdwgl3pkUE"
                 target="_blank"
                 className="block w-full text-center py-5 bg-white/5 border border-white/10 rounded-2xl font-bold text-ruta-white hover:bg-ruta-yellow hover:text-ruta-black transition-all no-underline"
               >
-                Ver Mapa en Tiempo Real
+                Abrir en Google Maps
               </a>
             </div>
           </div>
 
-          {/* Visual Column (Placeholder for Map/Truck Photo) */}
+          {/* Visual Column (Real Map) */}
           <div className="lg:col-span-7 relative h-full min-h-[500px]">
-            <div className="absolute inset-0 rounded-[3rem] overflow-hidden border border-white/10 bg-ruta-black">
-              {/* Simulated Map / Abstract Pattern */}
-              <div className="absolute inset-0 opacity-40 bg-[url('https://laruta11-images.s3.amazonaws.com/menu/1755574768_tomahawk-full-ig-portrait-1080-1350-2.png')] bg-cover bg-center grayscale contrast-125 blur-sm"></div>
-              <div className="absolute inset-0 bg-gradient-to-tr from-ruta-dark via-ruta-dark/80 to-ruta-dark/20"></div>
+            <div className="absolute inset-0 rounded-[3rem] overflow-hidden border border-white/10 bg-ruta-black shadow-2xl">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15137.082940291351!2d-70.30726709437847!3d-18.471391954398037!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x915aa9be349b5ac7%3A0x5a375eee0ddf0167!2sLa%20Ruta%2011!5e0!3m2!1ses!2scl!4v1766369155665!5m2!1ses!2scl"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Ubicación La Ruta 11"
+                className="grayscale opacity-80 hover:grayscale-0 transition-all duration-700"
+              ></iframe>
 
-              {/* Floating Map Pin Effect */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-ruta-yellow blur-xl opacity-40 animate-pulse"></div>
-                  <div className="relative bg-ruta-yellow p-4 rounded-2xl border-4 border-ruta-dark shadow-2xl">
-                    <MapPin className="w-8 h-8 text-ruta-black fill-current" />
-                  </div>
-                </div>
-              </div>
+              {/* Gradient Overlay for better UI integration */}
+              <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ruta-dark to-transparent pointer-events-none"></div>
             </div>
 
             {/* Dynamic Card */}
@@ -90,7 +91,7 @@ export default function Location() {
                 </div>
                 <div>
                   <h5 className="font-bold text-white text-sm">Reserva para Eventos</h5>
-                  <p className="text-xs text-ruta-white/50">Disponibilidad para todo el año 2025.</p>
+                  <p className="text-xs text-ruta-white/50">Disponibilidad para todo el año en Arica.</p>
                 </div>
               </div>
             </div>
