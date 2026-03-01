@@ -21,23 +21,28 @@ export default function SocialProofTicker() {
         fetchStats();
     }, []);
 
-    const displayStats = stats || { views: 1250, calls: 154, clicks: 89 };
+    const displayStats = stats || {
+        views: 6274,
+        calls: 12,
+        interactions: 356,
+        directions: 294
+    };
 
     const messages = [
         {
-            icon: <Users className="w-4 h-4 text-ruta-yellow" />,
-            text: `+${displayStats.views.toLocaleString()} personas nos buscaron en Google Maps este mes`,
+            icon: <TrendingUp className="w-4 h-4 text-ruta-yellow" />,
+            text: `+${displayStats.views.toLocaleString('es-CL')} personas nos han visto en Google este mes`,
             id: 'views'
         },
         {
-            icon: <PhoneCall className="w-4 h-4 text-ruta-yellow" />,
-            text: `${displayStats.calls} clientes nos llamaron directo desde Google`,
-            id: 'calls'
+            icon: <Users className="w-4 h-4 text-ruta-yellow" />,
+            text: `+${displayStats.directions} personas buscaron cómo llegar a nuestro local`,
+            id: 'directions'
         },
         {
-            icon: <TrendingUp className="w-4 h-4 text-ruta-yellow" />,
-            text: "¡Somos el Foodtruck #1 en búsquedas locales!",
-            id: 'rank'
+            icon: <PhoneCall className="w-4 h-4 text-ruta-yellow" />,
+            text: `${displayStats.interactions} interacciones reales con nuestro perfil de negocio`,
+            id: 'interactions'
         }
     ];
 
