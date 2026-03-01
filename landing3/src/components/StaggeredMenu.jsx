@@ -379,26 +379,10 @@ export const StaggeredMenu = ({
                             draggable={false}
                         />
                     </div>
-                    <div className="text-lg md:text-xl font-extrabold tracking-tighter text-ruta-white uppercase hidden sm:block">
+                    <div className="text-lg md:text-xl font-extrabold tracking-tighter text-ruta-white uppercase">
                         La Ruta <span className="text-ruta-yellow">11</span>
                     </div>
                 </div>
-
-                {/* Desktop and Tablet Links (Hidden on small screens) */}
-                {!open && (
-                    <div className="hidden lg:flex items-center space-x-8">
-                        {items && items.map((link) => (
-                            <a
-                                key={link.label}
-                                href={link.link}
-                                className="text-[10px] font-bold uppercase tracking-[0.2em] text-ruta-white/60 hover:text-ruta-yellow transition-all relative group py-2"
-                            >
-                                {link.label}
-                                <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-ruta-yellow transition-all duration-300 group-hover:w-full"></span>
-                            </a>
-                        ))}
-                    </div>
-                )}
 
                 <div className="flex items-center gap-4">
                     {/* Pedir Ahora Button (Visible on Desktop) */}

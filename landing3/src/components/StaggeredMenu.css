@@ -129,7 +129,7 @@
   position: absolute;
   top: 0;
   right: 0;
-  width: clamp(260px, 100vw, 420px);
+  width: clamp(280px, 100vw, 520px);
   height: 100%;
   background: #0a0a0b;
   backdrop-filter: blur(12px);
@@ -141,6 +141,12 @@
   z-index: 10;
   pointer-events: auto;
   border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@media (min-width: 1024px) {
+  .staggered-menu-panel {
+    padding: 8em 4em 4em 4em;
+  }
 }
 
 [data-position='left'] .staggered-menu-panel {
