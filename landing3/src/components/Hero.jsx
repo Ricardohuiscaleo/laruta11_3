@@ -68,6 +68,26 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
     closeModal();
   };
 
+  const [googleData, setGoogleData] = useState({ rating: '4.9', count: '30+' });
+
+  useEffect(() => {
+    const fetchRating = async () => {
+      try {
+        const response = await fetch('https://app.laruta11.cl/api/get_google_reviews.php');
+        const result = await response.json();
+        if (result.success) {
+          setGoogleData({
+            rating: result.rating.toString(),
+            count: result.total_ratings.toString()
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching rating:', error);
+      }
+    };
+    fetchRating();
+  }, []);
+
   useEffect(() => {
     const img = new Image();
     img.onload = () => {
@@ -148,8 +168,11 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
                   <div className="text-xs uppercase tracking-widest text-ruta-white/40">Platos de Autor</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold text-ruta-white mb-1">4.9/5</div>
-                  <div className="text-xs uppercase tracking-widest text-ruta-white/40">Valoración</div>
+                  <div className="text-3xl font-bold text-ruta-yellow mb-1 flex items-center gap-2">
+                    {googleData.rating}/5
+                    <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" alt="Google" className="h-4 brightness-0 invert opacity-50" />
+                  </div>
+                  <div className="text-xs uppercase tracking-widest text-ruta-white/40 font-bold">Reseñas de Google</div>
                 </div>
               </div>
             </div>
