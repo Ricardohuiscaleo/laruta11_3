@@ -37,7 +37,8 @@ RUN cd admin2 && npm install && npm run build
 RUN rm -rf /var/www/html/* && \
     cp -r dist/* /var/www/html/ && \
     cp -r api /var/www/html/ && \
-    cp -r admin2/dist /var/www/html/admin2 && \
+    mkdir -p /var/www/html/admin2 && \
+    cp -r admin2/dist/* /var/www/html/admin2/ && \
     cp admin2-htaccess /var/www/html/admin2/.htaccess && \
     cp load-env.php /var/www/html/ && \
     cp config.php /var/www/html/
