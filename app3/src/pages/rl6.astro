@@ -150,6 +150,10 @@ const GRADOS_MILITARES = [
         <div class="text-center mb-12">
           <h2 class="text-4xl md:text-5xl font-black text-slate-900 mb-4">Solicitar Crédito</h2>
           <p class="text-gray-600 text-lg">Completa el formulario en 4 pasos simples</p>
+          <div id="systemStatus" class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-500">
+            <span class="w-2 h-2 rounded-full bg-gray-400 inline-block"></span>
+            Verificando sistema...
+          </div>
         </div>
         
         <div class="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
@@ -330,6 +334,34 @@ const GRADOS_MILITARES = [
       var pasoActual = 0;
       var totalPasos = 3;
       var usuarioLogueado = null;
+      var sistemaOperativo = false;
+
+      // Verificar estado del sistema (Gmail token)
+      (async function checkSystem() {
+        var statusEl = document.getElementById('systemStatus');
+        var btnContinuar = document.getElementById('btnContinuar');
+        try {
+          var res = await fetch('/api/gmail/check_token_status.php');
+          var data = await res.json();
+          sistemaOperativo = data.ok === true;
+        } catch(e) {
+          sistemaOperativo = false;
+        }
+        if (statusEl) {
+          if (sistemaOperativo) {
+            statusEl.className = 'mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-700';
+            statusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span> Sistema operativo';
+          } else {
+            statusEl.className = 'mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-red-100 text-red-700';
+            statusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span> Sistema no disponible &nbsp;·&nbsp; <a href="https://wa.me/56945392581" target="_blank" class="underline font-bold">Contactar soporte</a>';
+            if (btnContinuar) {
+              btnContinuar.setAttribute('disabled', 'true');
+              btnContinuar.classList.add('opacity-50', 'cursor-not-allowed');
+              btnContinuar.classList.remove('hover:scale-105');
+            }
+          }
+        }
+      })();
 
       // Verificar sesión al cargar
       try {
