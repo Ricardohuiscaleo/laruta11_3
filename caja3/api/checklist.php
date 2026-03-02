@@ -181,7 +181,7 @@ function getActive($conn)
                 $r = $s ? $s->fetch(PDO::FETCH_ASSOC) : null;
                 $saldo_cache = $r ? '$' . number_format(floatval($r['saldo_nuevo']), 0, ',', '.') : '?';
             }
-            $item['description'] = 'Verificar saldo en caja: ' . $saldo_cache;
+            $item['description'] = $item['description'] . ': ' . $saldo_cache;
         }
     }
     unset($item);
