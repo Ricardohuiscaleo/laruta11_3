@@ -1,6 +1,6 @@
 <?php
 // Configuración de errores para API
-error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+error_reporting(E_ALL & ~E_DEPRECATED);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
@@ -31,7 +31,4 @@ function handle_api_exception($e)
         'error' => $e->getMessage(),
         'type' => get_class($e)
     ]);
-}
-
-// Registrar el manejador de excepciones global por si acaso
-set_exception_handler('handle_api_exception');
+}set_exception_handler('handle_api_exception');
