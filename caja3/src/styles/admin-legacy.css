@@ -1,0 +1,370 @@
+    .content {
+      flex: 1;
+      overflow: auto;
+      padding: 16px;
+    }
+
+    #dashboard-view .content {
+      padding: 4px;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 24px;
+      border-bottom: 1px solid #e5e5e5;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0a0a0a;
+    }
+
+    .card-content {
+      padding: 24px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: #0f766e;
+      border: none;
+      border-radius: 8px;
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    .stat-value {
+      font-size: clamp(1.2rem, 3vw, 1.5rem);
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: #0a0a0a;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: #333;
+    }
+
+    .btn-secondary {
+      background: #f5f5f5;
+      color: #0a0a0a;
+    }
+
+    .btn-secondary:hover {
+      background: #e5e5e5;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: #ffffff;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .table th {
+      text-align: left;
+      padding: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #e5e5e5;
+    }
+
+    .table td {
+      padding: 12px;
+      border-bottom: 1px solid #f5f5f5;
+    }
+
+    .table tr:hover {
+      background: #fafafa;
+    }
+
+    .input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: #0a0a0a;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .search {
+      position: relative;
+    }
+
+    .search input {
+      padding-left: 40px;
+      width: 300px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #666;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Desktop styles */
+    @media (min-width: 768px) {
+      .sidebar {
+        position: static;
+        left: 0;
+      }
+
+      .sidebar-overlay {
+        display: none !important;
+      }
+
+      .mobile-menu-btn {
+        display: none;
+      }
+
+      .header {
+        padding: 0 32px;
+      }
+
+      .content {
+        padding: 32px;
+      }
+
+      #dashboard-view {
+        padding: 4px;
+      }
+
+      .stats-grid {
+        gap: 24px;
+        margin-bottom: 32px;
+      }
+
+      .stat-card {
+        padding: 24px;
+      }
+
+      .stat-value {
+        font-size: 32px;
+      }
+
+      .page-title {
+        font-size: 20px;
+      }
+
+      .user-info {
+        gap: 12px;
+      }
+    }
+
+    /* Tablet adjustments */
+    @media (max-width: 1024px) {
+      .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      }
+    }
+
+    /* TUU Reports responsive */
+    .tuu-filters {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .tuu-select,
+    .tuu-search {
+      padding: 8px;
+      border: 1px solid #e5e5e5;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .tuu-search {
+      min-width: 200px;
+    }
+
+    .tuu-pagination-header {
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .tuu-info {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .tuu-pagination-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .tuu-page-info {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    /* Mobile optimizations */
+    @media (max-width: 640px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .stat-card {
+        padding: 12px;
+      }
+
+      .stat-value {
+        font-size: 20px;
+      }
+
+      .stat-label {
+        font-size: 12px;
+      }
+
+      .table {
+        font-size: 12px;
+      }
+
+      .table th,
+      .table td {
+        padding: 8px 4px;
+      }
+
+      .btn {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+
+      .card-content {
+        padding: 16px;
+      }
+
+      .toolbar {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+      }
+
+      .search input {
+        width: 100%;
+      }
+
+      /* TUU mobile specific */
+      .tuu-filters {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .tuu-select,
+      .tuu-search {
+        width: 100%;
+      }
+
+      .tuu-pagination-header {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+      }
+
+      .tuu-pagination-controls {
+        justify-content: center;
+      }
+
+      .btn-sm {
+        padding: 8px 16px;
+      }
+
+      .tuu-page-info {
+        margin: 0 8px;
+      }
+    }
