@@ -2279,12 +2279,12 @@ export default function App() {
         </div>
       )}
 
-      <header className="px-3 py-2 sm:p-3 fixed top-0 left-0 right-0 bg-white z-40 shadow-sm" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
-        <div className="flex items-center justify-between w-full max-w-7xl mx-auto">
-          {/* Main Icon Row with Equal Spacing */}
-          <div className="flex items-center gap-1 sm:gap-2 w-full justify-between">
+      <header className="px-2 py-1 sm:px-4 sm:py-2 fixed top-0 left-0 right-0 bg-white z-40 shadow-sm" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)' }}>
+        <div className="max-w-7xl mx-auto">
+          {/* Single row for all icons with equal spacing */}
+          <div className="flex items-center justify-center gap-1 xs:gap-2 sm:gap-4 md:gap-6">
             {/* Logo */}
-            <div className="p-1">
+            <div className="p-2 shrink-0">
               <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" style={{ width: '28px', height: '28px' }} width="28" height="28" />
             </div>
 
@@ -2292,10 +2292,10 @@ export default function App() {
             {cajaUser && (
               <button
                 onClick={() => { vibrate(30); window.location.href = '/checklist'; }}
-                className="text-gray-600 hover:text-orange-500 transition-colors p-2 rounded-full hover:bg-gray-100"
+                className="text-gray-600 hover:text-orange-500 transition-colors p-2 rounded-full hover:bg-gray-100 shrink-0"
                 title="Checklist"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 11l3 3L22 4"></path>
                   <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                 </svg>
@@ -2306,13 +2306,13 @@ export default function App() {
             {cajaUser && (
               <button
                 onClick={() => { vibrate(30); setShowInactiveProducts(!showInactiveProducts); }}
-                className={`p-2 rounded-full transition-all ${showInactiveProducts
-                  ? 'bg-red-500 text-white shadow-lg'
+                className={`p-2 rounded-full transition-all shrink-0 ${showInactiveProducts
+                  ? 'bg-red-500 text-white shadow-md'
                   : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 title={showInactiveProducts ? 'Ocultar inactivos' : 'Mostrar inactivos'}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   {showInactiveProducts ? (
                     <>
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -2333,18 +2333,18 @@ export default function App() {
               <button
                 onClick={() => { vibrate(30); setIsProfileOpen(true); }}
                 className="flex items-center gap-1 text-gray-600 hover:text-orange-500 p-2 rounded-full hover:bg-gray-100 transition-all shrink-0"
-                title="Perfil Cajera"
+                title="Perfil"
               >
                 <UserIcon size={24} className="text-orange-500" isAnimated={false} />
-                <span className="font-medium text-[10px] sm:text-xs hidden xs:inline">{cajaUser.fullName || cajaUser.user}</span>
+                <span className="font-medium text-[10px] hidden lg:inline">{cajaUser.fullName || cajaUser.user}</span>
               </button>
             )}
 
             {/* Compartir */}
             <button
               onClick={() => { vibrate(30); setShowQRModal(true); }}
-              className="text-gray-600 hover:text-orange-500 p-2 rounded-full hover:bg-gray-100 transition-colors"
-              title="Compartir App"
+              className="text-gray-600 hover:text-orange-500 p-2 rounded-full hover:bg-gray-100 transition-colors shrink-0"
+              title="Compartir"
             >
               <ShareIcon size={24} isAnimated={false} />
             </button>
@@ -2352,17 +2352,17 @@ export default function App() {
             {/* Notificaciones */}
             <button
               onClick={() => { vibrate(30); setIsNotificationsOpen(true); }}
-              className="text-gray-600 hover:text-orange-500 p-2 rounded-full hover:bg-gray-100 relative"
+              className="text-gray-600 hover:text-orange-500 p-2 rounded-full hover:bg-gray-100 relative shrink-0"
               title="Notificaciones"
             >
               <BellIcon ref={bellIconRef} size={24} />
               {activeOrdersCount > 0 && (
-                <span className="absolute top-1 right-1 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] min-w-[14px] h-[14px] px-1 border-2 border-white">
+                <span className="absolute top-1 right-1 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] min-w-[15px] h-[15px] px-1 border-2 border-white shadow-sm">
                   {activeOrdersCount}
                 </span>
               )}
               {activeChecklistsCount > 0 && (
-                <span className="absolute bottom-1 right-1 bg-blue-500 text-white rounded-full flex items-center justify-center text-[8px] min-w-[14px] h-[14px] px-1 border-2 border-white">
+                <span className="absolute bottom-1 right-1 bg-blue-500 text-white rounded-full flex items-center justify-center text-[8px] min-w-[15px] h-[15px] px-1 border-2 border-white shadow-sm">
                   {activeChecklistsCount}
                 </span>
               )}
@@ -2393,10 +2393,10 @@ export default function App() {
                     console.error('Error opening config:', error);
                   }
                 }}
-                className="text-gray-600 hover:text-orange-500 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                className="text-gray-600 hover:text-orange-500 p-2 rounded-full hover:bg-gray-100 transition-colors shrink-0"
                 title="Configuración"
               >
-                <Settings size={24} />
+                <Settings size={22} />
               </button>
             )}
 
