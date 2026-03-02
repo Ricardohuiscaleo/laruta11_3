@@ -43,16 +43,29 @@ export function Dashboard() {
         return () => ws.close();
     }, [])
 
-    if (loading) {
+    if (loading || !data) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
                 <div className="h-12 w-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-muted-foreground font-medium animate-pulse">Sincronizando métricas con PHP 8.5...</p>
+                <div className="text-center">
+                    <p className="text-muted-foreground font-black uppercase text-[10px] tracking-widest animate-pulse">Sincronizando Métricas v8.5</p>
+                    <p className="text-[10px] text-slate-400 mt-1">{loading ? 'Conectando con HUB API...' : 'Esperando respuesta del servidor...'}</p>
+                </div>
             </div>
         )
     }
 
-    const { ventas, compras, margen, inventario, plan_compras, breakeven, goals, payment_methods, addresses } = data;
+    const {
+        ventas = {},
+        compras = {},
+        margen = {},
+        inventario = {},
+        plan_compras = {},
+        breakeven = {},
+        goals = {},
+        payment_methods = [],
+        addresses = []
+    } = data;
 
     const MetricCard = ({ title, value, subValue, icon: Icon, trend, color, footer }) => (
         <Card className="overflow-hidden border-slate-200/60 shadow-sm hover:shadow-md transition-all">
