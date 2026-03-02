@@ -982,7 +982,7 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
         className="flex items-center gap-2 text-gray-600 hover:text-orange-500 p-1 rounded-lg hover:bg-gray-100 transition-all"
         title="Perfil Cajera"
       >
-        <UserIcon size={clamp(24, 6, 28)} className="text-orange-500" isAnimated={false} />
+        <UserIcon size={24} className="text-orange-500" isAnimated={false} />
         <span className="font-medium text-[clamp(12px,3vw,14px)]">{cajaUser.fullName || cajaUser.user}</span>
       </button>
     )}
@@ -993,7 +993,7 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
       className="text-gray-600 hover:text-orange-500 transition-colors"
       title="Compartir App"
     >
-      <ShareIcon size={clamp(24, 6, 28)} isAnimated={false} />
+      <ShareIcon size={24} isAnimated={false} />
     </button>
 
     {/* Notificaciones */}
@@ -1002,7 +1002,7 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
       className="text-gray-600 hover:text-orange-500 relative"
       title="Notificaciones"
     >
-      <BellIcon ref={bellIconRef} size={clamp(24, 6, 28)} />
+      <BellIcon ref={bellIconRef} size={24} />
       {activeOrdersCount > 0 && (
         <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full flex items-center justify-center text-[clamp(7px,2vw,9px)] w-[clamp(12px,3vw,14px)] h-[clamp(12px,3vw,14px)]">
           {activeOrdersCount}
@@ -1015,9 +1015,37 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
       )}
     </button>
 
+    {/* Configuración */}
+    {cajaUser && (
+      <button
+        onClick={async () => {
+          vibrate(30);
+          setShowStatusModal(true);
+          const res = await fetch('/api/get_truck_status.php?truckId=4');
+          const data = await res.json();
+          if (data.success) setTruckStatus(data.truck);
+
+          const schedRes = await fetch('/api/get_truck_schedules.php?truckId=4');
+          const schedData = await schedRes.json();
+          if (schedData.success) {
+            setSchedules(schedData.schedules);
+            setCurrentDayOfWeek(schedData.currentDayOfWeek);
+          }
+
+          const catRes = await fetch('/api/get_menu_structure.php');
+          const catData = await catRes.json();
+          if (catData.success) setMenuCategories(catData.categories);
+        }}
+        className="text-gray-600 hover:text-orange-500 transition-colors"
+        title="Configuración"
+      >
+        <Settings size={24} />
+      </button>
+    )}
+
     {/* Carrito */}
     <button onClick={() => { vibrate(30); playCajaSound(); setShowCheckout(true); }} className="text-gray-600 hover:text-orange-500 relative">
-      <ShoppingCartIcon ref={cartIconRef} size={clamp(24, 6, 28)} />
+      <ShoppingCartIcon ref={cartIconRef} size={24} />
       {cartItemCount > 0 && (
         <span className="absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center animate-fade-in text-[clamp(8px,2vw,10px)] w-[clamp(14px,3.5vw,16px)] h-[clamp(14px,3.5vw,16px)]">
           {cartItemCount}
@@ -2258,7 +2286,7 @@ export default function App() {
       <header className="px-4 py-2 sm:p-3 fixed top-0 left-0 right-0 bg-white z-40 shadow-sm" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
         <div className="flex items-center justify-between w-full">
           {/* Logo */}
-          <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" style={{ width: 'clamp(24px, 6vw, 28px)', height: 'clamp(24px, 6vw, 28px)' }} />
+          <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" style={{ width: '28px', height: '28px' }} width="28" height="28" />
 
           {/* Checklist */}
           {cajaUser && (

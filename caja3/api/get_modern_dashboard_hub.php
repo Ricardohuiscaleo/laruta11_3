@@ -61,11 +61,11 @@ try {
 
     // Top Item by Revenue
     $stmtTopItem = $pdo->prepare("
-        SELECT product_name, SUM(subtotal) as revenue 
+        SELECT oi.product_name, SUM(oi.subtotal) as revenue 
         FROM tuu_order_items oi 
         JOIN tuu_orders o ON oi.order_reference = o.order_number 
         WHERE o.created_at >= ? AND o.created_at < ? AND o.payment_status = 'paid' 
-        GROUP BY product_name ORDER BY revenue DESC LIMIT 1
+        GROUP BY oi.product_name ORDER BY revenue DESC LIMIT 1
     ");
     $stmtTopItem->execute([$firstShiftStartUTC, $lastShiftEndUTC]);
     $topItem = $stmtTopItem->fetch(PDO::FETCH_ASSOC);
