@@ -27,14 +27,17 @@ RUN echo "Cache bust: $CACHEBUST"
 
 COPY . .
 
-# Instalar dependencias y build
+# Build caja3
 RUN npm install && npm run build
+
+# Build admin2
+RUN cd admin2 && npm install && npm run build
 
 # Mover build a Apache
 RUN rm -rf /var/www/html/* && \
     cp -r dist/* /var/www/html/ && \
     cp -r api /var/www/html/ && \
-    [ -d admin ] && cp -r admin /var/www/html/ || true && \
+    cp -r admin2/dist /var/www/html/admin2 && \
     cp load-env.php /var/www/html/ && \
     cp config.php /var/www/html/
 
