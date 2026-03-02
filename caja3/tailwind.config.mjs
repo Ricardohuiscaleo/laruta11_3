@@ -10,9 +10,13 @@ export default {
 	theme: {
 		extend: {
 			borderRadius: {
-				lg: 'var(--radius)',
-				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				lg: 'var(--radius, 0.5rem)',
+				md: 'calc(var(--radius, 0.5rem) - 2px)',
+				sm: 'calc(var(--radius, 0.5rem) - 4px)',
+				xl: '0.75rem',
+				'2xl': '1rem',
+				'3xl': '1.5rem',
+				full: '9999px'
 			},
 			colors: {
 				background: 'hsl(var(--background))',
