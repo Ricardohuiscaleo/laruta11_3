@@ -50,4 +50,3 @@ if (basename(__FILE__) == basename($_SERVER['SCRIPT_NAME'])) {
     header('Content-Type: application/json');
     echo json_encode(['success' => refreshGmailToken()]);
 }
-?>

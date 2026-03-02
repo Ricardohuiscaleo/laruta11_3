@@ -90,4 +90,3 @@ $debug['step2']['secret_key_received'] = isset($validate_result['secret_key']);
 $debug['step2']['account_id_received'] = isset($validate_result['account_id']);
 
 echo json_encode($debug, JSON_PRETTY_PRINT);
-?>

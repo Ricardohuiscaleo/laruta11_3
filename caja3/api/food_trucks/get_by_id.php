@@ -46,4 +46,3 @@ if ($truck) {
 }
 
 $conn->close();
-?>

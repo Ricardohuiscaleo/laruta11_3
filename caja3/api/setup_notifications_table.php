@@ -78,4 +78,3 @@ if ($httpCode === 200) {
         'response' => $response
     ]);
 }
-?>

@@ -64,4 +64,3 @@ try {
         imagedestroy($errorImage);
     }
 }
-?>

@@ -33,4 +33,3 @@ if (isset($tokens[$token]) && $tokens[$token]['expires'] > time()) {
     
     echo json_encode(['valid' => false]);
 }
-?>

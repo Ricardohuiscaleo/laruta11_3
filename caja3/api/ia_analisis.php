@@ -120,4 +120,3 @@ switch ($method) {
 }
 
 $conn->close();
-?>

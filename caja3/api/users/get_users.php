@@ -80,4 +80,3 @@ try {
         'error' => $e->getMessage()
     ]);
 }
-?>

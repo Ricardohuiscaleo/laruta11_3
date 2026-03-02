@@ -67,4 +67,3 @@ try {
         'error' => 'Error corrigiendo URLs: ' . $e->getMessage()
     ]);
 }
-?>

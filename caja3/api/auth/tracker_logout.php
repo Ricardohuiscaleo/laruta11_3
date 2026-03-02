@@ -6,4 +6,3 @@ header('Content-Type: application/json');
 unset($_SESSION['tracker_user']);
 
 echo json_encode(['success' => true]);
-?>

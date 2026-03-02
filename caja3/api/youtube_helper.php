@@ -67,4 +67,3 @@ if (basename(__FILE__) == basename($_SERVER["SCRIPT_FILENAME"])) {
         echo "<strong>Output:</strong> " . ($clean_url ? htmlspecialchars($clean_url) : 'INVALID') . "</p>\n";
     }
 }
-?>

@@ -71,4 +71,3 @@ if ($conn->query($sql)) {
 
 // Cerrar conexión
 $conn->close();
-?>

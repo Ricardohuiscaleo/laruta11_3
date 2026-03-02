@@ -48,4 +48,3 @@ if (mysqli_query($user_conn, $update_user) && mysqli_query($user_conn, $insert_h
 }
 
 mysqli_close($user_conn);
-?>

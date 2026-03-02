@@ -44,4 +44,3 @@ if ($stmt->execute()) {
 }
 
 $conn->close();
-?>

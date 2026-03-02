@@ -973,7 +973,20 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
 
 
 // Sub-component for Header Actions
-const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsNotificationsOpen, activeOrdersCount, activeChecklistsCount, setShowCheckout, cartItemCount, playCajaSound, cartIconRef, bellIconRef }) => (
+const HeaderRightActions = ({
+  cajaUser,
+  setIsProfileOpen,
+  setShowQRModal,
+  setIsNotificationsOpen,
+  activeOrdersCount,
+  activeChecklistsCount,
+  setShowCheckout,
+  cartItemCount,
+  playCajaSound,
+  cartIconRef,
+  bellIconRef,
+  handleOpenConfig
+}) => (
   <div className="flex items-center gap-4 sm:gap-6">
     {/* Perfil Cajera */}
     {cajaUser && (
@@ -1018,24 +1031,7 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
     {/* Configuración */}
     {cajaUser && (
       <button
-        onClick={async () => {
-          vibrate(30);
-          setShowStatusModal(true);
-          const res = await fetch('/api/get_truck_status.php?truckId=4');
-          const data = await res.json();
-          if (data.success) setTruckStatus(data.truck);
-
-          const schedRes = await fetch('/api/get_truck_schedules.php?truckId=4');
-          const schedData = await schedRes.json();
-          if (schedData.success) {
-            setSchedules(schedData.schedules);
-            setCurrentDayOfWeek(schedData.currentDayOfWeek);
-          }
-
-          const catRes = await fetch('/api/get_menu_structure.php');
-          const catData = await catRes.json();
-          if (catData.success) setMenuCategories(catData.categories);
-        }}
+        onClick={handleOpenConfig}
         className="text-gray-600 hover:text-orange-500 transition-colors"
         title="Configuración"
       >
@@ -2340,6 +2336,28 @@ export default function App() {
             playCajaSound={playCajaSound}
             cartIconRef={cartIconRef}
             bellIconRef={bellIconRef}
+            handleOpenConfig={async () => {
+              vibrate(30);
+              setShowStatusModal(true);
+              try {
+                const res = await fetch('/api/get_truck_status.php?truckId=4');
+                const data = await res.json();
+                if (data.success) setTruckStatus(data.truck);
+
+                const schedRes = await fetch('/api/get_truck_schedules.php?truckId=4');
+                const schedData = await schedRes.json();
+                if (schedData.success) {
+                  setSchedules(schedData.schedules);
+                  setCurrentDayOfWeek(schedData.currentDayOfWeek);
+                }
+
+                const catRes = await fetch('/api/get_menu_structure.php');
+                const catData = await catRes.json();
+                if (catData.success) setMenuCategories(catData.categories);
+              } catch (error) {
+                console.error('Error opening config:', error);
+              }
+            }}
           />
         </div>
       </header>

@@ -31,4 +31,3 @@ echo json_encode([
         'api_key' => $config['tuu_api_key'] ?? ''
     ]
 ]);
-?>

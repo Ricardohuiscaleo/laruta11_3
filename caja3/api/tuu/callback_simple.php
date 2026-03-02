@@ -96,4 +96,3 @@ if (isset($_GET['x_reference']) && isset($_GET['x_result']) && $_GET['x_result']
 // Responder OK a TUU
 http_response_code(200);
 echo "OK";
-?>

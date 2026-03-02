@@ -185,4 +185,3 @@ try {
     error_log('Stack trace: ' . $e->getTraceAsString());
     echo json_encode(['success' => false, 'error' => $e->getMessage(), 'line' => $e->getLine(), 'file' => basename($e->getFile())]);
 }
-?>

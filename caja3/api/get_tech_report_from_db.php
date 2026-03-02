@@ -60,4 +60,3 @@ try {
         'error' => $e->getMessage()
     ]);
 }
-?>

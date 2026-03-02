@@ -72,4 +72,3 @@ try {
 } catch (PDOException $e) {
     echo json_encode(['success' => false, 'error' => 'Error: ' . $e->getMessage()]);
 }
-?>

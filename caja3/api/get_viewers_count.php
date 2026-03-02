@@ -58,4 +58,3 @@ try {
         'active_viewers' => 0
     ]);
 }
-?>

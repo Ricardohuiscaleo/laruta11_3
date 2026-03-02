@@ -123,4 +123,3 @@ function createWarmEmailTemplate($body, $subject, $candidate_name) {
     </body>
     </html>';
 }
-?>

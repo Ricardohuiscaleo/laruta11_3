@@ -47,4 +47,3 @@ if (empty($categorias)) {
 echo json_encode($categorias);
 
 $conn->close();
-?>

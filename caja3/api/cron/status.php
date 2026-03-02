@@ -23,4 +23,4 @@ echo json_encode([
     'total_lines' => count($lines),
     'last_update' => date('Y-m-d H:i:s', filemtime($logFile))
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-?>
+

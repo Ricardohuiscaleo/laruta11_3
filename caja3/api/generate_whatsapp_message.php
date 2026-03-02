@@ -104,4 +104,3 @@ echo json_encode([
     'message' => $message,
     'whatsapp_url' => $whatsappUrl
 ]);
-?>

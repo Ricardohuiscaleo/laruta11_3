@@ -49,7 +49,7 @@ $anio_actual = date('Y');
 $fecha_vencimiento = "21 de $mes_actual, $anio_actual";
 
 $conn->close();
-?>
+
 <!DOCTYPE html>
 <html lang='es'>
 <head>
@@ -73,13 +73,13 @@ $conn->close();
                     
                     <tr>
                         <td style='padding: 30px;'>
-                            <h2 style='color: #333333; margin: 0 0 15px 0;'>Hola, <?= htmlspecialchars($user['nombre']) ?> 👋</h2>
+                            <h2 style='color: #333333; margin: 0 0 15px 0;'>Hola, <?= htmlspecialchars($user['nombre'])  👋</h2>
                             <p style='color: #666666; line-height: 1.6; margin: 0;'>
                                 Te enviamos el detalle de tu crédito La Ruta 11. Gracias por confiar en nosotros.
                             </p>
                             <p style='color: #666666; line-height: 1.6; margin: 10px 0 0 0; font-size: 14px;'>
-                                <strong>Grado:</strong> <?= htmlspecialchars($user['grado_militar']) ?><br>
-                                <strong>Unidad:</strong> <?= htmlspecialchars($user['unidad_trabajo']) ?>
+                                <strong>Grado:</strong> <?= htmlspecialchars($user['grado_militar']) <br>
+                                <strong>Unidad:</strong> <?= htmlspecialchars($user['unidad_trabajo']) 
                             </p>
                         </td>
                     </tr>
@@ -94,19 +94,19 @@ $conn->close();
                                         <table width='100%' cellpadding='8' cellspacing='0'>
                                             <tr>
                                                 <td style='color: #666666; border-bottom: 1px solid #e0e0e0;'>Crédito Total:</td>
-                                                <td align='right' style='color: #333333; font-weight: bold; border-bottom: 1px solid #e0e0e0;'>$<?= number_format($credito_total, 0, ',', '.') ?></td>
+                                                <td align='right' style='color: #333333; font-weight: bold; border-bottom: 1px solid #e0e0e0;'>$<?= number_format($credito_total, 0, ',', '.') </td>
                                             </tr>
                                             <tr>
                                                 <td style='color: #666666; border-bottom: 1px solid #e0e0e0;'>Consumido:</td>
-                                                <td align='right' style='color: #333333; font-weight: bold; border-bottom: 1px solid #e0e0e0;'>$<?= number_format($credito_usado, 0, ',', '.') ?></td>
+                                                <td align='right' style='color: #333333; font-weight: bold; border-bottom: 1px solid #e0e0e0;'>$<?= number_format($credito_usado, 0, ',', '.') </td>
                                             </tr>
                                             <tr>
                                                 <td style='color: #666666; border-bottom: 1px solid #e0e0e0;'>Disponible:</td>
-                                                <td align='right' style='color: #22c55e; font-weight: bold; border-bottom: 1px solid #e0e0e0;'>$<?= number_format($credito_disponible, 0, ',', '.') ?></td>
+                                                <td align='right' style='color: #22c55e; font-weight: bold; border-bottom: 1px solid #e0e0e0;'>$<?= number_format($credito_disponible, 0, ',', '.') </td>
                                             </tr>
                                             <tr>
                                                 <td style='color: #666666; padding-top: 10px;'>Saldo a Pagar:</td>
-                                                <td align='right' style='color: #ef4444; font-weight: bold; font-size: 20px; padding-top: 10px;'>$<?= number_format($saldo_pagar, 0, ',', '.') ?></td>
+                                                <td align='right' style='color: #ef4444; font-weight: bold; font-size: 20px; padding-top: 10px;'>$<?= number_format($saldo_pagar, 0, ',', '.') </td>
                                             </tr>
                                         </table>
                                     </td>
@@ -119,7 +119,7 @@ $conn->close();
                         <td style='padding: 0 30px 30px 30px;'>
                             <div style='background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px;'>
                                 <p style='margin: 0; color: #856404;'>
-                                    <strong>📅 Fecha de Vencimiento:</strong> <?= $fecha_vencimiento ?>
+                                    <strong>📅 Fecha de Vencimiento:</strong> <?= $fecha_vencimiento 
                                 </p>
                             </div>
                         </td>
@@ -127,11 +127,11 @@ $conn->close();
                     
                     <tr>
                         <td style='padding: 0 30px 30px 30px;' align='center'>
-                            <a href='https://caja.laruta11.cl/estado-cuenta?user_id=<?= $user_id ?>' 
+                            <a href='https://caja.laruta11.cl/estado-cuenta?user_id=<?= $user_id ' 
                                style='display: inline-block; background: #6b7280; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; font-size: 14px; margin-bottom: 10px;'>
                                 📊 Ver Estado de Cuenta Detallado
                             </a><br>
-                            <a href='https://app.laruta11.cl/pagar-credito?user_id=<?= $user_id ?>&monto=<?= $saldo_pagar ?>' 
+                            <a href='https://app.laruta11.cl/pagar-credito?user_id=<?= $user_id &monto=<?= $saldo_pagar ' 
                                style='display: inline-block; background: #0074D9; color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
                                 💳 Pagar Ahora
                             </a>
@@ -150,7 +150,7 @@ $conn->close();
                                 <a href='https://app.laruta11.cl' style='color: #ff6b35; text-decoration: none;'>app.laruta11.cl</a>
                             </p>
                             <p style='color: #cccccc; margin: 15px 0 0 0; font-size: 11px;'>
-                                © <?= date('Y') ?> La Ruta 11 SpA. Todos los derechos reservados.
+                                © <?= date('Y')  La Ruta 11 SpA. Todos los derechos reservados.
                             </p>
                         </td>
                     </tr>

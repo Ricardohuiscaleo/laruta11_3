@@ -73,4 +73,3 @@ if ($producto_id) {
 }
 
 $conn->close();
-?>

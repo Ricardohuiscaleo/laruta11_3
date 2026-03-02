@@ -130,4 +130,3 @@ try {
     $pdo->rollBack();
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
-?>

@@ -54,4 +54,3 @@ echo json_encode([
     'request_data' => $data,
     'response' => json_decode($response, true)
 ]);
-?>

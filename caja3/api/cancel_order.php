@@ -178,4 +178,3 @@ function restoreInventory($pdo, $order_number)
 
     return $count;
 }
-?>

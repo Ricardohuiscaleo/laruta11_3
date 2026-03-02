@@ -232,4 +232,4 @@ function generatePaymentConfirmationEmail($user, $amount, $method, $notes, $cred
 </html>
     ";
 }
-?>
+

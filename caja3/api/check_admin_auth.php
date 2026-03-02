@@ -20,4 +20,3 @@ echo json_encode([
     'authenticated' => $is_logged_in,
     'user' => $is_logged_in ? ($_SESSION['admin_user'] ?? 'admin') : null
 ]);
-?>

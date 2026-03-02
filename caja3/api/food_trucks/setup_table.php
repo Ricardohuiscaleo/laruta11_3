@@ -69,4 +69,3 @@ if ($conn->query($sql)) {
 }
 
 $conn->close();
-?>

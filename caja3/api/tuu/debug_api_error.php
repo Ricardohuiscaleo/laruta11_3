@@ -51,4 +51,3 @@ echo json_encode([
     'raw_response' => $response,
     'api_key_prefix' => substr($config['tuu_api_key'], 0, 20) . '...'
 ]);
-?>

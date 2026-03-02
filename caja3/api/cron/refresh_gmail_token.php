@@ -10,4 +10,3 @@ file_put_contents(__DIR__ . '/gmail_refresh.log', $logMessage, FILE_APPEND);
 
 // Respuesta para cron
 echo $result ? "Token refreshed successfully\n" : "Token refresh failed\n";
-?>

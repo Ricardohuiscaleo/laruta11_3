@@ -22,7 +22,7 @@ $authUrl = 'https://accounts.google.com/o/oauth2/auth?' . http_build_query([
 ]);
 
 header('Content-Type: text/html; charset=utf-8');
-?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -49,13 +49,13 @@ header('Content-Type: text/html; charset=utf-8');
         </ol>
     </div>
     
-    <a href="<?php echo $authUrl; ?>" class="btn">🔐 Autorizar Gmail</a>
+    <a href="<?php echo $authUrl; " class="btn">🔐 Autorizar Gmail</a>
     
     <br><br>
     <a href="/api/test_gmail.php" style="color: #666;">← Volver al test</a>
     
     <div style="margin-top: 30px; font-size: 12px; color: #666;">
-        📧 Email configurado: <?php echo $config['gmail_sender_email']; ?>
+        📧 Email configurado: <?php echo $config['gmail_sender_email']; 
     </div>
 </body>
 </html>

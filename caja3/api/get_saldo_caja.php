@@ -88,4 +88,4 @@ echo json_encode([
     'efectivo_dia' => $total_cash,
     'ingresos_automaticos_dia' => $ingresos_auto
 ]);
-?>
+

@@ -7,4 +7,3 @@ echo json_encode([
     'message' => 'Recarga la página para ver los cambios actualizados',
     'reload' => true
 ]);
-?>

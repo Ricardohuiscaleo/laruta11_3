@@ -73,4 +73,4 @@ if (mysqli_query($conn, $query)) {
         'error' => 'Error al guardar la configuración: ' . mysqli_error($conn)
     ]);
 }
-?>
+

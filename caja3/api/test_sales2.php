@@ -20,4 +20,4 @@ if($dataCash){
 } else {
     echo "Failed to fetch $urlCash\n";
 }
-?>
+

@@ -108,4 +108,3 @@ echo "\n📊 Resumen por día:\n";
 foreach ($summary as $row) {
     echo "   {$row['date']}: {$row['count']} transacciones - $" . number_format($row['total']) . "\n";
 }
-?>

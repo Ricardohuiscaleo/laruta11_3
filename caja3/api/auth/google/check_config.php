@@ -29,4 +29,3 @@ $auth_url_debug = 'https://accounts.google.com/o/oauth2/auth?' . http_build_quer
 ]);
 
 echo "<p><a href='" . $auth_url_debug . "'>Test OAuth with Debug Callback</a></p>";
-?>

@@ -64,4 +64,3 @@ try {
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'messages' => [], 'error' => $e->getMessage()]);
 }
-?>

@@ -27,4 +27,3 @@ if (isset($_GET['redirect'])) {
 // Redirigir a Google OAuth
 header('Location: ' . $auth_url);
 exit();
-?>

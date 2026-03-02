@@ -50,4 +50,3 @@ echo json_encode([
         'server_host' => $_SERVER['HTTP_HOST']
     ]
 ]);
-?>

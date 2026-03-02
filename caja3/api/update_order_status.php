@@ -88,4 +88,3 @@ function sendOrderNotification($orderId, $orderNumber, $customerName, $status, $
         error_log('Error guardando notificación: ' . $e->getMessage());
     }
 }
-?>

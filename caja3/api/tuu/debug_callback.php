@@ -14,4 +14,3 @@ echo "<h3>POST Parameters:</h3>";
 echo "<pre>" . json_encode($_POST, JSON_PRETTY_PRINT) . "</pre>";
 echo "<h3>Full URL:</h3>";
 echo "<pre>" . $_SERVER['REQUEST_URI'] . "</pre>";
-?>

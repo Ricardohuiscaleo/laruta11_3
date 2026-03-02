@@ -57,4 +57,3 @@ if (php_sapi_name() === 'cli') {
     $result = saveTechReportToDB($reportData);
     echo json_encode($result);
 }
-?>

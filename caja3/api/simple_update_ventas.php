@@ -56,4 +56,3 @@ echo json_encode([
     'message' => 'Actualización simple completada',
     'affected_rows' => $stmt->affected_rows
 ]);
-?>

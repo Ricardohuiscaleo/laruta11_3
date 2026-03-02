@@ -65,4 +65,3 @@ if ($config) {
 } else {
     echo "Config no encontrado\n";
 }
-?>

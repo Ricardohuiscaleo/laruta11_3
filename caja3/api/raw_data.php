@@ -37,4 +37,3 @@ echo json_encode([
     'message' => 'Datos sin procesar de la base de datos',
     'ventas' => $ventas
 ]);
-?>

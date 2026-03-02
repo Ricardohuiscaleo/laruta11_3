@@ -22,4 +22,3 @@ $categorias = [
 ];
 
 echo json_encode($categorias);
-?>

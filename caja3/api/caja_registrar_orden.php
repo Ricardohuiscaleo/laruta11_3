@@ -438,4 +438,3 @@ function deductProductCaja($pdo, $product_id, $quantity, $order_reference = null
         }
     }
 }
-?>

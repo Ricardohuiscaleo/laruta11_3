@@ -71,4 +71,3 @@ if (file_exists($logFile)) {
     echo "\n📝 Contenido del log:\n";
     echo file_get_contents($logFile);
 }
-?>

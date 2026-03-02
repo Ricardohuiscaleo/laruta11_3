@@ -25,4 +25,3 @@ echo json_encode([
     'debug' => $debug,
     'json_error' => json_last_error_msg()
 ]);
-?>

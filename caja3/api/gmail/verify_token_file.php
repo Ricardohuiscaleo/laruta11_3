@@ -19,4 +19,4 @@ if (file_exists($token_path)) {
 }
 
 echo json_encode($result, JSON_PRETTY_PRINT);
-?>
+

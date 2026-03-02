@@ -65,4 +65,3 @@ if (isset($_GET['code'])) {
 } else {
     echo "<h2>❌ No se recibió código de autorización</h2>";
 }
-?>

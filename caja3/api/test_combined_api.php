@@ -52,4 +52,3 @@ if ($response) {
 } else {
     echo "❌ No response from API\n";
 }
-?>

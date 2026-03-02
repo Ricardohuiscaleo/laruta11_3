@@ -93,4 +93,3 @@ try {
 } catch (PDOException $e) {
     echo "Error de base de datos: " . $e->getMessage() . "\n";
 }
-?>

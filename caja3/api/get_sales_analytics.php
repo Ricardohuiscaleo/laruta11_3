@@ -387,4 +387,4 @@ try {
     $debug[] = 'Trace: ' . $e->getTraceAsString();
     echo json_encode(['success' => false, 'error' => $e->getMessage(), 'debug' => $debug]);
 }
-?>
+

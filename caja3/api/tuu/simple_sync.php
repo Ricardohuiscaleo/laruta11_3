@@ -80,4 +80,3 @@ try {
     // Log de error
     file_put_contents(__DIR__ . '/cron_log.txt', date('Y-m-d H:i:s') . " - ERROR: " . $e->getMessage() . "\n", FILE_APPEND);
 }
-?>

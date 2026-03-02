@@ -56,4 +56,3 @@ if ($stmt->execute()) {
 
 $stmt->close();
 $conn->close();
-?>

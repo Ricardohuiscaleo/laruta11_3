@@ -103,4 +103,4 @@ try {
     $debug[] = 'ERROR: ' . $e->getMessage();
     echo json_encode(['success' => false, 'error' => $e->getMessage(), 'debug' => $debug]);
 }
-?>
+

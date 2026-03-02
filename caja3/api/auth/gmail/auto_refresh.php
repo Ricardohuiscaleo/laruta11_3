@@ -29,4 +29,3 @@ function checkAndRefreshToken() {
 function ensureValidGmailToken() {
     return checkAndRefreshToken();
 }
-?>

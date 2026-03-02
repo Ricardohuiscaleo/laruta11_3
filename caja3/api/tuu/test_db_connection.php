@@ -64,4 +64,3 @@ try {
         'error_code' => $e->getCode()
     ]);
 }
-?>

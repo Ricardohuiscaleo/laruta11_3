@@ -45,4 +45,3 @@ try {
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'error' => 'Error del servidor: ' . $e->getMessage()]);
 }
-?>

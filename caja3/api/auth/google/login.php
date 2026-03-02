@@ -19,4 +19,3 @@ $auth_url = 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query([
 // Redirigir a Google
 header('Location: ' . $auth_url);
 exit();
-?>

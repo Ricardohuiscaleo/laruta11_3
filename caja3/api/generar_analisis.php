@@ -500,4 +500,3 @@ function generarAnalisisGemini($datos, $tipo, $apiKey, $analisisExistentes = [])
 }
 
 $conn->close();
-?>

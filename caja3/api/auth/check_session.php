@@ -74,4 +74,3 @@ if (isset($_SESSION['cashier'])) {
 }
 
 echo json_encode($response);
-?>

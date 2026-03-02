@@ -49,4 +49,3 @@ try {
 }
 
 $conn->close();
-?>

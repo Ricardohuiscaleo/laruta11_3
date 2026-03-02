@@ -64,4 +64,3 @@ if (mysqli_query($conn, $sql_update)) {
 
 // Cerrar la conexión
 mysqli_close($conn);
-?>

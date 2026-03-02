@@ -74,4 +74,3 @@ try {
         'error' => 'Error obteniendo productos: ' . $e->getMessage()
     ]);
 }
-?>

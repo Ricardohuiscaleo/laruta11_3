@@ -57,4 +57,3 @@ try {
         'note' => 'El trigger puede ya existir'
     ]);
 }
-?>

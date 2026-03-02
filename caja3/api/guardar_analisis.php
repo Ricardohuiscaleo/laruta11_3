@@ -23,4 +23,3 @@ function guardarAnalisis($conn, $tipo, $contenido) {
     $stmt->close();
     return $result;
 }
-?>

@@ -72,4 +72,3 @@ if ($data['status'] === 'OK' && !empty($data['routes'])) {
         'fallback' => true
     ]);
 }
-?>

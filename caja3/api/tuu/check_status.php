@@ -73,4 +73,3 @@ if ($config_ok) {
 $status['all_ok'] = ($status['api_status'] === 'OK' && $status['db_status'] === 'OK' && $status['config_status'] === 'OK');
 
 echo json_encode($status);
-?>

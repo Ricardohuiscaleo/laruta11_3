@@ -21,4 +21,3 @@ $auth_url = "https://accounts.google.com/o/oauth2/auth?" . http_build_query([
 
 header('Location: ' . $auth_url);
 exit();
-?>

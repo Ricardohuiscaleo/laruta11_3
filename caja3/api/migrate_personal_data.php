@@ -142,4 +142,3 @@ $conn->close();
 
 $result["message"] = "Migración completada";
 echo json_encode($result);
-?>

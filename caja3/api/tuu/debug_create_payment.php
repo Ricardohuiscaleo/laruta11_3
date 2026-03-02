@@ -79,4 +79,3 @@ try {
         'file' => basename($e->getFile())
     ]);
 }
-?>

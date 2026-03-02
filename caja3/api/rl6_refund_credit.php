@@ -217,5 +217,4 @@ function restoreInventory($conn, $order_number) {
 
     return $count;
 }
-?>
-?>
+

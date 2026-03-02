@@ -106,4 +106,3 @@ try {
     header('Location: https://app.laruta11.cl/?login=error&msg=' . urlencode($e->getMessage()));
     exit();
 }
-?>

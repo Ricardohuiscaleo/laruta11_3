@@ -27,4 +27,3 @@ $location = mysqli_fetch_assoc($result);
 mysqli_close($user_conn);
 
 echo json_encode($location);
-?>

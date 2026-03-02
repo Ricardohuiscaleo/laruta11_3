@@ -102,4 +102,4 @@ if ($created > 0) {
     echo "Ya fueron creados $total checklists HOY.\n";
 }
 echo "Finalizado: " . date('Y-m-d H:i:s') . "\n";
-?>
+

@@ -50,4 +50,3 @@ echo json_encode([
     'report' => $staticReport,
     'timestamp' => time()
 ]);
-?>

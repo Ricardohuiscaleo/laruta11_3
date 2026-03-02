@@ -18,4 +18,3 @@ echo json_encode([
     "fecha_formateada" => $fecha_formateada,
     "timestamp" => time() * 1000 // Timestamp en milisegundos para JavaScript
 ]);
-?>

@@ -68,4 +68,4 @@ class MySQLSessionHandler implements SessionHandlerInterface {
         return mysqli_stmt_affected_rows($stmt);
     }
 }
-?>
+

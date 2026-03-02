@@ -52,4 +52,3 @@ try {
 }
 
 mysqli_close($conn);
-?>

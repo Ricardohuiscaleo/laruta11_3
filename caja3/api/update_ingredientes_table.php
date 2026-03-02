@@ -73,4 +73,3 @@ if ($result) {
 echo json_encode(['success' => true, 'columns' => $columns, 'message' => 'Estructura de la tabla ingredientes']);
 
 $conn->close();
-?>

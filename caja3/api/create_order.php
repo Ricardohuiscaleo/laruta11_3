@@ -425,4 +425,4 @@ function deductProduct($pdo, $product_id, $quantity) {
             ->execute([$quantity, $product_id]);
     }
 }
-?>
+

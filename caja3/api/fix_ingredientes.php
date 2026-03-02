@@ -163,4 +163,3 @@ if (count($ingredientesFaltantes) > 0) {
 $conn->close();
 
 echo json_encode($response, JSON_PRETTY_PRINT);
-?>

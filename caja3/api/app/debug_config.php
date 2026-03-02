@@ -34,4 +34,3 @@ $debug['config_loaded'] = $config !== null;
 $debug['config_keys'] = $config ? array_keys($config) : [];
 
 echo json_encode($debug, JSON_PRETTY_PRINT);
-?>

@@ -120,4 +120,4 @@ echo json_encode([
     'total_ingresos' => $total_ingresos,
     'total_retiros' => $total_retiros
 ]);
-?>
+

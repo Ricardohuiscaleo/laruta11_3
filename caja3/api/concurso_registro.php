@@ -171,4 +171,3 @@ try {
         echo json_encode(['error' => 'Error del servidor']);
     }
 }
-?>

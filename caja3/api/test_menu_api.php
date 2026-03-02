@@ -21,4 +21,3 @@ if ($data && $data['success']) {
 } else {
     echo "❌ Error en API: " . ($data['error'] ?? 'Unknown error') . "\n";
 }
-?>

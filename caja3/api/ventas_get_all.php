@@ -55,4 +55,3 @@ echo json_encode([
     'message' => 'Datos de ventas obtenidos correctamente',
     'ventas' => $ventas
 ]);
-?>

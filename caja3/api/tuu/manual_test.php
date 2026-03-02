@@ -35,4 +35,3 @@ if (file_exists($logFile)) {
     echo "📝 Últimas líneas del log:\n";
     echo file_get_contents($logFile);
 }
-?>

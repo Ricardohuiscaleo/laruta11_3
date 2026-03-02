@@ -55,4 +55,3 @@ echo json_encode([
     'raw_response' => $response,
     'parsed_response' => json_decode($response, true)
 ], JSON_PRETTY_PRINT);
-?>

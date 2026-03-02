@@ -84,4 +84,3 @@ if ($response) {
 } else {
     echo "❌ No response\n";
 }
-?>

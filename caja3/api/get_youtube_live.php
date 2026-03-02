@@ -59,4 +59,3 @@ try {
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'embed_url' => '', 'error' => $e->getMessage()]);
 }
-?>

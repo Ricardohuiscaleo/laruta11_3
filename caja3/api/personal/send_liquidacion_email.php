@@ -87,4 +87,3 @@ else {
     'details' => $result
   ]);
 }
-?>

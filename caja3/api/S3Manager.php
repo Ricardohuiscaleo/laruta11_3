@@ -221,4 +221,3 @@ class S3Manager {
         return $httpCode === 204;
     }
 }
-?>

@@ -12,4 +12,3 @@ $auth_url = 'https://accounts.google.com/o/oauth2/auth?' . http_build_query([
 echo "<h1>Test con URL exacta del config</h1>";
 echo "<p>Redirect URI: " . $config['ruta11_google_redirect_uri'] . "</p>";
 echo "<a href='" . $auth_url . "' style='background: #4285f4; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px;'>Login with Google</a>";
-?>

@@ -37,4 +37,3 @@ echo json_encode([
     'message' => 'Estructura de la tabla ventas_v2 obtenida correctamente',
     'columns' => $columns
 ]);
-?>

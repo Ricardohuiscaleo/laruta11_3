@@ -7,4 +7,4 @@ require_once __DIR__ . '/get_token_db.php';
 $result = getValidGmailToken();
 
 echo json_encode($result);
-?>
+

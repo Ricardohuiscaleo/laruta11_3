@@ -14,4 +14,3 @@ $log = [
 ];
 
 echo json_encode($log, JSON_PRETTY_PRINT);
-?>

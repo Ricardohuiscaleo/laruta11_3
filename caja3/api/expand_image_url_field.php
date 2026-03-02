@@ -37,4 +37,3 @@ try {
         'error' => 'Error expandiendo campo: ' . $e->getMessage()
     ]);
 }
-?>

@@ -33,4 +33,4 @@ if ($session_id) {
 setcookie('PHPSESSID', '', time() - 3600, '/', '', true, true);
 
 echo json_encode(['success' => true, 'message' => 'Sesión cerrada']);
-?>
+

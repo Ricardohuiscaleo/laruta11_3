@@ -63,4 +63,3 @@ foreach ($keysToShow as $key) {
 }
 
 echo json_encode(['success' => true, 'keys' => $filteredKeys]);
-?>

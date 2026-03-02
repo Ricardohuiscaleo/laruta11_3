@@ -15,4 +15,3 @@ foreach ($roles as $role) {
     echo "</pre>";
     echo "<hr>";
 }
-?>

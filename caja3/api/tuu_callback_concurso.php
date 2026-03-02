@@ -103,4 +103,3 @@ try {
 } catch (Exception $e) {
     echo "Error procesando pago: " . $e->getMessage();
 }
-?>

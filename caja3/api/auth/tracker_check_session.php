@@ -23,4 +23,3 @@ try {
         'error' => 'Server error'
     ]);
 }
-?>

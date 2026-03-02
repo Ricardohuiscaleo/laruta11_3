@@ -40,4 +40,3 @@ session_set_cookie_params([
 
 ini_set('session.gc_maxlifetime', 2592000);
 session_start();
-?>

@@ -105,4 +105,3 @@ try {
         'error' => 'Error del servidor: ' . $e->getMessage()
     ]);
 }
-?>

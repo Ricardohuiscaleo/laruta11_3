@@ -36,4 +36,4 @@ $pdo = new PDO(
 $pdo->exec("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
 
 return $pdo;
-?>
+

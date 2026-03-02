@@ -21,4 +21,3 @@ echo json_encode([
     'transaction_id_captured' => $tuu_data['x_transaction_id'],
     'url_example' => 'https://app.laruta11.cl/payment-success/?' . http_build_query($tuu_data)
 ]);
-?>

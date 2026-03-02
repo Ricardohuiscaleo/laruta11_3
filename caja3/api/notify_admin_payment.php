@@ -56,4 +56,3 @@ try {
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'error' => 'Error al crear notificación']);
 }
-?>

@@ -25,4 +25,3 @@ echo "</ol>";
 echo "<a href='{$authUrl}' target='_blank' style='background: #4285f4; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 10px 0; display: inline-block;'>🔐 Autorizar Gmail</a><br>";
 echo "<a href='/api/test_gmail.php' style='background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 10px 0; display: inline-block;'>🧪 Probar API</a>";
 echo "<br><small>📧 Email configurado: " . $config['gmail_sender_email'] . "</small>";
-?>

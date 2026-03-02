@@ -54,4 +54,3 @@ if ($configPath) {
         'error' => 'Config file not found'
     ]);
 }
-?>

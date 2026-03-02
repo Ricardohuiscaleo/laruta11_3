@@ -64,4 +64,3 @@ foreach ($dateFormats as $date) {
     }
     echo "\n";
 }
-?>

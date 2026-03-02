@@ -192,4 +192,3 @@ try {
         'error' => 'Error en limpieza: ' . $e->getMessage()
     ]);
 }
-?>

@@ -77,4 +77,3 @@ if (isset($config['gemini_api_key']) && !empty($config['gemini_api_key'])) {
 }
 
 echo json_encode($result, JSON_PRETTY_PRINT);
-?>

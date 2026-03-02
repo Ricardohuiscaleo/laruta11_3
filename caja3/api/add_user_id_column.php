@@ -59,4 +59,3 @@ try {
         'error' => 'Error en migración: ' . $e->getMessage()
     ]);
 }
-?>

@@ -134,4 +134,3 @@ try {
         'error' => $e->getMessage()
     ]);
 }
-?>

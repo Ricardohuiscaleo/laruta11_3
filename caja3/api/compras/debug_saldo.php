@@ -70,4 +70,4 @@ try {
         'error' => $e->getMessage()
     ]);
 }
-?>
+

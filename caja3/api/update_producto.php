@@ -146,4 +146,3 @@ try {
 } catch (PDOException $e) {
     echo json_encode(['success' => false, 'error' => 'Error actualizando producto: ' . $e->getMessage()]);
 }
-?>

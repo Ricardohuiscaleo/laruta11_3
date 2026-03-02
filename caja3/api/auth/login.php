@@ -68,4 +68,3 @@ if (isset($valid_users[$username]) && $valid_users[$username] === $password) {
         'message' => 'Usuario o contraseña incorrectos'
     ]);
 }
-?>

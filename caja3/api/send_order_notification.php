@@ -68,4 +68,3 @@ if (isset($_POST['order_id']) && isset($_POST['status'])) {
     $success = sendNotification($orderId, $orderNumber, $customerName, $status, $config);
     echo json_encode(['success' => $success]);
 }
-?>

@@ -200,4 +200,3 @@ function processInventoryDeduction($pdo, $order_items) {
         }
     }
 }
-?>

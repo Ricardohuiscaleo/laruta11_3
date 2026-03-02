@@ -84,4 +84,3 @@ if ($data['status'] === 'OK' && !empty($data['results'])) {
 } else {
     echo json_encode(['error' => 'No se pudo obtener información de la dirección', 'status' => $data['status'] ?? 'unknown']);
 }
-?>

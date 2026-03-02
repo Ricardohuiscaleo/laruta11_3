@@ -48,4 +48,3 @@ if (isset($config['admin_users'][$username]) && $config['admin_users'][$username
 } else {
     echo json_encode(['success' => false, 'message' => 'Credenciales incorrectas']);
 }
-?>

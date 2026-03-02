@@ -15,4 +15,3 @@ if (!$data) {
 }
 
 echo buildPayrollEmailHtml($data);
-?>

@@ -277,4 +277,3 @@ function deductProduct($pdo, $product_id, $quantity, $order_reference = null, $o
         }
     }
 }
-?>

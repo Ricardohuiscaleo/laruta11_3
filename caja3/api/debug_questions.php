@@ -110,4 +110,3 @@ foreach ($roles as $role) {
         echo "❌ Error: " . $e->getMessage() . "<br>";
     }
 }
-?>

@@ -67,4 +67,4 @@ if (mysqli_query($conn, $query)) {
         'error' => 'Error al guardar la bebida: ' . mysqli_error($conn)
     ]);
 }
-?>
+

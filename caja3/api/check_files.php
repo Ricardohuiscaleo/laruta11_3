@@ -39,4 +39,3 @@ echo json_encode([
     'files' => $results,
     'server_info' => $server_info
 ]);
-?>

@@ -60,4 +60,4 @@ echo json_encode([
     'success' => true,
     'movimientos' => $movimientos
 ]);
-?>
+

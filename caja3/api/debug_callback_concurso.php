@@ -26,4 +26,3 @@ $params = http_build_query([
 
 header("Location: https://app.laruta11.cl/concurso/gracias/?$params");
 exit;
-?>

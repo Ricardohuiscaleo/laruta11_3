@@ -101,4 +101,3 @@ if (is_dir($root_dir)) {
 } else {
     echo "No se puede acceder al directorio raíz";
 }
-?>
