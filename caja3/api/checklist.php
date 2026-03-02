@@ -156,16 +156,10 @@ function getActive($conn)
     // Calcular tiempo restante
     $time_remaining = 0;
     if ($checklist['status'] === 'pending') {
-        // Si está pendiente, mostrar tiempo hasta que se active
         if ($current_time < $scheduled_datetime) {
             $time_remaining = ($scheduled_datetime->getTimestamp() - $current_time->getTimestamp()) / 60;
         }
-    }
-
-
-
-             elseif ($checklist['status'] === 'active') {
-        // Si está activo, mostrar tiempo hasta deadline
+    } elseif ($checklist['status'] === 'active') {
         if ($current_time < $deadline) {
             $time_remaining = ($deadline->getTimestamp() - $current_time->getTimestamp()) / 60;
         }
