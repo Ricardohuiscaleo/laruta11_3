@@ -816,6 +816,7 @@ export default function App() {
   const sessionLoadedRef = useRef(false);
   const [isScrolledToEnd, setIsScrolledToEnd] = useState(false);
   const categoriesScrollRef = useRef(null);
+  const cartIconRef = useRef(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false);
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
@@ -1410,6 +1411,7 @@ export default function App() {
       window.Analytics.trackAddToCart(product.id, product.name);
     }
 
+    if (cartIconRef.current) cartIconRef.current.startAnimation();
     setCart(prevCart => [...prevCart, {
       ...product,
       quantity: 1,
@@ -2006,13 +2008,8 @@ export default function App() {
                   </button>
 
                   {/* Carrito */}
-                  <button onClick={() => { vibrate(30); setIsCartOpen(true); }} className="text-gray-600 hover:text-orange-500 transition-all relative p-1">
-                    <ShoppingCartIcon size={24} />
-                    {cartItemCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold">
-                        {cartItemCount}
-                      </span>
-                    )}
+                  <button onClick={() => { vibrate(30); setIsCartOpen(true); }} className="text-gray-600 hover:text-orange-500 transition-all p-1">
+                    <ShoppingCartIcon ref={cartIconRef} size={24} badge={cartItemCount} />
                   </button>
                 </div>
               </div>
@@ -2131,13 +2128,8 @@ export default function App() {
                   </button>
 
                   {/* Carrito */}
-                  <button onClick={() => { vibrate(30); setIsCartOpen(true); }} className="text-gray-600 hover:text-orange-500 transition-all relative p-1 flex-shrink-0">
-                    <ShoppingCartIcon size={20} />
-                    {cartItemCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold">
-                        {cartItemCount}
-                      </span>
-                    )}
+                  <button onClick={() => { vibrate(30); setIsCartOpen(true); }} className="text-gray-600 hover:text-orange-500 transition-all p-1 flex-shrink-0">
+                    <ShoppingCartIcon size={20} badge={cartItemCount} />
                   </button>
                 </div>
               </div>
