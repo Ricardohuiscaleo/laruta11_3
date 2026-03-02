@@ -973,7 +973,7 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
 
 
 // Sub-component for Header Actions
-const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsNotificationsOpen, activeOrdersCount, activeChecklistsCount, setShowCheckout, cartItemCount, playCajaSound, cartIconRef }) => (
+const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsNotificationsOpen, activeOrdersCount, activeChecklistsCount, setShowCheckout, cartItemCount, playCajaSound, cartIconRef, bellIconRef }) => (
   <div className="flex items-center gap-4 sm:gap-6">
     {/* Perfil Cajera */}
     {cajaUser && (
@@ -982,7 +982,7 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
         className="flex items-center gap-2 text-gray-600 hover:text-orange-500 p-1 rounded-lg hover:bg-gray-100 transition-all"
         title="Perfil Cajera"
       >
-        <UserIcon size={clamp(24, 6, 28)} className="text-orange-500" />
+        <UserIcon size={clamp(24, 6, 28)} className="text-orange-500" isAnimated={false} />
         <span className="font-medium text-[clamp(12px,3vw,14px)]">{cajaUser.fullName || cajaUser.user}</span>
       </button>
     )}
@@ -993,7 +993,7 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
       className="text-gray-600 hover:text-orange-500 transition-colors"
       title="Compartir App"
     >
-      <ShareIcon size={clamp(24, 6, 28)} />
+      <ShareIcon size={clamp(24, 6, 28)} isAnimated={false} />
     </button>
 
     {/* Notificaciones */}
@@ -1002,14 +1002,14 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
       className="text-gray-600 hover:text-orange-500 relative"
       title="Notificaciones"
     >
-      <BellIcon size={clamp(24, 6, 28)} />
+      <BellIcon ref={bellIconRef} size={clamp(24, 6, 28)} />
       {activeOrdersCount > 0 && (
-        <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full flex items-center justify-center text-[clamp(8px,2vw,10px)] w-[clamp(14px,3.5vw,16px)] h-[clamp(14px,3.5vw,16px)]">
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full flex items-center justify-center text-[clamp(7px,2vw,9px)] w-[clamp(12px,3vw,14px)] h-[clamp(12px,3vw,14px)]">
           {activeOrdersCount}
         </span>
       )}
       {activeChecklistsCount > 0 && (
-        <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full flex items-center justify-center text-[clamp(8px,2vw,10px)] w-[clamp(14px,3.5vw,16px)] h-[clamp(14px,3.5vw,16px)]">
+        <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full flex items-center justify-center text-[clamp(7px,2vw,9px)] w-[clamp(12px,3vw,14px)] h-[clamp(12px,3vw,14px)]">
           {activeChecklistsCount}
         </span>
       )}
@@ -1019,7 +1019,7 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
     <button onClick={() => { vibrate(30); playCajaSound(); setShowCheckout(true); }} className="text-gray-600 hover:text-orange-500 relative">
       <ShoppingCartIcon ref={cartIconRef} size={clamp(24, 6, 28)} />
       {cartItemCount > 0 && (
-        <span className="absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center animate-fade-in text-[clamp(9px,2.2vw,11px)] w-[clamp(16px,4vw,20px)] h-[clamp(16px,4vw,20px)]">
+        <span className="absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center animate-fade-in text-[clamp(8px,2vw,10px)] w-[clamp(14px,3.5vw,16px)] h-[clamp(14px,3.5vw,16px)]">
           {cartItemCount}
         </span>
       )}
@@ -1032,6 +1032,7 @@ const clamp = (min, vw, max) => `clamp(${min}px, ${vw}vw, ${max}px)`;
 
 export default function App() {
   const cartIconRef = useRef(null);
+  const bellIconRef = useRef(null);
   const [menuCategories, setMenuCategories] = useState([]);
   const [menuCategoriesExpanded, setMenuCategoriesExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1149,6 +1150,13 @@ export default function App() {
   const [pendingPaymentModal, setPendingPaymentModal] = useState(null);
   const [showCashModal, setShowCashModal] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
+
+  // Trigger bell animation when notifications change
+  useEffect(() => {
+    if ((activeOrdersCount > 0 || activeChecklistsCount > 0) && bellIconRef.current) {
+      bellIconRef.current.startAnimation();
+    }
+  }, [activeOrdersCount, activeChecklistsCount]);
   const [cashAmount, setCashAmount] = useState('');
   const [cashStep, setCashStep] = useState('input');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -2250,7 +2258,7 @@ export default function App() {
       <header className="px-4 py-2 sm:p-3 fixed top-0 left-0 right-0 bg-white z-40 shadow-sm" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
         <div className="flex items-center justify-between w-full">
           {/* Logo */}
-          <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" style={{ width: 'clamp(32px, 8vw, 40px)', height: 'clamp(32px, 8vw, 40px)' }} />
+          <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" style={{ width: 'clamp(24px, 6vw, 28px)', height: 'clamp(24px, 6vw, 28px)' }} />
 
           {/* Checklist */}
           {cajaUser && (
@@ -2259,7 +2267,7 @@ export default function App() {
               className="text-gray-600 hover:text-orange-500 transition-colors"
               title="Checklist"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 11l3 3L22 4"></path>
                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
               </svg>
@@ -2270,13 +2278,13 @@ export default function App() {
           {cajaUser && (
             <button
               onClick={() => { vibrate(30); setShowInactiveProducts(!showInactiveProducts); }}
-              className={`p-1.5 rounded-lg transition-all ${showInactiveProducts
+              className={`p-1 rounded-lg transition-all ${showInactiveProducts
                 ? 'bg-red-500 text-white'
                 : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                 }`}
               title={showInactiveProducts ? 'Ocultar inactivos' : 'Mostrar inactivos'}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 {showInactiveProducts ? (
                   <>
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -2303,6 +2311,7 @@ export default function App() {
             cartItemCount={cartItemCount}
             playCajaSound={playCajaSound}
             cartIconRef={cartIconRef}
+            bellIconRef={bellIconRef}
           />
         </div>
       </header>
