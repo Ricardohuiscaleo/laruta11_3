@@ -163,3 +163,6 @@ send_json([
 } catch (Exception $e) {
 handle_api_exception($e);
 }
+} catch (Exception $e) {
+handle_api_exception($e);
+}
