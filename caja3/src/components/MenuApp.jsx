@@ -982,7 +982,7 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
         className="flex items-center gap-2 text-gray-600 hover:text-orange-500 p-1 rounded-lg hover:bg-gray-100 transition-all"
         title="Perfil Cajera"
       >
-        <UserIcon size={clamp(32, 8, 40)} className="text-orange-500" />
+        <UserIcon size={clamp(24, 6, 28)} className="text-orange-500" />
         <span className="font-medium text-[clamp(12px,3vw,14px)]">{cajaUser.fullName || cajaUser.user}</span>
       </button>
     )}
@@ -993,7 +993,7 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
       className="text-gray-600 hover:text-orange-500 transition-colors"
       title="Compartir App"
     >
-      <ShareIcon size={clamp(32, 8, 40)} />
+      <ShareIcon size={clamp(24, 6, 28)} />
     </button>
 
     {/* Notificaciones */}
@@ -1002,7 +1002,7 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
       className="text-gray-600 hover:text-orange-500 relative"
       title="Notificaciones"
     >
-      <BellIcon size={clamp(32, 8, 40)} />
+      <BellIcon size={clamp(24, 6, 28)} />
       {activeOrdersCount > 0 && (
         <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full flex items-center justify-center text-[clamp(8px,2vw,10px)] w-[clamp(14px,3.5vw,16px)] h-[clamp(14px,3.5vw,16px)]">
           {activeOrdersCount}
@@ -1017,7 +1017,7 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
 
     {/* Carrito */}
     <button onClick={() => { vibrate(30); playCajaSound(); setShowCheckout(true); }} className="text-gray-600 hover:text-orange-500 relative">
-      <ShoppingCartIcon ref={cartIconRef} size={clamp(32, 8, 40)} />
+      <ShoppingCartIcon ref={cartIconRef} size={clamp(24, 6, 28)} />
       {cartItemCount > 0 && (
         <span className="absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center animate-fade-in text-[clamp(9px,2.2vw,11px)] w-[clamp(16px,4vw,20px)] h-[clamp(16px,4vw,20px)]">
           {cartItemCount}
