@@ -11,25 +11,13 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 
-    $stmt = $pdo->query("SELECT access_token, updated_at FROM gmail_tokens ORDER BY updated_at DESC LIMIT 1");
+    $stmt = $pdo->query("SELECT updated_at FROM gmail_tokens ORDER BY updated_at DESC LIMIT 1");
     $token = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$token) { echo json_encode(['ok' => false, 'error' => 'no_token']); exit; }
+    if (!$token) { echo json_encode(['ok' => false]); exit; }
 
     $minutes = (time() - strtotime($token['updated_at'])) / 60;
-    if ($minutes > 60) { echo json_encode(['ok' => false, 'error' => 'expired']); exit; }
-
-    $ch = curl_init('https://gmail.googleapis.com/gmail/v1/users/me/profile');
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token['access_token']],
-        CURLOPT_TIMEOUT => 5,
-    ]);
-    curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    echo json_encode(['ok' => $http_code === 200]);
+    echo json_encode(['ok' => $minutes <= 90]);
 } catch (Exception $e) {
-    echo json_encode(['ok' => false, 'error' => 'db']);
+    echo json_encode(['ok' => false]);
 }
