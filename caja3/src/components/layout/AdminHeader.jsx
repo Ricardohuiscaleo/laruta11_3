@@ -1,20 +1,12 @@
 import React from 'react';
-import { Menu } from 'lucide-react';
-import { Button } from "@/components/ui/button";
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import HeaderActions from '../HeaderActions';
 
-export function AdminHeader({ title, onMenuClick, cajaUser }) {
+export function AdminHeader({ title, cajaUser }) {
     return (
-        <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 bg-white border-b lg:px-8">
+        <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 bg-white border-b lg:px-6">
             <div className="flex items-center gap-4">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="lg:hidden"
-                    onClick={onMenuClick}
-                >
-                    <Menu className="w-6 h-6" />
-                </Button>
+                <SidebarTrigger />
                 <h1 className="text-xl font-semibold tracking-tight text-foreground">
                     {title}
                 </h1>

@@ -1,26 +1,19 @@
 ---
-import '../styles/globals.css';
-
-interface Props {
-	title: string;
-}
-
-const { title } = Astro.props;
+import HeaderActions from '../components/HeaderActions.jsx';
+import { SidebarProvider } from "@/components/ui/sidebar"
+import "@/styles/globals.css"
 ---
 
+<!DOCTYPE html>
 <html lang="es">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" />
-		<title>{title} - La Ruta 11</title>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
-    <script is:inline src="/smart-analysis-loader.js"></script>
-    <script is:inline src="/product-edit-modal-loader.js"></script>
-    <script is:inline src="https://unpkg.com/lucide@latest"></script>
-	</head>
-	<body class="min-h-screen bg-muted/20 font-sans antialiased">
-		<slot />
-	</body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Administrativo - La Ruta 11</title>
+</head>
+<body class="bg-background text-foreground antialiased min-h-screen">
+    <SidebarProvider client:load>
+        <slot />
+    </SidebarProvider>
+</body>
 </html>
