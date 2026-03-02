@@ -21,7 +21,11 @@ export function Dashboard() {
             })
 
         // WebSocket para actualizaciones en tiempo real
-        const ws = new WebSocket('ws://localhost:8080')
+        const wsUrl = import.meta.env.PROD 
+            ? 'wss://caja.laruta11.cl:8080' 
+            : 'ws://localhost:8080'
+        
+        const ws = new WebSocket(wsUrl)
         
         ws.onopen = () => {
             console.log('✅ WebSocket conectado')
