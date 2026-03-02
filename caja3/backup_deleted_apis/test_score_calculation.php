@@ -88,4 +88,3 @@ foreach ($test_values as $test_max) {
 }
 
 mysqli_close($conn);
-?>

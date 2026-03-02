@@ -10,4 +10,3 @@ echo json_encode([
     'auth_type' => $_SESSION['auth_type'] ?? null,
     'has_jobs_user_id' => isset($_SESSION['jobs_user_id'])
 ]);
-?>

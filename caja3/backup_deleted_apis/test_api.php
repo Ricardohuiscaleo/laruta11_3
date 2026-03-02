@@ -47,4 +47,3 @@ try {
 }
 
 $conn->close();
-?>

@@ -44,4 +44,3 @@ echo json_encode([
     'response' => $response === false ? 'false' : 'success',
     'access_key' => substr($config['aws_access_key_id'], 0, 8) . '...'
 ]);
-?>

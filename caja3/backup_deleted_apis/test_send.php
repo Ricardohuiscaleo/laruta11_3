@@ -56,4 +56,3 @@ function testGmailSend($to, $subject, $htmlBody) {
         return ['success' => false, 'error' => "Gmail API: {$errorMsg}"];
     }
 }
-?>

@@ -44,7 +44,7 @@ foreach ($apis as $api) {
 }
 
 $percentage = $total > 0 ? round(($withConfig / $total) * 100, 1) : 0;
-?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -87,51 +87,51 @@ $percentage = $total > 0 ? round(($withConfig / $total) * 100, 1) : 0;
         
         <div class="stats">
             <div class="stat-card">
-                <div class="stat-number"><?php echo $total; ?></div>
+                <div class="stat-number"><?php echo $total; </div>
                 <div class="stat-label">Total APIs</div>
             </div>
             <div class="stat-card success">
-                <div class="stat-number"><?php echo $withConfig; ?></div>
+                <div class="stat-number"><?php echo $withConfig; </div>
                 <div class="stat-label">✓ Con Config</div>
             </div>
             <div class="stat-card warning">
-                <div class="stat-number"><?php echo $withoutConfig; ?></div>
+                <div class="stat-number"><?php echo $withoutConfig; </div>
                 <div class="stat-label">⚠ Sin Config</div>
             </div>
         </div>
 
         <div class="progress-bar">
-            <div class="progress-fill" style="width: <?php echo $percentage; ?>%"><?php echo $percentage; ?>% OK</div>
+            <div class="progress-fill" style="width: <?php echo $percentage; %"><?php echo $percentage; % OK</div>
         </div>
 
         <div class="section">
-            <h2 class="section-title">✅ APIs Críticas (<?php echo count($critical); ?>)</h2>
+            <h2 class="section-title">✅ APIs Críticas (<?php echo count($critical); )</h2>
             <div class="api-list">
-                <?php foreach ($critical as $api): ?>
+                <?php foreach ($critical as $api): 
                 <div class="api-item">
                     <span class="icon">✓</span>
-                    <span class="name">/<?php echo htmlspecialchars($api); ?></span>
+                    <span class="name">/<?php echo htmlspecialchars($api); </span>
                     <span class="status-badge ok">OK</span>
                 </div>
-                <?php endforeach; ?>
+                <?php endforeach; 
             </div>
         </div>
 
         <div class="section">
-            <h2 class="section-title">📁 Todas las APIs (<?php echo $total; ?>)</h2>
+            <h2 class="section-title">📁 Todas las APIs (<?php echo $total; )</h2>
             <div class="api-list">
                 <?php foreach ($apis as $api): 
                     $content = @file_get_contents(__DIR__ . '/' . $api);
                     $hasConfig = $content && (strpos($content, 'config.php') !== false || strpos($content, 'config_loader.php') !== false);
-                ?>
+                
                 <div class="api-item">
-                    <span class="icon"><?php echo $hasConfig ? '✓' : '⚠'; ?></span>
-                    <span class="name">/<?php echo htmlspecialchars($api); ?></span>
-                    <span class="status-badge <?php echo $hasConfig ? 'ok' : 'error'; ?>">
-                        <?php echo $hasConfig ? 'OK' : 'No config'; ?>
+                    <span class="icon"><?php echo $hasConfig ? '✓' : '⚠'; </span>
+                    <span class="name">/<?php echo htmlspecialchars($api); </span>
+                    <span class="status-badge <?php echo $hasConfig ? 'ok' : 'error'; ">
+                        <?php echo $hasConfig ? 'OK' : 'No config'; 
                     </span>
                 </div>
-                <?php endforeach; ?>
+                <?php endforeach; 
 
             </div>
         </div>
@@ -145,7 +145,7 @@ $percentage = $total > 0 ? round(($withConfig / $total) * 100, 1) : 0;
         </div>
 
         <div class="timestamp">
-            Generado: <?php echo date('Y-m-d H:i:s'); ?> | 
+            Generado: <?php echo date('Y-m-d H:i:s');  | 
             Escaneo en tiempo real
         </div>
     </div>

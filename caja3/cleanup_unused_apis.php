@@ -187,4 +187,3 @@ chmod(__DIR__ . '/cleanup_apis.sh', 0755);
 echo "💾 Script de limpieza generado: cleanup_apis.sh\n";
 echo "⚠️  IMPORTANTE: Revisa la lista antes de ejecutar la limpieza\n";
 echo "🔧 Para ejecutar: ./cleanup_apis.sh\n";
-?>

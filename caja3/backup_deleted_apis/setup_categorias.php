@@ -60,4 +60,3 @@ if (!$tableExists) {
 }
 
 $conn->close();
-?>

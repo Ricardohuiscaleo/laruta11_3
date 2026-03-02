@@ -60,4 +60,3 @@ foreach ($tables as $table_name => $sql) {
 }
 
 mysqli_close($user_conn);
-?>

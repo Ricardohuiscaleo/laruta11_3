@@ -90,4 +90,3 @@ try {
         'line' => $e->getLine()
     ]);
 }
-?>

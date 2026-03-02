@@ -2279,86 +2279,141 @@ export default function App() {
         </div>
       )}
 
-      <header className="px-4 py-2 sm:p-3 fixed top-0 left-0 right-0 bg-white z-40 shadow-sm" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
-        <div className="flex items-center justify-between w-full">
-          {/* Logo */}
-          <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" style={{ width: '28px', height: '28px' }} width="28" height="28" />
+      <header className="px-3 py-2 sm:p-3 fixed top-0 left-0 right-0 bg-white z-40 shadow-sm" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
+        <div className="flex items-center justify-between w-full max-w-7xl mx-auto">
+          {/* Main Icon Row with Equal Spacing */}
+          <div className="flex items-center gap-1 sm:gap-2 w-full justify-between">
+            {/* Logo */}
+            <div className="p-1">
+              <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" style={{ width: '28px', height: '28px' }} width="28" height="28" />
+            </div>
 
-          {/* Checklist */}
-          {cajaUser && (
+            {/* Checklist */}
+            {cajaUser && (
+              <button
+                onClick={() => { vibrate(30); window.location.href = '/checklist'; }}
+                className="text-gray-600 hover:text-orange-500 transition-colors p-2 rounded-full hover:bg-gray-100"
+                title="Checklist"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 11l3 3L22 4"></path>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+              </button>
+            )}
+
+            {/* Toggle Productos Inactivos */}
+            {cajaUser && (
+              <button
+                onClick={() => { vibrate(30); setShowInactiveProducts(!showInactiveProducts); }}
+                className={`p-2 rounded-full transition-all ${showInactiveProducts
+                  ? 'bg-red-500 text-white shadow-lg'
+                  : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                title={showInactiveProducts ? 'Ocultar inactivos' : 'Mostrar inactivos'}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  {showInactiveProducts ? (
+                    <>
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </>
+                  ) : (
+                    <>
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </>
+                  )}
+                </svg>
+              </button>
+            )}
+
+            {/* Perfil Cajera */}
+            {cajaUser && (
+              <button
+                onClick={() => { vibrate(30); setIsProfileOpen(true); }}
+                className="flex items-center gap-1 text-gray-600 hover:text-orange-500 p-2 rounded-full hover:bg-gray-100 transition-all shrink-0"
+                title="Perfil Cajera"
+              >
+                <UserIcon size={24} className="text-orange-500" isAnimated={false} />
+                <span className="font-medium text-[10px] sm:text-xs hidden xs:inline">{cajaUser.fullName || cajaUser.user}</span>
+              </button>
+            )}
+
+            {/* Compartir */}
             <button
-              onClick={() => { vibrate(30); window.location.href = '/checklist'; }}
-              className="text-gray-600 hover:text-orange-500 transition-colors"
-              title="Checklist"
+              onClick={() => { vibrate(30); setShowQRModal(true); }}
+              className="text-gray-600 hover:text-orange-500 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              title="Compartir App"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 11l3 3L22 4"></path>
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-              </svg>
+              <ShareIcon size={24} isAnimated={false} />
             </button>
-          )}
 
-          {/* Toggle Productos Inactivos */}
-          {cajaUser && (
+            {/* Notificaciones */}
             <button
-              onClick={() => { vibrate(30); setShowInactiveProducts(!showInactiveProducts); }}
-              className={`p-1 rounded-lg transition-all ${showInactiveProducts
-                ? 'bg-red-500 text-white'
-                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                }`}
-              title={showInactiveProducts ? 'Ocultar inactivos' : 'Mostrar inactivos'}
+              onClick={() => { vibrate(30); setIsNotificationsOpen(true); }}
+              className="text-gray-600 hover:text-orange-500 p-2 rounded-full hover:bg-gray-100 relative"
+              title="Notificaciones"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                {showInactiveProducts ? (
-                  <>
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </>
-                ) : (
-                  <>
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </>
-                )}
-              </svg>
+              <BellIcon ref={bellIconRef} size={24} />
+              {activeOrdersCount > 0 && (
+                <span className="absolute top-1 right-1 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] min-w-[14px] h-[14px] px-1 border-2 border-white">
+                  {activeOrdersCount}
+                </span>
+              )}
+              {activeChecklistsCount > 0 && (
+                <span className="absolute bottom-1 right-1 bg-blue-500 text-white rounded-full flex items-center justify-center text-[8px] min-w-[14px] h-[14px] px-1 border-2 border-white">
+                  {activeChecklistsCount}
+                </span>
+              )}
             </button>
-          )}
 
-          <HeaderRightActions
-            cajaUser={cajaUser}
-            setIsProfileOpen={setIsProfileOpen}
-            setShowQRModal={setShowQRModal}
-            setIsNotificationsOpen={setIsNotificationsOpen}
-            activeOrdersCount={activeOrdersCount}
-            activeChecklistsCount={activeChecklistsCount}
-            setShowCheckout={setShowCheckout}
-            cartItemCount={cartItemCount}
-            playCajaSound={playCajaSound}
-            cartIconRef={cartIconRef}
-            bellIconRef={bellIconRef}
-            handleOpenConfig={async () => {
-              vibrate(30);
-              setShowStatusModal(true);
-              try {
-                const res = await fetch('/api/get_truck_status.php?truckId=4');
-                const data = await res.json();
-                if (data.success) setTruckStatus(data.truck);
+            {/* Configuración */}
+            {cajaUser && (
+              <button
+                onClick={async () => {
+                  vibrate(30);
+                  setShowStatusModal(true);
+                  try {
+                    const res = await fetch('/api/get_truck_status.php?truckId=4');
+                    const data = await res.json();
+                    if (data.success) setTruckStatus(data.truck);
 
-                const schedRes = await fetch('/api/get_truck_schedules.php?truckId=4');
-                const schedData = await schedRes.json();
-                if (schedData.success) {
-                  setSchedules(schedData.schedules);
-                  setCurrentDayOfWeek(schedData.currentDayOfWeek);
-                }
+                    const schedRes = await fetch('/api/get_truck_schedules.php?truckId=4');
+                    const schedData = await schedRes.json();
+                    if (schedData.success) {
+                      setSchedules(schedData.schedules);
+                      setCurrentDayOfWeek(schedData.currentDayOfWeek);
+                    }
 
-                const catRes = await fetch('/api/get_menu_structure.php');
-                const catData = await catRes.json();
-                if (catData.success) setMenuCategories(catData.categories);
-              } catch (error) {
-                console.error('Error opening config:', error);
-              }
-            }}
-          />
+                    const catRes = await fetch('/api/get_menu_structure.php');
+                    const catData = await catRes.json();
+                    if (catData.success) setMenuCategories(catData.categories);
+                  } catch (error) {
+                    console.error('Error opening config:', error);
+                  }
+                }}
+                className="text-gray-600 hover:text-orange-500 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                title="Configuración"
+              >
+                <Settings size={24} />
+              </button>
+            )}
+
+            {/* Carrito */}
+            <button
+              onClick={() => { vibrate(30); playCajaSound(); setShowCheckout(true); }}
+              className="text-gray-600 hover:text-orange-500 p-2 rounded-full hover:bg-gray-100 relative"
+              title="Carrito"
+            >
+              <ShoppingCartIcon ref={cartIconRef} size={24} />
+              {cartItemCount > 0 && (
+                <span className="absolute top-1 right-1 bg-red-500 text-white font-bold rounded-full flex items-center justify-center animate-fade-in text-[8px] min-w-[14px] h-[14px] px-1 border-2 border-white">
+                  {cartItemCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 

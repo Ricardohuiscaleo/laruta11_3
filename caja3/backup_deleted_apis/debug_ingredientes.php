@@ -100,4 +100,3 @@ if ($ingrediente_id) {
 }
 
 $conn->close();
-?>

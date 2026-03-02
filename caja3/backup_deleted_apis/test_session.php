@@ -16,4 +16,3 @@ echo json_encode([
     'session_id' => session_id(),
     'all_session' => $_SESSION
 ]);
-?>

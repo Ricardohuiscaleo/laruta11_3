@@ -71,4 +71,3 @@ if (isset($config['app_db_host'])) {
 }
 
 echo json_encode($results, JSON_PRETTY_PRINT);
-?>

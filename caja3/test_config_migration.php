@@ -44,4 +44,4 @@ $has_require = strpos($root_content, 'require_once') !== false && strpos($root_c
 echo "   ✓ Config NO requiere load-env: " . ($has_require ? "❌ Aún lo requiere" : "✅ Correcto") . "\n";
 
 echo "\n=== MIGRACIÓN COMPLETADA ✅ ===\n";
-?>
+

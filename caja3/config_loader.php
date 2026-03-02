@@ -22,4 +22,4 @@ function loadConfig() {
 }
 
 return loadConfig();
-?>
+

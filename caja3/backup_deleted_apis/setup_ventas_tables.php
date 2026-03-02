@@ -100,4 +100,3 @@ $results[] = executeQuery($conn, $sql_estadisticas, "estadisticas_diarias");
 echo json_encode(["results" => $results]);
 
 mysqli_close($conn);
-?>

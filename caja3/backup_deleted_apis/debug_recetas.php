@@ -85,4 +85,3 @@ $debug["recetas_test"] = $recetas_test;
 echo json_encode($debug, JSON_PRETTY_PRINT);
 
 $conn->close();
-?>

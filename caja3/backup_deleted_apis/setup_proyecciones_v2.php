@@ -107,4 +107,3 @@ if ($row['count'] == 0) {
 echo "Tablas v2 creadas correctamente y datos iniciales insertados.";
 
 $conn->close();
-?>

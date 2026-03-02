@@ -34,4 +34,3 @@ if (isset($_COOKIE['auth_token']) && $conn) {
 }
 
 echo json_encode($debug, JSON_PRETTY_PRINT);
-?>

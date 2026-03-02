@@ -126,4 +126,4 @@ $config = [
 ];
 
 return $config;
-?>
+

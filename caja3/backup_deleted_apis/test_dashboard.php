@@ -51,4 +51,3 @@ testAPI("$baseUrl/get_recetas.php", "Recetas (formato completo)");
 testAPI("$baseUrl/get_recetas_simple.php", "Recetas (formato simple)");
 
 echo "<p>Pruebas completadas.</p>";
-?>

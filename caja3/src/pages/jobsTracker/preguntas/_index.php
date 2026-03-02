@@ -42,7 +42,7 @@ if ($_POST['action'] ?? '' === 'delete') {
     header("Location: ?position=$currentPosition&deleted=1");
     exit;
 }
-?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -78,10 +78,10 @@ if ($_POST['action'] ?? '' === 'delete') {
     <div class="bg-white rounded-lg shadow p-6 mb-6">
         <h2 class="text-lg font-semibold mb-4">Seleccionar Posición</h2>
         <div class="flex gap-4">
-            <a href="?position=cajero" class="px-4 py-2 rounded-lg <?= $currentPosition === 'cajero' ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-700' ?>">
+            <a href="?position=cajero" class="px-4 py-2 rounded-lg <?= $currentPosition === 'cajero' ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-700' ">
                 Cajero
             </a>
-            <a href="?position=maestro_sanguchero" class="px-4 py-2 rounded-lg <?= $currentPosition === 'maestro_sanguchero' ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-700' ?>">
+            <a href="?position=maestro_sanguchero" class="px-4 py-2 rounded-lg <?= $currentPosition === 'maestro_sanguchero' ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-700' ">
                 Maestro Sanguchero
             </a>
         </div>
@@ -110,27 +110,27 @@ if ($_POST['action'] ?? '' === 'delete') {
         <div class="bg-white rounded-lg shadow p-6">
             <h3 class="text-lg font-semibold mb-4">Preguntas Sí/No</h3>
             <div class="space-y-3">
-                <?php if (empty($positionQuestions['yesno'])): ?>
+                <?php if (empty($positionQuestions['yesno'])): 
                     <p class="text-gray-500 text-center py-4">No hay preguntas Sí/No configuradas.</p>
-                <?php else: ?>
-                    <?php foreach ($positionQuestions['yesno'] as $q): ?>
+                <?php else: 
+                    <?php foreach ($positionQuestions['yesno'] as $q): 
                         <div class="border border-gray-200 rounded-lg p-4">
                             <div class="flex items-start justify-between">
                                 <div class="flex-1 pr-4">
-                                    <p class="text-sm text-gray-900"><?= htmlspecialchars($q['question_text']) ?></p>
+                                    <p class="text-sm text-gray-900"><?= htmlspecialchars($q['question_text']) </p>
                                 </div>
                                 <div class="flex gap-2">
-                                    <button onclick="editQuestion(<?= $q['id'] ?>, '<?= addslashes($q['question_text']) ?>')" class="text-blue-600 hover:text-blue-800 text-xs">✏️</button>
+                                    <button onclick="editQuestion(<?= $q['id'] , '<?= addslashes($q['question_text']) ')" class="text-blue-600 hover:text-blue-800 text-xs">✏️</button>
                                     <form method="POST" style="display:inline" onsubmit="return confirm('¿Eliminar esta pregunta?')">
                                         <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="id" value="<?= $q['id'] ?>">
+                                        <input type="hidden" name="id" value="<?= $q['id'] ">
                                         <button type="submit" class="text-red-600 hover:text-red-800 text-xs">❌</button>
                                     </form>
                                 </div>
                             </div>
                         </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+                    <?php endforeach; 
+                <?php endif; 
             </div>
         </div>
 
@@ -138,27 +138,27 @@ if ($_POST['action'] ?? '' === 'delete') {
         <div class="bg-white rounded-lg shadow p-6">
             <h3 class="text-lg font-semibold mb-4">Preguntas Abiertas</h3>
             <div class="space-y-3">
-                <?php if (empty($positionQuestions['open'])): ?>
+                <?php if (empty($positionQuestions['open'])): 
                     <p class="text-gray-500 text-center py-4">No hay preguntas abiertas configuradas.</p>
-                <?php else: ?>
-                    <?php foreach ($positionQuestions['open'] as $q): ?>
+                <?php else: 
+                    <?php foreach ($positionQuestions['open'] as $q): 
                         <div class="border border-gray-200 rounded-lg p-4">
                             <div class="flex items-start justify-between">
                                 <div class="flex-1 pr-4">
-                                    <p class="text-sm text-gray-900"><?= htmlspecialchars($q['question_text']) ?></p>
+                                    <p class="text-sm text-gray-900"><?= htmlspecialchars($q['question_text']) </p>
                                 </div>
                                 <div class="flex gap-2">
-                                    <button onclick="editQuestion(<?= $q['id'] ?>, '<?= addslashes($q['question_text']) ?>')" class="text-blue-600 hover:text-blue-800 text-xs">✏️</button>
+                                    <button onclick="editQuestion(<?= $q['id'] , '<?= addslashes($q['question_text']) ')" class="text-blue-600 hover:text-blue-800 text-xs">✏️</button>
                                     <form method="POST" style="display:inline" onsubmit="return confirm('¿Eliminar esta pregunta?')">
                                         <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="id" value="<?= $q['id'] ?>">
+                                        <input type="hidden" name="id" value="<?= $q['id'] ">
                                         <button type="submit" class="text-red-600 hover:text-red-800 text-xs">❌</button>
                                     </form>
                                 </div>
                             </div>
                         </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+                    <?php endforeach; 
+                <?php endif; 
             </div>
         </div>
     </div>

@@ -87,4 +87,3 @@ if (file_exists($config_path)) {
 
 // Devolver información
 echo json_encode($info, JSON_PRETTY_PRINT);
-?>

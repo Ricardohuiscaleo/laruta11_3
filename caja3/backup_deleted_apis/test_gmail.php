@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
-?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -82,7 +82,7 @@ header('Content-Type: text/html; charset=utf-8');
         echo '<div class="status info">🗑️ Token eliminado. <a href="gmail_setup.php">Reautorizar</a></div>';
         echo '<meta http-equiv="refresh" content="2">';
     }
-    ?>
+    
     
     <hr>
     <p><small>💡 <strong>Tip:</strong> Si hay errores, limpia el token y reautoriza.</small></p>

@@ -88,4 +88,3 @@ if ($conn->multi_query($sql)) {
 }
 
 $conn->close();
-?>

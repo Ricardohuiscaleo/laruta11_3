@@ -66,4 +66,3 @@ foreach ($simulatedTuuData['content'] as $i => $transaction) {
 }
 
 echo "\n=== DATOS LISTOS PARA INSERTAR ===\n";
-?>

@@ -100,4 +100,3 @@ echo "- Archivos eliminados: $deleted\n";
 echo "- Archivos no encontrados: $notFound\n";
 echo "- Backup creado en: backup_deleted_apis/\n";
 echo "\n✅ Limpieza completada!\n";
-?>

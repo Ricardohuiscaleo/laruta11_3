@@ -52,4 +52,4 @@ foreach ($patterns as $pattern => $files) {
 }
 
 echo "=== FIN DE AUDITORÍA ===\n";
-?>
+

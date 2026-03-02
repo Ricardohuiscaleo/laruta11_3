@@ -121,4 +121,3 @@ if ($row['count'] == 0) {
 echo json_encode(["results" => $results]);
 
 mysqli_close($conn);
-?>

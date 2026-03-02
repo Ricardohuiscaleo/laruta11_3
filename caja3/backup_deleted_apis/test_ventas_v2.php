@@ -43,4 +43,3 @@ echo json_encode([
     'columns' => $columns,
     'data' => $data
 ]);
-?>

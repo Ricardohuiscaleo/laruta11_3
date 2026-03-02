@@ -51,4 +51,3 @@ foreach ($realTuuTransactions as $transaction) {
 }
 
 echo "✓ Simulación completada - Los datos están listos para MySQL\n";
-?>
