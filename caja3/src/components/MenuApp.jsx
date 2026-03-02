@@ -1040,13 +1040,8 @@ const HeaderRightActions = ({
     )}
 
     {/* Carrito */}
-    <button onClick={() => { vibrate(30); playCajaSound(); setShowCheckout(true); }} className="text-gray-600 hover:text-orange-500 relative">
-      <ShoppingCartIcon ref={cartIconRef} size={24} />
-      {cartItemCount > 0 && (
-        <span className="absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center animate-fade-in text-[clamp(8px,2vw,10px)] w-[clamp(14px,3.5vw,16px)] h-[clamp(14px,3.5vw,16px)]">
-          {cartItemCount}
-        </span>
-      )}
+    <button onClick={() => { vibrate(30); playCajaSound(); setShowCheckout(true); }} className="text-gray-600 hover:text-orange-500">
+      <ShoppingCartIcon ref={cartIconRef} size={24} badge={cartItemCount} />
     </button>
   </div>
 );
@@ -2280,9 +2275,9 @@ export default function App() {
       )}
 
       <header className="px-2 py-1 sm:px-4 sm:py-2 fixed top-0 left-0 right-0 bg-white z-40 shadow-sm" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)' }}>
-        <div className="max-w-7xl mx-auto">
-          {/* Single row for all icons with equal spacing */}
-          <div className="flex items-center justify-center gap-1 xs:gap-2 sm:gap-4 md:gap-6">
+        <div className="w-full">
+          {/* Single row for all icons with equal spacing and full width */}
+          <div className="flex items-center justify-between w-full gap-1 xs:gap-2 sm:gap-4">
             {/* Logo */}
             <div className="p-2 shrink-0">
               <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" style={{ width: '28px', height: '28px' }} width="28" height="28" />
@@ -2403,15 +2398,10 @@ export default function App() {
             {/* Carrito */}
             <button
               onClick={() => { vibrate(30); playCajaSound(); setShowCheckout(true); }}
-              className="text-gray-600 hover:text-orange-500 p-2 rounded-full hover:bg-gray-100 relative"
+              className="text-gray-600 hover:text-orange-500 p-2 rounded-full hover:bg-gray-100"
               title="Carrito"
             >
-              <ShoppingCartIcon ref={cartIconRef} size={24} />
-              {cartItemCount > 0 && (
-                <span className="absolute top-1 right-1 bg-red-500 text-white font-bold rounded-full flex items-center justify-center animate-fade-in text-[8px] min-w-[14px] h-[14px] px-1 border-2 border-white">
-                  {cartItemCount}
-                </span>
-              )}
+              <ShoppingCartIcon ref={cartIconRef} size={24} badge={cartItemCount} />
             </button>
           </div>
         </div>
@@ -2429,7 +2419,7 @@ export default function App() {
           .join(', ');
         return (
           <div
-            className="fixed left-0 right-0 z-30 bg-orange-50 border-b border-orange-200 px-3 py-1 cursor-pointer"
+            className="fixed left-0 right-0 z-30 bg-orange-50 border-b border-orange-200 px-3 py-1 cursor-pointer rounded-b-xl"
             style={{ top: 'calc(env(safe-area-inset-top, 0px) + 50px)' }}
             onClick={() => { vibrate(30); playCajaSound(); setShowCheckout(true); }}
           >

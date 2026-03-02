@@ -73,7 +73,7 @@ const ShoppingCartIcon = forwardRef(
 
         return (
             <motion.div
-                className={cn("inline-flex items-center justify-center", className)}
+                className={cn("inline-flex items-center justify-center relative", className)}
                 onMouseEnter={handleEnter}
                 onMouseLeave={handleLeave}
                 {...props}
@@ -99,6 +99,30 @@ const ShoppingCartIcon = forwardRef(
                         variants={cartVariants}
                     />
                 </motion.svg>
+                {props.badge > 0 && (
+                    <span
+                        style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-8px',
+                            background: '#ef4444',
+                            color: 'white',
+                            fontSize: '10px',
+                            fontWeight: 'bold',
+                            minWidth: '18px',
+                            height: '18px',
+                            borderRadius: '9999px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '0 4px',
+                            lineHeight: 1,
+                            pointerEvents: 'none',
+                        }}
+                    >
+                        {props.badge}
+                    </span>
+                )}
             </motion.div>
         );
     },
