@@ -164,7 +164,7 @@ function CartModal({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
         </div>
         {cart.length === 0 ? (
           <div className="flex-grow flex flex-col justify-center items-center text-gray-500">
-            <ShoppingCart size={48} className="mb-4" />
+            <ShoppingCartIcon size={48} className="mb-4" />
             <p>Tu carrito está vacío.</p>
           </div>
         ) : (
@@ -973,8 +973,8 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
 
 
 // Sub-component for Header Actions
-const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsNotificationsOpen, activeOrdersCount, activeChecklistsCount, setShowCheckout, cartItemCount, playCajaSound }) => (
-  <div className="flex items-center gap-1 sm:gap-2">
+const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsNotificationsOpen, activeOrdersCount, activeChecklistsCount, setShowCheckout, cartItemCount, playCajaSound, cartIconRef }) => (
+  <div className="flex items-center gap-4 sm:gap-6">
     {/* Perfil Cajera */}
     {cajaUser && (
       <button
@@ -982,7 +982,7 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
         className="flex items-center gap-2 text-gray-600 hover:text-orange-500 p-1 rounded-lg hover:bg-gray-100 transition-all"
         title="Perfil Cajera"
       >
-        <UserIcon size={20} className="text-orange-500" />
+        <UserIcon size={clamp(32, 8, 40)} className="text-orange-500" />
         <span className="font-medium text-[clamp(12px,3vw,14px)]">{cajaUser.fullName || cajaUser.user}</span>
       </button>
     )}
@@ -993,7 +993,7 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
       className="text-gray-600 hover:text-orange-500 transition-colors"
       title="Compartir App"
     >
-      <ShareIcon size={20} />
+      <ShareIcon size={clamp(32, 8, 40)} />
     </button>
 
     {/* Notificaciones */}
@@ -1002,7 +1002,7 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
       className="text-gray-600 hover:text-orange-500 relative"
       title="Notificaciones"
     >
-      <BellIcon size={20} />
+      <BellIcon size={clamp(32, 8, 40)} />
       {activeOrdersCount > 0 && (
         <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full flex items-center justify-center text-[clamp(8px,2vw,10px)] w-[clamp(14px,3.5vw,16px)] h-[clamp(14px,3.5vw,16px)]">
           {activeOrdersCount}
@@ -1017,7 +1017,7 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
 
     {/* Carrito */}
     <button onClick={() => { vibrate(30); playCajaSound(); setShowCheckout(true); }} className="text-gray-600 hover:text-orange-500 relative">
-      <ShoppingCartIcon size={20} />
+      <ShoppingCartIcon ref={cartIconRef} size={clamp(32, 8, 40)} />
       {cartItemCount > 0 && (
         <span className="absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center animate-fade-in text-[clamp(9px,2.2vw,11px)] w-[clamp(16px,4vw,20px)] h-[clamp(16px,4vw,20px)]">
           {cartItemCount}
@@ -1027,7 +1027,11 @@ const HeaderRightActions = ({ cajaUser, setIsProfileOpen, setShowQRModal, setIsN
   </div>
 );
 
+// Helper to use clamp-like logic in JS if needed or just pass the string
+const clamp = (min, vw, max) => `clamp(${min}px, ${vw}vw, ${max}px)`;
+
 export default function App() {
+  const cartIconRef = useRef(null);
   const [menuCategories, setMenuCategories] = useState([]);
   const [menuCategoriesExpanded, setMenuCategoriesExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1836,6 +1840,11 @@ export default function App() {
     vibrate(50);
     playAddSound();
 
+    // Trigger cart icon animation
+    if (cartIconRef.current) {
+      cartIconRef.current.startAnimation();
+    }
+
     if (window.Analytics) {
       window.Analytics.trackAddToCart(product.id, product.name);
     }
@@ -2293,6 +2302,7 @@ export default function App() {
             setShowCheckout={setShowCheckout}
             cartItemCount={cartItemCount}
             playCajaSound={playCajaSound}
+            cartIconRef={cartIconRef}
           />
         </div>
       </header>
@@ -2995,7 +3005,7 @@ export default function App() {
 
               <div className="border-t pt-4 mb-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                  <ShoppingCart size={20} className="text-orange-500" />
+                  <ShoppingCartIcon size={20} className="text-orange-500" />
                   Tu Pedido
                 </h3>
                 <div className="space-y-3 mb-4">
