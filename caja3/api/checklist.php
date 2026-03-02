@@ -170,10 +170,19 @@ function getActive($conn)
     $stmt->execute([$checklist['id']]);
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Convertir is_completed y requires_photo a booleanos
+    // Inyectar saldo dinámico + convertir booleanos
+    $saldo_cache = null;
     foreach ($items as &$item) {
         $item['is_completed'] = (bool)$item['is_completed'];
         $item['requires_photo'] = (bool)$item['requires_photo'];
+        if (stripos($item['description'], 'saldo en caja') !== false) {
+            if ($saldo_cache === null) {
+                $s = $conn->query("SELECT saldo_nuevo FROM caja_movimientos ORDER BY id DESC LIMIT 1");
+                $r = $s ? $s->fetch(PDO::FETCH_ASSOC) : null;
+                $saldo_cache = $r ? '$' . number_format(floatval($r['saldo_nuevo']), 0, ',', '.') : '?';
+            }
+            $item['description'] = 'Verificar saldo en caja: ' . $saldo_cache;
+        }
     }
     unset($item);
 
@@ -217,7 +226,7 @@ function updateItem($conn)
     global $json_data;
     $data = $json_data ?? json_decode(file_get_contents('php://input'), true);
     $item_id = $data['item_id'] ?? null;
-    $is_completed = $data['is_completed'] ?? false;
+    $is_completed = isset($data['is_completed']) ? (int)(bool)$data['is_completed'] : 0;
     $notes = $data['notes'] ?? null;
 
     if (!$item_id) {
@@ -447,7 +456,8 @@ function createDaily($conn)
                 'Revisar stock de ingredientes principales',
                 'Encender equipos de cocina',
                 'Verificar temperatura de refrigeradores',
-                'Preparar estación de trabajo'
+                'Preparar estación de trabajo',
+                'Verificar saldo en caja'
             ],
             'cierre' => [
                 'Limpiar plancha y parrilla',
