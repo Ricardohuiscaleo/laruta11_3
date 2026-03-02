@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { TrendingUp, ShoppingCart, DollarSign, Package, Wifi, WifiOff } from "lucide-react"
 
 export function Dashboard() {
@@ -21,17 +21,17 @@ export function Dashboard() {
             })
 
         // WebSocket para actualizaciones en tiempo real
-        const wsUrl = import.meta.env.PROD 
-            ? 'wss://caja.laruta11.cl:8080' 
+        const wsUrl = import.meta.env.PROD
+            ? 'wss://caja.laruta11.cl:8080'
             : 'ws://localhost:8080'
-        
+
         const ws = new WebSocket(wsUrl)
-        
+
         ws.onopen = () => {
             console.log('✅ WebSocket conectado')
             setWsConnected(true)
         }
-        
+
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data)
             if (!data.error) {
@@ -39,12 +39,12 @@ export function Dashboard() {
                 setLoading(false)
             }
         }
-        
+
         ws.onerror = (error) => {
             console.error('❌ WebSocket error:', error)
             setWsConnected(false)
         }
-        
+
         ws.onclose = () => {
             console.log('❌ WebSocket desconectado')
             setWsConnected(false)

@@ -1,0 +1,9 @@
+---
+import Layout from '../layouts/AdminLayout.astro';
+import AdminApp from '../../admin2/src/App.jsx';
+import '../../admin2/src/index.css';
+---
+
+<Layout title="Admin 2.0">
+  <AdminApp client:only="react" />
+</Layout>

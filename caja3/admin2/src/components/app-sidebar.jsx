@@ -32,7 +32,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarRail,
-} from "@/components/ui/sidebar"
+} from "./ui/sidebar"
 
 const data = {
     navMain: [

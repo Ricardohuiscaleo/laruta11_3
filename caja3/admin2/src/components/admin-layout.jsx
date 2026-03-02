@@ -1,6 +1,6 @@
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "./ui/sidebar"
 import { AppSidebar } from "./app-sidebar"
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "./ui/separator"
 
 export function AdminLayout({ children, title = "Dashboard" }) {
     return (
