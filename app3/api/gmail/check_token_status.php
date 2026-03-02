@@ -11,13 +11,12 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 
-    $stmt = $pdo->query("SELECT updated_at FROM gmail_tokens ORDER BY updated_at DESC LIMIT 1");
+    $stmt = $pdo->query("SELECT expires_at FROM gmail_tokens ORDER BY updated_at DESC LIMIT 1");
     $token = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$token) { echo json_encode(['ok' => false]); exit; }
 
-    $minutes = (time() - strtotime($token['updated_at'])) / 60;
-    echo json_encode(['ok' => $minutes <= 90]);
+    echo json_encode(['ok' => time() < (int)$token['expires_at']]);
 } catch (Exception $e) {
     echo json_encode(['ok' => false]);
 }
