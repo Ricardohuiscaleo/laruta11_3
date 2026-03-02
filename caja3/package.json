@@ -7,7 +7,9 @@
         "start": "astro dev",
         "build": "astro build",
         "preview": "astro preview",
-        "astro": "astro"
+        "astro": "astro",
+        "ws": "node ws-server.js",
+        "dev:all": "npm run ws & npm run dev"
     },
     "dependencies": {
         "@astrojs/react": "^3.6.0",
@@ -27,7 +29,10 @@
         "recharts": "^3.1.2",
         "tailwind-merge": "^3.5.0",
         "tailwindcss-animate": "^1.0.7",
-        "tesseract.js": "^7.0.0"
+        "tesseract.js": "^7.0.0",
+        "ws": "^8.18.0",
+        "mysql2": "^3.11.5",
+        "dotenv": "^16.4.7"
     },
     "devDependencies": {
         "@astrojs/tailwind": "^6.0.2",

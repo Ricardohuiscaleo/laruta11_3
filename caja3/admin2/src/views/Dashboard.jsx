@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { TrendingUp, ShoppingCart, DollarSign, Package } from "lucide-react"
+import { TrendingUp, ShoppingCart, DollarSign, Package, Wifi, WifiOff } from "lucide-react"
 
 export function Dashboard() {
     const [stats, setStats] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [wsConnected, setWsConnected] = useState(false)
 
     useEffect(() => {
+        // Fallback: cargar datos iniciales con fetch
         fetch('/api/get_dashboard_stats.php')
             .then(res => res.json())
             .then(data => {
@@ -17,6 +19,34 @@ export function Dashboard() {
                 console.error("Error fetching stats:", err)
                 setLoading(false)
             })
+
+        // WebSocket para actualizaciones en tiempo real
+        const ws = new WebSocket('ws://localhost:8080')
+        
+        ws.onopen = () => {
+            console.log('✅ WebSocket conectado')
+            setWsConnected(true)
+        }
+        
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data)
+            if (!data.error) {
+                setStats(data)
+                setLoading(false)
+            }
+        }
+        
+        ws.onerror = (error) => {
+            console.error('❌ WebSocket error:', error)
+            setWsConnected(false)
+        }
+        
+        ws.onclose = () => {
+            console.log('❌ WebSocket desconectado')
+            setWsConnected(false)
+        }
+
+        return () => ws.close()
     }, [])
 
     if (loading) {
@@ -56,6 +86,21 @@ export function Dashboard() {
 
     return (
         <div className="space-y-6">
+            {/* Indicador de conexión */}
+            <div className="flex items-center gap-2 text-sm">
+                {wsConnected ? (
+                    <>
+                        <Wifi className="h-4 w-4 text-green-600" />
+                        <span className="text-green-600 font-medium">Tiempo real activo</span>
+                    </>
+                ) : (
+                    <>
+                        <WifiOff className="h-4 w-4 text-gray-400" />
+                        <span className="text-gray-400">Modo estático</span>
+                    </>
+                )}
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {cards.map((card) => (
                     <Card key={card.title} className="shadow-sm border-slate-200/60 bg-white/50 backdrop-blur-sm">
