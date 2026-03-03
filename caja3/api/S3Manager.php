@@ -82,8 +82,7 @@ class S3Manager {
                 break;
         }
         
-        imagedestroy($source);
-        imagedestroy($compressed);
+
         
         return $tempFile;
     }
@@ -104,9 +103,8 @@ class S3Manager {
         
         // Validate file type
         $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mimeType = finfo_file($finfo, $file['tmp_name']);
-        finfo_close($finfo);
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->file($file['tmp_name']);
         
         if (!in_array($mimeType, $allowedTypes)) {
             throw new Exception('Tipo de archivo no permitido. Solo JPG, PNG, GIF, WEBP');
@@ -164,8 +162,6 @@ class S3Manager {
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlInfo = curl_getinfo($ch);
         $error = curl_error($ch);
-        curl_close($ch);
-        
         // Debug info
         $debugInfo = [
             'url' => $url,
@@ -216,7 +212,6 @@ class S3Manager {
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
         
         return $httpCode === 204;
     }

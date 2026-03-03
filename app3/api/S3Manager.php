@@ -82,22 +82,29 @@ class S3Manager {
                 break;
         }
         
-        imagedestroy($source);
-        imagedestroy($compressed);
+
         
         return $tempFile;
     }
     
     public function uploadFile($file, $key, $compress = true) {
+        // Debug: ver qué llega
+        error_log('S3Manager uploadFile - file array: ' . json_encode([
+            'name' => $file['name'] ?? 'not set',
+            'type' => $file['type'] ?? 'not set',
+            'tmp_name' => $file['tmp_name'] ?? 'not set',
+            'error' => $file['error'] ?? 'not set',
+            'size' => $file['size'] ?? 'not set'
+        ]));
+        
         if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
-            throw new Exception('No se recibió un archivo válido');
+            throw new Exception('No se recibió un archivo válido. tmp_name=' . ($file['tmp_name'] ?? 'not set') . ', is_uploaded=' . (isset($file['tmp_name']) && is_uploaded_file($file['tmp_name']) ? 'yes' : 'no'));
         }
         
         // Validate file type
         $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mimeType = finfo_file($finfo, $file['tmp_name']);
-        finfo_close($finfo);
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->file($file['tmp_name']);
         
         if (!in_array($mimeType, $allowedTypes)) {
             throw new Exception('Tipo de archivo no permitido. Solo JPG, PNG, GIF, WEBP');
@@ -155,8 +162,6 @@ class S3Manager {
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlInfo = curl_getinfo($ch);
         $error = curl_error($ch);
-        curl_close($ch);
-        
         // Debug info
         $debugInfo = [
             'url' => $url,
@@ -207,9 +212,7 @@ class S3Manager {
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
         
         return $httpCode === 204;
     }
 }
-?>
