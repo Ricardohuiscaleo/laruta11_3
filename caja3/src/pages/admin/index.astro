@@ -357,7 +357,7 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
               <div class="toolbar">
                 <div style="display: flex; align-items: center; gap: 12px;">
                   <h2 class="card-title">Gestión de Usuarios</h2>
-                  <button id="btnTestUsuarios" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px; background: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; cursor: pointer;">
+                  <button id="btnTestUsuarios" onclick="window.openTestUsuariosModal()" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px; background: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; cursor: pointer;">
                     🧪 Test Sistema
                   </button>
                 </div>
@@ -879,10 +879,7 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
             </div>
           </div>
         </div>
-      </div>
-    </main>
-  </div>
-  
+  </AdminDashboardShell>
   <script>
     // @ts-nocheck
     // Variables globales
@@ -6675,10 +6672,8 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
         
       });
   </script>
-  </AdminDashboardShell>
-
   <!-- MODAL DE TEST SISTEMA USUARIOS -->
-  <div id="modalTestUsuarios" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[9999]">
+  <div id="modalTestUsuarios" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[9999]" style="display: none;">
     <div class="bg-[#1e293b] w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
       <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800">
         <div class="flex items-center gap-2">
@@ -6689,7 +6684,7 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
           </div>
           <span class="text-slate-300 font-mono text-sm ml-2">diagnostic_tool_v2.sh</span>
         </div>
-        <button id="btnCloseTestUsuarios" class="text-slate-400 hover:text-white transition-colors">&times;</button>
+        <button onclick="window.closeTestUsuariosModal()" class="text-slate-400 hover:text-white transition-colors text-2xl" id="btnCloseTestUsuarios">&times;</button>
       </div>
       <div class="p-6">
         <div id="testConsoleUsuarios" class="bg-black/40 rounded-lg p-4 font-mono text-sm h-64 overflow-y-auto mb-4 border border-slate-700 custom-scrollbar">
@@ -6698,10 +6693,10 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
         <div class="flex justify-between items-center">
           <div id="testStatusUsuarios" class="text-xs font-bold uppercase tracking-wider text-slate-400">STATUS: READY</div>
           <div class="flex gap-3">
-            <button id="btnCopyLogsUsuarios" class="px-4 py-2 text-xs font-bold bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-all flex items-center gap-2">
+            <button onclick="window.copyTestUsuariosLogs()" class="px-4 py-2 text-xs font-bold bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-all flex items-center gap-2" id="btnCopyLogsUsuarios">
               📋 Copiar Logs
             </button>
-            <button id="btnRunTestUsuarios" class="px-6 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-lg shadow-lg shadow-amber-500/20 transition-all">
+            <button onclick="window.runTestUsuarios()" class="px-6 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-lg shadow-lg shadow-amber-500/20 transition-all" id="btnRunTestUsuarios">
               EJECUTAR DIAGNÓSTICO
             </button>
           </div>
@@ -6711,18 +6706,34 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
   </div>
 
   <script is:inline>
-    // Lógica del Test de Usuarios
-    document.getElementById('btnTestUsuarios')?.addEventListener('click', () => {
-      document.getElementById('modalTestUsuarios').classList.remove('hidden');
-      document.getElementById('modalTestUsuarios').classList.add('flex');
-    });
+    // Lógica global del Test de Usuarios
+    window.openTestUsuariosModal = function() {
+      const modal = document.getElementById('modalTestUsuarios');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+      }
+    };
 
-    document.getElementById('btnCloseTestUsuarios')?.addEventListener('click', () => {
-      document.getElementById('modalTestUsuarios').classList.add('hidden');
-      document.getElementById('modalTestUsuarios').classList.remove('flex');
-    });
+    window.closeTestUsuariosModal = function() {
+      const modal = document.getElementById('modalTestUsuarios');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+      }
+    };
 
-    document.getElementById('btnRunTestUsuarios')?.addEventListener('click', async () => {
+    window.copyTestUsuariosLogs = function() {
+      const text = document.getElementById('testConsoleUsuarios').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('btnCopyLogsUsuarios');
+        const original = btn.textContent;
+        btn.textContent = 'Copiado!';
+        setTimeout(() => btn.textContent = original, 2000);
+      });
+    };
+
+    window.runTestUsuarios = async function() {
       const console = document.getElementById('testConsoleUsuarios');
       const status = document.getElementById('testStatusUsuarios');
       const btn = document.getElementById('btnRunTestUsuarios');
@@ -6750,12 +6761,12 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
 
       try {
         log('Verificando endpoint de actualización...');
-        const res = await fetch('/api/rl6/system_test.php'); // Usamos el mismo test para verificar DB
+        const res = await fetch('/api/rl6/system_test.php');
         const data = await res.json();
         
         if (data.success) {
           log('Conexión a DB y esquema: OK', 'success');
-          log('Verificando integridad de campos RL6 en tabla usuarios...');
+          log('Verificando integridad de campos RL6 en tabla usuarios...', 'info');
           log('Campos detectados: rut, grado_militar, unidad_trabajo, es_militar_rl6', 'success');
           status.innerHTML = '<span class="text-green-500">SISTEMA OPERATIVO ✓</span>';
         } else {
@@ -6769,16 +6780,12 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
         btn.disabled = false;
         btn.classList.remove('opacity-50');
       }
-    });
+    };
 
-    document.getElementById('btnCopyLogsUsuarios')?.addEventListener('click', () => {
-      const text = document.getElementById('testConsoleUsuarios').innerText;
-      navigator.clipboard.writeText(text).then(() => {
-        const btn = document.getElementById('btnCopyLogsUsuarios');
-        const original = btn.textContent;
-        btn.textContent = 'Copiado!';
-        setTimeout(() => btn.textContent = original, 2000);
-      });
+    // Garantizar que Chart y Lucide estén listos
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('Admin Page Ready');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     });
   </script>
 
@@ -6804,8 +6811,5 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
       animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
   </style>
-</AdminLayout>
 
-    window.loadReportes = function() {
-      // El iframe ya carga automáticamente
-    };
+</AdminLayout>
