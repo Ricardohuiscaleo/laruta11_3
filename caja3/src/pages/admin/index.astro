@@ -6760,15 +6760,31 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
       };
 
       try {
-        log('Verificando API Principal...');
-        // Path relativo robusto
-        const res = await fetch('/api/system_test_rl6.php?t=' + Date.now());
+        log('Buscando API de Diagnóstico...');
+        let res = await fetch('/api/system_test_rl6.php?t=' + Date.now());
         
         if (!res.ok) {
-           throw new Error(`Respuesta HTTP ${res.status}`);
+           log('API raíz falló, reintentando en subcarpeta...', 'warning');
+           res = await fetch('/api/rl6/system_test.php?t=' + Date.now());
+        }
+
+        if (!res.ok) {
+           throw new Error(`Servidor respondió con código ${res.status}`);
         }
         
-        const data = await res.json();
+        const contentType = res.headers.get('content-type');
+        const text = await res.text();
+        
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (jsonErr) {
+          console.error('Invalid JSON response:', text);
+          if (text.includes('<?php') || text.includes('<?=')) {
+            throw new Error('El servidor devolvió código fuente PHP en lugar de ejecutarlo. Revisa la configuración del servidor.');
+          }
+          throw new Error('La respuesta del servidor no es un JSON válido. Revisa los logs de red.');
+        }
         
         if (data.logs && Array.isArray(data.logs)) {
           data.logs.forEach(l => log(l.message, l.status));
