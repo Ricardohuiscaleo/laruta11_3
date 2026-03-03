@@ -13,19 +13,19 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 try {
     $pdo = getDBConnection();
-    
+
     $user_id = $_POST['user_id'] ?? null;
     $name = $_POST['name'] ?? '';
     $email = $_POST['email'] ?? '';
     $phone = $_POST['phone'] ?? '';
     $is_active = $_POST['is_active'] ?? 1;
     $is_militar_rl6 = $_POST['is_militar_rl6'] ?? 0;
-    
+
     if (!$user_id) {
         echo json_encode(['success' => false, 'error' => 'ID de usuario requerido']);
         exit;
     }
-    
+
     // Actualizar información básica
     $sql = "UPDATE usuarios SET 
             name = :name,
@@ -34,7 +34,7 @@ try {
             is_active = :is_active,
             updated_at = NOW()
             WHERE id = :user_id";
-    
+
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         'name' => $name,
@@ -43,66 +43,80 @@ try {
         'is_active' => $is_active,
         'user_id' => $user_id
     ]);
-    
+
     // Si es militar RL6, actualizar campos adicionales
     if ($is_militar_rl6 == 1) {
-    $rut_militar = $_POST['rut_militar'] ?? '';
-        $rango_militar = $_POST['rango_militar'] ?? '';
-        $unidad_militar = $_POST['unidad_militar'] ?? '';
+        $rut = $_POST['rut'] ?? $_POST['rut_militar'] ?? '';
+        $grado_militar = $_POST['grado_militar'] ?? $_POST['rango_militar'] ?? '';
+        $unidad_trabajo = $_POST['unidad_trabajo'] ?? $_POST['unidad_militar'] ?? '';
         $domicilio_particular = $_POST['domicilio_particular'] ?? '';
         $limite_credito = $_POST['limite_credito'] ?? 50000;
         $credito_aprobado = $_POST['credito_aprobado'] ?? 0;
-        
-        // Verificar si ya tiene columnas RL6
-        $checkSql = "SHOW COLUMNS FROM usuarios LIKE 'rut_militar'";
-        $checkStmt = $pdo->query($checkSql);
-        
-        if ($checkStmt->rowCount() > 0) {
-            // Actualizar campos RL6
-            $sqlRL6 = "UPDATE usuarios SET 
-                      rut_militar = :rut_militar,
-                      rango_militar = :rango_militar,
-                      unidad_militar = :unidad_militar,
-                      domicilio_particular = :domicilio_particular,
-                      limite_credito = :limite_credito,
-                      credito_aprobado = :credito_aprobado";
-            
-            // Si se aprueba el crédito por primera vez, guardar fecha
-            if ($credito_aprobado == 1) {
-                $sqlRL6 .= ", fecha_aprobacion_credito = COALESCE(fecha_aprobacion_credito, NOW()),
-                            credito_disponible = :limite_credito";
+
+        // Auto-migración selectiva: asegurar que las columnas necesarias existen
+        $check_cols = [
+            'rut' => "VARCHAR(12) NULL",
+            'grado_militar' => "VARCHAR(100) NULL",
+            'unidad_trabajo' => "VARCHAR(255) NULL",
+            'domicilio_particular' => "TEXT NULL",
+            'es_militar_rl6' => "TINYINT(1) DEFAULT 0",
+            'credito_aprobado' => "TINYINT(1) DEFAULT 0",
+            'limite_credito' => "DECIMAL(10,2) DEFAULT 0.00",
+            'credito_usado' => "DECIMAL(10,2) DEFAULT 0.00",
+            'fecha_solicitud_rl6' => "TIMESTAMP NULL",
+            'fecha_aprobacion_rl6' => "TIMESTAMP NULL",
+            'fecha_aprobacion_credito' => "TIMESTAMP NULL",
+            'credito_disponible' => "DECIMAL(10,2) DEFAULT 0.00"
+        ];
+
+        foreach ($check_cols as $col => $definition) {
+            $check = $pdo->query("SHOW COLUMNS FROM usuarios LIKE '$col'");
+            if ($check->rowCount() == 0) {
+                $pdo->exec("ALTER TABLE usuarios ADD COLUMN $col $definition");
             }
-            
-            $sqlRL6 .= " WHERE id = :user_id";
-            
-            $stmtRL6 = $pdo->prepare($sqlRL6);
-            $params = [
-                'rut_militar' => $rut_militar,
-                'rango_militar' => $rango_militar,
-                'unidad_militar' => $unidad_militar,
-                'domicilio_particular' => $domicilio_particular,
-                'limite_credito' => $limite_credito,
-                'credito_aprobado' => $credito_aprobado,
-                'user_id' => $user_id
-            ];
-            
-            if ($credito_aprobado == 1) {
-                $params['limite_credito'] = $limite_credito;
-            }
-            
-            $stmtRL6->execute($params);
         }
+
+        // Actualizar campos RL6
+        $sqlRL6 = "UPDATE usuarios SET 
+                  es_militar_rl6 = 1,
+                  rut = :rut,
+                  grado_militar = :grado_militar,
+                  unidad_trabajo = :unidad_trabajo,
+                  domicilio_particular = :domicilio_particular,
+                  limite_credito = :limite_credito,
+                  credito_aprobado = :credito_aprobado";
+
+        // Si se aprueba el crédito por primera vez, guardar fecha
+        if ($credito_aprobado == 1) {
+            $sqlRL6 .= ", fecha_aprobacion_credito = COALESCE(fecha_aprobacion_credito, NOW()),
+                        credito_disponible = :limite_credito";
+        }
+
+        $sqlRL6 .= " WHERE id = :user_id";
+
+        $stmtRL6 = $pdo->prepare($sqlRL6);
+        $params = [
+            'rut' => $rut,
+            'grado_militar' => $grado_militar,
+            'unidad_trabajo' => $unidad_trabajo,
+            'domicilio_particular' => $domicilio_particular,
+            'limite_credito' => $limite_credito,
+            'credito_aprobado' => $credito_aprobado,
+            'user_id' => $user_id
+        ];
+
+        $stmtRL6->execute($params);
     }
-    
+
     echo json_encode([
         'success' => true,
         'message' => 'Usuario actualizado correctamente'
     ]);
-    
-} catch (Exception $e) {
+
+}
+catch (Exception $e) {
     echo json_encode([
         'success' => false,
         'error' => $e->getMessage()
     ]);
 }
-

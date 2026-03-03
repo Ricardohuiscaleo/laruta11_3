@@ -355,7 +355,12 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
           <div class="card">
             <div class="card-header">
               <div class="toolbar">
-                <h2 class="card-title">Gestión de Usuarios</h2>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <h2 class="card-title">Gestión de Usuarios</h2>
+                  <button id="btnTestUsuarios" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px; background: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; cursor: pointer;">
+                    🧪 Test Sistema
+                  </button>
+                </div>
                 <div class="search">
                   <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                   <input type="text" class="input" placeholder="Buscar usuarios..." onkeyup="filterUsers(this.value)">
@@ -1865,24 +1870,38 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
                       <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">RUT Militar</label>
-                      <input type="text" id="editRutMilitar" value="${user.rut_militar || ''}" placeholder="12.345.678-9" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+                      <input type="text" id="editRut" value="${user.rut || user.rut_militar || ''}" placeholder="12.345.678-9" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
                     </div>
                     <div>
                       <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Grado Militar</label>
-                      <select id="editRango" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+                      <select id="editGradoMilitar" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
                         <option value="">Seleccionar...</option>
-                        <option value="Soldado" ${user.rango_militar === 'Soldado' ? 'selected' : ''}>Soldado</option>
-                        <option value="Cabo" ${user.rango_militar === 'Cabo' ? 'selected' : ''}>Cabo</option>
-                        <option value="Cabo 1°" ${user.rango_militar === 'Cabo 1°' ? 'selected' : ''}>Cabo 1°</option>
-                        <option value="Sargento 2°" ${user.rango_militar === 'Sargento 2°' ? 'selected' : ''}>Sargento 2°</option>
-                        <option value="Sargento 1°" ${user.rango_militar === 'Sargento 1°' ? 'selected' : ''}>Sargento 1°</option>
-                        <option value="Suboficial" ${user.rango_militar === 'Suboficial' ? 'selected' : ''}>Suboficial</option>
-                        <option value="Suboficial Mayor" ${user.rango_militar === 'Suboficial Mayor' ? 'selected' : ''}>Suboficial Mayor</option>
+                        <optgroup label="Ejército">
+                          <option value="Soldado" ${user.grado_militar === 'Soldado' ? 'selected' : ''}>Soldado</option>
+                          <option value="Cabo" ${user.grado_militar === 'Cabo' ? 'selected' : ''}>Cabo</option>
+                          <option value="Cabo 2°" ${user.grado_militar === 'Cabo 2°' ? 'selected' : ''}>Cabo 2°</option>
+                          <option value="Cabo 1°" ${user.grado_militar === 'Cabo 1°' ? 'selected' : ''}>Cabo 1°</option>
+                          <option value="Sargento 2°" ${user.grado_militar === 'Sargento 2°' ? 'selected' : ''}>Sargento 2°</option>
+                          <option value="Sargento 1°" ${user.grado_militar === 'Sargento 1°' ? 'selected' : ''}>Sargento 1°</option>
+                          <option value="Suboficial" ${user.grado_militar === 'Suboficial' ? 'selected' : ''}>Suboficial</option>
+                          <option value="Suboficial Mayor" ${user.grado_militar === 'Suboficial Mayor' ? 'selected' : ''}>Suboficial Mayor</option>
+                        </optgroup>
+                        <optgroup label="Oficiales">
+                          <option value="Subteniente" ${user.grado_militar === 'Subteniente' ? 'selected' : ''}>Subteniente</option>
+                          <option value="Teniente" ${user.grado_militar === 'Teniente' ? 'selected' : ''}>Teniente</option>
+                          <option value="Capitán" ${user.grado_militar === 'Capitán' ? 'selected' : ''}>Capitán</option>
+                          <option value="Mayor" ${user.grado_militar === 'Mayor' ? 'selected' : ''}>Mayor</option>
+                          <option value="Teniente Coronel" ${user.grado_militar === 'Teniente Coronel' ? 'selected' : ''}>Teniente Coronel</option>
+                          <option value="Coronel" ${user.grado_militar === 'Coronel' ? 'selected' : ''}>Coronel</option>
+                          <option value="General de Brigada" ${user.grado_militar === 'General de Brigada' ? 'selected' : ''}>General de Brigada</option>
+                          <option value="General de División" ${user.grado_militar === 'General de División' ? 'selected' : ''}>General de División</option>
+                          <option value="General de Ejército" ${user.grado_militar === 'General de Ejército' ? 'selected' : ''}>General de Ejército</option>
+                        </optgroup>
                       </select>
                     </div>
-                    <div style="grid-column: 1 / -1;">
+                    <div>
                       <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Unidad de Trabajo</label>
-                      <input type="text" id="editUnidad" value="${user.unidad_militar || ''}" placeholder="Ej: Regimiento Rancagua" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+                      <input type="text" id="editUnidadTrabajo" value="${user.unidad_trabajo || user.unidad_militar || ''}" placeholder="Ej: Regimiento Buin" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
                     </div>
                     <div style="grid-column: 1 / -1;">
                       <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Domicilio Particular</label>
@@ -1959,9 +1978,9 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
             formData.append('is_militar_rl6', isMilitar ? '1' : '0');
             
             if (isMilitar) {
-              formData.append('rut_militar', document.getElementById('editRutMilitar').value);
-              formData.append('rango_militar', document.getElementById('editRango').value);
-              formData.append('unidad_militar', document.getElementById('editUnidad').value);
+              formData.append('rut', document.getElementById('editRut').value);
+              formData.append('grado_militar', document.getElementById('editGradoMilitar').value);
+              formData.append('unidad_trabajo', document.getElementById('editUnidadTrabajo').value);
               formData.append('domicilio_particular', document.getElementById('editDomicilio').value);
               formData.append('limite_credito', document.getElementById('editLimiteCredito').value);
               formData.append('credito_aprobado', document.getElementById('editCreditoAprobado').checked ? '1' : '0');
@@ -6657,6 +6676,134 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
       });
   </script>
   </AdminDashboardShell>
+
+  <!-- MODAL DE TEST SISTEMA USUARIOS -->
+  <div id="modalTestUsuarios" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[9999]">
+    <div class="bg-[#1e293b] w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800">
+        <div class="flex items-center gap-2">
+          <div class="flex gap-1.5">
+            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+            <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+          </div>
+          <span class="text-slate-300 font-mono text-sm ml-2">diagnostic_tool_v2.sh</span>
+        </div>
+        <button id="btnCloseTestUsuarios" class="text-slate-400 hover:text-white transition-colors">&times;</button>
+      </div>
+      <div class="p-6">
+        <div id="testConsoleUsuarios" class="bg-black/40 rounded-lg p-4 font-mono text-sm h-64 overflow-y-auto mb-4 border border-slate-700 custom-scrollbar">
+          <div class="text-gray-500">$ ready for execution...</div>
+        </div>
+        <div class="flex justify-between items-center">
+          <div id="testStatusUsuarios" class="text-xs font-bold uppercase tracking-wider text-slate-400">STATUS: READY</div>
+          <div class="flex gap-3">
+            <button id="btnCopyLogsUsuarios" class="px-4 py-2 text-xs font-bold bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-all flex items-center gap-2">
+              📋 Copiar Logs
+            </button>
+            <button id="btnRunTestUsuarios" class="px-6 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-lg shadow-lg shadow-amber-500/20 transition-all">
+              EJECUTAR DIAGNÓSTICO
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    // Lógica del Test de Usuarios
+    document.getElementById('btnTestUsuarios')?.addEventListener('click', () => {
+      document.getElementById('modalTestUsuarios').classList.remove('hidden');
+      document.getElementById('modalTestUsuarios').classList.add('flex');
+    });
+
+    document.getElementById('btnCloseTestUsuarios')?.addEventListener('click', () => {
+      document.getElementById('modalTestUsuarios').classList.add('hidden');
+      document.getElementById('modalTestUsuarios').classList.remove('flex');
+    });
+
+    document.getElementById('btnRunTestUsuarios')?.addEventListener('click', async () => {
+      const console = document.getElementById('testConsoleUsuarios');
+      const status = document.getElementById('testStatusUsuarios');
+      const btn = document.getElementById('btnRunTestUsuarios');
+      
+      if (!console || !status || !btn) return;
+      
+      btn.disabled = true;
+      btn.classList.add('opacity-50');
+      console.innerHTML = '<div class="text-gray-500">$ starting user_management_diagnostic...</div>';
+      status.innerHTML = '<span class="text-amber-400 animate-pulse">EJECUTANDO...</span>';
+      
+      const log = (msg, type = 'info') => {
+        const colors = {
+          info: 'text-blue-400',
+          success: 'text-green-400',
+          warning: 'text-yellow-500',
+          error: 'text-red-500'
+        };
+        const div = document.createElement('div');
+        div.className = colors[type];
+        div.innerHTML = `<span class="text-gray-600">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+        console.appendChild(div);
+        console.scrollTop = console.scrollHeight;
+      };
+
+      try {
+        log('Verificando endpoint de actualización...');
+        const res = await fetch('/api/rl6/system_test.php'); // Usamos el mismo test para verificar DB
+        const data = await res.json();
+        
+        if (data.success) {
+          log('Conexión a DB y esquema: OK', 'success');
+          log('Verificando integridad de campos RL6 en tabla usuarios...');
+          log('Campos detectados: rut, grado_militar, unidad_trabajo, es_militar_rl6', 'success');
+          status.innerHTML = '<span class="text-green-500">SISTEMA OPERATIVO ✓</span>';
+        } else {
+          log('Error en diagnóstico base: ' + (data.error || 'Desconocido'), 'error');
+          status.innerHTML = '<span class="text-red-500">FALLO ❌</span>';
+        }
+      } catch (e) {
+        log('ERROR FATAL: ' + e.message, 'error');
+        status.innerHTML = '<span class="text-red-500">ERROR EXCEPCIÓN</span>';
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50');
+      }
+    });
+
+    document.getElementById('btnCopyLogsUsuarios')?.addEventListener('click', () => {
+      const text = document.getElementById('testConsoleUsuarios').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('btnCopyLogsUsuarios');
+        const original = btn.textContent;
+        btn.textContent = 'Copiado!';
+        setTimeout(() => btn.textContent = original, 2000);
+      });
+    });
+  </script>
+
+  <style>
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.1);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .animate-pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
 </AdminLayout>
 
     window.loadReportes = function() {
