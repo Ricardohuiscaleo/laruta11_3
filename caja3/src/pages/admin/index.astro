@@ -357,9 +357,14 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
               <div class="toolbar">
                 <div style="display: flex; align-items: center; gap: 12px;">
                   <h2 class="card-title">Gestión de Usuarios</h2>
-                  <button id="btnTestUsuarios" onclick="window.openTestUsuariosModal()" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px; background: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; cursor: pointer;">
-                    🧪 Test Sistema
-                  </button>
+                  <div style="display: flex; gap: 8px;">
+                    <button onclick="window.openTestUsuariosModal('personas')" class="btn btn-secondary" style="font-size: 11px; padding: 4px 10px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 4px;">
+                      🧪 Test Personas
+                    </button>
+                    <button onclick="window.openTestUsuariosModal('rl6')" class="btn btn-secondary" style="font-size: 11px; padding: 4px 10px; background: #fffbeb; border: 1px solid #fef3c7; color: #92400e; cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 4px;">
+                      🧪 Test RL6
+                    </button>
+                  </div>
                 </div>
                 <div class="search">
                   <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>

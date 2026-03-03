@@ -45,8 +45,6 @@ const navItems = [
     { id: 'mermas', label: 'Mermas', icon: Trash2, href: '/admin/mermas' },
     { id: 'users', label: 'Usuarios', icon: Users },
     { id: 'militares-rl6', label: 'Militares RL6', icon: Target },
-    { id: 'test-personas', label: 'Test Personas', icon: TestTube, action: () => window.openTestUsuariosModal('personas') },
-    { id: 'test-rl6', label: 'Test RL6', icon: Target, action: () => window.openTestUsuariosModal('rl6') },
     { id: 'trucks', label: 'Food Trucks', icon: Truck, href: '/admin/food-trucks' },
     { id: 'technical-report', label: 'Informe Técnico', icon: FileText },
     { id: 'robots', label: 'Robots', icon: Bot },
