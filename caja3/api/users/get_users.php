@@ -4,31 +4,35 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
 header('Access-Control-Allow-Headers: Content-Type');
 
-$config_paths = [
-    __DIR__ . '/../../config.php',
-    __DIR__ . '/../../../config.php',
-    __DIR__ . '/../../../../config.php',
-    __DIR__ . '/../../../../../config.php',
-    __DIR__ . '/../../../../../../config.php',
-    __DIR__ . '/../../../../../../../config.php'
-];
-
-$config = null;
-foreach ($config_paths as $path) {
-    if (file_exists($path)) {
-        $config = require_once $path;
-        break;
-    }
-}
-
-if (!$config) {
-    echo json_encode(['success' => false, 'error' => 'Config not found']);
-    exit;
-}
+require_once __DIR__ . '/../db_connect.php';
 
 try {
-    $pdo = new PDO("mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4", $config['app_db_user'], $config['app_db_pass']);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = require __DIR__ . '/../db_connect.php';
+
+    // Auto-migración selectiva: asegurar que las columnas necesarias existen para el SELECT
+    $check_cols = [
+        'rut' => "VARCHAR(12) NULL",
+        'grado_militar' => "VARCHAR(100) NULL",
+        'unidad_trabajo' => "VARCHAR(255) NULL",
+        'domicilio_particular' => "TEXT NULL",
+        'es_militar_rl6' => "TINYINT(1) DEFAULT 0",
+        'credito_aprobado' => "TINYINT(1) DEFAULT 0",
+        'limite_credito' => "DECIMAL(10,2) DEFAULT 0.00",
+        'credito_usado' => "DECIMAL(10,2) DEFAULT 0.00",
+        'selfie_url' => "VARCHAR(500) NULL",
+        'carnet_frontal_url' => "VARCHAR(500) NULL",
+        'carnet_trasero_url' => "VARCHAR(500) NULL",
+        'fecha_solicitud_rl6' => "TIMESTAMP NULL",
+        'fecha_aprobacion_rl6' => "TIMESTAMP NULL",
+        'credito_disponible' => "DECIMAL(10,2) DEFAULT 0.00"
+    ];
+
+    foreach ($check_cols as $col => $definition) {
+        $check = $pdo->query("SHOW COLUMNS FROM usuarios LIKE '$col'");
+        if ($check->rowCount() == 0) {
+            $pdo->exec("ALTER TABLE usuarios ADD COLUMN $col $definition");
+        }
+    }
 
     $sql = "
         SELECT 

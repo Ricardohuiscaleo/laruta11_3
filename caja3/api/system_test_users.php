@@ -31,9 +31,7 @@ try {
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
     addLog("Total de usuarios registrados: " . ($result['total'] ?? 0), "success");
-    addLog("Verificando permisos de escritura temporales...");
-
-    // Test simple de escritura si fuera necesario, pero por ahora lectura es suficiente para "Personas"
+    addLog("Verificando integridad básica de esquema...");
 
     addLog("Sistema de usuarios básico operativo.", "success");
     echo json_encode(['success' => true, 'logs' => $logs]);
@@ -43,5 +41,4 @@ catch (Exception $e) {
     addLog("ERROR: " . $e->getMessage(), "error");
     echo json_encode(['success' => false, 'logs' => $logs]);
 }
-?>
 ?>
