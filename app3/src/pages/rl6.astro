@@ -302,7 +302,7 @@ const GRADOS_MILITARES = [
           <div>
             <h4 class="font-black text-lg mb-4 text-amber-400">La Ruta 11</h4>
             <p class="text-gray-400 text-sm leading-relaxed">
-              <span id="btnTestSystem" class="cursor-pointer hover:text-amber-300 transition-colors">Sistema RL6</span>.
+              <span id="btnTestSystem" class="cursor-pointer hover:text-amber-300 transition-colors" style="cursor: pointer;">Sistema RL6</span>.
             </p>
           </div>
           <div>
@@ -839,15 +839,12 @@ const GRADOS_MILITARES = [
             });
             var result = await response.json();
             
-            if (result.success || !result.blocked_until) {
-              alert('✅ Desbloqueado correctamente');
-              document.body.removeChild(modal);
-            } else {
-              alert('❌ Código incorrecto');
+            }
+          } catch (error) {
             alert('❌ Error: ' + error.message);
           }
-          });
         });
+      }
       }
 
       // LÓGICA DE TEST SISTEMA
