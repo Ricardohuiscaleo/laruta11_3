@@ -1822,7 +1822,7 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
           modal.innerHTML = `
             <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="font-size: 20px; margin: 0;">✏️ Editar Usuario</h2>
+                <h2 style="font-size: 20px; margin: 0;">✏️ Editar Usuario <span id="modalStandardId" style="font-size: 14px; color: #666; font-weight: normal; margin-left: 10px;">ID: ${user.id}</span></h2>
                 <button onclick="this.closest('div[style*=fixed]').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
               </div>
               
@@ -1864,7 +1864,7 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
                       <span style="font-size: 14px; font-weight: 600;">Es Militar RL6</span>
                     </label>
                   </div>
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div id="militarFields" style="display: ${isMilitarRL6 ? 'grid' : 'none'}; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
                       <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">RUT Militar</label>
                       <input type="text" id="editRut" value="${user.rut || user.rut_militar || ''}" placeholder="12.345.678-9" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
@@ -1873,26 +1873,23 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
                       <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Grado Militar</label>
                       <select id="editGradoMilitar" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
                         <option value="">Seleccionar...</option>
-                        <optgroup label="Ejército">
-                          <option value="Soldado" ${user.grado_militar === 'Soldado' ? 'selected' : ''}>Soldado</option>
-                          <option value="Cabo" ${user.grado_militar === 'Cabo' ? 'selected' : ''}>Cabo</option>
-                          <option value="Cabo 2°" ${user.grado_militar === 'Cabo 2°' ? 'selected' : ''}>Cabo 2°</option>
-                          <option value="Cabo 1°" ${user.grado_militar === 'Cabo 1°' ? 'selected' : ''}>Cabo 1°</option>
-                          <option value="Sargento 2°" ${user.grado_militar === 'Sargento 2°' ? 'selected' : ''}>Sargento 2°</option>
-                          <option value="Sargento 1°" ${user.grado_militar === 'Sargento 1°' ? 'selected' : ''}>Sargento 1°</option>
-                          <option value="Suboficial" ${user.grado_militar === 'Suboficial' ? 'selected' : ''}>Suboficial</option>
-                          <option value="Suboficial Mayor" ${user.grado_militar === 'Suboficial Mayor' ? 'selected' : ''}>Suboficial Mayor</option>
-                        </optgroup>
                         <optgroup label="Oficiales">
-                          <option value="Subteniente" ${user.grado_militar === 'Subteniente' ? 'selected' : ''}>Subteniente</option>
-                          <option value="Teniente" ${user.grado_militar === 'Teniente' ? 'selected' : ''}>Teniente</option>
-                          <option value="Capitán" ${user.grado_militar === 'Capitán' ? 'selected' : ''}>Capitán</option>
-                          <option value="Mayor" ${user.grado_militar === 'Mayor' ? 'selected' : ''}>Mayor</option>
-                          <option value="Teniente Coronel" ${user.grado_militar === 'Teniente Coronel' ? 'selected' : ''}>Teniente Coronel</option>
+                          <option value="General" ${user.grado_militar === 'General' ? 'selected' : ''}>General</option>
                           <option value="Coronel" ${user.grado_militar === 'Coronel' ? 'selected' : ''}>Coronel</option>
-                          <option value="General de Brigada" ${user.grado_militar === 'General de Brigada' ? 'selected' : ''}>General de Brigada</option>
-                          <option value="General de División" ${user.grado_militar === 'General de División' ? 'selected' : ''}>General de División</option>
-                          <option value="General de Ejército" ${user.grado_militar === 'General de Ejército' ? 'selected' : ''}>General de Ejército</option>
+                          <option value="Teniente Coronel" ${user.grado_militar === 'Teniente Coronel' ? 'selected' : ''}>Teniente Coronel</option>
+                          <option value="Mayor" ${user.grado_militar === 'Mayor' ? 'selected' : ''}>Mayor</option>
+                          <option value="Capitán" ${user.grado_militar === 'Capitán' ? 'selected' : ''}>Capitán</option>
+                          <option value="Teniente" ${user.grado_militar === 'Teniente' ? 'selected' : ''}>Teniente</option>
+                          <option value="Subteniente" ${user.grado_militar === 'Subteniente' ? 'selected' : ''}>Subteniente</option>
+                        </optgroup>
+                        <optgroup label="Suboficiales">
+                          <option value="Suboficial Mayor" ${user.grado_militar === 'Suboficial Mayor' ? 'selected' : ''}>Suboficial Mayor</option>
+                          <option value="Suboficial" ${user.grado_militar === 'Suboficial' ? 'selected' : ''}>Suboficial</option>
+                          <option value="Sargento 1°" ${user.grado_militar === 'Sargento 1°' ? 'selected' : ''}>Sargento 1°</option>
+                          <option value="Sargento 2°" ${user.grado_militar === 'Sargento 2°' ? 'selected' : ''}>Sargento 2°</option>
+                          <option value="Cabo 1°" ${user.grado_militar === 'Cabo 1°' ? 'selected' : ''}>Cabo 1°</option>
+                          <option value="Cabo 2°" ${user.grado_militar === 'Cabo 2°' ? 'selected' : ''}>Cabo 2°</option>
+                          <option value="Soldado" ${user.grado_militar === 'Soldado' ? 'selected' : ''}>Soldado</option>
                         </optgroup>
                       </select>
                     </div>
@@ -1900,25 +1897,69 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
                       <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Unidad de Trabajo</label>
                       <input type="text" id="editUnidadTrabajo" value="${user.unidad_trabajo || user.unidad_militar || ''}" placeholder="Ej: Regimiento Buin" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
                     </div>
+                    <div>
+                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Límite Crédito ($)</label>
+                      <input type="number" id="editLimiteCredito" value="${user.limite_credito || 0}" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                      <div>
+                        <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Crédito Usado ($)</label>
+                        <input type="number" id="editCreditoUsado" value="${user.credito_usado || 0}" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; background: #f9fafb;" readonly>
+                      </div>
+                      <div>
+                        <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Crédito Disponible ($)</label>
+                        <input type="number" id="editCreditoDisponible" value="${user.credito_disponible || 0}" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; background: #f0fdf4; color: #166534; font-weight: 600;" readonly>
+                      </div>
+                    </div>
                     <div style="grid-column: 1 / -1;">
                       <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Domicilio Particular</label>
                       <textarea id="editDomicilio" rows="2" placeholder="Calle, número, ciudad, región" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">${user.domicilio_particular || ''}</textarea>
                     </div>
-                    <div>
-                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Límite de Crédito ($)</label>
-                      <input type="number" id="editLimiteCredito" value="${user.limite_credito || 50000}" min="0" step="1000" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
-                    </div>
-                    <div>
-                      <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Crédito Disponible</label>
-                      <input type="number" id="editCreditoDisponible" value="${user.credito_disponible || 0}" readonly style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px; background: #f9fafb; color: #666;">
-                    </div>
-                    <div style="grid-column: 1 / -1;">
-                      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <div style="grid-column: 1 / -1; margin-top: 5px;">
+                      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: #dcfce7; padding: 8px; border-radius: 6px; border: 1px solid #22c55e;">
                         <input type="checkbox" id="editCreditoAprobado" ${user.credito_aprobado == 1 ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer;">
-                        <span style="font-size: 14px; font-weight: 600; color: #059669;">✅ Crédito Aprobado</span>
+                        <span style="font-size: 14px; font-weight: 700; color: #166534;">✅ Crédito Aprobado</span>
                       </label>
                     </div>
-                  </div>
+
+                    <!-- FOTOS RL6 -->
+                    <div style="grid-column: 1 / -1; margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                      <div style="text-align: center;">
+                        <label style="display: block; font-size: 11px; margin-bottom: 4px;">Selfie</label>
+                        <div id="previewSelfie" style="width: 100%; height: 80px; background: #eee; border-radius: 4px; overflow: hidden; margin-bottom: 4px; cursor: pointer;" onclick="document.getElementById('uploadSelfie').click()">
+                          ${user.selfie_url ? `<img src="${user.selfie_url}" style="width:100%; height:100%; object-fit:cover;">` : '<div style="padding-top:25px; color:#999; font-size: 20px;">📸</div>'}
+                        </div>
+                        <input type="file" id="uploadSelfie" style="display:none" onchange="handleAdminPhotoUpload(this, 'selfie_url', 'previewSelfie')">
+                        <span style="font-size: 9px; color: #666;">Click para subir</span>
+                      </div>
+                      <div style="text-align: center;">
+                        <label style="display: block; font-size: 11px; margin-bottom: 4px;">Carnet (F)</label>
+                        <div id="previewFrontal" style="width: 100%; height: 80px; background: #eee; border-radius: 4px; overflow: hidden; margin-bottom: 4px; cursor: pointer;" onclick="document.getElementById('uploadFrontal').click()">
+                          ${user.carnet_frontal_url ? `<img src="${user.carnet_frontal_url}" style="width:100%; height:100%; object-fit:cover;">` : '<div style="padding-top:25px; color:#999; font-size: 20px;">🆔</div>'}
+                        </div>
+                        <input type="file" id="uploadFrontal" style="display:none" onchange="handleAdminPhotoUpload(this, 'carnet_frontal_url', 'previewFrontal')">
+                        <span style="font-size: 9px; color: #666;">Click para subir</span>
+                      </div>
+                      <div style="text-align: center;">
+                        <label style="display: block; font-size: 11px; margin-bottom: 4px;">Carnet (T)</label>
+                        <div id="previewTrasero" style="width: 100%; height: 80px; background: #eee; border-radius: 4px; overflow: hidden; margin-bottom: 4px; cursor: pointer;" onclick="document.getElementById('uploadTrasero').click()">
+                          ${user.carnet_trasero_url ? `<img src="${user.carnet_trasero_url}" style="width:100%; height:100%; object-fit:cover;">` : '<div style="padding-top:25px; color:#999; font-size: 20px;">🆔</div>'}
+                        </div>
+                        <input type="file" id="uploadTrasero" style="display:none" onchange="handleAdminPhotoUpload(this, 'carnet_trasero_url', 'previewTrasero')">
+                        <span style="font-size: 9px; color: #666;">Click para subir</span>
+                      </div>
+                    </div>
+
+                    <div style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+                      <div>
+                        <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">📅 F. Solicitud</label>
+                        <input type="text" value="${user.fecha_solicitud_rl6 || 'Pendiente'}" readonly style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 13px; background: #f9fafb; color: #666;">
+                      </div>
+                      <div>
+                        <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">📅 F. Aprobación</label>
+                        <input type="text" value="${user.fecha_aprobacion_rl6 || 'No aprobada'}" readonly style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 13px; background: #f9fafb; color: #666;">
+                      </div>
+                    </div>
                 </div>
                 
                 <!-- Estadísticas (solo lectura) -->
@@ -1981,6 +2022,13 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
               formData.append('domicilio_particular', document.getElementById('editDomicilio').value);
               formData.append('limite_credito', document.getElementById('editLimiteCredito').value);
               formData.append('credito_aprobado', document.getElementById('editCreditoAprobado').checked ? '1' : '0');
+              formData.append('credito_usado', document.getElementById('editCreditoUsado').value);
+              
+              // Agregar URLs de fotos si se subieron nuevas
+              const formEl = document.getElementById('editUserForm');
+              if (formEl.getAttribute('data-selfie_url')) formData.append('selfie_url', formEl.getAttribute('data-selfie_url'));
+              if (formEl.getAttribute('data-carnet_frontal_url')) formData.append('carnet_frontal_url', formEl.getAttribute('data-carnet_frontal_url'));
+              if (formEl.getAttribute('data-carnet_trasero_url')) formData.append('carnet_trasero_url', formEl.getAttribute('data-carnet_trasero_url'));
             }
             
             fetch('/api/users/update_user.php', {
@@ -6707,11 +6755,17 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
 
   <script is:inline>
     // Lógica global del Test de Usuarios
-    window.openTestUsuariosModal = function() {
+    window.openTestUsuariosModal = function(type = 'rl6') {
       const modal = document.getElementById('modalTestUsuarios');
       if (modal) {
         modal.classList.remove('hidden');
         modal.style.display = 'flex';
+        // Guardar tipo de test en el botón ejecutor
+        const btnRun = document.getElementById('btnRunTestUsuarios');
+        if (btnRun) btnRun.setAttribute('data-test-type', type);
+        
+        const banner = document.querySelector('#modalTestUsuarios .text-sm.ml-2');
+        if (banner) banner.textContent = type === 'rl6' ? 'diagnostic_rl6.sh' : 'diagnostic_users.sh';
       }
     };
 
@@ -6740,9 +6794,11 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
       
       if (!console || !status || !btn) return;
       
+      const testType = btn.getAttribute('data-test-type') || 'rl6';
+      
       btn.disabled = true;
       btn.classList.add('opacity-50');
-      console.innerHTML = '<div class="text-gray-500">$ starting user_management_diagnostic...</div>';
+      console.innerHTML = `<div class="text-gray-500">$ starting ${testType}_diagnostic...</div>`;
       status.innerHTML = '<span class="text-amber-400 animate-pulse">EJECUTANDO...</span>';
       
       const log = (msg, type = 'info') => {
@@ -6760,10 +6816,12 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
       };
 
       try {
-        log('Buscando API de Diagnóstico...');
-        let res = await fetch('/api/system_test_rl6.php?t=' + Date.now());
+        log(`Iniciando Test: ${testType.toUpperCase()}...`);
+        const endpoint = testType === 'rl6' ? '/api/system_test_rl6.php' : '/api/system_test_users.php';
         
-        if (!res.ok) {
+        let res = await fetch(endpoint + '?t=' + Date.now());
+        
+        if (!res.ok && testType === 'rl6') {
            log('API raíz falló, reintentando en subcarpeta...', 'warning');
            res = await fetch('/api/rl6/system_test.php?t=' + Date.now());
         }
@@ -6772,18 +6830,16 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
            throw new Error(`Servidor respondió con código ${res.status}`);
         }
         
-        const contentType = res.headers.get('content-type');
         const text = await res.text();
         
         let data;
         try {
           data = JSON.parse(text);
         } catch (jsonErr) {
-          console.error('Invalid JSON response:', text);
           if (text.includes('<?php') || text.includes('<?=')) {
-            throw new Error('El servidor devolvió código fuente PHP en lugar de ejecutarlo. Revisa la configuración del servidor.');
+            throw new Error('El servidor devolvió código fuente PHP en lugar de ejecutarlo.');
           }
-          throw new Error('La respuesta del servidor no es un JSON válido. Revisa los logs de red.');
+          throw new Error('La respuesta del servidor no es un JSON válido.');
         }
         
         if (data.logs && Array.isArray(data.logs)) {
@@ -6802,6 +6858,39 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
         btn.disabled = false;
         btn.classList.remove('opacity-50');
       }
+    };
+
+    // Handler para subida de fotos en Admin
+    window.handleAdminPhotoUpload = function(input, field, previewId) {
+      if (!input.files || !input.files[0]) return;
+      
+      const preview = document.getElementById(previewId);
+      preview.innerHTML = '<div style="padding-top:25px; color:#3b82f6;" class="animate-pulse">⏳</div>';
+      
+      const formData = new FormData();
+      formData.append('image', input.files[0]);
+      
+      fetch('/api/upload_image.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          preview.innerHTML = `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
+          // Guardar URL en un atributo temporal del modal para el submit posterior
+          const modal = document.getElementById('editUserForm');
+          modal.setAttribute(`data-${field}`, data.url);
+          console.log(`Foto subida exitosamente: ${field} -> ${data.url}`);
+        } else {
+          alert('Error al subir foto: ' + data.error);
+          preview.innerHTML = '<div style="padding-top:25px; color:#ef4444;">❌</div>';
+        }
+      })
+      .catch(err => {
+        alert('Error conectando con el servidor de subida');
+        preview.innerHTML = '<div style="padding-top:25px; color:#ef4444;">❌</div>';
+      });
     };
 
     // Garantizar que Chart y Lucide estén listos

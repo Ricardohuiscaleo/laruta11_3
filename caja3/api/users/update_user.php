@@ -53,6 +53,12 @@ try {
         $limite_credito = $_POST['limite_credito'] ?? 50000;
         $credito_aprobado = $_POST['credito_aprobado'] ?? 0;
 
+        // Nuevos campos RL6
+        $selfie_url = $_POST['selfie_url'] ?? null;
+        $carnet_frontal_url = $_POST['carnet_frontal_url'] ?? null;
+        $carnet_trasero_url = $_POST['carnet_trasero_url'] ?? null;
+        $credito_usado = $_POST['credito_usado'] ?? 0;
+
         // Auto-migración selectiva: asegurar que las columnas necesarias existen
         $check_cols = [
             'rut' => "VARCHAR(12) NULL",
@@ -63,6 +69,9 @@ try {
             'credito_aprobado' => "TINYINT(1) DEFAULT 0",
             'limite_credito' => "DECIMAL(10,2) DEFAULT 0.00",
             'credito_usado' => "DECIMAL(10,2) DEFAULT 0.00",
+            'selfie_url' => "VARCHAR(500) NULL",
+            'carnet_frontal_url' => "VARCHAR(500) NULL",
+            'carnet_trasero_url' => "VARCHAR(500) NULL",
             'fecha_solicitud_rl6' => "TIMESTAMP NULL",
             'fecha_aprobacion_rl6' => "TIMESTAMP NULL",
             'fecha_aprobacion_credito' => "TIMESTAMP NULL",
@@ -84,12 +93,24 @@ try {
                   unidad_trabajo = :unidad_trabajo,
                   domicilio_particular = :domicilio_particular,
                   limite_credito = :limite_credito,
-                  credito_aprobado = :credito_aprobado";
+                  credito_aprobado = :credito_aprobado,
+                  credito_usado = :credito_usado";
+
+        if ($selfie_url)
+            $sqlRL6 .= ", selfie_url = :selfie_url";
+        if ($carnet_frontal_url)
+            $sqlRL6 .= ", carnet_frontal_url = :carnet_frontal_url";
+        if ($carnet_trasero_url)
+            $sqlRL6 .= ", carnet_trasero_url = :carnet_trasero_url";
 
         // Si se aprueba el crédito por primera vez, guardar fecha
         if ($credito_aprobado == 1) {
             $sqlRL6 .= ", fecha_aprobacion_credito = COALESCE(fecha_aprobacion_credito, NOW()),
-                        credito_disponible = :limite_credito";
+                        fecha_aprobacion_rl6 = COALESCE(fecha_aprobacion_rl6, NOW()),
+                        credito_disponible = :limite_credito - :credito_usado";
+        }
+        else {
+            $sqlRL6 .= ", credito_disponible = :limite_credito - :credito_usado";
         }
 
         $sqlRL6 .= " WHERE id = :user_id";
@@ -102,8 +123,16 @@ try {
             'domicilio_particular' => $domicilio_particular,
             'limite_credito' => $limite_credito,
             'credito_aprobado' => $credito_aprobado,
+            'credito_usado' => $credito_usado,
             'user_id' => $user_id
         ];
+
+        if ($selfie_url)
+            $params['selfie_url'] = $selfie_url;
+        if ($carnet_frontal_url)
+            $params['carnet_frontal_url'] = $carnet_frontal_url;
+        if ($carnet_trasero_url)
+            $params['carnet_trasero_url'] = $carnet_trasero_url;
 
         $stmtRL6->execute($params);
     }

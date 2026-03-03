@@ -39,6 +39,20 @@ try {
             u.fecha_registro as registration_date,
             u.activo as is_active,
             u.direccion as city,
+            u.rut,
+            u.grado_militar,
+            u.unidad_trabajo,
+            u.domicilio_particular,
+            u.es_militar_rl6,
+            u.credito_aprobado,
+            u.limite_credito,
+            u.credito_usado,
+            u.credito_disponible,
+            u.selfie_url,
+            u.carnet_frontal_url,
+            u.carnet_trasero_url,
+            u.fecha_solicitud_rl6,
+            u.fecha_aprobacion_rl6,
             COALESCE(o.order_count, 0) as total_orders,
             COALESCE(o.total_spent, 0) as total_spent,
             o.last_order_date,
@@ -74,7 +88,8 @@ try {
         'data' => $users
     ]);
 
-} catch (Exception $e) {
+}
+catch (Exception $e) {
     echo json_encode([
         'success' => false,
         'error' => $e->getMessage()
