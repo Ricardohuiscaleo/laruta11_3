@@ -27,12 +27,19 @@ if ($conn->connect_error) {
     die(json_encode(['success' => false, 'error' => 'Error de conexión: ' . $conn->connect_error]));
 }
 
-$sql = "ALTER TABLE order_notifications ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE";
-
-if ($conn->query($sql)) {
-    echo json_encode(['success' => true, 'message' => 'Campo is_read agregado exitosamente']);
-} else {
-    echo json_encode(['success' => false, 'error' => $conn->error]);
+// Mapear si la columna existe (usando método compatible)
+$check = $conn->query("SHOW COLUMNS FROM order_notifications LIKE 'is_read'");
+if ($check->num_rows == 0) {
+    $sql = "ALTER TABLE order_notifications ADD COLUMN is_read BOOLEAN DEFAULT FALSE";
+    if ($conn->query($sql)) {
+        echo json_encode(['success' => true, 'message' => 'Campo is_read agregado exitosamente']);
+    }
+    else {
+        echo json_encode(['success' => false, 'error' => $conn->error]);
+    }
+}
+else {
+    echo json_encode(['success' => true, 'message' => 'Campo is_read ya existe']);
 }
 
 $conn->close();

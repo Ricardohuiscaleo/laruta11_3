@@ -1,24 +1,10 @@
 <?php
-// Buscar config.php en múltiples niveles
-$config_paths = [
-    __DIR__ . '/../../config.php',     // 2 niveles
-    __DIR__ . '/../../../config.php',  // 3 niveles  
-    __DIR__ . '/../../../../config.php', // 4 niveles
-    __DIR__ . '/../../../../../config.php' // 5 niveles
-];
-
-$config = null;
-foreach ($config_paths as $path) {
-    if (file_exists($path)) {
-        $config = require_once $path;
-        break;
-    }
-}
-
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
 header('Access-Control-Allow-Headers: Content-Type');
+
+require_once __DIR__ . '/../db_connect.php';
 
 if (!isset($_GET['id'])) {
     echo json_encode(['success' => false, 'error' => 'User ID required']);
@@ -26,14 +12,36 @@ if (!isset($_GET['id'])) {
 }
 
 try {
-    // Usar base de datos app
-    $pdo = new PDO("mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4", $config['app_db_user'], $config['app_db_pass']);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = require __DIR__ . '/../db_connect.php';
 
     $user_id = (int)$_GET['id'];
 
-    // Obtener datos del usuario
-    $stmt = $pdo->prepare("SELECT * FROM app_users WHERE id = ?");
+    // 1. Obtener datos del usuario (mapeando a lo que el frontend espera)
+    $stmt = $pdo->prepare("
+        SELECT 
+            id,
+            nombre as name,
+            email,
+            telefono as phone,
+            fecha_registro as registration_date,
+            ultimo_acceso as last_login,
+            total_spent,
+            activo as is_active,
+            rut,
+            grado_militar,
+            unidad_trabajo,
+            domicilio_particular,
+            es_militar_rl6,
+            credito_aprobado,
+            limite_credito,
+            credito_usado,
+            credito_disponible,
+            selfie_url,
+            carnet_frontal_url,
+            carnet_trasero_url
+        FROM usuarios 
+        WHERE id = ?
+    ");
     $stmt->execute([$user_id]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -42,66 +50,47 @@ try {
         exit;
     }
 
-    // Obtener pedidos del usuario
-    $stmt = $pdo->prepare("
+    // 2. Obtener pedidos recientes del usuario (de tuu_orders)
+    $stmtOrder = $pdo->prepare("
         SELECT 
-            o.*,
-            GROUP_CONCAT(
-                CONCAT(oi.quantity, 'x ', oi.product_name, ' ($', oi.unit_price, ')')
-                SEPARATOR ', '
-            ) as items_summary
-        FROM user_orders o
-        LEFT JOIN user_order_items oi ON o.id = oi.order_id
+            o.id,
+            o.order_number,
+            o.payment_status as status,
+            o.product_price as total_amount,
+            o.created_at,
+            o.product_name as items
+        FROM tuu_orders o
         WHERE o.user_id = ?
-        GROUP BY o.id
-        ORDER BY o.order_date DESC
+        ORDER BY o.created_at DESC
         LIMIT 10
     ");
-    $stmt->execute([$user_id]);
-    $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmtOrder->execute([$user_id]);
+    $orders = $stmtOrder->fetchAll(PDO::FETCH_ASSOC);
 
-    // Estadísticas del usuario
-    $stmt = $pdo->prepare("
+    // 3. Estadísticas rápidas
+    $stmtStats = $pdo->prepare("
         SELECT 
             COUNT(*) as total_orders,
-            COALESCE(SUM(total_amount), 0) as total_spent,
-            COALESCE(AVG(total_amount), 0) as avg_order_value,
-            MAX(order_date) as last_order_date,
-            MIN(order_date) as first_order_date
-        FROM user_orders 
-        WHERE user_id = ? AND status != 'cancelled'
+            SUM(product_price) as total_spent,
+            AVG(product_price) as avg_order_value,
+            MAX(created_at) as last_order_date
+        FROM tuu_orders 
+        WHERE user_id = ? AND payment_status = 'paid'
     ");
-    $stmt->execute([$user_id]);
-    $stats = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    // Productos más comprados
-    $stmt = $pdo->prepare("
-        SELECT 
-            oi.product_name,
-            SUM(oi.quantity) as total_quantity,
-            COUNT(DISTINCT o.id) as order_count,
-            SUM(oi.total_price) as total_spent
-        FROM user_order_items oi
-        JOIN user_orders o ON oi.order_id = o.id
-        WHERE o.user_id = ? AND o.status != 'cancelled'
-        GROUP BY oi.product_name
-        ORDER BY total_quantity DESC
-        LIMIT 5
-    ");
-    $stmt->execute([$user_id]);
-    $favorite_products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmtStats->execute([$user_id]);
+    $stats = $stmtStats->fetch(PDO::FETCH_ASSOC);
 
     echo json_encode([
         'success' => true,
         'data' => [
             'user' => $user,
             'orders' => $orders,
-            'stats' => $stats,
-            'favorite_products' => $favorite_products
+            'stats' => $stats
         ]
     ]);
 
-} catch (Exception $e) {
+}
+catch (Exception $e) {
     echo json_encode([
         'success' => false,
         'error' => $e->getMessage()
