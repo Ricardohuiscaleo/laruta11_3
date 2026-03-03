@@ -323,7 +323,7 @@ const GRADOS_MILITARES = [
           </div>
         </div>
         <div class="border-t border-slate-700 pt-8 text-center text-gray-500 text-sm">
-          <p>&copy; 2026 La Ruta 11 • <span id="btnTestSystem" class="cursor-pointer hover:text-amber-300 transition-colors" style="cursor: pointer;">Sistema RL6</span> • Todos los derechos reservados</p>
+          <p>&copy; 2026 La Ruta 11 • <span id="btnTestSystem" class="cursor-pointer hover:text-amber-300 transition-colors" style="cursor: pointer; display: inline-block;">Sistema RL6</span> • Todos los derechos reservados</p>
         </div>
       </div>
     </footer>
@@ -817,32 +817,37 @@ const GRADOS_MILITARES = [
         var btnUnlock = document.getElementById('btnUnlock');
         if (btnUnlock) {
           btnUnlock.addEventListener('click', async function() {
-            var unlockInput = document.getElementById('unlockCode') as HTMLInputElement;
-            var code = unlockInput?.value || '';
-          if (!code) {
-            alert('⚠️ Ingresa un código');
-            return;
-          }
-          
-          if (!usuarioLogueado || !usuarioLogueado['id']) return;
-          
-          var formData = new FormData();
-          formData.append('unlock_code', code);
-          formData.append('user_id', usuarioLogueado['id']);
-          
-          try {
-            var response = await fetch('/api/rl6/register_militar.php', {
-              method: 'POST',
-              body: formData
-            });
-            var result = await response.json();
-            
+            var unlockInput = document.getElementById('unlockCode');
+            var code = unlockInput ? unlockInput.value : '';
+            if (!code) {
+              alert('⚠️ Ingresa un código');
+              return;
             }
-          } catch (error) {
-            alert('❌ Error: ' + error.message);
-          }
-        });
-      }
+            
+            if (!usuarioLogueado || !usuarioLogueado.id) return;
+            
+            var formData = new FormData();
+            formData.append('unlock_code', code);
+            formData.append('user_id', usuarioLogueado.id);
+            
+            try {
+              var response = await fetch('/api/rl6/register_militar.php', {
+                method: 'POST',
+                body: formData
+              });
+              var result = await response.json();
+              
+              if (result.success || !result.blocked_until) {
+                alert('✅ Desbloqueado correctamente');
+                document.body.removeChild(modal);
+              } else {
+                alert('❌ Código incorrecto');
+              }
+            } catch (error) {
+              alert('❌ Error: ' + error.message);
+            }
+          });
+        }
       }
 
       // LÓGICA DE TEST SISTEMA
