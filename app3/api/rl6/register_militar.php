@@ -30,6 +30,38 @@ if ($conn->connect_error) {
     die(json_encode(['success' => false, 'error' => 'Error de conexión']));
 }
 
+$conn->set_charset('utf8mb4');
+
+// Auto-migración selectiva: asegurar que las columnas necesarias existen
+$check_cols = [
+    'rut' => "VARCHAR(12) NULL",
+    'grado_militar' => "VARCHAR(100) NULL",
+    'unidad_trabajo' => "VARCHAR(255) NULL",
+    'domicilio_particular' => "TEXT NULL",
+    'carnet_frontal_url' => "VARCHAR(500) NULL",
+    'carnet_trasero_url' => "VARCHAR(500) NULL",
+    'selfie_url' => "VARCHAR(500) NULL",
+    'es_militar_rl6' => "TINYINT(1) DEFAULT 0",
+    'credito_aprobado' => "TINYINT(1) DEFAULT 0",
+    'limite_credito' => "DECIMAL(10,2) DEFAULT 0.00",
+    'credito_usado' => "DECIMAL(10,2) DEFAULT 0.00",
+    'fecha_solicitud_rl6' => "TIMESTAMP NULL",
+    'fecha_aprobacion_rl6' => "TIMESTAMP NULL"
+];
+
+$res = $conn->query("SHOW COLUMNS FROM usuarios");
+$existing_cols = [];
+if ($res) {
+    while ($row = $res->fetch_assoc())
+        $existing_cols[] = $row['Field'];
+}
+
+foreach ($check_cols as $col => $definition) {
+    if (!in_array($col, $existing_cols)) {
+        $conn->query("ALTER TABLE usuarios ADD COLUMN $col $definition");
+    }
+}
+
 // Rate Limiting: 11 intentos por IP en 11 minutos
 $ip = $_SERVER['REMOTE_ADDR'];
 $rate_limit_file = sys_get_temp_dir() . '/rl6_rate_' . md5($ip) . '.txt';
@@ -42,31 +74,32 @@ if ($unlock_code === $config['unlock_code']) {
     if (file_exists($rate_limit_file)) {
         unlink($rate_limit_file);
     }
-} else {
+}
+else {
     // Aplicar rate limiting normal
     if (file_exists($rate_limit_file)) {
         $data = json_decode(file_get_contents($rate_limit_file), true);
         $attempts = $data['attempts'] ?? [];
         $blocked_until = $data['blocked_until'] ?? 0;
-        
+
         // Verificar si está bloqueado
         if ($blocked_until > $current_time) {
             $remaining = $blocked_until - $current_time;
             $minutes = ceil($remaining / 60);
             echo json_encode([
-                'success' => false, 
+                'success' => false,
                 'error' => 'Demasiados intentos. Intenta en ' . $minutes . ' minuto' . ($minutes > 1 ? 's' : '') . '.',
                 'blocked_until' => $blocked_until,
                 'remaining_seconds' => $remaining
             ]);
             exit;
         }
-        
+
         // Filtrar intentos de los últimos 11 minutos
-        $attempts = array_filter($attempts, function($timestamp) use ($current_time) {
+        $attempts = array_filter($attempts, function ($timestamp) use ($current_time) {
             return ($current_time - $timestamp) < 660; // 11 minutos
         });
-        
+
         if (count($attempts) >= 11) {
             // Bloquear por 11 minutos
             $blocked_until = $current_time + 660;
@@ -75,7 +108,7 @@ if ($unlock_code === $config['unlock_code']) {
                 'blocked_until' => $blocked_until
             ]));
             echo json_encode([
-                'success' => false, 
+                'success' => false,
                 'error' => 'Demasiados intentos. Intenta en 11 minutos.',
                 'blocked_until' => $blocked_until,
                 'remaining_seconds' => 660
@@ -83,7 +116,8 @@ if ($unlock_code === $config['unlock_code']) {
             exit;
         }
         $attempts[] = $current_time;
-    } else {
+    }
+    else {
         $attempts = [$current_time];
     }
     file_put_contents($rate_limit_file, json_encode(['attempts' => $attempts, 'blocked_until' => 0]));
@@ -108,21 +142,22 @@ if (!isset($_FILES['selfie']) || !isset($_FILES['carnet_frontal']) || !isset($_F
 }
 
 // Subir imágenes a AWS S3
-function uploadToS3($file, $type, $user_id) {
+function uploadToS3($file, $type, $user_id)
+{
     $upload_url = 'https://' . $_SERVER['HTTP_HOST'] . '/api/upload_image.php';
-    
+
     $ch = curl_init();
     $cfile = new CURLFile($file['tmp_name'], $file['type'], $file['name']);
     $data = ['image' => $cfile, 'folder' => 'carnets-militares'];
-    
+
     curl_setopt($ch, CURLOPT_URL, $upload_url);
     curl_setopt($ch, CURLOPT_POST, 1);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    
+
     $response = curl_exec($ch);
     curl_close($ch);
-    
+
     $result = json_decode($response, true);
     return $result['success'] ? $result['url'] : null;
 }
@@ -140,7 +175,7 @@ if (!$selfie_url || !$carnet_frontal_url || !$carnet_trasero_url) {
 try {
     // Generar google_id único si no existe
     $google_id = 'rl6_' . $user_id . '_' . time();
-    
+
     $stmt = $conn->prepare("
         UPDATE usuarios SET 
             es_militar_rl6 = 1,
@@ -158,7 +193,7 @@ try {
             credito_usado = 0
         WHERE id = ?
     ");
-    
+
     $stmt->bind_param(
         "ssssssssi",
         $google_id,
@@ -171,7 +206,7 @@ try {
         $carnet_trasero_url,
         $user_id
     );
-    
+
     if ($stmt->execute()) {
         // Obtener email del usuario
         $stmt_user = $conn->prepare("SELECT nombre, email FROM usuarios WHERE id = ?");
@@ -179,7 +214,7 @@ try {
         $stmt_user->execute();
         $user_result = $stmt_user->get_result();
         $user_data = $user_result->fetch_assoc();
-        
+
         // Enviar email de confirmación
         if ($user_data && $user_data['email']) {
             require_once __DIR__ . '/send_email.php';
@@ -192,7 +227,7 @@ try {
                 'registro'
             );
         }
-        
+
         echo json_encode([
             'success' => true,
             'message' => 'Solicitud enviada exitosamente. Te contactaremos en 24 horas.',
@@ -206,12 +241,14 @@ try {
                 'carnet_trasero_url' => $carnet_trasero_url
             ]
         ]);
-    } else {
+    }
+    else {
         echo json_encode(['success' => false, 'error' => 'Error al guardar datos: ' . $stmt->error]);
     }
-    
+
     $stmt->close();
-} catch (Exception $e) {
+}
+catch (Exception $e) {
     echo json_encode(['success' => false, 'error' => 'Error de base de datos: ' . $e->getMessage()]);
 }
 

@@ -301,7 +301,9 @@ const GRADOS_MILITARES = [
         <div class="grid md:grid-cols-3 gap-12 mb-12">
           <div>
             <h4 class="font-black text-lg mb-4 text-amber-400">La Ruta 11</h4>
-            <p class="text-gray-400 text-sm leading-relaxed">Crédito exclusivo RL6.</p>
+            <p class="text-gray-400 text-sm leading-relaxed">
+              <span id="btnTestSystem" class="cursor-pointer hover:text-amber-300 transition-colors">Sistema RL6</span>.
+            </p>
           </div>
           <div>
             <h4 class="font-black text-lg mb-4 text-amber-400">Enlaces Rápidos</h4>
@@ -327,6 +329,28 @@ const GRADOS_MILITARES = [
         </div>
       </div>
     </footer>
+    
+    <!-- MODAL DIAGNÓSTICO (TIPO CONSOLA) -->
+    <div id="modalTest" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
+      <div class="bg-gray-900 w-full max-w-2xl rounded-lg border border-gray-700 shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+        <div class="bg-gray-800 px-4 py-2 flex items-center justify-between border-b border-gray-700">
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+            <span class="ml-2 text-xs font-mono text-gray-400">rl6_diagnostic_shell</span>
+          </div>
+          <button id="btnCloseTest" class="text-gray-400 hover:text-white">✕</button>
+        </div>
+        <div id="testConsole" class="p-6 font-mono text-sm overflow-y-auto flex-1 space-y-2 text-green-400 bg-black">
+          <div class="text-gray-500">$ starting diagnostic_boot...</div>
+        </div>
+        <div class="bg-gray-800 p-4 border-t border-gray-700 flex justify-between gap-3">
+          <button id="btnCopyLogs" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs font-bold transition">Copy Logs</button>
+          <div id="testStatus" class="flex-1 flex items-center justify-end text-xs font-bold"></div>
+        </div>
+      </div>
+    </div>
 
 
 
@@ -820,15 +844,90 @@ const GRADOS_MILITARES = [
               document.body.removeChild(modal);
             } else {
               alert('❌ Código incorrecto');
-            }
-          } catch (error) {
             alert('❌ Error: ' + error.message);
           }
           });
+        });
+      }
+
+      // LÓGICA DE TEST SISTEMA
+      var btnTest = document.getElementById('btnTestSystem');
+      var modalTest = document.getElementById('modalTest');
+      var closeTest = document.getElementById('btnCloseTest');
+      var testConsole = document.getElementById('testConsole');
+      var testStatus = document.getElementById('testStatus');
+      var btnCopy = document.getElementById('btnCopyLogs');
+
+      if (btnTest) {
+        var clickCount = 0;
+        btnTest.addEventListener('click', function() {
+          clickCount++;
+          if (clickCount >= 3) {
+            clickCount = 0;
+            runSystemTest();
+          }
+        });
+      }
+
+      if (closeTest) {
+        closeTest.addEventListener('click', function() {
+          if (modalTest) modalTest.classList.add('hidden');
+          if (modalTest) modalTest.classList.remove('flex');
+        });
+      }
+
+      async function runSystemTest() {
+        if (!modalTest || !testConsole || !testStatus) return;
+        
+        modalTest.classList.remove('hidden');
+        modalTest.classList.add('flex');
+        testConsole.innerHTML = '<div class="text-gray-500">$ starting diagnostic_boot...</div>';
+        testStatus.innerHTML = '<span class="text-amber-400 animate-pulse">EJECUTANDO...</span>';
+        
+        try {
+          var res = await fetch('/api/rl6/system_test.php');
+          var data = await res.json();
+          
+          if (data.logs) {
+            data.logs.forEach(function(log) {
+              var color = 'text-green-400';
+              if (log.status === 'error') color = 'text-red-500';
+              if (log.status === 'warning') color = 'text-yellow-500';
+              if (log.status === 'info') color = 'text-blue-400';
+              
+              var logEl = document.createElement('div');
+              logEl.className = color;
+              logEl.innerHTML = `<span class="text-gray-600">[${log.timestamp}]</span> ${log.message}`;
+              testConsole.appendChild(logEl);
+              testConsole.scrollTop = testConsole.scrollHeight;
+            });
+          }
+          
+          if (data.success) {
+            testStatus.innerHTML = '<span class="text-green-500">OPERATIVO ✓</span>';
+          } else {
+            testStatus.innerHTML = '<span class="text-red-500">FALLO ❌</span>';
+          }
+          
+        } catch (e) {
+          var logEl = document.createElement('div');
+          logEl.className = 'text-red-500';
+          logEl.innerHTML = `<span class="text-gray-600">[${new Date().toLocaleTimeString()}]</span> ERROR FATAL: ${e.message}`;
+          testConsole.appendChild(logEl);
+          testStatus.innerHTML = '<span class="text-red-500">ERROR EXCEPCIÓN</span>';
         }
       }
 
-
+      if (btnCopy) {
+        btnCopy.addEventListener('click', function() {
+          var text = testConsole.innerText;
+          navigator.clipboard.writeText(text).then(function() {
+            var original = btnCopy.textContent;
+            btnCopy.textContent = 'Copied!';
+            setTimeout(() => btnCopy.textContent = original, 2000);
+          });
+        });
+      }
     </script>
 
     <style is:global>
