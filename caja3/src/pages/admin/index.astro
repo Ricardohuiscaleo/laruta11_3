@@ -1877,25 +1877,21 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
                     <div>
                       <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px;">Grado Militar</label>
                       <select id="editGradoMilitar" style="width: 100%; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 14px;">
-                        <option value="">Seleccionar...</option>
-                        <optgroup label="Oficiales">
-                          <option value="General" ${user.grado_militar === 'General' ? 'selected' : ''}>General</option>
-                          <option value="Coronel" ${user.grado_militar === 'Coronel' ? 'selected' : ''}>Coronel</option>
-                          <option value="Teniente Coronel" ${user.grado_militar === 'Teniente Coronel' ? 'selected' : ''}>Teniente Coronel</option>
-                          <option value="Mayor" ${user.grado_militar === 'Mayor' ? 'selected' : ''}>Mayor</option>
-                          <option value="Capitán" ${user.grado_militar === 'Capitán' ? 'selected' : ''}>Capitán</option>
-                          <option value="Teniente" ${user.grado_militar === 'Teniente' ? 'selected' : ''}>Teniente</option>
-                          <option value="Subteniente" ${user.grado_militar === 'Subteniente' ? 'selected' : ''}>Subteniente</option>
-                        </optgroup>
-                        <optgroup label="Suboficiales">
-                          <option value="Suboficial Mayor" ${user.grado_militar === 'Suboficial Mayor' ? 'selected' : ''}>Suboficial Mayor</option>
-                          <option value="Suboficial" ${user.grado_militar === 'Suboficial' ? 'selected' : ''}>Suboficial</option>
-                          <option value="Sargento 1°" ${user.grado_militar === 'Sargento 1°' ? 'selected' : ''}>Sargento 1°</option>
-                          <option value="Sargento 2°" ${user.grado_militar === 'Sargento 2°' ? 'selected' : ''}>Sargento 2°</option>
-                          <option value="Cabo 1°" ${user.grado_militar === 'Cabo 1°' ? 'selected' : ''}>Cabo 1°</option>
-                          <option value="Cabo 2°" ${user.grado_militar === 'Cabo 2°' ? 'selected' : ''}>Cabo 2°</option>
-                          <option value="Soldado" ${user.grado_militar === 'Soldado' ? 'selected' : ''}>Soldado</option>
-                        </optgroup>
+                        <option value="">Selecciona tu grado</option>
+                        <option value="SLTP" ${user.grado_militar === 'SLTP' ? 'selected' : ''}>SLTP</option>
+                        <option value="Cabo 2°" ${user.grado_militar === 'Cabo 2°' ? 'selected' : ''}>Cabo 2°</option>
+                        <option value="Cabo 1°" ${user.grado_militar === 'Cabo 1°' ? 'selected' : ''}>Cabo 1°</option>
+                        <option value="Cabo" ${user.grado_militar === 'Cabo' ? 'selected' : ''}>Cabo</option>
+                        <option value="Sargento 2°" ${user.grado_militar === 'Sargento 2°' ? 'selected' : ''}>Sargento 2°</option>
+                        <option value="Sargento 1°" ${user.grado_militar === 'Sargento 1°' ? 'selected' : ''}>Sargento 1°</option>
+                        <option value="Suboficial" ${user.grado_militar === 'Suboficial' ? 'selected' : ''}>Suboficial</option>
+                        <option value="Suboficial Mayor" ${user.grado_militar === 'Suboficial Mayor' ? 'selected' : ''}>Suboficial Mayor</option>
+                        <option value="Subteniente" ${user.grado_militar === 'Subteniente' ? 'selected' : ''}>Subteniente</option>
+                        <option value="Teniente" ${user.grado_militar === 'Teniente' ? 'selected' : ''}>Teniente</option>
+                        <option value="Capitán" ${user.grado_militar === 'Capitán' ? 'selected' : ''}>Capitán</option>
+                        <option value="Mayor" ${user.grado_militar === 'Mayor' ? 'selected' : ''}>Mayor</option>
+                        <option value="Teniente Coronel" ${user.grado_militar === 'Teniente Coronel' ? 'selected' : ''}>Teniente Coronel</option>
+                        <option value="Coronel" ${user.grado_militar === 'Coronel' ? 'selected' : ''}>Coronel</option>
                       </select>
                     </div>
                     <div>

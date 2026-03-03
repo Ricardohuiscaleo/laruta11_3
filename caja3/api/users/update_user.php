@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
-    $pdo = getDBConnection();
+    $pdo = require __DIR__ . '/../db_connect.php';
 
     $user_id = $_POST['user_id'] ?? null;
     $name = $_POST['name'] ?? '';
