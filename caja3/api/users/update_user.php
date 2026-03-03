@@ -26,8 +26,11 @@ try {
         exit;
     }
 
-    // Asegurar que updated_at existe
-    $pdo->exec("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+    // Asegurar que updated_at existe (usando un método más compatible)
+    $check = $pdo->query("SHOW COLUMNS FROM usuarios LIKE 'updated_at'");
+    if ($check->rowCount() == 0) {
+        $pdo->exec("ALTER TABLE usuarios ADD COLUMN updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+    }
 
     // Actualizar información básica (usando nombres de columna reales: nombre, telefono, activo)
     $sql = "UPDATE usuarios SET 
