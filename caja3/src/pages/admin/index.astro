@@ -6753,24 +6753,30 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
           error: 'text-red-500'
         };
         const div = document.createElement('div');
-        div.className = colors[type];
+        div.className = colors[type] || 'text-white';
         div.innerHTML = `<span class="text-gray-600">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
         console.appendChild(div);
         console.scrollTop = console.scrollHeight;
       };
 
       try {
-        log('Verificando endpoint de actualización...');
-        const res = await fetch('/api/rl6/system_test.php');
+        log('Verificando API Principal...');
+        // Path relativo robusto
+        const res = await fetch('/api/system_test_rl6.php?t=' + Date.now());
+        
+        if (!res.ok) {
+           throw new Error(`Respuesta HTTP ${res.status}`);
+        }
+        
         const data = await res.json();
         
+        if (data.logs && Array.isArray(data.logs)) {
+          data.logs.forEach(l => log(l.message, l.status));
+        }
+
         if (data.success) {
-          log('Conexión a DB y esquema: OK', 'success');
-          log('Verificando integridad de campos RL6 en tabla usuarios...', 'info');
-          log('Campos detectados: rut, grado_militar, unidad_trabajo, es_militar_rl6', 'success');
           status.innerHTML = '<span class="text-green-500">SISTEMA OPERATIVO ✓</span>';
         } else {
-          log('Error en diagnóstico base: ' + (data.error || 'Desconocido'), 'error');
           status.innerHTML = '<span class="text-red-500">FALLO ❌</span>';
         }
       } catch (e) {
