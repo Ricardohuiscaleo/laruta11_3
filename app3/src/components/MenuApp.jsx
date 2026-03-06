@@ -3805,25 +3805,25 @@ export default function App() {
         {showClosingWarning && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[200] flex justify-center items-center p-4">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-              <div className="bg-gradient-to-br from-slate-700 to-slate-900 p-6 text-center">
-                <div className="text-5xl mb-2">🌙</div>
-                <h2 className="text-2xl font-black text-white">Cerramos pronto</h2>
+              <div className="bg-gradient-to-br from-pink-400 to-rose-500 p-6 text-center">
+                <div className="text-5xl mb-2">🌙✨</div>
+                <h2 className="text-2xl font-black text-white">Gracias por visitarnos</h2>
               </div>
               <div className="p-8 text-center">
-                <p className="text-gray-700 text-lg leading-relaxed mb-3">
-                  Hola{user?.nombre ? ` ${user.nombre.split(' ')[0]}` : ''} 💛
+                <p className="text-gray-700 text-lg font-semibold mb-3">
+                  {user?.nombre ? `¡${user.nombre.split(' ')[0]}, qué lindo que pasaras!` : '¡Qué lindo que pasaras!'} 💕
                 </p>
                 <p className="text-gray-600 leading-relaxed mb-4">
-                  Ya no estamos recibiendo pedidos por hoy. Nuestro horario de atención está llegando a su fin.
+                  Por hoy ya cerramos nuestra cocina con todo el amor. No alcanzamos a recibir más pedidos, pero te guardamos el mejor sabor para mañana. 🍔
                 </p>
-                <p className="text-gray-500 text-sm leading-relaxed mb-6 italic">
-                  Gracias por preferirnos, ¡te esperamos mañana con todo el sabor y cariño de siempre! ❤️
+                <p className="text-rose-500 font-medium text-sm mb-6">
+                  ¡Gracias por preferirnos, te queremos mucho! ❤️
                 </p>
                 <button
                   onClick={() => setShowClosingWarning(false)}
-                  className="w-full bg-gradient-to-r from-slate-600 to-slate-800 text-white font-bold py-4 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all"
+                  className="w-full bg-gradient-to-r from-pink-500 to-rose-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all"
                 >
-                  Entendido, ¡hasta mañana!
+                  ¡Hasta mañana! 👋
                 </button>
               </div>
             </div>
