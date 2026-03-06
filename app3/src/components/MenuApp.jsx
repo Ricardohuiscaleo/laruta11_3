@@ -809,6 +809,8 @@ export default function App() {
     today_schedule: null
   });
   const [isClosedPopupOpen, setIsClosedPopupOpen] = useState(false);
+  const [showClosingWarning, setShowClosingWarning] = useState(false);
+  const closingWarningShownRef = useRef(false);
   const [discountCode, setDiscountCode] = useState('');
   const [pizzaDiscount, setPizzaDiscount] = useState(0);
   const [isShareAppOpen, setIsShareAppOpen] = useState(false);
@@ -1616,6 +1618,25 @@ export default function App() {
       setIsClosedPopupOpen(true);
     }
   }, [statusData.is_active]);
+
+  // Aviso 15 minutos antes del cierre
+  useEffect(() => {
+    if (!statusData?.is_active || !statusData?.today_schedule?.horario_fin) return;
+    const check = () => {
+      const now = new Date();
+      const [h, m] = statusData.today_schedule.horario_fin.split(':').map(Number);
+      const closing = new Date(now);
+      closing.setHours(h, m, 0, 0);
+      const diff = (closing - now) / 60000;
+      if (diff > 0 && diff <= 15 && !closingWarningShownRef.current) {
+        closingWarningShownRef.current = true;
+        setShowClosingWarning(true);
+      }
+    };
+    check();
+    const interval = setInterval(check, 60000);
+    return () => clearInterval(interval);
+  }, [statusData?.is_active, statusData?.today_schedule?.horario_fin]);
 
   // Autocompletar campos del checkout cuando se abre el modal
   useEffect(() => {
@@ -3776,6 +3797,33 @@ export default function App() {
         {isCheckoutOpen && (
           <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
             <CheckoutApp onClose={() => setIsCheckoutOpen(false)} />
+          </div>
+        )}
+
+        {/* Closing Warning Popup - 15 min antes del cierre */}
+        {showClosingWarning && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex justify-center items-center p-4" onClick={() => setShowClosingWarning(false)}>
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-gradient-to-br from-amber-400 to-orange-500 p-6 text-center">
+                <div className="text-5xl mb-2">🌙</div>
+                <h2 className="text-2xl font-black text-white">¡Últimos pedidos!</h2>
+              </div>
+              <div className="p-8 text-center">
+                <p className="text-gray-700 text-lg leading-relaxed mb-2">
+                  Hola{user?.nombre ? ` ${user.nombre.split(' ')[0]}` : ''} 💛 Estamos a punto de cerrar.
+                </p>
+                <p className="text-gray-600 leading-relaxed mb-6">
+                  En menos de <span className="font-bold text-orange-600">15 minutos</span> ya no recibiremos más pedidos por hoy. Si quieres pedir algo, ¡es ahora o nunca! 🍔
+                </p>
+                <p className="text-sm text-gray-400 mb-6 italic">Gracias por preferirnos, ¡te esperamos mañana con todo el sabor! ❤️</p>
+                <button
+                  onClick={() => setShowClosingWarning(false)}
+                  className="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all"
+                >
+                  ¡Voy a pedir ahora!
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
