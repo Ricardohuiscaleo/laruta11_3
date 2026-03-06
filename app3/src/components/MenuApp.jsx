@@ -879,7 +879,8 @@ export default function App() {
 
   const handleCheckout = () => {
     const isClosed = !statusData.is_active;
-    if (isClosed) {
+    if (isClosed || showClosingWarning) {
+      setShowClosingWarning(true);
       return;
     }
     localStorage.setItem('ruta11_cart', JSON.stringify(cart));
@@ -3802,25 +3803,27 @@ export default function App() {
 
         {/* Closing Warning Popup - 15 min antes del cierre */}
         {showClosingWarning && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex justify-center items-center p-4" onClick={() => setShowClosingWarning(false)}>
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
-              <div className="bg-gradient-to-br from-amber-400 to-orange-500 p-6 text-center">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[200] flex justify-center items-center p-4">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+              <div className="bg-gradient-to-br from-slate-700 to-slate-900 p-6 text-center">
                 <div className="text-5xl mb-2">🌙</div>
-                <h2 className="text-2xl font-black text-white">¡Últimos pedidos!</h2>
+                <h2 className="text-2xl font-black text-white">Cerramos pronto</h2>
               </div>
               <div className="p-8 text-center">
-                <p className="text-gray-700 text-lg leading-relaxed mb-2">
-                  Hola{user?.nombre ? ` ${user.nombre.split(' ')[0]}` : ''} 💛 Estamos a punto de cerrar.
+                <p className="text-gray-700 text-lg leading-relaxed mb-3">
+                  Hola{user?.nombre ? ` ${user.nombre.split(' ')[0]}` : ''} 💛
                 </p>
-                <p className="text-gray-600 leading-relaxed mb-6">
-                  En menos de <span className="font-bold text-orange-600">15 minutos</span> ya no recibiremos más pedidos por hoy. Si quieres pedir algo, ¡es ahora o nunca! 🍔
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  Ya no estamos recibiendo pedidos por hoy. Nuestro horario de atención está llegando a su fin.
                 </p>
-                <p className="text-sm text-gray-400 mb-6 italic">Gracias por preferirnos, ¡te esperamos mañana con todo el sabor! ❤️</p>
+                <p className="text-gray-500 text-sm leading-relaxed mb-6 italic">
+                  Gracias por preferirnos, ¡te esperamos mañana con todo el sabor y cariño de siempre! ❤️
+                </p>
                 <button
                   onClick={() => setShowClosingWarning(false)}
-                  className="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all"
+                  className="w-full bg-gradient-to-r from-slate-600 to-slate-800 text-white font-bold py-4 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all"
                 >
-                  ¡Voy a pedir ahora!
+                  Entendido, ¡hasta mañana!
                 </button>
               </div>
             </div>
