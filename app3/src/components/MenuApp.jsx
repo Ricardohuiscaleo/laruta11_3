@@ -3814,7 +3814,7 @@ export default function App() {
                   {user?.nombre ? `¡${user.nombre.split(' ')[0]}, qué lindo que pasaras!` : '¡Qué lindo que pasaras!'} 💕
                 </p>
                 <p className="text-gray-600 leading-relaxed mb-4">
-                  Por hoy ya cerramos nuestro Foodtruck con todo el amor. No alcanzamos a recibir más pedidos, pero te guardamos el mejor sabor para mañana. 🍔
+                  Por hoy ya cerramos nuestro Foodtruck. No alcanzamos a recibir más pedidos, pero te guardamos el mejor sabor para mañana. 🍔
                 </p>
                 <p className="text-orange-500 font-medium text-sm mb-6">
                   ¡Gracias por preferirnos, te queremos mucho! ❤️
