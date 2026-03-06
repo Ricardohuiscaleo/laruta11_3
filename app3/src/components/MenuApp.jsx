@@ -3805,7 +3805,7 @@ export default function App() {
         {showClosingWarning && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[200] flex justify-center items-center p-4">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-              <div className="bg-gradient-to-br from-pink-400 to-rose-500 p-6 text-center">
+              <div className="bg-gradient-to-br from-orange-500 to-red-600 p-6 text-center">
                 <div className="text-5xl mb-2">🌙✨</div>
                 <h2 className="text-2xl font-black text-white">Gracias por visitarnos</h2>
               </div>
@@ -3814,14 +3814,14 @@ export default function App() {
                   {user?.nombre ? `¡${user.nombre.split(' ')[0]}, qué lindo que pasaras!` : '¡Qué lindo que pasaras!'} 💕
                 </p>
                 <p className="text-gray-600 leading-relaxed mb-4">
-                  Por hoy ya cerramos nuestra cocina con todo el amor. No alcanzamos a recibir más pedidos, pero te guardamos el mejor sabor para mañana. 🍔
+                  Por hoy ya cerramos nuestro Foodtruck con todo el amor. No alcanzamos a recibir más pedidos, pero te guardamos el mejor sabor para mañana. 🍔
                 </p>
-                <p className="text-rose-500 font-medium text-sm mb-6">
+                <p className="text-orange-500 font-medium text-sm mb-6">
                   ¡Gracias por preferirnos, te queremos mucho! ❤️
                 </p>
                 <button
                   onClick={() => setShowClosingWarning(false)}
-                  className="w-full bg-gradient-to-r from-pink-500 to-rose-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all"
+                  className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all"
                 >
                   ¡Hasta mañana! 👋
                 </button>
