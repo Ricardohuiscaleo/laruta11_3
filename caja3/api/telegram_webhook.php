@@ -179,6 +179,49 @@ switch (strtolower(trim($text))) {
         break;
 
     default:
+        // Manejar approve/reject de ediciones de producto
+        if (preg_match('/^(approve|reject)_edit_(\d+)$/', strtolower(trim($text)), $m)) {
+            $action     = $m[1];
+            $request_id = (int)$m[2];
+
+            $req = $pdo->prepare("SELECT * FROM product_edit_requests WHERE id = ? AND status = 'pending'");
+            $req->execute([$request_id]);
+            $edit = $req->fetch(PDO::FETCH_ASSOC);
+
+            if (!$edit) {
+                sendTelegramMessage($token, $chatId, "⚠️ Solicitud #{$request_id} no encontrada o ya procesada.");
+                break;
+            }
+
+            if ($action === 'approve') {
+                $pdo->prepare("UPDATE products SET name = ?, description = ? WHERE id = ?")
+                    ->execute([$edit['new_name'], $edit['new_description'], $edit['product_id']]);
+                $pdo->prepare("UPDATE product_edit_requests SET status = 'approved' WHERE id = ?")
+                    ->execute([$request_id]);
+                $reply = "✅ *Cambio aprobado* y aplicado en el menú.\n\nProducto ID: {$edit['product_id']}\nNombre: `{$edit['new_name']}`";
+            } else {
+                $pdo->prepare("UPDATE product_edit_requests SET status = 'rejected' WHERE id = ?")
+                    ->execute([$request_id]);
+                $reply = "❌ *Cambio rechazado.*\n\nEl producto '{$edit['old_name']}' no fue modificado.";
+            }
+
+            // Editar el mensaje original para quitar los botones
+            if (!empty($edit['telegram_message_id'])) {
+                $url = "https://api.telegram.org/bot{$token}/editMessageReplyMarkup";
+                $ch = curl_init($url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, [
+                    'chat_id' => $chatId,
+                    'message_id' => $edit['telegram_message_id'],
+                    'reply_markup' => json_encode(['inline_keyboard' => []])
+                ]);
+                curl_exec($ch);
+            }
+
+            sendTelegramMessage($token, $chatId, $reply, $mainButtons);
+            break;
+        }
+
         if (!$isCallback) {
             sendTelegramMessage($token, $chatId, "❓ No reconozco ese comando. Usa los botones de abajo:", $mainButtons);
         }

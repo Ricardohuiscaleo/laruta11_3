@@ -5,6 +5,8 @@ export default function ProductEditModal({ productId, onClose, onSave }) {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
+  const [pendingRequest, setPendingRequest] = useState(false); // nombre/desc esperando aprobación
+  const [requestSent, setRequestSent] = useState(false);
 
   useEffect(() => {
     if (productId) {
@@ -17,7 +19,11 @@ export default function ProductEditModal({ productId, onClose, onSave }) {
     try {
       const res = await fetch(`/api/get_productos.php?id=${productId}`);
       const data = await res.json();
-      setProduct(Array.isArray(data) ? data[0] : data);
+      setProduct({
+        ...(Array.isArray(data) ? data[0] : data),
+        _original_name: (Array.isArray(data) ? data[0] : data).name,
+        _original_description: (Array.isArray(data) ? data[0] : data).description
+      });
       setLoading(false);
     } catch (error) {
       console.error('Error:', error);
@@ -47,22 +53,49 @@ export default function ProductEditModal({ productId, onClose, onSave }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Detectar si nombre o descripción cambiaron
+    const nameChanged = product.name !== product._original_name;
+    const descChanged = product.description !== product._original_description;
+
+    if (nameChanged || descChanged) {
+      // Enviar solicitud de aprobación vía Telegram
+      setPendingRequest(true);
+      try {
+        const cashier = JSON.parse(localStorage.getItem('cajaUser') || '{}').full_name || 'Cajera';
+        const res = await fetch('/api/products/request_product_edit.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            product_id: product.id,
+            name: product.name,
+            description: product.description,
+            cashier
+          })
+        });
+        const result = await res.json();
+        if (result.success) {
+          setRequestSent(true);
+        } else {
+          alert('Error al enviar solicitud: ' + result.error);
+        }
+      } catch (err) {
+        alert('Error al enviar solicitud');
+      } finally {
+        setPendingRequest(false);
+      }
+      return; // No guardar directo, esperar aprobación
+    }
+
+    // Sin cambios en nombre/desc: guardar directo (precio, stock, etc.)
     const formData = new FormData();
     Object.keys(product).forEach(key => {
-      formData.append(key, product[key]);
+      if (!key.startsWith('_original')) formData.append(key, product[key]);
     });
-
     try {
-      const res = await fetch('/api/update_producto.php', {
-        method: 'POST',
-        body: formData
-      });
+      const res = await fetch('/api/update_producto.php', { method: 'POST', body: formData });
       const result = await res.json();
-      if (result.success) {
-        onSave();
-      } else {
-        alert('Error: ' + result.error);
-      }
+      if (result.success) { onSave(); } else { alert('Error: ' + result.error); }
     } catch (error) {
       alert('Error al guardar');
     }
@@ -80,6 +113,24 @@ export default function ProductEditModal({ productId, onClose, onSave }) {
 
   if (!product) return null;
 
+  // Pantalla de solicitud enviada
+  if (requestSent) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }}>
+        <div style={{ background: 'white', borderRadius: '12px', padding: '40px', maxWidth: '400px', width: '100%', textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📨</div>
+          <h3 style={{ margin: '0 0 12px', fontSize: '18px', fontWeight: 700 }}>Solicitud enviada</h3>
+          <p style={{ color: '#666', marginBottom: '24px', lineHeight: 1.5 }}>
+            El cambio fue enviado al administrador por Telegram para su aprobación. Se aplicará al menú una vez aprobado.
+          </p>
+          <button onClick={onClose} style={{ padding: '10px 24px', background: '#0a0a0a', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
+            Entendido
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const categoryNames = { 1: 'La Ruta 11', 2: 'Sandwiches', 3: 'Hamburguesas', 4: 'Completos', 5: 'Snacks', 6: 'Personalizar', 7: 'Extras', 8: 'Combos' };
 
   return (
@@ -93,7 +144,7 @@ export default function ProductEditModal({ productId, onClose, onSave }) {
         <form onSubmit={handleSubmit} style={{ padding: '24px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '14px' }}>Nombre *</label>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '14px' }}>Nombre * <span style={{ color: '#f59e0b', fontSize: '11px', fontWeight: 400 }}>(requiere aprobación)</span></label>
               <input
                 type="text"
                 value={product.name || ''}
@@ -114,7 +165,7 @@ export default function ProductEditModal({ productId, onClose, onSave }) {
           </div>
 
           <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '14px' }}>Descripción</label>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '14px' }}>Descripción <span style={{ color: '#f59e0b', fontSize: '11px', fontWeight: 400 }}>(requiere aprobación)</span></label>
             <textarea
               value={product.description || ''}
               onChange={e => setProduct({ ...product, description: e.target.value })}
@@ -207,8 +258,8 @@ export default function ProductEditModal({ productId, onClose, onSave }) {
             <button type="button" onClick={onClose} style={{ padding: '10px 20px', border: '1px solid #e5e5e5', background: 'white', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>
               Cancelar
             </button>
-            <button type="submit" style={{ padding: '10px 20px', background: '#0a0a0a', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>
-              Guardar Cambios
+            <button type="submit" disabled={pendingRequest} style={{ padding: '10px 20px', background: pendingRequest ? '#999' : '#0a0a0a', color: 'white', border: 'none', borderRadius: '6px', cursor: pendingRequest ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: 500 }}>
+              {pendingRequest ? 'Enviando...' : 'Guardar Cambios'}
             </button>
           </div>
         </form>
