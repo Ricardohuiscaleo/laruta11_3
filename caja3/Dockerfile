@@ -1,4 +1,4 @@
-FROM php:8.5-apache
+FROM php:8.4-apache
 
 # Instalar Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
