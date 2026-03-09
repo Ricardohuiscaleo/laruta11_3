@@ -736,6 +736,11 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
   const [showImageModal, setShowImageModal] = useState(false);
   const [isActive, setIsActive] = useState(product.active !== 0);
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
+  const [editingInfo, setEditingInfo] = useState(false);
+  const [editName, setEditName] = useState(product.name);
+  const [editDesc, setEditDesc] = useState(product.description || '');
+  const [editSending, setEditSending] = useState(false);
+  const [editSent, setEditSent] = useState(false);
 
   useEffect(() => {
     if (window.Analytics) {
@@ -913,15 +918,49 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
 
             {/* Product Info */}
             <div className="p-5 overflow-y-auto" style={{ maxHeight: '50vh' }}>
-              <h3 className="text-xl font-black text-gray-900 leading-tight mb-2">{product.name}</h3>
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-xl font-black text-gray-900 leading-tight">{product.name}</h3>
+                {!editSent && (
+                  <button onClick={() => setEditingInfo(v => !v)} className="ml-2 mt-1 text-gray-400 hover:text-orange-500 flex-shrink-0" title="Sugerir edición">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                )}
+              </div>
 
-              {product.description && (
-                <p className="text-sm text-gray-600 leading-relaxed mb-4">
-                  {product.description}
-                </p>
-              )}
-
-              {/* Removed {product.grams}g as requested */}
+              {editSent ? (
+                <p className="text-sm text-green-600 font-medium mb-4">✅ Solicitud enviada al administrador.</p>
+              ) : editingInfo ? (
+                <div className="mb-4 space-y-2">
+                  <input value={editName} onChange={e => setEditName(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-semibold" placeholder="Nombre" />
+                  <textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={3}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none" placeholder="Descripción" />
+                  <div className="flex gap-2">
+                    <button onClick={() => setEditingInfo(false)}
+                      className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-600">Cancelar</button>
+                    <button disabled={editSending}
+                      onClick={async () => {
+                        setEditSending(true);
+                        try {
+                          const cashier = JSON.parse(localStorage.getItem('cajaUser') || '{}').full_name || 'Cajera';
+                          const res = await fetch('/api/products/request_product_edit.php', {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ product_id: product.id, name: editName, description: editDesc, cashier })
+                          });
+                          const data = await res.json();
+                          if (data.success) { setEditSent(true); setEditingInfo(false); }
+                          else alert('Error: ' + data.error);
+                        } catch { alert('Error al enviar'); }
+                        finally { setEditSending(false); }
+                      }}
+                      className="flex-1 py-2 rounded-lg bg-orange-500 text-white text-sm font-bold disabled:opacity-50">
+                      {editSending ? 'Enviando...' : 'Enviar para aprobación'}
+                    </button>
+                  </div>
+                </div>
+              ) : product.description ? (
+                <p className="text-sm text-gray-600 leading-relaxed mb-4">{product.description}</p>
+              ) : null}
 
               {/* Price + Cart Controls */}
               <div className="flex items-center justify-between pt-3 border-t border-gray-100">

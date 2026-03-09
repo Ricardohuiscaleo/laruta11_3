@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
-  X, ZoomIn, ChevronDown, ChevronUp, ChefHat
+  X, ZoomIn, ChevronDown, ChevronUp, ChefHat, Pencil
 } from 'lucide-react';
 
 const ComboItem = ({ item, isExtra = false, onAddToCart, onRemoveFromCart, getProductQuantity }) => {
@@ -133,6 +133,11 @@ const ProductDetailModal = ({
   const [newReviewName, setNewReviewName] = useState('');
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [expandedComboSections, setExpandedComboSections] = useState(new Set(['personalizar']));
+  const [editingInfo, setEditingInfo] = useState(false);
+  const [editName, setEditName] = useState(product.name);
+  const [editDesc, setEditDesc] = useState(product.description || '');
+  const [editSending, setEditSending] = useState(false);
+  const [editSent, setEditSent] = useState(false);
 
   const [tempCustomizations, setTempCustomizations] = useState(() => {
     if (product.isEditing && product.customizations) {
@@ -226,13 +231,66 @@ const ProductDetailModal = ({
           <div className="p-6">
             {/* Descripción del Producto */}
             <div className="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
-              <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
-                <ChefHat size={18} className="text-orange-500" />
-                Descripción
-              </h3>
-              <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
-                {product.description || 'Sin descripción disponible.'}
-              </p>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                  <ChefHat size={18} className="text-orange-500" />
+                  Descripción
+                </h3>
+                {!editSent && (
+                  <button onClick={() => setEditingInfo(v => !v)} className="text-gray-400 hover:text-orange-500 transition-colors" title="Sugerir edición">
+                    <Pencil size={15} />
+                  </button>
+                )}
+              </div>
+
+              {editSent ? (
+                <p className="text-sm text-green-600 font-medium">✅ Solicitud enviada al administrador para aprobación.</p>
+              ) : editingInfo ? (
+                <div className="space-y-2">
+                  <input
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-semibold"
+                    placeholder="Nombre"
+                  />
+                  <textarea
+                    value={editDesc}
+                    onChange={e => setEditDesc(e.target.value)}
+                    rows={3}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none"
+                    placeholder="Descripción"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setEditingInfo(false)}
+                      className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-600"
+                    >Cancelar</button>
+                    <button
+                      disabled={editSending}
+                      onClick={async () => {
+                        setEditSending(true);
+                        try {
+                          const cashier = JSON.parse(localStorage.getItem('cajaUser') || '{}').full_name || 'Cajera';
+                          const res = await fetch('/api/products/request_product_edit.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ product_id: product.id, name: editName, description: editDesc, cashier })
+                          });
+                          const data = await res.json();
+                          if (data.success) { setEditSent(true); setEditingInfo(false); }
+                          else alert('Error: ' + data.error);
+                        } catch { alert('Error al enviar'); }
+                        finally { setEditSending(false); }
+                      }}
+                      className="flex-1 py-2 rounded-lg bg-orange-500 text-white text-sm font-bold disabled:opacity-50"
+                    >{editSending ? 'Enviando...' : 'Enviar para aprobación'}</button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+                  {product.description || 'Sin descripción disponible.'}
+                </p>
+              )}
             </div>
 
             {showComboSection && (
