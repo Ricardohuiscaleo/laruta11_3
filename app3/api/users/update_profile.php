@@ -2,7 +2,9 @@
 session_start();
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['user'])) {
+// Aceptar user_id desde sesión o desde POST (app usa localStorage)
+$user_id_post = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
+if (!isset($_SESSION['user']) && !$user_id_post) {
     echo json_encode(['success' => false, 'error' => 'No autenticado']);
     exit();
 }
@@ -28,7 +30,7 @@ if (!$user_conn) {
 }
 
 mysqli_set_charset($user_conn, 'utf8');
-$user_id = $_SESSION['user']['id'];
+$user_id = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : $user_id_post;
 
 $telefono = mysqli_real_escape_string($user_conn, $_POST['telefono'] ?? '');
 $instagram = mysqli_real_escape_string($user_conn, $_POST['instagram'] ?? '');

@@ -210,6 +210,7 @@ const ProfileModalModern = ({
     
     try {
       const saveFormData = new FormData();
+      saveFormData.append('user_id', user.id);
       saveFormData.append('telefono', formData.telefono);
       saveFormData.append('instagram', formData.instagram);
       if (formData.fecha_nacimiento && formData.fecha_nacimiento !== '0000-00-00') {
