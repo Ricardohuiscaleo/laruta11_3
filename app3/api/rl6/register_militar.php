@@ -237,22 +237,22 @@ try {
         if ($tg_token && $tg_chat_id) {
                 $nombre_tg = $user_data['nombre'] ?? 'Sin nombre';
                 $email_tg  = $user_data['email'] ?? '';
-                $msg  = "🎖️ NUEVA SOLICITUD RL6\n";
+                $msg  = "🎖️ NUEVA SOLICITUD DE CRÉDITO RL6\n";
                 $msg .= "──────────\n";
                 $msg .= "👤 Nombre: " . $nombre_tg . "\n";
                 $msg .= "📧 Email: " . $email_tg . "\n";
-                $msg .= "🪪 RUT: " . $rut . "\n";
+                $msg .= "🪦 RUT: " . $rut . "\n";
                 $msg .= "🎗️ Grado: " . $grado_militar . "\n";
                 $msg .= "🏢 Unidad: " . $unidad_trabajo . "\n";
                 $msg .= "🏠 Domicilio: " . $domicilio_particular . "\n";
                 $msg .= "──────────\n";
-                $msg .= "Aprobar credito?";
+                $msg .= "Aprobar crédito?";
 
                 $buttons = [
                     [
-                        ['text' => 'Ver Selfie',        'url' => $selfie_url],
-                        ['text' => 'Ver Carnet Frontal','url' => $carnet_frontal_url],
-                        ['text' => 'Ver Carnet Trasero','url' => $carnet_trasero_url],
+                        ['text' => '🤳 Selfie',   'url' => $selfie_url],
+                        ['text' => '📷 Carnet A', 'url' => $carnet_frontal_url],
+                        ['text' => '📷 Carnet B', 'url' => $carnet_trasero_url],
                     ],
                     [
                         ['text' => 'Aprobar $50.000', 'callback_data' => "approve_rl6_{$user_id}_50000"],
@@ -260,7 +260,7 @@ try {
                     ],
                     [
                         ['text' => 'Aprobar $20.000', 'callback_data' => "approve_rl6_{$user_id}_20000"],
-                        ['text' => 'Rechazar',        'callback_data' => "reject_rl6_{$user_id}"],
+                        ['text' => '❌ Rechazar',    'callback_data' => "reject_rl6_{$user_id}"],
                     ],
                 ];
 
