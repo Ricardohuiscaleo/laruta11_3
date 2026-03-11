@@ -821,7 +821,7 @@ const GRADOS_MILITARES = [
         }
       }
 
-      // Autocomplete dirección con Nominatim
+      // Autocomplete dirección con Google Places
       var inputDireccion = document.getElementById('inputDireccion') as HTMLInputElement | null;
       var dropdownDireccion = document.getElementById('dropdownDireccion') as HTMLElement | null;
       var direccionTimer: ReturnType<typeof setTimeout> | null = null;
@@ -829,7 +829,7 @@ const GRADOS_MILITARES = [
       function posicionarDropdown() {
         if (!inputDireccion || !dropdownDireccion) return;
         var rect = inputDireccion.getBoundingClientRect();
-        dropdownDireccion.style.top = (rect.bottom + window.scrollY) + 'px';
+        dropdownDireccion.style.top = (rect.bottom + 4) + 'px';
         dropdownDireccion.style.left = rect.left + 'px';
         dropdownDireccion.style.width = rect.width + 'px';
       }
@@ -838,24 +838,29 @@ const GRADOS_MILITARES = [
         inputDireccion.addEventListener('input', function() {
           var q = inputDireccion!.value.trim();
           if (direccionTimer) clearTimeout(direccionTimer);
-          if (q.length < 4) { dropdownDireccion!.style.display = 'none'; return; }
+          if (q.length < 3) { dropdownDireccion!.style.display = 'none'; return; }
           direccionTimer = setTimeout(async function() {
             try {
-              var res = await fetch('https://nominatim.openstreetmap.org/search?format=json&countrycodes=cl&limit=5&q=' + encodeURIComponent(q), {
-                headers: { 'Accept-Language': 'es' }
+              var res = await fetch('/api/location/autocomplete_proxy.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ input: q, country: 'cl' })
               });
-              var items: any[] = await res.json();
+              var data: any = await res.json();
+              var items: any[] = data.predictions || [];
               if (!items.length) { dropdownDireccion!.style.display = 'none'; return; }
               dropdownDireccion!.innerHTML = '';
               items.forEach(function(item: any) {
                 var opt = document.createElement('div');
-                opt.textContent = item.display_name;
-                opt.style.cssText = 'padding:10px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f3f4f6;';
-                opt.addEventListener('mouseenter', function() { opt.style.background = '#fef3c7'; });
+                var main = item.structured_formatting?.main_text || item.description;
+                var secondary = item.structured_formatting?.secondary_text || '';
+                opt.innerHTML = `<div style="font-size:13px;font-weight:500;color:#111">${main}</div>${secondary ? `<div style="font-size:11px;color:#6b7280">${secondary}</div>` : ''}`;
+                opt.style.cssText = 'padding:10px 12px;cursor:pointer;border-bottom:1px solid #f3f4f6;';
+                opt.addEventListener('mouseenter', function() { opt.style.background = '#fff7ed'; });
                 opt.addEventListener('mouseleave', function() { opt.style.background = ''; });
                 opt.addEventListener('mousedown', function(e) {
                   e.preventDefault();
-                  inputDireccion!.value = item.display_name;
+                  inputDireccion!.value = item.description;
                   dropdownDireccion!.style.display = 'none';
                 });
                 dropdownDireccion!.appendChild(opt);
@@ -863,7 +868,7 @@ const GRADOS_MILITARES = [
               posicionarDropdown();
               dropdownDireccion!.style.display = 'block';
             } catch(e) { dropdownDireccion!.style.display = 'none'; }
-          }, 400);
+          }, 300);
         });
 
         inputDireccion.addEventListener('blur', function() {

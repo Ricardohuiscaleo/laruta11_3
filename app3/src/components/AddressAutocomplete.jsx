@@ -5,8 +5,22 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState({});
   const debounceTimer = useRef(null);
   const inputRef = useRef(null);
+  const wrapperRef = useRef(null);
+
+  const updateDropdownPosition = () => {
+    if (!inputRef.current) return;
+    const rect = inputRef.current.getBoundingClientRect();
+    setDropdownStyle({
+      position: 'fixed',
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: rect.width,
+      zIndex: 99999,
+    });
+  };
 
   const fetchSuggestions = async (input) => {
     if (!input || input.length < 3) {
@@ -16,7 +30,6 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
 
     setIsLoading(true);
     try {
-      // Usar proxy PHP para evitar CORS
       const proxyResponse = await fetch('/api/location/autocomplete_proxy.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -28,6 +41,7 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
       if (data.predictions) {
         setSuggestions(data.predictions);
         setShowSuggestions(true);
+        updateDropdownPosition();
       }
     } catch (error) {
       console.error('Error fetching suggestions:', error);
@@ -40,14 +54,8 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
     const newValue = e.target.value;
     onChange(newValue);
 
-    // Debounce para no hacer requests en cada tecla
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
-
-    debounceTimer.current = setTimeout(() => {
-      fetchSuggestions(newValue);
-    }, 300);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => fetchSuggestions(newValue), 300);
   };
 
   const handleSelectSuggestion = (suggestion) => {
@@ -56,26 +64,30 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
     setShowSuggestions(false);
   };
 
-  // Cerrar sugerencias al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (inputRef.current && !inputRef.current.contains(e.target)) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
         setShowSuggestions(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', updateDropdownPosition, true);
+    window.addEventListener('resize', updateDropdownPosition);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', updateDropdownPosition, true);
+      window.removeEventListener('resize', updateDropdownPosition);
+    };
   }, []);
 
   return (
-    <div className="relative" ref={inputRef}>
-      <div className="relative">
+    <div ref={wrapperRef}>
+      <div className="relative" ref={inputRef}>
         <input
           type="text"
           value={value}
           onChange={handleInputChange}
-          onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+          onFocus={() => { if (suggestions.length > 0) { setShowSuggestions(true); updateDropdownPosition(); } }}
           className={className || "w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"}
           placeholder={placeholder}
           autoComplete="off"
@@ -88,14 +100,13 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
         )}
       </div>
 
-      {/* Sugerencias */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+        <div style={{ ...dropdownStyle, background: 'white', border: '1px solid #d1d5db', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', maxHeight: '200px', overflowY: 'auto' }}>
           {suggestions.map((suggestion) => (
             <button
               key={suggestion.place_id}
               type="button"
-              onClick={() => handleSelectSuggestion(suggestion)}
+              onMouseDown={(e) => { e.preventDefault(); handleSelectSuggestion(suggestion); }}
               className="w-full px-4 py-3 text-left hover:bg-orange-50 transition-colors border-b border-gray-100 last:border-b-0"
             >
               <div className="flex items-start gap-2">

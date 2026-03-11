@@ -66,7 +66,7 @@ const ProfileModalModern = ({
   const [formData, setFormData] = useState({
     telefono: '',
     instagram: '',
-    fechaNacimiento: '',
+    fecha_nacimiento: '',
     genero: '',
     direccion: ''
   });
@@ -94,7 +94,7 @@ const ProfileModalModern = ({
       setFormData({
         telefono: user.telefono || '',
         instagram: user.instagram || '',
-        fechaNacimiento: user.fecha_nacimiento || '',
+        fecha_nacimiento: (user.fecha_nacimiento && user.fecha_nacimiento !== '0000-00-00') ? user.fecha_nacimiento : '',
         genero: user.genero || '',
         direccion: user.direccion || user.direccion_actual || ''
       });
@@ -212,10 +212,8 @@ const ProfileModalModern = ({
       const saveFormData = new FormData();
       saveFormData.append('telefono', formData.telefono);
       saveFormData.append('instagram', formData.instagram);
-      // Filtrar fecha_nacimiento inválida
-      const fechaNac = formData.fecha_nacimiento || formData.fechaNacimiento;
-      if (fechaNac && fechaNac !== '0000-00-00') {
-        saveFormData.append('fecha_nacimiento', fechaNac);
+      if (formData.fecha_nacimiento && formData.fecha_nacimiento !== '0000-00-00') {
+        saveFormData.append('fecha_nacimiento', formData.fecha_nacimiento);
       }
       saveFormData.append('genero', formData.genero);
       saveFormData.append('direccion', formData.direccion);
@@ -389,7 +387,7 @@ const ProfileModalModern = ({
                 </h3>
                 <input 
                   type="date"
-                  value={formData.fecha_nacimiento && formData.fecha_nacimiento !== '0000-00-00' ? formData.fecha_nacimiento : ''}
+                  value={formData.fecha_nacimiento || ''}
                   onChange={(e) => handleInputChange('fecha_nacimiento', e.target.value)}
                   className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
