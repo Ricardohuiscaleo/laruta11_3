@@ -1,129 +1,135 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { MapPin } from 'lucide-react';
 
 const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu dirección...", className = "" }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [dropdownStyle, setDropdownStyle] = useState({});
+  const [rect, setRect] = useState(null);
   const debounceTimer = useRef(null);
   const inputRef = useRef(null);
   const wrapperRef = useRef(null);
 
-  const updateDropdownPosition = () => {
-    if (!inputRef.current) return;
-    const rect = inputRef.current.getBoundingClientRect();
-    setDropdownStyle({
-      position: 'fixed',
-      top: rect.bottom + 4,
-      left: rect.left,
-      width: rect.width,
-      zIndex: 99999,
-    });
+  const updateRect = () => {
+    if (inputRef.current) setRect(inputRef.current.getBoundingClientRect());
   };
 
   const fetchSuggestions = async (input) => {
-    if (!input || input.length < 3) {
-      setSuggestions([]);
-      return;
-    }
-
+    if (!input || input.length < 3) { setSuggestions([]); return; }
     setIsLoading(true);
     try {
-      const proxyResponse = await fetch('/api/location/autocomplete_proxy.php', {
+      const res = await fetch('/api/location/autocomplete_proxy.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ input, country: 'cl' })
       });
-
-      const data = await proxyResponse.json();
-      
-      if (data.predictions) {
+      const data = await res.json();
+      if (data.predictions?.length) {
         setSuggestions(data.predictions);
         setShowSuggestions(true);
-        updateDropdownPosition();
+        updateRect();
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
       }
-    } catch (error) {
-      console.error('Error fetching suggestions:', error);
+    } catch (e) {
+      console.error('Error fetching suggestions:', e);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleInputChange = (e) => {
-    const newValue = e.target.value;
-    onChange(newValue);
-
+    onChange(e.target.value);
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => fetchSuggestions(newValue), 300);
+    debounceTimer.current = setTimeout(() => fetchSuggestions(e.target.value), 300);
   };
 
-  const handleSelectSuggestion = (suggestion) => {
+  const handleSelect = (suggestion) => {
     onChange(suggestion.description);
     setSuggestions([]);
     setShowSuggestions(false);
   };
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
+    const onClickOutside = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
         setShowSuggestions(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('scroll', updateDropdownPosition, true);
-    window.addEventListener('resize', updateDropdownPosition);
+    document.addEventListener('mousedown', onClickOutside);
+    window.addEventListener('scroll', updateRect, true);
+    window.addEventListener('resize', updateRect);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('scroll', updateDropdownPosition, true);
-      window.removeEventListener('resize', updateDropdownPosition);
+      document.removeEventListener('mousedown', onClickOutside);
+      window.removeEventListener('scroll', updateRect, true);
+      window.removeEventListener('resize', updateRect);
     };
   }, []);
 
+  const dropdown = showSuggestions && suggestions.length > 0 && rect ? createPortal(
+    <div style={{
+      position: 'fixed',
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: rect.width,
+      zIndex: 999999,
+      background: 'white',
+      border: '1px solid #e5e7eb',
+      borderRadius: '10px',
+      boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+      maxHeight: '220px',
+      overflowY: 'auto',
+    }}>
+      {suggestions.map((s) => (
+        <button
+          key={s.place_id}
+          type="button"
+          onMouseDown={(e) => { e.preventDefault(); handleSelect(s); }}
+          style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', borderBottom: '1px solid #f3f4f6', cursor: 'pointer' }}
+          onMouseEnter={e => e.currentTarget.style.background = '#fff7ed'}
+          onMouseLeave={e => e.currentTarget.style.background = 'none'}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+            <MapPin size={14} style={{ color: '#f97316', marginTop: '2px', flexShrink: 0 }} />
+            <div style={{ minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {s.structured_formatting?.main_text || s.description}
+              </p>
+              {s.structured_formatting?.secondary_text && (
+                <p style={{ margin: 0, fontSize: '11px', color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {s.structured_formatting.secondary_text}
+                </p>
+              )}
+            </div>
+          </div>
+        </button>
+      ))}
+    </div>,
+    document.body
+  ) : null;
+
   return (
     <div ref={wrapperRef}>
-      <div className="relative" ref={inputRef}>
+      <div style={{ position: 'relative' }} ref={inputRef}>
         <input
           type="text"
           value={value}
           onChange={handleInputChange}
-          onFocus={() => { if (suggestions.length > 0) { setShowSuggestions(true); updateDropdownPosition(); } }}
+          onFocus={() => { if (suggestions.length > 0) { setShowSuggestions(true); updateRect(); } }}
           className={className || "w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"}
           placeholder={placeholder}
           autoComplete="off"
         />
-        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+        <MapPin style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} size={16} />
         {isLoading && (
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500"></div>
+          <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)' }}>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500" />
           </div>
         )}
       </div>
-
-      {showSuggestions && suggestions.length > 0 && (
-        <div style={{ ...dropdownStyle, background: 'white', border: '1px solid #d1d5db', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', maxHeight: '200px', overflowY: 'auto' }}>
-          {suggestions.map((suggestion) => (
-            <button
-              key={suggestion.place_id}
-              type="button"
-              onMouseDown={(e) => { e.preventDefault(); handleSelectSuggestion(suggestion); }}
-              className="w-full px-4 py-3 text-left hover:bg-orange-50 transition-colors border-b border-gray-100 last:border-b-0"
-            >
-              <div className="flex items-start gap-2">
-                <MapPin size={16} className="text-orange-500 mt-1 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {suggestion.structured_formatting?.main_text || suggestion.description}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {suggestion.structured_formatting?.secondary_text || ''}
-                  </p>
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
+      {dropdown}
     </div>
   );
 };
