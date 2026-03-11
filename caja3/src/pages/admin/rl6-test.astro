@@ -110,7 +110,7 @@
             body.append('domicilio', document.getElementById('domicilio').value);
 
             try {
-                const res  = await fetch('/api/rl6/test_send_rl6.php', { method: 'POST', body });
+                const res  = await fetch('https://app.laruta11.cl/api/rl6/test_send_rl6.php', { method: 'POST', body });
                 const data = await res.json();
 
                 if (data.success) {
@@ -143,7 +143,7 @@
             try {
                 const body = new FormData();
                 body.append('user_id', lastUserId);
-                const res  = await fetch('/api/rl6/delete_test_rl6.php', { method: 'POST', body });
+                const res  = await fetch('https://app.laruta11.cl/api/rl6/delete_test_rl6.php', { method: 'POST', body });
                 const data = await res.json();
 
                 if (data.success) {

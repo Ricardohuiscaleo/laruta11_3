@@ -481,14 +481,14 @@ const GRADOS_MILITARES = [
           
           // Pre-llenar datos del usuario logueado
           if (usuarioLogueado) {
-            var inputNombre = document.querySelector('input[name="nombre"]');
-            var inputEmail = document.querySelector('input[name="email"]');
-            var inputPassword = document.querySelector('input[name="password"]');
-            var inputTelefono = document.querySelector('input[name="telefono"]');
+            var inputNombre = document.querySelector<HTMLInputElement>('input[name="nombre"]');
+            var inputEmail = document.querySelector<HTMLInputElement>('input[name="email"]');
+            var inputPassword = document.querySelector<HTMLInputElement>('input[name="password"]');
+            var inputTelefono = document.querySelector<HTMLInputElement>('input[name="telefono"]');
             
-            if (inputNombre && inputNombre.tagName === 'INPUT') inputNombre['value'] = usuarioLogueado['nombre'] || '';
-            if (inputEmail && inputEmail.tagName === 'INPUT') inputEmail['value'] = usuarioLogueado['email'] || '';
-            if (inputTelefono && inputTelefono.tagName === 'INPUT') inputTelefono['value'] = usuarioLogueado['telefono'] || '';
+            if (inputNombre) inputNombre.value = usuarioLogueado['nombre'] || '';
+            if (inputEmail) inputEmail.value = usuarioLogueado['email'] || '';
+            if (inputTelefono) inputTelefono.value = usuarioLogueado['telefono'] || '';
             
             // Si es usuario Google, ocultar campo password y remover required
             if (usuarioLogueado['google_id'] && inputPassword) {
@@ -586,23 +586,21 @@ const GRADOS_MILITARES = [
       if (inputRut) {
         // Formatear RUT mientras se escribe
         inputRut.addEventListener('input', function(e) {
-          if (!e.target) return;
-          var target = e.target as HTMLInputElement;
-          var valor = target['value'].replace(/[^0-9kK]/g, '');
+          var target = (e.target as HTMLInputElement);
+          if (!target) return;
+          var valor = target.value.replace(/[^0-9kK]/g, '');
           var formateado = '';
           
           if (valor.length > 1) {
             var cuerpo = valor.slice(0, -1);
             var dv = valor.slice(-1).toUpperCase();
-            
-            // Agregar puntos cada 3 dígitos
             cuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
             formateado = cuerpo + '-' + dv;
           } else {
             formateado = valor;
           }
           
-          target['value'] = formateado;
+          target.value = formateado;
         });
         
         inputRut.addEventListener('blur', async function() {
@@ -878,18 +876,20 @@ const GRADOS_MILITARES = [
 
       async function runSystemTest() {
         if (!modalTest || !testConsole || !testStatus) return;
+        const console_ = testConsole as HTMLElement;
+        const status_  = testStatus  as HTMLElement;
         
         modalTest.classList.remove('hidden');
         modalTest.classList.add('flex');
-        testConsole.innerHTML = '<div class="text-gray-500">$ starting diagnostic_boot...</div>';
-        testStatus.innerHTML = '<span class="text-amber-400 animate-pulse">EJECUTANDO...</span>';
+        console_.innerHTML = '<div class="text-gray-500">$ starting diagnostic_boot...</div>';
+        status_.innerHTML = '<span class="text-amber-400 animate-pulse">EJECUTANDO...</span>';
         
         try {
           var res = await fetch('/api/rl6/system_test.php');
           var data = await res.json();
           
           if (data.logs) {
-            data.logs.forEach(function(log) {
+            data.logs.forEach(function(log: any) {
               var color = 'text-green-400';
               if (log.status === 'error') color = 'text-red-500';
               if (log.status === 'warning') color = 'text-yellow-500';
@@ -898,33 +898,32 @@ const GRADOS_MILITARES = [
               var logEl = document.createElement('div');
               logEl.className = color;
               logEl.innerHTML = `<span class="text-gray-600">[${log.timestamp}]</span> ${log.message}`;
-              testConsole.appendChild(logEl);
-              testConsole.scrollTop = testConsole.scrollHeight;
+              console_.appendChild(logEl);
+              console_.scrollTop = console_.scrollHeight;
             });
           }
           
-          if (data.success) {
-            testStatus.innerHTML = '<span class="text-green-500">OPERATIVO ✓</span>';
-          } else {
-            testStatus.innerHTML = '<span class="text-red-500">FALLO ❌</span>';
-          }
+          status_.innerHTML = data.success
+            ? '<span class="text-green-500">OPERATIVO ✓</span>'
+            : '<span class="text-red-500">FALLO ❌</span>';
           
-        } catch (e) {
+        } catch (e: any) {
           var logEl = document.createElement('div');
           logEl.className = 'text-red-500';
           logEl.innerHTML = `<span class="text-gray-600">[${new Date().toLocaleTimeString()}]</span> ERROR FATAL: ${e.message}`;
-          testConsole.appendChild(logEl);
-          testStatus.innerHTML = '<span class="text-red-500">ERROR EXCEPCIÓN</span>';
+          console_.appendChild(logEl);
+          status_.innerHTML = '<span class="text-red-500">ERROR EXCEPCIÓN</span>';
         }
       }
 
       if (btnCopy) {
-        btnCopy.addEventListener('click', function() {
-          var text = testConsole.innerText;
-          navigator.clipboard.writeText(text).then(function() {
-            var original = btnCopy.textContent;
-            btnCopy.textContent = 'Copied!';
-            setTimeout(() => btnCopy.textContent = original, 2000);
+        const copy_ = btnCopy as HTMLButtonElement;
+        copy_.addEventListener('click', function() {
+          const console__ = testConsole as HTMLElement;
+          navigator.clipboard.writeText(console__.innerText).then(function() {
+            var original = copy_.textContent;
+            copy_.textContent = 'Copied!';
+            setTimeout(() => { copy_.textContent = original; }, 2000);
           });
         });
       }
