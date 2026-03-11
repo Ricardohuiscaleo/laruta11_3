@@ -144,11 +144,11 @@ if (!isset($_FILES['selfie']) || !isset($_FILES['carnet_frontal']) || !isset($_F
 }
 
 // Subir imágenes a AWS S3
-function uploadToS3($file, $type, $user_id)
+function uploadToS3($file, $type, $user_id, $config)
 {
     try {
         require_once __DIR__ . '/../S3Manager.php';
-        $s3 = new S3Manager();
+        $s3 = new S3Manager($config);
         $fileName = 'carnets-militares/' . $user_id . '_' . $type . '_' . time() . '_' . basename($file['name']);
         return $s3->uploadFile($file, $fileName);
     } catch (Exception $e) {
@@ -156,9 +156,9 @@ function uploadToS3($file, $type, $user_id)
     }
 }
 
-$selfie_url = uploadToS3($_FILES['selfie'], 'selfie', $user_id);
-$carnet_frontal_url = uploadToS3($_FILES['carnet_frontal'], 'frontal', $user_id);
-$carnet_trasero_url = uploadToS3($_FILES['carnet_trasero'], 'trasero', $user_id);
+$selfie_url = uploadToS3($_FILES['selfie'], 'selfie', $user_id, $config);
+$carnet_frontal_url = uploadToS3($_FILES['carnet_frontal'], 'frontal', $user_id, $config);
+$carnet_trasero_url = uploadToS3($_FILES['carnet_trasero'], 'trasero', $user_id, $config);
 
 if (!$selfie_url || !$carnet_frontal_url || !$carnet_trasero_url) {
     echo json_encode(['success' => false, 'error' => 'Error al subir imágenes']);
