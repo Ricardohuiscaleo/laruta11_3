@@ -73,6 +73,89 @@ if ($chatId != $authorizedChatId) {
     exit;
 }
 
+// Enviar email RL6 usando Gmail API de caja3
+function sendRL6Email($to, $nombre, $rut, $grado, $unidad, $tipo, $extra = null) {
+    require_once __DIR__ . '/gmail/get_token_db.php';
+    $token_result = getValidGmailToken();
+    if (isset($token_result['error'])) {
+        error_log('sendRL6Email: ' . $token_result['error']);
+        return false;
+    }
+    $token = $token_result['access_token'];
+
+    if ($tipo === 'aprobado') {
+        $limite  = $extra ?? 50000;
+        $meses   = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        $dias    = max(0, 21 - intval(date('j')));
+        $mes     = $meses[date('n') - 1];
+        $subject = '🎉 Crédito RL6 Aprobado - La Ruta 11';
+        $color   = '#10b981';
+        $title   = '🎉 ¡Crédito RL6 Aprobado!';
+        $intro   = "Tu solicitud de crédito RL6 ha sido <strong style='color:#10b981;'>APROBADA</strong>.";
+        $body    = "
+        <div style='background:#d1fae5;padding:20px;border-radius:8px;margin:20px 0;text-align:center;'>
+            <p style='font-size:28px;font-weight:bold;color:#10b981;margin:0;'>$" . number_format($limite, 0, ',', '.') . "</p>
+            <p style='color:#065f46;margin:4px 0 0;'>Disponible de inmediato</p>
+        </div>
+        <ol>
+            <li>Abre la app y ve a tu Perfil → Crédito</li>
+            <li>En el checkout elige \"Pagar con Crédito RL6\"</li>
+            <li>Paga el 21 de $mes, te quedan $dias días 😊</li>
+        </ol>";
+    } elseif ($tipo === 'rechazado') {
+        $subject = '❌ Solicitud RL6 No Aprobada - La Ruta 11';
+        $color   = '#ef4444';
+        $title   = 'Solicitud RL6 No Aprobada';
+        $intro   = 'Lamentamos informarte que tu solicitud no pudo ser aprobada en esta ocasión.';
+        $body    = "<ul><li>Contáctanos para más información</li><li>Verifica tus datos y vuelve a intentar</li></ul>";
+    } else {
+        return false;
+    }
+
+    $html = "<!DOCTYPE html><html><body style='font-family:sans-serif;background:#f9fafb;padding:5px;'>
+<table width='100%'><tr><td align='center'>
+<table width='600' style='background:#fff;border-radius:16px;border:2px solid $color;'>
+<tr><td style='background:$color;padding:32px 20px;text-align:center;'>
+    <h1 style='color:#fff;margin:0;font-size:24px;'>$title</h1>
+</td></tr>
+<tr><td style='padding:24px 20px;'>
+    <p>Hola <strong>" . htmlspecialchars($nombre) . "</strong>,</p>
+    <p>$intro</p>
+    $body
+    <p style='margin-top:24px;border-top:1px solid #e5e7eb;padding-top:16px;text-align:center;color:#6b7280;font-size:13px;'>
+        La Ruta 11 - Sistema RL6<br>
+        <a href='https://wa.me/56936227422' style='color:$color;'>WhatsApp: +56 9 3622 7422</a>
+    </p>
+</td></tr>
+</table>
+</td></tr></table>
+</body></html>";
+
+    $raw = rtrim(strtr(base64_encode(
+        "From: La Ruta 11 <saboresdelaruta11@gmail.com>\r\n" .
+        "To: $to\r\n" .
+        "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n" .
+        "MIME-Version: 1.0\r\n" .
+        "Content-Type: text/html; charset=UTF-8\r\n\r\n" .
+        $html
+    ), '+/', '-_'), '=');
+
+    $ch = curl_init('https://gmail.googleapis.com/gmail/v1/users/me/messages/send');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $token, 'Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['raw' => $raw]));
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200) {
+        error_log('sendRL6Email webhook: HTTP ' . $httpCode . ' - ' . $response);
+        return false;
+    }
+    return true;
+}
+
 // Definir Botones
 $mainButtons = [
     [['text' => '📊 Reporte del Turno', 'callback_data' => '/reporte']],
@@ -199,25 +282,14 @@ switch (strtolower(trim($text))) {
                 $pdo->prepare("UPDATE usuarios SET credito_aprobado = 1, limite_credito = ?, fecha_aprobacion_rl6 = NOW() WHERE id = ?")
                     ->execute([$limite, $user_id]);
 
-                // Email de aprobacion
-                $send_email_path = __DIR__ . '/../../app3/api/rl6/send_email.php';
-                if (file_exists($send_email_path)) {
-                    require_once $send_email_path;
-                    sendRL6Email($usuario['email'], $usuario['nombre'], $usuario['rut'], $usuario['grado_militar'], $usuario['unidad_trabajo'], 'aprobado', $limite);
-                }
-
-                $reply = "Credito aprobado para {$usuario['nombre']} (ID: {$user_id})\nLimite: $" . number_format($limite, 0, ',', '.') . "\nEmail enviado a: {$usuario['email']}";
+                $emailOk = sendRL6Email($usuario['email'], $usuario['nombre'], $usuario['rut'], $usuario['grado_militar'], $usuario['unidad_trabajo'], 'aprobado', $limite);
+                $reply = "Credito aprobado para {$usuario['nombre']} (ID: {$user_id})\nLimite: $" . number_format($limite, 0, ',', '.') . "\n" . ($emailOk ? "✅ Email enviado a: {$usuario['email']}" : "⚠️ Email FALLÓ para: {$usuario['email']}");
             } else {
                 $pdo->prepare("UPDATE usuarios SET credito_aprobado = 0, limite_credito = 0 WHERE id = ?")
                     ->execute([$user_id]);
 
-                $send_email_path = __DIR__ . '/../../app3/api/rl6/send_email.php';
-                if (file_exists($send_email_path)) {
-                    require_once $send_email_path;
-                    sendRL6Email($usuario['email'], $usuario['nombre'], $usuario['rut'], $usuario['grado_militar'], $usuario['unidad_trabajo'], 'rechazado');
-                }
-
-                $reply = "Solicitud rechazada para {$usuario['nombre']} (ID: {$user_id})\nEmail enviado a: {$usuario['email']}";
+                $emailOk = sendRL6Email($usuario['email'], $usuario['nombre'], $usuario['rut'], $usuario['grado_militar'], $usuario['unidad_trabajo'], 'rechazado');
+                $reply = "Solicitud rechazada para {$usuario['nombre']} (ID: {$user_id})\n" . ($emailOk ? "✅ Email enviado a: {$usuario['email']}" : "⚠️ Email FALLÓ para: {$usuario['email']}");
             }
 
             // Quitar botones del mensaje original

@@ -56,6 +56,22 @@ const ProfileModalModern = ({
   // Verificar si es militar RL6 aprobado
   const isMilitarRL6 = (user?.es_militar_rl6 == 1 || user?.es_militar_rl6 === '1') && 
                        (user?.credito_aprobado == 1 || user?.credito_aprobado === '1');
+
+  // SSE: escuchar cambios de crédito RL6 en tiempo real
+  useEffect(() => {
+    if (!isOpen || !user?.id) return;
+    const es = new EventSource(`/api/auth/credit_status_sse.php?user_id=${user.id}`);
+    es.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      const updated = { ...user, ...data };
+      setUser(updated);
+      try {
+        const stored = JSON.parse(localStorage.getItem('laruta11_user') || '{}');
+        localStorage.setItem('laruta11_user', JSON.stringify({ ...stored, ...data }));
+      } catch {}
+    };
+    return () => es.close();
+  }, [isOpen, user?.id]);
   
   const [passport, setPassport] = useState({
     hamburguesas: false,
