@@ -146,22 +146,14 @@ if (!isset($_FILES['selfie']) || !isset($_FILES['carnet_frontal']) || !isset($_F
 // Subir imágenes a AWS S3
 function uploadToS3($file, $type, $user_id)
 {
-    $upload_url = 'https://' . $_SERVER['HTTP_HOST'] . '/api/upload_image.php';
-
-    $ch = curl_init();
-    $cfile = new CURLFile($file['tmp_name'], $file['type'], $file['name']);
-    $data = ['image' => $cfile, 'folder' => 'carnets-militares'];
-
-    curl_setopt($ch, CURLOPT_URL, $upload_url);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    $result = json_decode($response, true);
-    return $result['success'] ? $result['url'] : null;
+    try {
+        require_once __DIR__ . '/../S3Manager.php';
+        $s3 = new S3Manager();
+        $fileName = 'carnets-militares/' . $user_id . '_' . $type . '_' . time() . '_' . basename($file['name']);
+        return $s3->uploadFile($file, $fileName);
+    } catch (Exception $e) {
+        return null;
+    }
 }
 
 $selfie_url = uploadToS3($_FILES['selfie'], 'selfie', $user_id);
