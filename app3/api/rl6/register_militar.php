@@ -246,13 +246,14 @@ try {
                 $msg .= "🏢 Unidad: " . $unidad_trabajo . "\n";
                 $msg .= "🏠 Domicilio: " . $domicilio_particular . "\n";
                 $msg .= "──────────\n";
-                $msg .= "Selfie: " . $selfie_url . "\n";
-                $msg .= "Carnet frontal: " . $carnet_frontal_url . "\n";
-                $msg .= "Carnet trasero: " . $carnet_trasero_url . "\n";
-                $msg .= "──────────\n";
                 $msg .= "Aprobar credito?";
 
                 $buttons = [
+                    [
+                        ['text' => 'Ver Selfie',        'url' => $selfie_url],
+                        ['text' => 'Ver Carnet Frontal','url' => $carnet_frontal_url],
+                        ['text' => 'Ver Carnet Trasero','url' => $carnet_trasero_url],
+                    ],
                     [
                         ['text' => 'Aprobar $50.000', 'callback_data' => "approve_rl6_{$user_id}_50000"],
                         ['text' => 'Aprobar $30.000', 'callback_data' => "approve_rl6_{$user_id}_30000"],
@@ -276,13 +277,12 @@ try {
                 $tg_result = curl_exec($ch);
                 $tg_error  = curl_error($ch);
                 curl_close($ch);
-                $tg_debug = ['token_set' => !empty($tg_token), 'chat_id_set' => !empty($tg_chat_id), 'response' => $tg_result, 'curl_error' => $tg_error];
+
             }
 
         echo json_encode([
             'success' => true,
             'message' => 'Solicitud enviada exitosamente. Te contactaremos en 24 horas.',
-            'tg_debug' => $tg_debug ?? null,
             'data' => [
                 'user_id' => $user_id,
                 'rut' => $rut,
