@@ -256,9 +256,10 @@ const GRADOS_MILITARES = [
             <!-- PASO 3: Domicilio + Carnets -->
             <div id="paso3" class="paso-form hidden">
               <h3 class="text-lg font-bold mb-4 text-slate-900">Información Particular</h3>
-              <div>
+              <div style="position: relative;">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Dirección Completa *</label>
-                <textarea name="domicilio_particular" placeholder="Calle, número, ciudad, región" required rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"></textarea>
+                <input type="text" id="inputDireccion" name="domicilio_particular" placeholder="Calle, número, ciudad" required autocomplete="off" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent" />
+                <div id="dropdownDireccion" style="display:none; position:fixed; background:white; border:1px solid #d1d5db; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:9999; max-height:200px; overflow-y:auto;"></div>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Carnet Frontal *</label>
@@ -577,7 +578,7 @@ const GRADOS_MILITARES = [
         
         inputRut.addEventListener('blur', async function() {
           if (!inputRut) return;
-          var rut = inputRut['value'].replace(/[^0-9kK]/g, '');
+          var rut = (inputRut as HTMLInputElement).value.replace(/[^0-9kK]/g, '');
           if (!rut || rut.length < 8) return;
           
           try {
@@ -589,7 +590,7 @@ const GRADOS_MILITARES = [
               body: formData
             });
             
-            var result = await response.json();
+            var result: any = await response.json();
             
             if (result.exists) {
               rutValido = false;
@@ -601,8 +602,8 @@ const GRADOS_MILITARES = [
                 rutMessage.textContent = '⚠️ Este RUT ya está registrado (solicitud ' + statusMsg + '). Contacta a soporte: +56 9 3622 7422';
               }
               if (inputRut) {
-                inputRut.classList.add('border-red-500');
-                inputRut.classList.remove('border-gray-300');
+                (inputRut as HTMLInputElement).classList.add('border-red-500');
+                (inputRut as HTMLInputElement).classList.remove('border-gray-300');
               }
             } else {
               rutValido = true;
@@ -612,8 +613,8 @@ const GRADOS_MILITARES = [
                 rutMessage.textContent = '✓ RUT ok.';
               }
               if (inputRut) {
-                inputRut.classList.add('border-green-500');
-                inputRut.classList.remove('border-gray-300', 'border-red-500');
+                (inputRut as HTMLInputElement).classList.add('border-green-500');
+                (inputRut as HTMLInputElement).classList.remove('border-gray-300', 'border-red-500');
               }
             }
           } catch (error) {
@@ -787,18 +788,18 @@ const GRADOS_MILITARES = [
         var btnUnlock = document.getElementById('btnUnlock');
         if (btnUnlock) {
           btnUnlock.addEventListener('click', async function() {
-            var unlockInput = document.getElementById('unlockCode');
+            var unlockInput = document.getElementById('unlockCode') as HTMLInputElement | null;
             var code = unlockInput ? unlockInput.value : '';
             if (!code) {
               alert('⚠️ Ingresa un código');
               return;
             }
             
-            if (!usuarioLogueado || !usuarioLogueado.id) return;
+            if (!usuarioLogueado || !(usuarioLogueado as any).id) return;
             
             var formData = new FormData();
             formData.append('unlock_code', code);
-            formData.append('user_id', usuarioLogueado.id);
+            formData.append('user_id', (usuarioLogueado as any).id);
             
             try {
               var response = await fetch('/api/rl6/register_militar.php', {
@@ -818,6 +819,59 @@ const GRADOS_MILITARES = [
             }
           });
         }
+      }
+
+      // Autocomplete dirección con Nominatim
+      var inputDireccion = document.getElementById('inputDireccion') as HTMLInputElement | null;
+      var dropdownDireccion = document.getElementById('dropdownDireccion') as HTMLElement | null;
+      var direccionTimer: ReturnType<typeof setTimeout> | null = null;
+
+      function posicionarDropdown() {
+        if (!inputDireccion || !dropdownDireccion) return;
+        var rect = inputDireccion.getBoundingClientRect();
+        dropdownDireccion.style.top = (rect.bottom + window.scrollY) + 'px';
+        dropdownDireccion.style.left = rect.left + 'px';
+        dropdownDireccion.style.width = rect.width + 'px';
+      }
+
+      if (inputDireccion && dropdownDireccion) {
+        inputDireccion.addEventListener('input', function() {
+          var q = inputDireccion!.value.trim();
+          if (direccionTimer) clearTimeout(direccionTimer);
+          if (q.length < 4) { dropdownDireccion!.style.display = 'none'; return; }
+          direccionTimer = setTimeout(async function() {
+            try {
+              var res = await fetch('https://nominatim.openstreetmap.org/search?format=json&countrycodes=cl&limit=5&q=' + encodeURIComponent(q), {
+                headers: { 'Accept-Language': 'es' }
+              });
+              var items: any[] = await res.json();
+              if (!items.length) { dropdownDireccion!.style.display = 'none'; return; }
+              dropdownDireccion!.innerHTML = '';
+              items.forEach(function(item: any) {
+                var opt = document.createElement('div');
+                opt.textContent = item.display_name;
+                opt.style.cssText = 'padding:10px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f3f4f6;';
+                opt.addEventListener('mouseenter', function() { opt.style.background = '#fef3c7'; });
+                opt.addEventListener('mouseleave', function() { opt.style.background = ''; });
+                opt.addEventListener('mousedown', function(e) {
+                  e.preventDefault();
+                  inputDireccion!.value = item.display_name;
+                  dropdownDireccion!.style.display = 'none';
+                });
+                dropdownDireccion!.appendChild(opt);
+              });
+              posicionarDropdown();
+              dropdownDireccion!.style.display = 'block';
+            } catch(e) { dropdownDireccion!.style.display = 'none'; }
+          }, 400);
+        });
+
+        inputDireccion.addEventListener('blur', function() {
+          setTimeout(function() { if (dropdownDireccion) dropdownDireccion.style.display = 'none'; }, 150);
+        });
+
+        window.addEventListener('scroll', posicionarDropdown, true);
+        window.addEventListener('resize', posicionarDropdown);
       }
 
       // LÓGICA DE TEST SISTEMA
