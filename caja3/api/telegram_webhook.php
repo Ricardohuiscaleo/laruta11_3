@@ -203,7 +203,7 @@ switch (strtolower(trim($text))) {
                 $send_email_path = __DIR__ . '/../../app3/api/rl6/send_email.php';
                 if (file_exists($send_email_path)) {
                     require_once $send_email_path;
-                    @sendRL6Email($usuario['email'], $usuario['nombre'], $usuario['rut'], $usuario['grado_militar'], $usuario['unidad_trabajo'], 'aprobado', $limite);
+                    sendRL6Email($usuario['email'], $usuario['nombre'], $usuario['rut'], $usuario['grado_militar'], $usuario['unidad_trabajo'], 'aprobado', $limite);
                 }
 
                 $reply = "Credito aprobado para {$usuario['nombre']} (ID: {$user_id})\nLimite: $" . number_format($limite, 0, ',', '.') . "\nEmail enviado a: {$usuario['email']}";
@@ -214,7 +214,7 @@ switch (strtolower(trim($text))) {
                 $send_email_path = __DIR__ . '/../../app3/api/rl6/send_email.php';
                 if (file_exists($send_email_path)) {
                     require_once $send_email_path;
-                    @sendRL6Email($usuario['email'], $usuario['nombre'], $usuario['rut'], $usuario['grado_militar'], $usuario['unidad_trabajo'], 'rechazado');
+                    sendRL6Email($usuario['email'], $usuario['nombre'], $usuario['rut'], $usuario['grado_militar'], $usuario['unidad_trabajo'], 'rechazado');
                 }
 
                 $reply = "Solicitud rechazada para {$usuario['nombre']} (ID: {$user_id})\nEmail enviado a: {$usuario['email']}";
