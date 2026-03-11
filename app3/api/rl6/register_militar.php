@@ -144,14 +144,15 @@ if (!isset($_FILES['selfie']) || !isset($_FILES['carnet_frontal']) || !isset($_F
 }
 
 // Subir imágenes a AWS S3
+require_once __DIR__ . '/../S3Manager.php';
 function uploadToS3($file, $type, $user_id, $config)
 {
     try {
-        require_once __DIR__ . '/../S3Manager.php';
         $s3 = new S3Manager($config);
         $fileName = 'carnets-militares/' . $user_id . '_' . $type . '_' . time() . '_' . basename($file['name']);
         return $s3->uploadFile($file, $fileName);
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
+        error_log('uploadToS3 error: ' . $e->getMessage());
         return null;
     }
 }

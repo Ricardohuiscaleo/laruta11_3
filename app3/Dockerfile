@@ -10,7 +10,7 @@ RUN npm run build
 FROM php:8.2-apache
 
 # Instalar extensiones PHP
-RUN docker-php-ext-install mysqli pdo pdo_mysql
+RUN docker-php-ext-install mysqli pdo pdo_mysql && docker-php-ext-configure gd && docker-php-ext-install gd
 
 # Configurar Apache
 RUN a2enmod rewrite headers && \
