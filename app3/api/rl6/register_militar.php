@@ -1,4 +1,6 @@
 <?php
+ini_set('display_errors', 0);
+error_reporting(0);
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
@@ -69,7 +71,7 @@ $current_time = time();
 $unlock_code = $_POST['unlock_code'] ?? null;
 
 // Verificar código de desbloqueo
-if ($unlock_code === $config['unlock_code']) {
+if ($unlock_code && isset($config['unlock_code']) && $unlock_code === $config['unlock_code']) {
     // Eliminar archivo de rate limit si el código es correcto
     if (file_exists($rate_limit_file)) {
         unlink($rate_limit_file);
@@ -237,10 +239,9 @@ try {
         foreach ($config_paths_tg as $p) {
             if (file_exists($p)) { $config_tg = require $p; break; }
         }
-        if ($config_tg) {
-            $tg_token   = $config_tg['telegram_token'] ?? getenv('TELEGRAM_TOKEN');
-            $tg_chat_id = $config_tg['telegram_chat_id'] ?? getenv('TELEGRAM_CHAT_ID');
-            if ($tg_token && $tg_chat_id) {
+        $tg_token   = ($config_tg['telegram_token'] ?? null) ?: getenv('TELEGRAM_TOKEN');
+        $tg_chat_id = ($config_tg['telegram_chat_id'] ?? null) ?: getenv('TELEGRAM_CHAT_ID');
+        if ($tg_token && $tg_chat_id) {
                 $esc = fn($t) => str_replace(['_','*','[','`'], ['\\_','\\*','\\[','\\`'], $t);
                 $nombre_tg = $user_data['nombre'] ?? 'Sin nombre';
                 $email_tg  = $user_data['email'] ?? '';
@@ -281,7 +282,6 @@ try {
                 curl_exec($ch);
                 curl_close($ch);
             }
-        }
 
         echo json_encode([
             'success' => true,
