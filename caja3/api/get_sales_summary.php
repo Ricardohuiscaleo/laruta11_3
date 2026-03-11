@@ -44,14 +44,14 @@ try {
             $firstDay = new DateTime("$year-$month-01", new DateTimeZone('America/Santiago'));
             $lastDay = new DateTime($firstDay->format('Y-m-t'), new DateTimeZone('America/Santiago'));
             
-            $start_date_chile = $firstDay->format('Y-m-d') . ' 17:30:00';
+            $start_date_chile = $firstDay->format('Y-m-d') . ' 17:00:00';
             $end_date_chile = $lastDay->format('Y-m-d') . ' 23:59:59';
         } else {
             // Mes actual hasta hoy
             $now = new DateTime('now', new DateTimeZone('America/Santiago'));
             $firstDay = new DateTime($now->format('Y-m-01'), new DateTimeZone('America/Santiago'));
             
-            $start_date_chile = $firstDay->format('Y-m-d') . ' 17:30:00';
+            $start_date_chile = $firstDay->format('Y-m-d') . ' 17:00:00';
             $end_date_chile = $now->format('Y-m-d H:i:s');
         }
         
@@ -82,7 +82,7 @@ try {
         
         // Turno: desde 17:30 Chile hasta 04:00 del día siguiente (todos los días)
         // Convertir hora Chile a UTC para la query (Chile = UTC-3)
-        $start_date_chile = $shiftStartDate . ' 17:30:00';
+        $start_date_chile = $shiftStartDate . ' 17:00:00';
         $end_date_chile = date('Y-m-d', strtotime($shiftStartDate . ' +1 day')) . ' 04:00:00';
         
         // Convertir a UTC para query (sumar 3 horas)
@@ -159,7 +159,7 @@ try {
         $shift_hours = 'Mes completo';
         $shift_date = ucfirst($month) . ' ' . $year;
     } else {
-        $shift_hours = '17:30-04:00';
+        $shift_hours = '17:00-04:00';
         
         // Formatear fecha con rango (ej: "25 al 26 de octubre 2025")
         $startDateObj = new DateTime($shiftStartDate);
