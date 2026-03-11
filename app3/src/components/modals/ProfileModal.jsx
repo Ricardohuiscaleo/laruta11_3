@@ -40,8 +40,33 @@ const ProfileModal = ({
     genero: '',
     direccion: ''
   });
-  const [saveButtonState, setSaveButtonState] = useState('idle'); // idle, saving, saved
-  
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [addressLoading, setAddressLoading] = useState(false);
+  const addressRef = React.useRef(null);
+
+  const fetchAddressSuggestions = async (query) => {
+    if (query.length < 3) { setAddressSuggestions([]); setShowSuggestions(false); return; }
+    setAddressLoading(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=cl&limit=5&addressdetails=1`);
+      const data = await res.json();
+      setAddressSuggestions(data);
+      setShowSuggestions(data.length > 0);
+    } catch { setAddressSuggestions([]); }
+    setAddressLoading(false);
+  };
+
+  const [suggestionPos, setSuggestionPos] = useState({top:0,left:0,width:0});
+  const handleAddressInputChange = (value) => {
+    handleInputChange('direccion', value);
+    fetchAddressSuggestions(value);
+    if (addressRef.current) {
+      const rect = addressRef.current.getBoundingClientRect();
+      setSuggestionPos({ top: rect.bottom + window.scrollY, left: rect.left, width: rect.width });
+    }
+  };
+
   // Cargar datos frescos del perfil al abrir modal
   useEffect(() => {
     if (isOpen && user) {
@@ -108,9 +133,15 @@ const ProfileModal = ({
       
       const result = await response.json();
       if (result.success) {
-        console.log('Perfil actualizado exitosamente');
         safeSetHasProfileChanges(false);
         setSaveButtonState('saved');
+        // Actualizar usuario en estado global con datos frescos del servidor
+        if (setUser && result.user) {
+          setUser(result.user);
+          const stored = localStorage.getItem('user');
+          if (stored) localStorage.setItem('user', JSON.stringify(result.user));
+        }
+        setTimeout(() => setSaveButtonState('idle'), 2500);
       } else {
         console.error('Error guardando perfil:', result.error);
         alert('Error al guardar: ' + result.error);
@@ -281,14 +312,52 @@ const ProfileModal = ({
             
             <div className="space-y-4">
               <h4 className="font-bold text-gray-800">Mi dirección</h4>
-              <textarea 
-                placeholder="Ingresa tu dirección" 
-                value={formData.direccion || ''}
-                onChange={(e) => handleInputChange('direccion', e.target.value)}
-                className="w-full border rounded-lg resize-none" 
-                style={{padding: 'clamp(8px, 2vw, 12px)', fontSize: 'clamp(12px, 3vw, 14px)', minHeight: '80px'}} 
-                rows="3"
-              />
+              <div style={{position:'relative'}}>
+                <input
+                  ref={addressRef}
+                  type="text"
+                  placeholder="Ej: Yumbel 2629, Arica"
+                  value={formData.direccion || ''}
+                  onChange={(e) => handleAddressInputChange(e.target.value)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  onFocus={() => { if (addressRef.current) { const r = addressRef.current.getBoundingClientRect(); setSuggestionPos({top: r.bottom + window.scrollY, left: r.left, width: r.width}); } if (addressSuggestions.length > 0) setShowSuggestions(true); }}
+                  className="w-full border rounded-lg"
+                  style={{padding: 'clamp(8px, 2vw, 12px)', fontSize: 'clamp(12px, 3vw, 14px)'}}
+                  autoComplete="off"
+                />
+                {addressLoading && <span style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',fontSize:12,color:'#9ca3af'}}>...</span>}
+              </div>
+              {showSuggestions && addressSuggestions.length > 0 && (
+                <div style={{
+                  position: 'fixed',
+                  top: suggestionPos.top,
+                  left: suggestionPos.left,
+                  width: suggestionPos.width,
+                  zIndex: 9999,
+                  background: '#fff',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 8,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                  maxHeight: 220,
+                  overflowY: 'auto'
+                }}>
+                  {addressSuggestions.map((s, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onMouseDown={() => {
+                        handleInputChange('direccion', s.display_name);
+                        setShowSuggestions(false);
+                      }}
+                      style={{display:'block',width:'100%',textAlign:'left',padding:'10px 14px',fontSize:13,borderBottom: i < addressSuggestions.length-1 ? '1px solid #f3f4f6' : 'none',background:'none',cursor:'pointer'}}
+                      onMouseEnter={e => e.currentTarget.style.background='#f9fafb'}
+                      onMouseLeave={e => e.currentTarget.style.background='none'}
+                    >
+                      📍 {s.display_name}
+                    </button>
+                  ))}
+                </div>
+              )}
               <button 
                 onClick={handleSaveChanges}
                 disabled={saveButtonState === 'saving'}
