@@ -235,22 +235,21 @@ try {
         $tg_token   = ($config_tg['telegram_token'] ?? null) ?: getenv('TELEGRAM_TOKEN');
         $tg_chat_id = ($config_tg['telegram_chat_id'] ?? null) ?: getenv('TELEGRAM_CHAT_ID');
         if ($tg_token && $tg_chat_id) {
-                $esc = fn($t) => str_replace(['_','*','[','`'], ['\\_','\\*','\\[','\\`'], $t);
                 $nombre_tg = $user_data['nombre'] ?? 'Sin nombre';
                 $email_tg  = $user_data['email'] ?? '';
-                $msg  = "\xF0\x9F\x8E\x96\xEF\xB8\x8F *NUEVA SOLICITUD RL6*\n";
-                $msg .= "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n";
-                $msg .= "\xF0\x9F\x91\xA4 *Nombre:* " . $esc($nombre_tg) . "\n";
-                $msg .= "\xF0\x9F\x93\xA7 *Email:* " . $email_tg . "\n";
-                $msg .= "\xF0\x9F\xAA\xAA *RUT:* " . $rut . "\n";
-                $msg .= "\xF0\x9F\x8E\x97\xEF\xB8\x8F *Grado:* " . $esc($grado_militar) . "\n";
-                $msg .= "\xF0\x9F\x8F\xA2 *Unidad:* " . $esc($unidad_trabajo) . "\n";
-                $msg .= "\xF0\x9F\x8F\xA0 *Domicilio:* " . $esc($domicilio_particular) . "\n";
-                $msg .= "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n";
+                $msg  = "🎖️ NUEVA SOLICITUD RL6\n";
+                $msg .= "──────────\n";
+                $msg .= "👤 Nombre: " . $nombre_tg . "\n";
+                $msg .= "📧 Email: " . $email_tg . "\n";
+                $msg .= "🪪 RUT: " . $rut . "\n";
+                $msg .= "🎗️ Grado: " . $grado_militar . "\n";
+                $msg .= "🏢 Unidad: " . $unidad_trabajo . "\n";
+                $msg .= "🏠 Domicilio: " . $domicilio_particular . "\n";
+                $msg .= "──────────\n";
                 $msg .= "Selfie: " . $selfie_url . "\n";
                 $msg .= "Carnet frontal: " . $carnet_frontal_url . "\n";
                 $msg .= "Carnet trasero: " . $carnet_trasero_url . "\n";
-                $msg .= "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n";
+                $msg .= "──────────\n";
                 $msg .= "Aprobar credito?";
 
                 $buttons = [
@@ -271,7 +270,7 @@ try {
                 curl_setopt($ch, CURLOPT_POSTFIELDS, [
                     'chat_id'      => $tg_chat_id,
                     'text'         => $msg,
-                    'parse_mode'   => 'Markdown',
+
                     'reply_markup' => json_encode(['inline_keyboard' => $buttons]),
                 ]);
                 $tg_result = curl_exec($ch);
