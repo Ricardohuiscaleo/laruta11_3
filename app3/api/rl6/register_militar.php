@@ -218,7 +218,7 @@ try {
         // Enviar email de confirmación
         if ($user_data && $user_data['email']) {
             require_once __DIR__ . '/send_email.php';
-            sendRL6Email(
+            @sendRL6Email(
                 $user_data['email'],
                 $user_data['nombre'],
                 $rut,
@@ -226,6 +226,61 @@ try {
                 $unidad_trabajo,
                 'registro'
             );
+        }
+
+        // Notificar por Telegram para aprobación
+        $config_paths_tg = [
+            __DIR__ . '/../../../caja3/config.php',
+            __DIR__ . '/../../../../caja3/config.php',
+        ];
+        $config_tg = null;
+        foreach ($config_paths_tg as $p) {
+            if (file_exists($p)) { $config_tg = require $p; break; }
+        }
+        if ($config_tg) {
+            $tg_token   = $config_tg['telegram_token'] ?? getenv('TELEGRAM_TOKEN');
+            $tg_chat_id = $config_tg['telegram_chat_id'] ?? getenv('TELEGRAM_CHAT_ID');
+            if ($tg_token && $tg_chat_id) {
+                $esc = fn($t) => str_replace(['_','*','[','`'], ['\\_','\\*','\\[','\\`'], $t);
+                $nombre_tg = $user_data['nombre'] ?? 'Sin nombre';
+                $email_tg  = $user_data['email'] ?? '';
+                $msg  = "\xF0\x9F\x8E\x96\xEF\xB8\x8F *NUEVA SOLICITUD RL6*\n";
+                $msg .= "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n";
+                $msg .= "\xF0\x9F\x91\xA4 *Nombre:* " . $esc($nombre_tg) . "\n";
+                $msg .= "\xF0\x9F\x93\xA7 *Email:* " . $email_tg . "\n";
+                $msg .= "\xF0\x9F\xAA\xAA *RUT:* " . $rut . "\n";
+                $msg .= "\xF0\x9F\x8E\x97\xEF\xB8\x8F *Grado:* " . $esc($grado_militar) . "\n";
+                $msg .= "\xF0\x9F\x8F\xA2 *Unidad:* " . $esc($unidad_trabajo) . "\n";
+                $msg .= "\xF0\x9F\x8F\xA0 *Domicilio:* " . $esc($domicilio_particular) . "\n";
+                $msg .= "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n";
+                $msg .= "Selfie: " . $selfie_url . "\n";
+                $msg .= "Carnet frontal: " . $carnet_frontal_url . "\n";
+                $msg .= "Carnet trasero: " . $carnet_trasero_url . "\n";
+                $msg .= "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n";
+                $msg .= "Aprobar credito?";
+
+                $buttons = [
+                    [
+                        ['text' => 'Aprobar $50.000', 'callback_data' => "approve_rl6_{$user_id}_50000"],
+                        ['text' => 'Aprobar $30.000', 'callback_data' => "approve_rl6_{$user_id}_30000"],
+                    ],
+                    [
+                        ['text' => 'Aprobar $20.000', 'callback_data' => "approve_rl6_{$user_id}_20000"],
+                        ['text' => 'Rechazar',        'callback_data' => "reject_rl6_{$user_id}"],
+                    ],
+                ];
+
+                $ch = curl_init("https://api.telegram.org/bot{$tg_token}/sendMessage");
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, [
+                    'chat_id'      => $tg_chat_id,
+                    'text'         => $msg,
+                    'parse_mode'   => 'Markdown',
+                    'reply_markup' => json_encode(['inline_keyboard' => $buttons]),
+                ]);
+                curl_exec($ch);
+                curl_close($ch);
+            }
         }
 
         echo json_encode([

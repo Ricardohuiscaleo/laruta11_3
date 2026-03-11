@@ -179,6 +179,65 @@ switch (strtolower(trim($text))) {
         break;
 
     default:
+        // Manejar approve/reject de solicitudes RL6
+        if (preg_match('/^(approve|reject)_rl6_(\d+)(?:_(\d+))?$/', strtolower(trim($text)), $m)) {
+            $action  = $m[1];
+            $user_id = (int)$m[2];
+            $limite  = isset($m[3]) ? (int)$m[3] : 0;
+
+            // Buscar datos del usuario
+            $stmt = $pdo->prepare("SELECT nombre, email, rut, grado_militar, unidad_trabajo FROM usuarios WHERE id = ? AND es_militar_rl6 = 1");
+            $stmt->execute([$user_id]);
+            $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$usuario) {
+                sendTelegramMessage($token, $chatId, "Usuario #{$user_id} no encontrado o no es militar RL6.");
+                break;
+            }
+
+            if ($action === 'approve') {
+                $pdo->prepare("UPDATE usuarios SET credito_aprobado = 1, limite_credito = ?, fecha_aprobacion_rl6 = NOW() WHERE id = ?")
+                    ->execute([$limite, $user_id]);
+
+                // Email de aprobacion
+                $send_email_path = __DIR__ . '/../../app3/api/rl6/send_email.php';
+                if (file_exists($send_email_path)) {
+                    require_once $send_email_path;
+                    @sendRL6Email($usuario['email'], $usuario['nombre'], $usuario['rut'], $usuario['grado_militar'], $usuario['unidad_trabajo'], 'aprobado', $limite);
+                }
+
+                $reply = "Credito aprobado para {$usuario['nombre']} (ID: {$user_id})\nLimite: $" . number_format($limite, 0, ',', '.') . "\nEmail enviado a: {$usuario['email']}";
+            } else {
+                $pdo->prepare("UPDATE usuarios SET credito_aprobado = 0, limite_credito = 0 WHERE id = ?")
+                    ->execute([$user_id]);
+
+                $send_email_path = __DIR__ . '/../../app3/api/rl6/send_email.php';
+                if (file_exists($send_email_path)) {
+                    require_once $send_email_path;
+                    @sendRL6Email($usuario['email'], $usuario['nombre'], $usuario['rut'], $usuario['grado_militar'], $usuario['unidad_trabajo'], 'rechazado');
+                }
+
+                $reply = "Solicitud rechazada para {$usuario['nombre']} (ID: {$user_id})\nEmail enviado a: {$usuario['email']}";
+            }
+
+            // Quitar botones del mensaje original
+            if (isset($update['callback_query']['message']['message_id'])) {
+                $msg_id = $update['callback_query']['message']['message_id'];
+                $ch = curl_init("https://api.telegram.org/bot{$token}/editMessageReplyMarkup");
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, [
+                    'chat_id'      => $chatId,
+                    'message_id'   => $msg_id,
+                    'reply_markup' => json_encode(['inline_keyboard' => []]),
+                ]);
+                curl_exec($ch);
+                curl_close($ch);
+            }
+
+            sendTelegramMessage($token, $chatId, $reply, $mainButtons);
+            break;
+        }
+
         // Manejar approve/reject de ediciones de producto
         if (preg_match('/^(approve|reject)_edit_(\d+)$/', strtolower(trim($text)), $m)) {
             $action     = $m[1];
