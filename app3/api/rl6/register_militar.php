@@ -212,8 +212,8 @@ try {
 
         // Enviar email de confirmación
         if ($user_data && $user_data['email']) {
-            @include_once __DIR__ . '/send_email.php';
-            @sendRL6Email(
+            include_once __DIR__ . '/send_email.php';
+            sendRL6Email(
                 $user_data['email'],
                 $user_data['nombre'],
                 $rut,
