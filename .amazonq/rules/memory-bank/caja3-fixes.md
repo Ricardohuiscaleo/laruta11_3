@@ -135,6 +135,38 @@
 - **Meses**: Array en español (enero, febrero, marzo...)
 - **Uso**: Estados de cuenta, vencimientos
 
+## 🤖 Telegram Webhook - Email RL6 Aprobado/Rechazado
+
+### Bug: Email nunca se enviaba al aprobar/rechazar desde Telegram
+- **Causa**: El webhook de caja3 hacía `require_once __DIR__ . '/../../app3/api/rl6/send_email.php'` — path que no existe en producción porque caja3 y app3 son **contenedores Docker separados** (no comparten filesystem)
+- **Síntoma**: Telegram mostraba "Email enviado a: ejemplo@gmail.com" pero el email nunca llegaba, porque `file_exists()` retornaba `false` y el bloque de envío nunca se ejecutaba
+- **Solución**: Agregar función `sendRL6Email()` directamente en `telegram_webhook.php` usando `caja3/api/gmail/get_token_db.php` — la misma infraestructura que ya usa `/admin/emails/` y que funciona correctamente
+- **Archivo**: `caja3/api/telegram_webhook.php`
+- **Commit**: `6976a49`
+
+### Cómo funciona ahora
+- Botones Aprobar ($50k/$30k/$20k) → actualiza BD + llama `sendRL6Email(..., 'aprobado', $limite)`
+- Botón Rechazar → actualiza BD + llama `sendRL6Email(..., 'rechazado')`
+- `sendRL6Email()` usa `getValidGmailToken()` de `caja3/api/gmail/get_token_db.php` (tokens en MySQL, auto-refresh)
+- Reply en Telegram ahora muestra ✅ o ⚠️ según si el email realmente se envió
+
+### Regla clave: contenedores separados
+- **NUNCA** usar paths relativos cross-container (`../../app3/...`) en caja3
+- Cada contenedor solo puede acceder a sus propios archivos
+- Si caja3 necesita funcionalidad de app3, debe replicarla localmente o hacer llamada HTTP
+- La infraestructura Gmail (get_token_db.php, tokens en BD) está disponible en **ambos** contenedores
+
+## 🔄 SSE - Tab Crédito RL6 en Tiempo Real
+
+### Problema
+- Tab "Crédito" en ProfileModalModern solo aparecía si `credito_aprobado = 1` en el objeto `user` en memoria (localStorage)
+- Al aprobar desde Telegram, el usuario no veía el tab hasta hacer re-login
+
+### Solución: Server-Sent Events
+- **Endpoint**: `app3/api/auth/credit_status_sse.php` — consulta `credito_aprobado`, `es_militar_rl6`, `credito_bloqueado` cada 10s, emite evento solo cuando cambia
+- **Frontend**: `ProfileModalModern.jsx` abre `EventSource` al abrir el modal, actualiza `user` y localStorage al recibir cambio
+- **Resultado**: Tab aparece automáticamente ~10s después de que admin aprueba, sin re-login
+
 ## 🐛 Bugs Resueltos
 
 1. ✅ **404 en track_usage.php**: Sistema removido completamente
@@ -147,6 +179,8 @@
 8. ✅ **Email no mobile-friendly**: Rediseño completo mobile-first
 9. ✅ **Tarjetas desiguales**: Estructura consistente en todas las cards
 10. ✅ **curl_close deprecado**: Removido de send_credit_statement.php
+11. ✅ **Email aprobación RL6 no se enviaba**: Webhook usaba path cross-container inexistente en producción
+12. ✅ **Tab Crédito no aparecía sin re-login**: SSE actualiza estado en tiempo real
 
 ## 📝 Notas Importantes
 

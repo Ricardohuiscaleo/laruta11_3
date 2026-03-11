@@ -62,6 +62,14 @@
   $pdo = new PDO("mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4", $config['app_db_user'], $config['app_db_pass']);
   ```
 
+## Infraestructura - Contenedores Separados
+- **app3 y caja3 son contenedores Docker independientes** — no comparten filesystem en producción
+- **NUNCA** usar paths relativos cross-container desde caja3 (`../../app3/...`) — `file_exists()` siempre retorna `false`
+- Si caja3 necesita funcionalidad de app3: replicar localmente o hacer llamada HTTP
+- **Gmail disponible en ambos**: `caja3/api/gmail/get_token_db.php` existe y funciona igual que en app3
+- **Telegram webhook** (`caja3/api/telegram_webhook.php`): maneja aprobación/rechazo RL6 con `sendRL6Email()` propia que usa `get_token_db.php` de caja3 — misma infraestructura que `/admin/emails/`
+- Variables de entorno por contenedor: `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_SENDER_EMAIL`
+
 ## Chilean Localization
 - **Number Format**: Use `toLocaleString('es-CL')` with dot (.) as thousands separator
 - **Currency**: Always show $ symbol before amount
