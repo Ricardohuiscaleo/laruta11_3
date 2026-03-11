@@ -52,6 +52,8 @@ try {
             p.views,
             p.likes,
             p.is_active,
+            p.is_featured,
+            p.sale_price,
             p.created_at,
             s.name as subcategory_name,
             s.slug as subcategory_slug,
@@ -144,6 +146,8 @@ try {
             'subcategory_id' => (int)$product['subcategory_id'],
             'subcategory_name' => $product['subcategory_name'],
             'active' => (int)$product['is_active'],
+            'is_featured' => (int)$product['is_featured'],
+            'sale_price' => $product['sale_price'] ? (int)$product['sale_price'] : null,
             'category_name' => $product['category_id'] == 8 ? 'combos' : null
         ];
     }

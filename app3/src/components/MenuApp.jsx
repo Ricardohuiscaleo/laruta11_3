@@ -629,6 +629,11 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
           onClick={() => setQuickViewProduct(product)}
           onTouchStart={handleDoubleTap}
         >
+          {product.is_featured && product.sale_price && (
+            <div className="absolute top-1.5 left-1.5 z-10 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-md animate-pulse">
+              🔥 OFERTA
+            </div>
+          )}
           {product.image ? (
             <>
               {!imageLoaded && <div className="absolute inset-0 bg-gray-100 rounded-lg"></div>}
@@ -709,8 +714,15 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
               </div>
 
               {/* Precio a la derecha - Estilo minimalista */}
-              <span className="text-green-600 font-semibold text-xs">
-                ${product.price.toLocaleString('es-CL')}
+              <span className="text-right">
+                {product.is_featured && product.sale_price ? (
+                  <>
+                    <span className="text-gray-400 line-through text-[10px] block">${product.price.toLocaleString('es-CL')}</span>
+                    <span className="text-red-500 font-black text-sm">${product.sale_price.toLocaleString('es-CL')}</span>
+                  </>
+                ) : (
+                  <span className="text-green-600 font-semibold text-xs">${product.price.toLocaleString('es-CL')}</span>
+                )}
               </span>
             </div>
           </div>
@@ -1417,6 +1429,7 @@ export default function App() {
     if (cartIconRef.current) cartIconRef.current.startAnimation();
     setCart(prevCart => [...prevCart, {
       ...product,
+      price: product.sale_price || product.price,
       quantity: 1,
       customizations: null,
       cartItemId: Date.now(),

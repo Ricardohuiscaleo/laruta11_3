@@ -814,9 +814,20 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
         )}
 
         <div className="absolute top-1.5 right-1.5 z-20 flex flex-col items-end gap-1">
-          <span className="bg-white/95 px-1.5 py-0.5 rounded-lg font-black text-[10px] text-black shadow-sm backdrop-blur-sm border border-gray-100">
-            ${product.price ? product.price.toLocaleString('es-CL') : '0'}
-          </span>
+          {product.is_featured && product.sale_price ? (
+            <>
+              <span className="bg-red-500 text-white px-1.5 py-0.5 rounded-lg font-black text-[10px] shadow-sm animate-pulse">
+                🔥 ${product.sale_price.toLocaleString('es-CL')}
+              </span>
+              <span className="bg-white/80 px-1.5 py-0.5 rounded-lg font-bold text-[9px] text-gray-400 line-through shadow-sm">
+                ${product.price.toLocaleString('es-CL')}
+              </span>
+            </>
+          ) : (
+            <span className="bg-white/95 px-1.5 py-0.5 rounded-lg font-black text-[10px] text-black shadow-sm backdrop-blur-sm border border-gray-100">
+              ${product.price ? product.price.toLocaleString('es-CL') : '0'}
+            </span>
+          )}
           {product.category_name === 'Combos' && (
             <div className={`bg-white/90 p-0.5 rounded flex items-center gap-0.5 shadow-sm transition-opacity ${!isActive ? 'opacity-50' : ''}`}>
               <GiHamburger size={7} className="text-orange-500" />
@@ -1917,6 +1928,7 @@ export default function App() {
 
     setCart(prevCart => [...prevCart, {
       ...product,
+      price: product.sale_price || product.price,
       quantity: 1,
       customizations: null,
       cartItemId: Date.now() + Math.random(),
