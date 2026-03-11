@@ -96,8 +96,8 @@ try {
                 COUNT(*) as count,
                 SUM(installment_amount) as total
             FROM tuu_orders
-            WHERE created_at >= ? 
-            AND created_at < ?
+            WHERE COALESCE(scheduled_time, created_at) >= ? 
+            AND COALESCE(scheduled_time, created_at) < ?
             AND payment_status = 'paid'
             AND order_number NOT LIKE 'RL6-%'
             GROUP BY payment_method";
@@ -132,8 +132,8 @@ try {
                         SUM(delivery_fee) as delivery_total,
                         SUM(COALESCE(delivery_extras, 0)) as extras_total
                     FROM tuu_orders
-                    WHERE created_at >= ? 
-                    AND created_at < ?
+                    WHERE COALESCE(scheduled_time, created_at) >= ? 
+                    AND COALESCE(scheduled_time, created_at) < ?
                     AND payment_status = 'paid'
                     AND order_number NOT LIKE 'RL6-%'
                     AND delivery_type = 'delivery'
