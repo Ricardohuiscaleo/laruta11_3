@@ -814,9 +814,9 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
         )}
 
         <div className="absolute top-1.5 right-1.5 z-20 flex flex-col items-end gap-1">
-          {product.is_featured && product.sale_price ? (
+          {!!product.is_featured && !!product.sale_price ? (
             <>
-              <span className="bg-red-500 text-white px-1.5 py-0.5 rounded-lg font-black text-[10px] shadow-sm animate-pulse">
+              <span className="bg-red-500 text-white px-1.5 py-0.5 rounded-lg font-black text-[10px] shadow-sm">
                 🔥 ${product.sale_price.toLocaleString('es-CL')}
               </span>
               <span className="bg-white/80 px-1.5 py-0.5 rounded-lg font-bold text-[9px] text-gray-400 line-through shadow-sm">
