@@ -217,7 +217,7 @@ try {
 
         // Enviar email de confirmación
         if ($user_data && $user_data['email']) {
-            require_once __DIR__ . '/send_email.php';
+            @include_once __DIR__ . '/send_email.php';
             @sendRL6Email(
                 $user_data['email'],
                 $user_data['nombre'],
