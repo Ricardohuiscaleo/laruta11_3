@@ -266,19 +266,24 @@ try {
 
                 $ch = curl_init("https://api.telegram.org/bot{$tg_token}/sendMessage");
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 10);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, [
                     'chat_id'      => $tg_chat_id,
                     'text'         => $msg,
                     'parse_mode'   => 'Markdown',
                     'reply_markup' => json_encode(['inline_keyboard' => $buttons]),
                 ]);
-                curl_exec($ch);
+                $tg_result = curl_exec($ch);
+                $tg_error  = curl_error($ch);
                 curl_close($ch);
+                $tg_debug = ['token_set' => !empty($tg_token), 'chat_id_set' => !empty($tg_chat_id), 'response' => $tg_result, 'curl_error' => $tg_error];
             }
 
         echo json_encode([
             'success' => true,
             'message' => 'Solicitud enviada exitosamente. Te contactaremos en 24 horas.',
+            'tg_debug' => $tg_debug ?? null,
             'data' => [
                 'user_id' => $user_id,
                 'rut' => $rut,
