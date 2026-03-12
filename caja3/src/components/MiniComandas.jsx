@@ -375,15 +375,22 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                   return selectionsArray.map((sel, sidx) => {
                     if (!sel || !sel.name) return null;
                     const itemKey = `${orderId}-sel-${item.id}-${group}-${sidx}`;
+                    const selImageUrl = sel.image_url || sel.image || 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png';
                     return (
-                      <label key={`${idx}-${sidx}`} className="flex items-center gap-1 cursor-pointer">
+                      <label key={`${idx}-${sidx}`} className="flex items-center gap-1 cursor-pointer mb-0.5">
                         <input
                           type="checkbox"
                           checked={!!checkedItems[itemKey]}
                           onChange={e => setCheckedItems(prev => ({ ...prev, [itemKey]: e.target.checked }))}
-                          className="w-2.5 h-2.5 accent-purple-500"
+                          className="w-2.5 h-2.5 accent-purple-500 flex-shrink-0"
                         />
-                        <span className={checkedItems[itemKey] ? 'line-through text-gray-400' : 'text-gray-700'}>
+                        <img 
+                          src={selImageUrl} 
+                          alt={sel.name} 
+                          className="w-6 h-6 object-cover rounded border border-purple-300" 
+                          onError={(e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png'; }}
+                        />
+                        <span className={`text-[9px] ${checkedItems[itemKey] ? 'line-through text-gray-400' : 'text-gray-700'}`}>
                           {item.quantity}x {sel.name}
                         </span>
                       </label>
