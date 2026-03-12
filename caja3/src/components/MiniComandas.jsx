@@ -307,39 +307,41 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
     };
 
     return (
-      <div key={item.id} className="mb-3 pb-3 border-b border-gray-200 last:border-0 transition-all">
-        <div className="flex gap-2 mb-2">
-          <label className="flex items-start gap-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              checked={isChecked}
-              onChange={e => toggleAll(e.target.checked)}
-              className="w-5 h-5 mt-1 accent-green-600 flex-shrink-0"
-            />
-          </label>
-          <img 
-            src={imageUrl} 
-            alt={item.product_name} 
-            className="w-16 h-16 object-cover rounded border-2 border-gray-300 flex-shrink-0" 
-            onError={(e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png'; }}
+      <div key={item.id} className="mb-3 transition-all">
+        <label className={`block cursor-pointer rounded-lg border-2 overflow-hidden transition-all ${
+          isChecked 
+            ? 'bg-green-50 border-green-400 opacity-60' 
+            : 'bg-white border-gray-300 hover:border-orange-400 hover:shadow-md'
+        }`}>
+          <input
+            type="checkbox"
+            checked={isChecked}
+            onChange={e => toggleAll(e.target.checked)}
+            className="hidden"
           />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <span className={`font-bold text-sm transition-all ${isChecked ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
-                {item.product_name}
-                {isChecked && (
-                  <span className="text-green-600 font-bold ml-1 animate-in fade-in duration-300">
-                    ✓
-                  </span>
-                )}
-              </span>
-              <div className="text-right flex-shrink-0">
-                <div className="text-sm font-bold">x{item.quantity}</div>
-                <div className="text-xs text-gray-600">${parseInt(item.product_price || item.price || 0).toLocaleString('es-CL')}</div>
+          <div className="relative">
+            <img 
+              src={imageUrl} 
+              alt={item.product_name} 
+              className="w-full h-32 object-cover" 
+              onError={(e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png'; }}
+            />
+            {isChecked && (
+              <div className="absolute inset-0 bg-green-600/80 flex items-center justify-center">
+                <CheckCircle size={48} className="text-white" />
               </div>
+            )}
+          </div>
+          <div className="p-2">
+            <div className={`font-bold text-sm mb-1 ${isChecked ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+              {item.product_name}
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-600">Cantidad: <span className="font-bold">{item.quantity}</span></span>
+              <span className="font-bold text-orange-600">${parseInt(item.product_price || item.price || 0).toLocaleString('es-CL')}</span>
             </div>
           </div>
-        </div>
+        </label>
 
         {isCombo && (
           <>
@@ -551,7 +553,9 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
         </div>
 
         <div className="bg-gray-50 rounded p-3 mb-3">
-          {order.items && order.items.map(item => renderProductDetails(item, order.id))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {order.items && order.items.map(item => renderProductDetails(item, order.id))}
+          </div>
         </div>
 
         {renderDeliveryExtras(order)}
