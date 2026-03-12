@@ -30,7 +30,7 @@ if (isset($_GET['x_reference']) && isset($_GET['x_result']) && $_GET['x_result']
             );
 
         // Actualizar estado de la orden
-        $update_stmt = $pdo->prepare("UPDATE tuu_orders SET status = 'completed' WHERE order_number = ?");
+        $update_stmt = $pdo->prepare("UPDATE tuu_orders SET status = 'completed', payment_status = 'paid', order_status = 'pending', updated_at = NOW() WHERE order_number = ?");
         $update_stmt->execute([$order_reference]);
 
         // Obtener items de la orden para procesar inventario
@@ -80,21 +80,11 @@ if (isset($_GET['x_reference']) && isset($_GET['x_result']) && $_GET['x_result']
             }
         }
 
-        // Llamar API de inventario
+        // Procesar inventario directamente (sin HTTP)
         if (!empty($inventory_items)) {
-            $inventory_data = json_encode(['items' => $inventory_items]);
-
-            $ch = curl_init('https://app.laruta11.cl/api/process_sale_inventory.php');
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $inventory_data);
-
-            $inventory_response = curl_exec($ch);
-            curl_close($ch);
-
-            error_log("Inventario procesado para orden: $order_reference");
-            error_log("Respuesta inventario: $inventory_response");
+            require_once __DIR__ . '/../process_sale_inventory_fn.php';
+            $inv_result = processSaleInventory($pdo, $inventory_items, $order_reference);
+            error_log("Inventario para orden $order_reference: " . ($inv_result['success'] ? 'OK' : $inv_result['error']));
         }
 
         // Obtener datos completos de la orden para WhatsApp
