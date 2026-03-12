@@ -76,8 +76,8 @@ try {
                 oi.quantity,
                 oi.subtotal,
                 oi.item_cost,
-                p.stock as current_stock,
-                p.has_recipe
+                p.stock_quantity as current_stock,
+                (SELECT COUNT(*) FROM product_recipes WHERE product_id = oi.product_id) > 0 as has_recipe
             FROM tuu_order_items oi
             LEFT JOIN products p ON oi.product_id = p.id
             WHERE oi.order_reference = ?
@@ -98,11 +98,11 @@ try {
                     SELECT 
                         r.ingredient_id,
                         i.name as ingredient_name,
-                        r.quantity_needed,
+                        r.quantity as quantity_needed,
                         i.unit,
-                        i.stock as current_stock,
-                        i.stock + (r.quantity_needed * ?) as stock_before
-                    FROM recipes r
+                        i.current_stock,
+                        i.current_stock + (r.quantity * ?) as stock_before
+                    FROM product_recipes r
                     INNER JOIN ingredients i ON r.ingredient_id = i.id
                     WHERE r.product_id = ?
                 ";
@@ -121,7 +121,7 @@ try {
             } else {
                 // Producto sin receta (bebidas, etc)
                 $item['inventory_status'] = 'direct_product';
-                $item['stock_before'] = $item['current_stock'] + $item['quantity'];
+                $item['stock_before'] = ($item['current_stock'] ?? 0) + $item['quantity'];
                 $item['stock_matches'] = true; // Asumimos que cuadra
             }
         }
