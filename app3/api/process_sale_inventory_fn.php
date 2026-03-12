@@ -1,5 +1,15 @@
 <?php
 function processProductInventory($pdo, $product_id, $quantity_sold, $order_reference = null, $order_item_id = null) {
+    if (!$product_id) return;
+
+    // Verificar que el producto existe
+    $exists = $pdo->prepare("SELECT id FROM products WHERE id = ?");
+    $exists->execute([$product_id]);
+    if (!$exists->fetch()) {
+        error_log("processProductInventory: product_id=$product_id no existe en products, skipping");
+        return;
+    }
+
     $recipe_stmt = $pdo->prepare("
         SELECT pr.ingredient_id, pr.quantity, pr.unit, i.current_stock, i.name
         FROM product_recipes pr 
