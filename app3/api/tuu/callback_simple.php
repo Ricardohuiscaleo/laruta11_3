@@ -17,7 +17,10 @@ error_log("=== TUU CALLBACK RECIBIDO ===");
 error_log("GET: " . json_encode($_GET));
 error_log("POST: " . json_encode($_POST));
 
-// Procesar pago exitoso
+// Procesar pago exitoso — SOLO si TUU confirma 'Transaccion aprobada'
+$x_message = $_GET['x_message'] ?? '';
+$is_approved = ($x_message === 'Transaccion aprobada');
+
 if (isset($_GET['x_reference']) && isset($_GET['x_result']) && $_GET['x_result'] === 'completed') {
     $order_reference = $_GET['x_reference'];
 
@@ -29,9 +32,19 @@ if (isset($_GET['x_reference']) && isset($_GET['x_result']) && $_GET['x_result']
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
             );
 
-        // Actualizar estado de la orden
-        $update_stmt = $pdo->prepare("UPDATE tuu_orders SET status = 'completed', payment_status = 'paid', order_status = 'pending', updated_at = NOW() WHERE order_number = ?");
-        $update_stmt->execute([$order_reference]);
+        error_log("callback_simple: Order $order_reference, x_message: $x_message, approved: " . ($is_approved ? 'YES' : 'NO'));
+
+        // Actualizar estado — payment_status = 'paid' SOLO si aprobado
+        $update_stmt = $pdo->prepare("UPDATE tuu_orders SET status = 'completed', payment_status = ?, order_status = 'pending', updated_at = NOW() WHERE order_number = ?");
+        $update_stmt->execute([$is_approved ? 'paid' : 'pending_payment', $order_reference]);
+
+        // Procesar inventario SOLO si aprobado
+        if (!$is_approved) {
+            error_log("callback_simple: Pago NO aprobado para $order_reference, inventario NO procesado");
+            http_response_code(200);
+            echo "OK";
+            exit;
+        }
 
         // Obtener items de la orden para procesar inventario
         $items_stmt = $pdo->prepare("

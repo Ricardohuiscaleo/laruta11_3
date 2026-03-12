@@ -49,10 +49,12 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 
-    // Actualizar tuu_orders con todos los datos de TUU
+    $is_approved = ($message === 'Transaccion aprobada');
+
+    // Actualizar tuu_orders — payment_status = 'paid' SOLO si TUU confirma aprobación
     $sql = "UPDATE tuu_orders SET 
             status = ?,
-            payment_status = 'paid',
+            payment_status = ?,
             tuu_transaction_id = ?,
             tuu_amount = ?,
             tuu_timestamp = ?,
@@ -66,6 +68,7 @@ try {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         $result,
+        $is_approved ? 'paid' : 'pending_payment',
         $transaction_id,
         $amount,
         $timestamp,
@@ -76,8 +79,44 @@ try {
         $order_id
     ]);
     
-    // Log completo para debug
-    error_log("TUU Success: Order $order_id, Transaction ID: $transaction_id, Amount: $amount, Currency: $currency, Account: $account_id, Timestamp: $timestamp");
+    error_log("TUU register_success: Order $order_id, message: $message, approved: " . ($is_approved ? 'YES' : 'NO'));
+
+    // Procesar inventario SOLO si TUU confirmó aprobación y aún no tiene transacciones
+    if ($is_approved) {
+        $check = $pdo->prepare("SELECT COUNT(*) FROM inventory_transactions WHERE order_reference = ?");
+        $check->execute([$order_id]);
+        if ($check->fetchColumn() == 0) {
+            $items_stmt = $pdo->prepare("SELECT id, product_id, product_name, quantity, item_type, combo_data FROM tuu_order_items WHERE order_reference = ?");
+            $items_stmt->execute([$order_id]);
+            $order_items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($order_items)) {
+                $inventory_items = [];
+                foreach ($order_items as $item) {
+                    if ($item['item_type'] === 'combo' && $item['combo_data']) {
+                        $cd = json_decode($item['combo_data'], true);
+                        $inventory_items[] = [
+                            'order_item_id' => $item['id'], 'id' => $item['product_id'],
+                            'name' => $item['product_name'], 'cantidad' => $item['quantity'],
+                            'is_combo' => true, 'combo_id' => $cd['combo_id'] ?? null,
+                            'fixed_items' => $cd['fixed_items'] ?? [], 'selections' => $cd['selections'] ?? []
+                        ];
+                    } else {
+                        $inv = ['order_item_id' => $item['id'], 'id' => $item['product_id'],
+                                'name' => $item['product_name'], 'cantidad' => $item['quantity']];
+                        if ($item['combo_data']) {
+                            $cd = json_decode($item['combo_data'], true);
+                            if (isset($cd['customizations'])) $inv['customizations'] = $cd['customizations'];
+                        }
+                        $inventory_items[] = $inv;
+                    }
+                }
+                require_once __DIR__ . '/../process_sale_inventory_fn.php';
+                $inv_result = processSaleInventory($pdo, $inventory_items, $order_id);
+                error_log("register_success inventario $order_id: " . ($inv_result['success'] ? 'OK' : $inv_result['error']));
+            }
+        }
+    }
 
     echo json_encode([
         'success' => true,
