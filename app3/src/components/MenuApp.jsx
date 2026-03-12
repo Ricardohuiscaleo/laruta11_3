@@ -2828,35 +2828,46 @@ export default function App() {
                       >
                         <option value="">Seleccionar horario</option>
                         {(() => {
-                          // Hora de Chile (UTC-3)
                           const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Santiago' }));
                           const currentHour = now.getHours();
                           const currentMinute = now.getMinutes();
                           const dayOfWeek = now.getDay();
 
-                          // Horarios cada media hora
-                          let allSlots = [];
-                          if (dayOfWeek >= 1 && dayOfWeek <= 4) { // Lunes a Jueves hasta 00:30
-                            allSlots = ['18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00', '23:30', '00:00', '00:30'];
-                          } else if (dayOfWeek === 5 || dayOfWeek === 6) { // Viernes y Sábado hasta 02:30
-                            allSlots = ['18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00', '23:30', '00:00', '00:30', '01:00', '01:30', '02:00', '02:30'];
-                          } else { // Domingo hasta 00:00
-                            allSlots = ['18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00', '23:30', '00:00'];
+                          // Obtener horario del día actual desde BD
+                          const todaySchedule = schedules.find(s => s.day_of_week === dayOfWeek);
+                          if (!todaySchedule || !todaySchedule.active) return null;
+
+                          // horario_inicio + 30min → horario_fin - 30min
+                          const [startH, startM] = todaySchedule.start.split(':').map(Number);
+                          const [endH, endM] = todaySchedule.end.split(':').map(Number);
+                          const firstSlotMins = startH * 60 + startM + 30;
+                          const lastSlotMins = endH * 60 + endM - 30;
+                          // lastSlotMins puede cruzar medianoche (ej: 01:00 = 60 mins)
+                          const lastSlotNorm = lastSlotMins < 0 ? lastSlotMins + 1440 : lastSlotMins;
+
+                          // Generar slots cada 30 min
+                          const allSlots = [];
+                          let cursor = firstSlotMins;
+                          for (let i = 0; i < 48; i++) {
+                            const norm = cursor % 1440;
+                            const h = Math.floor(norm / 60);
+                            const m = norm % 60;
+                            allSlots.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+                            // Parar si llegamos al último slot
+                            if (norm === lastSlotNorm) break;
+                            cursor += 30;
                           }
 
-                          // Filtrar slots disponibles (hora actual + 30 min)
+                          // Filtrar: solo slots >= hora actual + 30 min
+                          const currentMins = currentHour * 60 + currentMinute + 30;
                           return allSlots.filter(slot => {
-                            const [slotHour, slotMin] = slot.split(':').map(Number);
-                            const slotTime = slotHour * 60 + slotMin;
-                            const currentTime = currentHour * 60 + currentMinute + 30;
-
-                            // Si es después de medianoche (00:00-02:30) y estamos después de las 19:00
-                            if (slotHour < 3 && currentHour >= 19) return true;
-                            // Si el slot es mayor al tiempo actual + 30 min
-                            return slotTime >= currentTime;
+                            const [sh, sm] = slot.split(':').map(Number);
+                            const slotMins = sh * 60 + sm;
+                            // Slots de madrugada (< 6h) siempre pasan si ya son > 17h
+                            if (sh < 6 && currentHour >= 17) return true;
+                            return slotMins >= currentMins;
                           }).map(slot => <option key={slot} value={slot}>{slot}</option>);
-                        })()
-                        }
+                        })()}
                       </select>
                       <p className="text-xs text-gray-500 mt-1">Tiempo de preparación: 15-30 minutos</p>
                     </div>
