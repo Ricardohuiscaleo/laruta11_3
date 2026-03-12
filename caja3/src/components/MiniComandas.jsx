@@ -307,7 +307,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
     };
 
     return (
-      <div key={item.id} className="mb-3 transition-all">
+      <div key={item.id} className="transition-all">
         <label className={`block cursor-pointer rounded-lg border-2 overflow-hidden transition-all ${
           isChecked 
             ? 'bg-green-50 border-green-400 opacity-60' 
@@ -319,29 +319,103 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
             onChange={e => toggleAll(e.target.checked)}
             className="hidden"
           />
-          <div className="relative">
+          <div className="relative aspect-square">
             <img 
               src={imageUrl} 
               alt={item.product_name} 
-              className="w-full h-32 object-cover" 
+              className="w-full h-full object-cover" 
               onError={(e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png'; }}
             />
             {isChecked && (
               <div className="absolute inset-0 bg-green-600/80 flex items-center justify-center">
-                <CheckCircle size={48} className="text-white" />
+                <CheckCircle size={32} className="text-white" />
               </div>
             )}
           </div>
-          <div className="p-2">
-            <div className={`font-bold text-sm mb-1 ${isChecked ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+          <div className="p-1.5">
+            <div className={`font-bold text-[10px] mb-0.5 line-clamp-2 ${isChecked ? 'line-through text-gray-500' : 'text-gray-800'}`}>
               {item.product_name}
             </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-600">Cantidad: <span className="font-bold">{item.quantity}</span></span>
+            <div className="flex items-center justify-between text-[9px]">
+              <span className="text-gray-600">x<span className="font-bold">{item.quantity}</span></span>
               <span className="font-bold text-orange-600">${parseInt(item.product_price || item.price || 0).toLocaleString('es-CL')}</span>
             </div>
           </div>
         </label>
+
+        {/* Detalles de combo y extras */}
+        {isCombo && (
+          <div className="mt-1 text-[9px] space-y-1">
+            {comboData.fixed_items && comboData.fixed_items.length > 0 && (
+              <div className="bg-blue-50 rounded p-1 border border-blue-200">
+                <div className="font-bold text-blue-700 mb-0.5">Incluye:</div>
+                {comboData.fixed_items.map((fixed, idx) => {
+                  const itemKey = `${orderId}-fixed-${item.id}-${idx}`;
+                  return (
+                    <label key={idx} className="flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={!!checkedItems[itemKey]}
+                        onChange={e => setCheckedItems(prev => ({ ...prev, [itemKey]: e.target.checked }))}
+                        className="w-2.5 h-2.5 accent-blue-500"
+                      />
+                      <span className={checkedItems[itemKey] ? 'line-through text-gray-400' : 'text-gray-700'}>
+                        {item.quantity * (fixed.quantity || 1)}x {fixed.product_name || fixed.name}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+            {comboData.selections && Object.keys(comboData.selections).length > 0 && (
+              <div className="bg-purple-50 rounded p-1 border border-purple-200">
+                <div className="font-bold text-purple-700 mb-0.5">Seleccionado:</div>
+                {Object.entries(comboData.selections).map(([group, selection], idx) => {
+                  const selectionsArray = Array.isArray(selection) ? selection : [selection];
+                  return selectionsArray.map((sel, sidx) => {
+                    if (!sel || !sel.name) return null;
+                    const itemKey = `${orderId}-sel-${item.id}-${group}-${sidx}`;
+                    return (
+                      <label key={`${idx}-${sidx}`} className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!checkedItems[itemKey]}
+                          onChange={e => setCheckedItems(prev => ({ ...prev, [itemKey]: e.target.checked }))}
+                          className="w-2.5 h-2.5 accent-purple-500"
+                        />
+                        <span className={checkedItems[itemKey] ? 'line-through text-gray-400' : 'text-gray-700'}>
+                          {item.quantity}x {sel.name}
+                        </span>
+                      </label>
+                    );
+                  });
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {comboData && comboData.customizations && comboData.customizations.length > 0 && (
+          <div className="mt-1 bg-orange-50 rounded p-1 border border-orange-300">
+            <div className="text-[9px] font-bold text-orange-700 mb-0.5">❗ Extras:</div>
+            {comboData.customizations.map((custom, idx) => {
+              const itemKey = `${orderId}-cust-${item.id}-${idx}`;
+              return (
+                <label key={idx} className="flex items-center gap-1 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!checkedItems[itemKey]}
+                    onChange={e => setCheckedItems(prev => ({ ...prev, [itemKey]: e.target.checked }))}
+                    className="w-2.5 h-2.5 accent-orange-600"
+                  />
+                  <span className={`text-[9px] font-bold ${checkedItems[itemKey] ? 'line-through text-orange-300' : 'text-orange-800'}`}>
+                    {custom.quantity || item.quantity}x {custom.name}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        )}
 
         {isCombo && (
           <>
@@ -553,7 +627,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
         </div>
 
         <div className="bg-gray-50 rounded p-3 mb-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             {order.items && order.items.map(item => renderProductDetails(item, order.id))}
           </div>
         </div>
