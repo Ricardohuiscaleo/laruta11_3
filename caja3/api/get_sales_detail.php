@@ -54,11 +54,11 @@ try {
                 DATE_FORMAT(DATE_SUB(created_at, INTERVAL 3 HOUR), '%H:%i') as hora_corta,
                 created_at
             FROM tuu_orders
-            WHERE COALESCE(scheduled_time, created_at) >= ? AND COALESCE(scheduled_time, created_at) < ?
+            WHERE created_at >= ? AND created_at < ?
             AND payment_status = 'paid'
             AND order_number NOT LIKE 'RL6-%'
             AND (order_status IS NULL OR order_status NOT IN ('cancelled', 'failed'))
-            ORDER BY COALESCE(scheduled_time, created_at) DESC
+            ORDER BY created_at DESC
             LIMIT 500";
 
     $stmt = $pdo->prepare($sql);
