@@ -946,7 +946,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           </div>
         </div>
       )}
-      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 shadow-lg flex items-center justify-between">
+      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 shadow-lg flex items-center justify-between" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
         <h2 className="text-xl font-bold flex items-center gap-2">
           📋 Comandas Activas
           {activeOrdersCount > 0 && (

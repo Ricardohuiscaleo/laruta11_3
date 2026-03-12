@@ -2908,7 +2908,7 @@ export default function App() {
         <div className="fixed inset-0 bg-white z-40 flex flex-col overflow-hidden">
           <div className="bg-white w-full h-full flex flex-col overflow-hidden">
             {/* Header fijo con gradiente */}
-            <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white flex justify-between items-center px-6 py-4 shadow-lg sticky top-0 z-50">
+            <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white flex justify-between items-center px-6 py-4 shadow-lg sticky top-0 z-50" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
               <h2 className="text-xl font-bold">Finalizar Pedido</h2>
               <button onClick={() => setShowCheckout(false)} className="p-1 hover:bg-white/20 rounded-full transition-colors">
                 <X size={24} />
@@ -3777,7 +3777,7 @@ export default function App() {
       {/* Modal Estado del Local */}
       {showStatusModal && truckStatus && (
         <div className="fixed inset-0 bg-white z-50 flex flex-col">
-          <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-6 shadow-lg">
+          <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-6 shadow-lg" style={{ paddingTop: 'max(1.5rem, env(safe-area-inset-top))' }}>
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-bold">Configuración del Local</h2>
