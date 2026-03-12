@@ -34,7 +34,7 @@ try {
     $shift_date = $_GET['shift_date'] ?? date('Y-m-d');
     
     // Obtener transacciones del turno
-    $start_datetime_chile = $shift_date . ' 17:30:00';
+    $start_datetime_chile = $shift_date . ' 17:00:00';
     $next_day = date('Y-m-d', strtotime($shift_date . ' +1 day'));
     $end_datetime_chile = $next_day . ' 04:00:00';
     $start_datetime_utc = date('Y-m-d H:i:s', strtotime($start_datetime_chile . ' +3 hours'));
@@ -52,9 +52,9 @@ try {
             COALESCE(o.tuu_amount, o.installment_amount) as total_amount,
             o.delivery_fee
         FROM tuu_orders o
-        WHERE o.created_at >= ? AND o.created_at < ?
+        WHERE COALESCE(o.scheduled_time, o.created_at) >= ? AND COALESCE(o.scheduled_time, o.created_at) < ?
         AND o.payment_status = 'paid'
-        ORDER BY o.created_at DESC
+        ORDER BY COALESCE(o.scheduled_time, o.created_at) DESC
     ";
     
     $stmt = $pdo->prepare($sql);
