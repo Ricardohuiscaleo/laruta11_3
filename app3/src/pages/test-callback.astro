@@ -1,0 +1,185 @@
+---
+---
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Test Callback Inventario - La Ruta 11</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: monospace; background: #0f172a; color: #e2e8f0; padding: 20px; }
+    h1 { color: #f97316; margin-bottom: 4px; font-size: 20px; }
+    .subtitle { color: #64748b; font-size: 12px; margin-bottom: 24px; }
+    .section { background: #1e293b; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .section h2 { color: #94a3b8; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    button { background: #f97316; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-family: monospace; font-size: 13px; }
+    button:hover { background: #ea580c; }
+    button.blue { background: #3b82f6; }
+    button.blue:hover { background: #2563eb; }
+    button.red { background: #ef4444; }
+    button.red:hover { background: #dc2626; }
+    button.green { background: #10b981; }
+    button.green:hover { background: #059669; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    input[type=text] { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 7px 10px; border-radius: 6px; font-family: monospace; font-size: 13px; width: 260px; }
+    .log { background: #0f172a; border-radius: 6px; padding: 12px; font-size: 12px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; margin-top: 10px; border: 1px solid #1e293b; }
+    .ok { color: #10b981; }
+    .err { color: #ef4444; }
+    .warn { color: #f59e0b; }
+    .info { color: #60a5fa; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { color: #64748b; text-align: left; padding: 6px 8px; border-bottom: 1px solid #334155; }
+    td { padding: 6px 8px; border-bottom: 1px solid #1e293b; }
+    tr:hover td { background: #0f172a; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; }
+    .badge.paid { background: #064e3b; color: #10b981; }
+    .badge.unpaid { background: #450a0a; color: #ef4444; }
+    .row-actions { display: flex; gap: 6px; }
+    #backfill-results td { font-size: 11px; }
+  </style>
+</head>
+<body>
+
+<h1>🧪 Test Callback Inventario</h1>
+<p class="subtitle">app.laruta11.cl/api/tuu/test_callback_inventory.php</p>
+
+<!-- SECCIÓN 1: Simular callback individual -->
+<div class="section">
+  <h2>1. Simular Callback (orden individual)</h2>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <input type="text" id="order-input" placeholder="R11-1234567890-1234" />
+    <button class="blue" onclick="simulate()">▶ Simular</button>
+    <button class="red" onclick="revert()">↩ Revertir</button>
+  </div>
+  <div id="simulate-log" class="log" style="display:none"></div>
+</div>
+
+<!-- SECCIÓN 2: Órdenes Webpay sin consumo -->
+<div class="section">
+  <h2>2. Órdenes Webpay sin consumo de inventario</h2>
+  <button onclick="loadOrders()">🔍 Buscar</button>
+  <div id="orders-container" style="margin-top:12px"></div>
+</div>
+
+<!-- SECCIÓN 3: Backfill masivo -->
+<div class="section">
+  <h2>3. Backfill masivo (hasta 50 órdenes)</h2>
+  <button class="green" onclick="backfill()">⚡ Generar consumos faltantes</button>
+  <div id="backfill-log" class="log" style="display:none"></div>
+</div>
+
+<script>
+const API = '/api/tuu/test_callback_inventory.php';
+
+function log(elId, text, cls = '') {
+  const el = document.getElementById(elId);
+  el.style.display = 'block';
+  el.innerHTML += `<span class="${cls}">${text}</span>\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearLog(elId) {
+  const el = document.getElementById(elId);
+  el.innerHTML = '';
+  el.style.display = 'none';
+}
+
+async function simulate() {
+  const order = document.getElementById('order-input').value.trim();
+  if (!order) { alert('Ingresa un order_number'); return; }
+  clearLog('simulate-log');
+  log('simulate-log', `▶ Simulando callback para ${order}...`, 'info');
+  try {
+    const r = await fetch(`${API}?action=simulate&order_number=${order}`);
+    const d = await r.json();
+    if (!d.success) { log('simulate-log', `✗ Error: ${d.error}`, 'err'); return; }
+    log('simulate-log', `✓ Items procesados: ${d.items_count}`, 'ok');
+    log('simulate-log', `✓ Transacciones generadas: ${d.transactions.length}`, 'ok');
+    if (d.transactions.length === 0) {
+      log('simulate-log', '⚠ Sin transacciones — productos sin receta o sin product_id', 'warn');
+    }
+    d.transactions.forEach(t => {
+      const qty = parseFloat(t.quantity).toFixed(4);
+      const prev = parseFloat(t.previous_stock).toFixed(4);
+      const next = parseFloat(t.new_stock).toFixed(4);
+      log('simulate-log', `  ${t.item_name} | qty: ${qty} | stock: ${prev} → ${next}`, '');
+    });
+  } catch(e) { log('simulate-log', `✗ ${e.message}`, 'err'); }
+}
+
+async function revert() {
+  const order = document.getElementById('order-input').value.trim();
+  if (!order) { alert('Ingresa un order_number'); return; }
+  if (!confirm(`¿Revertir consumo de ${order}?`)) return;
+  clearLog('simulate-log');
+  log('simulate-log', `↩ Revirtiendo ${order}...`, 'warn');
+  try {
+    const r = await fetch(`${API}?action=revert&order_number=${order}`);
+    const d = await r.json();
+    if (d.success) log('simulate-log', `✓ Revertidas ${d.reverted} transacciones`, 'ok');
+    else log('simulate-log', `✗ ${d.error}`, 'err');
+  } catch(e) { log('simulate-log', `✗ ${e.message}`, 'err'); }
+}
+
+async function loadOrders() {
+  const container = document.getElementById('orders-container');
+  container.innerHTML = '<span style="color:#64748b">Buscando...</span>';
+  try {
+    const r = await fetch(`${API}?action=list`);
+    const d = await r.json();
+    if (!d.success) { container.innerHTML = `<span class="err">${d.error}</span>`; return; }
+    if (d.orders.length === 0) {
+      container.innerHTML = '<span class="ok">✓ Todas las órdenes tienen consumo registrado</span>';
+      return;
+    }
+    let html = `<p style="color:#f59e0b;margin-bottom:8px">⚠ ${d.orders.length} órdenes sin consumo</p>`;
+    html += `<table><thead><tr><th>Order #</th><th>Cliente</th><th>Monto</th><th>Items</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>`;
+    d.orders.forEach(o => {
+      const fecha = new Date(o.created_at).toLocaleString('es-CL');
+      const monto = parseInt(o.installment_amount).toLocaleString('es-CL');
+      html += `<tr>
+        <td>${o.order_number}</td>
+        <td>${o.customer_name}</td>
+        <td>$${monto}</td>
+        <td>${o.item_count}</td>
+        <td>${fecha}</td>
+        <td class="row-actions">
+          <button class="blue" style="padding:4px 10px;font-size:11px" onclick="simulateOrder('${o.order_number}')">▶ Simular</button>
+          <button class="red" style="padding:4px 10px;font-size:11px" onclick="revertOrder('${o.order_number}')">↩ Revertir</button>
+        </td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  } catch(e) { container.innerHTML = `<span class="err">${e.message}</span>`; }
+}
+
+async function simulateOrder(order) {
+  document.getElementById('order-input').value = order;
+  await simulate();
+  document.getElementById('order-input').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function revertOrder(order) {
+  document.getElementById('order-input').value = order;
+  await revert();
+}
+
+async function backfill() {
+  clearLog('backfill-log');
+  log('backfill-log', '⚡ Iniciando backfill...', 'info');
+  try {
+    const r = await fetch(`${API}?action=backfill`);
+    const d = await r.json();
+    if (!d.success) { log('backfill-log', `✗ ${d.error}`, 'err'); return; }
+    log('backfill-log', `✓ Procesadas ${d.processed} órdenes\n`, 'ok');
+    d.results.forEach(r => {
+      if (r.status === 'ok') log('backfill-log', `  ✓ ${r.order}`, 'ok');
+      else if (r.status === 'sin_items') log('backfill-log', `  ⚠ ${r.order} — sin items`, 'warn');
+      else log('backfill-log', `  ✗ ${r.order} — ${r.error}`, 'err');
+    });
+  } catch(e) { log('backfill-log', `✗ ${e.message}`, 'err'); }
+}
+</script>
+</body>
+</html>
