@@ -276,6 +276,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
     const comboData = item.combo_data ? JSON.parse(item.combo_data) : null;
     const isCombo = item.item_type === 'combo' && comboData;
     const isChecked = !!checkedItems[`${orderId}-${item.id}`];
+    const imageUrl = item.image_url || item.image || 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png';
 
     const toggleAll = (checked) => {
       const updates = { [`${orderId}-${item.id}`]: checked };
@@ -307,29 +308,36 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
     return (
       <div key={item.id} className="mb-3 pb-3 border-b border-gray-200 last:border-0 transition-all">
-        <div className="flex justify-between items-start mb-1">
-          <label className="flex items-start gap-2 cursor-pointer flex-1 group">
+        <div className="flex gap-2 mb-2">
+          <label className="flex items-start gap-2 cursor-pointer group">
             <input
               type="checkbox"
               checked={isChecked}
               onChange={e => toggleAll(e.target.checked)}
-              className="w-4 h-4 mt-1 accent-green-600 flex-shrink-0"
+              className="w-5 h-5 mt-1 accent-green-600 flex-shrink-0"
             />
-            <div className="flex-1">
-              <span className={`font-semibold text-sm transition-all ${isChecked ? 'text-gray-400' : 'text-gray-800'}`}>
-                <span className="mr-1">👈😊</span>
-                <span className={isChecked ? 'line-through opacity-50' : ''}>{item.product_name}</span>
+          </label>
+          <img 
+            src={imageUrl} 
+            alt={item.product_name} 
+            className="w-16 h-16 object-cover rounded border-2 border-gray-300 flex-shrink-0" 
+            onError={(e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png'; }}
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <span className={`font-bold text-sm transition-all ${isChecked ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                {item.product_name}
                 {isChecked && (
                   <span className="text-green-600 font-bold ml-1 animate-in fade-in duration-300">
-                    , Todo Bien
+                    ✓
                   </span>
                 )}
               </span>
+              <div className="text-right flex-shrink-0">
+                <div className="text-sm font-bold">x{item.quantity}</div>
+                <div className="text-xs text-gray-600">${parseInt(item.product_price || item.price || 0).toLocaleString('es-CL')}</div>
+              </div>
             </div>
-          </label>
-          <div className="text-right ml-2">
-            <div className="text-sm font-bold">x{item.quantity}</div>
-            <div className="text-xs text-gray-600">${parseInt(item.product_price || item.price || 0).toLocaleString('es-CL')}</div>
           </div>
         </div>
 
