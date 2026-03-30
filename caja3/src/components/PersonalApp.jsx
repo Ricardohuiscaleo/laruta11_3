@@ -1296,8 +1296,8 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
     navigator.clipboard.writeText(generarResumenPagos()).then(() => { setCopiedResumen(true); setTimeout(() => setCopiedResumen(false), 2500); });
   }
 
-  const totalCalculado = personal.filter(p => p.activo == 1).reduce((s, p) => s + getLiquidacion(p).costoEmpresa, 0);
-  const totalAdelantos = personal.filter(p => p.activo == 1).reduce((s, p) => s + getLiquidacion(p).montoAdelantos, 0);
+  const totalCalculado = personal.filter(p => p.activo == 1 && !p.rol?.includes('dueño')).reduce((s, p) => s + getLiquidacion(p).costoEmpresa, 0);
+  const totalAdelantos = personal.filter(p => p.activo == 1 && !p.rol?.includes('dueño')).reduce((s, p) => s + getLiquidacion(p).montoAdelantos, 0);
   const totalPagado = pagosNomina.reduce((s, p) => s + parseFloat(p.monto), 0);
   const saldo = presupuesto - (totalPagado + totalAdelantos);
   const hayPagos = pagosNomina.length > 0;
