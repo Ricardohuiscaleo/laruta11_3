@@ -106,13 +106,13 @@ export default function PersonalApp() {
     };
 
     const addSection = (titulo, obj, totalObj) => {
-      if (totalObj <= 0 && obj.sueldoBase <= 0 && obj.ajustesPer.length === 0 && Object.keys(obj.gruposReemplazando).length === 0 && Object.keys(obj.gruposReemplazados).length === 0) return;
+      if (totalObj <= 0 && obj.sueldoBase <= 0 && obj.ajustesPer.length === 0 && Object.keys(obj.gruposReemplazando || {}).length === 0 && Object.keys(obj.gruposReemplazados || {}).length === 0) return;
 
       const detalles = [];
-      Object.values(obj.gruposReemplando || obj.gruposReemplazando).forEach(g => {
+      Object.values(obj.gruposReemplazando || {}).forEach(g => {
         detalles.push({ texto: `Reemplazaste a ${g.persona?.nombre ?? '?'} (${g.dias.length} días)`, monto: `+${formatMonto(g.monto)}`, color: '#10b981' });
       });
-      Object.values(obj.gruposReemplazados).forEach(g => {
+      Object.values(obj.gruposReemplazados || {}).forEach(g => {
         detalles.push({ texto: `${g.persona?.nombre ?? '?'} te cubrió (${g.dias.length} días)`, monto: `-${formatMonto(g.monto)}`, color: '#ef4444' });
       });
       obj.ajustesPer.forEach(a => {
@@ -398,9 +398,9 @@ export default function PersonalApp() {
       return s + m;
     }, 0) : 0;
 
-    const totalReemplazando = Object.values(gruposReemplazando).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
-    const totalReemplazandoCosto = Object.values(gruposReemplazando).filter(g => g.pago_por === 'empresa' || g.pago_por === 'empresa_adelanto').reduce((s, g) => s + g.monto, 0);
-    const totalReemplazados = Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa' || g.pago_por === 'empresa_adelanto').reduce((s, g) => s + g.monto, 0);
+    const totalReemplazando = Object.values(gruposReemplazando || {}).filter(g => g.pago_por === 'empresa').reduce((s, g) => s + g.monto, 0);
+    const totalReemplazandoCosto = Object.values(gruposReemplazando || {}).filter(g => g.pago_por === 'empresa' || g.pago_por === 'empresa_adelanto').reduce((s, g) => s + g.monto, 0);
+    const totalReemplazados = Object.values(gruposReemplazados || {}).filter(g => g.pago_por === 'empresa' || g.pago_por === 'empresa_adelanto').reduce((s, g) => s + g.monto, 0);
 
     const total = Math.round(sueldoBase + totalReemplazando - totalReemplazados + totalAjustes);
     const costoEmpresa = Math.round(sueldoBase + totalReemplazandoCosto - totalReemplazados + costoAjustes);
@@ -1250,8 +1250,8 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
         roles = p.rol.split(',').map(r => r.trim()).join(', ');
       }
       md += `\n*${p.nombre.toUpperCase()}*\n_${roles}_\n▪ *Días:* ${diasTrabajados}\n▪ *Base:* $${sueldoBase.toLocaleString('es-CL')}\n`;
-      Object.values(gruposReemplazando).forEach(g => { md += `▪ *Reemplazó a ${g.persona?.nombre ?? '?'}* (días ${g.dias.sort((a, b) => a - b).join(',') || 'N/A'}): +$${g.monto.toLocaleString('es-CL')}\n`; });
-      Object.values(gruposReemplazados).forEach(g => { md += `▪ *${g.persona?.nombre ?? '?'} cubrió días* ${g.dias.sort((a, b) => a - b).join(',') || 'N/A'}: -$${g.monto.toLocaleString('es-CL')}\n`; });
+      Object.values(gruposReemplazando || {}).forEach(g => { md += `▪ *Reemplazó a ${g.persona?.nombre ?? '?'}* (días ${g.dias.sort((a, b) => a - b).join(',') || 'N/A'}): +$${g.monto.toLocaleString('es-CL')}\n`; });
+      Object.values(gruposReemplazados || {}).forEach(g => { md += `▪ *${g.persona?.nombre ?? '?'} cubrió días* ${g.dias.sort((a, b) => a - b).join(',') || 'N/A'}: -$${g.monto.toLocaleString('es-CL')}\n`; });
       ajustesPer.forEach(a => {
         const m = parseFloat(a.monto);
         md += `▪ ${a.concepto}: *${m < 0 ? '-' : '+'}$${Math.abs(m).toLocaleString('es-CL')}*\n`;
@@ -1305,8 +1305,8 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
   function generarNotas(p) {
     const { sueldoBase, gruposReemplazando, gruposReemplazados, ajustesPer } = getLiquidacion(p);
     const partes = [`Base $${(sueldoBase / 1000).toFixed(0)}k`];
-    Object.values(gruposReemplazando).forEach(g => partes.push(`+${g.dias.length} días ${g.persona?.nombre ?? '?'} +$${(g.monto / 1000).toFixed(0)}k`));
-    Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa').forEach(g => partes.push(`-${g.dias.length} días ${g.persona?.nombre ?? '?'} -$${(g.monto / 1000).toFixed(0)}k`));
+    Object.values(gruposReemplazando || {}).forEach(g => partes.push(`+${g.dias.length} días ${g.persona?.nombre ?? '?'} +$${(g.monto / 1000).toFixed(0)}k`));
+    Object.values(gruposReemplazados || {}).filter(g => g.pago_por === 'empresa').forEach(g => partes.push(`-${g.dias.length} días ${g.persona?.nombre ?? '?'} -$${(g.monto / 1000).toFixed(0)}k`));
     ajustesPer.forEach(a => partes.push(a.concepto));
     return partes.join(' | ');
   }
@@ -1398,7 +1398,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
       {/* Listado Minimalista */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {personal.filter(p => p.activo == 1 && !p.rol?.includes('dueño')).map(p => {
-              const { diasTrabajados, sueldoBase, gruposReemplazando, gruposReemplados, ajustesPer, total } = getLiquidacion(p);
+              const { diasTrabajados, sueldoBase, gruposReemplazando, gruposReemplazados, ajustesPer, total } = getLiquidacion(p);
               const c = colores[p.id];
               const abierto = expandidos[p.id] !== false;
               const pagado = pagosNomina.find(pn => pn.personal_id == p.id);
@@ -1442,7 +1442,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                           <span style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>${sueldoBase.toLocaleString('es-CL')}</span>
                         </div>
 
-                        {Object.values(gruposReemplazando).map((g, i) => (
+                        {(Object.values(gruposReemplazando || {})).map((g, i) => (
                           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, padding: '6px 10px', borderRadius: 8, background: '#f0fdf4', border: '1px solid #dcfce7', color: '#166534', fontSize: 12 }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                               <span style={{ opacity: 0.7 }}>↔</span> Reemplazo {g.persona?.nombre ?? '?'} ({g.dias.length}d)
@@ -1451,7 +1451,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                           </div>
                         ))}
 
-                        {Object.values(gruposReemplados).map((g, i) => (
+                        {(Object.values(gruposReemplazados || {})).map((g, i) => (
                           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, padding: '6px 10px', borderRadius: 8, background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', fontSize: 12 }}>
                             <span>{g.persona?.nombre ?? '?'} cubrió {g.dias.length}d</span>
                             {g.pago_por === 'empresa' && <span style={{ fontWeight: 800 }}>-${g.monto.toLocaleString('es-CL')}</span>}
@@ -1511,8 +1511,8 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
         roles = p.rol.split(',').map(r => r.trim()).join(', ');
       }
       md += `\n*${p.nombre.toUpperCase()}*\n_${roles}_\n▪ *Días:* ${diasTrabajados}\n▪ *Base:* $${sueldoBase.toLocaleString('es-CL')}\n`;
-      Object.values(gruposReemplazando).forEach(g => { md += `▪ *Reemplazó a ${g.persona?.nombre ?? '?'}* (días ${g.dias.sort((a, b) => a - b).join(',')}): +$${g.monto.toLocaleString('es-CL')}\n`; });
-      Object.values(gruposReemplazados).forEach(g => { md += `▪ *${g.persona?.nombre ?? '?'} cubrió días* ${g.dias.sort((a, b) => a - b).join(',')}: -$${g.monto.toLocaleString('es-CL')}\n`; });
+      Object.values(gruposReemplazando || {}).forEach(g => { md += `▪ *Reemplazó a ${g.persona?.nombre ?? '?'}* (días ${g.dias.sort((a, b) => a - b).join(',')}): +$${g.monto.toLocaleString('es-CL')}\n`; });
+      Object.values(gruposReemplazados || {}).forEach(g => { md += `▪ *${g.persona?.nombre ?? '?'} cubrió días* ${g.dias.sort((a, b) => a - b).join(',')}: -$${g.monto.toLocaleString('es-CL')}\n`; });
       ajustesPer.forEach(a => {
         const m = parseFloat(a.monto);
         md += `▪ ${a.concepto}: *${m < 0 ? '-' : '+'}$${Math.abs(m).toLocaleString('es-CL')}*\n`;
@@ -1567,8 +1567,8 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
   function generarNotas(p) {
     const { sueldoBase, gruposReemplazando, gruposReemplazados, ajustesPer } = getLiquidacion(p);
     const partes = [`Base $${(sueldoBase / 1000).toFixed(0)}k`];
-    Object.values(gruposReemplazando).forEach(g => partes.push(`+${g.dias.length} días ${g.persona?.nombre ?? '?'} +$${(g.monto / 1000).toFixed(0)}k`));
-    Object.values(gruposReemplazados).filter(g => g.pago_por === 'empresa').forEach(g => partes.push(`-${g.dias.length} días ${g.persona?.nombre ?? '?'} -$${(g.monto / 1000).toFixed(0)}k`));
+    Object.values(gruposReemplazando || {}).forEach(g => partes.push(`+${g.dias.length} días ${g.persona?.nombre ?? '?'} +$${(g.monto / 1000).toFixed(0)}k`));
+    Object.values(gruposReemplazados || {}).filter(g => g.pago_por === 'empresa').forEach(g => partes.push(`-${g.dias.length} días ${g.persona?.nombre ?? '?'} -$${(g.monto / 1000).toFixed(0)}k`));
     ajustesPer.forEach(a => partes.push(a.concepto));
     return partes.join(' | ');
   }
@@ -1708,7 +1708,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                           {roles.includes('dueño') ? (sueldoBase >= 0 ? `+$${sueldoBase.toLocaleString('es-CL')} ✅` : `-$${Math.abs(sueldoBase).toLocaleString('es-CL')} 🚨`) : `$${sueldoBase.toLocaleString('es-CL')}`}
                         </span>
                       </div>
-                      {Object.values(gruposReemplazando).map((g, i) => (
+                      {(Object.values(gruposReemplazando || {})).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', border: `1px solid ${g.pago_por === 'empresa_adelanto' ? '#a5b4fc' : '#86efac'}`, backgroundColor: g.pago_por === 'empresa_adelanto' ? '#eef2ff' : '#dcfce7', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                           <span style={{ fontSize: 13, color: g.pago_por === 'empresa_adelanto' ? '#3730a3' : '#14532d', fontWeight: 600 }}>
                             ↔ Reemplazó a {g.persona?.nombre ?? '?'} {g.dias.length} días
@@ -1720,7 +1720,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                           }
                         </div>
                       ))}
-                      {Object.values(gruposReemplazados).map((g, i) => (
+                      {(Object.values(gruposReemplazados || {})).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #fca5a5', backgroundColor: '#fee2e2', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: 8 }}>
                           <span style={{ fontSize: 13, color: '#7f1d1d', fontWeight: 600 }}>
                             {g.persona?.nombre ?? '?'} cubrió {g.dias.length} días
