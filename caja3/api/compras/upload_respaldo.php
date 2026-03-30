@@ -81,8 +81,28 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
     
+    // Obtener valor actual
+    $stmt = $pdo->prepare("SELECT imagen_respaldo FROM compras WHERE id = ?");
+    $stmt->execute([$compra_id]);
+    $currentValue = $stmt->fetchColumn();
+
+    $images = [];
+    if (!empty($currentValue)) {
+        $decoded = json_decode($currentValue, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            $images = $decoded;
+        } else {
+            // Backward compatibility: if it was a plain string, convert to array
+            $images = [$currentValue];
+        }
+    }
+
+    // Añadir nueva imagen
+    $images[] = $imageUrl;
+    $newValue = json_encode($images);
+    
     $stmt = $pdo->prepare("UPDATE compras SET imagen_respaldo = ? WHERE id = ?");
-    $stmt->execute([$imageUrl, $compra_id]);
+    $stmt->execute([$newValue, $compra_id]);
     
     echo json_encode([
         'success' => true,

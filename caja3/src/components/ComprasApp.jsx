@@ -655,7 +655,18 @@ export default function ComprasApp() {
         });
       }
       if (compra.imagen_respaldo) {
-        mensaje += `   📎 Respaldo: ${compra.imagen_respaldo}\n`;
+        try {
+          const images = JSON.parse(compra.imagen_respaldo);
+          if (Array.isArray(images)) {
+            images.forEach((img, i) => {
+              mensaje += `   📎 Respaldo ${images.length > 1 ? i + 1 : ''}: ${img}\n`;
+            });
+          } else {
+            mensaje += `   📎 Respaldo: ${compra.imagen_respaldo}\n`;
+          }
+        } catch (e) {
+          mensaje += `   📎 Respaldo: ${compra.imagen_respaldo}\n`;
+        }
       }
       mensaje += `\n`;
     });
@@ -1842,27 +1853,59 @@ export default function ComprasApp() {
             compras
               .map(compra => (
               <div key={compra.id} className="compra-card" style={{position: 'relative'}}>
-                <div style={{position: 'absolute', top: '20px', right: '50px', display: 'flex', gap: '6px'}}>
-                  {compra.imagen_respaldo ? (
-                    <button
-                      onClick={() => window.open(compra.imagen_respaldo, '_blank')}
-                      style={{padding: '6px 10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600'}}
-                      title="Ver respaldo"
-                    >
-                      📎 Ver
-                    </button>
-                  ) : (
-                    <label style={{padding: '6px 10px', background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600'}}>
-                      {uploadingRespaldo === compra.id ? '⏳' : '📎 Subir'}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        style={{display: 'none'}}
-                        onChange={(e) => handleUploadRespaldo(compra.id, e)}
-                        disabled={uploadingRespaldo === compra.id}
-                      />
-                    </label>
-                  )}
+                <div style={{position: 'absolute', top: '20px', right: '50px', display: 'flex', gap: '6px', alignItems: 'center'}}>
+                  {/* Botón para ver imágenes existentes */}
+                  {compra.imagen_respaldo && (() => {
+                    try {
+                      const images = JSON.parse(compra.imagen_respaldo);
+                      const imageList = Array.isArray(images) ? images : [compra.imagen_respaldo];
+                      return imageList.map((img, i) => (
+                        <button
+                          key={i}
+                          onClick={() => window.open(img, '_blank')}
+                          style={{padding: '6px 10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600'}}
+                          title={`Ver respaldo ${i + 1}`}
+                        >
+                          📎 {imageList.length > 1 ? i + 1 : 'Ver'}
+                        </button>
+                      ));
+                    } catch (e) {
+                      return (
+                        <button
+                          onClick={() => window.open(compra.imagen_respaldo, '_blank')}
+                          style={{padding: '6px 10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600'}}
+                          title="Ver respaldo"
+                        >
+                          📎 Ver
+                        </button>
+                      );
+                    }
+                  })()}
+
+                  {/* Botón para subir más (siempre visible o si hay espacio) */}
+                  <label style={{
+                    padding: '6px 10px', 
+                    background: '#10b981', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '6px', 
+                    cursor: 'pointer', 
+                    fontSize: '11px', 
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    {uploadingRespaldo === compra.id ? '⏳' : <><Plus size={14} /> Foto</>}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{display: 'none'}}
+                      onChange={(e) => handleUploadRespaldo(compra.id, e)}
+                      disabled={uploadingRespaldo === compra.id}
+                    />
+                  </label>
+
                   <button
                     onClick={() => handleDeleteCompra(compra.id)}
                     style={{padding: '6px 10px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600'}}
