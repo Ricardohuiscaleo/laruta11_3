@@ -1346,152 +1346,138 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Centro de costos */}
-      <div style={{ background: 'linear-gradient(135deg, #1e293b, #334155)', borderRadius: 16, padding: '20px 24px', color: 'white' }}>
-        <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <DollarSign size={16} /> Centro de Costos — Nómina {MESES_L[mes]} {anio}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Resumen Moderno */}
+      <div style={{ background: '#f8fafc', borderRadius: 20, padding: '24px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#475569', fontWeight: 600 }}>
+            <DollarSign size={18} /> Resumen Nómina {MESES_L[mes]} {anio}
+          </div>
+          {editPresupuesto
+            ? <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <input type='number' value={presupuestoInput} onChange={e => setPresupuestoInput(e.target.value)}
+                style={{ width: 120, padding: '4px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 16, fontWeight: 700, outline: 'none' }} />
+              <button onClick={() => { onSavePresupuesto(parseFloat(presupuestoInput)); setEditPresupuesto(false); }} style={{ padding: '8px', borderRadius: 8, border: 'none', background: '#22c55e', color: 'white', cursor: 'pointer', display: 'flex' }}>
+                <Check size={16} />
+              </button>
+              <button onClick={() => setEditPresupuesto(false)} style={{ padding: '8px', borderRadius: 8, border: 'none', background: '#94a3b8', color: 'white', cursor: 'pointer', display: 'flex' }}>
+                <X size={16} />
+              </button>
+            </div>
+            : <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ fontSize: 24, fontWeight: 800, color: '#1e293b' }}>${presupuesto.toLocaleString('es-CL')} <span style={{ fontSize: 12, fontWeight: 500, color: '#64748b', marginLeft: 4 }}>Presupuesto</span></div>
+              <button onClick={() => { setPresupuestoInput(presupuesto); setEditPresupuesto(true); }} style={{ padding: '6px', borderRadius: 8, border: 'none', background: '#f1f5f9', color: '#64748b', cursor: 'pointer', display: 'flex' }}>
+                <Edit size={14} />
+              </button>
+            </div>
+          }
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
-          <div>
-            <div style={{ fontSize: 12, opacity: 0.6 }}>Presupuesto</div>
-            {editPresupuesto
-              ? <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <input type='number' value={presupuestoInput} onChange={e => setPresupuestoInput(e.target.value)}
-                  style={{ width: 120, padding: '4px 8px', borderRadius: 6, border: 'none', fontSize: 16, fontWeight: 700, color: '#1e293b', background: 'white' }} />
-                <button onClick={() => { onSavePresupuesto(parseFloat(presupuestoInput)); setEditPresupuesto(false); }} style={{ padding: '6px', borderRadius: 8, border: 'none', background: '#4ade80', color: '#065f46', cursor: 'pointer', display: 'flex' }}>
-                  <Check size={16} />
-                </button>
-                <button onClick={() => setEditPresupuesto(false)} style={{ padding: '6px', borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer', display: 'flex' }}>
-                  <X size={16} />
-                </button>
-              </div>
-              : <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ fontSize: 22, fontWeight: 800 }}>${presupuesto.toLocaleString('es-CL')}</div>
-                <button onClick={() => { setPresupuestoInput(presupuesto); setEditPresupuesto(true); }} style={{ padding: '6px', borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer', display: 'flex' }}>
-                  <Edit size={14} />
-                </button>
-              </div>
-            }
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          <div style={{ padding: '16px', background: 'white', borderRadius: 12, border: '1px solid #f1f5f9' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: 8 }}>Gasto Ejecutado</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: '#1e293b' }}>${(totalPagado + totalAdelantos).toLocaleString('es-CL')}</div>
+            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>Proyectado: ${totalCalculado.toLocaleString('es-CL')}</div>
           </div>
-          <div>
-            <div style={{ fontSize: 12, opacity: 0.6 }}>Pagos realizados</div>
-            <div style={{ fontSize: 22, fontWeight: 800 }}>${(totalPagado + totalAdelantos).toLocaleString('es-CL')}</div>
-            <div style={{ fontSize: 10, opacity: 0.6 }}>Calculado: ${totalCalculado.toLocaleString('es-CL')}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 12, opacity: 0.6 }}>{saldo < 0 ? 'Exceso' : 'Saldo presupuesto'}</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: saldo < 0 ? '#f87171' : '#4ade80' }}>
+          <div style={{ padding: '16px', background: 'white', borderRadius: 12, border: '1px solid #f1f5f9' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: 8 }}>{saldo < 0 ? 'Exceso' : 'Saldo Real'}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: saldo < 0 ? '#ef4444' : '#10b981' }}>
               ${Math.abs(saldo).toLocaleString('es-CL')}
             </div>
-            <div style={{ fontSize: 10, opacity: 0.6 }}>{saldo < 0 ? 'Sobre el presupuesto' : 'Disponible'}</div>
+            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>{saldo < 0 ? 'Sobre presupuesto' : 'Monto disponible'}</div>
+          </div>
+          <div style={{ padding: '16px', background: 'white', borderRadius: 12, border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 8 }}>Acciones</div>
+            <button onClick={copiarResumenPagos} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #e2e8f0', background: 'white', color: '#1e293b', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13 }}>
+              {copiedResumen ? <Check size={16} /> : <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ fontSize: 16 }}>📋</span> {copiedResumen ? 'Copiado' : 'Copiar Resumen'}</div>}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Liquidación agrupada por roles */}
-
-      {[['Administradores', administradores], ['Cajeros', cajeros], ['Plancheros', plancheros]].filter(([, grupo]) => grupo.length > 0).map(([titulo, grupo]) => (
-        <div key={titulo}>
-          <h2 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>{titulo}</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {grupo.map(p => {
-              const { diasTrabajados, diasReemplazados, ajustesPer, sueldoBase, gruposReemplazados, gruposReemplazando, total } = getLiquidacion(p);
+      {/* Listado Minimalista */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {personal.filter(p => p.activo == 1 && !p.rol?.includes('dueño')).map(p => {
+              const { diasTrabajados, sueldoBase, gruposReemplazando, gruposReemplados, ajustesPer, total } = getLiquidacion(p);
               const c = colores[p.id];
               const abierto = expandidos[p.id] !== false;
               const pagado = pagosNomina.find(pn => pn.personal_id == p.id);
-              // Get most specific ruta11 role label
               const roles = typeof p.rol === 'string' ? p.rol.split(',').map(r => r.trim()) : (Array.isArray(p.rol) ? p.rol : []);
-              const rolLabel = roles.includes('administrador') ? 'Administrador' : roles.includes('cajero') ? 'Cajero/a' : roles.includes('planchero') ? 'Planchero/a' : '';
+              const rolLabel = roles.includes('administrador') ? 'Admin' : roles.includes('cajero') ? 'Cajero' : roles.includes('planchero') ? 'Planchero' : '';
+
               return (
-                <div key={p.id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: `1px solid ${c?.border || '#e2e8f0'}`, marginBottom: 4 }}>
-                  {/* Header row */}
-                  <div className="detail-card-header" onClick={() => toggleCard(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', cursor: 'pointer', background: c?.light || '#f8fafc', borderBottom: abierto ? `2px solid ${c?.border || '#e2e8f0'}` : 'none', transition: 'all 0.2s' }}>
-                    {/* Color accent bar */}
-                    <div className="detail-card-accent" style={{ width: 6, height: 40, borderRadius: 3, background: c?.bg || '#cbd5e1', flexShrink: 0 }} />
-                    {/* Name + meta */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="detail-card-name-section" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                        <span className="detail-card-name-text" style={{ fontWeight: 800, fontSize: 17, color: '#0f172a', letterSpacing: '-0.3px' }}>{p.nombre}</span>
-                        {pagado && <ShieldCheck size={18} style={{ color: '#059669' }} />}
-                        <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: c?.light || '#f1f5f9', color: c?.text || '#475569', border: `1px solid ${c?.border || '#e2e8f0'}`, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{rolLabel}</span>
+                <div key={p.id} style={{ background: 'white', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
+                  <div onClick={() => toggleCard(p.id)} style={{ padding: '14px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: abierto ? '#f8fafc' : 'white' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: c?.light || '#f1f5f9', color: c?.text || '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700 }}>
+                        {p.nombre.charAt(0)}
                       </div>
-                      <div style={{ fontSize: 13, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{diasTrabajados} días trabajados</div>
-                    </div>
-                    {/* Salary summary inline */}
-                    <div className="detail-card-meta" style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
-                      <div className="detail-card-base-col" style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>{roles.includes('dueño') ? '💵 Liquidez' : `Base ${rolLabel}`}</div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: roles.includes('dueño') ? (sueldoBase >= 0 ? '#10b981' : '#dc2626') : '#475569' }}>
-                          {roles.includes('dueño') ? (sueldoBase >= 0 ? `+$${sueldoBase.toLocaleString('es-CL')} ✅` : `-$${Math.abs(sueldoBase).toLocaleString('es-CL')} 🚨`) : `$${sueldoBase.toLocaleString('es-CL')}`}
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontWeight: 700, fontSize: 15, color: '#1e293b' }}>{p.nombre}</span>
+                          {pagado && <ShieldCheck size={16} style={{ color: '#10b981' }} />}
                         </div>
+                        <div style={{ fontSize: 12, color: '#64748b' }}>{rolLabel} • {diasTrabajados} días</div>
                       </div>
-                      <div className="detail-card-total-col" style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 10, fontWeight: 800, color: c?.text || '#64748b', textTransform: 'uppercase', marginBottom: 2 }}>Saldo Final</div>
-                        <div style={{ fontSize: 18, fontWeight: 900, color: c?.text || '#1e293b' }}>${total.toLocaleString('es-CL')}</div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 11, color: '#94a3b8' }}>Total Liq.</div>
+                        <div style={{ fontSize: 16, fontWeight: 800, color: '#1e293b' }}>${total.toLocaleString('es-CL')}</div>
                       </div>
-                      <div style={{ marginLeft: 4 }}>
-                        {abierto ? <ChevronUp size={24} style={{ color: c?.text || '#94a3b8' }} /> : <ChevronDown size={24} style={{ color: c?.text || '#94a3b8' }} />}
+                      <div style={{ color: '#94a3b8' }}>
+                        {abierto ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                       </div>
                     </div>
                   </div>
-                  {/* Expanded detail */}
+
                   {abierto && (
-                    <div style={{ padding: '4px 16px 14px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                        <span style={{ fontSize: 13, color: '#64748b' }}>{roles.includes('dueño') ? '💵 Liquidez (Dueño)' : `Sueldo base (${rolLabel})`}</span>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: roles.includes('dueño') ? (sueldoBase >= 0 ? '#10b981' : '#dc2626') : 'inherit' }}>
-                          {roles.includes('dueño') ? (sueldoBase >= 0 ? `+$${sueldoBase.toLocaleString('es-CL')} ✅` : `-$${Math.abs(sueldoBase).toLocaleString('es-CL')} 🚨`) : `$${sueldoBase.toLocaleString('es-CL')}`}
-                        </span>
-                      </div>
-                      {Object.values(gruposReemplazando).map((g, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', border: `1px solid ${g.pago_por === 'empresa_adelanto' ? '#a5b4fc' : '#86efac'}`, backgroundColor: g.pago_por === 'empresa_adelanto' ? '#eef2ff' : '#dcfce7', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                          <span style={{ fontSize: 13, color: g.pago_por === 'empresa_adelanto' ? '#3730a3' : '#14532d', fontWeight: 600 }}>
-                            ↔ Reemplazó a {g.persona?.nombre ?? '?'} {g.dias.length} días
-                            {g.pago_por === 'empresa_adelanto' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#c7d2fe', color: '#4338ca', fontWeight: 800, border: '1px solid #a5b4fc' }}>✅ YA PAGADO</span>}
-                          </span>
-                          {g.pago_por === 'empresa_adelanto'
-                            ? <span style={{ fontSize: 13, color: '#6366f1', fontWeight: 600 }}>${g.monto.toLocaleString('es-CL')}</span>
-                            : <span style={{ fontSize: 13, fontWeight: 800, color: '#166534' }}>+${g.monto.toLocaleString('es-CL')}</span>
-                          }
+                    <div style={{ padding: '0 20px 20px', borderTop: '1px solid #f1f5f9' }}>
+                      <div style={{ padding: '12px 0' }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 12, letterSpacing: '0.02em' }}>Detalle Liquidación</div>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, padding: '0 4px' }}>
+                          <span style={{ fontSize: 13, color: '#475569' }}>Sueldo Base {rolLabel}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>${sueldoBase.toLocaleString('es-CL')}</span>
                         </div>
-                      ))}
-                      {Object.values(gruposReemplazados).map((g, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #fca5a5', backgroundColor: '#fee2e2', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: 8 }}>
-                          <span style={{ fontSize: 13, color: '#7f1d1d', fontWeight: 600 }}>
-                            {g.persona?.nombre ?? '?'} cubrió {g.dias.length} días
-                            {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 800, border: '1px solid #fcd34d' }}> PAGO DIRECTO</span>}
-                            {g.pago_por === 'empresa_adelanto' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#c7d2fe', color: '#4338ca', fontWeight: 800, border: '1px solid #a5b4fc' }}>ADELANTO</span>}
-                          </span>
-                          {(g.pago_por === 'empresa' || g.pago_por === 'empresa_adelanto')
-                            ? <span style={{ fontSize: 13, fontWeight: 800, color: '#991b1b' }}>-${g.monto.toLocaleString('es-CL')}</span>
-                            : <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>—</span>
-                          }
-                        </div>
-                      ))}{ajustesPer.map(a => (
-                        <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #f1f5f9', gap: 8 }}>
-                          <span style={{ fontSize: 13, color: '#64748b', flex: 1 }}>{a.concepto}</span>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: parseFloat(a.monto) < 0 ? '#ef4444' : '#10b981' }}>
-                              {parseFloat(a.monto) < 0 ? '-' : '+'}${Math.abs(parseFloat(a.monto)).toLocaleString('es-CL')}
+
+                        {Object.values(gruposReemplazando).map((g, i) => (
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, padding: '6px 10px', borderRadius: 8, background: '#f0fdf4', border: '1px solid #dcfce7', color: '#166534', fontSize: 12 }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ opacity: 0.7 }}>↔</span> Reemplazo {g.persona?.nombre ?? '?'} ({g.dias.length}d)
                             </span>
-                            <button onClick={() => onDeleteAjuste(a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 2 }}>
-                              <Trash2 size={14} />
-                            </button>
+                            <span style={{ fontWeight: 800 }}>+${g.monto.toLocaleString('es-CL')}</span>
                           </div>
-                        </div>
-                      ))}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0 12px', borderTop: '2px solid #f1f5f9', marginTop: 12 }}>
-                        <span style={{ fontSize: 16, fontWeight: 800, color: '#1e293b' }}>Total Líquido a Pagar</span>
-                        <span style={{ fontSize: 20, fontWeight: 900, color: c?.text || '#1e293b' }}>${total.toLocaleString('es-CL')}</span>
+                        ))}
+
+                        {Object.values(gruposReemplados).map((g, i) => (
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, padding: '6px 10px', borderRadius: 8, background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', fontSize: 12 }}>
+                            <span>{g.persona?.nombre ?? '?'} cubrió {g.dias.length}d</span>
+                            {g.pago_por === 'empresa' && <span style={{ fontWeight: 800 }}>-${g.monto.toLocaleString('es-CL')}</span>}
+                          </div>
+                        ))}
+
+                        {ajustesPer.map(a => (
+                          <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 4px', borderTop: '1px dashed #f1f5f9', marginTop: 4, fontSize: 12 }}>
+                            <span style={{ color: '#64748b' }}>{a.concepto}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                              <span style={{ fontWeight: 700, color: parseFloat(a.monto) < 0 ? '#ef4444' : '#10b981' }}>
+                                {parseFloat(a.monto) < 0 ? '-' : '+'}${Math.abs(parseFloat(a.monto)).toLocaleString('es-CL')}
+                              </span>
+                              <button onClick={() => onDeleteAjuste(a.id)} style={{ background: '#f1f5f9', border: 'none', width: 24, height: 24, borderRadius: 6, cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trash2 size={12} /></button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                        <button onClick={() => onAjuste(p)} style={{ flex: 1, padding: '9px', border: `1px dashed ${c?.border}`, borderRadius: 8, background: c?.light, color: c?.text, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>+ Ajuste</button>
+
+                      <div style={{ display: 'flex', gap: 8, borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>
+                        <button onClick={() => onAjuste(p)} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: 'white', color: '#475569', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>+ Ajuste</button>
                         {pagado ? (
-                          <button onClick={() => deletePago(pagado.id)} style={{ flex: 1, padding: '9px', border: '1px solid #fca5a5', borderRadius: 8, background: '#fef2f2', color: '#ef4444', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>Desmarcar Pago</button>
+                          <button onClick={() => deletePago(pagado.id)} style={{ flex: 1, height: 36, borderRadius: 8, border: 'none', background: '#fee2e2', color: '#ef4444', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Desmarcar Pago</button>
                         ) : (
-                          <button onClick={() => marcarPagado(p)} disabled={savingPago === p.id} style={{ flex: 1, padding: '9px', border: 'none', borderRadius: 8, background: '#10b981', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
-                            {savingPago === p.id ? 'Cargando...' : 'Marcar Pagado'}
+                          <button onClick={() => marcarPagado(p)} disabled={savingPago === p.id} style={{ flex: 1, height: 36, borderRadius: 8, border: 'none', background: '#1e293b', color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                            {savingPago === p.id ? '...' : 'Confirmar Pago'}
                           </button>
                         )}
                       </div>
@@ -1500,11 +1486,8 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                 </div>
               );
             })}
-          </div>
-        </div>
-      ))
-      }
-    </div >
+      </div>
+    </div>
   );
 }
 
