@@ -67,7 +67,8 @@ export default function PersonalApp() {
   const [pagosNomina, setPagosNomina] = useState({ ruta11: [], seguridad: [] });
   const [presupuestoNomina, setPresupuestoNomina] = useState({ ruta11: 0, seguridad: 0 });
   const [modalAjuste, setModalAjuste] = useState(null);
-  const [formAjuste, setFormAjuste] = useState({ monto: '', concepto: '', notas: '', tipo: '-' });
+  const [formAjuste, setFormAjuste] = useState({ monto: '', concepto: '', notas: '', categoria_id: 1, signo: '-' });
+  const [ajustesCategorias, setAjustesCategorias] = useState([]);
   const [saving, setSaving] = useState(false);
   const [showToastMsg, setShowToastMsg] = useState('');
   const [toastType, setToastType] = useState('success');
@@ -147,18 +148,22 @@ export default function PersonalApp() {
     setLoading(true);
     try {
       const mesStr = String(mes + 1).padStart(2, '0');
-      const [pRes, tRes, aRes, pnRes, pnSegRes, cfRes] = await Promise.all([
+      const [pRes, tRes, aRes, pnRes, pnSegRes, cfRes, catRes] = await Promise.all([
         fetch('/api/personal/get_personal.php'),
         fetch(`/api/personal/get_turnos.php?mes=${anio}-${mesStr}`),
         fetch(`/api/personal/get_ajustes.php?mes=${anio}-${mesStr}`),
         fetch(`/api/personal/get_pagos_nomina.php?mes=${anio}-${mesStr}&centro_costo=ruta11`),
         fetch(`/api/personal/get_pagos_nomina.php?mes=${anio}-${mesStr}&centro_costo=seguridad`),
-        fetch(`/api/personal/get_monthly_cashflow.php?mes=${anio}-${mesStr}`)
+        fetch(`/api/personal/get_monthly_cashflow.php?mes=${anio}-${mesStr}`),
+        fetch('/api/personal/get_ajustes_categorias.php')
       ]);
-      const [p, t, a, pn, pnSeg, cf] = await Promise.all([pRes.json(), tRes.json(), aRes.json(), pnRes.json(), pnSegRes.json(), cfRes.json()]);
+      const [p, t, a, pn, pnSeg, cf, cat] = await Promise.all([
+        pRes.json(), tRes.json(), aRes.json(), pnRes.json(), pnSegRes.json(), cfRes.json(), catRes.json()
+      ]);
       if (p.success) setPersonal(p.data);
       if (t.success) setTurnos(t.data);
       if (a.success) setAjustes(a.data);
+      if (cat.success) setAjustesCategorias(cat.data);
       if (pn.success && pnSeg.success) {
         setPagosNomina({ ruta11: pn.data, seguridad: pnSeg.data });
         setPresupuestoNomina({ ruta11: pn.presupuesto ?? 0, seguridad: pnSeg.presupuesto ?? 0 });
@@ -258,8 +263,9 @@ export default function PersonalApp() {
         body: JSON.stringify({
           personal_id: modalAjuste.id,
           mes: `${anio}-${mesStr}-01`,
-          monto: parseFloat(formAjuste.monto) * (formAjuste.tipo === '-' ? -1 : 1),
+          monto: parseFloat(formAjuste.monto) * (formAjuste.signo === '-' ? -1 : 1),
           concepto: formAjuste.concepto,
+          categoria_id: formAjuste.categoria_id,
           notas: formAjuste.notas || '',
         }),
       });
@@ -267,7 +273,7 @@ export default function PersonalApp() {
       if (data.success) {
         showToast('Ajuste guardado');
         setModalAjuste(null);
-        setFormAjuste({ monto: '', concepto: '', notas: '', tipo: '-' });
+        setFormAjuste({ monto: '', concepto: '', notas: '', categoria_id: 1, signo: '-' });
         loadData();
       } else {
         showToast(data.error || 'Error', 'error');
@@ -389,12 +395,20 @@ export default function PersonalApp() {
     const includeAjustes = modoContexto === 'all' || modoContexto === 'ruta11' || (modoContexto === 'seguridad' && !hasRuta11);
 
     const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
+    const montoAdelantos = includeAjustes ? ajustesPer.filter(a => a.tipo === 'adelanto' || (a.concepto || '').toLowerCase().includes('adelanto')).reduce((s, a) => s + Math.abs(parseFloat(a.monto)), 0) : 0;
+    const montoMultas = includeAjustes ? ajustesPer.filter(a => a.tipo === 'multa' || (a.concepto || '').toLowerCase().includes('falta') || (a.concepto || '').toLowerCase().includes('multa')).reduce((s, a) => s + Math.abs(parseFloat(a.monto)), 0) : 0;
+    const montoCorrecciones = includeAjustes ? ajustesPer.filter(a => a.tipo === 'correccion' || (a.concepto || '').toLowerCase().includes('febrero') || (a.concepto || '').toLowerCase().includes('anterior')).reduce((s, a) => s + parseFloat(a.monto), 0) : 0;
+    
     const totalAjustes = includeAjustes ? ajustesPer.reduce((s, a) => s + parseFloat(a.monto), 0) : 0;
+    // costoAjustes: lo que la empresa "paga" (excluye ahorros/multas y adelantos ya entregados)
     const costoAjustes = includeAjustes ? ajustesPer.reduce((s, a) => {
       const m = parseFloat(a.monto);
-      if (m > 0) return s + m;
+      if (m > 0) return s + m; // Bonos/Premios son costo
+      const tipo = (a.tipo || '').toLowerCase();
       const desc = (a.concepto || '').toLowerCase();
-      if (desc.includes('adelanto') || desc.includes('anticipo') || desc.includes('prestamo')) return s;
+      // Si es adelanto, no resta del costo empresa (porque ya es parte del presupuesto)
+      if (tipo === 'adelanto' || desc.includes('adelanto')) return s;
+      // Si es multa, SI resta del costo empresa (porque es ahorro/compensación)
       return s + m;
     }, 0) : 0;
 
@@ -404,8 +418,7 @@ export default function PersonalApp() {
 
     const total = Math.round(sueldoBase + totalReemplazando - totalReemplazados + totalAjustes);
     const costoEmpresa = Math.round(sueldoBase + totalReemplazandoCosto - totalReemplazados + costoAjustes);
-    const montoAdelantos = Math.max(0, costoEmpresa - total);
-    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplazados, gruposReemplazando, total, costoEmpresa, montoAdelantos };
+    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplados: gruposReemplazados, gruposReemplazando, total, costoEmpresa, montoAdelantos, montoMultas, montoCorrecciones };
   }
 
   const administradores = personal.filter(p => p.rol?.includes('administrador') && p.activo == 1);
@@ -768,47 +781,53 @@ export default function PersonalApp() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Motivo / Concepto Rápido</label>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-                  <button type="button" onClick={() => setFormAjuste(f => ({ ...f, concepto: 'Adelanto de sueldo', tipo: '-' }))} style={{ padding: '8px 12px', borderRadius: 20, border: '1px solid #e2e8f0', background: formAjuste.concepto === 'Adelanto de sueldo' ? '#fee2e2' : 'white', color: formAjuste.concepto === 'Adelanto de sueldo' ? '#b91c1c' : '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Adelanto de sueldo</button>
-                  <button type="button" onClick={() => setFormAjuste(f => ({ ...f, concepto: 'Descuento por pérdida', tipo: '-' }))} style={{ padding: '8px 12px', borderRadius: 20, border: '1px solid #e2e8f0', background: formAjuste.concepto === 'Descuento por pérdida' ? '#fee2e2' : 'white', color: formAjuste.concepto === 'Descuento por pérdida' ? '#b91c1c' : '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Descuento por pérdida</button>
-                  <button type="button" onClick={() => setFormAjuste(f => ({ ...f, concepto: 'Bono extra', tipo: '+' }))} style={{ padding: '8px 12px', borderRadius: 20, border: '1px solid #e2e8f0', background: formAjuste.concepto === 'Bono extra' ? '#dcfce7' : 'white', color: formAjuste.concepto === 'Bono extra' ? '#15803d' : '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Bono extra</button>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Categoría del Ajuste</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
+                  {ajustesCategorias.map(cat => (
+                    <button key={cat.id} type="button" 
+                      onClick={() => setFormAjuste(f => ({ ...f, categoria_id: cat.id, signo: cat.signo_defecto, concepto: cat.nombre }))}
+                      style={{ 
+                        padding: '10px 4px', borderRadius: 10, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                        transition: 'all 0.15s', border: formAjuste.categoria_id === cat.id ? `2px solid ${cat.color}` : '1px solid #e2e8f0',
+                        background: formAjuste.categoria_id === cat.id ? `${cat.color}15` : 'white',
+                        color: formAjuste.categoria_id === cat.id ? cat.color : '#64748b'
+                      }}>
+                      <div style={{ fontSize: 16 }}>{cat.icono}</div>
+                      <div>{cat.nombre}</div>
+                    </button>
+                  ))}
                 </div>
-                <input type="text" value={formAjuste.concepto} onChange={e => setFormAjuste(f => ({ ...f, concepto: e.target.value }))} placeholder="O escribe otro concepto..."
+                <input type="text" value={formAjuste.concepto} onChange={e => setFormAjuste(f => ({ ...f, concepto: e.target.value }))} placeholder="Descripción detallada..."
                   style={{ width: '100%', padding: '10px 14px', border: '1px solid #e3e3e3', borderRadius: 12, fontSize: 14 }} />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Dirección del ajuste</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button type="button" onClick={() => setFormAjuste(f => ({ ...f, tipo: '-' }))} style={{ flex: 1, padding: '10px', borderRadius: 12, border: formAjuste.tipo === '-' ? '2px solid #ef4444' : '1px solid #e3e3e3', background: formAjuste.tipo === '-' ? '#fef2f2' : 'white', color: formAjuste.tipo === '-' ? '#b91c1c' : '#444746', fontWeight: 700, cursor: 'pointer' }}>➖ Descontar Saldo</button>
-                  <button type="button" onClick={() => setFormAjuste(f => ({ ...f, tipo: '+' }))} style={{ flex: 1, padding: '10px', borderRadius: 12, border: formAjuste.tipo === '+' ? '2px solid #10b981' : '1px solid #e3e3e3', background: formAjuste.tipo === '+' ? '#ecfdf5' : 'white', color: formAjuste.tipo === '+' ? '#047857' : '#444746', fontWeight: 700, cursor: 'pointer' }}>➕ Sumar Saldo</button>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Cantidad (sin signos)</label>
-                <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontWeight: 800, fontSize: 18, color: formAjuste.tipo === '-' ? '#ef4444' : '#10b981' }}>{formAjuste.tipo} $</span>
-                  <input type="number" min="0" value={formAjuste.monto} onChange={e => setFormAjuste(f => ({ ...f, monto: Math.abs(parseFloat(e.target.value) || 0) || '' }))} placeholder="0"
-                    style={{ width: '100%', padding: '12px 14px 12px 42px', border: '1px solid #e3e3e3', borderRadius: 12, fontSize: 18, fontWeight: 700 }} />
-                </div>
-                {formAjuste.monto && (
-                  <div style={{ fontSize: 12, color: formAjuste.tipo === '-' ? '#ef4444' : '#10b981', marginTop: 4, fontWeight: 600 }}>
-                    Se va a {formAjuste.tipo === '-' ? 'descontar' : 'sumar'} ${parseFloat(formAjuste.monto).toLocaleString('es-CL')}
+              <div style={{ display: 'flex', gap: 16 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Monto</label>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontWeight: 800, fontSize: 16, color: formAjuste.signo === '-' ? '#ef4444' : '#10b981' }}>{formAjuste.signo} $</span>
+                    <input type="number" min="0" value={formAjuste.monto} onChange={e => setFormAjuste(f => ({ ...f, monto: Math.abs(parseFloat(e.target.value) || 0) || '' }))} placeholder="0"
+                      style={{ width: '100%', padding: '10px 14px 10px 38px', border: '1px solid #e3e3e3', borderRadius: 12, fontSize: 16, fontWeight: 700 }} />
                   </div>
-                )}
+                </div>
+                <div style={{ width: 100 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Sentido</label>
+                  <button type="button" onClick={() => setFormAjuste(f => ({ ...f, signo: f.signo === '-' ? '+' : '-' }))}
+                    style={{ width: '100%', padding: '10px', borderRadius: 12, border: '1px solid #e2e8f0', background: formAjuste.signo === '-' ? '#fee2e2' : '#dcfce7', color: formAjuste.signo === '-' ? '#b91c1c' : '#15803d', fontWeight: 800, cursor: 'pointer' }}>
+                    {formAjuste.signo === '-' ? 'DESCUENTA' : 'SUMA'}
+                  </button>
+                </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Notas Adicionales (Opcional)</label>
-                <input type="text" value={formAjuste.notas || ''} onChange={e => setFormAjuste(f => ({ ...f, notas: e.target.value }))} placeholder="Detalles extra, motivos..."
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Notas Adicionales (Interno)</label>
+                <input type="text" value={formAjuste.notas || ''} onChange={e => setFormAjuste(f => ({ ...f, notas: e.target.value }))} placeholder="¿Por qué se hace este ajuste?"
                   style={{ width: '100%', padding: '10px 14px', border: '1px solid #e3e3e3', borderRadius: 12, fontSize: 14 }} />
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>
-              <button onClick={() => { setModalAjuste(null); setFormAjuste({ monto: '', concepto: '', notas: '', tipo: '-' }); }} style={{ flex: 1, padding: '12px', border: 'none', background: '#f1f3f4', borderRadius: 12, cursor: 'pointer', fontWeight: 600, color: '#444746' }}>Cancelar</button>
+              <button onClick={() => { setModalAjuste(null); setFormAjuste({ monto: '', concepto: '', notas: '', categoria_id: 1, signo: '-' }); }} style={{ flex: 1, padding: '12px', border: 'none', background: '#f1f3f4', borderRadius: 12, cursor: 'pointer', fontWeight: 600, color: '#444746' }}>Cancelar</button>
               <button onClick={saveAjuste} disabled={saving || !formAjuste.monto || !formAjuste.concepto} style={{ flex: 1, padding: '12px', border: 'none', background: '#1a73e8', borderRadius: 12, cursor: 'pointer', fontWeight: 600, color: 'white', opacity: (saving || !formAjuste.monto || !formAjuste.concepto) ? 0.6 : 1 }}>
                 {saving ? 'Guardando...' : 'Guardar Ajuste'}
               </button>
@@ -1296,10 +1315,15 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
     navigator.clipboard.writeText(generarResumenPagos()).then(() => { setCopiedResumen(true); setTimeout(() => setCopiedResumen(false), 2500); });
   }
 
-  const totalCalculado = personal.filter(p => p.activo == 1 && !p.rol?.includes('dueño')).reduce((s, p) => s + getLiquidacion(p).costoEmpresa, 0);
-  const totalAdelantos = personal.filter(p => p.activo == 1 && !p.rol?.includes('dueño')).reduce((s, p) => s + getLiquidacion(p).montoAdelantos, 0);
-  const totalPagado = pagosNomina.reduce((s, p) => s + parseFloat(p.monto), 0);
-  const saldo = presupuesto - (totalPagado + totalAdelantos);
+  const liqVisibles = personal.filter(p => !p.rol?.includes('dueño') && (p.activo == 1 || p.id == 0)).map(p => getLiquidacion(p));
+  const totalSueldosNetos = liqVisibles.reduce((s, l) => s + l.total, 0);
+  const totalAdelantos = liqVisibles.reduce((s, l) => s + l.montoAdelantos, 0);
+  const totalReemplazosCaja = liqVisibles.reduce((s, l) => s + l.ajustesPer.filter(a => a.tipo === 'reemplazo_caja').reduce((ss, aa) => ss + Math.abs(parseFloat(aa.monto)), 0), 0);
+  const totalCompensaciones = liqVisibles.reduce((s, l) => s + l.montoMultas + Math.abs(l.montoCorrecciones), 0);
+  
+  const totalPagadoReal = pagosNomina.filter(pn => personal.some(per => per.id == pn.personal_id && per.activo == 1)).reduce((s, p) => s + parseFloat(p.monto), 0);
+  const cajaDisponible = presupuesto - (totalPagadoReal + totalAdelantos + totalReemplazosCaja);
+  const balanceFinal = presupuesto - (totalSueldosNetos + totalAdelantos + totalReemplazosCaja + totalCompensaciones);
   const hayPagos = pagosNomina.length > 0;
 
   function generarNotas(p) {
@@ -1373,25 +1397,40 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
           }
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
-          <div style={{ padding: '16px', background: 'white', borderRadius: 12, border: '1px solid #f1f5f9' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: 8 }}>Gasto Ejecutado</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: '#1e293b' }}>${(totalPagado + totalAdelantos).toLocaleString('es-CL')}</div>
-            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>Proyectado: ${totalCalculado.toLocaleString('es-CL')}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
+          <div style={{ padding: '14px', background: 'white', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>Presupuesto</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#1e293b' }}>${presupuesto.toLocaleString('es-CL')}</div>
           </div>
-          <div style={{ padding: '16px', background: 'white', borderRadius: 12, border: '1px solid #f1f5f9' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: 8 }}>{saldo < 0 ? 'Exceso' : 'Saldo Real'}</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: saldo < 0 ? '#ef4444' : '#10b981' }}>
-              ${Math.abs(saldo).toLocaleString('es-CL')}
+
+          <div style={{ padding: '14px', background: 'white', borderRadius: 12, border: '1px solid #e2e8f0', cursor: 'pointer' }} title="Sueldos por pagar + Adelantos entregados">
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>Pagos / Salidas</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#2563eb' }}>${(totalSueldosNetos + totalAdelantos + totalReemplazosCaja).toLocaleString('es-CL')}</div>
+            <div style={{ fontSize: 9, color: '#94a3b8' }}>Pendiente Banco: ${totalSueldosNetos.toLocaleString('es-CL')}</div>
+          </div>
+
+          <div style={{ padding: '14px', background: 'white', borderRadius: 12, border: '1px solid #e2e8f0', cursor: 'pointer' }} title="Multas, Faltas y Recuperaciones que vuelven a la empresa">
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>Compensaciones</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#f59e0b' }}>${totalCompensaciones.toLocaleString('es-CL')}</div>
+            <div style={{ fontSize: 9, color: '#94a3b8' }}>Ahorro Empresa</div>
+          </div>
+
+          <div style={{ padding: '14px', background: balanceFinal === 0 ? '#f0fdf4' : '#fff1f2', borderRadius: 12, border: `1px solid ${balanceFinal === 0 ? '#bbf7d0' : '#fecdd3'}` }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: balanceFinal === 0 ? '#16a34a' : '#be123c', textTransform: 'uppercase', marginBottom: 4 }}>Balance Final</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: balanceFinal === 0 ? '#15803d' : '#e11d48' }}>
+              {balanceFinal === 0 ? 'OK (0)' : `${balanceFinal < 0 ? '-' : '+'}$${Math.abs(balanceFinal).toLocaleString('es-CL')}`}
             </div>
-            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>{saldo < 0 ? 'Sobre presupuesto' : 'Monto disponible'}</div>
+            <div style={{ fontSize: 9, color: balanceFinal === 0 ? '#16a34a' : '#be123c' }}>{balanceFinal === 0 ? 'Todo cuadra' : 'Desviación detectada'}</div>
           </div>
-          <div style={{ padding: '16px', background: 'white', borderRadius: 12, border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 8 }}>Acciones</div>
-            <button onClick={copiarResumenPagos} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #e2e8f0', background: 'white', color: '#1e293b', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13 }}>
-              {copiedResumen ? <Check size={16} /> : <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ fontSize: 16 }}>📋</span> {copiedResumen ? 'Copiado' : 'Copiar Resumen'}</div>}
-            </button>
+        </div>
+
+        <div style={{ marginTop: 20, display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'flex-end' }}>
+          <div style={{ flex: 1, padding: '10px 16px', background: '#f1f5f9', borderRadius: 10, fontSize: 12, color: '#475569', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <AlertCircle size={14} /> <span>Caja para pagos pendientes: <strong>${cajaDisponible.toLocaleString('es-CL')}</strong></span>
           </div>
+          <button onClick={copiarResumenPagos} style={{ padding: '10px 20px', borderRadius: 10, border: '1px solid #e2e8f0', background: 'white', color: '#1e293b', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+            {copiedResumen ? <Check size={16} /> : <span>📋 Copiar Resumen</span>}
+          </button>
         </div>
       </div>
 
@@ -1458,17 +1497,23 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                           </div>
                         ))}
 
-                        {ajustesPer.map(a => (
-                          <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 4px', borderTop: '1px dashed #f1f5f9', marginTop: 4, fontSize: 12 }}>
-                            <span style={{ color: '#64748b' }}>{a.concepto}</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                              <span style={{ fontWeight: 700, color: parseFloat(a.monto) < 0 ? '#ef4444' : '#10b981' }}>
-                                {parseFloat(a.monto) < 0 ? '-' : '+'}${Math.abs(parseFloat(a.monto)).toLocaleString('es-CL')}
+                        {ajustesPer.map(a => {
+                          const catObj = ajustesCategorias.find(c => c.slug === a.tipo);
+                          const icon = catObj ? catObj.icono : '📄';
+                          return (
+                            <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 4px', borderTop: '1px dashed #f1f5f9', marginTop: 4, fontSize: 12 }}>
+                              <span style={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ fontSize: 13 }} title={a.tipo}>{icon}</span> {a.concepto}
                               </span>
-                              <button onClick={() => onDeleteAjuste(a.id)} style={{ background: '#f1f5f9', border: 'none', width: 24, height: 24, borderRadius: 6, cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trash2 size={12} /></button>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <span style={{ fontWeight: 700, color: parseFloat(a.monto) < 0 ? '#ef4444' : '#10b981' }}>
+                                  {parseFloat(a.monto) < 0 ? '-' : '+'}${Math.abs(parseFloat(a.monto)).toLocaleString('es-CL')}
+                                </span>
+                                <button onClick={() => onDeleteAjuste(a.id)} style={{ background: '#f1f5f9', border: 'none', width: 24, height: 24, borderRadius: 6, cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trash2 size={12} /></button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       <div style={{ display: 'flex', gap: 8, borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>

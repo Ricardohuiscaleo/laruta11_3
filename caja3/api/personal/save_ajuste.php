@@ -24,13 +24,14 @@ $personal_id = intval($input['personal_id'] ?? 0);
 $mes = $input['mes'] ?? '';
 $monto = floatval($input['monto'] ?? 0);
 $concepto = trim($input['concepto'] ?? '');
+$categoria_id = intval($input['categoria_id'] ?? 0);
 $notas = trim($input['notas'] ?? '');
 if (!$personal_id || !$mes || !$concepto) {
     echo json_encode(['success' => false, 'error' => 'Datos incompletos']);
     exit;
 }
-$stmt = mysqli_prepare($conn, "INSERT INTO ajustes_sueldo (personal_id, mes, monto, concepto, notas) VALUES (?,?,?,?,?)");
-mysqli_stmt_bind_param($stmt, 'isdss', $personal_id, $mes, $monto, $concepto, $notas);
+$stmt = mysqli_prepare($conn, "INSERT INTO ajustes_sueldo (personal_id, mes, monto, concepto, categoria_id, notas) VALUES (?,?,?,?,?,?)");
+mysqli_stmt_bind_param($stmt, 'isdsis', $personal_id, $mes, $monto, $concepto, $categoria_id, $notas);
 if (mysqli_stmt_execute($stmt)) {
     echo json_encode(['success' => true, 'id' => mysqli_insert_id($conn)]);
 }
