@@ -539,6 +539,7 @@ export default function PersonalApp() {
                 anio={anio}
                 pagosNomina={pagosNomina}
                 presupuestoNomina={presupuestoNomina}
+                ajustesCategorias={ajustesCategorias}
                 onReloadPagos={loadData}
                 showToast={showToast}
                 onEditPersonal={(p) => { setModalPersonal(p); setFormPersonal({ nombre: p.nombre, rol: typeof p.rol === 'string' ? p.rol.split(',') : p.rol, sueldo_base_cajero: p.sueldo_base_cajero || '', sueldo_base_planchero: p.sueldo_base_planchero || '', sueldo_base_admin: p.sueldo_base_admin || '', sueldo_base_seguridad: p.sueldo_base_seguridad || '', activo: p.activo }); }}
@@ -873,7 +874,7 @@ export default function PersonalApp() {
 
 // --- SUBRECUROS Y COMPONENTES ---
 
-function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupuestoNomina, onReloadPagos, showToast, onEditPersonal, previewPersonalEmail, sendPersonalEmail, sendMassiveEmails }) {
+function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupuestoNomina, ajustesCategorias, onReloadPagos, showToast, onEditPersonal, previewPersonalEmail, sendPersonalEmail, sendMassiveEmails }) {
   const [copiedGlobal, setCopiedGlobal] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
 
