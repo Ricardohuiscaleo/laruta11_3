@@ -8,7 +8,7 @@ $auth_url = 'https://accounts.google.com/o/oauth2/auth?' . http_build_query([
     'scope' => 'email profile',
     'response_type' => 'code'
 ]);
-
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -16,11 +16,11 @@ $auth_url = 'https://accounts.google.com/o/oauth2/auth?' . http_build_query([
 </head>
 <body>
     <h1>Test Final - OAuth Autorizado</h1>
-    <p><strong>Client ID:</strong> <?= $config['ruta11_google_client_id'] </p>
-    <p><strong>Redirect URI:</strong> <?= $config['ruta11_google_redirect_uri'] </p>
+    <p><strong>Client ID:</strong> <?= $config['ruta11_google_client_id'] ?></p>
+    <p><strong>Redirect URI:</strong> <?= $config['ruta11_google_redirect_uri'] ?></p>
     <p><strong>Ambas BDs conectadas:</strong> ✅</p>
     
-    <a href="<?= $auth_url " 
+    <a href="<?= $auth_url ?>" 
        style="background: #4285f4; color: white; padding: 20px 40px; text-decoration: none; border-radius: 8px; font-size: 18px; display: inline-block; margin: 20px 0;">
         🚀 Login with Google (Final Test)
     </a>

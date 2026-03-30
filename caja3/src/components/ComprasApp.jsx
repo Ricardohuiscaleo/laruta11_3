@@ -82,8 +82,10 @@ export default function ComprasApp() {
   const [montoTransferencia, setMontoTransferencia] = useState('');
   const [saldoAnterior, setSaldoAnterior] = useState('');
   const [uploadingRespaldo, setUploadingRespaldo] = useState(null);
-  const [respaldoFile, setRespaldoFile] = useState(null);
-  const [respaldoPreview, setRespaldoPreview] = useState(null);
+  const [respaldoFiles, setRespaldoFiles] = useState([]);
+  const [respaldoPreviews, setRespaldoPreviews] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [selectedPreviewImage, setSelectedPreviewImage] = useState(null);
   const [historialSearchTerm, setHistorialSearchTerm] = useState('');
   const [showComprasSearch, setShowComprasSearch] = useState(false);
   const [comprasSearchTerm, setComprasSearchTerm] = useState('');
@@ -327,6 +329,44 @@ export default function ComprasApp() {
     });
   };
 
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setIsDragging(true);
+    } else if (e.type === 'dragleave') {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFiles(files);
+    }
+  };
+
+  const handleFiles = (files) => {
+    const validFiles = files.filter(file => {
+      if (!file.type.startsWith('image/')) {
+        alert(`❌ ${file.name} no es una imagen`);
+        return false;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`❌ ${file.name} es demasiado grande (máx 10MB)`);
+        return false;
+      }
+      return true;
+    });
+    
+    setRespaldoFiles(prev => [...prev, ...validFiles]);
+    setRespaldoPreviews(prev => [...prev, ...validFiles.map(f => URL.createObjectURL(f))]);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -362,16 +402,33 @@ export default function ComprasApp() {
       if (data.success) {
         const compraId = data.compra_id;
         
-        // Subir respaldo si existe
-        if (respaldoFile) {
-          const formData = new FormData();
-          formData.append('image', respaldoFile);
-          formData.append('compra_id', compraId);
+        // Subir respaldos si existen
+        if (respaldoFiles.length > 1) {
+           // Si hay múltiples, subirlos secuencialmente
+           for (const file of respaldoFiles) {
+              const uploadData = new FormData();
+              uploadData.append('image', file);
+              uploadData.append('compra_id', compraId);
+              try {
+                await fetch(`/api/compras/upload_respaldo.php?t=${Date.now()}`, {
+                  method: 'POST',
+                  body: uploadData,
+                  cache: 'no-store'
+                });
+              } catch (error) {
+                console.error('Error subiendo respaldo:', error);
+              }
+           }
+        } else if (respaldoFiles.length === 1) {
+          const file = respaldoFiles[0];
+          const uploadData = new FormData();
+          uploadData.append('image', file);
+          uploadData.append('compra_id', compraId);
           
           try {
             await fetch(`/api/compras/upload_respaldo.php?t=${Date.now()}`, {
               method: 'POST',
-              body: formData,
+              body: uploadData,
               cache: 'no-store'
             });
           } catch (error) {
@@ -388,8 +445,8 @@ export default function ComprasApp() {
           notas: '',
           items: []
         });
-        setRespaldoFile(null);
-        setRespaldoPreview(null);
+        setRespaldoFiles([]);
+        setRespaldoPreviews([]);
         loadCompras(1);
         loadSaldoDisponible();
       } else {
@@ -1533,63 +1590,75 @@ export default function ComprasApp() {
 
           <div className="form-group">
             <label><Paperclip size={16} /> Respaldo (Boleta/Factura)</label>
-            {!respaldoPreview ? (
+            <div 
+              style={{
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: '10px', 
+                marginTop: '10px',
+                padding: '10px',
+                border: isDragging ? '2px dashed #10b981' : '2px solid transparent',
+                background: isDragging ? '#dcfce7' : 'transparent',
+                borderRadius: '12px',
+                transition: 'all 0.2s'
+              }}
+              onDragEnter={handleDrag}
+              onDragOver={handleDrag}
+              onDragLeave={handleDrag}
+              onDrop={handleDrop}
+            >
+              {respaldoPreviews.map((prev, idx) => (
+                <div key={idx} style={{position: 'relative', display: 'inline-block'}}>
+                  <img 
+                    src={prev} 
+                    onClick={() => setSelectedPreviewImage(prev)}
+                    style={{width: '24px', height: '24px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #10b981', cursor: 'zoom-in'}} 
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRespaldoFiles(prevFiles => prevFiles.filter((_, i) => i !== idx));
+                      setRespaldoPreviews(prevUrls => prevUrls.filter((_, i) => i !== idx));
+                    }}
+                    style={{position: 'absolute', top: '-4px', right: '-4px', width: '12px', height: '12px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.2)'}}
+                  >
+                    <X size={8} />
+                  </button>
+                </div>
+              ))}
+              
               <label style={{
+                width: '24px',
+                height: '24px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px',
-                padding: '12px',
                 background: '#f0fdf4',
                 border: '2px dashed #10b981',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                fontWeight: '600',
                 color: '#059669',
                 transition: 'all 0.2s'
               }}
               onMouseEnter={(e) => e.currentTarget.style.background = '#dcfce7'}
               onMouseLeave={(e) => e.currentTarget.style.background = '#f0fdf4'}
               >
-                <Image size={18} /> Adjuntar Foto de Boleta/Factura
+                <Plus size={16} />
                 <input
                   type="file"
                   accept="image/*"
+                  multiple
                   style={{display: 'none'}}
                   onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      // Validar tipo
-                      if (!file.type.startsWith('image/')) {
-                        alert('❌ Por favor selecciona una imagen');
-                        return;
-                      }
-                      // Validar tamaño (máx 10MB)
-                      if (file.size > 10 * 1024 * 1024) {
-                        alert('❌ La imagen es demasiado grande (máx 10MB)');
-                        return;
-                      }
-                      setRespaldoFile(file);
-                      setRespaldoPreview(URL.createObjectURL(file));
+                    const files = Array.from(e.target.files);
+                    if (files.length > 0) {
+                      handleFiles(files);
                     }
                   }}
                 />
               </label>
-            ) : (
-              <div style={{marginTop: '8px', position: 'relative', display: 'inline-block'}}>
-                <img src={respaldoPreview} style={{maxWidth: '200px', borderRadius: '8px', border: '2px solid #10b981'}} />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRespaldoFile(null);
-                    setRespaldoPreview(null);
-                  }}
-                  style={{position: 'absolute', top: '8px', right: '8px', padding: '6px 10px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', boxShadow: '0 2px 4px rgba(0,0,0,0.2)'}}
-                >
-                  <X size={14} /> Quitar
-                </button>
-              </div>
-            )}
+            </div>
           </div>
 
           {/* Agregar Items */}
@@ -1860,24 +1929,22 @@ export default function ComprasApp() {
                       const images = JSON.parse(compra.imagen_respaldo);
                       const imageList = Array.isArray(images) ? images : [compra.imagen_respaldo];
                       return imageList.map((img, i) => (
-                        <button
+                        <img 
                           key={i}
-                          onClick={() => window.open(img, '_blank')}
-                          style={{padding: '6px 10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600'}}
+                          src={img}
+                          onClick={() => setSelectedPreviewImage(img)}
+                          style={{width: '24px', height: '24px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #3b82f6', cursor: 'zoom-in'}}
                           title={`Ver respaldo ${i + 1}`}
-                        >
-                          📎 {imageList.length > 1 ? i + 1 : 'Ver'}
-                        </button>
+                        />
                       ));
                     } catch (e) {
                       return (
-                        <button
-                          onClick={() => window.open(compra.imagen_respaldo, '_blank')}
-                          style={{padding: '6px 10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600'}}
+                        <img 
+                          src={compra.imagen_respaldo}
+                          onClick={() => setSelectedPreviewImage(compra.imagen_respaldo)}
+                          style={{width: '24px', height: '24px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #3b82f6', cursor: 'zoom-in'}}
                           title="Ver respaldo"
-                        >
-                          📎 Ver
-                        </button>
+                        />
                       );
                     }
                   })()}
@@ -2985,6 +3052,58 @@ export default function ComprasApp() {
           }
         }
       `}</style>
+      {/* Modal Vista Previa Imagen */}
+      {selectedPreviewImage && (
+        <div 
+          onClick={() => setSelectedPreviewImage(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            padding: '20px',
+            cursor: 'zoom-out'
+          }}
+        >
+          <img 
+            src={selectedPreviewImage} 
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              borderRadius: '12px',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+              objectFit: 'contain'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button 
+            onClick={() => setSelectedPreviewImage(null)}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'white',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+            }}
+          >
+            <X size={24} />
+          </button>
+        </div>
+      )}
     </div>
   );
-}
+};

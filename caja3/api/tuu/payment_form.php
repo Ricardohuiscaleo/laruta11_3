@@ -36,7 +36,7 @@ $form_data = [
 
 // URL de destino (igual que el plugin)
 $action_url = 'https://core.payment.haulmer.com/api/v1/payment/init';
-
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -131,17 +131,17 @@ $action_url = 'https://core.payment.haulmer.com/api/v1/payment/init';
         <h2>Procesando tu Pago</h2>
         <p>Serás redirigido a la pasarela segura de TUU</p>
         
-        <div class="amount">$<?= number_format($amount, 0, ',', '.') </div>
+        <div class="amount">$<?= number_format($amount, 0, ',', '.') ?></div>
         
         <div class="spinner"></div>
         
-        <p><strong><?= htmlspecialchars($customer_name) </strong></p>
-        <p><?= htmlspecialchars($description) </p>
+        <p><strong><?= htmlspecialchars($customer_name) ?></strong></p>
+        <p><?= htmlspecialchars($description) ?></p>
         
-        <form id="paymentForm" method="POST" action="<?= $action_url ">
-            <?php foreach ($form_data as $key => $value): 
-                <input type="hidden" name="<?= htmlspecialchars($key) " value="<?= htmlspecialchars($value) ">
-            <?php endforeach; 
+        <form id="paymentForm" method="POST" action="<?= $action_url ?>">
+            <?php foreach ($form_data as $key => $value): ?> 
+                <input type="hidden" name="<?= htmlspecialchars($key) ?>" value="<?= htmlspecialchars($value) ?>">
+            <?php endforeach; ?> 
             <button type="submit" class="btn">Continuar al Pago</button>
         </form>
         

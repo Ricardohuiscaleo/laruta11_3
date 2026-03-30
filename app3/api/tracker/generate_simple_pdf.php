@@ -44,13 +44,13 @@ try {
     $interview = mysqli_fetch_assoc($interviewResult);
     
     // Generar PDF simple usando FPDF o similar
-    generateSimplePDF($candidate, $interview);
+    generateSimplePDF($candidate, $interview, $conn);
     
 } catch (Exception $e) {
     die('Error generando PDF: ' . $e->getMessage());
 }
 
-function generateSimplePDF($candidate, $interview) {
+function generateSimplePDF($candidate, $interview, $conn) {
     // Headers para descarga
     $filename = 'entrevista_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $candidate['nombre']) . '_' . date('Y-m-d') . '.txt';
     header('Content-Type: text/plain; charset=utf-8');

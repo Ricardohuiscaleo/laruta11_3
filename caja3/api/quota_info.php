@@ -98,7 +98,7 @@ if (isset($modelsData['models'])) {
         }
     }
 }
-
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -111,23 +111,23 @@ if (isset($modelsData['models'])) {
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-2xl font-bold mb-6">Información de Cuota de Gemini API</h1>
         
-        <?php if ($errorMessage): 
+        <?php if ($errorMessage): ?> 
             <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6">
-                <p><?php echo $errorMessage; </p>
+                <p><?php echo $errorMessage; ?></p>
             </div>
-        <?php endif; 
+        <?php endif; ?> 
         
         <!-- Información de la clave API -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 class="text-xl font-semibold mb-4">Información de la Clave API</h2>
-            <p><strong>Prefijo de clave:</strong> <?php echo substr($apiKey, 0, 5) . '...' . substr($apiKey, -5); </p>
-            <p><strong>Longitud:</strong> <?php echo strlen($apiKey);  caracteres</p>
+            <p><strong>Prefijo de clave:</strong> <?php echo substr($apiKey, 0, 5) . '...' . substr($apiKey, -5); ?></p>
+            <p><strong>Longitud:</strong> <?php echo strlen($apiKey); ?> caracteres</p>
         </div>
         
         <!-- Información de uso actual -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 class="text-xl font-semibold mb-4">Uso Actual</h2>
-            <?php if ($usageMetadata): 
+            <?php if ($usageMetadata): ?> 
                 <div class="overflow-x-auto">
                     <table class="min-w-full bg-white">
                         <thead>
@@ -137,56 +137,56 @@ if (isset($modelsData['models'])) {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($usageMetadata as $key => $value): 
+                            <?php foreach ($usageMetadata as $key => $value): ?> 
                                 <tr>
-                                    <td class="py-2 px-4 border-b border-gray-200"><?php echo $key; </td>
-                                    <td class="py-2 px-4 border-b border-gray-200"><?php echo is_array($value) ? json_encode($value) : $value; </td>
+                                    <td class="py-2 px-4 border-b border-gray-200"><?php echo $key; ?></td>
+                                    <td class="py-2 px-4 border-b border-gray-200"><?php echo is_array($value) ? json_encode($value) : $value; ?></td>
                                 </tr>
-                            <?php endforeach; 
+                            <?php endforeach; ?> 
                         </tbody>
                     </table>
                 </div>
-            <?php else: 
+            <?php else: ?> 
                 <p class="text-gray-500">No hay información de uso disponible.</p>
-            <?php endif; 
+            <?php endif; ?> 
         </div>
         
         <!-- Modelos recomendados -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 class="text-xl font-semibold mb-4">Modelos Recomendados</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <?php foreach ($recommendedModels as $model): 
-                    <div class="border rounded-lg p-4 <?php echo isset($model['recomendado']) && $model['recomendado'] ? 'border-green-500 bg-green-50' : 'border-gray-200'; ">
-                        <h3 class="font-semibold text-lg mb-2"><?php echo $model['nombre']; </h3>
-                        <p class="text-sm text-gray-600 mb-2"><?php echo $model['descripcion']; </p>
+                <?php foreach ($recommendedModels as $model): ?> 
+                    <div class="border rounded-lg p-4 <?php echo isset($model['recomendado']) && $model['recomendado'] ? 'border-green-500 bg-green-50' : 'border-gray-200'; ?>">
+                        <h3 class="font-semibold text-lg mb-2"><?php echo $model['nombre']; ?></h3>
+                        <p class="text-sm text-gray-600 mb-2"><?php echo $model['descripcion']; ?></p>
                         <div class="text-xs text-gray-500">
-                            <p><strong>Tokens de entrada:</strong> <?php echo $model['tokens_entrada']; </p>
-                            <p><strong>Tokens de salida:</strong> <?php echo $model['tokens_salida']; </p>
+                            <p><strong>Tokens de entrada:</strong> <?php echo $model['tokens_entrada']; ?></p>
+                            <p><strong>Tokens de salida:</strong> <?php echo $model['tokens_salida']; ?></p>
                         </div>
-                        <?php if (isset($model['caracteristicas']) && !empty($model['caracteristicas'])): 
+                        <?php if (isset($model['caracteristicas']) && !empty($model['caracteristicas'])): ?> 
                             <div class="mt-2">
                                 <p class="text-xs font-medium text-gray-700 mb-1">Características:</p>
                                 <ul class="text-xs text-gray-600 list-disc pl-4">
-                                    <?php foreach ($model['caracteristicas'] as $caracteristica): 
-                                        <li><?php echo $caracteristica; </li>
-                                    <?php endforeach; 
+                                    <?php foreach ($model['caracteristicas'] as $caracteristica): ?> 
+                                        <li><?php echo $caracteristica; ?></li>
+                                    <?php endforeach; ?> 
                                 </ul>
                             </div>
-                        <?php endif; 
-                        <?php if (isset($model['recomendado']) && $model['recomendado']): 
+                        <?php endif; ?> 
+                        <?php if (isset($model['recomendado']) && $model['recomendado']): ?> 
                             <div class="mt-2">
                                 <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Recomendado</span>
                             </div>
-                        <?php endif; 
+                        <?php endif; ?> 
                     </div>
-                <?php endforeach; 
+                <?php endforeach; ?> 
             </div>
         </div>
         
         <!-- Modelos disponibles -->
         <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-xl font-semibold mb-4">Modelos Disponibles (<?php echo count($availableModels); )</h2>
-            <?php if (!empty($availableModels)): 
+            <h2 class="text-xl font-semibold mb-4">Modelos Disponibles (<?php echo count($availableModels); ?>)</h2>
+            <?php if (!empty($availableModels)): ?> 
                 <div class="overflow-x-auto">
                     <table class="min-w-full bg-white">
                         <thead>
@@ -198,28 +198,28 @@ if (isset($modelsData['models'])) {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($availableModels as $model): 
+                            <?php foreach ($availableModels as $model): ?> 
                                 <tr>
                                     <td class="py-2 px-4 border-b border-gray-200 font-medium">
-                                        <?php echo $model['displayName']; 
+                                        <?php echo $model['displayName']; ?> 
                                     </td>
                                     <td class="py-2 px-4 border-b border-gray-200">
-                                        <?php echo $model['version']; 
+                                        <?php echo $model['version']; ?> 
                                     </td>
                                     <td class="py-2 px-4 border-b border-gray-200">
-                                        <?php echo number_format($model['inputTokenLimit'], 0, ',', '.'); 
+                                        <?php echo number_format($model['inputTokenLimit'], 0, ',', '.'); ?> 
                                     </td>
                                     <td class="py-2 px-4 border-b border-gray-200">
-                                        <?php echo number_format($model['outputTokenLimit'], 0, ',', '.'); 
+                                        <?php echo number_format($model['outputTokenLimit'], 0, ',', '.'); ?> 
                                     </td>
                                 </tr>
-                            <?php endforeach; 
+                            <?php endforeach; ?> 
                         </tbody>
                     </table>
                 </div>
-            <?php else: 
+            <?php else: ?> 
                 <p class="text-gray-500">No hay modelos disponibles.</p>
-            <?php endif; 
+            <?php endif; ?> 
         </div>
         
         <div class="mt-6 text-center text-sm text-gray-500">

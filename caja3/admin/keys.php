@@ -3,7 +3,7 @@ session_start();
 
 // Verificar si ya está autenticado
 $authenticated = isset($_SESSION['keys_admin']);
-
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -14,7 +14,7 @@ $authenticated = isset($_SESSION['keys_admin']);
     <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo.png" />
 </head>
 <body class="bg-gray-100">
-    <?php if (!$authenticated): 
+    <?php if (!$authenticated): ?> 
     <div class="min-h-screen flex items-center justify-center">
         <div class="bg-white p-8 rounded-xl shadow-xl w-full max-w-md">
             <div class="text-center mb-6">
@@ -36,7 +36,7 @@ $authenticated = isset($_SESSION['keys_admin']);
             </form>
         </div>
     </div>
-    <?php else: 
+    <?php else: ?> 
     <div class="max-w-7xl mx-auto p-6">
         <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
             <a href="/admin" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors inline-block mb-4">← Volver al Admin</a>
@@ -48,10 +48,10 @@ $authenticated = isset($_SESSION['keys_admin']);
             <div class="text-center py-10 text-gray-600">Cargando keys...</div>
         </div>
     </div>
-    <?php endif; 
+    <?php endif; ?> 
 
     <script>
-        <?php if (!$authenticated): 
+        <?php if (!$authenticated): ?> 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -79,7 +79,7 @@ $authenticated = isset($_SESSION['keys_admin']);
                 errorDiv.style.display = 'block';
             }
         });
-        <?php else: 
+        <?php else: ?> 
         async function loadKeys() {
             try {
                 const response = await fetch('/api/admin/get_keys.php');
@@ -231,7 +231,7 @@ $authenticated = isset($_SESSION['keys_admin']);
         }
 
         loadKeys();
-        <?php endif; 
+        <?php endif; ?> 
     </script>
 </body>
 </html>
