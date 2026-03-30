@@ -1,0 +1,8 @@
+node_modules
+dist
+.astro
+admin2/node_modules
+admin2/dist
+*.log
+.env
+.git
