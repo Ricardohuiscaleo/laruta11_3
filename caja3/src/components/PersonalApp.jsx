@@ -65,7 +65,7 @@ export default function PersonalApp() {
   const [ajustes, setAjustes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagosNomina, setPagosNomina] = useState({ ruta11: [], seguridad: [] });
-  const [presupuestoNomina, setPresupuestoNomina] = useState({ ruta11: 1200000, seguridad: 1200000 });
+  const [presupuestoNomina, setPresupuestoNomina] = useState({ ruta11: 0, seguridad: 0 });
   const [modalAjuste, setModalAjuste] = useState(null);
   const [formAjuste, setFormAjuste] = useState({ monto: '', concepto: '', notas: '', tipo: '-' });
   const [saving, setSaving] = useState(false);
@@ -161,7 +161,7 @@ export default function PersonalApp() {
       if (a.success) setAjustes(a.data);
       if (pn.success && pnSeg.success) {
         setPagosNomina({ ruta11: pn.data, seguridad: pnSeg.data });
-        setPresupuestoNomina({ ruta11: pn.presupuesto ?? 1200000, seguridad: pnSeg.presupuesto ?? 1200000 });
+        setPresupuestoNomina({ ruta11: pn.presupuesto ?? 0, seguridad: pnSeg.presupuesto ?? 0 });
       }
       if (cf.success) setCashflowMes(cf.data);
     } catch (e) {
@@ -1296,8 +1296,8 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
     navigator.clipboard.writeText(generarResumenPagos()).then(() => { setCopiedResumen(true); setTimeout(() => setCopiedResumen(false), 2500); });
   }
 
-  const totalCalculado = personal.reduce((s, p) => s + getLiquidacion(p).costoEmpresa, 0);
-  const totalAdelantos = personal.reduce((s, p) => s + getLiquidacion(p).montoAdelantos, 0);
+  const totalCalculado = personal.filter(p => p.activo == 1).reduce((s, p) => s + getLiquidacion(p).costoEmpresa, 0);
+  const totalAdelantos = personal.filter(p => p.activo == 1).reduce((s, p) => s + getLiquidacion(p).montoAdelantos, 0);
   const totalPagado = pagosNomina.reduce((s, p) => s + parseFloat(p.monto), 0);
   const saldo = presupuesto - (totalPagado + totalAdelantos);
   const hayPagos = pagosNomina.length > 0;
