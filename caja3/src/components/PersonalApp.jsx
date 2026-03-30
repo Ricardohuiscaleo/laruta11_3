@@ -163,7 +163,7 @@ export default function PersonalApp() {
       if (p.success) setPersonal(p.data);
       if (t.success) setTurnos(t.data);
       if (a.success) setAjustes(a.data);
-      if (cat.success) setAjustesCategorias(cat.data);
+      if (cat.success && Array.isArray(cat.data)) setAjustesCategorias(cat.data);
       if (pn.success && pnSeg.success) {
         setPagosNomina({ ruta11: pn.data, seguridad: pnSeg.data });
         setPresupuestoNomina({ ruta11: pn.presupuesto ?? 0, seguridad: pnSeg.presupuesto ?? 0 });
@@ -783,7 +783,7 @@ export default function PersonalApp() {
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#70757a', textTransform: 'uppercase', marginBottom: 6 }}>Categoría del Ajuste</label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
-                  {ajustesCategorias.map(cat => (
+                  {(ajustesCategorias || []).map(cat => (
                     <button key={cat.id} type="button" 
                       onClick={() => setFormAjuste(f => ({ ...f, categoria_id: cat.id, signo: cat.signo_defecto, concepto: cat.nombre }))}
                       style={{ 
@@ -1503,7 +1503,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
                           return (
                             <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 4px', borderTop: '1px dashed #f1f5f9', marginTop: 4, fontSize: 12 }}>
                               <span style={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <span style={{ fontSize: 13 }} title={a.tipo}>{icon}</span> {a.concepto}
+                                <span style={{ fontSize: 13 }} title={a.tipo || 'ajuste'}>{icon}</span> {a.concepto}
                               </span>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                 <span style={{ fontWeight: 700, color: parseFloat(a.monto) < 0 ? '#ef4444' : '#10b981' }}>
