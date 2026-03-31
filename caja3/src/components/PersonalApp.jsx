@@ -914,38 +914,46 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
     const emojis = { 'Ricardo': '🤖', 'Andrés': '🧑🏻', 'Andres': '🧑🏻', 'Camila': '👩🏽', 'Neit': '👩🏻', 'Gabriel': '🧑🏿', 'Claudio': '🧓🏽', 'Yojhans': '👺' };
 
     let md = `🏦 *RESUMEN GLOBAL PAGOS*\n📅 _${MESES_L[mes] ? MESES_L[mes].toUpperCase() : ''} ${anio}_\n━━━━━━━━━━━━\n`;
-    let sum = 0;
-    // Solo ignorar empleados normales con total 0, pero incluir dueño aunque tenga pérdida.
-    let items = allData.filter(item => {
+    
+    // 1. Filtrar staff solo con pagos PENDIENTES (excluir dueños del staff)
+    let staffItems = allData.filter(item => {
       const isOwner = item.persona.rol && item.persona.rol.includes('dueño');
-      return isOwner || item.granTotal > 0;
+      const isPaid = item.totalPagado >= item.granTotal; 
+      return !isOwner && !isPaid && item.granTotal > 0;
     });
 
     if (ids && ids.length > 0) {
-      items = items.filter(item => ids.includes(item.persona.id));
+      staffItems = staffItems.filter(item => ids.includes(item.persona.id));
     }
 
-    // Preparar el maxLength para alinear bien
-    const montosStr = items.map(item => `$${item.granTotal >= 0 ? item.granTotal.toLocaleString('es-CL') : '-' + Math.abs(item.granTotal).toLocaleString('es-CL')}`);
-    const maxLen = Math.max(...montosStr.map(s => s.length), 0);
+    // 2. Persona DUEÑO aparte
+    const socioDueño = allData.find(item => item.persona.rol && item.persona.rol.includes('dueño'));
 
-    items.forEach((item, idx) => {
-      const isOwner = item.persona.rol && item.persona.rol.includes('dueño');
+    let sum = 0;
+    
+    // Preparar el maxLength para staff
+    staffItems.forEach(item => {
       const nombre = item.persona.nombre;
       const primerNombre = nombre.split(' ')[0];
       const emoji = emojis[nombre] || emojis[primerNombre] || '👤';
-
-      if (isOwner) {
-        let str = `$${item.granTotal >= 0 ? item.granTotal.toLocaleString('es-CL') : '-' + Math.abs(item.granTotal).toLocaleString('es-CL')}`;
-        md += `> - ${emoji} _${nombre.toUpperCase()} (Dueño):_ \`\`\`${str.padStart(maxLen, ' ')}\`\`\`\n`;
-        sum += item.granTotal;
-      } else {
-        let str = `$${item.granTotal.toLocaleString('es-CL')}`;
-        md += `> - ${emoji} _${primerNombre.toUpperCase()}:_ \`\`\`${str.padStart(maxLen, ' ')}\`\`\`\n`;
-        sum += item.granTotal;
-      }
+      const montoFaltante = item.granTotal - item.totalPagado;
+      let montoStr = `$${montoFaltante.toLocaleString('es-CL')}`;
+      
+      md += `> - ${emoji} _${primerNombre.toUpperCase()}:_ \`\`\`${montoStr}\`\`\`\n`;
+      sum += montoFaltante;
     });
-    md += `━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
+
+    md += `━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n`;
+
+    if (socioDueño) {
+      const isPaidDueño = socioDueño.totalPagado >= socioDueño.granTotal;
+      if (!isPaidDueño || (ids && ids.includes(socioDueño.persona.id))) {
+         const emoji = emojis[socioDueño.persona.nombre] || '👺';
+         md += `\n💵 _Liquidez Socio Dueño:_\n> - ${emoji} _${socioDueño.persona.nombre.toUpperCase()}:_ \`\`\`$${socioDueño.granTotal.toLocaleString('es-CL')}\`\`\`\n`;
+      }
+    }
+
+    md += `\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
 
     navigator.clipboard.writeText(md).then(() => {
       setCopiedGlobal(true);
