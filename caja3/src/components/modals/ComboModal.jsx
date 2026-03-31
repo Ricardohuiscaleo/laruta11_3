@@ -27,57 +27,57 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
   const loadComboData = async () => {
     setLoading(true);
     try {
-      console.log('Loading combo with ID:', combo.id);
-      console.log('Full combo object:', combo);
+      console.log('Loading combo:', combo.name, 'with ID:', combo.id);
 
-      // Map product names to real combo IDs
+      // Map product names to real combo IDs (Fallback hardcoded)
       const comboMapping = {
         'Combo Doble Mixta': 1,
         'Combo Completo': 2,
         'Combo Gorda': 3,
         'Combo Dupla': 4,
         'Combo Salchipapa': 242,
-        'Combo Salchipapas': 242,
-        'Combo Salchipapa x2': 242,
-        'Combo Salchipapas x2': 242
+        'Combo Salchipapas': 242
       };
 
       let realComboId = comboMapping[combo.name] || combo.id;
       
-      // Intentar búsqueda por palabra clave si no hay match directo
-      if (!comboMapping[combo.name] && combo.name.toLowerCase().includes('salchipapa')) {
-        console.log('Match por palabra clave Salchipapa -> ID 242');
-        realComboId = 242;
+      const fetchCombo = async (id) => {
+        const response = await fetch(`/api/get_combos.php?combo_id=${id}&v=${Date.now()}`);
+        return await response.json();
+      };
+
+      let data = await fetchCombo(realComboId);
+
+      // Si no se encuentra por ID, intentar buscar por nombre en todos los combos
+      if (!data.success || !data.combos || data.combos.length === 0) {
+        console.log('Combo ID not found, searching by name...');
+        const allResponse = await fetch(`/api/get_combos.php?v=${Date.now()}`);
+        const allData = await allResponse.json();
+        
+        if (allData.success && allData.combos) {
+          // Buscar coincidencia exacta o por palabra clave
+          const match = allData.combos.find(c => 
+            c.name.toLowerCase() === combo.name.toLowerCase() ||
+            (combo.name.toLowerCase().includes('salchipapa') && c.name.toLowerCase().includes('salchipapa'))
+          );
+          
+          if (match) {
+            console.log('Match found by name:', match.name, 'ID:', match.id);
+            // Cargar los detalles de ese combo específico (para obtener items fijos y selecciones)
+            data = await fetchCombo(match.id);
+          }
+        }
       }
 
-      console.log('Using combo ID:', realComboId);
+      console.log('Final combo data received:', data);
 
-      const response = await fetch(`/api/get_combos.php?combo_id=${realComboId}&v=${Date.now()}&_=${Math.random()}`, {
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      });
-      const data = await response.json();
-
-      console.log('Combo data received:', data);
-
-      if (data.success && data.combos.length > 0) {
+      if (data.success && data.combos && data.combos.length > 0) {
         const comboDetails = data.combos[0];
-        console.log('Fixed items:', comboDetails.fixed_items);
-        console.log('Selection groups:', comboDetails.selection_groups);
         setComboData(comboDetails);
       } else {
-        console.log('No combo found with ID:', combo.id);
-        // This is a regular product marked as combo, treat as simple product
+        console.warn('No combo configuration found for:', combo.name);
         onClose();
-        // Add directly to cart as regular product
-        onAddToCart({
-          ...combo,
-          quantity: 1,
-          isSimpleProduct: true
-        });
+        onAddToCart({ ...combo, quantity: 1, isSimpleProduct: true });
         return;
       }
     } catch (error) {
