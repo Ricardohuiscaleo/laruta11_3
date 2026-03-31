@@ -1095,8 +1095,8 @@ function NominaCard({ item, colorObj, onNotify, onEdit, onPreviewEmail, onSendEm
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div className="nomina-card-name" style={{ fontSize: 16, fontWeight: 700, color: '#1f1f1f', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.persona.nombre}</div>
-            <div className="nomina-card-rol" style={{ fontSize: 12, color: c.text, fontWeight: 600, textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {Array.isArray(item.persona.rol) ? item.persona.rol.join(', ') : item.persona.rol}
+            <div className="nomina-card-rol" style={{ fontSize: 11, color: c.text, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 2 }}>
+              {typeof item.persona.rol === 'string' ? item.persona.rol.split(',').join(' • ') : 'Personal'}
             </div>
           </div>
         </div>
@@ -1478,7 +1478,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
 
       {/* Listado Minimalista */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {personal.filter(p => p.activo == 1 && !p.rol?.includes('dueño')).map(p => {
+        {personal.filter(p => p.activo == 1 && !p.rol?.includes('dueño') && (p.rol?.includes('cajero') || p.rol?.includes('planchero') || p.rol?.includes('administrador'))).map(p => {
               const { diasTrabajados, sueldoBase, gruposReemplazando, gruposReemplazados, ajustesPer, total } = getLiquidacion(p);
               const c = colores[p.id];
               const abierto = expandidos[p.id] !== false;
