@@ -691,15 +691,21 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-2 mb-2 text-xs">
-            <Store size={14} className="text-green-600" />
-            <span>Retiro</span>
-            {!isScheduled && (
+          <div className="flex items-center gap-2 mb-2 text-xs p-1.5 bg-orange-50 rounded border border-orange-200">
+            {order.pickup_time ? (
               <>
-                {order.pickup_time ? (
-                  <><Clock size={14} className="text-orange-600" /><span className="font-bold text-orange-600">{order.pickup_time.substring(0, 5)}</span></>
-                ) : order.created_at && (
-                  <><Clock size={14} className="text-gray-500" /><span>{new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span></>
+                <Clock size={16} className="text-red-600 animate-pulse" />
+                <span className="font-bold text-red-600 text-sm">
+                  PARA RETIRO A LAS: {order.pickup_time.substring(0, 5)}
+                </span>
+                <span className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[10px] animate-pulse">¡ATENCIÓN!</span>
+              </>
+            ) : (
+              <>
+                <Store size={14} className="text-green-600" />
+                <span>Retiro Inmediato</span>
+                {order.created_at && (
+                  <><Clock size={14} className="text-gray-500" /><span>Recibido {new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span></>
                 )}
               </>
             )}
