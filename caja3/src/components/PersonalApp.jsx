@@ -1412,22 +1412,28 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
             <div style={{ fontSize: 18, fontWeight: 800, color: '#1e293b' }}>${presupuesto.toLocaleString('es-CL')}</div>
           </div>
 
-          <div style={{ padding: '14px', background: 'white', borderRadius: 12, border: '1px solid #e2e8f0', cursor: 'pointer' }} title="Sueldos por pagar + Adelantos entregados">
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>Pagos / Salidas</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#2563eb' }}>${(totalSueldosNetos + totalAdelantos + totalReemplazosCaja).toLocaleString('es-CL')}</div>
-            <div style={{ fontSize: 9, color: '#94a3b8' }}>Pendiente Banco: ${totalSueldosNetos.toLocaleString('es-CL')}</div>
+          <div style={{ padding: '14px', background: 'white', borderRadius: 12, border: '1px solid #e2e8f0', cursor: 'pointer' }} title="Dinero ya entregado (Adelantos + Pagos en Efectivo)">
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>Adelantos y Caja</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#f97316' }}>${(totalAdelantos + totalReemplazosCaja).toLocaleString('es-CL')}</div>
+            <div style={{ fontSize: 9, color: '#94a3b8' }}>Ya salió de presupuesto</div>
           </div>
 
-          <div style={{ padding: '14px', background: 'white', borderRadius: 12, border: '1px solid #e2e8f0', cursor: 'pointer' }} title="Multas, Faltas y Recuperaciones que vuelven a la empresa">
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>Compensaciones</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#f59e0b' }}>${totalCompensaciones.toLocaleString('es-CL')}</div>
-            <div style={{ fontSize: 9, color: '#94a3b8' }}>Ahorro Empresa</div>
+          <div style={{ padding: '14px', background: 'white', borderRadius: 12, border: '1px solid #e2e8f0', cursor: 'pointer' }} title="Multas y faltas que quedan para la empresa">
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>Descuentos (Ahorro)</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#ef4444' }}>${totalCompensaciones.toLocaleString('es-CL')}</div>
+            <div style={{ fontSize: 9, color: '#94a3b8' }}>Compensaciones</div>
+          </div>
+
+          <div style={{ padding: '14px', background: '#eff6ff', borderRadius: 12, border: '1px solid #bfdbfe' }} title="Monto total a transferir por cuenta bancaria">
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#3b82f6', textTransform: 'uppercase', marginBottom: 4 }}>Pagar por Banco</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#2563eb' }}>${totalSueldosNetos.toLocaleString('es-CL')}</div>
+            <div style={{ fontSize: 9, color: '#60a5fa' }}>Transferencias pendientes</div>
           </div>
 
           <div style={{ padding: '14px', background: balanceFinal === 0 ? '#f0fdf4' : '#fff1f2', borderRadius: 12, border: `1px solid ${balanceFinal === 0 ? '#bbf7d0' : '#fecdd3'}` }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: balanceFinal === 0 ? '#16a34a' : '#be123c', textTransform: 'uppercase', marginBottom: 4 }}>Balance Final</div>
             <div style={{ fontSize: 18, fontWeight: 800, color: balanceFinal === 0 ? '#15803d' : '#e11d48' }}>
-              {balanceFinal === 0 ? 'OK (0)' : `${balanceFinal < 0 ? '-' : '+'}$${Math.abs(balanceFinal).toLocaleString('es-CL')}`}
+              {balanceFinal === 0 ? 'OK ($0)' : `${balanceFinal < 0 ? '-' : '+'}$${Math.abs(balanceFinal).toLocaleString('es-CL')}`}
             </div>
             <div style={{ fontSize: 9, color: balanceFinal === 0 ? '#16a34a' : '#be123c' }}>{balanceFinal === 0 ? 'Todo cuadra' : 'Desviación detectada'}</div>
           </div>
@@ -1765,7 +1771,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                       {(Object.values(gruposReemplazando || {})).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', border: `1px solid ${g.pago_por === 'empresa_adelanto' ? '#a5b4fc' : '#86efac'}`, backgroundColor: g.pago_por === 'empresa_adelanto' ? '#eef2ff' : '#dcfce7', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                           <span style={{ fontSize: 13, color: g.pago_por === 'empresa_adelanto' ? '#3730a3' : '#14532d', fontWeight: 600 }}>
-                            ↔ Reemplazó a {g.persona?.nombre ?? '?'} {g.dias.length} días
+                            ↔ Reemplazó a {g.persona?.nombre ?? '?'} ({g.dias.length}d)
                             {g.pago_por === 'empresa_adelanto' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#c7d2fe', color: '#4338ca', fontWeight: 800, border: '1px solid #a5b4fc' }}>✅ YA PAGADO</span>}
                           </span>
                           {g.pago_por === 'empresa_adelanto'
@@ -1774,10 +1780,10 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                           }
                         </div>
                       ))}
-                      {(Object.values(gruposReemplazados || {})).map((g, i) => (
+                      {(Object.values(gruposReemplados || {})).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #fca5a5', backgroundColor: '#fee2e2', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: 8 }}>
                           <span style={{ fontSize: 13, color: '#7f1d1d', fontWeight: 600 }}>
-                            {g.persona?.nombre ?? '?'} cubrió {g.dias.length} días
+                            ↔ Reemplazo {g.persona?.nombre ?? '?'} ({g.dias.length}d)
                             {g.pago_por === 'titular' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#fef3c7', color: '#b45309', fontWeight: 800, border: '1px solid #fcd34d' }}> PAGO DIRECTO</span>}
                             {g.pago_por === 'empresa_adelanto' && <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#c7d2fe', color: '#4338ca', fontWeight: 800, border: '1px solid #a5b4fc' }}>ADELANTO</span>}
                           </span>
