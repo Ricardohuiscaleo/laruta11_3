@@ -1,3 +1,4 @@
+// v1.0.2 - Fixed Security Tab variable name
 import React, { useState, useEffect } from 'react';
 import {
   Users,
@@ -426,7 +427,7 @@ export default function PersonalApp() {
 
     const total = Math.round(sueldoBase + totalReemplazando - totalReemplazados + totalAjustes);
     const costoEmpresa = Math.round(sueldoBase + totalReemplazandoCosto - totalReemplazados + costoAjustes);
-    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplados: gruposReemplazados, gruposReemplazando, total, costoEmpresa, montoAdelantos, montoMultas, montoCorrecciones, montoReemplazosCaja };
+    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplazados, gruposReemplazando, total, costoEmpresa, montoAdelantos, montoMultas, montoCorrecciones, montoReemplazosCaja };
   }
 
   const administradores = personal.filter(p => p.rol?.includes('administrador') && p.activo == 1);
@@ -1780,7 +1781,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                           }
                         </div>
                       ))}
-                      {(Object.values(gruposReemplados || {})).map((g, i) => (
+                      {(Object.values(gruposReemplazados || {})).map((g, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #fca5a5', backgroundColor: '#fee2e2', borderRadius: 12, marginTop: 6, marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: 8 }}>
                           <span style={{ fontSize: 13, color: '#7f1d1d', fontWeight: 600 }}>
                             ↔ Reemplazo {g.persona?.nombre ?? '?'} ({g.dias.length}d)
