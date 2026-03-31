@@ -27,7 +27,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
   const loadComboData = async () => {
     setLoading(true);
     try {
-      console.log('Loading combo:', combo.name, 'with ID:', combo.id);
+      console.log('DEBUG-SISTEMA-NUEVO-V3: Cargando combo', combo.name, 'con ID:', combo.id);
 
       // Map product names to real combo IDs (Fallback hardcoded)
       const comboMapping = {
