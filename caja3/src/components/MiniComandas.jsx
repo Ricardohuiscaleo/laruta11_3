@@ -694,11 +694,11 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           <div className="flex items-center gap-2 mb-2 text-xs p-1.5 bg-orange-50 rounded border border-orange-200">
             {order.pickup_time ? (
               <>
-                <Clock size={16} className="text-red-600 animate-pulse" />
+                <Clock size={16} className="text-red-600" />
                 <span className="font-bold text-red-600 text-sm">
                   PARA RETIRO A LAS: {order.pickup_time.substring(0, 5)}
                 </span>
-                <span className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[10px] animate-pulse">¡ATENCIÓN!</span>
+                <span className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[10px]">¡ATENCIÓN!</span>
               </>
             ) : (
               <>
