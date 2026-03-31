@@ -131,10 +131,10 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
   const getTimeAlert = (seconds) => {
     const minutes = Math.floor(seconds / 60);
-    if (minutes >= 20) {
+    if (minutes >= 60) {
       return { icon: '🚨', color: 'bg-red-100 border-red-500', textColor: 'text-red-800', status: 'MUY ATRASADO', statusColor: 'text-red-800' };
-    } else if (minutes >= 10) {
-      return { icon: '⚠️', color: 'bg-yellow-100 border-yellow-500', textColor: 'text-yellow-800', status: 'ATRASADO', statusColor: 'text-yellow-800' };
+    } else if (minutes >= 30) {
+      return { icon: '⚠️', color: 'bg-orange-100 border-orange-500', textColor: 'text-orange-800', status: 'ATRASADO', statusColor: 'text-orange-800' };
     }
     return { icon: '⏱️', color: 'bg-white border-gray-300', textColor: 'text-gray-800', status: 'A TIEMPO', statusColor: 'text-green-600' };
   };
