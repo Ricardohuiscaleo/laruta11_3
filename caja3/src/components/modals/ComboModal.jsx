@@ -35,8 +35,8 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
         'Combo Completo': 2,
         'Combo Gorda': 3,
         'Combo Dupla': 4,
-        'Combo Salchipapa': 242,
-        'Combo Salchipapas': 242
+        'Combo Salchipapa': 234,
+        'Combo Salchipapas': 234
       };
 
       let realComboId = comboMapping[combo.name] || combo.id;
