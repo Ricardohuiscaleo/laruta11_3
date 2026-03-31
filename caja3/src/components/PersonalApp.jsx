@@ -396,8 +396,9 @@ export default function PersonalApp() {
 
     const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
     const montoAdelantos = includeAjustes ? ajustesPer.filter(a => a.tipo === 'adelanto' || (a.concepto || '').toLowerCase().includes('adelanto')).reduce((s, a) => s + Math.abs(parseFloat(a.monto)), 0) : 0;
-    const montoMultas = includeAjustes ? ajustesPer.filter(a => a.tipo === 'multa' || (a.concepto || '').toLowerCase().includes('falta') || (a.concepto || '').toLowerCase().includes('multa')).reduce((s, a) => s + Math.abs(parseFloat(a.monto)), 0) : 0;
-    const montoCorrecciones = includeAjustes ? ajustesPer.filter(a => a.tipo === 'correccion' || (a.concepto || '').toLowerCase().includes('febrero') || (a.concepto || '').toLowerCase().includes('anterior')).reduce((s, a) => s + parseFloat(a.monto), 0) : 0;
+    const montoMultas = includeAjustes ? ajustesPer.filter(a => (a.tipo === 'multa' || (a.concepto || '').toLowerCase().includes('falta') || (a.concepto || '').toLowerCase().includes('multa')) && !a.tipo?.includes('reemplazo_caja') && !(a.notas || '').toLowerCase().includes('efectivo')).reduce((s, a) => s + Math.abs(parseFloat(a.monto)), 0) : 0;
+    const montoCorrecciones = includeAjustes ? ajustesPer.filter(a => (a.tipo === 'correccion' || (a.concepto || '').toLowerCase().includes('febrero') || (a.concepto || '').toLowerCase().includes('anterior')) && !(a.notas || '').toLowerCase().includes('efectivo')).reduce((s, a) => s + parseFloat(a.monto), 0) : 0;
+    const montoReemplazosCaja = includeAjustes ? ajustesPer.filter(a => a.tipo?.includes('reemplazo_caja') || (a.notas || '').toLowerCase().includes('efectivo')).reduce((s, a) => s + Math.abs(parseFloat(a.monto)), 0) : 0;
     
     const totalAjustes = includeAjustes ? ajustesPer.reduce((s, a) => s + parseFloat(a.monto), 0) : 0;
     // costoAjustes: lo que la empresa "paga" (excluye ahorros/multas y adelantos ya entregados)
@@ -418,7 +419,7 @@ export default function PersonalApp() {
 
     const total = Math.round(sueldoBase + totalReemplazando - totalReemplazados + totalAjustes);
     const costoEmpresa = Math.round(sueldoBase + totalReemplazandoCosto - totalReemplazados + costoAjustes);
-    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplados: gruposReemplazados, gruposReemplazando, total, costoEmpresa, montoAdelantos, montoMultas, montoCorrecciones };
+    return { diasNormales, diasReemplazados, reemplazosHechos, diasTrabajados, ajustesPer, totalAjustes, sueldoBase: Math.round(sueldoBase), gruposReemplados: gruposReemplazados, gruposReemplazando, total, costoEmpresa, montoAdelantos, montoMultas, montoCorrecciones, montoReemplazosCaja };
   }
 
   const administradores = personal.filter(p => p.rol?.includes('administrador') && p.activo == 1);
@@ -1319,7 +1320,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
   const liqVisibles = personal.filter(p => !p.rol?.includes('dueño') && (p.activo == 1 || p.id == 0)).map(p => getLiquidacion(p));
   const totalSueldosNetos = liqVisibles.reduce((s, l) => s + l.total, 0);
   const totalAdelantos = liqVisibles.reduce((s, l) => s + l.montoAdelantos, 0);
-  const totalReemplazosCaja = liqVisibles.reduce((s, l) => s + l.ajustesPer.filter(a => a.tipo === 'reemplazo_caja').reduce((ss, aa) => ss + Math.abs(parseFloat(aa.monto)), 0), 0);
+  const totalReemplazosCaja = liqVisibles.reduce((s, l) => s + l.montoReemplazosCaja, 0);
   const totalCompensaciones = liqVisibles.reduce((s, l) => s + l.montoMultas + Math.abs(l.montoCorrecciones), 0);
   
   const totalPagadoReal = pagosNomina.filter(pn => personal.some(per => per.id == pn.personal_id && per.activo == 1)).reduce((s, p) => s + parseFloat(p.monto), 0);
