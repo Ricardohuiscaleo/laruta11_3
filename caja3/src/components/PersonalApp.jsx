@@ -1311,22 +1311,38 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
   }
 
   function generarResumenPagos() {
-    const emojis = { 'Ricardo': '🤖', 'Andrés': '🧑🏻', 'Andres': '🧑🏻', 'Camila': '👩🏽', 'Neit': '👩🏻', 'Gabriel': '🧑🏿', 'Claudio': '🧓🏽' };
+    const emojis = { 'Ricardo': '🤖', 'Andrés': '🧑🏻', 'Andres': '🧑🏻', 'Camila': '👩🏽', 'Neit': '👩🏻', 'Gabriel': '🧑🏿', 'Claudio': '🧓🏽', 'Yojhans': '👺' };
     const mesLabel = `${MESES_L[mes]} ${anio}`;
     let md = `🏦 *RESUMEN PAGOS NÓMINA*\n📅 _${mesLabel.toUpperCase()}_\n━━━━━━━━━━━━\n`;
-    let sum = 0;
-    const items = personal.filter(p => getLiquidacion(p).total > 0);
-    const montosStr = items.map(p => `$${getLiquidacion(p).total.toLocaleString('es-CL')}`);
-    const maxLen = Math.max(...montosStr.map(s => s.length), 0);
+    
+    // 1. Filtrar staff solo con pagos PENDIENTES (excluir dueños y ya pagados)
+    const staffItems = personal.filter(p => {
+       const isOwner = p.rol && p.rol.includes('dueño');
+       const isPaid = pagosNomina.some(pn => pn.personal_id == p.id);
+       const { total } = getLiquidacion(p);
+       return !isOwner && !isPaid && total > 0;
+    });
 
-    items.forEach((p, idx) => {
+    // 2. Socio Dueño aparte
+    const socioDueño = personal.find(p => p.rol && p.rol.includes('dueño'));
+
+    let sum = 0;
+    staffItems.forEach((p) => {
       const { total } = getLiquidacion(p);
       const emoji = emojis[p.nombre] || emojis[p.nombre.split(' ')[0]] || '👤';
-      const montoPad = montosStr[idx].padStart(maxLen, ' ');
-      md += `> - ${emoji} _${p.nombre.toUpperCase()}:_ \`\`\`${montoPad}\`\`\`\n`;
+      md += `> - ${emoji} _${p.nombre.toUpperCase()}:_ \`\`\`$${total.toLocaleString('es-CL')}\`\`\`\n`;
       sum += total;
     });
-    md += `━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
+
+    md += `━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n`;
+
+    if (socioDueño) {
+      const { total } = getLiquidacion(socioDueño);
+      const emoji = emojis[socioDueño.persona?.nombre] || emojis[socioDueño.nombre] || '👺';
+      md += `\n💵 _Liquidez Socio Dueño:_\n> - ${emoji} _${socioDueño.nombre.toUpperCase()}:_ \`\`\`$${total.toLocaleString('es-CL')}\`\`\`\n`;
+    }
+
+    md += `\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
     return md;
   }
 
@@ -1604,22 +1620,38 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
   }
 
   function generarResumenPagos() {
-    const emojis = { 'Ricardo': '🤖', 'Andrés': '🧑🏻', 'Andres': '🧑🏻', 'Camila': '👩🏽', 'Neit': '👩🏻', 'Gabriel': '🧑🏿', 'Claudio': '🧓🏽' };
+    const emojis = { 'Ricardo': '🤖', 'Andrés': '🧑🏻', 'Andres': '🧑🏻', 'Camila': '👩🏽', 'Neit': '👩🏻', 'Gabriel': '🧑🏿', 'Claudio': '🧓🏽', 'Yojhans': '👺' };
     const mesLabel = `${MESES_L[mes]} ${anio}`;
     let md = `🏦 *RESUMEN PAGOS SEGURIDAD*\n📅 _${mesLabel.toUpperCase()}_\n━━━━━━━━━━━━\n`;
-    let sum = 0;
-    const items = guardias.filter(p => getLiquidacion(p).total > 0);
-    const montosStr = items.map(p => `$${getLiquidacion(p).total.toLocaleString('es-CL')}`);
-    const maxLen = Math.max(...montosStr.map(s => s.length), 0);
+    
+    // 1. Filtrar staff solo con pagos PENDIENTES
+    const staffItems = guardias.filter(p => {
+       const isOwner = p.rol && p.rol.includes('dueño');
+       const isPaid = pagosNomina.some(pn => pn.personal_id == p.id);
+       const { total } = getLiquidacion(p);
+       return !isOwner && !isPaid && total > 0;
+    });
 
-    items.forEach((p, idx) => {
+    // 2. Socio Dueño aparte
+    const socioDueño = guardias.find(p => p.rol && p.rol.includes('dueño'));
+
+    let sum = 0;
+    staffItems.forEach((p) => {
       const { total } = getLiquidacion(p);
       const emoji = emojis[p.nombre] || emojis[p.nombre.split(' ')[0]] || '👤';
-      const montoPad = montosStr[idx].padStart(maxLen, ' ');
-      md += `> - ${emoji} _${p.nombre.toUpperCase()}:_ \`\`\`${montoPad}\`\`\`\n`;
+      md += `> - ${emoji} _${p.nombre.toUpperCase()}:_ \`\`\`$${total.toLocaleString('es-CL')}\`\`\`\n`;
       sum += total;
     });
-    md += `━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
+
+    md += `━━━━━━━━━━━━\n💰 *Total a Transferir:* \`\`\`$${sum.toLocaleString('es-CL')}\`\`\`\n`;
+
+    if (socioDueño) {
+      const { total } = getLiquidacion(socioDueño);
+      const emoji = emojis[socioDueño.nombre] || '👺';
+      md += `\n💵 _Liquidez Socio Dueño:_\n> - ${emoji} _${socioDueño.nombre.toUpperCase()}:_ \`\`\`$${total.toLocaleString('es-CL')}\`\`\`\n`;
+    }
+
+    md += `\n🔗 *DETALLES:* https://caja.laruta11.cl/personal/`;
     return md;
   }
 
