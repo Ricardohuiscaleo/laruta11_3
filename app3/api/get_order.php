@@ -100,6 +100,9 @@ try {
             'delivery_extras' => (float)($order['delivery_extras'] ?? 0),
             'delivery_extras_items' => $delivery_extras_items,
             'cashback_used' => (float)($order['cashback_used'] ?? 0),
+            'pickup_time' => $order['pickup_time'],
+            'is_scheduled' => (int)$order['is_scheduled'],
+            'scheduled_time' => $order['scheduled_time'],
             'items' => $formatted_items
         ]
     ]);

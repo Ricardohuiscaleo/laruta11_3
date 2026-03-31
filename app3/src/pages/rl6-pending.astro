@@ -277,6 +277,10 @@
                     <span class="info-label">Notas:</span>
                     <span class="info-value" id="customer-notes" style="max-width: 200px;">-</span>
                 </div>
+                <div id="scheduled-time-row" class="info-row hidden" style="background: #fff3cd; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+                    <span class="info-label" style="color: #856404; font-weight: 800;">⏰ HORARIO:</span>
+                    <span class="info-value" id="scheduled-time" style="color: #856404; font-weight: 900; font-size: 18px;">-</span>
+                </div>
             </div>
 
             <!-- Items -->
@@ -674,6 +678,15 @@
                 }
             }
             
+            if (order.pickup_time) {
+                const scheduledTimeElement = document.getElementById('scheduled-time');
+                const scheduledTimeRow = document.getElementById('scheduled-time-row');
+                if (scheduledTimeElement && scheduledTimeRow) {
+                    scheduledTimeElement.textContent = order.pickup_time.substring(0, 5) + ' hrs';
+                    scheduledTimeRow.classList.remove('hidden');
+                }
+            }
+
             if (customerInfoElement) {
                 customerInfoElement.classList.remove('hidden');
             }

@@ -724,7 +724,21 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs text-gray-600">Subtotal: <span className="font-semibold text-gray-800">${parseInt(order.subtotal || 0).toLocaleString('es-CL')}</span></span>
                 {order.delivery_type === 'delivery' && order.delivery_fee > 0 && (
-                  <span className="text-xs text-orange-600 flex items-center gap-1">+ <Bike size={12} /> <span className="font-semibold">${parseInt(order.delivery_fee - (order.delivery_discount || 0)).toLocaleString('es-CL')}</span></span>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs text-orange-600 flex items-center gap-1">+ <Bike size={12} /> <span className="font-semibold">${parseInt(order.delivery_fee - (order.delivery_discount || 0)).toLocaleString('es-CL')}</span></span>
+                    {order.delivery_extras_items && (
+                      <div className="flex flex-col gap-0.5 pl-4 border-l border-orange-200">
+                        {(() => {
+                          try {
+                            const extras = JSON.parse(order.delivery_extras_items);
+                            return Array.isArray(extras) ? extras.map((ex, i) => (
+                              <span key={i} className="text-[9px] text-orange-700 italic flex items-center gap-1">• {ex.name} (+${parseInt(ex.price).toLocaleString('es-CL')})</span>
+                            )) : null;
+                          } catch (e) { return null; }
+                        })()}
+                      </div>
+                    )}
+                  </div>
                 )}
                 {order.discount_10 > 0 && (
                   <span className="text-xs text-green-600 flex items-center gap-1">- ⭐10% descuento <span className="font-semibold">${parseInt(order.discount_10).toLocaleString('es-CL')}</span></span>
