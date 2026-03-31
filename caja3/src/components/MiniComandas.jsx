@@ -571,7 +571,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                 <div className="flex items-center gap-2 text-blue-800">
                   <Bike size={12} className="flex-shrink-0" />
                   <span className="font-medium">Delivery</span>
-                  {isScheduled && order.pickup_time ? (
+                  {order.pickup_time ? (
                     <div className="flex items-center gap-1 bg-red-100 px-2 py-0.5 rounded border border-red-300">
                        <Clock size={14} className="text-red-600" />
                        <span className="font-bold text-red-600 text-[10px]">PROGRAMADO A LAS: {order.pickup_time.substring(0, 5)}</span>
@@ -698,13 +698,13 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           </div>
         ) : (
           <div className="flex items-center gap-2 mb-2 text-xs p-1.5 bg-orange-50 rounded border border-orange-200">
-            {isScheduled && order.pickup_time ? (
+            {order.pickup_time ? (
               <>
                 <Clock size={16} className="text-red-600" />
                 <span className="font-bold text-red-600 text-sm">
                   PARA RETIRO A LAS: {order.pickup_time.substring(0, 5)}
                 </span>
-                <span className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[10px]">¡PROGRAMADO!</span>
+                <span className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[10px]">¡ATENCIÓN!</span>
               </>
             ) : (
               <>
