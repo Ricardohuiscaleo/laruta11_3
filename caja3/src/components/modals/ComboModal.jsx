@@ -36,18 +36,18 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
         'Combo Completo': 2,
         'Combo Gorda': 3,
         'Combo Dupla': 4,
-        'Combo Salchipapa': 234,
-        'Combo Salchipapas': 234,
-        'Combo Salchipapa x2': 234,
-        'Combo Salchipapas x2': 234
+        'Combo Salchipapa': 242,
+        'Combo Salchipapas': 242,
+        'Combo Salchipapa x2': 242,
+        'Combo Salchipapas x2': 242
       };
 
       let realComboId = comboMapping[combo.name] || combo.id;
       
       // Intentar búsqueda por palabra clave si no hay match directo
       if (!comboMapping[combo.name] && combo.name.toLowerCase().includes('salchipapa')) {
-        console.log('Match por palabra clave Salchipapa -> ID 234');
-        realComboId = 234;
+        console.log('Match por palabra clave Salchipapa -> ID 242');
+        realComboId = 242;
       }
 
       console.log('Using combo ID:', realComboId);
