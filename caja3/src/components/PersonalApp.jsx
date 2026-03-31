@@ -629,7 +629,7 @@ export default function PersonalApp() {
 
             {tab === 'liquidacion' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 48 }}>
-                <LiquidacionView personal={personal} cajeros={cajeros} plancheros={plancheros} administradores={administradores} getLiquidacion={(p) => getLiquidacion(p, 'ruta11')} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina.ruta11} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina.ruta11} onSavePresupuesto={(monto) => savePresupuesto(monto, 'ruta11')} centroCosto="ruta11" />
+                <LiquidacionView personal={personal} cajeros={cajeros} plancheros={plancheros} administradores={administradores} getLiquidacion={(p) => getLiquidacion(p, 'ruta11')} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina.ruta11} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina.ruta11} onSavePresupuesto={(monto) => savePresupuesto(monto, 'ruta11')} centroCosto="ruta11" ajustesCategorias={ajustesCategorias} />
                 <div style={{ background: 'white', borderRadius: 28, padding: 28, border: '1px solid #e3e3e3' }}>
                   <CalendarioView diasEnMes={diasEnMes} primerDiaLunes={primerDiaLunes} turnosPorFecha={turnosNoSeguridad} personal={personal} colores={COLORES} mes={mes} anio={anio} onAddTurno={(dia, fecha) => { setModalTurno({ dia, fecha }); setFormTurno({ personal_id: '', tipo: 'normal', reemplazado_por: '', monto_reemplazo: 20000, pago_por: 'empresa', fecha_fin: fecha }); }} onDeleteTurno={deleteTurno} />
                 </div>
@@ -638,7 +638,7 @@ export default function PersonalApp() {
 
             {tab === 'seguridad' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 48 }}>
-                <LiquidacionSeguridad guardias={guardias} getLiquidacion={(p) => getLiquidacion(p, 'seguridad')} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina.seguridad} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina.seguridad} onSavePresupuesto={(monto) => savePresupuesto(monto, 'seguridad')} centroCosto="seguridad" />
+                <LiquidacionSeguridad guardias={guardias} getLiquidacion={(p) => getLiquidacion(p, 'seguridad')} colores={COLORES} onAjuste={setModalAjuste} onDeleteAjuste={deleteAjuste} mes={mes} anio={anio} pagosNomina={pagosNomina.seguridad} onReloadPagos={loadData} showToast={showToast} presupuesto={presupuestoNomina.seguridad} onSavePresupuesto={(monto) => savePresupuesto(monto, 'seguridad')} centroCosto="seguridad" ajustesCategorias={ajustesCategorias} />
                 <CalendarioSeguridad diasEnMes={diasEnMes} primerDiaLunes={primerDiaLunes} turnosSeguridad={turnosSeguridad} personal={personal} mes={mes} anio={anio} onAddTurno={(params) => { setModalTurno(params); setFormTurno({ personal_id: params.titularId || '', tipo: 'reemplazo_seguridad', reemplazado_por: '', monto_reemplazo: 17966.666, pago_por: 'empresa', fecha_fin: params.fecha }); }} onDeleteTurno={deleteTurno} />
               </div>
             )}
@@ -1250,7 +1250,7 @@ function CalendarioView({ diasEnMes, primerDiaLunes, turnosPorFecha, personal, c
   );
 }
 
-function LiquidacionView({ personal, cajeros, plancheros, administradores = [], getLiquidacion, colores, onAjuste, onDeleteAjuste, mes, anio, pagosNomina, onReloadPagos, showToast, presupuesto, onSavePresupuesto, centroCosto = 'ruta11' }) {
+function LiquidacionView({ personal, cajeros, plancheros, administradores = [], getLiquidacion, colores, onAjuste, onDeleteAjuste, mes, anio, pagosNomina, onReloadPagos, showToast, presupuesto, onSavePresupuesto, centroCosto = 'ruta11', ajustesCategorias }) {
   const MESES_L = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const [savingPago, setSavingPago] = useState(false);
   const [expandidos, setExpandidos] = useState({});
@@ -1537,7 +1537,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
   );
 }
 
-function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onDeleteAjuste, mes, anio, pagosNomina, onReloadPagos, showToast, presupuesto, onSavePresupuesto, centroCosto = 'seguridad' }) {
+function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onDeleteAjuste, mes, anio, pagosNomina, onReloadPagos, showToast, presupuesto, onSavePresupuesto, centroCosto = 'seguridad', ajustesCategorias }) {
   const MESES_L = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const [savingPago, setSavingPago] = useState(false);
   const [expandidos, setExpandidos] = useState({});
@@ -1779,19 +1779,25 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
                           }
                         </div>
                       ))}
-                      {ajustesPer.map(a => (
-                        <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f1f5f9', gap: 8 }}>
-                          <span style={{ fontSize: 13, color: '#64748b', flex: 1 }}>{a.concepto}</span>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 14, fontWeight: 600, color: parseFloat(a.monto) < 0 ? '#ef4444' : '#10b981' }}>
-                              {parseFloat(a.monto) < 0 ? '-' : '+'}${Math.abs(parseFloat(a.monto)).toLocaleString('es-CL')}
+                      {ajustesPer.map(a => {
+                        const catObj = ajustesCategorias?.find(c => c.slug === a.tipo);
+                        const icon = catObj ? catObj.icono : '📄';
+                        return (
+                          <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f1f5f9', gap: 8 }}>
+                            <span style={{ fontSize: 13, color: '#64748b', flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontSize: 13 }} title={a.tipo || 'ajuste'}>{icon}</span> {a.concepto}
                             </span>
-                            <button onClick={() => onDeleteAjuste(a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 2 }}>
-                              <Trash2 size={14} />
-                            </button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontSize: 14, fontWeight: 600, color: parseFloat(a.monto) < 0 ? '#ef4444' : '#10b981' }}>
+                                {parseFloat(a.monto) < 0 ? '-' : '+'}${Math.abs(parseFloat(a.monto)).toLocaleString('es-CL')}
+                              </span>
+                              <button onClick={() => onDeleteAjuste(a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 2 }}>
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0 12px', borderTop: '2px solid #f1f5f9', marginTop: 12 }}>
                         <span style={{ fontSize: 16, fontWeight: 800, color: '#1e293b' }}>Total Líquido a Pagar</span>
                         <span style={{ fontSize: 20, fontWeight: 900, color: c.text }}>${total.toLocaleString('es-CL')}</span>
