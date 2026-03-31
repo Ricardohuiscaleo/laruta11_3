@@ -1328,7 +1328,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
   const totalSueldosNetos = liqVisibles.reduce((s, l) => s + l.total, 0);
   const totalAdelantos = liqVisibles.reduce((s, l) => s + l.montoAdelantos, 0);
   const totalReemplazosCaja = liqVisibles.reduce((s, l) => s + l.montoReemplazosCaja, 0);
-  const totalCompensaciones = liqVisibles.reduce((s, l) => s + l.montoMultas + Math.abs(l.montoCorrecciones), 0);
+  const totalCompensaciones = liqVisibles.reduce((s, l) => s + l.montoMultas + Math.abs(l.montoCorrecciones) - l.montoReemplazosCaja, 0);
   
   const totalPagadoReal = pagosNomina.filter(pn => personal.some(per => per.id == pn.personal_id && per.activo == 1)).reduce((s, p) => s + parseFloat(p.monto), 0);
   const cajaDisponible = presupuesto - (totalPagadoReal + totalAdelantos + totalReemplazosCaja);
