@@ -954,11 +954,13 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
     });
   }
 
+  const staffOnly = allData.filter(i => !(i.persona.rol && i.persona.rol.includes('dueño')));
+
   const stats = {
-    totalAPagar: allData.reduce((s, i) => s + i.granTotal, 0),
-    totalPagado: allData.reduce((s, i) => s + i.totalPagado, 0),
-    totalCosto: allData.reduce((s, i) => s + i.granCosto, 0),
-    totalAdelantos: allData.reduce((s, i) => s + i.granAdelantos, 0),
+    totalAPagar: staffOnly.reduce((s, i) => s + i.granTotal, 0),
+    totalPagado: staffOnly.reduce((s, i) => s + i.totalPagado, 0),
+    totalCosto: staffOnly.reduce((s, i) => s + i.granCosto, 0),
+    totalAdelantos: staffOnly.reduce((s, i) => s + i.granAdelantos, 0),
     presupuesto: (presupuestoNomina.ruta11 || 0) + (presupuestoNomina.seguridad || 0)
   };
 
