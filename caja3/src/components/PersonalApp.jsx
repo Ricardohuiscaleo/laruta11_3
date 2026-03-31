@@ -962,7 +962,7 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
     presupuesto: (presupuestoNomina.ruta11 || 0) + (presupuestoNomina.seguridad || 0)
   };
 
-  const saldoGlobal = stats.presupuesto - (stats.totalPagado + stats.totalAdelantos);
+  const balanceProyectado = stats.presupuesto - stats.totalCosto;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, animation: 'fadeIn 0.4s ease-out' }}>
@@ -988,14 +988,14 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
           <div>
             <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>Pagos realizados</div>
             <div style={{ fontSize: 24, fontWeight: 900 }}>${(stats.totalPagado + stats.totalAdelantos).toLocaleString('es-CL')}</div>
-            <div style={{ fontSize: 10, opacity: 0.7 }}>Comprometido: ${stats.totalCosto.toLocaleString('es-CL')}</div>
+            <div style={{ fontSize: 10, opacity: 0.7 }}>Costo Comprometido: ${stats.totalCosto.toLocaleString('es-CL')}</div>
           </div>
           <div>
-            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>{saldoGlobal < 0 ? 'Exceso' : 'Saldo presupuesto'}</div>
-            <div style={{ fontSize: 24, fontWeight: 900, color: saldoGlobal < 0 ? '#fca5a5' : '#4ade80' }}>
-              ${Math.abs(saldoGlobal).toLocaleString('es-CL')}
+            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>{balanceProyectado < 0 ? 'Desviación Global' : 'Balance Proyectado'}</div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: balanceProyectado < 0 ? '#fca5a5' : '#4ade80' }}>
+              {balanceProyectado < 0 ? '-' : ''}${Math.abs(balanceProyectado).toLocaleString('es-CL')}
             </div>
-            <div style={{ fontSize: 10, opacity: 0.7 }}>{saldoGlobal < 0 ? 'Sobre el límite' : 'Disponible'}</div>
+            <div style={{ fontSize: 10, opacity: 0.7 }}>{balanceProyectado < 0 ? 'Sobre el presupuesto global 🚨' : 'Saldo final disponible ✅'}</div>
           </div>
         </div>
 
