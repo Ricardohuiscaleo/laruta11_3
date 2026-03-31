@@ -162,8 +162,15 @@ export default function PersonalApp() {
       ]);
       if (p.success) setPersonal(p.data);
       if (t.success) setTurnos(t.data);
-      if (a.success) setAjustes(a.data);
       if (cat.success && Array.isArray(cat.data)) setAjustesCategorias(cat.data);
+      if (a.success) {
+        const catData = cat.success ? cat.data : [];
+        const ajustesConTipo = a.data.map(aj => ({
+          ...aj,
+          tipo: (catData.find(c => c.id == aj.categoria_id)?.slug || 'otro')
+        }));
+        setAjustes(ajustesConTipo);
+      }
       if (pn.success && pnSeg.success) {
         setPagosNomina({ ruta11: pn.data, seguridad: pnSeg.data });
         setPresupuestoNomina({ ruta11: pn.presupuesto ?? 0, seguridad: pnSeg.presupuesto ?? 0 });
