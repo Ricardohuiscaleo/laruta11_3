@@ -570,10 +570,15 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                 <div className="flex items-center gap-2 text-blue-800">
                   <Bike size={12} className="flex-shrink-0" />
                   <span className="font-medium">Delivery</span>
-                  {!isScheduled && order.created_at && (
+                  {order.pickup_time && order.pickup_time !== '00:00:00' ? (
+                    <div className="flex items-center gap-1 bg-red-100 px-2 py-0.5 rounded border border-red-300">
+                       <Clock size={14} className="text-red-600" />
+                       <span className="font-bold text-red-600">ENTREGAR A LAS: {order.pickup_time.substring(0, 5)}</span>
+                    </div>
+                  ) : !isScheduled && order.created_at && (
                     <><Clock size={12} /><span>{new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span></>
                   )}
-                  {order.delivery_address && <span className="font-semibold">• {order.delivery_address}</span>}
+                  {order.delivery_address && <span className="font-semibold text-blue-900">• {order.delivery_address}</span>}
                 </div>
               </div>
             </div>
