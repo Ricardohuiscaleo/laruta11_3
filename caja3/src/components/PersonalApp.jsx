@@ -396,9 +396,10 @@ export default function PersonalApp() {
 
     const ajustesPer = ajustes.filter(a => a.personal_id == p.id);
     const montoAdelantos = includeAjustes ? ajustesPer.filter(a => a.tipo === 'adelanto' || (a.concepto || '').toLowerCase().includes('adelanto')).reduce((s, a) => s + Math.abs(parseFloat(a.monto)), 0) : 0;
-    const montoMultas = includeAjustes ? ajustesPer.filter(a => (a.tipo === 'multa' || (a.concepto || '').toLowerCase().includes('falta') || (a.concepto || '').toLowerCase().includes('multa')) && !a.tipo?.includes('reemplazo_caja') && !(a.notas || '').toLowerCase().includes('efectivo')).reduce((s, a) => s + Math.abs(parseFloat(a.monto)), 0) : 0;
-    const montoCorrecciones = includeAjustes ? ajustesPer.filter(a => (a.tipo === 'correccion' || (a.concepto || '').toLowerCase().includes('febrero') || (a.concepto || '').toLowerCase().includes('anterior')) && !(a.notas || '').toLowerCase().includes('efectivo')).reduce((s, a) => s + parseFloat(a.monto), 0) : 0;
-    const montoReemplazosCaja = includeAjustes ? ajustesPer.filter(a => a.tipo?.includes('reemplazo_caja') || (a.notas || '').toLowerCase().includes('efectivo')).reduce((s, a) => s + Math.abs(parseFloat(a.monto)), 0) : 0;
+    const isMarceOrCash = (a) => (a.concepto || '').toLowerCase().includes('marce') || (a.notas || '').toLowerCase().includes('efectivo') || a.tipo?.includes('reemplazo_caja');
+    const montoMultas = includeAjustes ? ajustesPer.filter(a => (a.tipo === 'multa' || (a.concepto || '').toLowerCase().includes('falta') || (a.concepto || '').toLowerCase().includes('multa')) && !isMarceOrCash(a)).reduce((s, a) => s + Math.abs(parseFloat(a.monto)), 0) : 0;
+    const montoCorrecciones = includeAjustes ? ajustesPer.filter(a => (a.tipo === 'correccion' || (a.concepto || '').toLowerCase().includes('febrero') || (a.concepto || '').toLowerCase().includes('anterior')) && !isMarceOrCash(a)).reduce((s, a) => s + parseFloat(a.monto), 0) : 0;
+    const montoReemplazosCaja = includeAjustes ? ajustesPer.filter(a => isMarceOrCash(a) && parseFloat(a.monto) < 0).reduce((s, a) => s + Math.abs(parseFloat(a.monto)), 0) : 0;
     
     const totalAjustes = includeAjustes ? ajustesPer.reduce((s, a) => s + parseFloat(a.monto), 0) : 0;
     // costoAjustes: lo que la empresa "paga" (excluye ahorros/multas y adelantos ya entregados)
