@@ -8,209 +8,153 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
-      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-      background: linear-gradient(-45deg, #0f172a, #1e293b, #0f172a);
-      background-size: 400% 400%;
-      animation: gradientShift 10s ease infinite;
+      font-family: 'Segoe UI', Impact, Arial, sans-serif; 
+      background: #000;
       color: white;
-      overflow-x: hidden;
+      overflow: hidden; 
+      height: 100vh;
+      width: 100vw;
     }
     
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    #menu-container { 
+      padding: 2px; 
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
     
-    #menu-container { padding: 60px; max-width: 100%; margin: 0 auto; min-height: 100vh; }
+    .layout-split {
+      display: flex;
+      flex: 1;
+      gap: 2px;
+      overflow: hidden;
+    }
+
+    /* COLUMNAS */
+    .column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: rgba(255,255,255,0.02);
+      border-radius: 4px;
+      padding: 2px;
+      overflow: hidden;
+    }
     
+    .column-header {
+      background: #ff6b00;
+      color: white;
+      text-align: center;
+      padding: 2px;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: 1vw;
+      border-radius: 3px;
+      margin-bottom: 2px;
+    }
+
     .products-grid { 
       display: grid; 
-      grid-template-columns: repeat(5, 1fr); 
-      gap: 40px; 
-      padding-bottom: 120px;
+      grid-template-columns: repeat(4, 1fr); 
+      gap: 2px;
+      overflow-y: auto;
+      flex: 1;
     }
+
+    .column-right { flex: 1.2; } /* A bit more space for drinks */
+    .column-right .products-grid {
+      grid-template-columns: repeat(7, 1fr); /* 7 cols for drinks section */
+    }
+
+    /* SCROLLBARS (Minimalist) */
+    .products-grid::-webkit-scrollbar { width: 4px; }
+    .products-grid::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     
+    /* CARDS ABSOLUTE COMPACT */
     .product-card { 
       background: white; 
-      border: 6px solid transparent; 
-      border-radius: 24px; 
+      border: 2px solid transparent; 
+      border-radius: 4px; 
       overflow: hidden;
       display: flex;
       flex-direction: column;
       position: relative;
       cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.5);
-      aspect-ratio: 1/1;
-      scroll-margin: 180px;
-      transform: scale(1);
+      aspect-ratio: 1/1.1; 
+      transition: all 0.05s;
     }
     
     .product-card.focused { 
-      transform: scale(1.12); 
+      transform: scale(1.02); 
       border-color: #fbbf24; 
-      box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(251, 191, 36, 0.4);
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
       z-index: 50;
     }
     
     .smart-tag {
         position: absolute;
-        top: 20px;
-        right: 20px;
-        background: #fbbf24;
-        color: #000;
-        padding: 8px 16px;
-        border-radius: 12px;
-        font-size: 16px;
+        top: 2px;
+        right: 2px;
+        background: #ff6b00;
+        color: white;
+        padding: 1px 3px;
+        border-radius: 2px;
+        font-size: 0.5vw; /* Más pequeño según feedback */
         font-weight: 900;
-        text-transform: uppercase;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-        z-index: 10;
-        letter-spacing: 1px;
+        z-index: 5;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
 
-    .product-image { width: 100%; height: 75%; object-fit: cover; }
-    .product-image-placeholder { width: 100%; height: 75%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 80px; }
+    .product-image { width: 100%; height: 50%; object-fit: cover; }
+    .product-image-placeholder { width: 100%; height: 50%; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 12px; }
     
-    .product-content { padding: 25px; flex: 1; display: flex; flex-direction: column; justify-content: center; background: white; text-align: center; }
-    .product-name { font-size: 22px; font-weight: 900; color: #1e293b; line-height: 1.1; margin-bottom: 8px; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
-    .product-price { font-size: 32px; font-weight: 900; color: #059669; }
+    .product-content { 
+      padding: 2px; 
+      flex: 1; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: center; 
+      background: #f8fafc; /* Ligeramente gris para diferenciar del fondo */
+      text-align: center; 
+      border-top: 1px solid #eee;
+    }
+    .product-name { 
+      font-size: 0.75vw; 
+      font-weight: 900; 
+      color: #0f172a; 
+      line-height: 1.1; 
+      text-transform: uppercase; 
+      overflow: hidden; 
+      display: -webkit-box; 
+      -webkit-line-clamp: 2; 
+      line-clamp: 2; /* Propiedad estándar */
+      -webkit-box-orient: vertical; 
+      word-break: break-word;
+      margin-bottom: 1px;
+    }
+    .product-price { 
+      font-size: 1.1vw; 
+      font-weight: 900; 
+      color: #059669; 
+    }
     
-    .loading { text-align: center; padding: 120px; color: #fff; font-size: 40px; font-weight: 900; }
-    
+    /* MODAL (Always Large) */
     .fullscreen-modal {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0,0,0,0.98);
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.95);
       z-index: 9999;
-      align-items: center;
-      justify-content: center;
-      backdrop-filter: blur(15px);
+      align-items: center; justify-content: center;
     }
-    
     .fullscreen-modal.active { display: flex; }
-    
-    .fullscreen-content {
-      display: flex;
-      width: 92vw;
-      height: 88vh;
-      background: white;
-      border-radius: 40px;
-      overflow: hidden;
-      position: relative;
-      box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.9);
-      color: #1e293b;
-    }
-    
-    .fullscreen-image {
-      width: 50%;
-      height: 100%;
-      object-fit: cover;
-      flex-shrink: 0;
-    }
-    
-    .fullscreen-details {
-      width: 50%;
-      padding: 80px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      background: #fff;
-    }
-    
-    .fullscreen-category {
-      font-size: 28px;
-      text-transform: uppercase;
-      letter-spacing: 4px;
-      color: #fbbf24;
-      margin-bottom: 25px;
-      font-weight: 800;
-      background: #000;
-      display: inline-block;
-      padding: 5px 15px;
-      border-radius: 8px;
-      width: fit-content;
-    }
-    
-    .fullscreen-name {
-      font-size: 84px;
-      font-weight: 900;
-      color: #0f172a;
-      margin-bottom: 35px;
-      line-height: 1;
-      text-transform: uppercase;
-    }
-    
-    .fullscreen-description {
-      font-size: 38px;
-      color: #475569;
-      margin-bottom: 50px;
-      line-height: 1.2;
-    }
-    
-    .fullscreen-price {
-      font-size: 100px;
-      font-weight: 900;
-      color: #059669;
-    }
-    
-    .close-fullscreen {
-      position: absolute;
-      top: 40px;
-      right: 40px;
-      font-size: 60px;
-      color: #fff;
-      cursor: pointer;
-      background: #0f172a;
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-      transition: all 0.2s;
-    }
-
-    .close-fullscreen:hover { transform: rotate(90deg); background: #ef4444; }
-    
-    .autoplay-controls {
-      position: absolute;
-      bottom: 40px;
-      right: 40px;
-      z-index: 100;
-    }
-    
-    .autoplay-btn {
-      font-size: 50px;
-      cursor: pointer;
-      background: #f1f5f9;
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: none;
-      color: #0f172a;
-      transition: all 0.3s;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-
-    .autoplay-btn:hover { background: #fbbf24; color: #000; transform: scale(1.1); }
-    
-    @keyframes fastIn {
-      from { transform: scale(0.7); opacity: 0; filter: blur(20px); }
-      to { transform: scale(1); opacity: 1; filter: blur(0); }
-    }
-    
-    .fullscreen-content.animate { animation: fastIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .fullscreen-content { width: 90vw; height: 80vh; background: white; border-radius: 20px; display: flex; overflow: hidden; position: relative; color: #000; }
+    .fullscreen-image { width: 50%; height: 100%; object-fit: cover; }
+    .fullscreen-details { width: 50%; padding: 40px; display: flex; flex-direction: column; justify-content: center; }
+    .fullscreen-name { font-size: 60px; font-weight: 900; margin-bottom: 20px; text-transform: uppercase; }
+    .fullscreen-price { font-size: 80px; font-weight: 900; color: #059669; }
+    .close-fullscreen { position: absolute; top: 20px; right: 20px; font-size: 40px; background: #000; color: #fff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
   </style>
 </head>
 <body>
@@ -295,25 +239,48 @@
     }
     
     function renderGrid() {
-      let html = `
-        <div class="products-grid">
-          ${allProductsGlobal.map((product, idx) => `
-            <div class="product-card ${idx === currentNavIndex ? 'focused' : ''}" data-index="${idx}" onclick="openFullscreen(allProductsGlobal[${idx}])">
-              ${product.tag ? `<div class="smart-tag">${product.tag}</div>` : ''}
-              ${product.image_url ? 
-                `<img src="${product.image_url}" alt="${product.name}" class="product-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                 <div class="product-image-placeholder" style="display:none;">🍽️</div>` :
-                `<div class="product-image-placeholder">🍽️</div>`
-              }
-              <div class="product-content">
-                <div class="product-name">${product.name}</div>
-                <div class="product-price">$${new Intl.NumberFormat('es-CL').format(product.price)}</div>
-              </div>
-            </div>
-          `).join('')}
+      // Separar alimentos de bebidas
+      const foodProducts = allProductsGlobal.filter(p => [2, 3, 4, 12, 8].includes(p.categoryKey));
+      const drinkProducts = allProductsGlobal.filter(p => [11, 10].includes(p.categoryKey));
+
+      const renderCard = (product, totalIndex) => `
+        <div class="product-card" data-index="${totalIndex}" onclick="openFullscreen(allProductsGlobal[${totalIndex}])">
+          ${product.tag ? `<div class="smart-tag">${product.tag}</div>` : ''}
+          ${product.image_url ? 
+            `<img src="${product.image_url}" alt="${product.name}" class="product-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+             <div class="product-image-placeholder" style="display:none;">🍽️</div>` :
+            `<div class="product-image-placeholder">🍽️</div>`
+          }
+          <div class="product-content">
+            <div class="product-name">${product.name}</div>
+            <div class="product-price">$${new Intl.NumberFormat('es-CL').format(product.price)}</div>
+          </div>
         </div>
       `;
-      document.getElementById('menu-content').innerHTML = html;
+
+      // Mapear foodProducts a sus índices originales
+      const htmlFood = foodProducts.map(p => {
+        const originalIdx = allProductsGlobal.indexOf(p);
+        return renderCard(p, originalIdx);
+      }).join('');
+
+      const htmlDrinks = drinkProducts.map(p => {
+        const originalIdx = allProductsGlobal.indexOf(p);
+        return renderCard(p, originalIdx);
+      }).join('');
+
+      document.getElementById('menu-content').innerHTML = `
+        <div class="layout-split">
+          <div class="column column-left">
+            <div class="column-header">Aliementos / Combos</div>
+            <div class="products-grid" id="gridFood">${htmlFood}</div>
+          </div>
+          <div class="column column-right">
+            <div class="column-header">Bebidas / Café / Red Bull</div>
+            <div class="products-grid" id="gridDrinks">${htmlDrinks}</div>
+          </div>
+        </div>
+      `;
       updateFocus(currentNavIndex);
     }
     
@@ -379,20 +346,76 @@
       const cards = document.querySelectorAll('.product-card');
       if (!cards.length) return;
 
+      const currentCard = cards[currentNavIndex];
+      const isFood = currentCard.closest('.column-left');
+      const leftGrid = document.getElementById('gridFood');
+      const rightGrid = document.getElementById('gridDrinks');
+      const leftCards = leftGrid.querySelectorAll('.product-card');
+      const rightCards = rightGrid.querySelectorAll('.product-card');
+
       let nextIndex = currentNavIndex;
+      const colsLeft = 4;
+      const colsRight = 7;
 
       switch(e.key) {
         case 'ArrowRight':
-          nextIndex = (currentNavIndex + 1) % cards.length;
+          if (isFood) {
+            const row = Math.floor(Array.from(leftCards).indexOf(currentCard) / colsLeft);
+            const targetIdxInRight = row * colsRight;
+            if (rightCards.length > 0) {
+              const targetCard = rightCards[Math.min(targetIdxInRight, rightCards.length - 1)];
+              nextIndex = parseInt(targetCard.dataset.index);
+            }
+          } else {
+            const idxInRight = Array.from(rightCards).indexOf(currentCard);
+            if ((idxInRight + 1) % colsRight !== 0 && idxInRight + 1 < rightCards.length) {
+              nextIndex = parseInt(rightCards[idxInRight + 1].dataset.index);
+            }
+          }
           break;
         case 'ArrowLeft':
-          nextIndex = (currentNavIndex - 1 + cards.length) % cards.length;
+          if (!isFood) {
+            const idxInRight = Array.from(rightCards).indexOf(currentCard);
+            if (idxInRight % colsRight === 0) {
+              const row = Math.floor(idxInRight / colsRight);
+              const targetIdxInLeft = (row * colsLeft) + (colsLeft - 1);
+              const targetCard = leftCards[Math.min(targetIdxInLeft, leftCards.length - 1)];
+              nextIndex = parseInt(targetCard.dataset.index);
+            } else {
+              nextIndex = parseInt(rightCards[idxInRight - 1].dataset.index);
+            }
+          } else {
+            const idxInLeft = Array.from(leftCards).indexOf(currentCard);
+            if (idxInLeft % colsLeft !== 0) {
+              nextIndex = parseInt(leftCards[idxInLeft - 1].dataset.index);
+            }
+          }
           break;
         case 'ArrowDown':
-          nextIndex = Math.min(currentNavIndex + gridCols, cards.length - 1);
+          if (isFood) {
+            const idx = Array.from(leftCards).indexOf(currentCard);
+            if (idx + colsLeft < leftCards.length) {
+              nextIndex = parseInt(leftCards[idx + colsLeft].dataset.index);
+            }
+          } else {
+            const idx = Array.from(rightCards).indexOf(currentCard);
+            if (idx + colsRight < rightCards.length) {
+              nextIndex = parseInt(rightCards[idx + colsRight].dataset.index);
+            }
+          }
           break;
         case 'ArrowUp':
-          nextIndex = Math.max(currentNavIndex - gridCols, 0);
+          if (isFood) {
+            const idx = Array.from(leftCards).indexOf(currentCard);
+            if (idx - colsLeft >= 0) {
+              nextIndex = parseInt(leftCards[idx - colsLeft].dataset.index);
+            }
+          } else {
+            const idx = Array.from(rightCards).indexOf(currentCard);
+            if (idx - colsRight >= 0) {
+              nextIndex = parseInt(rightCards[idx - colsRight].dataset.index);
+            }
+          }
           break;
         case 'Enter':
           openFullscreen(allProductsGlobal[currentNavIndex]);
@@ -405,12 +428,16 @@
     }
 
     function updateFocus(index) {
-      const cards = document.querySelectorAll('.product-card');
-      if (!cards[index]) return;
-      cards[currentNavIndex].classList.remove('focused');
+      const allCards = document.querySelectorAll('.product-card');
+      const targetCard = Array.from(allCards).find(c => parseInt(c.dataset.index) === index);
+      if (!targetCard) return;
+
+      const oldCard = Array.from(allCards).find(c => parseInt(c.dataset.index) === currentNavIndex);
+      if (oldCard) oldCard.classList.remove('focused');
+
       currentNavIndex = index;
-      cards[currentNavIndex].classList.add('focused');
-      cards[currentNavIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      targetCard.classList.add('focused');
+      targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     document.addEventListener('keydown', handleKeyDown);
