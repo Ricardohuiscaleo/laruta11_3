@@ -101,6 +101,8 @@ try {
             curl_close($ch);
             
             error_log("RL6 Payment - Email sent: HTTP $email_http_code - Response: $email_response");
+
+
             error_log("RL6 Payment SUCCESS - User: {$order_data['user_id']}, Order: $order_id, Amount: {$order_data['product_price']}");
         } else {
             error_log("RL6 Payment ALREADY PROCESSED - Order: $order_id");

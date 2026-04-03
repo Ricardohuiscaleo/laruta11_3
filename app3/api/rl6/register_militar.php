@@ -210,19 +210,6 @@ try {
         $user_result = $stmt_user->get_result();
         $user_data = $user_result->fetch_assoc();
 
-        // Enviar email de confirmación
-        if ($user_data && $user_data['email']) {
-            include_once __DIR__ . '/send_email.php';
-            sendRL6Email(
-                $user_data['email'],
-                $user_data['nombre'],
-                $rut,
-                $grado_militar,
-                $unidad_trabajo,
-                'registro'
-            );
-        }
-
         // Notificar por Telegram para aprobación
         $config_paths_tg = [
             __DIR__ . '/../../../caja3/config.php',

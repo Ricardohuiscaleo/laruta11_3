@@ -21,135 +21,110 @@ const GRADOS_MILITARES = [
     <meta property="og:type" content="website" />
   </head>
   <body class="bg-white text-gray-900">
-    <!-- HEADER -->
-    <header class="fixed top-0 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 shadow-lg z-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+    <!-- HEADER SIMPLE -->
+    <header class="fixed top-0 w-full bg-slate-900 shadow-lg z-50">
+      <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between font-inter">
         <div class="flex items-center gap-3">
-          <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" class="h-10 w-auto" />
-          <img src="/rl6logo.png" alt="RL6" class="h-10 w-auto" />
+          <a href="/" class="hover:opacity-80 transition-opacity">
+            <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" class="h-10 w-auto" />
+          </a>
+          <span class="text-white font-bold text-lg hidden sm:inline">Sistema RL6</span>
         </div>
-        <nav class="hidden md:flex gap-8 text-sm font-semibold">
-          <a href="#beneficios" class="text-gray-300 hover:text-amber-400 transition duration-300">Beneficios</a>
-          <a href="#registro" class="text-gray-300 hover:text-amber-400 transition duration-300">Registro</a>
-          <a href="#contacto" class="text-gray-300 hover:text-amber-400 transition duration-300">Contacto</a>
-        </nav>
-        <button id="menuBtn" class="md:hidden text-gray-300 hover:text-amber-400">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-          </svg>
-        </button>
-      </div>
-      <nav id="mobileMenu" class="hidden md:hidden bg-slate-800 border-t border-slate-700">
-        <a href="#beneficios" class="block px-4 py-3 text-gray-300 hover:bg-slate-700 hover:text-amber-400 transition">Beneficios</a>
-        <a href="#registro" class="block px-4 py-3 text-gray-300 hover:bg-slate-700 hover:text-amber-400 transition">Registro</a>
-        <a href="#contacto" class="block px-4 py-3 text-gray-300 hover:bg-slate-700 hover:text-amber-400 transition">Contacto</a>
-      </nav>
-    </header>
-
-    <!-- HERO SECTION -->
-    <section class="pt-32 pb-20 px-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      <div class="absolute inset-0 opacity-10">
-        <div class="absolute top-10 right-10 w-72 h-72 bg-amber-500 rounded-full blur-3xl"></div>
-        <div class="absolute bottom-10 left-10 w-72 h-72 bg-blue-500 rounded-full blur-3xl"></div>
-      </div>
-      <div class="max-w-4xl mx-auto text-center relative z-10">
-        <div class="mb-6 inline-block px-4 py-2 bg-amber-500/20 border border-amber-400/50 rounded-full">
-          <span class="text-amber-300 font-semibold text-sm">🎖️ Sistema Exclusivo RL6</span>
-        </div>
-        <h1 class="text-5xl md:text-7xl font-black mb-6 text-white leading-tight">
-          El lápiz aguanta todo ✏️
-        </h1>
-        <p class="text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto font-light">
-          Crédito exclusivo "RL6". Compra en La Ruta 11 y paga el 21.
-        </p>
-        <a href="#registro" class="inline-block px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-lg hover:shadow-2xl hover:shadow-amber-500/50 transition duration-300 transform hover:scale-105">
-          Solicitar Crédito Ahora →
+        <a href="/" class="text-gray-300 hover:text-amber-400 text-sm font-semibold flex items-center gap-2 transition duration-300">
+           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+           Volver al inicio
         </a>
       </div>
-    </section>
+    </header>
 
-    <!-- BENEFICIOS -->
-    <section id="beneficios" class="py-20 px-4 bg-white">
-      <div class="max-w-6xl mx-auto">
-        <div class="text-center mb-16">
-          <h2 class="text-4xl md:text-5xl font-black text-slate-900 mb-4">¿Por qué RL6?</h2>
-          <p class="text-gray-600 text-lg">Beneficios exclusivos diseñados para ti</p>
+
+    <!-- MODAL TÉRMINOS Y CONDICIONES (Contenido Original) -->
+    <div id="modalTermsAndConditions" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
+      <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="bg-slate-900 px-6 py-4 flex items-center justify-between sticky top-0">
+          <div class="flex items-center gap-2">
+            <span class="text-white font-bold">🎖️ Términos y Condiciones RL6</span>
+          </div>
+          <button id="btnCloseTerms" class="text-gray-300 hover:text-white transition">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+          </button>
         </div>
-        <div class="grid md:grid-cols-3 gap-8">
-          <div class="p-8 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-200 hover:shadow-xl transition duration-300 transform hover:-translate-y-2">
-            <div class="text-5xl mb-4">⚡</div>
-            <h3 class="text-xl font-bold mb-3 text-slate-900">Aprobación Rápida</h3>
-            <p class="text-gray-700">Proceso simple y seguro. Validación por nuestro equipo en máximo 24 horas.</p>
-          </div>
-          <div class="p-8 bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl border border-amber-200 hover:shadow-xl transition duration-300 transform hover:-translate-y-2">
-            <div class="text-5xl mb-4">💳</div>
-            <h3 class="text-xl font-bold mb-3 text-slate-900">Límite Inicial</h3>
-            <p class="text-gray-700">Crédito inicial desde $50.000, genera cashback en cada compra, aumento de cupo evaluado según comportamiento de pago cada 3 meses.</p>
-          </div>
-          <div class="p-8 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border border-green-200 hover:shadow-xl transition duration-300 transform hover:-translate-y-2">
-            <div class="text-5xl mb-4">🛍️</div>
-            <h3 class="text-xl font-bold mb-3 text-slate-900">Úsalo Inmediatamente</h3>
-            <p class="text-gray-700">Una vez aprobado, usa tu crédito en La Ruta 11 y comercios asociados.</p>
-          </div>
+        <div class="overflow-y-auto p-6 md:p-10 space-y-12">
+          <!-- HERO SECTION MOVED -->
+          <section class="text-center rounded-xl bg-slate-900 text-white p-8 overflow-hidden relative">
+            <div class="mb-6 inline-block px-4 py-2 bg-amber-500/20 border border-amber-400/50 rounded-full">
+              <span class="text-amber-300 font-semibold text-sm">🎖️ Sistema Exclusivo RL6</span>
+            </div>
+            <h1 class="text-3xl md:text-5xl font-black mb-4 leading-tight">
+              El lápiz aguanta todo ✏️
+            </h1>
+            <p class="text-lg text-gray-300 max-w-2xl mx-auto font-light">
+              Crédito exclusivo "RL6". Compra en La Ruta 11 y paga el 21.
+            </p>
+          </section>
+
+          <!-- BENEFICIOS MOVED -->
+          <section id="beneficios_modal">
+            <div class="text-center mb-10">
+              <h2 class="text-3xl font-black text-slate-900 mb-2">¿Por qué RL6?</h2>
+              <p class="text-gray-600">Beneficios exclusivos diseñados para ti</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6">
+              <div class="p-6 bg-blue-50 rounded-xl border border-blue-100">
+                <div class="text-4xl mb-3">⚡</div>
+                <h3 class="font-bold mb-2 text-slate-900">Aprobación Rápida</h3>
+                <p class="text-sm text-gray-700">Proceso simple y seguro. Validación por nuestro equipo en máximo 24 horas.</p>
+              </div>
+              <div class="p-6 bg-amber-50 rounded-xl border border-amber-100">
+                <div class="text-4xl mb-3">💳</div>
+                <h3 class="font-bold mb-2 text-slate-900">Límite Inicial</h3>
+                <p class="text-sm text-gray-700">Crédito inicial desde $50.000, genera cashback en cada compra.</p>
+              </div>
+              <div class="p-6 bg-green-50 rounded-xl border border-green-100">
+                <div class="text-4xl mb-3">🛍️</div>
+                <h3 class="font-bold mb-2 text-slate-900">Úsalo Ahora</h3>
+                <p class="text-sm text-gray-700">Una vez aprobado, úsalo en La Ruta 11 y locales asociados.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- INSTRUCCIONES MOVED -->
+          <section id="instrucciones_modal" class="bg-amber-50 rounded-xl p-6 border-2 border-amber-300">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="text-3xl">⚠️</div>
+              <h2 class="text-2xl font-black text-slate-900">Instrucciones Importantes</h2>
+            </div>
+            <div class="space-y-4">
+              <div class="flex gap-3">
+                <div class="flex-shrink-0 w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-bold">1</div>
+                <p class="text-sm text-gray-700"><strong>👤 Cuenta Activa:</strong> Debes estar registrado en la app de La Ruta 11 antes de solicitar este crédito especializado.</p>
+              </div>
+              <div class="flex gap-3">
+                <div class="flex-shrink-0 w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-bold">2</div>
+                <p class="text-sm text-gray-700"><strong>📝 Datos Reales:</strong> Necesitamos tu RUT, grado y fotos de tu carnet militar. Validación manual estricta.</p>
+              </div>
+              <div class="flex gap-3 bg-red-100 p-3 rounded border border-red-200">
+                <div class="flex-shrink-0 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold">!</div>
+                <p class="text-sm text-red-700"><strong>🔄 Reiniciar Sesión:</strong> Tras la aprobación, debes <strong>cerrar e iniciar sesión nuevamente</strong> en la app para visualizar tu crédito.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+        <div class="bg-slate-50 p-4 border-t flex justify-end">
+          <button id="btnAcceptInModal" class="px-6 py-2 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition">Entendido</button>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- INSTRUCCIONES IMPORTANTES -->
-    <section class="py-16 px-4 bg-gradient-to-br from-amber-50 to-orange-50">
-      <div class="max-w-4xl mx-auto">
-        <div class="bg-white rounded-2xl shadow-xl p-8 border-2 border-amber-300">
-          <div class="flex items-center gap-3 mb-6">
-            <div class="text-4xl">⚠️</div>
-            <h2 class="text-3xl font-black text-slate-900">Instrucciones Importantes</h2>
-          </div>
-          <div class="space-y-6">
-            <div class="flex gap-4">
-              <div class="flex-shrink-0 w-8 h-8 bg-amber-500 text-white rounded-full flex items-center justify-center font-bold">1</div>
-              <div>
-                <h3 class="font-bold text-lg text-slate-900 mb-2">👤 Debes tener cuenta en La Ruta 11</h3>
-                <p class="text-gray-700">Antes de solicitar el crédito RL6, debes estar registrado en nuestra app. Si aún no tienes cuenta, regístrate primero y luego vuelve a esta página.</p>
-              </div>
-            </div>
-            <div class="flex gap-4">
-              <div class="flex-shrink-0 w-8 h-8 bg-amber-500 text-white rounded-full flex items-center justify-center font-bold">2</div>
-              <div>
-                <h3 class="font-bold text-lg text-slate-900 mb-2">📝 Completa el formulario con datos reales</h3>
-                <p class="text-gray-700">Necesitamos tu RUT, grado militar, unidad de trabajo y fotos de tu carnet militar (frontal, trasero y selfie). Toda la información será verificada manualmente.</p>
-              </div>
-            </div>
-            <div class="flex gap-4">
-              <div class="flex-shrink-0 w-8 h-8 bg-amber-500 text-white rounded-full flex items-center justify-center font-bold">3</div>
-              <div>
-                <h3 class="font-bold text-lg text-slate-900 mb-2">⏳ Espera la aprobación (máx 24 horas)</h3>
-                <p class="text-gray-700">Nuestro equipo revisará tu solicitud y te contactará para confirmar. Recibirás un email cuando tu crédito sea aprobado.</p>
-              </div>
-            </div>
-            <div class="flex gap-4 bg-red-50 p-4 rounded-lg border-2 border-red-200">
-              <div class="flex-shrink-0 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center font-bold">4</div>
-              <div>
-                <h3 class="font-bold text-lg text-red-700 mb-2">🔄 IMPORTANTE: Cierra sesión y vuelve a iniciar</h3>
-                <p class="text-red-600 font-medium">Una vez aprobado tu crédito, debes <strong>cerrar sesión</strong> en la app y <strong>volver a iniciar sesión</strong> para que se cargue tu crédito disponible. Sin este paso, no podrás usar tu crédito.</p>
-              </div>
-            </div>
-            <div class="flex gap-4">
-              <div class="flex-shrink-0 w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold">5</div>
-              <div>
-                <h3 class="font-bold text-lg text-slate-900 mb-2">🎉 ¡Listo! Usa tu crédito</h3>
-                <p class="text-gray-700">Después de iniciar sesión nuevamente, verás tu crédito disponible en el checkout. Podrás seleccionar "Entrega en Cuartel" y "Pagar con Crédito RL6".</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
-    <!-- REGISTRO SECTION -->
-    <section id="registro" class="py-20 px-4 bg-gradient-to-br from-slate-50 to-slate-100">
+    <!-- REGISTRO SECTION - MAIN VIEW -->
+    <section id="registro" class="pt-24 pb-20 px-4 min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div class="max-w-2xl mx-auto">
-        <div class="text-center mb-12">
-          <h2 class="text-4xl md:text-5xl font-black text-slate-900 mb-4">Solicitar Crédito</h2>
-          <p class="text-gray-600 text-lg">Completa el formulario en 4 pasos simples</p>
+        <div class="text-center mb-8">
+          <h2 class="text-4xl md:text-5xl font-black text-slate-900 mb-2">Solicitar Crédito RL6</h2>
+          <p class="text-gray-600">Completa tu solicitud para validación exclusiva</p>
+        </div>
+
 
         </div>
         
@@ -273,14 +248,24 @@ const GRADOS_MILITARES = [
               </div>
             </div>
 
-            <!-- PASO 4: Confirmación -->
+            <!-- PASO 4: Confirmación + T&C -->
             <div id="paso4" class="paso-form hidden">
-              <h3 class="text-lg font-bold mb-4 text-slate-900">Confirmación</h3>
-              <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-                <p class="text-sm text-amber-900">Revisa tus datos antes de enviar. Nuestro equipo validará tu solicitud en máximo 24 horas.</p>
+              <h3 class="text-lg font-bold mb-4 text-slate-900">Confirmación y Términos</h3>
+              <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                <p class="text-sm text-amber-900">Revisa tus datos. Al enviar, aceptas ser contactado para la validación de tu crédito.</p>
               </div>
-              <div id="resumenDatos" class="bg-gray-50 rounded-lg p-4 text-sm space-y-2 text-gray-700"></div>
+              
+              <div id="resumenDatos" class="bg-gray-50 border rounded-lg p-4 text-sm space-y-2 text-gray-700 mb-6"></div>
+
+              <!-- CHECKBOX TÉRMINOS Y CONDICIONES (Funcional) -->
+              <div class="flex items-start gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                <input type="checkbox" id="checkTerms" name="acepta_terminos" class="mt-1 w-5 h-5 text-amber-600 rounded bg-white border-gray-300 focus:ring-amber-500" />
+                <label for="checkTerms" class="text-sm text-gray-700 leading-tight">
+                  Acepto los <button type="button" id="btnOpenTerms" class="text-amber-600 font-bold hover:underline">Términos, Condiciones y Beneficios</param> del programa RL6 y autorizo la validación de mi información militar.
+                </label>
+              </div>
             </div>
+
 
             <!-- Botones de navegación -->
             <div class="flex gap-3 mt-6">
@@ -419,8 +404,40 @@ const GRADOS_MILITARES = [
         if (btnSiguiente) btnSiguiente.classList.toggle('hidden', paso === totalPasos);
         if (btnEnviar) btnEnviar.classList.toggle('hidden', paso !== totalPasos);
 
-        if (paso === totalPasos) mostrarResumen();
+        // Lógica de Términos y Condiciones
+        if (paso === totalPasos) {
+          mostrarResumen();
+          // Reset checkbox when reaching the final step to ensure they see it
+          var checkTerms = document.getElementById('checkTerms') as HTMLInputElement | null;
+          if (checkTerms) {
+            // Optionally we can keep it if they already checked it, but let's make sure the button is synced
+            actualizarEstadoBotonEnviar();
+          }
+        }
       }
+
+      function actualizarEstadoBotonEnviar() {
+        var checkTerms = document.getElementById('checkTerms') as HTMLInputElement | null;
+        var btnEnviar = document.getElementById('btnEnviar') as HTMLButtonElement | null;
+        if (checkTerms && btnEnviar) {
+           if (checkTerms.checked) {
+             btnEnviar.classList.remove('opacity-50', 'cursor-not-allowed');
+             btnEnviar.removeAttribute('disabled');
+           } else {
+             btnEnviar.classList.add('opacity-50', 'cursor-not-allowed');
+             btnEnviar.setAttribute('disabled', 'true');
+           }
+        }
+      }
+
+      // Listener para el checkbox de términos
+      document.addEventListener('change', function(e) {
+        var target = e.target as HTMLInputElement;
+        if (target && target.id === 'checkTerms') {
+          actualizarEstadoBotonEnviar();
+        }
+      });
+
 
       function mostrarResumen() {
         var formEl = document.getElementById('formMultiPaso');
@@ -731,15 +748,36 @@ const GRADOS_MILITARES = [
         });
       }
 
-      // Redirigir a página principal para login
-      var btnAbrirLogin = document.getElementById('btnAbrirLogin');
-      if (btnAbrirLogin) {
-        btnAbrirLogin.addEventListener('click', function() {
-          // Guardar que viene de RL6 para redirigir después
-          localStorage.setItem('rl6_redirect', 'true');
-          window.location.href = '/?login=required';
+      // Lógica Modal Términos
+      var modalTerms = document.getElementById('modalTermsAndConditions');
+      var btnOpenTerms = document.getElementById('btnOpenTerms');
+      var btnCloseTerms = document.getElementById('btnCloseTerms');
+      var btnAcceptInModal = document.getElementById('btnAcceptInModal');
+      var checkTerms = document.getElementById('checkTerms') as HTMLInputElement | null;
+
+      if (btnOpenTerms && modalTerms) {
+        btnOpenTerms.addEventListener('click', function() {
+          modalTerms!.classList.remove('hidden');
+          modalTerms!.classList.add('flex');
         });
       }
+
+      function cerrarModalTerms() {
+        if (modalTerms) {
+          modalTerms.classList.add('hidden');
+          modalTerms.classList.remove('flex');
+        }
+      }
+
+      if (btnCloseTerms) btnCloseTerms.addEventListener('click', cerrarModalTerms);
+      if (btnAcceptInModal) {
+        btnAcceptInModal.addEventListener('click', function() {
+          if (checkTerms) checkTerms.checked = true;
+          actualizarEstadoBotonEnviar();
+          cerrarModalTerms();
+        });
+      }
+
 
       // Función para mostrar cronómetro de bloqueo
       function mostrarCronometroBloqueo(seconds) {
