@@ -59,11 +59,15 @@
       gap: 2px;
       overflow-y: auto;
       flex: 1;
+      align-content: start; 
+      grid-auto-rows: min-content; /* Asegura que las filas no se estiren */
     }
 
-    .column-right { flex: 1.2; } /* A bit more space for drinks */
+    .column-right { flex: 2; } /* Más espacio horizontal para meter más columnas */
     .column-right .products-grid {
-      grid-template-columns: repeat(7, 1fr); /* 7 cols for drinks section */
+      grid-template-columns: repeat(8, 1fr); /* 8 columnas para bebidas */
+      align-content: start;
+      grid-auto-rows: min-content;
     }
 
     /* SCROLLBARS (Minimalist) */
@@ -155,6 +159,14 @@
     .fullscreen-name { font-size: 60px; font-weight: 900; margin-bottom: 20px; text-transform: uppercase; }
     .fullscreen-price { font-size: 80px; font-weight: 900; color: #059669; }
     .close-fullscreen { position: absolute; top: 20px; right: 20px; font-size: 40px; background: #000; color: #fff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+    /* ESTILO ULTRA-COMPACTO PARA BEBIDAS */
+    .card-drink {
+      aspect-ratio: 1/0.75 !important; /* Aún más planas */
+    }
+    .card-drink .product-image { height: 30% !important; }
+    .card-drink .product-name { font-size: 0.55vw !important; }
+    .card-drink .product-price { font-size: 0.75vw !important; }
   </style>
 </head>
 <body>
@@ -243,8 +255,8 @@
       const foodProducts = allProductsGlobal.filter(p => [2, 3, 4, 12, 8].includes(p.categoryKey));
       const drinkProducts = allProductsGlobal.filter(p => [11, 10].includes(p.categoryKey));
 
-      const renderCard = (product, totalIndex) => `
-        <div class="product-card" data-index="${totalIndex}" onclick="openFullscreen(allProductsGlobal[${totalIndex}])">
+      const renderCard = (product, totalIndex, isDrink) => `
+        <div class="product-card ${isDrink ? 'card-drink' : ''}" data-index="${totalIndex}" onclick="openFullscreen(allProductsGlobal[${totalIndex}])">
           ${product.tag ? `<div class="smart-tag">${product.tag}</div>` : ''}
           ${product.image_url ? 
             `<img src="${product.image_url}" alt="${product.name}" class="product-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -261,12 +273,12 @@
       // Mapear foodProducts a sus índices originales
       const htmlFood = foodProducts.map(p => {
         const originalIdx = allProductsGlobal.indexOf(p);
-        return renderCard(p, originalIdx);
+        return renderCard(p, originalIdx, false);
       }).join('');
 
       const htmlDrinks = drinkProducts.map(p => {
         const originalIdx = allProductsGlobal.indexOf(p);
-        return renderCard(p, originalIdx);
+        return renderCard(p, originalIdx, true);
       }).join('');
 
       document.getElementById('menu-content').innerHTML = `
@@ -355,7 +367,7 @@
 
       let nextIndex = currentNavIndex;
       const colsLeft = 4;
-      const colsRight = 7;
+      const colsRight = 8;
 
       switch(e.key) {
         case 'ArrowRight':
