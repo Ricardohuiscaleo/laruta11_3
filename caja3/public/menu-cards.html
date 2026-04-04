@@ -55,17 +55,17 @@
 
     .products-grid { 
       display: grid; 
-      grid-template-columns: repeat(4, 1fr); 
+      grid-template-columns: repeat(8, 1fr); /* 8 columnas para comida */
       gap: 2px;
       overflow-y: auto;
       flex: 1;
       align-content: start; 
-      grid-auto-rows: min-content; /* Asegura que las filas no se estiren */
+      grid-auto-rows: min-content; 
     }
 
-    .column-right { flex: 2; } /* Más espacio horizontal para meter más columnas */
+    .column-right { flex: 0.5; } /* Columna de bebidas más estrecha */
     .column-right .products-grid {
-      grid-template-columns: repeat(8, 1fr); /* 8 columnas para bebidas */
+      grid-template-columns: repeat(4, 1fr); /* 4 columnas de bebidas */
       align-content: start;
       grid-auto-rows: min-content;
     }
@@ -160,13 +160,13 @@
     .fullscreen-price { font-size: 80px; font-weight: 900; color: #059669; }
     .close-fullscreen { position: absolute; top: 20px; right: 20px; font-size: 40px; background: #000; color: #fff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
-    /* ESTILO ULTRA-COMPACTO PARA BEBIDAS */
+    /* ESTILO BEBIDAS: RETRATO 4:5 */
     .card-drink {
-      aspect-ratio: 1/0.75 !important; /* Aún más planas */
+      aspect-ratio: 4/5 !important; 
     }
-    .card-drink .product-image { height: 30% !important; }
-    .card-drink .product-name { font-size: 0.55vw !important; }
-    .card-drink .product-price { font-size: 0.75vw !important; }
+    .card-drink .product-image { height: 60% !important; }
+    .card-drink .product-name { font-size: 0.6vw !important; }
+    .card-drink .product-price { font-size: 0.8vw !important; }
   </style>
 </head>
 <body>
@@ -366,8 +366,8 @@
       const rightCards = rightGrid.querySelectorAll('.product-card');
 
       let nextIndex = currentNavIndex;
-      const colsLeft = 4;
-      const colsRight = 8;
+      const colsLeft = 8;
+      const colsRight = 4;
 
       switch(e.key) {
         case 'ArrowRight':
