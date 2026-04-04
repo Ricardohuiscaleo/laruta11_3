@@ -1,6 +1,6 @@
 <?php
 function _env(string $key, string $default = ''): string {
-    $v = _env($key);
+    $v = getenv($key);
     if ($v !== false && $v !== '') return $v;
     if (isset($_ENV[$key]) && $_ENV[$key] !== '') return $_ENV[$key];
     if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') return $_SERVER[$key];
