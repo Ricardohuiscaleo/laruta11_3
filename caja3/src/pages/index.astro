@@ -133,8 +133,8 @@ import MenuApp from '../components/MenuApp.jsx';
 					if (navigator.geolocation) {
 						navigator.geolocation.getCurrentPosition(
 							position => {
-								(visitData as any).latitude = position.coords.latitude;
-								(visitData as any).longitude = position.coords.longitude;
+								visitData.latitude = position.coords.latitude;
+								visitData.longitude = position.coords.longitude;
 								this.sendData('/api/app/track_visit.php', visitData);
 							},
 							() => this.sendData('/api/app/track_visit.php', visitData),
@@ -270,10 +270,10 @@ import MenuApp from '../components/MenuApp.jsx';
 			}
 			
 			// Make utilities globally available
-			(window as any).Analytics = Analytics;
-			(window as any).UserSession = UserSession;
-			(window as any).CookieManager = CookieManager;
-			(window as any).AuthManager = AuthManager;
+			window.Analytics = Analytics;
+			window.UserSession = UserSession;
+			window.CookieManager = CookieManager;
+			window.AuthManager = AuthManager;
 		</script>
 	</body>
 </html>

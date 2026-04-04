@@ -143,8 +143,8 @@
         document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const username = (document.getElementById('username') as HTMLInputElement)?.value;
-            const password = (document.getElementById('password') as HTMLInputElement)?.value;
+            const username = document.getElementById('username')?.value;
+            const password = document.getElementById('password')?.value;
             const errorDiv = document.getElementById('error');
             
             if (!username || !password || !errorDiv) return;
@@ -187,13 +187,13 @@
             }
         }
 
-        function renderKeys(keys: any) {
+        function renderKeys(keys) {
             const container = document.getElementById('keys-container');
             if (!container) return;
             
             let html = '<div class="bg-white rounded-lg shadow overflow-hidden"><table class="min-w-full"><thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Key</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th></tr></thead><tbody class="bg-white divide-y divide-gray-200">';
             
-            Object.entries(keys).forEach(([keyName, value]: [string, any]) => {
+            Object.entries(keys).forEach(([keyName, value]) => {
                 const displayValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
                 html += `<tr class="hover:bg-gray-50">
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${keyName}</td>
@@ -212,9 +212,9 @@
         }
 
         // Make functions globally accessible
-        (window as any).toggleKey = function(keyName: string) {
+        window.toggleKey = function(keyName) {
             const keyElement = document.getElementById(`key-${keyName}`);
-            const button = (event as any)?.target as HTMLButtonElement;
+            const button = event?.target;
             
             if (keyElement && button) {
                 if (keyElement.classList.contains('blur-sm')) {
@@ -229,11 +229,11 @@
             }
         };
 
-        (window as any).copyKey = function(keyName: string) {
+        window.copyKey = function(keyName) {
             const keyElement = document.getElementById(`key-${keyName}`);
             if (keyElement?.textContent) {
                 navigator.clipboard.writeText(keyElement.textContent).then(() => {
-                    const button = (event as any)?.target as HTMLButtonElement;
+                    const button = event?.target;
                     if (button) {
                         const originalText = button.textContent;
                         button.textContent = '✅ Copiado';

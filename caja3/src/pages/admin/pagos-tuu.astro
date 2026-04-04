@@ -480,7 +480,7 @@
       }
       
       const newHTML = transactions.map(order => {
-        const transaction = order as any;
+        const transaction = order;
         const date = new Date(transaction.created_at || transaction.payment_date_time);
         const paymentIcons = { 'cash': 'banknote', 'card': 'credit-card', 'transfer': 'landmark', 'webpay': 'credit-card', 'pedidosya': 'bike' };
         const displayId = transaction.order_reference || transaction.sale_id;
@@ -630,10 +630,10 @@
       
       tuuFilteredTransactions = tuuAllTransactions.filter(t => {
         let typeMatch = true;
-        const displayId = (t as any).order_reference || (t as any).sale_id;
+        const displayId = t.order_reference || t.sale_id;
         const isApp = displayId && displayId.toString().startsWith('R11-');
         const isCaja = displayId && displayId.toString().startsWith('T11-');
-        const isPOS = (t as any).payment_source === 'pos';
+        const isPOS = t.payment_source === 'pos';
         
         if (filterType === 'pos') typeMatch = isPOS;
         else if (filterType === 'online') typeMatch = isCaja;
@@ -642,11 +642,11 @@
         let searchMatch = true;
         if (searchTerm) {
           const searchableText = [
-            (t as any).order_reference || (t as any).saleId || '',
-            (t as any).customer_name || '',
-            (t as any).customer_phone || '',
-            (t as any).detailed_items || (t as any).product_name || '',
-            ((t as any).amount || (t as any).totalAmount || (t as any).tuu_amount || 0).toString()
+            t.order_reference || t.saleId || '',
+            t.customer_name || '',
+            t.customer_phone || '',
+            t.detailed_items || t.product_name || '',
+            (t.amount || t.totalAmount || t.tuu_amount || 0).toString()
           ].join(' ').toLowerCase();
           searchMatch = searchableText.includes(searchTerm);
         }

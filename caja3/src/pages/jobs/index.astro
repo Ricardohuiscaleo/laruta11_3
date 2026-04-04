@@ -283,7 +283,7 @@ export const prerender = false;
     </footer>
 
     <script>
-        let currentUser: any = null;
+        let currentUser = null;
 
         // Definir todas las funciones
         function handleGoogleLogin() {
@@ -343,9 +343,9 @@ export const prerender = false;
                     </div>
                     
                     <div class="flex items-center justify-center gap-6 mb-12 p-6 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
-                        <img id="auth-user-photo" src="${(currentUser as any).foto_perfil}" alt="Foto de perfil" class="w-16 h-16 rounded-full border-2 border-white/30">
+                        <img id="auth-user-photo" src="${currentUser.foto_perfil}" alt="Foto de perfil" class="w-16 h-16 rounded-full border-2 border-white/30">
                         <div class="text-left">
-                            <p class="text-2xl font-bold">¡Hola, ${(currentUser as any).nombre.split(' ')[0]}!</p>
+                            <p class="text-2xl font-bold">¡Hola, ${currentUser.nombre.split(' ')[0]}!</p>
                             <p class="text-white/80 text-lg">Elige la posición que mejor se adapte a tu perfil profesional</p>
                         </div>
                     </div>
@@ -396,8 +396,8 @@ export const prerender = false;
             
             if (authSection) authSection.classList.add('hidden');
             if (userSection) userSection.classList.remove('hidden');
-            if (userName && currentUser) userName.textContent = (currentUser as any).nombre.split(' ')[0];
-            if (userPhoto && currentUser) (userPhoto as HTMLImageElement).src = (currentUser as any).foto_perfil;
+            if (userName && currentUser) userName.textContent = currentUser.nombre.split(' ')[0];
+            if (userPhoto && currentUser) (userPhoto as HTMLImageElement).src = currentUser.foto_perfil;
         }
 
         // Contador regresivo

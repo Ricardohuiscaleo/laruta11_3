@@ -502,7 +502,7 @@
 					
 					if (data.participantes && data.participantes.length > 0) {
 						// Filtrar solo participantes pagados
-						const participantesPagados = data.participantes.filter((p: any) => 
+						const participantesPagados = data.participantes.filter((p) => 
 							p.payment_status === 'paid' || p.estado_pago === 'pagado'
 						);
 						
@@ -515,7 +515,7 @@
 										(${8 - participantesPagados.length} cupos disponibles)
 									</p>
 								</div>
-								${participantesPagados.map((p: any, i: number) => 
+								${participantesPagados.map((p, i) => 
 									`<div class="flex justify-between items-center py-2 border-b">
 										<span class="flex items-center">
 											<i data-lucide="star" class="w-4 h-4 mr-2 text-orange-500"></i>
@@ -529,23 +529,21 @@
 								).join('')}`;
 							
 							// Inicializar iconos de Lucide después de actualizar el HTML
-							if (typeof (window as any).lucide !== 'undefined') {
-								(window as any).lucide.createIcons();
+							if (typeof window.lucide !== 'undefined') {
+								window.lucide.createIcons();
 							}
 						} else {
 							lista.innerHTML = '<p class="text-gray-500 flex items-center"><i data-lucide="users" class="w-4 h-4 mr-2"></i>No hay participantes inscritos aún. ¡Sé el primero!</p>';
 							
-							// Inicializar iconos de Lucide
-							if (typeof (window as any).lucide !== 'undefined') {
-								(window as any).lucide.createIcons();
+							if (typeof window.lucide !== 'undefined') {
+								window.lucide.createIcons();
 							}
 						}
 					} else {
 						lista.innerHTML = '<p class="text-gray-500 flex items-center"><i data-lucide="users" class="w-4 h-4 mr-2"></i>No hay participantes inscritos aún. ¡Sé el primero!</p>';
 						
-						// Inicializar iconos de Lucide
-						if (typeof (window as any).lucide !== 'undefined') {
-							(window as any).lucide.createIcons();
+						if (typeof window.lucide !== 'undefined') {
+							window.lucide.createIcons();
 						}
 					}
 				} catch (error) {
@@ -567,9 +565,9 @@
 					
 					if (Array.isArray(productos)) {
 						// Buscar por IDs específicos
-						const completo = productos.find((p: any) => p.id == 14); // Completo Tradicional
-						const ave = productos.find((p: any) => p.id == 6); // Ave Italiana
-						const hamburguesa = productos.find((p: any) => p.id == 11); // Hamburguesa Doble Mixta
+						const completo = productos.find((p) => p.id == 14); // Completo Tradicional
+						const ave = productos.find((p) => p.id == 6); // Ave Italiana
+						const hamburguesa = productos.find((p) => p.id == 11); // Hamburguesa Doble Mixta
 						
 						const completoImg = document.getElementById('completo-img') as HTMLImageElement;
 						if (completoImg) {
@@ -642,7 +640,7 @@
 			});
 
 			document.getElementById('terminos-modal')?.addEventListener('click', (e) => {
-				if ((e.target as HTMLElement)?.id === 'terminos-modal') {
+				if (e.target?.id === 'terminos-modal') {
 					document.getElementById('terminos-modal')?.classList.add('hidden');
 				}
 			});
@@ -693,8 +691,8 @@
 			cargarProductos();
 			
 			// Initialize Lucide icons
-			if (typeof (window as any).lucide !== 'undefined') {
-				(window as any).lucide.createIcons();
+			if (typeof window.lucide !== 'undefined') {
+				window.lucide.createIcons();
 			}
 			
 			// Tracking system

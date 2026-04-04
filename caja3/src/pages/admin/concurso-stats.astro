@@ -277,7 +277,7 @@
             const canvasEl = document.getElementById('dailyChart');
             if (!canvasEl) return;
             
-            const ctx = (canvasEl as HTMLCanvasElement).getContext('2d');
+            const ctx = canvasEl.getContext('2d');
             if (!ctx) return;
             
             if (dailyChart) {
@@ -325,7 +325,7 @@
             const canvasEl = document.getElementById('sourcesChart');
             if (!canvasEl) return;
             
-            const ctx = (canvasEl as HTMLCanvasElement).getContext('2d');
+            const ctx = canvasEl.getContext('2d');
             if (!ctx) return;
             
             if (sourcesChart) {
@@ -403,14 +403,14 @@
         
         // Manejar preview y subida de imagen
         document.addEventListener('DOMContentLoaded', () => {
-            const imageInput = document.getElementById('modal-image') as HTMLInputElement;
+            const imageInput = document.getElementById('modal-image');
             const imagePreview = document.getElementById('image-preview');
-            const previewImg = document.getElementById('preview-img') as HTMLImageElement;
+            const previewImg = document.getElementById('preview-img');
             const uploadStatus = document.getElementById('upload-status');
             
             if (imageInput) {
                 imageInput.addEventListener('change', async function(e) {
-                    const target = e.target as HTMLInputElement;
+                    const target = e.target;
                     const file = target.files?.[0];
                     if (!file) {
                         if (imagePreview) imagePreview.style.display = 'none';
@@ -438,7 +438,7 @@
             }
         });
         
-        async function uploadImageToAWS(file: File) {
+        async function uploadImageToAWS(file) {
             const uploadStatus = document.getElementById('upload-status');
             
             try {
@@ -542,10 +542,10 @@
         if (addBtn) {
             addBtn.onclick = function() {
                 const title = document.getElementById('modal-title');
-                const form = document.getElementById('contestant-form') as HTMLFormElement;
-                const idInput = document.getElementById('contestant-id') as HTMLInputElement;
+                const form = document.getElementById('contestant-form');
+                const idInput = document.getElementById('contestant-id');
                 const preview = document.getElementById('image-preview');
-                const imageInput = document.getElementById('modal-image') as HTMLInputElement;
+                const imageInput = document.getElementById('modal-image');
                 const modal = document.getElementById('contestant-modal');
                 
                 if (title) title.textContent = 'Agregar Concursante';
@@ -569,18 +569,18 @@
             };
         }
         
-        (window as any).editContestant = function(id: number) {
-            const contestant: any = contestants.find((c: any) => c.id == id);
+        window.editContestant = function(id) {
+            const contestant = contestants.find((c) => c.id == id);
             if (!contestant) return;
             
             const title = document.getElementById('modal-title');
-            const idInput = document.getElementById('contestant-id') as HTMLInputElement;
-            const nombreInput = document.getElementById('modal-nombre') as HTMLInputElement;
-            const rutInput = document.getElementById('modal-rut') as HTMLInputElement;
-            const emailInput = document.getElementById('modal-email') as HTMLInputElement;
-            const telefonoInput = document.getElementById('modal-telefono') as HTMLInputElement;
-            const pesoInput = document.getElementById('modal-peso') as HTMLInputElement;
-            const statusSelect = document.getElementById('modal-payment-status') as HTMLSelectElement;
+            const idInput = document.getElementById('contestant-id');
+            const nombreInput = document.getElementById('modal-nombre');
+            const rutInput = document.getElementById('modal-rut');
+            const emailInput = document.getElementById('modal-email');
+            const telefonoInput = document.getElementById('modal-telefono');
+            const pesoInput = document.getElementById('modal-peso');
+            const statusSelect = document.getElementById('modal-payment-status');
             const modal = document.getElementById('contestant-modal');
             
             if (title) title.textContent = 'Editar Concursante';
@@ -594,7 +594,7 @@
             if (modal) modal.style.display = 'flex';
         };
         
-        (window as any).deleteContestant = async function(id: number) {
+        window.deleteContestant = async function(id) {
             if (!confirm('¿Eliminar este concursante?')) return;
             
             try {
@@ -622,13 +622,13 @@
             form.onsubmit = async function(e) {
                 e.preventDefault();
                 
-                const idInput = document.getElementById('contestant-id') as HTMLInputElement;
-                const nombreInput = document.getElementById('modal-nombre') as HTMLInputElement;
-                const rutInput = document.getElementById('modal-rut') as HTMLInputElement;
-                const emailInput = document.getElementById('modal-email') as HTMLInputElement;
-                const telefonoInput = document.getElementById('modal-telefono') as HTMLInputElement;
-                const pesoInput = document.getElementById('modal-peso') as HTMLInputElement;
-                const statusSelect = document.getElementById('modal-payment-status') as HTMLSelectElement;
+                const idInput = document.getElementById('contestant-id');
+                const nombreInput = document.getElementById('modal-nombre');
+                const rutInput = document.getElementById('modal-rut');
+                const emailInput = document.getElementById('modal-email');
+                const telefonoInput = document.getElementById('modal-telefono');
+                const pesoInput = document.getElementById('modal-peso');
+                const statusSelect = document.getElementById('modal-payment-status');
                 
                 const formData = {
                     id: idInput?.value || '',

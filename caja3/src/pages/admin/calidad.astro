@@ -228,7 +228,7 @@
         var currentRole = 'planchero';
         var uploadedImages = {};
 
-        (window as any).toggleAccordion = function(id) {
+        window.toggleAccordion = function(id) {
             var content = document.getElementById('content-' + id);
             var icon = document.getElementById('icon-' + id);
             if (!content || !icon) return;
@@ -243,7 +243,7 @@
             }
         };
 
-        (window as any).selectRole = function(role) {
+        window.selectRole = function(role) {
             currentRole = role;
             var buttons = document.querySelectorAll('.role-btn');
             for (var i = 0; i < buttons.length; i++) {
@@ -336,7 +336,7 @@
             
             for (var i = 0; i < items.length; i++) {
                 var yesRadio = document.getElementById('q' + items[i].id + '_yes');
-                if (yesRadio && (yesRadio as HTMLInputElement).checked) {
+                if (yesRadio && yesRadio.checked) {
                     completedTasks++;
                 }
             }
@@ -357,12 +357,12 @@
                 
                 if (savedState.status) {
                     var radio = document.getElementById('q' + item.id + '_' + savedState.status);
-                    if (radio) (radio as HTMLInputElement).checked = true;
+                    if (radio) radio.checked = true;
                 }
                 
                 if (savedState.comment) {
                     var textarea = document.getElementById('obs' + item.id);
-                    if (textarea) (textarea as HTMLTextAreaElement).value = savedState.comment;
+                    if (textarea) textarea.value = savedState.comment;
                 }
                 
                 if (savedState.photos) {
@@ -383,7 +383,7 @@
             var radios = document.querySelectorAll('input[type="radio"]');
             for (var i = 0; i < radios.length; i++) {
                 radios[i].addEventListener('change', function(e) {
-                    var target = e.target as HTMLInputElement;
+                    var target = e.target;
                     if (target && target.name) {
                         var itemId = target.name.replace('q', '');
                         saveTaskState(itemId, 'status', target.value);
@@ -395,7 +395,7 @@
             var textareas = document.querySelectorAll('textarea');
             for (var i = 0; i < textareas.length; i++) {
                 textareas[i].addEventListener('input', function(e) {
-                    var target = e.target as HTMLTextAreaElement;
+                    var target = e.target;
                     if (target && target.id) {
                         var itemId = target.id.replace('obs', '');
                         saveTaskState(itemId, 'comment', target.value);
@@ -404,7 +404,7 @@
             }
         }
 
-        (window as any).addPhoto = function(questionId) {
+        window.addPhoto = function(questionId) {
             if (!uploadedImages[questionId]) uploadedImages[questionId] = [];
             if (uploadedImages[questionId].length >= 2) {
                 alert('Máximo 2 fotos por pregunta');
@@ -413,11 +413,11 @@
             document.getElementById('photo' + questionId)?.click();
         };
 
-        (window as any).openPhoto = function(url) {
+        window.openPhoto = function(url) {
             window.open(url, '_blank');
         };
 
-        (window as any).removePhoto = function(questionId, index) {
+        window.removePhoto = function(questionId, index) {
             if (!uploadedImages[questionId]) return;
             uploadedImages[questionId].splice(index, 1);
             updatePhotoGrid(questionId);
@@ -438,7 +438,7 @@
             
             grid.style.display = 'grid';
             if (addBtn) addBtn.textContent = photos.length >= 2 ? 'Máximo 2 fotos' : 'Añadir Foto (' + photos.length + '/2)';
-            if (addBtn) (addBtn as HTMLButtonElement).disabled = photos.length >= 2;
+            if (addBtn) addBtn.disabled = photos.length >= 2;
             
             var html = '';
             for (var i = 0; i < photos.length; i++) {
@@ -450,7 +450,7 @@
             grid.innerHTML = html;
         }
 
-        (window as any).handleImageUpload = function(input, questionId) {
+        window.handleImageUpload = function(input, questionId) {
             var file = input.files && input.files[0];
             if (!file) return;
             
@@ -539,8 +539,8 @@
                     
                     responses[item.id] = {
                         question: item.question,
-                        answer: yesRadio && (yesRadio as HTMLInputElement).checked ? 'si' : (noRadio && (noRadio as HTMLInputElement).checked ? 'no' : ''),
-                        observations: observations && (observations as HTMLTextAreaElement).value || '',
+                        answer: yesRadio && yesRadio.checked ? 'si' : (noRadio && noRadio.checked ? 'no' : ''),
+                        observations: observations && observations.value || '',
                         photos: uploadedImages[item.id] || []
                     };
                 }
