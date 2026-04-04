@@ -26,26 +26,23 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $input = json_decode(file_get_contents('php://input'), true);
 
-$userField = $input['email'] ?? $input['username'] ?? null;
-$password = $input['password'] ?? null;
-
-if (!$userField || !$password) {
-    echo json_encode(['error' => 'Usuario/Email y contraseña son requeridos']);
+if (!$input || !isset($input['email']) || !isset($input['password'])) {
+    echo json_encode(['error' => 'Email y contraseña son requeridos']);
     exit();
 }
 
-$email = filter_var(trim($userField), FILTER_VALIDATE_EMAIL);
+$email = filter_var(trim($input['email']), FILTER_VALIDATE_EMAIL);
+$password = trim($input['password']);
+
 if (!$email) {
-    // If not email, search by username (nombre) or id
-    $query = "SELECT id, email, nombre, password FROM usuarios WHERE nombre = ? OR email = ? LIMIT 1";
-    $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, "ss", $userField, $userField);
-} else {
-    // Search by email
-    $query = "SELECT id, email, nombre, password FROM usuarios WHERE email = ? LIMIT 1";
-    $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, "s", $email);
+    echo json_encode(['error' => 'Email inválido']);
+    exit();
 }
+
+// Buscar usuario
+$query = "SELECT id, email, nombre, password FROM usuarios WHERE email = ?";
+$stmt = mysqli_prepare($conn, $query);
+mysqli_stmt_bind_param($stmt, "s", $email);
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
 $user = mysqli_fetch_assoc($result);
@@ -54,12 +51,6 @@ if (!$user || !password_verify($password, $user['password'])) {
     echo json_encode(['error' => 'Email o contraseña incorrectos']);
     exit();
 }
-
-// Iniciar sesión real para el navegador
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-$_SESSION['user'] = $user;
 
 // Crear nuevo token
 $token = bin2hex(random_bytes(32));
