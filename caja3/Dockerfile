@@ -1,4 +1,4 @@
-FROM php:8.5-apache-bookworm
+FROM php:8.2-apache
 
 # Instalar dependencias del sistema y extensiones PHP
 RUN apt-get update && apt-get install -y \
