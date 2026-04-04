@@ -41,8 +41,10 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
 
       let realComboId = comboMapping[combo.name] || combo.id;
       
+      const baseUrl = window.location.port === '4321' ? 'http://localhost:3000' : '';
+
       const fetchCombo = async (id) => {
-        const response = await fetch(`/api/get_combos.php?combo_id=${id}&v=${Date.now()}`);
+        const response = await fetch(`${baseUrl}/api/get_combos.php?combo_id=${id}&v=${Date.now()}`);
         return await response.json();
       };
 
@@ -51,7 +53,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
       // Si no se encuentra por ID, intentar buscar por nombre en todos los combos
       if (!data.success || !data.combos || data.combos.length === 0) {
         console.log('Combo ID not found, searching by name...');
-        const allResponse = await fetch(`/api/get_combos.php?v=${Date.now()}`);
+        const allResponse = await fetch(`${baseUrl}/api/get_combos.php?v=${Date.now()}`);
         const allData = await allResponse.json();
         
         if (allData.success && allData.combos) {
@@ -233,7 +235,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center animate-fade-in" onClick={onClose}>
-      <div className="bg-white w-full max-w-2xl mx-4 rounded-2xl flex flex-col animate-slide-up max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white w-[95vw] max-w-6xl mx-4 rounded-2xl flex flex-col animate-slide-up max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
         <div className="border-b flex justify-between items-center p-4">
           <h2 className="font-bold text-gray-800 text-xl">Personalizar Combo</h2>
           <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-800">
@@ -248,64 +250,22 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
               <p className="text-gray-600 mt-4">Cargando combo...</p>
             </div>
           ) : comboData ? (
-            <div className="space-y-6">
-              {/* Combo Header */}
-              <div className="text-center">
-                {(combo.image_url || comboData.image_url) && (
-                  <img
-                    src={combo.image_url || comboData.image_url}
-                    alt={combo.name}
-                    className="w-32 h-32 object-cover rounded-lg mx-auto mb-4"
-                    onError={(e) => {
-                      console.log('Error loading combo image:', e.target.src);
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                )}
+            <div className="space-y-6">              {/* Combo Header super resumido */}
+              <div className="text-center mb-2">
                 <h3 className="text-2xl font-bold text-gray-800">{combo.name}</h3>
-                <p className="text-gray-600 mt-2">{combo.description}</p>
-                <p className="text-2xl font-bold text-orange-500 mt-2">${parseInt(combo.price).toLocaleString('es-CL')}</p>
+                <p className="text-xl font-bold text-orange-500 mt-1">${parseInt(combo.price).toLocaleString('es-CL')}</p>
               </div>
 
-              {/* Fixed Items */}
-              {comboData.fixed_items && comboData.fixed_items.length > 0 && (
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3">Incluye:</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {comboData.fixed_items.map((item, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        {item.image_url && (
-                          <img
-                            src={item.image_url}
-                            alt={item.product_name}
-                            className="w-12 h-12 object-cover rounded"
-                            onError={(e) => {
-                              console.log('Error loading item image:', e.target.src);
-                              e.target.style.display = 'none';
-                            }}
-                          />
-                        )}
-                        <div>
-                          <p className="font-medium text-gray-800">{item.product_name}</p>
-                          <p className="text-sm text-gray-600">Cantidad: {item.quantity}</p>
-                        </div>
-                        <Check className="text-green-500 ml-auto" size={20} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Selection Groups */}
+              {/* Selection Groups (Omitimos Mostrar los Fixed Items para mantener UI Limpia) */}
               {comboData.selection_groups && Object.entries(comboData.selection_groups).map(([groupName, options], groupIndex) => {
                 const maxSelections = options.length > 0 ? (options[0].max_selections || 1) : 1;
                 const totalSelected = getTotalSelected(groupName);
                 return (
                   <div key={groupIndex}>
-                    <h4 className="text-lg font-semibold text-gray-800 mb-3">
-                      Elige tu {groupName} ({totalSelected}/{maxSelections}):
+                    <h4 className="text-lg font-semibold text-gray-800 mb-3 text-center bg-gray-100 py-2 rounded-lg">
+                      Elige tu {groupName} ({totalSelected}/{maxSelections})
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                       {options.map((option, optionIndex) => {
                         const currentCount = maxSelections === 1
                           ? (selections[groupName] === option.product_id ? 1 : 0)
@@ -340,60 +300,66 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                               )}
                             </div>
                             {maxSelections > 1 ? (
-                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections, 'remove')}
+                                    disabled={currentCount === 0}
+                                    className="combo-nav-btn w-9 h-9 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors font-black text-xl"
+                                  >
+                                    -
+                                  </button>
+                                  <span className="w-8 text-center font-bold text-gray-800 text-lg">{currentCount}</span>
+                                  <button
+                                    onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections, 'add')}
+                                    disabled={totalSelectedInGroup >= maxSelections}
+                                    className="combo-nav-btn w-9 h-9 rounded-lg bg-green-500 hover:bg-green-600 disabled:bg-gray-200 text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all active:scale-90 shadow-sm font-bold text-xl"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              ) : (
                                 <button
-                                  onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections, 'remove')}
-                                  disabled={currentCount === 0}
-                                  className="w-9 h-9 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors font-black text-xl"
+                                  onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections)}
+                                  className={`combo-nav-btn w-10 h-10 rounded-lg border-2 flex items-center justify-center transition-all ${currentCount > 0 ? 'bg-green-500 border-green-500 text-white' : 'border-gray-200 hover:bg-gray-50'
+                                    }`}
                                 >
-                                  -
+                                  {currentCount > 0 ? (
+                                    <Check size={24} />
+                                  ) : (
+                                    <div className="w-5 h-5 rounded-md border-2 border-gray-300"></div>
+                                  )}
                                 </button>
-                                <span className="w-8 text-center font-bold text-gray-800 text-lg">{currentCount}</span>
-                                <button
-                                  onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections, 'add')}
-                                  disabled={totalSelectedInGroup >= maxSelections}
-                                  className="w-9 h-9 rounded-lg bg-green-500 hover:bg-green-600 disabled:bg-gray-200 text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all active:scale-90 shadow-sm font-bold text-xl"
-                                >
-                                  +
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections)}
-                                className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center transition-all ${currentCount > 0 ? 'bg-green-500 border-green-500 text-white' : 'border-gray-200 hover:bg-gray-50'
-                                  }`}
-                              >
-                                {currentCount > 0 ? (
-                                  <Check size={24} />
-                                ) : (
-                                  <div className="w-5 h-5 rounded-md border-2 border-gray-300"></div>
-                                )}
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-600">Error cargando datos del combo</p>
-            </div>
-          )}
-        </div>
-
-        <div className="border-t p-4">
-          <button
-            onClick={handleAddToCart}
-            disabled={loading || !comboData}
-            className={`w-full font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center shadow-lg active:scale-95 ${loading || !comboData ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600 text-white'
-              }`}
-          >
-            Agregar al Carrito - ${calculateTotalPrice().toLocaleString('es-CL')}
-          </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-600">Error cargando datos del combo</p>
+              </div>
+            )}
+          </div>
+  
+          <div className="border-t p-4 flex gap-4">
+            <button
+              onClick={onClose}
+              className="combo-nav-btn flex-1 font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center shadow-md bg-gray-200 hover:bg-gray-300 text-gray-800"
+            >
+              Volver
+            </button>
+            <button
+              onClick={handleAddToCart}
+              disabled={loading || !comboData}
+              className={`combo-nav-btn flex-1 font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center shadow-lg active:scale-95 ${loading || !comboData ? 'bg-gray-300 text-gray-500' : 'bg-green-500 hover:bg-green-600 text-white'
+                }`}
+            >
+              Agregar al Carrito - ${calculateTotalPrice().toLocaleString('es-CL')}
+            </button>
         </div>
       </div>
     </div>
