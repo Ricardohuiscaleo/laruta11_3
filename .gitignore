@@ -31,3 +31,4 @@ app3/sessions/*
 !app3/sessions/.gitkeep
 caja3/sessions/*
 !caja3/sessions/.gitkeepapp3/api/google_service_account.json
+caja3/api/
