@@ -16,7 +16,13 @@ RUN apt-get update && apt-get install -y \
 
 # Habilitar mod_rewrite y configurar Apache
 RUN a2enmod rewrite headers && \
-    sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
+    sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf && \
+    echo 'PassEnv APP_DB_HOST APP_DB_NAME APP_DB_USER APP_DB_PASS' >> /etc/apache2/apache2.conf && \
+    echo 'PassEnv ADMIN_PASS CAJERA_PASS RICARDO_PASS MANAGER_PASS RUTA11_PASS' >> /etc/apache2/apache2.conf && \
+    echo 'PassEnv TELEGRAM_TOKEN TELEGRAM_CHAT_ID' >> /etc/apache2/apache2.conf && \
+    echo 'PassEnv GMAIL_CLIENT_ID GMAIL_CLIENT_SECRET GMAIL_SENDER_EMAIL' >> /etc/apache2/apache2.conf && \
+    echo 'PassEnv TUU_API_KEY TUU_ONLINE_RUT TUU_ONLINE_SECRET TUU_ONLINE_ENV TUU_ENVIRONMENT TUU_DEVICE_SERIAL' >> /etc/apache2/apache2.conf && \
+    echo 'PassEnv AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY S3_BUCKET S3_REGION S3_URL' >> /etc/apache2/apache2.conf
 
 # Copiar código
 WORKDIR /app
