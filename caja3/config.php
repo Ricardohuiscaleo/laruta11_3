@@ -36,10 +36,10 @@ $config = [
     'Calcularuta11_db_user' => _env('CALCULARUTA11_DB_USER'),
     'Calcularuta11_db_pass' => _env('CALCULARUTA11_DB_PASS'),
 
-    'app_db_host' => _env('APP_DB_HOST') ?: 'localhost',
-    'app_db_name' => _env('APP_DB_NAME') ?: 'laruta11',
-    'app_db_user' => _env('APP_DB_USER') ?: 'root',
-    'app_db_pass' => _env('APP_DB_PASS') ?: '',
+    'app_db_host' => _env('APP_DB_HOST'),
+    'app_db_name' => _env('APP_DB_NAME'),
+    'app_db_user' => _env('APP_DB_USER'),
+    'app_db_pass' => _env('APP_DB_PASS'),
 
     'ruta11_db_host' => _env('RUTA11_DB_HOST'),
     'ruta11_db_name' => _env('RUTA11_DB_NAME'),
@@ -47,37 +47,24 @@ $config = [
     'ruta11_db_pass' => _env('RUTA11_DB_PASS'),
 
     'admin_users' => [
-        'admin'   => _env('ADMIN_PASS')   ?: 'R11adm2025x7k9',
-        'ricardo' => _env('RICARDO_PASS') ?: '',
-        'manager' => _env('MANAGER_PASS') ?: '',
-        'ruta11'  => _env('RUTA11_PASS')  ?: ''
+        _env('ADMIN_USER') ?: 'admin' => _env('ADMIN_PASS') ?: 'admin123',
+        'ricardo' => _env('RICARDO_PASS'),
+        'manager' => _env('MANAGER_PASS'),
+        'ruta11' => _env('RUTA11_PASS')
     ],
 
-    'inventario_user'     => _env('INVENTARIO_USER'),
+    'inventario_user' => _env('INVENTARIO_USER'),
     'inventario_password' => _env('INVENTARIO_PASSWORD'),
 
     'caja_users' => [
-        'admin'  => _env('ADMIN_PASS')  ?: 'R11adm2025x7k9',
-        'cajera' => _env('CAJERA_PASS') ?: 'ruta11caja'
+        'admin' => 'R11adm2025x7k9',
+        'cajera' => 'ruta11caja'
     ],
 
     'gmail_client_id' => _env('GMAIL_CLIENT_ID'),
     'gmail_client_secret' => _env('GMAIL_CLIENT_SECRET'),
-    'gmail_redirect_uri' => _env('GMAIL_REDIRECT_URI'),
     'gmail_sender_email' => _env('GMAIL_SENDER_EMAIL'),
 
-    'ruta11_google_client_id' => _env('RUTA11_GOOGLE_CLIENT_ID'),
-    'ruta11_google_client_secret' => _env('RUTA11_GOOGLE_CLIENT_SECRET'),
-    'ruta11_google_redirect_uri' => _env('RUTA11_GOOGLE_REDIRECT_URI'),
-    'ruta11_app_redirect_uri' => _env('RUTA11_APP_REDIRECT_URI'),
-
-    'tuu_api_key' => _env('TUU_API_KEY'),
-    'tuu_online_rut' => _env('TUU_ONLINE_RUT'),
-    'tuu_online_secret' => _env('TUU_ONLINE_SECRET'),
-    'tuu_online_env' => _env('TUU_ONLINE_ENV'),
-    'tuu_environment' => _env('TUU_ENVIRONMENT'),
-    'tuu_device_serial' => _env('TUU_DEVICE_SERIAL'),
-    
     'external_credentials' => [
         'pedidosya' => [
             'platform' => 'PedidosYA (Gowin)',

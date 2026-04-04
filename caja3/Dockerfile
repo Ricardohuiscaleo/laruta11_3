@@ -1,15 +1,15 @@
-FROM php:8.2-apache
+FROM php:8.4-apache
 
-# Instalar dependencias del sistema y extensiones PHP
+# Instalar Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    apt-get clean
+
+# Instalar extensiones PHP necesarias
 RUN apt-get update && apt-get install -y \
-    curl \
-    gnupg \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
-    build-essential \
-    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install mysqli pdo pdo_mysql gd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
