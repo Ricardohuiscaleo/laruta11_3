@@ -55,7 +55,7 @@
 
     .products-grid { 
       display: grid; 
-      grid-template-columns: repeat(8, 1fr); /* 8 columnas para comida */
+      grid-template-columns: repeat(7, 1fr); /* 7 columnas para comida */
       gap: 2px;
       overflow-y: auto;
       flex: 1;
@@ -63,9 +63,9 @@
       grid-auto-rows: min-content; 
     }
 
-    .column-right { flex: 0.5; } /* Columna de bebidas más estrecha */
+    .column-right { flex: 0.71; } /* Relación 7:5 aproximada */
     .column-right .products-grid {
-      grid-template-columns: repeat(4, 1fr); /* 4 columnas de bebidas */
+      grid-template-columns: repeat(5, 1fr); /* 5 columnas de bebidas */
       align-content: start;
       grid-auto-rows: min-content;
     }
@@ -160,13 +160,17 @@
     .fullscreen-price { font-size: 80px; font-weight: 900; color: #059669; }
     .close-fullscreen { position: absolute; top: 20px; right: 20px; font-size: 40px; background: #000; color: #fff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
-    /* ESTILO BEBIDAS: RETRATO 4:5 */
+    /* ESTILO BEBIDAS: RETRATO 4:5 CON FOTO REDUCIDA */
     .card-drink {
       aspect-ratio: 4/5 !important; 
     }
-    .card-drink .product-image { height: 60% !important; }
-    .card-drink .product-name { font-size: 0.6vw !important; }
-    .card-drink .product-price { font-size: 0.8vw !important; }
+    .card-drink .product-image { 
+      height: 50% !important; 
+      width: 70% !important; /* Reducida un 30% como pidió el usuario */
+      margin: 0 auto;
+    }
+    .card-drink .product-name { font-size: 0.65vw !important; }
+    .card-drink .product-price { font-size: 0.85vw !important; }
   </style>
 </head>
 <body>
@@ -366,8 +370,8 @@
       const rightCards = rightGrid.querySelectorAll('.product-card');
 
       let nextIndex = currentNavIndex;
-      const colsLeft = 8;
-      const colsRight = 4;
+      const colsLeft = 7;
+      const colsRight = 5;
 
       switch(e.key) {
         case 'ArrowRight':
