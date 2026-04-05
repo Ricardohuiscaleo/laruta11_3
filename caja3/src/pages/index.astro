@@ -130,19 +130,7 @@ import MenuApp from '../components/MenuApp.jsx';
 						platform: navigator.platform
 					};
 					
-					if (navigator.geolocation) {
-						navigator.geolocation.getCurrentPosition(
-							position => {
-								visitData.latitude = position.coords.latitude;
-								visitData.longitude = position.coords.longitude;
-								this.sendData('/api/app/track_visit.php', visitData);
-							},
-							() => this.sendData('/api/app/track_visit.php', visitData),
-							{ timeout: 5000 }
-						);
-					} else {
-						this.sendData('/api/app/track_visit.php', visitData);
-					}
+					this.sendData('/api/app/track_visit.php', visitData);
 				},
 				
 				setupEventListeners() {
