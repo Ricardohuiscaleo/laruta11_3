@@ -3445,7 +3445,7 @@ export default function App() {
                       setCashAmount('');
                       setCashStep('input');
                     }}
-                    disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
+                    
                     className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${selectedPaymentMethod === 'cash'
                       ? 'bg-green-500 hover:bg-green-600 text-white border-green-500'
                       : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
@@ -3669,6 +3669,15 @@ export default function App() {
                   </button>
                 </div>
 
+                {selectedPaymentMethod && (
+                  <button
+                    onClick={handleCreateOrder}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-lg flex items-center justify-center gap-2 mt-2"
+                  >
+                    ✅ Confirmar Pedido
+                  </button>
+                )}
+                <p className="text-xs text-green-700 text-center mt-2">🔒 Todos los métodos son seguros</p>
               </div>
             </div>
           </div>
