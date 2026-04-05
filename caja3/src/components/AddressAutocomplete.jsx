@@ -58,7 +58,8 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
         .catch(() => {});
     }
   };
-    onChange(suggestion.description);
+
+  const handleSelect = (suggestion) => {
     setSuggestions([]);
     setShowSuggestions(false);
     // Calcular tarifa dinámica si hay callback
