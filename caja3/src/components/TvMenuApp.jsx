@@ -324,12 +324,84 @@ export default function TvMenuApp() {
   const [foodCount, setFoodCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Sonidos
-  const playSound = (src) => { try { const a = new Audio(src); a.volume = 0.5; a.play(); } catch(e) {} };
-  const soundBlip    = () => playSound('/blip.mp3');
-  const soundAgregar = () => playSound('/agregar.mp3');
-  const soundExito   = () => playSound('/exito.mp3');
-  const soundDesagregar = () => playSound('/desagregar.mp3');
+  // Web Audio API - sonidos sin archivos, sin delay
+  const audioCtx = useRef(null);
+  const getCtx = () => {
+    if (!audioCtx.current) audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx.current;
+  };
+
+  const playTone = (freq, type, duration, vol = 0.3, fadeOut = true) => {
+    try {
+      const ctx = getCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(vol, ctx.currentTime);
+      if (fadeOut) gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + duration);
+    } catch(e) {}
+  };
+
+  // Blip de navegación: tick suave
+  const soundBlip = () => playTone(880, 'sine', 0.06, 0.15);
+
+  // Agregar al carrito: pop satisfactorio (dos notas)
+  const soundAgregar = () => {
+    try {
+      const ctx = getCtx();
+      [0, 0.07].forEach((delay, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(i === 0 ? 523 : 784, ctx.currentTime + delay);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.15);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.15);
+      });
+    } catch(e) {}
+  };
+
+  // Éxito al enviar pedido: fanfare 3 notas
+  const soundExito = () => {
+    try {
+      const ctx = getCtx();
+      [[523, 0], [659, 0.12], [784, 0.24]].forEach(([freq, delay]) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+        gain.gain.setValueAtTime(0.35, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.25);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.25);
+      });
+    } catch(e) {}
+  };
+
+  // Desagregar: nota descendente
+  const soundDesagregar = () => {
+    try {
+      const ctx = getCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(220, ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.12);
+    } catch(e) {}
+  };
   
   // Carrito y Timer
   const [cart, setCart] = useState([]);
