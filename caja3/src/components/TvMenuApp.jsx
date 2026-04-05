@@ -772,10 +772,12 @@ export default function TvMenuApp() {
           <div style={{background: 'white', color: 'black', padding: '5px 15px', borderRadius: '5px'}}>
             {cart.length} ítems / ${cartTotal.toLocaleString('es-CL')}
           </div>
-          <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.85)', marginTop: '4px', fontWeight: 400}}>
+        </div>
+        {cart.length > 0 && (
+          <div style={{position: 'absolute', top: '110px', right: '20px', background: 'rgba(0,0,0,0.75)', color: 'white', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', fontWeight: 500, pointerEvents: 'none', zIndex: 100, backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.2)'}}>
             ↑ Sube con el control remoto para ver tu pedido
           </div>
-        </div>
+        )}
       </header>
       
       <div id="menu-container">

@@ -332,7 +332,7 @@ const CheckoutApp = ({ onClose }) => {
     ? parseInt(nearbyTrucks[0].tarifa_delivery || 0)
     : 0;
 
-  const deliveryDiscountAmount = deliveryDiscountActive ? Math.round(deliveryFee * 0.4) : 0;
+  const deliveryDiscountAmount = deliveryDiscountActive ? Math.round(deliveryFee * 0.2857) : 0;
   const finalDeliveryCost = deliveryFee - deliveryDiscountAmount;
 
   // Calcular total de extras de delivery (sin descuentos ni cashback)
@@ -1354,7 +1354,7 @@ const CheckoutApp = ({ onClose }) => {
                         <span className="font-semibold line-through text-gray-400">${deliveryFee.toLocaleString('es-CL')}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Descuento Delivery (40%):</span>
+                        <span className="text-gray-600">Descuento Delivery (28%):</span>
                         <span className="font-semibold text-green-600">${(deliveryFee - deliveryDiscountAmount).toLocaleString('es-CL')}</span>
                       </div>
                     </>

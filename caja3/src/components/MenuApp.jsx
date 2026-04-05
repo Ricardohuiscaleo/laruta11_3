@@ -325,7 +325,7 @@ function CartModal({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                       }}
                       className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
                     />
-                    <span className="text-xs font-medium text-gray-700">Descuento Delivery (40%)</span>
+                    <span className="text-xs font-medium text-gray-700">Descuento Delivery (28%)</span>
                   </label>
                 </div>
                 <div>
@@ -1326,7 +1326,7 @@ export default function App() {
 
   const setExactAmount = () => {
     const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-    const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
+    const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
     const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
     const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
     const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
@@ -1341,7 +1341,7 @@ export default function App() {
 
   const handleContinueCash = () => {
     const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-    const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
+    const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
     const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
     const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
     const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
@@ -1374,7 +1374,7 @@ export default function App() {
     try {
       console.log('💵 Procesando pago en EFECTIVO...');
       const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-      const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
+      const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
       const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
       const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
       const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
@@ -3066,7 +3066,7 @@ export default function App() {
                     <button
                       onClick={() => {
                         if (!customerInfo.deliveryDiscount) {
-                          const confirmed = window.confirm('🚚 Descuento Delivery (40%)\n\nSe aplicará un 40% de descuento en el costo de delivery. Solo válido para direcciones específicas.\n\n¿Aplicar descuento?');
+                          const confirmed = window.confirm('🚚 Descuento Delivery (28%)\n\nSe aplicará un 40% de descuento en el costo de delivery. Solo válido para direcciones específicas.\n\n¿Aplicar descuento?');
                           if (confirmed) {
                             setCustomerInfo({ ...customerInfo, deliveryDiscount: true, address: '' });
                           }
@@ -3086,7 +3086,7 @@ export default function App() {
                         readOnly
                         className="w-3 h-3 pointer-events-none"
                       />
-                      <span>-40% Delivery</span>
+                      <span>-28% Delivery</span>
                     </button>
                   )}
                   {customerInfo.deliveryType === 'pickup' && (
@@ -3383,8 +3383,8 @@ export default function App() {
                       </div>
                       {customerInfo.deliveryDiscount && (
                         <div className="flex justify-between items-center">
-                          <span className="text-green-600 text-sm">Descuento Delivery (40%):</span>
-                          <span className="font-semibold text-green-600">${Math.round(parseInt(nearbyTrucks[0].tarifa_delivery || 0) * 0.6).toLocaleString('es-CL')}</span>
+                          <span className="text-green-600 text-sm">Descuento Delivery (28%):</span>
+                          <span className="font-semibold text-green-600">${Math.round(parseInt(nearbyTrucks[0].tarifa_delivery || 0) * 0.7143).toLocaleString('es-CL')}</span>
                         </div>
                       )}
                     </>
@@ -3423,7 +3423,7 @@ export default function App() {
                     <span>Total:</span>
                     <span className="text-orange-500">${(() => {
                       const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-                      const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
+                      const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
                       const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                       const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                       const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
@@ -3466,7 +3466,7 @@ export default function App() {
                       try {
                         console.log('💳 Procesando pago con TARJETA...');
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-                        const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
+                        const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
                         const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                         const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                         const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
@@ -3539,7 +3539,7 @@ export default function App() {
                       try {
                         console.log('📱 Procesando pago con TRANSFERENCIA...');
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-                        const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
+                        const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
                         const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                         const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                         const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
@@ -3609,7 +3609,7 @@ export default function App() {
                       try {
                         console.log('🛌 Procesando pago con PEDIDOSYA...');
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-                        const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
+                        const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
                         const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                         const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                         const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
@@ -3753,7 +3753,7 @@ export default function App() {
                   <p className="text-sm text-gray-600 mb-1">Total a pagar:</p>
                   <p className="text-3xl font-bold text-orange-600">${(() => {
                     const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-                    const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
+                    const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
                     const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                     const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                     const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
@@ -3831,7 +3831,7 @@ export default function App() {
                     <span className="text-sm text-gray-600">Total:</span>
                     <span className="text-lg font-semibold">${(() => {
                       const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-                      const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
+                      const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
                       const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                       const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                       const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
@@ -3849,7 +3849,7 @@ export default function App() {
                       <span className="text-2xl font-bold text-green-600">
                         ${(() => {
                           const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-                          const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.6) : baseDeliveryFee;
+                          const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
                           const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                           const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                           const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;

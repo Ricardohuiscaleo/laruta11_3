@@ -726,6 +726,9 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                 {order.delivery_type === 'delivery' && order.delivery_fee > 0 && (
                   <div className="flex flex-col gap-0.5">
                     <span className="text-xs text-orange-600 flex items-center gap-1">+ <Bike size={12} /> <span className="font-semibold">${parseInt(order.delivery_fee - (order.delivery_discount || 0)).toLocaleString('es-CL')}</span></span>
+                    {order.payment_method === 'card' && (
+                      <span className="text-xs text-red-500 flex items-center gap-1">💳 <span>+$500 recargo tarjeta</span></span>
+                    )}
                     {order.delivery_extras_items && (
                       <div className="flex flex-col gap-0.5 pl-4 border-l border-orange-200">
                         {(() => {

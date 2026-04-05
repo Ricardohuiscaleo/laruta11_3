@@ -134,6 +134,10 @@
                         <span class="text-gray-600">Delivery:</span>
                         <span id="delivery-fee" class="font-semibold">$0</span>
                     </div>
+                    <div id="card-surcharge-row" class="justify-between mb-2 hidden">
+                        <span class="text-red-600 text-sm">💳 Recargo tarjeta delivery:</span>
+                        <span class="font-semibold text-red-600">+$500</span>
+                    </div>
                     <div id="discount-10-row" class="justify-between mb-2 hidden">
                         <span class="text-green-600 text-sm">Descuento R11 (10%):</span>
                         <span id="discount-10" class="font-semibold text-green-600">-$0</span>
@@ -287,6 +291,7 @@
                 
                 if (data.success && data.order) {
                     window.orderData = data.order; // Guardar para acceso global
+                    window._orderPaymentMethod = data.order.payment_method || 'card';
                     displayOrderItems(data.order.items, data.order.total, data.order.delivery_fee);
                     displayCustomerInfo(data.order);
                     updateWhatsAppLink();
@@ -394,6 +399,12 @@
                 const deliveryFeeElement = document.getElementById('delivery-fee');
                 if (deliveryFeeElement) {
                     deliveryFeeElement.textContent = `$${deliveryFee.toLocaleString('es-CL')}`;
+                }
+                // Mostrar recargo tarjeta si aplica
+                const cardSurchargeRow = document.getElementById('card-surcharge-row');
+                if (cardSurchargeRow && window._orderPaymentMethod === 'card') {
+                    cardSurchargeRow.classList.remove('hidden');
+                    cardSurchargeRow.classList.add('flex');
                 }
             }
             
