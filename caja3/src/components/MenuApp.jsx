@@ -1189,6 +1189,23 @@ export default function App() {
   const [deliveryFeeLabel, setDeliveryFeeLabel] = useState(null);
   const [deliveryDistanceInfo, setDeliveryDistanceInfo] = useState(null);
 
+  const [tvOrderId, setTvOrderId] = useState(() => {
+    const saved = localStorage.getItem('tv_order_id');
+    return saved ? parseInt(saved) : null;
+  });
+
+  const setTvOrderIdPersist = (id) => {
+    if (id) localStorage.setItem('tv_order_id', id);
+    else localStorage.removeItem('tv_order_id');
+    setTvOrderId(id);
+  };
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [currentOrder, setCurrentOrder] = useState(null);
+  const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', email: '', address: '', deliveryType: 'pickup', pickupTime: '', customerNotes: '', deliveryDiscount: false, pickupDiscount: false, birthdayDiscount: false, discount30: false });
+
+  // Auto-calcular tarifa si ya hay dirección al cargar
   useEffect(() => {
     if (customerInfo.address && customerInfo.deliveryType === 'delivery' && dynamicDeliveryFee === null) {
       fetch('/api/location/get_delivery_fee.php', {
@@ -1207,21 +1224,6 @@ export default function App() {
         .catch(() => {});
     }
   }, [customerInfo.address, customerInfo.deliveryType]);
-  const [tvOrderId, setTvOrderId] = useState(() => {
-    const saved = localStorage.getItem('tv_order_id');
-    return saved ? parseInt(saved) : null;
-  });
-
-  const setTvOrderIdPersist = (id) => {
-    if (id) localStorage.setItem('tv_order_id', id);
-    else localStorage.removeItem('tv_order_id');
-    setTvOrderId(id);
-  };
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [showCheckout, setShowCheckout] = useState(false);
-  const [showPayment, setShowPayment] = useState(false);
-  const [currentOrder, setCurrentOrder] = useState(null);
-  const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', email: '', address: '', deliveryType: 'pickup', pickupTime: '', customerNotes: '', deliveryDiscount: false, pickupDiscount: false, birthdayDiscount: false, discount30: false });
 
   // Polling pedidos TV
   useEffect(() => {
