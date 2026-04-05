@@ -46,7 +46,18 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
     debounceTimer.current = setTimeout(() => fetchSuggestions(e.target.value), 300);
   };
 
-  const handleSelect = (suggestion) => {
+  const handleBlur = () => {
+    if (onDeliveryFee && value && value.length > 5) {
+      fetch('/api/location/get_delivery_fee.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: value })
+      })
+        .then(r => r.json())
+        .then(data => { if (data.success) onDeliveryFee(data); })
+        .catch(() => {});
+    }
+  };
     onChange(suggestion.description);
     setSuggestions([]);
     setShowSuggestions(false);
@@ -129,6 +140,7 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
           value={value}
           onChange={handleInputChange}
           onFocus={() => { if (suggestions.length > 0) { setShowSuggestions(true); updateRect(); } }}
+          onBlur={handleBlur}
           className={className || "w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"}
           placeholder={placeholder}
           autoComplete="off"
