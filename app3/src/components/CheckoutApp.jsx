@@ -328,8 +328,11 @@ const CheckoutApp = ({ onClose }) => {
     }
   }, [discountCode, customerInfo.deliveryType]);
 
-  const deliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0
-    ? parseInt(nearbyTrucks[0].tarifa_delivery || 0)
+  const [dynamicDeliveryFee, setDynamicDeliveryFee] = useState(null);
+  const [deliveryFeeLabel, setDeliveryFeeLabel] = useState(null);
+
+  const deliveryFee = customerInfo.deliveryType === 'delivery'
+    ? (dynamicDeliveryFee !== null ? dynamicDeliveryFee : (nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0))
     : 0;
 
   const deliveryDiscountAmount = deliveryDiscountActive ? Math.round(deliveryFee * 0.2857) : 0;
@@ -822,7 +825,7 @@ const CheckoutApp = ({ onClose }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <header className="bg-gradient-to-r from-red-500 to-orange-500 shadow-lg fixed top-0 left-0 right-0 z-50">
         <div className="max-w-4xl mx-auto px-1 py-4">
           <div className="flex items-center justify-between gap-3">
@@ -1089,11 +1092,14 @@ const CheckoutApp = ({ onClose }) => {
                     ) : (
                       <AddressAutocomplete
                         value={customerInfo.address}
-                        onChange={(address) => setCustomerInfo({ ...customerInfo, address })}
+                        onChange={(address) => { setCustomerInfo({ ...customerInfo, address }); setDynamicDeliveryFee(null); setDeliveryFeeLabel(null); }}
                         placeholder="Escribe tu dirección..."
+                        onDeliveryFee={(data) => { setDynamicDeliveryFee(data.delivery_fee); setDeliveryFeeLabel(data.label); }}
                       />
                     )}
-                    {nearbyTrucks.length > 0 && !deliveryDiscountActive && (
+                    {deliveryFeeLabel ? (
+                      <p className="text-xs text-green-700 font-semibold mt-1">{deliveryFeeLabel}</p>
+                    ) : nearbyTrucks.length > 0 && !deliveryDiscountActive && (
                       <p className="text-xs text-blue-600 mt-1">
                         🚚 Costo de delivery: ${parseInt(nearbyTrucks[0].tarifa_delivery || 0).toLocaleString('es-CL')}
                       </p>
@@ -1323,9 +1329,9 @@ const CheckoutApp = ({ onClose }) => {
                     </div>
                   )}
                   {user && walletBalance > 0 && (
-                    <div className={`border-t pt-3 mt-3 -mx-4 px-4 py-4 rounded-lg ${walletBalance >= 500 ? 'bg-gradient-to-br from-green-50 to-emerald-50' : 'bg-gray-100'}`}>
+                    <div className={`border-t pt-3 mt-3 rounded-lg overflow-hidden ${walletBalance >= 500 ? 'bg-gradient-to-br from-green-50 to-emerald-50' : 'bg-gray-100'}`} style={{margin: '12px 0 0 0', padding: '12px'}}>
                       <div className="flex justify-between items-center mb-3">
-                        <div>
+                        <div style={{minWidth: 0, flex: 1}}>
                           <span className={`text-sm font-bold flex items-center gap-1 ${walletBalance >= 500 ? 'text-gray-700' : 'text-gray-500'}`}>
                             💰 Usa cashback desde $500
                           </span>
@@ -1337,7 +1343,7 @@ const CheckoutApp = ({ onClose }) => {
                         {walletBalance >= 500 && (
                           <button
                             onClick={() => setCashbackAmount(Math.min(walletBalance, cartSubtotal - discountAmount))}
-                            className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-full font-medium hover:bg-green-700 transition-colors"
+                            className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-full font-medium hover:bg-green-700 transition-colors flex-shrink-0 ml-2"
                           >
                             Usar todo
                           </button>
@@ -1353,8 +1359,11 @@ const CheckoutApp = ({ onClose }) => {
                         disabled={walletBalance < 500}
                         className={`w-full h-3 rounded-lg appearance-none ${walletBalance >= 500 ? 'bg-gray-200 cursor-pointer accent-green-600' : 'bg-gray-300 cursor-not-allowed'}`}
                         style={{
+                          display: 'block',
+                          width: '100%',
+                          boxSizing: 'border-box',
                           background: walletBalance >= 500
-                            ? `linear-gradient(to right, #10b981 0%, #10b981 ${(cashbackAmount / Math.min(walletBalance, cartSubtotal - discountAmount)) * 100}%, #e5e7eb ${(cashbackAmount / Math.min(walletBalance, cartSubtotal - discountAmount)) * 100}%, #e5e7eb 100%)`
+                            ? `linear-gradient(to right, #10b981 0%, #10b981 ${(cashbackAmount / Math.max(1, Math.min(walletBalance, cartSubtotal - discountAmount))) * 100}%, #e5e7eb ${(cashbackAmount / Math.max(1, Math.min(walletBalance, cartSubtotal - discountAmount))) * 100}%, #e5e7eb 100%)`
                             : '#d1d5db'
                         }}
                       />

@@ -346,8 +346,9 @@ function CartModal({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                   ) : (
                     <AddressAutocomplete
                       value={customerInfo.address}
-                      onChange={(address) => setCustomerInfo({ ...customerInfo, address })}
+                      onChange={(address) => { setCustomerInfo({ ...customerInfo, address }); setDynamicDeliveryFee(null); setDeliveryFeeLabel(null); }}
                       placeholder="Ingresa tu dirección..."
+                      onDeliveryFee={(data) => { setDynamicDeliveryFee(data.delivery_fee); setDeliveryFeeLabel(data.label); }}
                     />
                   )}
                 </div>
@@ -1184,6 +1185,8 @@ export default function App() {
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [tvPendingCount, setTvPendingCount] = useState(0);
+  const [dynamicDeliveryFee, setDynamicDeliveryFee] = useState(null);
+  const [deliveryFeeLabel, setDeliveryFeeLabel] = useState(null);
   const [tvOrderId, setTvOrderId] = useState(() => {
     const saved = localStorage.getItem('tv_order_id');
     return saved ? parseInt(saved) : null;
@@ -2090,11 +2093,12 @@ export default function App() {
   const CARD_DELIVERY_SURCHARGE = 500;
 
   const deliveryFee = useMemo(() => {
-    if (customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0) {
-      return parseInt(nearbyTrucks[0].tarifa_delivery || 0);
+    if (customerInfo.deliveryType === 'delivery') {
+      if (dynamicDeliveryFee !== null) return dynamicDeliveryFee;
+      if (nearbyTrucks.length > 0) return parseInt(nearbyTrucks[0].tarifa_delivery || 0);
     }
     return 0;
-  }, [customerInfo.deliveryType, nearbyTrucks]);
+  }, [customerInfo.deliveryType, nearbyTrucks, dynamicDeliveryFee]);
 
   const cardDeliverySurcharge = useMemo(() => {
     return customerInfo.deliveryType === 'delivery' && selectedPaymentMethod === 'card' ? CARD_DELIVERY_SURCHARGE : 0;
@@ -3202,11 +3206,14 @@ export default function App() {
                       ) : (
                         <AddressAutocomplete
                           value={customerInfo.address || ''}
-                          onChange={(address) => setCustomerInfo({ ...customerInfo, address })}
+                          onChange={(address) => { setCustomerInfo({ ...customerInfo, address }); setDynamicDeliveryFee(null); setDeliveryFeeLabel(null); }}
                           placeholder="Ingresa tu dirección..."
+                          onDeliveryFee={(data) => { setDynamicDeliveryFee(data.delivery_fee); setDeliveryFeeLabel(data.label); }}
                         />
                       )}
-                      {nearbyTrucks.length > 0 && !customerInfo.deliveryDiscount && (
+                      {deliveryFeeLabel ? (
+                        <p className="text-xs text-green-700 font-semibold mt-1">{deliveryFeeLabel}</p>
+                      ) : nearbyTrucks.length > 0 && !customerInfo.deliveryDiscount && (
                         <p className="text-xs text-blue-600 mt-1">
                           🚚 Costo de delivery: ${parseInt(nearbyTrucks[0].tarifa_delivery || 0).toLocaleString('es-CL')}
                         </p>

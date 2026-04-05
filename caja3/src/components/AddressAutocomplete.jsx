@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { MapPin } from 'lucide-react';
 
-const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu dirección...", className = "" }) => {
+const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu dirección...", className = "", onDeliveryFee = null }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +50,17 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
     onChange(suggestion.description);
     setSuggestions([]);
     setShowSuggestions(false);
+    // Calcular tarifa dinámica si hay callback
+    if (onDeliveryFee) {
+      fetch('/api/location/get_delivery_fee.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: suggestion.description })
+      })
+        .then(r => r.json())
+        .then(data => { if (data.success) onDeliveryFee(data); })
+        .catch(() => {});
+    }
   };
 
   useEffect(() => {
