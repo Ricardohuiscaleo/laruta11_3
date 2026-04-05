@@ -129,7 +129,7 @@ const ShoppingCartIcon = forwardRef(
                             position: 'absolute',
                             top: '-8px',
                             left: '-8px',
-                            background: '#3b82f6',
+                            background: '#ef4444',
                             color: 'white',
                             fontSize: '10px',
                             fontWeight: 'bold',
@@ -144,7 +144,7 @@ const ShoppingCartIcon = forwardRef(
                             pointerEvents: 'none',
                         }}
                     >
-                        📺{props.tvBadge}
+                        {props.tvBadge}
                     </span>
                 )}
             </motion.div>

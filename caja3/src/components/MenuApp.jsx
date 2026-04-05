@@ -2967,7 +2967,7 @@ export default function App() {
               {/* Tipo de entrega */}
               <div className="mb-4">
                 <h3 className="text-sm font-semibold text-gray-800 mb-2">Tipo de Entrega</h3>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setCustomerInfo({ ...customerInfo, deliveryType: 'delivery' })}
@@ -2989,6 +2989,22 @@ export default function App() {
                   >
                     <Caravan size={20} className="text-red-500 flex-shrink-0" />
                     <span className="font-semibold text-sm">Retiro</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={loadTvOrder}
+                    className={`relative p-2 border-2 rounded-lg transition-colors flex items-center gap-2 ${customerInfo.deliveryType === 'tv'
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                  >
+                    {tvPendingCount > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold">
+                        {tvPendingCount}
+                      </span>
+                    )}
+                    <span className="text-base">📺</span>
+                    <span className="font-semibold text-sm">Venta TV</span>
                   </button>
                 </div>
               </div>
