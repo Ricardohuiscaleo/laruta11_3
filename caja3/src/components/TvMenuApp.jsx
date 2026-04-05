@@ -752,6 +752,9 @@ export default function TvMenuApp() {
           <div style={{background: 'white', color: 'black', padding: '5px 15px', borderRadius: '5px'}}>
             {cart.length} ítems / ${cartTotal.toLocaleString('es-CL')}
           </div>
+          <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.85)', marginTop: '4px', fontWeight: 400}}>
+            ↑ Sube con el control remoto para ver tu pedido
+          </div>
         </div>
       </header>
       
@@ -766,7 +769,7 @@ export default function TvMenuApp() {
                   data-index={index}
                 >
                   {p.image_url ? (
-                    <img src={p.image_url} alt={p.name} className="product-image" crossOrigin="anonymous" onLoad={(e) => autoNormalizeImage(e.target)} onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+                    <img src={p.image_url} alt={p.name} className="product-image" onLoad={(e) => autoNormalizeImage(e.target)} onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
                   ) : null}
                   <div className="product-image-placeholder" style={{ display: p.image_url ? 'none' : 'flex' }}>🍽️</div>
                   <div className="product-content">
@@ -789,7 +792,7 @@ export default function TvMenuApp() {
                     data-index={totalIndex}
                   >
                     {p.image_url ? (
-                      <img src={p.image_url} alt={p.name} className="product-image" crossOrigin="anonymous" onLoad={(e) => autoNormalizeImage(e.target)} onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+                      <img src={p.image_url} alt={p.name} className="product-image" onLoad={(e) => autoNormalizeImage(e.target)} onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
                     ) : null}
                     <div className="product-image-placeholder" style={{ display: p.image_url ? 'none' : 'flex' }}>🍽️</div>
                     <div className="product-content">
