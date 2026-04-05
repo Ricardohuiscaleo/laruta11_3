@@ -37,13 +37,20 @@ try {
 
     $stmtItem = $pdo->prepare("INSERT INTO tv_order_items (order_id, product_id, product_name, price, customizations) VALUES (?, ?, ?, ?, ?)");
     foreach ($cart as $item) {
-        $customs = isset($item['selections']) ? json_encode($item['selections']) : null;
+        // Guardar todo el item como JSON para reconstruir el carrito exactamente
+        $fullItemData = json_encode([
+            'selections'    => $item['selections'] ?? null,
+            'fixed_items'   => $item['fixed_items'] ?? null,
+            'category_name' => $item['category_name'] ?? null,
+            'type'          => $item['type'] ?? null,
+            'displayName'   => $item['displayName'] ?? null,
+        ]);
         $stmtItem->execute([
             $orderId,
             $item['id'],
             $item['name'],
             $item['price'],
-            $customs
+            $fullItemData
         ]);
     }
 

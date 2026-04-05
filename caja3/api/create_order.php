@@ -48,6 +48,7 @@ try {
     $delivery_extras = $input['delivery_extras'] ?? 0;
     $delivery_extras_items = !empty($input['delivery_extras_items']) ? json_encode($input['delivery_extras_items']) : null;
     $cashback_used = $input['cashback_used'] ?? 0;
+    $tv_order_id = $input['tv_order_id'] ?? null;
     
     // TODOS los pagos requieren confirmación en comandas
     $payment_status = 'unpaid';
@@ -77,8 +78,8 @@ try {
             product_name, product_price, delivery_fee, installment_amount, 
             has_item_details, status, payment_status, payment_method, order_status, delivery_type, 
             delivery_address, pickup_time, customer_notes, 
-            subtotal, discount_amount, discount_10, discount_30, discount_birthday, discount_pizza, delivery_discount, delivery_extras, delivery_extras_items, cashback_used
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            subtotal, discount_amount, discount_10, discount_30, discount_birthday, discount_pizza, delivery_discount, delivery_extras, delivery_extras_items, cashback_used, tv_order_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $order_stmt = $pdo->prepare($order_sql);
         $order_stmt->execute([
@@ -101,7 +102,8 @@ try {
             $delivery_discount,
             $delivery_extras,
             $delivery_extras_items,
-            $cashback_used
+            $cashback_used,
+            $tv_order_id
         ]);
     } else {
         $order_sql = "INSERT INTO tuu_orders (
@@ -109,8 +111,8 @@ try {
             product_name, product_price, delivery_fee, installment_amount, 
             has_item_details, status, payment_status, payment_method, order_status, delivery_type, 
             delivery_address, pickup_time, customer_notes, 
-            subtotal, discount_amount, discount_10, discount_30, discount_birthday, discount_pizza, delivery_discount, delivery_extras, delivery_extras_items, cashback_used
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            subtotal, discount_amount, discount_10, discount_30, discount_birthday, discount_pizza, delivery_discount, delivery_extras, delivery_extras_items, cashback_used, tv_order_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $order_stmt = $pdo->prepare($order_sql);
         $order_stmt->execute([
@@ -133,11 +135,17 @@ try {
             $delivery_discount,
             $delivery_extras,
             $delivery_extras_items,
-            $cashback_used
+            $cashback_used,
+            $tv_order_id
         ]);
     }
     
     $order_db_id = $pdo->lastInsertId();
+    
+    // Si viene de TV, marcar tv_order como enviado_cocina
+    if ($tv_order_id) {
+        $pdo->prepare("UPDATE tv_orders SET status = 'enviado_cocina' WHERE id = ?")->execute([$tv_order_id]);
+    }
     
     // Guardar items específicos
     foreach ($cart_items as $item) {

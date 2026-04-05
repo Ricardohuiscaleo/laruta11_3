@@ -42,12 +42,17 @@ try {
 
     // Formatear items igual que el carrito de MenuApp
     $cartItems = array_map(function($item) {
+        $extra = $item['customizations'] ? json_decode($item['customizations'], true) : [];
         return [
-            'id'           => $item['product_id'],
-            'name'         => $item['product_name'],
-            'price'        => (float)$item['price'],
-            'quantity'     => 1,
-            'customizations' => $item['customizations'] ? json_decode($item['customizations'], true) : null,
+            'id'            => $item['product_id'],
+            'name'          => $item['product_name'],
+            'price'         => (float)$item['price'],
+            'quantity'      => 1,
+            'selections'    => $extra['selections'] ?? null,
+            'fixed_items'   => $extra['fixed_items'] ?? null,
+            'category_name' => $extra['category_name'] ?? null,
+            'type'          => $extra['type'] ?? null,
+            'displayName'   => $extra['displayName'] ?? null,
             'tv_order_item_id' => $item['id']
         ];
     }, $items);

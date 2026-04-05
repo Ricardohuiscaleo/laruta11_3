@@ -1396,7 +1396,8 @@ export default function App() {
         customer_notes: finalNotes,
         delivery_type: customerInfo.deliveryType,
         delivery_address: customerInfo.address || null,
-        payment_method: 'cash'
+        payment_method: 'cash',
+        tv_order_id: tvOrderId || null
       };
 
       console.log('📤 Enviando orden:', orderData);
@@ -3466,7 +3467,8 @@ export default function App() {
                           customer_notes: customerInfo.customerNotes || null,
                           delivery_type: customerInfo.deliveryType,
                           delivery_address: customerInfo.address || null,
-                          payment_method: 'card'
+                          payment_method: 'card',
+                          tv_order_id: tvOrderId || null
                         };
                         console.log('📤 Enviando orden:', orderData);
                         const response = await fetch('/api/create_order.php', {
@@ -3535,7 +3537,8 @@ export default function App() {
                           customer_notes: customerInfo.customerNotes || null,
                           delivery_type: customerInfo.deliveryType,
                           delivery_address: customerInfo.address || null,
-                          payment_method: 'transfer'
+                          payment_method: 'transfer',
+                          tv_order_id: tvOrderId || null
                         };
                         console.log('📤 Enviando orden:', orderData);
                         const response = await fetch('/api/create_order.php', {
@@ -3604,7 +3607,8 @@ export default function App() {
                           customer_notes: customerInfo.customerNotes || null,
                           delivery_type: customerInfo.deliveryType,
                           delivery_address: customerInfo.address || null,
-                          payment_method: 'pedidosya'
+                          payment_method: 'pedidosya',
+                          tv_order_id: tvOrderId || null
                         };
                         console.log('📤 Enviando orden:', orderData);
                         const response = await fetch('/api/create_order.php', {

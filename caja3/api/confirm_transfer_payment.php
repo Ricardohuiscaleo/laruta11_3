@@ -60,6 +60,14 @@ try {
     $update_stmt = $pdo->prepare($update_sql);
     $update_stmt->execute([$order_id]);
 
+    // Si tiene tv_order_id, marcar tv_orders como pagado
+    $tv_check = $pdo->prepare("SELECT tv_order_id FROM tuu_orders WHERE id = ?");
+    $tv_check->execute([$order_id]);
+    $tv_row = $tv_check->fetch(PDO::FETCH_ASSOC);
+    if (!empty($tv_row['tv_order_id'])) {
+        $pdo->prepare("UPDATE tv_orders SET status = 'pagado' WHERE id = ?")->execute([$tv_row['tv_order_id']]);
+    }
+
     // Obtener items de la orden para descontar inventario
     $items_stmt = $pdo->prepare("SELECT id, product_id, product_name, item_type, combo_data, quantity FROM tuu_order_items WHERE order_id = ?");
     $items_stmt->execute([$order_id]);
