@@ -323,6 +323,13 @@ export default function TvMenuApp() {
   const [allProducts, setAllProducts] = useState([]);
   const [foodCount, setFoodCount] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // Sonidos
+  const playSound = (src) => { try { const a = new Audio(src); a.volume = 0.5; a.play(); } catch(e) {} };
+  const soundBlip    = () => playSound('/blip.mp3');
+  const soundAgregar = () => playSound('/agregar.mp3');
+  const soundExito   = () => playSound('/exito.mp3');
+  const soundDesagregar = () => playSound('/desagregar.mp3');
   
   // Carrito y Timer
   const [cart, setCart] = useState([]);
@@ -480,7 +487,7 @@ export default function TvMenuApp() {
     if (product.categoryKey === 8) {
         setComboModalOpen(true);
     } else {
-        setCart(prev => [...prev, product]);
+        soundAgregar(); setCart(prev => [...prev, product]);
         setModalOpen(false);
         setSelectedProduct(null);
     }
@@ -510,7 +517,7 @@ export default function TvMenuApp() {
           if (result.success) {
               setCart([]);
               setCartModalOpen(false);
-              setTicketOrderId(result.order_id);
+              soundExito(); setTicketOrderId(result.order_id);
               if (navIndexRef.current === -1) updateFocusDOM(0);
           } else {
               alert("Error al enviar orden: " + (result.error || "Desconocido"));
@@ -530,17 +537,29 @@ export default function TvMenuApp() {
           if (btns.length === 0) return;
 
           let currentIndex = btns.findIndex(b => b.classList.contains('focused-combo'));
-          if (currentIndex === -1) currentIndex = 0; // Inicia en el primero
+          if (currentIndex === -1) currentIndex = 0;
 
-          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          const COLS = 3;
+          if (e.key === 'ArrowRight') {
               e.preventDefault();
               currentIndex = (currentIndex + 1) % btns.length;
-          } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+              soundBlip();
+          } else if (e.key === 'ArrowLeft') {
               e.preventDefault();
               currentIndex = (currentIndex - 1 + btns.length) % btns.length;
+              soundBlip();
+          } else if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              currentIndex = Math.min(currentIndex + COLS, btns.length - 1);
+              soundBlip();
+          } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              currentIndex = Math.max(currentIndex - COLS, 0);
+              soundBlip();
           } else if (e.key === 'Enter') {
               e.preventDefault();
-              btns[currentIndex].click(); // Simula el click original del Modal
+              soundAgregar();
+              btns[currentIndex].click();
               
               // Pequeño delay por si la UI se re-renderiza tras el click (ej: al clickear un botón)
               setTimeout(() => {
@@ -687,6 +706,7 @@ export default function TvMenuApp() {
       }
       
       if (nextIndex !== navIndexRef.current) {
+         soundBlip();
          updateFocusDOM(nextIndex);
       }
     };
@@ -836,7 +856,7 @@ export default function TvMenuApp() {
                 <button 
                   className="modal-btn btn-primary focused" 
                   onClick={() => {
-                    setCart(prev => [...prev, selectedProduct]);
+                    soundAgregar(); setCart(prev => [...prev, selectedProduct]);
                     setModalOpen(false);
                   }}
                 >
@@ -854,7 +874,7 @@ export default function TvMenuApp() {
         onClose={() => setComboModalOpen(false)}
         quantity={1}
         onAddToCart={(comboWithSelections) => {
-          setCart(prev => [...prev, comboWithSelections]);
+          soundAgregar(); setCart(prev => [...prev, comboWithSelections]);
           setComboModalOpen(false);
           setModalOpen(false);
           setSelectedProduct(null);
