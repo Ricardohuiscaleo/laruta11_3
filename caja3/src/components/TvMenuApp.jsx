@@ -407,7 +407,7 @@ export default function TvMenuApp() {
         return 0;
       };
 
-      drinks.sort((a, b) => getVolume(b) - getVolume(a));
+      drinks.sort((a, b) => (parseInt(a.grams) || 0) - (parseInt(b.grams) || 0));
 
       const finalArray = [...finalFoods, ...drinks];
       setAllProducts(finalArray);
