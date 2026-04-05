@@ -256,7 +256,7 @@ function CartModal({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
             <h3 className="font-bold text-gray-800 text-lg">Datos de Entrega</h3>
 
             {/* Delivery Type */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <button
                 onClick={() => setCustomerInfo({ ...customerInfo, deliveryType: 'delivery' })}
                 className={`p-3 border-2 rounded-lg text-center transition-colors ${customerInfo.deliveryType === 'delivery' ? 'border-orange-500 bg-orange-50' : 'border-gray-300'}`}
@@ -270,6 +270,18 @@ function CartModal({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
               >
                 <div className="text-2xl mb-1">🏪</div>
                 <div className="text-sm font-semibold">Retiro</div>
+              </button>
+              <button
+                onClick={loadTvOrder}
+                className={`relative p-3 border-2 rounded-lg text-center transition-colors ${customerInfo.deliveryType === 'tv' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+              >
+                {tvPendingCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold">
+                    {tvPendingCount}
+                  </span>
+                )}
+                <div className="text-2xl mb-1">📺</div>
+                <div className="text-sm font-semibold">Venta TV</div>
               </button>
             </div>
 
@@ -1173,11 +1185,46 @@ export default function App() {
   const [zoomedProduct, setZoomedProduct] = useState(null);
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [tvPendingCount, setTvPendingCount] = useState(0);
+  const [tvOrderId, setTvOrderId] = useState(null);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
   const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', email: '', address: '', deliveryType: 'pickup', pickupTime: '', customerNotes: '', deliveryDiscount: false, pickupDiscount: false, birthdayDiscount: false, discount30: false });
+
+  // Polling pedidos TV
+  useEffect(() => {
+    const fetchTvCount = () => {
+      fetch('/api/tv/get_pending_count.php')
+        .then(r => r.json())
+        .then(d => setTvPendingCount(d.count || 0))
+        .catch(() => {});
+    };
+    fetchTvCount();
+    const interval = setInterval(fetchTvCount, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadTvOrder = async () => {
+    try {
+      const res = await fetch('/api/tv/get_next_order.php');
+      const data = await res.json();
+      if (!data.success) { alert('No hay pedidos TV pendientes'); return; }
+      const newItems = data.items.map(item => ({
+        ...item,
+        cartItemId: `tv_${item.id}_${Date.now()}_${Math.random()}`,
+        quantity: 1
+      }));
+      setCart(newItems);
+      setTvOrderId(data.tv_order_id);
+      setCustomerInfo(prev => ({ ...prev, deliveryType: 'tv' }));
+      setIsCartOpen(true);
+      setTvPendingCount(prev => Math.max(0, prev - 1));
+    } catch (e) {
+      alert('Error al cargar pedido TV');
+    }
+  };
   const [menuWithImages, setMenuWithImages] = useState(menuData);
   const [likedProducts, setLikedProducts] = useState(new Set());
   const [isLoading, setIsLoading] = useState(false);

@@ -31,20 +31,18 @@ try {
     $cart = $data['cart'];
     $total = $data['total'];
 
-    // 1. Crear cabecera
     $stmt = $pdo->prepare("INSERT INTO tv_orders (total, status) VALUES (?, 'pendiente')");
     $stmt->execute([$total]);
     $orderId = $pdo->lastInsertId();
 
-    // 2. Crear ítems
     $stmtItem = $pdo->prepare("INSERT INTO tv_order_items (order_id, product_id, product_name, price, customizations) VALUES (?, ?, ?, ?, ?)");
     foreach ($cart as $item) {
         $customs = isset($item['selections']) ? json_encode($item['selections']) : null;
         $stmtItem->execute([
-            $orderId, 
-            $item['id'], 
-            $item['name'], 
-            $item['price'], 
+            $orderId,
+            $item['id'],
+            $item['name'],
+            $item['price'],
             $customs
         ]);
     }
