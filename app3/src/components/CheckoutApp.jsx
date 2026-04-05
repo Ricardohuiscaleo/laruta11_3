@@ -330,6 +330,27 @@ const CheckoutApp = ({ onClose }) => {
 
   const [dynamicDeliveryFee, setDynamicDeliveryFee] = useState(null);
   const [deliveryFeeLabel, setDeliveryFeeLabel] = useState(null);
+  const [deliveryDistanceInfo, setDeliveryDistanceInfo] = useState(null); // {km, min}
+
+  // Auto-calcular tarifa si ya hay dirección al cargar
+  useEffect(() => {
+    if (customerInfo.address && customerInfo.deliveryType === 'delivery' && dynamicDeliveryFee === null) {
+      fetch('/api/location/get_delivery_fee.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: customerInfo.address })
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            setDynamicDeliveryFee(data.delivery_fee);
+            setDeliveryFeeLabel(data.label);
+            setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [customerInfo.address, customerInfo.deliveryType]);
 
   const deliveryFee = customerInfo.deliveryType === 'delivery'
     ? (dynamicDeliveryFee !== null ? dynamicDeliveryFee : (nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0))
@@ -391,7 +412,9 @@ const CheckoutApp = ({ onClose }) => {
         pickup_time: customerInfo.pickupTime || null,
         scheduled_time: scheduledTime ? `${scheduledTime.date} ${scheduledTime.time}` : null,
         is_scheduled: !!scheduledTime,
-        cashback_used: cashbackAmount
+        cashback_used: cashbackAmount,
+        delivery_distance_km: deliveryDistanceInfo?.km || null,
+        delivery_duration_min: deliveryDistanceInfo?.min || null
       };
 
       console.log('Sending payment data:', paymentData);
@@ -1094,7 +1117,7 @@ const CheckoutApp = ({ onClose }) => {
                         value={customerInfo.address}
                         onChange={(address) => { setCustomerInfo({ ...customerInfo, address }); setDynamicDeliveryFee(null); setDeliveryFeeLabel(null); }}
                         placeholder="Escribe tu dirección..."
-                        onDeliveryFee={(data) => { setDynamicDeliveryFee(data.delivery_fee); setDeliveryFeeLabel(data.label); }}
+                        onDeliveryFee={(data) => { setDynamicDeliveryFee(data.delivery_fee); setDeliveryFeeLabel(data.label); setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min }); }}
                       />
                     )}
                     {deliveryFeeLabel ? (
@@ -1297,11 +1320,18 @@ const CheckoutApp = ({ onClose }) => {
                     </>
                   )}
                   {deliveryFee > 0 && deliveryDiscountAmount === 0 && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 flex items-center gap-1">
-                        <Bike size={16} className="text-red-500" /> Delivery:
-                      </span>
-                      <span className="font-semibold">${deliveryFee.toLocaleString('es-CL')}</span>
+                    <div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 flex items-center gap-1">
+                          <Bike size={16} className="text-red-500" /> Delivery:
+                        </span>
+                        <span className="font-semibold">${deliveryFee.toLocaleString('es-CL')}</span>
+                      </div>
+                      {deliveryDistanceInfo && (
+                        <p className="text-xs text-gray-500 mt-0.5 ml-5">
+                          📍 {deliveryDistanceInfo.km} km · ~{deliveryDistanceInfo.min} min
+                        </p>
+                      )}
                     </div>
                   )}
                   {cardDeliverySurcharge > 0 && (

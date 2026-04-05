@@ -49,6 +49,14 @@ try {
     $delivery_extras_items = !empty($input['delivery_extras_items']) ? json_encode($input['delivery_extras_items']) : null;
     $cashback_used = $input['cashback_used'] ?? 0;
     $tv_order_id = $input['tv_order_id'] ?? null;
+    $dist_km  = $input['delivery_distance_km'] ?? null;
+    $dist_min = $input['delivery_duration_min'] ?? null;
+    // Agregar info de distancia a notas si existe
+    $base_notes = $base_notes;
+    if ($dist_km && ($input['delivery_type'] ?? '') === 'delivery') {
+        $dist_note = "📍 {$dist_km} km · ~{$dist_min} min";
+        $base_notes = $base_notes ? "{$base_notes}\n{$dist_note}" : $dist_note;
+    }
     
     // TODOS los pagos requieren confirmación en comandas
     $payment_status = 'unpaid';
@@ -92,7 +100,7 @@ try {
             $input['delivery_type'] ?? 'pickup',
             $input['delivery_address'] ?? null,
             $input['pickup_time'] ?? null,
-            $input['customer_notes'] ?? null,
+            $base_notes,
             $subtotal,
             $discount_amount,
             $discount_10,
@@ -125,7 +133,7 @@ try {
             $input['delivery_type'] ?? 'pickup',
             $input['delivery_address'] ?? null,
             $input['pickup_time'] ?? null,
-            $input['customer_notes'] ?? null,
+            $base_notes,
             $subtotal,
             $discount_amount,
             $discount_10,

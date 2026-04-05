@@ -669,7 +669,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                       }
                     }
 
-                    const message = `> 🚚 *Pedido ${order.order_number}*\n\n*👤 Cliente:*\n- *Nombre:* ${order.customer_name}\n- *Teléfono:* ${order.customer_phone || 'No disponible'}\n\n*📦 Productos:*\n${items}\n\n*💰 Montos:*\n- Subtotal: $${subtotal}\n- Delivery: $${deliveryFee}\n\n> *💰 TOTAL: $${total}*\n\n${paymentInstruction}\n\n*📍 Dirección:*\n> ${order.delivery_address}\n\n🗺️ Ver en mapa:\n${mapsUrl}`;
+                    const message = `> 🚚 *Pedido ${order.order_number}*\n\n*👤 Cliente:*\n- *Nombre:* ${order.customer_name}\n- *Teléfono:* ${order.customer_phone || 'No disponible'}\n\n*📦 Productos:*\n${items}\n\n*💰 Montos:*\n- Subtotal: $${subtotal}\n- Delivery: $${deliveryFee}\n\n> *💰 TOTAL: $${total}*\n\n${paymentInstruction}\n\n*📍 Dirección:*\n> ${order.delivery_address}${order.delivery_distance_km ? `\n📏 Distancia: ${order.delivery_distance_km} km · ~${order.delivery_duration_min} min` : ''}\n\n🗺️ Ver en mapa:\n${mapsUrl}`;
 
                     // Debug: mostrar el mensaje completo antes de enviarlo
                     console.log('=== MENSAJE COMPLETO PARA RIDER ===');

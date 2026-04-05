@@ -348,7 +348,7 @@ function CartModal({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                       value={customerInfo.address}
                       onChange={(address) => { setCustomerInfo({ ...customerInfo, address }); setDynamicDeliveryFee(null); setDeliveryFeeLabel(null); }}
                       placeholder="Ingresa tu dirección..."
-                      onDeliveryFee={(data) => { setDynamicDeliveryFee(data.delivery_fee); setDeliveryFeeLabel(data.label); }}
+                      onDeliveryFee={(data) => { setDynamicDeliveryFee(data.delivery_fee); setDeliveryFeeLabel(data.label); setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min }); }}
                     />
                   )}
                 </div>
@@ -1187,6 +1187,26 @@ export default function App() {
   const [tvPendingCount, setTvPendingCount] = useState(0);
   const [dynamicDeliveryFee, setDynamicDeliveryFee] = useState(null);
   const [deliveryFeeLabel, setDeliveryFeeLabel] = useState(null);
+  const [deliveryDistanceInfo, setDeliveryDistanceInfo] = useState(null);
+
+  useEffect(() => {
+    if (customerInfo.address && customerInfo.deliveryType === 'delivery' && dynamicDeliveryFee === null) {
+      fetch('/api/location/get_delivery_fee.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: customerInfo.address })
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            setDynamicDeliveryFee(data.delivery_fee);
+            setDeliveryFeeLabel(data.label);
+            setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [customerInfo.address, customerInfo.deliveryType]);
   const [tvOrderId, setTvOrderId] = useState(() => {
     const saved = localStorage.getItem('tv_order_id');
     return saved ? parseInt(saved) : null;
@@ -1408,7 +1428,9 @@ export default function App() {
         delivery_type: customerInfo.deliveryType,
         delivery_address: customerInfo.address || null,
         payment_method: 'cash',
-        tv_order_id: tvOrderId || null
+        tv_order_id: tvOrderId || null,
+        delivery_distance_km: deliveryDistanceInfo?.km || null,
+        delivery_duration_min: deliveryDistanceInfo?.min || null
       };
 
       console.log('📤 Enviando orden:', orderData);
@@ -3208,7 +3230,7 @@ export default function App() {
                           value={customerInfo.address || ''}
                           onChange={(address) => { setCustomerInfo({ ...customerInfo, address }); setDynamicDeliveryFee(null); setDeliveryFeeLabel(null); }}
                           placeholder="Ingresa tu dirección..."
-                          onDeliveryFee={(data) => { setDynamicDeliveryFee(data.delivery_fee); setDeliveryFeeLabel(data.label); }}
+                          onDeliveryFee={(data) => { setDynamicDeliveryFee(data.delivery_fee); setDeliveryFeeLabel(data.label); setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min }); }}
                         />
                       )}
                       {deliveryFeeLabel ? (
@@ -3380,9 +3402,14 @@ export default function App() {
                           <Bike size={16} className="text-red-500" /> Delivery:
                         </span>
                         <span className={customerInfo.deliveryDiscount ? "font-semibold line-through text-gray-400" : "font-semibold"}>
-                          ${parseInt(nearbyTrucks[0].tarifa_delivery || 0).toLocaleString('es-CL')}
+                          ${deliveryFee.toLocaleString('es-CL')}
                         </span>
                       </div>
+                      {deliveryDistanceInfo && (
+                        <p className="text-xs text-gray-500 mt-0.5 ml-5">
+                          📍 {deliveryDistanceInfo.km} km · ~{deliveryDistanceInfo.min} min
+                        </p>
+                      )}
                       {customerInfo.deliveryDiscount && (
                         <div className="flex justify-between items-center">
                           <span className="text-green-600 text-sm">Descuento Delivery (28%):</span>
@@ -3520,7 +3547,9 @@ export default function App() {
                           delivery_type: customerInfo.deliveryType,
                           delivery_address: customerInfo.address || null,
                           payment_method: selectedPaymentMethod,
-                          tv_order_id: tvOrderId || null
+                          tv_order_id: tvOrderId || null,
+                          delivery_distance_km: deliveryDistanceInfo?.km || null,
+                          delivery_duration_min: deliveryDistanceInfo?.min || null
                         };
                         const response = await fetch('/api/create_order.php', {
                           method: 'POST',
