@@ -1476,6 +1476,16 @@ export default function App() {
     setCurrentOrder(null);
     setCustomerInfo({ name: '', phone: '', email: '', address: '' });
 
+    // Marcar tv_order como pagado si aplica
+    if (tvOrderId) {
+      fetch('/api/tv/update_order_status.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id: tvOrderId, status: 'pagado'})
+      }).catch(() => {});
+      setTvOrderId(null);
+    }
+
     if (paymentData && paymentData.payment_url) {
       alert(`¡Pedido #${currentOrder?.order_number} enviado a TUU para pago online!`);
     } else {
@@ -3222,6 +3232,30 @@ export default function App() {
                   <ShoppingCartIcon size={20} className="text-orange-500" />
                   Tu Pedido
                 </h3>
+
+                {/* Tarjeta orden TV */}
+                {tvOrderId && customerInfo.deliveryType === 'tv' && (
+                  <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)', borderRadius: '10px', padding: '12px 16px', marginBottom: '12px'}}>
+                    <div style={{color: 'white', fontWeight: 800, fontSize: '18px'}}>📺 Orden: #{tvOrderId}</div>
+                    <button
+                      onClick={async () => {
+                        if (!confirm('¿Anular esta orden TV?')) return;
+                        await fetch('/api/tv/update_order_status.php', {
+                          method: 'POST',
+                          headers: {'Content-Type': 'application/json'},
+                          body: JSON.stringify({id: tvOrderId, status: 'cancelado'})
+                        });
+                        setTvOrderId(null);
+                        setCart([]);
+                        setCustomerInfo(prev => ({...prev, deliveryType: 'pickup'}));
+                        setTvPendingCount(prev => Math.max(0, prev - 1));
+                      }}
+                      style={{background: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontWeight: 700, fontSize: '13px', cursor: 'pointer'}}
+                    >
+                      Anular orden
+                    </button>
+                  </div>
+                )}
                 <div className="space-y-3 mb-4">
                   {cart.map((item, index) => {
                     const isCombo = item.type === 'combo' || item.category_name === 'Combos' || item.selections;

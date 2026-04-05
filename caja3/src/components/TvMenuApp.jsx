@@ -327,6 +327,7 @@ export default function TvMenuApp() {
   // Carrito y Timer
   const [cart, setCart] = useState([]);
   const [cartModalOpen, setCartModalOpen] = useState(false);
+  const [ticketOrderId, setTicketOrderId] = useState(null);
   const [inactivityTimer, setInactivityTimer] = useState(300);
   const inactivityIntervalRef = useRef(null);
   
@@ -507,9 +508,9 @@ export default function TvMenuApp() {
           
           const result = await response.json();
           if (result.success) {
-              alert(`¡Orden enviada con éxito! N°: #${result.order_id}. Acércate a caja para pagar.`);
               setCart([]);
               setCartModalOpen(false);
+              setTicketOrderId(result.order_id);
               if (navIndexRef.current === -1) updateFocusDOM(0);
           } else {
               alert("Error al enviar orden: " + (result.error || "Desconocido"));
@@ -888,6 +889,29 @@ export default function TvMenuApp() {
                     <button className="modal-btn btn-primary cart-modal-btn focused" style={{opacity: cart.length === 0 ? 0.3 : 1}}>Enviar a Caja</button>
                 </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Ticket */}
+      {ticketOrderId && (
+        <div style={{position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+          <div style={{background: 'white', borderRadius: '24px', padding: '60px 80px', textAlign: 'center', maxWidth: '600px', width: '90%', boxShadow: '0 25px 60px rgba(0,0,0,0.4)'}}>
+            <div style={{fontSize: '80px', marginBottom: '20px'}}>🎟️</div>
+            <div style={{fontSize: '22px', color: '#64748b', marginBottom: '12px', fontWeight: 600}}>Tu número de orden es</div>
+            <div style={{background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)', borderRadius: '16px', padding: '30px 40px', marginBottom: '30px'}}>
+              <div style={{fontSize: '80px', fontWeight: 900, color: 'white', letterSpacing: '-2px'}}>#{ticketOrderId}</div>
+            </div>
+            <div style={{fontSize: '24px', color: '#374151', marginBottom: '40px', lineHeight: 1.4}}>
+              📸 Saca una foto<br/><span style={{color: '#6b7280', fontSize: '20px'}}>Este es tu número de orden 😊</span>
+            </div>
+            <div style={{fontSize: '18px', color: '#f97316', fontWeight: 700, marginBottom: '30px'}}>Acércate a caja para pagar</div>
+            <button
+              onClick={() => { setTicketOrderId(null); }}
+              style={{background: '#1d4ed8', color: 'white', border: 'none', borderRadius: '12px', padding: '18px 60px', fontSize: '22px', fontWeight: 700, cursor: 'pointer'}}
+            >
+              Cerrar
+            </button>
           </div>
         </div>
       )}
