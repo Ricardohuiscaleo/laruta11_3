@@ -2088,6 +2088,8 @@ export default function App() {
     }, 0);
   }, [cart]);
 
+  const CARD_DELIVERY_SURCHARGE = 500;
+
   const deliveryFee = useMemo(() => {
     if (customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0) {
       return parseInt(nearbyTrucks[0].tarifa_delivery || 0);
@@ -2095,12 +2097,17 @@ export default function App() {
     return 0;
   }, [customerInfo.deliveryType, nearbyTrucks]);
 
+  const cardDeliverySurcharge = useMemo(() => {
+    return customerInfo.deliveryType === 'delivery' && selectedPaymentMethod === 'card' ? CARD_DELIVERY_SURCHARGE : 0;
+  }, [customerInfo.deliveryType, selectedPaymentMethod]);
+
   const cartTotal = useMemo(() => {
     const currentDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0
       ? parseInt(nearbyTrucks[0].tarifa_delivery || 0)
       : 0;
-    return cartSubtotal + currentDeliveryFee;
-  }, [cartSubtotal, customerInfo.deliveryType, nearbyTrucks]);
+    const surcharge = customerInfo.deliveryType === 'delivery' && selectedPaymentMethod === 'card' ? CARD_DELIVERY_SURCHARGE : 0;
+    return cartSubtotal + currentDeliveryFee + surcharge;
+  }, [cartSubtotal, customerInfo.deliveryType, nearbyTrucks, selectedPaymentMethod]);
 
   const cartItemCount = useMemo(() => cart.length, [cart]);
   const getProductQuantity = (productId) => cart.filter(item => item.id === productId).length;
@@ -3406,6 +3413,12 @@ export default function App() {
                       <span className="font-semibold text-orange-600">-${Math.round(cart.find(item => item.id === 231).price * 0.2).toLocaleString('es-CL')}</span>
                     </div>
                   )}
+                  {customerInfo.deliveryType === 'delivery' && selectedPaymentMethod === 'card' && (
+                    <div className="flex justify-between items-center bg-red-50 px-2 py-1 rounded border border-red-200">
+                      <span className="text-red-600 text-sm font-bold">💳 Recargo tarjeta delivery:</span>
+                      <span className="font-semibold text-red-600">+$500</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center text-lg font-bold border-t pt-2">
                     <span>Total:</span>
                     <span className="text-orange-500">${(() => {
@@ -3415,7 +3428,7 @@ export default function App() {
                       const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                       const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                       const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-                      return (cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
+                      const surcharge3425 = customerInfo.deliveryType === "delivery" && selectedPaymentMethod === "card" ? 500 : 0; return (cartSubtotal + deliveryFee + surcharge3425 - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
                     })()}</span>
                   </div>
                 </div>
@@ -3459,21 +3472,24 @@ export default function App() {
                         const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                         const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
                         const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
+                        const cardSurcharge = customerInfo.deliveryType === 'delivery' ? 500 : 0;
+                        const finalTotalWithSurcharge = finalTotal + cardSurcharge;
 
                         const orderData = {
-                          amount: finalTotal,
+                          amount: finalTotalWithSurcharge,
                           customer_name: customerInfo.name,
                           customer_phone: customerInfo.phone,
                           customer_email: customerInfo.email || `${customerInfo.phone}@ruta11.cl`,
                           user_id: user?.id || null,
                           cart_items: cart,
-                          delivery_fee: deliveryFee,
+                          delivery_fee: deliveryFee + cardSurcharge,
                           discount_amount: pickupDiscountAmount + discount30Amount + birthdayDiscountAmount + pizzaDiscountAmount,
                           discount_10: pickupDiscountAmount,
                           discount_30: discount30Amount,
                           discount_birthday: birthdayDiscountAmount,
                           discount_pizza: pizzaDiscountAmount,
-                          customer_notes: customerInfo.customerNotes || null,
+                          customer_notes: customerInfo.customerNotes ? `${customerInfo.customerNotes}
++$500 recargo tarjeta delivery` : (cardSurcharge ? '+$500 recargo tarjeta delivery' : null),
                           delivery_type: customerInfo.deliveryType,
                           delivery_address: customerInfo.address || null,
                           payment_method: 'card',
@@ -3742,7 +3758,7 @@ export default function App() {
                     const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                     const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                     const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-                    return (cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
+                    const surcharge3752 = customerInfo.deliveryType === "delivery" && selectedPaymentMethod === "card" ? 500 : 0; return (cartSubtotal + deliveryFee + surcharge3752 - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
                   })()}</p>
                 </div>
 
@@ -3820,7 +3836,7 @@ export default function App() {
                       const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                       const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                       const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-                      return (cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
+                      const surcharge3830 = customerInfo.deliveryType === "delivery" && selectedPaymentMethod === "card" ? 500 : 0; return (cartSubtotal + deliveryFee + surcharge3830 - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
                     })()}</span>
                   </div>
                   <div className="flex justify-between items-center mb-2">
