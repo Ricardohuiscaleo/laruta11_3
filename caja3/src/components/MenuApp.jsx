@@ -3387,6 +3387,12 @@ export default function App() {
                           <span className="font-semibold text-green-600">${Math.round(parseInt(nearbyTrucks[0].tarifa_delivery || 0) * 0.7143).toLocaleString('es-CL')}</span>
                         </div>
                       )}
+                      {selectedPaymentMethod === 'card' && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-red-600 text-sm">💳 Recargo tarjeta delivery:</span>
+                          <span className="font-semibold text-red-600">+$500</span>
+                        </div>
+                      )}
                     </>
                   )}
                   {customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount && (
