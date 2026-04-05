@@ -1186,7 +1186,16 @@ export default function App() {
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [tvPendingCount, setTvPendingCount] = useState(0);
-  const [tvOrderId, setTvOrderId] = useState(null);
+  const [tvOrderId, setTvOrderId] = useState(() => {
+    const saved = localStorage.getItem('tv_order_id');
+    return saved ? parseInt(saved) : null;
+  });
+
+  const setTvOrderIdPersist = (id) => {
+    if (id) localStorage.setItem('tv_order_id', id);
+    else localStorage.removeItem('tv_order_id');
+    setTvOrderId(id);
+  };
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
@@ -1217,7 +1226,7 @@ export default function App() {
         quantity: 1
       }));
       setCart(newItems);
-      setTvOrderId(data.tv_order_id);
+      setTvOrderIdPersist(data.tv_order_id);
       setCustomerInfo(prev => ({ ...prev, deliveryType: 'tv' }));
       setIsCartOpen(true);
       setTvPendingCount(prev => Math.max(0, prev - 1));
@@ -1484,7 +1493,7 @@ export default function App() {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({id: tvOrderId, status: 'pagado'})
       }).catch(() => {});
-      setTvOrderId(null);
+      setTvOrderIdPersist(null);
     }
 
     if (paymentData && paymentData.payment_url) {
@@ -3246,7 +3255,7 @@ export default function App() {
                           headers: {'Content-Type': 'application/json'},
                           body: JSON.stringify({id: tvOrderId, status: 'cancelado'})
                         });
-                        setTvOrderId(null);
+                        setTvOrderIdPersist(null);
                         setCart([]);
                         setCustomerInfo(prev => ({...prev, deliveryType: 'pickup'}));
                         setTvPendingCount(prev => Math.max(0, prev - 1));
