@@ -123,6 +123,30 @@ const ShoppingCartIcon = forwardRef(
                         {props.badge}
                     </span>
                 )}
+                {props.tvBadge > 0 && (
+                    <span
+                        style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            left: '-8px',
+                            background: '#3b82f6',
+                            color: 'white',
+                            fontSize: '10px',
+                            fontWeight: 'bold',
+                            minWidth: '18px',
+                            height: '18px',
+                            borderRadius: '9999px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '0 4px',
+                            lineHeight: 1,
+                            pointerEvents: 'none',
+                        }}
+                    >
+                        📺{props.tvBadge}
+                    </span>
+                )}
             </motion.div>
         );
     },

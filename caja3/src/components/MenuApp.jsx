@@ -1103,7 +1103,7 @@ const HeaderRightActions = ({
 
     {/* Carrito */}
     <button onClick={() => { vibrate(30); playCajaSound(); setShowCheckout(true); }} className="text-gray-600 hover:text-orange-500">
-      <ShoppingCartIcon ref={cartIconRef} size={24} badge={cartItemCount} />
+      <ShoppingCartIcon ref={cartIconRef} size={24} badge={cartItemCount} tvBadge={tvPendingCount} />
     </button>
   </div>
 );
@@ -2499,7 +2499,7 @@ export default function App() {
               className="text-gray-600 hover:text-orange-500 p-2 rounded-full hover:bg-gray-100"
               title="Carrito"
             >
-              <ShoppingCartIcon ref={cartIconRef} size={24} badge={cartItemCount} />
+              <ShoppingCartIcon ref={cartIconRef} size={24} badge={cartItemCount} tvBadge={tvPendingCount} />
             </button>
           </div>
         </div>

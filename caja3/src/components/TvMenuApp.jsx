@@ -737,7 +737,7 @@ export default function TvMenuApp() {
 
       <header id="main-header">
         <div className="header-left">
-          <img src="icon.ico" alt="La Ruta 11" className="logo-header" />
+          <img src="/icon.ico" alt="La Ruta 11" className="logo-header" />
           <div className="header-text">La Ruta 11 Foodtrucks | <span style={{color: '#ff6b00'}}>Menú</span></div>
           {inactivityTimer <= 270 && inactivityTimer > 0 && cart.length > 0 && (
             <div className="inactivity-timer" style={{ marginLeft: '30px', textAlign: 'left', alignItems: 'flex-start' }}>
@@ -765,7 +765,7 @@ export default function TvMenuApp() {
                   data-index={index}
                 >
                   {p.image_url ? (
-                    <img src={p.image_url} alt={p.name} className="product-image" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+                    <img src={p.image_url} alt={p.name} className="product-image" crossOrigin="anonymous" onLoad={(e) => autoNormalizeImage(e.target)} onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
                   ) : null}
                   <div className="product-image-placeholder" style={{ display: p.image_url ? 'none' : 'flex' }}>🍽️</div>
                   <div className="product-content">
@@ -788,7 +788,7 @@ export default function TvMenuApp() {
                     data-index={totalIndex}
                   >
                     {p.image_url ? (
-                      <img src={p.image_url} alt={p.name} className="product-image" onLoad={(e) => autoNormalizeImage(e.target)} onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+                      <img src={p.image_url} alt={p.name} className="product-image" crossOrigin="anonymous" onLoad={(e) => autoNormalizeImage(e.target)} onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
                     ) : null}
                     <div className="product-image-placeholder" style={{ display: p.image_url ? 'none' : 'flex' }}>🍽️</div>
                     <div className="product-content">
