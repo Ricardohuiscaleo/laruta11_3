@@ -35,6 +35,7 @@ import SwipeToggle from './SwipeToggle.jsx';
 import useDoubleTap from '../hooks/useDoubleTap.js';
 import { vibrate, playNotificationSound, createConfetti, initAudio, playComandaSound, playAddSound, playRemoveSound, playSuccessSound, playCajaSound } from '../utils/effects.js';
 import { validateCheckoutForm, getFormDisabledState } from '../utils/validation.js';
+import AddressAutocomplete from './AddressAutocomplete.jsx';
 
 
 
@@ -343,13 +344,10 @@ function CartModal({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                       <option value="Ctel. Av. Santa María 3000">Ctel. Av. Santa María 3000</option>
                     </select>
                   ) : (
-                    <input
-                      type="text"
+                    <AddressAutocomplete
                       value={customerInfo.address}
-                      onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg text-sm"
+                      onChange={(address) => setCustomerInfo({ ...customerInfo, address })}
                       placeholder="Ingresa tu dirección..."
-                      required
                     />
                   )}
                 </div>
@@ -3201,14 +3199,10 @@ export default function App() {
                           <option value="Ctel. Av. Santa María 3000">Ctel. Av. Santa María 3000</option>
                         </select>
                       ) : (
-                        <input
-                          type="text"
-                          id="deliveryAddress"
+                        <AddressAutocomplete
                           value={customerInfo.address || ''}
-                          onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          onChange={(address) => setCustomerInfo({ ...customerInfo, address })}
                           placeholder="Ingresa tu dirección..."
-                          required
                         />
                       )}
                       {nearbyTrucks.length > 0 && !customerInfo.deliveryDiscount && (

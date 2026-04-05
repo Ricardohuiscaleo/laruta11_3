@@ -334,13 +334,14 @@ const CheckoutApp = ({ onClose }) => {
 
   const deliveryDiscountAmount = deliveryDiscountActive ? Math.round(deliveryFee * 0.2857) : 0;
   const finalDeliveryCost = deliveryFee - deliveryDiscountAmount;
+  const cardDeliverySurcharge = customerInfo.deliveryType === 'delivery' && paymentMethod === 'card' ? 500 : 0;
 
   // Calcular total de extras de delivery (sin descuentos ni cashback)
   const deliveryExtrasTotal = selectedDeliveryExtras.reduce((sum, extra) => sum + (extra.price * extra.quantity), 0);
 
   // Cashback solo aplica al subtotal de productos (no al delivery ni extras)
   const subtotalAfterDiscounts = cartSubtotal - discountAmount - cashbackAmount;
-  const finalTotal = subtotalAfterDiscounts + finalDeliveryCost + deliveryExtrasTotal;
+  const finalTotal = subtotalAfterDiscounts + finalDeliveryCost + deliveryExtrasTotal + cardDeliverySurcharge;
 
   useEffect(() => {
     setCartTotal(finalTotal);
@@ -786,8 +787,8 @@ const CheckoutApp = ({ onClose }) => {
         customer_email: customerInfo.email || `${customerInfo.phone}@ruta11.cl`,
         user_id: user?.id || null,
         cart_items: cart,
-        delivery_fee: deliveryFee,
-        customer_notes: customerInfo.customerNotes || null,
+        delivery_fee: deliveryFee + cardDeliverySurcharge,
+        customer_notes: customerInfo.customerNotes || (cardDeliverySurcharge ? '+$500 recargo tarjeta delivery' : null),
         delivery_type: customerInfo.deliveryType,
         delivery_address: customerInfo.address || null,
         pickup_time: customerInfo.pickupTime || null,
@@ -1295,6 +1296,12 @@ const CheckoutApp = ({ onClose }) => {
                         <Bike size={16} className="text-red-500" /> Delivery:
                       </span>
                       <span className="font-semibold">${deliveryFee.toLocaleString('es-CL')}</span>
+                    </div>
+                  )}
+                  {cardDeliverySurcharge > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-red-600 text-sm">💳 Recargo tarjeta delivery:</span>
+                      <span className="font-semibold text-red-600">+$500</span>
                     </div>
                   )}
                   {selectedDeliveryExtras.length > 0 && (
