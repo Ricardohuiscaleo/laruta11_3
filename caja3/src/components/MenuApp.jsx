@@ -1283,6 +1283,7 @@ export default function App() {
   const [cashAmount, setCashAmount] = useState('');
   const [cashStep, setCashStep] = useState('input');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessingOrder, setIsProcessingOrder] = useState(false);
   const [highlightedProductId, setHighlightedProductId] = useState(null);
   const [discountCode, setDiscountCode] = useState('');
   const [audioEnabled, setAudioEnabled] = useState(true);
@@ -3455,28 +3456,54 @@ export default function App() {
                     <span>Efectivo</span>
                   </button>
                   <button
+                    onClick={() => setSelectedPaymentMethod('card')}
+                    className={`border-2 font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${selectedPaymentMethod === 'card'
+                      ? 'bg-purple-500 hover:bg-purple-600 text-white border-purple-500'
+                      : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                      }`}
+                  >
+                    <CreditCard size={16} />
+                    <span>Tarjeta</span>
+                  </button>
+                  <button
+                    onClick={() => setSelectedPaymentMethod('transfer')}
+                    className={`border-2 font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${selectedPaymentMethod === 'transfer'
+                      ? 'bg-blue-500 hover:bg-blue-600 text-white border-blue-500'
+                      : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                      }`}
+                  >
+                    <Smartphone size={16} />
+                    <span>Transfer.</span>
+                  </button>
+                  <button
+                    onClick={() => setSelectedPaymentMethod('pedidosya')}
+                    className={`border-2 font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${selectedPaymentMethod === 'pedidosya'
+                      ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500'
+                      : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                      }`}
+                  >
+                    <Bike size={16} />
+                    <span>PedidosYA</span>
+                  </button>
+                </div>
+
+                {selectedPaymentMethod && selectedPaymentMethod !== 'cash' && (
+                  <button
                     onClick={async () => {
-                      if (!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)) return;
-                      setSelectedPaymentMethod('card');
-                      const confirmed = window.confirm('Has seleccionado TARJETA como método de pago. ¿Continuar?');
-                      if (!confirmed) {
-                        setSelectedPaymentMethod(null);
-                        return;
-                      }
+                      if (isProcessingOrder) return;
+                      setIsProcessingOrder(true);
                       try {
-                        console.log('💳 Procesando pago con TARJETA...');
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
                         const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
                         const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                         const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                         const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                         const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-                        const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
-                        const cardSurcharge = customerInfo.deliveryType === 'delivery' ? 500 : 0;
-                        const finalTotalWithSurcharge = finalTotal + cardSurcharge;
-
+                        const cardSurcharge = selectedPaymentMethod === 'card' && customerInfo.deliveryType === 'delivery' ? 500 : 0;
+                        const finalTotal = cartSubtotal + deliveryFee + cardSurcharge - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
+                        const redirectMap = { card: '/card-pending', transfer: '/transfer-pending', pedidosya: '/pedidosya-pending' };
                         const orderData = {
-                          amount: finalTotalWithSurcharge,
+                          amount: finalTotal,
                           customer_name: customerInfo.name,
                           customer_phone: customerInfo.phone,
                           customer_email: customerInfo.email || `${customerInfo.phone}@ruta11.cl`,
@@ -3488,193 +3515,41 @@ export default function App() {
                           discount_30: discount30Amount,
                           discount_birthday: birthdayDiscountAmount,
                           discount_pizza: pizzaDiscountAmount,
-                          customer_notes: customerInfo.customerNotes ? `${customerInfo.customerNotes}
-+$500 recargo tarjeta delivery` : (cardSurcharge ? '+$500 recargo tarjeta delivery' : null),
+                          customer_notes: customerInfo.customerNotes || (cardSurcharge ? '+$500 recargo tarjeta delivery' : null),
                           delivery_type: customerInfo.deliveryType,
                           delivery_address: customerInfo.address || null,
-                          payment_method: 'card',
+                          payment_method: selectedPaymentMethod,
                           tv_order_id: tvOrderId || null
                         };
-                        console.log('📤 Enviando orden:', orderData);
                         const response = await fetch('/api/create_order.php', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify(orderData)
                         });
                         const result = await response.json();
-                        console.log('📥 Respuesta:', result);
                         if (result.success) {
                           localStorage.removeItem('ruta11_cart');
                           localStorage.removeItem('ruta11_cart_total');
-                          console.log('✅ Redirigiendo a /card-pending?order=' + result.order_id);
-                          window.location.href = '/card-pending?order=' + result.order_id;
+                          window.location.href = `${redirectMap[selectedPaymentMethod]}?order=${result.order_id}`;
                         } else {
                           alert('❌ Error al crear orden: ' + (result.error || 'Error desconocido'));
+                          setIsProcessingOrder(false);
                           setSelectedPaymentMethod(null);
                         }
                       } catch (error) {
-                        console.error('❌ Error procesando pago con tarjeta:', error);
                         alert('❌ Error al procesar el pago: ' + error.message);
+                        setIsProcessingOrder(false);
                         setSelectedPaymentMethod(null);
                       }
                     }}
-                    disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${selectedPaymentMethod === 'card'
-                      ? 'bg-purple-500 hover:bg-purple-600 text-white border-purple-500'
-                      : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
-                      }`}
+                    disabled={isProcessingOrder}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:opacity-70 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-lg flex items-center justify-center gap-2 mt-2"
                   >
-                    <CreditCard size={16} />
-                    <span>Tarjeta</span>
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)) return;
-                      setSelectedPaymentMethod('transfer');
-                      const confirmed = window.confirm('Has seleccionado TRANSFERENCIA como método de pago. ¿Continuar?');
-                      if (!confirmed) {
-                        setSelectedPaymentMethod(null);
-                        return;
-                      }
-                      try {
-                        console.log('📱 Procesando pago con TRANSFERENCIA...');
-                        const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-                        const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
-                        const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
-                        const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
-                        const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
-                        const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-                        const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
-
-                        const orderData = {
-                          amount: finalTotal,
-                          customer_name: customerInfo.name,
-                          customer_phone: customerInfo.phone,
-                          customer_email: customerInfo.email || `${customerInfo.phone}@ruta11.cl`,
-                          user_id: user?.id || null,
-                          cart_items: cart,
-                          delivery_fee: deliveryFee,
-                          discount_amount: pickupDiscountAmount + discount30Amount + birthdayDiscountAmount + pizzaDiscountAmount,
-                          discount_10: pickupDiscountAmount,
-                          discount_30: discount30Amount,
-                          discount_birthday: birthdayDiscountAmount,
-                          discount_pizza: pizzaDiscountAmount,
-                          customer_notes: customerInfo.customerNotes || null,
-                          delivery_type: customerInfo.deliveryType,
-                          delivery_address: customerInfo.address || null,
-                          payment_method: 'transfer',
-                          tv_order_id: tvOrderId || null
-                        };
-                        console.log('📤 Enviando orden:', orderData);
-                        const response = await fetch('/api/create_order.php', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify(orderData)
-                        });
-                        const result = await response.json();
-                        console.log('📥 Respuesta:', result);
-                        if (result.success) {
-                          localStorage.removeItem('ruta11_cart');
-                          localStorage.removeItem('ruta11_cart_total');
-                          console.log('✅ Redirigiendo a /transfer-pending?order=' + result.order_id);
-                          window.location.href = '/transfer-pending?order=' + result.order_id;
-                        } else {
-                          alert('❌ Error al crear orden: ' + (result.error || 'Error desconocido'));
-                          setSelectedPaymentMethod(null);
-                        }
-                      } catch (error) {
-                        console.error('❌ Error procesando pago con transferencia:', error);
-                        alert('❌ Error al procesar el pago: ' + error.message);
-                        setSelectedPaymentMethod(null);
-                      }
-                    }}
-                    disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${selectedPaymentMethod === 'transfer'
-                      ? 'bg-blue-500 hover:bg-blue-600 text-white border-blue-500'
-                      : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
-                      }`}
-                  >
-                    <Smartphone size={16} />
-                    <span>Transfer.</span>
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)) return;
-                      setSelectedPaymentMethod('pedidosya');
-                      const confirmed = window.confirm('Has seleccionado PEDIDOSYA como método de pago. ¿Continuar?');
-                      if (!confirmed) {
-                        setSelectedPaymentMethod(null);
-                        return;
-                      }
-                      try {
-                        console.log('🛌 Procesando pago con PEDIDOSYA...');
-                        const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-                        const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
-                        const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
-                        const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
-                        const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
-                        const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-                        const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
-
-                        const orderData = {
-                          amount: finalTotal,
-                          customer_name: customerInfo.name,
-                          customer_phone: customerInfo.phone,
-                          customer_email: customerInfo.email || `${customerInfo.phone}@ruta11.cl`,
-                          user_id: user?.id || null,
-                          cart_items: cart,
-                          delivery_fee: deliveryFee,
-                          discount_amount: pickupDiscountAmount + discount30Amount + birthdayDiscountAmount + pizzaDiscountAmount,
-                          discount_10: pickupDiscountAmount,
-                          discount_30: discount30Amount,
-                          discount_birthday: birthdayDiscountAmount,
-                          discount_pizza: pizzaDiscountAmount,
-                          customer_notes: customerInfo.customerNotes || null,
-                          delivery_type: customerInfo.deliveryType,
-                          delivery_address: customerInfo.address || null,
-                          payment_method: 'pedidosya',
-                          tv_order_id: tvOrderId || null
-                        };
-                        console.log('📤 Enviando orden:', orderData);
-                        const response = await fetch('/api/create_order.php', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify(orderData)
-                        });
-                        const result = await response.json();
-                        console.log('📥 Respuesta:', result);
-                        if (result.success) {
-                          localStorage.removeItem('ruta11_cart');
-                          localStorage.removeItem('ruta11_cart_total');
-                          console.log('✅ Redirigiendo a /pedidosya-pending?order=' + result.order_id);
-                          window.location.href = '/pedidosya-pending?order=' + result.order_id;
-                        } else {
-                          alert('❌ Error al crear orden: ' + (result.error || 'Error desconocido'));
-                          setSelectedPaymentMethod(null);
-                        }
-                      } catch (error) {
-                        console.error('❌ Error procesando pago con PedidosYA:', error);
-                        alert('❌ Error al procesar el pago: ' + error.message);
-                        setSelectedPaymentMethod(null);
-                      }
-                    }}
-                    disabled={!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)}
-                    className={`disabled:bg-gray-300 disabled:text-gray-500 border-2 disabled:cursor-not-allowed font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${selectedPaymentMethod === 'pedidosya'
-                      ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500'
-                      : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
-                      }`}
-                  >
-                    <Bike size={16} />
-                    <span>PedidosYA</span>
-                  </button>
-                </div>
-
-                {selectedPaymentMethod && (
-                  <button
-                    onClick={handleCreateOrder}
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-lg flex items-center justify-center gap-2 mt-2"
-                  >
-                    ✅ Confirmar Pedido
+                    {isProcessingOrder ? (
+                      <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /><span>Procesando...</span></>
+                    ) : (
+                      <>✅ Confirmar Pedido</>
+                    )}
                   </button>
                 )}
                 <p className="text-xs text-green-700 text-center mt-2">🔒 Todos los métodos son seguros</p>
