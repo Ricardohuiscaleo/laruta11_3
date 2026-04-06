@@ -17,7 +17,8 @@ const CheckoutApp = () => {
     customerNotes: '',
     deliveryDiscount: false,
     pickupDiscount: false,
-    birthdayDiscount: false
+    birthdayDiscount: false,
+    addressValidated: false
   });
   const [user, setUser] = useState(null);
   const [step, setStep] = useState(1);
@@ -29,6 +30,10 @@ const CheckoutApp = () => {
   const [showCashModal, setShowCashModal] = useState(false);
   const [cashAmount, setCashAmount] = useState('');
   const [cashStep, setCashStep] = useState('input');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [dynamicDeliveryFee, setDynamicDeliveryFee] = useState(null);
+  const [deliveryFeeLabel, setDeliveryFeeLabel] = useState(null);
+  const [deliveryDistanceInfo, setDeliveryDistanceInfo] = useState(null);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -89,7 +94,7 @@ const CheckoutApp = () => {
   }, []);
 
   const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0
-    ? parseInt(nearbyTrucks[0].tarifa_delivery || 0)
+    ? (dynamicDeliveryFee !== null ? dynamicDeliveryFee : parseInt(nearbyTrucks[0].tarifa_delivery || 0))
     : 0;
 
   const deliveryFee = customerInfo.deliveryDiscount
@@ -104,7 +109,9 @@ const CheckoutApp = () => {
     ? cart.find(item => item.id === 9).price
     : 0;
 
-  const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - birthdayDiscountAmount;
+  const cardDeliverySurcharge = customerInfo.deliveryType === 'delivery' && paymentMethod === 'card' ? 500 : 0;
+
+  const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - birthdayDiscountAmount + cardDeliverySurcharge;
 
   useEffect(() => {
     setCartTotal(finalTotal);
@@ -169,6 +176,7 @@ const CheckoutApp = () => {
   };
 
   const handleCardPayment = async () => {
+    setPaymentMethod('card');
     if (isProcessing) return;
 
     if (!customerInfo.name) {
@@ -178,6 +186,11 @@ const CheckoutApp = () => {
 
     if (customerInfo.deliveryType === 'delivery' && !customerInfo.address) {
       alert('Por favor ingresa la dirección de entrega');
+      return;
+    }
+
+    if (customerInfo.deliveryType === 'delivery' && !customerInfo.deliveryDiscount && !customerInfo.addressValidated) {
+      alert('Debes seleccionar una dirección de la lista de sugerencias para calcular la tarifa correcta.');
       return;
     }
 
@@ -221,6 +234,7 @@ const CheckoutApp = () => {
   };
 
   const handleCashPayment = () => {
+    setPaymentMethod('cash');
     if (!customerInfo.name) {
       alert('Por favor completa tu nombre');
       return;
@@ -637,7 +651,7 @@ const CheckoutApp = () => {
                           }}
                           className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
                         />
-                        <span className="text-sm font-medium text-gray-700">Descuento Delivery (40%)</span>
+                        <span className="text-sm font-medium text-gray-700">Descuento Delivery (28%)</span>
                       </label>
                     </div>
                     <div>
@@ -657,14 +671,24 @@ const CheckoutApp = () => {
                           <option value="Ctel. Av. Santa María 3000">Ctel. Av. Santa María 3000</option>
                         </select>
                       ) : (
-                        <input
-                          type="text"
+                        <AddressAutocomplete
                           value={customerInfo.address}
-                          onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          onChange={(address) => {
+                            setCustomerInfo({ ...customerInfo, address, addressValidated: false });
+                            setDynamicDeliveryFee(null);
+                            setDeliveryFeeLabel(null);
+                          }}
                           placeholder="Ingresa tu dirección..."
-                          required
+                          onDeliveryFee={(data) => {
+                            setCustomerInfo(prev => ({ ...prev, addressValidated: true }));
+                            setDynamicDeliveryFee(data.delivery_fee);
+                            setDeliveryFeeLabel(data.label);
+                            setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min });
+                          }}
                         />
+                      )}
+                      {deliveryFeeLabel && (
+                        <p className="text-xs text-green-700 font-semibold mt-1">{deliveryFeeLabel}</p>
                       )}
                     </div>
                   </>
@@ -797,42 +821,52 @@ const CheckoutApp = () => {
 
               <div className="border-t pt-4">
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-semibold">${cartSubtotal.toLocaleString('es-CL')}</span>
+                  <div className="flex justify-between items-center font-semibold">
+                    <span className="text-gray-700">Subtotal productos:</span>
+                    <span className="text-gray-900">${cartSubtotal.toLocaleString('es-CL')}</span>
                   </div>
                   {baseDeliveryFee > 0 && (
-                    <>
+                    <div className="border-t border-gray-50 pt-2 mt-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600 flex items-center gap-1">
-                          <Bike size={16} className="text-red-500" /> Delivery:
+                        <span className="text-gray-600 flex items-center gap-1 font-medium">
+                          <Bike size={16} className="text-red-500" /> Subtotal Delivery:
                         </span>
                         <span className={customerInfo.deliveryDiscount ? "font-semibold line-through text-gray-400" : "font-semibold"}>
                           ${baseDeliveryFee.toLocaleString('es-CL')}
                         </span>
                       </div>
                       {customerInfo.deliveryDiscount && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-green-600 text-sm">Descuento Delivery (40%):</span>
-                          <span className="font-semibold text-green-600">${deliveryFee.toLocaleString('es-CL')}</span>
+                        <div className="flex justify-between items-center ml-5 text-green-600">
+                          <span className="text-sm">↳ Descuento Delivery (28%):</span>
+                          <span className="font-semibold">-${(baseDeliveryFee - deliveryFee).toLocaleString('es-CL')}</span>
                         </div>
                       )}
-                    </>
+                      {cardDeliverySurcharge > 0 && (
+                        <div className="flex justify-between items-center ml-5 text-red-600">
+                          <span className="text-sm">↳ 💳 Recargo tarjeta delivery:</span>
+                          <span className="font-semibold">+$500</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center ml-5 pt-1 font-bold text-gray-800">
+                        <span className="text-xs uppercase tracking-wider">Total Delivery:</span>
+                        <span>${(deliveryFee + cardDeliverySurcharge).toLocaleString('es-CL')}</span>
+                      </div>
+                    </div>
                   )}
                   {pickupDiscountAmount > 0 && (
                     <div className="flex justify-between items-center">
-                      <span className="text-green-600 text-sm">Descuento R11 (10%):</span>
-                      <span className="font-semibold text-green-600">-${pickupDiscountAmount.toLocaleString('es-CL')}</span>
+                      <span className="text-green-600 text-sm font-medium">🎉 Descuento Compra Local (10%):</span>
+                      <span className="font-semibold">-${pickupDiscountAmount.toLocaleString('es-CL')}</span>
                     </div>
                   )}
                   {birthdayDiscountAmount > 0 && (
                     <div className="flex justify-between items-center">
-                      <span className="text-green-600 text-sm">🎂 Descuento Cumpleaños:</span>
-                      <span className="font-semibold text-green-600">-${birthdayDiscountAmount.toLocaleString('es-CL')}</span>
+                      <span className="text-green-600 text-sm font-medium">🎂 Descuento Cumpleaños:</span>
+                      <span className="font-semibold">-${birthdayDiscountAmount.toLocaleString('es-CL')}</span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center text-lg font-bold border-t pt-2">
-                    <span>Total:</span>
+                  <div className="flex justify-between items-center text-xl font-black border-t-2 border-gray-100 pt-3 mt-2">
+                    <span className="text-gray-800">TOTAL A PAGAR:</span>
                     <span className="text-orange-500">${cartTotal.toLocaleString('es-CL')}</span>
                   </div>
                 </div>

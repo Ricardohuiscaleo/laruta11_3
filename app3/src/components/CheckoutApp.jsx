@@ -19,7 +19,8 @@ const CheckoutApp = ({ onClose }) => {
     address: '',
     deliveryType: 'pickup',
     pickupTime: '',
-    customerNotes: ''
+    customerNotes: '',
+    addressValidated: false
   });
   const [user, setUser] = useState(null);
   const [step, setStep] = useState(1);
@@ -603,8 +604,13 @@ const CheckoutApp = ({ onClose }) => {
       return;
     }
 
-    if (deliveryDiscountActive && customerInfo.deliveryType === 'delivery' && !customerInfo.address) {
-      alert('⚠️ Para usar el código RL6, debes seleccionar una de las direcciones disponibles');
+    if (customerInfo.deliveryType === 'delivery' && !deliveryDiscountActive && !customerInfo.addressValidated) {
+      alert('⚠️ Debes seleccionar una dirección de la lista de sugerencias para calcular la tarifa correcta.');
+      return;
+    }
+
+    if (deliveryDiscountActive && customerInfo.deliveryType === 'delivery' && !['Ctel. Oscar Quina 1333', 'Ctel. Domeyco 1540', 'Ctel. Av. Santa María 3000'].includes(customerInfo.address)) {
+      alert('⚠️ Para usar el código RL6, debes seleccionar una de las direcciones militares de la lista');
       return;
     }
 
@@ -1126,9 +1132,18 @@ const CheckoutApp = ({ onClose }) => {
                     ) : (
                       <AddressAutocomplete
                         value={customerInfo.address}
-                        onChange={(address) => { setCustomerInfo({ ...customerInfo, address }); setDynamicDeliveryFee(null); setDeliveryFeeLabel(null); }}
+                        onChange={(address) => { 
+                          setCustomerInfo({ ...customerInfo, address, addressValidated: false }); 
+                          setDynamicDeliveryFee(null); 
+                          setDeliveryFeeLabel(null); 
+                        }}
                         placeholder="Escribe tu dirección..."
-                        onDeliveryFee={(data) => { setDynamicDeliveryFee(data.delivery_fee); setDeliveryFeeLabel(data.label); setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min }); }}
+                        onDeliveryFee={(data) => { 
+                          setCustomerInfo(prev => ({ ...prev, addressValidated: true }));
+                          setDynamicDeliveryFee(data.delivery_fee); 
+                          setDeliveryFeeLabel(data.label); 
+                          setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min }); 
+                        }}
                       />
                     )}
                     {deliveryFeeLabel ? (
@@ -1318,37 +1333,37 @@ const CheckoutApp = ({ onClose }) => {
                     <span className="text-gray-700">Subtotal productos:</span>
                     <span className="text-gray-900">${(cartSubtotal - discountAmount - cashbackAmount).toLocaleString('es-CL')}</span>
                   </div>
-                  {deliveryFee > 0 && deliveryDiscountAmount > 0 && (
-                    <>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Delivery:</span>
-                        <span className="font-semibold line-through text-gray-400">${deliveryFee.toLocaleString('es-CL')}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Descuento Delivery (28%):</span>
-                        <span className="font-semibold text-green-600">${(deliveryFee - deliveryDiscountAmount).toLocaleString('es-CL')}</span>
-                      </div>
-                    </>
-                  )}
-                  {deliveryFee > 0 && deliveryDiscountAmount === 0 && (
-                    <div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600 flex items-center gap-1">
-                          <Bike size={16} className="text-red-500" /> Delivery:
+                  {deliveryFee > 0 && (
+                    <div className="border-t border-gray-50 pt-2 mt-2">
+                       <div className="flex justify-between items-center">
+                        <span className="text-gray-600 flex items-center gap-1 font-medium">
+                          <Bike size={16} className="text-red-500" /> Subtotal Delivery:
                         </span>
-                        <span className="font-semibold">${deliveryFee.toLocaleString('es-CL')}</span>
+                        <span className={deliveryDiscountAmount > 0 ? "font-semibold line-through text-gray-400" : "font-semibold"}>
+                          ${deliveryFee.toLocaleString('es-CL')}
+                        </span>
+                      </div>
+                      {deliveryDiscountAmount > 0 && (
+                        <div className="flex justify-between items-center ml-5 text-green-600">
+                          <span className="text-sm">↳ Descuento Delivery (28%):</span>
+                          <span className="font-semibold">-${(deliveryFee - (deliveryFee - deliveryDiscountAmount)).toLocaleString('es-CL')}</span>
+                        </div>
+                      )}
+                      {cardDeliverySurcharge > 0 && (
+                        <div className="flex justify-between items-center ml-5 text-red-600">
+                          <span className="text-sm">↳ 💳 Recargo tarjeta delivery:</span>
+                          <span className="font-semibold">+$500</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center ml-5 pt-1 font-bold text-gray-800">
+                        <span className="text-xs uppercase tracking-wider">Total Delivery:</span>
+                        <span>${(deliveryFee - deliveryDiscountAmount + cardDeliverySurcharge).toLocaleString('es-CL')}</span>
                       </div>
                       {deliveryDistanceInfo && (
-                        <p className="text-xs text-gray-500 mt-0.5 ml-5">
+                        <p className="text-[10px] text-gray-400 mt-0.5 ml-5">
                           📍 {deliveryDistanceInfo.km} km · ~{deliveryDistanceInfo.min} min
                         </p>
                       )}
-                    </div>
-                  )}
-                  {cardDeliverySurcharge > 0 && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-red-600 text-sm">💳 Recargo tarjeta delivery:</span>
-                      <span className="font-semibold text-red-600">+$500</span>
                     </div>
                   )}
                   {selectedDeliveryExtras.length > 0 && (
@@ -1369,68 +1384,14 @@ const CheckoutApp = ({ onClose }) => {
                       </div>
                     </div>
                   )}
-                  {user && walletBalance > 0 && (
-                    <div className={`border-t pt-3 mt-3 rounded-lg overflow-hidden ${walletBalance >= 500 ? 'bg-gradient-to-br from-green-50 to-emerald-50' : 'bg-gray-100'}`} style={{margin: '12px 0 0 0', padding: '12px'}}>
-                      <div className="flex justify-between items-center mb-3">
-                        <div style={{minWidth: 0, flex: 1}}>
-                          <span className={`text-sm font-bold flex items-center gap-1 ${walletBalance >= 500 ? 'text-gray-700' : 'text-gray-500'}`}>
-                            💰 Usa cashback desde $500
-                          </span>
-                          <span className="text-xs text-gray-500">Disponible: ${parseInt(walletBalance).toLocaleString('es-CL')}</span>
-                          {walletBalance >= 500 && (
-                            <span className="text-xs text-blue-600 block mt-0.5">Solo aplica a productos</span>
-                          )}
-                        </div>
-                        {walletBalance >= 500 && (
-                          <button
-                            onClick={() => setCashbackAmount(Math.min(walletBalance, cartSubtotal - discountAmount))}
-                            className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-full font-medium hover:bg-green-700 transition-colors flex-shrink-0 ml-2"
-                          >
-                            Usar todo
-                          </button>
-                        )}
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max={walletBalance >= 500 ? Math.min(walletBalance, cartSubtotal - discountAmount) : 0}
-                        step="10"
-                        value={walletBalance >= 500 ? cashbackAmount : 0}
-                        onChange={(e) => walletBalance >= 500 && setCashbackAmount(parseInt(e.target.value))}
-                        disabled={walletBalance < 500}
-                        className={`w-full h-3 rounded-lg appearance-none ${walletBalance >= 500 ? 'bg-gray-200 cursor-pointer accent-green-600' : 'bg-gray-300 cursor-not-allowed'}`}
-                        style={{
-                          display: 'block',
-                          width: '100%',
-                          boxSizing: 'border-box',
-                          background: walletBalance >= 500
-                            ? `linear-gradient(to right, #10b981 0%, #10b981 ${(cashbackAmount / Math.max(1, Math.min(walletBalance, cartSubtotal - discountAmount))) * 100}%, #e5e7eb ${(cashbackAmount / Math.max(1, Math.min(walletBalance, cartSubtotal - discountAmount))) * 100}%, #e5e7eb 100%)`
-                            : '#d1d5db'
-                        }}
-                      />
-                      {walletBalance >= 500 && (
-                        <div className="flex justify-between items-center mt-3">
-                          <span className="text-sm font-bold text-green-700">Aplicando: ${parseInt(cashbackAmount).toLocaleString('es-CL')}</span>
-                          {cashbackAmount > 0 && (
-                            <button
-                              onClick={() => setCashbackAmount(0)}
-                              className="text-xs text-red-600 font-medium hover:underline"
-                            >
-                              Limpiar
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {cashbackAmount > 0 && (
+                  {user && walletBalance > 0 && cashbackAmount > 0 && (
                     <div className="flex justify-between items-center bg-green-100 -mx-2 px-2 py-1 rounded">
                       <span className="text-gray-700 font-medium text-sm">💰 Cashback Aplicado:</span>
                       <span className="font-semibold text-green-600">-${cashbackAmount.toLocaleString('es-CL')}</span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center text-lg font-bold border-t pt-2">
-                    <span>Total:</span>
+                  <div className="flex justify-between items-center text-xl font-black border-t-2 border-gray-100 pt-3 mt-2">
+                    <span className="text-gray-800">TOTAL A PAGAR:</span>
                     <span className="text-orange-500">${cartTotal.toLocaleString('es-CL')}</span>
                   </div>
                 </div>
