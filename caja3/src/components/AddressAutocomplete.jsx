@@ -60,6 +60,7 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
   };
 
   const handleSelect = (suggestion) => {
+    onChange(suggestion.description);
     setSuggestions([]);
     setShowSuggestions(false);
     // Calcular tarifa dinámica si hay callback

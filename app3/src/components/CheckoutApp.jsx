@@ -320,6 +320,10 @@ const CheckoutApp = ({ onClose }) => {
   useEffect(() => {
     if (discountCode.toUpperCase() === 'RL6' && customerInfo.deliveryType === 'delivery') {
       setDeliveryDiscountActive(true);
+      // Limpiar cálculos dinámicos al activar RL6
+      setDynamicDeliveryFee(null);
+      setDeliveryFeeLabel(null);
+      setDeliveryDistanceInfo(null);
       if (customerInfo.address && !['Ctel. Oscar Quina 1333', 'Ctel. Domeyco 1540', 'Ctel. Av. Santa María 3000'].includes(customerInfo.address)) {
         setCustomerInfo(prev => ({ ...prev, address: '' }));
       }
@@ -1103,7 +1107,14 @@ const CheckoutApp = ({ onClose }) => {
                     {deliveryDiscountActive ? (
                       <select
                         value={customerInfo.address}
-                        onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
+                        onChange={(e) => {
+                          const addr = e.target.value;
+                          setCustomerInfo({ ...customerInfo, address: addr });
+                          // Limpiar cálculos dinámicos para direcciones militares RL6
+                          setDynamicDeliveryFee(null);
+                          setDeliveryFeeLabel(null);
+                          setDeliveryDistanceInfo(null);
+                        }}
                         className="w-full px-3 py-2 border border-green-400 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-green-50"
                         required
                       >
