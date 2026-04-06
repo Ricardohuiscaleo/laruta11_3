@@ -119,7 +119,7 @@ const CheckoutApp = () => {
   // Auto-calcular tarifa si ya hay dirección al cargar (Caja3 version)
   useEffect(() => {
     if (customerInfo.address && customerInfo.address.length > 5 && customerInfo.deliveryType === 'delivery' && dynamicDeliveryFee === null && !customerInfo.deliveryDiscount) {
-      fetch('/api/location/get_delivery_fee.php', {
+      fetch('/app3/api/location/get_delivery_fee.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address: customerInfo.address })
@@ -463,7 +463,7 @@ const CheckoutApp = () => {
             // Mostrar personalizaciones
             if (item.customizations && item.customizations.length > 0) {
               item.customizations.forEach(custom => {
-                whatsappMessage += `   - ${custom.quantity}x ${custom.name} (+$${(custom.price * custom.quantity).toLocaleString('es-CL')})\n`;
+                whatsappMessage += `   - ${custom.quantity}x ${custom.name} (+$\${((custom.price || 0) * (custom.quantity || 0)).toLocaleString('es-CL')})\n`;
               });
             }
 
@@ -824,7 +824,7 @@ const CheckoutApp = () => {
                               <span className="font-medium text-gray-700">Incluye:</span>
                               {item.customizations.map((custom, idx) => (
                                 <div key={idx} className="text-blue-600">
-                                  • {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')})
+                                  • {custom.quantity}x {custom.name} (+\${((custom.price || 0) * (custom.quantity || 0)).toLocaleString('es-CL')})
                                 </div>
                               ))}
                             </div>
@@ -967,7 +967,7 @@ const CheckoutApp = () => {
 
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
                   <p className="text-sm text-gray-600 mb-1">Total a pagar:</p>
-                  <p className="text-3xl font-bold text-orange-600">${cartTotal.toLocaleString('es-CL')}</p>
+                  <p className="text-3xl font-bold text-orange-600">${(cartTotal || 0).toLocaleString('es-CL')}</p>
                 </div>
 
                 <div className="mb-4">
