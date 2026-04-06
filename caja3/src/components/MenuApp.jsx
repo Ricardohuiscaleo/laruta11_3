@@ -348,7 +348,7 @@ function CartModal({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                       value={customerInfo.address}
                       onChange={(address) => { setCustomerInfo({ ...customerInfo, address }); setDynamicDeliveryFee(null); setDeliveryFeeLabel(null); }}
                       placeholder="Ingresa tu dirección..."
-                      onDeliveryFee={(data) => { setDynamicDeliveryFee(data.delivery_fee); setDeliveryFeeLabel(data.label); setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min }); }}
+                      onDeliveryFee={(data) => { if (data.delivery_fee != null) { setDynamicDeliveryFee(data.delivery_fee); setDeliveryFeeLabel(data.label); setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min }); } }}
                     />
                   )}
                 </div>
@@ -2118,7 +2118,7 @@ export default function App() {
 
   const deliveryFee = useMemo(() => {
     if (customerInfo.deliveryType === 'delivery') {
-      if (dynamicDeliveryFee !== null) return dynamicDeliveryFee;
+      if (dynamicDeliveryFee != null) return dynamicDeliveryFee;
       if (nearbyTrucks.length > 0) return parseInt(nearbyTrucks[0].tarifa_delivery || 0);
     }
     return 0;
@@ -3232,7 +3232,7 @@ export default function App() {
                           value={customerInfo.address || ''}
                           onChange={(address) => { setCustomerInfo({ ...customerInfo, address }); setDynamicDeliveryFee(null); setDeliveryFeeLabel(null); }}
                           placeholder="Ingresa tu dirección..."
-                          onDeliveryFee={(data) => { setDynamicDeliveryFee(data.delivery_fee); setDeliveryFeeLabel(data.label); setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min }); }}
+                          onDeliveryFee={(data) => { if (data.delivery_fee != null) { setDynamicDeliveryFee(data.delivery_fee); setDeliveryFeeLabel(data.label); setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min }); } }}
                         />
                       )}
                       {deliveryFeeLabel ? (

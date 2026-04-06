@@ -366,11 +366,19 @@ const CheckoutApp = ({ onClose }) => {
 
   // Auto-calcular tarifa si ya hay dirección al cargar (NO aplica para RL6)
   useEffect(() => {
-    if (customerInfo.address && customerInfo.deliveryType === 'delivery' && dynamicDeliveryFee === null && !deliveryDiscountActive) {
+    if (!customerInfo.address || customerInfo.deliveryType !== 'delivery') {
+      if (!customerInfo.address) {
+        setDeliveryDistanceInfo(null);
+      }
+      return;
+    }
+    if (customerInfo.address.length > 5 && dynamicDeliveryFee === null && !deliveryDiscountActive) {
+      const controller = new AbortController();
       fetch('/api/location/get_delivery_fee.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: customerInfo.address })
+        body: JSON.stringify({ address: customerInfo.address }),
+        signal: controller.signal
       })
         .then(r => r.json())
         .then(data => {
@@ -381,11 +389,12 @@ const CheckoutApp = ({ onClose }) => {
           }
         })
         .catch(() => {});
+      return () => controller.abort();
     }
   }, [customerInfo.address, customerInfo.deliveryType]);
 
   const deliveryFee = customerInfo.deliveryType === 'delivery'
-    ? (dynamicDeliveryFee !== null ? dynamicDeliveryFee : (nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0))
+    ? (dynamicDeliveryFee != null ? dynamicDeliveryFee : (nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0))
     : 0;
 
   const deliveryDiscountAmount = deliveryDiscountActive ? Math.round(deliveryFee * 0.2857) : 0;
@@ -1184,18 +1193,21 @@ const CheckoutApp = ({ onClose }) => {
                           value={customerInfo.address}
                           addressValidated={customerInfo.addressValidated}
                           hasError={formErrors.includes('address')}
-                          onChange={(address) => { 
-                            setCustomerInfo({ ...customerInfo, address, addressValidated: false }); 
-                            setDynamicDeliveryFee(null); 
-                            setDeliveryFeeLabel(null); 
+                          onChange={(address) => {
+                            setCustomerInfo({ ...customerInfo, address, addressValidated: false });
+                            setDynamicDeliveryFee(null);
+                            setDeliveryFeeLabel(null);
+                            setDeliveryDistanceInfo(null);
                             if (formErrors.includes('address')) setFormErrors(prev => prev.filter(err => err !== 'address'));
                           }}
                           placeholder="Escribe tu dirección..."
-                          onDeliveryFee={(data) => { 
+                          onDeliveryFee={(data) => {
                             setCustomerInfo(prev => ({ ...prev, addressValidated: true }));
-                            setDynamicDeliveryFee(data.delivery_fee); 
-                            setDeliveryFeeLabel(data.label); 
-                            setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min }); 
+                            if (data.delivery_fee != null) {
+                              setDynamicDeliveryFee(data.delivery_fee);
+                              setDeliveryFeeLabel(data.label);
+                              setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min });
+                            }
                           }}
                         />
                       )}
