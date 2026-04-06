@@ -899,19 +899,23 @@ const CheckoutApp = () => {
                           <span className="text-xs font-semibold">-${((baseDeliveryFee || 0) - (deliveryFee || 0)).toLocaleString('es-CL')}</span>
                         </div>
                       )}
-                      <div className="flex justify-between items-center ml-6 text-red-600">
-                        <span className="text-xs">↳ 💳 Recargo tarjeta:</span>
-                        <span className="text-xs font-semibold">+$500</span>
-                      </div>
+                      {cardDeliverySurcharge > 0 && (
+                        <div className="flex justify-between items-center ml-6 text-red-600">
+                          <span className="text-xs">↳ 💳 Recargo tarjeta:</span>
+                          <span className="text-xs font-semibold">+$500</span>
+                        </div>
+                      )}
                       {deliveryDistanceInfo && (
                         <p className="text-[10px] text-gray-400 ml-6">
                           📍 {deliveryDistanceInfo.km} km · ~{deliveryDistanceInfo.min} min
                         </p>
                       )}
-                      <div className="flex justify-between items-center pt-1.5 border-t border-gray-200">
-                        <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Total Delivery:</span>
-                        <span className="text-sm font-bold text-gray-900">${((deliveryFee || 0) + (cardDeliverySurcharge || 0)).toLocaleString('es-CL')}</span>
-                      </div>
+                      {(customerInfo.deliveryDiscount || cardDeliverySurcharge > 0) && (
+                        <div className="flex justify-between items-center pt-1.5 border-t border-gray-200">
+                          <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Total Delivery:</span>
+                          <span className="text-sm font-bold text-gray-900">${((deliveryFee || 0) + (cardDeliverySurcharge || 0)).toLocaleString('es-CL')}</span>
+                        </div>
+                      )}
                     </div>
                   )}
 

@@ -1298,6 +1298,7 @@ export default function App() {
   const [pendingPaymentModal, setPendingPaymentModal] = useState(null);
   const [showCashModal, setShowCashModal] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
+  const [checkoutErrors, setCheckoutErrors] = useState([]);
 
   // Trigger bell animation when notifications change
   useEffect(() => {
@@ -3413,19 +3414,23 @@ export default function App() {
                           <span className="text-xs font-semibold">-${((dynamicDeliveryFee != null ? dynamicDeliveryFee : parseInt(nearbyTrucks[0].tarifa_delivery || 0)) - deliveryFee).toLocaleString('es-CL')}</span>
                         </div>
                       )}
-                      <div className="flex justify-between items-center ml-6 text-red-600">
-                        <span className="text-xs">↳ 💳 Recargo tarjeta:</span>
-                        <span className="text-xs font-semibold">+$500</span>
-                      </div>
+                      {selectedPaymentMethod === 'card' && (
+                        <div className="flex justify-between items-center ml-6 text-red-600">
+                          <span className="text-xs">↳ 💳 Recargo tarjeta:</span>
+                          <span className="text-xs font-semibold">+$500</span>
+                        </div>
+                      )}
                       {deliveryDistanceInfo && (
                         <p className="text-[10px] text-gray-400 ml-6">
                           📍 {deliveryDistanceInfo.km} km · ~{deliveryDistanceInfo.min} min
                         </p>
                       )}
-                      <div className="flex justify-between items-center pt-1.5 border-t border-gray-200">
-                        <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Total Delivery:</span>
-                        <span className="text-sm font-bold text-gray-900">${(deliveryFee + (selectedPaymentMethod === 'card' ? 500 : 0)).toLocaleString('es-CL')}</span>
-                      </div>
+                      {(customerInfo.deliveryDiscount || selectedPaymentMethod === 'card') && (
+                        <div className="flex justify-between items-center pt-1.5 border-t border-gray-200">
+                          <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Total Delivery:</span>
+                          <span className="text-sm font-bold text-gray-900">${(deliveryFee + (selectedPaymentMethod === 'card' ? 500 : 0)).toLocaleString('es-CL')}</span>
+                        </div>
+                      )}
                     </div>
                   )}
                   {customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount && (
@@ -3470,10 +3475,22 @@ export default function App() {
 
               <div>
                 <h4 className="text-sm font-bold bg-yellow-400 text-black px-3 py-2 rounded-lg mb-3">Finaliza Eligiendo Método de Pago</h4>
+                {checkoutErrors.length > 0 && (
+                  <div className="bg-red-50 border border-red-300 rounded-lg px-3 py-2 mb-3 animate-shake">
+                    <p className="text-red-700 text-xs font-semibold">⚠️ Completa los datos para continuar:</p>
+                    {checkoutErrors.map((err, i) => (
+                      <p key={i} className="text-red-600 text-xs ml-3">• {err}</p>
+                    ))}
+                  </div>
+                )}
                 <div className="grid grid-cols-4 gap-2 mb-3">
                   <button
                     onClick={() => {
-                      if (!customerInfo.name || (customerInfo.deliveryType === 'delivery' && !customerInfo.address)) return;
+                      const errors = [];
+                      if (!customerInfo.name) errors.push('Nombre del cliente');
+                      if (customerInfo.deliveryType === 'delivery' && !customerInfo.address) errors.push('Dirección de entrega');
+                      if (errors.length > 0) { setCheckoutErrors(errors); setTimeout(() => setCheckoutErrors([]), 3000); return; }
+                      setCheckoutErrors([]);
                       setSelectedPaymentMethod('cash');
                       setShowCashModal(true);
                       setCashAmount('');
@@ -3489,7 +3506,14 @@ export default function App() {
                     <span>Efectivo</span>
                   </button>
                   <button
-                    onClick={() => setSelectedPaymentMethod('card')}
+                    onClick={() => {
+                      const errors = [];
+                      if (!customerInfo.name) errors.push('Nombre del cliente');
+                      if (customerInfo.deliveryType === 'delivery' && !customerInfo.address) errors.push('Dirección de entrega');
+                      if (errors.length > 0) { setCheckoutErrors(errors); setTimeout(() => setCheckoutErrors([]), 3000); return; }
+                      setCheckoutErrors([]);
+                      setSelectedPaymentMethod('card');
+                    }}
                     className={`border-2 font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${selectedPaymentMethod === 'card'
                       ? 'bg-purple-500 hover:bg-purple-600 text-white border-purple-500'
                       : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
@@ -3499,7 +3523,14 @@ export default function App() {
                     <span>Tarjeta</span>
                   </button>
                   <button
-                    onClick={() => setSelectedPaymentMethod('transfer')}
+                    onClick={() => {
+                      const errors = [];
+                      if (!customerInfo.name) errors.push('Nombre del cliente');
+                      if (customerInfo.deliveryType === 'delivery' && !customerInfo.address) errors.push('Dirección de entrega');
+                      if (errors.length > 0) { setCheckoutErrors(errors); setTimeout(() => setCheckoutErrors([]), 3000); return; }
+                      setCheckoutErrors([]);
+                      setSelectedPaymentMethod('transfer');
+                    }}
                     className={`border-2 font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${selectedPaymentMethod === 'transfer'
                       ? 'bg-blue-500 hover:bg-blue-600 text-white border-blue-500'
                       : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
@@ -3509,7 +3540,14 @@ export default function App() {
                     <span>Transfer.</span>
                   </button>
                   <button
-                    onClick={() => setSelectedPaymentMethod('pedidosya')}
+                    onClick={() => {
+                      const errors = [];
+                      if (!customerInfo.name) errors.push('Nombre del cliente');
+                      if (customerInfo.deliveryType === 'delivery' && !customerInfo.address) errors.push('Dirección de entrega');
+                      if (errors.length > 0) { setCheckoutErrors(errors); setTimeout(() => setCheckoutErrors([]), 3000); return; }
+                      setCheckoutErrors([]);
+                      setSelectedPaymentMethod('pedidosya');
+                    }}
                     className={`border-2 font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${selectedPaymentMethod === 'pedidosya'
                       ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500'
                       : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
