@@ -369,7 +369,7 @@
     </div>
 
     <script>
-        let currentOrderData = null;
+        let currentOrderData: any = null;
 
         function generateWhatsAppMessage() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -410,7 +410,7 @@
             
             if (currentOrderData && currentOrderData.scheduled_time && currentOrderData.is_scheduled) {
                 const scheduledDate = new Date(currentOrderData.scheduled_time);
-                const options = { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
+                const options: Intl.DateTimeFormatOptions = { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
                 const formattedDate = scheduledDate.toLocaleDateString('es-CL', options);
                 message += `⏰ *Programado:* ${formattedDate}\n`;
             }
@@ -513,7 +513,7 @@
                 let customizationsText = '';
                 
                 if (isCombo) {
-                    const comboIncludes = [];
+                    const comboIncludes: string[] = [];
                     
                     if (item.fixed_items && item.fixed_items.length > 0) {
                         item.fixed_items.forEach(f => {
@@ -534,7 +534,8 @@
                                     comboIncludes.push(`${item.quantity}x ${name}`);
                                 });
                             } else if (categoryItems && typeof categoryItems === 'object') {
-                                const name = categoryItems.name || categoryItems.product_name || String(categoryItems);
+                                const ci = categoryItems as any;
+                                const name = ci.name || ci.product_name || String(categoryItems);
                                 comboIncludes.push(`${item.quantity}x ${name}`);
                             }
                         });
@@ -710,8 +711,8 @@
             }
             
             loadOrderData();
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
+            if (typeof (window as any).lucide !== 'undefined') {
+                (window as any).lucide.createIcons();
             }
         });
     </script>

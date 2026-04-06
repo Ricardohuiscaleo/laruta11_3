@@ -119,7 +119,7 @@ const CheckoutApp = () => {
   // Auto-calcular tarifa si ya hay dirección al cargar (Caja3 version)
   useEffect(() => {
     if (customerInfo.address && customerInfo.address.length > 5 && customerInfo.deliveryType === 'delivery' && dynamicDeliveryFee === null && !customerInfo.deliveryDiscount) {
-      fetch('/app3/api/location/get_delivery_fee.php', {
+      fetch('/caja3/api/location/get_delivery_fee.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address: customerInfo.address })
@@ -506,7 +506,7 @@ const CheckoutApp = () => {
         }
 
         if (deliveryFee > 0) {
-          whatsappMessage += `- *Costo delivery:* $${deliveryFee.toLocaleString('es-CL')}\n`;
+          whatsappMessage += `- *Costo delivery:* $${(deliveryFee || 0).toLocaleString('es-CL')}\n`;
         }
         whatsappMessage += `\n`;
 
