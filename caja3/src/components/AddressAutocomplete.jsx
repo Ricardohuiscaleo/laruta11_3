@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { MapPin } from 'lucide-react';
 
-const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu dirección...", className = "", onDeliveryFee = null }) => {
+const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu dirección...", className = "", onDeliveryFee = null, addressValidated = false }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,31 +47,24 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
   };
 
   const handleBlur = () => {
-    // Si el usuario sale del input y no ha seleccionado una sugerencia (lo que dispara onDeliveryFee),
-    // limpiamos el input para obligar a elegir del listado.
-    // Usamos un pequeño timeout para no interferir con el click en la sugerencia.
+    // Si el usuario sale del input sin haber seleccionado una sugerencia válida (addressValidated es false),
+    // limpiamos el input para obligar a usar el listado.
     setTimeout(() => {
-      if (onDeliveryFee && !suggestions.find(s => s.description === value)) {
-        // En lugar de limpiar aquí directamente, dejamos que el padre controle la validación
-        // pero el componente ya no intentará geocodificar basura.
+      if (!addressValidated && value) {
+        onChange('');
       }
     }, 200);
   };
 
   const handleSelect = (suggestion) => {
-    onChange(suggestion.description);
+    const fullAddress = suggestion.description;
+    onChange(fullAddress);
     setSuggestions([]);
     setShowSuggestions(false);
-    // Calcular tarifa dinámica si hay callback
+    
+    // Al seleccionar de la lista, ya sabemos que es una dirección válida de Google
     if (onDeliveryFee) {
-      fetch('/api/location/get_delivery_fee.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: suggestion.description })
-      })
-        .then(r => r.json())
-        .then(data => { if (data.success) onDeliveryFee(data); })
-        .catch(() => {});
+      onDeliveryFee({ success: true, from_select: true, address: fullAddress });
     }
   };
 

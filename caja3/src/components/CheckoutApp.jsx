@@ -115,6 +115,27 @@ const CheckoutApp = () => {
 
   const finalTotal = cartSubtotal + deliveryFee - pickupDiscountAmount - birthdayDiscountAmount + cardDeliverySurcharge;
 
+  // Auto-calcular tarifa si ya hay dirección al cargar (Caja3 version)
+  useEffect(() => {
+    if (customerInfo.address && customerInfo.address.length > 5 && customerInfo.deliveryType === 'delivery' && dynamicDeliveryFee === null && !customerInfo.deliveryDiscount) {
+      fetch('/api/location/get_delivery_fee.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: customerInfo.address })
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            setDynamicDeliveryFee(data.delivery_fee);
+            setDeliveryFeeLabel(data.label);
+            setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min });
+            setCustomerInfo(prev => ({ ...prev, addressValidated: true }));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [customerInfo.address, customerInfo.deliveryType]);
+
   useEffect(() => {
     setCartTotal(finalTotal);
   }, [finalTotal, customerInfo.deliveryType, deliveryFee, cartSubtotal, nearbyTrucks]);
@@ -687,6 +708,7 @@ const CheckoutApp = () => {
                         ) : (
                           <AddressAutocomplete
                             value={customerInfo.address}
+                            addressValidated={customerInfo.addressValidated}
                             onChange={(address) => {
                               setCustomerInfo({ ...customerInfo, address, addressValidated: false });
                               setDynamicDeliveryFee(null);
