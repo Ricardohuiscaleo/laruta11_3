@@ -332,9 +332,9 @@ const CheckoutApp = ({ onClose }) => {
   const [deliveryFeeLabel, setDeliveryFeeLabel] = useState(null);
   const [deliveryDistanceInfo, setDeliveryDistanceInfo] = useState(null); // {km, min}
 
-  // Auto-calcular tarifa si ya hay dirección al cargar
+  // Auto-calcular tarifa si ya hay dirección al cargar (NO aplica para RL6)
   useEffect(() => {
-    if (customerInfo.address && customerInfo.deliveryType === 'delivery' && dynamicDeliveryFee === null) {
+    if (customerInfo.address && customerInfo.deliveryType === 'delivery' && dynamicDeliveryFee === null && !deliveryDiscountActive) {
       fetch('/api/location/get_delivery_fee.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

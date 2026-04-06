@@ -1205,9 +1205,9 @@ export default function App() {
   const [currentOrder, setCurrentOrder] = useState(null);
   const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', email: '', address: '', deliveryType: 'pickup', pickupTime: '', customerNotes: '', deliveryDiscount: false, pickupDiscount: false, birthdayDiscount: false, discount30: false });
 
-  // Auto-calcular tarifa si ya hay dirección al cargar
+  // Auto-calcular tarifa si ya hay dirección al cargar (NO aplica para RL6)
   useEffect(() => {
-    if (customerInfo.address && customerInfo.deliveryType === 'delivery' && dynamicDeliveryFee === null) {
+    if (customerInfo.address && customerInfo.deliveryType === 'delivery' && dynamicDeliveryFee === null && !customerInfo.deliveryDiscount) {
       fetch('/api/location/get_delivery_fee.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
