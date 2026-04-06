@@ -1536,10 +1536,8 @@ export default function App() {
         requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
           if (currentScrollY > lastScrollY && currentScrollY > 100) {
-            setIsCategoriesVisible(false);
             setIsNavVisible(false);
           } else {
-            setIsCategoriesVisible(true);
             setIsNavVisible(true);
           }
           setLastScrollY(currentScrollY);
@@ -2049,8 +2047,8 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Fila 2: Menú de categorías scrolleable - Sin padding */}
-              <div className={`mx-2 mt-2 transition-all duration-300 overflow-hidden ${isCategoriesVisible ? 'max-h-20' : 'max-h-0'}`}>
+              {/* Fila 2: Menú de categorías scrolleable - Siempre visible */}
+              <div className="mx-2 mt-2 mb-1">
                 {/* Menú de categorías scrolleable */}
                 <div
                   ref={categoriesScrollRef}
@@ -2172,22 +2170,20 @@ export default function App() {
           </div>
         </header>
 
-        {/* Banner de deslizar - Solo móvil */}
-        {isCategoriesVisible && (
-          <div className={`sm:hidden fixed top-[115px] right-2 z-40 transition-all duration-300 ${isCategoriesVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'}`}>
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              className={`transition-transform duration-300 text-gray-600 ${isScrolledToEnd ? 'rotate-180' : ''} ${!isScrolledToEnd ? 'animate-bounce-horizontal' : ''}`}
-            >
-              <path d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
-        )}
+        {/* Banner de deslizar categorías - Solo móvil */}
+        <div className={`sm:hidden fixed top-[115px] right-2 z-40 transition-all duration-300`}>
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            className={`transition-transform duration-300 text-gray-600 ${isScrolledToEnd ? 'rotate-180' : ''} ${!isScrolledToEnd ? 'animate-bounce-horizontal' : ''}`}
+          >
+            <path d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
 
         {/* Cart Sidebar - Solo PC */}
         <aside className="hidden lg:flex lg:flex-col fixed right-0 top-0 bottom-0 w-96 bg-white border-l border-gray-200 z-30 overflow-y-auto">

@@ -1436,10 +1436,12 @@ const CheckoutApp = ({ onClose }) => {
                           📍 {deliveryDistanceInfo.km} km · ~{deliveryDistanceInfo.min} min
                         </p>
                       )}
-                      <div className="flex justify-between items-center pt-1.5 border-t border-gray-200">
-                        <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Total Delivery:</span>
-                        <span className="text-sm font-bold text-gray-900">${(deliveryFee - deliveryDiscountAmount + cardDeliverySurcharge).toLocaleString('es-CL')}</span>
-                      </div>
+                      {(deliveryDiscountAmount > 0 || cardDeliverySurcharge > 0) && (
+                        <div className="flex justify-between items-center pt-1.5 border-t border-gray-200">
+                          <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Total Delivery:</span>
+                          <span className="text-sm font-bold text-gray-900">${(deliveryFee - deliveryDiscountAmount + cardDeliverySurcharge).toLocaleString('es-CL')}</span>
+                        </div>
+                      )}
                     </div>
                   )}
                   {selectedDeliveryExtras.length > 0 && (
