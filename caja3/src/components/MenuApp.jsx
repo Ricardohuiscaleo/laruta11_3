@@ -3599,11 +3599,20 @@ export default function App() {
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify(orderData)
                         });
-                        const result = await response.json();
+                        const text = await response.text();
+                        let result;
+                        try { result = JSON.parse(text); } catch (e) {
+                          console.error('API response not JSON:', text.substring(0, 200));
+                          alert('❌ Error del servidor. Intenta de nuevo.');
+                          setIsProcessingOrder(false);
+                          setSelectedPaymentMethod(null);
+                          return;
+                        }
                         if (result.success) {
                           localStorage.removeItem('ruta11_cart');
                           localStorage.removeItem('ruta11_cart_total');
-                          window.location.href = `${redirectMap[selectedPaymentMethod]}?order=${result.order_id}`;
+                          const redirectUrl = `${redirectMap[selectedPaymentMethod]}?order=${encodeURIComponent(result.order_id)}`;
+                          window.location.assign(redirectUrl);
                         } else {
                           alert('❌ Error al crear orden: ' + (result.error || 'Error desconocido'));
                           setIsProcessingOrder(false);
