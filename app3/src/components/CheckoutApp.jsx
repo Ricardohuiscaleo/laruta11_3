@@ -219,13 +219,38 @@ const CheckoutApp = ({ onClose }) => {
       .then(data => {
         if (data.authenticated) {
           setUser(data.user);
+          const userAddress = data.user.direccion || '';
           setCustomerInfo(prev => ({
             ...prev,
             name: data.user.nombre || '',
             phone: data.user.telefono || '',
             email: data.user.email || '',
-            address: data.user.direccion || ''
+            address: userAddress,
+            addressValidated: false // Default initially
           }));
+
+          // Si hay dirección guardada, validarla de inmediato
+          if (userAddress.length > 5) {
+            fetch('/api/location/get_delivery_fee.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ address: userAddress })
+            })
+              .then(r => r.json())
+              .then(feeData => {
+                if (feeData.success) {
+                  setCustomerInfo(prev => ({ ...prev, addressValidated: true }));
+                  setDynamicDeliveryFee(feeData.delivery_fee);
+                  setDeliveryFeeLabel(feeData.label);
+                  setDeliveryDistanceInfo({ km: feeData.distance_km, min: feeData.duration_min });
+                } else {
+                  // Si la dirección guardada no es válida para Google, la limpiamos
+                  setCustomerInfo(prev => ({ ...prev, address: '', addressValidated: false }));
+                }
+              })
+              .catch(() => {});
+          }
+
           // Usar stats del API si están disponibles
           if (data.stats) {
             const points = Math.floor((data.stats.total_spent || 0) / 10);
@@ -1134,6 +1159,7 @@ const CheckoutApp = ({ onClose }) => {
                       ) : (
                         <AddressAutocomplete
                           value={customerInfo.address}
+                          addressValidated={customerInfo.addressValidated}
                           onChange={(address) => { 
                             setCustomerInfo({ ...customerInfo, address, addressValidated: false }); 
                             setDynamicDeliveryFee(null); 

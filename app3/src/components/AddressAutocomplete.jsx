@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { MapPin } from 'lucide-react';
 
-const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu dirección...", className = "", onDeliveryFee = null }) => {
+const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu dirección...", className = "", onDeliveryFee = null, addressValidated = false }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,6 +38,16 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleBlur = () => {
+    // Si el usuario sale del input sin haber seleccionado una sugerencia válida,
+    // limpiamos el input para obligar a usar el listado.
+    setTimeout(() => {
+      if (!addressValidated && value) {
+        onChange('');
+      }
+    }, 200);
   };
 
   const handleInputChange = (e) => {
@@ -129,6 +139,7 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
           value={value}
           onChange={handleInputChange}
           onFocus={() => { if (suggestions.length > 0) { setShowSuggestions(true); updateRect(); } }}
+          onBlur={handleBlur}
           className={className || "w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"}
           placeholder={placeholder}
           autoComplete="off"

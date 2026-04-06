@@ -855,7 +855,7 @@ const CheckoutApp = () => {
                           )}
                         </div>
                         <p className="font-semibold text-gray-800 text-sm">
-                          ${itemTotal.toLocaleString('es-CL')}
+                          ${(itemTotal || 0).toLocaleString('es-CL')}
                         </p>
                       </div>
                     </div>
@@ -867,7 +867,7 @@ const CheckoutApp = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center font-semibold">
                     <span className="text-gray-700">Subtotal productos:</span>
-                    <span className="text-gray-900">${cartSubtotal.toLocaleString('es-CL')}</span>
+                    <span className="text-gray-900">${(cartSubtotal || 0).toLocaleString('es-CL')}</span>
                   </div>
                   {baseDeliveryFee > 0 && (
                     <div className="border-t border-gray-50 pt-2 mt-2">
@@ -876,13 +876,13 @@ const CheckoutApp = () => {
                           <Bike size={16} className="text-red-500" /> Subtotal Delivery:
                         </span>
                         <span className={customerInfo.deliveryDiscount ? "font-semibold line-through text-gray-400" : "font-semibold"}>
-                          ${baseDeliveryFee.toLocaleString('es-CL')}
+                          ${(baseDeliveryFee || 0).toLocaleString('es-CL')}
                         </span>
                       </div>
                       {customerInfo.deliveryDiscount && (
                         <div className="flex justify-between items-center ml-5 text-green-600">
                           <span className="text-sm">↳ Descuento Delivery (28%):</span>
-                          <span className="font-semibold">-${(baseDeliveryFee - deliveryFee).toLocaleString('es-CL')}</span>
+                          <span className="font-semibold">-${((baseDeliveryFee || 0) - (deliveryFee || 0)).toLocaleString('es-CL')}</span>
                         </div>
                       )}
                       {cardDeliverySurcharge > 0 && (
@@ -893,7 +893,7 @@ const CheckoutApp = () => {
                       )}
                       <div className="flex justify-between items-center ml-5 pt-1 font-bold text-gray-800">
                         <span className="text-xs uppercase tracking-wider">Total Delivery:</span>
-                        <span>${(deliveryFee + cardDeliverySurcharge).toLocaleString('es-CL')}</span>
+                        <span>${((deliveryFee || 0) + (cardDeliverySurcharge || 0)).toLocaleString('es-CL')}</span>
                       </div>
                       {deliveryDistanceInfo && (
                         <p className="text-[10px] text-gray-400 mt-0.5 ml-5">
@@ -916,7 +916,7 @@ const CheckoutApp = () => {
                   )}
                   <div className="flex justify-between items-center text-xl font-black border-t-2 border-gray-100 pt-3 mt-2">
                     <span className="text-gray-800">TOTAL A PAGAR:</span>
-                    <span className="text-orange-500">${cartTotal.toLocaleString('es-CL')}</span>
+                    <span className="text-orange-500">${(cartTotal || 0).toLocaleString('es-CL')}</span>
                   </div>
                 </div>
               </div>
