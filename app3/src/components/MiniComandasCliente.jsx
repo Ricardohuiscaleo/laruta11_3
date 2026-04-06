@@ -98,6 +98,7 @@ const MiniComandasCliente = ({ customerName, userId, onOrdersUpdate, isOpen, onC
   };
 
   const getTimeElapsed = (createdAt) => {
+    if (!createdAt) return 0;
     const created = new Date(createdAt + ' UTC');
     const diffMs = currentTime - created.getTime();
     const totalSeconds = Math.floor(diffMs / 1000);
