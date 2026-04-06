@@ -723,12 +723,12 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                 <span className="text-sm font-bold text-gray-800">Total</span>
                 <span className="text-sm font-black text-orange-500">${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}</span>
               </div>
-              </div>
-              <div className="flex items-center gap-1 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded w-fit">
-                {getPaymentIcon(order.payment_method)}
-                <span>{getPaymentText(order.payment_method)}</span>
-              </div>
             </div>
+            <div className="flex items-center gap-1 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded w-fit">
+              {getPaymentIcon(order.payment_method)}
+              <span>{getPaymentText(order.payment_method)}</span>
+            </div>
+          </div>
             <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded ${isPaid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
               {isPaid ? <CheckCircle size={14} /> : <XCircle size={14} />}
               <span>{isPaid ? 'Pagado' : 'Pendiente'}</span>
