@@ -98,8 +98,7 @@ const MiniComandasCliente = ({ customerName, userId, onOrdersUpdate, isOpen, onC
   };
 
   const getTimeElapsed = (createdAt) => {
-    const created = new Date(createdAt);
-    created.setHours(created.getHours() - 3);
+    const created = new Date(createdAt + ' UTC');
     const diffMs = currentTime - created.getTime();
     const totalSeconds = Math.floor(diffMs / 1000);
     return Math.max(0, totalSeconds);
@@ -348,7 +347,7 @@ const MiniComandasCliente = ({ customerName, userId, onOrdersUpdate, isOpen, onC
                             <span className="font-semibold text-gray-900">Delivery</span>
                             <span className="text-gray-700">• {order.delivery_address}</span>
                             {order.created_at && (
-                              <><span className="text-gray-400">•</span><span className="text-gray-600">{new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}</span></>
+                              <><span className="text-gray-400">•</span><span className="text-gray-600">{new Date(order.created_at + ' UTC').toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago'})}</span></>
                             )}
                           </div>
                         </div>
@@ -358,7 +357,7 @@ const MiniComandasCliente = ({ customerName, userId, onOrdersUpdate, isOpen, onC
                             <Store size={14} className="text-green-600 flex-shrink-0" />
                             <span className="font-semibold text-gray-900">Retiro</span>
                             {(order.pickup_time || order.created_at) && (
-                              <><span className="text-gray-400">•</span><span className="text-gray-600">{order.pickup_time || new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}</span></>
+                              <><span className="text-gray-400">•</span><span className="text-gray-600">{order.pickup_time || new Date(order.created_at + ' UTC').toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago'})}</span></>
                             )}
                           </div>
                         </div>

@@ -115,8 +115,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   };
 
   const getTimeElapsed = (createdAt) => {
-    const created = new Date(createdAt);
-    created.setHours(created.getHours() - 3);
+    const created = new Date(createdAt + ' UTC');
     const diffMs = currentTime - created.getTime();
     const totalSeconds = Math.floor(diffMs / 1000);
     return Math.max(0, totalSeconds);
@@ -568,7 +567,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           <div className="space-y-2">
             <div className="text-xs bg-blue-50 border border-blue-200 rounded p-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-blue-800">
+                <div className="flex items-center gap-2 text-blue-800 flex-wrap">
                   <Bike size={12} className="flex-shrink-0" />
                   <span className="font-medium">Delivery</span>
                   {order.pickup_time ? (
@@ -577,9 +576,12 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                        <span className="font-bold text-red-600 text-[10px]">PROGRAMADO A LAS: {order.pickup_time.substring(0, 5)}</span>
                     </div>
                   ) : !isScheduled && order.created_at && (
-                    <><Clock size={12} /><span>{new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span></>
+                    <><Clock size={12} /><span>{new Date(order.created_at + ' UTC').toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' })}</span></>
                   )}
                   {order.delivery_address && <span className="font-semibold text-blue-900">• {order.delivery_address}</span>}
+                  {order.delivery_distance_km && (
+                    <span className="text-[10px] text-gray-500">📍 {order.delivery_distance_km} km · ~{order.delivery_duration_min} min</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -638,7 +640,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
             <div className="flex items-center gap-2 text-green-800">
               <span className="font-medium">🎖️ Retirado en Cuartel RL6</span>
               {!isScheduled && order.created_at && (
-                <><Clock size={12} /><span>{new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span></>
+                <><Clock size={12} /><span>{new Date(order.created_at + ' UTC').toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' })}</span></>
               )}
             </div>
           </div>
@@ -657,7 +659,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                 <Store size={14} className="text-green-600" />
                 <span>Retiro Inmediato</span>
                 {order.created_at && (
-                  <><Clock size={14} className="text-gray-500" /><span>Recibido {new Date(new Date(order.created_at).getTime() - 3 * 60 * 60 * 1000).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span></>
+                  <><Clock size={14} className="text-gray-500" /><span>Recibido {new Date(order.created_at + ' UTC').toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' })}</span></>
                 )}
               </>
             )}
