@@ -73,6 +73,7 @@ const CheckoutApp = ({ onClose }) => {
   const [rl6Credit, setRl6Credit] = useState(null);
   const [loadingRL6, setLoadingRL6] = useState(false);
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
+  const [shakesAddress, setShakesAddress] = useState(false);
 
   // Verificar si es militar RL6 aprobado (loose equality para manejar strings y numbers)
   const isMilitarRL6 = (user?.es_militar_rl6 == 1 || user?.es_militar_rl6 === '1') &&
@@ -1110,45 +1111,54 @@ const CheckoutApp = ({ onClose }) => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Dirección de entrega *
                     </label>
-                    {deliveryDiscountActive ? (
-                      <select
-                        value={customerInfo.address}
-                        onChange={(e) => {
-                          const addr = e.target.value;
-                          setCustomerInfo({ ...customerInfo, address: addr });
-                          // Limpiar cálculos dinámicos para direcciones militares RL6
-                          setDynamicDeliveryFee(null);
-                          setDeliveryFeeLabel(null);
-                          setDeliveryDistanceInfo(null);
-                        }}
-                        className="w-full px-3 py-2 border border-green-400 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-green-50"
-                        required
-                      >
-                        <option value="">Seleccionar dirección con descuento</option>
-                        <option value="Ctel. Oscar Quina 1333">Ctel. Oscar Quina 1333</option>
-                        <option value="Ctel. Domeyco 1540">Ctel. Domeyco 1540</option>
-                        <option value="Ctel. Av. Santa María 3000">Ctel. Av. Santa María 3000</option>
-                      </select>
-                    ) : (
-                      <AddressAutocomplete
-                        value={customerInfo.address}
-                        onChange={(address) => { 
-                          setCustomerInfo({ ...customerInfo, address, addressValidated: false }); 
-                          setDynamicDeliveryFee(null); 
-                          setDeliveryFeeLabel(null); 
-                        }}
-                        placeholder="Escribe tu dirección..."
-                        onDeliveryFee={(data) => { 
-                          setCustomerInfo(prev => ({ ...prev, addressValidated: true }));
-                          setDynamicDeliveryFee(data.delivery_fee); 
-                          setDeliveryFeeLabel(data.label); 
-                          setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min }); 
-                        }}
-                      />
-                    )}
+                    <div className={shakesAddress ? 'animate-shake' : ''}>
+                      {deliveryDiscountActive ? (
+                        <select
+                          value={customerInfo.address}
+                          onChange={(e) => {
+                            const addr = e.target.value;
+                            setCustomerInfo({ ...customerInfo, address: addr });
+                            // Limpiar cálculos dinámicos para direcciones militares RL6
+                            setDynamicDeliveryFee(null);
+                            setDeliveryFeeLabel(null);
+                            setDeliveryDistanceInfo(null);
+                          }}
+                          className="w-full px-3 py-2 border border-green-400 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-green-50"
+                          required
+                        >
+                          <option value="">Seleccionar dirección con descuento</option>
+                          <option value="Ctel. Oscar Quina 1333">Ctel. Oscar Quina 1333</option>
+                          <option value="Ctel. Domeyco 1540">Ctel. Domeyco 1540</option>
+                          <option value="Ctel. Av. Santa María 3000">Ctel. Av. Santa María 3000</option>
+                        </select>
+                      ) : (
+                        <AddressAutocomplete
+                          value={customerInfo.address}
+                          onChange={(address) => { 
+                            setCustomerInfo({ ...customerInfo, address, addressValidated: false }); 
+                            setDynamicDeliveryFee(null); 
+                            setDeliveryFeeLabel(null); 
+                          }}
+                          placeholder="Escribe tu dirección..."
+                          onDeliveryFee={(data) => { 
+                            setCustomerInfo(prev => ({ ...prev, addressValidated: true }));
+                            setDynamicDeliveryFee(data.delivery_fee); 
+                            setDeliveryFeeLabel(data.label); 
+                            setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min }); 
+                          }}
+                        />
+                      )}
+                    </div>
                     {deliveryFeeLabel ? (
                       <p className="text-xs text-green-700 font-semibold mt-1">{deliveryFeeLabel}</p>
-                    ) : nearbyTrucks.length > 0 && !deliveryDiscountActive && (
+                    ) : (
+                      !deliveryDiscountActive && (
+                        <p className="text-[10px] text-orange-600 mt-1 flex items-center gap-1">
+                          📍 Selecciona una dirección de la lista para calcular el despacho
+                        </p>
+                      )
+                    )}
+                    {nearbyTrucks.length > 0 && !deliveryDiscountActive && !deliveryFeeLabel && (
                       <p className="text-xs text-blue-600 mt-1">
                         🚚 Costo de delivery: ${parseInt(nearbyTrucks[0].tarifa_delivery || 0).toLocaleString('es-CL')}
                       </p>
@@ -1333,7 +1343,7 @@ const CheckoutApp = ({ onClose }) => {
                     <span className="text-gray-700">Subtotal productos:</span>
                     <span className="text-gray-900">${(cartSubtotal - discountAmount - cashbackAmount).toLocaleString('es-CL')}</span>
                   </div>
-                  {deliveryFee > 0 && (
+                  {deliveryFee > 0 && customerInfo.addressValidated && (
                     <div className="border-t border-gray-50 pt-2 mt-2">
                        <div className="flex justify-between items-center">
                         <span className="text-gray-600 flex items-center gap-1 font-medium">
@@ -2306,5 +2316,25 @@ const CheckoutApp = ({ onClose }) => {
     </div>
   );
 };
+
+const styles = `
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.animate-shake {
+  animation: shake 0.2s ease-in-out 0s 2;
+  border: 2px solid #ef4444 !important;
+  border-radius: 8px;
+}
+`;
+
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement("style");
+  styleSheet.innerText = styles;
+  document.head.appendChild(styleSheet);
+}
 
 export default CheckoutApp;

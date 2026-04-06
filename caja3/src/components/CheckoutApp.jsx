@@ -34,6 +34,7 @@ const CheckoutApp = () => {
   const [dynamicDeliveryFee, setDynamicDeliveryFee] = useState(null);
   const [deliveryFeeLabel, setDeliveryFeeLabel] = useState(null);
   const [deliveryDistanceInfo, setDeliveryDistanceInfo] = useState(null);
+  const [shakesAddress, setShakesAddress] = useState(false);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -117,7 +118,19 @@ const CheckoutApp = () => {
     setCartTotal(finalTotal);
   }, [finalTotal, customerInfo.deliveryType, deliveryFee, cartSubtotal, nearbyTrucks]);
 
+  const validateDeliveryAddress = () => {
+    if (customerInfo.deliveryType === 'delivery' && !customerInfo.deliveryDiscount && !customerInfo.addressValidated) {
+      setShakesAddress(true);
+      vibrate(200);
+      setTimeout(() => setShakesAddress(false), 500);
+      alert('⚠️ Dirección no válida. Debes seleccionar una dirección de la lista de sugerencias para calcular la tarifa correcta.');
+      return false;
+    }
+    return true;
+  };
+
   const handleTUUPayment = async () => {
+    if (!validateDeliveryAddress()) return;
     try {
       // PASO 1: Crear el pago y obtener order_id
       const paymentData = {
@@ -189,10 +202,7 @@ const CheckoutApp = () => {
       return;
     }
 
-    if (customerInfo.deliveryType === 'delivery' && !customerInfo.deliveryDiscount && !customerInfo.addressValidated) {
-      alert('Debes seleccionar una dirección de la lista de sugerencias para calcular la tarifa correcta.');
-      return;
-    }
+    if (!validateDeliveryAddress()) return;
 
     setIsProcessing(true);
     try {
@@ -239,6 +249,9 @@ const CheckoutApp = () => {
       alert('Por favor completa tu nombre');
       return;
     }
+
+    if (!validateDeliveryAddress()) return;
+
     setShowCashModal(true);
     setCashAmount('');
     setCashStep('input');
@@ -339,6 +352,8 @@ const CheckoutApp = () => {
       return;
     }
 
+    if (!validateDeliveryAddress()) return;
+
     setIsProcessing(true);
     try {
       const orderData = {
@@ -381,15 +396,12 @@ const CheckoutApp = () => {
   const handleTransferPayment = async () => {
     if (isProcessing) return;
 
-    if (!customerInfo.name) {
-      alert('Por favor completa tu nombre');
-      return;
-    }
-
     if (customerInfo.deliveryType === 'delivery' && !customerInfo.address) {
       alert('Por favor ingresa la dirección de entrega');
       return;
     }
+
+    if (!validateDeliveryAddress()) return;
 
     setIsProcessing(true);
     try {
@@ -658,37 +670,46 @@ const CheckoutApp = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Dirección de entrega *
                       </label>
-                      {customerInfo.deliveryDiscount ? (
-                        <select
-                          value={customerInfo.address}
-                          onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                          required
-                        >
-                          <option value="">Seleccionar dirección con descuento</option>
-                          <option value="Ctel. Oscar Quina 1333">Ctel. Oscar Quina 1333</option>
-                          <option value="Ctel. Domeyco 1540">Ctel. Domeyco 1540</option>
-                          <option value="Ctel. Av. Santa María 3000">Ctel. Av. Santa María 3000</option>
-                        </select>
-                      ) : (
-                        <AddressAutocomplete
-                          value={customerInfo.address}
-                          onChange={(address) => {
-                            setCustomerInfo({ ...customerInfo, address, addressValidated: false });
-                            setDynamicDeliveryFee(null);
-                            setDeliveryFeeLabel(null);
-                          }}
-                          placeholder="Ingresa tu dirección..."
-                          onDeliveryFee={(data) => {
-                            setCustomerInfo(prev => ({ ...prev, addressValidated: true }));
-                            setDynamicDeliveryFee(data.delivery_fee);
-                            setDeliveryFeeLabel(data.label);
-                            setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min });
-                          }}
-                        />
-                      )}
+                      <div className={shakesAddress ? 'animate-shake' : ''}>
+                        {customerInfo.deliveryDiscount ? (
+                          <select
+                            value={customerInfo.address}
+                            onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            required
+                          >
+                            <option value="">Seleccionar dirección con descuento</option>
+                            <option value="Ctel. Oscar Quina 1333">Ctel. Oscar Quina 1333</option>
+                            <option value="Ctel. Domeyco 1540">Ctel. Domeyco 1540</option>
+                            <option value="Ctel. Av. Santa María 3000">Ctel. Av. Santa María 3000</option>
+                          </select>
+                        ) : (
+                          <AddressAutocomplete
+                            value={customerInfo.address}
+                            onChange={(address) => {
+                              setCustomerInfo({ ...customerInfo, address, addressValidated: false });
+                              setDynamicDeliveryFee(null);
+                              setDeliveryFeeLabel(null);
+                            }}
+                            placeholder="Ingresa tu dirección..."
+                            onDeliveryFee={(data) => {
+                              setCustomerInfo(prev => ({ ...prev, addressValidated: true }));
+                              setDynamicDeliveryFee(data.delivery_fee);
+                              setDeliveryFeeLabel(data.label);
+                              setDeliveryDistanceInfo({ km: data.distance_km, min: data.duration_min });
+                            }}
+                          />
+                        )}
+                      </div>
                       {deliveryFeeLabel && (
-                        <p className="text-xs text-green-700 font-semibold mt-1">{deliveryFeeLabel}</p>
+                        <div className="mt-1">
+                          <p className="text-xs text-green-700 font-semibold">{deliveryFeeLabel}</p>
+                          {deliveryDistanceInfo && (
+                            <p className="text-[10px] text-gray-500 flex items-center gap-1">
+                              📍 {deliveryDistanceInfo.km} km · ~{deliveryDistanceInfo.min} min
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
                   </>
@@ -851,6 +872,11 @@ const CheckoutApp = () => {
                         <span className="text-xs uppercase tracking-wider">Total Delivery:</span>
                         <span>${(deliveryFee + cardDeliverySurcharge).toLocaleString('es-CL')}</span>
                       </div>
+                      {deliveryDistanceInfo && (
+                        <p className="text-[10px] text-gray-400 mt-0.5 ml-5">
+                          📍 {deliveryDistanceInfo.km} km · ~{deliveryDistanceInfo.min} min
+                        </p>
+                      )}
                     </div>
                   )}
                   {pickupDiscountAmount > 0 && (
@@ -1038,5 +1064,25 @@ const CheckoutApp = () => {
     </div>
   );
 };
+
+const styles = `
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.animate-shake {
+  animation: shake 0.2s ease-in-out 0s 2;
+  border: 2px solid #ef4444 !important;
+  border-radius: 8px;
+}
+`;
+
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement("style");
+  styleSheet.innerText = styles;
+  document.head.appendChild(styleSheet);
+}
 
 export default CheckoutApp;
