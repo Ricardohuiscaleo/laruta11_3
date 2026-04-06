@@ -3394,72 +3394,75 @@ export default function App() {
                 </div>
                 <div className="space-y-2 border-t pt-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-semibold">${cartSubtotal.toLocaleString('es-CL')}</span>
+                    <span className="text-sm text-gray-600">Subtotal:</span>
+                    <span className="text-sm font-semibold text-gray-900">${cartSubtotal.toLocaleString('es-CL')}</span>
                   </div>
                   {customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 && (
-                    <>
+                    <div className="bg-gray-50 -mx-2 px-3 py-2.5 rounded-lg space-y-1.5">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600 flex items-center gap-1">
-                          <Bike size={16} className="text-red-500" /> Delivery:
+                        <span className="text-sm text-gray-600 flex items-center gap-1.5">
+                          <Bike size={15} className="text-orange-500" /> Delivery:
                         </span>
-                        <span className={customerInfo.deliveryDiscount ? "font-semibold line-through text-gray-400" : "font-semibold"}>
-                          ${deliveryFee.toLocaleString('es-CL')}
+                        <span className={customerInfo.deliveryDiscount ? "text-sm line-through text-gray-400" : "text-sm font-semibold"}>
+                          ${(dynamicDeliveryFee != null ? dynamicDeliveryFee : parseInt(nearbyTrucks[0].tarifa_delivery || 0)).toLocaleString('es-CL')}
                         </span>
                       </div>
+                      {customerInfo.deliveryDiscount && (
+                        <div className="flex justify-between items-center ml-6 text-green-600">
+                          <span className="text-xs">↳ Desc. Delivery (28%):</span>
+                          <span className="text-xs font-semibold">-${((dynamicDeliveryFee != null ? dynamicDeliveryFee : parseInt(nearbyTrucks[0].tarifa_delivery || 0)) - deliveryFee).toLocaleString('es-CL')}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center ml-6 text-red-600">
+                        <span className="text-xs">↳ 💳 Recargo tarjeta:</span>
+                        <span className="text-xs font-semibold">+$500</span>
+                      </div>
                       {deliveryDistanceInfo && (
-                        <p className="text-xs text-gray-500 mt-0.5 ml-5">
+                        <p className="text-[10px] text-gray-400 ml-6">
                           📍 {deliveryDistanceInfo.km} km · ~{deliveryDistanceInfo.min} min
                         </p>
                       )}
-                      {customerInfo.deliveryDiscount && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-green-600 text-sm">Descuento Delivery (28%):</span>
-                          <span className="font-semibold text-green-600">${Math.round(parseInt(nearbyTrucks[0].tarifa_delivery || 0) * 0.7143).toLocaleString('es-CL')}</span>
-                        </div>
-                      )}
-                    </>
+                      <div className="flex justify-between items-center pt-1.5 border-t border-gray-200">
+                        <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Total Delivery:</span>
+                        <span className="text-sm font-bold text-gray-900">${(deliveryFee + (selectedPaymentMethod === 'card' ? 500 : 0)).toLocaleString('es-CL')}</span>
+                      </div>
+                    </div>
                   )}
                   {customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-green-600 text-sm">Descuento R11 (10%):</span>
-                      <span className="font-semibold text-green-600">-${Math.round(cartSubtotal * 0.1).toLocaleString('es-CL')}</span>
+                    <div className="flex justify-between items-center bg-green-50 -mx-2 px-3 py-1.5 rounded-lg">
+                      <span className="text-green-700 text-xs font-medium">🎉 Desc. R11 (10%):</span>
+                      <span className="text-green-700 text-sm font-semibold">-${Math.round(cartSubtotal * 0.1).toLocaleString('es-CL')}</span>
                     </div>
                   )}
                   {customerInfo.discount30 && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-yellow-600 text-sm font-bold">⭐ Descuento 30%:</span>
-                      <span className="font-semibold text-yellow-600">-${Math.round(cartSubtotal * 0.3).toLocaleString('es-CL')}</span>
+                    <div className="flex justify-between items-center bg-yellow-50 -mx-2 px-3 py-1.5 rounded-lg">
+                      <span className="text-yellow-700 text-xs font-medium">⭐ Desc. 30%:</span>
+                      <span className="text-yellow-700 text-sm font-semibold">-${Math.round(cartSubtotal * 0.3).toLocaleString('es-CL')}</span>
                     </div>
                   )}
                   {customerInfo.birthdayDiscount && cart.some(item => item.id === 9) && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-green-600 text-sm">🎂 Descuento Cumpleaños:</span>
-                      <span className="font-semibold text-green-600">-${cart.find(item => item.id === 9).price.toLocaleString('es-CL')}</span>
+                    <div className="flex justify-between items-center bg-pink-50 -mx-2 px-3 py-1.5 rounded-lg">
+                      <span className="text-pink-700 text-xs font-medium">🎂 Desc. Cumpleaños:</span>
+                      <span className="text-pink-700 text-sm font-semibold">-${cart.find(item => item.id === 9).price.toLocaleString('es-CL')}</span>
                     </div>
                   )}
                   {discountCode === 'PIZZA11' && cart.some(item => item.id === 231) && (
-                    <div className="flex justify-between items-center bg-yellow-100 px-2 py-1 rounded">
-                      <span className="text-orange-600 text-sm font-bold">🍕 Descuento Pizza11 (20%):</span>
-                      <span className="font-semibold text-orange-600">-${Math.round(cart.find(item => item.id === 231).price * 0.2).toLocaleString('es-CL')}</span>
+                    <div className="flex justify-between items-center bg-orange-50 -mx-2 px-3 py-1.5 rounded-lg">
+                      <span className="text-orange-700 text-xs font-medium">🍕 Desc. Pizza11 (20%):</span>
+                      <span className="text-orange-700 text-sm font-semibold">-${Math.round(cart.find(item => item.id === 231).price * 0.2).toLocaleString('es-CL')}</span>
                     </div>
                   )}
-                  {customerInfo.deliveryType === 'delivery' && selectedPaymentMethod === 'card' && (
-                    <div className="flex justify-between items-center bg-red-50 px-2 py-1 rounded border border-red-200">
-                      <span className="text-red-600 text-sm font-bold">💳 Recargo tarjeta delivery:</span>
-                      <span className="font-semibold text-red-600">+$500</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between items-center text-lg font-bold border-t pt-2">
-                    <span>Total:</span>
-                    <span className="text-orange-500">${(() => {
+                  <div className="flex justify-between items-center border-t-2 border-orange-200 pt-3 mt-1">
+                    <span className="text-lg font-black text-gray-800">Total:</span>
+                    <span className="text-xl font-black text-orange-500">${(() => {
                       const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
                       const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
                       const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                       const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                       const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                       const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-                      const surcharge3425 = customerInfo.deliveryType === "delivery" && selectedPaymentMethod === "card" ? 500 : 0; return (cartSubtotal + deliveryFee + surcharge3425 - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
+                      const surcharge = customerInfo.deliveryType === "delivery" && selectedPaymentMethod === "card" ? 500 : 0;
+                      return (cartSubtotal + deliveryFee + surcharge - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
                     })()}</span>
                   </div>
                 </div>
