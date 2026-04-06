@@ -126,7 +126,7 @@ const CheckoutApp = () => {
     }
     if (customerInfo.address.length > 5 && dynamicDeliveryFee === null && !customerInfo.deliveryDiscount) {
       const controller = new AbortController();
-      fetch('/caja3/api/location/get_delivery_fee.php', {
+      fetch('/api/location/get_delivery_fee.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address: customerInfo.address }),

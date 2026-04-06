@@ -26,6 +26,14 @@ if (!$address) {
 
 // 1. Geocodificar dirección → lat/lng
 $api_key = $config['ruta11_google_maps_api_key'] ?? $config['google_maps_api_key'] ?? '';
+// Normalizar direcciones RL6
+$address = str_ireplace('Ctel. Oscar Quina 1333', 'Oscar Quina 1333, Arica, Chile', $address);
+$address = str_ireplace('Ctel. Domeyco 1540', 'Domeyco 1540, Arica, Chile', $address);
+$address = str_ireplace('Ctel. Av. Santa María 3000', 'Av. Santa María 3000, Arica, Chile', $address);
+// Agregar Arica si no está
+if (stripos($address, 'arica') === false) {
+    $address .= ', Arica, Chile';
+}
 $encoded = urlencode($address);
 $geo_url = "https://maps.googleapis.com/maps/api/geocode/json?address={$encoded}&key={$api_key}&language=es&region=cl";
 $geo_response = @file_get_contents($geo_url);
