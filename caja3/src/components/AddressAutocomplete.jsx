@@ -62,9 +62,16 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
     setSuggestions([]);
     setShowSuggestions(false);
     
-    // Al seleccionar de la lista, ya sabemos que es una dirección válida de Google
+    // Calcular tarifa dinámica si hay callback
     if (onDeliveryFee) {
-      onDeliveryFee({ success: true, from_select: true, address: fullAddress });
+      fetch('/api/location/get_delivery_fee.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: fullAddress })
+      })
+        .then(r => r.json())
+        .then(data => { if (data.success) onDeliveryFee(data); })
+        .catch(() => {});
     }
   };
 

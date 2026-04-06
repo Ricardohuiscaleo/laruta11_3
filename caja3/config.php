@@ -8,6 +8,9 @@ $config = [
     'google_client_id' => getenv('GOOGLE_CLIENT_ID'),
     'google_client_secret' => getenv('GOOGLE_CLIENT_SECRET'),
 
+    'ruta11_google_maps_api_key' => getenv('RUTA11_GOOGLE_MAPS_API_KEY'),
+    'google_maps_api_key' => getenv('GOOGLE_MAPS_API_KEY'),
+
     'booking_db_host' => getenv('BOOKING_DB_HOST'),
     'booking_db_name' => getenv('BOOKING_DB_NAME'),
     'booking_db_user' => getenv('BOOKING_DB_USER'),
