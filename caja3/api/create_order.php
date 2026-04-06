@@ -101,8 +101,9 @@ try {
             product_name, product_price, delivery_fee, installment_amount, 
             has_item_details, status, payment_status, payment_method, order_status, delivery_type, 
             delivery_address, pickup_time, customer_notes, 
-            subtotal, discount_amount, discount_10, discount_30, discount_birthday, discount_pizza, delivery_discount, delivery_extras, delivery_extras_items, cashback_used, tv_order_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            subtotal, discount_amount, discount_10, discount_30, discount_birthday, discount_pizza, delivery_discount, delivery_extras, delivery_extras_items, cashback_used, tv_order_id,
+            delivery_distance_km, delivery_duration_min
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $order_stmt = $pdo->prepare($order_sql);
         $order_stmt->execute([
@@ -126,7 +127,9 @@ try {
             $delivery_extras,
             $delivery_extras_items,
             $cashback_used,
-            $tv_order_id
+            $tv_order_id,
+            $dist_km,
+            $dist_min
         ]);
     } else {
         $order_sql = "INSERT INTO tuu_orders (
@@ -134,8 +137,9 @@ try {
             product_name, product_price, delivery_fee, installment_amount, 
             has_item_details, status, payment_status, payment_method, order_status, delivery_type, 
             delivery_address, pickup_time, customer_notes, 
-            subtotal, discount_amount, discount_10, discount_30, discount_birthday, discount_pizza, delivery_discount, delivery_extras, delivery_extras_items, cashback_used, tv_order_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            subtotal, discount_amount, discount_10, discount_30, discount_birthday, discount_pizza, delivery_discount, delivery_extras, delivery_extras_items, cashback_used, tv_order_id,
+            delivery_distance_km, delivery_duration_min
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $order_stmt = $pdo->prepare($order_sql);
         $order_stmt->execute([
@@ -159,7 +163,9 @@ try {
             $delivery_extras,
             $delivery_extras_items,
             $cashback_used,
-            $tv_order_id
+            $tv_order_id,
+            $dist_km,
+            $dist_min
         ]);
     }
     
