@@ -585,52 +585,45 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
             </div>
             {order.delivery_type === 'delivery' && (
               <div className="flex items-center justify-between bg-white border border-gray-200 rounded p-2">
-                <span className="text-xs font-bold text-gray-800">Envía el pedido al delivery 😎👉🏻</span>
+                <span className="text-xs font-bold text-gray-800">Enviar al rider 🚚</span>
                 <button
                   onClick={() => {
-                    // Normalizar direcciones pre-establecidas
-                    let normalizedAddress = order.delivery_address;
+                    // Normalizar direcciones
+                    let normalizedAddress = order.delivery_address || '';
                     if (normalizedAddress.toLowerCase().includes('ctel.')) {
-                      if (normalizedAddress.toLowerCase().includes('domeyco')) {
-                        normalizedAddress = 'Domeyco 1540, Arica, Chile';
-                      } else if (normalizedAddress.toLowerCase().includes('oscar quina')) {
-                        normalizedAddress = 'Oscar Quina 1333, Arica, Chile';
-                      } else if (normalizedAddress.toLowerCase().includes('santa maría') || normalizedAddress.toLowerCase().includes('santa maria')) {
-                        normalizedAddress = 'Av. Santa María 3000, Arica, Chile';
-                      }
-                    } else {
-                      // Para direcciones normales, agregar ", Arica, Chile" si no lo tiene
-                      if (!normalizedAddress.toLowerCase().includes('arica') && !normalizedAddress.toLowerCase().includes('chile')) {
-                        normalizedAddress = `${normalizedAddress}, Arica, Chile`;
-                      }
+                      if (normalizedAddress.toLowerCase().includes('domeyco')) normalizedAddress = 'Domeyco 1540, Arica, Chile';
+                      else if (normalizedAddress.toLowerCase().includes('oscar quina')) normalizedAddress = 'Oscar Quina 1333, Arica, Chile';
+                      else if (normalizedAddress.toLowerCase().includes('santa mar')) normalizedAddress = 'Av. Santa María 3000, Arica, Chile';
+                    } else if (normalizedAddress && !normalizedAddress.toLowerCase().includes('arica')) {
+                      normalizedAddress += ', Arica, Chile';
                     }
+                    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(normalizedAddress)}`;
 
-                    const address = encodeURIComponent(normalizedAddress);
-                    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${address}`;
-                    // Calcular desglose de delivery
+                    // Productos
+                    const itemsList = (order.items || []).map((it, i) => {
+                      let line = `${i + 1}. ${it.product_name} x${it.quantity} - $${parseInt(it.product_price * it.quantity).toLocaleString('es-CL')}`;
+                      const cd = it.combo_data ? JSON.parse(it.combo_data) : null;
+                      if (cd?.customizations?.length) line += '\n' + cd.customizations.map(c => `   + ${c.quantity || 1}x ${c.name}`).join('\n');
+                      return line;
+                    }).join('\n');
+
+                    const orderSubtotal = `$${parseInt(order.subtotal || order.installment_amount || 0).toLocaleString('es-CL')}`;
+                    const orderTotal = `$${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}`;
+                    const payLabels = { cash: 'Efectivo', card: 'Tarjeta (pagado)', transfer: 'Transferencia', pedidosya: 'PedidosYA', rl6_credit: 'RL6' };
+
+                    // Desglose delivery
                     const baseFee = parseInt(order.delivery_fee || 0);
-                    const deliveryDiscount = parseInt(order.delivery_discount || 0);
-                    const cardSurcharge = (order.payment_method === 'card' && order.delivery_type === 'delivery') ? 500 : 0;
-                    const finalDeliveryTotal = baseFee - deliveryDiscount + cardSurcharge;
+                    const disc = parseInt(order.delivery_discount || 0);
+                    const surcharge = (order.payment_method === 'card') ? 500 : 0;
+                    const totalDel = baseFee - disc + surcharge;
+                    let delMsg = `- Delivery: $${baseFee.toLocaleString('es-CL')}`;
+                    if (disc > 0) delMsg += `\n- Desc. (28%): -$${disc.toLocaleString('es-CL')}`;
+                    if (surcharge > 0) delMsg += `\n- Recargo tarjeta: +$500`;
+                    delMsg += `\n- *TOTAL DELIVERY: $${totalDel.toLocaleString('es-CL')}*`;
 
-                    let deliveryBreakdownMsg = `- Subtotal Delivery: $${baseFee.toLocaleString('es-CL')}`;
-                    if (deliveryDiscount > 0) {
-                      deliveryBreakdownMsg += `\n- Descuento Delivery (28%): -$${deliveryDiscount.toLocaleString('es-CL')}`;
-                    }
-                    if (cardSurcharge > 0) {
-                      deliveryBreakdownMsg += `\n- 💳 Recargo tarjeta delivery: +$${cardSurcharge.toLocaleString('es-CL')}`;
-                    }
-                    deliveryBreakdownMsg += `\n- *TOTAL DELIVERY: $${finalDeliveryTotal.toLocaleString('es-CL')}*`;
+                    const msg = `> *Pedido ${order.order_number}*\n\n*Cliente:* ${order.customer_name}\n*Tel:* ${order.customer_phone || '-'}\n\n*Productos:*\n${itemsList}\n\n*Montos:*\n- Subtotal: ${orderSubtotal}\n${delMsg}\n\n> *TOTAL: ${orderTotal}*\n\n*Pago:* ${payLabels[order.payment_method] || order.payment_method}${order.delivery_address ? `\n\n*Direccion:*\n> ${order.delivery_address}${order.delivery_distance_km ? `\n${order.delivery_distance_km} km ~ ${order.delivery_duration_min} min` : ''}\n\nMapa: ${mapsUrl}` : ''}`;
 
-                    const message = `> 🚚 *Pedido ${order.order_number}*\n\n*👤 Cliente:*\n- *Nombre:* ${order.customer_name}\n- *Teléfono:* ${order.customer_phone || 'No disponible'}\n\n*📦 Productos:*\n${items}\n\n*💰 Montos:*\n- Subtotal Productos: $${subtotal}\n${deliveryBreakdownMsg}\n\n> *💰 TOTAL A PAGAR: $${total}*\n\n${paymentInstruction}${order.delivery_address ? `\n\n*📍 Dirección:*\n> ${order.delivery_address}${order.delivery_distance_km ? `\n📏 Distancia: ${order.delivery_distance_km} km · ~${order.delivery_duration_min} min` : ''}\n\n🗺️ Ver en mapa:\n${mapsUrl}` : '\n\n⚠️ *Sin dirección registrada - consultar al cliente*'}`;
-
-                    // Debug: mostrar el mensaje completo antes de enviarlo
-                    console.log('=== MENSAJE COMPLETO PARA RIDER ===');
-                    console.log(message);
-                    console.log('=== LONGITUD DEL MENSAJE ===');
-                    console.log(message.length);
-
-                    window.location.href = `whatsapp://send?text=${encodeURIComponent(message)}`;
+                    window.location.href = `whatsapp://send?text=${encodeURIComponent(msg)}`;
                   }}
                   className="flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
                 >
@@ -673,48 +666,63 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
         <div className="mb-3 p-2 bg-white rounded">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-gray-600">Subtotal: <span className="font-semibold text-gray-800">${parseInt(order.subtotal || 0).toLocaleString('es-CL')}</span></span>
-                {order.delivery_type === 'delivery' && order.delivery_fee > 0 && (
-                  <div className="flex flex-col gap-0.5 border-l border-gray-200 pl-2 ml-2">
-                    <span className="text-[10px] text-gray-500">Delivery:</span>
-                    <span className="text-xs text-gray-600 flex justify-between gap-4">
-                      <span>Subtotal Base:</span>
-                      <span className="font-semibold">${parseInt(order.delivery_fee).toLocaleString('es-CL')}</span>
-                    </span>
-                    {order.delivery_discount > 0 && (
-                      <span className="text-xs text-green-600 flex justify-between gap-4">
-                        <span>↳ Descuento (28%):</span>
-                        <span className="font-semibold">-${parseInt(order.delivery_discount).toLocaleString('es-CL')}</span>
-                      </span>
-                    )}
-                    {order.payment_method === 'card' && (
-                      <span className="text-xs text-red-500 flex justify-between gap-4">
-                        <span>↳ 💳 Recargo Tarjeta:</span>
-                        <span className="font-semibold">+$500</span>
-                      </span>
-                    )}
-                    <div className="border-t border-gray-100 mt-1 pt-1 flex justify-between gap-4 text-xs font-bold text-gray-800">
-                      <span>Total Delivery:</span>
-                      <span>${(parseInt(order.delivery_fee) - parseInt(order.delivery_discount || 0) + (order.payment_method === 'card' ? 500 : 0)).toLocaleString('es-CL')}</span>
-                    </div>
+            <div className="flex flex-col gap-1.5 flex-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-500">Subtotal</span>
+                <span className="font-semibold text-gray-800">${parseInt(order.subtotal || 0).toLocaleString('es-CL')}</span>
+              </div>
+              {order.delivery_type === 'delivery' && order.delivery_fee > 0 && (
+                <div className="bg-gray-50 rounded p-1.5 space-y-0.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500">Delivery</span>
+                    <span className="font-semibold">${parseInt(order.delivery_fee).toLocaleString('es-CL')}</span>
                   </div>
-                )}
-                {order.discount_10 > 0 && (
-                  <span className="text-xs text-green-600 flex items-center gap-1">- ⭐10% descuento <span className="font-semibold">${parseInt(order.discount_10).toLocaleString('es-CL')}</span></span>
-                )}
-                {order.discount_30 > 0 && (
-                  <span className="text-xs text-yellow-600 flex items-center gap-1">- ⭐30% descuento <span className="font-semibold">${parseInt(order.discount_30).toLocaleString('es-CL')}</span></span>
-                )}
-                {order.discount_birthday > 0 && (
-                  <span className="text-xs text-pink-600 flex items-center gap-1">- 🎂 Cumpleaños <span className="font-semibold">${parseInt(order.discount_birthday).toLocaleString('es-CL')}</span></span>
-                )}
-                {order.discount_pizza > 0 && (
-                  <span className="text-xs text-purple-600 flex items-center gap-1">- 🍕 Pizza <span className="font-semibold">${parseInt(order.discount_pizza).toLocaleString('es-CL')}</span></span>
-                )}
-                <span className="text-xs text-gray-400">→</span>
-                <span className="text-xs text-gray-600">Total: <span className="font-bold text-green-600">${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}</span></span>
+                  {order.delivery_discount > 0 && (
+                    <div className="flex justify-between text-xs text-green-600 ml-3">
+                      <span>↳ Desc. (28%)</span>
+                      <span className="font-semibold">-${parseInt(order.delivery_discount).toLocaleString('es-CL')}</span>
+                    </div>
+                  )}
+                  {order.payment_method === 'card' && (
+                    <div className="flex justify-between text-xs text-red-500 ml-3">
+                      <span>↳ 💳 Recargo</span>
+                      <span className="font-semibold">+$500</span>
+                    </div>
+                  )}
+                  <div className="border-t border-gray-200 mt-1 pt-1 flex justify-between text-xs font-bold text-gray-800">
+                    <span>Total Delivery</span>
+                    <span>${(parseInt(order.delivery_fee) - parseInt(order.delivery_discount || 0) + (order.payment_method === 'card' ? 500 : 0)).toLocaleString('es-CL')}</span>
+                  </div>
+                </div>
+              )}
+              {order.discount_10 > 0 && (
+                <div className="flex justify-between text-xs text-green-600">
+                  <span>⭐ Desc. 10%</span>
+                  <span className="font-semibold">-${parseInt(order.discount_10).toLocaleString('es-CL')}</span>
+                </div>
+              )}
+              {order.discount_30 > 0 && (
+                <div className="flex justify-between text-xs text-yellow-600">
+                  <span>⭐ Desc. 30%</span>
+                  <span className="font-semibold">-${parseInt(order.discount_30).toLocaleString('es-CL')}</span>
+                </div>
+              )}
+              {order.discount_birthday > 0 && (
+                <div className="flex justify-between text-xs text-pink-600">
+                  <span>🎂 Cumpleaños</span>
+                  <span className="font-semibold">-${parseInt(order.discount_birthday).toLocaleString('es-CL')}</span>
+                </div>
+              )}
+              {order.discount_pizza > 0 && (
+                <div className="flex justify-between text-xs text-purple-600">
+                  <span>🍕 Pizza</span>
+                  <span className="font-semibold">-${parseInt(order.discount_pizza).toLocaleString('es-CL')}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-orange-200 pt-1.5 mt-0.5">
+                <span className="text-sm font-bold text-gray-800">Total</span>
+                <span className="text-sm font-black text-orange-500">${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}</span>
+              </div>
               </div>
               <div className="flex items-center gap-1 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded w-fit">
                 {getPaymentIcon(order.payment_method)}
