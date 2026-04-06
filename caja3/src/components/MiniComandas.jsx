@@ -723,6 +723,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                 <span className="text-sm font-bold text-gray-800">Total</span>
                 <span className="text-sm font-black text-orange-500">${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}</span>
               </div>
+            </div>
           </div>
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center gap-1 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded w-fit">
@@ -734,7 +735,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
               <span>{isPaid ? 'Pagado' : 'Pendiente'}</span>
             </div>
           </div>
-        </div>
+
           {tuuCallbackFailed && (
             <div className="mt-2 bg-white border-2 border-red-500 p-2 rounded">
               <div className="flex items-center justify-between">
