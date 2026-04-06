@@ -74,6 +74,7 @@ const CheckoutApp = ({ onClose }) => {
   const [loadingRL6, setLoadingRL6] = useState(false);
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
   const [shakesAddress, setShakesAddress] = useState(false);
+  const [formErrors, setFormErrors] = useState([]); // Array de campos con error
 
   // Verificar si es militar RL6 aprobado (loose equality para manejar strings y numbers)
   const isMilitarRL6 = (user?.es_militar_rl6 == 1 || user?.es_militar_rl6 === '1') &&
@@ -398,16 +399,42 @@ const CheckoutApp = ({ onClose }) => {
   const subtotalAfterDiscounts = cartSubtotal - discountAmount - cashbackAmount;
   const finalTotal = subtotalAfterDiscounts + finalDeliveryCost + deliveryExtrasTotal + cardDeliverySurcharge;
 
-  useEffect(() => {
-    setCartTotal(finalTotal);
-  }, [finalTotal]);
+   const validateForm = () => {
+     const errors = [];
+     if (!customerInfo.name || customerInfo.name.trim().length < 2) errors.push('name');
+     // Validar teléfono: no vacío y al menos 9 dígitos
+     if (!customerInfo.phone || customerInfo.phone.replace(/\D/g, '').length < 9) errors.push('phone');
+
+     if (customerInfo.deliveryType === 'delivery') {
+       if (!deliveryDiscountActive && !customerInfo.addressValidated) {
+         errors.push('address');
+         setShakesAddress(true);
+         setTimeout(() => setShakesAddress(false), 500);
+       } else if (deliveryDiscountActive && !customerInfo.address) {
+         errors.push('address');
+       }
+     }
+
+     if (customerInfo.deliveryType === 'pickup' && !customerInfo.pickupTime) {
+       errors.push('pickupTime');
+     }
+
+     setFormErrors(errors);
+
+     if (errors.length > 0) {
+       vibrate(200); // Si la función vibrate está disponible globally o la importamos
+       return false;
+     }
+
+     return true;
+   };
+
+   useEffect(() => {
+     setCartTotal(finalTotal);
+   }, [finalTotal]);
 
   const handleTUUPayment = async () => {
-    // Validar dirección con descuento RL6
-    if (deliveryDiscountActive && customerInfo.deliveryType === 'delivery' && !customerInfo.address) {
-      alert('⚠️ Por favor selecciona una dirección con descuento');
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       // PASO 0: Usar cashback si aplica
@@ -587,16 +614,7 @@ const CheckoutApp = ({ onClose }) => {
   };
 
   const proceedToPayment = () => {
-    if (!customerInfo.name || !customerInfo.phone) {
-      alert('Por favor completa tu nombre y teléfono');
-      return;
-    }
-
-    // Validar dirección con descuento RL6
-    if (deliveryDiscountActive && customerInfo.deliveryType === 'delivery' && !customerInfo.address) {
-      alert('⚠️ Por favor selecciona una dirección con descuento');
-      return;
-    }
+    if (!validateForm()) return;
 
     // Check if within business hours (SOLO para usuarios regulares)
     if (!businessStatus.isOpen && !scheduledTime && !isMilitarRL6) {
@@ -982,9 +1000,11 @@ const CheckoutApp = ({ onClose }) => {
                   <input
                     type="text"
                     value={customerInfo.name}
-                    onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none ${user ? 'border-gray-200 bg-gray-50 text-gray-600 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-orange-500'
-                      }`}
+                    onChange={(e) => {
+                      setCustomerInfo({ ...customerInfo, name: e.target.value });
+                      if (formErrors.includes('name')) setFormErrors(prev => prev.filter(err => err !== 'name'));
+                    }}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none ${formErrors.includes('name') ? 'border-red-500 bg-red-50 animate-shake' : (user ? 'border-gray-200 bg-gray-50 text-gray-600 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-orange-500')}`}
                     placeholder="Tu nombre completo"
                     readOnly={!!user}
                     required
@@ -998,8 +1018,11 @@ const CheckoutApp = ({ onClose }) => {
                   <input
                     type="tel"
                     value={customerInfo.phone}
-                    onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    onChange={(e) => {
+                      setCustomerInfo({ ...customerInfo, phone: e.target.value });
+                      if (formErrors.includes('phone')) setFormErrors(prev => prev.filter(err => err !== 'phone'));
+                    }}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none ${formErrors.includes('phone') ? 'border-red-500 bg-red-50 animate-shake' : 'border-gray-300 focus:ring-2 focus:ring-orange-500'}`}
                     placeholder="+56 9 1234 5678"
                     required
                   />
@@ -1160,10 +1183,12 @@ const CheckoutApp = ({ onClose }) => {
                         <AddressAutocomplete
                           value={customerInfo.address}
                           addressValidated={customerInfo.addressValidated}
+                          hasError={formErrors.includes('address')}
                           onChange={(address) => { 
                             setCustomerInfo({ ...customerInfo, address, addressValidated: false }); 
                             setDynamicDeliveryFee(null); 
                             setDeliveryFeeLabel(null); 
+                            if (formErrors.includes('address')) setFormErrors(prev => prev.filter(err => err !== 'address'));
                           }}
                           placeholder="Escribe tu dirección..."
                           onDeliveryFee={(data) => { 
@@ -1217,8 +1242,11 @@ const CheckoutApp = ({ onClose }) => {
                     </label>
                     <select
                       value={customerInfo.pickupTime}
-                      onChange={(e) => setCustomerInfo({ ...customerInfo, pickupTime: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      onChange={(e) => {
+                        setCustomerInfo({ ...customerInfo, pickupTime: e.target.value });
+                        if (formErrors.includes('pickupTime')) setFormErrors(prev => prev.filter(err => err !== 'pickupTime'));
+                      }}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none ${formErrors.includes('pickupTime') ? 'border-red-500 bg-red-50 animate-shake' : 'border-gray-300 focus:ring-2 focus:ring-orange-500'}`}
                       required
                     >
                       <option value="">Seleccionar horario</option>

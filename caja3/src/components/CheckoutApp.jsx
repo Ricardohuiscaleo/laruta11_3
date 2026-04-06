@@ -36,6 +36,7 @@ const CheckoutApp = () => {
   const [deliveryFeeLabel, setDeliveryFeeLabel] = useState(null);
   const [deliveryDistanceInfo, setDeliveryDistanceInfo] = useState(null);
   const [shakesAddress, setShakesAddress] = useState(false);
+  const [formErrors, setFormErrors] = useState([]); // Array de campos con error
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -140,19 +141,34 @@ const CheckoutApp = () => {
     setCartTotal(finalTotal);
   }, [finalTotal, customerInfo.deliveryType, deliveryFee, cartSubtotal, nearbyTrucks]);
 
-  const validateDeliveryAddress = () => {
-    if (customerInfo.deliveryType === 'delivery' && !customerInfo.deliveryDiscount && !customerInfo.addressValidated) {
-      setShakesAddress(true);
+  const validateForm = () => {
+    const errors = [];
+    if (!customerInfo.name || customerInfo.name.trim().length < 2) errors.push('name');
+    // Validar teléfono: en Caja3 también debería ser obligatorio para contacto
+    if (!customerInfo.phone || customerInfo.phone.replace(/\D/g, '').length < 9) errors.push('phone');
+
+    if (customerInfo.deliveryType === 'delivery') {
+      if (!customerInfo.deliveryDiscount && !customerInfo.addressValidated) {
+        errors.push('address');
+        setShakesAddress(true);
+        setTimeout(() => setShakesAddress(false), 500);
+      } else if (customerInfo.deliveryDiscount && !customerInfo.address) {
+        errors.push('address');
+      }
+    }
+
+    setFormErrors(errors);
+
+    if (errors.length > 0) {
       vibrate(200);
-      setTimeout(() => setShakesAddress(false), 500);
-      alert('⚠️ Dirección no válida. Debes seleccionar una dirección de la lista de sugerencias para calcular la tarifa correcta.');
       return false;
     }
+
     return true;
   };
 
   const handleTUUPayment = async () => {
-    if (!validateDeliveryAddress()) return;
+    if (!validateForm()) return;
     try {
       // PASO 1: Crear el pago y obtener order_id
       const paymentData = {
@@ -214,17 +230,7 @@ const CheckoutApp = () => {
     setPaymentMethod('card');
     if (isProcessing) return;
 
-    if (!customerInfo.name) {
-      alert('Por favor completa tu nombre');
-      return;
-    }
-
-    if (customerInfo.deliveryType === 'delivery' && !customerInfo.address) {
-      alert('Por favor ingresa la dirección de entrega');
-      return;
-    }
-
-    if (!validateDeliveryAddress()) return;
+    if (!validateForm()) return;
 
     setIsProcessing(true);
     try {
@@ -267,12 +273,7 @@ const CheckoutApp = () => {
 
   const handleCashPayment = () => {
     setPaymentMethod('cash');
-    if (!customerInfo.name) {
-      alert('Por favor completa tu nombre');
-      return;
-    }
-
-    if (!validateDeliveryAddress()) return;
+    if (!validateForm()) return;
 
     setShowCashModal(true);
     setCashAmount('');
@@ -368,13 +369,7 @@ const CheckoutApp = () => {
 
   const handlePedidosYAPayment = async () => {
     if (isProcessing) return;
-
-    if (!customerInfo.name) {
-      alert('Por favor completa tu nombre');
-      return;
-    }
-
-    if (!validateDeliveryAddress()) return;
+    if (!validateForm()) return;
 
     setIsProcessing(true);
     try {
@@ -417,13 +412,7 @@ const CheckoutApp = () => {
 
   const handleTransferPayment = async () => {
     if (isProcessing) return;
-
-    if (customerInfo.deliveryType === 'delivery' && !customerInfo.address) {
-      alert('Por favor ingresa la dirección de entrega');
-      return;
-    }
-
-    if (!validateDeliveryAddress()) return;
+    if (!validateForm()) return;
 
     setIsProcessing(true);
     try {
@@ -644,9 +633,11 @@ const CheckoutApp = () => {
                   <input
                     type="text"
                     value={customerInfo.name}
-                    onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none ${user ? 'border-gray-200 bg-gray-50 text-gray-600 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-orange-500'
-                      }`}
+                    onChange={(e) => {
+                      setCustomerInfo({ ...customerInfo, name: e.target.value });
+                      if (formErrors.includes('name')) setFormErrors(prev => prev.filter(err => err !== 'name'));
+                    }}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none ${formErrors.includes('name') ? 'border-red-500 bg-red-50 animate-shake' : (user ? 'border-gray-200 bg-gray-50 text-gray-600 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-orange-500')}`}
                     placeholder="Tu nombre completo"
                     readOnly={!!user}
                     required
@@ -660,8 +651,11 @@ const CheckoutApp = () => {
                   <input
                     type="tel"
                     value={customerInfo.phone}
-                    onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    onChange={(e) => {
+                      setCustomerInfo({ ...customerInfo, phone: e.target.value });
+                      if (formErrors.includes('phone')) setFormErrors(prev => prev.filter(err => err !== 'phone'));
+                    }}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none ${formErrors.includes('phone') ? 'border-red-500 bg-red-50 animate-shake' : 'border-gray-300 focus:ring-2 focus:ring-orange-500'}`}
                     placeholder="+56 9 1234 5678"
                   />
                 </div>
@@ -709,10 +703,12 @@ const CheckoutApp = () => {
                           <AddressAutocomplete
                             value={customerInfo.address}
                             addressValidated={customerInfo.addressValidated}
+                            hasError={formErrors.includes('address')}
                             onChange={(address) => {
                               setCustomerInfo({ ...customerInfo, address, addressValidated: false });
                               setDynamicDeliveryFee(null);
                               setDeliveryFeeLabel(null);
+                              if (formErrors.includes('address')) setFormErrors(prev => prev.filter(err => err !== 'address'));
                             }}
                             placeholder="Ingresa tu dirección..."
                             onDeliveryFee={(data) => {
