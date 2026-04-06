@@ -115,7 +115,9 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   };
 
   const getTimeElapsed = (createdAt) => {
-    const created = new Date(createdAt + ' UTC');
+    if (!createdAt) return 0;
+    const created = new Date(createdAt.replace(' ', 'T') + 'Z');
+    if (isNaN(created.getTime())) return 0;
     const diffMs = currentTime - created.getTime();
     const totalSeconds = Math.floor(diffMs / 1000);
     return Math.max(0, totalSeconds);
@@ -576,7 +578,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                        <span className="font-bold text-red-600 text-[10px]">PROGRAMADO A LAS: {order.pickup_time.substring(0, 5)}</span>
                     </div>
                   ) : !isScheduled && order.created_at && (
-                    <><Clock size={12} /><span>{new Date(order.created_at + ' UTC').toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' })}</span></>
+                    <><Clock size={12} /><span>{new Date(order.created_at.replace(' ', 'T') + 'Z').toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' })}</span></>
                   )}
                   {order.delivery_address && <span className="font-semibold text-blue-900">• {order.delivery_address}</span>}
                   {order.delivery_distance_km && (
@@ -640,7 +642,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
             <div className="flex items-center gap-2 text-green-800">
               <span className="font-medium">🎖️ Retirado en Cuartel RL6</span>
               {!isScheduled && order.created_at && (
-                <><Clock size={12} /><span>{new Date(order.created_at + ' UTC').toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' })}</span></>
+                <><Clock size={12} /><span>{new Date(order.created_at.replace(' ', 'T') + 'Z').toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' })}</span></>
               )}
             </div>
           </div>
@@ -659,7 +661,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                 <Store size={14} className="text-green-600" />
                 <span>Retiro Inmediato</span>
                 {order.created_at && (
-                  <><Clock size={14} className="text-gray-500" /><span>Recibido {new Date(order.created_at + ' UTC').toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' })}</span></>
+                  <><Clock size={14} className="text-gray-500" /><span>Recibido {new Date(order.created_at.replace(' ', 'T') + 'Z').toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' })}</span></>
                 )}
               </>
             )}
