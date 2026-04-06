@@ -482,23 +482,23 @@ function CartModal({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
 
         <div className="bg-white border-t sticky bottom-0" style={{ padding: 'clamp(12px, 3vw, 16px)' }}>
           {customerInfo.deliveryType === 'delivery' && currentDeliveryFee > 0 && (
-            <div className="mb-2 space-y-1">
+            <div className="mb-2 space-y-1.5">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">Subtotal</span>
-                <span className="font-medium">${cartSubtotal.toLocaleString('es-CL')}</span>
+                <span className="text-gray-500">Subtotal</span>
+                <span className="font-medium text-gray-800">${cartSubtotal.toLocaleString('es-CL')}</span>
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600 flex items-center gap-1">
-                  <Truck size={14} />
+              <div className="flex justify-between items-center text-sm bg-gray-50 -mx-1 px-2 py-1.5 rounded-lg">
+                <span className="text-gray-500 flex items-center gap-1.5">
+                  <Truck size={14} className="text-orange-500" />
                   Delivery
                 </span>
-                <span className="font-medium text-blue-600">${currentDeliveryFee.toLocaleString('es-CL')}</span>
+                <span className="font-semibold text-gray-800">${currentDeliveryFee.toLocaleString('es-CL')}</span>
               </div>
             </div>
           )}
-          <div className="flex justify-between items-center mb-3 pt-2 border-t">
-            <span className="font-medium text-gray-600" style={{ fontSize: 'clamp(14px, 3.5vw, 18px)' }}>Total</span>
-            <span className="font-bold text-gray-800" style={{ fontSize: 'clamp(18px, 5vw, 24px)' }}>${finalTotal.toLocaleString('es-CL')}</span>
+          <div className="flex justify-between items-center mb-3 pt-2 border-t-2 border-orange-200">
+            <span className="font-bold text-gray-700" style={{ fontSize: 'clamp(14px, 3.5vw, 18px)' }}>Total</span>
+            <span className="font-black text-orange-500" style={{ fontSize: 'clamp(18px, 5vw, 24px)' }}>${finalTotal.toLocaleString('es-CL')}</span>
           </div>
 
           {!showCheckoutSection ? (

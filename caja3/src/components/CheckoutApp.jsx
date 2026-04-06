@@ -876,60 +876,63 @@ const CheckoutApp = () => {
                 })}
               </div>
 
-              <div className="border-t pt-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center font-semibold">
-                    <span className="text-gray-700">Subtotal productos:</span>
-                    <span className="text-gray-900">${(cartSubtotal || 0).toLocaleString('es-CL')}</span>
+              <div className="border-t-2 border-gray-200 pt-4 mt-2">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Subtotal:</span>
+                    <span className="text-sm font-semibold text-gray-900">${(cartSubtotal || 0).toLocaleString('es-CL')}</span>
                   </div>
+
                   {baseDeliveryFee > 0 && (
-                    <div className="border-t border-gray-50 pt-2 mt-2">
+                    <div className="bg-gray-50 -mx-2 px-3 py-2.5 rounded-lg space-y-1.5">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600 flex items-center gap-1 font-medium">
-                          <Bike size={16} className="text-red-500" /> Subtotal Delivery:
+                        <span className="text-sm text-gray-600 flex items-center gap-1.5">
+                          <Bike size={15} className="text-orange-500" /> Delivery:
                         </span>
-                        <span className={customerInfo.deliveryDiscount ? "font-semibold line-through text-gray-400" : "font-semibold"}>
+                        <span className={customerInfo.deliveryDiscount ? "text-sm line-through text-gray-400" : "text-sm font-semibold"}>
                           ${(baseDeliveryFee || 0).toLocaleString('es-CL')}
                         </span>
                       </div>
                       {customerInfo.deliveryDiscount && (
-                        <div className="flex justify-between items-center ml-5 text-green-600">
-                          <span className="text-sm">↳ Descuento Delivery (28%):</span>
-                          <span className="font-semibold">-${((baseDeliveryFee || 0) - (deliveryFee || 0)).toLocaleString('es-CL')}</span>
+                        <div className="flex justify-between items-center ml-6 text-green-600">
+                          <span className="text-xs">↳ Desc. Delivery (28%):</span>
+                          <span className="text-xs font-semibold">-${((baseDeliveryFee || 0) - (deliveryFee || 0)).toLocaleString('es-CL')}</span>
                         </div>
                       )}
                       {cardDeliverySurcharge > 0 && (
-                        <div className="flex justify-between items-center ml-5 text-red-600">
-                          <span className="text-sm">↳ 💳 Recargo tarjeta delivery:</span>
-                          <span className="font-semibold">+$500</span>
+                        <div className="flex justify-between items-center ml-6 text-red-600">
+                          <span className="text-xs">↳ 💳 Recargo tarjeta:</span>
+                          <span className="text-xs font-semibold">+$500</span>
                         </div>
                       )}
-                      <div className="flex justify-between items-center ml-5 pt-1 font-bold text-gray-800">
-                        <span className="text-xs uppercase tracking-wider">Total Delivery:</span>
-                        <span>${((deliveryFee || 0) + (cardDeliverySurcharge || 0)).toLocaleString('es-CL')}</span>
-                      </div>
                       {deliveryDistanceInfo && (
-                        <p className="text-[10px] text-gray-400 mt-0.5 ml-5">
+                        <p className="text-[10px] text-gray-400 ml-6">
                           📍 {deliveryDistanceInfo.km} km · ~{deliveryDistanceInfo.min} min
                         </p>
                       )}
+                      <div className="flex justify-between items-center pt-1.5 border-t border-gray-200">
+                        <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Total Delivery:</span>
+                        <span className="text-sm font-bold text-gray-900">${((deliveryFee || 0) + (cardDeliverySurcharge || 0)).toLocaleString('es-CL')}</span>
+                      </div>
                     </div>
                   )}
+
                   {pickupDiscountAmount > 0 && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-green-600 text-sm font-medium">🎉 Descuento Compra Local (10%):</span>
-                      <span className="font-semibold">-${pickupDiscountAmount.toLocaleString('es-CL')}</span>
+                    <div className="flex justify-between items-center bg-green-50 -mx-2 px-3 py-1.5 rounded-lg">
+                      <span className="text-green-700 text-xs font-medium">🎉 Desc. Compra Local (10%):</span>
+                      <span className="text-green-700 text-sm font-semibold">-${pickupDiscountAmount.toLocaleString('es-CL')}</span>
                     </div>
                   )}
                   {birthdayDiscountAmount > 0 && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-green-600 text-sm font-medium">🎂 Descuento Cumpleaños:</span>
-                      <span className="font-semibold">-${birthdayDiscountAmount.toLocaleString('es-CL')}</span>
+                    <div className="flex justify-between items-center bg-pink-50 -mx-2 px-3 py-1.5 rounded-lg">
+                      <span className="text-pink-700 text-xs font-medium">🎂 Desc. Cumpleaños:</span>
+                      <span className="text-pink-700 text-sm font-semibold">-${birthdayDiscountAmount.toLocaleString('es-CL')}</span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center text-xl font-black border-t-2 border-gray-100 pt-3 mt-2">
-                    <span className="text-gray-800">TOTAL A PAGAR:</span>
-                    <span className="text-orange-500">${(cartTotal || 0).toLocaleString('es-CL')}</span>
+
+                  <div className="flex justify-between items-center border-t-2 border-orange-200 pt-3 mt-1">
+                    <span className="text-lg font-black text-gray-800">Total:</span>
+                    <span className="text-xl font-black text-orange-500">${(cartTotal || 0).toLocaleString('es-CL')}</span>
                   </div>
                 </div>
               </div>

@@ -10,6 +10,7 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
   const debounceTimer = useRef(null);
   const inputRef = useRef(null);
   const wrapperRef = useRef(null);
+  const selectedFromList = useRef(false);
 
   const updateRect = () => {
     if (inputRef.current) setRect(inputRef.current.getBoundingClientRect());
@@ -41,22 +42,22 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
   };
 
   const handleInputChange = (e) => {
+    selectedFromList.current = false;
     onChange(e.target.value);
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => fetchSuggestions(e.target.value), 300);
   };
 
   const handleBlur = () => {
-    // Si el usuario sale del input sin haber seleccionado una sugerencia válida (addressValidated es false),
-    // limpiamos el input para obligar a usar el listado.
     setTimeout(() => {
-      if (!addressValidated && value) {
+      if (!selectedFromList.current && !addressValidated && value) {
         onChange('');
       }
     }, 200);
   };
 
   const handleSelect = (suggestion) => {
+    selectedFromList.current = true;
     const fullAddress = suggestion.description;
     onChange(fullAddress);
     setSuggestions([]);
