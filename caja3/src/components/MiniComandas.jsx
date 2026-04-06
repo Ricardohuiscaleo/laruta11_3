@@ -607,69 +607,22 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
                     const address = encodeURIComponent(normalizedAddress);
                     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${address}`;
-                    // Calcular delivery fee real (con descuento aplicado)
-                    const deliveryFeeReal = parseInt(order.delivery_fee) - parseInt(order.delivery_discount || 0);
-                    const subtotal = parseInt(order.subtotal || 0).toLocaleString('es-CL');
-                    const deliveryFee = deliveryFeeReal.toLocaleString('es-CL');
-                    const total = parseInt(order.installment_amount || 0).toLocaleString('es-CL');
+                    // Calcular desglose de delivery
+                    const baseFee = parseInt(order.delivery_fee || 0);
+                    const deliveryDiscount = parseInt(order.delivery_discount || 0);
+                    const cardSurcharge = (order.payment_method === 'card' && order.delivery_type === 'delivery') ? 500 : 0;
+                    const finalDeliveryTotal = baseFee - deliveryDiscount + cardSurcharge;
 
-                    // Construir lista de productos desde items array
-                    const items = order.items?.map(item => {
-                      const isCombo = item.item_type === 'combo' && item.combo_data;
-                      let itemText = `${item.quantity}x ${item.product_name}`;
-
-                      if (isCombo) {
-                        try {
-                          const comboData = JSON.parse(item.combo_data);
-                          if (comboData.fixed_items) {
-                            itemText += '\n  Incluye:';
-                            comboData.fixed_items.forEach(fixed => {
-                              itemText += `\n  • ${item.quantity}x ${fixed.product_name}`;
-                            });
-                          }
-                          if (comboData.selections) {
-                            Object.entries(comboData.selections).forEach(([group, selection]) => {
-                              if (selection && selection.name) {
-                                itemText += `\n  • ${item.quantity}x ${selection.name}`;
-                              }
-                            });
-                          }
-                        } catch (e) {
-                          // Si falla el parsing, usar solo el nombre del producto
-                        }
-                      }
-
-                      return itemText;
-                    }).join('\n\n') || order.product_name;
-
-                    // Determinar instrucción de pago
-                    let paymentInstruction = '';
-                    const isPaid = order.payment_status === 'paid';
-                    if (isPaid) {
-                      paymentInstruction = '✅ *YA ESTÁ PAGADO*';
-                    } else {
-                      switch (order.payment_method) {
-                        case 'card':
-                          paymentInstruction = '💳 *Tarjeta* - No olvides llevar máquina de pagos';
-                          break;
-                        case 'cash':
-                          paymentInstruction = '💵 *Efectivo* - No olvides llevar vuelto';
-                          break;
-                        case 'webpay':
-                          paymentInstruction = '💻 *Webpay* - Ya está pagado';
-                          break;
-                        case 'credit':
-                          paymentInstruction = '🏦 *Crédito* - Ya está pagado';
-                          break;
-                        case 'transfer':
-                          paymentInstruction = '🔄 *Transferencia* - Preguntar en caja si está pagado';
-                          break;
-                        default:
-                          paymentInstruction = `💰 *${order.payment_method}*`;
-                      }
+                    let deliveryBreakdownMsg = `- Subtotal Delivery: $${baseFee.toLocaleString('es-CL')}`;
+                    if (deliveryDiscount > 0) {
+                      deliveryBreakdownMsg += `\n- Descuento Delivery (28%): -$${deliveryDiscount.toLocaleString('es-CL')}`;
                     }
+                    if (cardSurcharge > 0) {
+                      deliveryBreakdownMsg += `\n- 💳 Recargo tarjeta delivery: +$${cardSurcharge.toLocaleString('es-CL')}`;
+                    }
+                    deliveryBreakdownMsg += `\n- *TOTAL DELIVERY: $${finalDeliveryTotal.toLocaleString('es-CL')}*`;
 
-                    const message = `> 🚚 *Pedido ${order.order_number}*\n\n*👤 Cliente:*\n- *Nombre:* ${order.customer_name}\n- *Teléfono:* ${order.customer_phone || 'No disponible'}\n\n*📦 Productos:*\n${items}\n\n*💰 Montos:*\n- Subtotal: $${subtotal}\n- Delivery: $${deliveryFee}\n\n> *💰 TOTAL: $${total}*\n\n${paymentInstruction}${order.delivery_address ? `\n\n*📍 Dirección:*\n> ${order.delivery_address}${order.delivery_distance_km ? `\n📏 Distancia: ${order.delivery_distance_km} km · ~${order.delivery_duration_min} min` : ''}\n\n🗺️ Ver en mapa:\n${mapsUrl}` : '\n\n⚠️ *Sin dirección registrada - consultar al cliente*'}`;
+                    const message = `> 🚚 *Pedido ${order.order_number}*\n\n*👤 Cliente:*\n- *Nombre:* ${order.customer_name}\n- *Teléfono:* ${order.customer_phone || 'No disponible'}\n\n*📦 Productos:*\n${items}\n\n*💰 Montos:*\n- Subtotal Productos: $${subtotal}\n${deliveryBreakdownMsg}\n\n> *💰 TOTAL A PAGAR: $${total}*\n\n${paymentInstruction}${order.delivery_address ? `\n\n*📍 Dirección:*\n> ${order.delivery_address}${order.delivery_distance_km ? `\n📏 Distancia: ${order.delivery_distance_km} km · ~${order.delivery_duration_min} min` : ''}\n\n🗺️ Ver en mapa:\n${mapsUrl}` : '\n\n⚠️ *Sin dirección registrada - consultar al cliente*'}`;
 
                     // Debug: mostrar el mensaje completo antes de enviarlo
                     console.log('=== MENSAJE COMPLETO PARA RIDER ===');
@@ -724,23 +677,28 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs text-gray-600">Subtotal: <span className="font-semibold text-gray-800">${parseInt(order.subtotal || 0).toLocaleString('es-CL')}</span></span>
                 {order.delivery_type === 'delivery' && order.delivery_fee > 0 && (
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-xs text-orange-600 flex items-center gap-1">+ <Bike size={12} /> <span className="font-semibold">${parseInt(order.delivery_fee - (order.delivery_discount || 0)).toLocaleString('es-CL')}</span></span>
+                  <div className="flex flex-col gap-0.5 border-l border-gray-200 pl-2 ml-2">
+                    <span className="text-[10px] text-gray-500">Delivery:</span>
+                    <span className="text-xs text-gray-600 flex justify-between gap-4">
+                      <span>Subtotal Base:</span>
+                      <span className="font-semibold">${parseInt(order.delivery_fee).toLocaleString('es-CL')}</span>
+                    </span>
+                    {order.delivery_discount > 0 && (
+                      <span className="text-xs text-green-600 flex justify-between gap-4">
+                        <span>↳ Descuento (28%):</span>
+                        <span className="font-semibold">-${parseInt(order.delivery_discount).toLocaleString('es-CL')}</span>
+                      </span>
+                    )}
                     {order.payment_method === 'card' && (
-                      <span className="text-xs text-red-500 flex items-center gap-1">💳 <span>+$500 recargo tarjeta</span></span>
+                      <span className="text-xs text-red-500 flex justify-between gap-4">
+                        <span>↳ 💳 Recargo Tarjeta:</span>
+                        <span className="font-semibold">+$500</span>
+                      </span>
                     )}
-                    {order.delivery_extras_items && (
-                      <div className="flex flex-col gap-0.5 pl-4 border-l border-orange-200">
-                        {(() => {
-                          try {
-                            const extras = JSON.parse(order.delivery_extras_items);
-                            return Array.isArray(extras) ? extras.map((ex, i) => (
-                              <span key={i} className="text-[9px] text-orange-700 italic flex items-center gap-1">• {ex.name} (+${parseInt(ex.price).toLocaleString('es-CL')})</span>
-                            )) : null;
-                          } catch (e) { return null; }
-                        })()}
-                      </div>
-                    )}
+                    <div className="border-t border-gray-100 mt-1 pt-1 flex justify-between gap-4 text-xs font-bold text-gray-800">
+                      <span>Total Delivery:</span>
+                      <span>${(parseInt(order.delivery_fee) - parseInt(order.delivery_discount || 0) + (order.payment_method === 'card' ? 500 : 0)).toLocaleString('es-CL')}</span>
+                    </div>
                   </div>
                 )}
                 {order.discount_10 > 0 && (

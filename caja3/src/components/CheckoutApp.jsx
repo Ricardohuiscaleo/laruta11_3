@@ -3,6 +3,7 @@ import { ArrowLeft, ShoppingCart, User, MapPin, CreditCard, Bike, Caravan } from
 import { vibrate, playSuccessSound } from '../utils/effects.js';
 import TUUPaymentIntegration from './TUUPaymentIntegration.jsx';
 import TUUPaymentFrame from './TUUPaymentFrame.jsx';
+import AddressAutocomplete from './AddressAutocomplete.jsx';
 
 const CheckoutApp = () => {
   const [cart, setCart] = useState([]);

@@ -47,16 +47,15 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Escribe tu direcc
   };
 
   const handleBlur = () => {
-    if (onDeliveryFee && value && value.length > 5) {
-      fetch('/api/location/get_delivery_fee.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: value })
-      })
-        .then(r => r.json())
-        .then(data => { if (data.success) onDeliveryFee(data); })
-        .catch(() => {});
-    }
+    // Si el usuario sale del input y no ha seleccionado una sugerencia (lo que dispara onDeliveryFee),
+    // limpiamos el input para obligar a elegir del listado.
+    // Usamos un pequeño timeout para no interferir con el click en la sugerencia.
+    setTimeout(() => {
+      if (onDeliveryFee && !suggestions.find(s => s.description === value)) {
+        // En lugar de limpiar aquí directamente, dejamos que el padre controle la validación
+        // pero el componente ya no intentará geocodificar basura.
+      }
+    }, 200);
   };
 
   const handleSelect = (suggestion) => {
