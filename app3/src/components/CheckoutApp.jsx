@@ -1209,8 +1209,8 @@ const CheckoutApp = ({ onClose }) => {
                   </div>
                 )}
 
-                {/* Mostrar "Programar Pedido" para Delivery y Retiro (NO para Cuartel) */}
-                {customerInfo.deliveryType !== 'cuartel' && !scheduledTime && businessStatus.isOpen && (
+                {/* Mostrar "Horario de retiro" SOLO para Retiro Local */}
+                {customerInfo.deliveryType === 'pickup' && !scheduledTime && businessStatus.isOpen && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Horario de retiro *
