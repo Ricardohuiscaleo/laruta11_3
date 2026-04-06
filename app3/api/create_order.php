@@ -41,6 +41,21 @@ try {
         throw new Exception('Carrito vacío');
     }
     
+    // Protección anti-duplicados: verificar si ya existe una orden reciente del mismo cliente con mismo monto
+    $pdo_check = new PDO(
+        "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
+        $config['app_db_user'],
+        $config['app_db_pass'],
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+    $dup_stmt = $pdo_check->prepare("SELECT order_number FROM tuu_orders WHERE customer_name = ? AND installment_amount = ? AND created_at > DATE_SUB(NOW(), INTERVAL 30 SECOND) LIMIT 1");
+    $dup_stmt->execute([trim($input['customer_name']), round($input['amount'])]);
+    $dup_order = $dup_stmt->fetch(PDO::FETCH_ASSOC);
+    if ($dup_order) {
+        echo json_encode(['success' => true, 'order_id' => $dup_order['order_number'], 'duplicate' => true]);
+        exit;
+    }
+    
     $amount = round($input['amount']);
     $customer_name = trim($input['customer_name']);
     $customer_phone = trim($input['customer_phone']);

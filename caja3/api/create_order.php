@@ -27,6 +27,21 @@ if (!$config) {
 try {
     $input = json_decode(file_get_contents('php://input'), true);
     
+    // Protección anti-duplicados: verificar si ya existe una orden reciente del mismo cliente con mismo monto
+    $pdo_check = new PDO(
+        "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
+        $config['app_db_user'],
+        $config['app_db_pass'],
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+    $dup_stmt = $pdo_check->prepare("SELECT order_number FROM tuu_orders WHERE customer_name = ? AND installment_amount = ? AND created_at > DATE_SUB(NOW(), INTERVAL 30 SECOND) LIMIT 1");
+    $dup_stmt->execute([trim($input['customer_name'] ?? ''), round($input['amount'] ?? 0)]);
+    $dup_order = $dup_stmt->fetch(PDO::FETCH_ASSOC);
+    if ($dup_order) {
+        echo json_encode(['success' => true, 'order_id' => $dup_order['order_number'], 'duplicate' => true]);
+        exit;
+    }
+    
     $amount = round($input['amount']);
     $customer_name = $input['customer_name'];
     $customer_phone = $input['customer_phone'];
@@ -52,7 +67,7 @@ try {
     $dist_km  = $input['delivery_distance_km'] ?? null;
     $dist_min = $input['delivery_duration_min'] ?? null;
     // Agregar info de distancia a notas si existe
-    $base_notes = $base_notes;
+    $base_notes = $input['customer_notes'] ?? null;
     if ($dist_km && ($input['delivery_type'] ?? '') === 'delivery') {
         $dist_note = "📍 {$dist_km} km · ~{$dist_min} min";
         $base_notes = $base_notes ? "{$base_notes}\n{$dist_note}" : $dist_note;
