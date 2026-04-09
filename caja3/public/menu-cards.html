@@ -166,22 +166,26 @@
     /* ESTILO BEBIDAS: BLANCO SLIM */
     .card-drink {
       aspect-ratio: 1/1.62 !important; 
-      /* Hereda background de .product-card */
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      position: relative;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
     .card-drink .product-image { 
-      height: 75% !important; /* Altura fija para que el precio no se mueva */
+      height: 80% !important;
       width: 100% !important; 
       object-fit: contain !important;
-      margin: 5px auto 0;
+      margin: 2px auto 0;
       mix-blend-mode: multiply; 
       border: none !important;
     }
     .card-drink .product-content {
-      height: 25% !important; /* Espacio reservado para el precio */
-      background: transparent;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 20% !important;
+      background: rgba(255,255,255,0.95);
       border: none;
-      padding: 5px 0;
+      padding: 2px 0;
       display: flex;
       align-items: center;
       justify-content: center;
