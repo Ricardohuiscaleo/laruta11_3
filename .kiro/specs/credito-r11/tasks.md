@@ -1,0 +1,260 @@
+# Plan de Implementación: Crédito R11
+
+## Resumen
+
+Implementación del sistema de crédito R11 para trabajadores de La Ruta 11, replicando la arquitectura del sistema RL6 existente. Se sigue un enfoque incremental: schema BD → APIs backend (PHP) → frontend (Astro/React) → cron jobs → tests. Cada API se copia del equivalente RL6 y se adaptan campos/tablas/prefijos.
+
+## Tareas
+
+- [ ] 1. Esquema de base de datos R11
+  - [ ] 1.1 Crear script SQL de migración para campos R11 en tabla `usuarios`
+    - Agregar campos: `es_credito_r11`, `credito_r11_aprobado`, `limite_credito_r11`, `credito_r11_usado`, `credito_r11_bloqueado`, `fecha_aprobacion_r11`, `fecha_ultimo_pago_r11`, `relacion_r11`
+    - Agregar índices: `idx_es_credito_r11`, `idx_credito_r11_bloqueado`
+    - _Requirements: 1.1_
+  - [ ] 1.2 Crear tabla `r11_credit_transactions`
+    - Columnas: `id`, `user_id`, `amount`, `type` (ENUM credit/debit/refund), `description`, `order_id`, `created_at`
+    - FK a `usuarios(id)`, índices en `user_id` y `created_at`
+    - _Requirements: 1.2_
+  - [ ] 1.3 Agregar campos R11 a tabla `tuu_orders` y actualizar ENUM `payment_method`
+    - Campos: `pagado_con_credito_r11` (TINYINT DEFAULT 0), `monto_credito_r11` (DECIMAL 10,2 DEFAULT 0.00)
+    - Modificar ENUM `payment_method` para incluir `r11_credit`
+    - Índice: `idx_pagado_credito_r11`
+    - _Requirements: 1.3, 1.4_
+  - [ ] 1.4 Migrar tabla `personal` para vincular con `usuarios` y R11
+    - Agregar columnas: `user_id` (INT NULL, FK → usuarios), `rut` (VARCHAR 12 NULL), `telefono` (VARCHAR 20 NULL)
+    - Agregar `rider` al SET de `rol` (actualmente: administrador, cajero, planchero, delivery, seguridad, dueño)
+    - Agregar índice en `user_id`
+    - No modificar datos existentes (Camila, Neit, Andrés, Gabriel, etc. se vincularán después manualmente o vía registro R11)
+    - _Requirements: 14.10_
+
+- [ ] 2. APIs de app3 — Consulta, uso de crédito R11 y registro
+  - [ ] 2.1 Crear `app3/api/r11/get_credit.php`
+    - Copiar de `app3/api/rl6/get_credit.php` y adaptar campos: `es_credito_r11`, `credito_r11_aprobado`, `limite_credito_r11`, `credito_r11_usado`, `relacion_r11`, `fecha_aprobacion_r11`
+    - Consultar últimas 20 transacciones de `r11_credit_transactions`
+    - Retornar error si usuario no tiene `es_credito_r11 = 1` o `credito_r11_aprobado = 1`
+    - _Requirements: 2.1, 2.2, 2.3_
+  - [ ] 2.2 Crear `app3/api/r11/use_credit.php`
+    - Copiar de `app3/api/rl6/use_credit.php` y adaptar campos R11
+    - Validar tres flags: `es_credito_r11 = 1`, `credito_r11_aprobado = 1`, `credito_r11_bloqueado = 0`
+    - Validar `credito_r11_usado + amount <= limite_credito_r11`
+    - En transacción: UPDATE `credito_r11_usado`, INSERT `r11_credit_transactions` (debit), UPDATE `tuu_orders` con `pagado_con_credito_r11 = 1`, `monto_credito_r11`, `payment_method = 'r11_credit'`, `payment_status = 'paid'`
+    - Retornar error con crédito disponible y monto solicitado si insuficiente
+    - Retornar error si crédito bloqueado
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8_
+  - [ ] 2.3 Crear `app3/api/r11/get_statement.php`
+    - Copiar de `app3/api/rl6/get_statement.php` y adaptar campos R11
+    - Retornar resumen (límite, usado, disponible, relación R11) y transacciones del período actual con items de orden
+    - _Requirements: 4.1, 4.2_
+  - [ ] 2.4 Crear `app3/api/r11/register.php` — Registro público de trabajador R11
+    - Copiar estructura de `app3/api/rl6/register_militar.php` y simplificar
+    - Recibir: `user_id`, `rut` (extraído del QR en frontend), `selfie` (file), `rol` (Planchero/a, Cajero/a, Rider, Otro)
+    - Validar que usuario existe en `usuarios`, rate limiting (5 intentos/10 min), validar formato RUT chileno
+    - Subir selfie a S3 (`carnets-trabajadores/{user_id}_selfie_{timestamp}`)
+    - UPDATE `usuarios` SET `es_credito_r11 = 1`, `rut`, `selfie_url`, `relacion_r11 = rol`
+    - INSERT/UPDATE en tabla `personal` (nombre, teléfono, email, rut, rol) para vincular con mi3
+    - Enviar notificación Telegram al admin con datos + selfie + RUT + botones aprobación ($20k, $30k, $50k, Rechazar)
+    - _Requirements: 14.1, 14.4, 14.5, 14.6, 14.7, 14.8, 14.9, 14.10, 14.11, 14.12, 14.13_
+
+- [ ] 3. APIs de app3 — Pago de crédito R11 vía Webpay
+  - [ ] 3.1 Crear `app3/api/r11/create_payment.php`
+    - Copiar de `app3/api/rl6/create_payment.php` y adaptar:
+    - Prefijo de orden: `R11C-{timestamp}-{random}`
+    - Descripción: `Pago Crédito R11 - {relacion_r11}`
+    - URLs: callback → `/api/r11/payment_callback.php`, complete → `/r11-payment-pending`, cancel → `/pagar-credito-r11?cancelled=1`
+    - Validar `es_credito_r11 = 1` y `credito_r11_aprobado = 1`
+    - Usar `credito_r11_usado` como monto
+    - _Requirements: 5.1_
+  - [ ] 3.2 Crear `app3/api/r11/payment_callback.php`
+    - Copiar de `app3/api/rl6/payment_callback.php` y adaptar:
+    - Validar prefijo `R11C-` en `x_reference`
+    - Verificar duplicados en `r11_credit_transactions` antes de procesar
+    - Si pago exitoso: INSERT refund en `r11_credit_transactions`, UPDATE `credito_r11_usado = 0`, `fecha_ultimo_pago_r11 = CURDATE()`, `credito_r11_bloqueado = 0`
+    - Enviar email de confirmación de pago
+    - Redirect a `r11-payment-success` o `pagar-credito-r11?error=1`
+    - _Requirements: 5.2, 5.3, 5.4, 5.5_
+
+- [ ] 4. Checkpoint — Verificar APIs de app3
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 5. APIs de caja3 — Administración de créditos R11
+  - [ ] 5.1 Crear `caja3/api/get_creditos_r11.php`
+    - Copiar de `caja3/api/get_militares_rl6.php` y adaptar campos R11
+    - Listar usuarios con `es_credito_r11 = 1` mostrando: nombre, email, teléfono, `relacion_r11`, `credito_r11_aprobado`, `limite_credito_r11`, `credito_r11_usado`, crédito disponible
+    - Soportar filtros: `status=pending` (aprobado=0), `status=approved` (aprobado=1)
+    - _Requirements: 7.1, 7.4, 7.5_
+  - [ ] 5.2 Crear `caja3/api/approve_credito_r11.php`
+    - Copiar de `caja3/api/approve_militar_rl6.php` y adaptar campos R11
+    - Acción `approve`: SET `credito_r11_aprobado = 1`, `limite_credito_r11`, `fecha_aprobacion_r11 = NOW()`
+    - Acción `reject`: SET `credito_r11_aprobado = 0`, `limite_credito_r11 = 0`
+    - _Requirements: 7.2, 7.3_
+  - [ ] 5.3 Crear `caja3/api/register_credito_r11.php`
+    - Endpoint nuevo (sin equivalente RL6)
+    - Si `user_id` proporcionado: UPDATE `es_credito_r11 = 1`, `relacion_r11`
+    - Si usuario no existe: INSERT en `usuarios` con datos básicos (nombre, teléfono, email) y `es_credito_r11 = 1`
+    - Si `auto_approve = true`: aprobar crédito y asignar límite en el mismo paso
+    - _Requirements: 13.1, 13.2, 13.3_
+  - [ ] 5.4 Crear `caja3/api/r11_refund_credit.php`
+    - Copiar de `caja3/api/rl6_refund_credit.php` y adaptar campos R11
+    - Buscar orden con `payment_method = 'r11_credit'`
+    - INSERT refund en `r11_credit_transactions`, UPDATE `credito_r11_usado -= monto`
+    - Marcar orden como `cancelled`/`unpaid`
+    - Restaurar inventario (ingredientes y productos) con transacciones `return` en `inventory_transactions`
+    - _Requirements: 6.1, 6.2, 6.3, 6.4_
+  - [ ] 5.5 Crear `caja3/api/r11/process_manual_payment.php`
+    - Copiar de `caja3/api/rl6/process_manual_payment.php` y adaptar campos R11
+    - INSERT refund en `r11_credit_transactions`, UPDATE `credito_r11_usado = GREATEST(0, credito_r11_usado - monto)`, `fecha_ultimo_pago_r11 = CURDATE()`
+    - Crear orden `R11C-MANUAL-{timestamp}` en `tuu_orders` con `payment_status = 'paid'`, `order_status = 'completed'`
+    - Enviar email de confirmación de pago al beneficiario
+    - _Requirements: 8.1, 8.2, 8.3, 8.4_
+
+- [ ] 6. Checkpoint — Verificar APIs de caja3
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 7. Frontend app3 — Páginas de crédito R11
+  - [ ] 7.1 Crear `app3/src/pages/r11.astro` — Registro R11 + Estado de cuenta
+    - Si usuario NO tiene `es_credito_r11 = 1`: mostrar formulario de registro con:
+      - Verificación de login (modal si no logueado)
+      - Pre-llenar nombre y email del usuario
+      - Lector QR con `jsQR` v1.4 + canvas + `requestAnimationFrame` loop:
+        - `getUserMedia({ facingMode: "environment" })` para cámara trasera
+        - Overlay con guía visual (rectángulo punteado "Apunta al QR del carnet")
+        - Al detectar QR: parsear URL `portal.sidiv.registrocivil.cl/docstatus?RUN=...`
+        - Extraer RUT del parámetro `RUN`, validar dominio `registrocivil.cl`
+        - Feedback: beep (WebAudio API) + `navigator.vibrate(200)` + mostrar RUT con ✅
+        - Si QR inválido: mostrar error, seguir escaneando
+        - Fallback: input manual de RUT si cámara no disponible
+        - Botón "Reintentar" para reabrir cámara
+      - Campo selfie (foto de rostro)
+      - Selector de rol: Planchero/a, Cajero/a, Rider, Otro
+      - Enviar a `app3/api/r11/register.php`
+    - Si usuario YA tiene `es_credito_r11 = 1` y `credito_r11_aprobado = 1`: mostrar estado de cuenta
+      - Tarjetas con límite, crédito usado, disponible y rol
+      - Listar transacciones del mes actual
+      - Botón "Pagar Crédito" si `credito_r11_usado > 0`
+      - Banner de alerta si `credito_r11_bloqueado = 1`
+    - Si usuario tiene `es_credito_r11 = 1` pero `credito_r11_aprobado = 0`: mostrar mensaje "Solicitud en revisión"
+    - _Requirements: 4.3, 11.1, 11.2, 11.3, 11.4, 14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7_
+  - [ ] 7.2 Crear `app3/src/pages/pagar-credito-r11.astro` — Flujo de pago Webpay
+    - Mostrar resumen de deuda y botón para iniciar pago vía `create_payment.php`
+    - Manejar estados: cancelled, error
+    - _Requirements: 5.6_
+  - [ ] 7.3 Crear `app3/src/pages/r11-payment-success.astro` y `r11-payment-pending.astro`
+    - Páginas de confirmación de pago exitoso y pendiente
+    - Mostrar monto pagado y enlace a estado de cuenta
+    - _Requirements: 5.6_
+  - [ ] 7.4 Integrar `r11_credit` como método de pago en `CheckoutApp.jsx`
+    - Agregar opción `r11_credit` en selector de métodos de pago
+    - Mostrar solo si usuario tiene `es_credito_r11 = 1`, `credito_r11_aprobado = 1`, `credito_r11_bloqueado = 0`
+    - Mostrar crédito disponible junto a la opción
+    - Al confirmar, llamar a `app3/api/r11/use_credit.php`
+    - _Requirements: 11.5, 3.1_
+
+- [ ] 8. Frontend caja3 — Administración de créditos R11
+  - [ ] 8.1 Crear vista "Créditos R11" en panel admin de caja3
+    - Vista separada de "Militares RL6"
+    - Tabla con beneficiarios R11: nombre, relación, límite, usado, disponible, estado
+    - Filtros por estado (pending/approved)
+    - _Requirements: 12.1, 12.2_
+  - [ ] 8.2 Agregar acciones de gestión en vista Créditos R11
+    - Botón registrar nuevo beneficiario (llamar a `register_credito_r11.php`)
+    - Botón aprobar crédito con campo de límite (llamar a `approve_credito_r11.php`)
+    - Botón rechazar crédito
+    - Botón procesar pago manual (llamar a `r11/process_manual_payment.php`)
+    - _Requirements: 12.3, 13.1, 13.2, 13.3_
+  - [ ] 8.3 Integrar crédito R11 en ArqueoApp y reportes
+    - Agregar `r11_credit` en `ArqueoApp.jsx`, `ArqueoResumen.jsx`, `VentasDetalle.jsx`
+    - Mostrar total de ventas con `r11_credit` como línea separada en resumen de métodos de pago
+    - Agregar en `pagos-tuu.astro` y `admin/index.astro` los mapeos de `r11_credit`
+    - _Requirements: 12.4_
+  - [ ] 8.4 Integrar crédito R11 en MiniComandas
+    - Mostrar etiqueta "Crédito R11" en pedidos con `payment_method = 'r11_credit'`
+    - Permitir anulación con reintegro automático (llamar a `r11_refund_credit.php`)
+    - _Requirements: 12.5_
+
+- [ ] 9. Checkpoint — Verificar frontend completo
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 10. Cron jobs — Cobro mensual y bloqueo automático R11
+  - [ ] 10.1 Crear `app3/api/r11/send_reminder.php` — Recordatorio día 28
+    - Consultar beneficiarios R11 con `credito_r11_usado > 0`
+    - Enviar email recordatorio a cada beneficiario con monto a descontar y fecha de descuento (día 1)
+    - Enviar email resumen al administrador con lista completa de deudores y monto total
+    - _Requirements: 9.1, 9.2, 9.3_
+  - [ ] 10.2 Crear `app3/api/r11/block_overdue.php` — Bloqueo día 2
+    - Consultar beneficiarios R11 con `credito_r11_usado > 0` y `fecha_ultimo_pago_r11` anterior al día 1 del mes actual (o NULL)
+    - UPDATE `credito_r11_bloqueado = 1`
+    - Enviar email de aviso de bloqueo a cada beneficiario bloqueado
+    - _Requirements: 9.4, 9.5_
+
+- [ ] 11. Cron jobs — Bloqueo automático RL6 (pendiente)
+  - [ ] 11.1 Crear `app3/api/rl6/block_overdue.php` — Bloqueo día 22
+    - Consultar militares con `credito_usado > 0` y `fecha_ultimo_pago` anterior al día 21 del mes actual (o NULL)
+    - UPDATE `credito_bloqueado = 1`
+    - Enviar email de aviso de bloqueo
+    - _Requirements: 10.1, 10.2_
+  - [ ] 11.2 Crear `app3/api/rl6/send_reminder.php` — Recordatorio día 18
+    - Enviar email recordatorio a militares con `credito_usado > 0` indicando monto pendiente y fecha límite (día 21)
+    - _Requirements: 10.3_
+  - [ ] 11.3 Agregar validación de `credito_bloqueado = 0` en `app3/api/rl6/use_credit.php`
+    - Rechazar compra si `credito_bloqueado = 1` con mensaje de bloqueo
+    - _Requirements: 10.4_
+
+- [ ] 12. Checkpoint — Verificar cron jobs y bloqueos
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 13. Property-based tests con fast-check
+  - [ ]* 13.1 Escribir test de propiedad: Cálculo de crédito disponible
+    - **Property 1: Cálculo de crédito disponible**
+    - Para cualquier `limite_credito_r11` y `credito_r11_usado` donde `usado <= limite`, verificar que crédito disponible = `limite - usado`
+    - **Validates: Requirements 2.1**
+  - [ ]* 13.2 Escribir test de propiedad: Validación de acceso al crédito (tres flags)
+    - **Property 2: Validación de acceso al crédito**
+    - Para cualquier combinación de `(es_credito_r11, credito_r11_aprobado, credito_r11_bloqueado)`, verificar que solo se permite acceso si `(1, 1, 0)`
+    - **Validates: Requirements 2.3, 3.1, 3.8**
+  - [ ]* 13.3 Escribir test de propiedad: Enforcement del límite de crédito
+    - **Property 3: Enforcement del límite de crédito**
+    - Para cualquier tripleta `(limite, usado, monto_compra)` >= 0, verificar que se aprueba si y solo si `usado + monto <= limite`
+    - **Validates: Requirements 3.2, 3.3**
+  - [ ]* 13.4 Escribir test de propiedad: Round-trip compra y anulación
+    - **Property 4: Round-trip compra y anulación restaura crédito**
+    - Para cualquier compra válida seguida de anulación, verificar que `credito_r11_usado` vuelve al valor original
+    - **Validates: Requirements 3.4, 3.5, 3.6, 6.1, 6.2, 6.3**
+  - [ ]* 13.5 Escribir test de propiedad: Idempotencia del callback de pago
+    - **Property 5: Idempotencia del callback de pago**
+    - Para cualquier orden R11C-, verificar que múltiples callbacks producen exactamente un refund
+    - **Validates: Requirements 5.4**
+  - [ ]* 13.6 Escribir test de propiedad: Pago exitoso resetea crédito a cero
+    - **Property 6: Pago exitoso resetea crédito a cero**
+    - Para cualquier `credito_r11_usado > 0`, después de pago exitoso verificar `credito_r11_usado = 0`, `fecha_ultimo_pago_r11 = hoy`, `credito_r11_bloqueado = 0`
+    - **Validates: Requirements 5.3**
+  - [ ]* 13.7 Escribir test de propiedad: Pago manual con piso en cero
+    - **Property 7: Pago manual con piso en cero**
+    - Para cualquier par `(credito_r11_usado, monto_pago)`, verificar que resultado = `max(0, usado - pago)`, nunca negativo
+    - **Validates: Requirements 8.2**
+  - [ ]* 13.8 Escribir test de propiedad: Correctitud de filtros de beneficiarios
+    - **Property 8: Correctitud de filtros de beneficiarios**
+    - Para cualquier conjunto de usuarios, verificar que filtro 'pending' retorna exactamente `es_credito_r11=1 AND aprobado=0` y 'approved' retorna `es_credito_r11=1 AND aprobado=1`
+    - **Validates: Requirements 7.4, 7.5**
+  - [ ]* 13.9 Escribir test de propiedad: Lógica de bloqueo automático R11
+    - **Property 9: Lógica de bloqueo automático R11**
+    - Para cualquier beneficiario evaluado el día 2, verificar que se bloquea si y solo si `credito_r11_usado > 0` AND `fecha_ultimo_pago_r11 < día 1 del mes`
+    - **Validates: Requirements 9.4**
+  - [ ]* 13.10 Escribir test de propiedad: Lógica de bloqueo automático RL6
+    - **Property 10: Lógica de bloqueo automático RL6**
+    - Para cualquier militar evaluado el día 22, verificar que se bloquea si y solo si `credito_usado > 0` AND `fecha_ultimo_pago < día 21 del mes`
+    - **Validates: Requirements 10.1**
+  - [ ]* 13.11 Escribir test de propiedad: Agregación de ventas R11 en ArqueoApp
+    - **Property 11: Agregación de ventas R11 en ArqueoApp**
+    - Para cualquier conjunto de órdenes mixtas, verificar que total R11 = suma de `installment_amount` donde `payment_method = 'r11_credit'` AND `payment_status = 'paid'`
+    - **Validates: Requirements 12.4**
+
+- [ ] 14. Checkpoint final — Verificar todo el sistema
+  - Ensure all tests pass, ask the user if questions arise.
+
+## Notas
+
+- Tasks marcadas con `*` son opcionales y pueden omitirse para un MVP más rápido
+- Cada tarea referencia requerimientos específicos para trazabilidad
+- Los checkpoints aseguran validación incremental
+- Los property tests validan propiedades universales de correctitud usando fast-check
+- La implementación sigue el patrón "copiar de RL6 y adaptar" para minimizar riesgo

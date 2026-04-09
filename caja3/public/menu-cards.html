@@ -18,7 +18,7 @@
     
     #menu-container { 
       padding: 3px;
-      height: calc(100vh - 60px); /* Header ~33px + Footer ~25px */
+      height: calc(100vh - 35px); /* Solo header */
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -42,31 +42,19 @@
       overflow: hidden;
     }
     
-    /* PIE DE PÁGINA FIJO (BOTTOM BAR) */
-    #main-footer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100vw;
-      display: flex;
-      gap: 3px;
-      padding: 0 3px 3px 3px;
-      z-index: 100;
-      background: #f5f5f5;
-    }
-    .footer-panel {
-      background: #ff6b00;
-      color: white;
+    /* TÍTULOS DE SECCIÓN */
+    .column-title {
+      background: #111827;
+      color: #ff6b00;
       text-align: center;
-      padding: 4px;
+      padding: 5px 4px;
       font-weight: 900;
       text-transform: uppercase;
-      font-size: 0.7vw;
-      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-      flex: 1;
+      font-size: 0.8vw;
+      letter-spacing: 1px;
       border-radius: 3px;
+      margin-bottom: 2px;
     }
-    .footer-panel.right { flex: 0.68; }
 
 
     .products-grid { 
@@ -100,7 +88,7 @@
       flex-direction: column;
       position: relative;
       cursor: pointer;
-      aspect-ratio: 1/1.3; 
+      aspect-ratio: 4/5; 
       transition: all 0.2s ease;
       box-shadow: 0 2px 6px rgba(0,0,0,0.08);
       margin: 1px;
@@ -163,9 +151,9 @@
       color: #059669; 
     }
     
-    /* ESTILO BEBIDAS: BLANCO SLIM */
+    /* ESTILO BEBIDAS: MISMO FORMATO 4:5 */
     .card-drink {
-      aspect-ratio: 1/1.62 !important; 
+      aspect-ratio: 4/5 !important; 
       position: relative;
       box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
@@ -275,11 +263,6 @@
   <div id="menu-container">
     <div id="menu-content" class="loading">SINTONIZANDO MENÚ...</div>
   </div>
-
-  <footer id="main-footer">
-    <div class="footer-panel">Nuestros productos</div>
-    <div class="footer-panel right">Elije tu bebida</div>
-  </footer>
   
   <script>
     const categories = {
@@ -392,9 +375,11 @@
       document.getElementById('menu-content').innerHTML = `
         <div class="layout-split">
           <div class="column column-left">
+            <div class="column-title">🍔 Nuestros Productos</div>
             <div class="products-grid" id="gridFood">${htmlFood}</div>
           </div>
           <div class="column column-right">
+            <div class="column-title">🥤 Elige tu Bebida</div>
             <div class="products-grid" id="gridDrinks">${htmlDrinks}</div>
           </div>
         </div>
