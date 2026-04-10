@@ -173,11 +173,11 @@ Implementación incremental del sistema mi3 RRHH: primero scaffolding de ambas a
 
 
 - [ ] 8. Controllers y Rutas — Worker API
-  - [ ] 8.1 Crear Form Requests de validación Worker
+  - [x] 8.1 Crear Form Requests de validación Worker
     - `Requests/Worker/ShiftSwapRequest.php` — validar fecha_turno (date, after:today), compañero_id (exists:personal,id), motivo (nullable, max:255)
     - _Requerimientos: 6.2_
 
-  - [ ] 8.2 Implementar controllers Worker
+  - [x] 8.2 Implementar controllers Worker
     - `Controllers/Worker/ProfileController.php` — GET profile: datos de personal + usuario + crédito R11
     - `Controllers/Worker/ShiftController.php` — GET shifts: turnos del mes vía ShiftService, filtrados por personal_id
     - `Controllers/Worker/PayrollController.php` — GET payroll: liquidación del mes vía LiquidacionService
@@ -205,13 +205,13 @@ Implementación incremental del sistema mi3 RRHH: primero scaffolding de ambas a
     - **Valida: Requerimientos 5.1, 7.5**
 
 - [ ] 9. Controllers y Rutas — Admin API
-  - [ ] 9.1 Crear Form Requests de validación Admin
+  - [x] 9.1 Crear Form Requests de validación Admin
     - `Requests/Admin/StorePersonalRequest.php` — validar nombre, rol, sueldos base, activo
     - `Requests/Admin/StoreShiftRequest.php` — validar personal_id, fecha, fecha_fin, tipo, reemplazado_por, monto_reemplazo, pago_por
     - `Requests/Admin/StoreAdjustmentRequest.php` — validar personal_id, mes, monto, concepto, categoria_id, notas
     - _Requerimientos: 8.2, 9.2, 11.1_
 
-  - [ ] 9.2 Implementar controllers Admin
+  - [x] 9.2 Implementar controllers Admin
     - `Controllers/Admin/PersonalController.php` — GET index, POST store, PUT update, PATCH toggle (activar/desactivar)
     - `Controllers/Admin/ShiftController.php` — GET index (calendario completo), POST store (crear turno/reemplazo, soportar rango de fechas), DELETE destroy
     - `Controllers/Admin/PayrollController.php` — GET index (resumen nómina), POST payments (registrar pago), PUT budget (actualizar presupuesto), POST send-liquidacion (enviar email individual), POST send-all (enviar masivo vía Queue)
