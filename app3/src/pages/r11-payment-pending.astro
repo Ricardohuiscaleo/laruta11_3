@@ -1,0 +1,154 @@
+---
+---
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesando Pago - Crédito R11</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+        }
+        h1 {
+            font-size: 24px;
+            color: #92400e;
+            margin-bottom: 10px;
+        }
+        .order-id {
+            font-size: 18px;
+            font-weight: 700;
+            color: #78350f;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #fef3c7;
+            border-top-color: #d97706;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 30px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .status {
+            font-size: 16px;
+            color: #666;
+            margin: 20px 0;
+        }
+        .info-box {
+            background: #fffbeb;
+            border: 2px solid #d97706;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+        .info-box p {
+            font-size: 14px;
+            color: #92400e;
+            line-height: 1.6;
+            margin: 8px 0;
+        }
+        .btn {
+            display: inline-block;
+            background: #d97706;
+            color: white;
+            padding: 14px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            margin-top: 20px;
+            transition: all 0.2s;
+        }
+        .btn:hover {
+            background: #b45309;
+            transform: translateY(-2px);
+        }
+    </style>
+    <link rel="icon" type="image/x-icon" href="/icon.ico" />
+</head>
+<body>
+    <div class="container">
+        <img src="/icon.ico" alt="La Ruta 11" class="logo">
+        <h1>🍔 Procesando Pago R11</h1>
+        <div class="order-id" id="order-id">Cargando...</div>
+
+        <div class="spinner"></div>
+
+        <div class="status">
+            Estamos procesando tu pago con TUU/Webpay...<br>
+            Por favor espera un momento.
+        </div>
+
+        <div class="info-box">
+            <p><strong>📋 ¿Qué está pasando?</strong></p>
+            <p>Tu pago de crédito R11 está siendo procesado de forma segura.</p>
+            <p>Una vez confirmado, tu saldo será actualizado automáticamente.</p>
+            <p><strong>⏱️ Esto puede tomar unos segundos...</strong></p>
+        </div>
+
+        <a href="/pagar-credito-r11" class="btn">← Volver a Estado de Cuenta</a>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('order') || urlParams.get('x_reference');
+        const xResult = urlParams.get('x_result');
+
+        if (orderId) document.getElementById('order-id').textContent = orderId;
+
+        // If already completed, redirect to callback
+        if (xResult === 'completed' && orderId) {
+            window.location.href = '/api/r11/payment_callback.php?' + window.location.search.substring(1);
+        } else {
+            // Auto-check payment status every 3 seconds
+            let checkCount = 0;
+            const maxChecks = 20;
+
+            const checkInterval = setInterval(async () => {
+                checkCount++;
+                if (checkCount > maxChecks) {
+                    clearInterval(checkInterval);
+                    return;
+                }
+                try {
+                    const response = await fetch(`/api/r11/check_payment_status.php?order=${orderId}`);
+                    const data = await response.json();
+                    if (data.success && data.status === 'completed') {
+                        clearInterval(checkInterval);
+                        window.location.href = `/r11-payment-success?order=${orderId}&amount=${data.amount}`;
+                    } else if (data.status === 'failed' || data.status === 'cancelled') {
+                        clearInterval(checkInterval);
+                        alert('El pago no pudo ser procesado. Por favor intenta nuevamente.');
+                        window.location.href = '/pagar-credito-r11';
+                    }
+                } catch (error) {
+                    console.error('Error verificando estado:', error);
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

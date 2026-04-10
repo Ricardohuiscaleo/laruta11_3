@@ -72,6 +72,8 @@ const CheckoutApp = ({ onClose }) => {
   const [orderCompleted, setOrderCompleted] = useState(false);
   const [rl6Credit, setRl6Credit] = useState(null);
   const [loadingRL6, setLoadingRL6] = useState(false);
+  const [r11Credit, setR11Credit] = useState(null);
+  const [loadingR11, setLoadingR11] = useState(false);
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
   const [shakesAddress, setShakesAddress] = useState(false);
   const [formErrors, setFormErrors] = useState([]); // Array de campos con error
@@ -79,6 +81,11 @@ const CheckoutApp = ({ onClose }) => {
   // Verificar si es militar RL6 aprobado (loose equality para manejar strings y numbers)
   const isMilitarRL6 = (user?.es_militar_rl6 == 1 || user?.es_militar_rl6 === '1') &&
     (user?.credito_aprobado == 1 || user?.credito_aprobado === '1');
+
+  // Verificar si es beneficiario R11 aprobado y no bloqueado
+  const isR11Credit = (user?.es_credito_r11 == 1 || user?.es_credito_r11 === '1') &&
+    (user?.credito_r11_aprobado == 1 || user?.credito_r11_aprobado === '1') &&
+    (user?.credito_r11_bloqueado == 0 || user?.credito_r11_bloqueado === '0' || !user?.credito_r11_bloqueado);
 
   // Cargar beneficios del usuario desde tuu_orders
   useEffect(() => {
@@ -135,6 +142,22 @@ const CheckoutApp = ({ onClose }) => {
           })
           .catch(error => console.error('Error loading RL6 credit:', error))
           .finally(() => setLoadingRL6(false));
+      }
+
+      // Cargar crédito R11 si es beneficiario aprobado y no bloqueado
+      if ((user.es_credito_r11 == 1 || user.es_credito_r11 === '1') &&
+        (user.credito_r11_aprobado == 1 || user.credito_r11_aprobado === '1') &&
+        (user.credito_r11_bloqueado == 0 || user.credito_r11_bloqueado === '0' || !user.credito_r11_bloqueado)) {
+        setLoadingR11(true);
+        fetch(`/api/r11/get_credit.php?user_id=${user.id}&t=${Date.now()}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              setR11Credit(data.credit);
+            }
+          })
+          .catch(error => console.error('Error loading R11 credit:', error))
+          .finally(() => setLoadingR11(false));
       }
     }
   }, [user, cartTotal]);
@@ -689,6 +712,8 @@ const CheckoutApp = ({ onClose }) => {
       proceedToPayment();
     } else if (paymentMethod === 'rl6') {
       processRL6Payment();
+    } else if (paymentMethod === 'r11') {
+      processR11Payment();
     }
   };
 
@@ -845,6 +870,81 @@ const CheckoutApp = ({ onClose }) => {
     }
   };
 
+  const processR11Payment = async () => {
+    // Validar saldo disponible
+    if (!r11Credit || cartTotal > r11Credit.credito_disponible) {
+      alert(`❌ Crédito insuficiente. Disponible: $${parseInt(r11Credit?.credito_disponible || 0).toLocaleString('es-CL')}`);
+      return;
+    }
+
+    if (!confirm(`¿Confirmas usar tu crédito R11? Se descontarán $${cartTotal.toLocaleString('es-CL')} de tu límite. Pagarás el 1 del mes.`)) {
+      return;
+    }
+
+    setIsProcessingOrder(true);
+
+    try {
+      // Crear orden primero
+      const orderData = {
+        amount: cartTotal,
+        subtotal: cartSubtotal,
+        discount_amount: discountAmount,
+        delivery_discount: deliveryDiscountAmount,
+        customer_name: customerInfo.name,
+        customer_phone: customerInfo.phone,
+        customer_email: customerInfo.email || `${customerInfo.phone}@ruta11.cl`,
+        user_id: user?.id || null,
+        cart_items: cart,
+        delivery_fee: deliveryFee,
+        customer_notes: customerInfo.customerNotes || null,
+        delivery_type: customerInfo.deliveryType,
+        delivery_address: customerInfo.address || null,
+        pickup_time: customerInfo.pickupTime || null,
+        payment_method: 'r11_credit',
+        scheduled_time: scheduledTime ? `${scheduledTime.date} ${scheduledTime.time}` : null,
+        is_scheduled: !!scheduledTime
+      };
+
+      const orderResponse = await fetch('/api/create_order.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData)
+      });
+
+      const orderResult = await orderResponse.json();
+      if (!orderResult.success) {
+        alert('❌ Error al crear orden: ' + orderResult.error);
+        return;
+      }
+
+      // Usar crédito R11
+      const creditResponse = await fetch('/api/r11/use_credit.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.id,
+          amount: cartTotal,
+          order_id: orderResult.order_id
+        })
+      });
+
+      const creditResult = await creditResponse.json();
+      if (creditResult.success) {
+        setOrderCompleted(true);
+        localStorage.removeItem('ruta11_cart');
+        localStorage.removeItem('ruta11_cart_total');
+        window.location.href = '/r11-pending?order=' + orderResult.order_id;
+      } else {
+        setIsProcessingOrder(false);
+        alert('❌ Error al usar crédito: ' + creditResult.error);
+      }
+    } catch (error) {
+      setIsProcessingOrder(false);
+      console.error('Error R11:', error);
+      alert('❌ Error al procesar: ' + error.message);
+    }
+  };
+
   const processCardOrder = async () => {
     setIsProcessingOrder(true);
 
@@ -945,6 +1045,9 @@ const CheckoutApp = ({ onClose }) => {
                   <p className="text-[10px] sm:text-xs text-white/80 leading-tight">cashback: {walletBalance !== null ? `$${parseInt(walletBalance).toLocaleString('es-CL')}` : <span className="animate-pulse">...</span>}</p>
                   {isMilitarRL6 && rl6Credit && (
                     <p className="text-[10px] sm:text-xs text-amber-300 leading-tight font-semibold">crédito: ${parseInt(rl6Credit.credito_disponible).toLocaleString('es-CL')}</p>
+                  )}
+                  {isR11Credit && r11Credit && (
+                    <p className="text-[10px] sm:text-xs text-amber-300 leading-tight font-semibold">R11: ${parseInt(r11Credit.credito_disponible).toLocaleString('es-CL')}</p>
                   )}
                 </div>
               </div>
@@ -1584,6 +1687,27 @@ const CheckoutApp = ({ onClose }) => {
                             </span>
                             <span className={`text-xs ${paymentMethod === 'rl6' ? 'text-white' : 'text-gray-500'}`}>
                               Disponible: ${parseInt(rl6Credit.credito_disponible).toLocaleString('es-CL')}
+                            </span>
+                          </div>
+                        </button>
+                      )}
+
+                      {isR11Credit && r11Credit && (
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('r11')}
+                          className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 col-span-2 ${paymentMethod === 'r11'
+                              ? 'border-amber-500 bg-gradient-to-r from-amber-500 to-amber-600 text-white'
+                              : 'border-gray-300 hover:border-amber-300'
+                            }`}
+                        >
+                          <Award size={24} className={paymentMethod === 'r11' ? 'text-white' : 'text-gray-600'} />
+                          <div className="text-center">
+                            <span className={`font-bold text-sm block ${paymentMethod === 'r11' ? 'text-white' : 'text-gray-700'}`}>
+                              🍔 Crédito R11
+                            </span>
+                            <span className={`text-xs ${paymentMethod === 'r11' ? 'text-white' : 'text-gray-500'}`}>
+                              Disponible: ${parseInt(r11Credit.credito_disponible).toLocaleString('es-CL')}
                             </span>
                           </div>
                         </button>

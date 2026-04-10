@@ -1,0 +1,682 @@
+---
+const title = 'R11 - Crédito Trabajadores La Ruta 11';
+const description = 'Crédito exclusivo para trabajadores y personas de confianza de La Ruta 11';
+const usuario = (Astro.locals as any)?.user || null;
+
+const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" />
+    <meta property="og:type" content="website" />
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  </head>
+  <body class="bg-white text-gray-900">
+    <!-- HEADER -->
+    <header class="fixed top-0 w-full bg-amber-700 shadow-lg z-50">
+      <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between font-inter">
+        <div class="flex items-center gap-3">
+          <a href="/" class="hover:opacity-80 transition-opacity">
+            <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" class="h-10 w-auto" />
+          </a>
+          <span class="text-white font-bold text-lg hidden sm:inline">Crédito R11</span>
+        </div>
+        <a href="/" class="text-amber-100 hover:text-white text-sm font-semibold flex items-center gap-2 transition duration-300">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+          Volver al inicio
+        </a>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT (dynamically switched by JS) -->
+    <div id="mainContent" class="pt-24 pb-20 px-4 min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">
+
+      <!-- LOADING STATE -->
+      <div id="loadingState" class="max-w-2xl mx-auto text-center py-20">
+        <div class="animate-spin w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full mx-auto"></div>
+        <p class="text-gray-600 mt-4">Cargando...</p>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- SECTION: REGISTRATION FORM (es_credito_r11 != 1) -->
+      <!-- ============================================ -->
+      <section id="registroSection" class="hidden max-w-2xl mx-auto">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl md:text-4xl font-black text-amber-800 mb-2">Solicitar Crédito R11</h2>
+          <p class="text-gray-600">Crédito exclusivo para el equipo de La Ruta 11</p>
+        </div>
+
+        <!-- Login Required Modal -->
+        <div id="modalLoginRequired" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden">
+          <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+              <div class="text-center">
+                <div class="text-6xl mb-4">🍔</div>
+                <h3 class="text-2xl font-bold mb-4 text-amber-800">Primero regístrate en La Ruta 11</h3>
+                <p class="text-gray-600 mb-6">Para solicitar el crédito R11, necesitas tener una cuenta en nuestra app.</p>
+                <button id="btnAbrirLogin" class="w-full px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-lg hover:shadow-lg transition duration-300 transform hover:scale-105 mb-3">Registrarme / Iniciar Sesión</button>
+                <p class="text-sm text-gray-500">Luego podrás solicitar tu crédito R11</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Logged in greeting -->
+        <div id="paso0" class="bg-white rounded-2xl shadow-2xl p-8 border border-amber-100">
+          <div id="siLogueado" class="hidden text-center">
+            <div class="text-6xl mb-4">👋</div>
+            <h3 class="text-2xl font-bold mb-4 text-amber-800">Hola <span id="nombreUsuario"></span></h3>
+            <p class="text-gray-600 mb-6">Completa tu solicitud de crédito R11.</p>
+            <button type="button" id="btnContinuar" class="px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-lg hover:shadow-lg transition duration-300 transform hover:scale-105">Continuar →</button>
+          </div>
+        </div>
+
+        <!-- Registration Form -->
+        <div id="formContainer" class="hidden bg-white rounded-2xl shadow-2xl p-8 border border-amber-100">
+          <!-- Progress bar -->
+          <div class="mb-8">
+            <div class="flex justify-between mb-2">
+              <span class="text-sm font-bold text-gray-700">Paso <span id="stepNum">1</span>/3</span>
+              <span class="text-sm text-gray-600" id="stepTitle">Escanear Carnet</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div id="progressBar" class="bg-gradient-to-r from-amber-500 to-amber-600 h-2 rounded-full transition-all duration-300" style="width: 33%"></div>
+            </div>
+          </div>
+
+          <!-- STEP 1: QR Scanner for RUT -->
+          <div id="paso1" class="paso-form">
+            <h3 class="text-lg font-bold mb-4 text-amber-800">📱 Escanear QR del Carnet</h3>
+            <p class="text-sm text-gray-600 mb-4">Escanea el código QR de tu carnet de identidad para extraer tu RUT automáticamente.</p>
+
+            <!-- QR Scanner Container -->
+            <div id="qrScannerContainer" class="mb-4">
+              <div id="qrVideoWrapper" class="relative rounded-xl overflow-hidden bg-black aspect-[4/3] mb-3">
+                <video id="qrVideo" class="w-full h-full object-cover" playsinline></video>
+                <!-- Overlay guide -->
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div class="w-48 h-48 border-2 border-dashed border-amber-400 rounded-lg flex items-center justify-center">
+                    <span class="text-amber-300 text-xs font-bold bg-black/50 px-2 py-1 rounded">Apunta al QR del carnet</span>
+                  </div>
+                </div>
+                <canvas id="qrCanvas" class="hidden"></canvas>
+              </div>
+              <div id="qrStatus" class="text-center text-sm text-gray-500">Iniciando cámara...</div>
+            </div>
+
+            <!-- QR Success -->
+            <div id="qrSuccess" class="hidden mb-4 p-4 bg-green-50 border-2 border-green-300 rounded-xl text-center">
+              <div class="text-4xl mb-2">✅</div>
+              <p class="text-green-800 font-bold">RUT detectado:</p>
+              <p id="rutDetectado" class="text-2xl font-black text-green-700 mt-1"></p>
+            </div>
+
+            <!-- QR Error -->
+            <div id="qrError" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p class="text-red-700 text-sm" id="qrErrorMsg">QR no válido. Asegúrate de escanear el QR de tu carnet de identidad.</p>
+            </div>
+
+            <!-- Retry button -->
+            <button type="button" id="btnRetryCamera" class="hidden w-full py-3 bg-amber-100 text-amber-800 font-bold rounded-lg hover:bg-amber-200 transition mb-3">
+              📷 Reintentar cámara
+            </button>
+
+            <!-- Manual RUT fallback -->
+            <div id="manualRutContainer" class="hidden">
+              <p class="text-sm text-gray-500 mb-2 text-center">¿No puedes usar la cámara? Ingresa tu RUT manualmente:</p>
+              <input type="text" id="inputRutManual" placeholder="12.345.678-9" maxlength="12" class="w-full px-4 py-3 border-2 border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-center text-xl font-bold" />
+            </div>
+
+            <input type="hidden" id="rutValue" />
+          </div>
+
+          <!-- STEP 2: Selfie + Role -->
+          <div id="paso2" class="paso-form hidden">
+            <h3 class="text-lg font-bold mb-4 text-amber-800">📸 Selfie y Rol</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Selfie (Foto de tu cara) *</label>
+                <input type="file" id="inputSelfie" accept="image/*" capture="user" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent" />
+                <p class="text-xs text-gray-500 mt-1">Foto clara de tu rostro (JPG, PNG)</p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tu rol en La Ruta 11 *</label>
+                <select id="selectRol" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                  <option value="">Selecciona tu rol</option>
+                  {ROLES_R11.map(rol => <option value={rol}>{rol}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3: Confirmation -->
+          <div id="paso3" class="paso-form hidden">
+            <h3 class="text-lg font-bold mb-4 text-amber-800">✅ Confirmar Solicitud</h3>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+              <p class="text-sm text-amber-900">Revisa tus datos antes de enviar. Tu solicitud será revisada por el equipo.</p>
+            </div>
+            <div id="resumenDatos" class="bg-gray-50 border rounded-lg p-4 text-sm space-y-2 text-gray-700 mb-4"></div>
+            <div id="submitError" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg mb-4">
+              <p class="text-red-700 text-sm" id="submitErrorMsg"></p>
+            </div>
+          </div>
+
+          <!-- Navigation buttons -->
+          <div class="flex gap-3 mt-6">
+            <button type="button" id="btnAnterior" class="hidden flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 rounded-lg transition">← Anterior</button>
+            <button type="button" id="btnSiguiente" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:shadow-lg text-white font-bold py-3 rounded-lg transition duration-300 transform hover:scale-105">Siguiente →</button>
+            <button type="button" id="btnEnviar" class="hidden flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:shadow-lg text-white font-bold py-3 rounded-lg transition duration-300 transform hover:scale-105">Enviar Solicitud</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================ -->
+      <!-- SECTION: PENDING REVIEW (es_credito_r11=1, aprobado=0) -->
+      <!-- ============================================ -->
+      <section id="pendingSection" class="hidden max-w-lg mx-auto text-center">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 border border-amber-100">
+          <div class="text-6xl mb-4">⏳</div>
+          <h2 class="text-2xl font-black text-amber-800 mb-4">Solicitud en Revisión</h2>
+          <p class="text-gray-600 mb-6">Tu solicitud de crédito R11 está siendo revisada por nuestro equipo. Te notificaremos cuando sea aprobada.</p>
+          <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <p class="text-sm text-amber-800">💡 Recuerda cerrar e iniciar sesión nuevamente después de la aprobación para ver tu crédito.</p>
+          </div>
+          <a href="/" class="inline-block mt-6 px-6 py-3 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700 transition">Volver al inicio</a>
+        </div>
+      </section>
+
+      <!-- ============================================ -->
+      <!-- SECTION: ACCOUNT STATUS (aprobado=1) -->
+      <!-- ============================================ -->
+      <section id="accountSection" class="hidden max-w-2xl mx-auto">
+        <!-- Blocked banner -->
+        <div id="blockedBanner" class="hidden mb-4 p-4 bg-red-100 border-2 border-red-400 rounded-xl">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">🚫</span>
+            <div>
+              <p class="font-bold text-red-800">Crédito Bloqueado</p>
+              <p class="text-sm text-red-700">Tu crédito está bloqueado por falta de pago. Paga tu saldo pendiente para reactivarlo.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center mb-6">
+          <h2 class="text-3xl font-black text-amber-800 mb-1">Mi Crédito R11</h2>
+          <p id="accountRole" class="text-gray-600"></p>
+        </div>
+
+        <!-- Credit cards -->
+        <div class="grid grid-cols-2 gap-3 mb-6">
+          <div class="bg-white rounded-xl shadow p-4 border border-amber-100">
+            <p class="text-xs text-gray-500 mb-1">Límite</p>
+            <p id="creditLimit" class="text-xl font-black text-amber-800">$0</p>
+          </div>
+          <div class="bg-white rounded-xl shadow p-4 border border-amber-100">
+            <p class="text-xs text-gray-500 mb-1">Usado</p>
+            <p id="creditUsed" class="text-xl font-black text-red-600">$0</p>
+          </div>
+          <div class="bg-white rounded-xl shadow p-4 border border-amber-100">
+            <p class="text-xs text-gray-500 mb-1">Disponible</p>
+            <p id="creditAvailable" class="text-xl font-black text-green-600">$0</p>
+          </div>
+          <div class="bg-white rounded-xl shadow p-4 border border-amber-100">
+            <p class="text-xs text-gray-500 mb-1">Rol</p>
+            <p id="creditRole" class="text-xl font-black text-amber-700">-</p>
+          </div>
+        </div>
+
+        <!-- Pay button -->
+        <div id="payButtonContainer" class="hidden mb-6">
+          <a href="/pagar-credito-r11" class="block w-full text-center py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-xl hover:shadow-lg transition duration-300 transform hover:scale-[1.02]">
+            💳 Pagar Crédito
+          </a>
+        </div>
+
+        <!-- Transactions -->
+        <div class="bg-white rounded-2xl shadow p-6 border border-amber-100">
+          <h3 class="text-lg font-bold text-amber-800 mb-4">📋 Transacciones del Mes</h3>
+          <div id="transactionsList" class="space-y-3"></div>
+          <div id="noTransactions" class="hidden text-center py-6 text-gray-400">
+            No hay transacciones este mes
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-gradient-to-r from-amber-800 via-amber-700 to-amber-800 text-white py-12 px-4">
+      <div class="max-w-6xl mx-auto text-center">
+        <p class="text-amber-200 text-sm">© 2026 La Ruta 11 • Sistema Crédito R11 • Todos los derechos reservados</p>
+      </div>
+    </footer>
+
+    <script>
+      // ========== STATE ==========
+      var pasoActual = 1;
+      var totalPasos = 3;
+      var usuarioLogueado = null;
+      var detectedRut = '';
+      var cameraStream = null;
+      var scanAnimFrame = null;
+
+      // ========== INIT ==========
+      (function init() {
+        try {
+          var userData = localStorage.getItem('ruta11_user');
+          if (userData) usuarioLogueado = JSON.parse(userData);
+
+          var urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.get('login') === 'success') {
+            window.history.replaceState({}, document.title, window.location.pathname);
+            var storedUser = localStorage.getItem('ruta11_user');
+            if (storedUser) usuarioLogueado = JSON.parse(storedUser);
+          }
+        } catch (e) {
+          console.error('Error al leer localStorage:', e);
+        }
+
+        if (!usuarioLogueado) {
+          // Not logged in — show registration section with login modal
+          document.getElementById('loadingState').classList.add('hidden');
+          document.getElementById('registroSection').classList.remove('hidden');
+          document.getElementById('modalLoginRequired').classList.remove('hidden');
+          return;
+        }
+
+        // Check user credit status
+        checkCreditStatus();
+      })();
+
+      function checkCreditStatus() {
+        fetch('/api/auth/check_session.php')
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.authenticated && data.user) {
+              usuarioLogueado = data.user;
+              localStorage.setItem('ruta11_user', JSON.stringify(data.user));
+            }
+            routeUser();
+          })
+          .catch(function() { routeUser(); });
+      }
+
+      function routeUser() {
+        document.getElementById('loadingState').classList.add('hidden');
+
+        var esR11 = usuarioLogueado && (usuarioLogueado.es_credito_r11 == 1 || usuarioLogueado.es_credito_r11 === '1');
+        var aprobado = usuarioLogueado && (usuarioLogueado.credito_r11_aprobado == 1 || usuarioLogueado.credito_r11_aprobado === '1');
+
+        if (esR11 && aprobado) {
+          // Show account status
+          document.getElementById('accountSection').classList.remove('hidden');
+          loadAccountData();
+        } else if (esR11 && !aprobado) {
+          // Show pending review
+          document.getElementById('pendingSection').classList.remove('hidden');
+        } else {
+          // Show registration form
+          document.getElementById('registroSection').classList.remove('hidden');
+          var siLogueado = document.getElementById('siLogueado');
+          var nombreUsuario = document.getElementById('nombreUsuario');
+          if (siLogueado && nombreUsuario) {
+            siLogueado.classList.remove('hidden');
+            nombreUsuario.textContent = String(usuarioLogueado.nombre || '').split(' ')[0];
+          }
+        }
+      }
+
+      // ========== ACCOUNT STATUS ==========
+      function loadAccountData() {
+        if (!usuarioLogueado) return;
+        fetch('/api/r11/get_credit.php?user_id=' + usuarioLogueado.id + '&t=' + Date.now())
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (!data.success) return;
+            var c = data.credit;
+            document.getElementById('creditLimit').textContent = '$' + parseInt(c.limite_credito).toLocaleString('es-CL');
+            document.getElementById('creditUsed').textContent = '$' + parseInt(c.credito_usado).toLocaleString('es-CL');
+            document.getElementById('creditAvailable').textContent = '$' + parseInt(c.credito_disponible).toLocaleString('es-CL');
+            document.getElementById('creditRole').textContent = c.relacion_r11 || '-';
+            document.getElementById('accountRole').textContent = c.relacion_r11 || '';
+
+            if (parseInt(c.credito_usado) > 0) {
+              document.getElementById('payButtonContainer').classList.remove('hidden');
+            }
+
+            if (usuarioLogueado.credito_r11_bloqueado == 1 || usuarioLogueado.credito_r11_bloqueado === '1') {
+              document.getElementById('blockedBanner').classList.remove('hidden');
+            }
+
+            // Render transactions
+            var txList = document.getElementById('transactionsList');
+            var txs = data.transactions || [];
+            if (txs.length === 0) {
+              document.getElementById('noTransactions').classList.remove('hidden');
+            } else {
+              txList.innerHTML = txs.map(function(tx) {
+                var isRefund = tx.type === 'refund';
+                var monto = Math.round(parseFloat(tx.amount));
+                var fecha = new Date(tx.created_at);
+                var meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+                var fechaStr = fecha.getDate() + ' ' + meses[fecha.getMonth()];
+                return '<div class="bg-gray-50 border-l-4 ' + (isRefund ? 'border-green-400' : 'border-red-400') + ' rounded p-3 flex justify-between items-center">' +
+                  '<div><span class="text-sm font-semibold text-gray-800">' + fechaStr + '</span>' +
+                  '<p class="text-xs text-gray-500">' + (tx.description || '') + '</p></div>' +
+                  '<span class="text-lg font-bold ' + (isRefund ? 'text-green-600' : 'text-red-600') + '">' +
+                  (isRefund ? '+' : '-') + '$' + monto.toLocaleString('es-CL') + '</span></div>';
+              }).join('');
+            }
+          })
+          .catch(function(err) { console.error('Error loading credit:', err); });
+      }
+
+      // ========== REGISTRATION FLOW ==========
+      // Login button
+      var btnAbrirLogin = document.getElementById('btnAbrirLogin');
+      if (btnAbrirLogin) {
+        btnAbrirLogin.addEventListener('click', function() {
+          window.location.href = '/?login=1&redirect=/r11';
+        });
+      }
+
+      // Continue button
+      var btnContinuar = document.getElementById('btnContinuar');
+      if (btnContinuar) {
+        btnContinuar.addEventListener('click', function() {
+          document.getElementById('paso0').classList.add('hidden');
+          document.getElementById('formContainer').classList.remove('hidden');
+          startQRScanner();
+        });
+      }
+
+      // Navigation
+      var btnSiguiente = document.getElementById('btnSiguiente');
+      var btnAnterior = document.getElementById('btnAnterior');
+      var btnEnviar = document.getElementById('btnEnviar');
+
+      if (btnSiguiente) {
+        btnSiguiente.addEventListener('click', function() {
+          if (!validateStep(pasoActual)) return;
+          if (pasoActual < totalPasos) {
+            pasoActual++;
+            showStep(pasoActual);
+          }
+        });
+      }
+
+      if (btnAnterior) {
+        btnAnterior.addEventListener('click', function() {
+          if (pasoActual > 1) {
+            pasoActual--;
+            showStep(pasoActual);
+          }
+        });
+      }
+
+      if (btnEnviar) {
+        btnEnviar.addEventListener('click', function() {
+          submitRegistration();
+        });
+      }
+
+      function showStep(step) {
+        var pasos = document.querySelectorAll('.paso-form');
+        for (var i = 0; i < pasos.length; i++) pasos[i].classList.add('hidden');
+        var el = document.getElementById('paso' + step);
+        if (el) el.classList.remove('hidden');
+
+        document.getElementById('stepNum').textContent = step;
+        document.getElementById('progressBar').style.width = (step / totalPasos * 100) + '%';
+        var titles = ['Escanear Carnet', 'Selfie y Rol', 'Confirmar Solicitud'];
+        document.getElementById('stepTitle').textContent = titles[step - 1] || '';
+
+        if (btnAnterior) btnAnterior.classList.toggle('hidden', step === 1);
+        if (btnSiguiente) btnSiguiente.classList.toggle('hidden', step === totalPasos);
+        if (btnEnviar) btnEnviar.classList.toggle('hidden', step !== totalPasos);
+
+        if (step === totalPasos) showSummary();
+        if (step === 1) startQRScanner();
+      }
+
+      function validateStep(step) {
+        if (step === 1) {
+          var rut = detectedRut || (document.getElementById('inputRutManual') ? document.getElementById('inputRutManual').value.trim() : '');
+          if (!rut) {
+            alert('⚠️ Debes escanear el QR de tu carnet o ingresar tu RUT manualmente.');
+            return false;
+          }
+          document.getElementById('rutValue').value = rut;
+          detectedRut = rut;
+          stopCamera();
+          return true;
+        }
+        if (step === 2) {
+          var selfie = document.getElementById('inputSelfie');
+          var rol = document.getElementById('selectRol');
+          if (!selfie || !selfie.files || selfie.files.length === 0) {
+            alert('⚠️ Debes subir una selfie.');
+            return false;
+          }
+          if (!rol || !rol.value) {
+            alert('⚠️ Debes seleccionar tu rol.');
+            return false;
+          }
+          return true;
+        }
+        return true;
+      }
+
+      function showSummary() {
+        var rut = detectedRut || document.getElementById('rutValue').value;
+        var rol = document.getElementById('selectRol') ? document.getElementById('selectRol').value : '';
+        var selfie = document.getElementById('inputSelfie');
+        var selfieFile = selfie && selfie.files && selfie.files[0] ? selfie.files[0].name : 'No seleccionada';
+
+        var html = '<div><strong>Nombre:</strong> ' + (usuarioLogueado ? usuarioLogueado.nombre : '') + '</div>' +
+          '<div><strong>Email:</strong> ' + (usuarioLogueado ? usuarioLogueado.email : '') + '</div>' +
+          '<div><strong>RUT:</strong> ' + rut + '</div>' +
+          '<div><strong>Rol:</strong> ' + rol + '</div>' +
+          '<div><strong>Selfie:</strong> ' + selfieFile + '</div>';
+        document.getElementById('resumenDatos').innerHTML = html;
+      }
+
+      // ========== QR SCANNER ==========
+      function parseCarnetQR(qrText) {
+        try {
+          var url = new URL(qrText);
+          if (!url.hostname.includes('registrocivil.cl')) return null;
+          var rut = url.searchParams.get('RUN');
+          if (!rut) return null;
+          return { rut: rut, serial: url.searchParams.get('serial'), valid: true };
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function playBeep() {
+        try {
+          var ctx = new (window.AudioContext || window.webkitAudioContext)();
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = 1000;
+          gain.gain.value = 0.3;
+          osc.start();
+          osc.stop(ctx.currentTime + 0.15);
+        } catch (e) {}
+      }
+
+      function startQRScanner() {
+        if (cameraStream) return; // Already running
+
+        var video = document.getElementById('qrVideo');
+        var canvas = document.getElementById('qrCanvas');
+        var statusEl = document.getElementById('qrStatus');
+        var scannerContainer = document.getElementById('qrScannerContainer');
+        var successEl = document.getElementById('qrSuccess');
+        var errorEl = document.getElementById('qrError');
+        var retryBtn = document.getElementById('btnRetryCamera');
+        var manualContainer = document.getElementById('manualRutContainer');
+
+        if (detectedRut) return; // Already detected
+
+        // Reset UI
+        successEl.classList.add('hidden');
+        errorEl.classList.add('hidden');
+        scannerContainer.classList.remove('hidden');
+        statusEl.textContent = 'Iniciando cámara...';
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          statusEl.textContent = 'Cámara no disponible en este dispositivo.';
+          manualContainer.classList.remove('hidden');
+          retryBtn.classList.remove('hidden');
+          return;
+        }
+
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+          .then(function(stream) {
+            cameraStream = stream;
+            video.srcObject = stream;
+            video.play();
+            statusEl.textContent = 'Escaneando... apunta al QR del carnet';
+            scanFrame();
+          })
+          .catch(function(err) {
+            console.error('Camera error:', err);
+            statusEl.textContent = 'No se pudo acceder a la cámara.';
+            manualContainer.classList.remove('hidden');
+            retryBtn.classList.remove('hidden');
+          });
+
+        function scanFrame() {
+          if (!cameraStream) return;
+          var ctx = canvas.getContext('2d');
+          if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            if (typeof jsQR !== 'undefined') {
+              var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+              if (code && code.data) {
+                var parsed = parseCarnetQR(code.data);
+                if (parsed && parsed.rut) {
+                  // Success!
+                  detectedRut = parsed.rut;
+                  document.getElementById('rutValue').value = parsed.rut;
+                  document.getElementById('rutDetectado').textContent = parsed.rut;
+                  successEl.classList.remove('hidden');
+                  scannerContainer.classList.add('hidden');
+                  playBeep();
+                  try { navigator.vibrate(200); } catch (e) {}
+                  stopCamera();
+                  return;
+                } else {
+                  // Invalid QR
+                  errorEl.classList.remove('hidden');
+                  document.getElementById('qrErrorMsg').textContent = 'QR detectado pero no es de un carnet chileno. Sigue escaneando...';
+                }
+              }
+            }
+          }
+          scanAnimFrame = requestAnimationFrame(scanFrame);
+        }
+      }
+
+      function stopCamera() {
+        if (scanAnimFrame) {
+          cancelAnimationFrame(scanAnimFrame);
+          scanAnimFrame = null;
+        }
+        if (cameraStream) {
+          cameraStream.getTracks().forEach(function(t) { t.stop(); });
+          cameraStream = null;
+        }
+      }
+
+      // Retry camera button
+      var btnRetryCamera = document.getElementById('btnRetryCamera');
+      if (btnRetryCamera) {
+        btnRetryCamera.addEventListener('click', function() {
+          detectedRut = '';
+          document.getElementById('qrSuccess').classList.add('hidden');
+          document.getElementById('qrError').classList.add('hidden');
+          document.getElementById('btnRetryCamera').classList.add('hidden');
+          startQRScanner();
+        });
+      }
+
+      // ========== SUBMIT REGISTRATION ==========
+      function submitRegistration() {
+        var rut = detectedRut || document.getElementById('rutValue').value;
+        var selfieInput = document.getElementById('inputSelfie');
+        var rol = document.getElementById('selectRol') ? document.getElementById('selectRol').value : '';
+
+        if (!rut || !selfieInput.files[0] || !rol) {
+          alert('⚠️ Faltan datos. Revisa todos los campos.');
+          return;
+        }
+
+        var btn = document.getElementById('btnEnviar');
+        btn.disabled = true;
+        btn.textContent = 'Enviando...';
+
+        var formData = new FormData();
+        formData.append('user_id', usuarioLogueado.id);
+        formData.append('rut', rut);
+        formData.append('selfie', selfieInput.files[0]);
+        formData.append('rol', rol);
+
+        fetch('/api/r11/register.php', {
+          method: 'POST',
+          body: formData
+        })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.success) {
+              alert('✅ ' + (data.message || 'Solicitud enviada correctamente.'));
+              // Update local user data
+              if (usuarioLogueado) {
+                usuarioLogueado.es_credito_r11 = 1;
+                usuarioLogueado.credito_r11_aprobado = 0;
+                localStorage.setItem('ruta11_user', JSON.stringify(usuarioLogueado));
+              }
+              window.location.reload();
+            } else {
+              document.getElementById('submitError').classList.remove('hidden');
+              document.getElementById('submitErrorMsg').textContent = data.error || 'Error al enviar solicitud.';
+              btn.disabled = false;
+              btn.textContent = 'Enviar Solicitud';
+            }
+          })
+          .catch(function(err) {
+            console.error('Submit error:', err);
+            document.getElementById('submitError').classList.remove('hidden');
+            document.getElementById('submitErrorMsg').textContent = 'Error de conexión. Intenta nuevamente.';
+            btn.disabled = false;
+            btn.textContent = 'Enviar Solicitud';
+          });
+      }
+
+      // Cleanup camera on page unload
+      window.addEventListener('beforeunload', stopCamera);
+    </script>
+
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+      body { font-family: 'Inter', system-ui, -apple-system, sans-serif; margin: 0; }
+      .font-inter { font-family: 'Inter', system-ui, sans-serif; }
+      .animate-spin { animation: spin 1s linear infinite; }
+      @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+  </body>
+</html>
