@@ -36,6 +36,8 @@ curl -s -H "Authorization: Bearer $COOLIFY_TOKEN" -H "Accept: application/json" 
 | app3 | `egck4wwcg0ccc4osck4sw8ow` | https://app.laruta11.cl | /app3 | 80 | production (env_id: 1) |
 | caja3 | `xockcgsc8k000o8osw8o88ko` | https://caja.laruta11.cl | /caja3 | 80 | production (env_id: 1) |
 | landing3 | `dks4cg8s0wsswk08ocwggk0g` | https://laruta11.cl | /landing3 | 80 | production (env_id: 1) |
+| mi3-backend | `ds24j8jlaf9ov4flk1nq4jek` | https://api-mi3.laruta11.cl | /mi3/backend | 8080 | production (env_id: 1) |
+| mi3-frontend | `sxdw43i9nt3cofrzxj28hx1e` | https://mi.laruta11.cl | /mi3/frontend | 3000 | production (env_id: 1) |
 
 ### Proyecto Digitalizatodo (repo: Ricardohuiscaleo/Digitalizatodo)
 
