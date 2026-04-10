@@ -16,8 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\EnsureIsAdmin::class,
         ]);
 
-        $middleware->statefulApi();
+        // API-only: return JSON 401 instead of redirecting to login route
+        $middleware->redirectGuestsTo(fn () => null);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Return JSON for all API exceptions
+        $exceptions->shouldRenderJsonWhen(fn () => true);
     })->create();
