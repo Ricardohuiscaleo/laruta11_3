@@ -29,8 +29,8 @@ COPY database/ /var/www/html/database/
 COPY bootstrap/app.php /var/www/html/bootstrap/app.php
 COPY public/index.php /var/www/html/public/index.php
 
-# Copy env
-COPY .env.example /var/www/html/.env
+# Copy env — empty .env so Laravel reads from container env vars (Coolify injects them)
+RUN touch /var/www/html/.env
 
 # Generate app key
 RUN php artisan key:generate --force

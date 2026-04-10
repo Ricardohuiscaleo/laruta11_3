@@ -102,3 +102,13 @@ ALTER TABLE personal ADD INDEX idx_user_id (user_id);
 -- Los registros actuales en `personal` se vincularán
 -- manualmente o cuando cada trabajador haga el registro R11.
 -- ============================================================
+
+
+-- ============================================================
+-- Migración adicional: campo carnet_qr_data en usuarios
+-- Almacena los datos completos del QR del carnet chileno
+-- (RUN, type, serial, mrz, validated, validation_status)
+-- ============================================================
+
+ALTER TABLE usuarios ADD COLUMN carnet_qr_data JSON NULL
+  COMMENT 'Datos del QR del carnet: RUN, type, serial, mrz, validated, validation_status';

@@ -94,7 +94,7 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
           <!-- STEP 1: QR Scanner for RUT -->
           <div id="paso1" class="paso-form">
             <h3 class="text-lg font-bold mb-4 text-amber-800">📱 Escanear QR del Carnet</h3>
-            <p class="text-sm text-gray-600 mb-4">Escanea el código QR de tu carnet de identidad para extraer tu RUT automáticamente.</p>
+            <p class="text-sm text-gray-600 mb-4">Escanea el código QR de tu carnet para validar tu identidad.</p>
 
             <!-- QR Scanner Container -->
             <div id="qrScannerContainer" class="mb-4">
@@ -114,8 +114,9 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
             <!-- QR Success -->
             <div id="qrSuccess" class="hidden mb-4 p-4 bg-green-50 border-2 border-green-300 rounded-xl text-center">
               <div class="text-4xl mb-2">✅</div>
-              <p class="text-green-800 font-bold">RUT detectado:</p>
+              <p class="text-green-800 font-bold">Carnet verificado:</p>
               <p id="rutDetectado" class="text-2xl font-black text-green-700 mt-1"></p>
+              <p id="serialDetectado" class="text-sm text-green-600 mt-1"></p>
             </div>
 
             <!-- QR Error -->
@@ -449,7 +450,11 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
         if (step === 1) {
           var rut = detectedRut || (document.getElementById('inputRutManual') ? document.getElementById('inputRutManual').value.trim() : '');
           if (!rut) {
-            alert('⚠️ Debes escanear el QR de tu carnet o ingresar tu RUT manualmente.');
+            alert('⚠️ Debes escanear el QR de tu carnet para validar tu identidad.');
+            return false;
+          }
+          if (!carnetQRData && !document.getElementById('inputRutManual').value.trim()) {
+            alert('⚠️ Debes escanear el QR del carnet. Si no puedes usar la cámara, ingresa tu RUT manualmente.');
             return false;
           }
           document.getElementById('rutValue').value = rut;
@@ -488,13 +493,26 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
       }
 
       // ========== QR SCANNER ==========
+      var carnetQRData = null; // Stores full QR data as JSON
+
       function parseCarnetQR(qrText) {
         try {
           var url = new URL(qrText);
           if (!url.hostname.includes('registrocivil.cl')) return null;
           var rut = url.searchParams.get('RUN');
           if (!rut) return null;
-          return { rut: rut, serial: url.searchParams.get('serial'), valid: true };
+          var serial = url.searchParams.get('serial');
+          var mrz = url.searchParams.get('mrz');
+          var type = url.searchParams.get('type');
+          if (!serial || !mrz) return null; // Need all data
+          return {
+            rut: rut,
+            serial: serial,
+            mrz: mrz,
+            type: type || 'CEDULA',
+            qr_url: qrText,
+            valid: true
+          };
         } catch (e) {
           return null;
         }
@@ -569,17 +587,23 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
               var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
               if (code && code.data) {
                 var parsed = parseCarnetQR(code.data);
-                if (parsed && parsed.rut) {
-                  // Success!
+                if (parsed && parsed.rut && parsed.serial && parsed.mrz) {
+                  // Success — all carnet data captured
                   detectedRut = parsed.rut;
+                  carnetQRData = parsed;
                   document.getElementById('rutValue').value = parsed.rut;
                   document.getElementById('rutDetectado').textContent = parsed.rut;
+                  document.getElementById('serialDetectado').textContent = 'Serial: ' + parsed.serial;
                   successEl.classList.remove('hidden');
                   scannerContainer.classList.add('hidden');
                   playBeep();
                   try { navigator.vibrate(200); } catch (e) {}
                   stopCamera();
                   return;
+                } else if (parsed && parsed.rut && (!parsed.serial || !parsed.mrz)) {
+                  // Partial data — missing serial or mrz
+                  errorEl.classList.remove('hidden');
+                  document.getElementById('qrErrorMsg').textContent = 'QR del carnet detectado pero faltan datos (serial/mrz). Intenta de nuevo con mejor iluminación.';
                 } else {
                   // Invalid QR
                   errorEl.classList.remove('hidden');
@@ -635,6 +659,9 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
         formData.append('rut', rut);
         formData.append('selfie', selfieInput.files[0]);
         formData.append('rol', rol);
+        if (carnetQRData) {
+          formData.append('carnet_qr_data', JSON.stringify(carnetQRData));
+        }
 
         fetch('/api/r11/register.php', {
           method: 'POST',
