@@ -21,19 +21,19 @@
       height: calc(100vh - 35px); /* Solo header */
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      overflow: auto;
     }
     
     .layout-split {
       display: flex;
+      flex-direction: column;
       flex: 1;
       gap: 2px;
-      overflow: hidden;
+      overflow: auto;
     }
 
     /* COLUMNAS */
     .column {
-      flex: 1;
       display: flex;
       flex-direction: column;
       background: rgba(255,255,255,0.02);
@@ -61,15 +61,12 @@
       display: grid; 
       grid-template-columns: repeat(8, 1fr); /* 8 columnas de alimentos */
       gap: 1px;
-      overflow-y: auto;
-      flex: 1;
       align-content: start; 
       grid-auto-rows: min-content; 
     }
 
-    .column-right { flex: 0.68; } /* Reducido un 20% aprox el ancho total */
     .column-right .products-grid {
-      grid-template-columns: repeat(8, 1fr); /* 8 columnas de bebidas */
+      grid-template-columns: repeat(8, 1fr); /* 8 columnas de bebidas, mismo ancho que alimentos */
       align-content: start;
       grid-auto-rows: min-content;
     }
@@ -151,35 +148,31 @@
       color: #059669; 
     }
     
-    /* ESTILO BEBIDAS: MISMO FORMATO 4:5 */
+    /* ESTILO BEBIDAS: MISMO FORMATO QUE ALIMENTOS */
     .card-drink {
       aspect-ratio: 4/5 !important; 
       position: relative;
       box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
     .card-drink .product-image { 
-      height: 80% !important;
+      height: 50% !important;
       width: 100% !important; 
       object-fit: contain !important;
-      margin: 2px auto 0;
       mix-blend-mode: multiply; 
       border: none !important;
     }
     .card-drink .product-content {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 20% !important;
-      background: rgba(255,255,255,0.95);
+      height: 50% !important;
+      background: #ffffff;
       border: none;
-      padding: 2px 0;
+      padding: 4px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
     }
     .card-drink .product-price { 
-      font-size: 1.2vw !important; 
+      font-size: 1.1vw !important; 
       color: #059669;
       margin: 0 !important;
     }
@@ -505,34 +498,40 @@
           e.preventDefault();
           if (currentCol < (cols - 1)) {
               nextIndex = Math.min(currentIndex + 1, (isDrink ? allProductsGlobal.length - 1 : foodCount - 1));
-          } else if (!isDrink) {
-              // Único "salto" permitido: pasar de comida a bebidas en la misma fila
-              let targetDrink = foodCount + (currentRow * cols);
-              if (targetDrink < allProductsGlobal.length) nextIndex = targetDrink;
           }
           break;
         case 'ArrowLeft':
           e.preventDefault();
           if (currentCol > 0) {
               nextIndex = Math.max(currentIndex - 1, (isDrink ? foodCount : 0));
-          } else if (isDrink) {
-              // Volver de bebidas a comida en la misma fila
-              let targetFood = (currentRow * cols) + 7;
-              if (targetFood < foodCount) nextIndex = targetFood;
-              else nextIndex = foodCount - 1; // Ir al último de comida si la fila no alcanza
           }
           break;
         case 'ArrowDown':
           e.preventDefault();
           let targetDown = currentIndex + cols;
           let maxSec = isDrink ? allProductsGlobal.length - 1 : foodCount - 1;
-          if (targetDown <= maxSec) nextIndex = targetDown;
+          if (targetDown <= maxSec) {
+            nextIndex = targetDown;
+          } else if (!isDrink) {
+            // Saltar de comida a bebidas
+            let targetDrink = foodCount + currentCol;
+            if (targetDrink < allProductsGlobal.length) nextIndex = targetDrink;
+            else nextIndex = allProductsGlobal.length - 1;
+          }
           break;
         case 'ArrowUp':
           e.preventDefault();
           let targetUp = currentIndex - cols;
           let minSec = isDrink ? foodCount : 0;
-          if (targetUp >= minSec) nextIndex = targetUp;
+          if (targetUp >= minSec) {
+            nextIndex = targetUp;
+          } else if (isDrink) {
+            // Saltar de bebidas a comida (última fila de comida, misma columna)
+            let lastFoodRow = Math.floor((foodCount - 1) / cols);
+            let targetFood = lastFoodRow * cols + currentCol;
+            if (targetFood >= foodCount) targetFood = foodCount - 1;
+            nextIndex = targetFood;
+          }
           break;
         case 'Enter':
           e.preventDefault();
