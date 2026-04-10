@@ -221,10 +221,13 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const cancelOrder = async (orderId, orderNumber) => {
     const order = orders.find(o => o.id === orderId);
     const isRL6 = order?.payment_method === 'rl6_credit';
+    const isR11 = order?.payment_method === 'r11_credit';
 
     const confirmMsg = isRL6
       ? `⚠️ ¿ANULAR el pedido ${orderNumber}?\n\n✅ Se reintegrará el crédito RL6 automáticamente.\n\nEsta acción no se puede deshacer.`
-      : `⚠️ ¿ANULAR el pedido ${orderNumber}?\n\nEsta acción no se puede deshacer.`;
+      : isR11
+        ? `⚠️ ¿ANULAR el pedido ${orderNumber}?\n\n✅ Se reintegrará el crédito R11 automáticamente.\n\nEsta acción no se puede deshacer.`
+        : `⚠️ ¿ANULAR el pedido ${orderNumber}?\n\nEsta acción no se puede deshacer.`;
 
     if (!confirm(confirmMsg)) return;
 
@@ -245,6 +248,25 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
         const refundResult = await refundResponse.json();
         if (refundResult.success) {
           alert('✅ Pedido anulado y crédito RL6 reintegrado');
+          await loadOrders();
+        } else {
+          alert('⚠️ Error: ' + refundResult.message);
+        }
+      } else if (isR11) {
+        // Para pedidos R11, llamar a la API de reintegro R11
+        const refundResponse = await fetch('/api/r11_refund_credit.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            order_number: orderNumber,
+            admin_id: 1,
+            reason: 'Pedido anulado desde comandas'
+          })
+        });
+
+        const refundResult = await refundResponse.json();
+        if (refundResult.success) {
+          alert('✅ Pedido anulado y crédito R11 reintegrado');
           await loadOrders();
         } else {
           alert('⚠️ Error: ' + refundResult.message);
@@ -467,6 +489,8 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
       case 'cash': return 'Efectivo';
       case 'transfer': return 'Transferencia';
       case 'pedidosya': return 'PedidosYA';
+      case 'rl6_credit': return 'Crédito RL6';
+      case 'r11_credit': return 'Crédito R11';
       default: return method;
     }
   };
@@ -474,7 +498,8 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const activeOrders = orders.filter(o =>
     o.order_status !== 'delivered' &&
     o.order_status !== 'cancelled' &&
-    !o.order_number.startsWith('RL6-') // Ocultar pagos de crédito RL6
+    !o.order_number.startsWith('RL6-') && // Ocultar pagos de crédito RL6
+    !o.order_number.startsWith('R11C-') // Ocultar pagos de crédito R11
   );
   const activeChecklists = checklists.filter(c => c.status !== 'completed' && c.status !== 'missed');
   const immediateOrders = activeOrders.filter(o => !isScheduledOrder(o));
@@ -613,7 +638,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
                     const orderSubtotal = `$${parseInt(order.subtotal || order.installment_amount || 0).toLocaleString('es-CL')}`;
                     const orderTotal = `$${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}`;
-                    const payLabels = { cash: 'Efectivo', card: 'Tarjeta (pagado)', transfer: 'Transferencia', pedidosya: 'PedidosYA', rl6_credit: 'RL6' };
+                    const payLabels = { cash: 'Efectivo', card: 'Tarjeta (pagado)', transfer: 'Transferencia', pedidosya: 'PedidosYA', rl6_credit: 'RL6', r11_credit: 'R11' };
 
                     // Desglose delivery
                     const baseFee = parseInt(order.delivery_fee || 0);

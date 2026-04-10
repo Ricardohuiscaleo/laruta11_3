@@ -679,6 +679,14 @@ export default function ArqueoResumen() {
               <div className="card-amount">${fmt(d.rl6_credit.total)}</div>
               <div className="card-count">{d.rl6_credit.count} pedidos</div>
             </div>
+
+            {d.r11_credit && (
+            <div className="card">
+              <div className="card-label"><CreditCard size={14} /> Crédito R11</div>
+              <div className="card-amount">${fmt(d.r11_credit.total)}</div>
+              <div className="card-count">{d.r11_credit.count} pedidos</div>
+            </div>
+            )}
             </div>
           </div>
 

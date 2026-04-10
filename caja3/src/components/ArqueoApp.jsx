@@ -220,6 +220,16 @@ export default function ArqueoApp() {
           <div className="card-count">{salesData.summary.rl6_credit.count} pedidos</div>
         </div>
 
+        {salesData.summary.r11_credit && (
+          <div className="card">
+            <div className="card-title">
+              <BadgeDollarSign size={16} /> Crédito R11
+            </div>
+            <div className="card-amount">${fmt(salesData.summary.r11_credit.total)}</div>
+            <div className="card-count">{salesData.summary.r11_credit.count} pedidos</div>
+          </div>
+        )}
+
         <div className="card card-delivery">
           <div className="card-title"><Bike size={16} /> Delivery</div>
           <div className="card-amount">${fmt(deliveryTotal)}</div>

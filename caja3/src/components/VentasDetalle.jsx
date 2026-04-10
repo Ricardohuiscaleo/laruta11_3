@@ -114,7 +114,8 @@ export default function VentasDetalle() {
       'transfer': { icon: Smartphone, label: 'Transfer', color: 'bg-blue-100 text-blue-800' },
       'webpay': { icon: CreditCard, label: 'Webpay', color: 'bg-yellow-100 text-yellow-800' },
       'pedidosya': { icon: Truck, label: 'PedidosYA', color: 'bg-orange-100 text-orange-800' },
-      'rl6_credit': { icon: CreditCard, label: 'Crédito RL6', color: 'bg-emerald-100 text-emerald-800' }
+      'rl6_credit': { icon: CreditCard, label: 'Crédito RL6', color: 'bg-emerald-100 text-emerald-800' },
+      'r11_credit': { icon: CreditCard, label: 'Crédito R11', color: 'bg-amber-100 text-amber-800' }
     };
     const badge = badges[method] || { icon: CreditCard, label: method, color: 'bg-gray-100 text-gray-800' };
     const Icon = badge.icon;
@@ -175,7 +176,8 @@ export default function VentasDetalle() {
               { key: 'card', icon: CreditCard, label: 'Tarjeta' },
               { key: 'transfer', icon: Smartphone, label: 'Transfer' },
               { key: 'pedidosya', icon: Truck, label: 'PedidosYA' },
-              { key: 'rl6_credit', icon: CreditCard, label: 'RL6' }
+              { key: 'rl6_credit', icon: CreditCard, label: 'RL6' },
+              { key: 'r11_credit', icon: CreditCard, label: 'R11' }
             ].map(filter => {
               const Icon = filter.icon;
               const isActive = currentFilter === filter.key;
