@@ -1,0 +1,124 @@
+<?php
+header('Content-Type: application/json');
+
+$config = require_once __DIR__ . '/../../config.php';
+
+try {
+    $order_id = $_GET['x_reference'] ?? null;
+    $result = $_GET['x_result'] ?? null;
+    $transaction_id = $_GET['x_transaction_id'] ?? null;
+    $amount = $_GET['x_amount'] ?? null;
+
+    if (!$order_id || !str_starts_with($order_id, 'R11C-')) {
+        throw new Exception('Order ID R11C requerido');
+    }
+
+    $pdo = new PDO(
+        "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
+        $config['app_db_user'],
+        $config['app_db_pass'],
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+
+    // Determinar estados
+    $new_status = match($result) {
+        'completed' => 'completed',
+        'failed' => 'failed',
+        'cancelled' => 'cancelled',
+        default => 'pending'
+    };
+
+    $payment_status = ($result === 'completed') ? 'paid' : 'unpaid';
+    $order_status = ($result === 'completed') ? 'completed' : 'cancelled';
+    $tuu_message = ($result === 'completed') ? 'Transaccion aprobada' : "Transaccion $result";
+
+    // Actualizar tuu_orders
+    $sql = "UPDATE tuu_orders SET 
+            status = ?, 
+            payment_status = ?,
+            order_status = ?,
+            tuu_transaction_id = ?,
+            tuu_message = ?,
+            tuu_amount = ?,
+            tuu_timestamp = NOW(),
+            updated_at = NOW()
+            WHERE order_number = ?";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$new_status, $payment_status, $order_status, $transaction_id, $tuu_message, $amount, $order_id]);
+
+    // Obtener datos de la orden
+    $order_sql = "SELECT user_id, customer_name, product_price FROM tuu_orders WHERE order_number = ?";
+    $order_stmt = $pdo->prepare($order_sql);
+    $order_stmt->execute([$order_id]);
+    $order_data = $order_stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$order_data || !$order_data['user_id']) {
+        throw new Exception('Orden no encontrada');
+    }
+
+    // VALIDACIÓN CRÍTICA: Solo ejecutar refund si pago aprobado
+    if ($payment_status === 'paid' && $tuu_message === 'Transaccion aprobada') {
+        
+        // Verificar si ya existe el refund para evitar duplicados
+        $check_sql = "SELECT id FROM r11_credit_transactions 
+                     WHERE user_id = ? AND order_id = ? AND type = 'refund'";
+        $check_stmt = $pdo->prepare($check_sql);
+        $check_stmt->execute([$order_data['user_id'], $order_id]);
+        $existing_refund = $check_stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$existing_refund) {
+            // 1. Insertar refund en r11_credit_transactions
+            $refund_sql = "INSERT INTO r11_credit_transactions 
+                          (user_id, amount, type, description, order_id) 
+                          VALUES (?, ?, 'refund', 'Pago de crédito R11 vía TUU', ?)";
+            $refund_stmt = $pdo->prepare($refund_sql);
+            $refund_stmt->execute([$order_data['user_id'], $order_data['product_price'], $order_id]);
+            
+            // 2. Resetear credito_r11_usado a 0, actualizar fecha_ultimo_pago_r11 y desbloquear
+            $reset_sql = "UPDATE usuarios SET 
+                          credito_r11_usado = 0, 
+                          fecha_ultimo_pago_r11 = CURDATE(),
+                          credito_r11_bloqueado = 0
+                          WHERE id = ?";
+            $reset_stmt = $pdo->prepare($reset_sql);
+            $reset_stmt->execute([$order_data['user_id']]);
+            
+            // 3. Enviar email de confirmación de pago
+            $ch = curl_init('https://app.laruta11.cl/api/gmail/send_payment_confirmation.php');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+                'user_id' => $order_data['user_id'],
+                'order_id' => $order_id,
+                'amount' => $order_data['product_price']
+            ]));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+            $email_response = curl_exec($ch);
+            $email_http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            
+            error_log("R11 Payment - Email sent: HTTP $email_http_code - Response: $email_response");
+
+            error_log("R11 Payment SUCCESS - User: {$order_data['user_id']}, Order: $order_id, Amount: {$order_data['product_price']}");
+        } else {
+            error_log("R11 Payment ALREADY PROCESSED - Order: $order_id");
+        }
+        
+        header("Location: https://app.laruta11.cl/r11-payment-success?order=$order_id&amount={$order_data['product_price']}");
+        exit;
+    } else {
+        error_log("R11 Payment FAILED - Order: $order_id, Status: $payment_status, Message: $tuu_message");
+        
+        header("Location: https://app.laruta11.cl/pagar-credito-r11?error=1");
+        exit;
+    }
+
+} catch (Exception $e) {
+    error_log("R11 Payment Callback Error: " . $e->getMessage());
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
+}
