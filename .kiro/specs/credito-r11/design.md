@@ -52,7 +52,7 @@ graph TB
 
 ### Decisiones de Diseño
 
-1. **Replicar estructura RL6**: Se copian los archivos PHP de RL6 y se adaptan los nombres de campos/tablas. Esto minimiza riesgo y tiempo de desarrollo ya que la lógica está probada en producción.
+1. **Replicar estructura RL6 con correcciones de seguridad**: Se copian los archivos PHP de RL6 y se adaptan los nombres de campos/tablas, pero corrigiendo las vulnerabilidades encontradas en la auditoría (falta de autenticación, CORS abierto, simulate bypass, validación de bloqueo faltante, crédito negativo posible). Esto minimiza riesgo y tiempo de desarrollo ya que la lógica está probada en producción.
 
 2. **Campos separados en `usuarios`**: Se usan campos independientes (`es_credito_r11`, `credito_r11_usado`, etc.) en lugar de un sistema genérico de créditos. Esto mantiene la independencia total entre RL6 y R11, evitando regresiones.
 
@@ -61,6 +61,12 @@ graph TB
 4. **Reutilización de `tuu_orders`**: Los pagos R11 se registran en la misma tabla `tuu_orders` con campos adicionales (`pagado_con_credito_r11`, `monto_credito_r11`), igual que RL6. Esto permite que el ArqueoApp y reportes existentes funcionen con mínimas modificaciones.
 
 5. **Registro público simplificado**: A diferencia de RL6 (que pide carnet frontal + trasero + selfie + datos militares), R11 solo pide selfie + foto carnet trasero (para escanear RUT vía QR) + selector de rol. El registro también crea/vincula al usuario en la tabla `personal` para mi3 (RRHH). El admin sigue pudiendo registrar directamente desde caja3.
+
+6. **Autenticación obligatoria en todos los endpoints**: A diferencia de RL6 (donde los endpoints no validan sesión), R11 valida `session_token` en app3 y `$_SESSION['admin_logged_in']` en caja3. Las correcciones de seguridad también se aplican retroactivamente a RL6.
+
+7. **Rate limiting en Redis**: En lugar de archivos temporales (que se pierden en cada deploy de Docker), se usa Redis (ya configurado en el VPS) para rate limiting del registro R11.
+
+8. **CORS restringido**: Los endpoints R11 solo aceptan requests de `app.laruta11.cl` y `caja.laruta11.cl`, no `*`.
 
 ## Componentes e Interfaces
 
@@ -551,6 +557,116 @@ sequenceDiagram
 **Valida: Requerimientos 12.4**
 
 ## Manejo de Errores
+
+### Autenticación y Seguridad
+
+#### Patrón de autenticación app3 (endpoints de usuario)
+
+Todos los endpoints en `app3/api/r11/` deben validar la sesión del usuario:
+
+```php
+// Al inicio de cada endpoint R11 en app3
+$user_id_param = $input['user_id'] ?? $_GET['user_id'] ?? null;
+
+// Verificar session_token
+$session_token = $_SERVER['HTTP_X_SESSION_TOKEN'] ?? $_COOKIE['session_token'] ?? null;
+if (!$session_token) {
+    echo json_encode(['success' => false, 'error' => 'No autenticado']);
+    exit;
+}
+
+$stmt = $conn->prepare("SELECT id FROM usuarios WHERE session_token = ? AND activo = 1");
+$stmt->bind_param("s", $session_token);
+$stmt->execute();
+$auth_user = $stmt->get_result()->fetch_assoc();
+
+if (!$auth_user || $auth_user['id'] != $user_id_param) {
+    echo json_encode(['success' => false, 'error' => 'No autorizado']);
+    exit;
+}
+```
+
+#### Patrón de autenticación caja3 (endpoints de admin)
+
+Todos los endpoints R11 en caja3 deben verificar sesión de admin:
+
+```php
+// Al inicio de cada endpoint R11 en caja3
+require_once __DIR__ . '/session_config.php';
+
+if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'error' => 'No autenticado']);
+    exit;
+}
+```
+
+#### CORS restringido
+
+```php
+// En lugar de Access-Control-Allow-Origin: *
+$allowed_origins = ['https://app.laruta11.cl', 'https://caja.laruta11.cl'];
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowed_origins)) {
+    header("Access-Control-Allow-Origin: $origin");
+    header("Access-Control-Allow-Credentials: true");
+}
+```
+
+#### Rate limiting con Redis
+
+```php
+// Para registro R11 — usar Redis en vez de archivos temporales
+function checkRateLimit($ip, $max_attempts = 5, $window_seconds = 600) {
+    $redis = new Redis();
+    $redis->connect(getenv('REDIS_HOST') ?: 'coolify-redis', getenv('REDIS_PORT') ?: 6379);
+    $redis_pass = getenv('REDIS_PASSWORD');
+    if ($redis_pass) $redis->auth($redis_pass);
+    
+    $key = "r11_rate:{$ip}";
+    $attempts = $redis->incr($key);
+    if ($attempts === 1) $redis->expire($key, $window_seconds);
+    
+    return $attempts <= $max_attempts;
+}
+```
+
+#### Validaciones de monto
+
+```php
+// En todos los endpoints que reciben montos
+$amount = filter_var($input['amount'] ?? 0, FILTER_VALIDATE_FLOAT);
+if ($amount === false || $amount <= 0) {
+    echo json_encode(['success' => false, 'error' => 'Monto inválido']);
+    exit;
+}
+```
+
+#### Protección contra doble anulación
+
+```php
+// En r11_refund_credit.php — verificar que no esté ya cancelado
+$stmt = $conn->prepare("
+    SELECT id, user_id, installment_amount, payment_method, order_status
+    FROM tuu_orders 
+    WHERE order_number = ? AND payment_method = 'r11_credit'
+");
+// ...
+if ($order['order_status'] === 'cancelled') {
+    throw new Exception('Este pedido ya fue anulado');
+}
+```
+
+### Correcciones RL6 (pre-requisito)
+
+Las siguientes correcciones se aplican a los archivos RL6 existentes antes de copiarlos para R11:
+
+| Archivo | Corrección |
+|---------|-----------|
+| `app3/api/rl6/use_credit.php` | Agregar validación `credito_bloqueado = 0`, validar `amount > 0`, actualizar `payment_method = 'rl6_credit'` y `payment_status = 'paid'` en tuu_orders |
+| `app3/api/rl6/payment_callback.php` | Eliminar parámetro `simulate` |
+| `caja3/api/rl6_refund_credit.php` | Usar `GREATEST(0, credito_usado - monto)`, verificar `order_status != 'cancelled'` antes de anular |
+| `app3/api/rl6/simulate_callback.php` | Eliminar archivo en producción (solo para desarrollo local) |
 
 ### Errores de Validación (HTTP 200, success: false)
 

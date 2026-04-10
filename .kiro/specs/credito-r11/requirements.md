@@ -32,6 +32,33 @@ Sistema de crédito para trabajadores de La Ruta 11 y personas de confianza (no 
 3. THE Sistema_Crédito_R11 SHALL agregar los campos `pagado_con_credito_r11` (TINYINT DEFAULT 0) y `monto_credito_r11` (DECIMAL 10,2 DEFAULT 0.00) a la Tabla_Tuu_Orders.
 4. THE Sistema_Crédito_R11 SHALL agregar el valor `r11_credit` al ENUM del campo `payment_method` de la Tabla_Tuu_Orders.
 
+### Requerimiento 1B: Correcciones de Seguridad RL6 (Pre-requisito)
+
+**User Story:** Como Administrador, quiero que las vulnerabilidades de seguridad existentes en el sistema RL6 sean corregidas antes de replicar la arquitectura en R11, para que ambos sistemas sean seguros.
+
+#### Criterios de Aceptación
+
+1. THE Sistema_App3 SHALL validar `credito_bloqueado = 0` en `app3/api/rl6/use_credit.php` antes de permitir una compra con crédito RL6, rechazando con mensaje de bloqueo si `credito_bloqueado = 1`.
+2. THE Sistema_App3 SHALL actualizar `payment_method = 'rl6_credit'` y `payment_status = 'paid'` en la Tabla_Tuu_Orders dentro de `app3/api/rl6/use_credit.php` para consistencia en reportes.
+3. THE Sistema_App3 SHALL eliminar el parámetro `simulate` del endpoint `app3/api/rl6/payment_callback.php` en producción.
+4. THE Sistema_App3 SHALL validar que `amount > 0` y sea numérico en `app3/api/rl6/use_credit.php`.
+5. THE Sistema_Caja3 SHALL verificar que un pedido no esté ya cancelado antes de procesar anulación en `caja3/api/rl6_refund_credit.php`, para evitar doble anulación.
+6. THE Sistema_Caja3 SHALL usar `GREATEST(0, credito_usado - monto)` en `caja3/api/rl6_refund_credit.php` para evitar crédito negativo.
+
+### Requerimiento 1C: Seguridad Transversal R11
+
+**User Story:** Como Administrador, quiero que todos los endpoints del crédito R11 tengan autenticación y validaciones de seguridad, para que no puedan ser explotados por usuarios no autorizados.
+
+#### Criterios de Aceptación
+
+1. EVERY endpoint de app3/api/r11/ SHALL validar el `session_token` del usuario autenticado y verificar que el `user_id` del request coincida con el usuario de la sesión.
+2. EVERY endpoint de caja3/api/ relacionado con R11 SHALL verificar la sesión de admin (`$_SESSION['admin_logged_in'] === true`) antes de procesar, retornando HTTP 401 si no está autenticado.
+3. THE Sistema_App3 SHALL restringir CORS en endpoints R11 a los dominios `app.laruta11.cl` y `caja.laruta11.cl` en lugar de `Access-Control-Allow-Origin: *`.
+4. THE Sistema_App3 SHALL validar que `amount > 0` y sea numérico en todos los endpoints R11 que reciben montos.
+5. THE Sistema_App3 SHALL implementar rate limiting basado en Redis (en lugar de archivos temporales) para el endpoint de registro R11, usando la conexión Redis existente (`REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`).
+6. THE Sistema_App3 SHALL NO incluir parámetro `simulate` ni ningún bypass de testing en los endpoints de callback de pago R11 en producción.
+7. THE Sistema_Caja3 SHALL verificar que un pedido no esté ya cancelado (`order_status != 'cancelled'`) antes de procesar anulación con reintegro de crédito R11.
+
 ### Requerimiento 2: API de Consulta de Crédito R11
 
 **User Story:** Como Beneficiario_R11, quiero consultar mi información de crédito R11, para que pueda ver mi límite, saldo usado, crédito disponible e historial de transacciones.

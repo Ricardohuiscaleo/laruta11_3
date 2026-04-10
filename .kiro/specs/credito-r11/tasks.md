@@ -2,9 +2,25 @@
 
 ## Resumen
 
-Implementación del sistema de crédito R11 para trabajadores de La Ruta 11, replicando la arquitectura del sistema RL6 existente. Se sigue un enfoque incremental: schema BD → APIs backend (PHP) → frontend (Astro/React) → cron jobs → tests. Cada API se copia del equivalente RL6 y se adaptan campos/tablas/prefijos.
+Implementación del sistema de crédito R11 para trabajadores de La Ruta 11, replicando la arquitectura del sistema RL6 existente con correcciones de seguridad. Se sigue un enfoque incremental: correcciones RL6 → schema BD → APIs backend (PHP) → frontend (Astro/React) → cron jobs → tests. Cada API se copia del equivalente RL6, se adaptan campos/tablas/prefijos, y se agregan autenticación, CORS restringido y validaciones de seguridad.
 
 ## Tareas
+
+- [ ] 0. Correcciones de seguridad RL6 (pre-requisito)
+  - [ ] 0.1 Corregir `app3/api/rl6/use_credit.php`
+    - Agregar validación `credito_bloqueado = 0` en el SELECT y rechazar si bloqueado
+    - Validar que `amount > 0` y sea numérico (`filter_var FILTER_VALIDATE_FLOAT`)
+    - Agregar `payment_method = 'rl6_credit'`, `payment_status = 'paid'` al UPDATE de `tuu_orders`
+    - _Requirements: 1B.1, 1B.2, 1B.4_
+  - [ ] 0.2 Corregir `app3/api/rl6/payment_callback.php`
+    - Eliminar el parámetro `simulate` y toda la lógica de `$is_simulation`
+    - _Requirements: 1B.3_
+  - [ ] 0.3 Corregir `caja3/api/rl6_refund_credit.php`
+    - Verificar `order_status != 'cancelled'` antes de procesar anulación
+    - Usar `GREATEST(0, credito_usado - ?)` en el UPDATE para evitar crédito negativo
+    - _Requirements: 1B.5, 1B.6_
+  - [ ] 0.4 Eliminar `app3/api/rl6/simulate_callback.php` (archivo de testing en producción)
+    - _Requirements: 1B.3_
 
 - [ ] 1. Esquema de base de datos R11
   - [ ] 1.1 Crear script SQL de migración para campos R11 en tabla `usuarios`
@@ -32,7 +48,9 @@ Implementación del sistema de crédito R11 para trabajadores de La Ruta 11, rep
     - Copiar de `app3/api/rl6/get_credit.php` y adaptar campos: `es_credito_r11`, `credito_r11_aprobado`, `limite_credito_r11`, `credito_r11_usado`, `relacion_r11`, `fecha_aprobacion_r11`
     - Consultar últimas 20 transacciones de `r11_credit_transactions`
     - Retornar error si usuario no tiene `es_credito_r11 = 1` o `credito_r11_aprobado = 1`
-    - _Requirements: 2.1, 2.2, 2.3_
+    - SEGURIDAD: Validar `session_token` y que `user_id` coincida con usuario autenticado
+    - SEGURIDAD: CORS restringido a `app.laruta11.cl`
+    - _Requirements: 2.1, 2.2, 2.3, 1C.1, 1C.3_
   - [ ] 2.2 Crear `app3/api/r11/use_credit.php`
     - Copiar de `app3/api/rl6/use_credit.php` y adaptar campos R11
     - Validar tres flags: `es_credito_r11 = 1`, `credito_r11_aprobado = 1`, `credito_r11_bloqueado = 0`
@@ -40,20 +58,25 @@ Implementación del sistema de crédito R11 para trabajadores de La Ruta 11, rep
     - En transacción: UPDATE `credito_r11_usado`, INSERT `r11_credit_transactions` (debit), UPDATE `tuu_orders` con `pagado_con_credito_r11 = 1`, `monto_credito_r11`, `payment_method = 'r11_credit'`, `payment_status = 'paid'`
     - Retornar error con crédito disponible y monto solicitado si insuficiente
     - Retornar error si crédito bloqueado
-    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8_
+    - SEGURIDAD: Validar `session_token`, `user_id` coincida, `amount > 0` numérico, CORS restringido
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 1C.1, 1C.3, 1C.4_
   - [ ] 2.3 Crear `app3/api/r11/get_statement.php`
     - Copiar de `app3/api/rl6/get_statement.php` y adaptar campos R11
     - Retornar resumen (límite, usado, disponible, relación R11) y transacciones del período actual con items de orden
-    - _Requirements: 4.1, 4.2_
+    - SEGURIDAD: Validar `session_token` y que `user_id` coincida con usuario autenticado
+    - _Requirements: 4.1, 4.2, 1C.1_
   - [ ] 2.4 Crear `app3/api/r11/register.php` — Registro público de trabajador R11
     - Copiar estructura de `app3/api/rl6/register_militar.php` y simplificar
     - Recibir: `user_id`, `rut` (extraído del QR en frontend), `selfie` (file), `rol` (Planchero/a, Cajero/a, Rider, Otro)
-    - Validar que usuario existe en `usuarios`, rate limiting (5 intentos/10 min), validar formato RUT chileno
+    - Validar que usuario existe en `usuarios`, validar formato RUT chileno
+    - SEGURIDAD: Rate limiting con Redis (5 intentos/10 min por IP) en vez de archivos temporales
+    - SEGURIDAD: Validar `session_token` y que `user_id` coincida
+    - SEGURIDAD: NO incluir `unlock_code` ni bypass de rate limit
     - Subir selfie a S3 (`carnets-trabajadores/{user_id}_selfie_{timestamp}`)
     - UPDATE `usuarios` SET `es_credito_r11 = 1`, `rut`, `selfie_url`, `relacion_r11 = rol`
     - INSERT/UPDATE en tabla `personal` (nombre, teléfono, email, rut, rol) para vincular con mi3
     - Enviar notificación Telegram al admin con datos + selfie + RUT + botones aprobación ($20k, $30k, $50k, Rechazar)
-    - _Requirements: 14.1, 14.4, 14.5, 14.6, 14.7, 14.8, 14.9, 14.10, 14.11, 14.12, 14.13_
+    - _Requirements: 14.1, 14.4, 14.5, 14.6, 14.7, 14.8, 14.9, 14.10, 14.11, 14.12, 14.13, 1C.1, 1C.5, 1C.6_
 
 - [ ] 3. APIs de app3 — Pago de crédito R11 vía Webpay
   - [ ] 3.1 Crear `app3/api/r11/create_payment.php`
@@ -63,7 +86,8 @@ Implementación del sistema de crédito R11 para trabajadores de La Ruta 11, rep
     - URLs: callback → `/api/r11/payment_callback.php`, complete → `/r11-payment-pending`, cancel → `/pagar-credito-r11?cancelled=1`
     - Validar `es_credito_r11 = 1` y `credito_r11_aprobado = 1`
     - Usar `credito_r11_usado` como monto
-    - _Requirements: 5.1_
+    - SEGURIDAD: Validar `session_token` y que `user_id` coincida
+    - _Requirements: 5.1, 1C.1_
   - [ ] 3.2 Crear `app3/api/r11/payment_callback.php`
     - Copiar de `app3/api/rl6/payment_callback.php` y adaptar:
     - Validar prefijo `R11C-` en `x_reference`
@@ -71,7 +95,8 @@ Implementación del sistema de crédito R11 para trabajadores de La Ruta 11, rep
     - Si pago exitoso: INSERT refund en `r11_credit_transactions`, UPDATE `credito_r11_usado = 0`, `fecha_ultimo_pago_r11 = CURDATE()`, `credito_r11_bloqueado = 0`
     - Enviar email de confirmación de pago
     - Redirect a `r11-payment-success` o `pagar-credito-r11?error=1`
-    - _Requirements: 5.2, 5.3, 5.4, 5.5_
+    - SEGURIDAD: NO incluir parámetro `simulate` ni bypass de testing
+    - _Requirements: 5.2, 5.3, 5.4, 5.5, 1C.6_
 
 - [ ] 4. Checkpoint — Verificar APIs de app3
   - Ensure all tests pass, ask the user if questions arise.
@@ -81,31 +106,37 @@ Implementación del sistema de crédito R11 para trabajadores de La Ruta 11, rep
     - Copiar de `caja3/api/get_militares_rl6.php` y adaptar campos R11
     - Listar usuarios con `es_credito_r11 = 1` mostrando: nombre, email, teléfono, `relacion_r11`, `credito_r11_aprobado`, `limite_credito_r11`, `credito_r11_usado`, crédito disponible
     - Soportar filtros: `status=pending` (aprobado=0), `status=approved` (aprobado=1)
-    - _Requirements: 7.1, 7.4, 7.5_
+    - SEGURIDAD: Verificar sesión de admin antes de procesar
+    - _Requirements: 7.1, 7.4, 7.5, 1C.2_
   - [ ] 5.2 Crear `caja3/api/approve_credito_r11.php`
     - Copiar de `caja3/api/approve_militar_rl6.php` y adaptar campos R11
     - Acción `approve`: SET `credito_r11_aprobado = 1`, `limite_credito_r11`, `fecha_aprobacion_r11 = NOW()`
     - Acción `reject`: SET `credito_r11_aprobado = 0`, `limite_credito_r11 = 0`
-    - _Requirements: 7.2, 7.3_
+    - SEGURIDAD: Verificar sesión de admin antes de procesar
+    - _Requirements: 7.2, 7.3, 1C.2_
   - [ ] 5.3 Crear `caja3/api/register_credito_r11.php`
     - Endpoint nuevo (sin equivalente RL6)
     - Si `user_id` proporcionado: UPDATE `es_credito_r11 = 1`, `relacion_r11`
     - Si usuario no existe: INSERT en `usuarios` con datos básicos (nombre, teléfono, email) y `es_credito_r11 = 1`
     - Si `auto_approve = true`: aprobar crédito y asignar límite en el mismo paso
-    - _Requirements: 13.1, 13.2, 13.3_
+    - SEGURIDAD: Verificar sesión de admin antes de procesar
+    - _Requirements: 13.1, 13.2, 13.3, 1C.2_
   - [ ] 5.4 Crear `caja3/api/r11_refund_credit.php`
     - Copiar de `caja3/api/rl6_refund_credit.php` y adaptar campos R11
     - Buscar orden con `payment_method = 'r11_credit'`
-    - INSERT refund en `r11_credit_transactions`, UPDATE `credito_r11_usado -= monto`
+    - SEGURIDAD: Verificar `order_status != 'cancelled'` antes de procesar (evitar doble anulación)
+    - INSERT refund en `r11_credit_transactions`, UPDATE `credito_r11_usado = GREATEST(0, credito_r11_usado - monto)`
     - Marcar orden como `cancelled`/`unpaid`
     - Restaurar inventario (ingredientes y productos) con transacciones `return` en `inventory_transactions`
-    - _Requirements: 6.1, 6.2, 6.3, 6.4_
+    - SEGURIDAD: Verificar sesión de admin antes de procesar
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 1C.2, 1C.7_
   - [ ] 5.5 Crear `caja3/api/r11/process_manual_payment.php`
     - Copiar de `caja3/api/rl6/process_manual_payment.php` y adaptar campos R11
     - INSERT refund en `r11_credit_transactions`, UPDATE `credito_r11_usado = GREATEST(0, credito_r11_usado - monto)`, `fecha_ultimo_pago_r11 = CURDATE()`
-    - Crear orden `R11C-MANUAL-{timestamp}` en `tuu_orders` con `payment_status = 'paid'`, `order_status = 'completed'`
+    - Crear orden `R11C-MANUAL-{timestamp}` en `tuu_orders` con `payment_method = 'r11_credit'`, `payment_status = 'paid'`, `order_status = 'completed'`
     - Enviar email de confirmación de pago al beneficiario
-    - _Requirements: 8.1, 8.2, 8.3, 8.4_
+    - SEGURIDAD: Verificar sesión de admin, validar `amount > 0`
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 1C.2, 1C.4_
 
 - [ ] 6. Checkpoint — Verificar APIs de caja3
   - Ensure all tests pass, ask the user if questions arise.
@@ -258,3 +289,6 @@ Implementación del sistema de crédito R11 para trabajadores de La Ruta 11, rep
 - Los checkpoints aseguran validación incremental
 - Los property tests validan propiedades universales de correctitud usando fast-check
 - La implementación sigue el patrón "copiar de RL6 y adaptar" para minimizar riesgo
+- **Tarea 0 es pre-requisito**: Las correcciones de seguridad RL6 deben aplicarse antes de copiar archivos para R11
+- **Seguridad transversal**: Todos los endpoints R11 incluyen autenticación (session_token en app3, sesión admin en caja3), CORS restringido, y validación de montos
+- **Rate limiting en Redis**: El registro R11 usa Redis en vez de archivos temporales (que se pierden en cada deploy Docker)
