@@ -64,7 +64,7 @@ try {
 
     // 1. Obtener datos del pedido
     $stmt = $conn->prepare("
-        SELECT id, user_id, installment_amount, payment_method
+        SELECT id, user_id, installment_amount, payment_method, order_status
         FROM tuu_orders 
         WHERE order_number = ? AND LOWER(payment_method) = 'rl6_credit'
     ");
@@ -77,13 +77,18 @@ try {
         throw new Exception('Pedido no encontrado o no pagado con crédito RL6');
     }
 
+    // Verificar que el pedido no esté ya cancelado (evitar doble anulación)
+    if ($order['order_status'] === 'cancelled') {
+        throw new Exception('Este pedido ya fue anulado');
+    }
+
     $user_id = $order['user_id'];
     $monto = $order['installment_amount'];
 
-    // 2. Reintegrar crédito (restar de credito_usado)
+    // 2. Reintegrar crédito (restar de credito_usado, sin bajar de 0)
     $stmt = $conn->prepare("
         UPDATE usuarios 
-        SET credito_usado = credito_usado - ? 
+        SET credito_usado = GREATEST(0, credito_usado - ?) 
         WHERE id = ? AND es_militar_rl6 = 1
     ");
     $stmt->bind_param("di", $monto, $user_id);

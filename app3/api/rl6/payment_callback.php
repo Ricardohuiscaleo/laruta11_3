@@ -8,7 +8,6 @@ try {
     $result = $_GET['x_result'] ?? null;
     $transaction_id = $_GET['x_transaction_id'] ?? null;
     $amount = $_GET['x_amount'] ?? null;
-    $is_simulation = isset($_GET['simulate']) && $_GET['simulate'] === '1';
 
     if (!$order_id || !str_starts_with($order_id, 'RL6-')) {
         throw new Exception('Order ID RL6 requerido');
@@ -108,30 +107,14 @@ try {
             error_log("RL6 Payment ALREADY PROCESSED - Order: $order_id");
         }
         
-        // Solo redirigir si NO es simulación
-        if (!$is_simulation) {
-            header("Location: https://app.laruta11.cl/rl6-payment-success?order=$order_id&amount={$order_data['product_price']}");
-            exit;
-        }
+        header("Location: https://app.laruta11.cl/rl6-payment-success?order=$order_id&amount={$order_data['product_price']}");
+        exit;
     } else {
         error_log("RL6 Payment FAILED - Order: $order_id, Status: $payment_status, Message: $tuu_message");
         
-        // Solo redirigir si NO es simulación
-        if (!$is_simulation) {
-            header("Location: https://app.laruta11.cl/pagar-credito?error=1");
-            exit;
-        }
+        header("Location: https://app.laruta11.cl/pagar-credito?error=1");
+        exit;
     }
-
-    echo json_encode([
-        'success' => true,
-        'order_id' => $order_id,
-        'status' => $new_status,
-        'payment_processed' => ($payment_status === 'paid' && $tuu_message === 'Transaccion aprobada'),
-        'redirect' => ($payment_status === 'paid' && $tuu_message === 'Transaccion aprobada') 
-            ? "https://app.laruta11.cl/rl6-payment-success?order=$order_id&amount={$order_data['product_price']}"
-            : "https://app.laruta11.cl/pagar-credito?error=1"
-    ]);
 
 } catch (Exception $e) {
     error_log("RL6 Payment Callback Error: " . $e->getMessage());

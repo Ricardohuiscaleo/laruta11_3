@@ -40,11 +40,19 @@ if (!$user_id || !$amount || !$order_id) {
     exit;
 }
 
+// Validar que amount sea numérico y positivo
+$amount = filter_var($amount, FILTER_VALIDATE_FLOAT);
+if ($amount === false || $amount <= 0) {
+    echo json_encode(['success' => false, 'error' => 'Monto inválido']);
+    exit;
+}
+
 // Verificar que es militar aprobado
 $stmt = $conn->prepare("
     SELECT 
         es_militar_rl6,
         credito_aprobado,
+        credito_bloqueado,
         limite_credito,
         credito_usado
     FROM usuarios 
@@ -58,6 +66,12 @@ $user = $result->fetch_assoc();
 
 if (!$user || !$user['es_militar_rl6'] || !$user['credito_aprobado']) {
     echo json_encode(['success' => false, 'error' => 'Usuario no autorizado para usar crédito RL6']);
+    exit;
+}
+
+// Validar que el crédito no esté bloqueado
+if (!empty($user['credito_bloqueado'])) {
+    echo json_encode(['success' => false, 'error' => 'Tu crédito está bloqueado por falta de pago. Por favor paga tu saldo pendiente.']);
     exit;
 }
 
@@ -100,7 +114,7 @@ try {
     // Actualizar orden en tuu_orders
     $stmt_order = $conn->prepare("
         UPDATE tuu_orders 
-        SET pagado_con_credito_rl6 = 1, monto_credito_rl6 = ?
+        SET pagado_con_credito_rl6 = 1, monto_credito_rl6 = ?, payment_method = 'rl6_credit', payment_status = 'paid'
         WHERE order_number = ?
     ");
     $stmt_order->bind_param("ds", $amount, $order_id);
