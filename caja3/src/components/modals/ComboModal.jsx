@@ -236,24 +236,24 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center animate-fade-in" onClick={onClose}>
       <div className="bg-white w-[95vw] max-w-6xl mx-4 rounded-2xl flex flex-col animate-slide-up max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-        <div className="border-b flex justify-between items-center p-4">
-          <h2 className="font-bold text-gray-800 text-xl">Personalizar Combo</h2>
+        <div className="border-b flex justify-between items-center p-3 sm:p-4">
+          <h2 className="font-bold text-gray-800 text-lg sm:text-xl">Personalizar Combo</h2>
           <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-800">
             <X size={24} />
           </button>
         </div>
 
-        <div className="flex-grow overflow-y-auto p-4">
+        <div className="flex-grow overflow-y-auto p-3 sm:p-4">
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
               <p className="text-gray-600 mt-4">Cargando combo...</p>
             </div>
           ) : comboData ? (
-            <div className="space-y-6">              {/* Combo Header super resumido */}
+            <div className="space-y-4 sm:space-y-6">              {/* Combo Header super resumido */}
               <div className="text-center mb-2">
-                <h3 className="text-2xl font-bold text-gray-800">{combo.name}</h3>
-                <p className="text-xl font-bold text-orange-500 mt-1">${parseInt(combo.price).toLocaleString('es-CL')}</p>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-800">{combo.name}</h3>
+                <p className="text-lg sm:text-xl font-bold text-orange-500 mt-1">${parseInt(combo.price).toLocaleString('es-CL')}</p>
               </div>
 
               {/* Selection Groups (Omitimos Mostrar los Fixed Items para mantener UI Limpia) */}
@@ -262,10 +262,10 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                 const totalSelected = getTotalSelected(groupName);
                 return (
                   <div key={groupIndex}>
-                    <h4 className="text-lg font-semibold text-gray-800 mb-3 text-center bg-gray-100 py-2 rounded-lg">
+                    <h4 className="text-base sm:text-lg font-semibold text-gray-800 mb-2 sm:mb-3 text-center bg-gray-100 py-2 rounded-lg">
                       Elige tu {groupName} ({totalSelected}/{maxSelections})
                     </h4>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                       {options.map((option, optionIndex) => {
                         const currentCount = maxSelections === 1
                           ? (selections[groupName] === option.product_id ? 1 : 0)
@@ -275,7 +275,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                         return (
                           <div
                             key={optionIndex}
-                            className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${currentCount > 0
+                            className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border-2 transition-all ${currentCount > 0
                               ? 'border-orange-500 bg-orange-50'
                               : 'border-gray-200'
                               }`}
@@ -284,35 +284,35 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                               <img
                                 src={option.image_url}
                                 alt={option.product_name}
-                                className="w-12 h-12 object-cover rounded"
+                                className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded flex-shrink-0"
                                 onError={(e) => {
                                   console.log('Error loading option image:', e.target.src);
                                   e.target.style.display = 'none';
                                 }}
                               />
                             )}
-                            <div className="flex-1 text-left">
-                              <p className="font-medium text-gray-800">{option.product_name}</p>
+                            <div className="flex-1 min-w-0 text-left">
+                              <p className="font-medium text-gray-800 text-sm sm:text-base truncate">{option.product_name}</p>
                               {option.additional_price > 0 ? (
-                                <p className="text-sm text-orange-600">+${parseInt(option.additional_price).toLocaleString('es-CL')}</p>
+                                <p className="text-xs sm:text-sm text-orange-600">+${parseInt(option.additional_price).toLocaleString('es-CL')}</p>
                               ) : (
-                                <p className="text-sm text-green-600 font-medium">Incluido</p>
+                                <p className="text-xs sm:text-sm text-green-600 font-medium">Incluido</p>
                               )}
                             </div>
                             {maxSelections > 1 ? (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                   <button
                                     onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections, 'remove')}
                                     disabled={currentCount === 0}
-                                    className="combo-nav-btn w-9 h-9 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors font-black text-xl"
+                                    className="combo-nav-btn w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors font-black text-lg sm:text-xl"
                                   >
                                     -
                                   </button>
-                                  <span className="w-8 text-center font-bold text-gray-800 text-lg">{currentCount}</span>
+                                  <span className="w-6 sm:w-8 text-center font-bold text-gray-800 text-base sm:text-lg">{currentCount}</span>
                                   <button
                                     onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections, 'add')}
                                     disabled={totalSelectedInGroup >= maxSelections}
-                                    className="combo-nav-btn w-9 h-9 rounded-lg bg-green-500 hover:bg-green-600 disabled:bg-gray-200 text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all active:scale-90 shadow-sm font-bold text-xl"
+                                    className="combo-nav-btn w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-green-500 hover:bg-green-600 disabled:bg-gray-200 text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all active:scale-90 shadow-sm font-bold text-lg sm:text-xl"
                                   >
                                     +
                                   </button>
@@ -320,13 +320,13 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                               ) : (
                                 <button
                                   onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections)}
-                                  className={`combo-nav-btn w-10 h-10 rounded-lg border-2 flex items-center justify-center transition-all ${currentCount > 0 ? 'bg-green-500 border-green-500 text-white' : 'border-gray-200 hover:bg-gray-50'
+                                  className={`combo-nav-btn w-9 h-9 sm:w-10 sm:h-10 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0 ${currentCount > 0 ? 'bg-green-500 border-green-500 text-white' : 'border-gray-200 hover:bg-gray-50'
                                     }`}
                                 >
                                   {currentCount > 0 ? (
-                                    <Check size={24} />
+                                    <Check size={20} />
                                   ) : (
-                                    <div className="w-5 h-5 rounded-md border-2 border-gray-300"></div>
+                                    <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-md border-2 border-gray-300"></div>
                                   )}
                                 </button>
                               )}
@@ -345,20 +345,20 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
             )}
           </div>
   
-          <div className="border-t p-4 flex gap-4">
+          <div className="border-t p-3 sm:p-4 flex gap-3 sm:gap-4">
             <button
               onClick={onClose}
-              className="combo-nav-btn flex-1 font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center shadow-md bg-gray-200 hover:bg-gray-300 text-gray-800"
+              className="combo-nav-btn flex-1 font-bold py-3 sm:py-3.5 px-3 sm:px-4 rounded-xl transition-all flex items-center justify-center shadow-md bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm sm:text-base"
             >
               Volver
             </button>
             <button
               onClick={handleAddToCart}
               disabled={loading || !comboData}
-              className={`combo-nav-btn flex-1 font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center shadow-lg active:scale-95 ${loading || !comboData ? 'bg-gray-300 text-gray-500' : 'bg-green-500 hover:bg-green-600 text-white'
+              className={`combo-nav-btn flex-1 font-bold py-3 sm:py-3.5 px-3 sm:px-4 rounded-xl transition-all flex items-center justify-center shadow-lg active:scale-95 text-sm sm:text-base ${loading || !comboData ? 'bg-gray-300 text-gray-500' : 'bg-green-500 hover:bg-green-600 text-white'
                 }`}
             >
-              Agregar al Carrito - ${calculateTotalPrice().toLocaleString('es-CL')}
+              Agregar - ${calculateTotalPrice().toLocaleString('es-CL')}
             </button>
         </div>
       </div>
