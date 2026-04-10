@@ -1,6 +1,5 @@
 FROM php:8.3-apache
 
-# Install system dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
     libpng-dev libjpeg-dev libfreetype6-dev \
     libzip-dev libonig-dev unzip git curl \
@@ -8,21 +7,22 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo_mysql mbstring gd zip bcmath \
     && a2enmod rewrite headers
 
-# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Create a fresh Laravel 11 project as base
-RUN composer create-project laravel/laravel:^11.0 /tmp/laravel --no-interaction --prefer-dist \
+# Create Laravel base WITHOUT running post-install scripts (avoids migrate in production)
+RUN composer create-project laravel/laravel:^11.0 /tmp/laravel --no-interaction --prefer-dist --no-scripts \
     && cp -a /tmp/laravel/. /var/www/html/ \
     && rm -rf /tmp/laravel
 
-# Install Sanctum on the base project
-RUN composer require laravel/sanctum --no-interaction
+# Install dependencies (no scripts to avoid artisan calls during build)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
-# Now overlay our custom code on top of the Laravel base
-# (artisan, vendor, bootstrap/providers.php etc remain from the base)
+# Install Sanctum
+RUN composer require laravel/sanctum --no-interaction --no-scripts
+
+# Overlay custom code
 COPY app/ /var/www/html/app/
 COPY config/ /var/www/html/config/
 COPY routes/ /var/www/html/routes/
@@ -30,23 +30,23 @@ COPY database/migrations/ /var/www/html/database/migrations/
 COPY database/seeders/ /var/www/html/database/seeders/
 COPY bootstrap/app.php /var/www/html/bootstrap/app.php
 
-# Empty .env so Laravel reads from container env vars (Coolify injects them)
-RUN rm -f /var/www/html/.env && touch /var/www/html/.env
+# Empty .env — Coolify injects env vars at runtime
+RUN rm -f .env && touch .env
 
-# Optimize autoloader with our custom classes
-RUN composer dump-autoload --optimize
+# Dump autoload with our custom classes
+RUN composer dump-autoload --optimize --no-scripts
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Permissions
+RUN chown -R www-data:www-data storage bootstrap/cache
 
-# Apache config for Laravel on port 8080
-RUN echo '<VirtualHost *:8080>\n\
+# Apache on port 8080
+RUN printf '<VirtualHost *:8080>\n\
     DocumentRoot /var/www/html/public\n\
     <Directory /var/www/html/public>\n\
         AllowOverride All\n\
         Require all granted\n\
     </Directory>\n\
-</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
+</VirtualHost>\n' > /etc/apache2/sites-available/000-default.conf
 
 RUN sed -i 's/80/8080/g' /etc/apache2/ports.conf
 
