@@ -13,29 +13,27 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# First: create a fresh Laravel 11 project as base
+# Create a fresh Laravel 11 project as base
 RUN composer create-project laravel/laravel:^11.0 /tmp/laravel --no-interaction --prefer-dist \
-    && cp -r /tmp/laravel/* /tmp/laravel/.* /var/www/html/ 2>/dev/null || true \
+    && cp -a /tmp/laravel/. /var/www/html/ \
     && rm -rf /tmp/laravel
 
-# Install Sanctum
+# Install Sanctum on the base project
 RUN composer require laravel/sanctum --no-interaction
 
 # Now overlay our custom code on top of the Laravel base
+# (artisan, vendor, bootstrap/providers.php etc remain from the base)
 COPY app/ /var/www/html/app/
 COPY config/ /var/www/html/config/
 COPY routes/ /var/www/html/routes/
-COPY database/ /var/www/html/database/
+COPY database/migrations/ /var/www/html/database/migrations/
+COPY database/seeders/ /var/www/html/database/seeders/
 COPY bootstrap/app.php /var/www/html/bootstrap/app.php
-COPY public/index.php /var/www/html/public/index.php
 
-# Copy env — empty .env so Laravel reads from container env vars (Coolify injects them)
-RUN touch /var/www/html/.env
+# Empty .env so Laravel reads from container env vars (Coolify injects them)
+RUN rm -f /var/www/html/.env && touch /var/www/html/.env
 
-# Generate app key
-RUN php artisan key:generate --force
-
-# Optimize
+# Optimize autoloader with our custom classes
 RUN composer dump-autoload --optimize
 
 # Set permissions
