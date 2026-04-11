@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Notificar Telegram",
+  "description": "Envía un mensaje a Telegram cuando el agente termina de ejecutar, notificando que el trabajo está listo.",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "curl -s -X POST \"https://api.telegram.org/bot8733395221:AAE9vL0YRHW4Fyp5GDYscTvFJi8QX_WNyws/sendMessage\" -d chat_id=8104543914 -d parse_mode=Markdown -d text=\"🤖 *Kiro terminó de trabajar*%0A%0ARevisa los cambios en el IDE.\""
+  }
+}

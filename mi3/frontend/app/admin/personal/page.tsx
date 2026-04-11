@@ -6,6 +6,10 @@ import { formatCLP, cn } from '@/lib/utils';
 import { Loader2, Plus, X, Pencil, ToggleLeft, ToggleRight } from 'lucide-react';
 import type { Personal, ApiResponse } from '@/types';
 
+const SUELDO_BASE_DEFECTO = 300000;
+const ROLES_VALIDOS = ['cajero', 'planchero', 'admin', 'seguridad'] as const;
+type RolValido = typeof ROLES_VALIDOS[number];
+
 export default function PersonalAdminPage() {
   const [personal, setPersonal] = useState<Personal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -14,6 +18,8 @@ export default function PersonalAdminPage() {
   const [editing, setEditing] = useState<Personal | null>(null);
   const [form, setForm] = useState({ nombre: '', rol: '', sueldo_base_cajero: 0, sueldo_base_planchero: 0, sueldo_base_admin: 0, sueldo_base_seguridad: 0 });
   const [submitting, setSubmitting] = useState(false);
+  // Track which salary fields the admin has manually touched (only for new workers)
+  const [touchedSueldos, setTouchedSueldos] = useState<Set<string>>(new Set());
 
   const fetchData = () => {
     setLoading(true);
@@ -28,7 +34,39 @@ export default function PersonalAdminPage() {
   const openAdd = () => {
     setEditing(null);
     setForm({ nombre: '', rol: '', sueldo_base_cajero: 0, sueldo_base_planchero: 0, sueldo_base_admin: 0, sueldo_base_seguridad: 0 });
+    setTouchedSueldos(new Set());
     setShowModal(true);
+  };
+
+  /** Parse roles from comma-separated string and apply default salary for new workers */
+  const handleRolChange = (rolValue: string) => {
+    const roles = rolValue.split(',').map(r => r.trim().toLowerCase()).filter(Boolean);
+    const sueldoUpdates: Record<string, number> = {};
+
+    if (!editing) {
+      for (const role of ROLES_VALIDOS) {
+        const key = `sueldo_base_${role}`;
+        const isRoleSelected = roles.includes(role);
+        const wasTouched = touchedSueldos.has(key);
+
+        if (isRoleSelected && !wasTouched) {
+          sueldoUpdates[key] = SUELDO_BASE_DEFECTO;
+        } else if (!isRoleSelected && !wasTouched) {
+          sueldoUpdates[key] = 0;
+        }
+      }
+    }
+
+    setForm(f => ({ ...f, rol: rolValue, ...sueldoUpdates }));
+  };
+
+  /** Handle salary field change — marks it as manually touched */
+  const handleSueldoChange = (role: RolValido, value: number) => {
+    const key = `sueldo_base_${role}`;
+    if (!editing) {
+      setTouchedSueldos(prev => new Set(prev).add(key));
+    }
+    setForm(f => ({ ...f, [key]: value }));
   };
 
   const openEdit = (p: Personal) => {
@@ -138,14 +176,14 @@ export default function PersonalAdminPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Roles (separados por coma)</label>
-                <input required value={form.rol} onChange={e => setForm(f => ({ ...f, rol: e.target.value }))}
+                <input required value={form.rol} onChange={e => handleRolChange(e.target.value)}
                   className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm" placeholder="cajero, planchero" />
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {(['cajero', 'planchero', 'admin', 'seguridad'] as const).map(role => (
+                {ROLES_VALIDOS.map(role => (
                   <div key={role}>
                     <label className="block text-xs text-gray-500 capitalize">Sueldo {role}</label>
-                    <input type="number" value={form[`sueldo_base_${role}`]} onChange={e => setForm(f => ({ ...f, [`sueldo_base_${role}`]: Number(e.target.value) }))}
+                    <input type="number" value={form[`sueldo_base_${role}`]} onChange={e => handleSueldoChange(role, Number(e.target.value))}
                       className="mt-1 block w-full rounded-lg border px-3 py-1.5 text-sm" />
                   </div>
                 ))}

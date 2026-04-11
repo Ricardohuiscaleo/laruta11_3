@@ -1,6 +1,6 @@
 import {
-  Home, User, Calendar, Receipt, CreditCard,
-  ClipboardCheck, ArrowLeftRight, Bell, Users,
+  Home, User, Calendar, Receipt, CreditCard, Wallet,
+  ClipboardCheck, ArrowLeftRight, Bell, Users, Repeat2,
   SlidersHorizontal,
   type LucideIcon,
 } from 'lucide-react';
@@ -9,6 +9,8 @@ export interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  /** Optional key used to attach dynamic badges (e.g. pending-loan indicator). */
+  badgeKey?: string;
 }
 
 // ── Worker Navigation ──
@@ -17,11 +19,13 @@ export const primaryNavItems: NavItem[] = [
   { href: '/dashboard', label: 'Inicio', icon: Home },
   { href: '/dashboard/turnos', label: 'Turnos', icon: Calendar },
   { href: '/dashboard/liquidacion', label: 'Sueldo', icon: Receipt },
-  { href: '/dashboard/credito', label: 'Crédito', icon: CreditCard },
+  { href: '/dashboard/prestamos', label: 'Préstamos', icon: Wallet, badgeKey: 'prestamo-pendiente' },
 ];
 
 export const secondaryNavItems: NavItem[] = [
   { href: '/dashboard/perfil', label: 'Perfil', icon: User },
+  { href: '/dashboard/credito', label: 'Crédito', icon: CreditCard },
+  { href: '/dashboard/reemplazos', label: 'Reemplazos', icon: Repeat2 },
   { href: '/dashboard/asistencia', label: 'Asistencia', icon: ClipboardCheck },
   { href: '/dashboard/cambios', label: 'Cambios', icon: ArrowLeftRight },
   { href: '/dashboard/notificaciones', label: 'Notificaciones', icon: Bell },

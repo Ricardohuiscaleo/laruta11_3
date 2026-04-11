@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Actualizar Bitácora",
+  "description": "Al finalizar una sesión de trabajo, lee la bitácora (.amazonq/rules/memory-bank/bitacora.md) y actualiza con lo que se hizo: features implementadas, estado de deploys, errores encontrados, lecciones aprendidas, y pendientes.",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Lee el archivo .amazonq/rules/memory-bank/bitacora.md y actualízalo con lo que se trabajó en esta sesión. Incluye: qué se implementó, estado actual de los deploys, errores encontrados y resueltos, lecciones aprendidas, y qué queda pendiente. Mantén el formato existente."
+  }
+}

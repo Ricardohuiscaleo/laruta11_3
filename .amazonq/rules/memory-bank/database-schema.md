@@ -1,7 +1,8 @@
 # La Ruta 11 - Database Schema
 
 ## 📊 Resumen
-Base de datos MySQL compartida entre app3 (clientes) y caja3 (cajeros) con 80+ tablas.
+Base de datos MySQL compartida entre app3 (clientes) y caja3 (cajeros) con 65 tablas.
+Última verificación contra producción: 2026-04-10.
 
 ## 🗄️ Tablas Principales
 
@@ -25,6 +26,19 @@ Base de datos MySQL compartida entre app3 (clientes) y caja3 (cajeros) con 80+ t
 - `fecha_registro` (timestamp, default CURRENT_TIMESTAMP)
 - `ultimo_acceso` (timestamp, auto-update)
 - `activo` (tinyint 1, default 1)
+- `instagram` (varchar 100)
+- `lugar_nacimiento` (varchar 255)
+- `nacionalidad` (varchar 20)
+- `direccion_actual` (text)
+- `ubicacion_actualizada` (timestamp)
+- `total_sessions` (int, default 0)
+- `total_time_seconds` (int, default 0)
+- `last_session_duration` (int, default 0)
+- `kanban_status` (enum: nuevo, revisando, entrevista, contratado, rechazado, default nuevo)
+- `last_notification_sent` (timestamp)
+- `notification_count` (int, default 0)
+- `pending_notification` (tinyint 1, default 0)
+- `notification_history` (longtext)
 
 **RL6 Credit Fields:**
 - `es_militar_rl6` (tinyint 1, default 0, indexed)
@@ -39,6 +53,20 @@ Base de datos MySQL compartida entre app3 (clientes) y caja3 (cajeros) con 80+ t
 - `credito_bloqueado` (tinyint 1, default 0, indexed)
 - `fecha_solicitud_rl6`, `fecha_aprobacion_rl6` (timestamp)
 - `fecha_ultimo_pago` (date, indexed)
+- `credito_disponible` (decimal 10,2, default 0.00)
+- `updated_at` (timestamp, auto-update)
+- `fecha_aprobacion_credito` (timestamp)
+
+**R11 Credit Fields:**
+- `es_credito_r11` (tinyint 1, default 0, indexed)
+- `credito_r11_aprobado` (tinyint 1, default 0)
+- `limite_credito_r11` (decimal 10,2, default 0.00)
+- `credito_r11_usado` (decimal 10,2, default 0.00)
+- `credito_r11_bloqueado` (tinyint 1, default 0, indexed)
+- `fecha_aprobacion_r11` (timestamp)
+- `fecha_ultimo_pago_r11` (date)
+- `relacion_r11` (varchar 100)
+- `carnet_qr_data` (JSON)
 
 #### `cashiers` - Cajeros del sistema
 - `id` (PK, auto_increment)
@@ -83,6 +111,8 @@ Base de datos MySQL compartida entre app3 (clientes) y caja3 (cajeros) con 80+ t
 - `allergens` (text)
 - `grams` (int, default 0)
 - `views`, `likes` (int, default 0)
+- `is_featured` (tinyint 1, default 0)
+- `sale_price` (decimal 10,2)
 - `created_at`, `updated_at` (timestamp)
 
 #### `categories` - Categorías principales
@@ -244,9 +274,11 @@ Base de datos MySQL compartida entre app3 (clientes) y caja3 (cajeros) con 80+ t
 **Order Details:**
 - `order_status` (enum: pending, sent_to_kitchen, preparing, ready, out_for_delivery, delivered, completed, cancelled, default pending)
 - `status` (enum: pending, sent_to_pos, completed, failed, default pending, indexed)
-- `delivery_type` (enum: pickup, delivery, cuartel, default pickup)
+- `delivery_type` (enum: pickup, delivery, cuartel, tv, default pickup)
 - `delivery_address` (text)
 - `delivery_fee` (decimal 10,2, default 0.00, indexed)
+- `delivery_distance_km` (decimal 5,1)
+- `delivery_duration_min` (int)
 - `pickup_time` (time)
 - `scheduled_time` (datetime)
 - `is_scheduled` (tinyint 1, default 0)
@@ -280,6 +312,10 @@ Base de datos MySQL compartida entre app3 (clientes) y caja3 (cajeros) con 80+ t
 - `reward_used` (varchar 50)
 - `reward_stamps_consumed` (int, default 0)
 - `reward_applied_at` (timestamp)
+- `dispatch_photo_url` (varchar 500)
+- `tv_order_id` (int)
+- `pagado_con_credito_r11` (tinyint 1, default 0, indexed)
+- `monto_credito_r11` (decimal 10,2, default 0.00)
 
 - `created_at` (timestamp, indexed)
 - `updated_at` (timestamp)
@@ -516,7 +552,7 @@ Base de datos MySQL compartida entre app3 (clientes) y caja3 (cajeros) con 80+ t
 - `longitud` (decimal 11,8, NOT NULL)
 - `horario_inicio`, `horario_fin` (time, default 10:00/22:00)
 - `activo` (tinyint 1, default 1)
-- `tarifa_delivery` (int, default 2000)
+- `tarifa_delivery` (int, default 2000) — **Producción: $3.500**
 - `usa_horarios_personalizados` (tinyint 1, default 0)
 - `created_at`, `updated_at` (timestamp)
 
@@ -582,3 +618,243 @@ Base de datos MySQL compartida entre app3 (clientes) y caja3 (cajeros) con 80+ t
 - Preferencia por enums para estados y tipos
 - Facilita validación a nivel de BD
 - Mejor performance que varchar con checks
+
+## 🆕 Tablas No Documentadas Previamente (verificadas 2026-04-10)
+
+### RRHH y Nómina
+
+#### `personal` - Personal/trabajadores
+- `id` (PK, auto_increment)
+- `nombre` (varchar 100, NOT NULL)
+- `email` (varchar 150)
+- `rol` (SET: administrador, cajero, planchero, delivery, seguridad, dueño, rider, default cajero)
+- `activo` (tinyint 1, default 1)
+- `created_at` (timestamp)
+- `sueldo_base_seguridad`, `sueldo_base_cajero`, `sueldo_base_planchero`, `sueldo_base_admin` (decimal 10,2, default 0.00)
+- `user_id` (int) — FK → usuarios
+- `rut` (varchar 12)
+- `telefono` (varchar 20)
+
+#### `turnos` - Turnos de trabajo
+- `id` (PK, auto_increment)
+- `personal_id` (int, NOT NULL, indexed, FK → personal)
+- `fecha` (date, NOT NULL)
+- `tipo` (varchar 30, NOT NULL, default 'normal')
+- `reemplazado_por` (int)
+- `notas` (varchar 255)
+- `created_at` (timestamp)
+- `pagado_por` (enum: empresa, personal)
+- `monto_reemplazo` (decimal 10,2, default 0.00)
+- `pago_por` (varchar 30, default 'empresa')
+
+#### `pagos_nomina` - Pagos de nómina
+- `id` (PK, auto_increment)
+- `mes` (date, NOT NULL, indexed)
+- `personal_id` (int)
+- `nombre` (varchar 100, NOT NULL)
+- `monto` (decimal 10,2, NOT NULL)
+- `es_externo` (tinyint 1, default 0)
+- `notas` (varchar 255)
+- `created_at` (timestamp)
+- `centro_costo` (varchar 50, default 'ruta11')
+
+#### `presupuesto_nomina` - Presupuesto mensual
+- `mes` (date, PK, NOT NULL)
+- `monto` (decimal 12,2, NOT NULL)
+- `centro_costo` (varchar 50, PK, default 'ruta11')
+
+#### `ajustes_sueldo` - Ajustes de sueldo
+- `id` (PK, auto_increment)
+- `personal_id` (int, NOT NULL, indexed)
+- `categoria_id` (int)
+- `mes` (date, NOT NULL)
+- `monto` (decimal 10,2, NOT NULL)
+- `concepto` (varchar 255, NOT NULL)
+- `created_at` (timestamp)
+- `notas` (varchar 255)
+
+#### `ajustes_categorias` - Categorías de ajustes
+- `id` (PK, auto_increment)
+- `slug` (varchar 50, UNIQUE, NOT NULL)
+- `nombre` (varchar 100, NOT NULL)
+- `icono` (varchar 20, NOT NULL)
+- `color` (varchar 20, NOT NULL)
+- `signo_defecto` (char 1, NOT NULL, default '-')
+- `orden` (int, default 0)
+
+### TV Orders (Pedidos desde TV)
+
+#### `tv_orders` - Órdenes desde pantalla TV
+- `id` (PK, auto_increment)
+- `total` (decimal 10,2, NOT NULL)
+- `status` (enum: pendiente, en_proceso, enviado_cocina, pagado, cancelado, default pendiente)
+- `created_at` (datetime)
+
+#### `tv_order_items` - Items de órdenes TV
+- `id` (PK, auto_increment)
+- `order_id` (int, NOT NULL, indexed, FK → tv_orders)
+- `product_id` (int, NOT NULL)
+- `product_name` (varchar 255, NOT NULL)
+- `price` (decimal 10,2, NOT NULL)
+- `customizations` (JSON)
+
+### POS Transactions
+
+#### `tuu_pos_transactions` - Transacciones POS TUU
+- `id` (PK, auto_increment)
+- `sale_id` (varchar 50, UNIQUE, NOT NULL)
+- `amount` (decimal 10,2, NOT NULL)
+- `status` (varchar 50, NOT NULL, indexed)
+- `pos_serial_number` (varchar 100, NOT NULL, indexed)
+- `transaction_type` (varchar 50, NOT NULL)
+- `payment_date_time` (datetime, NOT NULL, indexed)
+- `items_json` (text)
+- `extra_data_json` (text)
+- `created_at`, `updated_at` (timestamp)
+
+### Combos Extendido
+
+#### `combo_selections` - Selecciones de combos
+- `id` (PK, auto_increment)
+- `combo_id` (int, NOT NULL, indexed, FK → combos)
+- `selection_group` (varchar 50, NOT NULL)
+- `product_id` (int, NOT NULL, indexed, FK → products)
+- `additional_price` (decimal 10,2, default 0.00)
+- `max_selections` (int, default 1)
+
+### Usuarios Alternativo
+
+#### `app_users` - Usuarios de app (legacy/alternativo)
+- `id` (PK, auto_increment)
+- `email` (varchar 255, UNIQUE, NOT NULL)
+- `phone` (varchar 20)
+- `name`, `last_name` (varchar 255)
+- `birth_date` (date)
+- `gender` (enum: M, F, O)
+- `address` (text)
+- `city` (varchar 100, indexed), `region` (varchar 100), `postal_code` (varchar 10)
+- `registration_date` (timestamp, indexed)
+- `last_login` (timestamp)
+- `is_active` (tinyint 1, default 1)
+- `total_orders` (int, default 0), `total_spent` (decimal 10,2, default 0.00)
+- `favorite_category_id` (int)
+- `preferred_payment_method` (varchar 50)
+- `marketing_consent` (tinyint 1, default 0)
+- `created_at`, `updated_at` (timestamp)
+
+### Concurso/Juego
+
+#### `concurso_registros` - Registros de concurso
+- `id` (PK, auto_increment)
+- `order_number` (varchar 50, UNIQUE)
+- `customer_name` (varchar 255), `nombre` (varchar 100, NOT NULL)
+- `rut` (varchar 12, UNIQUE), `email` (varchar 100, UNIQUE)
+- `customer_phone`, `telefono` (varchar 20)
+- `peso` (int), `fecha_nacimiento` (date, NOT NULL)
+- `acepta_terminos` (tinyint 1, NOT NULL, default 1)
+- `mayor_18` (tinyint 1, default 0)
+- `image_url` (text)
+- Campos TUU: `tuu_payment_request_id`, `tuu_idempotency_key`, `tuu_device_used`, `tuu_transaction_id`, `tuu_amount` (default 5000), etc.
+- `payment_status`, `estado_pago` (enums de estado)
+- `created_at`, `updated_at`, `fecha_registro`, `fecha_pago` (timestamps)
+
+#### `concurso_state` - Estado del torneo
+- `id` (PK, default 1)
+- `tournament_data` (longtext, NOT NULL)
+- `updated_at` (timestamp)
+
+#### `concurso_tracking` - Tracking de visitas concurso
+- `id` (PK, auto_increment)
+- `source` (varchar 50, indexed, default 'DIRECT')
+- `ip_address` (varchar 45)
+- `user_agent` (text)
+- `visit_date` (date, NOT NULL, indexed)
+- `visit_time` (timestamp)
+- `is_participant` (tinyint 1, indexed, default 0)
+- `has_paid` (tinyint 1, default 0)
+
+#### `participant_likes` - Likes de participantes
+- `id` (PK, auto_increment)
+- `participant_id` (varchar 50, NOT NULL, indexed)
+- `viewer_id` (varchar 50, NOT NULL)
+- `ip_address` (varchar 45)
+- `created_at` (timestamp)
+
+### Chat y Live
+
+#### `chat_messages` - Mensajes de chat
+- `id` (PK, auto_increment)
+- `username` (varchar 50, NOT NULL)
+- `message` (text, NOT NULL)
+- `timestamp` (timestamp, indexed)
+- `approved` (tinyint 1, default 1)
+- `session_id` (varchar 255)
+- `sender` (enum: user, admin, default user)
+- `type` (varchar 255, default 'text')
+- `file_path` (varchar 255)
+- `telegram_message_id` (varchar 255)
+- `created_at`, `updated_at` (timestamp)
+
+#### `live_viewers` - Viewers de live stream
+- `id` (varchar 50, PK)
+- `ip_address` (varchar 45)
+- `user_agent` (text)
+- `last_seen` (timestamp, auto-update)
+- `created_at` (timestamp)
+
+#### `youtube_live` - Configuración YouTube Live
+- `id` (PK, default 1)
+- `original_url` (text)
+- `embed_url` (varchar 255)
+- `active` (tinyint 1, default 1)
+- `updated_at` (timestamp)
+
+### Otros
+
+#### `checklist_templates` - Templates de checklist
+- `id` (PK, auto_increment)
+- `type` (enum: apertura, cierre, indexed)
+- `item_order` (int, NOT NULL)
+- `description` (text, NOT NULL)
+- `requires_photo` (tinyint 1, default 0)
+- `active` (tinyint 1, default 1)
+- `created_at` (timestamp)
+
+#### `product_edit_requests` - Solicitudes de edición de productos
+- `id` (PK, auto_increment)
+- `product_id` (int, NOT NULL)
+- `old_name`, `new_name` (varchar 255)
+- `old_description`, `new_description` (text)
+- `cashier` (varchar 100)
+- `status` (enum: pending, approved, rejected, default pending)
+- `telegram_message_id` (int)
+- `created_at` (timestamp)
+
+#### `attempts` - Intentos de juego
+- `id` (PK, auto_increment)
+- `player_name` (varchar 50, NOT NULL, indexed)
+- `time_achieved` (decimal 5,2, NOT NULL)
+- `attempt_date` (timestamp, indexed)
+- `ip_address` (varchar 45)
+
+#### `user_locations` - Ubicaciones de usuarios
+- `id` (PK, auto_increment)
+- `user_id` (int, NOT NULL, indexed, FK → usuarios)
+- `latitud` (decimal 10,8, NOT NULL), `longitud` (decimal 11,8, NOT NULL)
+- `direccion` (text)
+- `precision_metros` (int, default 0)
+- `created_at` (timestamp, indexed)
+
+#### `user_journey` - Journey de usuario en sitio
+- `id` (PK, auto_increment)
+- `session_id` (varchar 100, indexed)
+- `page_sequence` (int)
+- `page_url` (varchar 500)
+- `time_spent` (int)
+- `scroll_depth` (int)
+- `exit_page` (tinyint 1, default 0)
+- `timestamp` (timestamp)
+
+#### `menu_categories`, `menu_subcategories` - Categorías/subcategorías de menú (legacy)
+
+#### `inventory_transactions_backup_20251110` - Backup de transacciones de inventario

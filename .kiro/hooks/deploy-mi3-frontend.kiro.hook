@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Deploy mi3 Frontend",
+  "description": "Triggers a rebuild of ONLY the mi3-frontend app in Coolify (mi.laruta11.cl). Does not affect other apps.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "curl -s -X POST -H \"Authorization: Bearer 3|S52ZUspC6N5G54apjgnKO6sY3VW5OixHlnY9GsMv8dc72ae8\" -H \"Accept: application/json\" \"http://76.13.126.63:8000/api/v1/applications/sxdw43i9nt3cofrzxj28hx1e/restart\" 2>/dev/null",
+    "timeout": 10
+  }
+}

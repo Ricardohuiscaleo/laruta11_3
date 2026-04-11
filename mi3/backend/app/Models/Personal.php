@@ -43,6 +43,11 @@ class Personal extends Model
         return $this->hasMany(NotificacionMi3::class, 'personal_id');
     }
 
+    public function prestamos()
+    {
+        return $this->hasMany(Prestamo::class, 'personal_id');
+    }
+
     public function getRolesArray(): array
     {
         return array_map('trim', explode(',', $this->rol ?? ''));

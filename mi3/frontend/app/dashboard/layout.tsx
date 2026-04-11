@@ -1,5 +1,6 @@
 import WorkerSidebar from '@/components/layouts/WorkerSidebar';
 import MobileNavLayout from '@/components/mobile/MobileNavLayout';
+import PushNotificationInit from '@/components/PushNotificationInit';
 
 export default function DashboardLayout({
   children,
@@ -8,6 +9,7 @@ export default function DashboardLayout({
 }) {
   return (
     <>
+      <PushNotificationInit />
       <MobileNavLayout variant="worker">{children}</MobileNavLayout>
       <div className="hidden md:flex min-h-screen">
         <WorkerSidebar />

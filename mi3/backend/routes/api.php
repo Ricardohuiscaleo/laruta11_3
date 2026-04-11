@@ -19,6 +19,10 @@ Route::prefix('v1')->group(function () {
             ->middleware('auth:sanctum');
         Route::get('me', [\App\Http\Controllers\Auth\AuthController::class, 'me'])
             ->middleware('auth:sanctum');
+
+        // Google OAuth (public, no auth required)
+        Route::get('google/redirect', [\App\Http\Controllers\Auth\AuthController::class, 'googleRedirect']);
+        Route::get('google/callback', [\App\Http\Controllers\Auth\AuthController::class, 'googleCallback']);
     });
 
     // ── Worker (trabajador autenticado) ─────────────────────────────
@@ -33,6 +37,19 @@ Route::prefix('v1')->group(function () {
         Route::post('shift-swaps', [\App\Http\Controllers\Worker\ShiftSwapController::class, 'store']);
         Route::get('notifications', [\App\Http\Controllers\Worker\NotificationController::class, 'index']);
         Route::patch('notifications/{id}/read', [\App\Http\Controllers\Worker\NotificationController::class, 'markAsRead']);
+
+        // Loans
+        Route::get('loans', [\App\Http\Controllers\Worker\LoanController::class, 'index']);
+        Route::post('loans', [\App\Http\Controllers\Worker\LoanController::class, 'store']);
+
+        // Dashboard summary
+        Route::get('dashboard-summary', [\App\Http\Controllers\Worker\DashboardController::class, 'index']);
+
+        // Replacements
+        Route::get('replacements', [\App\Http\Controllers\Worker\ReplacementController::class, 'index']);
+
+        // Push notifications
+        Route::post('push/subscribe', [\App\Http\Controllers\Worker\PushController::class, 'subscribe']);
     });
 
     // ── Admin (administrador/dueño) ─────────────────────────────────
@@ -71,5 +88,10 @@ Route::prefix('v1')->group(function () {
         Route::get('shift-swaps', [\App\Http\Controllers\Admin\ShiftSwapController::class, 'index']);
         Route::post('shift-swaps/{id}/approve', [\App\Http\Controllers\Admin\ShiftSwapController::class, 'approve']);
         Route::post('shift-swaps/{id}/reject', [\App\Http\Controllers\Admin\ShiftSwapController::class, 'reject']);
+
+        // Loans
+        Route::get('loans', [\App\Http\Controllers\Admin\LoanController::class, 'index']);
+        Route::post('loans/{id}/approve', [\App\Http\Controllers\Admin\LoanController::class, 'approve']);
+        Route::post('loans/{id}/reject', [\App\Http\Controllers\Admin\LoanController::class, 'reject']);
     });
 });

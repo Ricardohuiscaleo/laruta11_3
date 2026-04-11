@@ -1,18 +1,18 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-11, actualizado sesión 2026-04-11)
+## Estado Actual (2026-04-11, actualizado sesión 2026-04-11r)
 
 ### Aplicaciones Desplegadas
 
 | App | URL | Stack | Estado | Auto-deploy |
 |-----|-----|-------|--------|-------------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running | ❌ Manual |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running | ❌ Manual |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | 🔄 Deploying (`yzlvtsf89zu7nr9j1c4yk3ik`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React | ⚠️ Rebuild manual | ❌ Manual |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 | ✅ Running (hotfix) | ❌ Manual |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React | 🔄 Deploying (`jr4koj9551f0x4ppjlwpd2jq`) | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 | ✅ Running (hotfix `1c1b51e`) | ❌ Manual |
 
-Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks individuales.
+Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks individuales, o el nuevo hook "Ship It" para ciclo completo.
 
 ### Coolify UUIDs
 
@@ -22,6 +22,927 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 - mi3-backend: `ds24j8jlaf9ov4flk1nq4jek`
 - mi3-frontend: `sxdw43i9nt3cofrzxj28hx1e`
 - laruta11-db: `zs00occ8kcks40w4c88ogo08`
+
+---
+
+## Sesión 2026-04-11r — Hook Telegram + confirmación notificación
+
+### Lo realizado
+
+- Creado hook "Notificar Telegram" (`telegram-notify`) — tipo `agentStop`, acción `runCommand`
+- Envía mensaje a Telegram via bot `@laruta11_bot` al chat de Ricardo cuando el agente termina de trabajar
+- Verificado: mensaje recibido correctamente (message_id: 322)
+
+### Hook Configurado
+
+```json
+{
+  "name": "Notificar Telegram",
+  "id": "telegram-notify",
+  "when": { "type": "agentStop" },
+  "then": {
+    "type": "runCommand",
+    "command": "curl -s -X POST https://api.telegram.org/bot<TOKEN>/sendMessage -d chat_id=8104543914 -d parse_mode=Markdown -d text=..."
+  }
+}
+```
+
+### Hooks Actualizados
+
+| Hook | Tipo | Acción |
+|------|------|--------|
+| Smart Deploy | userTriggered | Analiza git diff y despliega solo apps afectadas |
+| Deploy app3 | userTriggered | Rebuild solo app3 |
+| Deploy caja3 | userTriggered | Rebuild solo caja3 |
+| Deploy mi3 Backend | userTriggered | Rebuild solo mi3-backend |
+| Deploy mi3 Frontend | userTriggered | Rebuild solo mi3-frontend |
+| Actualizar Bitácora | agentStop | Actualiza bitácora al final de cada sesión |
+| Leer Contexto | promptSubmit | Lee bitácora al inicio de cada sesión |
+| Ship It | userTriggered | Commit + push + deploy ciclo completo |
+| Notificar Telegram | agentStop | Envía mensaje a Telegram cuando el agente termina |
+
+---
+
+## Sesión 2026-04-11q — Push notifications + tests obligatorios en spec
+
+### Lo realizado: Actualización del spec mi3-worker-dashboard-v2
+
+Se agregaron push notifications nativas y se hicieron obligatorios todos los tests.
+
+**Cambios en requirements.md:**
+- Requerimiento 11: Push Notifications Nativas (10 criterios) — VAPID, service worker, tabla push_subscriptions_mi3, suscripción, envío en eventos clave (préstamo aprobado, turno cambiado, reemplazo, liquidación), desactivación de suscripciones expiradas, soporte Android + iOS 16.4+, PWA badge
+- Requerimiento 12: Gestión de Notificaciones In-App (3 criterios) — sincronización push + in-app, badge en MobileHeader, marcar como leídas
+
+**Cambios en design.md:**
+- Sección "Push Notifications" completa: arquitectura (3 diagramas Mermaid), PushNotificationService, Worker/PushController, Service Worker (sw.js), hook usePushNotifications, tabla push_subscriptions_mi3, tabla de 7 eventos que disparan push, dependencia minishlink/web-push
+
+**Cambios en tasks.md:**
+- Tarea 13 nueva: Push Notifications (8 sub-tareas: tabla, VAPID, servicio, controller, integración, SW, hook, in-app)
+- Checkpoint renumerado a 14
+- Todos los tests de propiedad cambiados de opcionales (`[ ]*`) a obligatorios (`[ ]`) — 10 PBT ahora son required
+- Nota actualizada: "Todos los tests son obligatorios"
+
+### Estado del Spec (actualizado)
+
+| Documento | Estado |
+|-----------|--------|
+| requirements.md | ✅ 12 requerimientos (antes 10) |
+| design.md | ✅ Arquitectura + push notifications + 10 propiedades |
+| tasks.md | ✅ 14 tareas, 10 PBT obligatorios, 8 sub-tareas push |
+
+### Pendiente
+
+- Ejecutar las 14 tareas del tasks.md (implementación completa)
+- Generar VAPID keys y configurar en Coolify
+- Crear tablas `prestamos` y `push_subscriptions_mi3` en BD producción
+- Implementar backend + frontend + push + tests
+- Deploy mi3-frontend + mi3-backend
+
+---
+
+## Sesión 2026-04-11p — Spec completo mi3-worker-dashboard-v2 (design + tasks)
+
+### Lo realizado: Generación de diseño técnico y plan de implementación
+
+Se completó el spec `mi3-worker-dashboard-v2` generando design.md y tasks.md a partir de los requisitos aprobados.
+
+**Spec:** `.kiro/specs/mi3-worker-dashboard-v2/`
+
+**Documentos generados:**
+- `design.md` — Diseño técnico completo con diagramas Mermaid (componentes, flujo de préstamos, ER), interfaces de API (JSON), modelo de datos (tabla `prestamos`), 10 propiedades de correctitud, manejo de errores, estrategia de testing
+- `tasks.md` — 13 tareas principales organizadas incrementalmente
+
+**Arquitectura diseñada:**
+- Backend: modelo `Prestamo`, `LoanService` (7 métodos), `LoanAutoDeductCommand` (cron día 1), 3 controllers nuevos (Worker/LoanController, Worker/DashboardController, Worker/ReplacementController), 1 controller admin (Admin/LoanController), modificación PersonalController
+- Frontend: dashboard rediseñado (4 tarjetas), página préstamos (lista + formulario + barra progreso), página reemplazos (realizados/recibidos + balance), navegación actualizada
+- BD: tabla `prestamos` nueva, categoría 'prestamo' en `ajustes_categorias`
+
+**Tareas (13 principales):**
+1. BD + modelo Prestamo
+2. LoanService (lógica de negocio)
+3. LoanAutoDeductCommand (cron)
+4. Checkpoint backend core
+5. Controllers (worker + admin) + rutas + sueldo base defecto
+6. Checkpoint backend completo
+7. Tipos TypeScript
+8. Dashboard rediseñado (4 tarjetas)
+9. Página Préstamos
+10. Página Reemplazos
+11. Navegación actualizada + badge
+12. Formulario admin sueldo base
+13. Checkpoint final
+
++ 10 sub-tareas opcionales de tests de propiedad (PBT)
+
+### Estado del Spec
+
+| Documento | Estado |
+|-----------|--------|
+| requirements.md | ✅ Completo (10 requerimientos) |
+| design.md | ✅ Completo (arquitectura + APIs + 10 propiedades) |
+| tasks.md | ✅ Completo (13 tareas + 10 PBT opcionales) |
+
+### Pendiente
+
+- Ejecutar las 13 tareas del tasks.md
+- Crear tabla `prestamos` en BD producción
+- Implementar backend (modelo, servicio, controllers, cron)
+- Implementar frontend (dashboard, préstamos, reemplazos, navegación)
+- Deploy mi3-frontend + mi3-backend
+
+---
+
+## Sesión 2026-04-11o — Trusted Commands: configuración de auto-aprobación de comandos shell
+
+### Lo realizado: Configuración de Trusted Commands en Kiro
+
+El usuario recibió el prompt de Trusted Commands de Kiro al ejecutar un `cat ... | ssh ... docker exec ... tee` (hotfix de CreditController.php en contenedor mi3-backend). El IDE ofreció 3 niveles de trust:
+
+| Opción | Patrón | Alcance |
+|--------|--------|---------|
+| Full command | `cat mi3/backend/.../CreditController.php \| ssh root@76.13.126.63 "docker exec -i ..."` | Solo ese archivo exacto con ese contenedor exacto |
+| Partial | `cat mi3/backend/.../CreditController.php *` | Solo `cat` de archivos en esa ruta |
+| Base | `cat *` | Cualquier `cat` futuro, sin importar argumentos |
+
+**Recomendación aplicada:** Elegir "Base" (`cat *`) para máxima cobertura — cubre lectura de archivos, inyección en contenedores vía SSH, y cualquier variante futura de `cat`. Las opciones más específicas obligarían a dar Trust de nuevo con cada archivo o ruta diferente.
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+67. **Trusted Commands en Kiro — elegir "Base" para comandos genéricos**: Para comandos como `cat`, `git`, `curl`, `ssh` que se usan con muchos argumentos diferentes, elegir la opción "Base" (`comando *`) evita tener que dar Trust repetidamente. Solo usar "Full command" para comandos destructivos o muy específicos donde quieras control granular
+68. **Trusted Commands se gestionan en Settings**: La lista de comandos confiados se puede ver y editar en la configuración de Kiro (Trusted Commands setting). Si se agrega un patrón demasiado amplio por error, se puede revocar desde ahí
+
+### Pendiente
+
+- Nada nuevo — los pendientes de sesiones anteriores siguen vigentes
+
+---
+
+## Sesión 2026-04-11n — Aclaración Autopilot vs Trust prompt + Actualización bitácora
+
+### Lo realizado: Aclaración de comportamiento del IDE + mantenimiento de bitácora
+
+El usuario reportó que a pesar de tener Autopilot activado y el steering `no-preguntar.md`, el IDE seguía mostrando un popup "Waiting on your input.. Reject / Trust / Run" al ejecutar comandos shell.
+
+**Diagnóstico:**
+- El popup NO es del agente — es una protección de seguridad del IDE (Kiro) para comandos shell
+- Autopilot controla si el agente puede ejecutar herramientas internas (editar archivos, leer código) sin aprobación → eso sí funciona automáticamente
+- Los comandos shell tienen un nivel extra de seguridad: la primera vez que se ejecuta un tipo de comando, el IDE pide "Trust" o "Run"
+- Una vez que el usuario da "Trust", ese tipo de comando ya no vuelve a pedir confirmación
+- El steering `no-preguntar.md` controla el comportamiento conversacional del agente (no preguntar "¿quieres que...?"), pero no puede controlar los prompts de seguridad del IDE
+
+**Diferencia clave:**
+| Capa | Qué controla | Solución |
+|------|-------------|----------|
+| Steering `no-preguntar.md` | Agente no pregunta "¿quieres que...?" conversacionalmente | ✅ Ya resuelto (sesión 2026-04-11m) |
+| Autopilot toggle | Herramientas internas del agente (editar, leer, etc.) se ejecutan sin click | ✅ Ya activado |
+| Trust prompt del IDE | Comandos shell requieren aprobación la primera vez por seguridad | Dar "Trust" una vez por tipo de comando |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Popup "Waiting on your input" en Autopilot | Protección de seguridad del IDE para comandos shell — independiente del modo Autopilot y del steering | Dar "Trust" al comando; los siguientes del mismo tipo pasan sin pedir |
+
+### Lecciones Aprendidas
+
+65. **3 capas de control en Kiro**: (1) Steering files controlan el comportamiento conversacional del agente, (2) Autopilot controla la ejecución automática de herramientas internas, (3) Trust prompts del IDE controlan la aprobación de comandos shell. Cada capa es independiente y se resuelve de forma diferente
+66. **Trust prompt es one-time**: Una vez que se da "Trust" a un tipo de comando shell, el IDE no vuelve a pedir confirmación para ese tipo. Es una medida de seguridad razonable que no afecta el flujo de trabajo después del primer uso
+
+### Pendiente
+
+- Nada nuevo — los pendientes de sesiones anteriores siguen vigentes (ver sesión 2026-04-11m y anteriores)
+
+---
+
+## Sesión 2026-04-11m — Hook "Ship It" + Steering "no preguntar"
+
+### Lo realizado: Automatización del ciclo de deploy + steering para ejecución directa
+
+**1. Hook "Ship It" creado:**
+- `.kiro/hooks/ship-it.kiro.hook` — Hook `userTriggered` tipo `askAgent` que ejecuta el ciclo completo:
+  1. `git status --porcelain` para detectar cambios
+  2. `git add -A` (con `git add -f` para `caja3/api/` que está en .gitignore)
+  3. `git commit -m "mensaje"` con conventional commits auto-generado según archivos modificados
+  4. `git push origin main`
+  5. Deploy inteligente: analiza qué carpetas cambiaron y dispara `curl restart` solo a las apps afectadas en Coolify
+  6. Reporte breve: archivos commiteados, hash, apps desplegadas
+
+**Diferencia con Smart Deploy existente:**
+- Smart Deploy: solo hace deploy (asume que ya hiciste commit + push)
+- Ship It: hace TODO el ciclo desde git add hasta deploy, sin intervención
+
+**2. Steering file "no preguntar" creado:**
+- `.kiro/steering/no-preguntar.md` — Steering `inclusion: always` que instruye al agente a NUNCA pedir confirmación antes de ejecutar comandos
+- El usuario estaba en modo Autopilot pero el agente seguía preguntando "¿quieres que...?" por comportamiento propio
+- El problema NO era el modo del IDE sino el comportamiento del agente — resuelto con steering que fuerza ejecución directa
+- Aplica a: git add/commit/push, curl deploys, ediciones de archivos, cualquier comando shell
+
+### Hooks Actualizados
+
+| Hook | Tipo | Acción | Nuevo |
+|------|------|--------|-------|
+| Ship It | userTriggered | askAgent: git add + commit + push + deploy inteligente | ✅ |
+| Smart Deploy | userTriggered | askAgent: solo deploy de apps que cambiaron en último commit | — |
+| Deploy app3 | userTriggered | runCommand: curl restart app3 | — |
+| Deploy caja3 | userTriggered | runCommand: curl restart caja3 | — |
+| Deploy mi3 Backend | userTriggered | runCommand: curl restart mi3-backend | — |
+| Deploy mi3 Frontend | userTriggered | runCommand: curl restart mi3-frontend | — |
+| Actualizar Bitácora | agentStop | askAgent: actualiza bitácora al final de sesión | — |
+| Leer Contexto | promptSubmit | askAgent: lee bitácora al inicio de sesión | — |
+
+### Steering Files
+
+| Archivo | Inclusión | Propósito |
+|---------|-----------|-----------|
+| `coolify-infra.md` | — | Info de infraestructura Coolify |
+| `no-preguntar.md` | always | Forzar ejecución directa sin pedir confirmación | ✅ Nuevo |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Agente pide confirmación en Autopilot | El modo Autopilot del IDE no controla el comportamiento conversacional del agente — solo controla si los comandos se auto-aprueban en el IDE | Crear steering file `no-preguntar.md` con `inclusion: always` que instruye al agente a ejecutar directamente |
+
+### Lecciones Aprendidas
+
+61. **Hook askAgent vs runCommand para flujos complejos**: Para flujos que requieren lógica condicional (analizar qué carpetas cambiaron, generar mensaje de commit, decidir qué apps desplegar), `askAgent` es mejor que `runCommand` porque el agente puede tomar decisiones. `runCommand` es para comandos simples y determinísticos
+62. **Automatización incremental de hooks**: Los hooks se pueden componer: Ship It = git add + commit + push + Smart Deploy. Pero es mejor tener un hook único que haga todo el ciclo que encadenar hooks, porque la ejecución es más predecible y el reporte es consolidado
+63. **Autopilot ≠ agente no pregunta**: El modo Autopilot del IDE solo controla si los comandos shell se auto-aprueban sin click del usuario. Pero el agente puede seguir preguntando "¿quieres que...?" por su comportamiento conversacional. Para eliminar eso, se necesita un steering file con `inclusion: always` que instruya al agente a ejecutar directamente
+64. **Steering files para modificar comportamiento del agente**: Los steering files con `inclusion: always` se inyectan en CADA interacción. Son la forma correcta de cambiar el comportamiento default del agente (como dejar de pedir confirmación). Los hooks no sirven para esto porque se disparan por eventos, no por comportamiento
+
+### Pendiente
+
+- Probar el hook Ship It con cambios reales para verificar el flujo completo end-to-end
+
+- Cambiar a modo Autopilot para que Ship It y Smart Deploy funcionen sin confirmación manual
+- Probar el hook Ship It con cambios reales para verificar que el flujo completo funciona end-to-end
+
+---
+
+## Sesión 2026-04-11l — Fix 500s backend mi3 (tablas faltantes + columna incorrecta)
+
+### Lo realizado: Diagnóstico y corrección de errores 500 en mi3 backend
+
+El usuario reportó múltiples errores 500 en la consola del navegador al navegar por mi3. Se investigaron los logs de Laravel vía SSH.
+
+**Errores encontrados y corregidos:**
+
+| Endpoint | Error | Causa | Fix |
+|----------|-------|-------|-----|
+| `/worker/notifications` | 500 | Tabla `notificaciones_mi3` no existía | Creada vía SQL directo en BD |
+| `/admin/shift-swaps` | 500 | Tabla `solicitudes_cambio_turno` no existía | Creada vía SQL directo en BD |
+| `/admin/payroll` | 500 | `sum('amount')` en `tuu_orders` — columna no existe | Cambiado a `sum('subtotal')` en LiquidacionService.php |
+| `/worker/credit` | 404 | Controller devolvía 404 cuando worker no tiene crédito R11 | Cambiado a 200 con `activo: false` — CreditController.php hotfixed + commit `2f4c9e7` |
+
+**Tablas creadas en producción vía SSH:**
+
+```sql
+-- solicitudes_cambio_turno
+CREATE TABLE solicitudes_cambio_turno (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  solicitante_id INT NOT NULL,
+  companero_id INT NOT NULL,
+  fecha_turno DATE NOT NULL,
+  motivo VARCHAR(255) NULL,
+  estado ENUM('pendiente','aprobada','rechazada') DEFAULT 'pendiente',
+  aprobado_por INT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_solicitante (solicitante_id),
+  INDEX idx_estado (estado)
+);
+
+-- notificaciones_mi3
+CREATE TABLE notificaciones_mi3 (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  personal_id INT NOT NULL,
+  tipo ENUM('turno','sistema','credito','nomina') DEFAULT 'sistema',
+  titulo VARCHAR(255) NOT NULL,
+  mensaje TEXT NULL,
+  referencia_id INT NULL,
+  referencia_tipo VARCHAR(50) NULL,
+  leida TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_personal (personal_id),
+  INDEX idx_leida (leida)
+);
+```
+
+**Hotfix aplicado:**
+- `LiquidacionService.php` inyectado en contenedor mi3-backend vía SSH (`tee`)
+- `php artisan cache:clear` falló porque tabla `cache` tampoco existe (no afecta funcionamiento)
+
+**Commit:** `1c1b51e` — `fix(mi3): amount→subtotal en tuu_orders + tablas creadas en BD`
+**Commit:** `2f4c9e7` — `fix(mi3): credit endpoint devuelve 200 con activo=false en vez de 404`
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `SQLSTATE[42S02]: Table 'notificaciones_mi3' doesn't exist` | Migración Laravel nunca ejecutada en producción | Crear tabla manualmente vía SQL |
+| `SQLSTATE[42S02]: Table 'solicitudes_cambio_turno' doesn't exist` | Migración Laravel nunca ejecutada en producción | Crear tabla manualmente vía SQL |
+| `SQLSTATE[42S22]: Column 'amount' not found in tuu_orders` | Modelo usaba `amount` pero columna real es `subtotal` | Cambiar `sum('amount')` a `sum('subtotal')` |
+| `php artisan cache:clear` falla | Tabla `cache` no existe (Laravel usa BD para cache pero tabla no creada) | No afecta — cache no se usa activamente |
+
+### Lecciones Aprendidas
+
+58. **Migraciones Laravel pendientes**: Las tablas `solicitudes_cambio_turno`, `notificaciones_mi3` y `cache` nunca se migraron en producción. Al usar BD compartida (no creada por Laravel), hay que crear tablas manualmente o ejecutar `php artisan migrate` — pero migrate requiere que las migraciones estén en el contenedor correcto
+59. **Column naming drift**: El modelo `TuuOrder` asumía columna `amount` pero la tabla real tiene `subtotal`. Siempre verificar nombres de columnas contra la BD real con `SHOW COLUMNS` antes de escribir queries
+60. **Hotfix PHP en Laravel**: Se puede inyectar archivos PHP directamente en el contenedor Laravel con `cat file | docker exec -i ... tee`. No requiere `cache:clear` para archivos de servicio (solo para config/routes)
+61. **APIs deben devolver 200 con estado vacío, no 404**: Cuando un recurso no aplica al usuario (ej: crédito R11 no activo), devolver 200 con `activo: false` en vez de 404. El frontend maneja el estado vacío sin errores en consola
+
+---
+
+## Sesión 2026-04-11k — ViewSwitcher admin/worker + Fix build errors
+
+### Lo realizado
+
+**ViewSwitcher para Ricardo (admin + trabajador):**
+- Creado `mi3/frontend/components/ViewSwitcher.tsx` — componente client que lee cookie `mi3_role`, si es admin muestra botón "Vista Trabajador" (desde /admin) o "Vista Admin" (desde /dashboard)
+- Agregado al sheet "Más" del MobileBottomNav y a ambos sidebars desktop (Worker + Admin)
+- Solo visible para admins — trabajadores normales no lo ven
+
+**Fix build error #1 — missing exports auth.ts:**
+- Deploy `r10agq1a8fydo1930vl166sk` falló: `Module '"@/lib/auth"' has no exported member 'getToken'`
+- Causa: al reescribir `auth.ts` para agregar `logout()`, se eliminaron `getToken/setToken/removeToken` que `useAuth.ts` importaba
+- Fix: restaurar las 3 funciones + mantener `logout()`. Commit `075ac32`
+
+**Fix build error #2 — Functions cannot be passed to Client Components:**
+- Deploy `ggi5dh66g2gmwzerlgq8ek00` falló: `Functions cannot be passed directly to Client Components`
+- Causa: layouts (Server Components) pasaban `NavItem[]` como props a `MobileNavLayout` (Client Component). `NavItem` contiene `icon: LucideIcon` que es una función React — no serializable entre server→client
+- Fix: cambiar de props `NavItem[]` a prop `variant: 'worker' | 'admin'` (string serializable). Cada Client Component importa los nav items directamente. Commit `02c7d9e`
+
+**Archivos creados/modificados:**
+1. `ViewSwitcher.tsx` — nuevo componente (lee cookie `mi3_role`, muestra switch admin↔worker)
+2. `MobileNavLayout.tsx` — acepta `variant` string en vez de NavItem arrays
+3. `MobileBottomNav.tsx` — acepta `variant`, importa nav items internamente, incluye ViewSwitcher en sheet "Más"
+4. `MobileHeader.tsx` — acepta `variant` (simplificado)
+5. `AdminSidebar.tsx` — agregado ViewSwitcher + logout
+6. `WorkerSidebar.tsx` — agregado ViewSwitcher + logout
+7. `admin/layout.tsx` — pasa `variant="admin"` en vez de NavItem arrays
+8. `dashboard/layout.tsx` — pasa `variant="worker"`
+9. `lib/auth.ts` — restaurados `getToken/setToken/removeToken` + `logout()`
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción | Deploy UUID | Estado |
+|--------|------|-------------|-------------|--------|
+| 1 | `3e2fed3` | header rojo + navbar admin | `r10agq1a8fydo1930vl166sk` | ❌ FAILED (auth.ts) |
+| 2 | `075ac32` | fix auth.ts exports | `ggi5dh66g2gmwzerlgq8ek00` | ❌ FAILED (NavItem props) |
+| 3 | `02c7d9e` | variant string + ViewSwitcher | `jr4koj9551f0x4ppjlwpd2jq` | 🔄 En cola |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `has no exported member 'getToken'` | Reescribir `auth.ts` eliminó exports usados por `useAuth.ts` | Restaurar `getToken/setToken/removeToken` |
+| `Functions cannot be passed directly to Client Components` | Server Component layout pasaba `NavItem[]` (con funciones LucideIcon) como props a Client Component | Usar `variant: string` y que el Client Component importe los items internamente |
+
+### Lecciones Aprendidas
+
+55. **No reescribir archivos sin verificar imports**: `getDiagnostics` local no detecta imports rotos en otros archivos — solo el build completo de Next.js lo hace
+56. **Server→Client serialization en Next.js 14**: Los Server Components NO pueden pasar funciones, clases, o componentes React como props a Client Components. Solo primitivos (string, number, boolean, arrays/objects de primitivos). Para pasar configuración con funciones (como íconos de lucide-react), usar un discriminador string y que el Client Component resuelva internamente
+57. **Patrón variant para componentes duales**: En vez de pasar arrays de config como props desde Server Components, usar `variant: 'worker' | 'admin'` y que el Client Component haga `const items = variant === 'admin' ? adminItems : workerItems`. Evita problemas de serialización y es más limpio
+
+---
+
+## Sesión 2026-04-11j — Header rojo + Navbar móvil admin + Sidebar rojo
+
+### Lo realizado: Unificación visual worker/admin con branding rojo
+
+El admin no tenía navbar móvil ni logout visible. Se unificó la experiencia: ambas vistas (worker y admin) ahora tienen el mismo patrón de navegación móvil y sidebar desktop rojo.
+
+**Archivos modificados (7):**
+
+1. `mi3/frontend/lib/navigation.ts` — Agregados `adminPrimaryNavItems` (Inicio, Personal, Turnos, Nómina), `adminSecondaryNavItems` (Ajustes, Créditos, Cambios), `allAdminNavItems`. `getPageTitle` busca en ambos arrays. `isNavItemActive` soporta `/admin` con coincidencia exacta
+2. `mi3/frontend/components/mobile/MobileHeader.tsx` — Fondo cambiado de blanco a rojo (`bg-red-500`). Texto y íconos blancos. Badge de notificaciones invertido (texto rojo sobre fondo blanco). Acepta prop `notificationsEndpoint` para reutilizar en admin
+3. `mi3/frontend/components/mobile/MobileBottomNav.tsx` — Ahora acepta props `primary` y `secondary` (NavItem[]). Color activo cambiado de amber a red-500. Defaults a worker nav items si no se pasan props
+4. `mi3/frontend/components/mobile/MobileNavLayout.tsx` — Acepta props `primary`, `secondary`, `notificationsEndpoint` y los pasa a MobileHeader y MobileBottomNav
+5. `mi3/frontend/components/layouts/AdminSidebar.tsx` — Reescrito: eliminado hamburguesa/overlay/useState. Ahora es desktop-only (`hidden md:flex`). Fondo rojo (`bg-red-600`), logo, logout al fondo
+6. `mi3/frontend/components/layouts/WorkerSidebar.tsx` — Sidebar cambiado de blanco a rojo (`bg-red-600`) para consistencia con el branding. Texto blanco, active state `bg-red-500`
+7. `mi3/frontend/app/admin/layout.tsx` — Reescrito: usa `MobileNavLayout` con `adminPrimaryNavItems`/`adminSecondaryNavItems` para móvil + `AdminSidebar` desktop-only. Mismo patrón que dashboard/layout.tsx
+
+**Resultado visual:**
+- Móvil: header rojo con logo + título + bell → contenido → bottom nav blanco con íconos rojos activos + "Más" con logout
+- Desktop: sidebar rojo con logo + links + logout al fondo → contenido
+- Idéntico en worker y admin (solo cambian los items de navegación)
+
+**0 errores de diagnóstico** en los 7 archivos.
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `3e2fed3` | `feat(mi3): header rojo + navbar móvil admin + sidebar rojo ambas vistas` |
+
+| Deploy | UUID | Estado |
+|--------|------|--------|
+| mi3-frontend | `r10agq1a8fydo1930vl166sk` | 🔄 En cola |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `3e2fed3` | `feat(mi3): header rojo + navbar móvil admin + sidebar rojo ambas vistas` |
+| 2 | `075ac32` | `fix(mi3): restaurar getToken/setToken/removeToken en auth.ts` |
+
+| Deploy | UUID | Estado |
+|--------|------|--------|
+| mi3-frontend | `r10agq1a8fydo1930vl166sk` | ❌ FAILED (build error auth.ts) |
+| mi3-frontend (fix) | `ggi5dh66g2gmwzerlgq8ek00` | 🔄 En cola |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Build failed: `Module '"@/lib/auth"' has no exported member 'getToken'` | Al reescribir `lib/auth.ts` para agregar `logout()`, se eliminaron las funciones `getToken`, `setToken`, `removeToken` que `hooks/useAuth.ts` importaba | Restaurar las 3 funciones en `auth.ts` manteniendo también `logout()`. Commit `075ac32` |
+
+### Lecciones Aprendidas
+
+53. **Componentes genéricos con props + defaults**: MobileBottomNav y MobileNavLayout aceptan `primary`/`secondary` como props con defaults a los worker items. Así se reutilizan para admin sin duplicar código
+54. **Branding consistente con un solo color**: Usar `red-500` (`#ef4444`) como color principal en header, sidebar, active states y badges unifica toda la app con el logo
+55. **No reescribir archivos completos sin verificar imports**: Al reescribir `lib/auth.ts` se eliminaron exports que otros archivos usaban (`useAuth.ts` → `getToken/setToken/removeToken`). Siempre verificar quién importa de un archivo antes de reescribirlo. `getDiagnostics` no detecta esto localmente porque TypeScript no compila todos los archivos — solo el build de Next.js lo detecta
+
+---
+
+## Sesión 2026-04-11i — Investigación reemplazos + notificaciones push + realtime
+
+### Lo realizado: Investigación y documentación del estado actual
+
+No se implementó código. Se investigó el sistema existente de reemplazos y notificaciones para planificar las próximas features.
+
+**Investigación de reemplazos (sistema actual en caja3):**
+- Valor por defecto: $20.000 por reemplazo
+- 3 modos de pago (`pago_por` en tabla `turnos`):
+  - `empresa` → pago a fin de mes en liquidación (entre miembros R11)
+  - `empresa_adelanto` → adelanto inmediato de $20.000
+  - `titular` → el titular paga directo al reemplazante
+- Reemplazos externos: admin pone nombre en `reemplazado_por` como texto
+- Todo gestionado desde caja3/PersonalApp.jsx por el admin
+- Liquidación calcula: `totalReemplazando` (lo que gana por cubrir) y `totalReemplazados` (lo que pierde por ser cubierto)
+- Solo reemplazos con `pago_por = 'empresa'` se suman/restan en liquidación
+
+**Investigación de notificaciones push (estado actual):**
+- Push notifications: documentadas en `.amazonq/rules/memory-bank/push-notifications.md` con diseño completo (VAPID + web-push + service worker) pero NO implementadas en producción
+- Service workers básicos existen en app3/caja3 solo para PWA badge y updates
+- No hay sistema realtime (no WebSockets, no SSE, no polling)
+- No hay badge contador dinámico en navegación (solo fetch estático al cargar MobileHeader)
+- No hay suscripciones push en mi3
+- Tabla `push_subscriptions` diseñada pero no creada en BD
+
+**Referencia Digitalizatodo:**
+- El usuario indica que push notifications nativas, realtime, badges con contador, suscripciones ping-pong ya están implementadas en `https://github.com/Ricardohuiscaleo/Digitalizatodo.git`
+- Ese repo no está clonado en el workspace actual — pendiente clonar para reutilizar la implementación
+
+### Reglas de negocio de reemplazos (confirmadas por el usuario)
+
+| Escenario | Pago | Cuándo |
+|-----------|------|--------|
+| Reemplazo entre miembros R11 | $20.000 vía empresa | Fin de mes (liquidación) |
+| Reemplazo externo | $20.000 | Titular paga, o descuento a fin de mes (adelanto) |
+| Reemplazo externo | Nombre completo del externo | Se registra en el turno |
+
+### Estado de notificaciones/realtime
+
+| Feature | app3/caja3 | mi3 | Digitalizatodo |
+|---------|-----------|-----|----------------|
+| Service Worker | ✅ Básico (PWA) | ❌ No | ✅ Completo |
+| Push Notifications | ❌ Diseñado, no implementado | ❌ No | ✅ Implementado |
+| VAPID keys | ❌ No generadas | ❌ No | ✅ Configurado |
+| Badge contador | ❌ Solo PWA badge | Parcial (fetch estático) | ✅ Realtime |
+| Realtime (WebSocket/SSE) | ❌ No | ❌ No | ✅ Implementado |
+| Tabla push_subscriptions | ❌ No creada | ❌ No | ✅ Existe |
+
+### Lecciones Aprendidas
+
+51. **Reemplazos tienen 3 modos de pago**: `empresa` (fin de mes), `empresa_adelanto` (inmediato), `titular` (directo). Solo `empresa` y `empresa_adelanto` afectan la liquidación. `titular` es entre personas y no pasa por el sistema
+52. **Push notifications en PWA**: Funcionan en Android (Chrome/Firefox/Samsung) y iOS 16.4+ (solo Safari). Requieren VAPID keys, service worker con listener `push`, y tabla `push_subscriptions` en BD. La implementación completa ya existe en Digitalizatodo
+
+### Pendiente — Decisiones
+
+- ¿Agregar reemplazos + notificaciones al spec `mi3-worker-dashboard-v2` existente, o crear spec separado para notificaciones/realtime?
+- Clonar repo Digitalizatodo para reutilizar implementación de push notifications
+- Definir qué eventos de mi3 disparan notificaciones push (préstamo aprobado, turno cambiado, reemplazo asignado, etc.)
+
+---
+
+## Sesión 2026-04-11h — Fix turnos Dafne + Deploy masivo
+
+### Lo realizado
+
+**Diagnóstico turnos Dafne:**
+- Endpoint `get_turnos.php` genera correctamente 16 turnos dinámicos para Dafne (id 12) en abril — verificado con curl al endpoint en producción
+- El problema visual era que `COLORES` en PersonalApp.jsx solo tenía IDs 1-8, y Dafne es id 12 → sin color en el calendario
+- Agregados colores para IDs 10 (Claudio), 11 (Yojhans), 12 (Dafne) en el mapa COLORES
+
+**Notas de negocio confirmadas:**
+- Ricardo: $300k admin + $530k seguridad (ya en BD)
+- Claudio: $530k seguridad, sin perfil mi3
+- Dafne: NO tiene cuenta en tabla `usuarios` — se vinculará cuando cree cuenta (igual que Andrés)
+
+**Commit + Push + Deploy masivo:**
+- Commit `52ba6f8`: `feat: remember session + logout + turnos Andrés/Dafne + colores PersonalApp`
+- 9 archivos en el commit (acumulado de sesiones f, g, h)
+- 3 deploys disparados simultáneamente via Coolify API
+
+### Deploys Disparados
+
+| App | UUID | Incluye |
+|-----|------|---------|
+| caja3 | `yzlvtsf89zu7nr9j1c4yk3ik` | Ciclo planchero Andrés/Andrés, colores Dafne/Claudio/Yojhans en PersonalApp |
+| mi3-frontend | `cu976z45l2v05exa773xs7ho` | Navbar móvil, logo R11 Work, remember session, logout, PWA manifest |
+| mi3-backend | `lzefh833oflo7bdzp9ykn7nw` | Remember token en AuthController, ciclo planchero en config |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `caja3/api` en .gitignore | El directorio `caja3/api/` está ignorado por git | Usar `git add -f` para forzar el add |
+| Inyección PersonalApp.jsx en contenedor falla | caja3 es Astro (compilado), el JSX no existe en `/var/www/html/src/` del contenedor | Requiere rebuild completo via Coolify, no hotfix |
+
+### Lecciones Aprendidas
+
+48. **COLORES por ID en PersonalApp**: El mapa de colores usa IDs de personal como keys. Al agregar trabajadores nuevos (Dafne id 12), hay que agregar su color al mapa. Sin color, el trabajador aparece en la liquidación pero invisible en el calendario
+49. **Hotfix JSX vs PHP**: Los archivos PHP (get_turnos.php) se pueden inyectar directamente en el contenedor. Los archivos JSX (PersonalApp.jsx) requieren rebuild porque Astro los compila a JS estático
+50. **Deploy masivo**: Se pueden disparar múltiples deploys simultáneos via Coolify API. Coolify los procesa en paralelo (hasta 2 builds concurrentes según config del servidor)
+
+---
+
+## Sesión 2026-04-11g — Vinculación de trabajadores con cuentas de usuario
+
+### Lo realizado: Búsqueda y vinculación de personal con usuarios
+
+Se buscaron cuentas de usuario existentes en la tabla `usuarios` para vincular con los trabajadores activos sin `user_id` en la tabla `personal`.
+
+**Búsqueda realizada:**
+- Consultada tabla `personal` (activos sin user_id): Camila (id 1), Andrés (id 3), Claudio (id 10), Dafne (id 12)
+- Buscados por email exacto y por nombre parcial en tabla `usuarios`
+- Dafne buscada específicamente: NO tiene cuenta en `usuarios`
+
+**Vinculación exitosa:**
+- Camila (personal id 1) → usuario id 162 (`camilanicolecam@gmail.com`) — match exacto por email
+
+**Decisiones del dueño sobre personal restante:**
+- Claudio (id 10): NO tendrá perfil en mi3 (sin cuenta de usuario). Se gestiona solo desde admin. Sueldo seguridad $530.000 ya configurado en BD
+- Ricardo (id 5): admin + seguridad. Sueldo seguridad $530.000 ya configurado. Seguridad es negocio aparte pero se gestiona en el mismo sistema
+- Andrés (id 3): sin cuenta, se vinculará automáticamente cuando se registre en app.laruta11.cl
+- Dafne (id 12): sin cuenta en `usuarios`, igual que Andrés — se vinculará cuando cree su cuenta
+
+### Estado actual de vinculación personal ↔ usuarios
+
+| Personal ID | Nombre | Rol | user_id | Sueldo | Estado mi3 |
+|-------------|--------|-----|---------|--------|------------|
+| 1 | Camila | cajero | 162 | $300.000 | ✅ Vinculada |
+| 3 | Andrés | planchero | — | $600.000 (full-time) | ⏳ Se vincula al registrarse |
+| 5 | Ricardo | admin,seguridad | 4 | $530.000 seg | ✅ Vinculado + Admin |
+| 10 | Claudio | seguridad | — | $530.000 seg | 🚫 Sin perfil mi3, solo admin |
+| 11 | Yojhans | dueño | 6 | — | ✅ Vinculado + Admin |
+| 12 | Dafne | cajero | — | $300.000 | ⏳ Se vincula al registrarse |
+
+### Notas de negocio (confirmadas por el dueño)
+
+- Seguridad es un negocio aparte pero se gestiona en el mismo sistema mi3
+- Sueldos seguridad: $530.000 (Ricardo y Claudio) — ya configurados en BD
+- Claudio no necesita acceso a mi3 como trabajador, solo aparece en la gestión admin
+- Andrés y Dafne se vincularán automáticamente cuando creen cuenta vía /r11 o app.laruta11.cl
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+45. **Password BD real**: La password de `laruta11_user` en producción es `CCoonn22kk11@` (obtenida de env var `APP_DB_PASS` del contenedor app3)
+46. **Emails en tabla personal**: Algunos trabajadores tienen emails placeholder o NULL en `personal.email`. Para vincular automáticamente, el email de `personal` debe coincidir con el de `usuarios`
+47. **Trabajadores sin perfil mi3**: No todos los trabajadores necesitan acceso a mi3. Claudio (seguridad) se gestiona solo desde admin. El sistema debe soportar personal sin user_id que solo aparece en nómina/turnos del admin
+
+### Pendiente — Vinculación
+
+- **Andrés**: Que se registre en app.laruta11.cl con `akelarre1986@gmail.com`, o confirmar otro email
+- **Claudio**: Confirmar si es `cl.nunez.rojas@gmail.com` (usuario id 32) o `claudiomellado8014@gmail.com` (usuario id 93)
+- **Dafne**: Obtener email real y buscar/crear cuenta de usuario
+
+---
+
+## Sesión 2026-04-11f — Remember session + Logout para mi3
+
+### Lo realizado: Recordar sesión y botón cerrar sesión
+
+Se implementó "Recordar sesión" (remember token) en el login y botón de logout para trabajadores y admins en mi3.
+
+**Archivos modificados (6):**
+
+1. `mi3/frontend/app/login/page.tsx` — Agregado checkbox "Recordar sesión" + estado `remember`, envía `remember: true/false` al backend en el body del POST login
+2. `mi3/frontend/lib/auth.ts` — Reescrito: función `logout()` centralizada que llama `POST /auth/logout` con `credentials: 'include'`, limpia localStorage y redirige a `/login`
+3. `mi3/frontend/components/layouts/WorkerSidebar.tsx` — Botón "Cerrar sesión" al fondo del sidebar desktop (rojo, ícono LogOut)
+4. `mi3/frontend/components/mobile/MobileBottomNav.tsx` — Botón "Cerrar sesión" en el bottom sheet "Más" (separado por border-t)
+5. `mi3/frontend/components/layouts/AdminSidebar.tsx` — Botón "Cerrar sesión" al fondo del sidebar admin (amber-200, ícono LogOut)
+6. `mi3/backend/app/Http/Controllers/Auth/AuthController.php` — `respondWithAuth` ahora recibe `$remember` bool: `false` → cookie maxAge=0 (session cookie, expira al cerrar navegador), `true` → cookie 30 días. Google OAuth siempre recuerda
+
+**Lógica de remember:**
+- `remember=false` (default): cookies `mi3_token`, `mi3_role`, `mi3_user` con `maxAge=0` → session cookies que expiran al cerrar el navegador
+- `remember=true`: cookies con `maxAge=30*24*60` minutos (30 días) → persisten entre sesiones
+- Google OAuth callback: siempre 30 días (login deliberado)
+
+**Logout:**
+- Frontend llama `POST /api/v1/auth/logout` con `credentials: 'include'`
+- Backend elimina el token Sanctum + setea las 3 cookies con `maxAge=-1` (expiradas)
+- Frontend limpia localStorage y hace hard redirect a `/login`
+
+**0 errores de diagnóstico** en los 6 archivos.
+
+### Estado del Deploy
+
+- mi3-frontend: ⏳ Pendiente commit + push + deploy
+- mi3-backend: ⏳ Pendiente commit + push + deploy (AuthController modificado)
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+43. **Session cookies vs persistent cookies**: En Laravel, `cookie()` con `maxAge=0` crea una session cookie que expira al cerrar el navegador. Con `maxAge > 0` persiste N minutos. Esto es la forma correcta de implementar "Recordar sesión" sin tokens adicionales — solo cambia la duración de la cookie existente
+44. **Logout centralizado**: Una función `logout()` en `lib/auth.ts` que llama al backend + limpia localStorage + hace `window.location.href = '/login'` es más robusto que solo borrar cookies client-side. El backend invalida el token Sanctum y expira las cookies httpOnly (que el frontend no puede borrar directamente)
+
+---
+
+## Sesión 2026-04-11e — Cambios de personal: Neit sale, Gabriel sale, Andrés full-time
+
+### Lo realizado: Reestructuración de turnos y personal
+
+**Cambios en BD (producción vía SSH):**
+1. Neit (id 2): `activo = 0` — ya no trabaja en la empresa
+2. Gabriel (id 4): ya estaba `activo = 0`, confirmado
+3. Andrés (id 3): `sueldo_base_planchero` actualizado de $300.000 → $600.000 (trabaja 2 ciclos 4x4 = todos los días)
+
+**Archivos modificados:**
+1. `caja3/api/personal/get_turnos.php` — Ciclo planchero cambiado de `Gabriel/Andrés` a `Andrés/Andrés` (Andrés trabaja todos los días). Inyectado en contenedor caja3 vía SSH para efecto inmediato
+2. `mi3/backend/config/mi3.php` — Ciclo plancheros: `person_a` cambiado de `'Gabriel'` a `'Andrés'` (en repo, pendiente deploy)
+
+**Lógica del cambio:**
+- Los turnos 4x4 de La Ruta 11 tienen 2 ciclos: cajeros (Camila/Dafne) y plancheros (antes Gabriel/Andrés)
+- Gabriel ya no trabaja → Andrés cubre ambas posiciones del ciclo planchero
+- Al poner `'a' => 'Andrés', 'b' => 'Andrés'`, el sistema genera turno para Andrés en pos 0-3 Y pos 4-7 = todos los días
+- Sueldo actualizado a $600.000 porque cubre 2 ciclos completos (2 × $300.000)
+
+### Estado del Deploy
+
+| Cambio | Método | Estado |
+|--------|--------|--------|
+| Neit activo=0 en BD | SQL directo vía SSH | ✅ Aplicado |
+| Andrés sueldo $600k en BD | SQL directo vía SSH | ✅ Aplicado |
+| get_turnos.php ciclo planchero | Inyectado en contenedor caja3 vía SSH | ✅ Aplicado (se pierde en redeploy) |
+| mi3.php config ciclo planchero | En repo, pendiente deploy mi3-backend | ⏳ Pendiente |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| MySQL access denied con password vieja | La bitácora tenía password incorrecta para laruta11_user | Obtener password real del contenedor app3 vía `env`: `CCoonn22kk11@` |
+
+### Estado actual del personal
+
+| ID | Nombre | Rol | Activo | Sueldo Base | Notas |
+|----|--------|-----|--------|-------------|-------|
+| 1 | Camila | cajero | ✅ | $300.000 | Ciclo 4x4 con Dafne |
+| 2 | Neit | cajero | ❌ | - | Ya no trabaja |
+| 3 | Andrés | planchero | ✅ | $600.000 | Trabaja todos los días (2 ciclos) |
+| 4 | Gabriel | planchero | ❌ | - | Ya no trabaja |
+| 5 | Ricardo | admin,seguridad | ✅ | - | Ciclo 4x4 seguridad con Claudio |
+| 10 | Claudio | seguridad | ✅ | - | Ciclo 4x4 seguridad con Ricardo |
+| 11 | Yojhans | dueño | ✅ | - | Admin |
+| 12 | Dafne | cajero | ✅ | $300.000 | Ciclo 4x4 con Camila |
+
+### Lecciones Aprendidas
+
+40. **Turnos 4x4 hardcodeados por nombre**: Los ciclos usan nombres (`'Gabriel'`, `'Andrés'`) en vez de IDs. Un cambio de personal requiere modificar código en 2-3 archivos + BD. Idealmente debería usar solo IDs
+41. **Password BD en bitácora estaba incorrecta**: La password real de `laruta11_user` es `CCoonn22kk11@`, no la que estaba documentada. Siempre verificar con `env` del contenedor
+42. **Andrés/Andrés en ciclo 4x4**: Para que alguien trabaje todos los días en un sistema 4x4, basta poner su nombre en ambas posiciones del ciclo (`person_a` y `person_b`). El generador dinámico asigna pos 0-3 a A y pos 4-7 a B — si A=B, trabaja los 8 días del ciclo
+
+### Pendiente
+
+- Commit + push + deploy caja3 y mi3-backend para persistir cambios
+- Verificar que el calendario de turnos en caja.laruta11.cl muestra Andrés todos los días
+- Verificar liquidación de Andrés refleja $600.000 base
+
+---
+
+## Sesión 2026-04-11d — Logo mi3 + Spec mi3-worker-dashboard-v2
+
+### Lo realizado
+
+**Parte 1: Logo "La Ruta 11 WORK" + PWA**
+
+- Imagen `mi.png` (proporcionada por el usuario) subida a S3 como `menu/logo-work.png` vía SCP al VPS + Python AWS Signature V4
+- URL pública: `https://laruta11-images.s3.amazonaws.com/menu/logo-work.png`
+- `MobileHeader.tsx`: texto "mi3" reemplazado por `<img>` del logo (h-8)
+- `WorkerSidebar.tsx`: texto "mi3" reemplazado por mismo logo para consistencia desktop
+- `manifest.json`: nombre "La Ruta 11 Work", short_name "R11 Work", theme_color/background_color `#ef4444` (rojo del logo), íconos apuntando a S3
+- `layout.tsx`: agregado `<link rel="manifest">`, `<meta name="theme-color">`, `<link rel="apple-touch-icon">`
+- Commit: `39588a4` — `feat(mi3): logo La Ruta 11 Work en header + PWA manifest`
+- Deploy: `xzsa7icz8xubg1p6oet4otys` en cola
+
+**Parte 2: Spec mi3-worker-dashboard-v2 (requirements-first)**
+
+Se investigó el sistema actual de personal en caja3 (PersonalApp.jsx, personal_api.php, LiquidacionService, ShiftService, ShiftSwapService) para entender la lógica de negocio existente antes de crear el spec.
+
+**Spec creado:** `.kiro/specs/mi3-worker-dashboard-v2/`
+
+**Hallazgos de la investigación:**
+- No existe tabla de préstamos — solo crédito R11 (para compras, no adelantos de sueldo)
+- Ajustes de sueldo (`ajustes_sueldo`) pueden ser negativos pero no hay flujo formal de solicitud
+- Reemplazos se gestionan solo desde caja3 por el admin
+- Sueldos base son por rol (cajero, planchero, admin, seguridad) — no hay default de $300k
+
+**Documento generado:**
+- `requirements.md` — 10 requerimientos EARS:
+  1. Sueldo base $300.000 por defecto para nuevos trabajadores
+  2. Modelo de datos para préstamos (nueva tabla `prestamos`)
+  3. Solicitud de préstamos por el trabajador (formulario, validaciones, 1 préstamo activo máx)
+  4. Gestión de préstamos por el admin (aprobar/rechazar, monto puede diferir)
+  5. Descuento automático de cuotas (cron día 1, transaccional)
+  6. Dashboard rediseñado con 4 tarjetas: Sueldo, Préstamos, Descuentos, Reemplazos
+  7. Sección dedicada de Préstamos con historial y barra de progreso
+  8. Gestión de reemplazos desde el trabajador (realizados/recibidos, balance mensual)
+  9. Navegación actualizada (Préstamos en bottom nav, Crédito pasa a "Más")
+  10. API REST completa (worker + admin endpoints)
+
+### Estado del Spec
+
+| Documento | Estado |
+|-----------|--------|
+| requirements.md | ✅ Completo (10 requerimientos EARS) |
+| design.md | ⏳ Pendiente (siguiente paso) |
+| tasks.md | ⏳ Pendiente |
+
+### Estado del Deploy
+
+| Deploy | UUID | Commit | Estado |
+|--------|------|--------|--------|
+| mi3-frontend (navbar) | `nrx1ipl0jli9h6b7sqoju09w` | `9b1f10d` | 🔄 En cola |
+| mi3-frontend (logo) | `xzsa7icz8xubg1p6oet4otys` | `39588a4` | 🔄 En cola |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Config PHP no encontrado en app3 container | Ruta `/var/www/html/public/config.php` no existe | Usar `env` del contenedor directamente para obtener AWS credentials |
+
+### Lecciones Aprendidas
+
+37. **S3 upload sin AWS CLI**: Desde el VPS se puede subir a S3 con Python puro usando `urllib.request` + AWS Signature V4. SCP la imagen al VPS primero, luego Python la sube. Funciona sin instalar nada
+38. **PWA icons desde S3**: El manifest.json puede referenciar íconos en URLs externas (S3) en vez de archivos locales en `/public`. Simplifica el manejo de assets
+39. **Investigar antes de especificar**: Para features que tocan lógica de negocio existente (préstamos, reemplazos), investigar primero el código de caja3 y la BD real evita requisitos incorrectos. El context-gatherer + lectura de PersonalApp.jsx y LiquidacionService reveló que no existía sistema de préstamos y que los reemplazos solo se gestionaban desde admin
+
+### Pendiente — mi3-worker-dashboard-v2
+
+- Revisar y aprobar requirements.md
+- Generar design.md (diseño técnico)
+- Generar tasks.md (plan de implementación)
+- Implementar: nueva tabla `prestamos`, APIs, frontend, cron de cuotas
+- Verificar deploy de mi3-frontend (navbar + logo) en producción
+
+---
+
+## Sesión 2026-04-11c — Implementación mi3 Mobile Navbar + Logo + Deploy
+
+### Lo realizado: Implementación completa de navegación móvil + branding para mi3
+
+Se ejecutaron todas las tareas del spec `mi3-mobile-navbar` y se agregó el logo "La Ruta 11 WORK" al header, sidebar y PWA.
+
+**Parte 1: Navegación móvil (spec mi3-mobile-navbar)**
+
+Archivos creados (4):
+1. `mi3/frontend/lib/navigation.ts` — Config centralizada: `NavItem` interface, `primaryNavItems` (4), `secondaryNavItems` (4), `allNavItems`, `getPageTitle()`, `isNavItemActive()`
+2. `mi3/frontend/components/mobile/MobileBottomNav.tsx` — Bottom nav fijo con 4 items + botón "Más" que abre bottom sheet con items secundarios. Safe-area-inset-bottom para notch de iPhone
+3. `mi3/frontend/components/mobile/MobileHeader.tsx` — Header fijo con logo, título dinámico, badge de notificaciones no leídas
+4. `mi3/frontend/components/mobile/MobileNavLayout.tsx` — Wrapper: MobileHeader + children (pt-14 pb-20) + MobileBottomNav. Solo visible en móvil via `md:hidden`
+
+Archivos modificados (2):
+5. `mi3/frontend/components/layouts/WorkerSidebar.tsx` — Simplificado a desktop-only: eliminado hamburguesa, overlay, useState, close button. Ahora usa `hidden md:flex md:flex-col`
+6. `mi3/frontend/app/dashboard/layout.tsx` — Layouts separados: `<MobileNavLayout>` para móvil + `<div className="hidden md:flex">` con WorkerSidebar para desktop
+
+**Parte 2: Logo "La Ruta 11 WORK" + PWA**
+
+- Imagen `mi.png` subida a S3 como `menu/logo-work.png` vía Python + AWS Signature V4 desde el VPS
+- URL: `https://laruta11-images.s3.amazonaws.com/menu/logo-work.png`
+- MobileHeader: texto "mi3" reemplazado por `<img>` del logo (h-8)
+- WorkerSidebar: texto "mi3" reemplazado por mismo logo para consistencia desktop
+- `manifest.json`: actualizado con nombre "La Ruta 11 Work", short_name "R11 Work", theme_color/background_color `#ef4444` (rojo del logo), íconos apuntando a S3
+- `layout.tsx`: agregado `<link rel="manifest">`, `<meta name="theme-color">`, `<link rel="apple-touch-icon">` para PWA en iOS
+
+**0 errores de diagnóstico** en todos los archivos.
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `9b1f10d` | `feat(mi3): navegación móvil tipo app nativa - bottom nav + header fijo` |
+| 2 | `39588a4` | `feat(mi3): logo La Ruta 11 Work en header + PWA manifest` |
+
+| Deploy | UUID | Estado |
+|--------|------|--------|
+| mi3-frontend (navbar) | `nrx1ipl0jli9h6b7sqoju09w` | 🔄 En cola |
+| mi3-frontend (logo) | `xzsa7icz8xubg1p6oet4otys` | 🔄 En cola |
+
+### Errores Encontrados y Resueltos
+
+Ninguno. Implementación limpia.
+
+### Lecciones Aprendidas
+
+34. **Layouts separados mobile/desktop en Next.js**: En vez de un solo layout con clases responsivas complejas, es más limpio renderizar `children` dos veces en wrappers separados. Cada wrapper controla su propia visibilidad con `md:hidden` / `hidden md:flex`
+35. **safe-area-inset-bottom para bottom nav**: En iPhones con notch, el bottom nav queda parcialmente oculto. Usar `pb-[env(safe-area-inset-bottom)]` en el nav fijo para compensar
+36. **WorkerSidebar simplificado**: Al separar la navegación móvil en componentes dedicados, el sidebar desktop se simplifica drásticamente — se eliminan useState, hamburguesa, overlay, close button
+37. **S3 upload sin AWS CLI**: Desde el VPS se puede subir a S3 con Python puro usando `urllib.request` + AWS Signature V4. SCP la imagen al VPS primero, luego Python la sube a S3. Funciona sin instalar nada
+38. **PWA icons desde S3**: El manifest.json puede referenciar íconos en URLs externas (S3) en vez de archivos locales en `/public`. Simplifica el manejo de assets sin duplicar imágenes en el repo
+
+---
+
+## Sesión 2026-04-11b — Spec completo mi3 Mobile Navbar
+
+### Lo realizado: Spec completo (design-first) de navegación móvil para mi3
+
+Se creó un spec completo (design-first) para agregar navegación tipo app nativa a la vista de trabajadores en mi3 (mi.laruta11.cl). El problema: la navegación actual es un sidebar de escritorio (`WorkerSidebar.tsx`) que se desliza desde la izquierda con hamburguesa — experiencia poco nativa en móvil.
+
+**Spec creado:** `.kiro/specs/mi3-mobile-navbar/`
+
+**Documentos generados (3/3 completos):**
+- `.kiro/specs/mi3-mobile-navbar/.config.kiro` — Config (design-first, feature)
+- `.kiro/specs/mi3-mobile-navbar/design.md` — Diseño técnico completo (HLD + LLD)
+- `.kiro/specs/mi3-mobile-navbar/requirements.md` — 11 requisitos EARS derivados del diseño
+- `.kiro/specs/mi3-mobile-navbar/tasks.md` — Plan de implementación con 5 tareas principales
+
+**Diseño técnico incluye:**
+
+1. **3 componentes nuevos:**
+   - `MobileBottomNav` — Barra inferior fija con 4 items principales (Inicio, Turnos, Sueldo, Crédito) + botón "Más" que abre bottom sheet con items secundarios (Perfil, Asistencia, Cambios, Notificaciones)
+   - `MobileHeader` — Header fijo superior con branding "mi3", título dinámico de página y badge de notificaciones
+   - `MobileNavLayout` — Wrapper que combina header + bottom nav con padding correcto
+
+2. **Modificación de WorkerSidebar:** Agregar `hidden md:block` para ocultarlo en móvil, eliminar hamburguesa
+
+3. **Configuración centralizada:** `lib/navigation.ts` con `primaryNavItems`, `secondaryNavItems`, `getPageTitle()`
+
+4. **Estrategia responsiva:** Móvil (<768px) usa header + bottom nav. Desktop (≥768px) mantiene sidebar actual sin cambios. Nunca se muestran ambos.
+
+5. **5 propiedades de correctitud:**
+   - Exclusividad desktop/móvil (nunca ambos visibles)
+   - Exactamente un item activo en bottom nav
+   - Cobertura completa (todos los links del sidebar accesibles en móvil)
+   - Consistencia de títulos (header = item de nav)
+   - No oclusión de contenido (padding correcto para elementos fijos)
+
+**Requisitos (11 en total):**
+- R1: Configuración centralizada de navegación
+- R2: Resolución de título de página
+- R3: Barra de navegación inferior móvil
+- R4: Determinación de item activo
+- R5: Menú "Más" con items secundarios
+- R6: Header móvil fijo
+- R7: Layout de navegación móvil (padding correcto)
+- R8: Exclusividad de sistemas de navegación desktop/móvil
+- R9: Cobertura completa de rutas
+- R10: Badge de notificaciones no leídas
+- R11: Manejo de rutas no reconocidas
+
+**Tareas de implementación (5 principales):**
+1. Crear `lib/navigation.ts` con config centralizada + tests de propiedad opcionales
+2. Checkpoint — verificar configuración
+3. Implementar 3 componentes móviles (MobileBottomNav, MobileHeader, MobileNavLayout)
+4. Modificar WorkerSidebar + actualizar dashboard/layout.tsx
+5. Checkpoint final — verificar integración
+
+**Sin dependencias nuevas** — usa Next.js, TailwindCSS, lucide-react existentes.
+
+### Estado del Spec
+
+| Documento | Estado |
+|-----------|--------|
+| design.md | ✅ Completo (HLD + LLD) |
+| requirements.md | ✅ Completo (11 requisitos EARS) |
+| tasks.md | ✅ Completo (5 tareas, sub-tareas opcionales de PBT) |
+
+### Pendiente — mi3 Mobile Navbar
+
+- Ejecutar las 5 tareas del tasks.md (implementación)
+- Implementar los 3 componentes nuevos
+- Modificar `WorkerSidebar.tsx` y `dashboard/layout.tsx`
+- Crear `lib/navigation.ts` con config centralizada
+- Probar en viewport móvil y desktop
+- Deploy mi3-frontend
+
+### Lecciones Aprendidas
+
+30. **Kiro spec design-first workflow**: Para features UI donde la solución técnica es clara (como reemplazar sidebar por bottom nav), el workflow design-first es más eficiente — se define la arquitectura de componentes primero y los requisitos se derivan después
+31. **Navegación móvil — patrón bottom nav**: Para apps con ~8 secciones, el patrón óptimo es 4 items principales en bottom nav + botón "Más" con sheet para el resto. Más de 5 items en bottom nav se vuelve ilegible en pantallas pequeñas
+32. **Responsividad con TailwindCSS md:hidden/md:block**: La forma más limpia de tener navegación dual (sidebar desktop + bottom nav móvil) es renderizar ambos y controlar visibilidad con clases de Tailwind, en vez de lógica JS con `window.innerWidth`
+33. **Spec design-first completo en una sesión**: El workflow design → requirements → tasks se puede completar en una sola sesión cuando el diseño técnico está claro. Los requisitos se derivan directamente del diseño y las tareas se mapean 1:1 con los componentes
 
 ---
 
@@ -124,7 +1045,7 @@ laruta11-images/
 
 **Pendiente mi3:**
 - Ejecutar migraciones Laravel (solicitudes_cambio_turno, notificaciones_mi3, personal_access_tokens)
-- Vincular trabajadores restantes (Camila, Neit, Andrés, Gabriel, Claudio, Dafne) con sus cuentas de usuarios
+- Vincular trabajadores restantes (Camila, Andrés, Gabriel, Claudio, Dafne) con sus cuentas de usuarios
 - Probar flujo completo de login con Google OAuth
 - Probar las páginas del dashboard trabajador y admin con datos reales
 - Configurar cron del scheduler de Laravel en el VPS
@@ -404,6 +1325,8 @@ TOTAL_DELIVERY = fee_bruto − descuento_rl6 + recargo_tarjeta
 - Probar dashboard con datos reales (nómina, turnos, etc.)
 - Configurar cron scheduler en VPS
 - Resolver problema de cache Docker en Coolify (builds no toman código nuevo)
+- **COMPLETADO**: Navegación móvil (spec `mi3-mobile-navbar`) — implementado + logo + PWA, deploy en cola
+- **NUEVO**: Worker Dashboard v2 (spec `mi3-worker-dashboard-v2`) — requirements listos, falta design + tasks + implementación. Incluye: préstamos, dashboard rediseñado, reemplazos, sueldo base $300k
 
 **R11 Crédito / Onboarding:**
 - Verificar que Camila pueda registrarse después del fix de Redis

@@ -11,11 +11,13 @@ import {
 } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/auth';
+import { usePendingLoanBadge } from '@/hooks/usePendingLoanBadge';
 import ViewSwitcher from '@/components/ViewSwitcher';
 
 export default function MobileBottomNav({ variant = 'worker' }: { variant?: 'worker' | 'admin' }) {
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const hasPendingLoan = usePendingLoanBadge();
 
   const primary = variant === 'admin' ? adminPrimaryNavItems : primaryNavItems;
   const secondary = variant === 'admin' ? adminSecondaryNavItems : secondaryNavItems;
@@ -28,11 +30,17 @@ export default function MobileBottomNav({ variant = 'worker' }: { variant?: 'wor
           {primary.map((item) => {
             const active = isNavItemActive(pathname, item.href);
             const Icon = item.icon;
+            const showBadge = variant === 'worker' && item.badgeKey === 'prestamo-pendiente' && hasPendingLoan;
             return (
               <Link key={item.href} href={item.href}
-                className={cn('flex flex-col items-center justify-center flex-1 h-full gap-0.5',
+                className={cn('flex flex-col items-center justify-center flex-1 h-full gap-0.5 relative',
                   active ? 'text-red-500' : 'text-gray-400')}>
-                <Icon className="w-5 h-5" />
+                <div className="relative">
+                  <Icon className="w-5 h-5" />
+                  {showBadge && (
+                    <span className="absolute -top-1 -right-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                  )}
+                </div>
                 <span className="text-xs">{item.label}</span>
               </Link>
             );

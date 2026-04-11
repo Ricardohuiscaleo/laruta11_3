@@ -103,6 +103,60 @@ export interface SolicitudCambio {
   created_at: string;
 }
 
+export interface Prestamo {
+  id: number;
+  monto_solicitado: number;
+  monto_aprobado: number | null;
+  motivo: string | null;
+  cuotas: number;
+  cuotas_pagadas: number;
+  estado: 'pendiente' | 'aprobado' | 'rechazado' | 'pagado' | 'cancelado';
+  fecha_aprobacion: string | null;
+  fecha_inicio_descuento: string | null;
+  notas_admin: string | null;
+  created_at: string;
+}
+
+export interface DashboardSummary {
+  sueldo: { total: number; mes: string };
+  prestamo: {
+    tiene_activo: boolean;
+    monto_pendiente: number;
+    cuotas_restantes: number;
+    monto_cuota: number;
+  };
+  descuentos: {
+    total: number;
+    por_categoria: Record<string, number>;
+  };
+  reemplazos: {
+    realizados: { cantidad: number; monto: number };
+    recibidos: { cantidad: number; monto: number };
+  };
+}
+
+export interface ReplacementSummary {
+  total_ganado: number;
+  total_descontado: number;
+  balance: number;
+}
+
+export interface ReplacementData {
+  realizados: Array<{
+    fecha: string;
+    titular: string;
+    monto: number;
+    pago_por: string;
+  }>;
+  recibidos: Array<{
+    fecha: string;
+    reemplazante: string;
+    monto: number;
+    pago_por: string;
+  }>;
+  resumen: ReplacementSummary;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;

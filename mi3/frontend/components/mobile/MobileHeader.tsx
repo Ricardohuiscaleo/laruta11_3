@@ -21,7 +21,7 @@ export default function MobileHeader({ variant = 'worker' }: { variant?: 'worker
       }
     }
     fetchNotifications();
-  }, []);
+  }, [pathname]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 md:hidden h-14 bg-red-500 shadow-sm">

@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Deploy caja3",
+  "description": "Triggers a rebuild of ONLY caja3 (caja.laruta11.cl). Does not affect other apps.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "curl -s -X POST -H \"Authorization: Bearer 3|S52ZUspC6N5G54apjgnKO6sY3VW5OixHlnY9GsMv8dc72ae8\" -H \"Accept: application/json\" \"http://76.13.126.63:8000/api/v1/applications/xockcgsc8k000o8osw8o88ko/restart\" 2>/dev/null",
+    "timeout": 10
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Smart Deploy",
+  "description": "Después de hacer git push, analiza qué carpetas cambiaron y despliega SOLO las apps afectadas (app3, caja3, mi3-backend, mi3-frontend). No despliega apps que no tuvieron cambios.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Revisa los últimos archivos modificados con `git diff --name-only HEAD~1` y despliega SOLO las apps de Coolify que tuvieron cambios. Usa estos UUIDs:\n- app3/ → curl restart egck4wwcg0ccc4osck4sw8ow\n- caja3/ → curl restart xockcgsc8k000o8osw8o88ko  \n- mi3/backend/ → curl restart ds24j8jlaf9ov4flk1nq4jek\n- mi3/frontend/ → curl restart sxdw43i9nt3cofrzxj28hx1e\n- landing3/ → curl restart dks4cg8s0wsswk08ocwggk0g\nToken: 3|S52ZUspC6N5G54apjgnKO6sY3VW5OixHlnY9GsMv8dc72ae8\nURL base: http://76.13.126.63:8000/api/v1/applications/{uuid}/restart\nSolo despliega las que realmente cambiaron. Reporta cuáles se desplegaron."
+  }
+}

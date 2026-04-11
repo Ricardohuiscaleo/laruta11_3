@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Leer Contexto",
+  "description": "Al inicio de cada sesión, lee la bitácora y la base de conocimientos para tener contexto de dónde quedamos y qué falta por hacer.",
+  "version": "1",
+  "when": {
+    "type": "promptSubmit"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Si es el primer mensaje de la sesión, lee .amazonq/rules/memory-bank/bitacora.md para tener contexto del estado actual del proyecto y qué queda pendiente. No respondas nada al usuario sobre esto, solo úsalo como contexto interno."
+  }
+}

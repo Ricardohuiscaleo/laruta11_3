@@ -6,8 +6,13 @@ use App\Models\NotificacionMi3;
 
 class NotificationService
 {
+    public function __construct(
+        private readonly PushNotificationService $pushNotificationService,
+    ) {}
+
     /**
      * Create a notification for a worker.
+     * Also sends a push notification if the worker has an active subscription.
      */
     public function crear(
         int $personalId,
@@ -17,7 +22,7 @@ class NotificationService
         ?int $referenciaId = null,
         ?string $referenciaTipo = null
     ): NotificacionMi3 {
-        return NotificacionMi3::create([
+        $notificacion = NotificacionMi3::create([
             'personal_id' => $personalId,
             'tipo' => $tipo,
             'titulo' => $titulo,
@@ -25,6 +30,19 @@ class NotificationService
             'referencia_id' => $referenciaId,
             'referencia_tipo' => $referenciaTipo,
         ]);
+
+        // Also send push notification
+        try {
+            $this->pushNotificationService->enviar(
+                $personalId,
+                $titulo,
+                $mensaje
+            );
+        } catch (\Throwable $e) {
+            // Push is best-effort — don't fail the in-app notification
+        }
+
+        return $notificacion;
     }
 
     /**

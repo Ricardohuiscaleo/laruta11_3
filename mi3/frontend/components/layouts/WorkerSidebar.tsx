@@ -2,27 +2,18 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Home, User, Calendar, Receipt, CreditCard,
-  ClipboardCheck, ArrowLeftRight, Bell, LogOut,
-} from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/auth';
+import { primaryNavItems, secondaryNavItems } from '@/lib/navigation';
+import { usePendingLoanBadge } from '@/hooks/usePendingLoanBadge';
 import ViewSwitcher from '@/components/ViewSwitcher';
 
-const links = [
-  { href: '/dashboard', label: 'Inicio', icon: Home },
-  { href: '/dashboard/perfil', label: 'Perfil', icon: User },
-  { href: '/dashboard/turnos', label: 'Turnos', icon: Calendar },
-  { href: '/dashboard/liquidacion', label: 'Liquidación', icon: Receipt },
-  { href: '/dashboard/credito', label: 'Crédito R11', icon: CreditCard },
-  { href: '/dashboard/asistencia', label: 'Asistencia', icon: ClipboardCheck },
-  { href: '/dashboard/cambios', label: 'Cambios', icon: ArrowLeftRight },
-  { href: '/dashboard/notificaciones', label: 'Notificaciones', icon: Bell },
-];
+const links = [...primaryNavItems, ...secondaryNavItems];
 
 export default function WorkerSidebar() {
   const pathname = usePathname();
+  const hasPendingLoan = usePendingLoanBadge();
 
   return (
     <aside className="hidden md:flex md:flex-col w-64 bg-red-600 text-white">
@@ -30,8 +21,9 @@ export default function WorkerSidebar() {
         <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-work.png" alt="La Ruta 11 Work" className="h-8 w-auto" />
       </div>
       <nav className="mt-2 flex-1 space-y-1 px-2">
-        {links.map(({ href, label, icon: Icon }) => {
+        {links.map(({ href, label, icon: Icon, badgeKey }) => {
           const active = pathname === href;
+          const showBadge = badgeKey === 'prestamo-pendiente' && hasPendingLoan;
           return (
             <Link
               key={href}
@@ -43,7 +35,12 @@ export default function WorkerSidebar() {
                   : 'text-red-100 hover:bg-red-500/50'
               )}
             >
-              <Icon className="h-5 w-5" />
+              <div className="relative">
+                <Icon className="h-5 w-5" />
+                {showBadge && (
+                  <span className="absolute -top-1 -right-1.5 h-2.5 w-2.5 rounded-full bg-yellow-400 ring-2 ring-red-600" />
+                )}
+              </div>
               {label}
             </Link>
           );
