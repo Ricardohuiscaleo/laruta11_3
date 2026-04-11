@@ -1,16 +1,10 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 
-interface FetchOptions extends RequestInit {
-  token?: string;
-}
-
 export async function apiFetch<T>(
   endpoint: string,
-  options: FetchOptions = {}
+  options: RequestInit = {}
 ): Promise<T> {
-  const { token, headers: customHeaders, ...rest } = options;
-
-  const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('mi3_token') : null);
+  const { headers: customHeaders, ...rest } = options;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -18,18 +12,23 @@ export async function apiFetch<T>(
     ...((customHeaders as Record<string, string>) || {}),
   };
 
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
-
   const res = await fetch(`${API_URL}/api/v1${endpoint}`, {
     headers,
+    credentials: 'include', // Always send httpOnly cookies
     ...rest,
   });
 
+  if (res.status === 401) {
+    // Unauthenticated — redirect to login
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    throw new ApiError(401, 'No autenticado');
+  }
+
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new ApiError(res.status, body.error || 'Error de servidor');
+    throw new ApiError(res.status, body.error || body.message || 'Error de servidor');
   }
 
   return res.json();

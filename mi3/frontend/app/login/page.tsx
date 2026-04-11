@@ -2,7 +2,6 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 
@@ -11,35 +10,14 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Check for error from OAuth redirect
   useEffect(() => {
-    const token = searchParams.get('token');
-    const userData = searchParams.get('user');
     const errorParam = searchParams.get('error');
-
     if (errorParam) {
       setError(decodeURIComponent(errorParam));
-      return;
-    }
-
-    if (token && userData) {
-      try {
-        const user = JSON.parse(decodeURIComponent(userData));
-        // Save to localStorage
-        localStorage.setItem('mi3_token', token);
-        localStorage.setItem('mi3_user', JSON.stringify(user));
-        // Save to cookies (for middleware)
-        document.cookie = `mi3_token=${encodeURIComponent(token)}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax; Secure`;
-        document.cookie = `mi3_role=${user.is_admin ? 'admin' : 'worker'}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax; Secure`;
-        // Hard redirect (not router.push) to ensure cookies are sent on next request
-        window.location.href = user.is_admin ? '/admin' : '/dashboard';
-        return;
-      } catch {
-        setError('Error procesando respuesta de Google');
-      }
     }
   }, [searchParams]);
 
@@ -48,12 +26,22 @@ function LoginForm() {
     setError('');
     setLoading(true);
     try {
-      const res = await login(email, password);
-      if (res.success) {
-        router.push(res.user.is_admin ? '/admin' : '/dashboard');
+      const res = await fetch(`${API_URL}/api/v1/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        credentials: 'include', // Important: sends and receives cookies
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Cookies are set by the backend response (httpOnly)
+        // Hard redirect to pick up the new cookies
+        window.location.href = data.user.is_admin ? '/admin' : '/dashboard';
+      } else {
+        setError(data.error || 'Error al iniciar sesión');
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al iniciar sesión');
+    } catch {
+      setError('Error de conexión');
     } finally {
       setLoading(false);
     }
@@ -103,35 +91,20 @@ function LoginForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
             className="block w-full rounded-xl border-0 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 ring-1 ring-gray-200 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-amber-500"
-            placeholder="tu@email.com"
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
+            placeholder="tu@email.com" />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
             className="block w-full rounded-xl border-0 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 ring-1 ring-gray-200 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-amber-500"
-            placeholder="Contraseña"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md active:scale-[0.98] disabled:opacity-50"
-          >
+            placeholder="Contraseña" />
+          <button type="submit" disabled={loading}
+            className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md active:scale-[0.98] disabled:opacity-50">
             {loading ? 'Ingresando...' : 'Ingresar'}
           </button>
         </form>
       </div>
 
-      <p className="mt-6 text-center text-xs text-gray-400">
-        Solo para el equipo de La Ruta 11
-      </p>
+      <p className="mt-6 text-center text-xs text-gray-400">Solo para el equipo de La Ruta 11</p>
     </div>
   );
 }

@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\EnsureIsAdmin::class,
         ]);
 
+        // Extract Sanctum token from httpOnly cookie if not in Authorization header
+        $middleware->prepend(\App\Http\Middleware\ExtractTokenFromCookie::class);
+
         // API-only: return JSON 401 instead of redirecting to login route
         $middleware->redirectGuestsTo(fn () => null);
     })
