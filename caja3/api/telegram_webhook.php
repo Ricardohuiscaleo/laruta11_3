@@ -168,24 +168,21 @@ function sendR11Email($to, $nombre, $relacion, $tipo, $extra = null) {
 
     if ($tipo === 'aprobado') {
         $limite  = $extra ?? 50000;
+        $limiteFmt = number_format($limite, 0, ',', '.');
         $subject = '🎉 ¡Bienvenido/a al equipo! - La Ruta 11';
         $color   = '#f59e0b';
         $title   = '🎉 ¡Ya eres parte del equipo!';
-        $intro   = "Tu registro como trabajador de La Ruta 11 ha sido <strong style='color:#f59e0b;'>APROBADO</strong>. Ya puedes acceder a tu portal.";
+        $intro   = "Tu registro como trabajador de La Ruta 11 ha sido <strong style='color:#f59e0b;'>APROBADO</strong>.";
         $body    = "
-        <div style='background:#fef3c7;padding:20px;border-radius:8px;margin:20px 0;text-align:center;'>
-            <p style='font-size:18px;font-weight:bold;color:#d97706;margin:0;'>Crédito R11 activado</p>
-            <p style='font-size:28px;font-weight:bold;color:#d97706;margin:8px 0 0;'>$" . number_format($limite, 0, ',', '.') . "</p>
-            <p style='color:#92400e;margin:4px 0 0;'>Disponible de inmediato</p>
-        </div>
-        <p style='font-weight:bold;color:#1f2937;'>¿Qué puedes hacer ahora?</p>
-        <ol>
+        <p style='font-weight:bold;color:#1f2937;margin-bottom:12px;'>Esto es lo que puedes hacer ahora:</p>
+        <ol style='line-height:2;'>
             <li>Accede a tu portal en <a href='https://mi.laruta11.cl' style='color:#d97706;font-weight:bold;'>mi.laruta11.cl</a></li>
-            <li>Inicia sesión con tu cuenta (Google o email)</li>
-            <li>Revisa tus turnos, liquidación y crédito</li>
-            <li>Usa tu crédito R11 para pedir en La Ruta 11</li>
+            <li>Revisa tus turnos y calendario</li>
+            <li>Consulta tu liquidación mensual</li>
+            <li>Solicita cambios de turno con tus compañeros</li>
+            <li>Ya tienes aprobado un crédito por <strong>\$$limiteFmt</strong> de descuento en tus pedidos en La Ruta 11</li>
         </ol>
-        <div style='text-align:center;margin:20px 0;'>
+        <div style='text-align:center;margin:24px 0;'>
             <a href='https://mi.laruta11.cl' style='display:inline-block;background:#d97706;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;'>Ir a mi portal →</a>
         </div>";
     } elseif ($tipo === 'rechazado') {

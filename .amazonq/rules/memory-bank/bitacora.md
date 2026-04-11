@@ -434,8 +434,9 @@ TOTAL_DELIVERY = fee_bruto − descuento_rl6 + recargo_tarjeta
 **Test #2 (limpio, 2026-04-11):**
 - Usuario 163 reseteado completamente y re-registrado desde cero
 - register.php crea registro en `personal` automáticamente
-- Aprobación reseteada a 0 para probar flujo Telegram → email onboarding → mi3 login
-- Pendiente: aprobar en Telegram, verificar nuevo email, login en mi3 como trabajador
+- Email onboarding v2: crédito como punto 5 (no protagonista), sin bloque grande
+- Telegram re-enviado para probar nuevo email
+- Pendiente: confirmar que el email v2 llegó correctamente a info@digitalizatodo.cl
 
 **Redis:**
 - Actualizar REDIS_PASSWORD en Coolify dashboard para app3 y caja3 (valor correcto: `kEfdMKJoEvNTkqFWhEC4hHM3otMA1W/xm/NiDsVBR0I=`)
