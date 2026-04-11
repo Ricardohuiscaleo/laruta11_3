@@ -22,3 +22,18 @@ Schedule::command('mi3:loan-auto-deduct')
 Schedule::command('mi3:r11-reminder')
     ->monthlyOn(28, '10:00')
     ->timezone('America/Santiago');
+
+// Crear checklists diarios — todos los días a las 14:00 Chile
+Schedule::command('mi3:create-daily-checklists')
+    ->dailyAt('14:00')
+    ->timezone('America/Santiago');
+
+// Detectar compañero ausente y habilitar checklist virtual — todos los días a las 19:00 Chile
+Schedule::command('mi3:check-companion-absence')
+    ->dailyAt('19:00')
+    ->timezone('America/Santiago');
+
+// Detectar inasistencias y aplicar descuentos — todos los días a las 02:00 Chile
+Schedule::command('mi3:detect-absences')
+    ->dailyAt('02:00')
+    ->timezone('America/Santiago');

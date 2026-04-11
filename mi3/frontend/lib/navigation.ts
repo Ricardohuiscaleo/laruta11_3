@@ -25,6 +25,7 @@ export const primaryNavItems: NavItem[] = [
 export const secondaryNavItems: NavItem[] = [
   { href: '/dashboard/perfil', label: 'Perfil', icon: User },
   { href: '/dashboard/credito', label: 'Crédito', icon: CreditCard },
+  { href: '/dashboard/checklist', label: 'Checklist', icon: ClipboardCheck, badgeKey: 'checklist-pendiente' },
   { href: '/dashboard/reemplazos', label: 'Reemplazos', icon: Repeat2 },
   { href: '/dashboard/asistencia', label: 'Asistencia', icon: ClipboardCheck },
   { href: '/dashboard/cambios', label: 'Cambios', icon: ArrowLeftRight },
@@ -43,6 +44,7 @@ export const adminPrimaryNavItems: NavItem[] = [
 ];
 
 export const adminSecondaryNavItems: NavItem[] = [
+  { href: '/admin/checklists', label: 'Checklists', icon: ClipboardCheck },
   { href: '/admin/ajustes', label: 'Ajustes', icon: SlidersHorizontal },
   { href: '/admin/creditos', label: 'Créditos R11', icon: CreditCard },
   { href: '/admin/cambios', label: 'Cambios', icon: ArrowLeftRight },

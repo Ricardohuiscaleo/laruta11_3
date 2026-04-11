@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class ChecklistItem extends Model
+{
+    protected $table = 'checklist_items';
+    public $timestamps = false;
+
+    protected $fillable = [
+        'checklist_id', 'item_order', 'description',
+        'requires_photo', 'photo_url', 'is_completed',
+        'completed_at', 'notes',
+        'ai_score', 'ai_observations', 'ai_analyzed_at',
+    ];
+
+    protected $casts = [
+        'requires_photo' => 'boolean',
+        'is_completed' => 'boolean',
+        'completed_at' => 'datetime',
+        'ai_analyzed_at' => 'datetime',
+    ];
+
+    public function checklist()
+    {
+        return $this->belongsTo(Checklist::class, 'checklist_id');
+    }
+}

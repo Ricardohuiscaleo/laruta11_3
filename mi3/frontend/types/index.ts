@@ -162,3 +162,78 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
+
+// ==========================================
+// Checklist v2 + Asistencia
+// ==========================================
+
+export interface Checklist {
+  id: number;
+  type: 'apertura' | 'cierre';
+  scheduled_date: string;
+  scheduled_time: string;
+  started_at: string | null;
+  completed_at: string | null;
+  status: 'pending' | 'active' | 'completed' | 'missed';
+  personal_id: number | null;
+  user_name: string | null;
+  rol: 'cajero' | 'planchero' | null;
+  checklist_mode: 'presencial' | 'virtual';
+  total_items: number;
+  completed_items: number;
+  completion_percentage: number;
+  items: ChecklistItem[];
+}
+
+export interface ChecklistItem {
+  id: number;
+  checklist_id: number;
+  item_order: number;
+  description: string;
+  requires_photo: boolean;
+  photo_url: string | null;
+  is_completed: boolean;
+  completed_at: string | null;
+  notes: string | null;
+  ai_score: number | null;
+  ai_observations: string | null;
+  ai_analyzed_at: string | null;
+}
+
+export interface ChecklistVirtual {
+  id: number;
+  checklist_id: number;
+  personal_id: number;
+  confirmation_text: string | null;
+  improvement_idea: string;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface ChecklistDetail {
+  checklist: Checklist;
+  items: ChecklistItem[];
+}
+
+export interface AttendanceSummary {
+  personal_id: number;
+  nombre: string;
+  dias_trabajados: number;
+  inasistencias: number;
+  virtuales: number;
+  monto_descuentos: number;
+  total_turnos: number;
+}
+
+export interface ImprovementIdea {
+  id: number;
+  personal_id: number;
+  nombre: string;
+  improvement_idea: string;
+  completed_at: string;
+}
+
+export type ChecklistListResponse = ApiResponse<Checklist[]>;
+export type ChecklistDetailResponse = ApiResponse<ChecklistDetail>;
+export type AttendanceResponse = ApiResponse<AttendanceSummary[]>;
+export type IdeasResponse = ApiResponse<ImprovementIdea[]>;

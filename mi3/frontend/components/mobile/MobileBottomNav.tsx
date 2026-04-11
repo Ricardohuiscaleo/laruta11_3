@@ -12,12 +12,14 @@ import {
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/auth';
 import { usePendingLoanBadge } from '@/hooks/usePendingLoanBadge';
+import { usePendingChecklistBadge } from '@/hooks/usePendingChecklistBadge';
 import ViewSwitcher from '@/components/ViewSwitcher';
 
 export default function MobileBottomNav({ variant = 'worker' }: { variant?: 'worker' | 'admin' }) {
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
   const hasPendingLoan = usePendingLoanBadge();
+  const hasPendingChecklist = usePendingChecklistBadge();
 
   const primary = variant === 'admin' ? adminPrimaryNavItems : primaryNavItems;
   const secondary = variant === 'admin' ? adminSecondaryNavItems : secondaryNavItems;
@@ -30,7 +32,10 @@ export default function MobileBottomNav({ variant = 'worker' }: { variant?: 'wor
           {primary.map((item) => {
             const active = isNavItemActive(pathname, item.href);
             const Icon = item.icon;
-            const showBadge = variant === 'worker' && item.badgeKey === 'prestamo-pendiente' && hasPendingLoan;
+            const showBadge = variant === 'worker' && (
+              (item.badgeKey === 'prestamo-pendiente' && hasPendingLoan) ||
+              (item.badgeKey === 'checklist-pendiente' && hasPendingChecklist)
+            );
             return (
               <Link key={item.href} href={item.href}
                 className={cn('flex flex-col items-center justify-center flex-1 h-full gap-0.5 relative',
@@ -65,11 +70,20 @@ export default function MobileBottomNav({ variant = 'worker' }: { variant?: 'wor
               {secondary.map((item) => {
                 const active = isNavItemActive(pathname, item.href);
                 const Icon = item.icon;
+                const showBadge = variant === 'worker' && (
+                  (item.badgeKey === 'prestamo-pendiente' && hasPendingLoan) ||
+                  (item.badgeKey === 'checklist-pendiente' && hasPendingChecklist)
+                );
                 return (
                   <Link key={item.href} href={item.href} onClick={() => setSheetOpen(false)}
                     className={cn('flex items-center gap-3 px-3 py-3 rounded-lg',
                       active ? 'text-red-500 bg-red-50' : 'text-gray-500 hover:bg-gray-50')}>
-                    <Icon className="w-5 h-5" />
+                    <div className="relative">
+                      <Icon className="w-5 h-5" />
+                      {showBadge && (
+                        <span className="absolute -top-1 -right-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                      )}
+                    </div>
                     <span className="text-sm font-medium">{item.label}</span>
                   </Link>
                 );

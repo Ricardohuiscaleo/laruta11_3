@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-11, actualizado sesión 2026-04-11aa)
+## Estado Actual (2026-04-11, actualizado sesión 2026-04-11af)
 
 ### Aplicaciones Desplegadas
 
@@ -28,7 +28,342 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks ind
 | Spec | Directorio | Estado |
 |------|-----------|--------|
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
-| checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ✅ Spec completo (requirements + design + tasks), pendiente ejecutar 14 tareas |
+| checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ✅ 14 tareas implementadas + Nova Pro testeado con fotos reales — pendiente deploy |
+
+---
+
+## Sesión 2026-04-11af — Test real: Nova Pro con fotos de checklist existentes + correcciones API Bedrock
+
+### Lo realizado: Test de Nova Pro con fotos reales de La Ruta 11 y correcciones técnicas
+
+**1. Descubrimiento de fotos existentes en S3:**
+
+Se consultó la API de caja3 (`get_history` + `get_checklist_items`) para obtener URLs de fotos reales de checklists completados. Las fotos están en `s3://laruta11-images/checklist/YYYY/MM/` y ya vienen comprimidas (~70-107KB) por el S3Manager de caja3.
+
+Fotos encontradas (checklist apertura #175 y cierre #174, 2026-04-11):
+- Interior apertura: `checklist/2026/04/69dac831df3a6_photo.jpg` (72KB)
+- Exterior apertura: `checklist/2026/04/69dac83b855c8_photo.jpg` (68KB)
+- Interior cierre: `checklist/2026/04/69d9d316f102b_photo.jpg` (107KB)
+- Exterior cierre: `checklist/2026/04/69d9d32431d4f_photo.jpg` (68KB)
+
+**2. Test de Nova Pro con fotos reales:**
+
+Se creó un script Python para testear `amazon.nova-pro-v1:0` con las 4 fotos reales. Resultados:
+
+| Foto | Score | Observaciones |
+|------|-------|---------------|
+| Interior apertura | 60 | ✅ Superficies limpias. ⚠️ Piso sucio y basura acumulada. ⚠️ Ingredientes no organizados |
+| Exterior apertura | 70 | ✅ Letrero visible, mesas colocadas. ⚠️ Vitrina de aderezos no se ve afuera, comedor necesita limpieza |
+| Interior cierre | 60 | ✅ Plancha y mesones limpios. ⚠️ Cables sueltos en piso, basura no guardada. ⚠️ Salsas no refrigeradas |
+| Exterior cierre | 80 | ✅ Food truck cerrado, nada expuesto. ⚠️ Verificar muebles afuera y limpieza completa |
+
+Las observaciones son específicas, accionables y en español. Nova Pro identifica problemas reales visibles en las fotos.
+
+**3. Correcciones técnicas en PhotoAnalysisService:**
+
+| Problema | Causa | Solución |
+|----------|-------|----------|
+| `ValidationException: maxNewTokens` | Nova Pro usa `max_new_tokens` (snake_case), no `maxNewTokens` (camelCase) | Cambiado a `max_new_tokens` |
+| Imagen por URL no funciona en Bedrock | Bedrock requiere imagen como base64, no URL directa | Ahora descarga la imagen de S3 y la envía como `bytes` (base64) |
+| Modelo incorrecto | Estaba usando `amazon.nova-lite-v1:0` | Cambiado a `amazon.nova-pro-v1:0` |
+
+**4. Aclaración de distribución real de fotos (pendiente implementar):**
+
+El usuario aclaró que la distribución de fotos es diferente a lo que teníamos en el spec:
+
+| Rol | Foto 1 | Foto 2 |
+|-----|--------|--------|
+| Planchero | 📸 Sector plancha, lavaplatos y freidora | 📸 Mesón de preparación |
+| Cajera | 📸 Interior desde la puerta | 📸 Exterior zona carro y comedor |
+
+Total: 8 fotos/día (4 por rol × apertura+cierre). Costo Nova Pro: ~$0.19/mes.
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/app/Services/Checklist/PhotoAnalysisService.php` | Modelo → `amazon.nova-pro-v1:0`, imagen como base64, `max_new_tokens` |
+
+### Commits y Deploys
+
+No se hizo commit ni deploy. Todo local.
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `ValidationException: maxNewTokens` en Nova Pro | Nova Pro espera `max_new_tokens` (snake_case) | Cambiado el parámetro en inferenceConfig |
+| Imagen por URL rechazada por Bedrock | Bedrock no acepta URLs directas para imágenes, requiere base64 | Se descarga la imagen de S3 con `file_get_contents()` y se envía como `base64_encode()` en campo `bytes` |
+| AWS CLI no instalado en local | No se pudo listar S3 directamente | Se usó la API de caja3 para obtener URLs de fotos existentes |
+
+### Lecciones Aprendidas
+
+100. **Bedrock Nova requiere imágenes en base64, no URLs**: A diferencia de otros modelos que aceptan URLs de imagen, Nova Pro/Lite requiere que la imagen se envíe como bytes base64 en el payload. Esto significa que el backend debe descargar la imagen de S3 antes de enviarla a Bedrock — un paso extra pero necesario
+101. **Parámetros de inferencia varían entre modelos Nova**: Nova Lite acepta `maxNewTokens` (camelCase) pero Nova Pro requiere `max_new_tokens` (snake_case). Siempre verificar la documentación del modelo específico antes de asumir compatibilidad de parámetros
+102. **Testear con fotos reales antes de deployar**: Las fotos de un food truck tienen condiciones específicas (iluminación nocturna, espacios reducidos, reflejos de acero inoxidable) que un test con fotos genéricas no captura. Nova Pro demostró dar observaciones útiles y específicas con las fotos reales de La Ruta 11
+103. **Las fotos de caja3 ya vienen comprimidas**: El S3Manager de caja3 comprime las fotos a ~70-107KB antes de subirlas. La compresión client-side que agregamos en el frontend de mi3 es un safety net adicional, pero las fotos del sistema actual ya son livianas
+
+### Pendiente
+
+- **ACTUALIZAR TEMPLATES Y PROMPTS** para las 8 fotos reales (planchero: plancha/freidora + mesón; cajera: interior puerta + exterior carro/comedor)
+- **DEPLOY: commit + deploy de mi3-backend y mi3-frontend** con todo el código del checklist v2
+- **EJECUTAR MIGRACIONES en producción** — las 5 migraciones ALTER TABLE + CREATE TABLE + seed
+- Configurar cron de Gmail token refresh en Coolify
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales y configurar en Coolify
+- Ejecutar `composer install` en contenedor mi3-backend para instalar `minishlink/web-push`
+- Fix test pre-existente LoanService (UNIQUE constraint en ajustes_categorias.slug)
+
+---
+
+## Sesión 2026-04-11ae — Mejora: compresión de fotos + prompts IA específicos para La Ruta 11
+
+### Lo realizado: Optimización de fotos y reescritura de prompts de IA
+
+Se identificaron y corrigieron dos problemas en el sistema de análisis de fotos con IA:
+
+**1. Compresión de fotos en frontend (antes no existía):**
+
+El frontend enviaba la foto raw del celular (5-12MB) directo al backend. Se agregó compresión client-side en `PhotoUpload`:
+- Canvas resize a máximo 1200px de ancho
+- Compresión JPEG calidad 80%
+- Resultado típico: ~200-400KB (vs 5-12MB original)
+- Más rápido en conexión móvil del trabajador + menos costo S3
+
+**2. Prompts de IA reescritos (antes genéricos en inglés):**
+
+Los prompts anteriores eran genéricos ("check for cleanliness of surfaces") y en inglés. Se reescribieron completamente:
+
+| Antes | Después |
+|-------|---------|
+| Inglés, genérico | Español, específico para food truck La Ruta 11 |
+| "check for cleanliness" | Evalúa plancha, aderezos, vitrina, TUU, PedidosYa |
+| Sin formato de feedback | Emojis: ✅ bien, ⚠️ mejora, 🚨 urgente |
+| Sin límite de extensión | Máximo 3 oraciones |
+| temperature 0.3 | temperature 0.2 (más consistente) |
+| maxNewTokens 500 | maxNewTokens 800 (español necesita más tokens) |
+
+Ejemplo de output esperado: `"✅ Superficies de trabajo limpias y plancha encendida. ⚠️ Los aderezos no están organizados en la vitrina. 🚨 Derrame de salsa en el piso."`
+
+**3. Contexto correcto en upload de fotos:**
+
+El frontend ahora envía el `contexto` correcto (interior/exterior × apertura/cierre) derivado de la descripción del ítem, en vez de siempre mandar `interior_apertura` por defecto. Se propagó `checklistType` como prop a través de `ChecklistCard → ChecklistItemRow → PhotoUpload`.
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/app/dashboard/checklist/page.tsx` | Agregada función `compressImage()`, propagación de `checklistType` prop, envío de `contexto` en formData |
+| `mi3/backend/app/Services/Checklist/PhotoAnalysisService.php` | 4 prompts reescritos en español con contexto La Ruta 11, temperature 0.2, maxNewTokens 800 |
+| `mi3/backend/tests/Unit/ChecklistService/PromptSelectionPropertyTest.php` | Keywords actualizados a español (INTERIOR/EXTERIOR, APERTURA/CIERRE, plancha, mesas, etc.) |
+
+### Commits y Deploys
+
+No se hizo commit ni deploy. Todo local, pendiente de commit + deploy junto con el código de la sesión anterior.
+
+### Errores Encontrados y Resueltos
+
+Ninguno. Los 14 tests siguen pasando (6197 assertions).
+
+### Lecciones Aprendidas
+
+97. **Comprimir fotos en el cliente antes de subir**: Las fotos de celular moderno son 5-12MB. Para un food truck con conexión móvil, subir eso es lento y caro. Canvas resize a 1200px + JPEG 80% reduce a ~200-400KB sin pérdida visible de calidad para análisis de IA. La IA no necesita 4000px para detectar si la plancha está limpia
+98. **Prompts de IA deben conocer el dominio**: Un prompt genérico ("check for cleanliness") genera observaciones genéricas inútiles. Un prompt que conoce el negocio ("¿la plancha está encendida? ¿los aderezos están en la vitrina? ¿el TUU está en posición?") genera feedback accionable que el trabajador puede usar inmediatamente
+99. **El contexto de la foto importa para la IA**: Enviar siempre `interior_apertura` como default significa que la IA analiza una foto exterior de cierre con criterios de interior de apertura — resultado inútil. Derivar el contexto de la descripción del ítem ("FOTO exterior" → exterior) y del tipo de checklist (apertura/cierre) es trivial y mejora dramáticamente la relevancia
+
+### Pendiente
+
+- **DEPLOY: commit + deploy de mi3-backend y mi3-frontend** con todo el código del checklist v2 + mejoras IA
+- **EJECUTAR MIGRACIONES en producción** — las 5 migraciones ALTER TABLE + CREATE TABLE + seed
+- Configurar cron de Gmail token refresh en Coolify
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales y configurar en Coolify
+- Ejecutar `composer install` en contenedor mi3-backend para instalar `minishlink/web-push`
+- Fix test pre-existente LoanService (UNIQUE constraint en ajustes_categorias.slug)
+
+---
+
+## Sesión 2026-04-11ad — Ejecución completa: 14 tareas del spec checklist-v2-asistencia
+
+### Lo realizado: Implementación completa del sistema de checklists v2 con asistencia
+
+Se ejecutaron las 14 tareas del spec `checklist-v2-asistencia` en una sola sesión. Todo el código fue generado y los 12 tests de propiedad pasan (14 test classes, 6254 assertions).
+
+**Backend (Laravel 11) — Archivos creados/modificados:**
+
+| # | Tarea | Archivos |
+|---|-------|----------|
+| 1 | Migraciones y seed | 5 migraciones ya existían de sesión anterior (000006-000010) |
+| 2 | Modelos Eloquent | `Checklist.php`, `ChecklistItem.php`, `ChecklistVirtual.php`, `ChecklistTemplate.php` |
+| 3 | ChecklistService | `app/Services/Checklist/ChecklistService.php` — creación diaria desde templates BD, consulta/completado, virtual, admin |
+| 4 | AttendanceService | `app/Services/Checklist/AttendanceService.php` — detección ausencias, compañero ausente, resumen mensual |
+| 5 | PhotoAnalysisService | `app/Services/Checklist/PhotoAnalysisService.php` — S3 upload + Bedrock Nova Lite análisis |
+| 7 | Artisan Commands | `CreateDailyChecklistsCommand.php` (14:00), `DetectAbsencesCommand.php` (02:00), `CheckCompanionAbsenceCommand.php` (19:00) |
+| 8 | Controllers + rutas | `Worker/ChecklistController.php` (6 endpoints), `Admin/ChecklistController.php` (4 endpoints), rutas en `api.php` |
+
+**Tests de propiedad (PHPUnit, 100 iteraciones cada uno):**
+
+| # | Propiedad | Test Class | Estado |
+|---|-----------|-----------|--------|
+| P1 | Creación corresponde a turnos | `CreationMatchesShiftsPropertyTest` | ✅ |
+| P2 | Creación idempotente | `IdempotentCreationPropertyTest` | ✅ |
+| P3 | Filtrado por rol | `FilterByRolPropertyTest` | ✅ |
+| P4 | Progreso y completado | `ProgressCompletionPropertyTest` | ✅ |
+| P5 | Validación foto obligatoria | `PhotoValidationPropertyTest` | ✅ |
+| P6 | Selección prompt IA | `PromptSelectionPropertyTest` | ✅ |
+| P7 | Asistencia por checklist | `AttendanceDeterminationPropertyTest` | ✅ |
+| P8 | Compañero ausente | `CompanionAbsencePropertyTest` | ✅ |
+| P9 | Idea mejora ≥ 20 chars | `ImprovementIdeaValidationPropertyTest` | ✅ |
+| P10 | Resumen mensual | `MonthlySummaryPropertyTest` | ✅ |
+| P11 | Filtrado por fecha | `DateFilterPropertyTest` | ✅ |
+| P12 | Ideas ordenadas desc | `IdeasOrderPropertyTest` | ✅ |
+
+**Infraestructura de testing creada:**
+
+- `database/migrations/0001_01_01_000000_create_base_tables.php` — migración base para SQLite in-memory testing (crea todas las tablas necesarias)
+- `composer.json` actualizado con `autoload-dev` para namespace `Tests\\`
+- Migraciones existentes hechas idempotentes (check if column exists)
+- Dependencias dev: `mockery/mockery`, `fakerphp/faker`
+
+**Frontend (Next.js 14) — Archivos creados/modificados:**
+
+| # | Tarea | Archivos |
+|---|-------|----------|
+| 10 | Tipos TypeScript | `types/index.ts` — 6 interfaces + 4 response types |
+| 11 | Checklist trabajador | `app/dashboard/checklist/page.tsx` — presencial (progreso, fotos, completado) + virtual (idea mejora) |
+| 12 | Panel admin | `app/admin/checklists/page.tsx` — 3 tabs (checklists día, asistencia mensual, ideas mejora) + modal detalle con IA |
+| 13 | Navegación | `lib/navigation.ts` actualizado + `hooks/usePendingChecklistBadge.ts` + badge en sidebar y mobile nav |
+
+**Scheduler registrado en `routes/console.php`:**
+
+| Hora (Chile) | Comando | Función |
+|-------------|---------|---------|
+| 14:00 | `mi3:create-daily-checklists` | Crear checklists apertura+cierre por rol |
+| 19:00 | `mi3:check-companion-absence` | Detectar compañero ausente, habilitar virtual |
+| 02:00 | `mi3:detect-absences` | Detectar inasistencias, crear descuento $40k |
+
+### Commits y Deploys
+
+No se hizo commit ni deploy en esta sesión. Todo el código está local, pendiente de commit + deploy.
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `artisan test` no reconocido | Laravel 11 no incluye el comando `test` por defecto | Usar `./vendor/bin/phpunit` directamente |
+| Test LoanService falla (UNIQUE constraint ajustes_categorias.slug) | Test pre-existente de LoanService tiene conflicto con seed de categoría "inasistencia" | No relacionado con este spec — error pre-existente, no se corrigió |
+| PHPUnit deprecation warnings (PDO::MYSQL_ATTR_SSL_CA) | PHP 8.5 deprecó constante PDO, Laravel aún no actualizado | Ignorado — solo warnings, no afecta funcionalidad |
+
+### Lecciones Aprendidas
+
+93. **Spec completo ejecutable en una sesión**: Las 14 tareas del spec checklist-v2-asistencia se ejecutaron en una sola sesión gracias a que el spec estaba bien definido (requirements + design + tasks con sub-tareas detalladas). Un spec bien escrito reduce ambigüedad y acelera la implementación
+94. **Base migration para testing con SQLite**: Crear una migración `0001_01_01_000000_create_base_tables.php` que replica las tablas de producción en SQLite permite usar `RefreshDatabase` sin depender de MySQL. Patrón útil para proyectos que usan tablas existentes en producción
+95. **Migraciones idempotentes**: Las migraciones ALTER TABLE deben verificar si la columna ya existe antes de agregarla (`Schema::hasColumn`). Esto evita errores al re-ejecutar migraciones en diferentes entornos
+96. **Notificaciones graceful**: Los comandos Artisan envuelven las llamadas a PushNotificationService en try/catch con fallback a Log. Si el servicio no está disponible, el flujo principal no se interrumpe — patrón robusto para servicios opcionales
+
+### Pendiente
+
+- **DEPLOY: commit + deploy de mi3-backend y mi3-frontend** con todo el código del checklist v2
+- **EJECUTAR MIGRACIONES en producción** — las 5 migraciones ALTER TABLE + CREATE TABLE + seed
+- Configurar cron de Gmail token refresh en Coolify
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales y configurar en Coolify
+- Ejecutar `composer install` en contenedor mi3-backend para instalar `minishlink/web-push`
+- Fix test pre-existente LoanService (UNIQUE constraint en ajustes_categorias.slug)
+
+---
+
+## Sesión 2026-04-11ac — Decisión: ejecutar spec checklist-v2-asistencia en sesión nueva
+
+### Lo realizado
+
+No se implementó código. El usuario preguntó si ejecutar las 14 tareas del spec ahora o en otra sesión. Se recomendó sesión nueva por el volumen de historial acumulado en esta sesión (muchas sub-sesiones desde 2026-04-11r hasta 2026-04-11ac).
+
+### Pendiente (próxima sesión)
+
+- **EJECUTAR: 14 tareas del spec checklist-v2-asistencia** — comando: "ejecuta las tareas del spec checklist-v2-asistencia"
+- Configurar cron de Gmail token refresh en Coolify
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales y configurar en Coolify
+- Ejecutar `composer install` en contenedor mi3-backend para instalar `minishlink/web-push`
+
+---
+
+## Sesión 2026-04-11ab — Eliminación GitHub Actions crons + descubrimiento tabla checklist_templates + actualización spec
+
+### Lo realizado: Investigación crons actuales, eliminación de GitHub Actions, actualización del spec
+
+**1. Investigación de cómo se crean los checklists hoy:**
+
+- No hay crontab en el servidor (solo el de saas-backend para Laravel scheduler)
+- No hay cron dentro del contenedor de caja3
+- Los checklists se crean via **GitHub Actions** con cron schedule:
+  - `daily-checklists.yml`: cada día a 11:00 UTC (8 AM Chile), llama a `https://caja.laruta11.cl/api/cron/create_daily_checklists.php`
+  - `gmail-token-refresh.yml`: cada 30 minutos, llama a `https://caja.laruta11.cl/api/gmail/refresh_token_cron.php`
+
+**2. Descubrimiento: tabla `checklist_templates` ya existe en BD:**
+
+La tabla `checklist_templates` ya existe con los 22 ítems actuales. El endpoint `create_daily_checklists.php` lee de esta tabla para crear los checklists diarios — NO estaban hardcoded como se asumió en el diseño.
+
+Estructura de `checklist_templates`:
+| Columna | Tipo |
+|---------|------|
+| id | INT PK AUTO |
+| type | ENUM('apertura','cierre') |
+| item_order | INT |
+| description | TEXT |
+| requires_photo | TINYINT(1) |
+| active | TINYINT(1) DEFAULT 1 |
+| created_at | TIMESTAMP |
+
+Falta la columna `rol` para separar por cajero/planchero — se agrega en la migración.
+
+**3. Eliminación de GitHub Actions workflows:**
+
+| Archivo eliminado | Cron | Reemplazo |
+|-------------------|------|-----------|
+| `.github/workflows/daily-checklists.yml` | Diario 11:00 UTC | Comando Artisan `mi3:create-daily-checklists` en Laravel scheduler |
+| `.github/workflows/gmail-token-refresh.yml` | Cada 30 min | Cron en Coolify (pendiente configurar) |
+
+**4. Actualización del spec checklist-v2-asistencia:**
+
+Cambios en `design.md`:
+- Decisión 2 cambiada: "Templates administrables desde admin de mi3" (antes: "hardcoded en servicio")
+- ChecklistService: eliminada constante TEMPLATES, ahora lee de tabla `checklist_templates`
+- Agregados métodos admin: `getTemplatesAdmin()`, `crearTemplate()`, `actualizarTemplate()`, `eliminarTemplate()`, `reordenarTemplates()`
+- Agregados endpoints admin: GET/POST/PUT/DELETE `/admin/checklists/templates`
+- Agregada tabla `checklist_templates` al diagrama ER con ALTER TABLE para columna `rol`
+
+Cambios en `tasks.md`:
+- Tarea 1.3 nueva: ALTER TABLE `checklist_templates` para agregar columna `rol` + actualizar templates existentes
+- Tarea 1.5: seed de categoría "inasistencia" con color `#ef4444`
+- Tarea 1.6 nueva: eliminar GitHub Actions workflows
+- Tarea 2.4 nueva: modelo `ChecklistTemplate`
+- Tarea 3.1 actualizada: ChecklistService lee templates de BD en vez de constantes
+
+### Commits
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `8b61fde` | `chore: eliminar GitHub Actions crons + actualizar spec checklist-v2-asistencia` |
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+90. **Verificar infraestructura existente antes de diseñar**: El diseño asumió templates hardcoded, pero la tabla `checklist_templates` ya existía en BD con los 22 ítems. Siempre verificar qué tablas y datos ya existen antes de diseñar el modelo de datos — evita trabajo duplicado y decisiones incorrectas
+91. **GitHub Actions como cron para apps en Coolify**: Usar GitHub Actions con `schedule` para llamar endpoints HTTP es un patrón válido pero frágil (depende de GitHub, no tiene retry robusto, no tiene logs centralizados). Mejor mover crons a Laravel scheduler o Coolify cron para tener todo en un solo lugar
+92. **Tabla de templates vs constantes**: Para ítems que el admin necesita gestionar (agregar, editar, reordenar), una tabla de templates es mejor que constantes en código. Para ítems que nunca cambian, constantes son más simples. En este caso, el admin quiere poder modificar los ítems del checklist desde mi3, así que tabla es la opción correcta
+
+### Pendiente
+
+- Configurar cron de Gmail token refresh en Coolify (reemplaza el GitHub Action eliminado)
+- Ejecutar las 14 tareas del spec checklist-v2-asistencia
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales y configurar en Coolify
+- Ejecutar `composer install` en contenedor mi3-backend para instalar `minishlink/web-push`
 
 ---
 

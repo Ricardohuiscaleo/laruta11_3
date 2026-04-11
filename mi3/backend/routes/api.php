@@ -51,6 +51,14 @@ Route::prefix('v1')->group(function () {
 
         // Push notifications
         Route::post('push/subscribe', [\App\Http\Controllers\Worker\PushController::class, 'subscribe']);
+
+        // Checklists
+        Route::get('checklists', [\App\Http\Controllers\Worker\ChecklistController::class, 'index']);
+        Route::post('checklists/{id}/items/{itemId}/complete', [\App\Http\Controllers\Worker\ChecklistController::class, 'completeItem']);
+        Route::post('checklists/{id}/items/{itemId}/photo', [\App\Http\Controllers\Worker\ChecklistController::class, 'uploadPhoto']);
+        Route::post('checklists/{id}/complete', [\App\Http\Controllers\Worker\ChecklistController::class, 'complete']);
+        Route::get('checklists/virtual', [\App\Http\Controllers\Worker\ChecklistController::class, 'virtual']);
+        Route::post('checklists/virtual/{id}/complete', [\App\Http\Controllers\Worker\ChecklistController::class, 'completeVirtual']);
     });
 
     // ── Admin (administrador/dueño) ─────────────────────────────────
@@ -94,5 +102,11 @@ Route::prefix('v1')->group(function () {
         Route::get('loans', [\App\Http\Controllers\Admin\LoanController::class, 'index']);
         Route::post('loans/{id}/approve', [\App\Http\Controllers\Admin\LoanController::class, 'approve']);
         Route::post('loans/{id}/reject', [\App\Http\Controllers\Admin\LoanController::class, 'reject']);
+
+        // Checklists
+        Route::get('checklists', [\App\Http\Controllers\Admin\ChecklistController::class, 'index']);
+        Route::get('checklists/attendance', [\App\Http\Controllers\Admin\ChecklistController::class, 'attendance']);
+        Route::get('checklists/ideas', [\App\Http\Controllers\Admin\ChecklistController::class, 'ideas']);
+        Route::get('checklists/{id}', [\App\Http\Controllers\Admin\ChecklistController::class, 'show']);
     });
 });
