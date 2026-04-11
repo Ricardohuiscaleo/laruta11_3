@@ -50,6 +50,10 @@ $conn->set_charset('utf8mb4');
 $ip = $_SERVER['REMOTE_ADDR'];
 
 function checkRateLimit($ip, $max_attempts = 5, $window_seconds = 600) {
+    // Check if Redis extension is available
+    if (!class_exists('Redis')) {
+        return true; // fail-open if Redis not installed
+    }
     try {
         $redis = new Redis();
         $redis_host = getenv('REDIS_HOST') ?: 'coolify-redis';
@@ -63,7 +67,7 @@ function checkRateLimit($ip, $max_attempts = 5, $window_seconds = 600) {
         if ($attempts === 1) $redis->expire($key, $window_seconds);
 
         return $attempts <= $max_attempts;
-    } catch (Exception $e) {
+    } catch (\Throwable $e) {
         // Si Redis no está disponible, permitir el request (fail-open)
         error_log('Redis rate limit error: ' . $e->getMessage());
         return true;
