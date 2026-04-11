@@ -421,9 +421,15 @@ TOTAL_DELIVERY = fee_bruto − descuento_rl6 + recargo_tarjeta
 - Usuario test creado: id=163, email=info@digitalizatodo.cl, password=`password`
 - Registro R11 exitoso vía API: selfie subida a S3, datos guardados en BD
 - Vinculado en personal: id=14, rol=cajero, user_id=163, activo=1
-- Telegram: notificación enviada (pendiente verificar recepción)
+- Telegram: notificación enviada ✅ (confirmado por usuario)
+- Email aprobación: enviado ✅ (confirmado por usuario — pero decía "Crédito R11" en vez de onboarding)
 - mi3 login: disponible en mi.laruta11.cl/login con email/password
-- Pendiente: verificar que Telegram llegó, aprobar, verificar email, verificar dashboard trabajador
+
+**Cambios aplicados en esta sesión (final):**
+- `/r11` emoji roto (🙌→�) arreglado a 😄, textos cambiados a onboarding
+- Email aprobación Telegram: "¡Ya eres parte del equipo!" con link a mi.laruta11.cl (no "Crédito R11 Aprobado")
+- mi3 login: saludo dinámico según hora (Buenos días/tardes/noches, bienvenido/a)
+- Deploy: app3 + caja3 + mi3-frontend en cola. Webhook caja3 hotfixed vía SSH
 
 **Redis:**
 - Actualizar REDIS_PASSWORD en Coolify dashboard para app3 y caja3 (valor correcto: `kEfdMKJoEvNTkqFWhEC4hHM3otMA1W/xm/NiDsVBR0I=`)
