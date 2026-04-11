@@ -405,9 +405,17 @@ TOTAL_DELIVERY = fee_bruto − descuento_rl6 + recargo_tarjeta
 - Configurar cron scheduler en VPS
 - Resolver problema de cache Docker en Coolify (builds no toman código nuevo)
 
-**R11 Crédito:**
+**R11 Crédito / Onboarding:**
 - Verificar que Camila pueda registrarse después del fix de Redis
 - Vincular trabajadores que se registren vía /r11 con tabla personal
+- Después de aprobación Telegram: auto-vincular en `personal` + enviar link a mi.laruta11.cl
+- Página /r11 rediseñada como onboarding (no solo crédito) — pendiente deploy app3
+
+**Flujo onboarding trabajador (definido):**
+1. Trabajador entra a app.laruta11.cl/r11 → se registra (QR + selfie + rol)
+2. Admin recibe notificación Telegram → aprueba
+3. Sistema vincula automáticamente en tabla `personal` + envía link a mi.laruta11.cl
+4. Trabajador entra a mi.laruta11.cl con su cuenta (Google o email) → ve dashboard
 
 **Redis:**
 - Actualizar REDIS_PASSWORD en Coolify dashboard para app3 y caja3 (valor correcto: `kEfdMKJoEvNTkqFWhEC4hHM3otMA1W/xm/NiDsVBR0I=`)
