@@ -145,3 +145,22 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 19. `feat(mi3): Google OAuth completo`
 20. `fix(mi3): login Suspense boundary`
 21. `docs: bitácora + hooks`
+22. `docs: bitácora actualizada con detalles finales`
+23. `fix(mi3): Dockerfile key:generate + route:clear para rutas custom`
+
+### Errores Encontrados y Resueltos (sesión continuación)
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `Route api/v1/auth/google/redirect could not be found` | Laravel no registra rutas custom porque el cache de rutas del `create-project` base persiste | Agregar `php artisan key:generate --force` y `php artisan route:clear` al Dockerfile después del COPY de código custom |
+| mi3-frontend build fail: `useSearchParams() should be wrapped in suspense boundary` | Next.js 14 requiere Suspense para useSearchParams en pre-rendering | Separar LoginForm como componente interno, envolver en `<Suspense>` |
+| mi3-backend 500 Server Error genérico | Faltaba APP_KEY como env var en Coolify | Generar key y agregarla vía API de Coolify |
+| mi3-backend `Route [login] not defined` | Sanctum intenta redirigir a ruta `login` cuando no hay token | `redirectGuestsTo(fn () => null)` + `shouldRenderJsonWhen(fn () => true)` en bootstrap |
+| Dockerfile `artisan migrate --graceful` falla en build | `APP_ENV=production` inyectado por Coolify causa que Laravel pida confirmación interactiva | `--no-scripts` en `composer create-project` y `composer install` |
+
+### Estado del Deploy mi3-backend (último)
+
+- Deployment UUID: `wbusyrtxs0xxlc ewvgn4e06n`
+- Fix aplicado: `key:generate + route:clear` en Dockerfile
+- Esperando resultado del build
+- Si pasa: la ruta `/api/v1/auth/google/redirect` debería funcionar y redirigir a Google OAuth
