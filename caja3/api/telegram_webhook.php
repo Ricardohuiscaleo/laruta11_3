@@ -180,7 +180,7 @@ function sendR11Email($to, $nombre, $relacion, $tipo, $extra = null) {
             <li>Revisa tus turnos y calendario</li>
             <li>Consulta tu liquidación mensual</li>
             <li>Solicita cambios de turno con tus compañeros</li>
-            <li>Ya tienes aprobado un crédito por <strong>\$$limiteFmt</strong> de descuento en tus pedidos en La Ruta 11</li>
+            <li>Ya puedes pedir en La Ruta 11 con crédito de hasta <strong>\$$limiteFmt</strong>. El cobro va directo a tu liquidación</li>
         </ol>
         <div style='text-align:center;margin:24px 0;'>
             <a href='https://mi.laruta11.cl' style='display:inline-block;background:#d97706;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;'>Ir a mi portal →</a>
