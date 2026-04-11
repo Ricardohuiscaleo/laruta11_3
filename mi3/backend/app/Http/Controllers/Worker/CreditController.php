@@ -20,9 +20,15 @@ class CreditController extends Controller
 
         if (!$usuario || !$usuario->es_credito_r11) {
             return response()->json([
-                'success' => false,
-                'error' => 'No tienes crédito R11 activo',
-            ], 404);
+                'success' => true,
+                'data' => [
+                    'activo' => false,
+                    'limite' => 0,
+                    'usado' => 0,
+                    'disponible' => 0,
+                    'bloqueado' => false,
+                ],
+            ]);
         }
 
         return response()->json([
