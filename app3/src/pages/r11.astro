@@ -1,6 +1,6 @@
 ---
-const title = 'R11 - Crédito Trabajadores La Ruta 11';
-const description = 'Crédito exclusivo para trabajadores y personas de confianza de La Ruta 11';
+const title = 'Bienvenido al Equipo - La Ruta 11';
+const description = 'Registro de trabajadores de La Ruta 11. Valida tu identidad y únete al equipo.';
 const usuario = (Astro.locals as any)?.user || null;
 
 const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
@@ -26,7 +26,7 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
           <a href="/" class="hover:opacity-80 transition-opacity">
             <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" class="h-10 w-auto" />
           </a>
-          <span class="text-white font-bold text-lg hidden sm:inline">Crédito R11</span>
+          <span class="text-white font-bold text-lg hidden sm:inline">Equipo R11</span>
         </div>
         <a href="/" class="text-amber-100 hover:text-white text-sm font-semibold flex items-center gap-2 transition duration-300">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
@@ -49,8 +49,8 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
       <!-- ============================================ -->
       <section id="registroSection" class="hidden max-w-2xl mx-auto">
         <div class="text-center mb-8">
-          <h2 class="text-3xl md:text-4xl font-black text-amber-800 mb-2">Solicitar Crédito R11</h2>
-          <p class="text-gray-600">Crédito exclusivo para el equipo de La Ruta 11</p>
+          <h2 class="text-3xl md:text-4xl font-black text-amber-800 mb-2">Bienvenido/a al Equipo 😊</h2>
+          <p class="text-gray-600">Regístrate como trabajador de La Ruta 11</p>
         </div>
 
         <!-- Login Required Modal -->
@@ -58,11 +58,11 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
           <div class="flex items-center justify-center min-h-screen p-4">
             <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
               <div class="text-center">
-                <div class="text-6xl mb-4">🍔</div>
-                <h3 class="text-2xl font-bold mb-4 text-amber-800">Primero regístrate en La Ruta 11</h3>
-                <p class="text-gray-600 mb-6">Para solicitar el crédito R11, necesitas tener una cuenta en nuestra app.</p>
-                <button id="btnAbrirLogin" class="w-full px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-lg hover:shadow-lg transition duration-300 transform hover:scale-105 mb-3">Registrarme / Iniciar Sesión</button>
-                <p class="text-sm text-gray-500">Luego podrás solicitar tu crédito R11</p>
+                <div class="text-6xl mb-4">👋</div>
+                <h3 class="text-2xl font-bold mb-4 text-amber-800">¡Hola!</h3>
+                <p class="text-gray-600 mb-6">Para registrarte como parte del equipo de La Ruta 11, primero necesitas una cuenta. Si ya la tienes, inicia sesión.</p>
+                <button id="btnAbrirLogin" class="w-full px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-lg hover:shadow-lg transition duration-300 transform hover:scale-105 mb-3">Crear cuenta o Iniciar Sesión</button>
+                <p class="text-sm text-gray-500">Puedes usar Google o tu email</p>
               </div>
             </div>
           </div>
@@ -71,9 +71,9 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
         <!-- Logged in greeting -->
         <div id="paso0" class="bg-white rounded-2xl shadow-2xl p-8 border border-amber-100">
           <div id="siLogueado" class="hidden text-center">
-            <div class="text-6xl mb-4">👋</div>
-            <h3 class="text-2xl font-bold mb-4 text-amber-800">Hola <span id="nombreUsuario"></span></h3>
-            <p class="text-gray-600 mb-6">Completa tu solicitud de crédito R11.</p>
+            <div class="text-6xl mb-4">�</div>
+            <h3 class="text-2xl font-bold mb-4 text-amber-800">Hola <span id="nombreUsuario"></span> 👋</h3>
+            <p class="text-gray-600 mb-6">Completa tu registro como trabajador de La Ruta 11. Solo necesitas tu carnet, una selfie y seleccionar tu rol.</p>
             <button type="button" id="btnContinuar" class="px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-lg hover:shadow-lg transition duration-300 transform hover:scale-105">Continuar →</button>
           </div>
         </div>
@@ -94,7 +94,7 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
           <!-- STEP 1: QR Scanner for RUT -->
           <div id="paso1" class="paso-form">
             <h3 class="text-lg font-bold mb-4 text-amber-800">📱 Escanear QR del Carnet</h3>
-            <p class="text-sm text-gray-600 mb-4">Escanea el código QR de tu carnet para validar tu identidad.</p>
+            <p class="text-sm text-gray-600 mb-4">Escanea el código QR de tu carnet de identidad para verificar quién eres. Es rápido y seguro.</p>
 
             <!-- QR Scanner Container -->
             <div id="qrScannerContainer" class="mb-4">
@@ -159,9 +159,9 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
 
           <!-- STEP 3: Confirmation -->
           <div id="paso3" class="paso-form hidden">
-            <h3 class="text-lg font-bold mb-4 text-amber-800">✅ Confirmar Solicitud</h3>
+            <h3 class="text-lg font-bold mb-4 text-amber-800">✅ Confirmar Registro</h3>
             <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-              <p class="text-sm text-amber-900">Revisa tus datos antes de enviar. Tu solicitud será revisada por el equipo.</p>
+              <p class="text-sm text-amber-900">Revisa tus datos antes de enviar. El equipo revisará tu registro y te notificará.</p>
             </div>
             <div id="resumenDatos" class="bg-gray-50 border rounded-lg p-4 text-sm space-y-2 text-gray-700 mb-4"></div>
             <div id="submitError" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg mb-4">
@@ -173,7 +173,7 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
           <div class="flex gap-3 mt-6">
             <button type="button" id="btnAnterior" class="hidden flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 rounded-lg transition">← Anterior</button>
             <button type="button" id="btnSiguiente" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:shadow-lg text-white font-bold py-3 rounded-lg transition duration-300 transform hover:scale-105">Siguiente →</button>
-            <button type="button" id="btnEnviar" class="hidden flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:shadow-lg text-white font-bold py-3 rounded-lg transition duration-300 transform hover:scale-105">Enviar Solicitud</button>
+            <button type="button" id="btnEnviar" class="hidden flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:shadow-lg text-white font-bold py-3 rounded-lg transition duration-300 transform hover:scale-105">Enviar Registro</button>
           </div>
         </div>
       </section>
@@ -184,10 +184,10 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
       <section id="pendingSection" class="hidden max-w-lg mx-auto text-center">
         <div class="bg-white rounded-2xl shadow-2xl p-8 border border-amber-100">
           <div class="text-6xl mb-4">⏳</div>
-          <h2 class="text-2xl font-black text-amber-800 mb-4">Solicitud en Revisión</h2>
-          <p class="text-gray-600 mb-6">Tu solicitud de crédito R11 está siendo revisada por nuestro equipo. Te notificaremos cuando sea aprobada.</p>
+          <h2 class="text-2xl font-black text-amber-800 mb-4">Registro en Revisión</h2>
+          <p class="text-gray-600 mb-6">Tu registro como trabajador está siendo revisado por el equipo. Te notificaremos cuando sea aprobado.</p>
           <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <p class="text-sm text-amber-800">💡 Recuerda cerrar e iniciar sesión nuevamente después de la aprobación para ver tu crédito.</p>
+            <p class="text-sm text-amber-800">💡 Una vez aprobado, tendrás acceso a tu portal de trabajador en <strong>mi.laruta11.cl</strong> y podrás usar el crédito R11.</p>
           </div>
           <a href="/" class="inline-block mt-6 px-6 py-3 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700 transition">Volver al inicio</a>
         </div>
@@ -209,7 +209,7 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
         </div>
 
         <div class="text-center mb-6">
-          <h2 class="text-3xl font-black text-amber-800 mb-1">Mi Crédito R11</h2>
+          <h2 class="text-3xl font-black text-amber-800 mb-1">Mi Portal R11</h2>
           <p id="accountRole" class="text-gray-600"></p>
         </div>
 
@@ -254,7 +254,7 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
     <!-- FOOTER -->
     <footer class="bg-gradient-to-r from-amber-800 via-amber-700 to-amber-800 text-white py-12 px-4">
       <div class="max-w-6xl mx-auto text-center">
-        <p class="text-amber-200 text-sm">© 2026 La Ruta 11 • Sistema Crédito R11 • Todos los derechos reservados</p>
+        <p class="text-amber-200 text-sm">© 2026 La Ruta 11 • Portal del Equipo • Todos los derechos reservados</p>
       </div>
     </footer>
 
@@ -435,7 +435,7 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
 
         document.getElementById('stepNum').textContent = step;
         document.getElementById('progressBar').style.width = (step / totalPasos * 100) + '%';
-        var titles = ['Escanear Carnet', 'Selfie y Rol', 'Confirmar Solicitud'];
+        var titles = ['Escanear Carnet', 'Selfie y Rol', 'Confirmar Registro'];
         document.getElementById('stepTitle').textContent = titles[step - 1] || '';
 
         if (btnAnterior) btnAnterior.classList.toggle('hidden', step === 1);
@@ -670,14 +670,28 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
           .then(function(r) { return r.json(); })
           .then(function(data) {
             if (data.success) {
-              alert('✅ ' + (data.message || 'Solicitud enviada correctamente.'));
               // Update local user data
               if (usuarioLogueado) {
                 usuarioLogueado.es_credito_r11 = 1;
                 usuarioLogueado.credito_r11_aprobado = 0;
                 localStorage.setItem('ruta11_user', JSON.stringify(usuarioLogueado));
               }
-              window.location.reload();
+              // Show success screen instead of alert
+              document.getElementById('formContainer').classList.add('hidden');
+              document.getElementById('registroSection').innerHTML = '<div class="max-w-lg mx-auto text-center bg-white rounded-2xl shadow-2xl p-8 border border-green-100">' +
+                '<div class="text-6xl mb-4">🎉</div>' +
+                '<h2 class="text-2xl font-black text-green-700 mb-4">¡Registro Enviado!</h2>' +
+                '<p class="text-gray-600 mb-6">Tu registro como trabajador de La Ruta 11 está siendo revisado. Te notificaremos por Telegram cuando sea aprobado.</p>' +
+                '<div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">' +
+                '<p class="text-sm text-green-800"><strong>¿Qué sigue?</strong></p>' +
+                '<ul class="text-sm text-green-700 mt-2 space-y-1 text-left">' +
+                '<li>✅ El admin revisará tu registro</li>' +
+                '<li>✅ Recibirás una notificación de aprobación</li>' +
+                '<li>✅ Podrás acceder a <strong>mi.laruta11.cl</strong> (tu portal de trabajador)</li>' +
+                '<li>✅ Se activará tu crédito R11 para compras</li>' +
+                '</ul></div>' +
+                '<a href="/" class="inline-block px-6 py-3 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700 transition">Volver al inicio</a>' +
+                '</div>';
             } else {
               document.getElementById('submitError').classList.remove('hidden');
               document.getElementById('submitErrorMsg').textContent = data.error || 'Error al enviar solicitud.';
