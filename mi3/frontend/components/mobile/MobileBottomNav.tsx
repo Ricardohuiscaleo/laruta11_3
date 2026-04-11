@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, LogOut } from 'lucide-react';
 import { primaryNavItems, secondaryNavItems, isNavItemActive } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
+import { logout } from '@/lib/auth';
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
@@ -71,7 +72,7 @@ export default function MobileBottomNav() {
             </div>
 
             {/* Secondary nav items */}
-            <div className="px-4 pb-6 space-y-1">
+            <div className="px-4 pb-4 space-y-1">
               {secondaryNavItems.map((item) => {
                 const active = isNavItemActive(pathname, item.href);
                 const Icon = item.icon;
@@ -92,6 +93,17 @@ export default function MobileBottomNav() {
                   </Link>
                 );
               })}
+            </div>
+
+            {/* Logout */}
+            <div className="px-4 pb-6 border-t border-gray-100 pt-3">
+              <button
+                onClick={logout}
+                className="flex w-full items-center gap-3 px-3 py-3 rounded-lg text-red-600 hover:bg-red-50"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="text-sm font-medium">Cerrar sesión</span>
+              </button>
             </div>
           </div>
         </div>

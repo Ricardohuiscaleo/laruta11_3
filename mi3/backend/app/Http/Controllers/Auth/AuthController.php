@@ -24,7 +24,7 @@ class AuthController extends Controller
         // Google OAuth login
         if ($request->filled('google_token')) {
             $result = $this->authService->loginWithGoogle($request->input('google_token'));
-            return $this->respondWithAuth($result);
+            return $this->respondWithAuth($result, true); // Google login always remembers
         }
 
         // Email + password login
@@ -38,13 +38,13 @@ class AuthController extends Controller
             $request->input('password'),
         );
 
-        return $this->respondWithAuth($result);
+        return $this->respondWithAuth($result, (bool) $request->input('remember', false));
     }
 
     /**
      * Build JSON response with httpOnly auth cookies.
      */
-    private function respondWithAuth(array $result): JsonResponse
+    private function respondWithAuth(array $result, bool $remember = false): JsonResponse
     {
         if (!$result['success']) {
             return response()->json(
@@ -53,7 +53,8 @@ class AuthController extends Controller
             );
         }
 
-        $maxAge = 30 * 24 * 60 * 60 / 60; // 30 days in minutes
+        // Session cookie (0) = expires when browser closes; 30 days if remember
+        $maxAge = $remember ? (30 * 24 * 60) : 0;
         $role = $result['user']['is_admin'] ? 'admin' : 'worker';
 
         return response()->json([

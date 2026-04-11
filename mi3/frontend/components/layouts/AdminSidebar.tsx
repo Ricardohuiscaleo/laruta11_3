@@ -4,10 +4,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home, Users, Calendar, Receipt, SlidersHorizontal,
-  CreditCard, ArrowLeftRight, X, Menu,
+  CreditCard, ArrowLeftRight, X, Menu, LogOut,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { logout } from '@/lib/auth';
 
 const links = [
   { href: '/admin', label: 'Inicio', icon: Home },
@@ -68,6 +69,15 @@ export default function AdminSidebar() {
             );
           })}
         </nav>
+        <div className="mt-auto border-t border-amber-700 px-2 py-3">
+          <button
+            onClick={logout}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-amber-200 transition-colors hover:bg-amber-700/50 hover:text-white"
+          >
+            <LogOut className="h-5 w-5" />
+            Cerrar sesión
+          </button>
+        </div>
       </aside>
     </>
   );

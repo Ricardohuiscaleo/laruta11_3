@@ -28,13 +28,16 @@ const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', '
 
 const COLORES = {
   1: { bg: '#d946ef', light: '#fdf4ff', border: '#f5d0fe', text: '#a21caf' }, // Camila - Rosa Fucsia
-  2: { bg: '#0ea5e9', light: '#f0f9ff', border: '#bae6fd', text: '#0369a1' }, // Neit - Azul Cian
+  2: { bg: '#0ea5e9', light: '#f0f9ff', border: '#bae6fd', text: '#0369a1' }, // (inactivo)
   3: { bg: '#eab308', light: '#fefce8', border: '#fef08a', text: '#a16207' }, // Andrés - Amarillo Sol
-  4: { bg: '#84cc16', light: '#f7fee7', border: '#d9f99d', text: '#4d7c0f' }, // Gabriel - Verde Lima
+  4: { bg: '#84cc16', light: '#f7fee7', border: '#d9f99d', text: '#4d7c0f' }, // (inactivo)
   5: { bg: '#8b5cf6', light: '#f5f3ff', border: '#ddd6fe', text: '#6d28d9' }, // Ricardo - Morado Eléctrico
   6: { bg: '#f97316', light: '#fff7ed', border: '#fed7aa', text: '#c2410c' }, // Claudio - Naranja Vitamínico
   7: { bg: '#f43f5e', light: '#fff1f2', border: '#fecdd3', text: '#be123c' }, // Rojo Coral
   8: { bg: '#14b8a6', light: '#f0fdfa', border: '#99f6e4', text: '#0f766e' }, // Azul Turquesa
+  10: { bg: '#f97316', light: '#fff7ed', border: '#fed7aa', text: '#c2410c' }, // Claudio (id real) - Naranja
+  11: { bg: '#6366f1', light: '#eef2ff', border: '#c7d2fe', text: '#4338ca' }, // Yojhans - Indigo
+  12: { bg: '#0ea5e9', light: '#f0f9ff', border: '#bae6fd', text: '#0369a1' }, // Dafne - Azul Cian
 };
 
 function useWindowWidth() {
@@ -94,7 +97,7 @@ export default function PersonalApp() {
         let rols = Array.isArray(p.rol) ? [...p.rol] : (p.rol || '').split(',');
         // Ajustes manuales solicitados por el dueño:
         const nLower = p.nombre.toLowerCase();
-        if (nLower.includes('neit') || nLower.includes('camila')) {
+        if (nLower.includes('dafne') || nLower.includes('camila')) {
           if (!rols.includes('cajera') && !rols.includes('cajero')) rols.push('cajera');
           rols = rols.map(r => r === 'cajero' ? 'cajera' : r); // force feminine
         }
@@ -911,7 +914,7 @@ function NominaView({ personal, getLiquidacion, mes, anio, pagosNomina, presupue
 
   function copiarResumenGlobal(ids = []) {
     const MESES_L = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    const emojis = { 'Ricardo': '🤖', 'Andrés': '🧑🏻', 'Andres': '🧑🏻', 'Camila': '👩🏽', 'Neit': '👩🏻', 'Gabriel': '🧑🏿', 'Claudio': '🧓🏽', 'Yojhans': '👺' };
+    const emojis = { 'Ricardo': '🤖', 'Andrés': '🧑🏻', 'Andres': '🧑🏻', 'Camila': '👩🏽', 'Dafne': '👩🏻', 'Gabriel': '🧑🏿', 'Claudio': '🧓🏽', 'Yojhans': '👺' };
 
     let md = `🏦 *RESUMEN GLOBAL PAGOS*\n📅 _${MESES_L[mes] ? MESES_L[mes].toUpperCase() : ''} ${anio}_\n━━━━━━━━━━━━\n`;
     
@@ -1311,7 +1314,7 @@ function LiquidacionView({ personal, cajeros, plancheros, administradores = [], 
   }
 
   function generarResumenPagos() {
-    const emojis = { 'Ricardo': '🤖', 'Andrés': '🧑🏻', 'Andres': '🧑🏻', 'Camila': '👩🏽', 'Neit': '👩🏻', 'Gabriel': '🧑🏿', 'Claudio': '🧓🏽', 'Yojhans': '👺' };
+    const emojis = { 'Ricardo': '🤖', 'Andrés': '🧑🏻', 'Andres': '🧑🏻', 'Camila': '👩🏽', 'Dafne': '👩🏻', 'Gabriel': '🧑🏿', 'Claudio': '🧓🏽', 'Yojhans': '👺' };
     const mesLabel = `${MESES_L[mes]} ${anio}`;
     let md = `🏦 *RESUMEN PAGOS NÓMINA*\n📅 _${mesLabel.toUpperCase()}_\n━━━━━━━━━━━━\n`;
     
@@ -1620,7 +1623,7 @@ function LiquidacionSeguridad({ guardias, getLiquidacion, colores, onAjuste, onD
   }
 
   function generarResumenPagos() {
-    const emojis = { 'Ricardo': '🤖', 'Andrés': '🧑🏻', 'Andres': '🧑🏻', 'Camila': '👩🏽', 'Neit': '👩🏻', 'Gabriel': '🧑🏿', 'Claudio': '🧓🏽', 'Yojhans': '👺' };
+    const emojis = { 'Ricardo': '🤖', 'Andrés': '🧑🏻', 'Andres': '🧑🏻', 'Camila': '👩🏽', 'Dafne': '👩🏻', 'Gabriel': '🧑🏿', 'Claudio': '🧓🏽', 'Yojhans': '👺' };
     const mesLabel = `${MESES_L[mes]} ${anio}`;
     let md = `🏦 *RESUMEN PAGOS SEGURIDAD*\n📅 _${mesLabel.toUpperCase()}_\n━━━━━━━━━━━━\n`;
     

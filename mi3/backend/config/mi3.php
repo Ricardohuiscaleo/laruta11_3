@@ -17,11 +17,11 @@ return [
         'cajeros' => [
             'base_date' => '2026-02-01',
             'person_a' => 'Camila',
-            'person_b' => 'Neit',
+            'person_b' => 'Dafne',
         ],
         'plancheros' => [
             'base_date' => '2026-02-03',
-            'person_a' => 'Gabriel',
+            'person_a' => 'Andrés',
             'person_b' => 'Andrés',
         ],
     ],

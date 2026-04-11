@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home, User, Calendar, Receipt, CreditCard,
-  ClipboardCheck, ArrowLeftRight, Bell,
+  ClipboardCheck, ArrowLeftRight, Bell, LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { logout } from '@/lib/auth';
 
 const links = [
   { href: '/dashboard', label: 'Inicio', icon: Home },
@@ -27,7 +28,7 @@ export default function WorkerSidebar() {
       <div className="flex items-center border-b px-4 py-4">
         <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-work.png" alt="La Ruta 11 Work" className="h-8 w-auto" />
       </div>
-      <nav className="mt-2 space-y-1 px-2">
+      <nav className="mt-2 flex-1 space-y-1 px-2">
         {links.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;
           return (
@@ -47,6 +48,15 @@ export default function WorkerSidebar() {
           );
         })}
       </nav>
+      <div className="border-t px-2 py-3">
+        <button
+          onClick={logout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+        >
+          <LogOut className="h-5 w-5" />
+          Cerrar sesión
+        </button>
+      </div>
     </aside>
   );
 }
