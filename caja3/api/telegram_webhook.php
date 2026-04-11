@@ -168,23 +168,26 @@ function sendR11Email($to, $nombre, $relacion, $tipo, $extra = null) {
 
     if ($tipo === 'aprobado') {
         $limite  = $extra ?? 50000;
-        $meses   = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-        $dias    = max(0, intval(date('t')) - intval(date('j'))); // days left in month
-        $mes     = $meses[date('n') - 1];
-        $subject = '🎉 Crédito R11 Aprobado - La Ruta 11';
+        $subject = '🎉 ¡Bienvenido/a al equipo! - La Ruta 11';
         $color   = '#f59e0b';
-        $title   = '🎉 ¡Crédito R11 Aprobado!';
-        $intro   = "Tu solicitud de crédito R11 ha sido <strong style='color:#f59e0b;'>APROBADA</strong>.";
+        $title   = '🎉 ¡Ya eres parte del equipo!';
+        $intro   = "Tu registro como trabajador de La Ruta 11 ha sido <strong style='color:#f59e0b;'>APROBADO</strong>. Ya puedes acceder a tu portal.";
         $body    = "
         <div style='background:#fef3c7;padding:20px;border-radius:8px;margin:20px 0;text-align:center;'>
-            <p style='font-size:28px;font-weight:bold;color:#d97706;margin:0;'>$" . number_format($limite, 0, ',', '.') . "</p>
+            <p style='font-size:18px;font-weight:bold;color:#d97706;margin:0;'>Crédito R11 activado</p>
+            <p style='font-size:28px;font-weight:bold;color:#d97706;margin:8px 0 0;'>$" . number_format($limite, 0, ',', '.') . "</p>
             <p style='color:#92400e;margin:4px 0 0;'>Disponible de inmediato</p>
         </div>
+        <p style='font-weight:bold;color:#1f2937;'>¿Qué puedes hacer ahora?</p>
         <ol>
-            <li>Abre la app y ve a tu Perfil → Crédito R11</li>
-            <li>En el checkout elige \"Pagar con Crédito R11\"</li>
-            <li>El cobro es el día 1 de cada mes (descuento de sueldo)</li>
-        </ol>";
+            <li>Accede a tu portal en <a href='https://mi.laruta11.cl' style='color:#d97706;font-weight:bold;'>mi.laruta11.cl</a></li>
+            <li>Inicia sesión con tu cuenta (Google o email)</li>
+            <li>Revisa tus turnos, liquidación y crédito</li>
+            <li>Usa tu crédito R11 para pedir en La Ruta 11</li>
+        </ol>
+        <div style='text-align:center;margin:20px 0;'>
+            <a href='https://mi.laruta11.cl' style='display:inline-block;background:#d97706;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;'>Ir a mi portal →</a>
+        </div>";
     } elseif ($tipo === 'rechazado') {
         $subject = '❌ Solicitud R11 No Aprobada - La Ruta 11';
         $color   = '#ef4444';
@@ -413,8 +416,29 @@ switch (strtolower(trim($text))) {
                 $pdo->prepare("UPDATE usuarios SET credito_r11_aprobado = 1, limite_credito_r11 = ?, fecha_aprobacion_r11 = NOW() WHERE id = ?")
                     ->execute([$limite, $user_id]);
 
+                // Vincular en tabla personal (crear si no existe)
+                $rolMap = [
+                    'Planchero/a' => 'planchero',
+                    'Cajero/a' => 'cajero',
+                    'Rider' => 'rider',
+                    'Otro' => 'cajero'
+                ];
+                $personalRol = $rolMap[$usuario['relacion_r11']] ?? 'cajero';
+
+                $checkPersonal = $pdo->prepare("SELECT id FROM personal WHERE user_id = ?");
+                $checkPersonal->execute([$user_id]);
+                $existingPersonal = $checkPersonal->fetch(PDO::FETCH_ASSOC);
+
+                if (!$existingPersonal) {
+                    $pdo->prepare("INSERT INTO personal (nombre, email, rut, rol, user_id, activo) VALUES (?, ?, ?, ?, ?, 1)")
+                        ->execute([$usuario['nombre'], $usuario['email'], $usuario['rut'], $personalRol, $user_id]);
+                    $personalMsg = "👤 Vinculado en personal como {$personalRol}";
+                } else {
+                    $personalMsg = "👤 Ya vinculado en personal (ID: {$existingPersonal['id']})";
+                }
+
                 $emailOk = sendR11Email($usuario['email'], $usuario['nombre'], $usuario['relacion_r11'], 'aprobado', $limite);
-                $reply = "✅ Crédito R11 aprobado para {$usuario['nombre']} (ID: {$user_id})\nRol: {$usuario['relacion_r11']}\nLímite: $" . number_format($limite, 0, ',', '.') . "\n" . ($emailOk ? "✅ Email enviado a: {$usuario['email']}" : "⚠️ Email FALLÓ para: {$usuario['email']}");
+                $reply = "✅ Aprobado: {$usuario['nombre']} (ID: {$user_id})\nRol: {$usuario['relacion_r11']}\nLímite: $" . number_format($limite, 0, ',', '.') . "\n{$personalMsg}\n" . ($emailOk ? "📧 Email con link a mi.laruta11.cl enviado" : "⚠️ Email FALLÓ");
             } else {
                 $pdo->prepare("UPDATE usuarios SET credito_r11_aprobado = 0, limite_credito_r11 = 0 WHERE id = ?")
                     ->execute([$user_id]);

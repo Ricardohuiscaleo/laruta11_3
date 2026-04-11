@@ -51,16 +51,23 @@ function LoginForm() {
     window.location.href = `${API_URL}/api/v1/auth/google/redirect`;
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 6 && hour < 12) return 'Buenos días';
+    if (hour >= 12 && hour < 20) return 'Buenas tardes';
+    return 'Buenas noches';
+  };
+
   return (
     <div className="w-full max-w-sm">
       <div className="mb-8 text-center">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-200">
-          <span className="text-3xl">🍔</span>
+          <span className="text-3xl">☀️</span>
         </div>
-        <h1 className="text-3xl font-black tracking-tight text-gray-900">
-          mi<span className="text-amber-600">3</span>
+        <h1 className="text-2xl font-black tracking-tight text-gray-900">
+          {getGreeting()}, bienvenido/a
         </h1>
-        <p className="mt-1 text-sm text-gray-500">Portal del equipo La Ruta 11</p>
+        <p className="mt-1 text-sm text-gray-500">La Ruta 11</p>
       </div>
 
       <div className="rounded-2xl bg-white/80 p-8 shadow-xl shadow-amber-100/50 backdrop-blur-sm ring-1 ring-gray-100">
