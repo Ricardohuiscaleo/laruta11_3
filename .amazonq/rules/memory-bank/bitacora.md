@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-11)
+## Estado Actual (2026-04-10)
 
 ### Aplicaciones Desplegadas
 
@@ -109,6 +109,8 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 10. **Google OAuth mi3**: Client ID `531902921465-1l4fa0esvcbhdlq4btejp7d1thdtj4a7`, redirect URI `https://api-mi3.laruta11.cl/api/v1/auth/google/callback`, origin `https://mi.laruta11.cl`
 11. **ChileAtiende API**: Es para fichas de trámites gubernamentales, NO sirve para buscar nombres por RUT
 12. **SII Chile**: Tiene nombre del contribuyente pero requiere captcha — no viable para automatización
+13. **Coolify Docker cache**: Los builds pueden terminar "finished" pero servir código viejo si la imagen Docker está cacheada. Workaround: inyectar archivos vía SSH o agregar `ARG CACHE_BUST=$(date)` al Dockerfile
+14. **Hotfix en contenedor Docker**: Se puede inyectar código directamente con `cat file | docker exec -i CONTAINER tee /path > /dev/null` + `php artisan route:clear`
 
 ### Hooks Configurados
 
@@ -160,7 +162,199 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 
 ### Estado del Deploy mi3-backend (último)
 
-- Deployment UUID: `wbusyrtxs0xxlc ewvgn4e06n`
-- Fix aplicado: `key:generate + route:clear` en Dockerfile
-- Esperando resultado del build
-- Si pasa: la ruta `/api/v1/auth/google/redirect` debería funcionar y redirigir a Google OAuth
+- Google OAuth redirect FUNCIONANDO: `https://api-mi3.laruta11.cl/api/v1/auth/google/redirect` → redirige a `accounts.google.com` correctamente
+- Fix aplicado: Inyección directa de AuthController.php, AuthService.php y rutas Google OAuth en el contenedor vía SSH (hotfix)
+- **PROBLEMA PERSISTENTE**: El Dockerfile de Coolify NO copia el código más reciente del repo. Los builds terminan "finished" pero el contenedor sigue con código viejo. Causa: Coolify cachea la imagen Docker agresivamente
+- **Workaround actual**: Inyectar archivos directamente en el contenedor vía SSH (`docker exec -i ... tee`)
+- **TODO**: Investigar cómo forzar rebuild sin cache en Coolify, o agregar un `ARG CACHE_BUST` al Dockerfile
+
+### Errores Adicionales Resueltos (sesión final)
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Rutas Google OAuth no registradas en contenedor | Coolify cachea imagen Docker, no copia código nuevo | Inyección directa vía SSH: `cat file \| docker exec -i ... tee` |
+| AuthController sin métodos googleRedirect/googleCallback | Mismo problema de cache — COPY del Dockerfile no actualiza | Inyección directa del AuthController.php y AuthService.php |
+| `api.php` con `<?php` duplicado al hacer append | Error de scripting al inyectar rutas | Limpiar archivo con `head -75` antes de append |
+
+---
+
+## Sesión 2026-04-10 — Auditoría Sistema de Delivery
+
+### Lo realizado: Auditoría completa de cálculos de delivery
+
+Se revisaron todos los archivos involucrados en el sistema de delivery: fórmulas de distancia, tarifas dinámicas, APIs, y cómo se integran con la creación de órdenes.
+
+**Archivos auditados (6 APIs PHP + 4 componentes React):**
+- `app3/api/location/get_delivery_fee.php` — Cálculo principal de tarifa dinámica (Google Directions + Haversine fallback)
+- `caja3/api/location/get_delivery_fee.php` — Copia idéntica para caja3
+- `app3/api/get_delivery_fee.php` — Versión legacy, solo devuelve tarifa base de BD (sin distancia)
+- `caja3/api/get_delivery_fee.php` — Copia legacy para caja3
+- `app3/api/location/check_delivery_zone.php` — Verificación de zona por radio (tabla `delivery_zones`)
+- `app3/api/location/calculate_delivery_time.php` — Cálculo de tiempo de entrega
+- `app3/api/food_trucks/get_nearby.php` — Food trucks cercanos (Haversine)
+- `app3/api/get_nearby_trucks.php` — Versión alternativa de trucks cercanos (PDO)
+- `app3/api/create_order.php` — Creación de orden (consume delivery_fee del frontend)
+- Componentes React: `CheckoutApp.jsx`, `MenuApp.jsx`, `AddressAutocomplete.jsx` (app3 y caja3)
+
+### Algoritmo de tarifa documentado
+
+**Fórmula Haversine (fallback):**
+```
+a = sin²(Δlat/2) + cos(lat₁) · cos(lat₂) · sin²(Δlng/2)
+d = 2R · atan2(√a, √(1−a))    donde R = 6371 km
+t = (d / 30) × 60 min          (asume 30 km/h en ciudad)
+```
+
+**Tarifa dinámica:**
+```
+tarifa_base = $3.500 (producción, configurable por food truck en BD campo tarifa_delivery)
+si d ≤ 6 km → fee = tarifa_base
+si d > 6 km → fee = tarifa_base + ⌈(d − 6) / 2⌉ × $1.000
+```
+Nota: el schema tiene default $2.000 pero en producción el food truck activo tiene $3.500.
+
+**Tabla de tarifas resultante (con base real $3.500):**
+
+| Distancia | Base | Surcharge | Total |
+|-----------|------|-----------|-------|
+| 3 km | $3.500 | $0 | $3.500 |
+| 6 km | $3.500 | $0 | $3.500 |
+| 7 km | $3.500 | $1.000 | $4.500 |
+| 10 km | $3.500 | $2.000 | $5.500 |
+| 15 km | $3.500 | $5.000 | $8.500 |
+
+### Modificadores de tarifa: Convenio Ejército (RL6) y Recargo Tarjeta
+
+**Valores reales de negocio (confirmados):**
+- Delivery base: **$3.500**
+- Convenio Ejército (RL6): **$2.500** (descuento de $1.000)
+- Con tarjeta: **+$500** → ejército + tarjeta = **$3.000**
+
+**Descuento Convenio Ejército (código "RL6"):**
+
+Se activa con código `RL6` en app3 o checkbox "Descuento Delivery (28%)" en caja3. Solo aplica a 3 direcciones de cuarteles hardcodeadas:
+- `Ctel. Oscar Quina 1333`
+- `Ctel. Domeyco 1540`
+- `Ctel. Av. Santa María 3000`
+
+**Implementación en código:**
+
+| Archivo | Factor | Resultado con $3.500 | ¿Correcto? |
+|---------|--------|---------------------|------------|
+| `app3/CheckoutApp.jsx` | `fee × 0.2857` (descuento) → paga `fee × 0.7143` | $2.500 | ✅ |
+| `caja3/MenuApp.jsx` | `fee × 0.7143` | $2.500 | ✅ |
+| `caja3/CheckoutApp.jsx` | `fee × 0.6` | $2.100 | ❌ BUG (debería ser $2.500) |
+
+⚠️ **BUG en `caja3/CheckoutApp.jsx`**: Factor 0.6 da $2.100 en vez de $2.500. Debería usar `× 0.7143` como el resto.
+
+**Recargo por pago con tarjeta:**
+```
+cardDeliverySurcharge = $500  (si delivery_type === 'delivery' && payment_method === 'card')
+                      = $0    (cualquier otro caso)
+```
+Se suma al `delivery_fee` guardado en la orden. Se agrega nota: `"+$500 recargo tarjeta delivery"`.
+
+**Fórmula completa del delivery:**
+```
+fee_base = $3.500 (producción, configurable en BD)
+surcharge_distancia = d > 6 km ? ⌈(d − 6) / 2⌉ × $1.000 : $0
+fee_bruto = fee_base + surcharge_distancia
+descuento_rl6 = código "RL6" ? fee_bruto × 0.2857 : $0   (~28.57%, deja en ~71.43%)
+recargo_tarjeta = delivery + tarjeta ? $500 : $0
+TOTAL_DELIVERY = fee_bruto − descuento_rl6 + recargo_tarjeta
+```
+
+**Ejemplos reales (zona base ≤6 km):**
+
+| Escenario | Cálculo | Total |
+|-----------|---------|-------|
+| Normal | $3.500 | $3.500 |
+| Ejército (RL6) | $3.500 × 0.7143 | $2.500 |
+| Normal + tarjeta | $3.500 + $500 | $4.000 |
+| Ejército + tarjeta | $2.500 + $500 | $3.000 |
+
+### Problemas encontrados (NO resueltos, pendientes de fix)
+
+| # | Problema | Severidad | Detalle |
+|---|---------|-----------|---------|
+| 1 | Sin límite máximo de distancia | 🔴 Alta | Dirección en Santiago (2.000 km) generaría surcharge de ~$997.000. No hay validación de zona máxima |
+| 2 | delivery_fee no se valida en backend | 🔴 Alta | `create_order.php` toma `$input['delivery_fee']` directo del frontend sin recalcular. Un usuario puede manipular el request y poner $0 |
+| 3 | Factor descuento RL6 inconsistente | 🔴 Alta | `caja3/CheckoutApp.jsx` usa ×0.6 ($2.100), el resto usa ×0.7143 ($2.500). Debería dar $2.500 en todos |
+| 4 | Archivos duplicados sin sincronía | 🟡 Media | 2 versiones de `get_delivery_fee.php` en cada app: `api/` (solo tarifa base) y `api/location/` (cálculo completo). Frontend usa ambos |
+| 5 | `check_delivery_zone.php` desconectado | 🟡 Media | Tabla `delivery_zones` con radio 5 km existe pero `get_delivery_fee.php` no la consulta. Sistemas paralelos |
+| 6 | CORS abierto en delivery APIs | 🟡 Media | `get_delivery_fee.php` tiene `Access-Control-Allow-Origin: *` en ambas versiones |
+| 7 | Prep time aleatorio | 🟢 Baja | `calculate_delivery_time.php` usa `rand(10, 15)` — resultados inconsistentes entre llamadas |
+
+### Lecciones Aprendidas (sesión delivery)
+
+13. **Delivery fee sin validación server-side**: El frontend calcula la tarifa y la envía al backend, pero `create_order.php` la acepta sin recalcular — vulnerabilidad de manipulación de precio
+14. **Archivos legacy vs dinámicos**: Existen 2 versiones de `get_delivery_fee.php` (raíz = estático, location/ = dinámico). El frontend carga ambos: el estático como fallback inicial y el dinámico al ingresar dirección
+15. **Zonas de delivery desacopladas**: La tabla `delivery_zones` y el cálculo de tarifa en `get_delivery_fee.php` son sistemas independientes que no se comunican entre sí
+16. **Descuento RL6 con factores distintos**: El descuento del convenio ejército se implementó con factores diferentes en cada componente (0.2857 vs 0.6 vs 0.7143) — necesita unificarse a un solo valor
+17. **Recargo tarjeta se suma al delivery_fee**: El +$500 por tarjeta no se guarda en campo separado, se suma al `delivery_fee` de la orden, lo que dificulta auditoría posterior
+
+### Pendiente — Fixes de Delivery (por prioridad)
+
+1. **[CRÍTICO]** Agregar límite máximo de distancia (~15-20 km) en `get_delivery_fee.php` y rechazar direcciones fuera de rango
+2. **[CRÍTICO]** Recalcular delivery_fee en `create_order.php` server-side en vez de confiar en el valor del frontend
+3. **[CRÍTICO]** Unificar factor descuento RL6 en `caja3/CheckoutApp.jsx` (cambiar ×0.6 a ×0.7143 o definir cuál es el correcto)
+4. **[MEDIO]** Unificar `get_delivery_fee.php` — eliminar versión legacy de `api/` o redirigir a `api/location/`
+5. **[MEDIO]** Integrar `delivery_zones` con el cálculo de tarifa, o eliminar la tabla si no se usa
+6. **[MEDIO]** Restringir CORS en APIs de delivery a dominios reales (`app.laruta11.cl`, `caja.laruta11.cl`)
+7. **[BAJO]** Fijar prep time a valor constante o basado en cantidad de items en vez de `rand()`
+8. **[BAJO]** Separar recargo tarjeta en campo propio en `tuu_orders` para mejor trazabilidad
+
+### Pendiente — General (acumulado)
+
+**mi3 RRHH:**
+- Ejecutar migraciones Laravel
+- Vincular trabajadores restantes
+- Probar flujo Google OAuth completo
+- Probar dashboard con datos reales
+- Configurar cron scheduler en VPS
+
+**Delivery:**
+- Aplicar los 8 fixes listados arriba
+
+---
+
+## Sesión 2026-04-10 (cont.) — Verificación Schema BD vs Producción
+
+### Lo realizado
+
+Verificación por SSH contra la BD real en producción (`laruta11` en `76.13.126.63`). Se comparó cada tabla documentada en `database-schema.md` con la estructura real usando `DESCRIBE` por SSH.
+
+### Hallazgos principales
+
+**1. Tarifa delivery confirmada:** `food_trucks` tiene `tarifa_delivery = 3500` en producción (id=4, "La Ruta 11", activo=1). El schema decía default 2000 (correcto como default de columna, pero el valor real es 3500).
+
+**2. 26 tablas no documentadas encontradas:**
+- RRHH/Nómina: `personal`, `turnos`, `pagos_nomina`, `presupuesto_nomina`, `ajustes_sueldo`, `ajustes_categorias`
+- TV Orders: `tv_orders`, `tv_order_items`
+- POS: `tuu_pos_transactions`
+- Combos: `combo_selections`
+- Usuarios: `app_users` (legacy)
+- Concurso: `concurso_registros`, `concurso_state`, `concurso_tracking`, `participant_likes`
+- Chat/Live: `chat_messages`, `live_viewers`, `youtube_live`
+- Otros: `checklist_templates`, `product_edit_requests`, `attempts`, `user_locations`, `user_journey`, `menu_categories`, `menu_subcategories`, `inventory_transactions_backup_20251110`
+
+**3. Campos faltantes en tablas documentadas:**
+- `usuarios`: faltaban 14 campos (instagram, lugar_nacimiento, nacionalidad, direccion_actual, ubicacion_actualizada, total_sessions, total_time_seconds, last_session_duration, kanban_status, notification fields, credito_disponible, fecha_aprobacion_credito) + todos los campos R11
+- `tuu_orders`: faltaban `delivery_distance_km`, `delivery_duration_min`, `dispatch_photo_url`, `tv_order_id`, `pagado_con_credito_r11`, `monto_credito_r11`, y `delivery_type` no incluía 'tv'
+- `products`: faltaban `is_featured`, `sale_price`
+
+**4. Conteo real:** 65 tablas (no "80+" como decía el doc)
+
+### Cambios aplicados al schema
+
+- Actualizado `database-schema.md` con todos los campos faltantes
+- Agregadas las 26 tablas no documentadas con estructura completa
+- Corregido conteo de tablas a 65
+- Marcado `tarifa_delivery` con nota de valor en producción ($3.500)
+- Agregado `delivery_type` enum incluye 'tv'
+- Agregados campos R11 en `usuarios`
+
+### Lecciones Aprendidas
+
+18. **Schema drift**: El schema documentado tenía 26 tablas sin documentar y ~20 campos faltantes en tablas existentes. Verificar contra producción periódicamente.
+19. **Valor vs default**: `tarifa_delivery` tiene default 2000 en el schema de la columna, pero el registro activo en producción tiene 3500. Documentar ambos valores.
