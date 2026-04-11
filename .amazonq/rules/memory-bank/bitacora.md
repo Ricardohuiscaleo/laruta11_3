@@ -431,6 +431,12 @@ TOTAL_DELIVERY = fee_bruto − descuento_rl6 + recargo_tarjeta
 - mi3 login: saludo dinámico según hora (Buenos días/tardes/noches, bienvenido/a)
 - Deploy: app3 + caja3 + mi3-frontend en cola. Webhook caja3 hotfixed vía SSH
 
+**Test #2 (limpio, 2026-04-11):**
+- Usuario 163 reseteado completamente y re-registrado desde cero
+- register.php crea registro en `personal` automáticamente
+- Aprobación reseteada a 0 para probar flujo Telegram → email onboarding → mi3 login
+- Pendiente: aprobar en Telegram, verificar nuevo email, login en mi3 como trabajador
+
 **Redis:**
 - Actualizar REDIS_PASSWORD en Coolify dashboard para app3 y caja3 (valor correcto: `kEfdMKJoEvNTkqFWhEC4hHM3otMA1W/xm/NiDsVBR0I=`)
 - Agregar `pecl install redis` al Dockerfile de app3 para que persista entre deploys
