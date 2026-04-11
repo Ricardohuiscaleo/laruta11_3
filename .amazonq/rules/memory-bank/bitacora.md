@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-10)
+## Estado Actual (2026-04-11)
 
 ### Aplicaciones Desplegadas
 
@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running | ❌ Manual |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React | ✅ Running | ❌ Manual |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 | ✅ Running | ❌ Manual |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React | ⚠️ Rebuild manual | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 | ✅ Running (hotfix) | ❌ Manual |
 
 Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks individuales.
 
@@ -118,6 +118,9 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 18. **router.push vs window.location.href**: En Next.js, `router.push` hace client-side navigation que NO envía cookies recién seteadas. Usar `window.location.href` para hard redirect que sí las incluye
 19. **Sanctum token con pipe `|`**: El token Sanctum tiene formato `id|hash`. El `|` debe ser `encodeURIComponent`-eado al guardarlo en cookies
 20. **Test Sanctum via SSH**: Se puede crear tokens de prueba con `php artisan tinker --execute` y testear endpoints con curl directamente — útil para aislar problemas frontend vs backend
+21. **OAuth token en URL es un parche, no best practice**: El token Sanctum no debe viajar en query params (visible en historial). La forma correcta es que el backend setee una cookie httpOnly en el redirect del callback. Esto elimina problemas de SameSite, XSS, y manipulación de cookies
+22. **PHP Error vs Exception**: `new Redis()` cuando la extensión no está instalada lanza `Error` (no `Exception`). `catch (Exception)` NO lo atrapa. Usar `catch (\Throwable)` o verificar `class_exists()` antes. Esto aplica a cualquier clase de extensión PHP opcional (Redis, Imagick, etc.)
+23. **mi3 login funciona**: Google OAuth → admin dashboard OK. Nómina y cambios muestran "load failed" (esperado, backend necesita datos reales). Login page con branding mi3 🍔
 
 ### Hooks Configurados
 
@@ -177,21 +180,21 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 
 ### Estado Google OAuth (actual)
 
-- Redirect (`/auth/google/redirect`) → ✅ Funciona, redirige a accounts.google.com
-- Callback (`/auth/google/callback`) → ✅ Funciona, retorna token Sanctum + user data de Ricardo correctamente
-- Token generado: `3|yudowL0pT5C8cKPiPl8FhvwT6TSSHq6r4yrSRISvb590aa51` (Ricardo, admin)
-- Login page recibe token y user → ✅ Guarda en localStorage + cookies
-- Redirect a `/admin` → ❌ Middleware redirige a `/login` (loop) porque el frontend cacheado por Next.js no tiene el código de cookies
-- **Fix**: Redeploy de mi3-frontend disparado (deployment `dzrprcdx39uojy0bb7gwkev8`)
-- **Pendiente**: Verificar que después del redeploy el login complete el flujo hasta `/admin`
-
-### Test SSH Backend (confirmado OK)
-
-```
-GET /api/v1/auth/me con Bearer token → 200
-{"success":true,"user":{"id":4,"nombre":"Ricardo Huiscaleo","email":"ricardo.huiscaleo@gmail.com","personal_id":5,"rol":"administrador,seguridad","is_admin":true}}
-```
-Backend Sanctum 100% funcional. El problema es solo del frontend (cookies + redirect).
+- Redirect (`/auth/google/redirect`) → ✅ Funciona
+- Callback (`/auth/google/callback`) → ✅ Funciona, genera token Sanctum
+- Backend Sanctum → ✅ 100% funcional (verificado via SSH con tinker + curl)
+- Login flow end-to-end → ⚠️ Funciona pero con PARCHE (token en URL, cookies client-side)
+- **DEUDA TÉCNICA RESUELTA**: OAuth implementado correctamente con httpOnly cookies:
+  1. Backend `googleCallback` setea 3 cookies httpOnly (`mi3_token`, `mi3_role`, `mi3_user`) via `Set-Cookie` header en el redirect
+  2. Backend `ExtractTokenFromCookie` middleware lee `mi3_token` de cookie y lo inyecta como `Authorization: Bearer` header
+  3. Backend `login` endpoint también setea cookies httpOnly en la respuesta JSON
+  4. Backend `logout` limpia las 3 cookies
+  5. Frontend `api.ts` usa `credentials: 'include'` en todas las requests
+  6. Frontend login page ya NO lee token de URL — solo muestra errores de OAuth
+  7. Middleware Next.js lee cookies httpOnly directamente (seteadas por backend cross-domain via `.laruta11.cl`)
+  8. Token NUNCA viaja en la URL ni es accesible por JavaScript
+- **Deploy**: Backend hotfixed via SSH, frontend deploy disparado (`od4ljeanrj417khq6dpxged6`)
+- **Pendiente**: Verificar flujo completo después del deploy del frontend. Limpiar cookies del navegador antes de probar
 
 ### Errores Adicionales Resueltos (sesión final)
 
@@ -203,6 +206,7 @@ Backend Sanctum 100% funcional. El problema es solo del frontend (cookies + redi
 | Google callback 500 Server Error | Tabla `personal_access_tokens` de Sanctum no existía en la BD | Crear tabla manualmente vía SSH: `CREATE TABLE personal_access_tokens (...)` |
 | Login → `/admin` redirect loop | Middleware Next.js lee cookies pero login page cacheada no las setea (build viejo) | Redeploy mi3-frontend para que tome código con `document.cookie` |
 | Cookies no se setean tras OAuth redirect | `document.cookie` con `SameSite=Lax` + `router.push` no persiste cookies en redirect cross-site (Google→api→frontend) | Usar `window.location.href` (hard redirect) + `encodeURIComponent` en token + middleware permisivo que no bloquea page loads |
+| R11 register.php 500 silencioso | `new Redis()` causa fatal `Error` (class not found) en app3 — extensión Redis no instalada. `catch (Exception)` no atrapa `Error` de PHP | Agregar `class_exists('Redis')` antes de instanciar + cambiar `catch (Exception)` a `catch (\Throwable)`. Fail-open si Redis no disponible |
 
 ---
 
@@ -335,8 +339,16 @@ TOTAL_DELIVERY = fee_bruto − descuento_rl6 + recargo_tarjeta
 ### Pendiente — General (acumulado)
 
 **mi3 RRHH:**
+- Implementar OAuth con httpOnly cookies (deuda técnica prioritaria) — IMPLEMENTADO, pendiente verificar en producción
 - Ejecutar migraciones Laravel
 - Vincular trabajadores restantes
+- Probar dashboard con datos reales (nómina, turnos, etc.)
+- Configurar cron scheduler en VPS
+- Resolver problema de cache Docker en Coolify (builds no toman código nuevo)
+
+**R11 Crédito:**
+- Verificar que Camila pueda registrarse después del fix de Redis
+- Vincular trabajadores que se registren vía /r11 con tabla personal
 - Probar flujo Google OAuth completo
 - Probar dashboard con datos reales
 - Configurar cron scheduler en VPS
