@@ -95,8 +95,9 @@ try {
         product_name, product_price, delivery_fee, installment_amount, 
         has_item_details, status, payment_status, payment_method, order_status, delivery_type, 
         delivery_address, pickup_time, customer_notes, subtotal, discount_amount, delivery_discount, 
-        delivery_extras, delivery_extras_items, cashback_used, scheduled_time, is_scheduled
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        delivery_extras, delivery_extras_items, cashback_used, scheduled_time, is_scheduled,
+        delivery_distance_km, delivery_duration_min
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
     $delivery_extras_json = null;
     if (!empty($input['delivery_extras']) && is_array($input['delivery_extras'])) {
@@ -128,7 +129,9 @@ try {
         $delivery_extras_json,
         $input['cashback_used'] ?? 0,
         $input['scheduled_time'] ?? null,
-        isset($input['is_scheduled']) ? ($input['is_scheduled'] ? 1 : 0) : 0
+        isset($input['is_scheduled']) ? ($input['is_scheduled'] ? 1 : 0) : 0,
+        $input['delivery_distance_km'] ?? null,
+        $input['delivery_duration_min'] ?? null
     ]);
     
     $order_db_id = $pdo->lastInsertId();

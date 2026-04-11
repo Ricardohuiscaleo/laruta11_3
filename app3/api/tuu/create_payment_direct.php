@@ -58,13 +58,37 @@ try {
             $order_sql = "INSERT INTO tuu_orders (
                 order_number, user_id, customer_name, customer_phone, 
                 product_name, product_price, delivery_fee, installment_amount, 
-                has_item_details, status, payment_status, order_status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, 'pending', 'unpaid', 'pending')";
+                has_item_details, status, payment_status, order_status,
+                delivery_type, delivery_address, customer_notes,
+                subtotal, discount_amount, delivery_discount,
+                delivery_extras, delivery_extras_items, cashback_used,
+                scheduled_time, is_scheduled,
+                delivery_distance_km, delivery_duration_min
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, 'pending', 'unpaid', 'pending',
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            $delivery_extras_json = null;
+            if (!empty($input['delivery_extras']) && is_array($input['delivery_extras'])) {
+                $delivery_extras_json = json_encode($input['delivery_extras']);
+            }
             
             $order_stmt = $pdo->prepare($order_sql);
             $order_stmt->execute([
                 $order_id, $user_id, $customer_name, $customer_phone,
-                $product_summary, $amount, $delivery_fee, $amount
+                $product_summary, $amount, $delivery_fee, $amount,
+                $input['delivery_type'] ?? 'pickup',
+                $input['delivery_address'] ?? null,
+                $input['customer_notes'] ?? null,
+                $input['subtotal'] ?? 0,
+                $input['discount_amount'] ?? 0,
+                $input['delivery_discount'] ?? 0,
+                $input['delivery_extras_total'] ?? 0,
+                $delivery_extras_json,
+                $input['cashback_used'] ?? 0,
+                $input['scheduled_time'] ?? null,
+                isset($input['is_scheduled']) ? ($input['is_scheduled'] ? 1 : 0) : 0,
+                $input['delivery_distance_km'] ?? null,
+                $input['delivery_duration_min'] ?? null
             ]);
             
             $order_db_id = $pdo->lastInsertId();

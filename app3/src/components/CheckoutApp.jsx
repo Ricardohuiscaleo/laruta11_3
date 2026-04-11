@@ -607,7 +607,9 @@ const CheckoutApp = ({ onClose }) => {
         payment_method: 'transfer',
         scheduled_time: scheduledTime ? `${scheduledTime.date} ${scheduledTime.time}` : null,
         is_scheduled: !!scheduledTime,
-        cashback_used: cashbackAmount
+        cashback_used: cashbackAmount,
+        delivery_distance_km: deliveryDistanceInfo?.km || null,
+        delivery_duration_min: deliveryDistanceInfo?.min || null
       };
 
       const response = await fetch('/api/create_order.php', {
@@ -769,7 +771,9 @@ const CheckoutApp = ({ onClose }) => {
         payment_method: 'cash',
         scheduled_time: scheduledTime ? `${scheduledTime.date} ${scheduledTime.time}` : null,
         is_scheduled: !!scheduledTime,
-        cashback_used: cashbackAmount
+        cashback_used: cashbackAmount,
+        delivery_distance_km: deliveryDistanceInfo?.km || null,
+        delivery_duration_min: deliveryDistanceInfo?.min || null
       };
 
       const response = await fetch('/api/create_order.php', {
@@ -827,7 +831,9 @@ const CheckoutApp = ({ onClose }) => {
         pickup_time: customerInfo.pickupTime || null,
         payment_method: 'rl6_credit',
         scheduled_time: scheduledTime ? `${scheduledTime.date} ${scheduledTime.time}` : null,
-        is_scheduled: !!scheduledTime
+        is_scheduled: !!scheduledTime,
+        delivery_distance_km: deliveryDistanceInfo?.km || null,
+        delivery_duration_min: deliveryDistanceInfo?.min || null
       };
 
       const orderResponse = await fetch('/api/create_order.php', {
@@ -902,7 +908,9 @@ const CheckoutApp = ({ onClose }) => {
         pickup_time: customerInfo.pickupTime || null,
         payment_method: 'r11_credit',
         scheduled_time: scheduledTime ? `${scheduledTime.date} ${scheduledTime.time}` : null,
-        is_scheduled: !!scheduledTime
+        is_scheduled: !!scheduledTime,
+        delivery_distance_km: deliveryDistanceInfo?.km || null,
+        delivery_duration_min: deliveryDistanceInfo?.min || null
       };
 
       const orderResponse = await fetch('/api/create_order.php', {

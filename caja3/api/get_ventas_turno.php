@@ -157,7 +157,7 @@ $pickupCount = 0;
 $deliveryCount = 0;
 $totalCost = 0;
 foreach ($ventas as $v) {
-    if (isset($v['delivery_type']) && $v['delivery_type'] === 'delivery') {
+    if ((isset($v['delivery_type']) && $v['delivery_type'] === 'delivery') || (isset($v['delivery_fee']) && floatval($v['delivery_fee']) > 0)) {
         $deliveryCount++;
     }
     else {

@@ -136,7 +136,6 @@ try {
                     AND COALESCE(scheduled_time, created_at) < ?
                     AND payment_status = 'paid'
                     AND order_number NOT LIKE 'RL6-%'
-                    AND delivery_type = 'delivery'
                     AND delivery_fee > 0";
     
     $deliveryStmt = $pdo->prepare($deliverySql);

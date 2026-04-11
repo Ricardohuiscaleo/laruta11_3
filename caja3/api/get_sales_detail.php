@@ -46,6 +46,9 @@ try {
                 cashback_used,
                 delivery_type,
                 delivery_address,
+                delivery_fee,
+                delivery_distance_km,
+                delivery_duration_min,
                 pickup_time,
                 customer_notes,
                 delivery_extras_items,
@@ -269,7 +272,7 @@ try {
         $method = $order['payment_method'];
         $payment_methods[$method] = ($payment_methods[$method] ?? 0) + floatval($order['installment_amount']);
 
-        $type = $order['delivery_type'] ?? 'pickup';
+        $type = (floatval($order['delivery_fee'] ?? 0) > 0 || ($order['delivery_type'] ?? 'pickup') === 'delivery') ? 'delivery' : 'pickup';
         $delivery_types[$type] = ($delivery_types[$type] ?? 0) + 1;
     }
 
