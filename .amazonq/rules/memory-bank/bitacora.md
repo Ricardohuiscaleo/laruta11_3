@@ -104,3 +104,44 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 5. **CORS en RL6**: Todos los endpoints tenían `Access-Control-Allow-Origin: *` — corregido a dominios específicos en R11
 6. **Rate limiting**: Archivos temporales se pierden en cada deploy Docker — usar Redis
 7. **Monorepo + Coolify**: Un push a main dispara rebuild de TODAS las apps — desactivar auto-deploy y usar Smart Deploy
+8. **Laravel APP_KEY**: Debe configurarse como env var en Coolify — sin ella Laravel da 500 genérico
+9. **Laravel bootstrap/app.php API-only**: Usar `redirectGuestsTo(fn () => null)` y `shouldRenderJsonWhen(fn () => true)` para evitar redirect a ruta `login` inexistente
+10. **Google OAuth mi3**: Client ID `531902921465-1l4fa0esvcbhdlq4btejp7d1thdtj4a7`, redirect URI `https://api-mi3.laruta11.cl/api/v1/auth/google/callback`, origin `https://mi.laruta11.cl`
+11. **ChileAtiende API**: Es para fichas de trámites gubernamentales, NO sirve para buscar nombres por RUT
+12. **SII Chile**: Tiene nombre del contribuyente pero requiere captcha — no viable para automatización
+
+### Hooks Configurados
+
+| Hook | Tipo | Acción |
+|------|------|--------|
+| Smart Deploy | userTriggered | Analiza git diff y despliega solo apps afectadas |
+| Deploy app3 | userTriggered | Rebuild solo app3 |
+| Deploy caja3 | userTriggered | Rebuild solo caja3 |
+| Deploy mi3 Backend | userTriggered | Rebuild solo mi3-backend |
+| Deploy mi3 Frontend | userTriggered | Rebuild solo mi3-frontend |
+| Actualizar Bitácora | agentStop | Actualiza esta bitácora al final de cada sesión |
+| Leer Contexto | promptSubmit | Lee bitácora al inicio de cada sesión |
+
+### Commits de la Sesión (cronológico)
+
+1. `fix(rl6): correcciones de seguridad`
+2. `feat(r11): schema BD`
+3. `feat(r11): APIs app3`
+4. `feat(r11): APIs caja3`
+5. `feat(r11): frontend app3`
+6. `feat(r11): frontend caja3`
+7. `feat(r11): cron jobs + webhook Telegram`
+8. `docs(r11): spec actualizado con seguridad`
+9. `docs(mi3): spec completo RRHH`
+10. `feat(mi3): scaffolding Laravel + Next.js`
+11. `feat(mi3): modelos Eloquent + middleware + auth`
+12. `feat(mi3): servicios de negocio (7)`
+13. `feat(mi3): controllers Worker + Admin (14)`
+14. `feat(mi3): cron jobs R11`
+15. `feat(mi3): frontend completo (15 páginas)`
+16. `feat(r11): QR scanner mejorado + validación Registro Civil`
+17. `fix(mi3): Dockerfile --no-scripts`
+18. `fix(mi3): bootstrap API-only JSON 401`
+19. `feat(mi3): Google OAuth completo`
+20. `fix(mi3): login Suspense boundary`
+21. `docs: bitácora + hooks`
