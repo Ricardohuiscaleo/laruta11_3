@@ -37,3 +37,8 @@ Schedule::command('mi3:check-companion-absence')
 Schedule::command('mi3:detect-absences')
     ->dailyAt('02:00')
     ->timezone('America/Santiago');
+
+// Generar turnos dinámicos 4x4 — día 25 de cada mes a las 10:00 (genera mes siguiente)
+Schedule::command('mi3:generate-shifts')
+    ->monthlyOn(25, '10:00')
+    ->timezone('America/Santiago');
