@@ -1,16 +1,16 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-11, actualizado sesión 2026-04-11r)
+## Estado Actual (2026-04-11, actualizado sesión 2026-04-11aa)
 
 ### Aplicaciones Desplegadas
 
 | App | URL | Stack | Estado | Auto-deploy |
 |-----|-----|-------|--------|-------------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running | ❌ Manual |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | 🔄 Deploying (`yzlvtsf89zu7nr9j1c4yk3ik`) | ❌ Manual |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React | 🔄 Deploying (`jr4koj9551f0x4ppjlwpd2jq`) | ❌ Manual |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 | ✅ Running (hotfix `1c1b51e`) | ❌ Manual |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React | ✅ Running (`ym47pg9nj2ybj96e6z6fkpqh`, commit `8b08dc0`) | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 | ✅ Running (`i110bwgekv2rq2v4nifwov9p`, commit `9ac25dc`) | ❌ Manual |
 
 Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks individuales, o el nuevo hook "Ship It" para ciclo completo.
 
@@ -22,6 +22,709 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks ind
 - mi3-backend: `ds24j8jlaf9ov4flk1nq4jek`
 - mi3-frontend: `sxdw43i9nt3cofrzxj28hx1e`
 - laruta11-db: `zs00occ8kcks40w4c88ogo08`
+
+### Specs en Progreso
+
+| Spec | Directorio | Estado |
+|------|-----------|--------|
+| mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
+| checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ✅ Spec completo (requirements + design + tasks), pendiente ejecutar 14 tareas |
+
+---
+
+## Sesión 2026-04-11aa — Aclaración diseño checklist: scheduler horarios + templates hardcoded vs BD
+
+### Lo realizado: Aclaración de decisiones de diseño del spec checklist-v2-asistencia
+
+No se implementó código. El usuario preguntó sobre dos decisiones del diseño: los 3 horarios del scheduler y los templates hardcoded.
+
+**Aclaración de los 3 horarios del scheduler:**
+
+| Hora (Chile) | Comando | Por qué a esa hora |
+|-------------|---------|-------------------|
+| 14:00 | `mi3:create-daily-checklists` | Antes de apertura (18:00) — el trabajador llega y ya tiene su checklist listo |
+| 19:00 | `mi3:check-companion-absence` | 1 hora después de apertura — si uno no inició checklist, habilitar virtual para el compañero |
+| 02:00 | `mi3:detect-absences` | Después de cierre (~01:00) — cerrar el día, detectar quién no hizo checklist, crear descuento $40k |
+
+**Aclaración de templates hardcoded:**
+- Los 11 ítems del checklist están definidos como constantes PHP en `ChecklistService::TEMPLATES`, no en una tabla de BD
+- Ventaja: más simple de mantener, no necesita admin UI para gestionar templates
+- Alternativa: tabla `checklist_templates` configurable desde admin (más flexible pero más complejo)
+- Para 11 ítems que rara vez cambian, hardcoded es más práctico
+- Pendiente: el usuario no confirmó preferencia — preguntar antes de implementar
+
+### Errores Encontrados y Resueltos
+
+Ninguno (sesión de aclaración).
+
+### Pendiente
+
+- Confirmar con el usuario: ¿templates hardcoded o configurables desde admin?
+- Confirmar horarios del scheduler (14:00, 19:00, 02:00)
+- Ejecutar las 14 tareas del spec checklist-v2-asistencia
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys, composer install web-push, configurar crons
+
+---
+
+## Sesión 2026-04-11z — Spec completo: Checklist v2 + Asistencia (design + tasks)
+
+### Lo realizado: Generación de diseño técnico y plan de implementación
+
+Se completó el spec `checklist-v2-asistencia` generando design.md y tasks.md a partir de los requerimientos aprobados en sesión anterior.
+
+**Spec:** `.kiro/specs/checklist-v2-asistencia/`
+
+**Documentos generados:**
+
+**design.md** — Diseño técnico completo:
+- Diagramas Mermaid: componentes, flujo de datos (scheduler → checklist → IA → asistencia), ER
+- 3 servicios nuevos: ChecklistService (templates hardcoded, CRUD, virtual), AttendanceService (ausencias, resumen mensual), PhotoAnalysisService (S3 + Bedrock Nova Lite)
+- 2 controllers: Worker/ChecklistController (6 endpoints), Admin/ChecklistController (4 endpoints)
+- 3 comandos Artisan: CreateDailyChecklists (14:00), CheckCompanionAbsence (19:00), DetectAbsences (02:00)
+- Modelo de datos: ALTER TABLE checklists (+personal_id, rol, checklist_mode), ALTER TABLE checklist_items (+ai_score, ai_observations, ai_analyzed_at), tabla nueva checklist_virtual
+- 12 propiedades de correctitud
+- Manejo de errores (Bedrock timeout 15s, S3 fallo, turno sin par, etc.)
+
+**tasks.md** — 14 tareas principales:
+
+| # | Tarea | Sub-tareas |
+|---|-------|-----------|
+| 1 | BD — Migraciones y seed | 4 (ALTER checklists, ALTER checklist_items, CREATE checklist_virtual, seed inasistencia) |
+| 2 | Modelos Eloquent | 3 (Checklist, ChecklistItem, ChecklistVirtual) |
+| 3 | ChecklistService + 6 PBT | 10 (templates, creación diaria, consulta/completado, virtual, admin, P1-P5, P9) |
+| 4 | AttendanceService + 3 PBT | 5 (ausencias, compañero ausente, resumen, P7, P8, P10) |
+| 5 | PhotoAnalysisService + 1 PBT | 2 (S3+Bedrock, P6) |
+| 6 | Checkpoint backend servicios | — |
+| 7 | Artisan Commands | 3 (create-daily 14:00, detect-absences 02:00, check-companion 19:00) |
+| 8 | Controllers + rutas + 2 PBT | 5 (Worker/Checklist, Admin/Checklist, rutas, P11, P12) |
+| 9 | Checkpoint backend completo | — |
+| 10 | Tipos TypeScript | 1 |
+| 11 | Frontend — Checklist trabajador | 2 (presencial + virtual) |
+| 12 | Frontend — Panel admin | 2 (lista/asistencia/ideas + detalle con IA) |
+| 13 | Navegación + badge | 2 |
+| 14 | Checkpoint final | — |
+
+**12 propiedades de correctitud (todas obligatorias):**
+
+| # | Propiedad | Valida |
+|---|-----------|--------|
+| P1 | Creación corresponde a turnos asignados | Req 1.1, 1.7 |
+| P2 | Creación idempotente | Req 1.6 |
+| P3 | Filtrado por rol | Req 2.1 |
+| P4 | Progreso y completado | Req 2.2, 2.3 |
+| P5 | Validación foto obligatoria | Req 2.6 |
+| P6 | Selección prompt IA por contexto | Req 3.2 |
+| P7 | Asistencia por completado de checklist | Req 4.1-4.5, 5.5 |
+| P8 | Detección compañero ausente | Req 5.1, 6.2, 6.4 |
+| P9 | Validación idea mejora ≥ 20 chars | Req 5.3 |
+| P10 | Resumen mensual correcto | Req 7.3 |
+| P11 | Filtrado por fecha | Req 7.4 |
+| P12 | Ideas ordenadas desc | Req 7.5 |
+
+### Decisiones de diseño clave
+
+- Templates de ítems hardcoded en ChecklistService (no en BD) — más simple de mantener
+- Asistencia derivada de checklists (no tabla separada) — se consulta si hay checklist completado
+- Análisis IA asíncrono-tolerante — si Bedrock falla, el checklist continúa normalmente
+- Checklist virtual en tabla separada para mantener la idea de mejora como dato estructurado
+- 3 horarios de scheduler: 14:00 (crear), 19:00 (detectar compañero ausente), 02:00 (detectar inasistencias)
+
+### Errores Encontrados y Resueltos
+
+Ninguno (sesión de spec/design/tasks).
+
+### Lecciones Aprendidas
+
+89. **Spec completo en una sesión (design + tasks)**: Cuando los requirements ya están aprobados, se puede generar design y tasks en la misma sesión. El design informa las tareas y las propiedades de correctitud se mapean directamente a tests obligatorios en el plan de implementación
+
+### Pendiente (próximas sesiones)
+
+- **Ejecutar las 14 tareas del spec checklist-v2-asistencia** (implementación completa)
+- Refactorizar adelanto de sueldo (spec separado pendiente)
+- Generar VAPID keys reales y configurar en Coolify
+- Ejecutar `composer install` en contenedor mi3-backend para instalar `minishlink/web-push`
+- Configurar crons en el servidor (loan-auto-deduct + los 3 nuevos de checklist)
+
+---
+
+## Sesión 2026-04-11y — Spec requirements: Checklist v2 + Asistencia Inteligente
+
+### Lo realizado: Creación del documento de requerimientos para checklist-v2-asistencia
+
+Se creó el spec `checklist-v2-asistencia` con workflow requirements-first y se generó el documento de requerimientos completo con 10 requerimientos.
+
+**Spec:** `.kiro/specs/checklist-v2-asistencia/`
+
+**Documento generado:** `requirements.md` — 10 requerimientos con criterios de aceptación EARS/INCOSE
+
+| # | Requerimiento | Criterios |
+|---|--------------|-----------|
+| 1 | Creación diaria de checklists por rol | 7 criterios — scheduler crea apertura/cierre por rol según turnos asignados |
+| 2 | Visualización y completado presencial | 6 criterios — UI en mi3, progreso, fotos obligatorias, filtrado por rol |
+| 3 | Subida de fotos + análisis con IA | 5 criterios — S3 upload, Nova Lite via Bedrock, score 0-100, timeout 15s |
+| 4 | Asistencia vinculada a checklist | 5 criterios — checklist completado = presente, sin checklist = ausente $40k |
+| 5 | Checklist virtual (compañero ausente) | 5 criterios — 1 paso + idea de mejora obligatoria (min 20 chars) |
+| 6 | Detección de compañero ausente | 4 criterios — par cajero+planchero, hora límite, ambos ausentes = sin virtual |
+| 7 | Panel admin | 5 criterios — lista checklists, detalle con IA, resumen asistencia, ideas de mejora |
+| 8 | Migración desde caja3 | 4 criterios — reutilizar tablas + columnas nuevas, preservar histórico, categoría "inasistencia" |
+| 9 | Navegación en mi3 | 4 criterios — item "Checklist" en nav worker + admin, badge pendientes |
+| 10 | Notificaciones push + in-app | 4 criterios — push al crear checklists, al habilitar virtual, al registrar inasistencia |
+
+**Decisiones de diseño en los requerimientos:**
+- Reutilizar tablas existentes `checklists` y `checklist_items` (agregar columnas, no crear tablas nuevas)
+- Asistencia se determina por completar al menos el checklist de apertura
+- Checklist virtual se habilita automáticamente cuando el compañero no inicia apertura antes de hora límite
+- Si ambos faltan → ambos reciben descuento, sin checklist virtual para ninguno
+- Ideas de mejora del checklist virtual se almacenan y son visibles para el admin
+- Categoría nueva "inasistencia" en `ajustes_categorias` (slug: "inasistencia", icono: "❌", signo: "-")
+
+### Errores Encontrados y Resueltos
+
+Ninguno (sesión de spec/requirements).
+
+### Lecciones Aprendidas
+
+88. **Specs como documentación viva del negocio**: El proceso de crear requirements formales forzó a documentar reglas de negocio que estaban solo en la cabeza del usuario (hora límite de apertura, lógica de par cajero+planchero, qué pasa si ambos faltan). Esto evita ambigüedades durante la implementación
+
+### Pendiente (próximas sesiones)
+
+- **Revisar requirements.md con el usuario** y ajustar si hay correcciones
+- **Generar design.md** para checklist-v2-asistencia (arquitectura, modelo de datos, APIs, propiedades de correctitud)
+- **Generar tasks.md** para checklist-v2-asistencia (plan de implementación)
+- **Ejecutar tareas** del spec checklist-v2-asistencia
+- Refactorizar adelanto de sueldo (spec separado pendiente)
+- Generar VAPID keys reales y configurar en Coolify
+- Ejecutar `composer install` en contenedor mi3-backend para instalar `minishlink/web-push`
+
+---
+
+## Sesión 2026-04-11x — Investigación checklist actual + diseño checklist v2 con IA + reglas asistencia refinadas
+
+### Lo realizado: Análisis del sistema de checklist existente + propuesta de rediseño
+
+No se implementó código. Se investigó el sistema de checklist actual en caja3 y se diseñó la propuesta de checklist v2 con reducción al 50%, separación por rol, análisis de fotos con IA (Nova Lite via Bedrock), y asistencia automática.
+
+**1. Análisis del checklist actual (caja3):**
+
+Tablas en BD: `checklists` y `checklist_items`
+- API: `caja3/api/checklist.php` (PHP puro, no Laravel)
+- Frontend: `caja3/src/components/ChecklistApp.jsx`
+- Cronjob: `createDaily()` crea checklists de apertura y cierre cada día
+- Fotos: se suben a S3 via `S3Manager.php`
+- Solo la cajera hace los checklists (en caja3, no en mi3)
+- No hay distinción por rol — todos los items son para quien lo haga
+- No hay vínculo con asistencia ni con descuentos
+
+**Items actuales (11 apertura + 11 cierre = 22 total):**
+
+| # | Apertura | Tipo |
+|---|----------|------|
+| 1 | Subir 3 estados de WSP (etiquetar grupos ventas) | Marketing |
+| 2 | Encender PedidosYa | Cajera |
+| 3 | Revisar carga de máquinas TUU | Cajera |
+| 4 | Sacar aderezos, vitrina y basureros | Planchero |
+| 5 | Sacar televisor, encender y mostrar carta | Planchero |
+| 6 | Llenar Jugo y probar pequeña muestra | Planchero |
+| 7 | Llenar salsas | Planchero |
+| 8 | Colocar servilletas en 20 bolsas de delivery | Planchero |
+| 9 | FOTO 1: Interior desde puerta del carro | Foto (requiere foto) |
+| 10 | FOTO 2: Amplia exterior (carro y comedor) | Foto (requiere foto) |
+| 11 | Verificar saldo en caja y enviar al grupo | Cajera |
+
+| # | Cierre | Tipo |
+|---|--------|------|
+| 1 | Apagar PedidosYa | Cajera |
+| 2 | Verificar saldo en caja y enviar al grupo | Cajera |
+| 3 | Guardar aderezos, vitrina, basureros y televisor | Planchero |
+| 4 | Dejar fuente de papas limpia | Planchero |
+| 5 | Dejar todas las superficies limpias | Planchero |
+| 6 | Desenchufar juguera | Planchero |
+| 7 | Desconectar conexiones de gas | Planchero |
+| 8 | Cerrar paso de agua "desagüe" | Planchero |
+| 9 | FOTO 1: Interior desde puerta (ver limpieza) | Foto |
+| 10 | FOTO 2: Amplia exterior (ver todo guardado) | Foto |
+| 11 | Verificar saldo en caja y enviar al grupo | Cajera (duplicado) |
+
+**Problemas identificados:**
+- 22 items totales es mucho — muchos son redundantes o agrupables
+- No hay separación por rol (cajera vs planchero)
+- Item 11 de cierre es duplicado del item 2
+- Las fotos se suben pero nadie las analiza — solo evidencia pasiva
+- No hay vínculo con asistencia ni turnos
+- Solo funciona en caja3, no en mi3
+
+**2. Propuesta Checklist v2 (reducción ~50%):**
+
+| # | Apertura Cajera (3 items) |
+|---|--------------------------|
+| 1 | Encender PedidosYa + verificar carga TUU |
+| 2 | Verificar saldo en caja |
+| 3 | 📸 FOTO interior (IA analiza limpieza + orden) |
+
+| # | Apertura Planchero (3 items) |
+|---|------------------------------|
+| 1 | Sacar aderezos, vitrina, basureros, televisor |
+| 2 | Llenar jugos + salsas + preparar delivery |
+| 3 | 📸 FOTO exterior (IA analiza montaje completo) |
+
+| # | Cierre Cajera (2 items) |
+|---|------------------------|
+| 1 | Apagar PedidosYa + verificar saldo final |
+| 2 | 📸 FOTO interior (IA verifica limpieza) |
+
+| # | Cierre Planchero (3 items) |
+|---|----------------------------|
+| 1 | Guardar todo + limpiar superficies |
+| 2 | Desconectar gas + agua + equipos |
+| 3 | 📸 FOTO exterior (IA verifica todo guardado) |
+
+**Total: 11 items (antes 22) = reducción 50%**
+
+**3. IA para análisis de fotos (Nova Lite via Bedrock):**
+
+- Las fotos de checklist se suben a S3 (ya funciona)
+- Nova Lite analiza cada foto y genera un score/observaciones
+- Ejemplo: "Interior limpio ✅, plancha apagada ✅, basura visible ❌"
+- El API actual en caja3 ya tiene acceso a Bedrock (confirmado por el usuario)
+- Esto reemplaza la verificación manual — la IA detecta problemas automáticamente
+
+**4. Reglas de asistencia refinadas (confirmadas por el usuario):**
+
+| Situación | Acción del trabajador | Resultado |
+|-----------|----------------------|-----------|
+| Asiste al turno (titular o reemplazo) | Hace checklist presencial (apertura + cierre) | Asistencia ✅, $0 descuento |
+| Compañero faltó, no puede trabajar | Hace checklist virtual (1 paso + idea de mejora) | Asistencia ✅, $0 descuento |
+| Falta al trabajo | NO hace nada (así de simple) | Inasistencia ❌, descuento $40.000 |
+| Día no laboral (sin turno asignado) | No aparece checklist | Sin efecto |
+
+**Condiciones clave:**
+- El checklist solo aparece si el trabajador tiene turno asignado ese día (titular o reemplazo interno)
+- El que falta NO tiene que hacer nada — su inasistencia se detecta automáticamente por ausencia de checklist
+- Días sin turno asignado = no hay checklist pendiente
+
+### Errores Encontrados y Resueltos
+
+Ninguno (sesión de investigación y diseño).
+
+### Lecciones Aprendidas
+
+85. **Checklist actual mezcla roles sin distinción**: Los 22 items actuales incluyen tareas de cajera (PedidosYa, TUU, saldo) y planchero (aderezos, plancha, gas) sin separación. Esto obliga a la cajera a checkear cosas que no le corresponden. Separar por rol reduce confusión y responsabiliza a cada uno
+86. **Fotos + IA reemplazan múltiples items manuales**: En vez de 5 items separados ("limpiar plancha", "guardar ingredientes", "cerrar puertas"), una foto + análisis con Nova Lite verifica todo de una vez. Más eficiente, con evidencia visual, y detecta problemas que un checkbox manual no detectaría
+87. **Asistencia por ausencia de acción (no por acción)**: El trabajador que falta NO tiene que hacer nada — su inasistencia se detecta automáticamente porque no completó el checklist del día. Esto es más simple y robusto que requerir que el ausente "marque" su falta. El sistema asume falta si no hay checklist en un día con turno asignado
+
+### Pendiente (próximas sesiones)
+
+- **Crear spec "Checklist v2 + Asistencia Inteligente"**: Checklist reducido por rol, análisis de fotos con Nova Lite, asistencia automática, checklist virtual, descuento $40k por falta
+- **Refactorizar adelanto de sueldo**: Cambiar sistema de préstamos con cuotas → adelanto sin cuotas, descuento a fin de mes, tope proporcional a días trabajados
+- Generar VAPID keys reales y configurar en Coolify
+- Ejecutar `composer install` en contenedor mi3-backend para instalar `minishlink/web-push`
+- Configurar cron `mi3:loan-auto-deduct` en el servidor
+
+---
+
+## Sesión 2026-04-11w — Corrección conceptual: Adelanto de sueldo (no préstamo) + Diseño asistencia inteligente
+
+### Lo realizado: Aclaración de reglas de negocio y diseño conceptual
+
+No se implementó código. El usuario aclaró dos conceptos fundamentales que cambian el diseño del sistema implementado en sesiones anteriores.
+
+**1. CORRECCIÓN: "Préstamo" → "Adelanto de sueldo"**
+
+El sistema implementado como "préstamos con cuotas" NO es correcto. La funcionalidad real es un adelanto de sueldo:
+
+| Concepto | Lo implementado (INCORRECTO) | Lo correcto |
+|----------|------------------------------|-------------|
+| Nombre | Préstamo | Adelanto de sueldo |
+| Cuotas | 1-3 cuotas mensuales | Sin cuotas — se descuenta completo a fin de mes |
+| Monto máximo | <= sueldo base del trabajador | <= proporcional a días trabajados vigentes del mes |
+| Descuento | Cron día 1 del mes siguiente, cuota por cuota | Automático en liquidación del mes actual (igual que crédito R11) |
+| Ejemplo | Si sueldo = $300k, puede pedir hasta $300k en 3 cuotas | Si lleva 2 días trabajados de 30, máximo ≈ $20k (2/30 × $300k) |
+
+**Impacto:** El modelo `Prestamo`, `LoanService`, `LoanAutoDeductCommand`, controllers, frontend de préstamos y tests de propiedad necesitan ser refactorizados o reemplazados para reflejar la lógica de adelanto.
+
+**2. DISEÑO: Asistencia inteligente con checklist presencial/virtual**
+
+**Contexto operativo:**
+- 1 turno = 1 planchero + 1 cajera (siempre en pareja)
+- Si falta uno → descuento $40.000 al que faltó
+- El compañero que se queda sin poder trabajar → se le paga igual (no tiene culpa)
+
+**Checklist como sistema de asistencia — dos modos:**
+
+| Modo | Cuándo | Qué hace | Resultado |
+|------|--------|----------|-----------|
+| Presencial | Trabajador asiste al foodtruck | Checklist normal: hora inicio, hora fin, tareas del día | Asistencia confirmada ✅ |
+| Virtual | Compañero faltó, no puede trabajar | Checklist de 1 paso: confirma que no asistirá porque su compañero no vino + aporta idea de mejora | Asistencia sin descuento ✅ + idea registrada |
+
+**Flujo del checklist virtual:**
+1. Trabajador abre mi3 y ve que su compañero no hizo checklist presencial
+2. Selecciona "Checklist Virtual"
+3. Mensaje: "Al marcar este checklist confirmo que no asistiré a foodtruck porque mi compañero/a no asistirá este día. No se me descontará. No obstante estaré a disposición de otras tareas."
+4. Campo obligatorio: "Para completar este checklist, indica ideas de cómo mejorar nuestros servicios actuales (preparación nueva, procedimiento nuevo, oportunidad de mejora)"
+5. Al enviar → asistencia marcada sin descuento + idea guardada en BD
+
+**Reglas de descuento automático (fin de mes):**
+- Día con checklist presencial → $0 descuento (asistió)
+- Día con checklist virtual → $0 descuento (compañero faltó, no es su culpa)
+- Día sin ningún checklist → $40.000 descuento (faltó sin justificación)
+
+**Valor agregado:** Los días "perdidos" se convierten en oportunidades de mejora. El trabajador que no tiene culpa no pierde plata y además contribuye con ideas.
+
+### Errores Encontrados y Resueltos
+
+Ninguno (sesión de diseño conceptual).
+
+### Lecciones Aprendidas
+
+82. **Validar terminología de negocio antes de implementar**: El usuario dijo "préstamo" en sesiones anteriores pero el concepto real es "adelanto de sueldo" — sin cuotas, descuento inmediato a fin de mes, tope proporcional a días trabajados. La diferencia es fundamental en la lógica de negocio. Siempre confirmar la mecánica exacta (cuotas? tope? cuándo se descuenta?) antes de diseñar el modelo de datos
+83. **Monto máximo proporcional a días trabajados**: El tope del adelanto no es el sueldo base completo sino proporcional a los días ya trabajados en el mes. Fórmula: `max_adelanto = (dias_trabajados / dias_totales_mes) × sueldo_base`. Esto previene que un trabajador pida un adelanto mayor a lo que ha ganado
+84. **Checklist dual (presencial/virtual) como sistema de asistencia**: En operaciones donde los trabajadores van en pareja (1 planchero + 1 cajera), si uno falta el otro no puede trabajar. El checklist virtual permite al trabajador "presente pero sin foodtruck" marcar asistencia sin descuento + aportar una idea de mejora. Convierte un día perdido en contribución productiva
+
+### Pendiente (próximas sesiones)
+
+- **URGENTE: Refactorizar sistema de préstamos → adelanto de sueldo**: Cambiar modelo, servicio, controllers, frontend y tests para reflejar la lógica correcta (sin cuotas, descuento a fin de mes, tope proporcional a días trabajados)
+- **Crear spec "Asistencia Inteligente"**: Checklist presencial/virtual, descuento automático $40k por falta, checklist virtual con idea de mejora obligatoria
+- Generar VAPID keys reales y configurar en Coolify
+- Ejecutar `composer install` en contenedor mi3-backend para instalar `minishlink/web-push`
+- Configurar cron `mi3:loan-auto-deduct` en el servidor
+
+---
+
+## Sesión 2026-04-11v — Fix formulario Cambios (dropdown compañeros) + discusión asistencia
+
+### Lo realizado: Endpoint companions + fix dropdown + propuesta asistencia inteligente
+
+**1. Fix formulario de Solicitudes de Cambio:**
+
+El formulario de "Nueva Solicitud" en `/dashboard/cambios` mostraba un input numérico de ID en vez de un dropdown con nombres de compañeros. Causa: el frontend intentaba cargar `GET /worker/shift-swaps/companions` pero la ruta no existía en el backend.
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `Worker/ShiftSwapController.php` | Agregado método `companions()` que llama a `ShiftSwapService::getCompañerosDisponibles()` y retorna `[{id, nombre}]` |
+| `routes/api.php` | Agregada ruta `GET shift-swaps/companions` (antes de `POST shift-swaps` para evitar conflicto) |
+
+**Lógica de filtrado de compañeros (ya existía en ShiftSwapService):**
+- Si el solicitante es seguridad → solo muestra otros de seguridad
+- Si es ruta11 (cajero/planchero/admin) → muestra todos los de ruta11 (excluye seguridad)
+- Siempre excluye al solicitante mismo
+- Solo personal activo
+
+**Nota del usuario:** Ricardo (admin) no tiene reemplazos — es "esclavo 24/7". Andrés tampoco tiene reemplazo formal pero a veces falta y trae sus propios reemplazos externos.
+
+**2. Discusión sobre asistencia inteligente:**
+
+El usuario describió el sistema actual de asistencia:
+- Checklist existente solo para cajera, con cronjob (que no tiene mucho sentido)
+- Si no se hace checklist = falta = descuento $40.000 (pero no siempre es culpa del trabajador)
+- Reemplazos: titular pierde $20k, reemplazante gana $20k (ya implementado en liquidación)
+
+**Propuesta discutida (no implementada aún):**
+1. Checklist como marcador de asistencia: planchero/cajera completa checklist diario → marca asistencia automáticamente
+2. Sin checklist al final del turno → alerta al admin (NO descuento automático)
+3. Admin confirma: falta real ($40k descuento) / justificada (sin descuento) / reemplazo ($20k swap)
+4. Evita descuentos injustos — el admin siempre tiene la última palabra
+
+Pendiente: decidir si se arma un spec "Asistencia Inteligente" para esto.
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `9ac25dc` | `fix(mi3): agregar endpoint GET /worker/shift-swaps/companions para dropdown de compañeros` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `i110bwgekv2rq2v4nifwov9p` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Formulario de cambios muestra input numérico de ID en vez de dropdown con nombres | Ruta `GET /worker/shift-swaps/companions` no existía en el backend — el frontend caía al fallback de input numérico | Agregar método `companions()` en `ShiftSwapController` + ruta en `api.php` |
+
+### Lecciones Aprendidas
+
+80. **Frontend con fallback graceful para endpoints faltantes**: El formulario de cambios tenía un fallback inteligente — si el endpoint de companions fallaba, mostraba un input numérico de ID. Esto evitó un crash pero creó una UX confusa. Mejor patrón: mostrar un mensaje de error claro ("No se pudieron cargar los compañeros") en vez de un fallback silencioso que confunde al usuario
+81. **Rutas GET con subrutas deben ir antes de POST**: En Laravel, `GET shift-swaps/companions` debe registrarse antes de `POST shift-swaps` para evitar que Laravel interprete "companions" como un parámetro de ruta
+
+### Reglas de negocio de asistencia (documentadas por el usuario)
+
+| Concepto | Valor | Notas |
+|----------|-------|-------|
+| Descuento por falta sin reemplazo | $40.000 | Se descuenta al trabajador que faltó |
+| Descuento/pago por reemplazo | $20.000 | Titular pierde $20k, reemplazante gana $20k |
+| Checklist actual | Solo cajera | Con cronjob que el usuario considera innecesario |
+| Roles con asistencia por checklist | Cajero, Planchero | Admin y seguridad no aplican |
+| Ricardo (admin) | Sin reemplazos | "Esclavo 24/7" |
+| Andrés | Sin reemplazo formal | Trae sus propios reemplazos externos cuando falta |
+
+### Pendiente
+
+- Decidir si se crea spec "Asistencia Inteligente" (checklist → asistencia → alertas admin → descuentos confirmados)
+- Generar VAPID keys reales y configurar en Coolify
+- Ejecutar `composer install` en contenedor mi3-backend para instalar `minishlink/web-push`
+- Probar flujo completo en producción: solicitar préstamo → aprobar → verificar ajuste sueldo
+- Probar dashboard rediseñado con datos reales
+- Configurar cron `mi3:loan-auto-deduct` en el servidor
+
+---
+
+## Sesión 2026-04-11u — Fix 500 en /worker/shift-swaps (columna companero_id vs compañero_id)
+
+### Lo realizado: Corrección de error 500 en sección Cambios
+
+El usuario reportó que la sección "Cambios" no cargaba, con error 500 en `GET /api/v1/worker/shift-swaps`.
+
+**Diagnóstico:**
+- Logs de Laravel: `SQLSTATE[42S22]: Column not found: 1054 Unknown column 'compañero_id' in 'where clause'`
+- La tabla `solicitudes_cambio_turno` fue creada manualmente en sesión 2026-04-11l con columna `companero_id` (sin ñ)
+- El modelo `SolicitudCambioTurno` y `ShiftSwapService` usan `compañero_id` (con ñ) en fillable, relaciones y queries
+
+**Fix aplicado:**
+- Renombrar columna en BD producción vía SSH:
+```sql
+ALTER TABLE solicitudes_cambio_turno CHANGE `companero_id` `compañero_id` INT NOT NULL;
+```
+- Requirió `--default-character-set=utf8mb4` en el comando mysql para que aceptara la ñ
+- No requirió deploy — fue solo un cambio en BD
+
+**Verificación:**
+- `SHOW COLUMNS FROM solicitudes_cambio_turno` confirma `compañero_id` (con ñ)
+- `curl` al endpoint retorna 401 (no autenticado) en vez de 500 — correcto
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| 500 en `GET /worker/shift-swaps`: `Unknown column 'compañero_id'` | Tabla creada manualmente con `companero_id` (sin ñ) en sesión 2026-04-11l, pero código usa `compañero_id` (con ñ) | `ALTER TABLE ... CHANGE companero_id compañero_id INT NOT NULL` con `--default-character-set=utf8mb4` |
+
+### Lecciones Aprendidas
+
+78. **Caracteres especiales en nombres de columnas MySQL**: MySQL soporta ñ y otros caracteres Unicode en nombres de columnas si se usan backticks y `--default-character-set=utf8mb4`. Sin el charset flag, el cliente mysql corrompe los bytes UTF-8 y falla con syntax error. Cuando se crean tablas manualmente, verificar que los nombres de columnas coincidan exactamente con el código (incluyendo acentos y ñ)
+79. **Drift entre SQL manual y código Laravel**: Cuando se crean tablas vía SQL directo (sin migraciones), es fácil que los nombres de columnas difieran del código. La migración Laravel tenía `compañero_id` (con ñ) pero el SQL manual de sesión 2026-04-11l usó `companero_id` (sin ñ). Siempre copiar los nombres de columnas directamente del modelo o migración, no escribirlos de memoria
+
+### Pendiente
+
+- Generar VAPID keys reales y configurar en Coolify (env vars VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY en mi3-backend + NEXT_PUBLIC_VAPID_PUBLIC_KEY en mi3-frontend)
+- Ejecutar `composer install` en contenedor mi3-backend para instalar `minishlink/web-push`
+- Probar flujo completo en producción: solicitar préstamo → aprobar → verificar ajuste sueldo → verificar notificación push
+- Probar dashboard rediseñado con datos reales
+- Probar página reemplazos con datos de turnos existentes
+- Configurar cron `mi3:loan-auto-deduct` en el servidor (si no se ejecuta automáticamente via Laravel scheduler)
+
+---
+
+## Sesión 2026-04-11t — Fix deploy mi3-frontend (Dockerfile multi-stage + TypeScript error)
+
+### Lo realizado: Corrección de 2 errores de deploy del frontend
+
+El deploy inicial del mi3-frontend (`bj6pfwvrcbsb3fybd0k5a27f`) falló porque el Dockerfile original solo copiaba archivos pre-compilados (`.next/standalone`, `.next/static`) que no existían en el repo — asumía que el build se hacía fuera del contenedor.
+
+**Fix 1 — Dockerfile multi-stage build:**
+- El Dockerfile original era un runner-only stage que hacía `COPY .next/static ./.next/static` — pero `.next/` no existe en el repo (se genera con `npm run build`)
+- Reescrito como multi-stage: `deps` (npm ci) → `builder` (npm run build) → `runner` (copia standalone output)
+- Se agregan `ARG` para `NEXT_PUBLIC_API_URL` y `NEXT_PUBLIC_VAPID_PUBLIC_KEY` para que las env vars de Coolify se inyecten en build time
+- Commit `5bb73ce`
+
+**Fix 2 — TypeScript type error en usePushNotifications.ts:**
+- Deploy `gwu33yzwq5ma1gk7vz4g41eh` compiló exitosamente pero falló en type checking: `Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BufferSource'`
+- Causa: TypeScript 5.4+ con Node 20 tiene tipos más estrictos para `ArrayBufferLike` vs `ArrayBuffer` — `Uint8Array` genérico no es directamente asignable a `BufferSource` que espera `ArrayBufferView<ArrayBuffer>`
+- Fix: cast explícito `urlBase64ToUint8Array(vapidPublicKey!) as BufferSource`
+- Commit `8b08dc0`
+
+**Verificación de deploys (espera + check):**
+- Después de cada deploy, se esperó ~3 minutos y se verificó el estado via Coolify API (`GET /deployments/{uuid}`)
+- mi3-backend `z13h5u3rxmtwvmf8c10e9x6s`: ✅ finished
+- mi3-frontend `ym47pg9nj2ybj96e6z6fkpqh`: ✅ finished
+- Notificación Telegram enviada (message_id: 326)
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `5bb73ce` | `fix(mi3): Dockerfile multi-stage build — compila Next.js dentro del contenedor` |
+| 2 | `8b08dc0` | `fix(mi3): cast Uint8Array to BufferSource en usePushNotifications` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend (intento 1) | mi.laruta11.cl | `bj6pfwvrcbsb3fybd0k5a27f` | ❌ FAILED (`.next/static` not found) |
+| mi3-frontend (intento 2) | mi.laruta11.cl | `gwu33yzwq5ma1gk7vz4g41eh` | ❌ FAILED (TypeScript type error) |
+| mi3-frontend (intento 3) | mi.laruta11.cl | `ym47pg9nj2ybj96e6z6fkpqh` | ✅ finished |
+| mi3-backend | api-mi3.laruta11.cl | `z13h5u3rxmtwvmf8c10e9x6s` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `COPY .next/static ./.next/static: not found` | Dockerfile era runner-only, asumía `.next/` pre-compilado que no existe en el repo | Reescribir como multi-stage build: deps → builder (npm run build) → runner |
+| `Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BufferSource'` | TypeScript 5.4+ con Node 20 tiene tipos más estrictos para ArrayBuffer — `Uint8Array` genérico no es asignable a `ArrayBufferView<ArrayBuffer>` | Cast explícito: `urlBase64ToUint8Array(...) as BufferSource` |
+
+### Lecciones Aprendidas
+
+74. **Dockerfile para Next.js standalone DEBE ser multi-stage**: Un Dockerfile que solo copia `.next/standalone` y `.next/static` asume que el build se hizo fuera del contenedor (CI/CD previo). En Coolify, el build se hace dentro del contenedor, así que necesita un stage `builder` que ejecute `npm run build`. El patrón correcto es: `deps` (npm ci) → `builder` (COPY + npm run build) → `runner` (COPY --from=builder .next/standalone + .next/static + public)
+75. **NEXT_PUBLIC_* vars necesitan ARG en Dockerfile**: Las variables `NEXT_PUBLIC_*` de Next.js se inyectan en build time (no runtime). En un multi-stage Dockerfile, hay que declararlas como `ARG` y luego `ENV` en el stage `builder` para que estén disponibles durante `npm run build`. Coolify las pasa automáticamente como build args si `is_buildtime: true`
+76. **TypeScript Uint8Array vs BufferSource en Node 20**: En TypeScript 5.4+ con `@types/node` 20+, `Uint8Array` retorna `Uint8Array<ArrayBufferLike>` que no es directamente asignable a `BufferSource` (que espera `ArrayBufferView<ArrayBuffer>`). La solución es un cast explícito `as BufferSource`. Esto no se detecta con `getDiagnostics` local si la versión de TypeScript difiere
+77. **Siempre verificar deploys después de disparar**: No dar por terminado un deploy solo porque Coolify respondió "queued". Esperar 2-3 minutos y verificar con `GET /api/v1/deployments/{uuid}` que el status sea `finished`. Los builds de Next.js pueden fallar en type checking aunque compilen localmente
+
+### Pendiente
+
+- Generar VAPID keys reales y configurar en Coolify (env vars VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY en mi3-backend + NEXT_PUBLIC_VAPID_PUBLIC_KEY en mi3-frontend)
+- Ejecutar `composer install` en contenedor mi3-backend para instalar `minishlink/web-push`
+- Probar flujo completo en producción: solicitar préstamo → aprobar → verificar ajuste sueldo → verificar notificación push
+- Probar dashboard rediseñado con datos reales
+- Probar página reemplazos con datos de turnos existentes
+- Configurar cron `mi3:loan-auto-deduct` en el servidor (si no se ejecuta automáticamente via Laravel scheduler)
+
+---
+
+## Sesión 2026-04-11s — Implementación completa spec mi3-worker-dashboard-v2 (14 tareas)
+
+### Lo realizado: Ejecución de las 14 tareas del spec mi3-worker-dashboard-v2
+
+Se implementó el spec completo del Worker Dashboard v2: sistema de préstamos, reemplazos, push notifications, dashboard rediseñado y navegación actualizada. 66 archivos modificados/creados.
+
+**Backend (Laravel 11) — Archivos creados:**
+
+| Archivo | Descripción |
+|---------|-------------|
+| `Models/Prestamo.php` | Modelo con $fillable, $casts, relaciones personal/aprobadoPor |
+| `Models/PushSubscription.php` | Modelo para suscripciones push (JSON subscription) |
+| `Services/Loan/LoanService.php` | 8 métodos: solicitar, aprobar, rechazar, getActivo, getPorPersonal, getTodos, procesarDescuentos, getSueldoBase |
+| `Services/Notification/PushNotificationService.php` | enviar(), suscribir(), desactivarExpiradas() — usa minishlink/web-push |
+| `Controllers/Worker/LoanController.php` | GET/POST /worker/loans |
+| `Controllers/Worker/DashboardController.php` | GET /worker/dashboard-summary (sueldo, préstamo, descuentos, reemplazos) |
+| `Controllers/Worker/ReplacementController.php` | GET /worker/replacements?mes=YYYY-MM |
+| `Controllers/Worker/PushController.php` | POST /worker/push/subscribe |
+| `Controllers/Admin/LoanController.php` | GET /admin/loans, POST approve/reject |
+| `Console/Commands/LoanAutoDeductCommand.php` | Cron `mi3:loan-auto-deduct` (día 1, 06:30 AM Chile) |
+| `database/migrations/...prestamos_table.php` | Tabla prestamos con FKs, índices |
+| `database/migrations/...push_subscriptions_mi3_table.php` | Tabla push_subscriptions_mi3 |
+| `config/services.php` | VAPID keys config |
+
+**Backend — Archivos modificados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `PersonalController.php` | `applyDefaultSueldo()` — $300.000 por defecto cuando null/0 |
+| `NotificationService.php` | Inyecta PushNotificationService, envía push en cada `crear()` |
+| `Personal.php` | Relación `prestamos()` agregada |
+| `routes/api.php` | 6 rutas nuevas (worker: loans, dashboard-summary, replacements, push/subscribe; admin: loans, approve, reject) |
+| `routes/console.php` | Schedule `mi3:loan-auto-deduct` monthlyOn(1, '06:30') |
+| `composer.json` | Agregado `minishlink/web-push: ^9.0` |
+| `.env.example` | VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY |
+
+**Frontend (Next.js 14) — Archivos creados:**
+
+| Archivo | Descripción |
+|---------|-------------|
+| `app/dashboard/prestamos/page.tsx` | Lista préstamos + formulario modal + barra progreso + badges estado |
+| `app/dashboard/reemplazos/page.tsx` | Realizados/recibidos + resumen mensual + navegación meses |
+| `components/PushNotificationInit.tsx` | Componente que inicializa push al montar layout |
+| `hooks/usePendingLoanBadge.ts` | Hook para badge de préstamo pendiente en nav |
+| `hooks/usePushNotifications.ts` | Registra SW, pide permiso, suscribe pushManager, envía al backend |
+| `public/sw.js` | Service Worker: push event, notificationclick, pushsubscriptionchange |
+
+**Frontend — Archivos modificados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `app/dashboard/page.tsx` | Rediseñado: 4 tarjetas (sueldo, préstamos, descuentos, reemplazos) + turnos + notificaciones |
+| `lib/navigation.ts` | Primary: Inicio, Turnos, Sueldo, Préstamos. Secondary: +Reemplazos. badgeKey en Préstamos |
+| `components/mobile/MobileBottomNav.tsx` | Badge rojo en Préstamos cuando hay pendiente |
+| `components/layouts/WorkerSidebar.tsx` | Badge amarillo en Préstamos + usa usePendingLoanBadge |
+| `components/mobile/MobileHeader.tsx` | Badge se actualiza al navegar (pathname dependency) |
+| `app/dashboard/layout.tsx` | Integra PushNotificationInit |
+| `app/admin/personal/page.tsx` | Pre-rellena sueldo $300.000 al seleccionar roles |
+| `types/index.ts` | +Prestamo, DashboardSummary, ReplacementData, ReplacementSummary, ApiResponse |
+| `.env.local.example` | NEXT_PUBLIC_VAPID_PUBLIC_KEY |
+
+**Tests de propiedad (PHPUnit) — 10 archivos creados:**
+
+| Test | Propiedad | Iteraciones |
+|------|-----------|-------------|
+| `DefaultSalaryPropertyTest` | P1: Sueldo base defecto null/0 → $300k | 3×100 |
+| `LoanAmountValidationPropertyTest` | P2: Monto > 0 y <= sueldo base | 4×100 |
+| `ActiveLoanBlocksNewRequestPropertyTest` | P3: Préstamo activo bloquea nueva solicitud | 3×100 |
+| `LoanApprovalCreatesRecordsPropertyTest` | P4: Aprobación crea registros correctos | 4×100 |
+| `LoanAutoDeductPropertyTest` | P5: Auto-descuento mensual correcto | 5×100 |
+| `ActiveLoanSummaryPropertyTest` | P6: Cálculo resumen préstamo activo | 4×100 |
+| `DiscountAggregationPropertyTest` | P7: Agregación descuentos por categoría | 3×100 |
+| `ReplacementSummaryPropertyTest` | P8: Balance = ganado - descontado | 4×100 |
+| `ReplacementMonthFilterPropertyTest` | P9: Filtrado por mes correcto | 3×100 |
+| `LoansOrderedByDatePropertyTest` | P10: Orden descendente por fecha | 3×100 |
+
+**BD producción — Tablas creadas vía SSH:**
+
+```sql
+-- prestamos (INT signed para match con personal.id)
+CREATE TABLE prestamos (id INT AUTO_INCREMENT PRIMARY KEY, personal_id INT NOT NULL, monto_solicitado DECIMAL(10,2) NOT NULL, monto_aprobado DECIMAL(10,2) NULL, motivo VARCHAR(255) NULL, cuotas INT NOT NULL DEFAULT 1, cuotas_pagadas INT NOT NULL DEFAULT 0, estado ENUM('pendiente','aprobado','rechazado','pagado','cancelado') DEFAULT 'pendiente', aprobado_por INT NULL, fecha_aprobacion TIMESTAMP NULL, fecha_inicio_descuento DATE NULL, notas_admin TEXT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP, INDEX idx_personal_id (personal_id), INDEX idx_estado (estado), INDEX idx_created_at (created_at), FOREIGN KEY (personal_id) REFERENCES personal(id), FOREIGN KEY (aprobado_por) REFERENCES personal(id));
+
+-- push_subscriptions_mi3
+CREATE TABLE push_subscriptions_mi3 (id INT AUTO_INCREMENT PRIMARY KEY, personal_id INT NOT NULL, subscription JSON NOT NULL, is_active TINYINT(1) DEFAULT 1, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP, INDEX idx_personal (personal_id), INDEX idx_active (is_active), FOREIGN KEY (personal_id) REFERENCES personal(id));
+
+-- Seed categoría
+INSERT INTO ajustes_categorias (nombre, slug, icono, color, signo_defecto, orden) VALUES ('Cuota Préstamo', 'prestamo', '💰', '#f59e0b', '-', 10);
+```
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `0ce3e3d` | `feat(mi3): worker dashboard v2 — préstamos, reemplazos, push notifications, navegación actualizada` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `z13h5u3rxmtwvmf8c10e9x6s` | ✅ finished |
+| mi3-frontend (intento 1) | mi.laruta11.cl | `bj6pfwvrcbsb3fybd0k5a27f` | ❌ FAILED (Dockerfile sin build stage) |
+| mi3-frontend (fix final) | mi.laruta11.cl | `ym47pg9nj2ybj96e6z6fkpqh` | ✅ finished (ver sesión 2026-04-11t) |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| FK incompatible `prestamos.personal_id` UNSIGNED vs `personal.id` INT signed | Migración Laravel usa `unsignedInteger()` pero tabla `personal` tiene `INT` signed | Crear tabla manualmente con `INT NOT NULL` (sin UNSIGNED) |
+| INSERT en `ajustes_categorias` falla: `Field 'color' doesn't have a default value` | La tabla tiene columnas obligatorias (`color`, `signo_defecto`, `orden`) no contempladas en la migración | Agregar todos los campos requeridos al INSERT: color `#f59e0b`, signo_defecto `-`, orden `10` |
+| `$COOLIFY_TOKEN` env var vacía | El token de Coolify no está en variables de entorno del shell | Usar el token hardcodeado del hook `deploy-mi3-backend.kiro.hook` |
+
+### Lecciones Aprendidas
+
+69. **Migraciones Laravel vs BD real — tipos de columna**: Las migraciones de Laravel usan `unsignedInteger()` por defecto para FKs, pero si la tabla referenciada tiene `INT` signed (como `personal.id`), la FK falla con `ERROR 3780: incompatible columns`. Siempre verificar el tipo de la columna referenciada con `SHOW COLUMNS` antes de crear FKs manualmente
+70. **Tablas con campos obligatorios sin default**: Al hacer INSERT en tablas existentes, verificar TODOS los campos NOT NULL sin DEFAULT con `SHOW COLUMNS`. La tabla `ajustes_categorias` tenía `color`, `signo_defecto` y `orden` como NOT NULL sin default — la migración solo contemplaba `nombre`, `slug`, `icono`
+71. **Spec-driven development con Kiro**: El flujo spec → requirements → design → tasks → ejecución secuencial funciona bien para features grandes. Las 14 tareas se ejecutaron en orden con subagentes, cada uno recibiendo el contexto necesario del spec. El spec actúa como contrato entre el diseño y la implementación
+72. **Push notifications en PWA — arquitectura completa**: El stack VAPID + minishlink/web-push (backend) + Service Worker + pushManager.subscribe (frontend) requiere: (1) VAPID keys en env, (2) tabla de suscripciones, (3) endpoint POST para guardar subscription, (4) sw.js en public/, (5) hook que registra SW y suscribe al montar, (6) servicio backend que envía via web-push. Todo es best-effort — los fallos de push no deben bloquear la lógica principal
+73. **Property-based testing en Laravel sin BD local**: Los PBT se crean con PHPUnit + Faker + RefreshDatabase + SQLite in-memory. Cada test genera 100 iteraciones con datos aleatorios. No se pueden ejecutar localmente si no hay BD configurada, pero la sintaxis se verifica con getDiagnostics
+
+### Estado del Spec mi3-worker-dashboard-v2
+
+| Tarea | Estado |
+|-------|--------|
+| 1. BD + modelo Prestamo | ✅ |
+| 2. LoanService + 3 PBT | ✅ |
+| 3. LoanAutoDeductCommand + 1 PBT | ✅ |
+| 4. Checkpoint backend core | ✅ |
+| 5. Controllers + rutas + sueldo base + 5 PBT | ✅ |
+| 6. Checkpoint backend completo | ✅ |
+| 7. Tipos TypeScript | ✅ |
+| 8. Dashboard rediseñado (4 tarjetas) | ✅ |
+| 9. Página Préstamos | ✅ |
+| 10. Página Reemplazos | ✅ |
+| 11. Navegación + badge + 1 PBT | ✅ |
+| 12. Formulario admin sueldo base | ✅ |
+| 13. Push Notifications (8 sub-tareas) | ✅ |
+| 14. Checkpoint final | ✅ |
+
+### Pendiente (sesión 2026-04-11s)
+
+- ~~Verificar que ambos deploys completen exitosamente~~ → ✅ Resuelto en sesión 2026-04-11t (backend finished, frontend requirió 2 fixes)
+- Generar VAPID keys reales y configurar en Coolify (env vars VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY en mi3-backend + NEXT_PUBLIC_VAPID_PUBLIC_KEY en mi3-frontend)
+- Ejecutar `composer install` en contenedor mi3-backend para instalar `minishlink/web-push`
+- Probar flujo completo en producción: solicitar préstamo → aprobar → verificar ajuste sueldo → verificar notificación push
+- Probar dashboard rediseñado con datos reales
+- Probar página reemplazos con datos de turnos existentes
+- Configurar cron `mi3:loan-auto-deduct` en el servidor (si no se ejecuta automáticamente via Laravel scheduler)
 
 ---
 

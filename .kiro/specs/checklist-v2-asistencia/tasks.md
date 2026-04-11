@@ -1,0 +1,249 @@
+# Plan de Implementación: Checklist v2 + Asistencia
+
+## Resumen
+
+Implementación incremental del sistema de checklists v2 con asistencia: migraciones de BD (ALTER TABLE + tabla nueva + seed), modelos Eloquent (Checklist, ChecklistItem, ChecklistVirtual), servicios core (ChecklistService, AttendanceService, PhotoAnalysisService), comandos Artisan (creación diaria, detección de ausencias, compañero ausente), controllers REST (worker + admin), frontend con tipos, páginas de checklist trabajador y panel admin, navegación actualizada, y tests de propiedad para las 12 propiedades del diseño.
+
+## Tareas
+
+- [ ] 1. Base de datos — Migraciones y seed
+  - [ ] 1.1 Crear migración ALTER TABLE `checklists` con columnas nuevas
+    - Agregar columnas: personal_id (INT NULL FK→personal), rol (ENUM cajero/planchero), checklist_mode (ENUM presencial/virtual DEFAULT presencial)
+    - Agregar índices: idx_personal_date (personal_id, scheduled_date), idx_rol_date (rol, scheduled_date)
+    - Agregar FK: fk_checklists_personal → personal(id)
+    - Preservar datos históricos existentes sin modificarlos
+    - _Requerimientos: 8.1, 8.2_
+  - [ ] 1.2 Crear migración ALTER TABLE `checklist_items` con columnas de IA
+    - Agregar columnas: ai_score (INT NULL), ai_observations (TEXT NULL), ai_analyzed_at (TIMESTAMP NULL)
+    - _Requerimientos: 8.1, 3.3_
+  - [ ] 1.3 Crear migración ALTER TABLE `checklist_templates` para agregar columna `rol`
+    - Agregar columna: rol (ENUM cajero/planchero NULL)
+    - Agregar índice: idx_type_rol (type, rol)
+    - Actualizar templates existentes asignando rol según descripción (PedidosYa/TUU/saldo→cajero, aderezos/salsas/gas→planchero, fotos→según interior/exterior)
+    - _Requerimientos: 1.2, 1.3, 1.4, 1.5_
+  - [ ] 1.4 Crear migración para tabla nueva `checklist_virtual`
+    - Columnas: id, checklist_id (FK→checklists), personal_id (FK→personal), confirmation_text (TEXT NULL), improvement_idea (TEXT NOT NULL), completed_at (TIMESTAMP NULL), created_at (TIMESTAMP)
+    - Índices: idx_personal_date (personal_id), idx_checklist (checklist_id)
+    - _Requerimientos: 5.4, 8.1_
+  - [ ] 1.5 Crear seed para categoría "inasistencia" en `ajustes_categorias`
+    - INSERT con nombre "Inasistencia", slug "inasistencia", ícono "❌", color "#ef4444", signo_defecto "-"
+    - _Requerimiento: 8.4_
+  - [ ] 1.6 Eliminar GitHub Actions workflows (crons migrados a Coolify/Laravel)
+    - Eliminar `.github/workflows/daily-checklists.yml` (reemplazado por comando Artisan en Laravel scheduler)
+    - Eliminar `.github/workflows/gmail-token-refresh.yml` (mover a cron en Coolify)
+    - _Requerimiento: 8.3_
+
+- [ ] 2. Modelos Eloquent
+  - [ ] 2.1 Crear modelo `Checklist` en `mi3/backend/app/Models/Checklist.php`
+    - Definir $table = 'checklists', $fillable, $casts (scheduled_date→date, started_at/completed_at→datetime)
+    - Relaciones: items() hasMany ChecklistItem, personal() belongsTo Personal, virtual() hasOne ChecklistVirtual
+    - Scopes: scopePendientes(), scopeByRol(), scopeByFecha()
+    - _Requerimientos: 1.1, 2.1_
+  - [ ] 2.2 Crear modelo `ChecklistItem` en `mi3/backend/app/Models/ChecklistItem.php`
+    - Definir $table = 'checklist_items', $fillable, $timestamps = false
+    - Relación: checklist() belongsTo Checklist
+    - _Requerimientos: 2.2, 3.3_
+  - [ ] 2.3 Crear modelo `ChecklistVirtual` en `mi3/backend/app/Models/ChecklistVirtual.php`
+    - Definir $table = 'checklist_virtual', $fillable, $timestamps = false
+    - Relaciones: checklist() belongsTo Checklist, personal() belongsTo Personal
+    - _Requerimientos: 5.4_
+  - [ ] 2.4 Crear modelo `ChecklistTemplate` en `mi3/backend/app/Models/ChecklistTemplate.php`
+    - Definir $table = 'checklist_templates', $fillable (type, rol, item_order, description, requires_photo, active)
+    - Scopes: scopeActive(), scopeByType(), scopeByRol()
+    - _Requerimientos: 1.2, 1.3, 1.4, 1.5_
+    - Scopes: scopePendientes(), scopeByRol(), scopeByFecha()
+    - _Requerimientos: 1.1, 2.1_
+  - [ ] 2.2 Crear modelo `ChecklistItem` en `mi3/backend/app/Models/ChecklistItem.php`
+    - Definir $table = 'checklist_items', $fillable, $timestamps = false
+    - Relación: checklist() belongsTo Checklist
+    - _Requerimientos: 2.2, 3.3_
+  - [ ] 2.3 Crear modelo `ChecklistVirtual` en `mi3/backend/app/Models/ChecklistVirtual.php`
+    - Definir $table = 'checklist_virtual', $fillable, $timestamps = false
+    - Relaciones: checklist() belongsTo Checklist, personal() belongsTo Personal
+    - _Requerimientos: 5.4_
+
+- [ ] 3. ChecklistService — lógica central de checklists
+  - [ ] 3.1 Crear `mi3/backend/app/Services/Checklist/ChecklistService.php` con creación diaria desde templates BD
+    - Implementar `getTemplates(type, rol)`: leer templates activos de tabla `checklist_templates` filtrados por type y rol
+    - Implementar `crearChecklistsDiarios(fecha)`: consultar turnos del día, leer templates de BD por rol, crear checklists apertura+cierre, omitir duplicados
+    - _Requerimientos: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
+  - [ ] 3.2 Implementar métodos de consulta y completado en ChecklistService
+    - `getChecklistsPendientes(personalId, fecha)`: filtrar por rol del trabajador
+    - `marcarItemCompletado(itemId, personalId)`: validar foto si requires_photo, registrar timestamp, actualizar progreso
+    - `completarChecklist(checklistId, personalId)`: marcar como completed, registrar hora
+    - _Requerimientos: 2.1, 2.2, 2.3, 2.4, 2.6_
+  - [ ] 3.3 Implementar métodos de checklist virtual en ChecklistService
+    - `habilitarChecklistVirtual(personalId, checklistId)`: crear registro en checklist_virtual
+    - `completarChecklistVirtual(virtualId, personalId, ideaMejora)`: validar mín. 20 caracteres, guardar idea, marcar completado
+    - _Requerimientos: 5.1, 5.2, 5.3, 5.4_
+  - [ ] 3.4 Implementar métodos admin en ChecklistService
+    - `getChecklistsAdmin(fecha, status)`: lista checklists con filtros
+    - `getDetalleChecklist(checklistId)`: detalle con ítems, fotos, resultados IA
+    - _Requerimientos: 7.1, 7.2, 7.4_
+  - [ ] 3.5 Test de propiedad: creación de checklists corresponde a turnos asignados
+    - **Propiedad 1: Creación de checklists corresponde a turnos asignados**
+    - Generar conjuntos aleatorios de trabajadores con/sin turno, verificar que solo se crean checklists para los que tienen turno, con rol y personal_id correctos
+    - **Valida: Requerimientos 1.1, 1.7**
+  - [ ] 3.6 Test de propiedad: creación idempotente de checklists
+    - **Propiedad 2: Creación idempotente de checklists**
+    - Ejecutar crearChecklistsDiarios dos veces con la misma fecha y turnos, verificar que no se crean duplicados
+    - **Valida: Requerimiento 1.6**
+  - [ ] 3.7 Test de propiedad: filtrado de checklists por rol del trabajador
+    - **Propiedad 3: Filtrado de checklists por rol del trabajador**
+    - Generar checklists con roles mixtos, verificar que getChecklistsPendientes retorna solo los del rol del trabajador
+    - **Valida: Requerimiento 2.1**
+  - [ ] 3.8 Test de propiedad: progreso y completado de checklist
+    - **Propiedad 4: Progreso y completado de checklist**
+    - Generar checklists con N ítems y K completados aleatorios, verificar porcentaje = (K/N)*100 y status = completed sii K = N
+    - **Valida: Requerimientos 2.2, 2.3**
+  - [ ] 3.9 Test de propiedad: validación de foto obligatoria
+    - **Propiedad 5: Validación de foto obligatoria**
+    - Generar ítems con requires_photo=true y photo_url null/no-null, verificar que se rechaza sin foto y se acepta con foto
+    - **Valida: Requerimiento 2.6**
+  - [ ] 3.10 Test de propiedad: validación de idea de mejora en checklist virtual
+    - **Propiedad 9: Validación de idea de mejora en checklist virtual**
+    - Generar strings de longitud aleatoria (0-100), verificar que se rechaza < 20 caracteres y se acepta >= 20
+    - **Valida: Requerimiento 5.3**
+
+- [ ] 4. AttendanceService — lógica de asistencia
+  - [ ] 4.1 Crear `mi3/backend/app/Services/Checklist/AttendanceService.php`
+    - `detectarAusencias(fecha)`: consultar turnos sin checklist completado (ni presencial ni virtual), crear ajuste_sueldo -40000 con categoría "inasistencia", notificar trabajador + admin
+    - `detectarCompaneroAusente(fecha)`: identificar pares de turno, detectar ausente temprano, habilitar checklist virtual para compañero
+    - `tieneAsistencia(personalId, fecha)`: verificar si completó al menos checklist de apertura (presencial o virtual)
+    - _Requerimientos: 4.1, 4.2, 4.3, 4.4, 4.5, 6.1, 6.2, 6.3, 6.4_
+  - [ ] 4.2 Implementar métodos de resumen en AttendanceService
+    - `getResumenAsistenciaMensual(personalId, mes)`: días trabajados, inasistencias, virtuales, monto descuentos
+    - `getResumenAsistenciaAdmin(mes)`: resumen por trabajador para panel admin
+    - _Requerimientos: 7.3_
+  - [ ] 4.3 Test de propiedad: determinación de asistencia por completado de checklist
+    - **Propiedad 7: Determinación de asistencia por completado de checklist**
+    - Generar trabajadores con turno (titular/reemplazante) y combinaciones de checklists completados/no completados, verificar presente sin descuento si completó apertura, ausente con ajuste -40000 si no completó nada
+    - **Valida: Requerimientos 4.1, 4.2, 4.3, 4.4, 4.5, 5.5**
+  - [ ] 4.4 Test de propiedad: detección de compañero ausente y habilitación de checklist virtual
+    - **Propiedad 8: Detección de compañero ausente y habilitación de checklist virtual**
+    - Generar pares de turno con combinaciones de presencia/ausencia, verificar que se habilita virtual solo cuando exactamente uno está ausente, no cuando ambos están ausentes
+    - **Valida: Requerimientos 5.1, 6.2, 6.4**
+  - [ ] 4.5 Test de propiedad: correctitud del resumen mensual de asistencia
+    - **Propiedad 10: Correctitud del resumen mensual de asistencia**
+    - Generar turnos y checklists aleatorios para un mes, verificar que días_trabajados + inasistencias = total_turnos y monto_descuentos = inasistencias × 40000
+    - **Valida: Requerimiento 7.3**
+
+- [ ] 5. PhotoAnalysisService — fotos y análisis IA
+  - [ ] 5.1 Crear `mi3/backend/app/Services/Checklist/PhotoAnalysisService.php`
+    - `subirFotoS3(foto)`: subir a bucket laruta11-images, path checklist/YYYY/MM/, retornar URL
+    - `analizarConIA(s3Url, contexto)`: enviar a Amazon Nova Lite (Bedrock) con prompt según contexto (interior/exterior × apertura/cierre), timeout 15s, retornar score + observaciones
+    - `subirYAnalizar(foto, itemId, contexto)`: orquestar subida + análisis, guardar resultado en checklist_items, manejar timeout como "pendiente"
+    - _Requerimientos: 3.1, 3.2, 3.3, 3.4, 3.5_
+  - [ ] 5.2 Test de propiedad: selección de prompt IA según contexto
+    - **Propiedad 6: Selección de prompt IA según contexto**
+    - Generar todas las combinaciones de tipo de foto (interior/exterior) y tipo de checklist (apertura/cierre), verificar que se selecciona el prompt correcto
+    - **Valida: Requerimiento 3.2**
+
+- [ ] 6. Checkpoint — Backend servicios core
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 7. Artisan Commands — Tareas programadas
+  - [ ] 7.1 Crear comando `mi3:create-daily-checklists`
+    - Ejecutar ChecklistService::crearChecklistsDiarios() para la fecha actual
+    - Enviar notificación push a trabajadores con checklists creados
+    - Registrar en Scheduler a las 14:00 Chile
+    - _Requerimientos: 1.1, 8.3, 10.1_
+  - [ ] 7.2 Crear comando `mi3:detect-absences`
+    - Ejecutar AttendanceService::detectarAusencias() para la fecha actual
+    - Enviar notificación push al trabajador ausente (descuento $40.000) y notificación in-app al admin
+    - Registrar en Scheduler a las 02:00 Chile
+    - _Requerimientos: 4.2, 4.3, 10.3, 10.4_
+  - [ ] 7.3 Crear comando `mi3:check-companion-absence`
+    - Ejecutar AttendanceService::detectarCompaneroAusente() para la fecha actual
+    - Enviar notificación push al trabajador afectado informando que debe completar checklist virtual
+    - Registrar en Scheduler a las 19:00 Chile
+    - _Requerimientos: 6.2, 6.3, 10.2_
+
+- [ ] 8. Controllers backend (Worker + Admin)
+  - [ ] 8.1 Crear `Worker/ChecklistController` con endpoints
+    - GET /api/v1/worker/checklists → checklists pendientes del día (filtrados por rol)
+    - POST /api/v1/worker/checklists/{id}/items/{itemId}/complete → marcar ítem completado
+    - POST /api/v1/worker/checklists/{id}/items/{itemId}/photo → subir foto (multipart)
+    - POST /api/v1/worker/checklists/{id}/complete → completar checklist
+    - GET /api/v1/worker/checklists/virtual → checklist virtual disponible
+    - POST /api/v1/worker/checklists/virtual/{id}/complete → completar virtual con idea de mejora
+    - _Requerimientos: 2.1, 2.2, 2.3, 2.5, 2.6, 3.1, 5.2, 5.3, 5.4_
+  - [ ] 8.2 Crear `Admin/ChecklistController` con endpoints
+    - GET /api/v1/admin/checklists → lista checklists con filtro fecha y status
+    - GET /api/v1/admin/checklists/{id} → detalle checklist con ítems y resultados IA
+    - GET /api/v1/admin/checklists/attendance → resumen asistencia mensual por trabajador
+    - GET /api/v1/admin/checklists/ideas → ideas de mejora de virtuales ordenadas por fecha desc
+    - _Requerimientos: 7.1, 7.2, 7.3, 7.4, 7.5_
+  - [ ] 8.3 Registrar nuevas rutas en `mi3/backend/routes/api.php`
+    - Agregar rutas worker: checklists, checklists/{id}/items/{itemId}/complete, photo, complete, virtual
+    - Agregar rutas admin: checklists, checklists/{id}, attendance, ideas
+    - _Requerimientos: 9.1, 9.3_
+  - [ ] 8.4 Test de propiedad: filtrado por fecha retorna solo checklists correspondientes
+    - **Propiedad 11: Filtrado por fecha retorna solo checklists correspondientes**
+    - Generar checklists en múltiples fechas, verificar que el filtro por fecha retorna solo los de esa fecha
+    - **Valida: Requerimiento 7.4**
+  - [ ] 8.5 Test de propiedad: ideas de mejora ordenadas por fecha descendente
+    - **Propiedad 12: Ideas de mejora ordenadas por fecha descendente**
+    - Generar checklists virtuales completados con fechas aleatorias, verificar orden descendente en respuesta
+    - **Valida: Requerimiento 7.5**
+
+- [ ] 9. Checkpoint — Backend completo
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 10. Frontend — Tipos e interfaces TypeScript
+  - [ ] 10.1 Agregar tipos en `mi3/frontend/types/index.ts`
+    - Interfaces: Checklist, ChecklistItem, ChecklistVirtual, ChecklistDetail, AttendanceSummary, ImprovementIdea
+    - Tipos para respuestas de API: ChecklistListResponse, ChecklistDetailResponse, AttendanceResponse, IdeasResponse
+    - _Requerimientos: 2.1, 7.1, 7.3, 7.5_
+
+- [ ] 11. Frontend — Página de Checklist del Trabajador
+  - [ ] 11.1 Crear `mi3/frontend/app/dashboard/checklist/page.tsx`
+    - Mostrar checklists pendientes (apertura y/o cierre) filtrados por rol
+    - Barra de progreso con porcentaje y cantidad de ítems restantes
+    - Botón para marcar ítem completado (deshabilitado si requiere foto y no hay foto)
+    - Componente de subida de foto con preview y manejo de error/reintento
+    - Mensaje "No tienes checklists pendientes" si no hay turno
+    - Consumir GET /api/v1/worker/checklists
+    - _Requerimientos: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 3.5_
+  - [ ] 11.2 Implementar sección de checklist virtual en la misma página
+    - Mostrar texto de confirmación del checklist virtual
+    - Campo de texto obligatorio para idea de mejora (mín. 20 caracteres, validación client-side)
+    - Botón de completar virtual
+    - Consumir GET /api/v1/worker/checklists/virtual y POST .../virtual/{id}/complete
+    - _Requerimientos: 5.2, 5.3, 5.4_
+
+- [ ] 12. Frontend — Panel Admin de Checklists
+  - [ ] 12.1 Crear `mi3/frontend/app/admin/checklists/page.tsx`
+    - Tab "Checklists del día": lista con estado (badge color), progreso, trabajador, filtro por fecha
+    - Tab "Asistencia": resumen mensual con días trabajados, inasistencias, virtuales, monto descuentos por trabajador
+    - Tab "Ideas de mejora": lista de ideas de virtuales con nombre del trabajador y fecha
+    - Consumir endpoints admin: checklists, attendance, ideas
+    - _Requerimientos: 7.1, 7.2, 7.3, 7.4, 7.5_
+  - [ ] 12.2 Crear vista de detalle de checklist en admin
+    - Modal o página con detalle de cada ítem: descripción, hora completado, foto (si aplica), puntaje IA y observaciones
+    - Indicador visual para ítems con análisis IA pendiente
+    - Consumir GET /api/v1/admin/checklists/{id}
+    - _Requerimientos: 7.2_
+
+- [ ] 13. Frontend — Navegación actualizada
+  - [ ] 13.1 Actualizar `mi3/frontend/lib/navigation.ts`
+    - Agregar ítem "Checklist" en secondaryNavItems del trabajador: href '/dashboard/checklist', icon ClipboardCheck, badgeKey 'checklist-pendiente'
+    - Agregar ítem "Checklists" en adminSecondaryNavItems: href '/admin/checklists', icon ClipboardCheck
+    - _Requerimientos: 9.1, 9.3_
+  - [ ] 13.2 Implementar badge de checklists pendientes en navegación
+    - Mostrar indicador visual cuando el trabajador tiene checklists pendientes para el día
+    - Consumir estado de checklists pendientes para activar/desactivar badge
+    - _Requerimiento: 9.2_
+
+- [ ] 14. Checkpoint final
+  - Ensure all tests pass, ask the user if questions arise.
+
+## Notas
+
+- Todos los tests de propiedad son obligatorios (12 propiedades del diseño)
+- Cada tarea referencia requerimientos específicos para trazabilidad
+- Los checkpoints permiten validación incremental entre backend servicios, backend completo, y frontend
+- Los tests de propiedad usan PHPUnit con generadores custom (random_int, Faker, loops) con mínimo 100 iteraciones
+- Las fotos se suben a S3 bucket laruta11-images en path checklist/YYYY/MM/
+- El análisis de IA con Bedrock tiene timeout de 15s; si falla, el checklist continúa normalmente
+- Las notificaciones push reutilizan el PushNotificationService existente
