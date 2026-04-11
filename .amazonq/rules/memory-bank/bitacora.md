@@ -115,6 +115,9 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 15. **Sanctum personal_access_tokens**: Laravel Sanctum requiere la tabla `personal_access_tokens` en la BD para crear tokens. Si se usa una BD compartida existente (no creada por Laravel), hay que crear esta tabla manualmente. Sin ella, `createToken()` da 500 sin mensaje claro en el log
 16. **Next.js middleware vs localStorage**: El middleware de Next.js corre en el edge (server-side) y NO tiene acceso a localStorage. Para auth, guardar el token también como cookie (`document.cookie`) que sí es accesible desde el middleware
 17. **Next.js cache en producción**: `x-nextjs-cache: HIT` significa que la página está sirviendo una versión cacheada del build anterior. Cambios en el código de la página requieren un redeploy para que tomen efecto
+18. **router.push vs window.location.href**: En Next.js, `router.push` hace client-side navigation que NO envía cookies recién seteadas. Usar `window.location.href` para hard redirect que sí las incluye
+19. **Sanctum token con pipe `|`**: El token Sanctum tiene formato `id|hash`. El `|` debe ser `encodeURIComponent`-eado al guardarlo en cookies
+20. **Test Sanctum via SSH**: Se puede crear tokens de prueba con `php artisan tinker --execute` y testear endpoints con curl directamente — útil para aislar problemas frontend vs backend
 
 ### Hooks Configurados
 
@@ -182,6 +185,14 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 - **Fix**: Redeploy de mi3-frontend disparado (deployment `dzrprcdx39uojy0bb7gwkev8`)
 - **Pendiente**: Verificar que después del redeploy el login complete el flujo hasta `/admin`
 
+### Test SSH Backend (confirmado OK)
+
+```
+GET /api/v1/auth/me con Bearer token → 200
+{"success":true,"user":{"id":4,"nombre":"Ricardo Huiscaleo","email":"ricardo.huiscaleo@gmail.com","personal_id":5,"rol":"administrador,seguridad","is_admin":true}}
+```
+Backend Sanctum 100% funcional. El problema es solo del frontend (cookies + redirect).
+
 ### Errores Adicionales Resueltos (sesión final)
 
 | Error | Causa | Solución |
@@ -191,6 +202,7 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 | `api.php` con `<?php` duplicado al hacer append | Error de scripting al inyectar rutas | Limpiar archivo con `head -75` antes de append |
 | Google callback 500 Server Error | Tabla `personal_access_tokens` de Sanctum no existía en la BD | Crear tabla manualmente vía SSH: `CREATE TABLE personal_access_tokens (...)` |
 | Login → `/admin` redirect loop | Middleware Next.js lee cookies pero login page cacheada no las setea (build viejo) | Redeploy mi3-frontend para que tome código con `document.cookie` |
+| Cookies no se setean tras OAuth redirect | `document.cookie` con `SameSite=Lax` + `router.push` no persiste cookies en redirect cross-site (Google→api→frontend) | Usar `window.location.href` (hard redirect) + `encodeURIComponent` en token + middleware permisivo que no bloquea page loads |
 
 ---
 
