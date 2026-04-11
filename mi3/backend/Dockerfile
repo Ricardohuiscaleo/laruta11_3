@@ -33,8 +33,14 @@ COPY bootstrap/app.php /var/www/html/bootstrap/app.php
 # Empty .env — Coolify injects env vars at runtime
 RUN rm -f .env && touch .env
 
+# Generate APP_KEY for build (will be overridden by Coolify env var at runtime)
+RUN php artisan key:generate --force --no-interaction
+
 # Dump autoload with our custom classes
 RUN composer dump-autoload --optimize --no-scripts
+
+# Clear and cache config/routes for production
+RUN php artisan config:clear && php artisan route:clear
 
 # Permissions
 RUN chown -R www-data:www-data storage bootstrap/cache
