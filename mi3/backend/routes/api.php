@@ -34,6 +34,7 @@ Route::prefix('v1')->group(function () {
         Route::get('credit/transactions', [\App\Http\Controllers\Worker\CreditController::class, 'transactions']);
         Route::get('attendance', [\App\Http\Controllers\Worker\AttendanceController::class, 'index']);
         Route::get('shift-swaps', [\App\Http\Controllers\Worker\ShiftSwapController::class, 'index']);
+        Route::get('shift-swaps/companions', [\App\Http\Controllers\Worker\ShiftSwapController::class, 'companions']);
         Route::post('shift-swaps', [\App\Http\Controllers\Worker\ShiftSwapController::class, 'store']);
         Route::get('notifications', [\App\Http\Controllers\Worker\NotificationController::class, 'index']);
         Route::patch('notifications/{id}/read', [\App\Http\Controllers\Worker\NotificationController::class, 'markAsRead']);

@@ -43,4 +43,17 @@ class ShiftSwapController extends Controller
             ],
         ], 201);
     }
+
+    public function companions(Request $request): JsonResponse
+    {
+        $personal = $request->get('personal');
+
+        $companions = $this->shiftSwapService->getCompañerosDisponibles($personal)
+            ->map(fn($p) => ['id' => $p->id, 'nombre' => $p->nombre]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $companions,
+        ]);
+    }
 }
