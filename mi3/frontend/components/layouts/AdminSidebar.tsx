@@ -4,9 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home, Users, Calendar, Receipt, SlidersHorizontal,
-  CreditCard, ArrowLeftRight, X, Menu, LogOut,
+  CreditCard, ArrowLeftRight, LogOut,
 } from 'lucide-react';
-import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/auth';
 
@@ -22,63 +21,34 @@ const links = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
 
   return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed left-4 top-4 z-40 rounded-lg bg-amber-700 p-2 text-white shadow-lg md:hidden"
-        aria-label="Abrir menú"
-      >
-        <Menu className="h-5 w-5" />
-      </button>
-
-      {open && (
-        <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setOpen(false)} />
-      )}
-
-      <aside className={cn(
-        'fixed inset-y-0 left-0 z-50 w-64 bg-amber-800 text-white shadow-xl transition-transform md:translate-x-0 md:static md:shadow-none',
-        open ? 'translate-x-0' : '-translate-x-full'
-      )}>
-        <div className="flex items-center justify-between border-b border-amber-700 px-4 py-4">
-          <h2 className="text-lg font-bold">mi3 Admin</h2>
-          <button onClick={() => setOpen(false)} className="md:hidden" aria-label="Cerrar menú">
-            <X className="h-5 w-5 text-amber-200" />
-          </button>
-        </div>
-        <nav className="mt-2 space-y-1 px-2">
-          {links.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                  active
-                    ? 'bg-amber-700 text-white'
-                    : 'text-amber-100 hover:bg-amber-700/50'
-                )}
-              >
-                <Icon className="h-5 w-5" />
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="mt-auto border-t border-amber-700 px-2 py-3">
-          <button
-            onClick={logout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-amber-200 transition-colors hover:bg-amber-700/50 hover:text-white"
-          >
-            <LogOut className="h-5 w-5" />
-            Cerrar sesión
-          </button>
-        </div>
-      </aside>
-    </>
+    <aside className="hidden md:flex md:flex-col w-64 bg-red-600 text-white">
+      <div className="flex items-center border-b border-red-500 px-4 py-4">
+        <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-work.png" alt="La Ruta 11 Work" className="h-8 w-auto" />
+      </div>
+      <nav className="mt-2 flex-1 space-y-1 px-2">
+        {links.map(({ href, label, icon: Icon }) => {
+          const active = pathname === href;
+          return (
+            <Link key={href} href={href}
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                active ? 'bg-red-500 text-white' : 'text-red-100 hover:bg-red-500/50'
+              )}>
+              <Icon className="h-5 w-5" />
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
+      <div className="border-t border-red-500 px-2 py-3">
+        <button onClick={logout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-200 transition-colors hover:bg-red-500/50 hover:text-white">
+          <LogOut className="h-5 w-5" />
+          Cerrar sesión
+        </button>
+      </div>
+    </aside>
   );
 }

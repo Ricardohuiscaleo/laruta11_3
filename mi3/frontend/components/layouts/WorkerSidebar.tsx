@@ -24,8 +24,8 @@ export default function WorkerSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex md:flex-col w-64 bg-white border-r">
-      <div className="flex items-center border-b px-4 py-4">
+    <aside className="hidden md:flex md:flex-col w-64 bg-red-600 text-white">
+      <div className="flex items-center border-b border-red-500 px-4 py-4">
         <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-work.png" alt="La Ruta 11 Work" className="h-8 w-auto" />
       </div>
       <nav className="mt-2 flex-1 space-y-1 px-2">
@@ -38,8 +38,8 @@ export default function WorkerSidebar() {
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                 active
-                  ? 'bg-amber-50 text-amber-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'bg-red-500 text-white'
+                  : 'text-red-100 hover:bg-red-500/50'
               )}
             >
               <Icon className="h-5 w-5" />
@@ -48,10 +48,10 @@ export default function WorkerSidebar() {
           );
         })}
       </nav>
-      <div className="border-t px-2 py-3">
+      <div className="border-t border-red-500 px-2 py-3">
         <button
           onClick={logout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-200 transition-colors hover:bg-red-500/50 hover:text-white"
         >
           <LogOut className="h-5 w-5" />
           Cerrar sesión
