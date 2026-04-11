@@ -20,7 +20,7 @@ class ShiftService
         $endDate = $startDate->copy()->endOfMonth()->startOfDay();
 
         // 1. Get manual shifts from DB
-        $dbShifts = Turno::with('reemplazante')
+        $dbShifts = Turno::with(['reemplazante', 'personal'])
             ->whereBetween('fecha', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->orderBy('fecha')
             ->orderBy('personal_id')
@@ -50,6 +50,7 @@ class ShiftService
             $result->push([
                 'id' => $turno->id,
                 'personal_id' => $turno->personal_id,
+                'personal_nombre' => $turno->personal?->nombre,
                 'fecha' => $turno->fecha->format('Y-m-d'),
                 'tipo' => $turno->tipo,
                 'is_dynamic' => false,
@@ -121,16 +122,17 @@ class ShiftService
         $cycles = config('mi3.shift_cycles');
         $shifts = [];
 
-        // Build personal name → ID map
+        // Build personal name → ID map (and ID → name for display)
         $names = [];
         foreach ($cycles as $cycle) {
             $names[] = $cycle['person_a'];
             $names[] = $cycle['person_b'];
         }
-        $personalMap = Personal::whereIn('nombre', array_unique($names))
+        $personalData = Personal::whereIn('nombre', array_unique($names))
             ->where('activo', 1)
-            ->pluck('id', 'nombre')
-            ->toArray();
+            ->get(['id', 'nombre']);
+        $personalMap = $personalData->pluck('id', 'nombre')->toArray();
+        $personalNames = $personalData->pluck('nombre', 'id')->toArray();
 
         // Track existing seguridad shifts to avoid duplicates (same as get_turnos.php)
         $turnosSegExistentes = [];
@@ -179,6 +181,7 @@ class ShiftService
                     $shifts[] = [
                         'id' => $idPrefix . $fechaStr . '_' . $personalId,
                         'personal_id' => $personalId,
+                        'personal_nombre' => $personalNames[$personalId] ?? null,
                         'fecha' => $fechaStr,
                         'tipo' => $tipo,
                         'is_dynamic' => true,
