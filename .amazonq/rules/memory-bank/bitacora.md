@@ -86,6 +86,7 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 - `tuu_orders`: pagado_con_credito_r11, monto_credito_r11, payment_method ENUM incluye 'r11_credit'
 - `r11_credit_transactions`: tabla nueva (id, user_id, amount, type, description, order_id, created_at)
 - `personal`: user_id, rut, telefono agregados; 'rider' agregado al SET de rol
+- `personal_access_tokens`: tabla Sanctum creada manualmente (requerida para auth tokens de mi3)
 
 ### Deploy — Reglas
 
@@ -111,6 +112,7 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 12. **SII Chile**: Tiene nombre del contribuyente pero requiere captcha — no viable para automatización
 13. **Coolify Docker cache**: Los builds pueden terminar "finished" pero servir código viejo si la imagen Docker está cacheada. Workaround: inyectar archivos vía SSH o agregar `ARG CACHE_BUST=$(date)` al Dockerfile
 14. **Hotfix en contenedor Docker**: Se puede inyectar código directamente con `cat file | docker exec -i CONTAINER tee /path > /dev/null` + `php artisan route:clear`
+15. **Sanctum personal_access_tokens**: Laravel Sanctum requiere la tabla `personal_access_tokens` en la BD para crear tokens. Si se usa una BD compartida existente (no creada por Laravel), hay que crear esta tabla manualmente. Sin ella, `createToken()` da 500 sin mensaje claro en el log
 
 ### Hooks Configurados
 
@@ -168,6 +170,12 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 - **Workaround actual**: Inyectar archivos directamente en el contenedor vía SSH (`docker exec -i ... tee`)
 - **TODO**: Investigar cómo forzar rebuild sin cache en Coolify, o agregar un `ARG CACHE_BUST` al Dockerfile
 
+### Estado Google OAuth (actual)
+
+- Redirect (`/auth/google/redirect`) → ✅ Funciona, redirige a accounts.google.com
+- Callback (`/auth/google/callback`) → ✅ Tabla `personal_access_tokens` creada, pendiente verificar flujo completo
+- Login page (`mi.laruta11.cl/login`) → ✅ Diseño actualizado con branding mi3, botón Google conectado a API
+
 ### Errores Adicionales Resueltos (sesión final)
 
 | Error | Causa | Solución |
@@ -175,6 +183,7 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 | Rutas Google OAuth no registradas en contenedor | Coolify cachea imagen Docker, no copia código nuevo | Inyección directa vía SSH: `cat file \| docker exec -i ... tee` |
 | AuthController sin métodos googleRedirect/googleCallback | Mismo problema de cache — COPY del Dockerfile no actualiza | Inyección directa del AuthController.php y AuthService.php |
 | `api.php` con `<?php` duplicado al hacer append | Error de scripting al inyectar rutas | Limpiar archivo con `head -75` antes de append |
+| Google callback 500 Server Error | Tabla `personal_access_tokens` de Sanctum no existía en la BD | Crear tabla manualmente vía SSH: `CREATE TABLE personal_access_tokens (...)` |
 
 ---
 
