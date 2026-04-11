@@ -25,7 +25,7 @@ export default function WorkerSidebar() {
   return (
     <aside className="hidden md:flex md:flex-col w-64 bg-white border-r">
       <div className="flex items-center border-b px-4 py-4">
-        <h2 className="text-lg font-bold text-amber-700">mi3</h2>
+        <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-work.png" alt="La Ruta 11 Work" className="h-8 w-auto" />
       </div>
       <nav className="mt-2 space-y-1 px-2">
         {links.map(({ href, label, icon: Icon }) => {

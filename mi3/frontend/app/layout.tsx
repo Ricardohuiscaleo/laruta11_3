@@ -13,6 +13,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#ef4444" />
+        <link rel="apple-touch-icon" href="https://laruta11-images.s3.amazonaws.com/menu/logo-work.png" />
+      </head>
       <body className="min-h-screen bg-gray-50 text-gray-900 antialiased">
         {children}
       </body>

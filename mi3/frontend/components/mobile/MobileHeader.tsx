@@ -28,7 +28,7 @@ export default function MobileHeader() {
     <header className="fixed top-0 left-0 right-0 z-40 md:hidden h-14 bg-white border-b border-gray-200 shadow-sm">
       <div className="flex items-center justify-between h-full px-4">
         {/* Branding */}
-        <span className="font-bold text-amber-700">mi3</span>
+        <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-work.png" alt="La Ruta 11 Work" className="h-8 w-auto" />
 
         {/* Page title */}
         <span className="text-sm font-medium text-gray-700">{title}</span>
