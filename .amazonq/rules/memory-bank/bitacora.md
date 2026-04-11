@@ -113,6 +113,8 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 13. **Coolify Docker cache**: Los builds pueden terminar "finished" pero servir código viejo si la imagen Docker está cacheada. Workaround: inyectar archivos vía SSH o agregar `ARG CACHE_BUST=$(date)` al Dockerfile
 14. **Hotfix en contenedor Docker**: Se puede inyectar código directamente con `cat file | docker exec -i CONTAINER tee /path > /dev/null` + `php artisan route:clear`
 15. **Sanctum personal_access_tokens**: Laravel Sanctum requiere la tabla `personal_access_tokens` en la BD para crear tokens. Si se usa una BD compartida existente (no creada por Laravel), hay que crear esta tabla manualmente. Sin ella, `createToken()` da 500 sin mensaje claro en el log
+16. **Next.js middleware vs localStorage**: El middleware de Next.js corre en el edge (server-side) y NO tiene acceso a localStorage. Para auth, guardar el token también como cookie (`document.cookie`) que sí es accesible desde el middleware
+17. **Next.js cache en producción**: `x-nextjs-cache: HIT` significa que la página está sirviendo una versión cacheada del build anterior. Cambios en el código de la página requieren un redeploy para que tomen efecto
 
 ### Hooks Configurados
 
@@ -173,8 +175,12 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 ### Estado Google OAuth (actual)
 
 - Redirect (`/auth/google/redirect`) → ✅ Funciona, redirige a accounts.google.com
-- Callback (`/auth/google/callback`) → ✅ Tabla `personal_access_tokens` creada, pendiente verificar flujo completo
-- Login page (`mi.laruta11.cl/login`) → ✅ Diseño actualizado con branding mi3, botón Google conectado a API
+- Callback (`/auth/google/callback`) → ✅ Funciona, retorna token Sanctum + user data de Ricardo correctamente
+- Token generado: `3|yudowL0pT5C8cKPiPl8FhvwT6TSSHq6r4yrSRISvb590aa51` (Ricardo, admin)
+- Login page recibe token y user → ✅ Guarda en localStorage + cookies
+- Redirect a `/admin` → ❌ Middleware redirige a `/login` (loop) porque el frontend cacheado por Next.js no tiene el código de cookies
+- **Fix**: Redeploy de mi3-frontend disparado (deployment `dzrprcdx39uojy0bb7gwkev8`)
+- **Pendiente**: Verificar que después del redeploy el login complete el flujo hasta `/admin`
 
 ### Errores Adicionales Resueltos (sesión final)
 
@@ -184,6 +190,7 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 | AuthController sin métodos googleRedirect/googleCallback | Mismo problema de cache — COPY del Dockerfile no actualiza | Inyección directa del AuthController.php y AuthService.php |
 | `api.php` con `<?php` duplicado al hacer append | Error de scripting al inyectar rutas | Limpiar archivo con `head -75` antes de append |
 | Google callback 500 Server Error | Tabla `personal_access_tokens` de Sanctum no existía en la BD | Crear tabla manualmente vía SSH: `CREATE TABLE personal_access_tokens (...)` |
+| Login → `/admin` redirect loop | Middleware Next.js lee cookies pero login page cacheada no las setea (build viejo) | Redeploy mi3-frontend para que tome código con `document.cookie` |
 
 ---
 
