@@ -417,6 +417,14 @@ TOTAL_DELIVERY = fee_bruto − descuento_rl6 + recargo_tarjeta
 3. Sistema vincula automáticamente en tabla `personal` + envía link a mi.laruta11.cl
 4. Trabajador entra a mi.laruta11.cl con su cuenta (Google o email) → ve dashboard
 
+**Test de flujo completo (2026-04-11):**
+- Usuario test creado: id=163, email=info@digitalizatodo.cl, password=`password`
+- Registro R11 exitoso vía API: selfie subida a S3, datos guardados en BD
+- Vinculado en personal: id=14, rol=cajero, user_id=163, activo=1
+- Telegram: notificación enviada (pendiente verificar recepción)
+- mi3 login: disponible en mi.laruta11.cl/login con email/password
+- Pendiente: verificar que Telegram llegó, aprobar, verificar email, verificar dashboard trabajador
+
 **Redis:**
 - Actualizar REDIS_PASSWORD en Coolify dashboard para app3 y caja3 (valor correcto: `kEfdMKJoEvNTkqFWhEC4hHM3otMA1W/xm/NiDsVBR0I=`)
 - Agregar `pecl install redis` al Dockerfile de app3 para que persista entre deploys
