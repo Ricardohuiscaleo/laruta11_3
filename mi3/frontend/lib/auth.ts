@@ -1,4 +1,21 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
+const TOKEN_KEY = 'mi3_token';
+
+export function getToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setToken(token: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function removeToken(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem('mi3_user');
+}
 
 export async function logout(): Promise<void> {
   try {
@@ -8,13 +25,8 @@ export async function logout(): Promise<void> {
       credentials: 'include',
     });
   } catch {
-    // Even if the API call fails, clear local state
+    // Even if API fails, clear local state
   }
-  // Clear any localStorage remnants
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('mi3_token');
-    localStorage.removeItem('mi3_user');
-  }
-  // Hard redirect to login (cookies cleared by backend)
+  removeToken();
   window.location.href = '/login';
 }
