@@ -27,15 +27,21 @@ function LoginForm() {
 
     if (token && userData) {
       try {
-        localStorage.setItem('mi3_token', token);
         const user = JSON.parse(decodeURIComponent(userData));
+        // Save to localStorage
+        localStorage.setItem('mi3_token', token);
         localStorage.setItem('mi3_user', JSON.stringify(user));
-        router.push(user.is_admin ? '/admin' : '/dashboard');
+        // Save to cookies (for middleware)
+        document.cookie = `mi3_token=${encodeURIComponent(token)}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax; Secure`;
+        document.cookie = `mi3_role=${user.is_admin ? 'admin' : 'worker'}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax; Secure`;
+        // Hard redirect (not router.push) to ensure cookies are sent on next request
+        window.location.href = user.is_admin ? '/admin' : '/dashboard';
+        return;
       } catch {
         setError('Error procesando respuesta de Google');
       }
     }
-  }, [searchParams, router]);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
