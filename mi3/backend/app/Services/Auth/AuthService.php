@@ -152,4 +152,67 @@ class AuthService
             return null;
         }
     }
+
+    /**
+     * Login with Google OAuth authorization code (server-side flow).
+     * Exchanges code for access token, gets user info, finds/creates user.
+     */
+    public function loginWithGoogleCode(string $code): array
+    {
+        $clientId = env('RUTA11_GOOGLE_CLIENT_ID');
+        $clientSecret = env('RUTA11_GOOGLE_CLIENT_SECRET');
+        $redirectUri = env('MI3_GOOGLE_REDIRECT_URI', 'https://api-mi3.laruta11.cl/api/v1/auth/google/callback');
+
+        // Exchange code for token
+        $ch = curl_init('https://oauth2.googleapis.com/token');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => http_build_query([
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
+                'redirect_uri' => $redirectUri,
+                'grant_type' => 'authorization_code',
+                'code' => $code,
+            ]),
+            CURLOPT_SSL_VERIFYPEER => false,
+        ]);
+        $tokenResponse = curl_exec($ch);
+        curl_close($ch);
+
+        $tokenData = json_decode($tokenResponse, true);
+
+        if (!isset($tokenData['access_token'])) {
+            return ['success' => false, 'error' => 'Error obteniendo token de Google', 'status' => 401];
+        }
+
+        // Get user info
+        $userResponse = file_get_contents(
+            'https://www.googleapis.com/oauth2/v2/userinfo?access_token=' . $tokenData['access_token']
+        );
+        $googleUser = json_decode($userResponse, true);
+
+        if (!$googleUser || !isset($googleUser['email'])) {
+            return ['success' => false, 'error' => 'Error obteniendo datos de Google', 'status' => 401];
+        }
+
+        // Find or create user
+        $user = Usuario::where('google_id', $googleUser['id'])->first();
+
+        if (!$user) {
+            $user = Usuario::where('email', $googleUser['email'])->first();
+        }
+
+        if (!$user) {
+            return ['success' => false, 'error' => 'No estás registrado en La Ruta 11', 'status' => 403];
+        }
+
+        // Update google_id and photo if needed
+        $user->update([
+            'google_id' => $googleUser['id'],
+            'foto_perfil' => $googleUser['picture'] ?? $user->foto_perfil,
+        ]);
+
+        return $this->authenticateUser($user);
+    }
 }
