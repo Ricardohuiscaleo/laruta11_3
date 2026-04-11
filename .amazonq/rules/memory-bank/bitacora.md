@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-11)
+## Estado Actual (2026-04-11, actualizado sesión 2026-04-11)
 
 ### Aplicaciones Desplegadas
 
@@ -22,6 +22,62 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 - mi3-backend: `ds24j8jlaf9ov4flk1nq4jek`
 - mi3-frontend: `sxdw43i9nt3cofrzxj28hx1e`
 - laruta11-db: `zs00occ8kcks40w4c88ogo08`
+
+---
+
+## Sesión 2026-04-11 — Búsqueda de Imagen en S3 y VPS
+
+### Lo realizado: Búsqueda exhaustiva de imagen `17758800463833968304311611655643.jpg`
+
+Se buscó la imagen `17758800463833968304311611655643.jpg` en todos los sistemas disponibles: AWS S3 y disco del VPS vía SSH.
+
+**Búsqueda en S3 (bucket `laruta11-images`):**
+- Se usó Python con AWS Signature V4 (AWS CLI no instalado en el Mac) para autenticar requests
+- Se listaron las 8 carpetas existentes en el bucket: `carnets-militares/`, `checklist/`, `compras/`, `despacho/`, `menu/`, `products/`, `qr-codes/`, `vehiculos/`
+- Se verificó con `HEAD` request autenticado en cada carpeta + raíz del bucket
+- Resultado: ❌ 404 en todas las ubicaciones — la imagen NO existe en S3
+
+**Búsqueda en VPS (`76.13.126.63`) vía SSH:**
+- Se buscó dentro de los contenedores Docker de app3 (`egck4wwcg0ccc4osck4sw8ow`) y caja3 (`xockcgsc8k000o8osw8o88ko`)
+- Se buscó en volúmenes Docker (`/var/lib/docker/volumes/`)
+- Se buscó en `/root` y `/data` del host
+- Resultado: ❌ No encontrada en ningún directorio del VPS
+
+**Búsqueda en Base de Datos:**
+- Se consultaron TODAS las tablas con columnas de imagen/URL: `checklist_items.photo_url`, `compras.imagen_respaldo`, `tuu_orders.dispatch_photo_url`, `products.image_url`, `categories.image_url`, `combos.image_url`, `usuarios.carnet_frontal_url`, `usuarios.carnet_trasero_url`, `usuarios.selfie_url`, `usuarios.foto_perfil`, `concurso_registros.image_url`
+- Se buscó con patrón parcial `%1775880%` para cubrir variaciones
+- Resultado: ❌ Sin coincidencias — la imagen no está referenciada en la BD
+
+**Análisis del nombre del archivo:**
+- El nombre `17758800463833968304311611655643` es un número largo sin estructura — patrón típico de nombre generado por cámara de celular Android
+- No coincide con los patrones del sistema: `pedido_{id}_{timestamp}.jpg` (despacho), `respaldo_{id}_{timestamp}.jpg` (compras), etc.
+- Conclusión: la imagen nunca fue subida al sistema, o fue generada por un dispositivo pero no llegó a guardarse
+
+### Estructura del bucket S3 documentada
+
+```
+laruta11-images/
+├── carnets-militares/    # Fotos de carnets militares (registro R11)
+├── checklist/            # Fotos de checklist operativo
+├── compras/              # Respaldos de compras (boletas/facturas)
+├── despacho/             # Fotos de despacho de pedidos
+├── menu/                 # Imágenes del menú
+├── products/             # Imágenes de productos
+├── qr-codes/             # Códigos QR generados
+├── vehiculos/            # Fotos de vehículos
+└── test-aws-api.txt      # Archivo de prueba (34 bytes)
+```
+
+### Lecciones Aprendidas
+
+27. **AWS CLI no instalado en Mac local**: Se puede usar Python con `urllib.request` + AWS Signature V4 como alternativa completa para operaciones S3 (HEAD, GET, LIST). No requiere instalar nada adicional
+28. **S3 devuelve 403 (no 404) sin credenciales**: Cuando el bucket no tiene acceso público, S3 responde 403 Forbidden tanto para objetos inexistentes como para acceso denegado. Siempre usar requests autenticados para distinguir 404 real
+29. **Patrones de nombres en S3**: Todas las imágenes del sistema siguen convención `{carpeta}/{tipo}_{id}_{timestamp}.jpg`. Nombres largos numéricos sin estructura son generados por cámaras de celular y no pertenecen al sistema
+
+### Pendiente — General (actualizado)
+
+**Imagen buscada:**
+- `17758800463833968304311611655643.jpg` NO existe en S3, VPS ni BD. Verificar origen con el usuario (¿de qué dispositivo/app viene?)
 
 ---
 
@@ -121,6 +177,9 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks in
 21. **OAuth token en URL es un parche, no best practice**: El token Sanctum no debe viajar en query params (visible en historial). La forma correcta es que el backend setee una cookie httpOnly en el redirect del callback. Esto elimina problemas de SameSite, XSS, y manipulación de cookies
 22. **PHP Error vs Exception**: `new Redis()` cuando la extensión no está instalada lanza `Error` (no `Exception`). `catch (Exception)` NO lo atrapa. Usar `catch (\Throwable)` o verificar `class_exists()` antes. Esto aplica a cualquier clase de extensión PHP opcional (Redis, Imagick, etc.)
 23. **mi3 login funciona**: Google OAuth → admin dashboard OK. Nómina y cambios muestran "load failed" (esperado, backend necesita datos reales). Login page con branding mi3 🍔
+24. **Redis en app3**: La extensión PHP Redis NO viene instalada en el contenedor de app3. Se instaló manualmente con `pecl install redis` + `echo extension=redis.so > /usr/local/etc/php/conf.d/redis.ini`. Se pierde en cada redeploy — agregar al Dockerfile para persistir
+25. **Redis password incorrecta**: El `.env` de app3/caja3 tiene `REDIS_PASSWORD=c75556ac0f0f27e7da0f` pero la contraseña real de coolify-redis es `kEfdMKJoEvNTkqFWhEC4hHM3otMA1W/xm/NiDsVBR0I=`. Actualizar en Coolify dashboard (la API no soporta PATCH de envs individuales)
+26. **Redis host**: app3 se conecta a `coolify-redis` (nombre del contenedor Docker). Funciona porque están en la misma red Docker
 
 ### Hooks Configurados
 
@@ -349,6 +408,11 @@ TOTAL_DELIVERY = fee_bruto − descuento_rl6 + recargo_tarjeta
 **R11 Crédito:**
 - Verificar que Camila pueda registrarse después del fix de Redis
 - Vincular trabajadores que se registren vía /r11 con tabla personal
+
+**Redis:**
+- Actualizar REDIS_PASSWORD en Coolify dashboard para app3 y caja3 (valor correcto: `kEfdMKJoEvNTkqFWhEC4hHM3otMA1W/xm/NiDsVBR0I=`)
+- Agregar `pecl install redis` al Dockerfile de app3 para que persista entre deploys
+- Actualmente: extensión instalada manualmente en contenedor (se pierde en redeploy), rate limiting fail-open
 - Probar flujo Google OAuth completo
 - Probar dashboard con datos reales
 - Configurar cron scheduler en VPS
