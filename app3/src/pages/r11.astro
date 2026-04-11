@@ -663,9 +663,14 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
           formData.append('carnet_qr_data', JSON.stringify(carnetQRData));
         }
 
+        // Get session token from user data (loaded by check_session.php which does SELECT *)
+        var sessionToken = usuarioLogueado.session_token || '';
+
         fetch('/api/r11/register.php', {
           method: 'POST',
-          body: formData
+          body: formData,
+          credentials: 'include',
+          headers: sessionToken ? { 'X-Session-Token': sessionToken } : {}
         })
           .then(function(r) { return r.json(); })
           .then(function(data) {

@@ -93,16 +93,29 @@ if (!$user_id || !$rut || !$rol) {
 }
 
 // SEGURIDAD: Validar session_token y que user_id coincida
+// Try: 1) X-Session-Token header, 2) session_token cookie, 3) PHP session
 $session_token = $_SERVER['HTTP_X_SESSION_TOKEN'] ?? $_COOKIE['session_token'] ?? null;
+
+// Fallback: check PHP session (Google OAuth users)
 if (!$session_token) {
+    require_once __DIR__ . '/../session_config.php';
+    if (isset($_SESSION['user']) && $_SESSION['user']['id'] == $user_id) {
+        // Authenticated via PHP session — skip token check
+        $auth_user = ['id' => $_SESSION['user']['id']];
+    }
+}
+
+if (!$session_token && !isset($auth_user)) {
     echo json_encode(['success' => false, 'error' => 'No autenticado']);
     exit;
 }
 
-$stmt = $conn->prepare("SELECT id FROM usuarios WHERE session_token = ? AND activo = 1");
-$stmt->bind_param("s", $session_token);
-$stmt->execute();
-$auth_user = $stmt->get_result()->fetch_assoc();
+if (!isset($auth_user)) {
+    $stmt = $conn->prepare("SELECT id FROM usuarios WHERE session_token = ? AND activo = 1");
+    $stmt->bind_param("s", $session_token);
+    $stmt->execute();
+    $auth_user = $stmt->get_result()->fetch_assoc();
+}
 
 if (!$auth_user || $auth_user['id'] != $user_id) {
     echo json_encode(['success' => false, 'error' => 'No autorizado']);
