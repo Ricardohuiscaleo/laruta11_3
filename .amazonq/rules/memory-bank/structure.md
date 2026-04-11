@@ -7,8 +7,15 @@ laruta11_3/
 ├── app3/           # Customer web application (app.laruta11.cl)
 ├── caja3/          # Cashier POS system (caja.laruta11.cl)
 ├── landing3/       # Marketing landing page (laruta11.cl)
+├── mi3/            # RRHH self-service app (mi.laruta11.cl + api-mi3.laruta11.cl)
+│   ├── backend/    # Laravel 11 API (PHP 8.3, Sanctum, Eloquent)
+│   └── frontend/   # Next.js 14 App Router (React, TailwindCSS, TypeScript)
 ├── scripts/        # Utility scripts (image conversion, etc.)
-└── .amazonq/       # Amazon Q AI assistant rules and memory
+├── .kiro/          # Kiro specs, steering, hooks
+│   ├── specs/      # Feature specs (credito-r11, mi3-rrhh)
+│   ├── steering/   # Steering files (coolify-infra)
+│   └── hooks/      # Agent hooks (deploy hooks)
+└── .amazonq/       # Memory bank and rules
 ```
 
 ## Application Architecture

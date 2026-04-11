@@ -1,0 +1,106 @@
+# La Ruta 11 — Bitácora de Desarrollo
+
+## Estado Actual (2026-04-11)
+
+### Aplicaciones Desplegadas
+
+| App | URL | Stack | Estado | Auto-deploy |
+|-----|-----|-------|--------|-------------|
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running | ❌ Manual |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running | ❌ Manual |
+| landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React | ✅ Running | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 | ✅ Running | ❌ Manual |
+
+Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook) o hooks individuales.
+
+### Coolify UUIDs
+
+- app3: `egck4wwcg0ccc4osck4sw8ow`
+- caja3: `xockcgsc8k000o8osw8o88ko`
+- landing3: `dks4cg8s0wsswk08ocwggk0g`
+- mi3-backend: `ds24j8jlaf9ov4flk1nq4jek`
+- mi3-frontend: `sxdw43i9nt3cofrzxj28hx1e`
+- laruta11-db: `zs00occ8kcks40w4c88ogo08`
+
+---
+
+## Sesión 2026-04-10/11 — Crédito R11 + mi3 RRHH
+
+### Crédito R11 (COMPLETADO)
+
+**Spec:** `.kiro/specs/credito-r11/`
+
+**Lo implementado:**
+1. Fixes de seguridad RL6 (validar credito_bloqueado, eliminar simulate, prevenir doble anulación, crédito negativo)
+2. Schema BD migrado en producción (8 campos en usuarios, tabla r11_credit_transactions, campos en tuu_orders, migración personal)
+3. 6 APIs app3: get_credit, use_credit, get_statement, register (QR+Redis+Telegram), create_payment, payment_callback
+4. 5 APIs caja3: get_creditos, approve, register, refund, process_manual_payment
+5. Frontend app3: r11.astro (registro QR + estado cuenta), pagar-credito-r11, payment pages, CheckoutApp r11_credit
+6. Frontend caja3: CreditosR11App, integración ArqueoApp/ArqueoResumen/VentasDetalle/MiniComandas
+7. Cron jobs: reminder día 28, block día 2
+8. Webhook Telegram: approve/reject R11
+9. QR scanner mejorado: captura RUN/serial/mrz/type completo, valida contra Registro Civil, guarda como JSON en carnet_qr_data
+
+**Seguridad aplicada:**
+- Autenticación session_token en app3, sesión admin en caja3
+- CORS restringido a dominios reales
+- Rate limiting con Redis para registro
+- Validación amount > 0, protección doble anulación
+- Sin simulate bypass en producción
+
+### mi3 RRHH (EN PROGRESO)
+
+**Spec:** `.kiro/specs/mi3-rrhh/`
+
+**Arquitectura:** Next.js 14 frontend + Laravel 11 backend exclusivo
+
+**Lo implementado:**
+1. Scaffolding completo (Laravel + Next.js + Dockerfiles)
+2. 12 modelos Eloquent + 3 migraciones (solicitudes_cambio_turno, notificaciones_mi3, categoría descuento_credito_r11)
+3. 2 middleware (EnsureIsWorker, EnsureIsAdmin) + AuthService con Sanctum
+4. 7 servicios de negocio: ShiftService (4x4), LiquidacionService, R11CreditService, NominaService, ShiftSwapService, NotificationService, GmailService
+5. 14 controllers (7 Worker + 7 Admin) + 4 Form Requests
+6. 2 cron commands (R11 auto-deduct día 1, reminder día 28) + SendLiquidacionEmailJob
+7. Frontend: 15 páginas reales (8 worker + 7 admin) + login con Google OAuth
+8. Apps creadas en Coolify con env vars configuradas
+9. Google OAuth configurado (redirect URI agregado en Google Cloud Console)
+
+**Pendiente mi3:**
+- Ejecutar migraciones Laravel (solicitudes_cambio_turno, notificaciones_mi3, personal_access_tokens)
+- Vincular trabajadores restantes (Camila, Neit, Andrés, Gabriel, Claudio, Dafne) con sus cuentas de usuarios
+- Probar flujo completo de login con Google OAuth
+- Probar las páginas del dashboard trabajador y admin con datos reales
+- Configurar cron del scheduler de Laravel en el VPS
+
+### Usuarios Admin en mi3
+
+| Persona | usuario.id | personal.id | Rol | Acceso |
+|---------|-----------|-------------|-----|--------|
+| Ricardo | 4 | 5 | administrador,seguridad | ✅ Admin |
+| Yojhans | 6 | 11 | dueño | ✅ Admin |
+
+### BD — Campos R11 agregados
+
+- `usuarios`: es_credito_r11, credito_r11_aprobado, limite_credito_r11, credito_r11_usado, credito_r11_bloqueado, fecha_aprobacion_r11, fecha_ultimo_pago_r11, relacion_r11, carnet_qr_data (JSON)
+- `tuu_orders`: pagado_con_credito_r11, monto_credito_r11, payment_method ENUM incluye 'r11_credit'
+- `r11_credit_transactions`: tabla nueva (id, user_id, amount, type, description, order_id, created_at)
+- `personal`: user_id, rut, telefono agregados; 'rider' agregado al SET de rol
+
+### Deploy — Reglas
+
+- Auto-deploy DESACTIVADO en todas las apps
+- Usar hook "Smart Deploy" para desplegar solo lo que cambió
+- Hooks individuales disponibles: Deploy app3, Deploy caja3, Deploy mi3 Backend, Deploy mi3 Frontend
+- Coolify API token: `3|S52ZUspC6N5G54apjgnKO6sY3VW5OixHlnY9GsMv8dc72ae8`
+- Steering file: `.kiro/steering/coolify-infra.md`
+
+### Lecciones Aprendidas
+
+1. **Dockerfile Laravel**: No usar `composer create-project` sin `--no-scripts` — el post-install intenta migrar en producción y falla
+2. **Next.js 14**: `useSearchParams()` debe estar dentro de `<Suspense>` boundary
+3. **Coolify env vars**: No usar `is_build_time` en la API, solo `is_preview`
+4. **Coolify .env**: Dejar `.env` vacío en el Dockerfile — Coolify inyecta env vars como variables de entorno del contenedor
+5. **CORS en RL6**: Todos los endpoints tenían `Access-Control-Allow-Origin: *` — corregido a dominios específicos en R11
+6. **Rate limiting**: Archivos temporales se pierden en cada deploy Docker — usar Redis
+7. **Monorepo + Coolify**: Un push a main dispara rebuild de TODAS las apps — desactivar auto-deploy y usar Smart Deploy
