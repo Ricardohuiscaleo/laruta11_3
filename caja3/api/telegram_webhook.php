@@ -172,7 +172,7 @@ function sendR11Email($to, $nombre, $relacion, $tipo, $extra = null) {
         $subject = '🎉 ¡Bienvenido/a al equipo! - La Ruta 11';
         $color   = '#f59e0b';
         $title   = '🎉 ¡Ya eres parte del equipo!';
-        $intro   = "Tu registro como trabajador de La Ruta 11 ha sido <strong style='color:#f59e0b;'>APROBADO</strong>.";
+        $intro   = "Tu registro ha sido <strong style='color:#f59e0b;'>APROBADO</strong>.";
         $body    = "
         <p style='font-weight:bold;color:#1f2937;margin-bottom:12px;'>Esto es lo que puedes hacer ahora:</p>
         <ol style='line-height:2;'>
