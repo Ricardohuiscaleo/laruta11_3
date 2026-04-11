@@ -12,6 +12,12 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // This migration creates base tables for SQLite in-memory testing.
+        // In production (MySQL), these tables already exist — skip creation.
+        if (Schema::hasTable('personal')) {
+            return;
+        }
+
         Schema::create('personal', function (Blueprint $table) {
             $table->increments('id');
             $table->string('nombre');
