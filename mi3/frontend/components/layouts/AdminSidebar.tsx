@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/auth';
+import ViewSwitcher from '@/components/ViewSwitcher';
 
 const links = [
   { href: '/admin', label: 'Inicio', icon: Home },
@@ -42,7 +43,8 @@ export default function AdminSidebar() {
           );
         })}
       </nav>
-      <div className="border-t border-red-500 px-2 py-3">
+      <div className="border-t border-red-500 px-2 py-3 space-y-1">
+        <ViewSwitcher className="text-red-100 hover:bg-red-500/50 hover:text-white" />
         <button onClick={logout}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-200 transition-colors hover:bg-red-500/50 hover:text-white">
           <LogOut className="h-5 w-5" />

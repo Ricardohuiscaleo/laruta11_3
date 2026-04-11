@@ -6,11 +6,7 @@ import { Bell } from 'lucide-react';
 import { getPageTitle } from '@/lib/navigation';
 import { apiFetch } from '@/lib/api';
 
-interface MobileHeaderProps {
-  notificationsEndpoint?: string;
-}
-
-export default function MobileHeader({ notificationsEndpoint = '/worker/notifications' }: MobileHeaderProps) {
+export default function MobileHeader({ variant = 'worker' }: { variant?: 'worker' | 'admin' }) {
   const pathname = usePathname();
   const title = getPageTitle(pathname);
   const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -18,14 +14,14 @@ export default function MobileHeader({ notificationsEndpoint = '/worker/notifica
   useEffect(() => {
     async function fetchNotifications() {
       try {
-        const data = await apiFetch<{ no_leidas: number }>(notificationsEndpoint);
+        const data = await apiFetch<{ no_leidas: number }>('/worker/notifications');
         setUnreadCount(data.no_leidas);
       } catch {
         setUnreadCount(0);
       }
     }
     fetchNotifications();
-  }, [notificationsEndpoint]);
+  }, []);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 md:hidden h-14 bg-red-500 shadow-sm">

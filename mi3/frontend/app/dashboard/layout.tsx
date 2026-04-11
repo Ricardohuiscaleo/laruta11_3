@@ -8,10 +8,7 @@ export default function DashboardLayout({
 }) {
   return (
     <>
-      {/* Mobile: header + content + bottom nav */}
-      <MobileNavLayout>{children}</MobileNavLayout>
-
-      {/* Desktop: sidebar + content */}
+      <MobileNavLayout variant="worker">{children}</MobileNavLayout>
       <div className="hidden md:flex min-h-screen">
         <WorkerSidebar />
         <main className="flex-1 p-6">{children}</main>

@@ -4,22 +4,21 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MoreHorizontal, LogOut } from 'lucide-react';
-import { primaryNavItems, secondaryNavItems, isNavItemActive, type NavItem } from '@/lib/navigation';
+import {
+  primaryNavItems, secondaryNavItems,
+  adminPrimaryNavItems, adminSecondaryNavItems,
+  isNavItemActive,
+} from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/auth';
+import ViewSwitcher from '@/components/ViewSwitcher';
 
-interface MobileBottomNavProps {
-  primary?: NavItem[];
-  secondary?: NavItem[];
-}
-
-export default function MobileBottomNav({
-  primary = primaryNavItems,
-  secondary = secondaryNavItems,
-}: MobileBottomNavProps) {
+export default function MobileBottomNav({ variant = 'worker' }: { variant?: 'worker' | 'admin' }) {
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
 
+  const primary = variant === 'admin' ? adminPrimaryNavItems : primaryNavItems;
+  const secondary = variant === 'admin' ? adminSecondaryNavItems : secondaryNavItems;
   const moreActive = secondary.some((item) => isNavItemActive(pathname, item.href));
 
   return (
@@ -68,7 +67,8 @@ export default function MobileBottomNav({
                 );
               })}
             </div>
-            <div className="px-4 pb-6 border-t border-gray-100 pt-3">
+            <div className="px-4 pb-6 border-t border-gray-100 pt-3 space-y-1">
+              <ViewSwitcher className="text-gray-500 hover:bg-gray-50" />
               <button onClick={logout}
                 className="flex w-full items-center gap-3 px-3 py-3 rounded-lg text-red-600 hover:bg-red-50">
                 <LogOut className="w-5 h-5" />
