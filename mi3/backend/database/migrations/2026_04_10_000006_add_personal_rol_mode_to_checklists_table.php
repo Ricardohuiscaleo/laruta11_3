@@ -13,7 +13,7 @@ return new class extends Migration
         }
 
         Schema::table('checklists', function (Blueprint $table) {
-            $table->unsignedInteger('personal_id')->nullable()->after('user_name');
+            $table->integer('personal_id')->nullable()->after('user_name');
             $table->enum('rol', ['cajero', 'planchero'])->nullable()->after('personal_id');
             $table->enum('checklist_mode', ['presencial', 'virtual'])->default('presencial')->after('rol');
 

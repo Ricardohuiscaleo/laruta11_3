@@ -14,8 +14,8 @@ return new class extends Migration
 
         Schema::create('checklist_virtual', function (Blueprint $table) {
             $table->increments('id');
-            $table->unsignedInteger('checklist_id');
-            $table->unsignedInteger('personal_id');
+            $table->integer('checklist_id');
+            $table->integer('personal_id');
             $table->text('confirmation_text')->nullable();
             $table->text('improvement_idea');
             $table->timestamp('completed_at')->nullable();
