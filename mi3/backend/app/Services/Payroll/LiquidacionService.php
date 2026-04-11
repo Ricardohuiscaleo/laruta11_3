@@ -163,7 +163,7 @@ class LiquidacionService
         $endDate = $startDate->copy()->endOfMonth()->endOfDay();
 
         return (float) TuuOrder::whereBetween('created_at', [$startDate, $endDate])
-            ->sum('amount');
+            ->sum('subtotal');
     }
 
     /**
