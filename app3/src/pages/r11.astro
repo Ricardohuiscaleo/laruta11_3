@@ -383,6 +383,8 @@ const ROLES_R11 = ['Planchero/a', 'Cajero/a', 'Rider', 'Otro'];
       var btnAbrirLogin = document.getElementById('btnAbrirLogin');
       if (btnAbrirLogin) {
         btnAbrirLogin.addEventListener('click', function() {
+          // Save redirect target so we come back after login
+          try { sessionStorage.setItem('r11_redirect', '/r11'); } catch(e) {}
           window.location.href = '/?login=1&redirect=/r11';
         });
       }

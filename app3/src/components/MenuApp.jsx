@@ -1813,6 +1813,17 @@ export default function App() {
                 window.location.href = '/rl6?login=success';
                 return;
               }
+
+              // Verificar si debe redirigir a R11
+              try {
+                const r11Redirect = sessionStorage.getItem('r11_redirect');
+                if (r11Redirect) {
+                  sessionStorage.removeItem('r11_redirect');
+                  console.log('🔄 Redirigiendo a R11...');
+                  window.location.href = r11Redirect + '?login=success';
+                  return;
+                }
+              } catch (e) {}
             } catch (error) {
               console.warn('⚠️ No se pudo guardar sesión de Google:', error);
             }
