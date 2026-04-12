@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { logout } from '@/lib/auth';
 import { usePendingLoanBadge } from '@/hooks/usePendingLoanBadge';
 import { usePendingChecklistBadge } from '@/hooks/usePendingChecklistBadge';
+import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import ViewSwitcher from '@/components/ViewSwitcher';
 
 export default function MobileBottomNav({ variant = 'worker' }: { variant?: 'worker' | 'admin' }) {
@@ -20,6 +21,7 @@ export default function MobileBottomNav({ variant = 'worker' }: { variant?: 'wor
   const [sheetOpen, setSheetOpen] = useState(false);
   const hasPendingLoan = usePendingLoanBadge();
   const hasPendingChecklist = usePendingChecklistBadge();
+  const unreadCount = useUnreadNotifications();
 
   const primary = variant === 'admin' ? adminPrimaryNavItems : primaryNavItems;
   const secondary = variant === 'admin' ? adminSecondaryNavItems : secondaryNavItems;
@@ -32,18 +34,24 @@ export default function MobileBottomNav({ variant = 'worker' }: { variant?: 'wor
           {primary.map((item) => {
             const active = isNavItemActive(pathname, item.href);
             const Icon = item.icon;
-            const showBadge = variant === 'worker' && (
+            const showDot = variant === 'worker' && (
               (item.badgeKey === 'prestamo-pendiente' && hasPendingLoan) ||
               (item.badgeKey === 'checklist-pendiente' && hasPendingChecklist)
             );
+            const showCount = item.badgeKey === 'notificaciones-unread' && unreadCount > 0;
             return (
               <Link key={item.href} href={item.href}
                 className={cn('flex flex-col items-center justify-center flex-1 h-full gap-0.5 relative',
                   active ? 'text-red-500' : 'text-gray-400')}>
                 <div className="relative">
                   <Icon className="w-5 h-5" />
-                  {showBadge && (
+                  {showDot && (
                     <span className="absolute -top-1 -right-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                  )}
+                  {showCount && (
+                    <span className="absolute -top-1.5 -right-2.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full ring-2 ring-white">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
                   )}
                 </div>
                 <span className="text-xs">{item.label}</span>
@@ -74,6 +82,7 @@ export default function MobileBottomNav({ variant = 'worker' }: { variant?: 'wor
                   (item.badgeKey === 'prestamo-pendiente' && hasPendingLoan) ||
                   (item.badgeKey === 'checklist-pendiente' && hasPendingChecklist)
                 );
+                const showCount = item.badgeKey === 'notificaciones-unread' && unreadCount > 0;
                 return (
                   <Link key={item.href} href={item.href} onClick={() => setSheetOpen(false)}
                     className={cn('flex items-center gap-3 px-3 py-3 rounded-lg',
