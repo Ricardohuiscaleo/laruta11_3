@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ao)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ap)
 
 ### Aplicaciones Desplegadas
 
@@ -39,8 +39,84 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | Spec | Directorio | Estado |
 |------|-----------|--------|
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
-| checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ✅ Deployado + migraciones ejecutadas en producción |
+| checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ⚠️ Spec marcado como deployado pero tabla `checklists_v2` NO existe en producción. Sistema usa checklists legacy |
 | mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Prompt con mapeo personas→proveedores (8 riders ARIAKA), fecha, metodo_pago transfer auto. 12+ deploys hoy |
+
+---
+
+## Sesión 2026-04-12ap — Checklists: crear test para Ricardo + diagnóstico sistema legacy
+
+### Lo realizado: Investigar sistema de checklists y crear checklists de prueba para Ricardo
+
+**1. Diagnóstico del sistema de checklists:**
+
+| Componente | Estado |
+|-----------|--------|
+| Tabla `checklists` (legacy) | ✅ Funciona, 6 checklists hoy |
+| Tabla `checklist_items` | ✅ Items de cada checklist |
+| Tabla `checklist_templates` | ✅ 11 apertura + 11 cierre activos |
+| Tabla `checklists_v2` | ❌ NO EXISTE en producción |
+| Spec checklist-v2-asistencia | ⚠️ Marcado como deployado pero migraciones no ejecutadas |
+
+**2. Checklists de hoy (antes del fix):**
+
+| # | Tipo | Asignado a | Status | Items |
+|---|------|-----------|--------|-------|
+| 177 | apertura | — (sin asignar) | pending | 0/11 |
+| 179 | apertura | Andres Aguilera (Planchero) | pending | 0/2 |
+| 181 | apertura | Dafne (Cajero) | pending | 0/3 |
+| 176 | cierre | — (sin asignar) | completed | 11/11 |
+| 180 | cierre | Andres Aguilera (Planchero) | pending | 0/2 |
+| 182 | cierre | Dafne (Cajero) | pending | 0/3 |
+
+**3. Checklists creados para Ricardo (personal_id=5):**
+
+| # | Tipo | Items | Status |
+|---|------|-------|--------|
+| 183 | apertura | 11 items (todos los templates activos) | pending |
+| 184 | cierre | 11 items (todos los templates activos) | pending |
+
+Ricardo puede testear en mi.laruta11.cl/dashboard/checklist.
+
+**4. Problemas identificados:**
+
+- Checklists "sin nombre" (— · —) son genéricos sin asignar a nadie
+- El sistema legacy crea checklists via cron de caja3 (`create_daily_checklists.php`)
+- Los templates tienen 11 items genéricos, pero Dafne solo tiene 3 y Andres 2 (items específicos por rol)
+- No hay UI de admin para editar templates — se hace directo en BD (`checklist_templates`)
+
+### Commits y Deploys
+
+No se hizo commit ni deploy (solo datos en BD via SSH).
+
+### Datos modificados en producción (SSH)
+
+| Tabla | Cambio |
+|-------|--------|
+| `checklists` | INSERT #183 (apertura Ricardo, 11 items) |
+| `checklists` | INSERT #184 (cierre Ricardo, 11 items) |
+| `checklist_items` | INSERT 22 items (11 apertura + 11 cierre) |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Estado |
+|-------|-------|--------|
+| `checklists_v2` table not found | Spec checklist-v2 marcado como deployado pero migraciones no ejecutadas en producción | Pendiente investigar |
+
+### Lecciones Aprendidas
+
+192. **Verificar que las migraciones se ejecutaron, no solo que el código se deployó**: El spec checklist-v2 está marcado como "deployado + migraciones ejecutadas" pero la tabla `checklists_v2` no existe. El deploy del código no garantiza que las migraciones corrieron
+
+### Pendiente
+
+- **Editar templates de checklist** — actualizar los 11 items de apertura/cierre con los nuevos items con IA
+- **Deshabilitar checklists genéricos** (sin nombre) — o asignarlos a alguien
+- **Investigar spec checklist-v2** — por qué la tabla no existe si está marcado como deployado
+- **UI admin para editar templates** — actualmente solo se puede via BD directa
+- Verificar upload S3 + extracción IA con prompt mejorado
+- Verificar Gmail Token Refresh
+- Integrar `NotificacionNueva` event en flujos reales
+- Generar turnos mayo
 
 ---
 
