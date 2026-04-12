@@ -234,6 +234,13 @@ Para ARIAKA: item = "Servicios Delivery", cantidad = 1, unidad = "unidad", tipo_
 
 TIPO 5 — FACTURA DE PROVEEDOR CONOCIDO:
 Si reconoces el formato de un proveedor específico (ej: Shipo, DistribuChile, etc.), usa el formato conocido para extraer datos con mayor precisión.
+Proveedores que SIEMPRE se pagan con transferencia (metodo_pago = "transfer"):
+- Ariztía, Ariztía (proveedor), Karina Andrea Muñoz Ahumada → metodo_pago = "transfer"
+- agrosuper, agrosuper (proveedor) → metodo_pago = "transfer"
+- ideal → metodo_pago = "transfer"
+- agro-lucila, Lucila Cacera → metodo_pago = "transfer"
+- ARIAKA → metodo_pago = "transfer"
+- JumboAPP → metodo_pago = "transfer"
 {$knownSuppliers}{$rutMapping}{$knownProducts}{$productPatterns}
 
 Formato de respuesta JSON:
