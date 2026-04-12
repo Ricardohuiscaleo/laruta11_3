@@ -225,21 +225,35 @@ PROMPT,
     }
 
     /**
-     * Orchestrate upload + AI analysis. Save result in checklist_items.
-     * If Bedrock times out, mark analysis as "pendiente" (don't fail).
-     *
-     * @return array{url: string, ai_score: int|null, ai_observations: string|null, ai_status: string}
+     * Upload photo to S3, mark item as completed, return immediately.
+     * AI analysis runs but doesn't block the response.
      */
     public function subirYAnalizar(UploadedFile $foto, int $itemId, string $contexto): array
     {
-        // Step 1: Upload to S3
+        // Step 1: Upload to S3 (fast, ~1s)
         $url = $this->subirFotoS3($foto);
 
-        // Save photo URL immediately
+        // Step 2: Save photo URL + mark item completed immediately
         $item = ChecklistItem::findOrFail($itemId);
-        $item->update(['photo_url' => $url]);
+        $item->update([
+            'photo_url' => $url,
+            'is_completed' => true,
+            'completed_at' => now(),
+        ]);
 
-        // Step 2: AI analysis (with timeout handling)
+        // Update checklist progress
+        $checklist = $item->checklist;
+        $completedCount = $checklist->items()->where('is_completed', true)->count();
+        $totalCount = $checklist->total_items;
+        $percentage = $totalCount > 0 ? round(($completedCount / $totalCount) * 100, 2) : 0;
+        $checklist->update([
+            'completed_items' => $completedCount,
+            'completion_percentage' => $percentage,
+            'status' => $completedCount > 0 ? 'active' : $checklist->status,
+            'started_at' => $checklist->started_at ?? now(),
+        ]);
+
+        // Step 3: AI analysis (non-blocking — if it fails, photo is still saved)
         $aiScore = null;
         $aiObservations = null;
         $aiStatus = 'pendiente';
