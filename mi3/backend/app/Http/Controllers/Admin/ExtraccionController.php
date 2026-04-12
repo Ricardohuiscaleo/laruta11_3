@@ -47,6 +47,10 @@ class ExtraccionController extends Controller
 
             // Match proveedor and items with suggestions
             $data = $result['data'];
+            
+            // Post-extraction: force map known persons to suppliers
+            $data = $this->mapPersonToSupplier($data);
+            
             $proveedorMatch = null;
             $itemsMatch = [];
 
@@ -133,5 +137,80 @@ class ExtraccionController extends Controller
             'success' => true,
             ...$report,
         ]);
+    }
+
+    /**
+     * Post-extraction: map known person names to actual suppliers.
+     * The AI sometimes returns the person's name instead of the business name.
+     * Also filters out the sender (Ricardo) being detected as supplier.
+     */
+    private function mapPersonToSupplier(array $data): array
+    {
+        $personToSupplier = [
+            // ARIAKA riders (delivery)
+            'karen miranda olmedo' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
+            'karen miranda' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
+            'elcia vilca' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
+            'eliana vilca' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
+            'cecilia rojas hinojosa' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
+            'cecilia rojas' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
+            'maria mondañez mamani' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
+            'maria mondanez mamani' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
+            'giovanna loza salas' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
+            'giovanna loza' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
+            'ariel araya' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
+            'ariel aliro araya villalobos' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
+            // Other known persons
+            'karina andrea muñoz ahumada' => ['proveedor' => 'Ariztía (proveedor)', 'item' => null, 'tipo_compra' => 'ingredientes'],
+            'karina muñoz' => ['proveedor' => 'Ariztía (proveedor)', 'item' => null, 'tipo_compra' => 'ingredientes'],
+            'lucila cacera' => ['proveedor' => 'agro-lucila', 'item' => null, 'tipo_compra' => 'ingredientes'],
+            // Sender (NOT a supplier — this is the owner)
+            'ricardo huiscaleo' => null,
+            'ricardo aníbal huiscaleo' => null,
+            'ricardo aníbal huiscaleo llafquén' => null,
+            'ricardo anibal huiscaleo llafquen' => null,
+        ];
+
+        $proveedor = mb_strtolower(trim($data['proveedor'] ?? ''));
+
+        // Check if the detected "proveedor" is actually a known person
+        foreach ($personToSupplier as $person => $mapping) {
+            if (str_contains($proveedor, $person) || similar_text($proveedor, $person, $pct) && $pct > 80) {
+                if ($mapping === null) {
+                    // This is the sender, not a supplier — clear it
+                    $data['proveedor'] = null;
+                    $data['notas_ia'] = ($data['notas_ia'] ?? '') . ' [IA detectó al emisor como proveedor, corregido]';
+                } else {
+                    $data['proveedor'] = $mapping['proveedor'];
+                    $data['metodo_pago'] = 'transfer';
+                    $data['tipo_compra'] = $mapping['tipo_compra'];
+                    if ($mapping['item'] && empty($data['items'])) {
+                        $data['items'] = [[
+                            'nombre' => $mapping['item'],
+                            'cantidad' => 1,
+                            'unidad' => 'unidad',
+                            'precio_unitario' => $data['monto_total'] ?? 0,
+                            'subtotal' => $data['monto_total'] ?? 0,
+                        ]];
+                    } elseif ($mapping['item']) {
+                        // Replace generic items with the correct one
+                        foreach ($data['items'] as &$item) {
+                            if (empty($item['nombre']) || mb_strtolower($item['nombre']) === 'transferencia') {
+                                $item['nombre'] = $mapping['item'];
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+        }
+
+        // Also check "Mercado Pago" as proveedor — it's never the real supplier
+        if ($proveedor === 'mercado pago') {
+            $data['proveedor'] = null;
+            $data['metodo_pago'] = 'transfer';
+        }
+
+        return $data;
     }
 }
