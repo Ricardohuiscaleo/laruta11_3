@@ -16,11 +16,8 @@ RUN composer create-project laravel/laravel:^11.0 /tmp/laravel --no-interaction 
     && cp -a /tmp/laravel/. /var/www/html/ \
     && rm -rf /tmp/laravel
 
-# Copy project composer files BEFORE install to get our dependencies (web-push, etc.)
-COPY composer.json /var/www/html/composer.json
-
-# Install dependencies including project-specific ones (no scripts to avoid artisan calls during build)
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+# Install project-specific dependencies (sanctum, web-push)
+RUN composer require laravel/sanctum:^4.0 minishlink/web-push:^9.0 --no-interaction --no-scripts --optimize-autoloader
 
 # Overlay custom code
 COPY app/ /var/www/html/app/
