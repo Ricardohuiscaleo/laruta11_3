@@ -46,7 +46,7 @@ function PhotoUpload({
   item: ChecklistItem;
   checklistId: number;
   checklistType: 'apertura' | 'cierre';
-  onPhotoUploaded: (itemId: number, photoUrl: string) => void;
+  onPhotoUploaded: (itemId: number, photoUrl: string, aiScore?: number | null, aiObs?: string | null) => void;
 }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -98,15 +98,14 @@ function PhotoUpload({
       const photoType = item.description.toLowerCase().includes('exterior') ? 'exterior' : 'interior';
       formData.append('contexto', `${photoType}_${checklistType}`);
 
-      const res = await apiFetch<ApiResponse<{ photo_url: string }>>(
+      const res = await apiFetch<ApiResponse<{ url: string; ai_score: number | null; ai_observations: string | null; ai_status: string }>>(
         `/worker/checklists/${checklistId}/items/${item.id}/photo`,
         {
           method: 'POST',
           body: formData,
-          headers: {}, // Let browser set Content-Type with boundary
         }
       );
-      onPhotoUploaded(item.id, res.data?.photo_url || '');
+      onPhotoUploaded(item.id, res.data?.url || '', res.data?.ai_score ?? null, res.data?.ai_observations ?? null);
     } catch (err: any) {
       setError(err.message || 'Error al subir foto');
       setPreview(item.photo_url);
@@ -185,7 +184,7 @@ function ChecklistItemRow({
   checklistId: number;
   checklistType: 'apertura' | 'cierre';
   onItemCompleted: (itemId: number) => void;
-  onPhotoUploaded: (itemId: number, photoUrl: string) => void;
+  onPhotoUploaded: (itemId: number, photoUrl: string, aiScore?: number | null, aiObs?: string | null) => void;
 }) {
   const [completing, setCompleting] = useState(false);
   const needsPhoto = item.requires_photo && !item.photo_url;
@@ -254,6 +253,28 @@ function ChecklistItemRow({
           onPhotoUploaded={onPhotoUploaded}
         />
       )}
+      {/* AI Analysis Feedback */}
+      {(item as any).ai_score != null && (
+        <div className={cn(
+          'mt-2 rounded-lg p-2.5 text-xs',
+          (item as any).ai_score >= 80 ? 'bg-green-50 text-green-700' :
+          (item as any).ai_score >= 50 ? 'bg-amber-50 text-amber-700' :
+          'bg-red-50 text-red-700'
+        )}>
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-semibold">Análisis IA</span>
+            <span className={cn(
+              'rounded-full px-2 py-0.5 text-xs font-bold',
+              (item as any).ai_score >= 80 ? 'bg-green-200 text-green-800' :
+              (item as any).ai_score >= 50 ? 'bg-amber-200 text-amber-800' :
+              'bg-red-200 text-red-800'
+            )}>
+              {(item as any).ai_score}/100
+            </span>
+          </div>
+          <p>{(item as any).ai_observations}</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -281,10 +302,9 @@ function ChecklistCard({
     onUpdate();
   };
 
-  const handlePhotoUploaded = (itemId: number, photoUrl: string) => {
-    // Photo uploaded = item marked as completed (backend does this too)
+  const handlePhotoUploaded = (itemId: number, photoUrl: string, aiScore?: number | null, aiObs?: string | null) => {
     checklist.items = checklist.items.map(i =>
-      i.id === itemId ? { ...i, photo_url: photoUrl, is_completed: true, completed_at: new Date().toISOString() } : i
+      i.id === itemId ? { ...i, photo_url: photoUrl, is_completed: true, completed_at: new Date().toISOString(), ai_score: aiScore, ai_observations: aiObs } : i
     );
     checklist.completed_items = checklist.items.filter(i => i.is_completed).length;
     checklist.completion_percentage = Math.round((checklist.completed_items / checklist.total_items) * 100);
