@@ -18,7 +18,7 @@ RUN composer create-project laravel/laravel:^11.0 /tmp/laravel --no-interaction 
     && rm -rf /tmp/laravel
 
 # Install project-specific dependencies
-RUN composer require laravel/sanctum:^4.0 minishlink/web-push:^9.0 laravel/reverb:^1.0 pusher/pusher-php-server:^7.2 --no-interaction --no-scripts --optimize-autoloader
+RUN composer require laravel/sanctum:^4.0 minishlink/web-push:^9.0 laravel/reverb:^1.0 pusher/pusher-php-server:^7.2 league/flysystem-aws-s3-v3:^3.0 --no-interaction --no-scripts --optimize-autoloader
 
 # Overlay custom code
 COPY app/ /var/www/html/app/

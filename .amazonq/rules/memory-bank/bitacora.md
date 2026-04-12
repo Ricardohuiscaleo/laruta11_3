@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ag)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ah)
 
 ### Aplicaciones Desplegadas
 
@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`daqq442d4qox36raoyup140y`, commit `dfac24c`) | ❌ Manual |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`nklzycf28cf1zp796kr8jgl5`, commit `dfac24c`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (commit `19e6232`) | ❌ Manual |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`ogou80u110szexhrj0jvwuxa`, commit `19e6232`) | ❌ Manual |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (commit `53585c4`) | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`g10efv3i4drb`, commit `53585c4`) | ❌ Manual |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running (`uu8lhn7wijjk1idj5ghf21pa`) | ❌ Manual |
 
 Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks individuales, o el nuevo hook "Ship It" para ciclo completo.
@@ -40,7 +40,73 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 |------|-----------|--------|
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ✅ Deployado + migraciones ejecutadas en producción |
-| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Deployado. Flujo foto→formulario. Fix NaN% stock. 3 deploys hoy |
+| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Deployado. Fix upload 422 + remember token 30d. 5 deploys hoy |
+
+---
+
+## Sesión 2026-04-12ah — Fix upload-temp 422 + remember token 30 días + deploy backend
+
+### Lo realizado: Corregir error 422 en upload de imágenes y persistencia de sesión
+
+**1. Fix 422 en upload-temp:**
+
+El frontend enviaba el archivo como `image` pero el backend validaba `imagen`:
+
+| Endpoint | Frontend envía | Backend esperaba | Fix |
+|----------|---------------|-----------------|-----|
+| `POST /compras/upload-temp` | `fd.append('image', file)` | `'imagen' => 'required\|image'` | Cambiar a `'image'` |
+| `POST /compras/{id}/imagen` | `fd.append('image', file)` | `'imagen' => 'required\|image'` | Cambiar a `'image'` |
+| `$request->file('imagen')` | — | — | Cambiar a `$request->file('image')` |
+
+**2. Fix sesión no persiste (remember token):**
+
+| Antes | Después |
+|-------|---------|
+| `remember` default `false` → cookie `maxAge = 0` (session cookie, se borra al cerrar browser) | `remember` default `true` → cookie `maxAge = 30 días` |
+| Usuarios tenían que re-loguearse cada vez que cerraban el browser | Sesión persiste 30 días automáticamente |
+
+El login con Google ya tenía `remember = true`. Solo el login con email+password tenía `false` por defecto.
+
+Nota: mi3 usa Sanctum (tokens en `personal_access_tokens` + cookies httpOnly), no `php_sessions` como caja3/app3. Es más seguro.
+
+**Archivos modificados (2):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/app/Http/Controllers/Admin/CompraController.php` | `uploadTemp`/`uploadImagen`: validar `'image'` no `'imagen'`, `$request->file('image')` |
+| `mi3/backend/app/Http/Controllers/Auth/AuthController.php` | `remember` default `true` (30 días) |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `53585c4` | `fix(mi3): upload-temp 422 (imagen→image) + remember token default true` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `g10efv3i4drb5nhe89qu1u4d` | ✅ queued |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| 422 en `POST /compras/upload-temp` | Backend valida `imagen`, frontend envía `image` | Cambiar validación a `'image'` en CompraController |
+| Sesión se pierde al cerrar browser | `remember` default `false` → cookie session (maxAge=0) | Cambiar default a `true` → cookie 30 días |
+
+### Lecciones Aprendidas
+
+179. **Consistencia de nombres de campo frontend↔backend**: Si el frontend envía `image`, el backend debe validar `image`. Parece obvio pero es fácil de confundir entre español (`imagen`) e inglés (`image`). Definir un estándar y mantenerlo
+180. **Para apps internas, remember=true por defecto**: En un food truck donde los mismos 5 usuarios usan la app todos los días, no tiene sentido que se deslogueen al cerrar el browser. 30 días de sesión es razonable. El checkbox "Recordarme" debería estar marcado por defecto
+
+### Pendiente
+
+- **Verificar** que upload de imágenes funciona después del deploy
+- **Re-login** para obtener cookie de 30 días (el fix aplica solo a nuevos logins)
+- Test end-to-end: subir foto → extracción IA → registro
+- Fix suscripciones duplicadas en `push_subscriptions_mi3`
+- Integrar `NotificacionNueva` event en flujos reales
+- Corregir caja3 `get_turnos.php` base date cajero
+- Generar turnos mayo
 
 ---
 
