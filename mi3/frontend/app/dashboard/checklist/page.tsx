@@ -497,7 +497,17 @@ export default function ChecklistPage() {
     setLoading(true);
     setError('');
     apiFetch<ApiResponse<Checklist[]>>('/worker/checklists')
-      .then(res => setChecklists(res.data || []))
+      .then(res => {
+        const all = res.data || [];
+        // Filter: cierre checklists only visible after 18:00 Chile time
+        const now = new Date();
+        const chileHour = new Date(now.toLocaleString('en-US', { timeZone: 'America/Santiago' })).getHours();
+        const filtered = all.filter(c => {
+          if (c.type === 'cierre' && c.status !== 'completed' && chileHour < 18) return false;
+          return true;
+        });
+        setChecklists(filtered);
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, []);

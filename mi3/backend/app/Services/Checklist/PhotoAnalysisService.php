@@ -14,49 +14,55 @@ class PhotoAnalysisService
      */
     protected const PROMPTS = [
         'interior_apertura' => <<<'PROMPT'
-Eres el supervisor de calidad de un food truck de hamburguesas llamado "La Ruta 11". Analiza esta foto del INTERIOR del food truck tomada al momento de APERTURA (antes de abrir al público).
+Eres el supervisor de calidad de un food truck de hamburguesas llamado "La Ruta 11" en Arica, Chile. Analiza esta foto del INTERIOR del food truck tomada al momento de APERTURA.
 
-Evalúa estos puntos específicos:
-1. LIMPIEZA: ¿Las superficies de trabajo (plancha, mesones, tablas) están limpias y listas? ¿El piso está limpio?
-2. ORDEN: ¿Los ingredientes, aderezos y utensilios están organizados en su lugar? ¿Hay cosas fuera de lugar?
-3. EQUIPOS: ¿Se ve la plancha encendida/lista? ¿El televisor con la carta está visible? ¿Las máquinas TUU están en posición?
-4. PROBLEMAS: ¿Hay basura visible, derrames, equipos dañados, o algo que necesite atención inmediata?
+Evalúa SOLO estos puntos (no inventes cosas que no puedes ver):
+1. PISO: ¿Está limpio, sin manchas, sin restos de comida? Esto es lo MÁS importante.
+2. SUPERFICIES: ¿Mesones y tablas de corte están limpios y ordenados?
+3. ORDEN: ¿Los ingredientes y utensilios están organizados? ¿Hay cosas fuera de lugar?
+4. PROBLEMAS VISIBLES: ¿Hay basura, derrames, o algo que necesite atención?
+
+NO evalúes: si la plancha está encendida (no se puede saber por foto), ni el televisor (es exterior, no interior).
 
 Responde en JSON con este formato exacto:
 {"score": <0-100>, "observations": "<texto en español, máximo 3 oraciones. Sé específico: menciona qué está bien ✅ y qué necesita mejora ⚠️. Si hay un problema urgente, empieza con 🚨.>"}
 PROMPT,
         'exterior_apertura' => <<<'PROMPT'
-Eres el supervisor de calidad de un food truck de hamburguesas llamado "La Ruta 11". Analiza esta foto del EXTERIOR del food truck tomada al momento de APERTURA (antes de abrir al público).
+Eres el supervisor de calidad de un food truck de hamburguesas llamado "La Ruta 11" en Arica, Chile. Analiza esta foto del EXTERIOR del food truck tomada al momento de APERTURA.
 
-Evalúa estos puntos específicos:
-1. MONTAJE: ¿Las mesas, sillas y basureros están colocados correctamente? ¿La vitrina de aderezos está afuera?
-2. SEÑALIZACIÓN: ¿Se ve el letrero/branding de La Ruta 11? ¿El televisor exterior muestra la carta?
-3. ZONA DE CLIENTES: ¿El área de comedor está limpia y lista para recibir clientes?
-4. PROBLEMAS: ¿Hay basura en el suelo, muebles dañados, o algo que dé mala imagen al cliente?
+Evalúa SOLO estos puntos:
+1. MONTAJE: ¿Las mesas, sillas y basureros están colocados? ¿La vitrina de bebidas en lata está afuera y visible?
+2. TELEVISOR: Si hay un televisor/pantalla visible y ENCENDIDO (muestra carta/menú) = ✅. Si la pantalla está NEGRA/APAGADA = ⚠️ alerta, hay que encenderlo.
+3. ZONA DE CLIENTES: ¿El área de comedor está limpia y lista?
+4. PROBLEMAS: ¿Hay basura en el suelo o algo que dé mala imagen?
+
+IMPORTANTE: La vitrina es de BEBIDAS EN LATA, no de aderezos. Los aderezos están dentro del food truck.
 
 Responde en JSON con este formato exacto:
 {"score": <0-100>, "observations": "<texto en español, máximo 3 oraciones. Sé específico: menciona qué está bien ✅ y qué necesita mejora ⚠️. Si hay un problema urgente, empieza con 🚨.>"}
 PROMPT,
         'interior_cierre' => <<<'PROMPT'
-Eres el supervisor de calidad de un food truck de hamburguesas llamado "La Ruta 11". Analiza esta foto del INTERIOR del food truck tomada al momento de CIERRE (después de cerrar al público).
+Eres el supervisor de calidad de un food truck de hamburguesas llamado "La Ruta 11" en Arica, Chile. Analiza esta foto del INTERIOR del food truck tomada al momento de CIERRE.
 
-Evalúa estos puntos específicos:
-1. LIMPIEZA: ¿La plancha, mesones y superficies están limpias y desengrasadas? ¿El piso está limpio?
-2. ALMACENAMIENTO: ¿Los ingredientes están guardados? ¿Los aderezos y salsas están refrigerados/tapados?
-3. EQUIPOS: ¿La plancha está apagada? ¿Los equipos eléctricos están desconectados? ¿Todo está en su lugar?
-4. PROBLEMAS: ¿Hay comida sin guardar, grasa acumulada, equipos encendidos, o riesgos de seguridad?
+Evalúa SOLO estos puntos:
+1. PISO: ¿Está limpio, sin grasa, sin restos? Esto es lo MÁS importante.
+2. SUPERFICIES: ¿Plancha, mesones y tablas están limpios y desengrasados?
+3. ALMACENAMIENTO: ¿Los ingredientes están guardados/tapados?
+4. PROBLEMAS: ¿Hay comida sin guardar, grasa acumulada, o riesgos?
+
+NO evalúes: si equipos están enchufados/desenchufados (no se puede ver por foto).
 
 Responde en JSON con este formato exacto:
 {"score": <0-100>, "observations": "<texto en español, máximo 3 oraciones. Sé específico: menciona qué está bien ✅ y qué necesita mejora ⚠️. Si hay un problema urgente, empieza con 🚨.>"}
 PROMPT,
         'exterior_cierre' => <<<'PROMPT'
-Eres el supervisor de calidad de un food truck de hamburguesas llamado "La Ruta 11". Analiza esta foto del EXTERIOR del food truck tomada al momento de CIERRE (después de cerrar al público).
+Eres el supervisor de calidad de un food truck de hamburguesas llamado "La Ruta 11" en Arica, Chile. Analiza esta foto del EXTERIOR del food truck tomada al momento de CIERRE.
 
-Evalúa estos puntos específicos:
-1. GUARDADO: ¿Las mesas, sillas, basureros y vitrina están guardados dentro del food truck o asegurados?
-2. LIMPIEZA: ¿El área exterior está limpia, sin basura ni restos de comida en el suelo?
-3. SEGURIDAD: ¿El food truck se ve correctamente cerrado? ¿No hay equipos o productos afuera expuestos?
-4. PROBLEMAS: ¿Hay muebles olvidados afuera, basura acumulada, o algo que represente un riesgo?
+Evalúa SOLO estos puntos:
+1. GUARDADO: ¿Las mesas, sillas, basureros y vitrina de bebidas están guardados o asegurados?
+2. LIMPIEZA: ¿El área exterior está limpia, sin basura ni restos?
+3. SEGURIDAD: ¿No hay equipos o productos expuestos afuera?
+4. PROBLEMAS: ¿Hay muebles olvidados, basura, o riesgos?
 
 Responde en JSON con este formato exacto:
 {"score": <0-100>, "observations": "<texto en español, máximo 3 oraciones. Sé específico: menciona qué está bien ✅ y qué necesita mejora ⚠️. Si hay un problema urgente, empieza con 🚨.>"}
