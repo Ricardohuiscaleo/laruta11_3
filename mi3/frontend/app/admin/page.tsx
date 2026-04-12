@@ -17,12 +17,18 @@ interface CronjobTask {
   frequency: string;
   enabled: boolean;
   last_status: string | null;
-  last_message: string | null;
   last_run: string | null;
-  last_duration: string | null;
   total_runs: number;
   failures: number;
 }
+
+const COOLIFY_URL = 'http://76.13.126.63:8000/api/v1';
+const COOLIFY_TOKEN = '3|S52ZUspC6N5G54apjgnKO6sY3VW5OixHlnY9GsMv8dc72ae8';
+const COOLIFY_APPS: Record<string, string> = {
+  'mi3-backend': 'ds24j8jlaf9ov4flk1nq4jek',
+  'app3': 'egck4wwcg0ccc4osck4sw8ow',
+  'caja3': 'xockcgsc8k000o8osw8o88ko',
+};
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -44,9 +50,38 @@ function freqLabel(freq: string): string {
   return freq;
 }
 
+async function fetchCronjobs(): Promise<CronjobTask[]> {
+  const tasks: CronjobTask[] = [];
+  const headers = { Authorization: `Bearer ${COOLIFY_TOKEN}`, Accept: 'application/json' };
+
+  for (const [appName, uuid] of Object.entries(COOLIFY_APPS)) {
+    try {
+      const res = await fetch(`${COOLIFY_URL}/applications/${uuid}/scheduled-tasks`, { headers });
+      if (!res.ok) continue;
+      const taskList = await res.json();
+
+      for (const task of taskList) {
+        let total_runs = 0, failures = 0, last_status: string | null = null, last_run: string | null = null;
+        try {
+          const execRes = await fetch(`${COOLIFY_URL}/applications/${uuid}/scheduled-tasks/${task.uuid}/executions`, { headers });
+          if (execRes.ok) {
+            const execs = await execRes.json();
+            total_runs = execs.length;
+            failures = execs.filter((e: any) => e.status !== 'success').length;
+            if (execs[0]) { last_status = execs[0].status; last_run = execs[0].finished_at; }
+          }
+        } catch {}
+        tasks.push({ app: appName, name: task.name, frequency: task.frequency, enabled: task.enabled, last_status, last_run, total_runs, failures });
+      }
+    } catch {}
+  }
+  return tasks;
+}
+
 export default function AdminPage() {
   const [data, setData] = useState<AdminDashData | null>(null);
   const [cronjobs, setCronjobs] = useState<CronjobTask[]>([]);
+  const [cronjobsLoading, setCronjobsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -58,12 +93,8 @@ export default function AdminPage() {
       apiFetch<{ success: boolean; data: { resumen: { gran_total: number }[] } }>(`/admin/payroll?mes=${mes}`),
       apiFetch<{ success: boolean; data: { id: number }[] }>('/admin/shift-swaps'),
       apiFetch<{ success: boolean; data: { bloqueado: boolean }[] }>('/admin/credits'),
-      apiFetch<{ success: boolean; data: CronjobTask[] }>('/admin/cronjobs'),
-    ]).then(([payrollRes, swapsRes, creditsRes, cronjobsRes]) => {
-      let payroll_total = 0;
-      let pending_swaps = 0;
-      let blocked_credits = 0;
-
+    ]).then(([payrollRes, swapsRes, creditsRes]) => {
+      let payroll_total = 0, pending_swaps = 0, blocked_credits = 0;
       if (payrollRes.status === 'fulfilled' && payrollRes.value.data) {
         const workers = payrollRes.value.data as any;
         if (workers.resumen) payroll_total = workers.resumen.reduce((s: number, w: any) => s + (w.gran_total || 0), 0);
@@ -77,13 +108,12 @@ export default function AdminPage() {
         const credits = creditsRes.value.data;
         blocked_credits = Array.isArray(credits) ? credits.filter((c: any) => c.bloqueado).length : 0;
       }
-      if (cronjobsRes.status === 'fulfilled' && Array.isArray(cronjobsRes.value.data)) {
-        setCronjobs(cronjobsRes.value.data);
-      }
-
       setData({ payroll_total, pending_swaps, blocked_credits });
       setLoading(false);
     }).catch(() => { setError('Error cargando datos'); setLoading(false); });
+
+    // Cronjobs load independently (don't block dashboard)
+    fetchCronjobs().then(setCronjobs).finally(() => setCronjobsLoading(false));
   }, []);
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-amber-600" /></div>;
@@ -109,12 +139,16 @@ export default function AdminPage() {
       </div>
 
       {/* Cronjobs Status */}
-      {cronjobs.length > 0 && (
-        <div className="rounded-xl border bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="h-5 w-5 text-amber-700" />
-            <span className="font-semibold text-sm text-amber-700">Cronjobs</span>
-          </div>
+      <div className="rounded-xl border bg-white p-5 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <Clock className="h-5 w-5 text-amber-700" />
+          <span className="font-semibold text-sm text-amber-700">Cronjobs</span>
+        </div>
+        {cronjobsLoading ? (
+          <div className="flex items-center gap-2 text-gray-400 text-sm py-4"><Loader2 className="h-4 w-4 animate-spin" /> Cargando cronjobs...</div>
+        ) : cronjobs.length === 0 ? (
+          <p className="text-sm text-gray-400 py-2">No se pudieron cargar los cronjobs</p>
+        ) : (
           <div className="space-y-3">
             {cronjobs.map((job, i) => (
               <div key={i} className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3">
@@ -143,16 +177,14 @@ export default function AdminPage() {
                     </div>
                   )}
                   {job.last_run && (
-                    <div>
-                      <p className="text-xs text-gray-500">{timeAgo(job.last_run)}</p>
-                    </div>
+                    <p className="text-xs text-gray-500">{timeAgo(job.last_run)}</p>
                   )}
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
