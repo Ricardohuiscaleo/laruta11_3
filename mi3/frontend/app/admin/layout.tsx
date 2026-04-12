@@ -1,5 +1,6 @@
 import AdminSidebar from '@/components/layouts/AdminSidebar';
 import MobileNavLayout from '@/components/mobile/MobileNavLayout';
+import PushNotificationInit from '@/components/PushNotificationInit';
 
 export default function AdminLayout({
   children,
@@ -8,6 +9,7 @@ export default function AdminLayout({
 }) {
   return (
     <>
+      <PushNotificationInit />
       <MobileNavLayout variant="admin">{children}</MobileNavLayout>
       <div className="hidden md:flex min-h-screen">
         <AdminSidebar />
