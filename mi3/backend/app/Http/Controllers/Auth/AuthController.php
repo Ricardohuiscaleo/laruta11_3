@@ -38,7 +38,7 @@ class AuthController extends Controller
             $request->input('password'),
         );
 
-        return $this->respondWithAuth($result, (bool) $request->input('remember', false));
+        return $this->respondWithAuth($result, (bool) $request->input('remember', true));
     }
 
     /**

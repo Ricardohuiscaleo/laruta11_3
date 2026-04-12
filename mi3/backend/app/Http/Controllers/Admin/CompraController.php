@@ -190,11 +190,11 @@ class CompraController extends Controller
     public function uploadTemp(Request $request): JsonResponse
     {
         $request->validate([
-            'imagen' => 'required|image|max:10240',
+            'image' => 'required|image|max:10240',
         ]);
 
         try {
-            $result = $this->imagenService->uploadTemp($request->file('imagen'));
+            $result = $this->imagenService->uploadTemp($request->file('image'));
 
             return response()->json([
                 'success' => true,
@@ -216,7 +216,7 @@ class CompraController extends Controller
     public function uploadImagen(Request $request, int $id): JsonResponse
     {
         $request->validate([
-            'imagen' => 'required|image|max:10240',
+            'image' => 'required|image|max:10240',
         ]);
 
         $compra = Compra::find($id);
@@ -226,7 +226,7 @@ class CompraController extends Controller
         }
 
         try {
-            $file = $request->file('imagen');
+            $file = $request->file('image');
             $timestamp = time();
             $key = "compras/respaldo_{$id}_{$timestamp}.jpg";
 

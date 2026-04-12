@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ae)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ag)
 
 ### Aplicaciones Desplegadas
 
@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`daqq442d4qox36raoyup140y`, commit `dfac24c`) | ❌ Manual |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`nklzycf28cf1zp796kr8jgl5`, commit `dfac24c`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Deploying (`fvgzm3fuu2u8`, commit `e72e859`) | ❌ Manual |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`kry1ebbnhf6c`, commit `e72e859`) | ❌ Manual |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (commit `19e6232`) | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`ogou80u110szexhrj0jvwuxa`, commit `19e6232`) | ❌ Manual |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running (`uu8lhn7wijjk1idj5ghf21pa`) | ❌ Manual |
 
 Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks individuales, o el nuevo hook "Ship It" para ciclo completo.
@@ -40,7 +40,161 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 |------|-----------|--------|
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ✅ Deployado + migraciones ejecutadas en producción |
-| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Deployado. Fix crash frontend + RUT mapping + 13 proveedores con RUT en BD + migración product_equivalences ejecutada |
+| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Deployado. Flujo foto→formulario. Fix NaN% stock. 3 deploys hoy |
+
+---
+
+## Sesión 2026-04-12ag — Auditoría badge digitalizatodo + fix badgeCount en push payload + manifest maskable
+
+### Lo realizado: Comparar implementación de badge entre digitalizatodo y mi3, corregir diferencias
+
+El usuario pidió investigar via SSH cómo funciona exactamente el badge count en el ícono de la PWA de digitalizatodo para comparar con mi3.
+
+**Auditoría de digitalizatodo (SSH a contenedores `bo888gk4kg8w0wossc00ccs8` + `fx5kn83mhdpe1jy3nj1zenjx`):**
+
+| Componente | Digitalizatodo | mi3 (antes) | mi3 (después) |
+|------------|---------------|-------------|---------------|
+| Push payload `badgeCount` | ✅ `'badgeCount' => 1` | ❌ No se enviaba | ✅ Agregado |
+| SW: `setAppBadge(data.badgeCount)` | ✅ | ✅ Ya existía | ✅ Sin cambios |
+| SW: `SET_BADGE` via postMessage | ✅ | ✅ Ya existía | ✅ Sin cambios |
+| SW: `clearAppBadge` on click | ❌ No lo hace | ✅ Ya lo hacíamos | ✅ Ventaja nuestra |
+| SW: `REFRESH_NOTIFICATIONS` broadcast | ✅ | ✅ Ya existía | ✅ Sin cambios |
+| Manifest `purpose` | `any maskable` | `any` | ✅ `any maskable` |
+| Manifest `id` | `"/"` | No existía | ✅ Agregado |
+| Backend: punto único de notificación | `Notification::send()` (BD + Reverb + Push) | `NotificationService::crear()` | ✅ Equivalente |
+
+**Código clave de digitalizatodo (`Notification.php`):**
+
+```php
+$payload = json_encode([
+    'title' => $title, 'body' => $body, 
+    'type' => $type, 'badgeCount' => 1
+]);
+```
+
+El `badgeCount` es lo que el SW lee para setear `self.registration.setAppBadge(count)`. Sin él, el badge no aparece en el ícono.
+
+**Archivos modificados (2):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/app/Services/Notification/PushNotificationService.php` | Agregado `'badgeCount' => 1` al payload JSON de push |
+| `mi3/frontend/public/manifest.json` | `purpose: "any maskable"`, agregado `"id": "/"` |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `19e6232` | `fix(mi3): agregar badgeCount al payload push + manifest maskable icons` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `ogou80u110szexhrj0jvwuxa` | ✅ finished |
+| mi3-frontend | mi.laruta11.cl | (deploy pendiente) | ⏳ |
+
+**Test push con badgeCount:**
+
+```php
+$service->crear(5, 'sistema', '🔔 Badge Test', '...');
+// ID: 3 — ahora con badgeCount:1 en payload
+```
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Badge no aparecía en ícono PWA | Payload push no incluía `badgeCount` — SW leía `data.badgeCount \|\| 1` pero el campo no existía | Agregar `'badgeCount' => 1` al payload en `PushNotificationService::enviar()` |
+
+### Lecciones Aprendidas
+
+164. **`badgeCount` en el payload push es requerido para el badge del ícono**: Aunque el SW tiene fallback `data.badgeCount || 1`, algunos browsers/OS no setean el badge si el campo no viene explícitamente en el payload. Siempre incluirlo
+165. **`purpose: "any maskable"` en manifest**: Permite que el ícono se adapte a la forma del launcher del dispositivo (círculo en Android, cuadrado redondeado en iOS). Sin `maskable`, el ícono puede verse cortado o con bordes blancos
+166. **Digitalizatodo como referencia de implementación**: El modelo `Notification::send()` de digitalizatodo es un buen patrón — un solo método estático que hace BD + Reverb + Push. Mi3 tiene el equivalente en `NotificationService::crear()`
+
+### Pendiente
+
+- Fix suscripciones duplicadas en `push_subscriptions_mi3` (44 registros para 1 usuario)
+- Integrar `NotificacionNueva` event en flujos reales (checklist, turno, adelanto)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12af — Flujo foto→formulario en Registro + fix NaN% en Stock
+
+### Lo realizado: Reorganizar flujo de registro (foto primero, IA extrae, formulario después) y corregir NaN% en Stock
+
+**1. Flujo de registro reorganizado:**
+
+| Antes | Después |
+|-------|---------|
+| Formulario completo visible de entrada | Paso 1: Solo zona de subir foto + botón "Extraer datos" |
+| Foto era opcional al final | Paso 2: Formulario pre-llenado por IA (o manual si skip) |
+| IA era un feature secundario | IA es el flujo principal, manual es el fallback |
+
+El nuevo flujo:
+1. Usuario ve zona de drag & drop: "Sube la foto de la boleta o producto"
+2. Sube foto → IA extrae datos → pre-llena proveedor + items
+3. Formulario aparece con datos pre-llenados, todo editable
+4. Botón "Ingresar manualmente sin foto" para skip
+
+**2. Fix NaN% en Stock:**
+
+El componente `StockDashboard` usaba campos que no existían en la respuesta de la API:
+
+| Campo en componente | Campo real de API | Fix |
+|-------------------|------------------|-----|
+| `item.stock_actual` | `item.current_stock` | Renombrado |
+| `item.nombre` | `item.name` | Renombrado |
+| `item.unidad` | `item.unit` | Renombrado |
+| `item.tipo` | `item.type` | Renombrado |
+| `item.ultima_cantidad_comprada` | `item.ultima_compra_cantidad` | Renombrado |
+| `item.vendido_desde_ultima_compra` | `item.vendido_desde_compra` | Renombrado |
+
+Además, `pct()` ahora hace `Number(item.current_stock) || 0` para evitar NaN.
+
+**Archivos modificados (4):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/components/admin/compras/RegistroCompra.tsx` | Reescrito: flujo foto→formulario con steps, handleExtractionResult pre-llena form |
+| `mi3/frontend/components/admin/compras/StockDashboard.tsx` | Reescrito: usar campos reales de API (current_stock, name, unit, type) |
+| `mi3/frontend/types/compras.ts` | StockItem: alinear con respuesta real de StockController |
+| `mi3/frontend/lib/compras-utils.ts` | (ya fixeado en sesión anterior) |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `f0078ec` | `fix(mi3): compras - foto primero en registro + fix NaN% en stock` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend | mi.laruta11.cl | `a6kdhwpe7gmt8bk62mtmmje0` | ✅ queued |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Stock muestra "NaN%" en todos los items | `StockItem` type usaba `stock_actual` pero API retorna `current_stock` → `undefined / number = NaN` | Alinear type con campos reales: `current_stock`, `name`, `unit`, `type` + `Number()` fallback |
+| Flujo de registro confuso | Formulario completo visible de entrada, foto era secundaria | Reorganizar: paso 1 = foto, paso 2 = formulario pre-llenado |
+
+### Lecciones Aprendidas
+
+177. **Flujo IA-first > formulario-first**: Si la IA hace el trabajo pesado, el primer paso debe ser darle la imagen. El formulario aparece después, pre-llenado. El ingreso manual es el fallback, no el flujo principal
+178. **Alinear types con la API real, no con lo ideal**: Los types de TypeScript deben reflejar exactamente lo que la API retorna (`current_stock`, `name`), no lo que el frontend quisiera (`stock_actual`, `nombre`). Esto evita NaN, undefined, y crashes silenciosos
+
+### Pendiente
+
+- **Verificar** que mi.laruta11.cl/admin/compras/registro muestra foto primero después del deploy
+- **Verificar** que mi.laruta11.cl/admin/compras/stock muestra porcentajes correctos
+- **Test end-to-end**: subir foto → extracción IA → registro → historial
+- Probar subida masiva con múltiples boletas
+- Integrar `NotificacionNueva` event en flujos reales
+- Corregir caja3 `get_turnos.php` base date cajero
+- Generar turnos mayo
 
 ---
 
