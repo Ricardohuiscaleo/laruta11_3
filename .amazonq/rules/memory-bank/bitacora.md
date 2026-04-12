@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ax)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12az)
 
 ### Aplicaciones Desplegadas
 
@@ -41,6 +41,78 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ⚠️ Spec marcado como deployado pero tabla `checklists_v2` NO existe en producción. Sistema usa checklists legacy |
 | mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Mapeo forzado persona→proveedor post-extracción. 9 riders ARIAKA + Ricardo (emisor) filtrado. 15+ deploys hoy |
+
+---
+
+## Sesión 2026-04-12ay+az — Checklist realtime toggle + fix photo upload 422
+
+### Lo realizado: Fix marcar/desmarcar sin reload + fix upload foto validation.required
+
+**1. Checklist realtime toggle (marcar/desmarcar):**
+
+| Antes | Después |
+|-------|---------|
+| Solo marcar, no desmarcar | Toggle: click marca, click de nuevo desmarca |
+| Cada marcado hacía re-fetch API (reload visual) | Optimistic UI: estado local se actualiza inmediatamente |
+| `onUpdate={fetchChecklists}` (re-fetch completo) | `onUpdate={() => setChecklists([...checklists])}` (spread local) |
+| Backend: `if (is_completed) return` (no-op) | Backend: `if (is_completed)` → desmarcar (toggle) |
+
+**2. Fix photo upload 422 (validation.required):**
+
+| Causa | Detalle |
+|-------|---------|
+| `apiFetch` siempre seteaba `Content-Type: application/json` | Incluso para FormData (multipart/form-data) |
+| El browser necesita setear Content-Type con boundary automáticamente | `Content-Type: application/json` rompe el multipart |
+| El backend recibía JSON vacío en vez de la foto | `validation.required` porque `photo` no existía en el request |
+
+**Fix:** `apiFetch` ahora detecta si `body instanceof FormData` y NO setea Content-Type, dejando que el browser lo haga.
+
+**3. Idea futura: tareas generadas por IA desde fotos de checklist:**
+
+El usuario propuso que si la IA detecta problemas en las fotos (ej: "🚨 Plancha sucia"), genere tareas automáticas asignadas al trabajador. Documentado como pendiente.
+
+**Archivos modificados (3):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/app/dashboard/checklist/page.tsx` | Toggle marcar/desmarcar, optimistic UI sin re-fetch |
+| `mi3/backend/app/Services/Checklist/ChecklistService.php` | `marcarItemCompletado` ahora toggle (desmarcar si ya completado) |
+| `mi3/frontend/lib/api.ts` | No setear Content-Type para FormData (fix multipart upload) |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `4af3612` | `fix(mi3): checklist realtime toggle - marcar/desmarcar sin reload` |
+| 2 | `643006b` | `fix(mi3): photo upload 422 - don't set Content-Type for FormData` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend | mi.laruta11.cl | `s12m9dirtal5cq0pbgaqayrj` | ✅ queued |
+| mi3-backend | api-mi3.laruta11.cl | `lnqvidphc6y8v9o4lb8s7uew` | ✅ queued |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| No se puede desmarcar item completado | Backend retornaba sin hacer nada si `is_completed=true` | Toggle: si completado → desmarcar, actualizar progress |
+| Reload al marcar cada item | `onUpdate` llamaba `fetchChecklists` (re-fetch API completo) | Optimistic UI: actualizar estado local con spread |
+| 422 `validation.required` al subir foto | `apiFetch` seteaba `Content-Type: application/json` para FormData | Detectar `body instanceof FormData` → no setear Content-Type |
+
+### Lecciones Aprendidas
+
+202. **FormData + Content-Type: application/json = 422**: Nunca setear Content-Type manualmente cuando envías FormData. El browser DEBE setear `multipart/form-data; boundary=...` automáticamente. Si fuerzas `application/json`, el servidor recibe un body vacío
+203. **Optimistic UI > re-fetch para acciones frecuentes**: Marcar/desmarcar un checklist es una acción que se hace muchas veces seguidas. Re-fetch la API completa cada vez causa flicker. Actualizar el estado local inmediatamente y hacer el POST async es mejor UX
+
+### Pendiente
+
+- **Verificar** que foto se sube y IA analiza después del deploy
+- **Feature futuro**: tareas generadas por IA desde fotos de checklist
+- Verificar upload S3 en compras
+- Verificar Gmail Token Refresh
+- Corregir caja3 `get_turnos.php` base date
+- Generar turnos mayo
+- Fix push subscriptions duplicadas
 
 ---
 
