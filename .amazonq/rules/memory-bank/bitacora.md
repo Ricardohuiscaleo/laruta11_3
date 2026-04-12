@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12bc)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12bd)
 
 ### Aplicaciones Desplegadas
 
@@ -41,6 +41,91 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ⚠️ Spec marcado como deployado pero tabla `checklists_v2` NO existe en producción. Sistema usa checklists legacy |
 | mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Mapeo forzado persona→proveedor post-extracción. 9 riders ARIAKA + Ricardo (emisor) filtrado. 15+ deploys hoy |
+
+---
+
+## Sesión 2026-04-12bd — Prompts IA mejorados con feedback real + cierre 18:00 + fotos planchero
+
+### Lo realizado: Reescribir 4 prompts de análisis IA con feedback del usuario, agregar fotos al planchero, cierre solo después de 18:00
+
+**1. Prompts IA reescritos con feedback real:**
+
+| Prompt | Antes (incorrecto) | Después (corregido) |
+|--------|-------------------|---------------------|
+| Interior apertura | "¿Plancha encendida? ¿TV visible?" | NO evaluar plancha ni TV. Piso es prioridad #1 |
+| Exterior apertura | "¿Vitrina de aderezos afuera?" | Vitrina es de BEBIDAS EN LATA. TV encendido=carta, apagado=alerta |
+| Interior cierre | "¿Equipos desconectados?" | NO evaluar enchufes. Piso limpio + superficies desengrasadas |
+| Exterior cierre | Sin cambios mayores | Vitrina de bebidas (no aderezos) |
+
+Regla clave agregada a todos: "NO evalúes cosas que no puedes ver en una foto"
+
+**2. Checklist cierre solo visible después de 18:00 Chile:**
+
+Frontend filtra: si `type === 'cierre'` y `status !== 'completed'` y hora Chile < 18 → no mostrar.
+
+**3. Fotos agregadas al planchero (Andres):**
+
+| Checklist | Antes | Después |
+|-----------|-------|---------|
+| #179 apertura | 2 items (sin foto) | 4 items (2 tareas + 2 fotos 📷) |
+| #180 cierre | 2 items (sin foto) | 4 items (2 tareas + 2 fotos 📷) |
+
+**Resumen fotos por rol:**
+
+| Rol | Apertura | Cierre |
+|-----|----------|--------|
+| Cajera | 4 tareas + 2 fotos = 6 items | 3 tareas + 2 fotos = 5 items |
+| Planchero | 2 tareas + 2 fotos = 4 items | 2 tareas + 2 fotos = 4 items |
+
+**Archivos modificados (2):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/app/Services/Checklist/PhotoAnalysisService.php` | 4 prompts reescritos con feedback real |
+| `mi3/frontend/app/dashboard/checklist/page.tsx` | Cierre filtrado por hora Chile >= 18:00 |
+
+**Datos modificados en producción (SSH):**
+
+| Tabla | Cambio |
+|-------|--------|
+| `checklist_items` | INSERT 4 items foto para planchero (#179, #180) |
+| `checklists` | UPDATE total_items #179=4, #180=4 |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `649ebd7` | `fix(mi3): prompts IA mejorados + cierre solo después 18:00 + fotos planchero` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend | mi.laruta11.cl | `saaf4bupuvnswfmw3ps69n6t` | ✅ queued |
+| mi3-backend | api-mi3.laruta11.cl | `cctihh1o5vrc6gudmfovueui` | ✅ queued |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| IA dice "vitrina de aderezos no afuera" | Prompt decía "vitrina de aderezos" pero es vitrina de bebidas en lata | Corregir prompt: "vitrina de BEBIDAS EN LATA" |
+| IA dice "plancha no encendida" | Prompt pedía evaluar si plancha está encendida (imposible por foto) | Agregar "NO evalúes: plancha encendida" |
+| IA dice "televisor no visible" en interior | TV es exterior, no interior | Quitar TV del prompt interior |
+| Checklist cierre visible desde la mañana | No había filtro por hora | Frontend filtra: cierre solo después 18:00 Chile |
+| Planchero sin fotos | Items de foto no se agregaron al crear checklist por rol | Agregados FOTO 1 + FOTO 2 |
+
+### Lecciones Aprendidas
+
+207. **Los prompts de IA deben reflejar la realidad del negocio, no suposiciones**: "Vitrina de aderezos" no existe — es vitrina de bebidas. "Plancha encendida" no se puede ver en foto. El feedback del usuario que usa el sistema diariamente es la mejor fuente para mejorar prompts
+208. **Filtrar por hora del día mejora la UX**: Mostrar el checklist de cierre a las 10am confunde. Solo mostrarlo después de las 18:00 cuando realmente corresponde
+
+### Pendiente
+
+- **Verificar** que prompts mejorados dan feedback correcto
+- **Verificar** que cierre no aparece antes de 18:00
+- Verificar upload S3 en compras
+- Verificar Gmail Token Refresh
+- Feature futuro: tareas generadas por IA desde fotos
+- Corregir caja3 `get_turnos.php` base date
+- Generar turnos mayo
 
 ---
 
