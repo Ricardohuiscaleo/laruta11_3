@@ -15,12 +15,12 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 export type PushStatus =
-  | 'loading'        // Checking status
-  | 'unsupported'    // Browser doesn't support push
-  | 'no-vapid'       // VAPID key not configured (server-side issue)
-  | 'denied'         // User blocked notifications in browser
-  | 'prompt'         // User hasn't decided yet — can activate
-  | 'active'         // Subscribed and working
+  | 'loading'
+  | 'unsupported'
+  | 'no-vapid'
+  | 'denied'
+  | 'prompt'
+  | 'active'         // Subscribed locally AND synced to backend
   | 'inactive';      // Permission granted but not subscribed
 
 export interface PushNotificationState {
@@ -33,12 +33,15 @@ const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 export function usePushNotifications(): PushNotificationState {
   const [status, setStatus] = useState<PushStatus>('loading');
 
-  // Check current status on mount
   useEffect(() => {
-    checkStatus();
+    checkAndSync();
   }, []);
 
-  async function checkStatus() {
+  /**
+   * Check browser state AND sync subscription to backend if exists.
+   * This ensures the backend always has the latest subscription endpoint.
+   */
+  async function checkAndSync() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
       setStatus('unsupported');
       return;
@@ -47,26 +50,28 @@ export function usePushNotifications(): PushNotificationState {
       setStatus('no-vapid');
       return;
     }
+
     const perm = Notification.permission;
-    if (perm === 'denied') {
-      setStatus('denied');
-      return;
-    }
-    if (perm === 'default') {
-      setStatus('prompt');
-      return;
-    }
-    // perm === 'granted' — check if actually subscribed
+    if (perm === 'denied') { setStatus('denied'); return; }
+    if (perm === 'default') { setStatus('prompt'); return; }
+
+    // perm === 'granted' — check subscription
     try {
       const reg = await navigator.serviceWorker.getRegistration('/sw.js');
-      if (reg) {
-        const sub = await reg.pushManager.getSubscription();
-        setStatus(sub ? 'active' : 'inactive');
-      } else {
-        setStatus('inactive');
-      }
+      if (!reg) { setStatus('inactive'); return; }
+
+      const sub = await reg.pushManager.getSubscription();
+      if (!sub) { setStatus('inactive'); return; }
+
+      // Subscription exists locally — sync to backend (keeps it fresh)
+      await apiFetch('/worker/push/subscribe', {
+        method: 'POST',
+        body: JSON.stringify({ subscription: sub.toJSON() }),
+      });
+      setStatus('active');
     } catch {
-      setStatus('inactive');
+      // If backend call fails, still show as active locally
+      setStatus('active');
     }
   }
 
@@ -76,14 +81,14 @@ export function usePushNotifications(): PushNotificationState {
       // 1. Register service worker
       const registration = await navigator.serviceWorker.register('/sw.js');
 
-      // 2. Request permission (will show browser prompt if 'default')
+      // 2. Request permission
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         setStatus(permission === 'denied' ? 'denied' : 'prompt');
         return false;
       }
 
-      // 3. Subscribe
+      // 3. Subscribe (or get existing)
       let subscription = await registration.pushManager.getSubscription();
       if (!subscription) {
         subscription = await registration.pushManager.subscribe({
@@ -92,7 +97,7 @@ export function usePushNotifications(): PushNotificationState {
         });
       }
 
-      // 4. Send to backend
+      // 4. Always send to backend (even if subscription existed)
       await apiFetch('/worker/push/subscribe', {
         method: 'POST',
         body: JSON.stringify({ subscription: subscription.toJSON() }),
@@ -101,7 +106,7 @@ export function usePushNotifications(): PushNotificationState {
       setStatus('active');
       return true;
     } catch {
-      await checkStatus(); // Re-check to get accurate status
+      await checkAndSync();
       return false;
     }
   }, []);

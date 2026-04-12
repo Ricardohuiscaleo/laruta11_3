@@ -4,14 +4,13 @@ import { useEffect } from 'react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 /**
- * Auto-activates push if permission was already granted (returning user).
- * Renders nothing visible.
+ * Auto-activates push if permission was already granted but not subscribed.
+ * The hook's checkAndSync() already handles re-syncing existing subscriptions.
  */
 export default function PushNotificationInit() {
   const { status, activate } = usePushNotifications();
 
   useEffect(() => {
-    // If permission already granted but not subscribed, auto-subscribe silently
     if (status === 'inactive') {
       activate();
     }
