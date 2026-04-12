@@ -1,12 +1,12 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12aj)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ak)
 
 ### Aplicaciones Desplegadas
 
 | App | URL | Stack | Estado | Auto-deploy |
 |-----|-----|-------|--------|-------------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`daqq442d4qox36raoyup140y`, commit `dfac24c`) | ❌ Manual |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Deploying (`ayepqdbjas6j`, commit `f803aee`) — fix Gmail token BD | ❌ Manual |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`nklzycf28cf1zp796kr8jgl5`, commit `dfac24c`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (commit `53585c4`) | ❌ Manual |
@@ -41,6 +41,84 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ✅ Deployado + migraciones ejecutadas en producción |
 | mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Fix S3 upload (flysystem-s3 en Dockerfile). 6 deploys hoy. Pendiente verificar upload funciona |
+
+---
+
+## Sesión 2026-04-12ak — Fix Gmail Token: migrado de archivo a BD + token renovado + deploy app3
+
+### Lo realizado: Renovar token Gmail expirado y migrar cron/emails de archivo local a BD
+
+**1. Token renovado manualmente via SSH:**
+
+```php
+require "/var/www/html/api/gmail/get_token_db.php";
+$result = getValidGmailToken();
+// → access_token: ya29.a0Aa7MYiojS3HX... (válido 60 min)
+```
+
+| Antes | Después |
+|-------|---------|
+| Token expirado desde 01:36 | Token renovado, válido hasta 20:22 |
+| `gmail_token.json` no existía en contenedor | Token en `gmail_tokens` tabla (ID 1) |
+
+**2. Cron migrado de archivo a BD:**
+
+| Archivo | Antes | Después |
+|---------|-------|---------|
+| `app3/api/cron/refresh_gmail_token.php` | `require auto_refresh.php` → lee `gmail_token.json` (archivo) | `require get_token_db.php` → lee `gmail_tokens` (BD) |
+| `app3/api/gmail/send_email.php` | `require get_token.php` → lee archivo | `require get_token_db.php` → lee BD |
+
+**3. Flujo corregido:**
+
+El cron cada 30 min ahora:
+1. Llama `getValidGmailToken()` de `get_token_db.php`
+2. Lee token de `gmail_tokens` tabla
+3. Si expirado → renueva con `refresh_token` via Google OAuth
+4. Actualiza `access_token` y `expires_at` en BD
+5. Registra resultado en `cron_executions`
+
+**Archivos ya existentes que funcionan correctamente:**
+- `send_payment_confirmation.php` ya usaba `get_token_db.php` ✅
+- `get_token_db.php` ya tenía auto-refresh desde BD ✅
+
+**Archivos modificados (2):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `app3/api/cron/refresh_gmail_token.php` | Reescrito: usa `get_token_db.php` (BD) en vez de `auto_refresh.php` (archivo) |
+| `app3/api/gmail/send_email.php` | `get_token.php` → `get_token_db.php` |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `f803aee` | `fix(app3): Gmail token refresh usa BD en vez de archivo local` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| app3 | app.laruta11.cl | `ayepqdbjas6jtnw5ykt1f3y2` | ✅ queued |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Gmail Token Refresh 29.4% éxito | `gmail_token.json` se perdía en cada deploy Docker | Migrar cron a `get_token_db.php` que lee/escribe en `gmail_tokens` tabla MySQL |
+| `send_email.php` no podía enviar emails | Usaba `get_token.php` que lee archivo inexistente | Cambiar a `get_token_db.php` |
+| Token expirado desde 01:36 | Nadie lo renovó porque el cron fallaba | Renovado manualmente via SSH + `getValidGmailToken()` |
+
+### Lecciones Aprendidas
+
+183. **Siempre tener dos fuentes de token: BD + auto-refresh**: `get_token_db.php` ya existía con auto-refresh desde BD, pero el cron y `send_email.php` no lo usaban. Cuando hay un helper que funciona, asegurarse de que TODOS los consumidores lo usen
+184. **Verificar que el cron funciona después de cada deploy**: El Gmail token refresh pasó de 100% a 29% sin que nadie lo notara. Un dashboard de cronjobs (que ya tenemos) debería tener alertas cuando la tasa de éxito baja
+
+### Pendiente
+
+- **Verificar** que Gmail Token Refresh pasa a 100% después del deploy de app3
+- Verificar que upload S3 funciona en mi3 después del rebuild Docker
+- Test end-to-end compras: subir foto → S3 → extracción IA → registro
+- Integrar `NotificacionNueva` event en flujos reales
+- Corregir caja3 `get_turnos.php` base date cajero
+- Generar turnos mayo
 
 ---
 

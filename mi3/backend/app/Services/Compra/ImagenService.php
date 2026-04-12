@@ -27,9 +27,11 @@ class ImagenService
             $contents = $this->compress($file->getRealPath());
         }
 
-        Storage::disk('s3')->put($tempKey, $contents, 'public');
+        Storage::disk('s3')->put($tempKey, $contents);
 
-        $tempUrl = Storage::disk('s3')->url($tempKey);
+        // Use direct S3 URL (bucket is configured for public read via bucket policy)
+        $bucket = config('filesystems.disks.s3.bucket', 'laruta11-images');
+        $tempUrl = "https://{$bucket}.s3.amazonaws.com/{$tempKey}";
 
         return [
             'tempUrl' => $tempUrl,
@@ -51,7 +53,8 @@ class ImagenService
         Storage::disk('s3')->copy($tempKey, $finalKey);
         Storage::disk('s3')->delete($tempKey);
 
-        return Storage::disk('s3')->url($finalKey);
+        $bucket = config('filesystems.disks.s3.bucket', 'laruta11-images');
+        return "https://{$bucket}.s3.amazonaws.com/{$finalKey}";
     }
 
     /**
