@@ -33,7 +33,7 @@ return [
     | IDs 1-4 son los trabajadores con turnos normales manuales que se filtran
     | para evitar duplicados con los turnos dinámicos generados.
     */
-    'dynamic_shift_personal_ids' => [1, 2, 3, 4],
+    'dynamic_shift_personal_ids' => [],
 
     /*
     |--------------------------------------------------------------------------
