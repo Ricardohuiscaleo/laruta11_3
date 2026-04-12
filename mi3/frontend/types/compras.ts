@@ -66,14 +66,19 @@ export interface Compra {
 
 export interface StockItem {
   id: number;
-  nombre: string;
-  tipo: 'ingredient' | 'product';
-  stock_actual: number;
+  name: string;
+  type: 'ingredient' | 'product';
+  current_stock: number;
   min_stock_level: number;
-  unidad: string;
+  unit: string;
   semaforo: 'rojo' | 'amarillo' | 'verde';
-  ultima_cantidad_comprada: number | null;
-  vendido_desde_ultima_compra: number | null;
+  category?: string;
+  cost_per_unit?: number;
+  supplier?: string;
+  ultima_compra_cantidad?: number | null;
+  stock_despues_compra?: number | null;
+  fecha_ultima_compra?: string | null;
+  vendido_desde_compra?: number | null;
 }
 
 // --- KPIs ---

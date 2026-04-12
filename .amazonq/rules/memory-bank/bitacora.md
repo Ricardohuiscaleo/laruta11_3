@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ad)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ae)
 
 ### Aplicaciones Desplegadas
 
@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`daqq442d4qox36raoyup140y`, commit `dfac24c`) | ❌ Manual |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`nklzycf28cf1zp796kr8jgl5`, commit `dfac24c`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (deploy pendiente, commit `686de0d`) | ❌ Manual |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`k12pu5vq0e7jjeihba9r0adp`, commit `686de0d`) | ❌ Manual |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Deploying (`fvgzm3fuu2u8`, commit `e72e859`) | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`kry1ebbnhf6c`, commit `e72e859`) | ❌ Manual |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running (`uu8lhn7wijjk1idj5ghf21pa`) | ❌ Manual |
 
 Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks individuales, o el nuevo hook "Ship It" para ciclo completo.
@@ -40,7 +40,131 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 |------|-----------|--------|
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ✅ Deployado + migraciones ejecutadas en producción |
-| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Prompt mejorado con contexto (proveedores+ingredientes). Totales 5/5 exactos, proveedores 3/5. Pendiente deploy |
+| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Deployado. Fix crash frontend + RUT mapping + 13 proveedores con RUT en BD + migración product_equivalences ejecutada |
+
+---
+
+## Sesión 2026-04-12ae — Fix crash frontend compras + deploy + RUT mapping + migraciones producción
+
+### Lo realizado: Corregir crash del frontend, deploy completo, poblar RUTs de proveedores, ejecutar migraciones
+
+**1. Fix crash frontend — `Application error: a client-side exception`:**
+
+El error era `TypeError: undefined is not an object (evaluating 'e.toLocaleString')` en `formatearPesosCLP`. Causa raíz: los componentes esperaban una estructura de respuesta API diferente a la real.
+
+| Componente | Esperaba | API Retorna | Fix |
+|-----------|----------|-------------|-----|
+| KpisDashboard | `{saldo_disponible}` | `{success, data: {saldo_disponible}}` | `.then(r => r.data)` |
+| RegistroCompra | `{saldo_disponible}` | `{success, data: {...}}` | `.then(r => r.data?.saldo_disponible)` |
+| ProyeccionCompras | `{saldo_disponible}` | `{success, data: {...}}` | Mismo fix |
+| HistorialCompras | `{data, last_page, total}` | `{success, compras, total_pages, total_compras}` | Cambiar campos |
+| StockDashboard | `StockItem[]` | `{success, items: [...]}` | `.then(r => r.items)` |
+| ItemSearch | `{nombre, stock_actual, unidad}` | `{name, current_stock, unit, type}` | Renombrar campos |
+| formatearPesosCLP | `number` | `undefined` (cuando API falla) | Null check: `if (monto == null) return '$0'` |
+
+**2. Deploy completo (2 commits):**
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `e3cb3de` | feat: subida masiva, Nova Pro, flujo asistido, navegación conectada |
+| 2 | `e72e859` | fix: API response structure mismatch + null safety |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend | mi.laruta11.cl | `fvgzm3fuu2u84w9xuppmnsq5` | ✅ queued |
+| mi3-backend | api-mi3.laruta11.cl | `kry1ebbnhf6c7v6h5ssg18au` | ✅ queued |
+| mi3-frontend (prev) | mi.laruta11.cl | `e4otxsqflkendkyczzfnjx6n` | ✅ finished |
+| mi3-backend (prev) | api-mi3.laruta11.cl | `d3muymet6mow2xq9xl5xssl2` | ✅ finished |
+
+**3. Migraciones ejecutadas en producción:**
+
+| Migración | Estado |
+|-----------|--------|
+| `2026_04_15_000005_create_product_equivalences_table` | ✅ 85.13ms |
+
+**4. RUTs poblados en supplier_index (13 proveedores):**
+
+| Proveedor | RUT |
+|-----------|-----|
+| Jumbo | 81.201.000-K |
+| unimarc | 81.537.600-5 |
+| Santa Isabel azolas | 76.079.100-4 |
+| Arauco | 76.416.198-4 |
+| agrosuper (proveedor) | 79.984.240-8 |
+| Ariztía (proveedor) | 78.194.739-3 |
+| shipo | 78.279.575-9 |
+| ideal | 76.979.850-1 |
+| vanni | 76.353.833-9 |
+| agro-asocapec | 77.618.930-K |
+| agro-lucila | 76.134.941-4 |
+| arica-plast | 76.333.833-3 |
+| Inzumo | 84.940.268-9 |
+
+**5. Equivalencias seeded desde historial (6):**
+
+| Producto | Equivalencia | Confirmado |
+|----------|-------------|-----------|
+| Hamburguesa R11 200gr | 22.9 unidades por paquete | 21x |
+| Tocino Laminado (60gr) | 25.9 unidades por paquete | 6x |
+| caja completo | 175 unidades por paquete | 4x |
+| Bolsa Delivery Baja | 200 unidades por paquete | 4x |
+| Virutilla Acero | 1 unidad | 3x |
+| Bolsa basura (rollo) | 1.7 unidades | 3x |
+
+**6. Prompt mejorado con mapeo RUT→proveedor:**
+
+El `buildLearnedContext()` ahora incluye `rut_map` en el contexto. El prompt inyecta:
+```
+Mapeo RUT → Proveedor:
+RUT 81.201.000-K = Jumbo
+RUT 76.416.198-4 = Arauco
+...
+```
+
+Cuando la IA lee un RUT en la boleta, puede identificar el proveedor automáticamente.
+
+**Archivos modificados (8):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/lib/compras-utils.ts` | `formatearPesosCLP` null-safe |
+| `mi3/frontend/components/admin/compras/KpisDashboard.tsx` | Fix API response `{success, data}` |
+| `mi3/frontend/components/admin/compras/RegistroCompra.tsx` | Fix API response + field names |
+| `mi3/frontend/components/admin/compras/ProyeccionCompras.tsx` | Fix API response |
+| `mi3/frontend/components/admin/compras/HistorialCompras.tsx` | Fix `{compras, total_compras, total_pages}` |
+| `mi3/frontend/components/admin/compras/StockDashboard.tsx` | Fix `{success, items}` |
+| `mi3/frontend/components/admin/compras/ItemSearch.tsx` | Fix field names `name/current_stock/unit/type` |
+| `mi3/backend/app/Services/Compra/ExtraccionService.php` | Add RUT→proveedor mapping to prompt context |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `e3cb3de` | `feat(mi3): compras inteligentes - subida masiva, Nova Pro, flujo asistido` |
+| 2 | `e72e859` | `fix(mi3): compras frontend - fix API response structure mismatch + null safety` |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `TypeError: undefined is not an object (evaluating 'e.toLocaleString')` | `formatearPesosCLP` recibía `undefined` cuando API fallaba o retornaba estructura diferente | Null check + fix estructura respuesta API en todos los componentes |
+| Frontend esperaba `{data, last_page}` de historial | CompraController retorna `{compras, total_compras, total_pages}` | Actualizar PaginatedResponse interface y field access |
+| ItemSearch mostraba `undefined` en dropdown | API retorna `name/current_stock/unit/type`, componente usaba `nombre/stock_actual/unidad/item_type` | Renombrar campos en SearchResult interface |
+
+### Lecciones Aprendidas
+
+174. **Siempre null-check funciones de formateo**: `formatearPesosCLP`, `formatearFecha`, etc. deben manejar `undefined/null` gracefully. En producción, las APIs pueden fallar, retornar 401, o tener estructura diferente a la esperada
+175. **Verificar estructura de respuesta API antes de deployar**: Los componentes frontend asumían una estructura (`{data, last_page}`) que no coincidía con lo que el controller realmente retorna (`{compras, total_pages}`). Esto se habría detectado con un test de integración o revisando el controller
+176. **RUT como identificador universal de proveedores chilenos**: El RUT es la forma más confiable de identificar un proveedor en una boleta chilena. Poblar `supplier_index.rut` desde las extracciones históricas permite identificación automática. Solo aplica a proveedores formales (supermercados, distribuidoras), no a ferias/agro
+
+### Pendiente
+
+- **Verificar** que mi.laruta11.cl/admin/compras/registro carga sin error después del deploy
+- **Test end-to-end** en producción: subir foto → extracción IA → registro → historial
+- Probar subida masiva con múltiples boletas
+- Integrar `NotificacionNueva` event en flujos reales (checklist, turno, adelanto)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Generar turnos mayo
 
 ---
 
