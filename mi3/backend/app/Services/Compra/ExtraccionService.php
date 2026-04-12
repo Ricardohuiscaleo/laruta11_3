@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Storage;
 
 class ExtraccionService
 {
-    private string $modelId = 'amazon.nova-lite-v1:0';
-    private int $timeoutSeconds = 10;
+    private string $modelId = 'amazon.nova-pro-v1:0';
+    private int $timeoutSeconds = 20;
 
     /**
      * Extract structured data from a boleta/factura image using Amazon Bedrock (Nova Lite).
@@ -400,24 +400,44 @@ PROMPT;
         $authorization = "AWS4-HMAC-SHA256 Credential={$accessKey}/{$credentialScope}, SignedHeaders={$signedHeaders}, Signature={$signature}";
 
         try {
-            $response = Http::timeout($this->timeoutSeconds)
-                ->withHeaders([
-                    'Content-Type' => 'application/json',
-                    'X-Amz-Date' => $now,
-                    'Authorization' => $authorization,
-                ])
-                ->withBody($jsonBody, 'application/json')
-                ->post($url);
+            // Use curl directly to avoid Guzzle/Laravel HTTP double-encoding the URL
+            // (the ':' in model ID gets encoded to %3A, then Guzzle re-encodes to %253A)
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => $jsonBody,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => $this->timeoutSeconds,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'X-Amz-Date: ' . $now,
+                    'Authorization: ' . $authorization,
+                ],
+            ]);
+            $responseBody = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
 
-            if ($response->successful()) {
-                return $response->json();
+            if ($curlError) {
+                if (str_contains($curlError, 'timed out')) {
+                    throw new \RuntimeException('Extracción agotó tiempo de espera');
+                }
+                Log::error("[ExtraccionService] Curl error: {$curlError}");
+                return null;
             }
 
-            Log::error('[ExtraccionService] Bedrock error: ' . $response->status() . ' ' . $response->body());
+            if ($httpCode === 200) {
+                return json_decode($responseBody, true);
+            }
+
+            Log::error("[ExtraccionService] Bedrock error: HTTP {$httpCode} " . substr($responseBody, 0, 500));
             return null;
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            Log::error('[ExtraccionService] Bedrock timeout: ' . $e->getMessage());
-            throw new \RuntimeException('Extracción agotó tiempo de espera');
+        } catch (\RuntimeException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('[ExtraccionService] Request error: ' . $e->getMessage());
+            return null;
         }
     }
 

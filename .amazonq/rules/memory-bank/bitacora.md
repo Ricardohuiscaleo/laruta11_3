@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12z)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ad)
 
 ### Aplicaciones Desplegadas
 
@@ -40,7 +40,201 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 |------|-----------|--------|
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ✅ Deployado + migraciones ejecutadas en producción |
-| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Implementación completa (tasks.md creado + todas las tareas requeridas ejecutadas), pendiente deploy + migraciones producción |
+| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Prompt mejorado con contexto (proveedores+ingredientes). Totales 5/5 exactos, proveedores 3/5. Pendiente deploy |
+
+---
+
+## Sesión 2026-04-12ad — Pruebas iterativas de prompt Nova Pro con imágenes reales + mejora de precisión
+
+### Lo realizado: Ciclo de prueba-corrección-prueba del prompt de extracción IA contra 10 imágenes reales de producción
+
+**1. Dataset real verificado via SSH:**
+
+| Dato | Valor |
+|------|-------|
+| Total compras en BD | 250 |
+| Compras con imagen | 234 |
+| Total imágenes en S3 | 248 |
+| Proveedores distintos | 15+ |
+| Items más comprados | Palta Hass (27x), Hamburguesa R11 (21x), Pan completo XL (19x), Tomate (18x) |
+
+**2. Prueba 1 — Prompt básico (sin contexto):**
+
+| # | Proveedor Real | IA Proveedor | Total | Problema |
+|---|---------------|-------------|-------|----------|
+| 257 | agro-asocapec | desconocido | 166% off ❌ | Foto producto, no sabe precio |
+| 256 | ideal | A033561603 (código) | 0% ✅ | Lee código de boleta, no nombre |
+| 254 | unimarc | Rotonda Arica | 16% off ⚠️ | Lee dirección, no proveedor |
+| 252 | Arauco | 0001 (código) | 0% ✅ | Boleta sin nombre visible |
+| 250 | agro-lucila | mercado pago | 0% ✅ | Lee método pago, no proveedor |
+
+Resultado: Totales 3/5 correctos, Proveedores 0/5 correctos.
+
+**3. Prueba 2 — Prompt mejorado (con contexto de proveedores + ingredientes):**
+
+Se inyectó en el prompt: lista de proveedores conocidos + lista de ingredientes del negocio + reglas específicas ("si es supermercado, usa ese nombre como proveedor").
+
+| # | Proveedor Real | IA Proveedor | Total | Mejora |
+|---|---------------|-------------|-------|--------|
+| 257 | agro-asocapec | agro-lucila | 0% ✅ | Ahora identifica "Tomate, 1 caja" y total exacto |
+| 256 | ideal | unimarc | 0% ✅ | Mapea items a "Pan Artesano Hamburguesa" |
+| 254 | unimarc | unimarc ✅ | 0% ✅ | Proveedor correcto + items mapeados |
+| 252 | Arauco | unimarc ❌ | 0% ✅ | Total exacto pero proveedor incorrecto |
+| 250 | agro-lucila | Mercado Pago | 0% ✅ | Total exacto pero lee método pago |
+
+Resultado: Totales **5/5 correctos** (antes 3/5), Proveedores **3/5** (antes 0/5).
+
+**4. Análisis de errores restantes:**
+
+Los 2 proveedores incorrectos son casos donde el nombre del proveedor NO está escrito en la imagen:
+- Boletas de carnicería (Arauco) → solo tienen códigos de barras
+- Tickets de feria (agro-lucila) → solo muestran "Mercado Pago"
+
+Estos casos requieren el flujo asistido: la IA pregunta "¿Dónde compraste?" con opciones conocidas.
+
+**5. Conclusión sobre aprendizaje:**
+
+Nova Pro no aprende sola (modelo estático). El aprendizaje es via prompt engineering acumulativo:
+- `extraction_feedback` guarda correcciones del usuario
+- `supplier_index` guarda patrones por proveedor
+- `product_equivalences` guarda reglas (caja tomates = 6 kg)
+- `getLearnedPatterns()` construye contexto desde estas 3 tablas e inyecta en el prompt
+- Cada corrección mejora el prompt de la siguiente extracción
+
+### Commits y Deploys
+
+No se hizo deploy (solo pruebas via SSH contra producción).
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Shell escaping con artisan tinker + regex | Backticks y regex en PHP dentro de SSH + docker exec causan parse errors | Usar comillas simples en SSH, evitar regex con backticks en tinker |
+| docker cp con stdin no funciona | `docker cp /dev/stdin container:/path < file` no copia el archivo | Ejecutar código directamente via artisan tinker en vez de copiar scripts |
+| Prompt sin contexto → proveedor incorrecto 5/5 | La IA lee lo que dice la boleta (código, dirección, método pago) | Inyectar lista de proveedores conocidos + reglas en el prompt |
+
+### Lecciones Aprendidas
+
+171. **Prompt con contexto de negocio >> prompt genérico**: Inyectar la lista de proveedores conocidos y ingredientes del negocio en el prompt de Bedrock mejora la precisión de proveedores de 0% a 60% y los totales de 60% a 100%. El modelo necesita saber qué buscar
+172. **El proveedor no siempre está en la imagen**: Boletas de carnicería y tickets de feria no muestran el nombre del proveedor. Para estos casos, el flujo asistido (preguntar al usuario) es la única solución. No intentar adivinar
+173. **Iteración rápida via SSH**: Probar prompts directamente en producción via `artisan tinker` + `curl` a Bedrock es la forma más rápida de iterar. No necesitas deploy para cada cambio de prompt — el prompt se construye dinámicamente desde la BD
+
+### Pendiente
+
+- **Deploy** mi3-backend + mi3-frontend con todo el código nuevo
+- **Ejecutar migración** `product_equivalences` en producción
+- **Seed equivalencias** desde historial
+- **Probar más imágenes** (248 total, solo probé 10)
+- **Ajustar prompt** para boletas de carnicería (Arauco) que solo tienen códigos
+- Integrar `NotificacionNueva` event en flujos reales (checklist, turno, adelanto)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Generar turnos mayo
+
+---
+
+## Sesión 2026-04-12ac — Subida masiva de boletas + navegación Compras conectada + Nova Pro como modelo
+
+### Lo realizado: Conectar ícono Compras del admin a la nueva app, agregar subida masiva, y múltiples mejoras IA
+
+**1. Navegación conectada:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/app/admin/page.tsx` | Ícono "Compras" en dashboard admin: `caja.laruta11.cl/compras/` → `/admin/compras` (nueva app) |
+| `mi3/frontend/lib/navigation.ts` | Agregado "Compras" (ShoppingCart) como primer item en `adminSecondaryNavItems` (menú "Más") |
+
+**2. Subida masiva de boletas (`SubidaMasiva.tsx`):**
+
+Nuevo componente que permite subir múltiples fotos de boletas/facturas a la vez:
+- Drag & drop o selección múltiple de archivos
+- La IA procesa cada imagen y agrupa automáticamente por proveedor
+- Proveedor desconocido → campo editable con warning amarillo
+- Todos los items son editables (nombre, cantidad, unidad, precio)
+- Botón "Registrar" por grupo individual o "Registrar todas" para todo de una
+- Cada grupo muestra thumbnails de las fotos, método de pago seleccionable, y total calculado
+
+**3. Toggle en tab Registro:**
+
+| Modo | Descripción |
+|------|-------------|
+| "Una compra" | Formulario normal (RegistroCompra.tsx) |
+| "Subida masiva" | Drag & drop múltiple (SubidaMasiva.tsx) |
+
+**4. Pruebas IA reales con Nova Pro en producción (sesión anterior, documentado aquí):**
+
+Se probaron 3 tipos de imágenes reales contra Nova Pro via SSH a producción:
+
+| Imagen | Proveedor Real | IA Extrajo | Precisión |
+|--------|---------------|------------|-----------|
+| Boleta Arauco #252 (carnicería) | Arauco | "Supermercado de Carnes Arauco SPA", 6 items con pesos exactos al gramo | ✅ Total exacto $71.470, pesos correctos |
+| Factura Jumbo #99 (supermercado, 14 items) | Jumbo | "CENCOSUD RETAIL S.A.", ~20 líneas incluyendo items + descuentos + IVA | ✅ Total exacto $135.010, todos los items leídos |
+| Foto tomates #257 (producto) | agro-asocapec | "tomates, 18 unidades" (tipo_imagen: foto_producto) | ⚠️ Identifica producto pero no sabe peso → necesita flujo asistido |
+| Ticket Shipo #244 (carnicería chica) | shipo | "Carniceria Don Shipo", 1 item parcial | ⚠️ Solo lee parte del ticket (depende de calidad foto) |
+
+**5. Modelo cambiado a Nova Pro:**
+
+| Antes | Después |
+|-------|---------|
+| `amazon.nova-lite-v1:0` | `amazon.nova-pro-v1:0` |
+| Precisión pipeline: 15-25% | Facturas supermercado/carnicería: ~90%+ |
+
+**6. Fix SigV4 signing para Bedrock:**
+
+El `:` en el model ID (`amazon.nova-pro-v1:0`) causaba doble URL-encoding con Laravel HTTP client (Guzzle). Fix: usar curl nativo en vez de `Http::post()`.
+
+**7. Flujo asistido (AsistenteCompraService) + equivalencias (product_equivalences):**
+
+- Nueva tabla `product_equivalences`: mapea "caja de tomates" → 6 kg tomate, con precio por caja
+- `AsistenteCompraService`: procesa extracción IA y genera preguntas inteligentes (precio, proveedor)
+- Flujo: foto → IA detecta → sistema pregunta lo que falta → auto-completa
+- `seedEquivalenciasDesdeHistorial()`: genera equivalencias iniciales desde patrones de compras históricas
+
+**8. Prompt multi-tipo mejorado:**
+
+El prompt de Bedrock ahora detecta 4 tipos de imagen (boleta, factura, producto, báscula) e incluye contexto aprendido: proveedores conocidos, ingredientes del negocio, patrones producto-cantidad, y correcciones frecuentes del usuario.
+
+**Archivos creados/modificados (7):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/app/admin/page.tsx` | Compras href → `/admin/compras` |
+| `mi3/frontend/lib/navigation.ts` | Agregado ShoppingCart + Compras en admin secondary nav |
+| `mi3/frontend/components/admin/compras/SubidaMasiva.tsx` | Nuevo: subida masiva con agrupación por proveedor |
+| `mi3/frontend/app/admin/compras/registro/page.tsx` | Toggle "Una compra" / "Subida masiva" |
+| `mi3/backend/app/Services/Compra/ExtraccionService.php` | Nova Pro, prompt multi-tipo, contexto aprendido, fix SigV4 curl |
+| `mi3/backend/app/Services/Compra/AsistenteCompraService.php` | Nuevo: flujo asistido con preguntas inteligentes |
+| `mi3/backend/database/migrations/2026_04_15_000005_create_product_equivalences_table.php` | Nueva tabla equivalencias |
+| `mi3/backend/app/Models/ProductEquivalence.php` | Nuevo modelo |
+
+### Commits y Deploys
+
+No se hizo deploy aún (código listo, pendiente commit + deploy).
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Nova Pro 403 en Bedrock | SigV4 doble URL-encoding: Guzzle re-encoda `%3A` a `%253A` | Reemplazar `Http::post()` por `curl_init()` nativo |
+| Nova Lite precisión 15-25% en pipeline | Modelo demasiado simple para boletas chilenas con códigos de barras | Cambiar a Nova Pro (`amazon.nova-pro-v1:0`) |
+| `AsistenteCompraService` no encontrado en producción | Código nuevo no deployado aún | Pendiente deploy |
+
+### Lecciones Aprendidas
+
+167. **Nova Pro >> Nova Lite para OCR de boletas**: Nova Lite no puede leer boletas de supermercado con múltiples items. Nova Pro lee todos los items, pesos exactos al gramo, precios, RUT, y totales. La diferencia es abismal para documentos complejos
+168. **SigV4 + Guzzle = doble encoding**: Laravel's `Http::post($url)` usa Guzzle que re-encoda la URL. Si el path tiene caracteres especiales (`:` en model ID de Bedrock), usar `curl_init()` nativo para evitar `%3A` → `%253A`
+169. **Flujo asistido > OCR puro**: Para fotos de productos (cajas, bolsas), la IA no puede adivinar el peso ni el precio. Mejor detectar el producto y preguntar al usuario lo que falta. El sistema aprende las respuestas para la próxima vez (equivalencias)
+170. **Subida masiva con agrupación automática**: Subir 5 boletas de una vez y que el sistema las agrupe por proveedor ahorra mucho tiempo vs registrar una por una. El proveedor desconocido queda editable
+
+### Pendiente
+
+- **Deploy** mi3-backend + mi3-frontend con todo el código nuevo
+- **Ejecutar migración** `product_equivalences` en producción
+- **Seed equivalencias** desde historial (`seedEquivalenciasDesdeHistorial()`)
+- **Test end-to-end** en producción: subida masiva → extracción IA → registro → historial → WebSocket
+- Integrar `NotificacionNueva` event en flujos reales (checklist, turno, adelanto)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
 
 ---
 

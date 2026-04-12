@@ -16,7 +16,7 @@ interface DashboardData {
 }
 
 const apps = [
-  { label: 'Compras', icon: ShoppingBag, color: 'bg-blue-500', href: 'https://caja.laruta11.cl/compras/' },
+  { label: 'Compras', icon: ShoppingBag, color: 'bg-blue-500', href: '/admin/compras' },
   { label: 'Checklists', icon: ClipboardCheck, color: 'bg-amber-500', href: '/admin/checklists' },
   { label: 'Cambios', icon: ArrowLeftRight, color: 'bg-purple-500', href: '/admin/cambios' },
   { label: 'Créditos', icon: CreditCard, color: 'bg-green-600', href: '/admin/creditos' },

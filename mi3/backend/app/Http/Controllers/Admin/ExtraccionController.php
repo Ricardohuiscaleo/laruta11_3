@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Compra\AsistenteCompraService;
 use App\Services\Compra\ExtraccionService;
 use App\Services\Compra\PipelineService;
 use App\Services\Compra\SugerenciaService;
@@ -17,6 +18,7 @@ class ExtraccionController extends Controller
         private SugerenciaService $sugerenciaService,
         private ValidacionService $validacionService,
         private PipelineService $pipelineService,
+        private AsistenteCompraService $asistenteService,
     ) {}
 
     /**
