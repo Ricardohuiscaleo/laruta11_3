@@ -4,23 +4,26 @@ import { useEffect, useCallback } from 'react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useAuth } from '@/hooks/useAuth';
+import { getEcho } from '@/lib/echo';
 
 /**
- * Initializes push notifications + WebSocket realtime connection.
- * Mounts in dashboard layout — renders nothing visible.
+ * Initializes push notifications sync + WebSocket realtime connection.
+ * Mounts in both dashboard and admin layouts — renders nothing visible.
+ *
+ * IMPORTANT: Never call Notification.requestPermission() here.
+ * Safari requires it from a user gesture (click). The modal handles that.
  */
 export default function PushNotificationInit() {
-  const { status, activate } = usePushNotifications();
+  const { status } = usePushNotifications(); // checkAndSync runs on mount (no requestPermission)
   const { user } = useAuth();
 
-  // Auto-subscribe push if permission already granted
+  // Initialize Echo WebSocket connection immediately (no user needed for connection)
   useEffect(() => {
-    if (status === 'inactive') activate();
-  }, [status, activate]);
+    getEcho(); // establishes wss:// connection on first call
+  }, []);
 
   // Handle realtime notification via WebSocket
-  const onNotification = useCallback((data: { titulo: string; cuerpo: string }) => {
-    // Refresh notification count in header (SW also does this, but this is instant)
+  const onNotification = useCallback(() => {
     navigator.serviceWorker?.controller?.postMessage({ type: 'REFRESH_NOTIFICATIONS' });
   }, []);
 
