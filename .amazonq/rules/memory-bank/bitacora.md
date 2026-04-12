@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ar)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12at)
 
 ### Aplicaciones Desplegadas
 
@@ -41,6 +41,98 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ⚠️ Spec marcado como deployado pero tabla `checklists_v2` NO existe en producción. Sistema usa checklists legacy |
 | mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Mapeo forzado persona→proveedor post-extracción. 9 riders ARIAKA + Ricardo (emisor) filtrado. 15+ deploys hoy |
+
+---
+
+## Sesión 2026-04-12as+at — Checklists: limpieza + asignar cajera a Ricardo + fix filtro por rol
+
+### Lo realizado: Limpiar checklists, crear cajera para Ricardo, diagnosticar y resolver filtro de visibilidad
+
+**1. Checklists eliminados:**
+
+| # | Tipo | Asignado | Motivo eliminación |
+|---|------|----------|-------------------|
+| 177 | apertura | — SIN ASIGNAR — | Genérico sin dueño |
+| 176 | cierre | — SIN ASIGNAR — | Genérico sin dueño |
+| 183 | apertura | Ricardo (11 items genéricos) | Reemplazado por cajera |
+| 184 | cierre | Ricardo (11 items genéricos) | Reemplazado por cajera |
+
+**2. Template actualizado:**
+
+| Antes | Después |
+|-------|---------|
+| "Colocar servilletas en 20 bolsas de delivery" | "Colocar servilletas en 10 bolsas de delivery" |
+
+71 items históricos actualizados (20→10) en `checklist_items`.
+
+**3. Checklists cajera creados para Ricardo:**
+
+| # | Tipo | Items | Rol |
+|---|------|-------|-----|
+| 185 | apertura | 4: Encender PedidosYa, Revisar TUU, Verificar saldo, Servilletas 10 bolsas | cajero |
+| 186 | cierre | 3: Apagar PedidosYa, Verificar saldo x2 | cajero |
+
+Con `personal_id=5`, `rol=cajero`.
+
+**4. Turno creado para Ricardo:**
+
+Ricardo no tenía turno hoy → "No tienes checklists pendientes". Creado turno #1357 (normal) para 2026-04-12.
+
+**5. Fix: Ricardo no veía checklists (filtro por rol):**
+
+`ChecklistService::getChecklistsPendientes()` filtra por `whereIn('rol', $roles)` donde `$roles` viene de `personal.getRolesArray()` intersectado con `['cajero', 'planchero']`. Ricardo tenía `administrador,seguridad` → intersección vacía → 0 checklists.
+
+| Antes | Después |
+|-------|---------|
+| `personal.rol = "administrador,seguridad"` | `personal.rol = "administrador,cajero,seguridad"` |
+
+**Estado final checklists hoy:**
+
+| # | Tipo | Asignado | Rol | Items |
+|---|------|----------|-----|-------|
+| 179 | apertura | Andres Aguilera | planchero | 2 |
+| 181 | apertura | Dafne | cajero | 4 |
+| 185 | apertura | Ricardo Huiscaleo | cajero | 4 |
+| 180 | cierre | Andres Aguilera | planchero | 2 |
+| 182 | cierre | Dafne | cajero | 3 |
+| 186 | cierre | Ricardo Huiscaleo | cajero | 3 |
+
+### Datos modificados en producción (SSH)
+
+| Tabla | Cambio |
+|-------|--------|
+| `checklists` | DELETE #177, #176, #183, #184 |
+| `checklist_items` | DELETE items de #177, #176, #183, #184 |
+| `checklist_templates` | UPDATE "20 bolsas" → "10 bolsas" |
+| `checklist_items` | UPDATE 71 items "20 bolsas" → "10 bolsas" |
+| `checklists` | INSERT #185 (apertura cajero Ricardo), #186 (cierre cajero Ricardo) |
+| `checklist_items` | INSERT 7 items (4 apertura + 3 cierre) para Ricardo |
+| `turnos` | INSERT #1357 (Ricardo, 2026-04-12, normal) |
+| `personal` | UPDATE id=5 rol: `administrador,seguridad` → `administrador,cajero,seguridad` |
+
+### Commits y Deploys
+
+No se hizo commit ni deploy (solo datos en BD via SSH).
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| "No tienes checklists pendientes" con checklist asignado | `getChecklistsPendientes` filtra por `whereIn('rol', ['cajero','planchero'])` y Ricardo solo tenía `administrador,seguridad` | Agregar `cajero` al rol de Ricardo en `personal` |
+| Checklists no aparecen sin turno | El frontend muestra "se crean automáticamente cuando tienes turno" y el endpoint requiere turno | Crear turno #1357 para Ricardo hoy |
+
+### Lecciones Aprendidas
+
+196. **El checklist requiere 3 condiciones para ser visible**: 1) `personal_id` en el checklist, 2) turno asignado para la fecha, 3) rol del personal incluye `cajero` o `planchero`. Si falta cualquiera, no aparece
+197. **Admins que quieren testear necesitan rol dual**: Un admin que quiere ver checklists de cajero necesita tener `cajero` en su campo `rol` de `personal`. El sistema no tiene bypass de admin para checklists
+
+### Pendiente
+
+- **Verificar** que Ricardo ve sus checklists en mi.laruta11.cl/dashboard/checklist
+- Definir qué fotos se dan a la IA para analizar en checklists
+- Verificar upload S3 + extracción IA en compras
+- Verificar Gmail Token Refresh
+- Generar turnos mayo
 
 ---
 
