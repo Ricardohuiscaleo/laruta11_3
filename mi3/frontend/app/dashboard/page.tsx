@@ -11,7 +11,11 @@ import {
   TrendingDown,
   Users,
   Loader2,
+  ClipboardCheck,
+  Sun,
+  Moon,
 } from 'lucide-react';
+import Link from 'next/link';
 import type {
   Turno,
   Notificacion,
@@ -134,6 +138,9 @@ export default function DashboardPage() {
   const [notifications, setNotifications] = useState<Notificacion[]>([]);
   const [noLeidas, setNoLeidas] = useState(0);
   const [bottomLoading, setBottomLoading] = useState(true);
+  const [checklists, setChecklists] = useState<any[]>([]);
+  const [checklistLoading, setChecklistLoading] = useState(true);
+  const [isDayOff, setIsDayOff] = useState(false);
 
   useEffect(() => {
     const now = new Date();
@@ -148,24 +155,33 @@ export default function DashboardPage() {
       .catch(() => setSummaryError('Error cargando resumen'))
       .finally(() => setSummaryLoading(false));
 
-    // Fetch shifts + notifications (existing sections)
+    // Fetch shifts + notifications + checklists
     Promise.allSettled([
       apiFetch<ApiResponse<{ turnos: Turno[] }>>(`/worker/shifts?mes=${mes}`),
       apiFetch<{ success: boolean; data: Notificacion[]; no_leidas: number }>('/worker/notifications'),
-    ]).then(([shiftsRes, notiRes]) => {
+      apiFetch<{ success: boolean; data: any[] }>('/worker/checklists'),
+    ]).then(([shiftsRes, notiRes, checkRes]) => {
       if (shiftsRes.status === 'fulfilled' && shiftsRes.value.data) {
         const todayShifts = shiftsRes.value.data.turnos.filter(t => t.fecha === today);
         setShifts(todayShifts);
+        if (todayShifts.length === 0) setIsDayOff(true);
+      } else {
+        setIsDayOff(true);
       }
       if (notiRes.status === 'fulfilled') {
         setNotifications(notiRes.value.data?.slice(0, 5) || []);
         setNoLeidas(notiRes.value.no_leidas || 0);
       }
+      if (checkRes.status === 'fulfilled') {
+        setChecklists(checkRes.value.data || []);
+      }
       setShiftsLoading(false);
       setBottomLoading(false);
+      setChecklistLoading(false);
     }).catch(() => {
       setShiftsLoading(false);
       setBottomLoading(false);
+      setChecklistLoading(false);
     });
   }, []);
 

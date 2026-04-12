@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12at)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12au)
 
 ### Aplicaciones Desplegadas
 
@@ -41,6 +41,63 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ⚠️ Spec marcado como deployado pero tabla `checklists_v2` NO existe en producción. Sistema usa checklists legacy |
 | mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Mapeo forzado persona→proveedor post-extracción. 9 riders ARIAKA + Ricardo (emisor) filtrado. 15+ deploys hoy |
+
+---
+
+## Sesión 2026-04-12au — Auditoría checklist: PhotoAnalysisService ya implementado con Nova Pro
+
+### Lo realizado: Investigar sistema de análisis IA de fotos de checklist — ya está implementado
+
+**Descubrimiento: `PhotoAnalysisService` ya existe y funciona:**
+
+El backend ya tiene un servicio completo de análisis de fotos de checklist con Nova Pro:
+
+| Componente | Estado | Detalle |
+|-----------|--------|---------|
+| `PhotoAnalysisService.php` | ✅ Implementado | 4 prompts específicos por contexto |
+| `subirFotoS3()` | ✅ | Sube a `checklist/YYYY/MM/` en S3 |
+| `analizarConIA()` | ✅ | Nova Pro con timeout 15s |
+| `subirYAnalizar()` | ✅ | Orquesta upload + análisis + guarda en BD |
+| Endpoint `POST /worker/checklists/{id}/items/{itemId}/photo` | ✅ | En ChecklistController |
+| Frontend `PhotoUpload` component | ✅ | En `dashboard/checklist/page.tsx` |
+| Frontend `ChecklistItemRow` | ✅ | Marcar/desmarcar items |
+| Frontend `ChecklistCard` | ✅ | Card con progress bar |
+
+**4 prompts de análisis IA por contexto:**
+
+| Contexto | Evalúa |
+|----------|--------|
+| `interior_apertura` | Limpieza superficies, orden ingredientes, plancha encendida, TUU, problemas |
+| `exterior_apertura` | Mesas/sillas/basureros, señalización, zona clientes, problemas |
+| `interior_cierre` | Limpieza/desengrase, almacenamiento, equipos apagados, riesgos |
+| `exterior_cierre` | Todo guardado, limpieza exterior, seguridad, problemas |
+
+Cada análisis retorna `{score: 0-100, observations: "texto"}` que se guarda en `checklist_items.ai_score`, `ai_observations`, `ai_analyzed_at`.
+
+**Conclusión:** El sistema de checklists con IA ya está completo en código. El problema era solo de datos (Ricardo no tenía turno + rol cajero). No se necesita código nuevo.
+
+**Pendientes del usuario:**
+- Quiere checklist realtime (marcar sin refresh) — ya funciona con useState
+- Quiere card unificada en dashboard (apertura + cierre en 1 card) — pendiente
+- Quiere "hoy tienes libre 😊" si no hay turno — pendiente
+- Quiere notificación push a las 6pm Chile si hay checklist pendiente — pendiente
+
+### Commits y Deploys
+
+No se hizo commit ni deploy (solo auditoría de código existente).
+
+### Lecciones Aprendidas
+
+198. **Antes de implementar, verificar qué ya existe**: El `PhotoAnalysisService` con 4 prompts de Nova Pro, upload S3, y análisis IA ya estaba implementado. El problema no era código faltante sino datos mal configurados (turno + rol)
+
+### Pendiente
+
+- **Card unificada** en dashboard: apertura + cierre en 1 card, "hoy tienes libre 😊" si día libre
+- **Notificación push 6pm** si hay checklist pendiente
+- Verificar que Ricardo ve y puede completar checklists
+- Verificar upload S3 + extracción IA en compras
+- Verificar Gmail Token Refresh
+- Generar turnos mayo
 
 ---
 
