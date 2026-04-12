@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import { getPageTitle } from '@/lib/navigation';
 import { apiFetch } from '@/lib/api';
-import { NotificationBellIndicator } from '@/components/NotificationStatusModal';
+import { NotificationTagIndicator } from '@/components/NotificationStatusModal';
 
 export default function MobileHeader({ variant = 'worker' }: { variant?: 'worker' | 'admin' }) {
   const pathname = usePathname();
@@ -29,8 +29,8 @@ export default function MobileHeader({ variant = 'worker' }: { variant?: 'worker
       <div className="flex items-center justify-between h-full px-4">
         <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-work.png" alt="La Ruta 11 Work" className="h-8 w-auto" />
         <span className="text-sm font-semibold text-white">{title}</span>
-        <div className="flex items-center gap-3">
-          <NotificationBellIndicator />
+        <div className="flex items-center gap-2">
+          <NotificationTagIndicator />
           <div className="relative">
             <Bell className="w-5 h-5 text-white/80" />
             {unreadCount > 0 && (
