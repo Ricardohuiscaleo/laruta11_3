@@ -175,11 +175,19 @@ class ExtraccionService
         $knownSuppliers = '';
         $knownProducts = '';
         $productPatterns = '';
+        $rutMapping = '';
 
         if ($context) {
             if (!empty($context['suppliers'])) {
                 $supplierList = implode(', ', array_slice($context['suppliers'], 0, 20));
                 $knownSuppliers = "\n\nProveedores conocidos del negocio: {$supplierList}";
+            }
+            if (!empty($context['rut_map'])) {
+                $rutLines = [];
+                foreach ($context['rut_map'] as $rut => $nombre) {
+                    $rutLines[] = "RUT {$rut} = {$nombre}";
+                }
+                $rutMapping = "\n\nMapeo RUT → Proveedor (si ves alguno de estos RUTs en la boleta, usa el nombre del proveedor):\n" . implode("\n", $rutLines);
             }
             if (!empty($context['products'])) {
                 $productList = implode(', ', array_slice($context['products'], 0, 30));
@@ -209,7 +217,7 @@ Lee el número del display digital. Extrae: peso_leido (número), unidad (kg/g),
 
 TIPO 4 — FACTURA DE PROVEEDOR CONOCIDO:
 Si reconoces el formato de un proveedor específico (ej: Shipo, DistribuChile, etc.), usa el formato conocido para extraer datos con mayor precisión.
-{$knownSuppliers}{$knownProducts}{$productPatterns}
+{$knownSuppliers}{$rutMapping}{$knownProducts}{$productPatterns}
 
 Formato de respuesta JSON:
 {
@@ -248,12 +256,20 @@ PROMPT;
         ];
 
         try {
-            // Known suppliers from supplier_index
-            $suppliers = \App\Models\SupplierIndex::orderBy('frecuencia', 'desc')
+            // Known suppliers from supplier_index (with RUTs)
+            $supplierRecords = \App\Models\SupplierIndex::orderBy('frecuencia', 'desc')
                 ->limit(20)
-                ->pluck('nombre_original')
-                ->toArray();
-            $context['suppliers'] = $suppliers;
+                ->get(['nombre_original', 'rut']);
+            $context['suppliers'] = $supplierRecords->pluck('nombre_original')->toArray();
+            
+            // RUT → proveedor mapping for identification
+            $rutMap = [];
+            foreach ($supplierRecords as $s) {
+                if ($s->rut) {
+                    $rutMap[$s->rut] = $s->nombre_original;
+                }
+            }
+            $context['rut_map'] = $rutMap;
 
             // Known ingredients
             $ingredients = \App\Models\Ingredient::where('is_active', 1)
