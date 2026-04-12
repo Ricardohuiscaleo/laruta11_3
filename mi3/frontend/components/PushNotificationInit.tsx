@@ -1,12 +1,21 @@
 'use client';
 
+import { useEffect } from 'react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 /**
- * Client component that initializes push notifications.
- * Renders nothing — just runs the hook on mount.
+ * Auto-activates push if permission was already granted (returning user).
+ * Renders nothing visible.
  */
 export default function PushNotificationInit() {
-  usePushNotifications();
+  const { status, activate } = usePushNotifications();
+
+  useEffect(() => {
+    // If permission already granted but not subscribed, auto-subscribe silently
+    if (status === 'inactive') {
+      activate();
+    }
+  }, [status, activate]);
+
   return null;
 }

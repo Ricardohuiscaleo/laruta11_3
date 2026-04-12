@@ -13,7 +13,7 @@ Schedule::command('mi3:r11-auto-deduct')
     ->monthlyOn(1, '06:00')
     ->timezone('America/Santiago');
 
-// Descuento automático de cuotas de préstamo — día 1 de cada mes a las 06:30 AM
+// Descuento automático de adelantos de sueldo — día 1 de cada mes a las 06:30 AM
 Schedule::command('mi3:loan-auto-deduct')
     ->monthlyOn(1, '06:30')
     ->timezone('America/Santiago');
