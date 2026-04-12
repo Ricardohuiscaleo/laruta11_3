@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Deploying (`ayepqdbjas6j`, commit `f803aee`) — fix Gmail token BD | ❌ Manual |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`nklzycf28cf1zp796kr8jgl5`, commit `dfac24c`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Deploying (commit `71ef7c4`) — fix contexto fotos planchero | ❌ Manual |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`sckwdosw7v2k`, commit `71ef7c4`) — 10 prompts IA planchero | ❌ Manual |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (commit `3345893`) — fix contexto fotos planchero | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (commit `71ef7c4`) — 10 prompts IA planchero | ❌ Manual |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running (`uu8lhn7wijjk1idj5ghf21pa`) | ❌ Manual |
 
 Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks individuales, o el nuevo hook "Ship It" para ciclo completo.
@@ -79,11 +79,13 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | Commit | Hash | Descripción |
 |--------|------|-------------|
 | 1 | `71ef7c4` | `fix(mi3): contexto fotos planchero - plancha/lavaplatos/mesón + 6 prompts IA específicos` |
+| 2 | `3345893` | `fix(mi3): TS error - ai_score undefined→null coalesce in handlePhotoUploaded` |
 
 | Deploy | App | UUID | Estado |
 |--------|-----|------|--------|
-| mi3-frontend | mi.laruta11.cl | `f1182bkemp24q5woss3qw8rh` | ✅ queued |
-| mi3-backend | api-mi3.laruta11.cl | `sckwdosw7v2ko1x3m0u8exdn` | ✅ queued |
+| mi3-backend | api-mi3.laruta11.cl | `sckwdosw7v2ko1x3m0u8exdn` | ✅ finished |
+| mi3-frontend (1er intento) | mi.laruta11.cl | `f1182bkemp24q5woss3qw8rh` | ❌ failed (TS error) |
+| mi3-frontend (2do intento) | mi.laruta11.cl | `qe5loml47uajy2hhe3px0rls` | ✅ finished |
 
 **Datos modificados en producción (SSH):**
 
@@ -100,10 +102,13 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | Error | Causa | Solución |
 |-------|-------|----------|
 | Fotos planchero analizadas con prompt genérico `interior` | Frontend solo detectaba `exterior` vs `interior`, no `plancha`/`lavaplatos`/`mesón` | Agregar detección de keywords: plancha, freidora, lavaplatos, mesón |
+| Deploy frontend falló: TS error línea 311 | `aiScore?: number \| null` (undefined posible) asignado a `ai_score: number \| null` (no acepta undefined) | `aiScore ?? null` para coalescer undefined a null |
+| No se verificó estado de deploys | Faltaba verificar que Coolify terminara el build exitosamente | Verificar con GET `/api/v1/deployments/{uuid}` → status: finished/failed |
 
 ### Lecciones Aprendidas
 
 209. **El contexto de la foto debe coincidir con el prompt de IA**: Si el backend tiene 10 prompts específicos pero el frontend solo envía 2 contextos posibles, los prompts específicos nunca se usan. Frontend y backend deben estar alineados en los contextos disponibles
+210. **Siempre verificar el estado del deploy después de hacer restart**: `queued` no significa `finished`. Hay que consultar el estado del deployment_uuid para confirmar que el build pasó. Un error de TypeScript puede hacer fallar el build silenciosamente
 
 ### Pendiente
 
