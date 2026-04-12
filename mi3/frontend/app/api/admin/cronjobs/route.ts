@@ -8,12 +8,12 @@ const APPS: Record<string, string> = {
 };
 
 const COOLIFY_URLS = [
+  'http://coolify:8080/api/v1',           // Coolify v4 internal port
   'http://coolify:80/api/v1',
   'http://coolify:8000/api/v1',
   'http://host.docker.internal:8000/api/v1',
   'http://172.17.0.1:8000/api/v1',
   'http://172.18.0.1:8000/api/v1',
-  'http://172.19.0.1:8000/api/v1',
   'http://76.13.126.63:8000/api/v1',
 ];
 
