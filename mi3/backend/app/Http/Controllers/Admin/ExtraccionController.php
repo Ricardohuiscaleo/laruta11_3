@@ -211,6 +211,23 @@ class ExtraccionController extends Controller
             $data['metodo_pago'] = 'transfer';
         }
 
+        // Normalize ARIAKA variants to just "ARIAKA"
+        $proveedorNow = mb_strtolower(trim($data['proveedor'] ?? ''));
+        if (str_contains($proveedorNow, 'ariaka')) {
+            $data['proveedor'] = 'ARIAKA';
+            $data['metodo_pago'] = 'transfer';
+            $data['tipo_compra'] = 'otros';
+            // Ensure item is "Servicios Delivery"
+            if (!empty($data['items'])) {
+                foreach ($data['items'] as &$item) {
+                    $itemName = mb_strtolower($item['nombre'] ?? '');
+                    if (empty($itemName) || $itemName === 'transferencia' || str_contains($itemName, 'servicio')) {
+                        $item['nombre'] = 'Servicios Delivery';
+                    }
+                }
+            }
+        }
+
         return $data;
     }
 }

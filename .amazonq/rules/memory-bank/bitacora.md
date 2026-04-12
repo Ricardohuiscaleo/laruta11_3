@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12aw)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ax)
 
 ### Aplicaciones Desplegadas
 
@@ -41,6 +41,79 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ⚠️ Spec marcado como deployado pero tabla `checklists_v2` NO existe en producción. Sistema usa checklists legacy |
 | mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Mapeo forzado persona→proveedor post-extracción. 9 riders ARIAKA + Ricardo (emisor) filtrado. 15+ deploys hoy |
+
+---
+
+## Sesión 2026-04-12ax — Fotos IA en checklists cajera + normalización ARIAKA + verificación sistema
+
+### Lo realizado: Agregar items de foto con IA a checklists de cajera, normalizar ARIAKA en subida masiva
+
+**1. Items de foto con IA agregados a checklists cajera:**
+
+Los checklists de cajera (Dafne y Ricardo) no tenían los items de foto (`requires_photo=1`). Agregados:
+
+| Checklist | Antes | Después | Items foto agregados |
+|-----------|-------|---------|---------------------|
+| #185 Ricardo apertura | 4 items | 6 items | FOTO 1: Interior, FOTO 2: Exterior |
+| #186 Ricardo cierre | 3 items | 5 items | FOTO 1: Interior, FOTO 2: Exterior |
+| #181 Dafne apertura | 4 items | 6 items | FOTO 1: Interior, FOTO 2: Exterior |
+| #182 Dafne cierre | 3 items | 5 items | FOTO 1: Interior, FOTO 2: Exterior |
+
+Al subir foto, `PhotoAnalysisService` la envía a Nova Pro con prompt específico (interior/exterior × apertura/cierre) y retorna score 0-100 + observaciones.
+
+**2. Normalización ARIAKA en subida masiva:**
+
+La IA a veces retorna "ARIAKA (Servicios Delivery)" en vez de "ARIAKA", creando 2 grupos. Fix: `mapPersonToSupplier()` ahora normaliza cualquier variante que contenga "ariaka" a exactamente "ARIAKA".
+
+**3. Verificación del sistema de checklists:**
+
+| Componente | Estado |
+|-----------|--------|
+| `checklist_items.ai_score` | ✅ Columna existe en producción |
+| `checklist_items.ai_observations` | ✅ Columna existe |
+| `checklist_items.ai_analyzed_at` | ✅ Columna existe |
+| `PhotoAnalysisService` | ✅ 4 prompts Nova Pro |
+| Frontend `PhotoUpload` | ✅ Compresión + upload + preview + cámara móvil |
+| Frontend marcar/desmarcar | ✅ Optimistic UI con useState (sin refresh) |
+| Ricardo completó 2 items | ✅ Confirmado en BD |
+
+**Archivos modificados (1):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/app/Http/Controllers/Admin/ExtraccionController.php` | Normalización ARIAKA: cualquier variante → "ARIAKA" exacto |
+
+**Datos modificados en producción (SSH):**
+
+| Tabla | Cambio |
+|-------|--------|
+| `checklist_items` | INSERT 8 items foto (2 por checklist × 4 checklists) |
+| `checklists` | UPDATE total_items en #181, #182, #185, #186 |
+
+### Commits y Deploys
+
+No se hizo commit del fix ARIAKA aún (pendiente).
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Checklists cajera sin opción de subir foto | Items de foto (`requires_photo=1`) no se incluyeron al crear checklists de cajera | Agregados FOTO 1 y FOTO 2 a los 4 checklists de cajera |
+| Subida masiva: 2 grupos ARIAKA | IA retorna "ARIAKA (Servicios Delivery)" como variante | Normalización: `str_contains('ariaka')` → "ARIAKA" |
+
+### Lecciones Aprendidas
+
+201. **Los items de foto deben incluirse en TODOS los checklists, no solo en los genéricos**: Al crear checklists por rol (cajera con 4 items), se omitieron los items de foto que son comunes a todos los roles. Los items de foto son transversales
+
+### Pendiente
+
+- **Commit + deploy** fix normalización ARIAKA
+- **Verificar** que Ricardo puede subir fotos y ver análisis IA
+- Verificar upload S3 en compras
+- Verificar Gmail Token Refresh
+- Corregir caja3 `get_turnos.php` base date
+- Generar turnos mayo
+- Fix push subscriptions duplicadas
 
 ---
 
