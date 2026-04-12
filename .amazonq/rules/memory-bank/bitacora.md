@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ak)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12am)
 
 ### Aplicaciones Desplegadas
 
@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`nklzycf28cf1zp796kr8jgl5`, commit `dfac24c`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (commit `53585c4`) | ❌ Manual |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`rm091jlhg5sk`, commit `f3a3665`) — rebuild Docker image con flysystem-s3 | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`mf336udaoty6`, commit `f169a02`) — fix S3 visibility public | ❌ Manual |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running (`uu8lhn7wijjk1idj5ghf21pa`) | ❌ Manual |
 
 Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks individuales, o el nuevo hook "Ship It" para ciclo completo.
@@ -40,7 +40,129 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 |------|-----------|--------|
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ✅ Deployado + migraciones ejecutadas en producción |
-| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Fix S3 upload (flysystem-s3 en Dockerfile). 6 deploys hoy. Pendiente verificar upload funciona |
+| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Remember token 30d verificado en BD (token #39). Upload S3 + preview pendiente verificar post-deploy |
+
+---
+
+## Sesión 2026-04-12am — Verificación remember token en BD (funcionando)
+
+### Lo realizado: Verificar que el remember token de 30 días funciona correctamente en producción
+
+**Verificación de cookies del usuario:**
+
+| Cookie | Valor | Expira | Correcto |
+|--------|-------|--------|----------|
+| `mi3_token` | `39\|kiabEalod2ts...` | 12/5/2026 15:38 (30 días) | ✅ |
+| `mi3_role` | `admin` | 12/5/2026 15:38 | ✅ |
+| `mi3_user` | `{id:4, personal_id:5, nombre:"Ricardo Huiscaleo", is_admin:true}` | 12/5/2026 15:38 | ✅ |
+| `PHPSESSID` | `b3c35635...` | 11/5/2026 (de caja3/app3, no mi3) | N/A |
+
+**Verificación en BD via SSH:**
+
+```
+Token #39 en personal_access_tokens:
+  tokenable_type = App\Models\Usuario
+  tokenable_id = 4 (Ricardo)
+  name = mi3-auth
+  created_at = 2026-04-12 15:38:07
+  last_used_at = 2026-04-12 15:42:48
+```
+
+- Token #39 coincide con cookie `39|kiabEalod2ts...` ✅
+- `last_used_at` se actualiza con cada request ✅
+- Cookie expira en 30 días (12 mayo) ✅
+- Total tokens en BD: 3 (Ricardo + 2 otros usuarios)
+
+**Conclusión:** El fix de `remember = true` por defecto funciona. La sesión persiste 30 días sin re-login.
+
+### Commits y Deploys
+
+No se hizo commit ni deploy (solo verificación).
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+187. **Sanctum tokens se verifican en BD en cada request**: `last_used_at` se actualiza automáticamente, lo que confirma que el middleware `auth:sanctum` está validando el token contra `personal_access_tokens`. Si el token se borra de la BD, la sesión se invalida inmediatamente
+
+### Pendiente
+
+- **Verificar** que preview S3 funciona después del deploy de mi3-backend
+- **Verificar** que Gmail Token Refresh pasa a 100% después del deploy de app3
+- Test end-to-end compras: subir foto → preview OK → extracción IA → registro
+- Integrar `NotificacionNueva` event en flujos reales
+- Corregir caja3 `get_turnos.php` base date cajero
+- Generar turnos mayo
+
+---
+
+## Sesión 2026-04-12al — Fix S3 preview 403 + Gmail token renovado + deploy app3 y mi3-backend
+
+### Lo realizado: Corregir 403 en preview de imágenes S3 y completar fix Gmail token
+
+**1. Fix 403 en preview de imágenes S3:**
+
+La imagen se subía correctamente a S3 (`compras/temp/{uuid}.jpg`) pero el preview en el frontend daba 403 Forbidden.
+
+| Causa | Detalle |
+|-------|---------|
+| Flysystem v3 sube como privado por defecto | `Storage::disk('s3')->put()` sin ACL = private |
+| Caja3 usa POST con policy signing | Implícitamente público (bucket policy permite lectura) |
+| `Storage::url()` genera URL incorrecta | No usa el formato `bucket.s3.amazonaws.com/key` |
+
+**Fix aplicado:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `config/filesystems.php` | Agregado `'visibility' => 'public'` al disco S3 (uploads con ACL public-read) |
+| `ImagenService.php` | URL directa `https://laruta11-images.s3.amazonaws.com/{key}` en vez de `Storage::url()` |
+
+**Verificación:** Las imágenes existentes en `compras/` son públicas (200 OK). Solo las nuevas de `compras/temp/` eran privadas.
+
+**2. Gmail Token — estado actual:**
+
+- Token renovado manualmente via SSH (sesión anterior)
+- Cron migrado de archivo a BD (sesión anterior)
+- Deploy app3 en cola con el fix
+
+**Archivos modificados (2):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/config/filesystems.php` | `visibility => 'public'` en disco S3 |
+| `mi3/backend/app/Services/Compra/ImagenService.php` | URL directa bucket, quitar `'public'` param de `put()` |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `f169a02` | `fix(mi3): S3 upload visibility public + direct bucket URL for previews` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `mf336udaoty6m5jqdhd1yli8` | ✅ queued |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| 403 Forbidden en preview de imagen subida a S3 | Flysystem v3 sube como privado por defecto, sin ACL public-read | `visibility => 'public'` en config/filesystems.php + URL directa del bucket |
+
+### Lecciones Aprendidas
+
+185. **Flysystem v3 + S3 = privado por defecto**: A diferencia de v2, Flysystem v3 no acepta `'public'` como tercer parámetro de `put()`. Hay que configurar `'visibility' => 'public'` en el disco o usar `putFileAs()` con opciones. Caja3 no tiene este problema porque usa POST directo con policy signing
+186. **URL directa del bucket > Storage::url()**: `Storage::url()` puede generar URLs incorrectas si `AWS_URL` no está configurado. Usar `https://{bucket}.s3.amazonaws.com/{key}` directamente es más confiable y consistente con las URLs que ya existen en la BD
+
+### Pendiente
+
+- **Verificar** que preview de imagen funciona después del deploy
+- **Verificar** que Gmail Token Refresh pasa a 100% después del deploy de app3
+- Test end-to-end compras: subir foto → preview OK → extracción IA → registro
+- Integrar `NotificacionNueva` event en flujos reales
+- Corregir caja3 `get_turnos.php` base date cajero
+- Generar turnos mayo
 
 ---
 

@@ -29,9 +29,15 @@ class ImagenService
 
         Storage::disk('s3')->put($tempKey, $contents);
 
-        // Use direct S3 URL (bucket is configured for public read via bucket policy)
+        // Generate presigned URL for preview (valid 1 hour)
+        $client = Storage::disk('s3')->getClient();
         $bucket = config('filesystems.disks.s3.bucket', 'laruta11-images');
-        $tempUrl = "https://{$bucket}.s3.amazonaws.com/{$tempKey}";
+        $cmd = $client->getCommand('GetObject', [
+            'Bucket' => $bucket,
+            'Key' => $tempKey,
+        ]);
+        $presigned = $client->createPresignedRequest($cmd, '+1 hour');
+        $tempUrl = (string) $presigned->getUri();
 
         return [
             'tempUrl' => $tempUrl,
@@ -49,10 +55,13 @@ class ImagenService
         $timestamp = time();
         $finalKey = "compras/respaldo_{$compraId}_{$timestamp}.jpg";
 
-        // Copy then delete (S3 doesn't have native move)
-        Storage::disk('s3')->copy($tempKey, $finalKey);
+        // Read temp file content and re-upload to final location
+        // This ensures the final file has the same ACL as caja3 uploads
+        $contents = Storage::disk('s3')->get($tempKey);
+        Storage::disk('s3')->put($finalKey, $contents);
         Storage::disk('s3')->delete($tempKey);
 
+        // Use direct bucket URL (same format as caja3 — these are publicly accessible)
         $bucket = config('filesystems.disks.s3.bucket', 'laruta11-images');
         return "https://{$bucket}.s3.amazonaws.com/{$finalKey}";
     }
