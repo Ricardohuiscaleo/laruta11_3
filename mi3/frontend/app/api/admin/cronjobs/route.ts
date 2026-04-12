@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 
-const COOLIFY_URL = 'http://76.13.126.63:8000/api/v1';
 const COOLIFY_TOKEN = '3|S52ZUspC6N5G54apjgnKO6sY3VW5OixHlnY9GsMv8dc72ae8';
 const APPS: Record<string, string> = {
   'mi3-backend': 'ds24j8jlaf9ov4flk1nq4jek',
@@ -8,20 +7,47 @@ const APPS: Record<string, string> = {
   'caja3': 'xockcgsc8k000o8osw8o88ko',
 };
 
+const COOLIFY_URLS = [
+  'http://host.docker.internal:8000/api/v1',
+  'http://172.17.0.1:8000/api/v1',
+  'http://coolify:8000/api/v1',
+  'http://76.13.126.63:8000/api/v1',
+  'http://10.0.0.1:8000/api/v1',
+];
+
+async function findWorkingUrl(): Promise<string | null> {
+  const headers = { Authorization: `Bearer ${COOLIFY_TOKEN}`, Accept: 'application/json' };
+  for (const url of COOLIFY_URLS) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2000);
+      const res = await fetch(`${url}/version`, { headers, signal: controller.signal });
+      clearTimeout(timeout);
+      if (res.ok) return url;
+    } catch {}
+  }
+  return null;
+}
+
 export async function GET() {
   const headers = { Authorization: `Bearer ${COOLIFY_TOKEN}`, Accept: 'application/json' };
   const tasks: any[] = [];
 
+  const baseUrl = await findWorkingUrl();
+  if (!baseUrl) {
+    return NextResponse.json({ error: 'Cannot reach Coolify API', tried: COOLIFY_URLS }, { status: 502 });
+  }
+
   for (const [appName, uuid] of Object.entries(APPS)) {
     try {
-      const res = await fetch(`${COOLIFY_URL}/applications/${uuid}/scheduled-tasks`, { headers, cache: 'no-store' });
+      const res = await fetch(`${baseUrl}/applications/${uuid}/scheduled-tasks`, { headers, cache: 'no-store' });
       if (!res.ok) continue;
       const taskList = await res.json();
 
       for (const task of taskList) {
         let total_runs = 0, failures = 0, last_status: string | null = null, last_run: string | null = null;
         try {
-          const execRes = await fetch(`${COOLIFY_URL}/applications/${uuid}/scheduled-tasks/${task.uuid}/executions`, { headers, cache: 'no-store' });
+          const execRes = await fetch(`${baseUrl}/applications/${uuid}/scheduled-tasks/${task.uuid}/executions`, { headers, cache: 'no-store' });
           if (execRes.ok) {
             const execs = await execRes.json();
             total_runs = execs.length;

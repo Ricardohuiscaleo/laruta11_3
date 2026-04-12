@@ -46,7 +46,8 @@ async function fetchCronjobs(): Promise<CronjobTask[]> {
   try {
     const res = await fetch('/api/admin/cronjobs');
     if (!res.ok) return [];
-    return await res.json();
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
   } catch { return []; }
 }
 
