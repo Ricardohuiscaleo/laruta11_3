@@ -8,34 +8,40 @@ const APPS: Record<string, string> = {
 };
 
 const COOLIFY_URLS = [
+  'http://coolify:80/api/v1',
+  'http://coolify:8000/api/v1',
   'http://host.docker.internal:8000/api/v1',
   'http://172.17.0.1:8000/api/v1',
-  'http://coolify:8000/api/v1',
+  'http://172.18.0.1:8000/api/v1',
+  'http://172.19.0.1:8000/api/v1',
   'http://76.13.126.63:8000/api/v1',
-  'http://10.0.0.1:8000/api/v1',
 ];
 
-async function findWorkingUrl(): Promise<string | null> {
+async function findWorkingUrl(): Promise<{ url: string | null; errors: string[] }> {
   const headers = { Authorization: `Bearer ${COOLIFY_TOKEN}`, Accept: 'application/json' };
+  const errors: string[] = [];
   for (const url of COOLIFY_URLS) {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 2000);
       const res = await fetch(`${url}/version`, { headers, signal: controller.signal });
       clearTimeout(timeout);
-      if (res.ok) return url;
-    } catch {}
+      if (res.ok) return { url, errors };
+      errors.push(`${url}: HTTP ${res.status}`);
+    } catch (e: any) {
+      errors.push(`${url}: ${e.cause?.code || e.message || 'unknown'}`);
+    }
   }
-  return null;
+  return { url: null, errors };
 }
 
 export async function GET() {
   const headers = { Authorization: `Bearer ${COOLIFY_TOKEN}`, Accept: 'application/json' };
   const tasks: any[] = [];
 
-  const baseUrl = await findWorkingUrl();
+  const { url: baseUrl, errors } = await findWorkingUrl();
   if (!baseUrl) {
-    return NextResponse.json({ error: 'Cannot reach Coolify API', tried: COOLIFY_URLS }, { status: 502 });
+    return NextResponse.json({ error: 'Cannot reach Coolify API', tried: COOLIFY_URLS, details: errors }, { status: 502 });
   }
 
   for (const [appName, uuid] of Object.entries(APPS)) {
