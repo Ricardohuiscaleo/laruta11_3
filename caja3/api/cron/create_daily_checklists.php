@@ -1,5 +1,6 @@
 <?php
 date_default_timezone_set('America/Santiago');
+$startTime = microtime(true);
 
 echo "Iniciando cronjob - " . date('Y-m-d H:i:s') . "\n";
 
@@ -102,4 +103,15 @@ if ($created > 0) {
     echo "Ya fueron creados $total checklists HOY.\n";
 }
 echo "Finalizado: " . date('Y-m-d H:i:s') . "\n";
+
+// Registrar en cron_executions (MySQL)
+try {
+    $duration = round(microtime(true) - $startTime, 2);
+    $output = $created > 0 ? "$created checklists creados" : "Ya existían $total checklists";
+    $now = date('Y-m-d H:i:s');
+    $stmt = $conn->prepare("INSERT INTO cron_executions (command, name, status, output, duration_seconds, started_at, finished_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute(['daily-checklists-caja3', 'Daily Checklists (caja3)', 'success', $output, $duration, $now, $now, $now, $now]);
+} catch (Exception $e) {
+    // No romper el cron si falla el logging
+}
 
