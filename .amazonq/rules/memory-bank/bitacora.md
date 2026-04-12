@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ba)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12bb)
 
 ### Aplicaciones Desplegadas
 
@@ -41,6 +41,67 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ⚠️ Spec marcado como deployado pero tabla `checklists_v2` NO existe en producción. Sistema usa checklists legacy |
 | mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Mapeo forzado persona→proveedor post-extracción. 9 riders ARIAKA + Ricardo (emisor) filtrado. 15+ deploys hoy |
+
+---
+
+## Sesión 2026-04-12bb — Checklist foto = auto-mark completado + feedback inmediato
+
+### Lo realizado: Subir foto marca item como completado inmediatamente, IA analiza en background
+
+**Problema:** Al subir foto, el usuario no podía continuar porque el request esperaba a que la IA terminara (~3-15s). El item no se marcaba como completado hasta que todo el proceso terminaba.
+
+**Fix — flujo nuevo:**
+
+| Paso | Antes | Después |
+|------|-------|---------|
+| 1. Upload S3 | ~1s | ~1s (sin cambio) |
+| 2. Marcar item completado | No se hacía hasta paso 4 | **Inmediato** después del upload |
+| 3. Actualizar progress checklist | No se hacía | **Inmediato** (completed_items, percentage, status) |
+| 4. Análisis IA (Nova Pro) | Bloqueante (~3-15s) | Corre pero **no bloquea** la respuesta |
+| 5. Usuario puede continuar | Solo después de paso 4 | **Después de paso 2** (~1s) |
+
+**Backend (`subirYAnalizar`):**
+- Upload S3 → marca `is_completed=true`, `completed_at=now()` → actualiza checklist progress → luego IA (si falla, foto ya está guardada y item marcado)
+
+**Frontend (`onPhotoUploaded`):**
+- Optimistic UI: marca item como completado en estado local inmediatamente
+
+**Archivos modificados (2):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/app/Services/Checklist/PhotoAnalysisService.php` | `subirYAnalizar`: marca completado inmediato + actualiza progress |
+| `mi3/frontend/app/dashboard/checklist/page.tsx` | `handlePhotoUploaded`: marca completado en estado local |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `cdf2b84` | `fix(mi3): checklist photo = auto-mark completed + immediate feedback` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend | mi.laruta11.cl | `z107pthdy6ikfrr8v69flblz` | ✅ queued |
+| mi3-backend | api-mi3.laruta11.cl | `q5sjkdlwhlbpf85qgufn26gr` | ✅ queued |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Subir foto bloquea al usuario ~3-15s | `subirYAnalizar` esperaba análisis IA antes de retornar | Marcar completado inmediato, IA corre después sin bloquear |
+
+### Lecciones Aprendidas
+
+205. **Upload = completado, análisis = background**: Para items que requieren foto, subir la foto ES completar el item. El análisis IA es un bonus que se puede hacer async. El usuario no debe esperar a la IA para continuar con el siguiente item
+
+### Pendiente
+
+- **Verificar** que foto se sube, item se marca, y IA analiza en background
+- Verificar upload S3 en compras
+- Verificar Gmail Token Refresh
+- Feature futuro: tareas generadas por IA desde fotos
+- Corregir caja3 `get_turnos.php` base date
+- Generar turnos mayo
 
 ---
 
