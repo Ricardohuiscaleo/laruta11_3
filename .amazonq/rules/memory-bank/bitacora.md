@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12bd)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12be)
 
 ### Aplicaciones Desplegadas
 
@@ -41,6 +41,65 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ⚠️ Spec marcado como deployado pero tabla `checklists_v2` NO existe en producción. Sistema usa checklists legacy |
 | mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Mapeo forzado persona→proveedor post-extracción. 9 riders ARIAKA + Ricardo (emisor) filtrado. 15+ deploys hoy |
+
+---
+
+## Sesión 2026-04-12be — Fix contexto fotos planchero en frontend (plancha/lavaplatos/mesón)
+
+### Lo realizado: Corregir derivación de contexto IA para fotos de planchero en el frontend
+
+**Problema:** El componente `PhotoUpload` derivaba el contexto de la foto solo con `interior`/`exterior` (para cajera). Los items del planchero tienen descripciones como "FOTO 1: Sector plancha y freidora", "FOTO 2: Lavaplatos", "FOTO 3: Mesón de trabajo", pero todos caían en `interior` por defecto → la IA usaba el prompt equivocado.
+
+**Fix — detección de 5 tipos de contexto:**
+
+| Keyword en descripción | Contexto enviado | Prompt IA usado |
+|------------------------|-----------------|-----------------|
+| `plancha` o `freidora` | `plancha_apertura` / `plancha_cierre` | Evalúa aseo plancha, manchas grasa, orden utensilios |
+| `lavaplatos` | `lavaplatos_apertura` / `lavaplatos_cierre` | Evalúa platos sucios, orden, acumulación |
+| `mesón` o `meson` | `meson_apertura` / `meson_cierre` | Evalúa limpieza mesón, TV normal en cierre |
+| `exterior` | `exterior_apertura` / `exterior_cierre` | Evalúa montaje, vitrina bebidas, TV |
+| (default) | `interior_apertura` / `interior_cierre` | Evalúa piso, superficies, orden |
+
+**Antes vs Después:**
+
+| Foto planchero | Antes | Después |
+|---------------|-------|---------|
+| Sector plancha | Prompt `interior` (genérico, no evalúa manchas grasa) | Prompt `plancha` (específico: aseo plancha, manchas, freidora) |
+| Lavaplatos | Prompt `interior` (no evalúa platos sucios) | Prompt `lavaplatos` (específico: platos, orden, acumulación) |
+| Mesón | Prompt `interior` (no sabe que TV en mesón es normal) | Prompt `meson` (específico: TV normal en cierre) |
+
+**Archivos modificados (1):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/app/dashboard/checklist/page.tsx` | `PhotoUpload`: detección de 5 tipos de contexto (plancha, lavaplatos, mesón, exterior, interior) |
+
+### Commits y Deploys
+
+Pendiente commit + deploy.
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Fotos planchero analizadas con prompt genérico `interior` | Frontend solo detectaba `exterior` vs `interior`, no `plancha`/`lavaplatos`/`mesón` | Agregar detección de keywords: plancha, freidora, lavaplatos, mesón |
+
+### Lecciones Aprendidas
+
+209. **El contexto de la foto debe coincidir con el prompt de IA**: Si el backend tiene 10 prompts específicos pero el frontend solo envía 2 contextos posibles, los prompts específicos nunca se usan. Frontend y backend deben estar alineados en los contextos disponibles
+
+### Pendiente
+
+- **Commit + push + deploy** del fix de contexto planchero
+- **Actualizar items planchero en producción**: cambiar de 2 fotos genéricas (Interior/Exterior) a 3 fotos específicas (Sector plancha, Lavaplatos, Mesón)
+- **Actualizar `checklist_templates`** para que la creación diaria use los items correctos del planchero
+- Verificar que prompts mejorados dan feedback correcto
+- Verificar upload S3 en compras
+- Verificar Gmail Token Refresh
+- Corregir caja3 `get_turnos.php` base date cajero
+- Generar turnos mayo
+- Fix push subscriptions duplicadas
+- Feature futuro: tareas generadas por IA desde fotos
 
 ---
 

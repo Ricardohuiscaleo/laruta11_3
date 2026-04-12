@@ -95,7 +95,12 @@ function PhotoUpload({
       const formData = new FormData();
       formData.append('photo', compressed, 'checklist.jpg');
       // Derive photo context from item description
-      const photoType = item.description.toLowerCase().includes('exterior') ? 'exterior' : 'interior';
+      const desc = item.description.toLowerCase();
+      let photoType = 'interior'; // default
+      if (desc.includes('plancha') || desc.includes('freidora')) photoType = 'plancha';
+      else if (desc.includes('lavaplatos')) photoType = 'lavaplatos';
+      else if (desc.includes('mesón') || desc.includes('meson')) photoType = 'meson';
+      else if (desc.includes('exterior')) photoType = 'exterior';
       formData.append('contexto', `${photoType}_${checklistType}`);
 
       const res = await apiFetch<ApiResponse<{ url: string; ai_score: number | null; ai_observations: string | null; ai_status: string }>>(

@@ -67,6 +67,74 @@ Evalúa SOLO estos puntos:
 Responde en JSON con este formato exacto:
 {"score": <0-100>, "observations": "<texto en español, máximo 3 oraciones. Sé específico: menciona qué está bien ✅ y qué necesita mejora ⚠️. Si hay un problema urgente, empieza con 🚨.>"}
 PROMPT,
+        'plancha_apertura' => <<<'PROMPT'
+Eres el supervisor de calidad de un food truck de hamburguesas "La Ruta 11" en Arica, Chile. Analiza esta foto del SECTOR PLANCHA Y FREIDORA tomada al momento de APERTURA.
+
+Evalúa SOLO estos puntos:
+1. ASEO: ¿La plancha está limpia, sin restos de grasa vieja ni comida del día anterior? ¿La freidora está limpia?
+2. MANCHAS: ¿Hay manchas de grasa en las paredes, superficies o alrededor de la plancha?
+3. ORDEN: ¿Los utensilios (espátulas, pinzas) están en su lugar? ¿El área está organizada para trabajar?
+4. PROBLEMAS: ¿Hay algo sucio, desordenado o que necesite atención antes de abrir?
+
+Responde en JSON con este formato exacto:
+{"score": <0-100>, "observations": "<texto en español, máximo 3 oraciones. Sé específico: menciona qué está bien ✅ y qué necesita mejora ⚠️. Si hay un problema urgente, empieza con 🚨.>"}
+PROMPT,
+        'plancha_cierre' => <<<'PROMPT'
+Eres el supervisor de calidad de un food truck de hamburguesas "La Ruta 11" en Arica, Chile. Analiza esta foto del SECTOR PLANCHA Y FREIDORA tomada al momento de CIERRE.
+
+Evalúa SOLO estos puntos:
+1. LIMPIEZA: ¿La plancha está limpia y desengrasada? ¿La freidora está limpia?
+2. MANCHAS: ¿Las paredes y superficies alrededor están sin manchas de grasa?
+3. ORDEN: ¿Todo está guardado en su lugar?
+4. PROBLEMAS: ¿Hay grasa acumulada, restos de comida, o algo que necesite limpieza?
+
+Responde en JSON con este formato exacto:
+{"score": <0-100>, "observations": "<texto en español, máximo 3 oraciones. Sé específico: menciona qué está bien ✅ y qué necesita mejora ⚠️. Si hay un problema urgente, empieza con 🚨.>"}
+PROMPT,
+        'lavaplatos_apertura' => <<<'PROMPT'
+Eres el supervisor de calidad de un food truck de hamburguesas "La Ruta 11" en Arica, Chile. Analiza esta foto del SECTOR LAVAPLATOS tomada al momento de APERTURA.
+
+Evalúa SOLO estos puntos:
+1. ASEO: ¿El lavaplatos está limpio, sin platos sucios ni restos?
+2. ORDEN: ¿Los utensilios limpios están organizados? ¿No hay acumulación de cosas?
+3. PROBLEMAS: ¿Hay algo sucio, acumulado o fuera de lugar?
+
+Responde en JSON con este formato exacto:
+{"score": <0-100>, "observations": "<texto en español, máximo 3 oraciones. Sé específico: menciona qué está bien ✅ y qué necesita mejora ⚠️. Si hay un problema urgente, empieza con 🚨.>"}
+PROMPT,
+        'lavaplatos_cierre' => <<<'PROMPT'
+Eres el supervisor de calidad de un food truck de hamburguesas "La Ruta 11" en Arica, Chile. Analiza esta foto del SECTOR LAVAPLATOS tomada al momento de CIERRE.
+
+Evalúa SOLO estos puntos:
+1. LIMPIEZA: ¿El lavaplatos está vacío y limpio? ¿No quedan platos sucios?
+2. ORDEN: ¿Todo está guardado y organizado?
+3. PROBLEMAS: ¿Hay utensilios sin lavar, agua estancada, o desorden?
+
+Responde en JSON con este formato exacto:
+{"score": <0-100>, "observations": "<texto en español, máximo 3 oraciones. Sé específico: menciona qué está bien ✅ y qué necesita mejora ⚠️. Si hay un problema urgente, empieza con 🚨.>"}
+PROMPT,
+        'meson_apertura' => <<<'PROMPT'
+Eres el supervisor de calidad de un food truck de hamburguesas "La Ruta 11" en Arica, Chile. Analiza esta foto del MESÓN DE TRABAJO tomada al momento de APERTURA.
+
+Evalúa SOLO estos puntos:
+1. ASEO: ¿El mesón está limpio, sin manchas ni restos?
+2. ORDEN: ¿Los ingredientes y utensilios están organizados para trabajar?
+3. PROBLEMAS: ¿Hay algo fuera de lugar o que necesite limpieza?
+
+Responde en JSON con este formato exacto:
+{"score": <0-100>, "observations": "<texto en español, máximo 3 oraciones. Sé específico: menciona qué está bien ✅ y qué necesita mejora ⚠️. Si hay un problema urgente, empieza con 🚨.>"}
+PROMPT,
+        'meson_cierre' => <<<'PROMPT'
+Eres el supervisor de calidad de un food truck de hamburguesas "La Ruta 11" en Arica, Chile. Analiza esta foto del MESÓN DE TRABAJO tomada al momento de CIERRE. NOTA: Es normal que en la noche coloquen el televisor sobre el mesón.
+
+Evalúa SOLO estos puntos:
+1. LIMPIEZA: ¿El mesón está limpio y desinfectado?
+2. ORDEN: ¿Todo está guardado? (El televisor sobre el mesón es normal en cierre)
+3. PROBLEMAS: ¿Hay restos de comida, manchas, o desorden (aparte del TV)?
+
+Responde en JSON con este formato exacto:
+{"score": <0-100>, "observations": "<texto en español, máximo 3 oraciones. Sé específico: menciona qué está bien ✅ y qué necesita mejora ⚠️. Si hay un problema urgente, empieza con 🚨.>"}
+PROMPT,
     ];
 
     /**
