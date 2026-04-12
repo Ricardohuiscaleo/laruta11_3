@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Deploying (`ayepqdbjas6j`, commit `f803aee`) — fix Gmail token BD | ❌ Manual |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`nklzycf28cf1zp796kr8jgl5`, commit `dfac24c`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Deploying (commit `8ec1eaa`) — dashboard 1 card + Adelanto | ❌ Manual |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`xkxkow6g44j6`, commit `f59e8db`) — push checklist 6pm | ❌ Manual |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Deploying (commit `71ef7c4`) — fix contexto fotos planchero | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`sckwdosw7v2k`, commit `71ef7c4`) — 10 prompts IA planchero | ❌ Manual |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running (`uu8lhn7wijjk1idj5ghf21pa`) | ❌ Manual |
 
 Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks individuales, o el nuevo hook "Ship It" para ciclo completo.
