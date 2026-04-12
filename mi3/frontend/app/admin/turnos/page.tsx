@@ -19,7 +19,7 @@ interface AdminTurno {
   is_dynamic: boolean;
 }
 
-interface WorkerOption { id: number; nombre: string; }
+interface WorkerOption { id: number; nombre: string; rol: string; }
 
 function getMonthStr(offset: number) {
   const d = new Date();
@@ -27,7 +27,12 @@ function getMonthStr(offset: number) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-const COLORS = ['bg-blue-100 text-blue-800', 'bg-green-100 text-green-800', 'bg-purple-100 text-purple-800', 'bg-pink-100 text-pink-800', 'bg-yellow-100 text-yellow-800', 'bg-teal-100 text-teal-800', 'bg-orange-100 text-orange-800', 'bg-indigo-100 text-indigo-800'];
+const ROL_COLORS: Record<string, string> = {
+  cajero: 'bg-pink-100 text-pink-800',
+  planchero: 'bg-amber-100 text-amber-800',
+  seguridad: 'bg-blue-100 text-blue-800',
+  administrador: 'bg-purple-100 text-purple-800',
+};
 
 export default function TurnosAdminPage() {
   const [monthOffset, setMonthOffset] = useState(0);
@@ -59,10 +64,13 @@ export default function TurnosAdminPage() {
 
   const workerColorMap = useMemo(() => {
     const map: Record<number, string> = {};
-    const ids = Array.from(new Set(turnos.map(t => t.personal_id)));
-    ids.forEach((id, i) => { map[id] = COLORS[i % COLORS.length]; });
+    workers.forEach(w => {
+      const rol = (w.rol || '').toLowerCase();
+      const color = Object.entries(ROL_COLORS).find(([k]) => rol.includes(k))?.[1] || 'bg-gray-100 text-gray-800';
+      map[w.id] = color;
+    });
     return map;
-  }, [turnos]);
+  }, [workers]);
 
   const calendarDays = useMemo(() => {
     const [y, m] = mes.split('-').map(Number);
@@ -75,14 +83,37 @@ export default function TurnosAdminPage() {
     return days;
   }, [mes]);
 
-  const turnosByDate = useMemo(() => {
+  const ROL_ORDER: Record<string, number> = { cajero: 0, planchero: 1, administrador: 2, seguridad: 3 };
+
+  const workerRolMap = useMemo(() => {
+    const map: Record<number, string> = {};
+    workers.forEach(w => { map[w.id] = (w as any).rol || ''; });
+    return map;
+  }, [workers]);
+
+  const sortedTurnosByDate = useMemo(() => {
     const map: Record<string, AdminTurno[]> = {};
     turnos.forEach(t => {
       if (!map[t.fecha]) map[t.fecha] = [];
       map[t.fecha].push(t);
     });
+    // Sort each day: cajero first, then planchero, then seguridad
+    Object.keys(map).forEach(fecha => {
+      map[fecha].sort((a, b) => {
+        const rolA = a.tipo === 'seguridad' ? 'seguridad' : (workerRolMap[a.personal_id] || '');
+        const rolB = b.tipo === 'seguridad' ? 'seguridad' : (workerRolMap[b.personal_id] || '');
+        const orderA = Object.entries(ROL_ORDER).find(([k]) => rolA.includes(k))?.[1] ?? 9;
+        const orderB = Object.entries(ROL_ORDER).find(([k]) => rolB.includes(k))?.[1] ?? 9;
+        return orderA - orderB;
+      });
+    });
     return map;
-  }, [turnos]);
+  }, [turnos, workerRolMap]);
+
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,13 +170,15 @@ export default function TurnosAdminPage() {
         {calendarDays.map((day, i) => {
           if (day === null) return <div key={i} />;
           const dateStr = `${mes}-${String(day).padStart(2, '0')}`;
-          const dayTurnos = turnosByDate[dateStr] || [];
+          const dayTurnos = sortedTurnosByDate[dateStr] || [];
+          const isToday = dateStr === todayStr;
           return (
-            <div key={i} className="min-h-[60px] rounded-lg border bg-white p-1 text-xs">
-              <span className="font-medium text-gray-600">{day}</span>
+            <div key={i} className={cn('min-h-[60px] rounded-lg border p-1 text-xs', isToday ? 'border-amber-500 border-2 bg-amber-50' : 'bg-white')}>
+              <span className={cn('font-medium', isToday ? 'text-amber-700 font-bold' : 'text-gray-600')}>{day}</span>
               <div className="mt-0.5 space-y-0.5">
                 {dayTurnos.slice(0, 3).map(t => (
-                  <div key={t.id} className={cn('flex items-center justify-between rounded px-1 py-0.5 text-[10px]', workerColorMap[t.personal_id] || 'bg-gray-100')}>
+                  <div key={t.id} className={cn('flex items-center justify-between rounded px-1 py-0.5 text-[10px]',
+                    t.tipo === 'seguridad' ? ROL_COLORS.seguridad : (workerColorMap[t.personal_id] || 'bg-gray-100'))}>
                     <span className="truncate">{t.personal_nombre?.split(' ')[0] || `#${t.personal_id}`}</span>
                     {!t.is_dynamic && typeof t.id === 'number' && (
                       <button onClick={() => deleteTurno(t.id)} className="ml-0.5 opacity-50 hover:opacity-100"><Trash2 className="h-2.5 w-2.5" /></button>
