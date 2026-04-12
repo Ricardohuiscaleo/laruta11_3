@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12an)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ao)
 
 ### Aplicaciones Desplegadas
 
@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Deploying (`ayepqdbjas6j`, commit `f803aee`) — fix Gmail token BD | ❌ Manual |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`nklzycf28cf1zp796kr8jgl5`, commit `dfac24c`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (commit `53585c4`) | ❌ Manual |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`pyz3anot8irv`, commit `2f5a777`) — S3 PUT directo SigV4 | ❌ Manual |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Deploying (`cl7fix87mbsf`, commit `e770a75`) | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`cz6gqhfb56zh`, commit `35d074a`) | ❌ Manual |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running (`uu8lhn7wijjk1idj5ghf21pa`) | ❌ Manual |
 
 Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks individuales, o el nuevo hook "Ship It" para ciclo completo.
@@ -40,7 +40,101 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 |------|-----------|--------|
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ✅ Deployado + migraciones ejecutadas en producción |
-| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ S3 reescrito con PUT directo SigV4 (como caja3). Pendiente verificar upload+preview post-deploy |
+| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Prompt con mapeo personas→proveedores (8 riders ARIAKA), fecha, metodo_pago transfer auto. 12+ deploys hoy |
+
+---
+
+## Sesión 2026-04-12ao — Prompt: mapeo personas→proveedores + fecha + metodo_pago transfer auto
+
+### Lo realizado: Mejorar prompt con conocimiento del negocio (riders, proveedores transfer, fecha, thumbnails)
+
+**1. Mapeo personas→proveedores en transferencias:**
+
+Investigación via SSH + Nova Pro de las fotos de transferencia para identificar quién es quién:
+
+| Persona (destinatario transferencia) | Proveedor |
+|--------------------------------------|-----------|
+| Karen Miranda Olmedo | ARIAKA (Servicios Delivery) |
+| Elcia Vilca | ARIAKA (Servicios Delivery) |
+| Cecilia Rojas Hinojosa | ARIAKA (Servicios Delivery) |
+| Maria Mondañez Mamani | ARIAKA (Servicios Delivery) |
+| Giovanna Loza Salas | ARIAKA (Servicios Delivery) |
+| Ariel Araya / Ariel Aliro Araya Villalobos | ARIAKA (Servicios Delivery) |
+| Karina Andrea Muñoz Ahumada | Ariztía (proveedor) |
+| Lucila Cacera | agro-lucila |
+
+**2. Proveedores que siempre se pagan con transferencia:**
+
+| Proveedor | metodo_pago auto |
+|-----------|-----------------|
+| Ariztía / Ariztía (proveedor) | transfer |
+| agrosuper / agrosuper (proveedor) | transfer |
+| ideal | transfer |
+| agro-lucila | transfer |
+| ARIAKA | transfer |
+| JumboAPP | transfer |
+
+**3. Nuevo tipo de imagen: transferencia**
+
+Cuando la IA ve un comprobante de Mercado Pago/banco, ahora:
+- Identifica al destinatario
+- Mapea a proveedor conocido (ej: Karen Miranda → ARIAKA)
+- Setea item = "Servicios Delivery", cantidad = 1
+- Setea metodo_pago = "transfer", tipo_compra = "otros"
+- Extrae fecha y monto
+
+**4. Extracción de fecha:**
+
+El prompt ahora pide `fecha` en formato YYYY-MM-DD. Se pre-llena en el formulario.
+
+**5. Thumbnails visibles en paso 2:**
+
+Las fotos subidas en paso 1 (foto) ahora se muestran como miniaturas en paso 2 (formulario), con opción de agregar más.
+
+**6. Pre-fill completo del formulario:**
+
+`handleExtractionResult` ahora pre-llena: proveedor, fecha, metodo_pago, tipo_compra, items.
+
+**Archivos modificados (4):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/app/Services/Compra/ExtraccionService.php` | Prompt: 8 riders ARIAKA, proveedores transfer, fecha, tipo transferencia |
+| `mi3/frontend/types/compras.ts` | ExtractionResult: +fecha, +metodo_pago, +tipo_compra, +transferencia |
+| `mi3/frontend/components/admin/compras/RegistroCompra.tsx` | Pre-fill fecha/metodo_pago/tipo_compra, thumbnails siempre visibles |
+| `mi3/frontend/components/admin/compras/ExtractionPreview.tsx` | (ya soportaba tipo transferencia) |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `e770a75` | `fix(mi3): prompt mejorado - mapeo personas→proveedores, fecha, tipo transferencia` |
+| 2 | `35d074a` | `fix(mi3): prompt - agrosuper/ariztía/ideal/agro-lucila siempre transfer` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend (1) | api-mi3.laruta11.cl | `jd6bxckydk4l5qammuweu8zo` | ✅ queued |
+| mi3-frontend | mi.laruta11.cl | `cl7fix87mbsfnq1f2ep6mw6l` | ✅ queued |
+| mi3-backend (2) | api-mi3.laruta11.cl | `cz6gqhfb56zha7z62p0k5t0z` | ✅ queued |
+
+### Errores Encontrados y Resueltos
+
+Ninguno (mejoras de prompt, no fixes de bugs).
+
+### Lecciones Aprendidas
+
+190. **El conocimiento del negocio es el mejor prompt engineering**: Saber que "Karen Miranda = ARIAKA = delivery" y que "agrosuper siempre se paga con transferencia" mejora más la precisión que cualquier técnica genérica de prompting. El prompt debe reflejar cómo funciona el negocio real
+191. **Comprobantes de transferencia ≠ boletas**: Son un tipo de imagen diferente que requiere lógica diferente. El proveedor no es "Mercado Pago" sino el destinatario. El item no se lee de la imagen sino que se infiere del mapeo persona→proveedor
+
+### Pendiente
+
+- **Verificar** que la misma foto de Karen Miranda ahora extrae: proveedor=ARIAKA, item=Servicios Delivery, fecha=2026-04-04, metodo_pago=transfer
+- **Verificar** thumbnails visibles en paso 2
+- **Verificar** upload S3 funciona (PUT directo SigV4)
+- Test end-to-end completo
+- Integrar `NotificacionNueva` event en flujos reales
+- Corregir caja3 `get_turnos.php` base date cajero
+- Generar turnos mayo
 
 ---
 
