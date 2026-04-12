@@ -45,6 +45,7 @@ class CronjobController extends Controller
             'http://host.docker.internal:8000',
             'http://172.17.0.1:8000',        // Docker bridge default gateway
             'http://coolify:8000',            // Coolify container name on coolify network
+            'http://76.13.126.63:8000',       // Public IP fallback
         ]));
 
         $tasks = [];
