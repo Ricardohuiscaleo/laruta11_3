@@ -68,7 +68,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-3 gap-3 border-t pt-3">
           <div className="text-center">
             <CreditCard className="mx-auto h-4 w-4 text-gray-400" />
-            <p className="mt-1 text-xs text-gray-500">Préstamos</p>
+            <p className="mt-1 text-xs text-gray-500">Adelanto</p>
             <p className="text-sm font-semibold text-gray-900">
               {s?.prestamo?.tiene_activo ? formatCLP(s.prestamo.monto_pendiente) : '$0'}
             </p>
