@@ -1,16 +1,19 @@
 <?php
 // Cron job para renovar token Gmail automáticamente
+// Usa BD (gmail_tokens) en vez de archivo local (gmail_token.json)
+// El archivo se pierde en cada deploy Docker
 $startTime = microtime(true);
-require_once __DIR__ . '/../auth/gmail/auto_refresh.php';
 
-$result = checkAndRefreshToken();
+require_once __DIR__ . '/../gmail/get_token_db.php';
+
+$result = getValidGmailToken();
 $duration = round(microtime(true) - $startTime, 2);
-$status = $result ? 'success' : 'failed';
-$output = $result ? 'Token refreshed successfully' : 'Token refresh failed';
 
-// Log del resultado
-$logMessage = date('Y-m-d H:i:s') . ' - Gmail Token Refresh: ' . ($result ? 'SUCCESS' : 'FAILED') . "\n";
-@file_put_contents(__DIR__ . '/gmail_refresh.log', $logMessage, FILE_APPEND);
+$success = isset($result['access_token']);
+$status = $success ? 'success' : 'failed';
+$output = $success 
+    ? 'Token válido (BD)' 
+    : 'Token refresh failed: ' . ($result['error'] ?? 'unknown');
 
 // Registrar en cron_executions (MySQL)
 try {
@@ -30,6 +33,5 @@ try {
     // No romper el cron si falla el logging
 }
 
-// Respuesta para cron
 echo $output . "\n";
 ?>

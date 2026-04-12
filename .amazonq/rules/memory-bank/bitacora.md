@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ah)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12aj)
 
 ### Aplicaciones Desplegadas
 
@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`nklzycf28cf1zp796kr8jgl5`, commit `dfac24c`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (commit `53585c4`) | ❌ Manual |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`g10efv3i4drb`, commit `53585c4`) | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`rm091jlhg5sk`, commit `f3a3665`) — rebuild Docker image con flysystem-s3 | ❌ Manual |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running (`uu8lhn7wijjk1idj5ghf21pa`) | ❌ Manual |
 
 Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks individuales, o el nuevo hook "Ship It" para ciclo completo.
@@ -40,7 +40,130 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 |------|-----------|--------|
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ✅ Deployado + migraciones ejecutadas en producción |
-| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Deployado. Fix upload 422 + remember token 30d. 5 deploys hoy |
+| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Fix S3 upload (flysystem-s3 en Dockerfile). 6 deploys hoy. Pendiente verificar upload funciona |
+
+---
+
+## Sesión 2026-04-12aj — Diagnóstico Gmail Token Refresh 29.4% fallos
+
+### Lo realizado: Investigar por qué Gmail Token Refresh falla 12 de 17 veces
+
+**Diagnóstico via SSH a producción:**
+
+Revisé los logs de `cron_executions` para `gmail-token-refresh`:
+
+| Período | Status | Output |
+|---------|--------|--------|
+| 10:30 - 12:30 (antes deploy) | `success` | "Token refresh failed" (output incorrecto pero status OK) |
+| 13:30 - 19:00 (después deploy) | `failed` | "Token refresh failed" |
+
+**Causa raíz:**
+
+El token de Gmail se guarda en un archivo local dentro del contenedor Docker: `app3/api/auth/gmail/gmail_token.json`. Cada deploy de app3 recrea el contenedor y el archivo se pierde.
+
+```
+ls: cannot access '/var/www/html/api/auth/gmail/gmail_token.json': No such file or directory
+```
+
+**Flujo del problema:**
+
+1. `refresh_gmail_token.php` llama `checkAndRefreshToken()`
+2. `checkAndRefreshToken()` busca `gmail_token.json` → no existe → retorna `false`
+3. Se registra como `failed` en `cron_executions`
+
+**Nota:** Los `success` anteriores a las 13:00 también decían "Token refresh failed" en el output — probablemente el token estaba válido (no necesitaba refresh) y retornaba `true`, pero el output se generaba incorrectamente.
+
+**Solución necesaria (no implementada aún):**
+
+Migrar el token de archivo local a la tabla `gmail_tokens` que ya existe en la BD. Esto sobrevive a deploys. Es un fix separado del spec de compras.
+
+### Commits y Deploys
+
+No se hizo commit ni deploy (solo diagnóstico).
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución Propuesta |
+|-------|-------|-------------------|
+| Gmail Token Refresh 29.4% éxito (12/17 fallos) | `gmail_token.json` se pierde en cada deploy de app3 (archivo local en Docker) | Migrar token a tabla `gmail_tokens` en MySQL (sobrevive deploys) |
+
+### Lecciones Aprendidas
+
+182. **Nunca guardar tokens/secrets en archivos locales dentro de Docker**: Los contenedores son efímeros — cada deploy los recrea. Tokens OAuth, API keys, y cualquier estado mutable debe ir en BD o volúmenes persistentes, no en archivos dentro del contenedor
+
+### Pendiente
+
+- **URGENTE: Migrar Gmail token a BD** (`gmail_tokens` table ya existe) — el email de confirmación de pagos RL6 no funciona sin esto
+- **Re-autorizar Gmail OAuth** manualmente para regenerar el token
+- Verificar que upload S3 funciona después del rebuild Docker de mi3-backend
+- Test end-to-end compras: subir foto → S3 → extracción IA → registro
+- Integrar `NotificacionNueva` event en flujos reales
+- Corregir caja3 `get_turnos.php` base date cajero
+- Generar turnos mayo
+
+---
+
+## Sesión 2026-04-12ai — Fix 500 upload-temp: flysystem-aws-s3-v3 faltaba en Dockerfile
+
+### Lo realizado: Diagnosticar y corregir error 500 en upload de imágenes — paquete S3 no instalado en Docker
+
+**Diagnóstico via SSH:**
+
+```
+flysystem-s3: NOT INSTALLED
+Error: Class "League\Flysystem\AwsS3V3\PortableVisibilityConverter" not found
+```
+
+El paquete `league/flysystem-aws-s3-v3` estaba en el `composer.json` local (instalado con `composer require` durante desarrollo) pero NO en la línea `composer require` del Dockerfile. El contenedor Docker se construye desde cero con `composer create-project` + `composer require`, así que si el paquete no está en esa línea, no existe en producción.
+
+**Fix:**
+
+| Antes (Dockerfile) | Después |
+|-------------------|---------|
+| `composer require laravel/sanctum:^4.0 minishlink/web-push:^9.0 laravel/reverb:^1.0 pusher/pusher-php-server:^7.2` | + `league/flysystem-aws-s3-v3:^3.0` |
+
+**Flujo de upload S3 (confirmado):**
+
+1. Frontend sube imagen via `POST /compras/upload-temp` (multipart/form-data, campo `image`)
+2. Backend comprime con GD si >500KB (quality 60, max 1200x800)
+3. Sube a S3: `laruta11-images/compras/temp/{uuid}.jpg`
+4. Retorna `{tempUrl, tempKey}`
+5. Al confirmar compra: mueve de `temp/` a `compras/respaldo_{id}_{timestamp}.jpg`
+
+**Archivos modificados (1):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/Dockerfile` | Agregar `league/flysystem-aws-s3-v3:^3.0` al `composer require` |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `f3a3665` | `fix(mi3): add flysystem-aws-s3-v3 to Dockerfile for S3 uploads` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `rm091jlhg5sknf0ppsqh5qld` | ✅ queued (rebuild Docker image) |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| 500 en `POST /compras/upload-temp` | `league/flysystem-aws-s3-v3` no instalado en Docker image — `Class "PortableVisibilityConverter" not found` | Agregar al `composer require` del Dockerfile |
+
+### Lecciones Aprendidas
+
+181. **Dockerfile `composer require` ≠ `composer.json` local**: El Dockerfile construye desde cero con `composer create-project` + `composer require`. Si agregas un paquete localmente con `composer require`, también debes agregarlo a la línea del Dockerfile. El `composer.json` local NO se copia al contenedor (se usa el generado por `create-project`)
+
+### Pendiente
+
+- **Verificar** que upload funciona después del rebuild Docker (deploy tarda más por rebuild)
+- **Test end-to-end**: subir foto → S3 → extracción IA → registro
+- Fix suscripciones duplicadas en `push_subscriptions_mi3`
+- Integrar `NotificacionNueva` event en flujos reales
+- Corregir caja3 `get_turnos.php` base date cajero
+- Generar turnos mayo
 
 ---
 
