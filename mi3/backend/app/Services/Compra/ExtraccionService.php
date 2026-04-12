@@ -221,6 +221,7 @@ IMPORTANTE: El proveedor NO es "Mercado Pago" ni el banco. El proveedor es segú
 Mapeo conocido de personas a proveedores:
 - Karen Miranda Olmedo = ARIAKA (Servicios Delivery)
 - Eliana Vilca = ARIAKA (Servicios Delivery)
+- Elcia Vilca = ARIAKA (Servicios Delivery)
 - Cecilia Rojas Hinojosa = ARIAKA (Servicios Delivery)
 - Maria Mondañez Mamani = ARIAKA (Servicios Delivery)
 - Maria Mondanez Mamani = ARIAKA (Servicios Delivery)
