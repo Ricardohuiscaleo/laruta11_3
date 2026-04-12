@@ -15,7 +15,10 @@ export interface ExtractionResult {
   monto_neto: number;
   iva: number;
   monto_total: number;
-  tipo_imagen: 'boleta' | 'factura' | 'producto' | 'bascula' | 'desconocido';
+  tipo_imagen: 'boleta' | 'factura' | 'producto' | 'bascula' | 'transferencia' | 'desconocido';
+  fecha: string | null;
+  metodo_pago: string | null;
+  tipo_compra: string | null;
   peso_bascula: number | null;
   unidad_bascula: string | null;
   notas_ia: string | null;

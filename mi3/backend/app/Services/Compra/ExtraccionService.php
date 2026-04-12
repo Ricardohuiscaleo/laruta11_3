@@ -215,15 +215,35 @@ Extrae: items (array con nombre/cantidad_estimada/unidad/confianza_estimacion).
 TIPO 3 — FOTO DE BÁSCULA/BALANZA (display digital mostrando peso):
 Lee el número del display digital. Extrae: peso_leido (número), unidad (kg/g), producto_probable (si se ve el producto en la báscula).
 
-TIPO 4 — FACTURA DE PROVEEDOR CONOCIDO:
+TIPO 4 — COMPROBANTE DE TRANSFERENCIA BANCARIA (Mercado Pago, banco, etc.):
+Extrae: destinatario (nombre de la persona que recibe), monto, fecha de la transferencia.
+IMPORTANTE: El proveedor NO es "Mercado Pago" ni el banco. El proveedor es según el DESTINATARIO.
+Mapeo conocido de personas a proveedores:
+- Karen Miranda Olmedo = ARIAKA (Servicios Delivery)
+- Elcia Vilca = ARIAKA (Servicios Delivery)
+- Cecilia Rojas Hinojosa = ARIAKA (Servicios Delivery)
+- Maria Mondañez Mamani = ARIAKA (Servicios Delivery)
+- Maria Mondanez Mamani = ARIAKA (Servicios Delivery)
+- Giovanna Loza Salas = ARIAKA (Servicios Delivery)
+- Ariel Araya = ARIAKA (Servicios Delivery)
+- Ariel Aliro Araya Villalobos = ARIAKA (Servicios Delivery)
+- Karina Andrea Muñoz Ahumada = Ariztía (proveedor)
+- Lucila Cacera = agro-lucila
+- Si el destinatario no está en el mapeo, usar el nombre de la persona como proveedor.
+Para ARIAKA: item = "Servicios Delivery", cantidad = 1, unidad = "unidad", tipo_compra = "otros".
+
+TIPO 5 — FACTURA DE PROVEEDOR CONOCIDO:
 Si reconoces el formato de un proveedor específico (ej: Shipo, DistribuChile, etc.), usa el formato conocido para extraer datos con mayor precisión.
 {$knownSuppliers}{$rutMapping}{$knownProducts}{$productPatterns}
 
 Formato de respuesta JSON:
 {
-  "tipo_imagen": "boleta" | "factura" | "producto" | "bascula" | "desconocido",
-  "proveedor": "nombre o null",
+  "tipo_imagen": "boleta" | "factura" | "producto" | "bascula" | "transferencia" | "desconocido",
+  "proveedor": "nombre del proveedor (NO el banco ni Mercado Pago)",
   "rut_proveedor": "XX.XXX.XXX-Y o null",
+  "fecha": "YYYY-MM-DD (fecha de la compra/transferencia)",
+  "metodo_pago": "cash" | "transfer" | "card" | "credit",
+  "tipo_compra": "ingredientes" | "insumos" | "equipamiento" | "otros",
   "items": [{"nombre": "...", "cantidad": N, "unidad": "kg|unidad|g|L", "precio_unitario": N, "subtotal": N}],
   "monto_neto": N o null,
   "iva": N o null,
@@ -239,6 +259,9 @@ Reglas:
 - Si no hay desglose de IVA, calcula: monto_neto = round(monto_total / 1.19), iva = monto_total - monto_neto
 - Para fotos de productos, estima cantidad basándote en el tamaño visual y patrones conocidos
 - Para básculas, lee el número exacto del display digital
+- SIEMPRE extrae la fecha si es visible en la imagen (formato YYYY-MM-DD)
+- Para transferencias: proveedor = destinatario (NO el banco/Mercado Pago), metodo_pago = "transfer"
+- Para comprobantes de pago a personas conocidas (delivery, servicios), tipo_compra = "otros"
 - Responde SOLO con el JSON, sin texto adicional
 PROMPT;
     }

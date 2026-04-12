@@ -91,6 +91,9 @@ export default function RegistroCompra() {
     setForm(f => ({
       ...f,
       proveedor: data.proveedor || f.proveedor,
+      fecha_compra: data.fecha || f.fecha_compra,
+      metodo_pago: data.metodo_pago || f.metodo_pago,
+      tipo_compra: data.tipo_compra || f.tipo_compra,
       items: [...f.items, ...newItems],
     }));
     setStep('formulario');
@@ -269,13 +272,22 @@ export default function RegistroCompra() {
             )}
           </div>
 
-          {/* Images (if not already uploaded) */}
-          {images.length === 0 && (
-            <div className="rounded-xl border bg-white p-4 shadow-sm">
-              <h3 className="mb-3 text-sm font-semibold text-gray-700">Imágenes de respaldo</h3>
-              <ImageUploader images={images} onChange={setImages} />
-            </div>
-          )}
+          {/* Images - always show thumbnails + allow adding more */}
+          <div className="rounded-xl border bg-white p-4 shadow-sm">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700">
+              Imágenes de respaldo {images.length > 0 && `(${images.length})`}
+            </h3>
+            {images.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {images.map((img, i) => (
+                  <div key={img.tempKey} className="relative h-16 w-16 rounded-lg border overflow-hidden">
+                    <img src={img.tempUrl} alt="" className="h-full w-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            )}
+            <ImageUploader images={images} onChange={setImages} />
+          </div>
 
           {/* Total + Submit */}
           <div className="rounded-xl border bg-white p-4 shadow-sm">

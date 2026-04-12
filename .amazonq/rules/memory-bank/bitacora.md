@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12am)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12an)
 
 ### Aplicaciones Desplegadas
 
@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`nklzycf28cf1zp796kr8jgl5`, commit `dfac24c`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (commit `53585c4`) | ❌ Manual |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`mf336udaoty6`, commit `f169a02`) — fix S3 visibility public | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`pyz3anot8irv`, commit `2f5a777`) — S3 PUT directo SigV4 | ❌ Manual |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running (`uu8lhn7wijjk1idj5ghf21pa`) | ❌ Manual |
 
 Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks individuales, o el nuevo hook "Ship It" para ciclo completo.
@@ -40,7 +40,83 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 |------|-----------|--------|
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ✅ Deployado + migraciones ejecutadas en producción |
-| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Remember token 30d verificado en BD (token #39). Upload S3 + preview pendiente verificar post-deploy |
+| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ S3 reescrito con PUT directo SigV4 (como caja3). Pendiente verificar upload+preview post-deploy |
+
+---
+
+## Sesión 2026-04-12an — S3 reescrito: PUT directo con SigV4 (como caja3) + diagnóstico bucket AWS
+
+### Lo realizado: Investigar bucket S3 en AWS, descubrir que Flysystem no sube, reescribir ImagenService con PUT directo
+
+**1. Diagnóstico del bucket S3 via API (SigV4):**
+
+| Config | Valor |
+|--------|-------|
+| Block Public Access | Todo `false` (desactivado) |
+| Bucket Policy | `PublicReadGetObject` para `*` en `laruta11-images/*` |
+| ACLs | Deshabilitadas (imposición propietario bucket) |
+| CORS | Permite todo (`*`) |
+
+El bucket está completamente abierto para lectura pública. El 403 NO era por permisos del bucket.
+
+**2. Descubrimiento: Flysystem no sube realmente:**
+
+| Test | Resultado |
+|------|-----------|
+| `Storage::disk('s3')->put('test.txt', 'hello')` | Retorna sin error |
+| `Storage::disk('s3')->exists('test.txt')` | `false` — archivo NO existe |
+| `curl GET test.txt` | 403 — no existe |
+| PUT directo con SigV4 a `bucket.s3.region.amazonaws.com` | HTTP 200 ✅ |
+| `curl GET` después del PUT directo | HTTP 200 ✅ — archivo público |
+
+Flysystem `put()` no lanza error pero el archivo no se sube. Probablemente un problema de configuración del adapter o del endpoint.
+
+**3. Solución: ImagenService reescrito con PUT directo SigV4:**
+
+Mismo approach que `caja3/api/S3Manager.php`:
+- `putObject()`: PUT directo a `bucket.s3.region.amazonaws.com/key` con SigV4
+- `getObject()`: GET con SigV4 (para mover archivos)
+- `deleteObject()`: DELETE con SigV4
+- `compress()`: GD quality 60, max 1200x800 (si >500KB)
+- URL pública: `https://laruta11-images.s3.amazonaws.com/{key}` (bucket policy permite lectura)
+
+**Archivos modificados (1):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/app/Services/Compra/ImagenService.php` | Reescrito completo: PUT/GET/DELETE directo S3 con SigV4, sin Flysystem |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `e8c2b95` | `fix(mi3): S3 presigned URLs for temp image preview` (intento con presigned, no fue la solución) |
+| 2 | `2f5a777` | `fix(mi3): S3 upload directo con SigV4 (como caja3/S3Manager)` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `pyz3anot8irvacblzivkyhdc` | ✅ queued |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| S3 upload con Flysystem: archivo no se sube realmente | `Storage::disk('s3')->put()` retorna OK pero `exists()` = false. Probable bug de config del adapter S3 en Flysystem v3 | Reescribir con PUT directo SigV4 (como caja3) |
+| 403 en preview de imagen temp | Archivo no existía en S3 (Flysystem no lo subió) | PUT directo resuelve el upload, bucket policy permite lectura pública |
+
+### Lecciones Aprendidas
+
+188. **Flysystem puede fallar silenciosamente**: `Storage::disk('s3')->put()` no lanza excepción cuando falla. El archivo simplemente no se sube. Siempre verificar con `exists()` después de un `put()`, o mejor aún, usar PUT directo con SigV4 que retorna HTTP 200/error explícito
+189. **Si caja3 ya tiene un S3Manager que funciona, replicar ese approach**: No reinventar la rueda con Flysystem cuando ya tienes código probado en producción. El PUT directo con SigV4 de caja3 funciona desde hace meses — usarlo
+
+### Pendiente
+
+- **Verificar** que upload + preview funciona después del deploy
+- Test end-to-end: subir foto → preview → extracción IA → registro
+- Verificar Gmail Token Refresh pasa a 100%
+- Integrar `NotificacionNueva` event en flujos reales
+- Corregir caja3 `get_turnos.php` base date cajero
+- Generar turnos mayo
 
 ---
 
