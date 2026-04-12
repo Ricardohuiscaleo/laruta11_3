@@ -15,7 +15,7 @@ return [
             'person_b' => 'Claudio',
         ],
         'cajeros' => [
-            'base_date' => '2026-02-01',
+            'base_date' => '2026-02-02',
             'person_a' => 'Camila',
             'person_b' => 'Dafne',
         ],
