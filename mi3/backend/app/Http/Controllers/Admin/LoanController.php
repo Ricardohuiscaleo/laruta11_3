@@ -17,7 +17,7 @@ class LoanController extends Controller
     /**
      * GET /api/v1/admin/loans
      *
-     * List all loans ordered by status priority and date.
+     * List all adelantos ordered by status priority and date.
      */
     public function index(): JsonResponse
     {
@@ -32,7 +32,8 @@ class LoanController extends Controller
     /**
      * POST /api/v1/admin/loans/{id}/approve
      *
-     * Approve a pending loan with amount, start date, and notes.
+     * Approve a pending adelanto with amount and notes.
+     * No fecha_inicio_descuento — deduction is always end of current month.
      */
     public function approve(Request $request, int $id): JsonResponse
     {
@@ -41,13 +42,12 @@ class LoanController extends Controller
         if (!$prestamo) {
             return response()->json([
                 'success' => false,
-                'error' => 'Préstamo no encontrado',
+                'error' => 'Adelanto no encontrado',
             ], 404);
         }
 
         $data = $request->validate([
             'monto_aprobado' => 'required|numeric|min:1',
-            'fecha_inicio_descuento' => 'nullable|date',
             'notas' => 'nullable|string|max:1000',
         ]);
 
@@ -58,7 +58,6 @@ class LoanController extends Controller
                 $prestamo,
                 $admin->id,
                 (float) $data['monto_aprobado'],
-                $data['fecha_inicio_descuento'] ?? null,
                 $data['notas'] ?? null,
             );
 
@@ -77,7 +76,7 @@ class LoanController extends Controller
     /**
      * POST /api/v1/admin/loans/{id}/reject
      *
-     * Reject a pending loan with optional notes.
+     * Reject a pending adelanto with optional notes.
      */
     public function reject(Request $request, int $id): JsonResponse
     {
@@ -86,7 +85,7 @@ class LoanController extends Controller
         if (!$prestamo) {
             return response()->json([
                 'success' => false,
-                'error' => 'Préstamo no encontrado',
+                'error' => 'Adelanto no encontrado',
             ], 404);
         }
 

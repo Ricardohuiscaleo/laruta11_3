@@ -6,6 +6,7 @@ use App\Models\AjusteCategoria;
 use App\Models\AjusteSueldo;
 use App\Models\Personal;
 use App\Models\Prestamo;
+use App\Models\Turno;
 use App\Services\Notification\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -18,30 +19,28 @@ class LoanService
     ) {}
 
     /**
-     * Create a loan request for a worker.
+     * Create an adelanto de sueldo request for a worker.
      *
-     * Validates: no active loan, amount <= base salary, installments 1-3.
+     * Validates: no active adelanto, amount <= proportional salary based on days worked.
+     * Cuotas is always 1 (full deduction at end of month).
      * Creates a pending record and notifies admins.
      */
-    public function solicitarPrestamo(int $personalId, float $monto, int $cuotas, ?string $motivo): Prestamo
+    public function solicitarPrestamo(int $personalId, float $monto, ?string $motivo): Prestamo
     {
         $personal = Personal::findOrFail($personalId);
 
-        // Validate no active loan
+        // Validate no active adelanto
         if ($this->getPrestamoActivo($personalId)) {
-            throw new \InvalidArgumentException('Ya tienes un préstamo activo');
+            throw new \InvalidArgumentException('Ya tienes un adelanto activo');
         }
 
-        // Validate installments range
-        if ($cuotas < 1 || $cuotas > 3) {
-            throw new \InvalidArgumentException('Las cuotas deben ser entre 1 y 3');
-        }
-
-        // Validate amount against base salary
+        // Calculate max amount proportional to days worked this month
         $sueldoBase = $this->getSueldoBase($personal);
-        if ($monto <= 0 || $monto > $sueldoBase) {
+        $montoMaximo = $this->calcularMontoMaximo($personalId, $sueldoBase);
+
+        if ($monto <= 0 || $monto > $montoMaximo) {
             throw new \InvalidArgumentException(
-                "El monto debe ser entre \$1 y \$" . number_format($sueldoBase, 0, ',', '.')
+                "El monto debe ser entre \$1 y \$" . number_format($montoMaximo, 0, ',', '.') . " (proporcional a días trabajados)"
             );
         }
 
@@ -49,7 +48,7 @@ class LoanService
             'personal_id' => $personalId,
             'monto_solicitado' => $monto,
             'motivo' => $motivo,
-            'cuotas' => $cuotas,
+            'cuotas' => 1, // Adelanto: always 1 (full deduction)
             'estado' => 'pendiente',
         ]);
 
@@ -59,8 +58,8 @@ class LoanService
             $this->notificationService->crear(
                 $admin->id,
                 'sistema',
-                'Nueva solicitud de préstamo',
-                "{$personal->nombre} solicita un préstamo de \$" . number_format($monto, 0, ',', '.'),
+                'Nueva solicitud de adelanto',
+                "{$personal->nombre} solicita un adelanto de \$" . number_format($monto, 0, ',', '.'),
                 $prestamo->id,
                 'prestamo'
             );
@@ -70,24 +69,46 @@ class LoanService
     }
 
     /**
-     * Approve a pending loan.
+     * Calculate the maximum adelanto amount based on days worked this month.
+     *
+     * Formula: (dias_con_turno / dias_totales_mes) × sueldo_base
+     */
+    public function calcularMontoMaximo(int $personalId, float $sueldoBase): float
+    {
+        $now = Carbon::now();
+        $diasTotalesMes = $now->daysInMonth;
+
+        // Count days with shifts in current month for this worker
+        $diasConTurno = Turno::where('personal_id', $personalId)
+            ->whereYear('fecha', $now->year)
+            ->whereMonth('fecha', $now->month)
+            ->distinct('fecha')
+            ->count('fecha');
+
+        if ($diasTotalesMes === 0) {
+            return 0;
+        }
+
+        return floor(($diasConTurno / $diasTotalesMes) * $sueldoBase);
+    }
+
+    /**
+     * Approve a pending adelanto.
      *
      * Updates status, creates a positive salary adjustment (category 'prestamo'),
-     * and notifies the worker.
+     * and notifies the worker. Deduction is always at end of current month.
      */
-    public function aprobar(Prestamo $prestamo, int $aprobadoPorId, float $montoAprobado, ?string $fechaInicio = null, ?string $notas = null): void
+    public function aprobar(Prestamo $prestamo, int $aprobadoPorId, float $montoAprobado, ?string $notas = null): void
     {
         if ($prestamo->estado !== 'pendiente') {
-            throw new \InvalidArgumentException('Solo se pueden aprobar préstamos pendientes');
+            throw new \InvalidArgumentException('Solo se pueden aprobar adelantos pendientes');
         }
 
         $categoriaId = AjusteCategoria::where('slug', 'prestamo')->value('id');
         $mes = now()->format('Y-m');
 
-        // Default: deductions start next month
-        $fechaInicioDescuento = $fechaInicio
-            ? Carbon::parse($fechaInicio)->format('Y-m-d')
-            : Carbon::now()->addMonth()->startOfMonth()->format('Y-m-d');
+        // Deduction is always end of current month (1st of next month when cron runs)
+        $fechaInicioDescuento = Carbon::now()->startOfMonth()->format('Y-m-d');
 
         DB::transaction(function () use ($prestamo, $aprobadoPorId, $montoAprobado, $fechaInicioDescuento, $notas, $categoriaId, $mes) {
             $prestamo->update([
@@ -99,12 +120,12 @@ class LoanService
                 'notas_admin' => $notas,
             ]);
 
-            // Create positive salary adjustment (loan disbursement)
+            // Create positive salary adjustment (adelanto disbursement)
             AjusteSueldo::create([
                 'personal_id' => $prestamo->personal_id,
                 'mes' => $mes . '-01',
                 'monto' => $montoAprobado,
-                'concepto' => 'Préstamo aprobado',
+                'concepto' => 'Adelanto de sueldo aprobado',
                 'categoria_id' => $categoriaId,
             ]);
         });
@@ -113,20 +134,20 @@ class LoanService
         $this->notificationService->crear(
             $prestamo->personal_id,
             'sistema',
-            '✅ Préstamo aprobado',
-            "Tu préstamo por \$" . number_format($montoAprobado, 0, ',', '.') . " fue aprobado",
+            '✅ Adelanto aprobado',
+            "Tu adelanto por \$" . number_format($montoAprobado, 0, ',', '.') . " fue aprobado. Se descontará a fin de mes.",
             $prestamo->id,
             'prestamo'
         );
     }
 
     /**
-     * Reject a pending loan and notify the worker.
+     * Reject a pending adelanto and notify the worker.
      */
     public function rechazar(Prestamo $prestamo, int $aprobadoPorId, ?string $notas = null): void
     {
         if ($prestamo->estado !== 'pendiente') {
-            throw new \InvalidArgumentException('Solo se pueden rechazar préstamos pendientes');
+            throw new \InvalidArgumentException('Solo se pueden rechazar adelantos pendientes');
         }
 
         $prestamo->update([
@@ -138,15 +159,15 @@ class LoanService
         $this->notificationService->crear(
             $prestamo->personal_id,
             'sistema',
-            '❌ Préstamo rechazado',
-            'Tu solicitud de préstamo fue rechazada' . ($notas ? ": {$notas}" : ''),
+            '❌ Adelanto rechazado',
+            'Tu solicitud de adelanto fue rechazada' . ($notas ? ": {$notas}" : ''),
             $prestamo->id,
             'prestamo'
         );
     }
 
     /**
-     * Get the active loan for a worker (approved with pending installments).
+     * Get the active adelanto for a worker (approved with pending deduction).
      */
     public function getPrestamoActivo(int $personalId): ?Prestamo
     {
@@ -157,7 +178,7 @@ class LoanService
     }
 
     /**
-     * Get all loans for a worker, ordered by creation date descending.
+     * Get all adelantos for a worker, ordered by creation date descending.
      */
     public function getPrestamosPorPersonal(int $personalId): Collection
     {
@@ -167,7 +188,7 @@ class LoanService
     }
 
     /**
-     * Get all loans (admin view), ordered by status priority and date.
+     * Get all adelantos (admin view), ordered by status priority and date.
      */
     public function getTodosPrestamos(): Collection
     {
@@ -178,11 +199,11 @@ class LoanService
     }
 
     /**
-     * Process monthly installment deductions for all active loans.
+     * Process monthly deductions for all active adelantos.
      *
      * Runs on the 1st of each month via scheduler.
-     * Creates negative salary adjustments and updates installment counts.
-     * Each loan is processed in its own transaction for resilience.
+     * Deducts the full monto_aprobado in one shot and marks as 'pagado'.
+     * Each adelanto is processed in its own transaction for resilience.
      *
      * @return array{resultados: array, errores: array}
      */
@@ -203,31 +224,28 @@ class LoanService
         foreach ($prestamos as $prestamo) {
             try {
                 DB::transaction(function () use ($prestamo, $mes, $mesNombre, $categoriaId, &$resultados) {
-                    $montoCuota = (int) round($prestamo->monto_aprobado / $prestamo->cuotas);
-                    $cuotaActual = $prestamo->cuotas_pagadas + 1;
+                    $montoDescuento = (int) round($prestamo->monto_aprobado);
 
-                    // Create negative salary adjustment (installment deduction)
+                    // Create negative salary adjustment (full adelanto deduction)
                     AjusteSueldo::create([
                         'personal_id' => $prestamo->personal_id,
                         'mes' => $mes . '-01',
-                        'monto' => -$montoCuota,
-                        'concepto' => "Cuota préstamo {$cuotaActual}/{$prestamo->cuotas} - {$mesNombre}",
+                        'monto' => -$montoDescuento,
+                        'concepto' => "Descuento adelanto de sueldo - {$mesNombre}",
                         'categoria_id' => $categoriaId,
                     ]);
 
-                    $prestamo->increment('cuotas_pagadas');
-
-                    // Mark as paid if all installments are done
-                    if ($prestamo->cuotas_pagadas >= $prestamo->cuotas) {
-                        $prestamo->update(['estado' => 'pagado']);
-                    }
+                    // Mark as fully paid immediately
+                    $prestamo->update([
+                        'cuotas_pagadas' => $prestamo->cuotas,
+                        'estado' => 'pagado',
+                    ]);
 
                     $resultados[] = [
                         'prestamo_id' => $prestamo->id,
                         'personal_id' => $prestamo->personal_id,
-                        'cuota' => "{$cuotaActual}/{$prestamo->cuotas}",
-                        'monto' => $montoCuota,
-                        'estado_final' => $prestamo->estado,
+                        'monto' => $montoDescuento,
+                        'estado_final' => 'pagado',
                     ];
                 });
             } catch (\Throwable $e) {
@@ -241,6 +259,32 @@ class LoanService
         return [
             'resultados' => $resultados,
             'errores' => $errores,
+        ];
+    }
+
+    /**
+     * Get max adelanto info for a worker (used by frontend to show available amount).
+     */
+    public function getInfoAdelanto(int $personalId): array
+    {
+        $personal = Personal::findOrFail($personalId);
+        $sueldoBase = $this->getSueldoBase($personal);
+
+        $now = Carbon::now();
+        $diasTotalesMes = $now->daysInMonth;
+        $diasConTurno = Turno::where('personal_id', $personalId)
+            ->whereYear('fecha', $now->year)
+            ->whereMonth('fecha', $now->month)
+            ->distinct('fecha')
+            ->count('fecha');
+
+        $montoMaximo = $this->calcularMontoMaximo($personalId, $sueldoBase);
+
+        return [
+            'sueldo_base' => $sueldoBase,
+            'dias_trabajados' => $diasConTurno,
+            'dias_totales_mes' => $diasTotalesMes,
+            'monto_maximo' => $montoMaximo,
         ];
     }
 

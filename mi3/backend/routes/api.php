@@ -39,8 +39,9 @@ Route::prefix('v1')->group(function () {
         Route::get('notifications', [\App\Http\Controllers\Worker\NotificationController::class, 'index']);
         Route::patch('notifications/{id}/read', [\App\Http\Controllers\Worker\NotificationController::class, 'markAsRead']);
 
-        // Loans
+        // Loans (adelantos de sueldo)
         Route::get('loans', [\App\Http\Controllers\Worker\LoanController::class, 'index']);
+        Route::get('loans/info', [\App\Http\Controllers\Worker\LoanController::class, 'info']);
         Route::post('loans', [\App\Http\Controllers\Worker\LoanController::class, 'store']);
 
         // Dashboard summary

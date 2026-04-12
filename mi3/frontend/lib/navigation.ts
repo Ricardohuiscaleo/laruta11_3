@@ -19,7 +19,7 @@ export const primaryNavItems: NavItem[] = [
   { href: '/dashboard', label: 'Inicio', icon: Home },
   { href: '/dashboard/turnos', label: 'Turnos', icon: Calendar },
   { href: '/dashboard/liquidacion', label: 'Sueldo', icon: Receipt },
-  { href: '/dashboard/prestamos', label: 'Préstamos', icon: Wallet, badgeKey: 'prestamo-pendiente' },
+  { href: '/dashboard/prestamos', label: 'Adelantos', icon: Wallet, badgeKey: 'prestamo-pendiente' },
 ];
 
 export const secondaryNavItems: NavItem[] = [

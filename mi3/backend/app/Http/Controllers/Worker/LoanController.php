@@ -16,7 +16,7 @@ class LoanController extends Controller
     /**
      * GET /api/v1/worker/loans
      *
-     * List loans for the authenticated worker, ordered by created_at desc.
+     * List adelantos for the authenticated worker, ordered by created_at desc.
      */
     public function index(Request $request): JsonResponse
     {
@@ -31,9 +31,26 @@ class LoanController extends Controller
     }
 
     /**
+     * GET /api/v1/worker/loans/info
+     *
+     * Get adelanto info (max amount, days worked, etc.) for the authenticated worker.
+     */
+    public function info(Request $request): JsonResponse
+    {
+        $personal = $request->get('personal');
+
+        $info = $this->loanService->getInfoAdelanto($personal->id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $info,
+        ]);
+    }
+
+    /**
      * POST /api/v1/worker/loans
      *
-     * Create a loan request with validation.
+     * Create an adelanto request. Cuotas is always 1 (no installments).
      */
     public function store(Request $request): JsonResponse
     {
@@ -41,7 +58,6 @@ class LoanController extends Controller
 
         $data = $request->validate([
             'monto' => 'required|numeric|min:1',
-            'cuotas' => 'required|integer|min:1|max:3',
             'motivo' => 'nullable|string|max:255',
         ]);
 
@@ -49,7 +65,6 @@ class LoanController extends Controller
             $prestamo = $this->loanService->solicitarPrestamo(
                 $personal->id,
                 (float) $data['monto'],
-                (int) $data['cuotas'],
                 $data['motivo'] ?? null,
             );
 
@@ -58,7 +73,7 @@ class LoanController extends Controller
                 'data' => $prestamo,
             ], 201);
         } catch (\InvalidArgumentException $e) {
-            $statusCode = str_contains($e->getMessage(), 'préstamo activo') ? 409 : 422;
+            $statusCode = str_contains($e->getMessage(), 'adelanto activo') ? 409 : 422;
 
             return response()->json([
                 'success' => false,

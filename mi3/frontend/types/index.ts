@@ -103,6 +103,12 @@ export interface SolicitudCambio {
   created_at: string;
 }
 
+/**
+ * Adelanto de sueldo (salary advance).
+ * Uses the `prestamos` DB table for backward compat.
+ * cuotas is always 1 for new adelantos; cuotas_pagadas is 0 or 1.
+ * Legacy records may have cuotas > 1.
+ */
 export interface Prestamo {
   id: number;
   monto_solicitado: number;
@@ -117,8 +123,16 @@ export interface Prestamo {
   created_at: string;
 }
 
+export interface AdelantoInfo {
+  sueldo_base: number;
+  dias_trabajados: number;
+  dias_totales_mes: number;
+  monto_maximo: number;
+}
+
 export interface DashboardSummary {
   sueldo: { total: number; mes: string };
+  /** Adelanto de sueldo info */
   prestamo: {
     tiene_activo: boolean;
     monto_pendiente: number;

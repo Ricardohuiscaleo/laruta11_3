@@ -13,7 +13,7 @@ import {
   XCircle,
   Ban,
 } from 'lucide-react';
-import type { Prestamo, ApiResponse } from '@/types';
+import type { Prestamo, AdelantoInfo, ApiResponse } from '@/types';
 
 /* ─── Estado badge colors ─── */
 const estadoConfig: Record<
@@ -36,7 +36,7 @@ const estadoConfig: Record<
     icon: <XCircle className="h-3.5 w-3.5" />,
   },
   pagado: {
-    label: 'Pagado',
+    label: 'Descontado',
     className: 'bg-blue-100 text-blue-700',
     icon: <CheckCircle2 className="h-3.5 w-3.5" />,
   },
@@ -62,48 +62,11 @@ function EstadoBadge({ estado }: { estado: Prestamo['estado'] }) {
   );
 }
 
-/* ─── Progress bar for active loans ─── */
-function ProgressBar({ pagadas, total }: { pagadas: number; total: number }) {
-  const pct = total > 0 ? Math.round((pagadas / total) * 100) : 0;
-  return (
-    <div className="mt-2">
-      <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-        <span>
-          {pagadas} de {total} cuota{total !== 1 ? 's' : ''}
-        </span>
-        <span>{pct}%</span>
-      </div>
-      <div className="h-2 w-full rounded-full bg-gray-200">
-        <div
-          className="h-2 rounded-full bg-red-500 transition-all"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-/* ─── Loan card ─── */
-function PrestamoCard({ prestamo }: { prestamo: Prestamo }) {
+/* ─── Adelanto card ─── */
+function AdelantoCard({ prestamo }: { prestamo: Prestamo }) {
   const isActive =
     prestamo.estado === 'aprobado' && prestamo.cuotas_pagadas < prestamo.cuotas;
   const montoMostrar = prestamo.monto_aprobado ?? prestamo.monto_solicitado;
-  const montoCuota =
-    prestamo.monto_aprobado && prestamo.cuotas > 0
-      ? Math.round(prestamo.monto_aprobado / prestamo.cuotas)
-      : null;
-
-  // Next deduction date: 1st of next month from now
-  const getProximaFecha = () => {
-    if (!isActive) return null;
-    const now = new Date();
-    const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    return next.toLocaleDateString('es-CL', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
 
   return (
     <div className="rounded-xl border bg-white p-4 shadow-sm">
@@ -122,13 +85,8 @@ function PrestamoCard({ prestamo }: { prestamo: Prestamo }) {
         <EstadoBadge estado={prestamo.estado} />
       </div>
 
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-        <span>
-          {prestamo.cuotas} cuota{prestamo.cuotas !== 1 ? 's' : ''}
-        </span>
-        <span>
-          {new Date(prestamo.created_at).toLocaleDateString('es-CL')}
-        </span>
+      <div className="mt-2 text-xs text-gray-500">
+        {new Date(prestamo.created_at).toLocaleDateString('es-CL')}
       </div>
 
       {prestamo.motivo && (
@@ -142,30 +100,19 @@ function PrestamoCard({ prestamo }: { prestamo: Prestamo }) {
       )}
 
       {isActive && (
-        <>
-          <ProgressBar
-            pagadas={prestamo.cuotas_pagadas}
-            total={prestamo.cuotas}
-          />
-          {montoCuota !== null && (
-            <div className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm">
-              <p className="text-red-700">
-                Próxima cuota: <span className="font-semibold">{formatCLP(montoCuota)}</span>
-              </p>
-              {getProximaFecha() && (
-                <p className="text-xs text-red-500">
-                  Descuento estimado: {getProximaFecha()}
-                </p>
-              )}
-            </div>
-          )}
-        </>
+        <div className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm">
+          <p className="text-red-700">
+            Se descontará completo a fin de mes:{' '}
+            <span className="font-semibold">{formatCLP(prestamo.monto_aprobado!)}</span>
+          </p>
+        </div>
       )}
     </div>
   );
 }
 
-/* ─── Modal overlay for loan request ─── */
+
+/* ─── Modal overlay for adelanto request ─── */
 function SolicitarModal({
   onClose,
   onSuccess,
@@ -174,10 +121,18 @@ function SolicitarModal({
   onSuccess: () => void;
 }) {
   const [monto, setMonto] = useState('');
-  const [cuotas, setCuotas] = useState('1');
   const [motivo, setMotivo] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  const [info, setInfo] = useState<AdelantoInfo | null>(null);
+  const [loadingInfo, setLoadingInfo] = useState(true);
+
+  useEffect(() => {
+    apiFetch<ApiResponse<AdelantoInfo>>('/worker/loans/info')
+      .then((res) => setInfo(res.data ?? null))
+      .catch(() => {})
+      .finally(() => setLoadingInfo(false));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,9 +143,8 @@ function SolicitarModal({
       setFormError('El monto debe ser mayor a $0');
       return;
     }
-    const cuotasNum = Number(cuotas);
-    if (cuotasNum < 1 || cuotasNum > 3) {
-      setFormError('Las cuotas deben ser entre 1 y 3');
+    if (info && montoNum > info.monto_maximo) {
+      setFormError(`El monto máximo disponible es ${formatCLP(info.monto_maximo)}`);
       return;
     }
 
@@ -200,7 +154,6 @@ function SolicitarModal({
         method: 'POST',
         body: JSON.stringify({
           monto: montoNum,
-          cuotas: cuotasNum,
           motivo: motivo.trim() || null,
         }),
       });
@@ -223,7 +176,7 @@ function SolicitarModal({
       <div className="relative w-full max-w-md rounded-t-2xl sm:rounded-2xl bg-white p-5 shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900">
-            Solicitar Préstamo
+            Solicitar Adelanto
           </h2>
           <button
             onClick={onClose}
@@ -232,6 +185,23 @@ function SolicitarModal({
             <X className="h-5 w-5 text-gray-400" />
           </button>
         </div>
+
+        {/* Info about max amount */}
+        {loadingInfo ? (
+          <div className="mb-3 flex items-center gap-2 text-sm text-gray-400">
+            <Loader2 className="h-4 w-4 animate-spin" /> Calculando monto disponible...
+          </div>
+        ) : info ? (
+          <div className="mb-3 rounded-lg bg-blue-50 p-3 text-sm text-blue-700">
+            <p>
+              Máximo disponible:{' '}
+              <span className="font-semibold">{formatCLP(info.monto_maximo)}</span>
+            </p>
+            <p className="text-xs text-blue-500 mt-0.5">
+              Proporcional a {info.dias_trabajados} día{info.dias_trabajados !== 1 ? 's' : ''} trabajado{info.dias_trabajados !== 1 ? 's' : ''} de {info.dias_totales_mes} en el mes
+            </p>
+          </div>
+        ) : null}
 
         {formError && (
           <div className="mb-3 rounded-lg bg-red-50 p-2.5 text-sm text-red-600">
@@ -248,26 +218,12 @@ function SolicitarModal({
               type="number"
               required
               min="1"
-              placeholder="Ej: 200000"
+              max={info?.monto_maximo}
+              placeholder={info ? `Máx: ${formatCLP(info.monto_maximo)}` : 'Ej: 200000'}
               value={monto}
               onChange={(e) => setMonto(e.target.value)}
               className="mt-1 block w-full rounded-lg border px-3 py-2.5 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500"
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Cuotas
-            </label>
-            <select
-              value={cuotas}
-              onChange={(e) => setCuotas(e.target.value)}
-              className="mt-1 block w-full rounded-lg border px-3 py-2.5 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500"
-            >
-              <option value="1">1 cuota</option>
-              <option value="2">2 cuotas</option>
-              <option value="3">3 cuotas</option>
-            </select>
           </div>
 
           <div>
@@ -282,6 +238,10 @@ function SolicitarModal({
               className="mt-1 block w-full rounded-lg border px-3 py-2.5 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500"
             />
           </div>
+
+          <p className="text-xs text-gray-400">
+            El adelanto se descontará completo de tu sueldo a fin de mes.
+          </p>
 
           <button
             type="submit"
@@ -307,6 +267,10 @@ export default function PrestamosPage() {
   const hasActive = prestamos.some(
     (p) => p.estado === 'aprobado' && p.cuotas_pagadas < p.cuotas
   );
+
+  const hasPending = prestamos.some((p) => p.estado === 'pendiente');
+
+  const canRequest = !hasActive && !hasPending;
 
   const fetchLoans = () => {
     setLoading(true);
@@ -338,7 +302,7 @@ export default function PrestamosPage() {
   if (error) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900">Préstamos</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Adelantos</h1>
         <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">
           {error}
         </div>
@@ -350,23 +314,25 @@ export default function PrestamosPage() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Préstamos</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Adelantos</h1>
         <button
           onClick={() => setShowModal(true)}
-          disabled={hasActive}
+          disabled={!canRequest}
           title={
             hasActive
-              ? 'Debes completar tu préstamo activo antes de solicitar otro'
-              : 'Solicitar préstamo'
+              ? 'Tienes un adelanto activo pendiente de descuento'
+              : hasPending
+                ? 'Ya tienes una solicitud pendiente de aprobación'
+                : 'Solicitar adelanto'
           }
           className={cn(
             'flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-white',
-            hasActive
+            !canRequest
               ? 'bg-gray-300 cursor-not-allowed'
               : 'bg-red-500 hover:bg-red-600'
           )}
         >
-          <Plus className="h-4 w-4" /> Solicitar Préstamo
+          <Plus className="h-4 w-4" /> Solicitar Adelanto
         </button>
       </div>
 
@@ -377,29 +343,35 @@ export default function PrestamosPage() {
         </div>
       )}
 
-      {/* Active loan warning */}
+      {/* Active adelanto warning */}
       {hasActive && (
         <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-700">
-          Tienes un préstamo activo. Debes completarlo antes de solicitar otro.
+          Tienes un adelanto activo que se descontará a fin de mes.
         </div>
       )}
 
-      {/* Loan list or empty state */}
+      {hasPending && !hasActive && (
+        <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-700">
+          Tienes una solicitud pendiente de aprobación.
+        </div>
+      )}
+
+      {/* Adelanto list or empty state */}
       {prestamos.length === 0 ? (
         <div className="rounded-xl border bg-white p-8 text-center shadow-sm">
           <Wallet className="mx-auto h-12 w-12 text-gray-300" />
-          <p className="mt-3 text-gray-500">No tienes préstamos</p>
+          <p className="mt-3 text-gray-500">No tienes adelantos</p>
           <button
             onClick={() => setShowModal(true)}
             className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600"
           >
-            <Plus className="h-4 w-4" /> Solicitar Préstamo
+            <Plus className="h-4 w-4" /> Solicitar Adelanto
           </button>
         </div>
       ) : (
         <div className="space-y-3">
           {prestamos.map((p) => (
-            <PrestamoCard key={p.id} prestamo={p} />
+            <AdelantoCard key={p.id} prestamo={p} />
           ))}
         </div>
       )}
