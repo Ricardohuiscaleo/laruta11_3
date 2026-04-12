@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12m)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12z)
 
 ### Aplicaciones Desplegadas
 
@@ -9,8 +9,9 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`daqq442d4qox36raoyup140y`, commit `dfac24c`) | ❌ Manual |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`nklzycf28cf1zp796kr8jgl5`, commit `dfac24c`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React | ✅ Running (`q13g9emqjrak1hq1u9gb9hvp`, commit `f120985`) | ❌ Manual |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 | ✅ Running (`r5kza4uqkg6gchkdx2en18pl`, commit `698ebea`) | ❌ Manual |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (deploy pendiente, commit `686de0d`) | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`k12pu5vq0e7jjeihba9r0adp`, commit `686de0d`) | ❌ Manual |
+| saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running (`uu8lhn7wijjk1idj5ghf21pa`) | ❌ Manual |
 
 Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks individuales, o el nuevo hook "Ship It" para ciclo completo.
 
@@ -39,6 +40,872 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 |------|-----------|--------|
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ✅ Deployado + migraciones ejecutadas en producción |
+| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Implementación completa (tasks.md creado + todas las tareas requeridas ejecutadas), pendiente deploy + migraciones producción |
+
+---
+
+## Sesión 2026-04-12u — Notificaciones en bottom nav (estilo Facebook) + página admin/notificaciones
+
+### Lo realizado: Mover notificaciones del header al bottom nav como 4to ícono visible
+
+El usuario pidió mover notificaciones al bottom nav como lo hace Facebook: 3 iconos + Alertas + Más.
+
+**Cambios en navegación (`navigation.ts`):**
+
+| Vista | Antes (primary) | Después (primary) |
+|-------|----------------|-------------------|
+| Worker | Inicio, Turnos, Sueldo, Adelantos | Inicio, Turnos, Sueldo, Alertas 🔔 |
+| Admin | Inicio, Personal, Turnos, Nómina | Inicio, Personal, Turnos, Alertas 🔔 |
+
+Adelantos (worker) y Nómina (admin) se movieron a secondary (menú "Más"). Notificaciones se movió de secondary a primary con `badgeKey: 'notificaciones-unread'`.
+
+**Bottom nav con badge count:**
+
+El ícono de Alertas muestra un badge rojo con el número de notificaciones no leídas. Se creó `useUnreadNotifications` hook que:
+- Fetcha `/worker/notifications` en cada cambio de ruta
+- Escucha `REFRESH_NOTIFICATIONS` del SW (push en tiempo real)
+- Setea `navigator.setAppBadge()` para el ícono PWA
+
+**Header limpiado:**
+
+Se quitó la campana de notificaciones del header (ya está en bottom nav). Solo queda logo + tag de push status + título.
+
+**Nueva página `/admin/notificaciones`:**
+
+Copia de la página worker pero con colores admin (rojo en vez de amber).
+
+**Test de notificación:**
+
+Push enviado (6 suscripciones) + evento Reverb despachado a personal_id=5.
+
+**Archivos creados/modificados (5):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/lib/navigation.ts` | Alertas como 4to primary item (worker + admin), Adelantos/Nómina a secondary |
+| `mi3/frontend/components/mobile/MobileBottomNav.tsx` | Badge count en Alertas, import useUnreadNotifications |
+| `mi3/frontend/components/mobile/MobileHeader.tsx` | Quitada campana, solo logo + tag + título |
+| `mi3/frontend/hooks/useUnreadNotifications.ts` | Nuevo: count + badge PWA + listener SW |
+| `mi3/frontend/app/admin/notificaciones/page.tsx` | Nueva página de notificaciones admin |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `11c82e2` | `feat(mi3): notificaciones en bottom nav (3 icons + alertas + más) + página admin/notificaciones` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend | mi.laruta11.cl | `u9vmkm4l0igdpq7cd1diicjd` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+158. **Bottom nav: máximo 5 items (4 + Más)**: Más de 5 items en el bottom nav rompe la UI en pantallas pequeñas. El patrón Facebook es 4 tabs visibles + botón "Más" para el resto
+159. **Badge count en bottom nav > campana en header**: El badge numérico en el ícono del bottom nav es más visible y accesible que una campana en el header. El usuario siempre ve el bottom nav
+
+### Pendiente
+
+- Integrar `NotificacionNueva` event en flujos reales (checklist, turno, adelanto)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12y — Implementación completa: App Compras Inteligentes mi3
+
+### Lo realizado: Crear tasks.md y ejecutar todas las tareas requeridas del spec mi3-compras-inteligentes
+
+Se creó el plan de implementación (tasks.md con 17 tareas principales) y se ejecutaron todas las tareas requeridas (no opcionales) secuencialmente. La app de compras inteligentes está completamente implementada en código.
+
+**1. Backend — Migraciones y Modelos (Tarea 1):**
+
+| Archivo | Tipo |
+|---------|------|
+| `mi3/backend/database/migrations/2026_04_15_000001_create_ai_extraction_logs_table.php` | Migración |
+| `mi3/backend/database/migrations/2026_04_15_000002_create_ai_training_dataset_table.php` | Migración |
+| `mi3/backend/database/migrations/2026_04_15_000003_create_supplier_index_table.php` | Migración |
+| `mi3/backend/database/migrations/2026_04_15_000004_create_extraction_feedback_table.php` | Migración |
+| `mi3/backend/app/Models/Compra.php` | Modelo |
+| `mi3/backend/app/Models/CompraDetalle.php` | Modelo |
+| `mi3/backend/app/Models/Ingredient.php` | Modelo |
+| `mi3/backend/app/Models/Product.php` | Modelo |
+| `mi3/backend/app/Models/CapitalTrabajo.php` | Modelo |
+| `mi3/backend/app/Models/AiExtractionLog.php` | Modelo |
+| `mi3/backend/app/Models/AiTrainingDataset.php` | Modelo |
+| `mi3/backend/app/Models/SupplierIndex.php` | Modelo |
+| `mi3/backend/app/Models/ExtractionFeedback.php` | Modelo |
+
+**2. Backend — Services (Tareas 2, 3, 6, 14, 15):**
+
+| Service | Métodos Principales |
+|---------|-------------------|
+| `CompraService` | registrar (atómico), eliminar (rollback stock), buscarItems (fuzzy), getProveedores, crearIngrediente, getSaldoDisponible, getHistorialSaldo |
+| `StockService` | getInventario (semáforo), parsearMarkdown, aplicarAjuste (atómico), reporteBebidas |
+| `SugerenciaService` | matchProveedor (fuzzy 60%), matchItems (pre-select ≥80%), actualizarIndice, registrarFeedback, precioHistorico, sugerirPrecio |
+| `ImagenService` | uploadTemp (compresión GD si >500KB), moverADefinitivo, asociarImagenes |
+| `ExtraccionService` | extractFromImage (Bedrock Nova Lite, SigV4 signing, prompt boletas chilenas, confidence scores, 10s timeout) |
+| `ValidacionService` | compararExtraccion (umbrales: proveedor ≥85%, monto ≤2%, items ≥80%/10%/5%), generarReporte (alerta si <70%) |
+| `PipelineService` | ejecutar (batch 10, procesa imágenes S3 históricas, compara vs datos reales), reporte |
+
+**3. Backend — Controllers y Rutas (Tareas 5, 16):**
+
+| Controller | Rutas |
+|-----------|-------|
+| `CompraController` | POST/GET/GET/{id}/DELETE compras, GET items, GET proveedores, POST ingrediente, POST upload-temp, POST {id}/imagen |
+| `StockController` | GET stock, GET stock/bebidas, POST ajuste-masivo, POST preview-ajuste |
+| `KpiController` | GET kpis, GET historial-saldo, GET proyeccion, GET precio-historico/{id} |
+| `ExtraccionController` | POST extract, GET extraction-quality, POST pipeline/run, GET pipeline/report |
+
+**4. Backend — Evento WebSocket:**
+
+| Archivo | Detalle |
+|---------|---------|
+| `mi3/backend/app/Events/CompraRegistrada.php` | ShouldBroadcast, Canal "compras", evento "compra.registrada", payload: compra_id, proveedor, monto_total, items_count, timestamp |
+
+**5. Frontend — Estructura y Layout (Tarea 8):**
+
+| Archivo | Contenido |
+|---------|-----------|
+| `mi3/frontend/app/admin/compras/layout.tsx` | Layout con 5 tabs + indicador WebSocket (verde/rojo) + toast de nuevas compras + reconexión exponential backoff |
+| `mi3/frontend/app/admin/compras/page.tsx` | Redirect a /registro |
+| `mi3/frontend/app/admin/compras/registro/page.tsx` | Renderiza RegistroCompra |
+| `mi3/frontend/app/admin/compras/historial/page.tsx` | Renderiza HistorialCompras |
+| `mi3/frontend/app/admin/compras/stock/page.tsx` | Renderiza StockDashboard + AjusteMasivo |
+| `mi3/frontend/app/admin/compras/proyeccion/page.tsx` | Renderiza ProyeccionCompras |
+| `mi3/frontend/app/admin/compras/kpis/page.tsx` | Renderiza KpisDashboard |
+| `mi3/frontend/lib/compras-api.ts` | Fetch wrapper (get/post/upload) con auth |
+| `mi3/frontend/lib/compras-utils.ts` | calcularIVA, formatearPesosCLP, formatearFecha |
+| `mi3/frontend/types/compras.ts` | ExtractionResult, Compra, CompraDetalle, StockItem, Kpi, CompraFormData |
+
+**6. Frontend — Componentes (Tareas 9-12, 14.4):**
+
+| Componente | Funcionalidad |
+|-----------|---------------|
+| `RegistroCompra.tsx` | Formulario completo: proveedor autocomplete, fecha, tipo, método pago, items dinámicos con IVA toggle, total, advertencia saldo |
+| `ItemSearch.tsx` | Búsqueda fuzzy debounced (300ms), dropdown con stock/precio, opción crear ingrediente |
+| `ImageUploader.tsx` | Drag & drop, upload temp a S3, thumbnails, botón "Extraer datos de la boleta" |
+| `ExtractionPreview.tsx` | Datos extraídos con badges de confianza por campo, campos <0.7 en naranja, botón "Usar datos" |
+| `HistorialCompras.tsx` | Lista paginada (50/pág), búsqueda debounced, selección múltiple para rendición |
+| `DetalleCompra.tsx` | Modal detalle completo, galería imágenes, eliminar, subir imagen |
+| `RendicionWhatsApp.tsx` | Generador texto WhatsApp, transferencia/saldo anterior, copiar portapapeles |
+| `StockDashboard.tsx` | Toggle ingredientes/bebidas, grid con semáforo (rojo/amarillo/verde), stock/min/vendido |
+| `AjusteMasivo.tsx` | Textarea markdown, preview tabla, errores en rojo, aplicar atómico |
+| `ProyeccionCompras.tsx` | Lista editable, total vs saldo, copiar WhatsApp |
+| `KpisDashboard.tsx` | 4 cards KPIs (ventas/sueldos/saldo), historial saldo tabla |
+
+**Total archivos creados/modificados: ~40 archivos**
+
+### Commits y Deploys
+
+No se hizo deploy aún (código implementado, pendiente commit + deploy + migraciones en producción).
+
+### Errores Encontrados y Resueltos
+
+Ninguno (implementación limpia, todos los archivos pasan diagnostics).
+
+### Lecciones Aprendidas
+
+164. **Ejecutar tareas en batch por capa**: Implementar primero todas las migraciones, luego todos los modelos, luego todos los services, luego todos los controllers, luego todo el frontend. Esto evita dependencias circulares y permite validar cada capa antes de pasar a la siguiente
+165. **SigV4 signing manual para Bedrock**: Si el AWS SDK para PHP no está instalado, se puede firmar requests HTTP manualmente con SigV4 usando hash_hmac. El endpoint es `bedrock-runtime.{region}.amazonaws.com/model/{modelId}/converse`. Esto evita agregar el SDK completo como dependencia
+166. **Compresión de imágenes con GD nativo**: PHP's GD library (imagecreatefromjpeg + imagejpeg con quality 60) es suficiente para comprimir boletas. No necesitas Intervention Image ni dependencias extra. Resize a max 1200x800 + quality 60 reduce ~60% del tamaño
+
+### Pendiente
+
+- **Commit y deploy** de mi3-compras-inteligentes (backend + frontend)
+- **Ejecutar migraciones** en producción: `php artisan migrate` (4 tablas nuevas)
+- **Configurar env vars AWS** en Coolify: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION para Bedrock
+- **Configurar S3 env vars** en mi3-backend si no están: AWS_BUCKET, AWS_URL
+- **Test end-to-end** en producción: registrar compra → extracción IA → historial → stock → WebSocket
+- Integrar `NotificacionNueva` event en flujos reales (checklist, turno, adelanto)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12x — Fix notificaciones: BD + push + Reverb integrados + auto mark-all-read
+
+### Lo realizado: Completar el flujo de notificaciones end-to-end y agregar auto-lectura
+
+**1. Problema: notificaciones push llegaban pero UI vacía**
+
+Las push de prueba usaban `PushNotificationService::enviar()` directamente — solo enviaba la push sin guardar en BD. El endpoint `/worker/notifications` lee de `notificaciones_mi3`, que estaba vacía.
+
+**Fix: `NotificationService::crear()` ahora hace 3 cosas:**
+
+| Paso | Antes | Después |
+|------|-------|---------|
+| 1. Guardar en BD | ✅ Ya existía | ✅ Sin cambios |
+| 2. Enviar push | ✅ Ya existía | ✅ Sin cambios |
+| 3. Broadcast Reverb | ❌ No existía | ✅ `event(new NotificacionNueva(...))` |
+
+Ahora `crear()` es el punto único de entrada para notificaciones: BD + push + WebSocket.
+
+**2. Auto mark-all-read al entrar a Notificaciones:**
+
+| Componente | Cambio |
+|------------|--------|
+| Backend: `POST /worker/notifications/read-all` | Nuevo endpoint que marca todas como leídas |
+| `NotificationController::markAllAsRead()` | Nuevo método que llama `marcarTodasLeidas()` |
+| Frontend: ambas páginas de notificaciones | Al cargar, si hay no leídas → `POST read-all` + actualizar UI |
+
+Patrón Facebook: al abrir la pestaña de notificaciones, el badge desaparece y todas se marcan como leídas.
+
+**3. Auditoría de suscripciones push:**
+
+Se verificó que el sistema es individual por `personal_id`:
+- `push_subscriptions_mi3` → cada fila tiene `personal_id`
+- `notificaciones_mi3` → cada fila tiene `personal_id`
+- Canal WebSocket → `worker.{personalId}` (individual)
+- Solo Ricardo (personal_id=5) tiene suscripciones activas (44 registros, la mayoría inactivos por re-sync)
+
+**Problema detectado:** `checkAndSync` crea una nueva suscripción en cada page load en vez de reusar la existente. Pendiente de fix.
+
+**Archivos modificados (5):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/app/Services/Notification/NotificationService.php` | `crear()` ahora dispara `NotificacionNueva` event (Reverb) |
+| `mi3/backend/app/Http/Controllers/Worker/NotificationController.php` | Nuevo `markAllAsRead()` |
+| `mi3/backend/routes/api.php` | Nueva ruta `POST /worker/notifications/read-all` |
+| `mi3/frontend/app/dashboard/notificaciones/page.tsx` | Auto mark-all-read al cargar |
+| `mi3/frontend/app/admin/notificaciones/page.tsx` | Auto mark-all-read al cargar |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `f891dbf` | `fix(mi3): NotificationService.crear() ahora también dispara evento Reverb WebSocket` |
+| 2 | `686de0d` | `feat(mi3): auto mark-all-read al entrar a notificaciones + endpoint read-all` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `k12pu5vq0e7jjeihba9r0adp` | ✅ finished |
+| mi3-frontend | mi.laruta11.cl | (pendiente — segundo curl no devolvió UUID) | ⏳ |
+
+**Test de notificación:**
+
+```php
+$service->crear(5, 'sistema', '🔔 Test Badge + Read', '...');
+// ID: 2 — guardada en BD + push enviada + Reverb broadcast
+```
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| UI "Sin notificaciones" a pesar de recibir push | Push se enviaba via `PushNotificationService::enviar()` sin guardar en BD | Usar `NotificationService::crear()` que hace BD + push + Reverb |
+| Suscripciones duplicadas (44 registros para 1 usuario) | `checkAndSync` crea nueva suscripción en cada page load | Pendiente: reusar suscripción existente si endpoint coincide |
+
+### Lecciones Aprendidas
+
+160. **Un solo punto de entrada para notificaciones**: `NotificationService::crear()` debe ser el único método para crear notificaciones. Nunca llamar `PushNotificationService::enviar()` directamente — eso solo envía push sin guardar en BD ni broadcast
+161. **Auto mark-all-read simplifica la UX**: En un equipo pequeño, marcar todas como leídas al abrir la pestaña es más práctico que requerir click individual. El badge desaparece inmediatamente
+
+### Pendiente
+
+- **Fix suscripciones duplicadas**: `suscribir()` en PushNotificationService debería reusar si el endpoint ya existe
+- Integrar `NotificacionNueva` event en flujos reales (checklist, turno, adelanto)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12w — Spec: Diseño técnico para Compras Inteligentes mi3
+
+### Lo realizado: Crear design.md con arquitectura completa, tablas nuevas, propiedades de correctitud y estrategia de testing
+
+Continuación del spec mi3-compras-inteligentes. Con los 12 requisitos aprobados en la sesión anterior (2026-04-12t), se creó el documento de diseño técnico completo.
+
+**1. Arquitectura diseñada:**
+
+| Componente | Detalle |
+|-----------|---------|
+| Controllers (4) | CompraController, StockController, ExtraccionController, KpiController |
+| Services (6) | CompraService, ExtraccionService, SugerenciaService, ValidacionService, PipelineService, StockService |
+| Endpoints API (~20) | CRUD compras, extracción IA, stock/ajuste masivo, KPIs, pipeline entrenamiento |
+| Componentes Frontend (12) | ComprasLayout, RegistroCompra, ItemSearch, ImageUploader, ExtractionPreview, HistorialCompras, DetalleCompra, StockDashboard, AjusteMasivo, ProyeccionCompras, KpisDashboard, RendicionWhatsApp |
+| Eventos WebSocket | CompraRegistrada (canal `compras`) via Laravel Reverb |
+
+**2. Tablas nuevas diseñadas (4):**
+
+| Tabla | Propósito |
+|-------|----------|
+| `ai_extraction_logs` | Logs de cada extracción IA: imagen, respuesta cruda Bedrock, datos parseados, scores de confianza, tiempo de procesamiento |
+| `ai_training_dataset` | Dataset de referencia: asocia imágenes históricas S3 con datos reales de compras para medir precisión |
+| `supplier_index` | Índice de proveedores frecuentes: nombre normalizado, RUT, frecuencia, ítems habituales, precios históricos |
+| `extraction_feedback` | Feedback de correcciones del usuario sobre datos pre-llenados por IA (campo, valor original, valor corregido) |
+
+**3. Propiedades de correctitud (14):**
+
+| # | Propiedad | Valida Requisito(s) |
+|---|----------|-------------------|
+| 1 | Cálculo IVA inversible | Req 1.5 |
+| 2 | Invariante snapshot stock | Req 1.7 |
+| 3 | Búsqueda fuzzy retorna resultados relevantes | Req 1.2, 1.4 |
+| 4 | Match fuzzy proveedores/ítems extraídos | Req 3.3, 3.4 |
+| 5 | Índice proveedores se actualiza consistentemente | Req 4.5, 4.6 |
+| 6 | Precisión aplica umbrales correctos por campo | Req 5.1-5.4 |
+| 7 | Paginación retorna slices correctos | Req 6.1 |
+| 8 | Búsqueda historial filtra correctamente | Req 6.2 |
+| 9 | Clasificación semáforo stock | Req 7.2 |
+| 10 | Cálculo saldo disponible | Req 9.2 |
+| 11 | Round-trip serialización extracción | Req 11.1-11.4 |
+| 12 | Round-trip parseo ajuste masivo | Req 12.1, 12.3 |
+| 13 | Parser markdown maneja líneas inválidas | Req 12.4 |
+| 14 | Formateo WhatsApp contiene datos requeridos | Req 6.6, 8.3 |
+
+**4. Estrategia de testing:**
+
+| Tipo | Herramienta | Cobertura |
+|------|------------|-----------|
+| Property-Based Tests | fast-check (frontend), Eris (backend PHP) | 14 propiedades, 100 iteraciones mínimo |
+| Unit Tests | Jest/Vitest (frontend), PHPUnit (backend) | Edge cases, ejemplos específicos |
+| Integration Tests | PHPUnit + DB | Registro atómico, upload S3, extracción Bedrock, WebSocket broadcast |
+
+**5. Diagramas incluidos:**
+
+- Diagrama de arquitectura general (Mermaid): Frontend → Controllers → Services → DB/S3/Bedrock/Reverb
+- Flujo de registro con extracción IA (Mermaid sequence diagram): Upload → Extract → Pre-fill → Confirm → Transaction → Broadcast
+
+**Archivos creados (1):**
+
+| Archivo | Contenido |
+|---------|-----------|
+| `.kiro/specs/mi3-compras-inteligentes/design.md` | Diseño técnico completo: arquitectura, endpoints, modelos de datos, DDL SQL, propiedades correctitud, manejo de errores, estrategia testing |
+
+### Commits y Deploys
+
+No se hizo commit ni deploy (solo documentación de spec).
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+161. **Separar controllers por dominio, no por CRUD**: En vez de un solo CompraController gigante, dividir en CompraController (CRUD), ExtraccionController (IA), StockController (inventario), KpiController (métricas). Cada controller delega a su service correspondiente
+162. **Tablas de IA separadas de tablas de negocio**: Los logs de extracción, dataset de entrenamiento y feedback van en tablas propias (`ai_extraction_logs`, `ai_training_dataset`, `extraction_feedback`), no mezclados con `compras` o `compras_detalle`. Esto permite iterar la IA sin tocar el esquema de negocio
+163. **Property-based testing para round-trip**: Las propiedades de serialización/deserialización (JSON de extracción, markdown de ajuste) se validan mejor con PBT que con unit tests. fast-check genera cientos de inputs aleatorios que cubren edge cases que no se te ocurrirían manualmente
+
+### Pendiente
+
+- **Crear tasks.md** con plan de implementación para mi3-compras-inteligentes
+- Integrar `NotificacionNueva` event en flujos reales (checklist, turno, adelanto)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12t — Spec: App de Compras Inteligentes para mi3
+
+### Lo realizado: Crear spec de requirements para nueva app de compras en mi3 con OCR inteligente
+
+El usuario pidió crear un spec para reemplazar la app de compras actual en caja3 (`ComprasApp.jsx` en `caja.laruta11.cl/compras/`) por una nueva app en mi3 (React + Laravel) con extracción inteligente de datos desde fotos de boletas/facturas usando Amazon Nova Lite (Bedrock), aprendizaje automático basado en historial, y actualizaciones en tiempo real vía Laravel Reverb.
+
+**1. Auditoría del sistema actual:**
+
+Se revisaron en detalle los siguientes archivos para entender la funcionalidad existente:
+
+| Archivo | Contenido Auditado |
+|---------|-------------------|
+| `caja3/src/components/ComprasApp.jsx` (3110 líneas) | Componente React monolítico con 4 tabs: Registro, Historial, Stock, Proyección. Búsqueda fuzzy, autocompletado proveedores, upload múltiple a S3, rendición WhatsApp, ajuste masivo markdown |
+| `caja3/api/compras/registrar_compra.php` | Transacción atómica: INSERT compra + items + UPDATE stock ingredients/products + UPDATE capital_trabajo |
+| `caja3/api/compras/get_compras.php` | Lista paginada con búsqueda, incluye items de cada compra |
+| `caja3/api/compras/upload_respaldo.php` | Upload a S3 via S3Manager, almacena URLs como JSON array en `imagen_respaldo` |
+| `caja3/api/compras/get_items_compra.php` | Query compleja: ingredientes + productos con stock, última compra, vendido desde última compra |
+| `caja3/api/compras/get_precio_historico.php` | Último precio de compra por ingrediente |
+| `caja3/api/compras/get_proveedores.php` | Proveedores distintos de tabla compras |
+| `.amazonq/rules/memory-bank/database-schema.md` | Esquema completo: compras, compras_detalle, ingredients, products, product_recipes, capital_trabajo |
+
+**2. Estructura mi3 auditada:**
+
+| Componente | Estado |
+|-----------|--------|
+| mi3-backend (Laravel 11) | Reverb WebSocket ya configurado, Services pattern, NotificacionNueva event existe |
+| mi3-frontend (Next.js 14) | App router con /admin y /dashboard, Echo + pusher-js ya instalados |
+| BD compartida `laruta11` | Tablas compras/compras_detalle/ingredients/products ya en uso por caja3 |
+| S3 `laruta11-images` | Fotos históricas bajo prefijo `compras/respaldo_{id}_{timestamp}.jpg` |
+
+**3. Documento de requirements creado:**
+
+Se creó `.kiro/specs/mi3-compras-inteligentes/requirements.md` con 12 requisitos:
+
+| # | Requisito | Descripción |
+|---|----------|-------------|
+| 1 | Registro de Compras | Transacciones atómicas, búsqueda fuzzy, autocompletado, IVA, creación de ingredientes |
+| 2 | Carga de Imágenes | Drag & drop, múltiples por compra, compresión, S3 |
+| 3 | Extracción IA (Nova Lite/Bedrock) | OCR boletas chilenas: proveedor, RUT, ítems, precios, IVA, niveles de confianza |
+| 4 | Pipeline de Entrenamiento | Procesar imágenes históricas S3, dataset de referencia, feedback de correcciones |
+| 5 | Validación Calidad IA | Métricas por campo, umbrales de aceptación, alertas si precisión < 70% |
+| 6 | Historial de Compras | Paginación, búsqueda, eliminación con rollback inventario, rendición WhatsApp |
+| 7 | Stock e Inventario | Semáforo criticidad, ingredientes vs bebidas, ajuste masivo markdown |
+| 8 | Proyección de Compras | Presupuesto vs saldo, sugerencias de precios históricos |
+| 9 | KPIs Financieros | Ventas, sueldos, saldo disponible, historial |
+| 10 | Realtime (Reverb) | WebSocket con reconexión automática, actualización en vivo |
+| 11 | Serialización Datos Extracción | Formato JSON estructurado, propiedad round-trip |
+| 12 | Parseo Ajuste Masivo Stock | Markdown parsing, preview, propiedad round-trip |
+
+**Archivos creados (2):**
+
+| Archivo | Contenido |
+|---------|-----------|
+| `.kiro/specs/mi3-compras-inteligentes/requirements.md` | Documento de requisitos con 12 requisitos, criterios de aceptación EARS, propiedades de correctness |
+| `.kiro/specs/mi3-compras-inteligentes/.config.kiro` | Config: specType=feature, workflowType=requirements-first |
+
+### Commits y Deploys
+
+No se hizo commit ni deploy (solo documentación de spec).
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+158. **Auditar antes de especificar**: Revisar el código existente (ComprasApp.jsx + 7 APIs PHP) antes de escribir requirements evita omitir funcionalidad crítica como el ajuste masivo markdown, la rendición WhatsApp, o el cálculo de saldo disponible que depende de ventas + sueldos
+159. **Amazon Nova Lite para OCR de boletas chilenas**: Nova Lite (Bedrock) es viable para extraer datos de boletas/facturas chilenas. El formato chileno tiene particularidades: RUT (XX.XXX.XXX-Y), montos en pesos sin decimales ($XX.XXX), IVA fijo 19%. El spec incluye umbrales de validación medibles (85% similitud proveedor, 2% tolerancia monto, 80% similitud ítems)
+160. **Pipeline de entrenamiento ≠ fine-tuning del modelo**: Para Nova Lite no se hace fine-tuning del modelo base. El "entrenamiento" consiste en construir un dataset de referencia procesando imágenes históricas, comparando extracción vs datos reales, y usando ese feedback para mejorar prompts y sugerencias del Motor_Sugerencias
+
+### Pendiente
+
+- **Crear design.md** para mi3-compras-inteligentes (arquitectura Laravel + Next.js, integración Bedrock, esquema de eventos Reverb)
+- **Crear tasks.md** con plan de implementación
+- Integrar `NotificacionNueva` event en flujos reales (checklist, turno, adelanto)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12s — Fix: Safari notification gesture error + Echo WebSocket init on mount
+
+### Lo realizado: Corregir error de Safari y asegurar que Echo se conecta al cargar la app
+
+**1. Error Safari: "Notification prompting can only be done from a user gesture"**
+
+`PushNotificationInit` llamaba `activate()` automáticamente cuando `status === 'inactive'`. `activate()` internamente llama `Notification.requestPermission()`. Safari requiere que esto se haga desde un user gesture (click/tap), no desde un `useEffect`.
+
+| Antes | Después |
+|-------|---------|
+| `if (status === 'inactive') activate()` | Eliminado — solo `checkAndSync()` corre en mount (no pide permiso) |
+| `requestPermission()` en auto | Solo se llama desde el botón "Activar Notificaciones" del modal |
+
+**2. Echo WebSocket no se conectaba:**
+
+`getEcho()` solo se llamaba dentro de `useRealtimeNotifications` que dependía de `user?.personal_id`. Si el user no había cargado aún, Echo nunca se inicializaba.
+
+| Antes | Después |
+|-------|---------|
+| Echo se inicializa solo cuando hay `personalId` | `getEcho()` se llama en `useEffect` sin dependencias (mount inmediato) |
+| Sin logs de debug | `console.log('[Echo] Connected to...')` para verificar en consola |
+| `Pusher` se asignaba a `window` en top-level import | Se asigna dentro de `getEcho()` (más seguro con SSR) |
+
+**Archivos modificados (2):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/components/PushNotificationInit.tsx` | Quitar auto-activate, agregar `getEcho()` en mount |
+| `mi3/frontend/lib/echo.ts` | Mover `window.Pusher` dentro de `getEcho()`, agregar `'use client'`, console.log |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `2d35ce2` | `fix(mi3): Safari notification gesture error + Echo WebSocket init on mount` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend | mi.laruta11.cl | `o10urq882lmktip3owzw1tfx` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Safari: "Notification prompting can only be done from a user gesture" | `PushNotificationInit` llamaba `activate()` → `requestPermission()` en useEffect | Quitar auto-activate; solo el modal (click) puede pedir permiso |
+| Echo WebSocket no se conectaba en mi3/admin | `getEcho()` dependía de `personalId` que aún no existía al mount | Llamar `getEcho()` en useEffect independiente sin dependencias |
+
+### Lecciones Aprendidas
+
+156. **Safari requiere user gesture para `Notification.requestPermission()`**: A diferencia de Chrome que permite llamarlo desde cualquier contexto, Safari lo bloquea si no viene de un click/tap. Nunca llamar `requestPermission()` en `useEffect` o `componentDidMount`
+157. **Separar conexión WebSocket de suscripción a canales**: La conexión Echo se puede establecer sin saber el `personalId`. La suscripción al canal sí necesita el ID. Inicializar Echo en mount y suscribir al canal cuando el user esté disponible
+
+### Pendiente
+
+- Integrar `NotificacionNueva` event en flujos reales (checklist, turno, adelanto)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12r — Fix: conflicto Traefik router "reverb" entre digitalizatodo y mi3
+
+### Lo realizado: Resolver conflicto de nombres de router Traefik que rompía WebSocket en ambas apps
+
+El usuario reportó que digitalizatodo devolvía 404 en `wss://admin.digitalizatodo.cl/app/...` y que mi3/admin no tenía WebSocket.
+
+**Diagnóstico — logs de Traefik:**
+
+```
+ERR Router defined multiple times with different configurations
+  routerName=reverb
+  configuration=[bo888gk4kg8w0wossc00ccs8..., ds24j8jlaf9ov4flk1nq4jek...]
+```
+
+Ambas apps (digitalizatodo y mi3-backend) tenían un router Traefik llamado `reverb` con configs diferentes (diferentes hosts, diferentes puertos). Traefik rechaza routers duplicados y no rutea ninguno → 404 para ambos.
+
+**Fix — renombrar routers a nombres únicos:**
+
+| App | Router antes | Router después | Service | Puerto |
+|-----|-------------|----------------|---------|--------|
+| digitalizatodo | `reverb` | `reverb-digi` | `reverb-digi` | 8080 |
+| mi3-backend | `reverb` | `reverb-mi3` | `reverb-mi3` | 9090 |
+
+Ambos con `priority=100`, `tls.certresolver=letsencrypt`, `entryPoints=https`.
+
+**Fix adicional — mi3/admin sin WebSocket:**
+
+`PushNotificationInit` (que inicializa Echo + push) solo estaba en el dashboard layout (worker). Se agregó al admin layout también.
+
+**Deploys realizados (4 en total):**
+
+| Deploy | App | UUID | Estado | Motivo |
+|--------|-----|------|--------|--------|
+| digitalizatodo (1) | admin.digitalizatodo.cl | `kbmxg0ercgub5xqr5l07nmck` | ✅ | Agregar labels reverb + certresolver |
+| digitalizatodo (2) | admin.digitalizatodo.cl | `jqkg57c2wzxse944wwjiu2dm` | ✅ | Agregar priority=100 |
+| digitalizatodo (3) | admin.digitalizatodo.cl | `uu8lhn7wijjk1idj5ghf21pa` | ✅ | Renombrar reverb → reverb-digi |
+| mi3-backend | api-mi3.laruta11.cl | `g1458zv40nn4kadhma2tqneg` | ✅ | Renombrar reverb → reverb-mi3 |
+| mi3-frontend | mi.laruta11.cl | `ny5hnm1h2gc37zkd02c44u4p` | ✅ | PushNotificationInit en admin layout |
+
+**Verificación final:**
+
+| App | WebSocket URL | Resultado |
+|-----|--------------|-----------|
+| digitalizatodo | `wss://admin.digitalizatodo.cl/app/diedimtyjfxaurcuejrt?protocol=7` | ✅ 101 Switching Protocols + Laravel Reverb |
+| mi3 | `wss://api-mi3.laruta11.cl/app/5a8abf247db02c706c9b?protocol=7` | ✅ 101 Switching Protocols + Laravel Reverb |
+
+**Archivos modificados (1 en repo):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/app/admin/layout.tsx` | Agregado `PushNotificationInit` (Echo + push en admin) |
+
+**Cambios en Coolify (no en repo):**
+
+| App | Cambio |
+|-----|--------|
+| digitalizatodo (`bo888gk4kg8w0wossc00ccs8`) | `custom_labels`: router `reverb` → `reverb-digi` + certresolver + priority |
+| mi3-backend (`ds24j8jlaf9ov4flk1nq4jek`) | `custom_labels`: router `reverb` → `reverb-mi3` + certresolver + priority |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `bf8922e` | `fix(mi3): agregar PushNotificationInit + Echo WebSocket en admin layout` |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| WebSocket 404 en digitalizatodo | Router Traefik `reverb` duplicado entre digitalizatodo y mi3 → Traefik rechaza ambos | Renombrar a `reverb-digi` y `reverb-mi3` (nombres únicos) |
+| Router `reverb` sin certresolver | Faltaba `tls.certresolver=letsencrypt` → Traefik no podía hacer TLS termination | Agregar certresolver a ambos routers |
+| mi3/admin sin WebSocket | `PushNotificationInit` solo en dashboard layout, no en admin | Agregar al admin layout |
+| Labels no persistían entre deploys | Labels agregadas manualmente al contenedor se pierden en redeploy | Agregar a `custom_labels` via Coolify API (persisten) |
+
+### Lecciones Aprendidas
+
+153. **Traefik router names son globales**: Si dos contenedores definen un router con el mismo nombre pero configs diferentes, Traefik rechaza AMBOS. Siempre usar nombres únicos por app (ej: `reverb-digi`, `reverb-mi3`)
+154. **Traefik logs son la fuente de verdad**: `docker logs coolify-proxy | grep reverb` reveló inmediatamente el conflicto de nombres. Siempre revisar logs de Traefik cuando hay problemas de routing
+155. **Custom labels en Coolify persisten, labels manuales no**: Las labels agregadas directamente al contenedor con `docker` se pierden en cada deploy. Solo las que están en `custom_labels` de Coolify (base64 encoded) persisten
+
+### Pendiente
+
+- Verificar que WebSocket aparece en Network al cargar mi3/admin y digitalizatodo
+- Integrar `NotificacionNueva` event en flujos reales (checklist, turno, adelanto)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12q — Mejorar hook Telegram + conectar Echo WebSocket en dashboard
+
+### Lo realizado: Dos mejoras — hook Telegram con resumen específico + Echo conectado en dashboard
+
+**1. Hook Telegram mejorado (`telegram-notify.kiro.hook`):**
+
+El hook `agentStop` enviaba un mensaje genérico: "🤖 Kiro terminó de trabajar / Revisa los cambios en el IDE." — sin detalle de qué se hizo.
+
+| Antes | Después |
+|-------|---------|
+| `runCommand` con texto hardcodeado | `askAgent` que genera resumen específico |
+| "Kiro terminó de trabajar" | "✅ Conecté Echo/Reverb WebSocket en PushNotificationInit. Deploy mi3-frontend..." |
+
+El nuevo hook usa `askAgent` con un prompt que pide generar un resumen breve (3-4 líneas) de lo que se hizo, incluyendo archivos modificados, deploys, y resultado, y luego enviarlo a Telegram via curl.
+
+**2. Echo/Reverb WebSocket conectado en dashboard (sesión anterior no documentada):**
+
+`PushNotificationInit.tsx` ahora también inicializa la conexión WebSocket via `useRealtimeNotifications`. Al cargar el dashboard:
+- Se conecta a `wss://api-mi3.laruta11.cl/app/{key}?protocol=7`
+- Se suscribe al canal `worker.{personal_id}` del usuario logueado
+- Escucha evento `.notificacion.nueva` para refrescar notificaciones en tiempo real
+- Usa `useAuth()` para obtener el `personal_id` del usuario
+
+**Archivos modificados (2):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `.kiro/hooks/telegram-notify.kiro.hook` | `runCommand` → `askAgent` con prompt de resumen específico |
+| `mi3/frontend/components/PushNotificationInit.tsx` | Agregado `useRealtimeNotifications` + `useAuth` para conectar Echo al montar dashboard |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `2e8997f` | `feat(mi3): conectar Echo/Reverb WebSocket en dashboard layout` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend | mi.laruta11.cl | `yced3ebjosovm55h5mjxyhv7` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+151. **Hooks `askAgent` pueden generar contenido dinámico**: A diferencia de `runCommand` que ejecuta un comando fijo, `askAgent` permite que el agente genere contenido basado en el contexto de la sesión. Ideal para resúmenes, notificaciones, y reportes post-ejecución
+152. **Echo necesita montarse en un componente para conectar**: Tener `lib/echo.ts` y `useRealtimeNotifications` no es suficiente — alguien tiene que llamar al hook. `PushNotificationInit` es el lugar ideal porque ya se monta en el dashboard layout
+
+### Pendiente
+
+- Verificar que la conexión WebSocket aparece en Network al cargar dashboard
+- Integrar `NotificacionNueva` event en flujos reales (checklist, turno, adelanto)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12o — Fix: Traefik routing para Reverb WebSocket (101 Switching Protocols)
+
+### Lo realizado: Configurar Traefik labels para rutear WebSocket directamente a Reverb
+
+En la sesión anterior (12n) Reverb quedó corriendo internamente pero el WebSocket no era accesible desde afuera — Traefik devolvía 500 porque HTTP/2 no soporta WebSocket upgrade a través de un proxy Apache intermedio.
+
+**Diagnóstico:**
+
+| Test | Resultado |
+|------|-----------|
+| Reverb directo (127.0.0.1:9090) | ✅ 101 Switching Protocols + `pusher:connection_established` |
+| Apache proxy (127.0.0.1:8080/app) | ✅ 101 Switching Protocols (funciona internamente) |
+| Traefik → Apache → Reverb (externo) | ❌ 500 Internal Server Error |
+
+**Causa:** Traefik usa HTTP/2 por defecto. El WebSocket upgrade requiere HTTP/1.1. Traefik no puede hacer upgrade a WebSocket si pasa por Apache como intermediario con HTTP/2.
+
+**Investigación de digitalizatodo:** Se descubrió que digitalizatodo tiene custom Traefik labels que rutean `/app` directamente al puerto 8080 (Reverb), sin pasar por nginx:
+
+```
+traefik.http.routers.reverb.rule=Host(`admin.digitalizatodo.cl`) && PathPrefix(`/app`)
+traefik.http.services.reverb.loadbalancer.server.port=8080
+```
+
+**Fix aplicado — Custom Traefik labels via Coolify API:**
+
+Se agregaron 6 labels nuevas al `custom_labels` de mi3-backend (base64 encoded, via `PATCH /applications/{uuid}`):
+
+| Label | Valor |
+|-------|-------|
+| `traefik.http.routers.reverb.rule` | `Host(\`api-mi3.laruta11.cl\`) && PathPrefix(\`/app\`)` |
+| `traefik.http.routers.reverb.entryPoints` | `https` |
+| `traefik.http.routers.reverb.tls` | `true` |
+| `traefik.http.routers.reverb.tls.certresolver` | `letsencrypt` |
+| `traefik.http.routers.reverb.service` | `reverb` |
+| `traefik.http.services.reverb.loadbalancer.server.port` | `9090` |
+
+Traefik ahora rutea `PathPrefix(/app)` directamente al puerto 9090 (Reverb), y todo lo demás al 8080 (Apache). El PathPrefix más específico (`/app`) tiene prioridad sobre el genérico (`/`).
+
+**Verificación exitosa desde afuera:**
+
+```
+$ curl --http1.1 -H "Upgrade: websocket" wss://api-mi3.laruta11.cl/app/5a8abf247db02c706c9b?protocol=7
+
+HTTP/1.1 101 Switching Protocols
+Sec-Websocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+X-Powered-By: Laravel Reverb
+```
+
+**URL WebSocket para el frontend:**
+`wss://api-mi3.laruta11.cl/app/5a8abf247db02c706c9b?protocol=7&client=js&version=8.4.0&flash=false`
+
+### Commits y Deploys
+
+No se hizo commit (cambios solo en Coolify config via API).
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `cmqv9wt7eux76txo3s9ch03f` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| WebSocket 500 desde afuera via Traefik | HTTP/2 no soporta WebSocket upgrade a través de proxy Apache | Custom Traefik labels para rutear `/app` directamente a Reverb (puerto 9090), sin pasar por Apache |
+| `custom_labels` rechazado por Coolify API | Payload no era base64 válido (backticks en shell) | Generar payload con Python y enviar via `@file` |
+
+### Lecciones Aprendidas
+
+148. **Traefik + WebSocket = routing directo**: No pasar WebSocket por un proxy HTTP intermedio (Apache/nginx). Crear un router Traefik separado con `PathPrefix(/app)` que apunte directamente al puerto de Reverb. Esto es lo que hace digitalizatodo
+149. **Custom Traefik labels en Coolify**: Se configuran via `PATCH /applications/{uuid}` con `custom_labels` en base64. Coolify las aplica como Docker labels en el contenedor. Se pueden agregar routers y services adicionales para múltiples puertos
+150. **PathPrefix más específico tiene prioridad en Traefik**: Un router con `PathPrefix(/app)` tiene prioridad sobre uno con `PathPrefix(/)` sin necesidad de configurar `priority` explícitamente
+
+### Pendiente
+
+- **Integrar `useRealtimeNotifications` en componentes** para que la UI se actualice en vivo via WebSocket
+- Integrar `NotificacionNueva` event en flujos reales (checklist, turno, adelanto)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12n — Laravel Reverb WebSocket server implementado en mi3
+
+### Lo realizado: Implementar Laravel Reverb para realtime WebSocket en mi3
+
+El usuario pidió implementar Reverb como en digitalizatodo para tener realtime en todo mi3.
+
+**Investigación previa (sesión 12i):** Se auditó digitalizatodo y se encontró que usa Laravel Reverb con supervisor (php-fpm + nginx + reverb). Mi3 usa Apache, así que se adaptó el approach.
+
+**1. Backend — Dockerfile reescrito con supervisor:**
+
+| Proceso | Puerto | Función |
+|---------|--------|---------|
+| Apache | 8080 | API HTTP (Laravel) |
+| Reverb | 9090 | WebSocket server |
+| Supervisor | — | Orquesta ambos procesos |
+
+Apache hace proxy de `/app` → `ws://127.0.0.1:9090/app` via `mod_proxy_wstunnel`, así el WebSocket se sirve desde el mismo dominio (`api-mi3.laruta11.cl`).
+
+**Dependencias agregadas al Dockerfile:**
+- `laravel/reverb:^1.0`
+- `pusher/pusher-php-server:^7.2`
+- `supervisor` (apt)
+- `pcntl` (PHP extension, requerida por Reverb)
+
+**2. Backend — Configs creados:**
+
+| Archivo | Contenido |
+|---------|-----------|
+| `config/broadcasting.php` | Driver `reverb`, conexión a Reverb interno (127.0.0.1:9090) |
+| `config/reverb.php` | Server en 0.0.0.0:9090, app credentials, allowed_origins `*`, ping 60s |
+| `docker/supervisord.conf` | Apache + Reverb como procesos supervisados |
+| `app/Events/NotificacionNueva.php` | Evento ShouldBroadcast en canal `worker.{personalId}` |
+
+**3. Backend — Env vars en Coolify (9 variables):**
+
+| Variable | Valor |
+|----------|-------|
+| `BROADCAST_CONNECTION` | `reverb` |
+| `REVERB_APP_ID` | `573413` |
+| `REVERB_APP_KEY` | `5a8abf247db02c706c9b` |
+| `REVERB_APP_SECRET` | `610af332089739e4b72b` |
+| `REVERB_HOST` | `api-mi3.laruta11.cl` |
+| `REVERB_PORT` | `443` |
+| `REVERB_SCHEME` | `https` |
+| `REVERB_SERVER_HOST` | `0.0.0.0` |
+| `REVERB_SERVER_PORT` | `9090` |
+
+**4. Frontend — Laravel Echo + Pusher.js:**
+
+| Archivo | Contenido |
+|---------|-----------|
+| `lib/echo.ts` | Configura Echo con broadcaster `reverb`, WSS a `api-mi3.laruta11.cl:443` |
+| `hooks/useRealtimeNotifications.ts` | Hook que escucha canal `worker.{personalId}` para evento `.notificacion.nueva` |
+| `package.json` | Agregados `laravel-echo:^1.16.0`, `pusher-js:^8.4.0` |
+
+**Env vars frontend en Coolify (2 variables):**
+
+| Variable | Valor |
+|----------|-------|
+| `NEXT_PUBLIC_REVERB_APP_KEY` | `5a8abf247db02c706c9b` |
+| `NEXT_PUBLIC_REVERB_HOST` | `api-mi3.laruta11.cl` |
+
+**5. Verificaciones post-deploy:**
+
+| Check | Resultado |
+|-------|-----------|
+| Supervisor corriendo | ✅ Apache (PID 7) + Reverb (PID 8) |
+| Reverb listening | ✅ `Starting server on 0.0.0.0:9090 (api-mi3.laruta11.cl)` |
+| `event(new NotificacionNueva(...))` | ✅ "Event dispatched" sin error |
+| Apache proxy modules | ✅ proxy, proxy_http, proxy_wstunnel loaded |
+| Frontend env vars | ✅ NEXT_PUBLIC_REVERB_APP_KEY + HOST presentes |
+
+**Archivos creados/modificados (10):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/Dockerfile` | Supervisor, Reverb, pcntl, proxy modules, CMD supervisord |
+| `mi3/backend/docker/supervisord.conf` | Nuevo: Apache + Reverb |
+| `mi3/backend/config/broadcasting.php` | Nuevo: driver reverb |
+| `mi3/backend/config/reverb.php` | Nuevo: server + app config |
+| `mi3/backend/app/Events/NotificacionNueva.php` | Nuevo: ShouldBroadcast event |
+| `mi3/backend/.env.example` | Agregadas 9 vars Reverb |
+| `mi3/frontend/package.json` | Agregados laravel-echo, pusher-js |
+| `mi3/frontend/package-lock.json` | Actualizado |
+| `mi3/frontend/lib/echo.ts` | Nuevo: Echo config con Reverb |
+| `mi3/frontend/hooks/useRealtimeNotifications.ts` | Nuevo: hook para escuchar canal worker |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `c67b67c` | `feat(mi3): Laravel Reverb WebSocket server + Echo frontend + supervisor` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `ezfmongl9nofujk2fph61gdv` | ✅ finished |
+| mi3-frontend | mi.laruta11.cl | `gsqia47rnf2x1sss0eihpvxy` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `curl /app` devuelve 500 | Normal — Reverb solo acepta WebSocket upgrade, no HTTP | No es error, es comportamiento esperado. Clientes reales (pusher-js) hacen el upgrade correctamente |
+| Env vars duplicadas en Coolify | POST creó nuevas en vez de actualizar existentes | Usar PATCH para actualizar, POST para crear nuevas |
+
+### Lecciones Aprendidas
+
+144. **Reverb necesita `pcntl` PHP extension**: Sin ella, Reverb no puede manejar señales de proceso. Agregar `docker-php-ext-install pcntl` al Dockerfile
+145. **Apache como WebSocket proxy**: `mod_proxy_wstunnel` permite que Apache haga proxy de WebSocket connections. `ProxyPass /app ws://127.0.0.1:9090/app` rutea el tráfico WS al Reverb interno, evitando exponer un segundo puerto
+146. **Supervisor reemplaza CMD en Dockerfile**: En vez de `CMD ["apache2-foreground"]`, usar `CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]` para orquestar múltiples procesos (Apache + Reverb)
+147. **Reverb usa protocolo Pusher**: El frontend se conecta con `pusher-js` y `laravel-echo` usando el broadcaster `reverb`. La URL es `wss://dominio/app/{key}?protocol=7`. Esto permite reusar todo el ecosistema Pusher sin pagar por el servicio
+
+### Pendiente
+
+- **Integrar `useRealtimeNotifications` en componentes** (MobileHeader, dashboard, etc.) para que la UI se actualice en vivo
+- **Integrar `NotificacionNueva` event** en flujos reales (checklist completado, turno asignado, adelanto aprobado)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
 
 ---
 
@@ -56,19 +923,27 @@ El usuario pidió que el header de mi3 use la imagen `R11HEADER.jpg` que ya exis
 
 ### Commits y Deploys
 
-No se hizo commit ni deploy. Cambios locales pendientes.
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `3632a46` | `feat(mi3): header image R11HEADER.jpg en MobileHeader` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend | mi.laruta11.cl | `zz0uy8qeqmuqsbu9b9xuml40` | ✅ queued (sesión 2026-04-12n) |
 
 ### Errores Encontrados y Resueltos
 
-Ninguno.
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Token Coolify expirado | El token hardcodeado en la bitácora (`...e2e0e0a0`) ya no era válido | Usar el token correcto del hook `deploy-mi3-frontend.kiro.hook` (`...8dc72ae8`) |
 
 ### Lecciones Aprendidas
 
 134. **Imágenes en `/public/` de Next.js se sirven desde la raíz**: Un archivo en `public/R11HEADER.jpg` se accede como `/R11HEADER.jpg` sin necesidad de importar ni usar `next/image`. Útil para assets estáticos que no necesitan optimización
+135. **Tokens de Coolify API**: Los hooks de Kiro (`.kiro/hooks/deploy-*.kiro.hook`) tienen el token correcto y actualizado. Si un token falla, revisar los hooks como fuente de verdad
 
 ### Pendiente
 
-- **Commit y deploy** de este cambio
 - Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
 - Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
 - Generar turnos mayo

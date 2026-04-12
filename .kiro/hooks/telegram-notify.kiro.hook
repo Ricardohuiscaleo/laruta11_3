@@ -1,13 +1,13 @@
 {
   "enabled": true,
-  "name": "Notificar Telegram",
-  "description": "Envía un mensaje a Telegram cuando el agente termina de ejecutar, notificando que el trabajo está listo.",
+  "name": "Notificar Telegram con resumen",
+  "description": "Cuando el agente termina, genera un resumen de lo que se hizo y lo envía a Telegram.",
   "version": "1",
   "when": {
     "type": "agentStop"
   },
   "then": {
-    "type": "runCommand",
-    "command": "curl -s -X POST \"https://api.telegram.org/bot8733395221:AAE9vL0YRHW4Fyp5GDYscTvFJi8QX_WNyws/sendMessage\" -d chat_id=8104543914 -d parse_mode=Markdown -d text=\"🤖 *Kiro terminó de trabajar*%0A%0ARevisa los cambios en el IDE.\""
+    "type": "askAgent",
+    "prompt": "Genera un resumen breve (máximo 3-4 líneas) de lo que acabas de hacer en esta sesión. Incluye: qué archivos se modificaron, qué se deployó, y el resultado. Luego envíalo a Telegram ejecutando este curl (reemplaza {RESUMEN} con el texto, usa %0A para saltos de línea, escapa caracteres especiales para URL):\n\ncurl -s -X POST \"https://api.telegram.org/bot8733395221:AAE9vL0YRHW4Fyp5GDYscTvFJi8QX_WNyws/sendMessage\" -d chat_id=8104543914 -d parse_mode=Markdown -d text=\"🤖 *Kiro terminó*%0A%0A{RESUMEN}\"\n\nIMPORTANTE: El resumen debe ser específico, no genérico. Ejemplo: '✅ Conecté Echo/Reverb WebSocket en PushNotificationInit. Deploy mi3-frontend (yced3eb). Ahora verás wss://api-mi3.laruta11.cl/app/... en Network con ping/pong.'"
   }
 }

@@ -65,6 +65,30 @@ Route::prefix('v1')->group(function () {
 
     // ── Admin (administrador/dueño) ─────────────────────────────────
     Route::prefix('admin')->middleware(['auth:sanctum', 'worker', 'admin'])->group(function () {
+        // Compras
+        Route::get('compras/items', [\App\Http\Controllers\Admin\CompraController::class, 'items']);
+        Route::get('compras/proveedores', [\App\Http\Controllers\Admin\CompraController::class, 'proveedores']);
+        Route::post('compras/ingrediente', [\App\Http\Controllers\Admin\CompraController::class, 'crearIngrediente']);
+        Route::post('compras/upload-temp', [\App\Http\Controllers\Admin\CompraController::class, 'uploadTemp']);
+        Route::post('compras/extract', [\App\Http\Controllers\Admin\ExtraccionController::class, 'extract']);
+        Route::get('compras/extraction-quality', [\App\Http\Controllers\Admin\ExtraccionController::class, 'quality']);
+        Route::post('compras/pipeline/run', [\App\Http\Controllers\Admin\ExtraccionController::class, 'runPipeline']);
+        Route::get('compras/pipeline/report', [\App\Http\Controllers\Admin\ExtraccionController::class, 'pipelineReport']);
+        Route::post('compras/{id}/imagen', [\App\Http\Controllers\Admin\CompraController::class, 'uploadImagen']);
+        Route::apiResource('compras', \App\Http\Controllers\Admin\CompraController::class)->only(['index', 'store', 'show', 'destroy']);
+
+        // Stock
+        Route::get('stock', [\App\Http\Controllers\Admin\StockController::class, 'index']);
+        Route::get('stock/bebidas', [\App\Http\Controllers\Admin\StockController::class, 'bebidas']);
+        Route::post('stock/ajuste-masivo', [\App\Http\Controllers\Admin\StockController::class, 'ajusteMasivo']);
+        Route::post('stock/preview-ajuste', [\App\Http\Controllers\Admin\StockController::class, 'previewAjuste']);
+
+        // KPIs
+        Route::get('kpis', [\App\Http\Controllers\Admin\KpiController::class, 'index']);
+        Route::get('kpis/historial-saldo', [\App\Http\Controllers\Admin\KpiController::class, 'historialSaldo']);
+        Route::get('kpis/proyeccion', [\App\Http\Controllers\Admin\KpiController::class, 'proyeccion']);
+        Route::get('kpis/precio-historico/{id}', [\App\Http\Controllers\Admin\KpiController::class, 'precioHistorico']);
+
         // Personal
         Route::get('personal', [\App\Http\Controllers\Admin\PersonalController::class, 'index']);
         Route::post('personal', [\App\Http\Controllers\Admin\PersonalController::class, 'store']);
