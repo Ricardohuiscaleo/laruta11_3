@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12az)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ba)
 
 ### Aplicaciones Desplegadas
 
@@ -41,6 +41,58 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ⚠️ Spec marcado como deployado pero tabla `checklists_v2` NO existe en producción. Sistema usa checklists legacy |
 | mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Mapeo forzado persona→proveedor post-extracción. 9 riders ARIAKA + Ricardo (emisor) filtrado. 15+ deploys hoy |
+
+---
+
+## Sesión 2026-04-12ba — Fix 502 checklist photo: S3 upload directo SigV4 en PhotoAnalysisService
+
+### Lo realizado: Reescribir upload de fotos de checklist con PUT directo S3 (mismo fix que compras)
+
+**Problema:** 502 al subir foto en checklist. El `PhotoAnalysisService.subirFotoS3()` usaba `Storage::disk('s3')->put()` que no funciona (mismo bug de Flysystem que ya fixeamos en compras/ImagenService).
+
+**Fix:** Reescribir `subirFotoS3()` con PUT directo a S3 usando SigV4 signing (curl nativo), exactamente como `ImagenService` de compras.
+
+| Antes | Después |
+|-------|---------|
+| `Storage::disk('s3')->put($path, $contents, 'public')` | PUT directo `curl` a `bucket.s3.region.amazonaws.com/key` con SigV4 |
+| `Storage::disk('s3')->url($path)` | URL directa `https://laruta11-images.s3.amazonaws.com/{key}` |
+| 502 (Flysystem falla silenciosamente → S3 upload no ocurre → Bedrock recibe URL inválida) | 200 (PUT directo funciona) |
+
+**Archivos modificados (1):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/app/Services/Checklist/PhotoAnalysisService.php` | `subirFotoS3()` reescrito con PUT directo SigV4 |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `fb584e8` | `fix(mi3): checklist photo S3 upload - use direct PUT SigV4 like compras` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `elcmwml3op3u8ot8qb7hxdn0` | ✅ queued |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| 502 al subir foto en checklist | `Storage::disk('s3')->put()` falla silenciosamente (Flysystem bug) → foto no se sube → Bedrock recibe URL inválida → crash | PUT directo S3 con SigV4 (como ImagenService de compras) |
+
+### Lecciones Aprendidas
+
+204. **Flysystem S3 bug afecta TODO el proyecto, no solo compras**: El mismo bug de `Storage::disk('s3')->put()` que no sube archivos afectó tanto a `ImagenService` (compras) como a `PhotoAnalysisService` (checklists). Cada servicio que use S3 debe usar PUT directo con SigV4
+
+### Pendiente
+
+- **Verificar** que foto de checklist se sube y IA analiza después del deploy
+- Verificar upload S3 en compras
+- Verificar Gmail Token Refresh
+- Feature futuro: tareas generadas por IA desde fotos
+- Corregir caja3 `get_turnos.php` base date
+- Generar turnos mayo
+- Fix push subscriptions duplicadas
 
 ---
 
