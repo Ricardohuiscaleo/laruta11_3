@@ -87,7 +87,7 @@ PROMPT,
 
     /**
      * Upload a photo to S3 bucket laruta11-images.
-     * Path: checklist/YYYY/MM/{unique_filename}
+     * Uses direct PUT with SigV4 (same as ImagenService) because Flysystem doesn't work.
      *
      * @return string The public URL of the uploaded photo
      */
@@ -96,15 +96,68 @@ PROMPT,
         $year = now()->format('Y');
         $month = now()->format('m');
         $filename = uniqid('checklist_') . '.' . ($foto->getClientOriginalExtension() ?: 'jpg');
-        $path = "checklist/{$year}/{$month}/{$filename}";
+        $objectKey = "checklist/{$year}/{$month}/{$filename}";
 
-        $stored = Storage::disk('s3')->put($path, file_get_contents($foto->getRealPath()), 'public');
+        $contents = file_get_contents($foto->getRealPath());
+        $contentType = $foto->getMimeType() ?: 'image/jpeg';
 
-        if (!$stored) {
+        $bucket = config('filesystems.disks.s3.bucket', env('AWS_BUCKET', 'laruta11-images'));
+        $region = config('filesystems.disks.s3.region', env('AWS_DEFAULT_REGION', 'us-east-1'));
+        $key = config('filesystems.disks.s3.key', env('AWS_ACCESS_KEY_ID', ''));
+        $secret = config('filesystems.disks.s3.secret', env('AWS_SECRET_ACCESS_KEY', ''));
+
+        $host = "{$bucket}.s3.{$region}.amazonaws.com";
+        $url = "https://{$host}/{$objectKey}";
+        $now = gmdate('Ymd\THis\Z');
+        $date = gmdate('Ymd');
+        $payloadHash = hash('sha256', $contents);
+
+        $headers = [
+            'content-type' => $contentType,
+            'host' => $host,
+            'x-amz-content-sha256' => $payloadHash,
+            'x-amz-date' => $now,
+        ];
+
+        $signedHeaders = implode(';', array_keys($headers));
+        $canonicalHeaders = '';
+        foreach ($headers as $k => $v) $canonicalHeaders .= "{$k}:{$v}\n";
+
+        $canonicalRequest = "PUT\n/{$objectKey}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
+        $credentialScope = "{$date}/{$region}/s3/aws4_request";
+        $stringToSign = "AWS4-HMAC-SHA256\n{$now}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
+
+        $kDate = hash_hmac('sha256', $date, "AWS4{$secret}", true);
+        $kRegion = hash_hmac('sha256', $region, $kDate, true);
+        $kService = hash_hmac('sha256', 's3', $kRegion, true);
+        $kSigning = hash_hmac('sha256', 'aws4_request', $kService, true);
+        $signature = hash_hmac('sha256', $stringToSign, $kSigning);
+
+        $auth = "AWS4-HMAC-SHA256 Credential={$key}/{$credentialScope}, SignedHeaders={$signedHeaders}, Signature={$signature}";
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_CUSTOMREQUEST => 'PUT',
+            CURLOPT_POSTFIELDS => $contents,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTPHEADER => [
+                "Content-Type: {$contentType}",
+                "X-Amz-Date: {$now}",
+                "X-Amz-Content-Sha256: {$payloadHash}",
+                "Authorization: {$auth}",
+            ],
+        ]);
+        $resp = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($code !== 200) {
+            Log::error("[PhotoAnalysisService] S3 PUT failed: HTTP {$code} for {$objectKey}");
             throw new \RuntimeException('Error al subir la foto a S3');
         }
 
-        return Storage::disk('s3')->url($path);
+        return "https://{$bucket}.s3.amazonaws.com/{$objectKey}";
     }
 
     /**
