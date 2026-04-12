@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('ai_extraction_logs', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('compra_id')->nullable();
+            $table->integer('compra_id')->nullable();
             $table->string('image_url', 500);
             $table->json('raw_response')->comment('Respuesta cruda de Bedrock');
             $table->json('extracted_data')->comment('Datos parseados estructurados');

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('ai_training_dataset', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('compra_id');
+            $table->integer('compra_id');
             $table->string('image_url', 500);
             $table->unsignedBigInteger('extraction_log_id')->nullable();
             $table->json('real_data')->comment('Datos reales de la compra (ground truth)');
@@ -24,7 +24,6 @@ return new class extends Migration
             $table->index('compra_id', 'idx_compra');
             $table->index('batch_id', 'idx_batch');
             $table->index('processed_at', 'idx_processed');
-            $table->foreign('compra_id')->references('id')->on('compras')->onDelete('cascade');
         });
     }
 

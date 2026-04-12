@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('extraction_feedback', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('extraction_log_id');
-            $table->unsignedInteger('compra_id');
+            $table->integer('compra_id');
             $table->string('field_name', 50)->comment('Campo corregido: proveedor, item_nombre, cantidad, precio, etc.');
             $table->text('original_value')->comment('Valor extraído por IA');
             $table->text('corrected_value')->comment('Valor corregido por usuario');
