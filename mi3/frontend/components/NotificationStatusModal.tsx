@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { usePushNotifications, type PushStatus } from '@/hooks/usePushNotifications';
 
@@ -54,21 +54,35 @@ const STATUS_CONFIG: Record<PushStatus, {
   },
 };
 
-/** Tag-style indicator: black pill with "Notificaciones" + colored dot */
+/** Tag-style indicator: shows "Notificaciones" for 5s then collapses to just the dot */
 export function NotificationTagIndicator() {
   const { status } = usePushNotifications();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const config = STATUS_CONFIG[status];
+
+  useEffect(() => {
+    const timer = setTimeout(() => setCollapsed(true), 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 bg-black/80 rounded-full px-2.5 py-1"
+        className={`flex items-center justify-center border border-black/70 transition-all duration-500 ease-in-out ${
+          collapsed
+            ? 'w-6 h-6 rounded-full p-0'
+            : 'gap-1.5 bg-black/80 rounded-full px-2.5 py-1'
+        }`}
         aria-label="Estado de notificaciones"
       >
-        <span className={`w-2 h-2 rounded-full ${config.dotColor}`} />
-        <span className="text-[11px] font-medium text-white leading-none">Notificaciones</span>
+        <span className={`shrink-0 rounded-full ${config.dotColor} ${collapsed ? 'w-2.5 h-2.5' : 'w-2 h-2'}`} />
+        {!collapsed && (
+          <span className="text-[11px] font-medium text-white leading-none whitespace-nowrap">
+            Notificaciones
+          </span>
+        )}
       </button>
 
       {open && <NotificationModal onClose={() => setOpen(false)} />}
