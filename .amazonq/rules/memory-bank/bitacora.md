@@ -121,6 +121,17 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 - Fix push subscriptions duplicadas
 - Feature futuro: tareas generadas por IA desde fotos
 
+**Verificación auth/sesión mi3 (SSH):**
+
+| Componente | Estado |
+|-----------|--------|
+| Token #41 en `personal_access_tokens` | ✅ user_id=4 (Ricardo), name=mi3-auth, last_used=2026-04-12 19:57 |
+| `expires_at` | NULL (remember=true, no expira) |
+| Tokens duplicados | ✅ Solo 1 token activo para user 4 |
+| SESSION_DRIVER | `database` pero tabla `sessions` vacía (0 rows) — correcto, Sanctum es stateless |
+| Cookie `mi3_token` | ✅ Contiene `41\|k8tWnsrn...` — mecanismo de auth correcto |
+| Cookie `PHPSESSID` | De caja3/app3 (PHP legacy), no de mi3 |
+
 ---
 
 ## Sesión 2026-04-12bd — Prompts IA mejorados con feedback real + cierre 18:00 + fotos planchero
