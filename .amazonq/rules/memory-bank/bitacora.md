@@ -1,16 +1,16 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-11, actualizado sesión 2026-04-11af)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12m)
 
 ### Aplicaciones Desplegadas
 
 | App | URL | Stack | Estado | Auto-deploy |
 |-----|-----|-------|--------|-------------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running | ❌ Manual |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running | ❌ Manual |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`daqq442d4qox36raoyup140y`, commit `dfac24c`) | ❌ Manual |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`nklzycf28cf1zp796kr8jgl5`, commit `dfac24c`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React | ✅ Running (`ym47pg9nj2ybj96e6z6fkpqh`, commit `8b08dc0`) | ❌ Manual |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 | ✅ Running (`i110bwgekv2rq2v4nifwov9p`, commit `9ac25dc`) | ❌ Manual |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React | ✅ Running (`q13g9emqjrak1hq1u9gb9hvp`, commit `f120985`) | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 | ✅ Running (`r5kza4uqkg6gchkdx2en18pl`, commit `698ebea`) | ❌ Manual |
 
 Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks individuales, o el nuevo hook "Ship It" para ciclo completo.
 
@@ -23,12 +23,2056 @@ Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks ind
 - mi3-frontend: `sxdw43i9nt3cofrzxj28hx1e`
 - laruta11-db: `zs00occ8kcks40w4c88ogo08`
 
+### Scheduled Tasks en Coolify
+
+| App | Task | Comando | Frecuencia | UUID |
+|-----|------|---------|------------|------|
+| mi3-backend | Laravel Scheduler | `php artisan schedule:run` | `* * * * *` | `e9svtnsk7x0prpxdt6ginl7p` |
+| app3 | Gmail Token Refresh | `curl -s https://app.laruta11.cl/api/cron/refresh_gmail_token.php` | `*/30 * * * *` | `ucp78eigwlh6hx9zhwi75q1x` |
+| caja3 | Daily Checklists (legacy) | `curl -s https://caja.laruta11.cl/api/cron/create_daily_checklists.php` | `0 12 * * *` (8 AM Chile) | `m3rws04ajruudvng66n5qb1d` |
+
+El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que activa los 7 comandos programados en `routes/console.php` de mi3-backend.
+
 ### Specs en Progreso
 
 | Spec | Directorio | Estado |
 |------|-----------|--------|
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
-| checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ✅ 14 tareas implementadas + Nova Pro testeado con fotos reales — pendiente deploy |
+| checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ✅ Deployado + migraciones ejecutadas en producción |
+
+---
+
+## Sesión 2026-04-12m — Header image: R11HEADER.jpg en MobileHeader de mi3
+
+### Lo realizado: Cambiar logo del header mobile por imagen local
+
+El usuario pidió que el header de mi3 use la imagen `R11HEADER.jpg` que ya existía en `mi3/frontend/public/`. Se reemplazó la referencia al logo de S3 (`logo-work.png`) por la imagen local servida desde `/public/`.
+
+**Archivos modificados (1):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/components/mobile/MobileHeader.tsx` | `src` del `<img>`: `https://laruta11-images.s3.amazonaws.com/menu/logo-work.png` → `/R11HEADER.jpg` |
+
+### Commits y Deploys
+
+No se hizo commit ni deploy. Cambios locales pendientes.
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+134. **Imágenes en `/public/` de Next.js se sirven desde la raíz**: Un archivo en `public/R11HEADER.jpg` se accede como `/R11HEADER.jpg` sin necesidad de importar ni usar `next/image`. Útil para assets estáticos que no necesitan optimización
+
+### Pendiente
+
+- **Commit y deploy** de este cambio
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12l — App badge count en ícono PWA + SW broadcast refresh
+
+### Lo realizado: Implementar badge count en ícono de la PWA (como digitalizatodo)
+
+El usuario confirmó que las push notifications llegan al celular, y pidió el badge count en el ícono de la app (el número que aparece sobre el ícono en el home screen).
+
+**Investigación de digitalizatodo (via SSH a `fx5kn83mhdpe1jy3nj1zenjx`):**
+
+El `sw.js` de digitalizatodo usa:
+- `self.registration.setAppBadge(count)` en el evento `push` para setear el badge
+- Listener `message` con tipo `SET_BADGE` para que el frontend pueda setear el badge
+- `postMessage({ type: 'REFRESH_NOTIFICATIONS' })` a todas las ventanas abiertas cuando llega un push
+
+**Implementación en mi3 — `sw.js` reescrito:**
+
+| Feature | Antes | Después |
+|---------|-------|---------|
+| App badge en push | ❌ No | ✅ `setAppBadge(badgeCount)` al recibir push |
+| Badge desde frontend | ❌ No | ✅ Listener `SET_BADGE` via `postMessage` |
+| Broadcast a tabs | ❌ No | ✅ `REFRESH_NOTIFICATIONS` a todas las ventanas |
+| Clear badge on click | ❌ No | ✅ `clearAppBadge()` al hacer click en notificación |
+| `requireInteraction` | ❌ No | ✅ Sí (requerido para iOS) |
+| `SKIP_WAITING` | ❌ No | ✅ Para actualizar SW sin recargar |
+
+**Implementación en `MobileHeader`:**
+
+| Feature | Antes | Después |
+|---------|-------|---------|
+| Setear badge en ícono PWA | ❌ No | ✅ `navigator.setAppBadge(count)` + mensaje al SW |
+| Escuchar push mientras app abierta | ❌ No | ✅ Listener `REFRESH_NOTIFICATIONS` del SW |
+| Refrescar count automáticamente | Solo en cambio de ruta | En cambio de ruta + cuando llega push |
+
+**Test de push con badge:**
+
+```php
+$service->enviar(5, '🔔 Badge Test', 'Revisa el ícono de la app', '/dashboard', 'high');
+// Sent: 2
+```
+
+**Archivos modificados (2):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/public/sw.js` | Reescrito: badge, broadcast, SET_BADGE listener, SKIP_WAITING, clearAppBadge on click |
+| `mi3/frontend/components/mobile/MobileHeader.tsx` | `setAppBadge()` al fetch, listener `REFRESH_NOTIFICATIONS` del SW |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `f120985` | `feat(mi3): app badge count en ícono PWA + SW broadcast refresh notifications` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend | mi.laruta11.cl | `q13g9emqjrak1hq1u9gb9hvp` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+141. **Badging API requiere PWA instalada**: `navigator.setAppBadge(count)` solo funciona cuando la app está instalada en el home screen como PWA. En el browser normal no tiene efecto
+142. **iOS PWA necesita `setAppBadge` desde el SW**: En iOS, `navigator.setAppBadge()` desde el frontend puede no funcionar — hay que usar `self.registration.setAppBadge()` desde el service worker. Por eso se implementa en ambos lados
+143. **SW puede avisar al frontend con `postMessage`**: Cuando llega un push y la app está abierta, el SW envía `REFRESH_NOTIFICATIONS` a todas las ventanas. El frontend escucha con `navigator.serviceWorker.addEventListener('message')` y refresca el count sin recargar la página
+
+### Pendiente
+
+- Integrar envío de push en eventos reales (checklist completado, turno asignado, adelanto aprobado)
+- Evaluar implementar Laravel Reverb para realtime con app abierta
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12k — Test exitoso: push notification enviada y recibida en celular
+
+### Lo realizado: Prueba end-to-end de push notifications en producción
+
+El usuario preguntó si al enviar una notificación le llegaría al celular. Se ejecutó una prueba real.
+
+**Prueba via SSH → artisan tinker:**
+
+```php
+$service = app(PushNotificationService::class);
+$sent = $service->enviar(5, '🔔 Prueba Push', 'Si lees esto, las notificaciones push funcionan en mi3!', '/dashboard', 'high');
+// Resultado: Sent: 2
+```
+
+Se enviaron 2 notificaciones exitosamente (personal_id=5, Ricardo). El `Sent: 2` indica que había 2 suscripciones activas en `push_subscriptions_mi3` (probablemente 2 dispositivos o 2 sesiones de browser) y ambas se entregaron sin error.
+
+**Flujo confirmado end-to-end:**
+
+| Paso | Componente | Estado |
+|------|-----------|--------|
+| 1. SW registrado | `mi3/frontend/public/sw.js` | ✅ |
+| 2. Permiso browser | `Notification.permission === 'granted'` | ✅ |
+| 3. Suscripción pushManager | `pushManager.subscribe()` con VAPID key | ✅ |
+| 4. Suscripción en BD | `push_subscriptions_mi3` (2 registros activos) | ✅ |
+| 5. VAPID keys en backend | `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY` en env | ✅ |
+| 6. `minishlink/web-push` | Instalado en contenedor | ✅ |
+| 7. Envío via `PushNotificationService::enviar()` | 2 notificaciones enviadas | ✅ |
+| 8. Recepción en dispositivo | Pendiente confirmación del usuario | ⏳ |
+
+### Commits y Deploys
+
+No se hizo commit ni deploy. Prueba de funcionalidad existente.
+
+### Errores Encontrados y Resueltos
+
+Ninguno. El sistema funcionó correctamente en el primer intento.
+
+### Lecciones Aprendidas
+
+139. **Push notifications funcionan end-to-end en mi3**: Todo el stack está operativo — desde el SW en el frontend hasta el envío via `minishlink/web-push` en el backend. Las VAPID keys, la tabla, la librería, y las suscripciones están correctamente configuradas
+140. **`artisan tinker` via SSH es la forma más rápida de probar push**: `docker exec $(docker ps -qf name=UUID) php artisan tinker --execute="..."` permite ejecutar código PHP arbitrario en el contenedor de producción sin necesidad de crear endpoints de prueba
+
+### Pendiente
+
+- Integrar envío de push en eventos reales (checklist completado, turno asignado, adelanto aprobado)
+- Evaluar implementar Laravel Reverb para realtime con app abierta
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12j — Rediseño dashboard admin: KPIs financieros + apps internas + cronjobs en sección separada
+
+### Lo realizado: Reestructuración completa del panel admin de mi3
+
+**1. Dashboard admin (`/admin`) rediseñado:**
+
+Antes: 3 cards (Nómina, Cambios Pendientes, Créditos Bloqueados) + sección cronjobs.
+
+Ahora:
+- 4 KPI cards en grid 2×2: Ventas Mes, Compras Mes, Nómina, Resultado Bruto (ventas − compras − nómina)
+- Sección "Aplicaciones" con iconos tipo app: Compras (abre `caja.laruta11.cl/compras/` en nueva pestaña), Checklists, Cambios, Créditos
+
+**2. Nuevo endpoint `GET /admin/dashboard`:**
+
+Controller `DashboardController.php` que obtiene:
+- Ventas y compras del mes via proxy a `caja.laruta11.cl/api/get_dashboard_cards.php`
+- Nómina calculada desde tabla `personal` (sueldos base por rol de personal activo)
+- Resultado bruto = ventas − compras − nómina
+
+**3. Cronjobs movidos a `/admin/cronjobs`:**
+
+Nueva página dedicada con la misma UI de cronjobs que antes estaba en inicio. Accesible desde:
+- Sidebar desktop: nuevo link "Cronjobs" con icono Clock
+- Mobile: menú "Más" → Cronjobs
+
+**4. Navegación actualizada:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `lib/navigation.ts` | Agregado `{ href: '/admin/cronjobs', label: 'Cronjobs', icon: Clock }` a `adminSecondaryNavItems` |
+| `AdminSidebar.tsx` | Agregado link Cronjobs al sidebar desktop |
+
+**Archivos creados/modificados (6):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/app/Http/Controllers/Admin/DashboardController.php` | Nuevo — proxy a caja3 API + cálculo nómina |
+| `mi3/backend/routes/api.php` | Nueva ruta `GET /admin/dashboard` |
+| `mi3/frontend/app/admin/page.tsx` | Reescrito — 4 KPIs + apps internas |
+| `mi3/frontend/app/admin/cronjobs/page.tsx` | Nuevo — página dedicada de cronjobs |
+| `mi3/frontend/lib/navigation.ts` | Agregado Cronjobs a nav secundaria |
+| `mi3/frontend/components/layouts/AdminSidebar.tsx` | Agregado Cronjobs al sidebar |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `698ebea` | `feat(mi3): dashboard admin con KPIs (ventas/compras/nómina/resultado) + apps internas + cronjobs en sección separada` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `r5kza4uqkg6gchkdx2en18pl` | ✅ finished |
+| mi3-frontend | mi.laruta11.cl | `hqgf0s0qviiuyedv35gtgv77` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+131. **Proxy backend para APIs cross-app**: mi3-backend puede hacer HTTP a `caja.laruta11.cl` sin problemas de CORS ni mixed content. Es el patrón correcto para agregar datos de caja3 al dashboard de mi3
+132. **Separar monitoreo técnico del dashboard de negocio**: Los cronjobs son info técnica que no necesita estar en la vista principal. Las KPIs financieras (ventas, compras, nómina, resultado) son lo que el admin necesita ver al abrir el panel
+
+### Pendiente
+
+- Verificar que Gmail token refresh realmente funciona (output dice "Token refresh failed")
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+- Agregar más apps internas al dashboard (inventario, ventas detalle, etc.)
+
+---
+
+## Sesión 2026-04-12i — Investigación: WebSockets realtime en digitalizatodo (Laravel Reverb)
+
+### Lo realizado: Auditoría de cómo funciona el realtime en digitalizatodo para evaluar replicarlo en mi3
+
+El usuario vio conexiones WebSocket (`wss://admin.digitalizatodo.cl/app/diedimtyjfxaurcuejrt?protocol=7&client=js&version=8.4.0`) con ping/pong en la pestaña Network de digitalizatodo, y preguntó por qué mi3 no tiene eso.
+
+**Investigación via SSH al contenedor saas-backend (`bo888gk4kg8w0wossc00ccs8`):**
+
+| Componente | Valor |
+|------------|-------|
+| Broadcasting driver | `reverb` (Laravel Reverb — WebSocket server nativo de Laravel) |
+| Paquetes | `laravel/reverb ^1.0`, `pusher/pusher-php-server ^7.2` |
+| REVERB_APP_KEY | `diedimtyjfxaurcuejrt` |
+| REVERB_HOST | `admin.digitalizatodo.cl` |
+| REVERB_PORT | `443` (WSS via Traefik) |
+| REVERB_SERVER_HOST | `0.0.0.0` (escucha en todas las interfaces) |
+| REVERB_SERVER_PORT | `8080` (interno, Traefik lo expone en 443) |
+| Protocolo frontend | Pusher protocol v7 (Laravel Echo + pusher-js) |
+| Canales observados | `attendance.integracao-arica`, `dashboard.integracao-arica`, `payments.integracao-arica`, `notifications.integracao-arica.44` |
+| Ping interval | 60s (configurable en `reverb.php`) |
+
+**Diferencia entre Push Notifications y WebSockets:**
+
+| Feature | Push Notifications (mi3 ✅) | WebSockets/Reverb (digitalizatodo ✅, mi3 ❌) |
+|---------|----------------------------|----------------------------------------------|
+| Protocolo | Web Push API | WebSocket (wss://) |
+| App cerrada | ✅ Funciona | ❌ Solo con app abierta |
+| Latencia | Segundos a minutos | Milisegundos |
+| Uso | Alertas fuera de la app | UI se actualiza en vivo |
+| Ejemplo | "Tienes un nuevo turno" | Dashboard se actualiza solo |
+
+**Para implementar Reverb en mi3 se necesitaría:**
+
+1. `composer require laravel/reverb pusher/pusher-php-server` en mi3-backend
+2. Configurar `config/reverb.php` y `config/broadcasting.php`
+3. Proceso `php artisan reverb:start` corriendo en el contenedor (supervisor o entrypoint)
+4. Exponer puerto WebSocket via Traefik en Coolify (path `/app` → Reverb)
+5. `npm install laravel-echo pusher-js` en mi3-frontend
+6. Crear Events con `ShouldBroadcast` en Laravel
+7. Suscribirse a canales en componentes React
+
+**Casos de uso identificados para mi3:**
+- Dashboard admin se actualiza en vivo cuando llega un checklist
+- Calendario de turnos se actualiza si alguien hace un cambio
+- Notificaciones in-app en tiempo real sin recargar
+- Estado de adelantos de sueldo actualizado en vivo
+
+### Commits y Deploys
+
+No se hizo commit ni deploy. Sesión de investigación.
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+136. **Push Notifications ≠ WebSockets**: Son complementarios. Push funciona con la app cerrada (alertas), WebSockets funciona con la app abierta (UI en vivo). Un sistema completo de realtime necesita ambos
+137. **Laravel Reverb es el WebSocket server nativo de Laravel**: Reemplaza a Pusher/Soketi como servidor self-hosted. Usa el protocolo Pusher, así que el frontend usa `pusher-js` + `laravel-echo`. Se configura como un proceso adicional (`php artisan reverb:start`) dentro del contenedor
+138. **Reverb en Docker necesita Traefik routing**: El WebSocket server escucha en un puerto interno (8080) y Traefik lo expone en 443 con WSS. La URL del cliente apunta al dominio principal con path `/app`
+
+### Pendiente
+
+- **Evaluar implementar Laravel Reverb en mi3** (requiere definir casos de uso prioritarios)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12h — Fix: push subscription sync al backend en cada page load
+
+### Lo realizado: Asegurar que la suscripción push se sincroniza al backend en cada carga
+
+El usuario reportó que el modal mostraba "Activas" con todos los checks verdes, pero no veía tráfico de red del service worker ni la suscripción.
+
+**Diagnóstico:**
+
+El hook `checkStatus()` solo verificaba el estado local del browser (permiso + suscripción en pushManager), sin verificar que el backend tuviera la suscripción. Podía mostrar "Activas" sin que el backend supiera nada.
+
+Se verificó en BD: `push_subscriptions_mi3` tenía 1 registro (personal_id=5, Ricardo), así que el POST sí se hizo al menos una vez. Pero no había mecanismo de re-sync.
+
+**Explicación al usuario sobre Web Push:**
+
+Web Push es pasivo — no hay "ping pong". El SW se registra una vez, se suscribe una vez, y queda dormido. Solo se activa cuando el servidor envía un push. No hay polling ni heartbeat visible en Network.
+
+**Fix: `checkAndSync()` reemplaza `checkStatus()`:**
+
+| Antes (`checkStatus`) | Después (`checkAndSync`) |
+|------------------------|--------------------------|
+| Verifica permiso browser | Verifica permiso browser |
+| Verifica suscripción local en pushManager | Verifica suscripción local en pushManager |
+| Si existe → status `active` | Si existe → POST al backend para sincronizar |
+| Nunca contacta al backend | Siempre envía suscripción al backend en cada page load |
+
+Ahora en cada carga de página se ve un `POST /worker/push/subscribe` en Network, confirmando que el flujo funciona end-to-end.
+
+**Archivos modificados (2):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/hooks/usePushNotifications.ts` | `checkStatus()` → `checkAndSync()`: sincroniza suscripción al backend en cada mount |
+| `mi3/frontend/components/PushNotificationInit.tsx` | Sin cambios funcionales (ya delegaba a `activate()` para `inactive`) |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `773abb0` | `fix(mi3): push hook syncs subscription to backend on every page load` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend | mi.laruta11.cl | `iowi1utbcsxjwd3m0av45cdv` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Modal mostraba "Activas" sin verificar backend | `checkStatus()` solo verificaba estado local del browser | `checkAndSync()` envía suscripción al backend en cada page load |
+
+### Lecciones Aprendidas
+
+134. **Web Push es pasivo, no hay polling**: El service worker no hace requests periódicos. Se registra, se suscribe una vez, y queda dormido hasta que el servidor envía un push. No hay "ping pong" visible en Network — eso es normal
+135. **Sincronizar suscripción push en cada page load**: Las suscripciones push pueden expirar o cambiar de endpoint. Enviar la suscripción al backend en cada carga de página mantiene el registro fresco y permite verificar en Network que el flujo funciona
+
+### Pendiente
+
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12g — Tag notificaciones: animación colapso 5s + posición al lado del logo
+
+### Lo realizado: Mejorar UX del indicador de notificaciones con animación de colapso
+
+El usuario pidió que el tag "Notificaciones" aparezca completo al entrar a la app, y después de 5 segundos se transforme en solo un círculo con borde negro y el dot de color adentro. Además, mover el tag a la derecha del logo (izquierda del header).
+
+**Comportamiento implementado:**
+
+| Tiempo | Estado visual |
+|--------|--------------|
+| 0-5s | Pill negro con texto "Notificaciones" + dot de color (expandido) |
+| 5s+ | Círculo con borde negro + dot de color centrado (colapsado) |
+| Click | Abre modal centrado con backdrop blur en cualquier estado |
+
+**Cambios en `NotificationTagIndicator`:**
+- `useState(collapsed)` + `useEffect` con `setTimeout(5000)` para colapsar
+- Transición CSS `transition-all duration-500 ease-in-out` para animación suave
+- Expandido: `gap-1.5 bg-black/80 rounded-full px-2.5 py-1` con texto
+- Colapsado: `w-6 h-6 rounded-full p-0 border border-black/70` solo dot
+
+**Cambios en `MobileHeader`:**
+- Tag movido de la derecha del header a `<div>` junto al logo (izquierda)
+- Layout: `[logo + tag] [título] [campana]`
+
+**Archivos modificados (2):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/components/NotificationStatusModal.tsx` | Animación colapso 5s, `useEffect` timer, estilos transición |
+| `mi3/frontend/components/mobile/MobileHeader.tsx` | Tag movido al lado del logo |
+
+Nota: esta sesión también incluyó los cambios de la sesión anterior no documentada donde se cambió la campana por un tag negro, el modal a `z-[100]` con `backdrop-blur-sm`, y se centró en desktop.
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `92820c7` | `fix(mi3): notificaciones tag negro + modal centrado z-100 con backdrop blur` |
+| 2 | `f856bc4` | `fix(mi3): tag notificaciones colapsa a dot después de 5s, posición al lado del logo` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend (1) | mi.laruta11.cl | `xotzq2t35x0oqopydflc6xaz` | ✅ finished |
+| mi3-frontend (2) | mi.laruta11.cl | `s3jcmi9uiaswfj5k7a5lnhu6` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Modal quedaba detrás del navbar inferior en mobile | Modal usaba `z-50`, igual que el bottom nav | Subir a `z-[100]` |
+
+### Lecciones Aprendidas
+
+132. **z-index hierarchy en mobile**: El bottom nav usa `z-50`, el header `z-40`. Modales que deben cubrir todo necesitan `z-[100]` o superior para estar por encima de ambos
+133. **Animación de colapso con CSS transitions**: Usar `transition-all duration-500` con cambio de `width`/`padding` permite animar el colapso de un pill a un círculo sin JavaScript de animación. El texto desaparece con renderizado condicional (`!collapsed && <span>`)
+
+### Pendiente
+
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12f — Auto-registro de Gmail refresh y Daily Checklists en cron_executions
+
+### Lo realizado: Agregar INSERT a cron_executions en los endpoints PHP de Coolify
+
+Los crons de Gmail token refresh (app3) y Daily Checklists (caja3) corren como scheduled tasks de Coolify (curl a endpoints PHP), pero no se registraban en la tabla `cron_executions` de MySQL. Se agregó el auto-registro en ambos endpoints.
+
+**Archivos modificados (2):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `app3/api/cron/refresh_gmail_token.php` | Agrega INSERT a `cron_executions` con command=`gmail-token-refresh`, status, output y duración |
+| `caja3/api/cron/create_daily_checklists.php` | Agrega INSERT a `cron_executions` con command=`daily-checklists-caja3`, status, output y duración |
+
+Ambos usan la misma BD (`app_db_*`) donde está la tabla `cron_executions`. El registro es try/catch para no romper el cron si falla el logging.
+
+**Verificación previa — los 3 crons corren desde Coolify:**
+
+| Task | Ejecuciones Coolify | Última | Status |
+|------|-------------------|--------|--------|
+| Gmail Token Refresh | 24 | 13:00 UTC | ✅ cada 30 min |
+| Daily Checklists | 1 | 12:00 UTC (8 AM Chile) | ✅ diario |
+| Laravel Scheduler | 710 | 13:11 UTC | ✅ cada minuto |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `dfac24c` | `feat(app3+caja3): auto-registrar Gmail refresh y Daily Checklists en cron_executions MySQL` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| app3 | app.laruta11.cl | `daqq442d4qox36raoyup140y` | ✅ finished |
+| caja3 | caja.laruta11.cl | `nklzycf28cf1zp796kr8jgl5` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `caja3/api` ignorado por .gitignore | El .gitignore de caja3 excluye la carpeta api | `git add -f` para forzar |
+
+### Lecciones Aprendidas
+
+130. **Crons externos al scheduler de Laravel necesitan registro manual**: Los endpoints PHP llamados por Coolify via curl no pasan por el scheduler de Laravel, así que no se benefician del auto-logging. Hay que agregar el INSERT a `cron_executions` directamente en cada endpoint PHP
+
+### Pendiente
+
+- Verificar que Gmail token refresh realmente funciona (output dice "Token refresh failed")
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12e — Cronjobs monitoring via MySQL (reemplazo de Coolify API)
+
+### Lo realizado: Sistema completo de monitoreo de cronjobs usando MySQL en vez de Coolify API
+
+Después de múltiples intentos fallidos de conectar a la API de Coolify desde contenedores Docker (problemas de red: ECONNREFUSED, ENOTFOUND, timeouts, mixed content HTTPS/HTTP), se cambió el approach completamente: registrar ejecuciones en MySQL y leer de ahí.
+
+**1. Tabla `cron_executions` creada en producción:**
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | BIGINT PK | Auto-increment |
+| command | VARCHAR(100) | Identificador del comando |
+| name | VARCHAR(100) | Nombre legible |
+| status | ENUM(success,failed) | Resultado |
+| output | TEXT | Output/mensaje |
+| duration_seconds | DECIMAL(8,2) | Duración en segundos |
+| started_at | TIMESTAMP | Inicio |
+| finished_at | TIMESTAMP | Fin |
+
+**2. Auto-logging en Laravel Scheduler (`routes/console.php`):**
+
+Los 7 comandos del scheduler ahora registran automáticamente cada ejecución en `cron_executions` via callbacks `before()`, `after()` y `onFailure()`. Cada registro incluye nombre, status, duración y timestamps.
+
+**3. Datos históricos importados de Coolify API (desde Mac, que sí alcanza la API):**
+
+| Comando | Registros | Status |
+|---------|-----------|--------|
+| `schedule:run` (Laravel Scheduler) | 1 (resumen de 692 ejecuciones) | 100% success |
+| `gmail-token-refresh` | 5 | 100% success (pero output dice "Token refresh failed") |
+| `daily-checklists-caja3` | 1 | 100% success |
+
+**4. Endpoint `GET /admin/cronjobs` reescrito:**
+
+Ahora lee de MySQL en vez de Coolify API. Devuelve por cada comando: `total_runs`, `successes`, `failures`, `success_rate`, `avg_duration`, `last_run`, `last_status`, `last_output`.
+
+**5. Frontend actualizado:**
+
+Dashboard admin muestra cada cronjob con: icono de status, nombre, comando, total ejecuciones, éxitos, fallos, porcentaje de éxito (badge verde/amarillo/rojo), duración promedio, y tiempo desde última ejecución.
+
+**6. Eliminada la Next.js API route proxy** (`app/api/admin/cronjobs/route.ts`) — ya no se necesita.
+
+**Archivos creados/modificados (6):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/database/migrations/2026_04_12_000001_create_cron_executions_table.php` | Nueva migración |
+| `mi3/backend/app/Models/CronExecution.php` | Nuevo modelo con método `log()` |
+| `mi3/backend/routes/console.php` | Reescrito: auto-logging via before/after/onFailure |
+| `mi3/backend/app/Http/Controllers/Admin/CronjobController.php` | Reescrito: lee de MySQL |
+| `mi3/frontend/app/admin/page.tsx` | Actualizado: usa `/admin/cronjobs` del backend Laravel |
+| `mi3/frontend/app/api/admin/cronjobs/route.ts` | Eliminado |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `f4676ce` | `feat(mi3): cronjobs monitoring via MySQL - tabla cron_executions + auto-logging en scheduler + dashboard admin` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `rbv7d56tyzob8lmonkn9n1om` | ✅ finished |
+| mi3-frontend | mi.laruta11.cl | `vm7oj84q45lqwzhbava0c6ia` | ✅ finished |
+
+### Datos modificados en producción (SSH)
+
+| Acción | Detalle |
+|--------|---------|
+| Migración | `2026_04_12_000001_create_cron_executions_table` ejecutada |
+| Seed | 7 registros históricos importados de Coolify API via `php artisan tinker` |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Coolify API inalcanzable desde contenedores Docker | `coolify:80` ECONNREFUSED, `coolify:8000` ECONNREFUSED, `host.docker.internal` ENOTFOUND (Linux), IPs bridge timeout | Abandonar Coolify API → usar MySQL |
+| Mixed content HTTPS→HTTP | Frontend HTTPS no puede llamar API HTTP de Coolify | Abandonar approach frontend directo → usar MySQL via backend |
+| `docker exec` con nombre incorrecto | `docker ps --filter "name=mi3-backend"` no matchea el nombre real del contenedor | Usar `docker ps` para ver nombres reales (formato `{uuid}-{timestamp}`) |
+| Coolify escucha en 8080 internamente, no 8000 | Puerto 8000 es el mapeo al host (`0.0.0.0:8000->8080/tcp`) | Descubierto pero no resolvió el problema de red |
+
+### Lecciones Aprendidas
+
+127. **No depender de Coolify API desde contenedores**: Los contenedores Docker en Coolify no pueden alcanzar la API de Coolify de forma confiable. Ni `host.docker.internal` (no existe en Linux), ni la IP pública (timeout), ni el nombre del contenedor `coolify` (ECONNREFUSED en puertos 80/8000/8080). La solución correcta es usar MySQL que está en la misma red Docker
+128. **Auto-logging en el scheduler es trivial**: Laravel permite `before()`, `after()` y `onFailure()` callbacks en cada scheduled command. Registrar en BD es más confiable que depender de APIs externas
+129. **Importar datos históricos antes de cambiar de sistema**: Al migrar de Coolify API a MySQL, se importaron los datos existentes para no perder historial. Siempre migrar datos antes de cambiar el mecanismo de recolección
+
+### Pendiente
+
+- Verificar que el Gmail token refresh realmente funciona (output dice "Token refresh failed" pero Coolify lo marca como success)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12d — Confirmación login Builder ID + consulta de cuota
+
+### Lo realizado: Consulta informativa sobre cuenta Kiro
+
+El usuario confirmó que está logueado con Builder ID (tier gratuito de Kiro) y consultó sobre su consumo. Se le indicó que el límite es de interacciones mensuales y que puede ver su uso desde la barra de estado del IDE o la paleta de comandos.
+
+**Archivos modificados:** Ninguno (sesión informativa).
+
+### Commits y Deploys
+
+No se hizo commit ni deploy.
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+133. **Kiro Builder ID = tier gratuito con límite de interacciones mensuales**: No se mide por tokens sino por interacciones. El consumo se consulta desde la UI del IDE (barra de estado o paleta de comandos), no desde el agente
+
+### Pendiente
+
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12c — Consulta de consumo/cuota de Kiro
+
+### Lo realizado: Consulta informativa sobre uso de Kiro
+
+El usuario preguntó cuánto ha consumido en Kiro (cuota, tokens, o lo que corresponda). Se informó que esa información no está disponible desde el chat del IDE — se gestiona desde la cuenta de usuario en kiro.dev o via la paleta de comandos (Cmd+Shift+P → "Kiro: Account").
+
+**Archivos modificados:** Ninguno (sesión informativa).
+
+### Commits y Deploys
+
+No se hizo commit ni deploy.
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+132. **Consumo de Kiro no es consultable desde el chat**: La información de uso/cuota de Kiro se gestiona desde el portal de cuenta (kiro.dev) o la paleta de comandos del IDE, no desde el agente. El agente no tiene acceso a métricas de consumo del usuario
+
+### Pendiente
+
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-12b — Implementación completa push notifications: VAPID keys + Dockerfile fix + deploy
+
+### Lo realizado: Activar push notifications end-to-end en producción
+
+Sesión de implementación completa para activar las push notifications que estaban con código muerto (sesión az diagnosticó que faltaban VAPID keys).
+
+**1. Generación de VAPID keys:**
+
+Par ECDH P-256 generado con Node.js `crypto.createECDH('prime256v1')`:
+- Public key: 87 chars (base64url)
+- Private key: 43 chars (base64url)
+
+**2. Configuración env vars en Coolify via API:**
+
+| App | Variable | UUID env |
+|-----|----------|----------|
+| mi3-backend | `VAPID_PUBLIC_KEY` | `nqu55i6exi0v9kroii7v1n21` |
+| mi3-backend | `VAPID_PRIVATE_KEY` | `jtvnfrio5uql46va4o33x37m` |
+| mi3-frontend | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | `cjekdip8ug441lsa3ht3v5ye` |
+
+**3. Verificación tabla BD:**
+
+`push_subscriptions_mi3` ya existía en producción (migración ejecutada en sesión anterior).
+
+**4. Fix Dockerfile mi3-backend — `minishlink/web-push` no se instalaba:**
+
+El Dockerfile creaba un Laravel vanilla con `composer create-project` y luego hacía `composer install` — pero el `composer.lock` era el de Laravel vanilla, sin `sanctum` ni `web-push`. Luego hacía `composer require laravel/sanctum` pero nunca instalaba `web-push`.
+
+| Antes | Después |
+|-------|---------|
+| `composer create-project` + `composer install` + `composer require sanctum` | `composer create-project` + `composer require sanctum:^4.0 web-push:^9.0` |
+
+Primer intento falló: copiar `composer.json` del proyecto antes de `composer install` causó lock mismatch. Solución: usar `composer require` directamente que actualiza el lock.
+
+**5. Verificaciones post-deploy (SSH):**
+
+| Check | Resultado |
+|-------|-----------|
+| `class_exists('Minishlink\WebPush\WebPush')` | ✅ OK (antes: MISSING) |
+| `strlen(getenv('VAPID_PUBLIC_KEY'))` | ✅ 87 chars |
+| `strlen(getenv('VAPID_PRIVATE_KEY'))` | ✅ 43 chars |
+| VAPID key en Next.js build JS | ✅ Embebida en chunk compilado |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` en contenedor | ✅ Presente |
+
+**Archivos modificados (1):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/Dockerfile` | Reemplazar `composer install` + `composer require sanctum` por `composer require sanctum:^4.0 web-push:^9.0` |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `898a338` | `feat(mi3): push notifications - indicador status + modal activación + fix Dockerfile web-push` |
+| 2 | `82850fc` | `fix(mi3): Dockerfile - usar composer require para instalar sanctum + web-push` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend (1) | api-mi3.laruta11.cl | `ergz59rc7vgkd8ppu8pmtckt` | ❌ failed (lock mismatch) |
+| mi3-backend (2) | api-mi3.laruta11.cl | `hhwappuwvp478vrl6u25jam9` | ✅ finished |
+| mi3-frontend | mi.laruta11.cl | `gnr91vuahn68pi8cn3yfxxp3` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `minishlink/web-push` no instalado en contenedor | Dockerfile usaba `composer.lock` de Laravel vanilla que no incluía web-push | Usar `composer require` en vez de `composer install` para agregar dependencias del proyecto |
+| Primer deploy falló: "lock file is not up to date" | Copiar `composer.json` del proyecto sobre el lock de Laravel vanilla causa mismatch | No copiar composer.json; usar `composer require` que actualiza el lock automáticamente |
+| `laravel/sanctum` tampoco estaba en lock | Mismo problema — se instalaba con `composer require` separado pero web-push no | Unificar en un solo `composer require sanctum:^4.0 web-push:^9.0` |
+
+### Lecciones Aprendidas
+
+129. **Dockerfile con `composer create-project` + dependencias custom**: Cuando el Dockerfile crea un Laravel vanilla y luego necesita dependencias adicionales del proyecto, NO copiar el `composer.json` del proyecto (causa lock mismatch). Usar `composer require pkg1 pkg2` que resuelve dependencias y actualiza el lock en un solo paso
+130. **NEXT_PUBLIC_* se embebe en build time**: Las env vars `NEXT_PUBLIC_*` de Next.js se embeben en el JavaScript durante `next build`. Si la variable no existe al momento del build, queda vacía para siempre. Hay que configurar la env var en Coolify ANTES de hacer el build/deploy
+131. **Verificar dependencias en contenedor post-deploy**: `class_exists()` via SSH es la forma más directa de verificar que una librería PHP está instalada en producción. No confiar en que el `composer.json` local refleja lo que hay en el contenedor
+
+### Pendiente
+
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-11bb — Indicador de notificaciones push + modal de activación en mi3
+
+### Lo realizado: UI para ver y activar notificaciones push desde el header mobile
+
+El usuario pidió un indicador visual de si las notificaciones están activas o no, que al hacer click abra un modal con el status detallado, y si no están activas, permita activarlas.
+
+**1. Refactorización del hook `usePushNotifications`:**
+
+El hook anterior era fire-and-forget (se ejecutaba una vez y no exponía estado). Refactorizado para exponer:
+
+| Export | Tipo | Descripción |
+|--------|------|-------------|
+| `status` | `PushStatus` | Estado actual: `loading`, `unsupported`, `no-vapid`, `denied`, `prompt`, `active`, `inactive` |
+| `activate()` | `() => Promise<boolean>` | Registra SW, pide permiso, suscribe a push, envía al backend |
+
+El hook detecta automáticamente el estado real: verifica soporte del navegador, VAPID key configurada, permiso de Notification API, y si hay suscripción activa en pushManager.
+
+**2. Componente `NotificationStatusModal`:**
+
+Dos exports:
+- `NotificationBellIndicator`: ícono de campana con dot de color (verde=activo, amarillo=inactivo, rojo=bloqueado). Click abre modal.
+- `NotificationModal`: bottom-sheet con status detallado:
+  - Ícono grande con color según estado
+  - Título + descripción contextual
+  - 4 status rows con checks: Service Worker, Permiso del navegador, Suscripción push, Configuración servidor
+  - Botón "🔔 Activar Notificaciones" si el estado permite activar (`prompt` o `inactive`)
+
+**3. Integración en MobileHeader:**
+
+El `NotificationBellIndicator` se agregó al lado izquierdo de la campana de notificaciones existente (que muestra unread count). Ahora el header tiene 2 íconos: push status + notificaciones.
+
+**4. PushNotificationInit actualizado:**
+
+Ahora auto-suscribe silenciosamente si el permiso ya estaba granted pero no hay suscripción (usuario que vuelve al sitio).
+
+**Archivos creados/modificados (4):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/hooks/usePushNotifications.ts` | Refactorizado: expone `status` y `activate()`, detecta estado real |
+| `mi3/frontend/components/NotificationStatusModal.tsx` | Nuevo: indicador + modal con status detallado + botón activar |
+| `mi3/frontend/components/mobile/MobileHeader.tsx` | Integrado `NotificationBellIndicator` en header |
+| `mi3/frontend/components/PushNotificationInit.tsx` | Auto-suscribe si permiso ya granted |
+
+### Commits y Deploys
+
+No se hizo commit ni deploy. Cambios locales pendientes.
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+127. **Exponer estado del hook, no solo side-effects**: El hook original hacía todo internamente sin exponer si funcionó o no. Refactorizar para exponer `status` permite que la UI reaccione al estado real (mostrar indicador, habilitar botón de activación, etc.)
+128. **Notification.permission tiene 3 estados**: `granted` (permitido), `denied` (bloqueado permanentemente por el usuario), `default` (no ha decidido — se puede pedir). Solo `denied` es irrecuperable desde la app; requiere que el usuario vaya a configuración del navegador
+
+### Pendiente
+
+- **Commit y deploy** de los cambios de esta sesión
+- **CRÍTICO: Generar VAPID keys y configurar en Coolify** (frontend + backend) — sin esto el indicador mostrará "No configurado"
+- Verificar que `minishlink/web-push` esté instalado en contenedor mi3-backend
+- Verificar que tabla `push_subscriptions_mi3` exista en BD
+- Verificar que el endpoint de cronjobs funciona en producción
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-11ba — Fix: cronjobs endpoint devuelve [] + verificación checklists caja3
+
+### Lo realizado: Debug y fix del CronjobController que no conectaba a Coolify API desde dentro del contenedor Docker
+
+**1. Cronjobs endpoint devuelve `[]` — problema de red Docker:**
+
+El endpoint `GET /admin/cronjobs` devolvía `{"success": true, "data": []}` porque el contenedor de mi3-backend no podía conectar a la API de Coolify en `http://76.13.126.63:8000` desde dentro de Docker.
+
+| Intento | URL | Resultado |
+|---------|-----|-----------|
+| 1 | `http://76.13.126.63:8000` (IP pública) | ❌ No conecta desde contenedor |
+| 2 | `http://host.docker.internal:8000` | ❌ No resuelve en Linux (solo Docker Desktop Mac/Win) |
+| 3 | Múltiples URLs con fallback | ✅ Fix aplicado |
+
+Fix: el controller ahora intenta 5 URLs en orden hasta que una funcione: env var, `host.docker.internal`, `172.17.0.1` (Docker bridge), `coolify` (nombre contenedor), y `76.13.126.63` (IP pública). Pendiente verificar cuál funciona en producción.
+
+**2. Env vars duplicadas en Coolify:**
+
+Se encontraron 4 env vars (2 duplicadas) para `COOLIFY_API_TOKEN` y `COOLIFY_API_URL`. Se limpiaron y recrearon correctamente con `COOLIFY_API_URL=http://host.docker.internal:8000`.
+
+**3. Checklists caja3 — verificación:**
+
+El usuario reportó que los checklists "muestran los de ayer". Se verificó via API:
+- Apertura 2026-04-11: ✅ existe, status `completed`
+- Cierre 2026-04-12: ✅ existe, status `pending`
+
+Los datos en BD son correctos. El cron de daily checklists se ejecutó manualmente y confirmó que ya existían. El problema visual puede ser cache del navegador.
+
+**4. Nómina sin datos:**
+
+No hay pagos registrados para el mes actual — es comportamiento esperado si no se han procesado pagos.
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/app/Http/Controllers/Admin/CronjobController.php` | Múltiples URLs fallback, `getenv()` fallback para token, IP pública como último recurso |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `98259f1` | `fix(mi3): cronjobs controller - try multiple Docker network URLs for Coolify API` |
+| 2 | `7878a8e` | `fix(mi3): add public IP fallback for Coolify API in cronjobs controller` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend (1) | api-mi3.laruta11.cl | `cjzu6499mr0kteuc6sqy0qun` | ✅ finished |
+| mi3-backend (2) | api-mi3.laruta11.cl | `o10f57ohkmvsqfu1mu3vvhdo` | ✅ finished |
+| mi3-backend (3) | api-mi3.laruta11.cl | `o2g6jm6kmhn0t26nzk3x5ngc` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Cronjobs endpoint devuelve `[]` | Contenedor Docker no puede conectar a IP pública de Coolify | Múltiples URLs fallback incluyendo Docker bridge, host.docker.internal, y IP pública |
+| Env vars duplicadas en Coolify | Se crearon 2 veces via API | Eliminadas duplicadas, recreadas limpias |
+| Checklists "muestran los de ayer" | Posible cache del navegador — datos en BD son correctos | Verificado via API, datos OK |
+
+### Lecciones Aprendidas
+
+125. **Networking Docker → host es complicado**: Desde dentro de un contenedor Docker, conectar al host (donde corre Coolify) no es trivial. `host.docker.internal` solo funciona en Docker Desktop (Mac/Win), no en Linux nativo. En Linux hay que usar la IP del bridge (`172.17.0.1`) o el nombre del contenedor en la misma red Docker. La solución más robusta es probar múltiples URLs con fallback
+126. **Env vars en Coolify se inyectan como variables de entorno del sistema**: No van al `.env` de Laravel (que está vacío en el Dockerfile). `env()` de Laravel las lee via `getenv()`, pero si hay config cacheado puede no funcionar. Usar `getenv()` directamente como fallback
+
+### Pendiente
+
+- **Verificar que el endpoint de cronjobs funciona** — el usuario debe recargar `mi.laruta11.cl/admin` y confirmar
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Generar turnos mayo
+- Generar VAPID keys reales
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook
+
+---
+
+## Sesión 2026-04-11az — Auditoría push notifications / service worker en mi3
+
+### Lo realizado: Diagnóstico completo del sistema de push notifications y service worker en mi.laruta11.cl
+
+El usuario preguntó por service workers y funcionalidad realtime en mi.laruta11.cl (como en digitalizatodo). Se hizo auditoría completa del estado de la implementación.
+
+**Estado encontrado — todo el código existe pero está inactivo:**
+
+| Componente | Archivo | Estado |
+|------------|---------|--------|
+| Service Worker | `mi3/frontend/public/sw.js` | ✅ Implementado (push, notificationclick, pushsubscriptionchange) |
+| PWA Manifest | `mi3/frontend/public/manifest.json` | ✅ Configurado (standalone, icons S3, theme red) |
+| Hook frontend | `mi3/frontend/hooks/usePushNotifications.ts` | ✅ Implementado (registra SW, pide permiso, suscribe) |
+| Componente init | `mi3/frontend/components/PushNotificationInit.tsx` | ✅ Montado en `dashboard/layout.tsx` |
+| Backend controller | `mi3/backend/app/Http/Controllers/Worker/PushController.php` | ✅ Endpoint `POST /worker/push/subscribe` |
+| Backend service | `mi3/backend/app/Services/Notification/PushNotificationService.php` | ✅ WebPush con VAPID, envío, limpieza |
+| Modelo | `mi3/backend/app/Models/PushSubscription.php` | ✅ Tabla `push_subscriptions_mi3` |
+| Librería | `minishlink/web-push ^9.0` en `composer.json` | ✅ Declarada |
+| VAPID keys frontend | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` en `.env` | ❌ Vacía — hook aborta silenciosamente |
+| VAPID keys backend | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` en `.env` | ❌ Vacías — WebPush no puede firmar |
+
+**Causa raíz:** El hook `usePushNotifications` hace `if (!vapidPublicKey) return;` al inicio. Sin la VAPID key en las env vars de producción, el service worker nunca se registra, nunca se pide permiso de notificaciones, y nunca se suscribe al push. Todo el código está muerto.
+
+**Para activar push notifications se necesita:**
+
+1. Generar par de VAPID keys (público/privado)
+2. Configurar `VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY` en env vars de mi3-backend en Coolify
+3. Configurar `NEXT_PUBLIC_VAPID_PUBLIC_KEY` en env vars de mi3-frontend en Coolify
+4. Verificar que `composer install` haya instalado `minishlink/web-push` en el contenedor
+5. Verificar que la tabla `push_subscriptions_mi3` exista en la BD
+6. Redeploy de ambas apps
+
+### Commits y Deploys
+
+No se hizo commit ni deploy. Sesión de auditoría únicamente.
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Push notifications completamente inactivas | VAPID keys vacías en env vars de producción (frontend y backend) | Pendiente: generar VAPID keys y configurar en Coolify |
+
+### Lecciones Aprendidas
+
+125. **Código sin config = código muerto**: Todo el sistema de push (SW, hook, backend, modelo) estaba implementado pero sin VAPID keys configuradas en producción. El hook aborta silenciosamente con `if (!vapidPublicKey) return;`, sin logs ni warnings visibles. Siempre verificar que las env vars requeridas estén configuradas después de deployar features que dependen de ellas
+126. **Auditar features post-deploy**: Las push notifications se implementaron en una sesión anterior pero nunca se completó el paso de configuración en producción. Un checklist post-deploy que verifique env vars habría detectado esto inmediatamente
+
+### Pendiente
+
+- **CRÍTICO: Generar VAPID keys y configurar en Coolify** (frontend + backend) para activar push notifications
+- Verificar que `minishlink/web-push` esté instalado en contenedor mi3-backend (`composer install`)
+- Verificar que tabla `push_subscriptions_mi3` exista en BD
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook (para parar spam Telegram)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+
+---
+
+## Sesión 2026-04-11ay — Sección Cronjobs Status en dashboard admin mi3
+
+### Lo realizado: Agregar vista de estado de cronjobs en /admin de mi3
+
+El usuario pidió ver el status y cantidad de ejecuciones de los cronjobs directamente en el panel admin de mi3 (`mi.laruta11.cl/admin`).
+
+**1. Backend — CronjobController (`GET /admin/cronjobs`):**
+
+Nuevo controller que consulta la API de Coolify para obtener scheduled tasks y sus ejecuciones de las 3 apps (mi3-backend, app3, caja3).
+
+| Dato | Fuente |
+|------|--------|
+| Tasks | `GET /api/v1/applications/{uuid}/scheduled-tasks` |
+| Ejecuciones | `GET /api/v1/applications/{uuid}/scheduled-tasks/{taskUuid}/executions` |
+
+Respuesta por task: `app`, `name`, `frequency`, `enabled`, `last_status`, `last_message`, `last_run`, `last_duration`, `total_runs`, `failures`.
+
+**2. Frontend — Sección Cronjobs en dashboard admin:**
+
+Debajo de las 3 cards existentes (Nómina, Cambios Pendientes, Créditos Bloqueados), se muestra una card con cada cronjob:
+- Icono verde/rojo según último status
+- Nombre + app + frecuencia legible
+- Cantidad de ejecuciones y fallos
+- Tiempo desde última ejecución ("hace 2m", "hace 1h")
+
+**3. Env vars agregadas en Coolify para mi3-backend:**
+
+| Variable | Valor |
+|----------|-------|
+| `COOLIFY_API_URL` | `http://76.13.126.63:8000` |
+| `COOLIFY_API_TOKEN` | `3\|S52ZU...` (token API de Coolify) |
+
+**Archivos creados/modificados (4):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/app/Http/Controllers/Admin/CronjobController.php` | Nuevo — consulta Coolify API |
+| `mi3/backend/routes/api.php` | Nueva ruta `GET /admin/cronjobs` |
+| `mi3/backend/.env.example` | Agregadas `COOLIFY_API_URL` y `COOLIFY_API_TOKEN` |
+| `mi3/frontend/app/admin/page.tsx` | Sección cronjobs con status, ejecuciones, fallos |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `a6190fe` | `feat(mi3): sección cronjobs status en dashboard admin via Coolify API` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `ezpu90qv6hryaqtbihpra5e4` | ✅ finished |
+| mi3-frontend | mi.laruta11.cl | `cro1skojjn490mu59biaf2pv` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Coolify API rechazaba `is_build_time` al crear env vars | Campo no permitido en la API | Enviar solo `key`, `value`, `is_preview` |
+
+### Lecciones Aprendidas
+
+123. **Coolify API expone ejecuciones de scheduled tasks**: `GET /applications/{uuid}/scheduled-tasks/{taskUuid}/executions` devuelve historial con status, duración, mensaje y timestamps — suficiente para un dashboard de monitoreo sin necesidad de herramientas externas
+124. **Env vars en Coolify via API**: `POST /applications/{uuid}/envs` con `key` y `value`. No enviar `is_build_time` (campo no permitido), solo `is_preview`
+
+### Pendiente
+
+- Desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook (para parar spam Telegram)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Generar VAPID keys reales
+
+---
+
+## Sesión 2026-04-11ax — Verificación status realtime de mi.laruta11.cl y todas las apps
+
+### Lo realizado: Health check manual de todas las apps en producción
+
+El usuario pidió revisar el status en tiempo real de mi.laruta11.cl. Se verificaron las 4 apps principales via fetch HTTP.
+
+**Resultados del health check:**
+
+| App | URL | Método | Resultado |
+|-----|-----|--------|-----------|
+| mi3-frontend | mi.laruta11.cl | Fetch `/login` (rendered) | ✅ OK — pantalla de login con Google/email, saludo "Buenas noches", branding correcto |
+| mi3-backend | api-mi3.laruta11.cl | Fetch raíz + `/api/worker/loans/info` | ⚠️ 404 — esperado (rutas protegidas con `auth:sanctum`, no hay endpoint público de health) |
+| app3 | app.laruta11.cl | Fetch `/` (rendered) | ✅ OK — menú completo con productos, imágenes S3, precios, horarios |
+| caja3 | caja.laruta11.cl | Fetch `/` | ✅ OK — "Verificando acceso..." (auth gate normal) |
+
+**Observaciones:**
+- mi.laruta11.cl redirige `/` → `/login` con HTTP 307 (middleware Next.js de auth) — comportamiento normal
+- El backend no tiene endpoint público de health check, lo que dificulta monitoreo externo
+- Todas las apps responden correctamente y sirven contenido esperado
+
+### Commits y Deploys
+
+No se hizo commit ni deploy. Sesión de verificación únicamente.
+
+### Errores Encontrados y Resueltos
+
+Ninguno. Todas las apps funcionando correctamente.
+
+### Lecciones Aprendidas
+
+123. **Falta health check público en mi3-backend**: No hay un endpoint `/api/health` sin auth en Laravel, lo que impide monitoreo externo automatizado. Agregar uno permitiría verificar que el backend está vivo sin necesidad de token
+
+### Pendiente
+
+- Agregar endpoint `/api/health` público en mi3-backend (para monitoreo sin auth)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Generar VAPID keys reales
+
+---
+
+## Sesión 2026-04-11au — Refactorización: préstamos con cuotas → adelanto de sueldo
+
+### Lo realizado: Cambio conceptual completo de préstamos a adelantos de sueldo
+
+Refactorización del sistema de "préstamos con cuotas" a "adelanto de sueldo sin cuotas", pendiente desde sesión 2026-04-11w.
+
+**Cambios de lógica de negocio:**
+
+| Antes (préstamo) | Después (adelanto) |
+|-------------------|-------------------|
+| 1-3 cuotas mensuales | Sin cuotas — descuento completo a fin de mes |
+| Monto máximo = sueldo base completo | Monto máximo = proporcional a días trabajados: `(dias/total) × sueldo` |
+| Descuento día 1 del mes siguiente | Descuento a fin de mes actual |
+| Selector de cuotas en UI | Sin selector — siempre 1 |
+| Barra de progreso de cuotas | "Se descontará completo a fin de mes" |
+
+**Archivos modificados (8):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `LoanService.php` | `solicitarPrestamo()` sin cuotas, `calcularMontoMaximo()` proporcional, `procesarDescuentosMensuales()` descuento completo, nuevo `getInfoAdelanto()` |
+| `Worker/LoanController.php` | Sin cuotas en validación, nuevo endpoint `GET /loans/info` |
+| `Admin/LoanController.php` | `aprobar()` sin `fecha_inicio_descuento`, mensajes "adelanto" |
+| `LoanAutoDeductCommand.php` | Mensajes actualizados |
+| `routes/api.php` | Nueva ruta `GET /worker/loans/info` |
+| `navigation.ts` | "Préstamos" → "Adelantos" |
+| `types/index.ts` | Nuevo `AdelantoInfo` interface, JSDoc en `Prestamo` |
+| `prestamos/page.tsx` | UI completa: sin cuotas, muestra máximo disponible, "Solicitar Adelanto" |
+
+**Backward compat:** tabla `prestamos`, rutas `/loans`, y archivos sin renombrar. Campo `cuotas` siempre 1 para nuevos adelantos; registros legacy con cuotas > 1 siguen funcionando.
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `6484e9a` | `refactor(mi3): préstamos con cuotas → adelanto de sueldo sin cuotas` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `oi6sv785sy2yylvy9jyhpnyy` | ✅ finished |
+| mi3-frontend | mi.laruta11.cl | `hp7gdgun739uk9olflufl38s` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+118. **Refactorizar concepto sin renombrar infraestructura**: Cambiar "préstamo" a "adelanto" en la lógica y UI sin renombrar tabla, rutas ni archivos permite hacer el cambio sin migraciones destructivas ni breaking changes en la API. Los clientes existentes siguen funcionando
+
+### Pendiente
+
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Configurar cron de Gmail token refresh en Coolify
+- Generar VAPID keys reales
+
+---
+
+## Sesión 2026-04-11aw — Andres Aguilera: nombre en BD + ciclos de turnos por ID
+
+### Lo realizado: Renombrar personal id=3 y cambiar ciclos de turnos de nombres a IDs
+
+**1. Renombrar personal id=3:**
+
+`UPDATE personal SET nombre = 'Andres Aguilera' WHERE id = 3` — antes era solo "Andrés".
+
+**2. Ciclos de turnos por ID (no por nombre):**
+
+Buscar personal por nombre (`WHERE nombre LIKE 'Andrés%'`) es frágil — si cambia el nombre se rompe. Refactorizado a IDs directos en 3 archivos:
+
+| Antes | Después |
+|-------|---------|
+| `'person_a' => 'Camila'` | `'person_a_id' => 1` |
+| `'person_b' => 'Dafne'` | `'person_b_id' => 12` |
+| `'person_a' => 'Andrés'` | `'person_a_id' => 3` |
+| `'person_a' => 'Ricardo'` | `'person_a_id' => 5` |
+| `'person_b' => 'Claudio'` | `'person_b_id' => 10` |
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `GenerateDynamicShiftsCommand.php` | CYCLES usa `a_id`/`b_id` en vez de `a_name`/`b_name` |
+| `config/mi3.php` | `shift_cycles` usa `person_a_id`/`person_b_id` |
+| `ShiftService.php` | `generate4x4Shifts()` lee IDs directos del config |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `2202b87` | `fix(mi3): renombrar Andrés → Andres Aguilera en personal y config turnos` |
+| 2 | `b635088` | `refactor(mi3): ciclos de turnos por ID en vez de nombre` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `nmkofz6mdegi0hbz7vkorr3a` | ✅ finished |
+
+### Datos modificados en producción (SSH)
+
+| Tabla | Cambio |
+|-------|--------|
+| `personal` id=3 | `nombre = 'Andres Aguilera'` (antes "Andrés") |
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+119. **Usar IDs, nunca nombres, para referencias entre sistemas**: Buscar personal por nombre con `LIKE` es frágil — un cambio de nombre, un acento, o un apellido rompe el match. IDs son inmutables y no ambiguos. Aplica a ciclos de turnos, configs, y cualquier referencia cross-tabla
+
+### Pendiente
+
+- Corregir caja3 `get_turnos.php` para usar IDs también (actualmente busca por nombre)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Configurar cron de Gmail token refresh en Coolify
+- Generar VAPID keys reales
+
+---
+
+## Sesión 2026-04-11av — Auditoría de cronjobs + configuración de 3 scheduled tasks en Coolify
+
+### Lo realizado: Auditoría completa de crons y creación de scheduled tasks via API de Coolify
+
+El usuario pidió verificar si los cronjobs en Coolify están funcionando. Se descubrió que ningún cron estaba activo y se configuraron 3 scheduled tasks directamente via la API de Coolify.
+
+**1. Auditoría inicial — nada funcionaba:**
+
+| Sistema | Estado |
+|---------|--------|
+| GitHub Actions | ❌ Workflows eliminados en sesión ab (carpeta `.github/workflows/` vacía) |
+| Coolify scheduled tasks | ❌ 0 tasks configuradas en todas las apps |
+| Laravel Scheduler (mi3-backend) | ❌ 7 comandos en `console.php` pero sin `schedule:run` invocándolos |
+| Endpoints PHP (app3/caja3) | ✅ Existen pero ❌ nadie los llamaba |
+
+**2. Scheduled tasks creadas via API de Coolify (`POST /api/v1/applications/{uuid}/scheduled-tasks`):**
+
+| App | Task | Comando | Frecuencia | UUID |
+|-----|------|---------|------------|------|
+| mi3-backend | Laravel Scheduler | `php artisan schedule:run` | `* * * * *` (cada minuto) | `e9svtnsk7x0prpxdt6ginl7p` |
+| app3 | Gmail Token Refresh | `curl -s https://app.laruta11.cl/api/cron/refresh_gmail_token.php` | `*/30 * * * *` (cada 30 min) | `ucp78eigwlh6hx9zhwi75q1x` |
+| caja3 | Daily Checklists (legacy) | `curl -s https://caja.laruta11.cl/api/cron/create_daily_checklists.php` | `0 12 * * *` (8 AM Chile) | `m3rws04ajruudvng66n5qb1d` |
+
+**3. Comandos que ahora se ejecutan via Laravel Scheduler (mi3-backend):**
+
+| Comando | Frecuencia | Propósito |
+|---------|------------|-----------|
+| `mi3:r11-auto-deduct` | Día 1, 6:00 AM | Descuento automático crédito R11 |
+| `mi3:loan-auto-deduct` | Día 1, 6:30 AM | Descuento automático adelantos sueldo |
+| `mi3:r11-reminder` | Día 28, 10:00 AM | Recordatorio deuda R11 |
+| `mi3:create-daily-checklists` | Diario 14:00 | Crear checklists diarios (mi3) |
+| `mi3:check-companion-absence` | Diario 19:00 | Detectar compañero ausente |
+| `mi3:detect-absences` | Diario 02:00 | Detectar inasistencias |
+| `mi3:generate-shifts` | Día 25, 10:00 | Generar turnos mes siguiente |
+
+### Commits y Deploys
+
+No se hizo commit ni deploy. Configuración hecha directamente via API de Coolify.
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Ningún cron funcionaba desde sesión ab | GitHub Actions eliminados sin configurar reemplazo en Coolify | Creadas 3 scheduled tasks via API de Coolify |
+| Gmail token refresh inactivo ~2 meses | Workflow eliminado, nunca se migró | Scheduled task en app3: `curl` cada 30 min |
+| Laravel scheduler nunca se ejecutaba | No había `schedule:run` configurado | Scheduled task en mi3-backend: `php artisan schedule:run` cada minuto |
+
+**4. Confirmación: scheduled tasks funcionando (notificaciones Telegram):**
+
+Coolify envía notificaciones a Telegram por cada ejecución exitosa ("Scheduled task succeeded"). Esto confirma que las 3 tasks están corriendo. Sin embargo, el Laravel Scheduler (`* * * * *`) genera una notificación cada minuto → spam. Las notificaciones llegan via webhook configurado en Coolify: `https://admin.digitalizatodo.cl/api/webhooks/coolify-deploy` → ese endpoint reenvía a Telegram. Para parar el spam: desactivar "Scheduled Task Success" en Coolify → Notifications → Webhook.
+
+### Lecciones Aprendidas
+
+119. **Coolify tiene scheduled tasks via API**: No hace falta modificar Dockerfiles ni instalar cron en contenedores. Coolify soporta `POST /api/v1/applications/{uuid}/scheduled-tasks` con `name`, `command` y `frequency` (cron syntax). Las tasks se ejecutan dentro del contenedor de la app
+120. **No eliminar crons sin configurar el reemplazo primero**: Los GitHub Actions se eliminaron en sesión ab con la intención de migrar, pero pasaron ~2 meses sin crons activos. Siempre configurar el reemplazo ANTES de eliminar
+121. **Desactivar notificaciones de éxito para crons frecuentes**: Un cron que corre cada minuto genera 1440 notificaciones/día. En Coolify → Notifications → Webhook, desmarcar "Scheduled Task Success" y dejar solo "Scheduled Task Failure"
+122. **Webhook de Coolify a DigitalízaTodo**: Las notificaciones de Coolify llegan a Telegram via `https://admin.digitalizatodo.cl/api/webhooks/coolify-deploy`, no directamente. Coolify → webhook → DigitalízaTodo → Telegram bot
+
+### Pendiente
+
+- **Desactivar "Scheduled Task Success" en Coolify** → Notifications → Webhook (para parar spam)
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales
+
+---
+
+## Sesión 2026-04-11at — Calendario turnos por rol + vincular Andrés Aguilera
+
+### Lo realizado: Mejorar calendario de turnos y vincular cuenta de Andrés
+
+**1. Andrés Aguilera vinculado a personal existente:**
+
+Andrés se registró como nuevo usuario (id=165, `akelarre1986@gmail.com`), lo que creó un duplicado en `personal` (id=17, sueldo $0). Se vinculó su user_id al registro original:
+
+| Acción | SQL |
+|--------|-----|
+| Vincular user_id | `UPDATE personal SET user_id = 165 WHERE id = 3` |
+| Desactivar duplicado | `UPDATE personal SET activo = 0 WHERE id = 17` |
+
+Resultado: personal id=3 (Andrés, planchero, sueldo $600k, user_id=165, activo).
+
+**2. Calendario de turnos mejorado (`/admin/turnos`):**
+
+| Mejora | Antes | Después |
+|--------|-------|---------|
+| Orden | Aleatorio por personal_id | Cajero → Planchero → Seguridad (por afinidad) |
+| Día actual | Sin destacar | Borde amber + fondo amber-50 |
+| Colores | Aleatorios por ID | Por rol: rosa=cajero, amber=planchero, azul=seguridad |
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/app/admin/turnos/page.tsx` | Orden por rol, día actual destacado, colores por rol |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `5635e99` | `feat(mi3): calendario turnos ordenado por rol + día actual destacado` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend | mi.laruta11.cl | `hwzrfaco2512i4keup9v3r8c` | ✅ finished |
+
+### Datos modificados en producción (SSH)
+
+| Tabla | Cambio |
+|-------|--------|
+| `personal` id=3 | `user_id = 165` (vinculado a Andrés Aguilera) |
+| `personal` id=17 | `activo = 0` (duplicado desactivado) |
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+117. **Registro de trabajadores crea duplicados en `personal`**: Cuando un trabajador existente (Andrés, id=3) se registra como nuevo usuario R11, el sistema crea un nuevo registro en `personal` (id=17) en vez de vincular al existente. Hay que verificar manualmente y vincular el `user_id` al registro original que tiene turnos, sueldo e historial
+
+### Pendiente
+
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Refactorizar adelanto de sueldo (spec separado)
+- Configurar cron de Gmail token refresh en Coolify
+- Generar VAPID keys reales
+
+---
+
+## Sesión 2026-04-11as — Fix: Camila no aparece en calendario de turnos mi3
+
+### Lo realizado: Corregir filtro que excluía turnos de Camila (personal_id=1)
+
+Camila no aparecía en `/admin/turnos` de mi3 a pesar de tener 14 turnos en la BD para abril.
+
+**Causa:** `ShiftService` tenía un filtro heredado de caja3 que excluía turnos `normal` sin `reemplazado_por` para `personal_ids [1, 2, 3, 4]` (config `dynamic_shift_personal_ids`). Este filtro existía para evitar duplicados entre turnos manuales viejos y turnos dinámicos generados on-the-fly. Pero ahora que `generate-shifts` persiste los turnos en BD, el filtro eliminaba los turnos legítimos de Camila (id=1).
+
+Dafne (id=12) sí aparecía porque no estaba en la lista [1,2,3,4].
+
+**Fix:** Vaciar `dynamic_shift_personal_ids` a `[]` en `config/mi3.php`. Ya no se necesita filtrar porque los turnos se generan y persisten correctamente en BD.
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `a4ac1d3` | `fix(mi3): dejar de filtrar turnos de personal_ids 1-4 en ShiftService` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `h7vl5z02zl5cmmg6ypgmomnc` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Camila no aparece en calendario turnos mi3 | `dynamic_shift_personal_ids: [1,2,3,4]` filtraba sus turnos como "manuales viejos" | Vaciar la lista a `[]` — ya no se necesita filtrar |
+
+### Lecciones Aprendidas
+
+116. **Lógica legacy puede romper features nuevas**: El filtro de `dynamic_shift_personal_ids` tenía sentido cuando los turnos se calculaban on-the-fly (para no duplicar con turnos manuales viejos en BD). Pero al cambiar a turnos persistidos via `generate-shifts`, ese mismo filtro eliminaba los turnos legítimos. Al migrar de un patrón a otro, hay que revisar y limpiar la lógica del patrón anterior
+
+### Pendiente
+
+- Corregir caja3 `get_turnos.php` base date cajero (2026-02-01 → 2026-02-02)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Refactorizar adelanto de sueldo (spec separado)
+- Configurar cron de Gmail token refresh en Coolify
+- Generar VAPID keys reales
+
+---
+
+## Sesión 2026-04-11ar — Fix: desfase 1 día en ciclo cajero Camila/Dafne
+
+### Lo realizado: Corregir base date del ciclo 4x4 de cajeras
+
+El usuario reportó que Camila terminó turno el 10 y Dafne entró el 11, pero mi3 tenía Dafne desde el 10 (1 día desfasado).
+
+**Causa:** La fecha base del ciclo cajero era `2026-02-01` (copiada de caja3), pero la realidad indica que debería ser `2026-02-02`. Con base 02-01, el 10 de abril da pos=4 (Dafne). Con base 02-02, el 10 da pos=3 (Camila) y el 11 da pos=4 (Dafne) — correcto.
+
+**Fix:**
+1. Cambiar base date de `2026-02-01` → `2026-02-02` en `GenerateDynamicShiftsCommand.php` y `config/mi3.php`
+2. Borrar 30 turnos incorrectos de cajeras en abril
+3. Regenerar con `mi3:generate-shifts --mes=2026-04` → 30 turnos creados
+
+**Verificación:**
+
+| Fecha | Antes (incorrecto) | Después (correcto) |
+|-------|-------------------|-------------------|
+| Abr 9 | Camila | Camila ✅ |
+| Abr 10 | Dafne ❌ | Camila ✅ |
+| Abr 11 | Dafne | Dafne ✅ |
+| Abr 15 | Camila | Camila ✅ |
+
+**Nota:** caja3 también usa `2026-02-01` como base en `get_turnos.php`, lo que significa que caja3 también tiene el desfase. Pero como caja3 no persiste los turnos en BD (los calcula on-the-fly), el impacto es solo visual en el calendario de caja3.
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `dd4559a` | `fix(mi3): corregir base date ciclo cajero 2026-02-01 → 2026-02-02` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `hs8piohzuj1r1wvk7ptiwzt4` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Turnos cajera desfasados 1 día | Base date `2026-02-01` incorrecta, debería ser `2026-02-02` | Corregir en command + config, borrar turnos incorrectos, regenerar |
+
+### Lecciones Aprendidas
+
+115. **Validar fechas base de ciclos con datos reales**: La fecha base del ciclo 4x4 se copió de caja3 sin verificar contra la realidad. Siempre confirmar con el usuario qué día exacto empieza/termina cada trabajador antes de generar turnos masivamente
+
+### Pendiente
+
+- **CORREGIR caja3** también: `get_turnos.php` usa base `2026-02-01` para cajeros, debería ser `2026-02-02`
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo
+- Refactorizar adelanto de sueldo (spec separado)
+- Configurar cron de Gmail token refresh en Coolify
+- Generar VAPID keys reales
+
+---
+
+## Sesión 2026-04-11aq — Fix: turnos mostrando IDs en vez de nombres + nómina sin datos
+
+### Lo realizado: Agregar personal_nombre a respuesta de turnos
+
+**1. Turnos sin nombres (`/admin/turnos`):**
+
+El `ShiftService::getShiftsForMonth()` no incluía `personal_nombre` en la respuesta. El frontend ya usaba `t.personal_nombre` pero caía al fallback `#${t.personal_id}`.
+
+Fix: agregar `personal_nombre` tanto en turnos de BD (via relación `personal()` con eager loading) como en turnos dinámicos 4x4 (via mapa `personalNames[id]`). También se agregó la relación `personal()` al modelo `Turno` (antes solo existía `titular()` como alias).
+
+**2. Nómina sin datos (`/admin/nomina`):**
+
+La nómina depende de `LiquidacionService::calcular()` que cuenta días trabajados basándose en turnos. Como antes no había turnos en abril en la tabla `turnos`, la liquidación daba $0 para todos. Ahora que se generaron los 90 turnos de abril (sesión anterior), la nómina debería mostrar datos correctamente.
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/app/Services/Shift/ShiftService.php` | Agregar `personal_nombre` a turnos BD y dinámicos, eager load `personal` |
+| `mi3/backend/app/Models/Turno.php` | Agregar relación `personal()` (alias de `titular()`) |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `1bc27c6` | `fix(mi3): agregar personal_nombre a turnos en ShiftService` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `ne1z8bg0tevrb5125lbq5uxh` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Turnos muestran `#1`, `#3` en vez de nombres | `ShiftService` no incluía `personal_nombre` en la respuesta | Agregar nombre via relación `personal()` y mapa `personalNames` |
+| Nómina vacía en abril | No había turnos en tabla `turnos` para abril → liquidación calculaba $0 | Resuelto por sesión anterior (generate-shifts creó 90 turnos) |
+
+### Lecciones Aprendidas
+
+114. **Siempre incluir nombres legibles en APIs**: Retornar solo IDs obliga al frontend a hacer lookups adicionales o mostrar códigos. Incluir `personal_nombre` junto con `personal_id` es trivial en el backend y mejora la UX inmediatamente
+
+### Pendiente
+
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Generar turnos mayo: `mi3:generate-shifts --mes=2026-05` (scheduler lo hará el 25 de abril)
+- Configurar cron de Gmail token refresh en Coolify
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales y configurar en Coolify
+
+---
+
+## Sesión 2026-04-11ap — Comando generate-shifts: turnos 4x4 en tabla `turnos`
+
+### Lo realizado: Replicar lógica de turnos dinámicos de caja3 en mi3
+
+Se investigó cómo caja3 genera los turnos 4x4 (`caja3/api/personal/get_turnos.php`) y se creó un comando Artisan equivalente en mi3 para persistir los turnos en la tabla `turnos`.
+
+**Lógica de ciclos 4x4 (replicada de caja3):**
+
+| Ciclo | Base | Persona A (pos 0-3) | Persona B (pos 4-7) |
+|-------|------|---------------------|---------------------|
+| Cajero | 2026-02-01 | Camila (id=1) | Dafne (id=12) |
+| Planchero | 2026-02-03 | Andrés (id=3) | Andrés (id=3) |
+| Seguridad | 2026-02-11 | Ricardo (id=5) | Claudio (id=10) |
+
+Fórmula: `pos = ((días_desde_base % 8) + 8) % 8`. Si pos < 4 → persona A, si pos >= 4 → persona B.
+
+**Comando creado:** `mi3:generate-shifts --mes=YYYY-MM`
+- Genera turnos para todo el mes en la tabla `turnos`
+- Idempotente: no crea duplicados
+- Scheduler: se ejecuta automáticamente el día 25 de cada mes a las 10:00 Chile
+
+**Ejecución en producción:**
+
+```
+php artisan mi3:generate-shifts --mes=2026-04
+→ Turnos creados: 90, omitidos: 0
+```
+
+**Verificación (coincide con calendario caja3):**
+
+| Fecha | Trabajadores |
+|-------|-------------|
+| 2026-04-11 (hoy) | Andrés (planchero), Dafne (cajera), Ricardo (seguridad) |
+| 2026-04-12 | Andrés, Dafne |
+| 2026-04-14 | Camila, Andrés |
+| 2026-04-15 | Camila, Andrés |
+
+**Archivos creados/modificados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/app/Console/Commands/GenerateDynamicShiftsCommand.php` | Nuevo comando con lógica 4x4 |
+| `mi3/backend/routes/console.php` | Scheduler: día 25 de cada mes a las 10:00 |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `0a0877d` | `feat(mi3): comando generate-shifts para turnos dinámicos 4x4` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `n5y72zr95ts837q8j6beeyjl` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+112. **Persistir turnos dinámicos en BD**: caja3 calcula turnos on-the-fly en el frontend, lo cual funciona para mostrar un calendario pero impide que otros sistemas los consulten. Persistirlos en la tabla `turnos` permite que checklists, asistencia, liquidación y cualquier otro módulo los use sin duplicar lógica
+113. **Andrés trabaja todos los días**: En el ciclo 4x4 del planchero, `person_a = person_b = Andrés`. Esto hace que trabaje los 8 días del ciclo (pos 0-7 siempre resuelve a Andrés). Es un patrón válido para alguien que no tiene reemplazo
+
+### Pendiente
+
+- **GENERAR TURNOS MAYO**: ejecutar `mi3:generate-shifts --mes=2026-05` cuando se acerque mayo (o el scheduler lo hará el 25 de abril)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Configurar cron de Gmail token refresh en Coolify
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales y configurar en Coolify
+
+---
+
+## Sesión 2026-04-11ao — Descubrimiento: turnos 4x4 son dinámicos, no están en tabla `turnos`
+
+### Lo realizado: Investigación de por qué Camila no tiene turnos en mi3
+
+Se verificó por SSH que Camila (personal_id=1) solo tiene 2 turnos viejos de febrero en la tabla `turnos`. No hay turnos para abril en la BD para ningún trabajador.
+
+**Descubrimiento crítico:**
+
+Los turnos del ciclo 4x4 en caja3 se calculan dinámicamente en el frontend (JavaScript), NO se guardan en la tabla `turnos` de la BD. La tabla `turnos` solo almacena reemplazos manuales.
+
+El calendario de caja3 (`caja.laruta11.cl/personal/`) muestra los turnos correctamente (Camila, Andrés, Dafne alternando en ciclo 4x4) porque los calcula on-the-fly.
+
+**Impacto en mi3 y checklists:**
+
+El sistema de checklists v2 depende de la tabla `turnos` para:
+- `crearChecklistsDiarios()` → consulta turnos del día para crear checklists
+- `detectarAusencias()` → consulta turnos para detectar quién debía trabajar
+- `detectarCompaneroAusente()` → consulta turnos para encontrar pares cajero+planchero
+
+Como la tabla `turnos` está vacía para abril, ninguno de estos funciona.
+
+**Opciones identificadas:**
+1. Replicar la lógica del ciclo 4x4 en mi3 (calcular turnos dinámicamente)
+2. Crear un comando Artisan que genere turnos en la tabla `turnos` basándose en el ciclo 4x4
+
+**Equipo activo actual (según calendario caja3):**
+- Camila R (cajera, personal_id=1) — ciclo 4x4
+- Dafne (cajera, personal_id=12) — ciclo 4x4 (alterna con Camila)
+- Andrés (planchero, personal_id=3) — trabaja todos los días
+- Claudio (seguridad, personal_id=10) — turno separado
+
+### Errores Encontrados y Resueltos
+
+Ninguno (sesión de investigación).
+
+### Lecciones Aprendidas
+
+111. **Turnos dinámicos vs persistidos**: caja3 calcula los turnos 4x4 en el frontend sin guardarlos en BD. Esto funciona para mostrar un calendario pero impide que otros sistemas (mi3, checklists, asistencia) consulten quién trabaja cada día. Para que el sistema de checklists funcione, los turnos deben existir en la tabla `turnos`
+
+### Pendiente
+
+- **CRÍTICO: Generar turnos en tabla `turnos`** — sin esto, los checklists y la asistencia no funcionan
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Configurar cron de Gmail token refresh en Coolify
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales y configurar en Coolify
+
+---
+
+## Sesión 2026-04-11al — Fix: órdenes delivery sin km y distancia (delivery_distance_km null)
+
+### Lo realizado: Corregir que las órdenes de delivery no guardaban distancia ni duración
+
+El usuario reportó que la orden #1763 (delivery, pagada con `rl6_credit`) llegó con `delivery_distance_km: null` y `delivery_duration_min: null` a pesar de tener dirección de delivery.
+
+**Causa raíz (2 bugs en app3):**
+
+1. **Frontend (`CheckoutApp.jsx`)**: Los flujos de pago `rl6_credit`, `r11_credit`, `cash` y `transfer` NO incluían `delivery_distance_km` ni `delivery_duration_min` en el payload enviado a la API. Solo el flujo de tarjeta (TUU/Webpay) los incluía en `paymentData` (línea 506-508).
+
+2. **Backend (`create_order.php`)**: El INSERT SQL no incluía las columnas `delivery_distance_km` ni `delivery_duration_min`, así que aunque el frontend los enviara, se perdían en la BD.
+
+3. **Backend (`create_payment_direct.php`)**: El INSERT era muy básico — no guardaba `delivery_type`, `delivery_address`, `customer_notes`, `subtotal`, discounts, ni los campos de distancia.
+
+**Nota:** caja3 NO tenía este bug — su `create_order.php` ya guardaba ambos campos correctamente.
+
+**Fix aplicado (3 archivos):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `app3/src/components/CheckoutApp.jsx` | Agregado `delivery_distance_km` y `delivery_duration_min` a los 4 flujos de pago: `rl6_credit`, `r11_credit`, `cash`, `transfer` |
+| `app3/api/create_order.php` | Agregadas columnas `delivery_distance_km` y `delivery_duration_min` al INSERT SQL + sus valores en el execute |
+| `app3/api/tuu/create_payment_direct.php` | Ampliado INSERT para guardar `delivery_type`, `delivery_address`, `customer_notes`, `subtotal`, discounts, `delivery_distance_km`, `delivery_duration_min` |
+
+**Flujo de datos corregido:**
+1. `get_delivery_fee.php` calcula distancia via Google Directions API → devuelve `distance_km` y `duration_min`
+2. Frontend guarda en state `deliveryDistanceInfo = {km, min}`
+3. Al crear orden, se envía en el payload → backend lo guarda en `tuu_orders`
+4. MiniComandas muestra `📍 X km · ~Y min` en la comanda
+
+### Commits y Deploys
+
+No se hizo commit ni deploy. Cambios locales pendientes de deploy.
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `delivery_distance_km: null` en órdenes delivery de app3 | Frontend no enviaba los campos en flujos rl6_credit/r11_credit/cash/transfer | Agregado `delivery_distance_km` y `delivery_duration_min` a los 4 flujos de pago |
+| Backend `create_order.php` no guardaba distancia | INSERT SQL no incluía las columnas `delivery_distance_km` ni `delivery_duration_min` | Agregadas las 2 columnas al INSERT + valores en execute |
+| Backend `create_payment_direct.php` INSERT incompleto | Solo guardaba campos básicos (nombre, teléfono, monto), perdía delivery_type, address, distancia, etc. | Ampliado INSERT con todos los campos relevantes |
+
+### Lecciones Aprendidas
+
+111. **Cada flujo de pago construye su propio payload**: En `CheckoutApp.jsx` hay 5 flujos de pago independientes (TUU, cash, transfer, rl6_credit, r11_credit), cada uno con su propio objeto `orderData`/`paymentData`. Cuando se agrega un campo nuevo, hay que agregarlo en TODOS los flujos — no solo en el principal. Idealmente refactorizar a una función `buildOrderPayload()` compartida
+112. **caja3 y app3 tienen APIs duplicadas con diferente nivel de completitud**: `caja3/api/create_order.php` ya guardaba `delivery_distance_km` correctamente, pero `app3/api/create_order.php` no. Al implementar features en una app, verificar que la otra también lo tenga (usar sync-checker)
+113. **`create_payment_direct.php` tenía un INSERT muy básico**: La API de TUU solo guardaba nombre, teléfono, monto y delivery_fee — perdía delivery_type, address, notas, subtotal, discounts y distancia. Esto significa que TODAS las órdenes pagadas con tarjeta también perdían esos datos
+
+### Pendiente
+
+- **DEPLOY app3** — commit + deploy con el fix de delivery_distance_km (3 archivos modificados)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Configurar cron de Gmail token refresh en Coolify
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales y configurar en Coolify
+- **REFACTORIZAR**: Extraer función `buildOrderPayload()` en CheckoutApp.jsx para evitar duplicación de campos entre los 5 flujos de pago
+
+---
+
+## Sesión 2026-04-11ao — Deploy: app3 + caja3 con fixes delivery
+
+### Lo realizado: Commit, push y deploy de ambas apps
+
+Se hizo commit único con los 7 archivos modificados en sesiones al, am y an, push a GitHub, y deploy de ambas apps via Coolify API.
+
+**Commit:** `dfbb1ab` — `fix(app3+caja3): delivery_distance_km en todos los flujos + arqueo/ventas-detalle con km/min`
+
+**Archivos incluidos (7):**
+
+| App | Archivo | Fix |
+|-----|---------|-----|
+| app3 | `src/components/CheckoutApp.jsx` | delivery_distance_km en 4 flujos de pago |
+| app3 | `api/create_order.php` | delivery_distance_km en INSERT |
+| app3 | `api/tuu/create_payment_direct.php` | INSERT completo con delivery_type, address, distancia |
+| caja3 | `api/get_sales_summary.php` | Arqueo: usar `delivery_fee > 0` en vez de `delivery_type` |
+| caja3 | `api/get_ventas_turno.php` | Mismo fix para conteo deliveries |
+| caja3 | `api/get_sales_detail.php` | Agregar delivery_fee, km, min al SELECT + fix conteo |
+| caja3 | `src/components/VentasDetalle.jsx` | Badge con costo + km + min |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `dfbb1ab` | `fix(app3+caja3): delivery_distance_km en todos los flujos + arqueo/ventas-detalle con km/min` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| app3 | app.laruta11.cl | `mafd73jmwk4u8i1bjpednfxe` | ✅ finished |
+| caja3 | caja.laruta11.cl | `s85wqerxqnr79e9s1g1lphpy` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Coolify API "Unauthenticated" | Token incorrecto usado inicialmente | Usar token correcto de hooks: `3\|S52ZU...` |
+| `caja3/api` ignorado por .gitignore | El .gitignore de caja3 excluye la carpeta api | Usar `git add -f` para forzar el stage |
+
+### Lecciones Aprendidas
+
+117. **Monorepo = un solo commit para cambios relacionados**: Al estar app3 y caja3 en el mismo repo, un solo commit puede incluir cambios de ambas apps. Esto simplifica el tracking pero requiere que el mensaje del commit sea claro sobre qué app afecta cada cambio
+118. **Token de Coolify API está en los hooks de deploy**: No usar tokens inventados — el token real está hardcodeado en `.kiro/hooks/deploy-*.kiro.hook`
+
+### Pendiente
+
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Configurar cron de Gmail token refresh en Coolify
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales y configurar en Coolify
+- **REFACTORIZAR**: Extraer función `buildOrderPayload()` en CheckoutApp.jsx para evitar duplicación de campos entre los 5 flujos de pago
+
+---
+
+## Sesión 2026-04-11an — Mejora: ventas-detalle muestra km, tiempo y costo delivery
+
+### Lo realizado: Agregar info de delivery (km, duración, costo) a la vista de detalle de ventas
+
+El usuario pidió que `/ventas-detalle` muestre kilómetros, tiempo estimado y costo del delivery en cada orden.
+
+**Cambios realizados (3 archivos en caja3):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `caja3/api/get_sales_detail.php` | Agregados `delivery_fee`, `delivery_distance_km` y `delivery_duration_min` al SELECT SQL |
+| `caja3/api/get_sales_detail.php` | Fix conteo `delivery_types`: ahora usa `delivery_fee > 0` además de `delivery_type` (mismo fix que arqueo) |
+| `caja3/src/components/VentasDetalle.jsx` | Badge compacto en órdenes delivery: `🚚 $3.500 · 3.7 km · ~9 min` (reemplaza el texto plano anterior) |
+
+**Antes:** Solo mostraba `🚚 $3.500` como texto suelto.
+**Después:** Badge amarillo compacto con costo + distancia + duración: `🚚 $3.500 · 3.7 km · ~9 min`
+
+### Commits y Deploys
+
+No se hizo commit ni deploy. Cambios locales pendientes de deploy junto con los fixes de sesiones al y am.
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| API `get_sales_detail.php` no devolvía campos de delivery | SELECT no incluía `delivery_fee`, `delivery_distance_km`, `delivery_duration_min` | Agregados al SELECT |
+| Conteo delivery_types incorrecto en stats | Usaba solo `delivery_type` que podía ser `pickup` en órdenes con delivery_fee | Ahora usa `delivery_fee > 0 OR delivery_type = 'delivery'` |
+
+### Lecciones Aprendidas
+
+116. **Consistencia en detección de delivery**: Todas las APIs que cuentan o filtran deliveries deben usar la misma lógica (`delivery_fee > 0`). Se corrigió en `get_sales_summary.php`, `get_ventas_turno.php` y ahora `get_sales_detail.php` — las 3 APIs que alimentan el arqueo y detalle de ventas
+
+### Pendiente
+
+- **DEPLOY app3** — commit + deploy con fix de delivery_distance_km (3 archivos)
+- **DEPLOY caja3** — commit + deploy con fixes de arqueo + ventas-detalle (4 archivos: get_sales_summary.php, get_ventas_turno.php, get_sales_detail.php, VentasDetalle.jsx)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Configurar cron de Gmail token refresh en Coolify
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales y configurar en Coolify
+- **REFACTORIZAR**: Extraer función `buildOrderPayload()` en CheckoutApp.jsx para evitar duplicación de campos entre los 5 flujos de pago
+
+---
+
+## Sesión 2026-04-11am — Fix: arqueo calculaba mal delivery + corrección datos históricos por SSH
+
+### Lo realizado: Corregir cálculo de delivery en arqueo y arreglar datos en producción
+
+**1. Bug en arqueo de caja (`get_sales_summary.php`):**
+
+El usuario reportó que el valor de delivery en el arqueo no coincidía con lo que mostraban las comandas.
+
+**Causa raíz:** La query del arqueo filtraba `delivery_type = 'delivery' AND delivery_fee > 0` para sumar delivery fees. Pero `create_payment_direct.php` (API de pagos con tarjeta en app3) NO guardaba `delivery_type` en el INSERT, y el default de la columna es `'pickup'`. Resultado: todas las órdenes pagadas con tarjeta desde app3 quedaban como `delivery_type = 'pickup'` aunque fueran delivery → el arqueo no las contaba → el total de delivery fees era menor → el "Total Ventas" era mayor de lo real.
+
+**Fix aplicado (2 archivos en caja3):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `caja3/api/get_sales_summary.php` | Eliminado filtro `delivery_type = 'delivery'` de la query de delivery fees. Ahora solo usa `delivery_fee > 0` (más robusto) |
+| `caja3/api/get_ventas_turno.php` | Mismo fix: detectar delivery por `delivery_fee > 0` además de `delivery_type` |
+
+**2. Corrección de orden T11-1775948586-5076 por SSH:**
+
+Se calculó la distancia real usando Google Directions API desde el food truck (-18.4714, -70.2888) hasta Coihueco 550, Arica:
+- Distancia: 3.7 km
+- Duración: ~9 min
+
+Se actualizó la orden directamente en producción:
+```sql
+UPDATE tuu_orders SET delivery_distance_km = 3.7, delivery_duration_min = 9 WHERE order_number = 'T11-1775948586-5076'
+```
+
+**3. Corrección de datos históricos por SSH:**
+
+Se ejecutó UPDATE para corregir órdenes que tenían `delivery_fee > 0` pero `delivery_type = 'pickup'`:
+```sql
+UPDATE tuu_orders SET delivery_type = 'delivery' WHERE delivery_fee > 0 AND delivery_type = 'pickup'
+```
+Resultado: 4 órdenes corregidas.
+
+### Commits y Deploys
+
+No se hizo commit ni deploy. Cambios locales en caja3 pendientes de deploy. Correcciones de datos ejecutadas directamente en producción por SSH.
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Arqueo muestra delivery fees menor al real | Query filtraba `delivery_type = 'delivery'` pero órdenes TUU de app3 no guardaban ese campo (default `pickup`) | Eliminado filtro `delivery_type`, ahora usa solo `delivery_fee > 0` |
+| Orden T11-1775948586-5076 sin km/min | Bug de sesión anterior (frontend no enviaba campos) | Calculado con Google Directions API y actualizado por SSH |
+| 4 órdenes históricas con `delivery_type = 'pickup'` pero `delivery_fee > 0` | `create_payment_direct.php` no guardaba `delivery_type` | UPDATE masivo por SSH |
+
+### Lecciones Aprendidas
+
+114. **No depender de `delivery_type` para identificar deliveries**: El campo `delivery_type` puede estar mal (default `pickup`) si alguna API no lo guarda. Usar `delivery_fee > 0` es más robusto porque el delivery fee siempre se calcula y guarda correctamente
+115. **Corregir datos históricos al descubrir bugs de INSERT**: Cuando se descubre que una API no guardaba un campo, no basta con corregir el código — hay que corregir también los datos existentes en producción con un UPDATE
+
+### Pendiente
+
+- **DEPLOY app3** — commit + deploy con fix de delivery_distance_km (3 archivos: CheckoutApp.jsx, create_order.php, create_payment_direct.php)
+- **DEPLOY caja3** — commit + deploy con fix de arqueo (2 archivos: get_sales_summary.php, get_ventas_turno.php)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Configurar cron de Gmail token refresh en Coolify
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales y configurar en Coolify
+- **REFACTORIZAR**: Extraer función `buildOrderPayload()` en CheckoutApp.jsx para evitar duplicación de campos entre los 5 flujos de pago
+
+---
+
+## Sesión 2026-04-11ak — Fix: redirect a /r11 después de login Google OAuth
+
+### Lo realizado: Corregir que después de loguearse desde /r11 no redirigía de vuelta
+
+El usuario reportó que al hacer login desde `/r11`, después del OAuth de Google se quedaba en la home de app3 en vez de volver a `/r11` para completar el registro.
+
+**Causa raíz:**
+
+`app_callback.php` (Google OAuth callback) siempre redirige a `/?login=success` sin preservar la página de origen. El parámetro `redirect=/r11` se perdía en el flujo OAuth.
+
+**Fix aplicado:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `app3/src/pages/r11.astro` | Guardar `r11_redirect=/r11` en `sessionStorage` antes de redirigir al login |
+| `app3/src/components/MenuApp.jsx` | Después de `login=success`, verificar `sessionStorage.r11_redirect` y redirigir si existe (mismo patrón que ya existía para RL6) |
+
+**Flujo corregido:** `/r11` → guarda redirect en sessionStorage → `/?login=1` → Google OAuth → `/?login=success` → MenuApp detecta `r11_redirect` → redirige a `/r11?login=success` → formulario de registro visible.
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `71fca43` | `fix(app3): redirect a /r11 después de login Google OAuth` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| app3 | app.laruta11.cl | `nap3sx0c1cquvk5uqdqwqctn` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| No redirige a /r11 después de login | `app_callback.php` siempre redirige a `/?login=success`, pierde el redirect | Guardar redirect en `sessionStorage` antes del login, verificar en MenuApp después del `login=success` |
+
+### Lecciones Aprendidas
+
+110. **OAuth pierde el contexto de redirect**: Google OAuth redirige al callback fijo (`app_callback.php`) que no sabe de dónde vino el usuario. Para preservar el redirect, hay que guardarlo en `sessionStorage` antes de iniciar el flujo OAuth y verificarlo después del callback. El patrón ya existía para RL6 con `localStorage` — se replicó para R11
+
+### Pendiente
+
+- **VERIFICAR** que Camila pueda completar el registro R11 completo (login → redirect → formulario → envío)
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Configurar cron de Gmail token refresh en Coolify
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales y configurar en Coolify
+
+---
+
+## Sesión 2026-04-11aj — Fix: "No autenticado" en registro R11 de app3
+
+### Lo realizado: Corregir error de autenticación en registro de trabajadores R11
+
+El usuario reportó que al intentar registrar una nueva trabajadora (Camila R, cajera) en `app.laruta11.cl/r11/`, el formulario mostraba "No autenticado" al enviar.
+
+**Causa raíz:**
+
+El `fetch` a `/api/r11/register.php` no enviaba credenciales de autenticación:
+1. No enviaba `credentials: 'include'` → la cookie `PHPSESSID` no llegaba al backend
+2. No enviaba header `X-Session-Token` → el backend no podía validar al usuario
+3. Los usuarios de Google OAuth tienen sesión PHP pero no necesariamente `session_token` en la BD
+
+**Fix aplicado (2 archivos):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `app3/src/pages/r11.astro` | Agregar `credentials: 'include'` + header `X-Session-Token` al fetch de registro |
+| `app3/api/r11/register.php` | Agregar fallback a sesión PHP: si no hay `session_token`, verificar `$_SESSION['user']` via `session_config.php` |
+
+**Flujo de autenticación corregido:**
+1. Intenta `X-Session-Token` header (login manual)
+2. Intenta `session_token` cookie
+3. Fallback: verifica `$_SESSION['user']` (Google OAuth)
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `a47416e` | `fix(app3): corregir 'No autenticado' en registro R11` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| app3 | app.laruta11.cl | `h11w4jrun8nc0ltpwombxptu` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| "No autenticado" al enviar registro R11 | `fetch` no enviaba `credentials: 'include'` ni `X-Session-Token`. Usuarios Google OAuth no tienen token en header/cookie | Agregar `credentials: 'include'` en frontend + fallback a `$_SESSION['user']` en backend |
+
+### Lecciones Aprendidas
+
+108. **Google OAuth + PHP sessions**: Los usuarios que se logean con Google OAuth tienen sesión PHP (`$_SESSION['user']`) pero no un `session_token` en header. Los endpoints que validan con `session_token` deben tener fallback a `$_SESSION` para soportar ambos flujos de autenticación
+109. **`credentials: 'include'` es obligatorio para cookies cross-origin en fetch**: Sin este flag, el browser no envía cookies (incluyendo `PHPSESSID`) en requests fetch. Esto es especialmente crítico en móvil donde las restricciones de cookies son más estrictas
+
+### Pendiente
+
+- **VERIFICAR** que Camila pueda completar el registro R11 después del fix
+- Actualizar templates en `checklist_templates` con los nuevos 8 ítems por rol
+- Configurar cron de Gmail token refresh en Coolify
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales y configurar en Coolify
+- Ejecutar `composer install` en contenedor mi3-backend para instalar `minishlink/web-push`
+
+---
+
+## Sesión 2026-04-11ai — Migraciones en producción: checklist v2 operativo
+
+### Lo realizado: Ejecución de migraciones en producción via SSH + fix FK signed/unsigned
+
+**1. Migraciones anteriores marcadas como ejecutadas:**
+
+5 migraciones pre-existentes (000001-000005) estaban pendientes en la tabla `migrations` pero sus tablas ya existían en producción. Se insertaron manualmente en la tabla `migrations` con batch 2 via `artisan tinker`.
+
+**2. Fix FK signed/unsigned:**
+
+Al ejecutar las migraciones del checklist, la migración 000006 falló con:
+```
+Referencing column 'personal_id' and referenced column 'id' in foreign key constraint 'fk_checklists_personal' are incompatible.
+```
+
+Causa: `personal.id` y `checklists.id` son `INT` signed en producción, pero las migraciones usaban `unsignedInteger()`. Se corrigió a `integer()` en:
+- `000006_add_personal_rol_mode_to_checklists_table.php` (personal_id)
+- `000009_create_checklist_virtual_table.php` (checklist_id, personal_id)
+
+Commit fix: `3cc8537` — `fix(mi3): corregir FK signed/unsigned en migraciones checklist`
+
+**3. Redeploy backend + migraciones exitosas:**
+
+Después del fix, se redeployó el backend (`bs0ye933z4lzvk7ot8nbogkr`) y se ejecutaron las 5 migraciones:
+
+| Migración | Tiempo | Estado |
+|-----------|--------|--------|
+| 000006 add_personal_rol_mode_to_checklists_table | 12.64ms | ✅ DONE |
+| 000007 add_ai_columns_to_checklist_items_table | 148.73ms | ✅ DONE |
+| 000008 add_rol_to_checklist_templates_table | 222.72ms | ✅ DONE |
+| 000009 create_checklist_virtual_table | 522.05ms | ✅ DONE |
+| 000010 add_inasistencia_categoria | 7.80ms | ✅ DONE |
+
+**4. Verificación de BD:**
+
+| Verificación | Estado |
+|-------------|--------|
+| `checklists` columnas: personal_id, rol, checklist_mode | ✅ |
+| `checklist_items` columnas: ai_score, ai_observations, ai_analyzed_at | ✅ |
+| `checklist_templates` columna: rol (cajero/planchero asignados) | ✅ |
+| Tabla `checklist_virtual` creada | ✅ |
+| Categoría "inasistencia" (❌) en ajustes_categorias | ✅ |
+| Templates con rol: cajero (4), planchero (4), sin rol (14 legacy) | ✅ |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `3cc8537` | `fix(mi3): corregir FK signed/unsigned en migraciones checklist` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend (redeploy) | api-mi3.laruta11.cl | `bs0ye933z4lzvk7ot8nbogkr` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| 5 migraciones anteriores fallan (tablas ya existen) | Migraciones 000001-000005 nunca se registraron en tabla `migrations` pero sus tablas sí existían | INSERT manual en tabla `migrations` via `artisan tinker` |
+| FK incompatible `fk_checklists_personal` | `personal.id` es `INT` signed, migración usaba `unsignedInteger()` (unsigned) | Cambiado a `integer()` en migraciones 000006 y 000009 |
+| Container name cambió después de redeploy | Coolify genera nuevo nombre de contenedor en cada deploy | Buscar con `docker ps --format '{{.Names}}' \| grep ds24j8` |
+
+### Lecciones Aprendidas
+
+105. **Verificar tipos de columna en producción antes de crear FKs**: Las tablas creadas por caja3 (PHP puro) usan `INT` signed, pero Laravel por defecto crea `UNSIGNED INT`. Siempre verificar con `DESCRIBE tabla` antes de crear foreign keys que referencien tablas existentes
+106. **Migraciones de tablas existentes necesitan registro manual**: Cuando Laravel se conecta a una BD que ya tiene tablas creadas por otro sistema, las migraciones CREATE TABLE fallan. Hay que insertar manualmente en la tabla `migrations` para marcarlas como ejecutadas
+107. **Container names cambian en cada deploy de Coolify**: No hardcodear el nombre del contenedor. Siempre buscar con `docker ps --filter` o `grep` del UUID de la app
+
+### Pendiente
+
+- **ACTUALIZAR TEMPLATES** en `checklist_templates`: desactivar los 14 legacy sin rol y crear los nuevos 8 ítems por rol (planchero: plancha/freidora + mesón; cajera: interior puerta + exterior carro/comedor)
+- Configurar cron de Gmail token refresh en Coolify
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales y configurar en Coolify
+- Ejecutar `composer install` en contenedor mi3-backend para instalar `minishlink/web-push`
+
+---
+| mi3-frontend | `c4awr8cnfidrzl4ta52yw7zh` | ✅ finished (~2 min build) |
+
+**3. Migraciones pendientes:**
+
+La API de Coolify `/execute` no está disponible en esta versión. Las migraciones deben ejecutarse manualmente:
+
+```bash
+ssh root@76.13.126.63
+docker exec -it $(docker ps --filter "name=mi3-backend" -q) php artisan migrate --force
+```
+
+Esto ejecutará las 5 migraciones:
+- ALTER TABLE `checklists` (+personal_id, rol, checklist_mode)
+- ALTER TABLE `checklist_items` (+ai_score, ai_observations, ai_analyzed_at)
+- ALTER TABLE `checklist_templates` (+rol, actualizar templates existentes)
+- CREATE TABLE `checklist_virtual`
+- INSERT categoría "inasistencia" en `ajustes_categorias`
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| (push anterior) | `3238706` | `feat(mi3): checklist v2 + asistencia + análisis IA con Nova Pro` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `ihg0druml4a85bixcsrhusbn` | ✅ finished |
+| mi3-frontend | mi.laruta11.cl | `c4awr8cnfidrzl4ta52yw7zh` | ✅ finished |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Coolify API `/execute` retorna 404 | Endpoint no disponible en esta versión de Coolify | Ejecutar migraciones manualmente via SSH/Docker |
+
+### Lecciones Aprendidas
+
+104. **Coolify API no tiene endpoint de ejecución de comandos**: La API de Coolify permite restart/deploy pero no ejecutar comandos dentro del contenedor. Para migraciones y comandos artisan, hay que usar SSH + docker exec directamente
+
+### Pendiente
+
+- **EJECUTAR MIGRACIONES** via SSH: `docker exec -it $(docker ps --filter "name=mi3-backend" -q) php artisan migrate --force`
+- **ACTUALIZAR TEMPLATES** en `checklist_templates` con los nuevos ítems por rol (8 fotos)
+- Configurar cron de Gmail token refresh en Coolify
+- Refactorizar adelanto de sueldo (spec separado)
+- Generar VAPID keys reales y configurar en Coolify
+- Ejecutar `composer install` en contenedor mi3-backend para instalar `minishlink/web-push`
 
 ---
 
