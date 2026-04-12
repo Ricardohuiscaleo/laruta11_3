@@ -309,7 +309,7 @@ function ChecklistCard({
 
   const handlePhotoUploaded = (itemId: number, photoUrl: string, aiScore?: number | null, aiObs?: string | null) => {
     checklist.items = checklist.items.map(i =>
-      i.id === itemId ? { ...i, photo_url: photoUrl, is_completed: true, completed_at: new Date().toISOString(), ai_score: aiScore, ai_observations: aiObs } : i
+      i.id === itemId ? { ...i, photo_url: photoUrl, is_completed: true, completed_at: new Date().toISOString(), ai_score: aiScore ?? null, ai_observations: aiObs ?? null } : i
     );
     checklist.completed_items = checklist.items.filter(i => i.is_completed).length;
     checklist.completion_percentage = Math.round((checklist.completed_items / checklist.total_items) * 100);
