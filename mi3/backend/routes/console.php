@@ -1,44 +1,48 @@
 <?php
 
 use Illuminate\Support\Facades\Schedule;
+use App\Models\CronExecution;
 
 /*
 |--------------------------------------------------------------------------
 | Console Routes — Scheduler
 |--------------------------------------------------------------------------
+| Cada comando se registra automáticamente en cron_executions via
+| before/after callbacks.
 */
 
-// Descuento automático de crédito R11 — día 1 de cada mes a las 6:00 AM
-Schedule::command('mi3:r11-auto-deduct')
-    ->monthlyOn(1, '06:00')
-    ->timezone('America/Santiago');
+$commands = [
+    ['cmd' => 'mi3:r11-auto-deduct',         'name' => 'Descuento R11',           'schedule' => fn($s) => $s->monthlyOn(1, '06:00')],
+    ['cmd' => 'mi3:loan-auto-deduct',         'name' => 'Descuento Adelantos',     'schedule' => fn($s) => $s->monthlyOn(1, '06:30')],
+    ['cmd' => 'mi3:r11-reminder',             'name' => 'Recordatorio R11',        'schedule' => fn($s) => $s->monthlyOn(28, '10:00')],
+    ['cmd' => 'mi3:create-daily-checklists',  'name' => 'Checklists Diarios',      'schedule' => fn($s) => $s->dailyAt('14:00')],
+    ['cmd' => 'mi3:check-companion-absence',  'name' => 'Detectar Ausencia',       'schedule' => fn($s) => $s->dailyAt('19:00')],
+    ['cmd' => 'mi3:detect-absences',          'name' => 'Descuento Inasistencias', 'schedule' => fn($s) => $s->dailyAt('02:00')],
+    ['cmd' => 'mi3:generate-shifts',          'name' => 'Generar Turnos',          'schedule' => fn($s) => $s->monthlyOn(25, '10:00')],
+];
 
-// Descuento automático de adelantos de sueldo — día 1 de cada mes a las 06:30 AM
-Schedule::command('mi3:loan-auto-deduct')
-    ->monthlyOn(1, '06:30')
-    ->timezone('America/Santiago');
+foreach ($commands as $c) {
+    $event = Schedule::command($c['cmd'])->timezone('America/Santiago');
+    ($c['schedule'])($event);
 
-// Recordatorio de deuda R11 — día 28 de cada mes a las 10:00 AM
-Schedule::command('mi3:r11-reminder')
-    ->monthlyOn(28, '10:00')
-    ->timezone('America/Santiago');
-
-// Crear checklists diarios — todos los días a las 14:00 Chile
-Schedule::command('mi3:create-daily-checklists')
-    ->dailyAt('14:00')
-    ->timezone('America/Santiago');
-
-// Detectar compañero ausente y habilitar checklist virtual — todos los días a las 19:00 Chile
-Schedule::command('mi3:check-companion-absence')
-    ->dailyAt('19:00')
-    ->timezone('America/Santiago');
-
-// Detectar inasistencias y aplicar descuentos — todos los días a las 02:00 Chile
-Schedule::command('mi3:detect-absences')
-    ->dailyAt('02:00')
-    ->timezone('America/Santiago');
-
-// Generar turnos dinámicos 4x4 — día 25 de cada mes a las 10:00 (genera mes siguiente)
-Schedule::command('mi3:generate-shifts')
-    ->monthlyOn(25, '10:00')
-    ->timezone('America/Santiago');
+    $startTime = null;
+    $event->before(function () use (&$startTime) {
+        $startTime = now();
+    });
+    $event->after(function () use ($c, &$startTime) {
+        try {
+            $duration = $startTime ? now()->diffInMilliseconds($startTime) / 1000 : null;
+            CronExecution::log($c['cmd'], $c['name'], 'success', null, $duration, $startTime);
+        } catch (\Throwable $e) {
+            // Don't let logging failures break the scheduler
+        }
+    });
+    $event->onFailure(function () use ($c, &$startTime) {
+        try {
+            $duration = $startTime ? now()->diffInMilliseconds($startTime) / 1000 : null;
+            CronExecution::log($c['cmd'], $c['name'], 'failed', null, $duration, $startTime);
+        } catch (\Throwable $e) {
+            // Don't let logging failures break the scheduler
+        }
+    });
+}

@@ -3,97 +3,48 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CronExecution;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class CronjobController extends Controller
 {
-    private string $baseUrl;
-    private string $token;
-
-    private array $apps = [
-        'mi3-backend' => 'ds24j8jlaf9ov4flk1nq4jek',
-        'app3'        => 'egck4wwcg0ccc4osck4sw8ow',
-        'caja3'       => 'xockcgsc8k000o8osw8o88ko',
-    ];
-
-    public function __construct()
-    {
-        $this->baseUrl = rtrim(env('COOLIFY_API_URL', 'http://host.docker.internal:8000'), '/');
-        $this->token   = env('COOLIFY_API_TOKEN', '');
-    }
-
     public function index(): JsonResponse
     {
-        // Fallback: try multiple URLs if token is set
-        if (empty($this->token)) {
-            // Try to read from getenv directly
-            $this->token = getenv('COOLIFY_API_TOKEN') ?: '';
-        }
-        if (empty($this->token)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'COOLIFY_API_TOKEN not configured',
-                'debug_env' => array_filter(array_keys($_ENV), fn($k) => str_contains($k, 'COOLIFY')),
-            ], 500);
-        }
+        // Aggregate stats per command
+        $stats = DB::table('cron_executions')
+            ->select(
+                'command',
+                'name',
+                DB::raw('COUNT(*) as total_runs'),
+                DB::raw("SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as successes"),
+                DB::raw("SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failures"),
+                DB::raw('ROUND(AVG(duration_seconds), 2) as avg_duration'),
+                DB::raw('MAX(finished_at) as last_run'),
+            )
+            ->groupBy('command', 'name')
+            ->orderBy('last_run', 'desc')
+            ->get()
+            ->map(function ($row) {
+                $last = CronExecution::where('command', $row->command)
+                    ->orderByDesc('id')->first();
 
-        // Try multiple base URLs (container networking varies)
-        $baseUrls = array_unique(array_filter([
-            $this->baseUrl,
-            'http://host.docker.internal:8000',
-            'http://172.17.0.1:8000',        // Docker bridge default gateway
-            'http://coolify:8000',            // Coolify container name on coolify network
-            'http://76.13.126.63:8000',       // Public IP fallback
-        ]));
+                return [
+                    'command'       => $row->command,
+                    'name'          => $row->name,
+                    'total_runs'    => (int) $row->total_runs,
+                    'successes'     => (int) $row->successes,
+                    'failures'      => (int) $row->failures,
+                    'success_rate'  => $row->total_runs > 0
+                        ? round(($row->successes / $row->total_runs) * 100, 1)
+                        : 0,
+                    'avg_duration'  => (float) $row->avg_duration,
+                    'last_run'      => $row->last_run,
+                    'last_status'   => $last?->status,
+                    'last_output'   => $last?->output,
+                ];
+            });
 
-        $tasks = [];
-
-        foreach ($this->apps as $appName => $uuid) {
-            foreach ($baseUrls as $baseUrl) {
-                try {
-                    $resp = Http::withToken($this->token)
-                        ->accept('application/json')
-                        ->timeout(3)
-                        ->get("{$baseUrl}/api/v1/applications/{$uuid}/scheduled-tasks");
-
-                    if (!$resp->successful()) continue;
-
-                    // This URL works — use it for executions too
-                    foreach ($resp->json() as $task) {
-                        $taskUuid = $task['uuid'];
-
-                        $execResp = Http::withToken($this->token)
-                            ->accept('application/json')
-                            ->timeout(3)
-                            ->get("{$baseUrl}/api/v1/applications/{$uuid}/scheduled-tasks/{$taskUuid}/executions");
-
-                        $executions = $execResp->successful() ? $execResp->json() : [];
-                        $total = count($executions);
-                        $failures = collect($executions)->where('status', '!=', 'success')->count();
-                        $lastExec = $executions[0] ?? null;
-
-                        $tasks[] = [
-                            'app'            => $appName,
-                            'name'           => $task['name'],
-                            'frequency'      => $task['frequency'],
-                            'enabled'        => $task['enabled'],
-                            'last_status'    => $lastExec['status'] ?? null,
-                            'last_message'   => $lastExec['message'] ?? null,
-                            'last_run'       => $lastExec['finished_at'] ?? null,
-                            'last_duration'  => $lastExec['duration'] ?? null,
-                            'total_runs'     => $total,
-                            'failures'       => $failures,
-                        ];
-                    }
-                    break; // This URL worked, don't try others for this app
-                } catch (\Exception $e) {
-                    continue; // Try next URL
-                }
-            }
-        }
-
-        return response()->json(['success' => true, 'data' => $tasks]);
+        return response()->json(['success' => true, 'data' => $stats]);
     }
 }
