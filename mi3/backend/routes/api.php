@@ -109,5 +109,8 @@ Route::prefix('v1')->group(function () {
         Route::get('checklists/attendance', [\App\Http\Controllers\Admin\ChecklistController::class, 'attendance']);
         Route::get('checklists/ideas', [\App\Http\Controllers\Admin\ChecklistController::class, 'ideas']);
         Route::get('checklists/{id}', [\App\Http\Controllers\Admin\ChecklistController::class, 'show']);
+
+        // Cronjobs status (Coolify scheduled tasks)
+        Route::get('cronjobs', [\App\Http\Controllers\Admin\CronjobController::class, 'index']);
     });
 });

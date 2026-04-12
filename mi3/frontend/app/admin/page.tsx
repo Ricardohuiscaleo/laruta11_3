@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP } from '@/lib/utils';
-import { Loader2, Receipt, ArrowLeftRight, AlertTriangle } from 'lucide-react';
+import { Loader2, Receipt, ArrowLeftRight, AlertTriangle, Clock, CheckCircle2, XCircle, Timer } from 'lucide-react';
 
 interface AdminDashData {
   payroll_total: number;
@@ -11,8 +11,42 @@ interface AdminDashData {
   blocked_credits: number;
 }
 
+interface CronjobTask {
+  app: string;
+  name: string;
+  frequency: string;
+  enabled: boolean;
+  last_status: string | null;
+  last_message: string | null;
+  last_run: string | null;
+  last_duration: string | null;
+  total_runs: number;
+  failures: number;
+}
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'ahora';
+  if (mins < 60) return `hace ${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `hace ${hrs}h`;
+  return `hace ${Math.floor(hrs / 24)}d`;
+}
+
+function freqLabel(freq: string): string {
+  if (freq === '* * * * *') return 'cada 1 min';
+  if (freq === '*/30 * * * *') return 'cada 30 min';
+  const m = freq.match(/^(\d+)\s+(\d+)\s+\*\s+\*\s+\*$/);
+  if (m) return `${m[2].padStart(2,'0')}:${m[1].padStart(2,'0')} diario`;
+  const m2 = freq.match(/^(\d+)\s+(\d+)\s+(\d+)\s+\*\s+\*$/);
+  if (m2) return `día ${m2[3]}, ${m2[2].padStart(2,'0')}:${m2[1].padStart(2,'0')}`;
+  return freq;
+}
+
 export default function AdminPage() {
   const [data, setData] = useState<AdminDashData | null>(null);
+  const [cronjobs, setCronjobs] = useState<CronjobTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -24,7 +58,8 @@ export default function AdminPage() {
       apiFetch<{ success: boolean; data: { resumen: { gran_total: number }[] } }>(`/admin/payroll?mes=${mes}`),
       apiFetch<{ success: boolean; data: { id: number }[] }>('/admin/shift-swaps'),
       apiFetch<{ success: boolean; data: { bloqueado: boolean }[] }>('/admin/credits'),
-    ]).then(([payrollRes, swapsRes, creditsRes]) => {
+      apiFetch<{ success: boolean; data: CronjobTask[] }>('/admin/cronjobs'),
+    ]).then(([payrollRes, swapsRes, creditsRes, cronjobsRes]) => {
       let payroll_total = 0;
       let pending_swaps = 0;
       let blocked_credits = 0;
@@ -41,6 +76,9 @@ export default function AdminPage() {
       if (creditsRes.status === 'fulfilled') {
         const credits = creditsRes.value.data;
         blocked_credits = Array.isArray(credits) ? credits.filter((c: any) => c.bloqueado).length : 0;
+      }
+      if (cronjobsRes.status === 'fulfilled' && Array.isArray(cronjobsRes.value.data)) {
+        setCronjobs(cronjobsRes.value.data);
       }
 
       setData({ payroll_total, pending_swaps, blocked_credits });
@@ -69,6 +107,52 @@ export default function AdminPage() {
           <p className="mt-2 text-2xl font-bold">{data?.blocked_credits || 0}</p>
         </div>
       </div>
+
+      {/* Cronjobs Status */}
+      {cronjobs.length > 0 && (
+        <div className="rounded-xl border bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="h-5 w-5 text-amber-700" />
+            <span className="font-semibold text-sm text-amber-700">Cronjobs</span>
+          </div>
+          <div className="space-y-3">
+            {cronjobs.map((job, i) => (
+              <div key={i} className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  {job.last_status === 'success' ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                  ) : job.last_status === 'failed' ? (
+                    <XCircle className="h-4 w-4 text-red-500 shrink-0" />
+                  ) : (
+                    <Timer className="h-4 w-4 text-gray-400 shrink-0" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{job.name}</p>
+                    <p className="text-xs text-gray-500">{job.app} · {freqLabel(job.frequency)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 shrink-0 text-right">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{job.total_runs}</p>
+                    <p className="text-xs text-gray-500">ejecuciones</p>
+                  </div>
+                  {job.failures > 0 && (
+                    <div>
+                      <p className="text-sm font-semibold text-red-600">{job.failures}</p>
+                      <p className="text-xs text-red-500">fallos</p>
+                    </div>
+                  )}
+                  {job.last_run && (
+                    <div>
+                      <p className="text-xs text-gray-500">{timeAgo(job.last_run)}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
