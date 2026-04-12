@@ -31,7 +31,7 @@ class NotificationService
             'referencia_tipo' => $referenciaTipo,
         ]);
 
-        // Also send push notification
+        // Send push notification (best-effort)
         try {
             $this->pushNotificationService->enviar(
                 $personalId,
@@ -39,7 +39,16 @@ class NotificationService
                 $mensaje
             );
         } catch (\Throwable $e) {
-            // Push is best-effort — don't fail the in-app notification
+            // Push is best-effort
+        }
+
+        // Broadcast via Reverb WebSocket (best-effort)
+        try {
+            event(new \App\Events\NotificacionNueva(
+                $personalId, $titulo, $mensaje, $tipo
+            ));
+        } catch (\Throwable $e) {
+            // Broadcast is best-effort
         }
 
         return $notificacion;
