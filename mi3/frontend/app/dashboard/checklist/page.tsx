@@ -189,10 +189,11 @@ function ChecklistItemRow({
 }) {
   const [completing, setCompleting] = useState(false);
   const needsPhoto = item.requires_photo && !item.photo_url;
-  const canComplete = !item.is_completed && !needsPhoto;
+  const canToggle = !needsPhoto || item.is_completed; // Can unmark even if photo needed
 
-  const handleComplete = async () => {
-    if (!canComplete) return;
+  const handleToggle = async () => {
+    if (completing) return;
+    if (!item.is_completed && needsPhoto) return; // Can't mark without photo
     setCompleting(true);
     try {
       await apiFetch(`/worker/checklists/${checklistId}/items/${item.id}/complete`, {
@@ -213,14 +214,14 @@ function ChecklistItemRow({
     )}>
       <div className="flex items-start gap-3">
         <button
-          onClick={handleComplete}
-          disabled={!canComplete || completing}
-          title={needsPhoto ? 'Sube una foto primero' : item.is_completed ? 'Completado' : 'Marcar como completado'}
+          onClick={handleToggle}
+          disabled={completing || (!item.is_completed && needsPhoto)}
+          title={needsPhoto && !item.is_completed ? 'Sube una foto primero' : item.is_completed ? 'Desmarcar' : 'Marcar'}
           className={cn(
             'mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors',
             item.is_completed
-              ? 'border-green-500 bg-green-500 text-white'
-              : canComplete
+              ? 'border-green-500 bg-green-500 text-white hover:bg-green-400'
+              : !needsPhoto
                 ? 'border-amber-400 hover:border-amber-500 hover:bg-amber-50'
                 : 'border-gray-300 cursor-not-allowed opacity-50'
           )}
@@ -269,10 +270,21 @@ function ChecklistCard({
   const isCompleted = checklist.status === 'completed';
 
   const handleItemCompleted = (itemId: number) => {
+    // Optimistic UI: update local state immediately
+    checklist.items = checklist.items.map(i => 
+      i.id === itemId ? { ...i, is_completed: !i.is_completed, completed_at: i.is_completed ? null : new Date().toISOString() } : i
+    );
+    checklist.completed_items = checklist.items.filter(i => i.is_completed).length;
+    checklist.completion_percentage = Math.round((checklist.completed_items / checklist.total_items) * 100);
+    if (checklist.completed_items === checklist.total_items) checklist.status = 'completed';
+    else checklist.status = 'active';
     onUpdate();
   };
 
   const handlePhotoUploaded = (itemId: number, photoUrl: string) => {
+    checklist.items = checklist.items.map(i =>
+      i.id === itemId ? { ...i, photo_url: photoUrl } : i
+    );
     onUpdate();
   };
 
@@ -506,7 +518,7 @@ export default function ChecklistPage() {
             <ChecklistCard
               key={checklist.id}
               checklist={checklist}
-              onUpdate={fetchChecklists}
+              onUpdate={() => setChecklists([...checklists])}
             />
           ))}
 

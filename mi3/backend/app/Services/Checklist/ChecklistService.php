@@ -147,8 +147,25 @@ class ChecklistService
             throw new \InvalidArgumentException('Este ítem requiere una foto antes de ser completado');
         }
 
-        // Already completed — return current state
+        // Toggle: if already completed, unmark it
         if ($item->is_completed) {
+            $item->update([
+                'is_completed' => false,
+                'completed_at' => null,
+            ]);
+
+            // Update checklist progress
+            $completedCount = $checklist->items()->where('is_completed', true)->count();
+            $totalCount = $checklist->total_items;
+            $percentage = $totalCount > 0 ? round(($completedCount / $totalCount) * 100, 2) : 0;
+
+            $checklist->update([
+                'completed_items' => $completedCount,
+                'completion_percentage' => $percentage,
+                'status' => $completedCount === 0 ? 'pending' : 'active',
+            ]);
+
+            $checklist->refresh();
             return ['item' => $item, 'checklist' => $checklist];
         }
 
