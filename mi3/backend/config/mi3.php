@@ -11,18 +11,18 @@ return [
     'shift_cycles' => [
         'seguridad' => [
             'base_date' => '2026-02-11',
-            'person_a' => 'Ricardo',
-            'person_b' => 'Claudio',
+            'person_a_id' => 5,   // Ricardo
+            'person_b_id' => 10,  // Claudio
         ],
         'cajeros' => [
             'base_date' => '2026-02-02',
-            'person_a' => 'Camila',
-            'person_b' => 'Dafne',
+            'person_a_id' => 1,   // Camila
+            'person_b_id' => 12,  // Dafne
         ],
         'plancheros' => [
             'base_date' => '2026-02-03',
-            'person_a' => 'Andres',
-            'person_b' => 'Andres',
+            'person_a_id' => 3,   // Andres Aguilera
+            'person_b_id' => 3,   // Andres Aguilera (trabaja todos los días)
         ],
     ],
 

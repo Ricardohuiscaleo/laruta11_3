@@ -122,17 +122,16 @@ class ShiftService
         $cycles = config('mi3.shift_cycles');
         $shifts = [];
 
-        // Build personal name → ID map (and ID → name for display)
-        $names = [];
+        // Build ID → name map for display
+        $ids = [];
         foreach ($cycles as $cycle) {
-            $names[] = $cycle['person_a'];
-            $names[] = $cycle['person_b'];
+            $ids[] = $cycle['person_a_id'];
+            $ids[] = $cycle['person_b_id'];
         }
-        $personalData = Personal::whereIn('nombre', array_unique($names))
+        $personalNames = Personal::whereIn('id', array_unique($ids))
             ->where('activo', 1)
-            ->get(['id', 'nombre']);
-        $personalMap = $personalData->pluck('id', 'nombre')->toArray();
-        $personalNames = $personalData->pluck('nombre', 'id')->toArray();
+            ->pluck('nombre', 'id')
+            ->toArray();
 
         // Track existing seguridad shifts to avoid duplicates (same as get_turnos.php)
         $turnosSegExistentes = [];
@@ -156,10 +155,10 @@ class ShiftService
 
         foreach ($cycles as $cycleName => $cycle) {
             $baseDate = Carbon::parse($cycle['base_date']);
-            $personAId = $personalMap[$cycle['person_a']] ?? null;
-            $personBId = $personalMap[$cycle['person_b']] ?? null;
+            $personAId = $cycle['person_a_id'];
+            $personBId = $cycle['person_b_id'];
 
-            if (!$personAId || !$personBId) {
+            if (!isset($personalNames[$personAId]) || !isset($personalNames[$personBId])) {
                 continue;
             }
 

@@ -18,9 +18,9 @@ class GenerateDynamicShiftsCommand extends Command
      * If person_a == person_b, that person works every day.
      */
     private const CYCLES = [
-        ['base' => '2026-02-02', 'a_name' => 'Camila', 'b_name' => 'Dafne', 'tipo' => 'normal'],
-        ['base' => '2026-02-03', 'a_name' => 'Andres', 'b_name' => 'Andres', 'tipo' => 'normal'],
-        ['base' => '2026-02-11', 'a_name' => 'Ricardo', 'b_name' => 'Claudio', 'tipo' => 'seguridad'],
+        ['base' => '2026-02-02', 'a_id' => 1, 'b_id' => 12, 'tipo' => 'normal'],      // Cajero: Camila / Dafne
+        ['base' => '2026-02-03', 'a_id' => 3, 'b_id' => 3, 'tipo' => 'normal'],        // Planchero: Andres / Andres
+        ['base' => '2026-02-11', 'a_id' => 5, 'b_id' => 10, 'tipo' => 'seguridad'],    // Seguridad: Ricardo / Claudio
     ];
 
     public function handle(): int
@@ -35,11 +35,15 @@ class GenerateDynamicShiftsCommand extends Command
         $skipped = 0;
 
         foreach (self::CYCLES as $cycle) {
-            $idA = Personal::where('nombre', 'like', $cycle['a_name'] . '%')->where('activo', 1)->value('id');
-            $idB = Personal::where('nombre', 'like', $cycle['b_name'] . '%')->where('activo', 1)->value('id');
+            $idA = $cycle['a_id'];
+            $idB = $cycle['b_id'];
 
-            if (!$idA || !$idB) {
-                $this->warn("  Ciclo {$cycle['a_name']}/{$cycle['b_name']}: personal no encontrado, omitiendo.");
+            // Verify both exist and are active
+            $nameA = Personal::where('id', $idA)->where('activo', 1)->value('nombre');
+            $nameB = Personal::where('id', $idB)->where('activo', 1)->value('nombre');
+
+            if (!$nameA || !$nameB) {
+                $this->warn("  Ciclo id={$idA}/id={$idB}: personal no encontrado o inactivo, omitiendo.");
                 continue;
             }
 
@@ -52,7 +56,6 @@ class GenerateDynamicShiftsCommand extends Command
                 $personalId = ($pos < 4) ? $idA : $idB;
                 $fecha = $current->format('Y-m-d');
 
-                // Skip if shift already exists (manual or previously generated)
                 $exists = Turno::where('personal_id', $personalId)
                     ->where('fecha', $fecha)
                     ->exists();
@@ -71,7 +74,7 @@ class GenerateDynamicShiftsCommand extends Command
                 $current->addDay();
             }
 
-            $this->line("  {$cycle['a_name']}/{$cycle['b_name']} ({$cycle['tipo']}): procesado");
+            $this->line("  {$nameA}/{$nameB} ({$cycle['tipo']}): procesado");
         }
 
         $this->info("Turnos creados: {$created}, omitidos (ya existían): {$skipped}");
