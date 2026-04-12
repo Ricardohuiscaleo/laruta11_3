@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home, Users, Calendar, Receipt, SlidersHorizontal,
-  CreditCard, ArrowLeftRight, LogOut,
+  CreditCard, ArrowLeftRight, LogOut, Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/auth';
@@ -18,6 +18,7 @@ const links = [
   { href: '/admin/ajustes', label: 'Ajustes', icon: SlidersHorizontal },
   { href: '/admin/creditos', label: 'Créditos R11', icon: CreditCard },
   { href: '/admin/cambios', label: 'Cambios', icon: ArrowLeftRight },
+  { href: '/admin/cronjobs', label: 'Cronjobs', icon: Clock },
 ];
 
 export default function AdminSidebar() {

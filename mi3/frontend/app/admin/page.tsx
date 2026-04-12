@@ -3,162 +3,96 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP } from '@/lib/utils';
-import { Loader2, Receipt, ArrowLeftRight, AlertTriangle, Clock, CheckCircle2, XCircle, Timer } from 'lucide-react';
+import {
+  Loader2, TrendingUp, ShoppingCart, Users, Calculator,
+  ShoppingBag, ArrowLeftRight, CreditCard, ClipboardCheck,
+} from 'lucide-react';
 
-interface AdminDashData {
-  payroll_total: number;
-  pending_swaps: number;
-  blocked_credits: number;
+interface DashboardData {
+  ventas_mes: number;
+  compras_mes: number;
+  nomina_mes: number;
+  resultado_bruto: number;
 }
 
-interface CronjobStat {
-  command: string;
-  name: string;
-  total_runs: number;
-  successes: number;
-  failures: number;
-  success_rate: number;
-  avg_duration: number;
-  last_run: string | null;
-  last_status: string | null;
-  last_output: string | null;
-}
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'ahora';
-  if (mins < 60) return `hace ${mins}m`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `hace ${hrs}h`;
-  return `hace ${Math.floor(hrs / 24)}d`;
-}
+const apps = [
+  { label: 'Compras', icon: ShoppingBag, color: 'bg-blue-500', href: 'https://caja.laruta11.cl/compras/' },
+  { label: 'Checklists', icon: ClipboardCheck, color: 'bg-amber-500', href: '/admin/checklists' },
+  { label: 'Cambios', icon: ArrowLeftRight, color: 'bg-purple-500', href: '/admin/cambios' },
+  { label: 'Créditos', icon: CreditCard, color: 'bg-green-600', href: '/admin/creditos' },
+];
 
 export default function AdminPage() {
-  const [data, setData] = useState<AdminDashData | null>(null);
-  const [cronjobs, setCronjobs] = useState<CronjobStat[]>([]);
-  const [cronjobsLoading, setCronjobsLoading] = useState(true);
+  const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
-    const now = new Date();
-    const mes = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
-    Promise.allSettled([
-      apiFetch<{ success: boolean; data: any }>(`/admin/payroll?mes=${mes}`),
-      apiFetch<{ success: boolean; data: any[] }>('/admin/shift-swaps'),
-      apiFetch<{ success: boolean; data: any[] }>('/admin/credits'),
-    ]).then(([payrollRes, swapsRes, creditsRes]) => {
-      let payroll_total = 0, pending_swaps = 0, blocked_credits = 0;
-      if (payrollRes.status === 'fulfilled' && payrollRes.value.data) {
-        const workers = payrollRes.value.data as any;
-        if (workers.resumen) payroll_total = workers.resumen.reduce((s: number, w: any) => s + (w.gran_total || 0), 0);
-        else if (Array.isArray(workers)) payroll_total = workers.reduce((s: number, w: any) => s + (w.gran_total || 0), 0);
-      }
-      if (swapsRes.status === 'fulfilled') {
-        const swaps = swapsRes.value.data;
-        pending_swaps = Array.isArray(swaps) ? swaps.filter((s: any) => s.estado === 'pendiente').length : 0;
-      }
-      if (creditsRes.status === 'fulfilled') {
-        const credits = creditsRes.value.data;
-        blocked_credits = Array.isArray(credits) ? credits.filter((c: any) => c.bloqueado).length : 0;
-      }
-      setData({ payroll_total, pending_swaps, blocked_credits });
-      setLoading(false);
-    }).catch(() => { setError('Error cargando datos'); setLoading(false); });
-
-    // Cronjobs from mi3-backend MySQL
-    apiFetch<{ success: boolean; data: CronjobStat[] }>('/admin/cronjobs')
-      .then(res => { if (res.data) setCronjobs(res.data); })
+    apiFetch<{ success: boolean; data: DashboardData }>('/admin/dashboard')
+      .then(res => { if (res.data) setData(res.data); })
       .catch(() => {})
-      .finally(() => setCronjobsLoading(false));
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-amber-600" /></div>;
-  if (error) return <div className="rounded-lg bg-red-50 p-4 text-red-600">{error}</div>;
+
+  const kpis = [
+    { label: 'Ventas Mes', value: data?.ventas_mes ?? 0, icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50' },
+    { label: 'Compras Mes', value: data?.compras_mes ?? 0, icon: ShoppingCart, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Nómina', value: data?.nomina_mes ?? 0, icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'Resultado Bruto', value: data?.resultado_bruto ?? 0, icon: Calculator,
+      color: (data?.resultado_bruto ?? 0) >= 0 ? 'text-green-600' : 'text-red-600',
+      bg: (data?.resultado_bruto ?? 0) >= 0 ? 'bg-green-50' : 'bg-red-50' },
+  ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <h1 className="text-2xl font-bold text-gray-900">Panel Admin</h1>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-amber-700"><Receipt className="h-5 w-5" /><span className="font-semibold text-sm">Nómina del Mes</span></div>
-          <p className="mt-2 text-2xl font-bold">{formatCLP(data?.payroll_total || 0)}</p>
-        </div>
-        <div className="rounded-xl border bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-amber-700"><ArrowLeftRight className="h-5 w-5" /><span className="font-semibold text-sm">Cambios Pendientes</span></div>
-          <p className="mt-2 text-2xl font-bold">{data?.pending_swaps || 0}</p>
-        </div>
-        <div className="rounded-xl border bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-red-600"><AlertTriangle className="h-5 w-5" /><span className="font-semibold text-sm">Créditos Bloqueados</span></div>
-          <p className="mt-2 text-2xl font-bold">{data?.blocked_credits || 0}</p>
-        </div>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        {kpis.map((kpi, i) => {
+          const Icon = kpi.icon;
+          return (
+            <div key={i} className={`rounded-2xl ${kpi.bg} p-4 sm:p-5`}>
+              <div className="flex items-center gap-2 mb-2">
+                <Icon className={`h-4 w-4 ${kpi.color}`} />
+                <span className="text-xs font-medium text-gray-600">{kpi.label}</span>
+              </div>
+              <p className={`text-lg sm:text-2xl font-bold ${kpi.color}`}>
+                {formatCLP(Math.abs(kpi.value))}
+              </p>
+              {kpi.label === 'Resultado Bruto' && (
+                <p className="text-xs text-gray-500 mt-1">Ventas − Compras − Nómina</p>
+              )}
+            </div>
+          );
+        })}
       </div>
 
-      {/* Cronjobs Status */}
-      <div className="rounded-xl border bg-white p-5 shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <Clock className="h-5 w-5 text-amber-700" />
-          <span className="font-semibold text-sm text-amber-700">Cronjobs</span>
+      {/* Apps internas */}
+      <div>
+        <h2 className="text-sm font-semibold text-gray-500 mb-3">Aplicaciones</h2>
+        <div className="grid grid-cols-4 gap-3">
+          {apps.map((app, i) => {
+            const Icon = app.icon;
+            const isExternal = app.href.startsWith('http');
+            const Tag = isExternal ? 'a' : 'a';
+            return (
+              <a
+                key={i}
+                href={app.href}
+                target={isExternal ? '_blank' : undefined}
+                rel={isExternal ? 'noopener noreferrer' : undefined}
+                className="flex flex-col items-center gap-2 py-3 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                <div className={`${app.color} h-12 w-12 rounded-2xl flex items-center justify-center shadow-sm`}>
+                  <Icon className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-xs font-medium text-gray-700">{app.label}</span>
+              </a>
+            );
+          })}
         </div>
-        {cronjobsLoading ? (
-          <div className="flex items-center gap-2 text-gray-400 text-sm py-4"><Loader2 className="h-4 w-4 animate-spin" /> Cargando...</div>
-        ) : cronjobs.length === 0 ? (
-          <p className="text-sm text-gray-400 py-2">Sin datos de cronjobs aún</p>
-        ) : (
-          <div className="space-y-3">
-            {cronjobs.map((job, i) => (
-              <div key={i} className="rounded-lg bg-gray-50 px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
-                    {job.last_status === 'success' ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    ) : job.last_status === 'failed' ? (
-                      <XCircle className="h-4 w-4 text-red-500 shrink-0" />
-                    ) : (
-                      <Timer className="h-4 w-4 text-gray-400 shrink-0" />
-                    )}
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{job.name}</p>
-                      <p className="text-xs text-gray-500">{job.command}</p>
-                    </div>
-                  </div>
-                  {job.last_run && (
-                    <p className="text-xs text-gray-400 shrink-0">{timeAgo(job.last_run)}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-4 mt-2 ml-7">
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs font-semibold text-gray-700">{job.total_runs}</span>
-                    <span className="text-xs text-gray-400">total</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs font-semibold text-green-600">{job.successes}</span>
-                    <span className="text-xs text-gray-400">ok</span>
-                  </div>
-                  {job.failures > 0 && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs font-semibold text-red-600">{job.failures}</span>
-                      <span className="text-xs text-gray-400">fallos</span>
-                    </div>
-                  )}
-                  <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                    job.success_rate >= 95 ? 'bg-green-100 text-green-700' :
-                    job.success_rate >= 80 ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>
-                    {job.success_rate}%
-                  </div>
-                  {job.avg_duration > 0 && (
-                    <span className="text-xs text-gray-400">~{job.avg_duration}s</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

@@ -112,5 +112,8 @@ Route::prefix('v1')->group(function () {
 
         // Cronjobs status (Coolify scheduled tasks)
         Route::get('cronjobs', [\App\Http\Controllers\Admin\CronjobController::class, 'index']);
+
+        // Dashboard KPIs (ventas, compras, nómina)
+        Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
     });
 });

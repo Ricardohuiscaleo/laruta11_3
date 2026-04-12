@@ -1,7 +1,7 @@
 import {
   Home, User, Calendar, Receipt, CreditCard, Wallet,
   ClipboardCheck, ArrowLeftRight, Bell, Users, Repeat2,
-  SlidersHorizontal,
+  SlidersHorizontal, Clock,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -48,6 +48,7 @@ export const adminSecondaryNavItems: NavItem[] = [
   { href: '/admin/ajustes', label: 'Ajustes', icon: SlidersHorizontal },
   { href: '/admin/creditos', label: 'Créditos R11', icon: CreditCard },
   { href: '/admin/cambios', label: 'Cambios', icon: ArrowLeftRight },
+  { href: '/admin/cronjobs', label: 'Cronjobs', icon: Clock },
 ];
 
 export const allAdminNavItems: NavItem[] = [...adminPrimaryNavItems, ...adminSecondaryNavItems];
