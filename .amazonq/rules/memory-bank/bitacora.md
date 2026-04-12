@@ -76,7 +76,24 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 
 ### Commits y Deploys
 
-Pendiente commit + deploy.
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `71ef7c4` | `fix(mi3): contexto fotos planchero - plancha/lavaplatos/mesón + 6 prompts IA específicos` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend | mi.laruta11.cl | `f1182bkemp24q5woss3qw8rh` | ✅ queued |
+| mi3-backend | api-mi3.laruta11.cl | `sckwdosw7v2ko1x3m0u8exdn` | ✅ queued |
+
+**Datos modificados en producción (SSH):**
+
+| Tabla | Cambio |
+|-------|--------|
+| `checklist_items` | UPDATE #1743, #1744 → "Sector plancha y freidora", "Lavaplatos" |
+| `checklist_items` | UPDATE #1745, #1746 → "Sector plancha y freidora", "Lavaplatos" |
+| `checklist_items` | INSERT #1747 "FOTO 3: Mesón de trabajo" (checklist 179) |
+| `checklist_items` | INSERT #1748 "FOTO 3: Mesón de trabajo" (checklist 180) |
+| `checklists` | UPDATE total_items #179=5, #180=5 |
 
 ### Errores Encontrados y Resueltos
 
@@ -90,10 +107,8 @@ Pendiente commit + deploy.
 
 ### Pendiente
 
-- **Commit + push + deploy** del fix de contexto planchero
-- **Actualizar items planchero en producción**: cambiar de 2 fotos genéricas (Interior/Exterior) a 3 fotos específicas (Sector plancha, Lavaplatos, Mesón)
+- Verificar que prompts mejorados dan feedback correcto en fotos planchero
 - **Actualizar `checklist_templates`** para que la creación diaria use los items correctos del planchero
-- Verificar que prompts mejorados dan feedback correcto
 - Verificar upload S3 en compras
 - Verificar Gmail Token Refresh
 - Corregir caja3 `get_turnos.php` base date cajero
