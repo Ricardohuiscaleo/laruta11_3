@@ -19,6 +19,7 @@ $commands = [
     ['cmd' => 'mi3:check-companion-absence',  'name' => 'Detectar Ausencia',       'schedule' => fn($s) => $s->dailyAt('19:00')],
     ['cmd' => 'mi3:detect-absences',          'name' => 'Descuento Inasistencias', 'schedule' => fn($s) => $s->dailyAt('02:00')],
     ['cmd' => 'mi3:generate-shifts',          'name' => 'Generar Turnos',          'schedule' => fn($s) => $s->monthlyOn(25, '10:00')],
+    ['cmd' => 'mi3:checklist-reminder',       'name' => 'Recordatorio Checklist',  'schedule' => fn($s) => $s->dailyAt('18:00')],
 ];
 
 foreach ($commands as $c) {
