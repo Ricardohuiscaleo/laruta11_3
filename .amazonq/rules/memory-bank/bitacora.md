@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12bb)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12bc)
 
 ### Aplicaciones Desplegadas
 
@@ -41,6 +41,69 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ⚠️ Spec marcado como deployado pero tabla `checklists_v2` NO existe en producción. Sistema usa checklists legacy |
 | mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Mapeo forzado persona→proveedor post-extracción. 9 riders ARIAKA + Ricardo (emisor) filtrado. 15+ deploys hoy |
+
+---
+
+## Sesión 2026-04-12bc — Mostrar feedback IA en checklist (score + observaciones en tiempo real)
+
+### Lo realizado: Mostrar resultados del análisis IA de fotos directamente en el checklist
+
+**Problema:** Las fotos se subían y la IA las analizaba (score 70/100, 80/100 en BD), pero el frontend no mostraba los resultados. El usuario no veía el feedback de la IA.
+
+**Verificación en BD (SSH):**
+
+| Item | Foto | Score | Observaciones |
+|------|------|-------|---------------|
+| #1735 FOTO 1 Interior | ✅ S3 | 70/100 | "Superficies limpias ✅, ingredientes en orden ✅, plancha no encendida ⚠️, televisor no visible ⚠️" |
+| #1736 FOTO 2 Exterior | ✅ S3 | 80/100 | "Montaje correcto ✅, letrero visible ✅, vitrina aderezos no afuera ⚠️, televisor sin carta ⚠️" |
+
+**Fix — mostrar AI feedback en el frontend:**
+
+| Componente | Cambio |
+|-----------|--------|
+| `ChecklistItemRow` | Nuevo bloque debajo de la foto: badge score (0-100) + observaciones |
+| `PhotoUpload` | Pasa `ai_score` y `ai_observations` de la respuesta API al handler |
+| `handlePhotoUploaded` | Guarda AI data en estado local para display inmediato |
+| Colores | Verde ≥80, Amarillo ≥50, Rojo <50 |
+
+**También fix:** La respuesta del API retorna `url` (no `photo_url`) y `ai_score`/`ai_observations`. El frontend ahora lee los campos correctos.
+
+**Archivos modificados (1):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/app/dashboard/checklist/page.tsx` | Display AI score+obs, fix response field names, pass AI data through handlers |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `c17a17a` | `feat(mi3): show AI feedback in checklist after photo upload` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend | mi.laruta11.cl | `kzpr8hwsoz65qq0zz889l1ao` | ✅ queued |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| AI feedback no visible en checklist | Frontend no tenía código para mostrar `ai_score`/`ai_observations` | Agregar bloque con badge score + observaciones debajo de la foto |
+| Response field mismatch | API retorna `url`, frontend esperaba `photo_url` | Cambiar a `res.data?.url` |
+
+### Lecciones Aprendidas
+
+206. **Si la IA analiza, mostrar el resultado**: No tiene sentido correr análisis IA si el usuario no ve el feedback. El score y las observaciones deben ser visibles inmediatamente después del upload, no escondidos en la BD
+
+### Pendiente
+
+- **Verificar** que score + observaciones aparecen después del deploy
+- Los datos existentes (score 70 y 80) deberían verse al recargar checklist
+- Verificar upload S3 en compras
+- Verificar Gmail Token Refresh
+- Feature futuro: tareas generadas por IA desde fotos
+- Corregir caja3 `get_turnos.php` base date
+- Generar turnos mayo
 
 ---
 
