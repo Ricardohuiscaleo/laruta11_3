@@ -27,11 +27,13 @@ function getMonthStr(offset: number) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-const ROL_COLORS: Record<string, string> = {
-  cajero: 'bg-pink-100 text-pink-800',
-  planchero: 'bg-amber-100 text-amber-800',
-  seguridad: 'bg-blue-100 text-blue-800',
-  administrador: 'bg-purple-100 text-purple-800',
+// Colors by personal_id (fixed per person)
+const PERSON_COLORS: Record<number, string> = {
+  1: 'bg-pink-100 text-pink-800',       // Camila — rosa
+  12: 'bg-yellow-100 text-yellow-800',   // Dafne — amarillo
+  3: 'bg-green-100 text-green-800',      // Andres — verde
+  5: 'bg-red-100 text-red-800',          // Ricardo — rojo
+  10: 'bg-blue-100 text-blue-800',       // Claudio — azul
 };
 
 export default function TurnosAdminPage() {
@@ -65,9 +67,7 @@ export default function TurnosAdminPage() {
   const workerColorMap = useMemo(() => {
     const map: Record<number, string> = {};
     workers.forEach(w => {
-      const rol = (w.rol || '').toLowerCase();
-      const color = Object.entries(ROL_COLORS).find(([k]) => rol.includes(k))?.[1] || 'bg-gray-100 text-gray-800';
-      map[w.id] = color;
+      map[w.id] = PERSON_COLORS[w.id] || 'bg-gray-100 text-gray-800';
     });
     return map;
   }, [workers]);
@@ -178,7 +178,7 @@ export default function TurnosAdminPage() {
               <div className="mt-0.5 space-y-0.5">
                 {dayTurnos.slice(0, 3).map(t => (
                   <div key={t.id} className={cn('flex items-center justify-between rounded px-1 py-0.5 text-[10px]',
-                    t.tipo === 'seguridad' ? ROL_COLORS.seguridad : (workerColorMap[t.personal_id] || 'bg-gray-100'))}>
+                    PERSON_COLORS[t.personal_id] || workerColorMap[t.personal_id] || 'bg-gray-100')}>
                     <span className="truncate">{t.personal_nombre?.split(' ')[0] || `#${t.personal_id}`}</span>
                     {!t.is_dynamic && typeof t.id === 'number' && (
                       <button onClick={() => deleteTurno(t.id)} className="ml-0.5 opacity-50 hover:opacity-100"><Trash2 className="h-2.5 w-2.5" /></button>
