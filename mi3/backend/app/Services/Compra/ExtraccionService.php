@@ -220,7 +220,6 @@ Extrae: destinatario (nombre de la persona que recibe), monto, fecha de la trans
 IMPORTANTE: El proveedor NO es "Mercado Pago" ni el banco. El proveedor es según el DESTINATARIO.
 Mapeo conocido de personas a proveedores:
 - Karen Miranda Olmedo = ARIAKA (Servicios Delivery)
-- Elcia Vilca = ARIAKA (Servicios Delivery)
 - Eliana Vilca = ARIAKA (Servicios Delivery)
 - Cecilia Rojas Hinojosa = ARIAKA (Servicios Delivery)
 - Maria Mondañez Mamani = ARIAKA (Servicios Delivery)
