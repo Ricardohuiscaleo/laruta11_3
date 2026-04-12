@@ -7,10 +7,14 @@ export async function apiFetch<T>(
   const { headers: customHeaders, ...rest } = options;
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
     Accept: 'application/json',
     ...((customHeaders as Record<string, string>) || {}),
   };
+
+  // Don't set Content-Type for FormData — browser sets it with boundary
+  if (!(rest.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   const res = await fetch(`${API_URL}/api/v1${endpoint}`, {
     headers,
