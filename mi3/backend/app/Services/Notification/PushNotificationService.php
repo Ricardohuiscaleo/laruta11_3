@@ -56,6 +56,7 @@ class PushNotificationService
             'body' => $cuerpo,
             'url' => $url,
             'priority' => $prioridad,
+            'badgeCount' => 1,
             'icon' => 'https://laruta11-images.s3.amazonaws.com/menu/logo-work.png',
             'badge' => 'https://laruta11-images.s3.amazonaws.com/menu/logo-work.png',
         ]);
