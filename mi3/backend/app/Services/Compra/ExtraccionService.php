@@ -348,7 +348,10 @@ PROMPT;
     {
         $service = 'bedrock';
         $host = parse_url($url, PHP_URL_HOST);
-        $path = parse_url($url, PHP_URL_PATH);
+        $rawPath = parse_url($url, PHP_URL_PATH);
+        // SigV4 requires URI-encoded path segments (: → %3A) for canonical request
+        $pathSegments = explode('/', $rawPath);
+        $encodedPath = implode('/', array_map(fn($s) => rawurlencode($s), $pathSegments));
         $jsonBody = json_encode($body);
 
         $now = gmdate('Ymd\THis\Z');
@@ -370,7 +373,7 @@ PROMPT;
 
         $canonicalRequest = implode("\n", [
             'POST',
-            $path,
+            $encodedPath,
             '', // query string
             $canonicalHeaders,
             $signedHeaders,
