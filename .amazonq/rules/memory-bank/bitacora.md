@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12aq)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ar)
 
 ### Aplicaciones Desplegadas
 
@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Deploying (`ayepqdbjas6j`, commit `f803aee`) — fix Gmail token BD | ❌ Manual |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`nklzycf28cf1zp796kr8jgl5`, commit `dfac24c`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Deploying (`cl7fix87mbsf`, commit `e770a75`) | ❌ Manual |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Deploying (`g9utmgo95h6o`, commit `57cde15`) — modal historial con tabla stock | ❌ Manual |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`puawh07zg5f8`, commit `df1468a`) — mapeo forzado persona→proveedor | ❌ Manual |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running (`uu8lhn7wijjk1idj5ghf21pa`) | ❌ Manual |
 
@@ -41,6 +41,64 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ⚠️ Spec marcado como deployado pero tabla `checklists_v2` NO existe en producción. Sistema usa checklists legacy |
 | mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Mapeo forzado persona→proveedor post-extracción. 9 riders ARIAKA + Ricardo (emisor) filtrado. 15+ deploys hoy |
+
+---
+
+## Sesión 2026-04-12ar — Modal historial con tabla PRODUCTO|CANT|P.UNIT|SUBTOTAL|STOCK
+
+### Lo realizado: Mejorar modal de detalle de compra en historial + confirmar gestión de stock
+
+**1. Modal de detalle mejorado:**
+
+| Antes | Después |
+|-------|---------|
+| `nombre | cantidad unidad | subtotal` (inline) | Tabla: Producto \| Cant. \| P.Unit. \| Subtotal \| Stock |
+| Sin precio unitario | ✅ Precio unitario visible |
+| Sin stock | ✅ Stock snapshot (`stock_despues`) visible |
+| Campo `d.nombre` (no existía en API) | Usa `nombre_item` (campo real) con fallback |
+
+**2. Confirmación: gestión de stock funciona igual que caja3:**
+
+| Operación | Qué hace |
+|-----------|----------|
+| Registrar compra | `ingredients.current_stock += cantidad` o `products.stock_quantity += cantidad` |
+| Eliminar compra | Revierte: `current_stock -= cantidad` |
+| Snapshot | `stock_antes` y `stock_despues` en cada `compras_detalle` |
+| Capital trabajo | `egresos_compras` actualizado en `capital_trabajo` del día |
+| Proveedor/costo | `ingredients.cost_per_unit` y `supplier` actualizados |
+
+**Archivos modificados (1):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/components/admin/compras/DetalleCompra.tsx` | Tabla con 5 columnas, usa `nombre_item` + `stock_despues` |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `57cde15` | `fix(mi3): modal historial con tabla PRODUCTO\|CANT\|P.UNIT\|SUBTOTAL\|STOCK` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend | mi.laruta11.cl | `g9utmgo95h6oor57ssblol1y` | ✅ queued |
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+195. **Los snapshots de stock son valiosos en el historial**: Mostrar `stock_despues` en el detalle de cada compra permite ver cómo estaba el inventario en ese momento. Es información que ya se guarda pero no se mostraba
+
+### Pendiente
+
+- Verificar que subida masiva agrupa riders bajo ARIAKA
+- Verificar upload S3 + preview
+- Verificar Gmail Token Refresh
+- Editar templates de checklist
+- Investigar spec checklist-v2
+- Generar turnos mayo
 
 ---
 
