@@ -7,11 +7,8 @@ import { Loader2, Bell, Calendar, Receipt, CreditCard, SlidersHorizontal, Info }
 import type { Notificacion } from '@/types';
 
 const tipoIcons: Record<string, typeof Bell> = {
-  turno: Calendar,
-  liquidacion: Receipt,
-  credito: CreditCard,
-  ajuste: SlidersHorizontal,
-  sistema: Info,
+  turno: Calendar, liquidacion: Receipt, credito: CreditCard,
+  ajuste: SlidersHorizontal, sistema: Info,
 };
 
 export default function NotificacionesPage() {
@@ -21,25 +18,25 @@ export default function NotificacionesPage() {
 
   useEffect(() => {
     apiFetch<{ success: boolean; data: Notificacion[]; no_leidas: number }>('/worker/notifications')
-      .then(res => setNotifications(res.data || []))
+      .then(res => {
+        setNotifications(res.data || []);
+        // Auto mark all as read when viewing (like Facebook)
+        if (res.no_leidas > 0) {
+          apiFetch('/worker/notifications/read-all', { method: 'POST' }).catch(() => {});
+          // Update UI immediately
+          setNotifications(prev => prev.map(n => ({ ...n, leida: true })));
+        }
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
-  const markAsRead = async (id: number) => {
-    try {
-      await apiFetch(`/worker/notifications/${id}/read`, { method: 'PATCH' });
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, leida: true } : n));
-    } catch { /* silent */ }
-  };
-
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-amber-600" /></div>;
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-red-500" /></div>;
   if (error) return <div className="rounded-lg bg-red-50 p-4 text-red-600">{error}</div>;
 
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-gray-900">Notificaciones</h1>
-
       {notifications.length === 0 ? (
         <div className="rounded-xl border bg-white p-8 text-center shadow-sm">
           <Bell className="mx-auto h-12 w-12 text-gray-300" />
@@ -50,28 +47,18 @@ export default function NotificacionesPage() {
           {notifications.map(n => {
             const Icon = tipoIcons[n.tipo] || Bell;
             return (
-              <button
-                key={n.id}
-                onClick={() => !n.leida && markAsRead(n.id)}
-                className={cn(
-                  'w-full rounded-xl border bg-white p-4 text-left shadow-sm transition-colors',
-                  !n.leida && 'border-amber-200 bg-amber-50'
-                )}
-              >
+              <div key={n.id} className="w-full rounded-xl border bg-white p-4 text-left shadow-sm">
                 <div className="flex items-start gap-3">
-                  <div className={cn('mt-0.5 rounded-lg p-2', !n.leida ? 'bg-amber-100' : 'bg-gray-100')}>
-                    <Icon className={cn('h-4 w-4', !n.leida ? 'text-amber-600' : 'text-gray-400')} />
+                  <div className="mt-0.5 rounded-lg p-2 bg-gray-100">
+                    <Icon className="h-4 w-4 text-gray-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className={cn('text-sm', !n.leida && 'font-semibold')}>{n.titulo}</p>
-                      {!n.leida && <span className="h-2 w-2 rounded-full bg-amber-500" />}
-                    </div>
+                    <p className="text-sm">{n.titulo}</p>
                     <p className="mt-0.5 text-xs text-gray-500">{n.mensaje}</p>
                     <p className="mt-1 text-xs text-gray-400">{new Date(n.created_at).toLocaleDateString('es-CL')}</p>
                   </div>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>

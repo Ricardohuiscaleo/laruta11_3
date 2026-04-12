@@ -38,6 +38,7 @@ Route::prefix('v1')->group(function () {
         Route::post('shift-swaps', [\App\Http\Controllers\Worker\ShiftSwapController::class, 'store']);
         Route::get('notifications', [\App\Http\Controllers\Worker\NotificationController::class, 'index']);
         Route::patch('notifications/{id}/read', [\App\Http\Controllers\Worker\NotificationController::class, 'markAsRead']);
+        Route::post('notifications/read-all', [\App\Http\Controllers\Worker\NotificationController::class, 'markAllAsRead']);
 
         // Loans (adelantos de sueldo)
         Route::get('loans', [\App\Http\Controllers\Worker\LoanController::class, 'index']);

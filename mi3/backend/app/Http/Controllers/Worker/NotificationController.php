@@ -40,4 +40,12 @@ class NotificationController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    public function markAllAsRead(Request $request): JsonResponse
+    {
+        $personal = $request->get('personal');
+        $count = $this->notificationService->marcarTodasLeidas($personal->id);
+
+        return response()->json(['success' => true, 'marked' => $count]);
+    }
 }
