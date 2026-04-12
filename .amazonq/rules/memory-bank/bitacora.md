@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12ap)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12aq)
 
 ### Aplicaciones Desplegadas
 
@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`nklzycf28cf1zp796kr8jgl5`, commit `dfac24c`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Deploying (`cl7fix87mbsf`, commit `e770a75`) | ❌ Manual |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`cz6gqhfb56zh`, commit `35d074a`) | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`puawh07zg5f8`, commit `df1468a`) — mapeo forzado persona→proveedor | ❌ Manual |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running (`uu8lhn7wijjk1idj5ghf21pa`) | ❌ Manual |
 
 Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks individuales, o el nuevo hook "Ship It" para ciclo completo.
@@ -40,7 +40,89 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 |------|-----------|--------|
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ⚠️ Spec marcado como deployado pero tabla `checklists_v2` NO existe en producción. Sistema usa checklists legacy |
-| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Prompt con mapeo personas→proveedores (8 riders ARIAKA), fecha, metodo_pago transfer auto. 12+ deploys hoy |
+| mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Mapeo forzado persona→proveedor post-extracción. 9 riders ARIAKA + Ricardo (emisor) filtrado. 15+ deploys hoy |
+
+---
+
+## Sesión 2026-04-12aq — Mapeo forzado persona→proveedor post-extracción + corrección riders
+
+### Lo realizado: Implementar mapeo server-side que corrige proveedores después de la extracción IA
+
+**Problema detectado en subida masiva:**
+
+La IA a veces no mapea correctamente las personas a proveedores, incluso con el prompt:
+
+| IA retornó | Debería ser | Problema |
+|-----------|-------------|----------|
+| Cecilia Rojas Hinojosa | ARIAKA | No agrupó con ARIAKA |
+| Karen Miranda | ARIAKA | Nombre parcial, no mapeó |
+| Ricardo Aníbal Huiscaleo Llafquén | (null — es el emisor) | Confundió emisor con destinatario |
+| Mercado Pago | (null — es el medio) | No es proveedor |
+
+**Solución: `mapPersonToSupplier()` en ExtraccionController**
+
+Mapeo forzado server-side DESPUÉS de la extracción IA. No depende del prompt — corrige siempre:
+
+| Persona detectada | Se mapea a | Item | metodo_pago |
+|------------------|-----------|------|-------------|
+| Karen Miranda (Olmedo) | ARIAKA | Servicios Delivery | transfer |
+| Elcia Vilca | ARIAKA | Servicios Delivery | transfer |
+| Eliana Vilca | ARIAKA | Servicios Delivery | transfer |
+| Cecilia Rojas (Hinojosa) | ARIAKA | Servicios Delivery | transfer |
+| Maria Mondañez Mamani | ARIAKA | Servicios Delivery | transfer |
+| Giovanna Loza (Salas) | ARIAKA | Servicios Delivery | transfer |
+| Ariel Araya (Villalobos) | ARIAKA | Servicios Delivery | transfer |
+| Karina (Andrea) Muñoz (Ahumada) | Ariztía (proveedor) | (mantiene items) | transfer |
+| Lucila Cacera | agro-lucila | (mantiene items) | transfer |
+| Ricardo Huiscaleo | null (emisor, no proveedor) | — | — |
+| Mercado Pago | null (medio, no proveedor) | — | transfer |
+
+El mapeo usa `str_contains` + `similar_text` con variantes de nombre (nombre completo y parcial).
+
+**También corregido: Elcia y Eliana Vilca son 2 personas distintas**, ambas riders ARIAKA.
+
+**Archivos modificados (1):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/backend/app/Http/Controllers/Admin/ExtraccionController.php` | `mapPersonToSupplier()` — mapeo forzado post-extracción con 11 personas + variantes |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `e770a75` | prompt: mapeo personas, fecha, tipo transferencia |
+| 2 | `35d074a` | prompt: proveedores transfer auto |
+| 3 | `db0f0fd` | agregar Eliana Vilca |
+| 4 | `9a68b39` | fix: Eliana no Elcia |
+| 5 | `6c13707` | fix: Elcia Y Eliana son 2 personas |
+| 6 | `df1468a` | mapeo forzado persona→proveedor post-extracción |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-backend | api-mi3.laruta11.cl | `puawh07zg5f8feut7y6nr7fu` | ✅ queued |
+
+### Errores Encontrados y Resueltos
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| Subida masiva: Cecilia Rojas como proveedor separado | Prompt no siempre mapea personas a ARIAKA | `mapPersonToSupplier()` server-side corrige forzadamente |
+| Ricardo Huiscaleo detectado como proveedor | IA confundió emisor con destinatario en transferencia | Mapeo a null (emisor, no proveedor) |
+| "Mercado Pago" como proveedor | IA lee el nombre del servicio de pago | Mapeo a null + metodo_pago=transfer |
+
+### Lecciones Aprendidas
+
+193. **Doble mapeo: prompt + post-extracción**: El prompt le dice a la IA qué hacer, pero no siempre obedece. El mapeo server-side en `mapPersonToSupplier()` corrige forzadamente. Dos capas de defensa: prompt (best effort) + código (garantizado)
+194. **Variantes de nombre**: Las personas pueden aparecer como "Karen Miranda", "Karen Miranda Olmedo", o "Karen". El mapeo debe incluir variantes parciales con `str_contains` para cubrir todos los casos
+
+### Pendiente
+
+- **Verificar** que subida masiva agrupa todas las transferencias de riders bajo ARIAKA
+- Verificar upload S3 + preview funciona
+- Verificar Gmail Token Refresh
+- Editar templates de checklist
+- Investigar spec checklist-v2
+- Generar turnos mayo
 
 ---
 
