@@ -67,16 +67,36 @@ export default function DetalleCompra({ compra, onClose, onDeleted }: DetalleCom
           {compra.detalles && compra.detalles.length > 0 && (
             <div>
               <h4 className="mb-2 text-sm font-semibold text-gray-700">Ítems</h4>
-              <div className="divide-y rounded-lg border text-sm">
-                {compra.detalles.map(d => (
-                  <div key={d.id} className="flex items-center justify-between px-3 py-2">
-                    <div>
-                      <span className="font-medium">{d.nombre}</span>
-                      <span className="ml-2 text-xs text-gray-500">{d.cantidad} {d.unidad}</span>
-                    </div>
-                    <span>{formatearPesosCLP(d.subtotal)}</span>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs text-gray-500">
+                      <th className="pb-2 pr-2">Producto</th>
+                      <th className="pb-2 pr-2 text-right">Cant.</th>
+                      <th className="pb-2 pr-2 text-right">P.Unit.</th>
+                      <th className="pb-2 pr-2 text-right">Subtotal</th>
+                      <th className="pb-2 text-right">Stock</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {compra.detalles.map(d => {
+                      const nombre = (d as any).nombre_item || d.nombre || '?';
+                      const unidad = (d as any).unidad || '';
+                      const stockDespues = (d as any).stock_despues;
+                      return (
+                        <tr key={d.id}>
+                          <td className="py-2 pr-2 font-medium">{nombre}</td>
+                          <td className="py-2 pr-2 text-right text-gray-600">{d.cantidad} {unidad}</td>
+                          <td className="py-2 pr-2 text-right">{formatearPesosCLP(d.precio_unitario)}</td>
+                          <td className="py-2 pr-2 text-right font-medium">{formatearPesosCLP(d.subtotal)}</td>
+                          <td className="py-2 text-right text-xs text-gray-500">
+                            {stockDespues != null ? stockDespues : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
