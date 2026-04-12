@@ -9,8 +9,9 @@ export function calcularIVA(precioTotal: number, cantidad: number): number {
 /**
  * Formatea un monto en pesos chilenos: "$15.990"
  */
-export function formatearPesosCLP(monto: number): string {
-  return '$' + monto.toLocaleString('es-CL');
+export function formatearPesosCLP(monto: number | null | undefined): string {
+  if (monto == null || isNaN(monto)) return '$0';
+  return '$' + Math.round(monto).toLocaleString('es-CL');
 }
 
 /**

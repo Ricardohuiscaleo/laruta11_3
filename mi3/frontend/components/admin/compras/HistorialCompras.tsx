@@ -13,10 +13,11 @@ const METODO_LABELS: Record<string, string> = {
 };
 
 interface PaginatedResponse {
-  data: Compra[];
-  current_page: number;
-  last_page: number;
-  total: number;
+  success: boolean;
+  compras: Compra[];
+  page: number;
+  total_pages: number;
+  total_compras: number;
 }
 
 export default function HistorialCompras() {
@@ -37,9 +38,9 @@ export default function HistorialCompras() {
       const params = new URLSearchParams({ page: String(p) });
       if (q) params.set('q', q);
       const res = await comprasApi.get<PaginatedResponse>(`/compras?${params}`);
-      setCompras(res.data);
-      setTotalPages(res.last_page);
-      setTotal(res.total);
+      setCompras(res.compras || []);
+      setTotalPages(res.total_pages || 1);
+      setTotal(res.total_compras || 0);
     } catch { setCompras([]); }
     setLoading(false);
   }, []);

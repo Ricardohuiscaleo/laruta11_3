@@ -7,11 +7,13 @@ import { formatearPesosCLP } from '@/lib/compras-utils';
 
 interface SearchResult {
   id: number;
-  nombre: string;
-  stock_actual: number;
-  unidad: string;
-  ultimo_precio: number | null;
-  item_type: 'ingredient' | 'product';
+  name: string;
+  current_stock: number;
+  unit: string;
+  cost_per_unit: number | null;
+  type: 'ingredient' | 'product';
+  category?: string;
+  min_stock_level?: number;
 }
 
 interface ItemSearchProps {
@@ -79,18 +81,18 @@ export default function ItemSearch({ onSelect, onCreateNew, placeholder = 'Busca
           {results.length > 0 ? (
             results.map(item => (
               <button
-                key={`${item.item_type}-${item.id}`}
+                key={`${item.type}-${item.id}`}
                 onClick={() => handleSelect(item)}
                 className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50"
               >
                 <div>
-                  <span className="font-medium text-gray-900">{item.nombre}</span>
+                  <span className="font-medium text-gray-900">{item.name}</span>
                   <span className="ml-2 text-xs text-gray-500">
-                    Stock: {item.stock_actual} {item.unidad}
+                    Stock: {item.current_stock} {item.unit}
                   </span>
                 </div>
-                {item.ultimo_precio != null && (
-                  <span className="text-xs text-gray-500">{formatearPesosCLP(item.ultimo_precio)}</span>
+                {item.cost_per_unit != null && (
+                  <span className="text-xs text-gray-500">{formatearPesosCLP(item.cost_per_unit)}</span>
                 )}
               </button>
             ))

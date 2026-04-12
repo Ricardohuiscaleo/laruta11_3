@@ -22,8 +22,8 @@ export default function KpisDashboard() {
 
   useEffect(() => {
     Promise.all([
-      comprasApi.get<Kpi>('/kpis'),
-      comprasApi.get<HistorialSaldoItem[]>('/kpis/historial-saldo'),
+      comprasApi.get<{ success: boolean; data: Kpi }>('/kpis').then(r => r.data),
+      comprasApi.get<{ success: boolean; historial: HistorialSaldoItem[] }>('/kpis/historial-saldo').then(r => r.historial || []),
     ]).then(([k, h]) => {
       setKpis(k);
       setHistorial(h);

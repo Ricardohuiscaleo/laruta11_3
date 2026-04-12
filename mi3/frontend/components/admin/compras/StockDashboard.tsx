@@ -25,8 +25,8 @@ export default function StockDashboard() {
   useEffect(() => {
     setLoading(true);
     const path = tab === 'ingredientes' ? '/stock?tipo=ingredientes' : '/stock?tipo=bebidas';
-    comprasApi.get<StockItem[]>(path)
-      .then(setItems)
+    comprasApi.get<{ success: boolean; items: StockItem[] }>(path)
+      .then(r => setItems(r.items || []))
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
   }, [tab]);

@@ -45,7 +45,9 @@ export default function RegistroCompra() {
   const provTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    comprasApi.get<Kpi>('/kpis').then(k => setSaldo(k.saldo_disponible)).catch(() => {});
+    comprasApi.get<{ success: boolean; data: Kpi }>('/kpis')
+      .then(r => setSaldo(r.data?.saldo_disponible ?? null))
+      .catch(() => {});
   }, []);
 
   // Proveedor autocomplete
@@ -72,16 +74,16 @@ export default function RegistroCompra() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const addItem = (item: { id: number; nombre: string; stock_actual: number; unidad: string; ultimo_precio: number | null; item_type: 'ingredient' | 'product' }) => {
+  const addItem = (item: { id: number; name: string; current_stock: number; unit: string; cost_per_unit: number | null; type: 'ingredient' | 'product' }) => {
     const newItem: CompraFormItem = {
-      ingrediente_id: item.item_type === 'ingredient' ? item.id : null,
-      product_id: item.item_type === 'product' ? item.id : null,
-      item_type: item.item_type,
-      nombre: item.nombre,
+      ingrediente_id: item.type === 'ingredient' ? item.id : null,
+      product_id: item.type === 'product' ? item.id : null,
+      item_type: item.type,
+      nombre: item.name,
       cantidad: 1,
-      unidad: item.unidad,
-      precio_unitario: item.ultimo_precio ?? 0,
-      subtotal: item.ultimo_precio ?? 0,
+      unidad: item.unit,
+      precio_unitario: item.cost_per_unit ?? 0,
+      subtotal: item.cost_per_unit ?? 0,
       incluye_iva: false,
     };
     setForm(f => ({ ...f, items: [...f.items, newItem] }));
@@ -127,7 +129,7 @@ export default function RegistroCompra() {
       setImages([]);
       setTimeout(() => setSuccess(false), 3000);
       // Refresh saldo
-      comprasApi.get<Kpi>('/kpis').then(k => setSaldo(k.saldo_disponible)).catch(() => {});
+      comprasApi.get<{ success: boolean; data: Kpi }>('/kpis').then(r => setSaldo(r.data?.saldo_disponible ?? null)).catch(() => {});
     } catch {
       alert('Error al registrar compra');
     }

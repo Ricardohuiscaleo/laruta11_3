@@ -20,7 +20,7 @@ export default function ProyeccionCompras() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    comprasApi.get<Kpi>('/kpis').then(k => setSaldo(k.saldo_disponible)).catch(() => {});
+    comprasApi.get<{ success: boolean; data: Kpi }>('/kpis').then(r => setSaldo(r.data?.saldo_disponible ?? null)).catch(() => {});
   }, []);
 
   const addItem = (item: { nombre: string; unidad: string; ultimo_precio: number | null }) => {
