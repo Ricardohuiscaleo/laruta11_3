@@ -21,8 +21,8 @@ return [
         ],
         'plancheros' => [
             'base_date' => '2026-02-03',
-            'person_a' => 'Andrés',
-            'person_b' => 'Andrés',
+            'person_a' => 'Andres',
+            'person_b' => 'Andres',
         ],
     ],
 
