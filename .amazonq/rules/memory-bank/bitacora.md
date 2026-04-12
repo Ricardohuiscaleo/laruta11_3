@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-12, actualizado sesión 2026-04-12av)
+## Estado Actual (2026-04-12, actualizado sesión 2026-04-12aw)
 
 ### Aplicaciones Desplegadas
 
@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Deploying (`ayepqdbjas6j`, commit `f803aee`) — fix Gmail token BD | ❌ Manual |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`nklzycf28cf1zp796kr8jgl5`, commit `dfac24c`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Deploying (`rchgvp32uv6m`, commit `f59e8db`) — dashboard rediseñado | ❌ Manual |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Deploying (commit `8ec1eaa`) — dashboard 1 card + Adelanto | ❌ Manual |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Deploying (`xkxkow6g44j6`, commit `f59e8db`) — push checklist 6pm | ❌ Manual |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running (`uu8lhn7wijjk1idj5ghf21pa`) | ❌ Manual |
 
@@ -41,6 +41,97 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | mi3-worker-dashboard-v2 | `.kiro/specs/mi3-worker-dashboard-v2/` | ✅ 14 tareas implementadas (requiere refactorizar préstamos → adelanto) |
 | checklist-v2-asistencia | `.kiro/specs/checklist-v2-asistencia/` | ⚠️ Spec marcado como deployado pero tabla `checklists_v2` NO existe en producción. Sistema usa checklists legacy |
 | mi3-compras-inteligentes | `.kiro/specs/mi3-compras-inteligentes/` | ✅ Mapeo forzado persona→proveedor post-extracción. 9 riders ARIAKA + Ricardo (emisor) filtrado. 15+ deploys hoy |
+
+---
+
+## Sesión 2026-04-12av+aw — Dashboard worker rediseñado + push checklist 6pm + Adelanto + revisión pendientes
+
+### Lo realizado: Rediseñar dashboard worker, agregar push 6pm, corregir nomenclatura, revisar pendientes
+
+**1. Dashboard worker rediseñado (1 card compacta):**
+
+| Antes (4 cards separadas) | Después (1 card) |
+|--------------------------|------------------|
+| SueldoCard, PrestamoCard, DescuentosCard, ReemplazosCard | 1 card: sueldo grande + 3 columnas (Adelanto, Descuentos, Reemplazos) + turno hoy |
+| Turnos Hoy (card separada) | Integrado en la card principal como banner amber |
+| Notificaciones (card separada) | Eliminado del dashboard (ya está en bottom nav Alertas) |
+
+**2. Acceso directo checklist debajo de la card:**
+
+| Estado | Qué muestra |
+|--------|-------------|
+| Hay checklists pendientes | Tarjeta amber "Realizar Checklist 🌅🌙" con link a /dashboard/checklist |
+| Día libre (sin turno) | Tarjeta azul "Hoy tienes libre 😊" |
+| Checklists completados | Tarjeta verde "Checklists completados ✅" |
+
+**3. Push notification checklist 6pm:**
+
+Nuevo comando `mi3:checklist-reminder` registrado en scheduler a las 18:00 hora Chile:
+- Busca checklists pendientes de hoy agrupados por personal_id
+- Envía push a cada trabajador con checklists sin completar
+- Mensaje: "📋 Checklist pendiente — Tienes X checklist(s) sin completar hoy"
+
+**4. Nomenclatura: Préstamos → Adelanto**
+
+Cambiado en el dashboard worker.
+
+**5. Revisión de pendientes de toda la conversación:**
+
+| # | Pendiente | Estado |
+|---|----------|--------|
+| 1 | Upload S3 PUT directo SigV4 | Deployado, pendiente verificar |
+| 2 | Extracción IA Nova Pro end-to-end | Deployado, pendiente verificar |
+| 3 | Subida masiva agrupa riders ARIAKA | Deployado (mapeo post-extracción), pendiente verificar |
+| 4 | Thumbnails en formulario | Deployado, pendiente verificar |
+| 5 | 11 property-based tests | No escritos (opcionales) |
+| 6 | Ricardo ve checklists | Turno + rol configurados, pendiente verificar |
+| 7 | Fotos checklist con IA | PhotoAnalysisService existe, pendiente testear en producción |
+| 8 | Gmail Token Refresh 100% | Migrado a BD, pendiente verificar |
+| 9 | Dashboard 1 card | Deployando |
+| 10 | Push checklist 6pm | Deployando |
+| 11 | get_turnos.php base date | Pendiente |
+| 12 | Generar turnos mayo | Pendiente |
+| 13 | Push subscriptions duplicadas | Pendiente |
+
+**Archivos modificados (3):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/app/dashboard/page.tsx` | Reescrito: 1 card compacta + acceso directo checklist + "Adelanto" |
+| `mi3/backend/app/Console/Commands/ChecklistReminderCommand.php` | Nuevo: push 6pm si checklists pendientes |
+| `mi3/backend/routes/console.php` | Agregado `mi3:checklist-reminder` dailyAt 18:00 Santiago |
+
+### Commits y Deploys
+
+| Commit | Hash | Descripción |
+|--------|------|-------------|
+| 1 | `f59e8db` | `feat(mi3): dashboard worker rediseñado + push checklist 6pm` |
+| 2 | `8ec1eaa` | `fix(mi3): Préstamos → Adelanto en dashboard worker` |
+
+| Deploy | App | UUID | Estado |
+|--------|-----|------|--------|
+| mi3-frontend | mi.laruta11.cl | `rchgvp32uv6me2sh7cdponwr` | ✅ queued |
+| mi3-backend | api-mi3.laruta11.cl | `xkxkow6g44j673z1ohgh42ch` | ✅ queued |
+
+### Errores Encontrados y Resueltos
+
+Ninguno.
+
+### Lecciones Aprendidas
+
+199. **Dashboard minimalista > dashboard con muchas cards**: Un food truck con 5 trabajadores no necesita 6 cards separadas. 1 card con la info esencial + acceso directo a la acción principal (checklist) es más efectivo
+200. **Push reminder como safety net**: La notificación a las 6pm es un recordatorio para los que olvidaron hacer el checklist. No reemplaza la disciplina pero ayuda
+
+### Pendiente
+
+- **Verificar** dashboard 1 card después del deploy
+- **Verificar** upload S3 + extracción IA en compras
+- **Verificar** subida masiva agrupa ARIAKA
+- **Verificar** Ricardo ve checklists
+- **Verificar** Gmail Token Refresh 100%
+- Corregir caja3 `get_turnos.php` base date cajero
+- Generar turnos mayo
+- Fix push subscriptions duplicadas
 
 ---
 
