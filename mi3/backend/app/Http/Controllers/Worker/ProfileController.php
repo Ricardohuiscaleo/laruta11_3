@@ -24,7 +24,7 @@ class ProfileController extends Controller
             'telefono' => $personal->telefono ?? $usuario?->telefono,
             'rut' => $personal->rut,
             'rol' => $personal->getRolesArray(),
-            'foto_perfil' => $usuario?->foto_perfil ?? null,
+            'foto_perfil' => $personal->foto_url ?? $usuario?->foto_perfil ?? null,
             'fecha_registro' => $personal->fecha_registro ?? null,
             'sueldos_base' => [
                 'cajero' => (float) $personal->sueldo_base_cajero,

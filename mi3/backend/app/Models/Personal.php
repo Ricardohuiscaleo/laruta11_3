@@ -13,6 +13,7 @@ class Personal extends Model
         'nombre', 'rol', 'user_id', 'rut', 'telefono', 'email',
         'sueldo_base_cajero', 'sueldo_base_planchero',
         'sueldo_base_admin', 'sueldo_base_seguridad', 'activo',
+        'foto_url',
     ];
 
     protected $casts = [

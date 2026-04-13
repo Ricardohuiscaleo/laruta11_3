@@ -13,7 +13,7 @@ class Usuario extends Authenticatable
     public $timestamps = false;
 
     protected $fillable = [
-        'nombre', 'email', 'telefono', 'session_token',
+        'nombre', 'email', 'telefono', 'session_token', 'foto_perfil',
         'es_credito_r11', 'credito_r11_aprobado', 'limite_credito_r11',
         'credito_r11_usado', 'credito_r11_bloqueado',
         'fecha_aprobacion_r11', 'fecha_ultimo_pago_r11', 'relacion_r11',

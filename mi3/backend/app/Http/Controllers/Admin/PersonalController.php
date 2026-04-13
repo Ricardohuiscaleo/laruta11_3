@@ -11,7 +11,7 @@ class PersonalController extends Controller
 {
     public function index(): JsonResponse
     {
-        $personal = Personal::with('usuario')->get();
+        $personal = Personal::with('usuario:id,email')->get();
 
         return response()->json(['success' => true, 'data' => $personal]);
     }

@@ -320,8 +320,15 @@ PROMPT,
             'completed_at' => now(),
         ]);
 
-        // Update checklist progress
+        // Step 2b: Use this photo as the worker's profile picture
         $checklist = $item->checklist;
+        if ($checklist && $checklist->personal_id) {
+            \App\Models\Personal::where('id', $checklist->personal_id)
+                ->whereNull('foto_url')
+                ->update(['foto_url' => $url]);
+        }
+
+        // Update checklist progress
         $completedCount = $checklist->items()->where('is_completed', true)->count();
         $totalCount = $checklist->total_items;
         $percentage = $totalCount > 0 ? round(($completedCount / $totalCount) * 100, 2) : 0;
