@@ -60,8 +60,10 @@ class SugerenciaService
     /**
      * Fuzzy match extracted items against ingredients and products.
      *
-     * Pre-selects matches with confidence >= 80%.
-     * Returns array of matched items with scores.
+     * Uses multi-strategy matching:
+     * 1. Keyword-based matching (split name into words, match against DB names)
+     * 2. similar_text() as fallback
+     * Pre-selects matches with confidence >= 75%.
      */
     public function matchItems(array $items): array
     {
@@ -82,6 +84,9 @@ class SugerenciaService
                 continue;
             }
 
+            // Extract meaningful keywords (ignore packaging noise like "800g", "10u", etc.)
+            $keywords = $this->extractKeywords($itemName);
+
             $bestMatch = null;
             $bestScore = 0;
             $bestType = null;
@@ -89,10 +94,10 @@ class SugerenciaService
             // Match against ingredients
             foreach ($ingredients as $ingredient) {
                 $candidateLower = mb_strtolower($ingredient->name);
-                similar_text($itemName, $candidateLower, $percent);
+                $score = $this->smartScore($itemName, $keywords, $candidateLower);
 
-                if ($percent > $bestScore) {
-                    $bestScore = $percent;
+                if ($score > $bestScore) {
+                    $bestScore = $score;
                     $bestMatch = [
                         'id' => $ingredient->id,
                         'name' => $ingredient->name,
@@ -107,10 +112,10 @@ class SugerenciaService
             // Match against products
             foreach ($products as $product) {
                 $candidateLower = mb_strtolower($product->name);
-                similar_text($itemName, $candidateLower, $percent);
+                $score = $this->smartScore($itemName, $keywords, $candidateLower);
 
-                if ($percent > $bestScore) {
-                    $bestScore = $percent;
+                if ($score > $bestScore) {
+                    $bestScore = $score;
                     $bestMatch = [
                         'id' => $product->id,
                         'name' => $product->name,
@@ -127,11 +132,98 @@ class SugerenciaService
                 'match' => $bestMatch,
                 'match_type' => $bestType,
                 'score' => round($bestScore, 2),
-                'pre_selected' => $bestScore >= 80,
+                'pre_selected' => $bestScore >= 75,
             ];
         }
 
         return $results;
+    }
+
+    /**
+     * Extract meaningful keywords from a product name, ignoring packaging notation.
+     */
+    private function extractKeywords(string $name): array
+    {
+        // Remove packaging patterns: 800g, 10u, 8x1, 5kg, etc.
+        $cleaned = preg_replace('/\b\d+\s*(g|kg|u|ml|l|cc|x\d+)\b/i', '', $name);
+        // Remove standalone numbers
+        $cleaned = preg_replace('/\b\d+\b/', '', $cleaned);
+        // Normalize accents for better matching
+        $cleaned = $this->removeAccents($cleaned);
+        // Split into words and filter
+        $words = preg_split('/[\s\-_\/]+/', $cleaned);
+        return array_values(array_filter($words, fn($w) => mb_strlen($w) >= 2));
+    }
+
+    /**
+     * Remove accents/diacritics for fuzzy matching.
+     */
+    private function removeAccents(string $str): string
+    {
+        $map = [
+            'á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u',
+            'Á' => 'A', 'É' => 'E', 'Í' => 'I', 'Ó' => 'O', 'Ú' => 'U',
+            'ñ' => 'n', 'Ñ' => 'N', 'ü' => 'u', 'Ü' => 'U',
+        ];
+        return strtr($str, $map);
+    }
+
+    /**
+     * Smart scoring: combines keyword matching with similar_text.
+     * Keyword matching is more robust for invoice product names.
+     */
+    private function smartScore(string $itemName, array $keywords, string $candidate): float
+    {
+        // Normalize accents in candidate for matching
+        $candidateNorm = $this->removeAccents($candidate);
+        $candidateWords = preg_split('/[\s\-_\/]+/', $candidateNorm);
+        $candidateWords = array_values(array_filter($candidateWords, fn($w) => mb_strlen($w) >= 2));
+
+        $keywordScore = 0;
+        if (!empty($keywords) && !empty($candidateWords)) {
+            // Score A: what % of OCR keywords match the DB candidate
+            $matchedFromOcr = 0;
+            foreach ($keywords as $kw) {
+                foreach ($candidateWords as $cw) {
+                    if (str_starts_with($kw, $cw) || str_starts_with($cw, $kw)) {
+                        $matchedFromOcr++;
+                        break;
+                    }
+                    similar_text($kw, $cw, $wordPct);
+                    if ($wordPct >= 80) {
+                        $matchedFromOcr++;
+                        break;
+                    }
+                }
+            }
+            $scoreA = (count($keywords) > 0) ? ($matchedFromOcr / count($keywords)) * 100 : 0;
+
+            // Score B: what % of DB candidate words are found in OCR keywords
+            // This handles "salchicha" (1 word) matching "salchicha big mont" (3 words)
+            $matchedFromDb = 0;
+            foreach ($candidateWords as $cw) {
+                foreach ($keywords as $kw) {
+                    if (str_starts_with($kw, $cw) || str_starts_with($cw, $kw)) {
+                        $matchedFromDb++;
+                        break;
+                    }
+                    similar_text($kw, $cw, $wordPct);
+                    if ($wordPct >= 80) {
+                        $matchedFromDb++;
+                        break;
+                    }
+                }
+            }
+            $scoreB = (count($candidateWords) > 0) ? ($matchedFromDb / count($candidateWords)) * 100 : 0;
+
+            $keywordScore = max($scoreA, $scoreB);
+        }
+
+        // Strategy 2: Full string similar_text
+        similar_text($itemName, $candidate, $fullPct);
+
+        // Return the best of both strategies
+        return max($keywordScore, $fullPct);
     }
 
     /**

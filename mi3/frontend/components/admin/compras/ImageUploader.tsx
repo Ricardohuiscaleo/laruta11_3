@@ -64,10 +64,15 @@ export default function ImageUploader({ images, onChange, onExtractionResult }: 
         success: boolean;
         data?: ExtractionResult;
         confianza?: ExtractionResult['confianza'];
+        sugerencias?: ExtractionResult['sugerencias'];
         error?: string;
       }>('/compras/extract', { temp_key: images[0].tempKey });
       if (res.success && res.data) {
-        const result: ExtractionResult = { ...res.data, confianza: res.confianza ?? res.data.confianza };
+        const result: ExtractionResult = {
+          ...res.data,
+          confianza: res.confianza ?? res.data.confianza,
+          sugerencias: res.sugerencias ?? res.data.sugerencias,
+        };
         setExtractionResult(result);
       } else {
         setExtractionError(true);

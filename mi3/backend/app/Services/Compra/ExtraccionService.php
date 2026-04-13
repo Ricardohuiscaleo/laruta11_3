@@ -252,7 +252,7 @@ Formato de respuesta JSON:
   "fecha": "YYYY-MM-DD (fecha de la compra/transferencia)",
   "metodo_pago": "cash" | "transfer" | "card" | "credit",
   "tipo_compra": "ingredientes" | "insumos" | "equipamiento" | "otros",
-  "items": [{"nombre": "...", "cantidad": N, "unidad": "kg|unidad|g|L", "precio_unitario": N, "subtotal": N}],
+  "items": [{"nombre": "nombre LIMPIO sin empaque", "cantidad": N_TOTAL_UNIDADES_O_KG, "unidad": "kg|unidad|g|L", "precio_unitario": N, "subtotal": N, "empaque_detalle": "descripción del cálculo de empaque o null"}],
   "monto_neto": N o null,
   "iva": N o null,
   "monto_total": N o null,
@@ -271,6 +271,30 @@ Reglas:
 - Para transferencias: proveedor = destinatario (NO el banco/Mercado Pago), metodo_pago = "transfer"
 - Para comprobantes de pago a personas conocidas (delivery, servicios), tipo_compra = "otros"
 - Responde SOLO con el JSON, sin texto adicional
+
+REGLA CRÍTICA — EMPAQUE Y CANTIDADES EN FACTURAS DE PROVEEDORES:
+Las facturas de proveedores mayoristas (Ariztía, Agrosuper, PF, etc.) usan notación de empaque en la descripción del producto.
+Ejemplos:
+- "SALCHICHA BIG MONT 800G 10U 8X1" con CANT=2 significa: 10 unidades/paquete × 8 paquetes/caja × 2 cajas = 160 unidades totales
+- "HAMBURGUESA 80G 20U 4X1" con CANT=3 significa: 20 unidades/paquete × 4 paquetes/caja × 3 cajas = 240 unidades totales
+- "PECHUGA DESHUESADA 5KG" con CANT=3 significa: 5kg × 3 = 15 kg totales
+- "JAMON PIERNA 200G 10U" con CANT=5 significa: 10 unidades/paquete × 5 paquetes = 50 unidades totales
+
+Patrones de empaque a detectar:
+- "NNu" o "NN U" = unidades por paquete (ej: 10U = 10 unidades por paquete)
+- "NNxN" o "NN X N" = paquetes por caja (ej: 8X1 = 8 paquetes por caja, 4X5 = 4 cajas de 5)
+- "NNkg" o "NN KG" = peso por unidad (ej: 5KG = 5 kilos por unidad)
+- "NNg" o "NN G" = peso por unidad en gramos (ej: 800G = 800 gramos por unidad)
+- La columna CANT de la factura = número de bultos/cajas compradas
+
+Para cada item, calcula:
+- "cantidad": la cantidad TOTAL en unidades de consumo (unidades individuales o kg totales)
+- "unidad": "unidad" para productos contables, "kg" para productos por peso
+- "empaque_detalle": string describiendo el cálculo, ej: "10u/paq × 8paq/caja × 2 cajas = 160 unidades"
+- "nombre": nombre LIMPIO del producto SIN la notación de empaque (ej: "Salchicha Big Mont" no "SALCHICHA BIG MONT 800G 10U 8X1")
+
+Si el producto se mide en unidades (salchichas, hamburguesas, panes), la cantidad debe ser en UNIDADES INDIVIDUALES.
+Si el producto se mide en peso (pechuga, carne molida), la cantidad debe ser en KG TOTALES.
 PROMPT;
     }
 

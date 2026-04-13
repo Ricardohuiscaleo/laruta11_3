@@ -6,6 +6,23 @@ export interface ExtractionItem {
   unidad: string;
   precio_unitario: number;
   subtotal: number;
+  empaque_detalle?: string | null;
+}
+
+export interface ItemSugerencia {
+  original: ExtractionItem;
+  match: {
+    id: number;
+    name: string;
+    unit: string;
+    cost_per_unit?: number;
+    current_stock?: number;
+    stock_quantity?: number;
+    price?: number;
+  } | null;
+  match_type: 'ingredient' | 'product' | null;
+  score: number;
+  pre_selected: boolean;
 }
 
 export interface ExtractionResult {
@@ -22,6 +39,10 @@ export interface ExtractionResult {
   peso_bascula: number | null;
   unidad_bascula: string | null;
   notas_ia: string | null;
+  sugerencias?: {
+    proveedor: { nombre_normalizado: string; nombre_original: string; rut?: string; score: number } | null;
+    items: ItemSugerencia[];
+  };
   confianza: {
     proveedor: number;
     rut: number;

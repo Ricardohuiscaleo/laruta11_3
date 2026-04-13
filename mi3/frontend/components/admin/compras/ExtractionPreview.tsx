@@ -137,15 +137,37 @@ export default function ExtractionPreview({ result, onUseData }: ExtractionPrevi
             <ConfidenceBadge score={confianza.items} />
           </div>
           <div className="space-y-1">
-            {result.items.map((item, i) => (
-              <div key={i} className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm">
-                <span className="flex-1 truncate font-medium">{item.nombre}</span>
-                <span className="mx-2 text-gray-500">{item.cantidad} {item.unidad}</span>
-                {item.precio_unitario > 0 && (
-                  <span className="font-medium text-gray-700">{formatCLP(item.precio_unitario)}</span>
-                )}
-              </div>
-            ))}
+            {result.items.map((item, i) => {
+              const sug = result.sugerencias?.items?.[i];
+              const matched = sug?.pre_selected && sug?.match;
+              return (
+                <div key={i} className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="flex-1 truncate font-medium">{item.nombre}</span>
+                    <span className="mx-2 text-gray-500">{item.cantidad} {item.unidad}</span>
+                    {item.precio_unitario > 0 && (
+                      <span className="font-medium text-gray-700">{formatCLP(item.precio_unitario)}</span>
+                    )}
+                  </div>
+                  {item.empaque_detalle && (
+                    <p className="text-xs text-blue-600 mt-0.5">📦 {item.empaque_detalle}</p>
+                  )}
+                  {matched && sug?.match && (
+                    <p className="text-xs text-green-600 mt-0.5">
+                      ✅ Match: {sug.match.name} ({Math.round(sug.score)}%)
+                    </p>
+                  )}
+                  {sug && !matched && sug.match && (
+                    <p className="text-xs text-amber-600 mt-0.5">
+                      ⚠️ Posible: {sug.match.name} ({Math.round(sug.score)}%)
+                    </p>
+                  )}
+                  {sug && !sug.match && (
+                    <p className="text-xs text-red-500 mt-0.5">❌ Sin match en inventario</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

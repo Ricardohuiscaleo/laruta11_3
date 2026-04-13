@@ -74,23 +74,52 @@ export default function RegistroCompra() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // When IA extracts data, pre-fill the form
+  // When IA extracts data, pre-fill the form with DB-matched items
   const handleExtractionResult = (data: ExtractionResult) => {
-    const newItems: CompraFormItem[] = (data.items || []).map(item => ({
-      ingrediente_id: null,
-      product_id: null,
-      item_type: 'ingredient' as const,
-      nombre: item.nombre || '',
-      cantidad: item.cantidad || 0,
-      unidad: item.unidad || 'unidad',
-      precio_unitario: item.precio_unitario || 0,
-      subtotal: item.subtotal || (item.cantidad || 0) * (item.precio_unitario || 0),
-      incluye_iva: false,
-    }));
+    const sugerencias = data.sugerencias;
+    const itemsSugeridos = sugerencias?.items || [];
+
+    const newItems: CompraFormItem[] = (data.items || []).map((item, idx) => {
+      // Try to find a DB match from sugerencias
+      const sug = itemsSugeridos[idx];
+      const matched = sug?.pre_selected && sug?.match ? sug : null;
+
+      if (matched && matched.match) {
+        const m = matched.match;
+        const isIngredient = matched.match_type === 'ingredient';
+        return {
+          ingrediente_id: isIngredient ? m.id : null,
+          product_id: !isIngredient ? m.id : null,
+          item_type: (matched.match_type || 'ingredient') as 'ingredient' | 'product',
+          nombre: m.name,
+          cantidad: item.cantidad || 0,
+          unidad: m.unit || item.unidad || 'unidad',
+          precio_unitario: item.precio_unitario || 0,
+          subtotal: item.subtotal || (item.cantidad || 0) * (item.precio_unitario || 0),
+          incluye_iva: false,
+        };
+      }
+
+      // No match found — add as unlinked item (user can search manually)
+      return {
+        ingrediente_id: null,
+        product_id: null,
+        item_type: 'ingredient' as const,
+        nombre: item.nombre || '',
+        cantidad: item.cantidad || 0,
+        unidad: item.unidad || 'unidad',
+        precio_unitario: item.precio_unitario || 0,
+        subtotal: item.subtotal || (item.cantidad || 0) * (item.precio_unitario || 0),
+        incluye_iva: false,
+      };
+    });
+
+    // Use matched proveedor name if available
+    const proveedorFinal = sugerencias?.proveedor?.nombre_original || data.proveedor || '';
 
     setForm(f => ({
       ...f,
-      proveedor: data.proveedor || f.proveedor,
+      proveedor: proveedorFinal || f.proveedor,
       fecha_compra: data.fecha || f.fecha_compra,
       metodo_pago: data.metodo_pago || f.metodo_pago,
       tipo_compra: data.tipo_compra || f.tipo_compra,
@@ -149,6 +178,10 @@ export default function RegistroCompra() {
         monto_total: total,
         temp_keys: images.map(i => i.tempKey),
         usuario: 'Admin',
+        items: form.items.map(it => ({
+          ...it,
+          nombre_item: it.nombre,
+        })),
       });
       setSuccess(true);
       setForm({ proveedor: '', fecha_compra: new Date().toISOString().split('T')[0], tipo_compra: 'ingredientes', metodo_pago: 'cash', notas: '', items: [], temp_image_keys: [] });
