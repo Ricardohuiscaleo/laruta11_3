@@ -254,6 +254,11 @@ PROMPT,
             }
             $imageB64 = base64_encode($imageBytes);
 
+            // Detect image format from URL extension or default to jpeg
+            $ext = strtolower(pathinfo(parse_url($s3Url, PHP_URL_PATH), PATHINFO_EXTENSION));
+            $formatMap = ['jpg' => 'jpeg', 'jpeg' => 'jpeg', 'png' => 'png', 'webp' => 'webp', 'gif' => 'gif'];
+            $bedrockFormat = $formatMap[$ext] ?? 'jpeg';
+
             $response = $client->invokeModel([
                 'modelId' => 'amazon.nova-pro-v1:0',
                 'contentType' => 'application/json',
@@ -265,7 +270,7 @@ PROMPT,
                             'content' => [
                                 [
                                     'image' => [
-                                        'format' => 'jpeg',
+                                        'format' => $bedrockFormat,
                                         'source' => [
                                             'bytes' => $imageB64,
                                         ],

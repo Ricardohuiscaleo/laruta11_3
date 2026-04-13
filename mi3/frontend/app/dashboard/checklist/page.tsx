@@ -56,24 +56,28 @@ function PhotoUpload({
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let { width, height } = img;
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
+        try {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return resolve(file); // fallback: original
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (blob) => resolve(blob || file), // fallback: original if toBlob fails
+            'image/jpeg',
+            quality,
+          );
+        } catch {
+          resolve(file); // fallback: original on any error
         }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return reject(new Error('Canvas not supported'));
-        ctx.drawImage(img, 0, 0, width, height);
-        canvas.toBlob(
-          (blob) => (blob ? resolve(blob) : reject(new Error('Compression failed'))),
-          'image/jpeg',
-          quality,
-        );
       };
-      img.onerror = () => reject(new Error('Error loading image'));
+      img.onerror = () => resolve(file); // fallback: original if can't decode (HEIC etc)
       img.src = URL.createObjectURL(file);
     });
   };
@@ -92,8 +96,10 @@ function PhotoUpload({
     setError('');
     try {
       const compressed = await compressImage(file);
+      const isOriginal = compressed === file;
+      const ext = isOriginal ? (file.name.split('.').pop() || 'jpg') : 'jpg';
       const formData = new FormData();
-      formData.append('photo', compressed, 'checklist.jpg');
+      formData.append('photo', compressed, `checklist.${ext}`);
       // Derive photo context from item description
       const desc = item.description.toLowerCase();
       let photoType = 'interior'; // default
