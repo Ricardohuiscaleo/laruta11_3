@@ -89,8 +89,8 @@ export default function RendicionWhatsApp({ compras, onClose, onCreated }: Rendi
   );
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-t-xl sm:rounded-xl bg-white shadow-xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4" onClick={onClose}>
+      <div className="w-full max-w-md rounded-t-xl sm:rounded-xl bg-white shadow-xl max-h-[85vh] overflow-y-auto pb-20 sm:pb-0" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b px-4 py-3 sticky top-0 bg-white z-10">
           <h3 className="text-base font-semibold text-gray-900">📋 Generar Rendición</h3>
           <button onClick={onClose} className="rounded-full p-1 hover:bg-gray-100"><X className="h-5 w-5" /></button>
