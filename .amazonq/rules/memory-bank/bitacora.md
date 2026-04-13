@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Deploying (`ayepqdbjas6j`, commit `f803aee`) — fix Gmail token BD | ❌ Manual |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`nklzycf28cf1zp796kr8jgl5`, commit `dfac24c`) | ❌ Manual |
 | landing3 | laruta11.cl | Astro | ✅ Running | ❌ Manual |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (commit `3345893`) — fix contexto fotos planchero | ❌ Manual |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (commit `71ef7c4`) — 10 prompts IA planchero | ❌ Manual |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (commit `40c3ce4`) — HEIC fallback + contexto planchero | ❌ Manual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (commit `40c3ce4`) — formato dinámico Bedrock | ❌ Manual |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running (`uu8lhn7wijjk1idj5ghf21pa`) | ❌ Manual |
 
 Auto-deploy desactivado en todas las apps. Se usa Smart Deploy (hook), hooks individuales, o el nuevo hook "Ship It" para ciclo completo.
@@ -74,18 +74,40 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 |---------|--------|
 | `mi3/frontend/app/dashboard/checklist/page.tsx` | `PhotoUpload`: detección de 5 tipos de contexto (plancha, lavaplatos, mesón, exterior, interior) |
 
+**Fix HEIC/cualquier formato de foto (cajera iPhone):**
+
+Cajera con iPhone moderno no podía subir foto — el frontend intentaba comprimir a JPEG via canvas, pero si el browser no decodifica HEIC, `img.onerror` lanzaba excepción y bloqueaba al usuario.
+
+| Componente | Antes | Después |
+|-----------|-------|---------|
+| `compressImage()` frontend | `reject(new Error(...))` si falla | `resolve(file)` — fallback al archivo original |
+| `img.onerror` | Rechaza la promesa → error visible | Resuelve con archivo original → sube sin comprimir |
+| `canvas.toBlob` null | Rechaza → error | Resuelve con archivo original |
+| Extensión archivo | Siempre `checklist.jpg` | `checklist.{ext}` según formato real |
+| Backend `analizarConIA` | `'format' => 'jpeg'` hardcodeado | Detecta formato real de la URL (jpg/png/webp) |
+
+**Archivos modificados (total sesión: 2):**
+
+| Archivo | Cambio |
+|---------|--------|
+| `mi3/frontend/app/dashboard/checklist/page.tsx` | Contexto 5 tipos + fallback HEIC/cualquier formato |
+| `mi3/backend/app/Services/Checklist/PhotoAnalysisService.php` | 6 prompts planchero + formato dinámico Bedrock |
+
 ### Commits y Deploys
 
 | Commit | Hash | Descripción |
 |--------|------|-------------|
 | 1 | `71ef7c4` | `fix(mi3): contexto fotos planchero - plancha/lavaplatos/mesón + 6 prompts IA específicos` |
 | 2 | `3345893` | `fix(mi3): TS error - ai_score undefined→null coalesce in handlePhotoUploaded` |
+| 3 | `40c3ce4` | `fix(mi3): photo upload fallback - HEIC/any format support, never block user` |
 
 | Deploy | App | UUID | Estado |
 |--------|-----|------|--------|
-| mi3-backend | api-mi3.laruta11.cl | `sckwdosw7v2ko1x3m0u8exdn` | ✅ finished |
+| mi3-backend (1ro) | api-mi3.laruta11.cl | `sckwdosw7v2ko1x3m0u8exdn` | ✅ finished |
 | mi3-frontend (1er intento) | mi.laruta11.cl | `f1182bkemp24q5woss3qw8rh` | ❌ failed (TS error) |
 | mi3-frontend (2do intento) | mi.laruta11.cl | `qe5loml47uajy2hhe3px0rls` | ✅ finished |
+| mi3-frontend (HEIC fix) | mi.laruta11.cl | `v60wqb8tla8s0hkfqjavs1q5` | ✅ finished |
+| mi3-backend (HEIC fix) | api-mi3.laruta11.cl | `sfpfjkuf0klxbjtcz55sdx3w` | ✅ finished |
 
 **Datos modificados en producción (SSH):**
 
@@ -104,11 +126,14 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | Fotos planchero analizadas con prompt genérico `interior` | Frontend solo detectaba `exterior` vs `interior`, no `plancha`/`lavaplatos`/`mesón` | Agregar detección de keywords: plancha, freidora, lavaplatos, mesón |
 | Deploy frontend falló: TS error línea 311 | `aiScore?: number \| null` (undefined posible) asignado a `ai_score: number \| null` (no acepta undefined) | `aiScore ?? null` para coalescer undefined a null |
 | No se verificó estado de deploys | Faltaba verificar que Coolify terminara el build exitosamente | Verificar con GET `/api/v1/deployments/{uuid}` → status: finished/failed |
+| Cajera iPhone no puede subir foto | `compressImage()` rechaza si canvas no decodifica HEIC → error bloquea al usuario | Fallback: si compresión falla, subir archivo original sin comprimir |
+| Bedrock formato hardcodeado `jpeg` | Si llega PNG/WebP, Bedrock puede rechazar | Detectar formato real de la extensión URL |
 
 ### Lecciones Aprendidas
 
 209. **El contexto de la foto debe coincidir con el prompt de IA**: Si el backend tiene 10 prompts específicos pero el frontend solo envía 2 contextos posibles, los prompts específicos nunca se usan. Frontend y backend deben estar alineados en los contextos disponibles
 210. **Siempre verificar el estado del deploy después de hacer restart**: `queued` no significa `finished`. Hay que consultar el estado del deployment_uuid para confirmar que el build pasó. Un error de TypeScript puede hacer fallar el build silenciosamente
+211. **Nunca bloquear al usuario por un error de compresión de imagen**: Si el canvas no puede decodificar HEIC (iPhones modernos), hacer fallback al archivo original. S3 acepta cualquier formato. Mejor subir una foto grande que no subir nada
 
 ### Pendiente
 
