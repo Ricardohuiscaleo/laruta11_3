@@ -134,7 +134,16 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 
 **Investigación Portal R11 (`app.laruta11.cl/r11/`):**
 
-El usuario reportó que `app.laruta11.cl/r11/` muestra "Mi Portal R11" con Límite $0, Usado $0, Disponible $0, Rol vacío. Es el sistema de crédito legacy de app3 (`app3/src/pages/r11.astro`). Muestra $0 porque el usuario no tiene crédito R11 configurado. Este portal fue reemplazado por mi3 (`mi.laruta11.cl`). Pendiente decidir si eliminar/desactivar.
+El usuario reportó que `app.laruta11.cl/r11/` muestra "Mi Portal R11" con Límite $0, Usado $0, Disponible $0, Rol vacío. Es el sistema de crédito legacy de app3 (`app3/src/pages/r11.astro`).
+
+| Usuario | `es_credito_r11` | `credito_r11_aprobado` | Lo que ve |
+|---------|-----------------|----------------------|-----------|
+| Ricardo (Google OAuth) | 0 | 0 | Formulario de registro "Bienvenido/a al Equipo" |
+| info@digitalizatodo.cl (manual) | 1 | 1 | Portal con $0 (session\_token no coincide → API falla) |
+
+La API `get_credit.php` valida `session_token` del header/cookie contra BD. Si no coincide → "No autenticado" → frontend muestra $0 como fallback. El usuario `info@digitalizatodo.cl` tiene `session_token: test_token_r11_registro_2026` pero el browser no lo envía.
+
+Pendiente decidir si eliminar/desactivar portal R11 (reemplazado por mi3).
 
 ---
 
