@@ -137,7 +137,7 @@ Cajera con iPhone moderno no podía subir foto — el frontend intentaba comprim
 
 **Migración bot Telegram:**
 
-Notificaciones de Kiro migradas de `@laruta11_bot` (compartido) a `@SuperKiro_bot` (dedicado). Token: `8432728868:AAEf2aVSvZqCT1t7SVgKKuG411XveYGpA7M`. Hook `.kiro/hooks/telegram-notify.kiro.hook` actualizado. Commit `63e4cf2`.
+Notificaciones de Kiro migradas de `@laruta11_bot` (compartido) a `@SuperKiro_bot` (dedicado). Token: `8432728868:AAEf2aVSvZqCT1t7SVgKKuG411XveYGpA7M`. Header: "SuperKiro-LaRuta11". Hook `.kiro/hooks/telegram-notify.kiro.hook` actualizado. Commits `63e4cf2`, `695f38d`.
 
 ### Pendiente
 
