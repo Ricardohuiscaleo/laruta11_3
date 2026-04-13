@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`e82e9a9`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`2cc350f`) |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`534e73e`) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`b66785d`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -51,6 +51,7 @@
 - [ ] **Corregir caja3 `get_turnos.php`** base date cajero (2026-02-01 → 2026-02-02)
 - [ ] **Generar turnos mayo** en producción
 - [ ] **Fix push subscriptions duplicadas** en `push_subscriptions_mi3` (44 registros para 1 usuario)
+- [ ] **Deploy pendiente**: fix duplicate entry turnos (`updateOrCreate` en ShiftController + ShiftSwapService) — falta commit+deploy
 
 ### 🟡 Verificaciones pendientes
 
@@ -65,13 +66,14 @@
 - [ ] Verificar Gmail Token Refresh funciona 100%
 - [ ] Verificar subida masiva agrupa ARIAKA correctamente
 - [ ] **Deploy pendiente**: `foto_url` en `personal` — BD ya tiene columna+datos, falta commit+deploy del código backend+frontend
-- [ ] **Resolver duplicado Dafne**: id=12 (sin user\_id, turnos apuntan acá) vs id=18 (user\_id=164, con foto). Migrar turnos/checklists al 18 y desactivar 12
+- [x] **Resolver duplicado Dafne**: migrados 16 turnos + 4 checklists de id=12 → id=18 (user\_id=164). id=12 desactivado, 0 referencias restantes.
 
 ### 🟢 Mejoras futuras
 
 - [x] **Sistema de Rendiciones**: Implementado. Tabla `rendiciones`, página pública /rendicion/{token}, saldo encadenado, 250 compras históricas marcadas como rendidas, saldo actual $68.899
-- [ ] Tareas generadas por IA desde fotos de checklist (si score < 50 → tarea automática)
-- [ ] **Verificar saldo en caja interactivo** — tarjeta con monto de `caja_movimientos`, confirmación sí/no, input diferencia, notificación admin (feature nueva)
+- [x] Tareas generadas por IA desde fotos de checklist (si score < 50 → tarea automática) — implementado: `checklist_ai_tasks`, escalamiento a 3 detecciones, tab Test IA
+- [x] **Verificar saldo en caja interactivo** — implementado: item_type cash_verification, tarjeta interactiva Sí/No, notificaciones via @laruta11_bot + push. Commit `7eb206d`
+- [ ] Obtener chat_id del grupo "Pedidos 11" para notificaciones de caja (actualmente usa chat personal)
 - [ ] Ejecutar migraciones `checklists_v2` en producción (spec existe pero tabla no)
 - [ ] Recalcular delivery\_fee server-side en `create_order.php` (actualmente confía en frontend)
 - [ ] Unificar factor descuento RL6 en caja3 (0.6 vs 0.7143)
@@ -79,6 +81,43 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-13y — Fix duplicate entry turnos (reemplazo)
+
+**Cambios:**
+- `ShiftController.php`: `Turno::create()` → `Turno::updateOrCreate()` para evitar violación unique constraint `(personal_id, fecha)` al crear turnos de reemplazo
+- `ShiftSwapService.php`: mismo fix en `aprobar()` — actualiza turno existente en vez de insertar duplicado
+
+**Commits:** pendiente
+**Deploys:** pendiente
+
+### 2026-04-13x — Fix nómina: excluir cashflow dueño + liquidez correcta
+
+**Cambios:**
+- `PayrollController.php`: filtrar rol "dueño" del cálculo de `total_sueldos` por centro de costo
+- `LiquidacionService.php`: `getCashflowLiquidez()` ahora calcula ventas - compras - sueldos (antes solo sumaba ventas brutas TUU)
+- Fórmula: ventas (installment - delivery, paid) - compras - sueldos Ruta 11 (activos, sin seguridad-only, sin dueño)
+- Arreglado en mi3 + caja3 `get_monthly_cashflow.php` (misma query)
+
+**Commits:** `38285fb`, `c344ac2`, `d30bf91`, `b66785d`
+**Deploys:** mi3-backend (`otmdd4be`) ✅, caja3 (`p13nq021`) ✅
+
+### 2026-04-13w — Feature: Verificación caja + AI Training + Tab Test IA
+
+**Cambios:**
+- 6 migraciones: `item_type` en templates/items, `cash_*` en items, 3 tablas nuevas (`checklist_ai_prompts`, `checklist_ai_training`, `checklist_ai_tasks`), seed 12 prompts
+- 3 modelos nuevos: `ChecklistAiPrompt`, `ChecklistAiTraining`, `ChecklistAiTask`
+- `TelegramService`: multi-bot (SuperKiro + @laruta11_bot)
+- `ChecklistService`: `verificarCaja()` con notificaciones Telegram + push
+- `PhotoAnalysisService`: prompts desde BD, `buildEnhancedPrompt` con correcciones + tareas, `registrarTareasSiNecesario` con escalamiento
+- `AITrainingService`: feedback, precisión, auto-generación de prompts candidatos
+- 8 rutas API nuevas, 2 componentes frontend (CashVerificationItem + TabTestIA)
+- Coolify: env vars `TELEGRAM_LARUTA11_TOKEN` + `TELEGRAM_LARUTA11_CHAT_ID`
+- BD: templates `cash_verification` para cajero apertura+cierre, checklists recreados con saldo $19.311
+- Admin view: `ChecklistItemDetail` muestra saldo esperado, resultado ok/discrepancia con colores
+
+**Commits:** `7eb206d`, `534e73e`
+**Deploys:** mi3-backend (`vzjjvl7z`) ✅, mi3-frontend (`tr6busob`, `z4p1p7dt`) ✅
 
 ### 2026-04-13v — Telegram notificación en fallo de cron + retry
 
@@ -91,37 +130,7 @@
 **Commits:** `2cc350f`
 **Deploys:** mi3-backend (`whpy117v`) ✅
 
-### 2026-04-13u — Overhaul checklist templates + AI prompts lavaplatos+mesón
-
-**Cambios:**
-- BD producción: desactivados 23 templates viejos, creados 23 nuevos con rol explícito (cajero/planchero, sin NULL)
-- BD producción: borrados checklists de hoy (ids 189-192), recreados 4 nuevos (ids 193-196) con items correctos via `mi3:create-daily-checklists`
-- Fotos planchero: "Sector plancha, freidora y fuentes" + "Lavaplatos y mesón de trabajo" (apertura y cierre)
-- Fotos cajero: interior + exterior (se mantienen)
-- Removido "Verificar saldo en caja" de templates (será feature interactiva aparte)
-- `PhotoAnalysisService.php`: nuevos prompts `lavaplatos_meson_apertura` y `lavaplatos_meson_cierre`
-
-**Commits:** `9ecee87`
-**Deploys:** mi3-backend (`x6vdz1v3`) ✅
-
-### 2026-04-13t — Fix 500 crear turno reemplazo + UX monto seleccionable
-
-**Cambios:**
-- `ShiftController.php`: try-catch en `store()` para capturar error real de BD en vez de 500 genérico
-- `turnos/page.tsx`: monto reemplazo ahora con botones rápidos $20.000/$30.000 + input "Otro" para monto custom
-
-**Commits:** `e82e9a9`
-**Deploys:** mi3-backend + mi3-frontend (push → Coolify auto-deploy)
-
-### 2026-04-13s — Desactivar cron legacy caja3 + template gas planchero
-
-**Cambios:**
-- BD producción: INSERT `checklist_templates` id=23 (apertura/planchero: "Conectar conexiones de gas")
-- BD producción: DELETE checklists legacy ids 178,187 (sin personal_id, hoy)
-- Coolify: scheduled task `Daily Checklists (caja3)` → `enabled: false` (UUID: `m3rws04ajruudvng66n5qb1d`)
-- Solo mi3 `create-daily-checklists` crea checklists ahora
-
 ---
 
-> Sesiones anteriores (130 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (133 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

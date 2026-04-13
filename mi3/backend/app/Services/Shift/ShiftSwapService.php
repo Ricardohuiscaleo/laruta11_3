@@ -67,15 +67,19 @@ class ShiftSwapService
                 'aprobado_por' => $aprobadoPorId,
             ]);
 
-            // Create replacement shift
-            Turno::create([
-                'personal_id' => $solicitud->solicitante_id,
-                'fecha' => $solicitud->fecha_turno,
-                'tipo' => 'reemplazo',
-                'reemplazado_por' => $solicitud->compañero_id,
-                'monto_reemplazo' => 20000,
-                'pago_por' => 'empresa',
-            ]);
+            // Create or update replacement shift
+            Turno::updateOrCreate(
+                [
+                    'personal_id' => $solicitud->solicitante_id,
+                    'fecha' => $solicitud->fecha_turno,
+                ],
+                [
+                    'tipo' => 'reemplazo',
+                    'reemplazado_por' => $solicitud->compañero_id,
+                    'monto_reemplazo' => 20000,
+                    'pago_por' => 'empresa',
+                ]
+            );
 
             // Notify both workers
             $notificationService = app(NotificationService::class);

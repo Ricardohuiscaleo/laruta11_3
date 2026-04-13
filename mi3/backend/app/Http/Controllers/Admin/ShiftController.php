@@ -41,14 +41,18 @@ class ShiftController extends Controller
             $current = $fechaInicio->copy();
 
             while ($current <= $fechaFin) {
-                $creados[] = Turno::create([
-                    'personal_id' => $data['personal_id'],
-                    'fecha' => $current->format('Y-m-d'),
-                    'tipo' => $data['tipo'],
-                    'reemplazado_por' => $data['reemplazado_por'] ?? null,
-                    'monto_reemplazo' => $data['monto_reemplazo'] ?? null,
-                    'pago_por' => $data['pago_por'] ?? null,
-                ]);
+                $creados[] = Turno::updateOrCreate(
+                    [
+                        'personal_id' => $data['personal_id'],
+                        'fecha' => $current->format('Y-m-d'),
+                    ],
+                    [
+                        'tipo' => $data['tipo'],
+                        'reemplazado_por' => $data['reemplazado_por'] ?? null,
+                        'monto_reemplazo' => $data['monto_reemplazo'] ?? null,
+                        'pago_por' => $data['pago_por'] ?? null,
+                    ]
+                );
                 $current->addDay();
             }
 
