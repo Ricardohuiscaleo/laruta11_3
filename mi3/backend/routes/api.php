@@ -98,6 +98,7 @@ Route::prefix('v1')->group(function () {
         Route::get('kpis', [\App\Http\Controllers\Admin\KpiController::class, 'index']);
         Route::get('kpis/historial-saldo', [\App\Http\Controllers\Admin\KpiController::class, 'historialSaldo']);
         Route::get('kpis/proyeccion', [\App\Http\Controllers\Admin\KpiController::class, 'proyeccion']);
+        Route::get('kpis/rendiciones', [\App\Http\Controllers\Admin\KpiController::class, 'rendiciones']);
         Route::get('kpis/precio-historico/{id}', [\App\Http\Controllers\Admin\KpiController::class, 'precioHistorico']);
 
         // Personal

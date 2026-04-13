@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Events\RendicionActualizada;
 use App\Models\Compra;
 use App\Models\Rendicion;
 use Illuminate\Http\JsonResponse;
@@ -106,6 +107,8 @@ class RendicionController extends Controller
                 ->where('estado', 'pagado')
                 ->update(['rendicion_id' => $rendicion->id]);
 
+            RendicionActualizada::dispatch($rendicion->id, 'pendiente', $saldoResultante);
+
             return response()->json([
                 'success' => true,
                 'rendicion' => $rendicion,
@@ -179,6 +182,8 @@ class RendicionController extends Controller
             'aprobado_at' => now(),
             'notas' => $request->input('notas') ?? $rendicion->notas,
         ]);
+
+        RendicionActualizada::dispatch($rendicion->id, 'aprobada', $saldoNuevo);
 
         return response()->json([
             'success' => true,

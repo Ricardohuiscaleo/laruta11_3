@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Rendicion;
 use App\Services\Compra\CompraService;
 use App\Services\Compra\SugerenciaService;
 use Illuminate\Http\JsonResponse;
@@ -44,6 +45,19 @@ class KpiController extends Controller
     public function proyeccion(): JsonResponse
     {
         return response()->json(['success' => true, 'proyeccion' => []]);
+    }
+
+    /**
+     * Historial de rendiciones (saldo encadenado).
+     * GET /api/v1/admin/kpis/rendiciones
+     */
+    public function rendiciones(): JsonResponse
+    {
+        $rendiciones = Rendicion::orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get(['id', 'token', 'saldo_anterior', 'total_compras', 'saldo_resultante', 'monto_transferido', 'saldo_nuevo', 'estado', 'created_at', 'aprobado_at']);
+
+        return response()->json(['success' => true, 'rendiciones' => $rendiciones]);
     }
 
     /**
