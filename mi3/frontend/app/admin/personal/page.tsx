@@ -131,7 +131,7 @@ export default function PersonalAdminPage() {
                 <td className="px-4 py-3 font-medium">
                   <div className="flex items-center gap-2">
                     {p.foto_url ? (
-                      <img src={p.foto_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                      <img src={p.foto_url} alt="" className="h-8 w-8 rounded-full object-cover" style={{ imageOrientation: 'from-image' }} />
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
                         <User className="h-4 w-4 text-amber-600" />
