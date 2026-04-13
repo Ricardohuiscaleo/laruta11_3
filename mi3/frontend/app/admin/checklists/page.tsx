@@ -200,7 +200,9 @@ function ChecklistItemDetail({ item }: { item: ChecklistItem }) {
   return (
     <div className={cn(
       'rounded-lg border p-3',
-      item.is_completed ? 'border-green-200 bg-green-50/50' : 'border-gray-200 bg-white'
+      item.is_completed ? 'border-green-200 bg-green-50/50' : 'border-gray-200 bg-white',
+      item.item_type === 'cash_verification' && !item.is_completed ? 'border-amber-300 bg-amber-50/50' : '',
+      item.item_type === 'cash_verification' && item.cash_result === 'discrepancia' ? 'border-red-300 bg-red-50/50' : '',
     )}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
@@ -219,6 +221,31 @@ function ChecklistItemDetail({ item }: { item: ChecklistItem }) {
           <span className="text-gray-300 text-xs">○</span>
         )}
       </div>
+
+      {/* Cash Verification Details */}
+      {item.item_type === 'cash_verification' && (
+        <div className={cn(
+          'mt-2 rounded-lg p-2.5 text-sm',
+          !item.is_completed ? 'bg-amber-100 text-amber-800' :
+          item.cash_result === 'ok' ? 'bg-green-100 text-green-800' :
+          'bg-red-100 text-red-800'
+        )}>
+          {!item.is_completed ? (
+            <p className="font-medium">💰 Saldo esperado: {formatCLP(item.cash_expected ?? 0)} — Pendiente</p>
+          ) : item.cash_result === 'ok' ? (
+            <p className="font-medium">✅ Caja verificada — Saldo: {formatCLP(item.cash_expected ?? 0)}</p>
+          ) : (
+            <div className="space-y-1">
+              <p className="font-medium">⚠️ Discrepancia de caja</p>
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div><span className="text-gray-500">Esperado:</span> {formatCLP(item.cash_expected ?? 0)}</div>
+                <div><span className="text-gray-500">Real:</span> {formatCLP(item.cash_actual ?? 0)}</div>
+                <div><span className="text-gray-500">Diferencia:</span> {formatCLP(Math.abs(item.cash_difference ?? 0))} ({(item.cash_difference ?? 0) > 0 ? 'sobrante' : 'faltante'})</div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Photo */}
       {item.photo_url && (
