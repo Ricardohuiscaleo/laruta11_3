@@ -66,9 +66,11 @@ export default function RendicionPublicPage({ params }: { params: { token: strin
   if (!rendicion) return null;
 
   const isPendiente = rendicion.estado === 'pendiente';
+  const saldoNegativo = rendicion.saldo_resultante < 0;
   const deuda = Math.abs(rendicion.saldo_resultante);
-  const exactoRedondeado = roundUp(deuda, 1000);
-  const smart = roundUp(deuda + 100000, 10000);
+  // Solo calcular montos sugeridos si Ricardo puso de su bolsillo (saldo negativo)
+  const exactoRedondeado = saldoNegativo ? roundUp(deuda, 1000) : 0;
+  const smart = saldoNegativo ? roundUp(deuda + 100000, 10000) : roundUp(100000, 10000);
 
   return (
     <div className="mx-auto max-w-lg p-4 space-y-4 pb-8">
@@ -96,10 +98,10 @@ export default function RendicionPublicPage({ params }: { params: { token: strin
             <p className="text-[11px] text-gray-500">Gastado</p>
             <p className="text-base font-bold text-red-600">-{fmt(rendicion.total_compras)}</p>
           </div>
-          <div className={`rounded-lg p-3 ${rendicion.saldo_resultante >= 0 ? 'bg-green-50' : 'bg-amber-50'}`}>
-            <p className="text-[11px] text-gray-500">{rendicion.saldo_resultante >= 0 ? 'A devolver' : 'Faltante'}</p>
-            <p className={`text-base font-bold ${rendicion.saldo_resultante >= 0 ? 'text-green-700' : 'text-amber-700'}`}>
-              {fmt(Math.abs(rendicion.saldo_resultante))}
+          <div className={`rounded-lg p-3 ${rendicion.saldo_resultante >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+            <p className="text-[11px] text-gray-500">{rendicion.saldo_resultante >= 0 ? 'Caja disponible' : 'Ricardo puso de su bolsillo'}</p>
+            <p className={`text-base font-bold ${rendicion.saldo_resultante >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+              {rendicion.saldo_resultante >= 0 ? fmt(rendicion.saldo_resultante) : fmt(Math.abs(rendicion.saldo_resultante))}
             </p>
           </div>
         </div>
@@ -153,19 +155,41 @@ export default function RendicionPublicPage({ params }: { params: { token: strin
 
           {/* Quick amount buttons */}
           <div className="space-y-2">
-            <label className="text-xs text-gray-500">Monto a transferir</label>
-            <div className="flex gap-2">
-              <button onClick={() => setMonto(String(exactoRedondeado))}
-                className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition-colors ${monto === String(exactoRedondeado) ? 'border-mi3-500 bg-mi3-50 text-mi3-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
-                {fmt(exactoRedondeado)}
-                <span className="block text-[10px] text-gray-400">Exacto</span>
-              </button>
-              <button onClick={() => setMonto(String(smart))}
-                className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition-colors ${monto === String(smart) ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
-                {fmt(smart)}
-                <span className="block text-[10px] text-gray-400">+ Caja</span>
-              </button>
-            </div>
+            <label className="text-xs text-gray-500">Monto a transferir a Ricardo</label>
+
+            {saldoNegativo ? (
+              <>
+                <p className="text-xs text-red-600 font-medium">⚠️ Ricardo puso {fmt(deuda)} de su bolsillo. Hay que devolverle.</p>
+                <div className="flex gap-2">
+                  <button onClick={() => setMonto(String(exactoRedondeado))}
+                    className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition-colors ${monto === String(exactoRedondeado) ? 'border-mi3-500 bg-mi3-50 text-mi3-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                    {fmt(exactoRedondeado)}
+                    <span className="block text-[10px] text-gray-400">Devolver</span>
+                  </button>
+                  <button onClick={() => setMonto(String(smart))}
+                    className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition-colors ${monto === String(smart) ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                    {fmt(smart)}
+                    <span className="block text-[10px] text-gray-400">Devolver + Caja</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-green-600 font-medium">✅ Ricardo tiene {fmt(rendicion.saldo_resultante)} en caja. No es obligatorio transferir.</p>
+                <div className="flex gap-2">
+                  <button onClick={() => setMonto('0')}
+                    className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition-colors ${monto === '0' ? 'border-mi3-500 bg-mi3-50 text-mi3-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                    $0
+                    <span className="block text-[10px] text-gray-400">Solo aprobar</span>
+                  </button>
+                  <button onClick={() => setMonto(String(smart))}
+                    className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition-colors ${monto === String(smart) ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                    {fmt(smart)}
+                    <span className="block text-[10px] text-gray-400">+ Caja extra</span>
+                  </button>
+                </div>
+              </>
+            )}
             <input type="number" value={monto} onChange={e => setMonto(e.target.value)}
               placeholder="Otro monto..."
               className="w-full rounded-lg border px-3 py-2.5 text-base" />

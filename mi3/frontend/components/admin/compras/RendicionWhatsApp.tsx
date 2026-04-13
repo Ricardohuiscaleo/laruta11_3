@@ -55,9 +55,10 @@ export default function RendicionWhatsApp({ compras, onClose, onCreated }: Rendi
 
     lines.push('━━━━━━━━━━━━━━━━━━━━');
     if (saldoResultante >= 0) {
-      lines.push(`*✅ Saldo a favor:* ${formatearPesosCLP(saldoResultante)}`);
+      lines.push(`*✅ Caja disponible:* ${formatearPesosCLP(saldoResultante)}`);
+      lines.push('No necesitas transferir, solo aprobar.');
     } else {
-      lines.push(`*⚠️ Por transferir:* ${formatearPesosCLP(Math.abs(saldoResultante))}`);
+      lines.push(`*⚠️ Ricardo puso de su bolsillo:* ${formatearPesosCLP(Math.abs(saldoResultante))}`);
     }
     lines.push('');
     lines.push(`🔗 Ver detalle y aprobar: ${link}`);
@@ -106,10 +107,10 @@ export default function RendicionWhatsApp({ compras, onClose, onCreated }: Rendi
               <p className="text-xs text-gray-500">Gastado</p>
               <p className="text-base font-bold text-red-600">-{formatearPesosCLP(totalCompras)}</p>
             </div>
-            <div className={`rounded-lg p-3 ${saldoResultante >= 0 ? 'bg-green-50' : 'bg-amber-50'}`}>
-              <p className="text-xs text-gray-500">{saldoResultante >= 0 ? 'A favor' : 'Por transferir'}</p>
-              <p className={`text-base font-bold ${saldoResultante >= 0 ? 'text-green-700' : 'text-amber-700'}`}>
-                {formatearPesosCLP(Math.abs(saldoResultante))}
+            <div className={`rounded-lg p-3 ${saldoResultante >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+              <p className="text-xs text-gray-500">{saldoResultante >= 0 ? 'Caja disponible' : 'Bolsillo Ricardo'}</p>
+              <p className={`text-base font-bold ${saldoResultante >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                {saldoResultante >= 0 ? formatearPesosCLP(saldoResultante) : formatearPesosCLP(Math.abs(saldoResultante))}
               </p>
             </div>
           </div>
