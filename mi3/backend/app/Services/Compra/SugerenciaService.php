@@ -169,6 +169,25 @@ class SugerenciaService
     }
 
     /**
+     * Check if two words are a valid prefix match.
+     * The shorter word must be at least 60% of the longer word's length.
+     */
+    private function isValidPrefixMatch(string $a, string $b): bool
+    {
+        if (!str_starts_with($a, $b) && !str_starts_with($b, $a)) {
+            return false;
+        }
+        $lenA = mb_strlen($a);
+        $lenB = mb_strlen($b);
+        $shorter = min($lenA, $lenB);
+        $longer = max($lenA, $lenB);
+        // "sal" (3) vs "salchicha" (9) = 33% → reject
+        // "mont" (4) vs "montina" (7) = 57% → accept
+        // "big" (3) vs "big" (3) = 100% → accept
+        return ($shorter / $longer) >= 0.50;
+    }
+
+    /**
      * Smart scoring: combines keyword matching with similar_text.
      * Keyword matching is more robust for invoice product names.
      */
@@ -185,7 +204,7 @@ class SugerenciaService
             $matchedFromOcr = 0;
             foreach ($keywords as $kw) {
                 foreach ($candidateWords as $cw) {
-                    if (str_starts_with($kw, $cw) || str_starts_with($cw, $kw)) {
+                    if ($this->isValidPrefixMatch($kw, $cw)) {
                         $matchedFromOcr++;
                         break;
                     }
@@ -199,11 +218,10 @@ class SugerenciaService
             $scoreA = (count($keywords) > 0) ? ($matchedFromOcr / count($keywords)) * 100 : 0;
 
             // Score B: what % of DB candidate words are found in OCR keywords
-            // This handles "salchicha" (1 word) matching "salchicha big mont" (3 words)
             $matchedFromDb = 0;
             foreach ($candidateWords as $cw) {
                 foreach ($keywords as $kw) {
-                    if (str_starts_with($kw, $cw) || str_starts_with($cw, $kw)) {
+                    if ($this->isValidPrefixMatch($kw, $cw)) {
                         $matchedFromDb++;
                         break;
                     }

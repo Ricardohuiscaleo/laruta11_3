@@ -292,6 +292,14 @@ Para cada item, calcula:
 - "unidad": "unidad" para productos contables, "kg" para productos por peso
 - "empaque_detalle": string describiendo el cálculo, ej: "10u/paq × 8paq/caja × 2 cajas = 160 unidades"
 - "nombre": nombre LIMPIO del producto SIN la notación de empaque (ej: "Salchicha Big Mont" no "SALCHICHA BIG MONT 800G 10U 8X1")
+- "precio_unitario": precio POR UNIDAD DE CONSUMO (no por bulto/caja). Calcula: subtotal_neto_linea / cantidad_total. Ej: si la línea dice PRECIO 22.630 y VALOR 45.260 con 160 unidades totales → precio_unitario = 45260 / 160 = 283
+- "subtotal": el valor NETO de la línea (columna VALOR de la factura, NO el precio por bulto)
+
+IMPORTANTE sobre precios en facturas mayoristas:
+- La columna PRECIO de la factura es el precio POR BULTO/CAJA, NO por unidad individual
+- La columna VALOR es PRECIO × CANT (total de la línea)
+- El precio_unitario que necesitamos es: VALOR / cantidad_total_unidades
+- Ejemplo: PRECIO=22.630, CANT=2, VALOR=45.260, cantidad_total=160 → precio_unitario = 45260/160 = 283
 
 Si el producto se mide en unidades (salchichas, hamburguesas, panes), la cantidad debe ser en UNIDADES INDIVIDUALES.
 Si el producto se mide en peso (pechuga, carne molida), la cantidad debe ser en KG TOTALES.
