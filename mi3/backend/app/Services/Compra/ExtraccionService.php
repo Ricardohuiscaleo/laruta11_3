@@ -205,6 +205,17 @@ Analiza esta imagen y determina qué tipo de contenido es. Responde SOLO con JSO
 TIPO 1 — BOLETA O FACTURA (documento impreso con texto, montos, RUT):
 Extrae: proveedor, rut_proveedor, items (array con nombre/cantidad/unidad/precio_unitario/subtotal), monto_neto, iva, monto_total.
 
+REGLA CRÍTICA PARA IDENTIFICAR AL PROVEEDOR EN FACTURAS CHILENAS:
+En una factura chilena, el PROVEEDOR (emisor) es la empresa que EMITE la factura, NO el destinatario.
+Estructura típica de una factura chilena:
+- ARRIBA/ENCABEZADO: nombre de la empresa emisora (EL PROVEEDOR), su dirección, su RUT
+- SECCIÓN "SEÑORES" o "CLIENTE": nombre del COMPRADOR (La Ruta 11, Ricardo Huiscaleo, etc.) — esto NO es el proveedor
+- La dirección del comprador (ej: YUMBEL 2629, ARICA) NO es el proveedor
+- El RUT del proveedor está en el encabezado, cerca del nombre de la empresa emisora
+- Si ves "FACTURA ELECTRÓNICA" con un número, el RUT cercano es del EMISOR (proveedor)
+- Nombres como "La Ruta 11", "Yumbel", "Arica" son del COMPRADOR, no del proveedor
+- Busca el nombre comercial en las PRIMERAS LÍNEAS del documento (antes de "SEÑORES")
+
 TIPO 2 — FOTO DE PRODUCTO (caja, bolsa, envase de ingrediente):
 Identifica el producto y estima la cantidad. Ejemplos:
 - Caja de tomates → "Tomate", cantidad estimada según tamaño de caja (caja estándar = 3 kg)

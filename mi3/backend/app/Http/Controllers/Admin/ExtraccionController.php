@@ -51,12 +51,22 @@ class ExtraccionController extends Controller
             // Post-extraction: force map known persons to suppliers
             $data = $this->mapPersonToSupplier($data);
             
+            // Post-extraction: if RUT is detected, try to match proveedor by RUT
+            $data = $this->matchProveedorByRut($data);
+            
             $proveedorMatch = null;
             $itemsMatch = [];
 
             if (!empty($data['proveedor'])) {
                 $proveedorMatch = $this->sugerenciaService->matchProveedor($data['proveedor']);
+                // If proveedor matched, override with the canonical name
+                if ($proveedorMatch && $proveedorMatch['score'] >= 70) {
+                    $data['proveedor'] = $proveedorMatch['nombre_original'];
+                }
             }
+
+            // Apply known supplier rules (metodo_pago, tipo_compra)
+            $data = $this->applySupplierRules($data);
 
             if (!empty($data['items'])) {
                 $itemsMatch = $this->sugerenciaService->matchItems($data['items']);
@@ -225,6 +235,65 @@ class ExtraccionController extends Controller
                         $item['nombre'] = 'Servicios Delivery';
                     }
                 }
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Post-extraction: match proveedor by RUT from supplier_index.
+     * If the AI detected a RUT, look it up in supplier_index to get the real name.
+     * This fixes cases where the AI reads the buyer's address as the supplier name.
+     */
+    private function matchProveedorByRut(array $data): array
+    {
+        $rut = $data['rut_proveedor'] ?? null;
+        if (empty($rut)) {
+            return $data;
+        }
+
+        // Look up RUT in supplier_index
+        $supplier = \App\Models\SupplierIndex::where('rut', $rut)->first();
+        if ($supplier) {
+            $data['proveedor'] = $supplier->nombre_original;
+            $data['notas_ia'] = ($data['notas_ia'] ?? '') . " [Proveedor identificado por RUT {$rut}]";
+        }
+
+        return $data;
+    }
+
+    /**
+     * Apply known supplier rules: metodo_pago, tipo_compra.
+     * Called after proveedor is resolved (by AI, RUT, or fuzzy match).
+     */
+    private function applySupplierRules(array $data): array
+    {
+        $proveedor = mb_strtolower(trim($data['proveedor'] ?? ''));
+        if ($proveedor === '') {
+            return $data;
+        }
+
+        // Suppliers that always pay by transfer
+        $transferSuppliers = [
+            'ariztía', 'ariztia', 'ariztía (proveedor)', 'ariztia (proveedor)',
+            'agrosuper', 'agrosuper (proveedor)',
+            'ideal', 'agro-lucila', 'ariaka', 'jumboapp',
+        ];
+
+        foreach ($transferSuppliers as $ts) {
+            if (str_contains($proveedor, $ts)) {
+                $data['metodo_pago'] = 'transfer';
+                break;
+            }
+        }
+
+        // Ingredient suppliers
+        $ingredientSuppliers = ['ariztía', 'ariztia', 'agrosuper', 'ideal', 'agro-lucila'];
+        foreach ($ingredientSuppliers as $is) {
+            if (str_contains($proveedor, $is)) {
+                $data['tipo_compra'] = 'ingredientes';
+                break;
             }
         }
 
