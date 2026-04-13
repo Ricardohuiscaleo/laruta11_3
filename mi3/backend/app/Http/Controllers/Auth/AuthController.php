@@ -53,8 +53,8 @@ class AuthController extends Controller
             );
         }
 
-        // Session cookie (0) = expires when browser closes; 30 days if remember
-        $maxAge = $remember ? (30 * 24 * 60) : 0;
+        // Always persist session for 30 days (internal app, no reason for session cookies)
+        $maxAge = 30 * 24 * 60; // 30 days in minutes
         $role = $result['user']['is_admin'] ? 'admin' : 'worker';
 
         return response()->json([
