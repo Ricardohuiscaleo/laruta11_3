@@ -239,21 +239,30 @@ export default function TurnosAdminPage() {
                       {workers.map(w => <option key={w.id} value={w.id}>{w.nombre}</option>)}
                     </select>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Monto</label>
-                      <input type="number" value={form.monto_reemplazo} onChange={e => setForm(f => ({ ...f, monto_reemplazo: e.target.value }))}
-                        className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm" />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Monto</label>
+                    <div className="mt-1 flex gap-2">
+                      {[20000, 30000].map(val => (
+                        <button key={val} type="button"
+                          onClick={() => setForm(f => ({ ...f, monto_reemplazo: String(val) }))}
+                          className={cn('flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+                            form.monto_reemplazo === String(val) ? 'border-amber-500 bg-amber-50 text-amber-700' : 'hover:bg-gray-50')}>
+                          ${val.toLocaleString('es-CL')}
+                        </button>
+                      ))}
+                      <input type="number" placeholder="Otro" value={![20000, 30000].map(String).includes(form.monto_reemplazo) ? form.monto_reemplazo : ''}
+                        onChange={e => setForm(f => ({ ...f, monto_reemplazo: e.target.value }))}
+                        className="w-24 rounded-lg border px-3 py-2 text-sm" />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Pago por</label>
-                      <select value={form.pago_por} onChange={e => setForm(f => ({ ...f, pago_por: e.target.value }))}
-                        className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm">
-                        <option value="empresa">Empresa</option>
-                        <option value="empresa_adelanto">Empresa (adelanto)</option>
-                        <option value="personal">Personal</option>
-                      </select>
-                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Pago por</label>
+                    <select value={form.pago_por} onChange={e => setForm(f => ({ ...f, pago_por: e.target.value }))}
+                      className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm">
+                      <option value="empresa">Empresa</option>
+                      <option value="empresa_adelanto">Empresa (adelanto)</option>
+                      <option value="personal">Personal</option>
+                    </select>
                   </div>
                 </>
               )}
