@@ -87,10 +87,16 @@ export default function HistorialCompras() {
           <div className="p-6 text-center text-sm text-gray-500">No hay compras</div>
         ) : (
           <div className="divide-y">
-            {compras.map(c => (
-              <div key={c.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
-                <input type="checkbox" checked={selected.has(c.id)}
-                  onChange={() => toggleSelect(c.id)} className="rounded" />
+            {compras.map(c => {
+              const rendida = !!(c as any).rendicion_id;
+              return (
+              <div key={c.id} className={`flex items-center gap-3 px-4 py-3 hover:bg-gray-50 ${rendida ? 'opacity-60' : ''}`}>
+                {!rendida ? (
+                  <input type="checkbox" checked={selected.has(c.id)}
+                    onChange={() => toggleSelect(c.id)} className="rounded" />
+                ) : (
+                  <span className="inline-flex items-center rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">✓</span>
+                )}
                 <button onClick={() => setDetalle(c)} className="flex flex-1 items-center justify-between text-left">
                   <div>
                     <p className="text-sm font-medium text-gray-900">{c.proveedor}</p>
@@ -102,7 +108,8 @@ export default function HistorialCompras() {
                   <span className="text-sm font-semibold text-gray-900">{formatearPesosCLP(c.monto_total)}</span>
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -131,7 +138,8 @@ export default function HistorialCompras() {
       )}
 
       {showRendicion && (
-        <RendicionWhatsApp compras={selectedCompras} onClose={() => setShowRendicion(false)} />
+        <RendicionWhatsApp compras={selectedCompras} onClose={() => setShowRendicion(false)}
+          onCreated={() => { setSelected(new Set()); fetchCompras(page, query); }} />
       )}
     </div>
   );
