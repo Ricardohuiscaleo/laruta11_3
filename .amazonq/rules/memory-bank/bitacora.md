@@ -154,7 +154,7 @@ Notificaciones de Kiro migradas de `@laruta11_bot` (compartido) a `@SuperKiro_bo
 
 Notas: `.deb` falló por dependencias GUI (webkit, appindicator). Zip + `install.sh --force --no-confirm` funcionó. Login requiere `--license free --use-device-flow` para Builder ID en servidor headless.
 
-Issue pendiente: kiro-cli via ACP puede estar viendo `/opt/kiro-acp-telegram-bot/` como workspace en vez de `/root/laruta11_3` a pesar de que `cwd` se pasa correctamente en spawn y `session/new`. Bot reiniciado con nueva sesión (`28e0cae5`), pendiente verificar con mensaje de prueba desde Telegram.
+Issue resuelto: tras reiniciar el bot, kiro-cli ve correctamente `/root/laruta11_3` como workspace (confirmado: lee README.md, ve app3/, caja3/, mi3/, .kiro/, etc.).
 
 ### Pendiente
 
