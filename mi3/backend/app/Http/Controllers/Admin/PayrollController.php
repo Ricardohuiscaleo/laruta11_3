@@ -57,7 +57,9 @@ class PayrollController extends Controller
 
         $centros = [];
         foreach (['ruta11', 'seguridad'] as $centro) {
+            // Exclude owner (dueño) from total_sueldos — cashflow is not a salary
             $totalSueldos = collect($raw[$centro]['personal'] ?? [])
+                ->filter(fn($e) => !str_contains($e['personal']->rol ?? '', 'dueño'))
                 ->sum(fn($e) => $e['liquidacion']['sueldo_base']);
             $totalPagado = collect($raw[$centro]['pagos'] ?? [])
                 ->sum('monto');
