@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'mi3 — La Ruta 11',
-  description: 'Portal de autoservicio RRHH para trabajadores de La Ruta 11',
+  title: 'La Ruta 11 — Work',
+  description: 'Portal de control y gestión para colaboradores y administración de La Ruta 11',
 };
 
 export default function RootLayout({

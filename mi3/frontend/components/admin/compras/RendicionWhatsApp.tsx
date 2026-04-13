@@ -39,27 +39,14 @@ export default function RendicionWhatsApp({ compras, onClose, onCreated }: Rendi
       '━━━━━━━━━━━━━━━━━━━━',
       `*💰 Saldo anterior:* ${formatearPesosCLP(saldoAnterior)}`,
       `*🛒 Total compras:* ${formatearPesosCLP(totalCompras)} (${compras.length} compras)`,
-      '',
     ];
 
-    compras.forEach((c, i) => {
-      lines.push(`*${i + 1}. ${c.proveedor}*`);
-      lines.push(`📅 ${formatearFecha(c.fecha_compra)} 💵 ${formatearPesosCLP(c.monto_total)}`);
-      if (c.detalles) {
-        c.detalles.forEach(d => {
-          const nombre = (d as any).nombre_item || (d as any).nombre || '?';
-          lines.push(`• ${nombre} (${d.cantidad} ${d.unidad})`);
-        });
-      }
-    });
-
-    lines.push('━━━━━━━━━━━━━━━━━━━━');
     if (saldoResultante >= 0) {
       lines.push(`*✅ Caja disponible:* ${formatearPesosCLP(saldoResultante)}`);
-      lines.push('No necesitas transferir, solo aprobar.');
     } else {
       lines.push(`*⚠️ Ricardo puso de su bolsillo:* ${formatearPesosCLP(Math.abs(saldoResultante))}`);
     }
+
     lines.push('');
     lines.push(`🔗 Ver detalle y aprobar: ${link}`);
 
