@@ -4,10 +4,8 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Public routes
+  // Static/internal routes — always pass through
   if (
-    pathname === '/login' ||
-    pathname === '/' ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
     pathname === '/favicon.ico'
@@ -18,6 +16,17 @@ export function middleware(request: NextRequest) {
   // Read httpOnly cookies set by the backend
   const token = request.cookies.get('mi3_token')?.value;
   const role = request.cookies.get('mi3_role')?.value;
+
+  // If user has token and visits login or root → redirect to their dashboard
+  if (token && (pathname === '/login' || pathname === '/')) {
+    const dest = role === 'admin' ? '/admin' : '/dashboard';
+    return NextResponse.redirect(new URL(dest, request.url));
+  }
+
+  // Public routes (login, root) — no token required
+  if (pathname === '/login' || pathname === '/') {
+    return NextResponse.next();
+  }
 
   // No token → redirect to login
   if (!token) {
