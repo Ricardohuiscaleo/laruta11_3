@@ -155,15 +155,37 @@ class LiquidacionService
     /**
      * Get cashflow liquidity for the owner's base salary.
      *
-     * Queries tuu_orders for the month to calculate net revenue.
+     * Formula: ventas (installment_amount - delivery_fee, paid only) - compras - sueldos base ruta11
+     * Replicates caja3/api/personal/get_monthly_cashflow.php
      */
     private function getCashflowLiquidez(string $mes): float
     {
-        $startDate = Carbon::parse($mes . '-01')->startOfDay();
-        $endDate = $startDate->copy()->endOfMonth()->endOfDay();
+        $year = explode('-', $mes)[0];
+        $month = explode('-', $mes)[1];
 
-        return (float) TuuOrder::whereBetween('created_at', [$startDate, $endDate])
-            ->sum('subtotal');
+        // Shift-based date range (same as caja3 dashboard)
+        $firstShiftStartUTC = Carbon::parse("{$year}-{$month}-01 17:00:00", 'America/Santiago')->utc();
+        $endOfMonth = Carbon::parse("{$year}-{$month}-01")->endOfMonth();
+        $lastShiftEndUTC = Carbon::parse($endOfMonth->addDay()->format('Y-m-d') . ' 04:00:00', 'America/Santiago')->utc();
+
+        // 1. Ventas (installment_amount - delivery_fee, paid only)
+        $ventas = (float) TuuOrder::whereBetween('created_at', [$firstShiftStartUTC, $lastShiftEndUTC])
+            ->where('payment_status', 'paid')
+            ->selectRaw('COALESCE(SUM(installment_amount), 0) - COALESCE(SUM(delivery_fee), 0) as net')
+            ->value('net');
+
+        // 2. Compras del mes
+        $compras = (float) \Illuminate\Support\Facades\DB::table('compras')
+            ->whereRaw("DATE_FORMAT(fecha_compra, '%Y-%m') = ?", [$mes])
+            ->sum('monto_total');
+
+        // 3. Sueldos base ruta11 (all active personal except seguridad-only)
+        $sueldos = (float) \App\Models\Personal::where('activo', 1)
+            ->selectRaw('COALESCE(SUM(sueldo_base_cajero + sueldo_base_planchero + sueldo_base_admin), 0) as total')
+            ->whereRaw("(rol NOT LIKE '%seguridad%' OR rol LIKE '%cajero%' OR rol LIKE '%planchero%' OR rol LIKE '%administrador%')")
+            ->value('total');
+
+        return $ventas - $compras - $sueldos;
     }
 
     /**
