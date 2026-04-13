@@ -132,6 +132,10 @@ El Laravel Scheduler ejecuta `php artisan schedule:run` cada minuto, lo que acti
 | Cookie `mi3_token` | ✅ Contiene `41\|k8tWnsrn...` — mecanismo de auth correcto |
 | Cookie `PHPSESSID` | De caja3/app3 (PHP legacy), no de mi3 |
 
+**Investigación Portal R11 (`app.laruta11.cl/r11/`):**
+
+El usuario reportó que `app.laruta11.cl/r11/` muestra "Mi Portal R11" con Límite $0, Usado $0, Disponible $0, Rol vacío. Es el sistema de crédito legacy de app3 (`app3/src/pages/r11.astro`). Muestra $0 porque el usuario no tiene crédito R11 configurado. Este portal fue reemplazado por mi3 (`mi.laruta11.cl`). Pendiente decidir si eliminar/desactivar.
+
 ---
 
 ## Sesión 2026-04-12bd — Prompts IA mejorados con feedback real + cierre 18:00 + fotos planchero
