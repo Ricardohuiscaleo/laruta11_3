@@ -32,6 +32,19 @@ class ChecklistController extends Controller
         $status = $request->query('status');
         $checklists = $this->checklistService->getChecklistsAdmin($fecha, $status);
 
+        // Refresh cash_expected for pending cash_verification items (dynamic until verified)
+        foreach ($checklists as $checklist) {
+            foreach ($checklist->items as $item) {
+                if ($item->item_type === 'cash_verification' && !$item->is_completed) {
+                    $saldoEsperado = \Illuminate\Support\Facades\DB::table('caja_movimientos')
+                        ->orderByDesc('id')
+                        ->value('saldo_nuevo') ?? 0;
+                    $item->cash_expected = $saldoEsperado;
+                    $item->saveQuietly();
+                }
+            }
+        }
+
         return response()->json(['success' => true, 'data' => $checklists]);
     }
 
@@ -41,6 +54,18 @@ class ChecklistController extends Controller
     public function show(int $id): JsonResponse
     {
         $detail = $this->checklistService->getDetalleChecklist($id);
+
+        // Refresh cash_expected for pending cash_verification items
+        foreach ($detail['items'] as $item) {
+            if ($item->item_type === 'cash_verification' && !$item->is_completed) {
+                $saldoEsperado = \Illuminate\Support\Facades\DB::table('caja_movimientos')
+                    ->orderByDesc('id')
+                    ->value('saldo_nuevo') ?? 0;
+                $item->cash_expected = $saldoEsperado;
+                $item->saveQuietly();
+            }
+        }
+
         return response()->json(['success' => true, 'data' => $detail]);
     }
 
