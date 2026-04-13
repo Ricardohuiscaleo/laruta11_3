@@ -42,8 +42,12 @@ foreach ($commands as $c) {
         try {
             $duration = $startTime ? now()->diffInMilliseconds($startTime) / 1000 : null;
             CronExecution::log($c['cmd'], $c['name'], 'failed', null, $duration, $startTime);
+
+            // Notify Telegram on failure
+            $tg = app(\App\Services\Notification\TelegramService::class);
+            $tg->send("⚠️ *Cron falló*: {$c['name']}\nComando: `{$c['cmd']}`\nDuración: {$duration}s\n\nPara re-ejecutar: `/retry {$c['cmd']}`");
         } catch (\Throwable $e) {
-            // Don't let logging failures break the scheduler
+            // Don't let logging/notification failures break the scheduler
         }
     });
 }
