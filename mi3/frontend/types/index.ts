@@ -206,6 +206,7 @@ export interface ChecklistItem {
   checklist_id: number;
   item_order: number;
   description: string;
+  item_type: 'standard' | 'cash_verification';
   requires_photo: boolean;
   photo_url: string | null;
   is_completed: boolean;
@@ -214,6 +215,10 @@ export interface ChecklistItem {
   ai_score: number | null;
   ai_observations: string | null;
   ai_analyzed_at: string | null;
+  cash_expected: number | null;
+  cash_actual: number | null;
+  cash_difference: number | null;
+  cash_result: 'ok' | 'discrepancia' | null;
 }
 
 export interface ChecklistVirtual {

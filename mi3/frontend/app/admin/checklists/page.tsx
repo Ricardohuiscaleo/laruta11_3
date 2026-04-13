@@ -16,7 +16,9 @@ import {
   Lightbulb,
   Users,
   AlertCircle,
+  Brain,
 } from 'lucide-react';
+import TabTestIA from '@/components/admin/TabTestIA';
 import type {
   Checklist,
   ChecklistItem,
@@ -463,7 +465,7 @@ function TabIdeas() {
 
 /* ─── Main Page ─── */
 
-type Tab = 'checklists' | 'asistencia' | 'ideas';
+type Tab = 'checklists' | 'asistencia' | 'ideas' | 'test-ia';
 
 export default function AdminChecklistsPage() {
   const [tab, setTab] = useState<Tab>('checklists');
@@ -483,12 +485,16 @@ export default function AdminChecklistsPage() {
         <TabButton active={tab === 'ideas'} onClick={() => setTab('ideas')}>
           <span className="flex items-center gap-1.5"><Lightbulb className="h-4 w-4" /> Ideas</span>
         </TabButton>
+        <TabButton active={tab === 'test-ia'} onClick={() => setTab('test-ia')}>
+          <span className="flex items-center gap-1.5"><Brain className="h-4 w-4" /> Test IA</span>
+        </TabButton>
       </div>
 
       {/* Tab Content */}
       {tab === 'checklists' && <TabChecklists />}
       {tab === 'asistencia' && <TabAsistencia />}
       {tab === 'ideas' && <TabIdeas />}
+      {tab === 'test-ia' && <TabTestIA />}
     </div>
   );
 }

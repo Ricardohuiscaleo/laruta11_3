@@ -92,13 +92,24 @@ class ChecklistService
                     ]);
 
                     foreach ($templates as $template) {
-                        ChecklistItem::create([
+                        $itemData = [
                             'checklist_id' => $checklist->id,
                             'item_order' => $template->item_order,
                             'description' => $template->description,
+                            'item_type' => $template->item_type ?? 'standard',
                             'requires_photo' => $template->requires_photo,
                             'is_completed' => false,
-                        ]);
+                        ];
+
+                        // For cash_verification items, query saldo esperado from caja_movimientos
+                        if (($template->item_type ?? 'standard') === 'cash_verification') {
+                            $saldoEsperado = DB::table('caja_movimientos')
+                                ->orderByDesc('id')
+                                ->value('saldo_nuevo') ?? 0;
+                            $itemData['cash_expected'] = $saldoEsperado;
+                        }
+
+                        ChecklistItem::create($itemData);
                     }
 
                     $created++;
@@ -207,6 +218,16 @@ class ChecklistService
             return $checklist;
         }
 
+        // Block completion if any cash_verification item is incomplete
+        $incompleteCashItems = $checklist->items()
+            ->where('item_type', 'cash_verification')
+            ->where('is_completed', false)
+            ->exists();
+
+        if ($incompleteCashItems) {
+            throw new \InvalidArgumentException('Debes completar la verificación de caja antes de finalizar el checklist');
+        }
+
         $checklist->update([
             'status' => 'completed',
             'completed_at' => now(),
@@ -278,6 +299,131 @@ class ChecklistService
             })
             ->with('checklist')
             ->first();
+    }
+
+    /**
+     * Verify cash for a cash_verification item.
+     *
+     * @return array{item: ChecklistItem, checklist: Checklist}
+     */
+    public function verificarCaja(int $itemId, int $personalId, bool $confirmed, ?float $actualAmount = null): array
+    {
+        $item = ChecklistItem::findOrFail($itemId);
+        $checklist = $item->checklist;
+
+        if ($checklist->personal_id !== $personalId) {
+            throw new \InvalidArgumentException('No tienes permiso para verificar este ítem');
+        }
+
+        if ($item->item_type !== 'cash_verification') {
+            throw new \InvalidArgumentException('Este ítem no es de verificación de caja');
+        }
+
+        // Idempotent: if already completed, return current state
+        if ($item->is_completed) {
+            return ['item' => $item, 'checklist' => $checklist];
+        }
+
+        $cashExpected = (float) ($item->cash_expected ?? 0);
+
+        if ($confirmed) {
+            // Cajero confirms: cash matches expected
+            $item->update([
+                'cash_actual' => $cashExpected,
+                'cash_difference' => 0,
+                'cash_result' => 'ok',
+                'is_completed' => true,
+                'completed_at' => now(),
+            ]);
+        } else {
+            // Cajero reports discrepancy
+            $cashActual = (float) $actualAmount;
+            $difference = $cashActual - $cashExpected;
+
+            $item->update([
+                'cash_actual' => $cashActual,
+                'cash_difference' => $difference,
+                'cash_result' => 'discrepancia',
+                'is_completed' => true,
+                'completed_at' => now(),
+            ]);
+        }
+
+        // Update checklist progress
+        $completedCount = $checklist->items()->where('is_completed', true)->count();
+        $totalCount = $checklist->total_items;
+        $percentage = $totalCount > 0 ? round(($completedCount / $totalCount) * 100, 2) : 0;
+
+        $checklist->update([
+            'completed_items' => $completedCount,
+            'completion_percentage' => $percentage,
+            'status' => $completedCount > 0 && $checklist->status === 'pending' ? 'active' : $checklist->status,
+            'started_at' => $checklist->started_at ?? now(),
+        ]);
+
+        $checklist->refresh();
+        $item->refresh();
+
+        // Send notifications (best-effort, non-blocking)
+        $this->enviarNotificacionesCaja($item, $checklist);
+
+        return ['item' => $item, 'checklist' => $checklist];
+    }
+
+    /**
+     * Send notifications after cash verification.
+     */
+    protected function enviarNotificacionesCaja(ChecklistItem $item, Checklist $checklist): void
+    {
+        try {
+            $telegram = app(\App\Services\Notification\TelegramService::class);
+            $nombre = $checklist->user_name ?? 'Cajero';
+            $tipo = ucfirst($checklist->type); // Apertura/Cierre
+            $fecha = $checklist->scheduled_date?->format('d/m/Y') ?? now()->format('d/m/Y');
+            $expected = number_format((float) $item->cash_expected, 0, ',', '.');
+
+            if ($item->cash_result === 'ok') {
+                $msg = "✅ Caja verificada por {$nombre} — Saldo: \${$expected} — {$tipo} {$fecha}";
+                $telegram->sendToLaruta11($msg);
+            } else {
+                $actual = number_format((float) $item->cash_actual, 0, ',', '.');
+                $diff = (float) $item->cash_difference;
+                $absDiff = number_format(abs($diff), 0, ',', '.');
+                $tipo_diff = $diff > 0 ? 'sobrante' : 'faltante';
+
+                $msg = "⚠️ Discrepancia de caja — {$nombre} — Esperado: \${$expected} — Real: \${$actual} — Diferencia: \${$absDiff} ({$tipo_diff}) — {$tipo} {$fecha}";
+                $telegram->sendToLaruta11($msg);
+
+                // Create notifications for each active admin
+                $admins = Personal::where('activo', true)
+                    ->where(function ($q) {
+                        $q->where('rol', 'LIKE', '%administrador%')
+                          ->orWhere('rol', 'LIKE', '%dueño%');
+                    })
+                    ->get();
+
+                $pushService = app(\App\Services\Notification\PushNotificationService::class);
+
+                foreach ($admins as $admin) {
+                    \App\Models\NotificacionMi3::create([
+                        'personal_id' => $admin->id,
+                        'tipo' => 'discrepancia_caja',
+                        'titulo' => 'Discrepancia de Caja',
+                        'mensaje' => "Cajero: {$nombre}\nEsperado: \${$expected}\nReal: \${$actual}\nDiferencia: \${$absDiff} ({$tipo_diff})\n{$tipo} {$fecha}",
+                    ]);
+
+                    $pushService->enviar(
+                        $admin->id,
+                        '⚠️ Discrepancia de Caja',
+                        "Diferencia: \${$absDiff} ({$tipo_diff}) — {$nombre}",
+                        '/admin/checklists',
+                        'high'
+                    );
+                }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Cash verification notification failed: ' . $e->getMessage());
+        }
     }
 
     /**

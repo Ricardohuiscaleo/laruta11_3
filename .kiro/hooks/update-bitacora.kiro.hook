@@ -1,13 +1,13 @@
 {
   "enabled": true,
   "name": "Actualizar Bitácora",
-  "description": "Al finalizar una sesión de trabajo, lee la bitácora (.amazonq/rules/memory-bank/bitacora.md) y actualiza con lo que se hizo: features implementadas, estado de deploys, errores encontrados, lecciones aprendidas, y pendientes.",
-  "version": "1",
+  "description": "Al finalizar una sesión, evalúa si hubo cambios materiales y actualiza la bitácora como fuente de verdad para el próximo agente.",
+  "version": "3",
   "when": {
     "type": "agentStop"
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Lee el archivo .amazonq/rules/memory-bank/bitacora.md y actualízalo con lo que se trabajó en esta sesión. Incluye: qué se implementó, estado actual de los deploys, errores encontrados y resueltos, lecciones aprendidas, y qué queda pendiente. Mantén el formato existente."
+    "prompt": "Evalúa si esta sesión produjo cambios materiales (archivos editados, commits, deploys, cambios en BD, configs, fix de bugs). Consultas de solo lectura, auditorías sin edición, o preguntas respondidas NO cuentan.\n\nSi NO hubo cambios materiales → no toques la bitácora.\n\nSi SÍ hubo cambios materiales → lee .amazonq/rules/memory-bank/bitacora.md y actualiza estas 3 secciones según corresponda:\n\n1. **Estado Actual**: Si cambió un deploy, actualiza el commit/estado en la tabla de apps. Si se agregó/modificó un scheduled task, bot, o UUID, refléjalo.\n\n2. **Tareas Pendientes**: Si se completó una tarea pendiente, márcala con [x] o elimínala. Si surgió una nueva tarea pendiente, agrégala en la prioridad correcta (🔴🟡🟢).\n\n3. **Sesiones Recientes**: Agrega una entrada SOLO si hubo cambios de código/BD/deploy. Mantén máximo 4 sesiones recientes (archiva las más antiguas mencionando bitacora-archivo.md). Formato: título descriptivo, cambios concretos, commits, deploys.\n\nNo agregues entradas vacías, triviales, o de solo lectura. La bitácora es la fuente de verdad para el próximo agente que abra este proyecto."
   }
 }

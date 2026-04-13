@@ -15,6 +15,7 @@ import {
   Send,
 } from 'lucide-react';
 import type { Checklist, ChecklistItem, ChecklistVirtual, ApiResponse } from '@/types';
+import CashVerificationItem from '@/components/checklist/CashVerificationItem';
 
 /* ─── Progress Bar ─── */
 function ProgressBar({ completed, total }: { completed: number; total: number }) {
@@ -197,6 +198,19 @@ function ChecklistItemRow({
   onItemCompleted: (itemId: number) => void;
   onPhotoUploaded: (itemId: number, photoUrl: string, aiScore?: number | null, aiObs?: string | null) => void;
 }) {
+  // Render CashVerificationItem for cash_verification items
+  if (item.item_type === 'cash_verification') {
+    return (
+      <CashVerificationItem
+        item={item}
+        checklistId={checklistId}
+        onVerified={(itemId, result, cashActual) => {
+          onItemCompleted(itemId);
+        }}
+      />
+    );
+  }
+
   const [completing, setCompleting] = useState(false);
   const needsPhoto = item.requires_photo && !item.photo_url;
   const canToggle = !needsPhoto || item.is_completed; // Can unmark even if photo needed

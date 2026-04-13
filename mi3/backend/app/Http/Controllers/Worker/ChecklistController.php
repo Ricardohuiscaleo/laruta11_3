@@ -26,6 +26,18 @@ class ChecklistController extends Controller
 
         $checklists = $this->checklistService->getChecklistsPendientes($personal->id, $fecha);
 
+        // For cash_verification items, ensure cash_expected is up-to-date
+        foreach ($checklists as $checklist) {
+            foreach ($checklist->items as $item) {
+                if ($item->item_type === 'cash_verification' && !$item->is_completed) {
+                    $saldoEsperado = \Illuminate\Support\Facades\DB::table('caja_movimientos')
+                        ->orderByDesc('id')
+                        ->value('saldo_nuevo') ?? 0;
+                    $item->cash_expected = $saldoEsperado;
+                }
+            }
+        }
+
         return response()->json([
             'success' => true,
             'data' => $checklists,
@@ -42,6 +54,41 @@ class ChecklistController extends Controller
 
         try {
             $result = $this->checklistService->marcarItemCompletado($itemId, $personal->id);
+
+            return response()->json([
+                'success' => true,
+                'data' => $result,
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            $statusCode = str_contains($e->getMessage(), 'permiso') ? 403 : 422;
+
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], $statusCode);
+        }
+    }
+
+    /**
+     * POST /api/v1/worker/checklists/{id}/items/{itemId}/verify-cash
+     * Verificar caja (confirmar o reportar discrepancia).
+     */
+    public function verifyCash(Request $request, int $id, int $itemId): JsonResponse
+    {
+        $personal = $request->get('personal');
+
+        $data = $request->validate([
+            'confirmed' => 'required|boolean',
+            'actual_amount' => 'required_if:confirmed,false|nullable|numeric|min:0',
+        ]);
+
+        try {
+            $result = $this->checklistService->verificarCaja(
+                $itemId,
+                $personal->id,
+                $data['confirmed'],
+                $data['actual_amount'] ?? null,
+            );
 
             return response()->json([
                 'success' => true,

@@ -3,6 +3,7 @@
 namespace App\Services\Checklist;
 
 use App\Models\ChecklistItem;
+use App\Services\Checklist\AITrainingService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -163,9 +164,20 @@ PROMPT,
 
     /**
      * Get the prompt for a given context.
+     * Reads from DB first, falls back to hardcoded PROMPTS constant.
      */
     public function getPromptForContext(string $contexto): string
     {
+        // Try DB first
+        $dbPrompt = \App\Models\ChecklistAiPrompt::where('contexto', $contexto)
+            ->where('is_active', true)
+            ->first();
+
+        if ($dbPrompt) {
+            return $dbPrompt->prompt_base;
+        }
+
+        // Fallback to hardcoded constant
         if (!isset(self::PROMPTS[$contexto])) {
             throw new \InvalidArgumentException("Contexto inválido: {$contexto}. Debe ser uno de: " . implode(', ', array_keys(self::PROMPTS)));
         }
@@ -181,6 +193,119 @@ PROMPT,
     public static function getValidContexts(): array
     {
         return array_keys(self::PROMPTS);
+    }
+
+    /**
+     * Build an enhanced prompt with previous corrections and pending tasks injected.
+     */
+    public function buildEnhancedPrompt(string $contexto): string
+    {
+        $basePrompt = $this->getPromptForContext($contexto);
+
+        // Inject previous admin corrections (last 5)
+        $corrections = \App\Models\ChecklistAiTraining::where('contexto', $contexto)
+            ->where('admin_feedback', 'incorrect')
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get();
+
+        if ($corrections->isNotEmpty()) {
+            $basePrompt .= "\n\nANTECEDENTES DE CORRECCIONES PREVIAS:\n";
+            foreach ($corrections as $i => $correction) {
+                $num = $i + 1;
+                $basePrompt .= "Corrección {$num}: La IA dijo: \"{$correction->ai_observations}\" (score: {$correction->ai_score}). ";
+                $basePrompt .= "El admin corrigió: \"{$correction->admin_notes}\"";
+                if ($correction->admin_score !== null) {
+                    $basePrompt .= " (score correcto: {$correction->admin_score})";
+                }
+                $basePrompt .= ".\n";
+            }
+        }
+
+        // Inject pending AI tasks for this context
+        $pendingTasks = \App\Models\ChecklistAiTask::where('contexto', $contexto)
+            ->whereIn('status', ['pendiente', 'no_mejorado'])
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get();
+
+        if ($pendingTasks->isNotEmpty()) {
+            $basePrompt .= "\nPROBLEMAS DETECTADOS PREVIAMENTE:\n";
+            $basePrompt .= "EN LA FOTO ANTERIOR SE DETECTARON ESTOS PROBLEMAS: ";
+            $problems = $pendingTasks->pluck('problema_detectado')->toArray();
+            $basePrompt .= implode('; ', $problems);
+            $basePrompt .= ". Verifica si fueron corregidos y reporta explícitamente cuáles mejoraron ✅ y cuáles persisten ⚠️.\n";
+        }
+
+        return $basePrompt;
+    }
+
+    /**
+     * Register AI tasks if problems are detected (score < 70 or alert emojis).
+     */
+    public function registrarTareasSiNecesario(ChecklistItem $item, int $score, string $observations, string $contexto): void
+    {
+        $hasAlertEmojis = str_contains($observations, '⚠️') || str_contains($observations, '🚨');
+
+        if ($score >= 70 && !$hasAlertEmojis) {
+            return;
+        }
+
+        // Check if a similar task already exists for this context
+        $existingTask = \App\Models\ChecklistAiTask::where('contexto', $contexto)
+            ->whereIn('status', ['pendiente', 'no_mejorado'])
+            ->first();
+
+        if ($existingTask) {
+            $existingTask->increment('veces_detectado');
+            $existingTask->update(['updated_at' => now()]);
+
+            // Escalation: if detected 3+ times, escalate
+            if ($existingTask->veces_detectado >= 3 && $existingTask->status !== 'escalado') {
+                $existingTask->update(['status' => 'escalado']);
+                $this->escalarProblemaRecurrente($existingTask);
+            }
+        } else {
+            \App\Models\ChecklistAiTask::create([
+                'contexto' => $contexto,
+                'problema_detectado' => $observations,
+                'foto_url_origen' => $item->photo_url ?? '',
+                'checklist_item_id_origen' => $item->id,
+                'status' => 'pendiente',
+                'veces_detectado' => 1,
+            ]);
+        }
+    }
+
+    /**
+     * Escalate a recurring problem: send push + Telegram notifications.
+     */
+    protected function escalarProblemaRecurrente(\App\Models\ChecklistAiTask $task): void
+    {
+        try {
+            $telegram = app(\App\Services\Notification\TelegramService::class);
+            $telegram->sendToLaruta11("🚨 Problema recurrente ({$task->contexto}): {$task->problema_detectado} — Detectado {$task->veces_detectado} veces");
+
+            $pushService = app(\App\Services\Notification\PushNotificationService::class);
+            $admins = \App\Models\Personal::where('activo', true)
+                ->where(function ($q) {
+                    $q->where('rol', 'LIKE', '%administrador%')
+                      ->orWhere('rol', 'LIKE', '%dueño%');
+                })
+                ->get();
+
+            foreach ($admins as $admin) {
+                $pushService->enviar(
+                    $admin->id,
+                    '🚨 Problema recurrente',
+                    "{$task->contexto}: {$task->problema_detectado}",
+                    '/admin/checklists',
+                    'high'
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Escalation notification failed: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -266,7 +391,7 @@ PROMPT,
      */
     public function analizarConIA(string $s3Url, string $contexto): array
     {
-        $prompt = $this->getPromptForContext($contexto);
+        $prompt = $this->buildEnhancedPrompt($contexto);
 
         try {
             $client = $this->createBedrockClient();
@@ -379,6 +504,13 @@ PROMPT,
                 'ai_observations' => $aiObservations,
                 'ai_analyzed_at' => now(),
             ]);
+
+            // Register training data
+            $promptUsed = $this->getPromptForContext($contexto);
+            app(AITrainingService::class)->registrarEvaluacion($item, $contexto, $promptUsed);
+
+            // Register AI tasks if problems detected
+            $this->registrarTareasSiNecesario($item, $aiScore, $aiObservations, $contexto);
         } catch (\Exception $e) {
             Log::warning('AI analysis failed or timed out, marking as pendiente', [
                 'item_id' => $itemId,

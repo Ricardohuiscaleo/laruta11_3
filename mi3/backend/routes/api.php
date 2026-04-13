@@ -63,6 +63,7 @@ Route::prefix('v1')->group(function () {
         Route::get('checklists', [\App\Http\Controllers\Worker\ChecklistController::class, 'index']);
         Route::post('checklists/{id}/items/{itemId}/complete', [\App\Http\Controllers\Worker\ChecklistController::class, 'completeItem']);
         Route::post('checklists/{id}/items/{itemId}/photo', [\App\Http\Controllers\Worker\ChecklistController::class, 'uploadPhoto']);
+        Route::post('checklists/{id}/items/{itemId}/verify-cash', [\App\Http\Controllers\Worker\ChecklistController::class, 'verifyCash']);
         Route::post('checklists/{id}/complete', [\App\Http\Controllers\Worker\ChecklistController::class, 'complete']);
         Route::get('checklists/virtual', [\App\Http\Controllers\Worker\ChecklistController::class, 'virtual']);
         Route::post('checklists/virtual/{id}/complete', [\App\Http\Controllers\Worker\ChecklistController::class, 'completeVirtual']);
@@ -146,6 +147,14 @@ Route::prefix('v1')->group(function () {
         Route::get('checklists', [\App\Http\Controllers\Admin\ChecklistController::class, 'index']);
         Route::get('checklists/attendance', [\App\Http\Controllers\Admin\ChecklistController::class, 'attendance']);
         Route::get('checklists/ideas', [\App\Http\Controllers\Admin\ChecklistController::class, 'ideas']);
+        Route::get('checklists/ai-photos', [\App\Http\Controllers\Admin\ChecklistController::class, 'aiPhotos']);
+        Route::post('checklists/ai-feedback', [\App\Http\Controllers\Admin\ChecklistController::class, 'aiFeedback']);
+        Route::post('checklists/ai-test', [\App\Http\Controllers\Admin\ChecklistController::class, 'aiTest']);
+        Route::get('checklists/ai-prompts', [\App\Http\Controllers\Admin\ChecklistController::class, 'aiPrompts']);
+        Route::put('checklists/ai-prompts/{id}', [\App\Http\Controllers\Admin\ChecklistController::class, 'aiPromptsUpdate']);
+        Route::post('checklists/ai-prompts/{id}/activate', [\App\Http\Controllers\Admin\ChecklistController::class, 'aiPromptsActivate']);
+        Route::post('checklists/ai-prompts/{id}/generate-candidate', [\App\Http\Controllers\Admin\ChecklistController::class, 'aiPromptsGenerateCandidate']);
+        Route::get('checklists/ai-tasks', [\App\Http\Controllers\Admin\ChecklistController::class, 'aiTasks']);
         Route::get('checklists/{id}', [\App\Http\Controllers\Admin\ChecklistController::class, 'show']);
 
         // Cronjobs status (Coolify scheduled tasks)

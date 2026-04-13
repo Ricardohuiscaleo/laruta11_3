@@ -42,7 +42,7 @@
     - _Preservation: Other PersonalController endpoints unchanged_
     - _Requirements: 1.1, 2.1, 3.1_
 
-- [-] 4. Bug 2 Fix: Fix DetectAbsencesCommand to use D-1 date for night shift detection
+- [x] 4. Bug 2 Fix: Fix DetectAbsencesCommand to use D-1 date for night shift detection
 
   - [x] 4.1 Change fecha to D-1 in DetectAbsencesCommand::handle()
     - In `mi3/backend/app/Console/Commands/DetectAbsencesCommand.php`, method `handle()`
@@ -55,7 +55,7 @@
     - _Preservation: Daytime shifts still detected correctly (they also have fecha=D-1 when command runs on D)_
     - _Requirements: 1.2, 1.3, 2.2, 2.3, 3.2, 3.3_
 
-  - [ ] 4.2 Verify bug condition exploration test now passes for Bug 2
+  - [x] 4.2 Verify bug condition exploration test now passes for Bug 2
     - **Property 1: Expected Behavior** - Night Shift Absence Uses D-1
     - **IMPORTANT**: Re-run the SAME test from task 1 (Bug 2 portion) - do NOT write a new test
     - The test from task 1 encodes the expected behavior: command detects D-1 night shifts
@@ -63,14 +63,14 @@
     - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed)
     - _Requirements: 2.2, 2.3_
 
-  - [ ] 4.3 Verify preservation tests still pass for Bug 2
+  - [x] 4.3 Verify preservation tests still pass for Bug 2
     - **Property 2: Preservation** - Daytime Shift Detection Unchanged
     - **IMPORTANT**: Re-run the SAME tests from task 2 (daytime shift portion) - do NOT write new tests
     - Run preservation property tests from step 2
     - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
     - Confirm daytime shift absence detection still works correctly
 
-- [-] 5. Bug 3 Fix: Transform PayrollController::index() response to match frontend expected shape
+- [x] 5. Bug 3 Fix: Transform PayrollController::index() response to match frontend expected shape
 
   - [x] 5.1 Add data transformation in PayrollController::index()
     - In `mi3/backend/app/Http/Controllers/Admin/PayrollController.php`, method `index()`
@@ -85,7 +85,7 @@
     - _Preservation: NominaService calculations unchanged, only response shape transforms_
     - _Requirements: 1.4, 1.5, 2.4, 2.5, 3.4, 3.5_
 
-  - [ ] 5.2 Verify bug condition exploration test now passes for Bug 3
+  - [x] 5.2 Verify bug condition exploration test now passes for Bug 3
     - **Property 1: Expected Behavior** - Nómina Returns Expected Shape
     - **IMPORTANT**: Re-run the SAME test from task 1 (Bug 3 portion) - do NOT write a new test
     - The test from task 1 encodes the expected behavior: response has resumen + centros keys
@@ -93,21 +93,21 @@
     - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed)
     - _Requirements: 2.4, 2.5_
 
-  - [ ] 5.3 Verify preservation tests still pass for Bug 3
+  - [x] 5.3 Verify preservation tests still pass for Bug 3
     - **Property 2: Preservation** - Payroll Calculations Unchanged
     - **IMPORTANT**: Re-run the SAME tests from task 2 (payroll values portion) - do NOT write new tests
     - Run preservation property tests from step 2
     - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions in liquidation values)
     - Confirm all numeric values match NominaService output
 
-- [-] 6. Commit + push + deploy all fixes
+- [x] 6. Commit + push + deploy all fixes
   - Commit Bug 2 and Bug 3 changes together (Bug 1 already committed in task 3)
   - Commit message: "fix: night shift D-1 date + nómina response shape transform"
   - Push to remote
   - Deploy to production
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-- [ ] 7. Checkpoint - Verify all 3 fixes work in production
+- [x] 7. Checkpoint - Verify all 3 fixes work in production
   - Verify Bug 1: PATCH `/api/v1/admin/personal/{id}/rotate-foto` returns 200 with `{success: true}`
   - Verify Bug 2: Run `mi3:detect-absences` and confirm night shift absences are detected with correct D-1 date
   - Verify Bug 3: Open `/admin/nomina` and confirm worker cards and cost center summaries render correctly

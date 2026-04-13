@@ -16,6 +16,8 @@ return [
     'telegram' => [
         'token' => env('TELEGRAM_TOKEN', ''),
         'chat_id' => env('TELEGRAM_CHAT_ID', ''),
+        'laruta11_token' => env('TELEGRAM_LARUTA11_TOKEN', ''),
+        'laruta11_chat_id' => env('TELEGRAM_LARUTA11_CHAT_ID', ''),
     ],
 
 ];

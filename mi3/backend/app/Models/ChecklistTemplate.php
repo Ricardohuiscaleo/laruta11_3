@@ -11,7 +11,7 @@ class ChecklistTemplate extends Model
 
     protected $fillable = [
         'type', 'rol', 'item_order',
-        'description', 'requires_photo', 'active',
+        'description', 'item_type', 'requires_photo', 'active',
     ];
 
     protected $casts = [
