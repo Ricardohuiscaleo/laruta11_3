@@ -324,7 +324,12 @@ class ChecklistService
             return ['item' => $item, 'checklist' => $checklist];
         }
 
-        $cashExpected = (float) ($item->cash_expected ?? 0);
+        // Always refresh cash_expected with current balance at verification time
+        $currentBalance = (float) (DB::table('caja_movimientos')
+            ->orderByDesc('id')
+            ->value('saldo_nuevo') ?? 0);
+        $item->update(['cash_expected' => $currentBalance]);
+        $cashExpected = $currentBalance;
 
         if ($confirmed) {
             // Cajero confirms: cash matches expected
