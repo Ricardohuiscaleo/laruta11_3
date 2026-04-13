@@ -112,11 +112,6 @@ export default function PersonalAdminPage() {
       setPersonal(prev => prev.map(p => p.id === id ? { ...p, foto_rotation: rotation } : p));
     } catch {}
   };
-    try {
-      await apiFetch(`/admin/personal/${p.id}/toggle`, { method: 'PATCH' });
-      fetchData();
-    } catch (err: any) { alert(err.message); }
-  };
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-amber-600" /></div>;
   if (error) return <div className="rounded-lg bg-red-50 p-4 text-red-600">{error}</div>;
