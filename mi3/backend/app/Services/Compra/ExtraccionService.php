@@ -216,6 +216,12 @@ Estructura típica de una factura chilena:
 - Nombres como "La Ruta 11", "Yumbel", "Arica" son del COMPRADOR, no del proveedor
 - Busca el nombre comercial en las PRIMERAS LÍNEAS del documento (antes de "SEÑORES")
 
+URLs/dominios que identifican al proveedor:
+- ariztiaatunegocio.cl o ariztia → proveedor = "Ariztía (proveedor)"
+- agrosuper.cl o agrosuper → proveedor = "Agrosuper"
+- ideal.cl → proveedor = "ideal"
+- Si ves una URL de empresa en la factura, esa empresa es el PROVEEDOR
+
 TIPO 2 — FOTO DE PRODUCTO (caja, bolsa, envase de ingrediente):
 Identifica el producto y estima la cantidad. Ejemplos:
 - Caja de tomates → "Tomate", cantidad estimada según tamaño de caja (caja estándar = 3 kg)

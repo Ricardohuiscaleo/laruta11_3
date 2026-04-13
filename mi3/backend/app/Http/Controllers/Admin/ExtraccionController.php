@@ -65,6 +65,21 @@ class ExtraccionController extends Controller
                 }
             }
 
+            if (!empty($data['items'])) {
+                $itemsMatch = $this->sugerenciaService->matchItems($data['items']);
+                
+                // If proveedor is still unknown/wrong, infer from matched ingredient's supplier
+                if ($this->isProveedorSuspect($data['proveedor'])) {
+                    $inferredProv = $this->inferProveedorFromItems($itemsMatch);
+                    if ($inferredProv) {
+                        $data['proveedor'] = $inferredProv;
+                        $data['notas_ia'] = ($data['notas_ia'] ?? '') . ' [Proveedor inferido del ingrediente]';
+                        // Re-match proveedor with the inferred name
+                        $proveedorMatch = $this->sugerenciaService->matchProveedor($inferredProv);
+                    }
+                }
+            }
+
             // Apply known supplier rules (metodo_pago, tipo_compra)
             $data = $this->applySupplierRules($data);
 
@@ -242,22 +257,54 @@ class ExtraccionController extends Controller
     }
 
     /**
-     * Post-extraction: match proveedor by RUT from supplier_index.
-     * If the AI detected a RUT, look it up in supplier_index to get the real name.
-     * This fixes cases where the AI reads the buyer's address as the supplier name.
+     * Post-extraction: match proveedor by RUT or known text patterns.
+     * Fixes cases where the AI reads the buyer's info as the supplier.
      */
     private function matchProveedorByRut(array $data): array
     {
+        // Strategy 1: Match by RUT in supplier_index
         $rut = $data['rut_proveedor'] ?? null;
-        if (empty($rut)) {
-            return $data;
+        if (!empty($rut)) {
+            $supplier = \App\Models\SupplierIndex::where('rut', $rut)->first();
+            if ($supplier) {
+                $data['proveedor'] = $supplier->nombre_original;
+                $data['notas_ia'] = ($data['notas_ia'] ?? '') . " [Proveedor por RUT {$rut}]";
+                return $data;
+            }
         }
 
-        // Look up RUT in supplier_index
-        $supplier = \App\Models\SupplierIndex::where('rut', $rut)->first();
-        if ($supplier) {
-            $data['proveedor'] = $supplier->nombre_original;
-            $data['notas_ia'] = ($data['notas_ia'] ?? '') . " [Proveedor identificado por RUT {$rut}]";
+        // Strategy 2: Detect known supplier names/URLs in the AI notes or raw extraction
+        // The AI might put "ariztiaatunegocio.cl" in notas_ia or the proveedor might be wrong
+        // but the items/context reveal the real supplier
+        $knownPatterns = [
+            'ariztia' => 'Ariztía (proveedor)',
+            'agrosuper' => 'Agrosuper',
+            'ideal' => 'ideal',
+            'shipo' => 'Shipo',
+        ];
+
+        // Check all text fields for supplier clues
+        $allText = mb_strtolower(
+            ($data['proveedor'] ?? '') . ' ' .
+            ($data['notas_ia'] ?? '') . ' ' .
+            ($data['rut_proveedor'] ?? '')
+        );
+
+        // Also check item names for supplier-specific products
+        foreach ($data['items'] ?? [] as $item) {
+            $allText .= ' ' . mb_strtolower($item['nombre'] ?? '');
+        }
+
+        foreach ($knownPatterns as $pattern => $supplierName) {
+            if (str_contains($allText, $pattern)) {
+                // Only override if current proveedor doesn't already contain the supplier name
+                $currentProv = mb_strtolower($data['proveedor'] ?? '');
+                if (!str_contains($currentProv, $pattern)) {
+                    $data['proveedor'] = $supplierName;
+                    $data['notas_ia'] = ($data['notas_ia'] ?? '') . " [Proveedor detectado por patrón '{$pattern}']";
+                }
+                break;
+            }
         }
 
         return $data;
@@ -298,5 +345,58 @@ class ExtraccionController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * Check if the detected proveedor is suspect (likely wrong).
+     * Known buyer names, addresses, or generic names.
+     */
+    private function isProveedorSuspect(?string $proveedor): bool
+    {
+        if (empty($proveedor)) return true;
+        
+        $suspects = [
+            'yumbel', 'arica', 'la ruta', 'ruta 11', 'ricardo',
+            'proveedor desconocido', 'desconocido', 'generico',
+        ];
+        $lower = mb_strtolower(trim($proveedor));
+        
+        foreach ($suspects as $s) {
+            if (str_contains($lower, $s)) return true;
+        }
+        
+        // Also suspect if proveedor didn't match anything in supplier_index
+        $match = $this->sugerenciaService->matchProveedor($proveedor);
+        return !$match || $match['score'] < 60;
+    }
+
+    /**
+     * Infer proveedor from matched items' supplier field.
+     * If most matched items come from the same supplier, use that.
+     */
+    private function inferProveedorFromItems(array $itemsMatch): ?string
+    {
+        $supplierCounts = [];
+        
+        foreach ($itemsMatch as $im) {
+            if (!$im['pre_selected'] || !$im['match']) continue;
+            
+            // Get the ingredient's supplier from DB
+            $matchId = $im['match']['id'] ?? null;
+            $matchType = $im['match_type'] ?? 'ingredient';
+            
+            if ($matchType === 'ingredient' && $matchId) {
+                $supplier = \App\Models\Ingredient::where('id', $matchId)->value('supplier');
+                if (!empty($supplier)) {
+                    $supplierCounts[$supplier] = ($supplierCounts[$supplier] ?? 0) + 1;
+                }
+            }
+        }
+        
+        if (empty($supplierCounts)) return null;
+        
+        // Return the most common supplier
+        arsort($supplierCounts);
+        return array_key_first($supplierCounts);
     }
 }

@@ -76,7 +76,7 @@ function InlineItemSearch({ onSelect }: { onSelect: (item: { id: number; name: s
         <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
         <input type="text" value={q} placeholder="Buscar ingrediente..."
           onChange={e => { setQ(e.target.value); if (timer.current) clearTimeout(timer.current); timer.current = setTimeout(() => search(e.target.value), 300); }}
-          className="w-full rounded-lg border border-gray-300 py-1.5 pl-8 pr-3 text-sm" />
+          className="w-full rounded-lg border border-gray-300 py-1.5 pl-8 pr-3 text-base" />
       </div>
       {open && results.length > 0 && (
         <div className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-lg border bg-white shadow-lg">
@@ -369,24 +369,24 @@ export default function RegistroPage() {
                   <div>
                     <label className="text-xs text-gray-500">Proveedor</label>
                     <input type="text" value={group.proveedor} onChange={e => updateGroup(gi, { proveedor: e.target.value })}
-                      className="w-full rounded border px-2 py-1.5 text-sm" placeholder="Proveedor" />
+                      className="w-full rounded border px-2 py-1.5 text-base" placeholder="Proveedor" />
                   </div>
                   <div>
                     <label className="text-xs text-gray-500">Fecha</label>
                     <input type="date" value={group.fecha_compra} onChange={e => updateGroup(gi, { fecha_compra: e.target.value })}
-                      className="w-full rounded border px-2 py-1.5 text-sm" />
+                      className="w-full rounded border px-2 py-1.5 text-base" />
                   </div>
                   <div>
                     <label className="text-xs text-gray-500">Pago</label>
                     <select value={group.metodo_pago} onChange={e => updateGroup(gi, { metodo_pago: e.target.value })}
-                      className="w-full rounded border px-2 py-1.5 text-sm">
+                      className="w-full rounded border px-2 py-1.5 text-base">
                       {METODOS_PAGO.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="text-xs text-gray-500">Notas</label>
                     <input type="text" value={group.notas} onChange={e => updateGroup(gi, { notas: e.target.value })}
-                      className="w-full rounded border px-2 py-1.5 text-sm" placeholder="Opcional" />
+                      className="w-full rounded border px-2 py-1.5 text-base" placeholder="Opcional" />
                   </div>
                 </div>
 
@@ -400,12 +400,12 @@ export default function RegistroPage() {
                       <div key={ii} className="rounded-lg border bg-gray-50 px-3 py-2 text-sm">
                         <div className="flex flex-wrap items-center gap-2">
                           <input type="text" value={item.nombre} onChange={e => updateItem(gi, ii, 'nombre', e.target.value)}
-                            className="min-w-[100px] flex-1 rounded border px-2 py-1 text-sm font-medium" />
+                            className="min-w-[100px] flex-1 rounded border px-2 py-1 text-[16px] font-medium" />
                           <input type="number" value={item.cantidad} step="any" onChange={e => updateItem(gi, ii, 'cantidad', parseFloat(e.target.value) || 0)}
-                            className="w-16 rounded border px-2 py-1 text-center" />
+                            className="w-16 rounded border px-2 py-1 text-[16px] text-center" />
                           <span className="text-xs text-gray-500">{item.unidad}</span>
                           <input type="number" value={item.precio_unitario} step="any" onChange={e => updateItem(gi, ii, 'precio_unitario', parseFloat(e.target.value) || 0)}
-                            className="w-20 rounded border px-2 py-1 text-right" />
+                            className="w-20 rounded border px-2 py-1 text-[16px] text-right" />
                           <span className="w-20 text-right text-xs font-medium">{formatearPesosCLP(item.subtotal)}</span>
                           <button onClick={() => removeItem(gi, ii)} className="text-red-400 hover:text-red-600"><X className="h-3.5 w-3.5" /></button>
                         </div>
