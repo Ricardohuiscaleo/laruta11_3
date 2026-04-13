@@ -135,6 +135,10 @@ Cajera con iPhone moderno no podía subir foto — el frontend intentaba comprim
 210. **Siempre verificar el estado del deploy después de hacer restart**: `queued` no significa `finished`. Hay que consultar el estado del deployment_uuid para confirmar que el build pasó. Un error de TypeScript puede hacer fallar el build silenciosamente
 211. **Nunca bloquear al usuario por un error de compresión de imagen**: Si el canvas no puede decodificar HEIC (iPhones modernos), hacer fallback al archivo original. S3 acepta cualquier formato. Mejor subir una foto grande que no subir nada
 
+**Migración bot Telegram:**
+
+Notificaciones de Kiro migradas de `@laruta11_bot` (compartido) a `@SuperKiro_bot` (dedicado). Token: `8432728868:AAEf2aVSvZqCT1t7SVgKKuG411XveYGpA7M`. Hook `.kiro/hooks/telegram-notify.kiro.hook` actualizado. Commit `63e4cf2`.
+
 ### Pendiente
 
 - Verificar que prompts mejorados dan feedback correcto en fotos planchero
