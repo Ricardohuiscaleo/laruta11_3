@@ -78,8 +78,8 @@ class ChecklistController extends Controller
         $personal = $request->get('personal');
 
         $data = $request->validate([
-            'confirmed' => 'required|boolean',
-            'actual_amount' => 'required_if:confirmed,false|nullable|numeric|min:0',
+            'confirmed' => 'nullable|boolean',
+            'actual_amount' => 'required|numeric|min:0',
         ]);
 
         try {

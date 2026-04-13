@@ -328,28 +328,18 @@ class ChecklistService
         // Do NOT refresh here — the cashier verified against the amount they saw
         $cashExpected = (float) ($item->cash_expected ?? 0);
 
-        if ($confirmed) {
-            // Cajero confirms: cash matches expected
-            $item->update([
-                'cash_actual' => $cashExpected,
-                'cash_difference' => 0,
-                'cash_result' => 'ok',
-                'is_completed' => true,
-                'completed_at' => now(),
-            ]);
-        } else {
-            // Cajero reports discrepancy
-            $cashActual = (float) $actualAmount;
-            $difference = $cashActual - $cashExpected;
+        // Always receive actual_amount from frontend (cashier always enters physical count)
+        $cashActual = (float) ($actualAmount ?? $cashExpected);
+        $difference = $cashActual - $cashExpected;
+        $result = abs($difference) < 1 ? 'ok' : 'discrepancia'; // tolerance of $1 for rounding
 
-            $item->update([
-                'cash_actual' => $cashActual,
-                'cash_difference' => $difference,
-                'cash_result' => 'discrepancia',
-                'is_completed' => true,
-                'completed_at' => now(),
-            ]);
-        }
+        $item->update([
+            'cash_actual' => $cashActual,
+            'cash_difference' => $difference,
+            'cash_result' => $result,
+            'is_completed' => true,
+            'completed_at' => now(),
+        ]);
 
         // Update checklist progress
         $completedCount = $checklist->items()->where('is_completed', true)->count();
