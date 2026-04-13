@@ -139,6 +139,18 @@ Cajera con iPhone moderno no podía subir foto — el frontend intentaba comprim
 
 Notificaciones de Kiro migradas de `@laruta11_bot` (compartido) a `@SuperKiro_bot` (dedicado). Token: `8432728868:AAEf2aVSvZqCT1t7SVgKKuG411XveYGpA7M`. Header: "SuperKiro-LaRuta11". Hook `.kiro/hooks/telegram-notify.kiro.hook` actualizado. Commits `63e4cf2`, `695f38d`.
 
+**kiro-cli instalado en VPS (puente Telegram↔Kiro):**
+
+| Paso | Estado |
+|------|--------|
+| kiro-cli v1.29.8 instalado (zip x86\_64) | ✅ `/root/.local/bin/kiro-cli` |
+| Login Builder ID (device flow) | ✅ Autenticado |
+| Repo `kiro-acp-telegram-bot` clonado | ⏳ Pendiente |
+| Bot configurado con `@SuperKiro_bot` | ⏳ Pendiente |
+| Bot corriendo como servicio (pm2/systemd) | ⏳ Pendiente |
+
+Notas: `.deb` falló por dependencias GUI (webkit, appindicator). Zip + `install.sh --force --no-confirm` funcionó. Login requiere `--license free --use-device-flow` para Builder ID en servidor headless.
+
 ### Pendiente
 
 - Verificar que prompts mejorados dan feedback correcto en fotos planchero
