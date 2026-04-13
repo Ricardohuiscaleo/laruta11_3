@@ -145,9 +145,12 @@ Notificaciones de Kiro migradas de `@laruta11_bot` (compartido) a `@SuperKiro_bo
 |------|--------|
 | kiro-cli v1.29.8 instalado (zip x86\_64) | ✅ `/root/.local/bin/kiro-cli` |
 | Login Builder ID (device flow) | ✅ Autenticado |
-| Repo `kiro-acp-telegram-bot` clonado | ⏳ Pendiente |
-| Bot configurado con `@SuperKiro_bot` | ⏳ Pendiente |
-| Bot corriendo como servicio (pm2/systemd) | ⏳ Pendiente |
+| Repo `kiro-acp-telegram-bot` clonado | ✅ `/opt/kiro-acp-telegram-bot` |
+| Bot configurado con `@SuperKiro_bot` | ✅ `.env` con token, workspace, allowed\_users |
+| Bot corriendo como servicio (pm2) | ✅ `kiro-telegram-bot` online, auto-start on reboot |
+| Node.js instalado | ✅ v20.20.2 |
+| Workspace clonado en VPS | ✅ `/root/laruta11_3` |
+| Sesión ACP activa | ✅ `265e3a51` — Kiro CLI Agent 1.29.8 |
 
 Notas: `.deb` falló por dependencias GUI (webkit, appindicator). Zip + `install.sh --force --no-confirm` funcionó. Login requiere `--license free --use-device-flow` para Builder ID en servidor headless.
 
