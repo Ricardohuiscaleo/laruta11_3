@@ -17,7 +17,17 @@ class AdjustmentController extends Controller
 
         $ajustes = AjusteSueldo::with(['personal', 'categoria'])
             ->where('mes', $mes . '-01')
-            ->get();
+            ->get()
+            ->map(fn ($a) => [
+                'id' => $a->id,
+                'personal_id' => $a->personal_id,
+                'personal_nombre' => $a->personal?->nombre ?? "#{$a->personal_id}",
+                'mes' => $a->mes,
+                'monto' => $a->monto,
+                'concepto' => $a->concepto,
+                'categoria' => $a->categoria?->nombre ?? '',
+                'notas' => $a->notas,
+            ]);
 
         return response()->json(['success' => true, 'data' => $ajustes]);
     }

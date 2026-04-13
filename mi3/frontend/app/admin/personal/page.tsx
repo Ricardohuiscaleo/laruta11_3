@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
-import { Loader2, Plus, X, Pencil, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Loader2, Plus, X, Pencil, ToggleLeft, ToggleRight, User } from 'lucide-react';
 import type { Personal, ApiResponse } from '@/types';
 
 const SUELDO_BASE_DEFECTO = 300000;
@@ -79,10 +79,12 @@ export default function PersonalAdminPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
+      // Backend expects rol as array, frontend stores as comma-separated string
+      const payload = { ...form, rol: form.rol.split(',').map(r => r.trim()).filter(Boolean) };
       if (editing) {
-        await apiFetch(`/admin/personal/${editing.id}`, { method: 'PUT', body: JSON.stringify(form) });
+        await apiFetch(`/admin/personal/${editing.id}`, { method: 'PUT', body: JSON.stringify(payload) });
       } else {
-        await apiFetch('/admin/personal', { method: 'POST', body: JSON.stringify({ ...form, activo: 1 }) });
+        await apiFetch('/admin/personal', { method: 'POST', body: JSON.stringify({ ...payload, activo: 1 }) });
       }
       setShowModal(false);
       fetchData();
@@ -126,7 +128,18 @@ export default function PersonalAdminPage() {
           <tbody className="divide-y">
             {personal.map(p => (
               <tr key={p.id}>
-                <td className="px-4 py-3 font-medium">{p.nombre}</td>
+                <td className="px-4 py-3 font-medium">
+                  <div className="flex items-center gap-2">
+                    {p.foto_url ? (
+                      <img src={p.foto_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
+                        <User className="h-4 w-4 text-amber-600" />
+                      </div>
+                    )}
+                    {p.nombre}
+                  </div>
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-1">
                     {p.rol.split(',').map(r => r.trim()).filter(Boolean).map(r => (
