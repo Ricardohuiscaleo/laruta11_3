@@ -23,9 +23,62 @@ class PayrollController extends Controller
     public function index(Request $request): JsonResponse
     {
         $mes = $request->query('mes', now()->format('Y-m'));
-        $resumen = $this->nominaService->getResumen($mes);
+        $raw = $this->nominaService->getResumen($mes);
 
-        return response()->json(['success' => true, 'data' => $resumen]);
+        // Transform to frontend expected shape: {resumen: WorkerPayroll[], centros: PayrollSummary[]}
+        $workersMap = []; // personal_id => aggregated WorkerPayroll
+
+        foreach (['ruta11', 'seguridad'] as $centro) {
+            foreach ($raw[$centro]['personal'] ?? [] as $entry) {
+                $p = $entry['personal'];
+                $liq = $entry['liquidacion'];
+                $pid = $p->id;
+
+                if (isset($workersMap[$pid])) {
+                    $workersMap[$pid]['sueldo_base'] += $liq['sueldo_base'];
+                    $workersMap[$pid]['dias_trabajados'] += $liq['dias_trabajados'];
+                    $workersMap[$pid]['reemplazos'] += $liq['reemplazos_hechos'];
+                    $workersMap[$pid]['ajustes_total'] += $liq['total_ajustes'];
+                    $workersMap[$pid]['gran_total'] += $liq['total'];
+                } else {
+                    $workersMap[$pid] = [
+                        'personal_id' => $pid,
+                        'nombre' => $p->nombre,
+                        'rol' => $p->rol,
+                        'sueldo_base' => $liq['sueldo_base'],
+                        'dias_trabajados' => $liq['dias_trabajados'],
+                        'reemplazos' => $liq['reemplazos_hechos'],
+                        'ajustes_total' => $liq['total_ajustes'],
+                        'gran_total' => $liq['total'],
+                    ];
+                }
+            }
+        }
+
+        $centros = [];
+        foreach (['ruta11', 'seguridad'] as $centro) {
+            $totalSueldos = collect($raw[$centro]['personal'] ?? [])
+                ->sum(fn($e) => $e['liquidacion']['sueldo_base']);
+            $totalPagado = collect($raw[$centro]['pagos'] ?? [])
+                ->sum('monto');
+            $presupuesto = $raw[$centro]['presupuesto'] ?? 0;
+
+            $centros[] = [
+                'centro_costo' => $centro,
+                'presupuesto' => $presupuesto,
+                'total_sueldos' => $totalSueldos,
+                'total_pagado' => $totalPagado,
+                'diferencia' => $presupuesto - $totalSueldos,
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'resumen' => array_values($workersMap),
+                'centros' => $centros,
+            ],
+        ]);
     }
 
     public function storePayment(Request $request): JsonResponse

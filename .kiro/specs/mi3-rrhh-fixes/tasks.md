@@ -31,9 +31,9 @@
   - Mark task complete when tests are written, run, and passing on unfixed code
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 3. Bug 1 Fix: Commit + deploy the rotate-foto fix
+- [x] 3. Bug 1 Fix: Commit + deploy the rotate-foto fix
 
-  - [ ] 3.1 Commit and deploy the rotate-foto import fix
+  - [x] 3.1 Commit and deploy the rotate-foto import fix
     - The `use Illuminate\Http\Request;` import is already staged in `mi3/backend/app/Http/Controllers/Admin/PersonalController.php`
     - Commit with message: "fix: add missing Request import to PersonalController (rotate-foto 500)"
     - Deploy to production
@@ -42,9 +42,9 @@
     - _Preservation: Other PersonalController endpoints unchanged_
     - _Requirements: 1.1, 2.1, 3.1_
 
-- [ ] 4. Bug 2 Fix: Fix DetectAbsencesCommand to use D-1 date for night shift detection
+- [-] 4. Bug 2 Fix: Fix DetectAbsencesCommand to use D-1 date for night shift detection
 
-  - [ ] 4.1 Change fecha to D-1 in DetectAbsencesCommand::handle()
+  - [x] 4.1 Change fecha to D-1 in DetectAbsencesCommand::handle()
     - In `mi3/backend/app/Console/Commands/DetectAbsencesCommand.php`, method `handle()`
     - Replace `$fecha = now()->format('Y-m-d')` with `$fecha = now()->subDay()->format('Y-m-d')`
     - This makes the command (running at midnight of D) evaluate shifts from D-1, which have already ended
@@ -70,9 +70,9 @@
     - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
     - Confirm daytime shift absence detection still works correctly
 
-- [ ] 5. Bug 3 Fix: Transform PayrollController::index() response to match frontend expected shape
+- [-] 5. Bug 3 Fix: Transform PayrollController::index() response to match frontend expected shape
 
-  - [ ] 5.1 Add data transformation in PayrollController::index()
+  - [x] 5.1 Add data transformation in PayrollController::index()
     - In `mi3/backend/app/Http/Controllers/Admin/PayrollController.php`, method `index()`
     - After `$resumen = $this->nominaService->getResumen($mes)`, add transformation logic:
     - Build `resumen` array: iterate over `$resumen['ruta11']['personal']` and `$resumen['seguridad']['personal']`, flatten each entry to WorkerPayroll shape: `{personal_id, nombre, rol, sueldo_base, dias_trabajados, reemplazos, ajustes_total, gran_total}`
@@ -100,7 +100,7 @@
     - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions in liquidation values)
     - Confirm all numeric values match NominaService output
 
-- [ ] 6. Commit + push + deploy all fixes
+- [-] 6. Commit + push + deploy all fixes
   - Commit Bug 2 and Bug 3 changes together (Bug 1 already committed in task 3)
   - Commit message: "fix: night shift D-1 date + nómina response shape transform"
   - Push to remote

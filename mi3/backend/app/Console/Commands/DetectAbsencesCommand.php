@@ -22,8 +22,8 @@ class DetectAbsencesCommand extends Command
 
     public function handle(): int
     {
-        $fecha = now()->format('Y-m-d');
-        $this->info("Detectando inasistencias para {$fecha}...");
+        $fecha = now()->subDay()->format('Y-m-d');
+        $this->info("Detectando inasistencias para {$fecha} (ayer)...");
 
         $result = $this->attendanceService->detectarAusencias($fecha);
 
