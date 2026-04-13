@@ -18,6 +18,7 @@ class Compra extends Model
         'notas',
         'imagen_respaldo',
         'usuario',
+        'rendicion_id',
     ];
 
     protected $casts = [
@@ -29,6 +30,11 @@ class Compra extends Model
     public function detalles()
     {
         return $this->hasMany(CompraDetalle::class, 'compra_id');
+    }
+
+    public function rendicion()
+    {
+        return $this->belongsTo(Rendicion::class, 'rendicion_id');
     }
 
     public function extractionLogs()

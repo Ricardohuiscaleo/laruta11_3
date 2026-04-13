@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
 
+    // ── Rendiciones (público — accesible desde link WhatsApp) ────────
+    Route::get('rendicion/{token}', [\App\Http\Controllers\Admin\RendicionController::class, 'show']);
+    Route::post('rendicion/{token}/aprobar', [\App\Http\Controllers\Admin\RendicionController::class, 'aprobar']);
+    Route::post('rendicion/{token}/rechazar', [\App\Http\Controllers\Admin\RendicionController::class, 'rechazar']);
+
     // ── Auth (público) ──────────────────────────────────────────────
     Route::prefix('auth')->group(function () {
         Route::post('login', [\App\Http\Controllers\Auth\AuthController::class, 'login']);
@@ -76,6 +81,11 @@ Route::prefix('v1')->group(function () {
         Route::get('compras/pipeline/report', [\App\Http\Controllers\Admin\ExtraccionController::class, 'pipelineReport']);
         Route::post('compras/{id}/imagen', [\App\Http\Controllers\Admin\CompraController::class, 'uploadImagen']);
         Route::apiResource('compras', \App\Http\Controllers\Admin\CompraController::class)->only(['index', 'store', 'show', 'destroy']);
+
+        // Rendiciones (admin: create, list, preview)
+        Route::get('rendiciones', [\App\Http\Controllers\Admin\RendicionController::class, 'index']);
+        Route::get('rendiciones/preview', [\App\Http\Controllers\Admin\RendicionController::class, 'preview']);
+        Route::post('rendiciones', [\App\Http\Controllers\Admin\RendicionController::class, 'store']);
 
         // Stock
         Route::get('stock', [\App\Http\Controllers\Admin\StockController::class, 'index']);
