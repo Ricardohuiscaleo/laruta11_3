@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StorePersonalRequest;
 use App\Models\Personal;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class PersonalController extends Controller
 {

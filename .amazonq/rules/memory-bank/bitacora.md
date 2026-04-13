@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`34ba5be`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`34ba5be`) |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`88d2fbb`) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`88d2fbb`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -54,10 +54,12 @@
 
 ### 🟡 Verificaciones pendientes
 
-- [ ] **Ajustes muestra IDs en vez de nombres** (#3, #10, #12) — necesita JOIN con personal para mostrar nombre del trabajador
-- [ ] **Inasistencias automáticas $40.000** — verificar si descuentos del 12-13 abril son correctos o falso positivo (checklists no completados aún)
-- [ ] **Nómina vacía** — endpoint no devuelve datos, investigar
-- [ ] **Editar trabajadores: "validation.array"** — error al editar personal, investigar validación en PersonalController update
+- [x] **Ajustes muestra IDs en vez de nombres** — fix: map personal_nombre en AdjustmentController
+- [ ] **Inasistencias automáticas $40.000** — verificar si descuentos del 12-13 abril son correctos o falso positivo
+- [ ] **Nómina vacía** — endpoint devuelve datos correctos pero frontend espera shape diferente (data.resumen vs data.ruta11). Spec: `.kiro/specs/mi3-rrhh-fixes/bugfix.md`
+- [x] **Editar trabajadores: "validation.array"** — fix: rol string→array en personal/page.tsx
+- [x] **Deploy pendiente**: `foto_url` en `personal` — committeado y deployado en 75e15b0
+- [ ] **Rotate foto 500** — falta `use Illuminate\Http\Request` en PersonalController (fix staged, pendiente commit+deploy). Spec: `.kiro/specs/mi3-rrhh-fixes/bugfix.md`
 - [ ] Verificar prompts IA planchero dan feedback correcto (plancha/lavaplatos/mesón)
 - [ ] Verificar upload S3 en compras (end-to-end)
 - [ ] Verificar Gmail Token Refresh funciona 100%
@@ -77,6 +79,30 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-13m — Rotar foto perfil + fix fotos rotadas + nómina investigada
+
+**Cambios:**
+- `PersonalController.php`: endpoint PATCH /personal/{id}/rotate-foto
+- `Personal.php`: foto\_rotation en fillable
+- BD producción: columna foto\_rotation smallint default 0
+- `personal/page.tsx`: botón rotar (hover avatar), CSS transform rotate, fix orphaned await
+- `globals.css`: image-orientation: from-image global
+- Nómina: investigada — backend devuelve 7 personas ruta11 + 2 seguridad, problema es frontend (data shape mismatch)
+
+**Commits:** `1da8565`, `05c3fb5`, `88d2fbb`
+**Deploys:** mi3-frontend (`pq93euln`) ✅, mi3-backend (`d6mq1ari`) ✅
+
+### 2026-04-13l — Fixes RRHH + foto_url commit + hook Telegram v2
+
+**Cambios:**
+- `AdjustmentController.php`: map personal\_nombre en response (fix IDs en vez de nombres)
+- `personal/page.tsx`: rol string→array antes de enviar (fix validation.array)
+- `types/index.ts` + modelos backend: foto\_url committeado (pendiente desde 12bf, causaba build error)
+- `telegram-notify.kiro.hook` v2: solo notifica si hubo deploy exitoso
+
+**Commits:** `75e15b0`
+**Deploys:** mi3-frontend (`m8s8jxff`) ✅, mi3-backend (`u5nnd4b2`) ✅
 
 ### 2026-04-13k — Historial rendiciones en KPIs + realtime WebSocket
 
@@ -141,5 +167,5 @@
 
 ---
 
-> Sesiones anteriores (120 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (122 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
