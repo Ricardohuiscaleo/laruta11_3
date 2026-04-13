@@ -62,11 +62,13 @@ try {
     $stmtCompras->execute([$mes]);
     $compras = (float)($stmtCompras->fetchColumn() ?? 0);
 
-    // 3. Total Sueldos Base (solo ruta11, lógica exacta de Dashboard get_dashboard_cards.php)
+    // 3. Total Sueldos Base Ruta 11 (solo activos, sin seguridad-only ni dueño)
     $stmtSueldos = $pdo->query("
         SELECT COALESCE(SUM(sueldo_base_cajero + sueldo_base_planchero + sueldo_base_admin), 0) as total_sueldos
         FROM personal 
-        WHERE rol != 'seguridad' OR rol IS NULL
+        WHERE activo = 1
+        AND rol NOT IN ('seguridad', 'dueño')
+        AND rol NOT LIKE '%dueño%'
     ");
     $sueldos = (float)($stmtSueldos->fetchColumn() ?? 0);
 
