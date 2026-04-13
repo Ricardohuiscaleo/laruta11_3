@@ -86,6 +86,7 @@ Route::prefix('v1')->group(function () {
         Route::get('rendiciones', [\App\Http\Controllers\Admin\RendicionController::class, 'index']);
         Route::get('rendiciones/preview', [\App\Http\Controllers\Admin\RendicionController::class, 'preview']);
         Route::post('rendiciones', [\App\Http\Controllers\Admin\RendicionController::class, 'store']);
+        Route::delete('rendiciones/{id}', [\App\Http\Controllers\Admin\RendicionController::class, 'anular']);
 
         // Stock
         Route::get('stock', [\App\Http\Controllers\Admin\StockController::class, 'index']);

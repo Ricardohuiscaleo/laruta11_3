@@ -213,4 +213,24 @@ class RendicionController extends Controller
 
         return response()->json(['success' => true, 'rendicion' => $rendicion->fresh()]);
     }
+
+    /**
+     * Anular rendición (admin can anular any non-approved rendición, or even approved ones).
+     * DELETE /api/v1/admin/rendiciones/{id}
+     */
+    public function anular(int $id): JsonResponse
+    {
+        $rendicion = Rendicion::findOrFail($id);
+
+        // Unlink compras so they go back to "sin rendir"
+        Compra::where('rendicion_id', $rendicion->id)
+            ->update(['rendicion_id' => null]);
+
+        $rendicion->update([
+            'estado' => 'rechazada',
+            'notas' => ($rendicion->notas ?? '') . ' [Anulada por admin]',
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Rendición anulada']);
+    }
 }

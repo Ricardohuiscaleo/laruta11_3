@@ -12,6 +12,12 @@ const METODO_LABELS: Record<string, string> = {
   cash: 'Efectivo', transfer: 'Transferencia', credit: 'Crédito', debit: 'Débito',
 };
 
+interface Rendicion {
+  id: number; token: string; estado: string; saldo_anterior: number;
+  total_compras: number; saldo_resultante: number; monto_transferido: number | null;
+  saldo_nuevo: number | null; created_at: string;
+}
+
 interface PaginatedResponse {
   success: boolean;
   compras: Compra[];
@@ -30,6 +36,7 @@ export default function HistorialCompras() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [detalle, setDetalle] = useState<Compra | null>(null);
   const [showRendicion, setShowRendicion] = useState(false);
+  const [rendiciones, setRendiciones] = useState<Rendicion[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchCompras = useCallback(async (p: number, q: string) => {
@@ -46,6 +53,26 @@ export default function HistorialCompras() {
   }, []);
 
   useEffect(() => { fetchCompras(page, query); }, [page, fetchCompras]);
+
+  // Load rendiciones
+  const fetchRendiciones = useCallback(async () => {
+    try {
+      const res = await comprasApi.get<{ success: boolean; rendiciones: Rendicion[] }>('/rendiciones');
+      setRendiciones(res.rendiciones || []);
+    } catch {}
+  }, []);
+  useEffect(() => { fetchRendiciones(); }, [fetchRendiciones]);
+
+  const anularRendicion = async (id: number) => {
+    if (!confirm('¿Anular esta rendición? Las compras volverán a "sin rendir".')) return;
+    try {
+      await comprasApi.get(`/rendiciones`); // just to verify auth
+      const res = await fetch(`${(process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl')}/api/v1/admin/rendiciones/${id}`, {
+        method: 'DELETE', headers: { Accept: 'application/json' }, credentials: 'include',
+      }).then(r => r.json());
+      if (res.success) { fetchRendiciones(); fetchCompras(page, query); }
+    } catch { alert('Error al anular'); }
+  };
 
   const handleSearch = (val: string) => {
     setQuery(val);
@@ -79,6 +106,26 @@ export default function HistorialCompras() {
           </button>
         )}
       </div>
+
+      {/* Pending rendiciones */}
+      {rendiciones.filter(r => r.estado === 'pendiente').length > 0 && (
+        <div className="space-y-2">
+          {rendiciones.filter(r => r.estado === 'pendiente').map(r => (
+            <div key={r.id} className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-amber-800">📋 Rendición pendiente</p>
+                <p className="text-xs text-amber-600">{formatearPesosCLP(r.total_compras)} · {new Date(r.created_at).toLocaleDateString('es-CL')}</p>
+              </div>
+              <div className="flex gap-2">
+                <a href={`/rendicion/${r.token}`} target="_blank" rel="noopener"
+                  className="rounded-lg border border-amber-300 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100">Ver</a>
+                <button onClick={() => anularRendicion(r.id)}
+                  className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">Anular</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="rounded-xl border bg-white shadow-sm">
         {loading ? (
@@ -139,7 +186,7 @@ export default function HistorialCompras() {
 
       {showRendicion && (
         <RendicionWhatsApp compras={selectedCompras} onClose={() => setShowRendicion(false)}
-          onCreated={() => { setSelected(new Set()); fetchCompras(page, query); }} />
+          onCreated={() => { setSelected(new Set()); fetchCompras(page, query); fetchRendiciones(); }} />
       )}
     </div>
   );
