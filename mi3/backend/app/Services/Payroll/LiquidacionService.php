@@ -179,11 +179,10 @@ class LiquidacionService
             ->whereRaw("DATE_FORMAT(fecha_compra, '%Y-%m') = ?", [$mes])
             ->sum('monto_total');
 
-        // 3. Sueldos base ruta11 (all active personal except seguridad-only)
-        $sueldos = (float) \App\Models\Personal::where('activo', 1)
-            ->selectRaw('COALESCE(SUM(sueldo_base_cajero + sueldo_base_planchero + sueldo_base_admin), 0) as total')
-            ->whereRaw("(rol NOT LIKE '%seguridad%' OR rol LIKE '%cajero%' OR rol LIKE '%planchero%' OR rol LIKE '%administrador%')")
-            ->value('total');
+        // 3. Sueldos base ruta11 (exact same query as caja3/api/personal/get_monthly_cashflow.php)
+        $sueldos = (float) \Illuminate\Support\Facades\DB::selectOne(
+            "SELECT COALESCE(SUM(sueldo_base_cajero + sueldo_base_planchero + sueldo_base_admin), 0) as total FROM personal WHERE rol != 'seguridad' OR rol IS NULL"
+        )->total;
 
         return $ventas - $compras - $sueldos;
     }
