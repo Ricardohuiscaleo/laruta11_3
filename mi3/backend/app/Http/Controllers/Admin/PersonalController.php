@@ -70,4 +70,11 @@ class PersonalController extends Controller
 
         return response()->json(['success' => true, 'data' => $personal]);
     }
+
+    public function rotateFoto(Request $request, int $id): JsonResponse
+    {
+        $personal = Personal::findOrFail($id);
+        $personal->update(['foto_rotation' => (int) $request->input('rotation', 0) % 360]);
+        return response()->json(['success' => true]);
+    }
 }

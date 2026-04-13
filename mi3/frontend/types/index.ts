@@ -22,6 +22,7 @@ export interface Personal {
   sueldo_base_seguridad: number;
   activo: boolean;
   foto_url?: string | null;
+  foto_rotation?: number;
 }
 
 export interface Turno {

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
-import { Loader2, Plus, X, Pencil, ToggleLeft, ToggleRight, User } from 'lucide-react';
+import { Loader2, Plus, X, Pencil, ToggleLeft, ToggleRight, User, RotateCw } from 'lucide-react';
 import type { Personal, ApiResponse } from '@/types';
 
 const SUELDO_BASE_DEFECTO = 300000;
@@ -102,6 +102,22 @@ export default function PersonalAdminPage() {
     } catch (err: any) { alert(err.message); }
   };
 
+  const rotateFoto = async (id: number, deg: number) => {
+    const rotation = deg % 360;
+    try {
+      await apiFetch(`/admin/personal/${id}/rotate-foto`, {
+        method: 'PATCH',
+        body: JSON.stringify({ rotation }),
+      });
+      setPersonal(prev => prev.map(p => p.id === id ? { ...p, foto_rotation: rotation } : p));
+    } catch {}
+  };
+    try {
+      await apiFetch(`/admin/personal/${p.id}/toggle`, { method: 'PATCH' });
+      fetchData();
+    } catch (err: any) { alert(err.message); }
+  };
+
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-amber-600" /></div>;
   if (error) return <div className="rounded-lg bg-red-50 p-4 text-red-600">{error}</div>;
 
@@ -131,7 +147,15 @@ export default function PersonalAdminPage() {
                 <td className="px-4 py-3 font-medium">
                   <div className="flex items-center gap-2">
                     {p.foto_url ? (
-                      <img src={p.foto_url} alt="" className="h-8 w-8 rounded-full object-cover" style={{ imageOrientation: 'from-image' }} />
+                      <div className="relative group">
+                        <img src={p.foto_url} alt="" className="h-8 w-8 rounded-full object-cover"
+                          style={{ transform: `rotate(${p.foto_rotation || 0}deg)` }} />
+                        <button onClick={(e) => { e.stopPropagation(); rotateFoto(p.id, (p.foto_rotation || 0) + 90); }}
+                          className="absolute -bottom-1 -right-1 hidden group-hover:flex h-4 w-4 items-center justify-center rounded-full bg-white shadow text-gray-500 hover:text-amber-600"
+                          title="Rotar foto">
+                          <RotateCw className="h-2.5 w-2.5" />
+                        </button>
+                      </div>
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
                         <User className="h-4 w-4 text-amber-600" />
