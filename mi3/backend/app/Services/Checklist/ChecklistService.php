@@ -328,10 +328,10 @@ class ChecklistService
         // Do NOT refresh here — the cashier verified against the amount they saw
         $cashExpected = (float) ($item->cash_expected ?? 0);
 
-        // Always receive actual_amount from frontend (cashier always enters physical count)
+        // Always receive actual_amount from frontend
         $cashActual = (float) ($actualAmount ?? $cashExpected);
-        $difference = $cashActual - $cashExpected;
-        $result = abs($difference) < 1 ? 'ok' : 'discrepancia'; // tolerance of $1 for rounding
+        $difference = round($cashActual - $cashExpected, 2);
+        $result = $difference == 0 ? 'ok' : 'discrepancia';
 
         $item->update([
             'cash_actual' => $cashActual,

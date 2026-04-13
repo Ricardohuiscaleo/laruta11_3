@@ -26,7 +26,7 @@ class ChecklistController extends Controller
 
         $checklists = $this->checklistService->getChecklistsPendientes($personal->id, $fecha);
 
-        // For cash_verification items, ensure cash_expected is up-to-date
+        // For cash_verification items, refresh cash_expected with current balance (dynamic until verified)
         foreach ($checklists as $checklist) {
             foreach ($checklist->items as $item) {
                 if ($item->item_type === 'cash_verification' && !$item->is_completed) {
@@ -34,6 +34,7 @@ class ChecklistController extends Controller
                         ->orderByDesc('id')
                         ->value('saldo_nuevo') ?? 0;
                     $item->cash_expected = $saldoEsperado;
+                    $item->saveQuietly(); // persist to DB so verify-cash uses the latest
                 }
             }
         }

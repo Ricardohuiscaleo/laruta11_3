@@ -231,24 +231,15 @@ function ChecklistItemDetail({ item }: { item: ChecklistItem }) {
           'bg-red-100 text-red-800'
         )}>
           {!item.is_completed ? (
-            <p className="font-medium">💰 Saldo en sistema: {formatCLP(item.cash_expected ?? 0)} — Pendiente verificación</p>
+            <p className="font-medium">💰 Saldo en sistema: {formatCLP(item.cash_expected ?? 0)} — Pendiente (dinámico)</p>
           ) : item.cash_result === 'ok' ? (
-            <div className="space-y-1">
-              <p className="font-medium">✅ Caja cuadrada</p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div><span className="text-gray-500">Sistema:</span> {formatCLP(item.cash_expected ?? 0)}</div>
-                <div><span className="text-gray-500">Físico:</span> {formatCLP(item.cash_actual ?? 0)}</div>
-              </div>
-            </div>
+            <p className="font-medium">
+              Sistema: {formatCLP(item.cash_expected ?? 0)} | Físico: {formatCLP(item.cash_actual ?? 0)} | ✅ Cuadrado
+            </p>
           ) : (
-            <div className="space-y-1">
-              <p className="font-medium">⚠️ Discrepancia de caja</p>
-              <div className="grid grid-cols-3 gap-2 text-xs">
-                <div><span className="text-gray-500">Sistema:</span> {formatCLP(item.cash_expected ?? 0)}</div>
-                <div><span className="text-gray-500">Físico:</span> {formatCLP(item.cash_actual ?? 0)}</div>
-                <div><span className="text-gray-500">Diferencia:</span> {formatCLP(Math.abs(item.cash_difference ?? 0))} ({(item.cash_difference ?? 0) > 0 ? 'sobrante' : 'faltante'})</div>
-              </div>
-            </div>
+            <p className="font-medium">
+              Sistema: {formatCLP(item.cash_expected ?? 0)} | Físico: {formatCLP(item.cash_actual ?? 0)} | {(item.cash_difference ?? 0) < 0 ? 'Faltan' : 'Sobran'} {formatCLP(Math.abs(item.cash_difference ?? 0))} ❌ Descuadrado
+            </p>
           )}
         </div>
       )}
