@@ -93,6 +93,46 @@ function InlineItemSearch({ onSelect }: { onSelect: (item: { id: number; name: s
   );
 }
 
+// --- Proveedor search with autocomplete ---
+function ProveedorSearch({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+
+  const search = async (val: string) => {
+    if (val.length < 1) { setSuggestions([]); setOpen(false); return; }
+    try {
+      const data = await comprasApi.get<{ success: boolean; data: string[] }>(`/compras/proveedores?q=${encodeURIComponent(val)}`);
+      const list = Array.isArray(data) ? data : (data.data || []);
+      setSuggestions(list.filter((s: string) => s.toLowerCase().includes(val.toLowerCase())));
+      setOpen(list.length > 0);
+    } catch { setSuggestions([]); }
+  };
+
+  return (
+    <div ref={ref} className="relative">
+      <input type="text" value={value} placeholder="Buscar proveedor..."
+        onChange={e => { onChange(e.target.value); search(e.target.value); }}
+        onFocus={() => { if (value) search(value); }}
+        className="w-full rounded border px-2 py-1.5 text-base" />
+      {open && suggestions.length > 0 && (
+        <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg border bg-white shadow-lg">
+          {suggestions.map(s => (
+            <button key={s} onClick={() => { onChange(s); setOpen(false); }}
+              className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-50 font-medium">{s}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- Main page component ---
 export default function RegistroPage() {
   const [groups, setGroups] = useState<CompraGroup[]>([]);
@@ -368,8 +408,7 @@ export default function RegistroPage() {
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   <div>
                     <label className="text-xs text-gray-500">Proveedor</label>
-                    <input type="text" value={group.proveedor} onChange={e => updateGroup(gi, { proveedor: e.target.value })}
-                      className="w-full rounded border px-2 py-1.5 text-base" placeholder="Proveedor" />
+                    <ProveedorSearch value={group.proveedor} onChange={v => updateGroup(gi, { proveedor: v })} />
                   </div>
                   <div>
                     <label className="text-xs text-gray-500">Fecha</label>
@@ -401,10 +440,21 @@ export default function RegistroPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           <input type="text" value={item.nombre} onChange={e => updateItem(gi, ii, 'nombre', e.target.value)}
                             className="min-w-[100px] flex-1 rounded border px-2 py-1 text-[16px] font-medium" />
-                          <input type="number" value={item.cantidad} step="any" onChange={e => updateItem(gi, ii, 'cantidad', parseFloat(e.target.value) || 0)}
+                          <input type="number" value={item.cantidad || ''} step="any" placeholder="Cant."
+                            onChange={e => updateItem(gi, ii, 'cantidad', e.target.value === '' ? 0 : parseFloat(e.target.value))}
+                            onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
                             className="w-16 rounded border px-2 py-1 text-[16px] text-center" />
-                          <span className="text-xs text-gray-500">{item.unidad}</span>
-                          <input type="number" value={item.precio_unitario} step="any" onChange={e => updateItem(gi, ii, 'precio_unitario', parseFloat(e.target.value) || 0)}
+                          <select value={item.unidad} onChange={e => updateItem(gi, ii, 'unidad', e.target.value)}
+                            className="w-20 rounded border px-1 py-1 text-xs text-gray-600">
+                            <option value="kg">kg</option>
+                            <option value="unidad">unidad</option>
+                            <option value="litro">litro</option>
+                            <option value="g">g</option>
+                            <option value="ml">ml</option>
+                          </select>
+                          <input type="number" value={item.precio_unitario || ''} step="any" placeholder="Precio"
+                            onChange={e => updateItem(gi, ii, 'precio_unitario', e.target.value === '' ? 0 : parseFloat(e.target.value))}
+                            onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
                             className="w-20 rounded border px-2 py-1 text-[16px] text-right" />
                           <span className="w-20 text-right text-xs font-medium">{formatearPesosCLP(item.subtotal)}</span>
                           <button onClick={() => removeItem(gi, ii)} className="text-red-400 hover:text-red-600"><X className="h-3.5 w-3.5" /></button>
