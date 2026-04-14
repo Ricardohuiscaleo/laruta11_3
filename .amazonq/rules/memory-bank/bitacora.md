@@ -89,7 +89,7 @@
 - `ExtraccionController`: post-match aplica `product_equivalences` — convierte paquetes a unidades individuales (ej: 2 paq Big Montina = 20 unidades). Recalcula precio_unitario. Cencosud/Jumbo/Santa Isabel en patrones. Fuzzy match con normalización de acentos.
 - Frontend: badge naranja 🏷️ `notas_descuento`, badge azul 📦 `empaque_detalle`. Tipo `RegistroItem` actualizado.
 - `getChecklistsAdmin`: shift-day solo cuando fecha=hoy Y 00:00-04:00.
-- BD: Jumbo/Santa Isabel en `supplier_index` (RUT 81.201.000-K). Big Montina 800GR + Salchicha Sureña/Sureña P en `product_equivalences` (1 paq = 10 unidades Montina Big). Crema Larga Vida → Crema (200ml). Champiñón Bdja/Bolsa/Bandeja → champiñón (Bandeja). Elton San Martin → Abastible (gas 15kg, calcula cilindros por monto).
+- BD: Jumbo/Santa Isabel en `supplier_index` (RUT 81.201.000-K). Big Montina 800GR + Salchicha Sureña/Sureña P en `product_equivalences` (1 paq = 10 unidades Montina Big). Crema Larga Vida → Crema (200ml). Champiñón variantes → champiñón (Bandeja) + fix doble-encoding UTF-8 ñ. Elton San Martin → Abastible (gas 15kg, calcula cilindros por monto).
 
 **Commits:** `cce9b31`→`c2a80da` (13 commits)
 **Deploys:** mi3-backend (`q6wf0vgq2o3mradc3cdg2079`) ✅, mi3-frontend (`z8mvpf6x0miwtdwmuy20j1h0`) ✅
