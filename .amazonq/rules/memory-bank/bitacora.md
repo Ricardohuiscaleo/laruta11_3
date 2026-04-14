@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2d50f13`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`200f2ce`) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`b8ebbf7`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -82,19 +82,17 @@
 
 ## Sesiones Recientes
 
-### 2026-04-14d — IA descuentos + estructura boleta supermercado + Cencosud + admin checklists fix
+### 2026-04-14d — IA descuentos + estructura boleta + equivalencias paquete→unidades + Cencosud
 
 **Cambios:**
-- Prompt IA: estructura boleta supermercado chileno (secciones: encabezado→productos→subtotal→fiscal→puntos→voucher). Productos entre encabezado y SUB TOTAL, ignorar puntos/fidelidad.
-- Prompt IA: campo `descuento` por item (valor positivo). Backend aplica resta en `normalizeAmounts`, recalcula `precio_unitario`.
-- Prompt IA: T. DEBITO→card, EFECTIVO→cash. Regla descuentos por línea (OFERTA SEMANA, DESCTO CONVENI).
-- `ExtraccionController`: Cencosud/Jumbo/Santa Isabel en patrones conocidos.
+- Prompt IA: estructura boleta supermercado chileno (secciones: encabezado→productos→subtotal→fiscal→puntos→voucher). Campo `descuento` por item, backend aplica resta en `normalizeAmounts`.
+- `ExtraccionController`: post-match aplica `product_equivalences` — convierte paquetes a unidades individuales (ej: 2 paq Big Montina = 20 unidades). Recalcula precio_unitario. Cencosud/Jumbo/Santa Isabel en patrones.
+- Frontend: badge naranja 🏷️ `notas_descuento`, badge azul 📦 `empaque_detalle`. Tipo `RegistroItem` actualizado.
 - `getChecklistsAdmin`: shift-day solo cuando fecha=hoy Y 00:00-04:00.
-- BD: Jumbo y Santa Isabel en `supplier_index` con RUT 81.201.000-K.
-- Frontend: badge naranja 🏷️ con `notas_descuento` visible en items extraídos. Tipo `RegistroItem` actualizado.
+- BD: Jumbo/Santa Isabel en `supplier_index` (RUT 81.201.000-K). Big Montina 800GR en `product_equivalences` (1 paq = 10 unidades).
 
-**Commits:** `cce9b31`, `bd69617`, `894a957`, `200f2ce`, `2d50f13`
-**Deploys:** mi3-backend (`j60rz0cu49d5pj60mmgx3mgf`) ✅, mi3-frontend (`z8mvpf6x0miwtdwmuy20j1h0`) ✅
+**Commits:** `cce9b31`, `bd69617`, `894a957`, `200f2ce`, `2d50f13`, `b8ebbf7`
+**Deploys:** mi3-backend (`y129646fy7rvjfblts5oodue`) ✅, mi3-frontend (`z8mvpf6x0miwtdwmuy20j1h0`) ✅
 
 ### 2026-04-14c — Fix checklist turno nocturno + shift-day logic alineada con caja3
 
