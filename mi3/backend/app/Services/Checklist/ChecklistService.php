@@ -451,22 +451,23 @@ class ChecklistService
      */
     public function getChecklistsAdmin(string $fecha, ?string $status = null): Collection
     {
-        // Shift-day logic: between 00:00-04:00, also show yesterday's checklists (night shift)
+        // Shift-day logic: only when viewing today's date and between 00:00-04:00
         $chileNow = now('America/Santiago');
         $chileHour = (int) $chileNow->format('H');
-        $shiftDate = $chileNow->copy();
-        if ($chileHour < 4) {
-            $shiftDate->subDay();
-        }
-        $shiftFecha = $shiftDate->format('Y-m-d');
+        $today = $chileNow->format('Y-m-d');
 
-        $query = Checklist::with(['personal', 'items'])
-            ->where(function ($q) use ($fecha, $shiftFecha) {
-                $q->whereDate('scheduled_date', $fecha);
-                if ($shiftFecha !== $fecha) {
-                    $q->orWhereDate('scheduled_date', $shiftFecha);
-                }
+        $query = Checklist::with(['personal', 'items']);
+
+        if ($fecha === $today && $chileHour < 4) {
+            // Night shift: show both today and yesterday
+            $yesterday = $chileNow->copy()->subDay()->format('Y-m-d');
+            $query->where(function ($q) use ($fecha, $yesterday) {
+                $q->whereDate('scheduled_date', $fecha)
+                  ->orWhereDate('scheduled_date', $yesterday);
             });
+        } else {
+            $query->whereDate('scheduled_date', $fecha);
+        }
 
         if ($status) {
             $query->where('status', $status);
