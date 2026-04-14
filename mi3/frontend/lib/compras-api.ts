@@ -43,4 +43,14 @@ export const comprasApi = {
     });
     return handleResponse<T>(res);
   },
+
+  async patch<T>(path: string, data: unknown): Promise<T> {
+    const res = await fetch(`${BASE}${path}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+    return handleResponse<T>(res);
+  },
 };

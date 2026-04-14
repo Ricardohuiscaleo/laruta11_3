@@ -94,6 +94,8 @@ Route::prefix('v1')->group(function () {
         Route::get('stock/bebidas', [\App\Http\Controllers\Admin\StockController::class, 'bebidas']);
         Route::post('stock/ajuste-masivo', [\App\Http\Controllers\Admin\StockController::class, 'ajusteMasivo']);
         Route::post('stock/preview-ajuste', [\App\Http\Controllers\Admin\StockController::class, 'previewAjuste']);
+        Route::patch('stock/{id}', [\App\Http\Controllers\Admin\StockController::class, 'update']);
+        Route::post('stock/consumir', [\App\Http\Controllers\Admin\StockController::class, 'consumir']);
 
         // KPIs
         Route::get('kpis', [\App\Http\Controllers\Admin\KpiController::class, 'index']);
