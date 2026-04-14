@@ -6,7 +6,9 @@ export interface ExtractionItem {
   unidad: string;
   precio_unitario: number;
   subtotal: number;
+  descuento?: number;
   empaque_detalle?: string | null;
+  notas_descuento?: string | null;
 }
 
 export interface ItemSugerencia {
