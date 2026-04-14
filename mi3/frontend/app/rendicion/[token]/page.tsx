@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Check, X, Clock, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Check, X, Clock, Loader2 } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-CL');
@@ -68,14 +68,15 @@ export default function RendicionPublicPage({ params }: { params: { token: strin
   const isPendiente = rendicion.estado === 'pendiente';
   const saldoNegativo = rendicion.saldo_resultante < 0;
   const deuda = Math.abs(rendicion.saldo_resultante);
-  // Solo calcular montos sugeridos si Ricardo puso de su bolsillo (saldo negativo)
   const exactoRedondeado = saldoNegativo ? roundUp(deuda, 1000) : 0;
   const smart = saldoNegativo ? roundUp(deuda + 100000, 10000) : roundUp(100000, 10000);
 
   return (
-    <div className="mx-auto max-w-lg p-4 space-y-4 pb-8">
+    /* Full-width container with only 4px horizontal margin */
+    <div style={{ maxWidth: '100%', padding: '0 4px', paddingBottom: '24px' }} className="space-y-2">
+
       {/* Header */}
-      <div className="text-center">
+      <div className="text-center py-3">
         <h1 className="text-xl font-bold text-gray-900">📋 Rendición de Gastos</h1>
         <p className="text-xs text-gray-400 mt-1">La Ruta 11 — {new Date(rendicion.created_at).toLocaleDateString('es-CL')}</p>
       </div>
@@ -87,82 +88,119 @@ export default function RendicionPublicPage({ params }: { params: { token: strin
         {isPendiente && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-sm text-amber-700"><Clock className="h-4 w-4" /> Pendiente</span>}
       </div>
 
-      {/* Summary */}
-      <div className="rounded-xl border bg-white p-4 shadow-sm">
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-lg bg-gray-50 p-3">
-            <p className="text-[11px] text-gray-500">Saldo anterior</p>
-            <p className="text-base font-bold">{fmt(rendicion.saldo_anterior)}</p>
+      {/* Summary — mobile friendly: 3 compact pills + optional transferred row */}
+      <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+        <div className="grid grid-cols-3">
+          <div className="p-2 text-center border-r">
+            <p className="text-[10px] text-gray-500 leading-tight">Saldo anterior</p>
+            <p className="text-sm font-bold mt-0.5">{fmt(rendicion.saldo_anterior)}</p>
           </div>
-          <div className="rounded-lg bg-red-50 p-3">
-            <p className="text-[11px] text-gray-500">Gastado</p>
-            <p className="text-base font-bold text-red-600">-{fmt(rendicion.total_compras)}</p>
+          <div className="p-2 text-center border-r bg-red-50">
+            <p className="text-[10px] text-gray-500 leading-tight">Gastado</p>
+            <p className="text-sm font-bold text-red-600 mt-0.5">-{fmt(rendicion.total_compras)}</p>
           </div>
-          <div className={`rounded-lg p-3 ${rendicion.saldo_resultante >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
-            <p className="text-[11px] text-gray-500">{rendicion.saldo_resultante >= 0 ? 'Caja disponible' : 'Ricardo puso de su bolsillo'}</p>
-            <p className={`text-base font-bold ${rendicion.saldo_resultante >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+          <div className={`p-2 text-center ${rendicion.saldo_resultante >= 0 ? 'bg-green-50' : 'bg-orange-50'}`}>
+            <p className="text-[10px] text-gray-500 leading-tight">
+              {rendicion.saldo_resultante >= 0 ? 'A favor' : 'Deuda'}
+            </p>
+            <p className={`text-sm font-bold mt-0.5 ${rendicion.saldo_resultante >= 0 ? 'text-green-700' : 'text-orange-700'}`}>
               {rendicion.saldo_resultante >= 0 ? fmt(rendicion.saldo_resultante) : fmt(Math.abs(rendicion.saldo_resultante))}
             </p>
           </div>
         </div>
 
         {rendicion.monto_transferido != null && (
-          <div className="grid grid-cols-2 gap-2 text-center border-t pt-3 mt-3">
-            <div className="rounded-lg bg-blue-50 p-3">
-              <p className="text-[11px] text-gray-500">Transferido</p>
-              <p className="text-base font-bold text-blue-700">+{fmt(rendicion.monto_transferido)}</p>
+          <div className="grid grid-cols-2 border-t">
+            <div className="p-2 text-center border-r bg-blue-50">
+              <p className="text-[10px] text-gray-500 leading-tight">Transferido</p>
+              <p className="text-sm font-bold text-blue-700 mt-0.5">+{fmt(rendicion.monto_transferido)}</p>
             </div>
-            <div className="rounded-lg bg-green-50 p-3">
-              <p className="text-[11px] text-gray-500">Saldo nuevo</p>
-              <p className="text-base font-bold text-green-700">{fmt(rendicion.saldo_nuevo ?? 0)}</p>
+            <div className="p-2 text-center bg-green-50">
+              <p className="text-[10px] text-gray-500 leading-tight">Saldo nuevo</p>
+              <p className="text-sm font-bold text-green-700 mt-0.5">{fmt(rendicion.saldo_nuevo ?? 0)}</p>
             </div>
           </div>
         )}
       </div>
 
       {/* Compras */}
-      <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3">
-        <h3 className="text-sm font-semibold text-gray-700">Compras ({compras.length})</h3>
-        {compras.map((c, i) => (
-          <div key={c.id} className="rounded-lg border bg-gray-50 p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold">{i + 1}. {c.proveedor}</span>
-              <span className="text-sm font-bold">{fmt(c.monto_total)}</span>
-            </div>
-            <p className="text-xs text-gray-400">📅 {c.fecha_compra}</p>
-            {c.items.map((item, j) => (
-              <p key={j} className="text-xs text-gray-600">• {item.nombre} ({item.cantidad} {item.unidad})</p>
-            ))}
-            {/* Photo thumbnails */}
-            {c.imagenes.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto pt-1">
-                {c.imagenes.map((url, k) => (
-                  <button key={k} onClick={() => setPhotoModal(url)}
-                    className="relative h-16 w-16 flex-shrink-0 rounded-lg border overflow-hidden hover:ring-2 hover:ring-mi3-400">
-                    <img src={url} alt={`Foto ${k + 1}`} className="h-full w-full object-cover" />
-                  </button>
-                ))}
+      <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+        <div className="px-3 py-2 border-b bg-gray-50">
+          <h3 className="text-sm font-semibold text-gray-700">Compras ({compras.length})</h3>
+        </div>
+        <div className="divide-y">
+          {compras.map((c, i) => (
+            <div key={c.id} className="px-2 py-2">
+              {/* Compra header */}
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-semibold text-gray-800">{i + 1}. {c.proveedor}</span>
+                <span className="text-sm font-bold">{fmt(c.monto_total)}</span>
               </div>
-            )}
-          </div>
-        ))}
+              <p className="text-xs text-gray-400 mb-1.5">📅 {c.fecha_compra}</p>
+
+              {/* Items table */}
+              {c.items.length > 0 && (
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100 text-gray-500">
+                      <th className="text-left py-1 px-1.5 font-medium rounded-tl">Producto</th>
+                      <th className="text-center py-1 px-1.5 font-medium w-10">Cant.</th>
+                      <th className="text-right py-1 px-1.5 font-medium w-16">P.Unit.</th>
+                      <th className="text-right py-1 px-1.5 font-medium w-18 rounded-tr">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {c.items.map((item, j) => {
+                      const subtotal = item.cantidad * item.precio_unitario;
+                      return (
+                        <tr key={j} className="text-gray-700">
+                          <td className="py-1 px-1.5 leading-tight">{item.nombre}</td>
+                          <td className="py-1 px-1.5 text-center">{item.cantidad}</td>
+                          <td className="py-1 px-1.5 text-right text-gray-500">{item.precio_unitario > 0 ? fmt(item.precio_unitario) : '—'}</td>
+                          <td className="py-1 px-1.5 text-right font-medium">{subtotal > 0 ? fmt(subtotal) : '—'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-gray-50 font-semibold text-gray-800 border-t border-gray-200">
+                      <td colSpan={3} className="py-1 px-1.5 text-right text-xs text-gray-500">Total</td>
+                      <td className="py-1 px-1.5 text-right">{fmt(c.monto_total)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              )}
+
+              {/* Photo thumbnails */}
+              {c.imagenes.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto pt-2">
+                  {c.imagenes.map((url, k) => (
+                    <button key={k} onClick={() => setPhotoModal(url)}
+                      className="relative h-16 w-16 flex-shrink-0 rounded-lg border overflow-hidden hover:ring-2 hover:ring-blue-400">
+                      <img src={url} alt={`Foto ${k + 1}`} className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Approve/Reject */}
       {isPendiente && !done && (
-        <div className="rounded-xl border bg-white p-4 shadow-sm space-y-4">
+        <div className="rounded-xl border bg-white shadow-sm p-3 space-y-3">
           <h3 className="text-sm font-semibold text-gray-700">Aprobar rendición</h3>
 
-          {/* Quick amount buttons */}
           <div className="space-y-2">
             <label className="text-xs text-gray-500">Monto a transferir a Ricardo</label>
 
             {saldoNegativo ? (
               <>
-                <p className="text-xs text-red-600 font-medium">⚠️ Ricardo puso {fmt(deuda)} de su bolsillo. Hay que devolverle.</p>
+                <p className="text-xs text-orange-600 font-medium">⚠️ Transferir {fmt(deuda)}.</p>
                 <div className="flex gap-2">
                   <button onClick={() => setMonto(String(exactoRedondeado))}
-                    className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition-colors ${monto === String(exactoRedondeado) ? 'border-mi3-500 bg-mi3-50 text-mi3-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                    className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition-colors ${monto === String(exactoRedondeado) ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
                     {fmt(exactoRedondeado)}
                     <span className="block text-[10px] text-gray-400">Devolver</span>
                   </button>
@@ -178,7 +216,7 @@ export default function RendicionPublicPage({ params }: { params: { token: strin
                 <p className="text-xs text-green-600 font-medium">✅ Ricardo tiene {fmt(rendicion.saldo_resultante)} en caja. No es obligatorio transferir.</p>
                 <div className="flex gap-2">
                   <button onClick={() => setMonto('0')}
-                    className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition-colors ${monto === '0' ? 'border-mi3-500 bg-mi3-50 text-mi3-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                    className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition-colors ${monto === '0' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
                     $0
                     <span className="block text-[10px] text-gray-400">Solo aprobar</span>
                   </button>
