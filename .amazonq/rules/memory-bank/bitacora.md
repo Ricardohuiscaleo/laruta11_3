@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2d50f13`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`65c2a9b`) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`fc51245`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -91,8 +91,8 @@
 - `getChecklistsAdmin`: shift-day solo cuando fecha=hoy Y 00:00-04:00.
 - BD: Jumbo/Santa Isabel en `supplier_index` (RUT 81.201.000-K). Big Montina 800GR + Salchicha Sureña/Sureña P en `product_equivalences` (1 paq = 10 unidades Montina Big). Crema Larga Vida → Crema (200ml). Champiñón Bdja/Bolsa/Bandeja → champiñón (Bandeja). Elton San Martin → Abastible (gas 15kg, calcula cilindros por monto).
 
-**Commits:** `cce9b31`, `bd69617`, `894a957`, `200f2ce`, `2d50f13`, `b8ebbf7`, `fcfe1bc`, `65c2a9b`
-**Deploys:** mi3-backend (`vod6bz7li9uoj25d5q2hpcx6`) ✅, mi3-frontend (`z8mvpf6x0miwtdwmuy20j1h0`) ✅
+**Commits:** `cce9b31`→`fc51245` (12 commits)
+**Deploys:** mi3-backend (`t99918wp92maloasmuyoaivq`) ✅, mi3-frontend (`z8mvpf6x0miwtdwmuy20j1h0`) ✅
 
 ### 2026-04-14c — Fix checklist turno nocturno + shift-day logic alineada con caja3
 
