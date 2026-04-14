@@ -28,9 +28,9 @@ class CompraController extends Controller
         $request->validate([
             'fecha_compra' => 'required|date',
             'proveedor'    => 'required|string|max:255',
-            'tipo_compra'  => 'required|string|max:50',
+            'tipo_compra'  => 'required|string|in:ingredientes,insumos,equipamiento,otros',
             'monto_total'  => 'required|numeric|min:0',
-            'metodo_pago'  => 'required|string|max:50',
+            'metodo_pago'  => 'required|string|in:cash,transfer,card,credit',
             'items'        => 'required|array|min:1',
             'items.*.nombre_item'     => 'required|string',
             'items.*.cantidad'        => 'required|numeric|min:0.01',
@@ -56,6 +56,11 @@ class CompraController extends Controller
                 'imagenes'    => $imagenes,
             ]);
         } catch (\Exception $e) {
+            \Log::error('Error registrando compra', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'data' => $request->except(['temp_keys']),
+            ]);
             return response()->json([
                 'success' => false,
                 'error'   => 'Error al registrar compra: ' . $e->getMessage(),

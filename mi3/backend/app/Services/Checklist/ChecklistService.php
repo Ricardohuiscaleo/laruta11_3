@@ -125,16 +125,28 @@ class ChecklistService
      */
     public function getChecklistsPendientes(int $personalId, string $fecha): Collection
     {
-        $personal = Personal::findOrFail($personalId);
-        $roles = array_intersect($personal->getRolesArray(), ['cajero', 'planchero']);
+        // Get current hour in Chile timezone
+        $chileNow = now('America/Santiago');
+        $chileHour = (int) $chileNow->format('H');
 
-        return Checklist::with('items')
+        // Between midnight and 06:00, also include yesterday's incomplete checklists
+        // (night shift workers need their cierre checklist past midnight)
+        $yesterday = \Carbon\Carbon::parse($fecha)->subDay()->format('Y-m-d');
+
+        $query = Checklist::with('items')
             ->where('personal_id', $personalId)
-            ->whereDate('scheduled_date', $fecha)
-            ->whereIn('rol', $roles)
             ->pendientes()
-            ->orderBy('type')
-            ->get();
+            ->where(function ($q) use ($fecha, $yesterday, $chileHour) {
+                $q->whereDate('scheduled_date', $fecha);
+                // Between 00:00-06:00, include yesterday's incomplete checklists
+                if ($chileHour < 6) {
+                    $q->orWhereDate('scheduled_date', $yesterday);
+                }
+            })
+            ->orderBy('scheduled_date', 'desc')
+            ->orderBy('type');
+
+        return $query->get();
     }
 
     /**

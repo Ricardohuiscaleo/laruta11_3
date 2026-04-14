@@ -26,6 +26,21 @@ class ChecklistController extends Controller
 
         $checklists = $this->checklistService->getChecklistsPendientes($personal->id, $fecha);
 
+        // On-demand creation: if worker has a shift today but no checklists, create them now
+        // This handles cases where the daily cron hasn't run yet or was missed
+        if ($checklists->isEmpty()) {
+            $hasTurno = \App\Models\Turno::whereDate('fecha', $fecha)
+                ->where(function ($q) use ($personal) {
+                    $q->where('personal_id', $personal->id)
+                      ->orWhere('reemplazado_por', $personal->id);
+                })->exists();
+
+            if ($hasTurno) {
+                $this->checklistService->crearChecklistsDiarios($fecha);
+                $checklists = $this->checklistService->getChecklistsPendientes($personal->id, $fecha);
+            }
+        }
+
         // For cash_verification items, refresh cash_expected with current balance (dynamic until verified)
         foreach ($checklists as $checklist) {
             foreach ($checklist->items as $item) {
