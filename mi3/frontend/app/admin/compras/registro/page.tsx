@@ -16,8 +16,8 @@ type UploadedImage = RegistroImage;
 const METODOS_PAGO = [
   { value: 'cash', label: 'Efectivo' },
   { value: 'transfer', label: 'Transferencia' },
+  { value: 'card', label: 'Tarjeta' },
   { value: 'credit', label: 'Crédito' },
-  { value: 'debit', label: 'Débito' },
 ];
 
 // --- Item search mini-component (inline) ---
@@ -113,6 +113,7 @@ export default function RegistroPage() {
   const [submitting, setSubmitting] = useState(false);
   const [saldo, setSaldo] = useState<number | null>(ctxKpis?.saldo_disponible ?? null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [previewImg, setPreviewImg] = useState<string | null>(null);
 
   // Sync saldo from context
   useEffect(() => {
@@ -363,16 +364,35 @@ export default function RegistroPage() {
             {/* Body */}
             {group.expanded && !isSubmitted && (
               <div className="p-4 space-y-3">
-                {/* Thumbnails */}
+                {/* Thumbnails — click to preview */}
                 {group.images.length > 0 && (
-                  <div className="flex gap-2 overflow-x-auto">
-                    {group.images.map((img, ii) => (
-                      <div key={ii} className="relative h-14 w-14 flex-shrink-0 rounded-lg border overflow-hidden">
-                        <img src={img.tempUrl} alt="" className="h-full w-full object-cover" />
-                        {img.status === 'extracting' && <div className="absolute inset-0 flex items-center justify-center bg-black/40"><Loader2 className="h-3 w-3 animate-spin text-white" /></div>}
-                        {img.status === 'error' && <div className="absolute inset-0 flex items-center justify-center bg-red-500/40"><X className="h-3 w-3 text-white" /></div>}
+                  <div className="space-y-2">
+                    <div className="flex gap-2 overflow-x-auto">
+                      {group.images.map((img, ii) => (
+                        <button key={ii} onClick={() => setPreviewImg(img.tempUrl)}
+                          className="relative h-14 w-14 flex-shrink-0 rounded-lg border overflow-hidden hover:ring-2 hover:ring-mi3-400">
+                          <img src={img.tempUrl} alt="" className="h-full w-full object-cover" />
+                          {img.status === 'extracting' && <div className="absolute inset-0 flex items-center justify-center bg-black/40"><Loader2 className="h-3 w-3 animate-spin text-white" /></div>}
+                          {img.status === 'error' && <div className="absolute inset-0 flex items-center justify-center bg-red-500/40"><X className="h-3 w-3 text-white" /></div>}
+                          {img.status === 'extracted' && <div className="absolute bottom-0 right-0 rounded-tl bg-green-500 p-0.5"><Check className="h-2.5 w-2.5 text-white" /></div>}
+                        </button>
+                      ))}
+                    </div>
+                    {/* IA feedback */}
+                    {group.images.some(img => img.extraction?.notas_ia) && (
+                      <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
+                        <p className="text-xs text-blue-700">
+                          💡 {group.images.filter(img => img.extraction?.notas_ia).map(img => img.extraction?.notas_ia).join(' · ')}
+                        </p>
                       </div>
-                    ))}
+                    )}
+                    {group.images.some(img => img.status === 'error') && (
+                      <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2">
+                        <p className="text-xs text-red-700">
+                          ⚠️ {group.images.filter(img => img.error).map(img => img.error).join(' · ')} — Puedes ingresar los datos manualmente
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -482,6 +502,19 @@ export default function RegistroPage() {
               <AlertTriangle className="h-4 w-4 flex-shrink-0" /> El total supera el saldo disponible
             </div>
           )}
+        </div>
+      )}
+
+      {/* Photo preview modal */}
+      {previewImg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setPreviewImg(null)}>
+          <div className="relative max-h-[90vh] max-w-[90vw]">
+            <img src={previewImg} alt="Preview" className="max-h-[85vh] max-w-full rounded-lg object-contain" />
+            <button onClick={() => setPreviewImg(null)}
+              className="absolute -top-3 -right-3 rounded-full bg-white p-1.5 shadow-lg hover:bg-gray-100">
+              <X className="h-5 w-5 text-gray-700" />
+            </button>
+          </div>
         </div>
       )}
     </div>
