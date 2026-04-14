@@ -6,11 +6,11 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`351753d`) |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | 🔄 Pendiente verificar (`351753d`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`246848b`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`246848b`) |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`b32f647`) — delivery tracking activo |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`351753d`) — migraciones delivery ejecutadas |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -69,6 +69,7 @@
 - [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3.
 - [ ] Recalcular delivery\_fee server-side en `create_order.php`
 - [ ] Unificar factor descuento RL6 en caja3 (0.6 vs 0.7143)
+- [ ] **Agregar `mi.laruta11.cl` a restricciones HTTP de Google Maps API key** en Google Cloud Console (el mapa no carga sin esto)
 - [x] **Deploy spec delivery-tracking-realtime** — commit `70650cf` pusheado. Builds disparados en Coolify. Pendiente verificar builds y ejecutar `php artisan migrate`.
 - [x] **Integración caja3/app3 delivery** — webhook en caja3 y iframe en app3 implementados en commit `70650cf`.
 - [ ] **Investigar arquitectura SaaS multi-tenant** — AWS Lambda + Aurora PostgreSQL + Amazon Location Service + Stripe. Dominio candidato: pocos.click (caduca 2026-12-21)
@@ -77,24 +78,35 @@
 
 ## Sesiones Recientes
 
-### 2026-04-14k — Deploy delivery-tracking-realtime: commit + push a main
+### 2026-04-14l — Deploy delivery-tracking-realtime: fixes build + deploys activos
+
+**Cambios:**
+- Fix 1: `app3/src/pages/tracking/[order_number].astro` → error `Expected "}" but found "."`. Commit `10cead8`.
+- Fix 2: app3 es `output: 'static'`, ruta dinámica requiere SSR. Reemplazada por `tracking/index.astro` estática con `?order=`. Commit `351753d`.
+- Fix 3: mi3-frontend fallaba con `npm ci` por `@vis.gl/react-google-maps` faltante en package-lock.json. Commit `f41e223`.
+- Fix 4: `</nav>` duplicado en AdminSidebar.tsx causaba `Expected ',', got 'className'`. Commit `b32f647`.
+- mi3-backend: deployado ✅ (`351753d`). Migraciones ejecutadas: rider_locations, delivery_assignments, daily_settlements, campos tuu_orders.
+- app3: deployado ✅ (`351753d`).
+- caja3: deploy en progreso (`351753d`).
+- mi3-frontend: deployado ✅ (`b32f647`). WebSocket conectado, paneles funcionales. Google Maps requiere agregar `mi.laruta11.cl` en restricciones de la API key en Google Cloud Console.
+
+**Commits:** `10cead8`, `351753d`, `f41e223`, `b32f647`
+**Deploys:** mi3-backend ✅, app3 ✅, mi3-frontend ✅, caja3 pendiente verificar
+
+### 2026-04-14k — Deploy delivery-tracking-realtime: commit inicial
 
 **Cambios:**
 - Commit `70650cf` — 44 archivos, 4736 inserciones. Todo el spec delivery-tracking-realtime pusheado a main.
-- Coolify disparó builds automáticos para mi3-backend, mi3-frontend, app3 y caja3.
-- **Pendiente confirmar**: que los builds completaron y ejecutar `php artisan migrate` en mi3-backend.
 
 **Commits:** `70650cf`
-**Deploys:** builds disparados, estado pendiente de verificación
+**Deploys:** builds fallaron (errores de build corregidos en sesión 14l)
 
 ### 2026-04-14j — Spec delivery-tracking-realtime: implementación completa
 
 **Cambios:**
 - **mi3-backend**: 4 migraciones, 3 modelos Eloquent, 2 eventos Reverb, channels.php, 3 servicios, 4 controladores + webhook, rutas API, 2 comandos Artisan en scheduler
 - **mi3-frontend**: hooks useDeliveryTracking/useRiderGPS/usePendingSettlementBadge; Vista Monitor /admin/delivery; Vista Rider /rider; badge alerta en AdminSidebar
-- **app3**: /tracking/[order_number].astro embebible + iframe en payment-success; env vars PUBLIC_GOOGLE_MAPS_KEY y PUBLIC_REVERB_APP_KEY en Coolify
-- **caja3**: webhook call en update_order_status.php; página /delivery-monitor
-- **Coolify mi3-frontend**: NEXT_PUBLIC_GOOGLE_MAPS_KEY agregada vía SSH
+- **app3/caja3**: tracking page, webhook, delivery-monitor; env vars en Coolify
 
 **Commits:** ninguno (código local)
 **Deploys:** ninguno
@@ -103,20 +115,11 @@
 
 **Cambios:**
 - `/opt/kiro-acp-telegram-bot/src/acp-client.js` en VPS: timeout `session/prompt` aumentado de 120s → 600s (10 min).
-- Bot reiniciado vía `pm2 restart kiro-telegram-bot`.
 
 **Commits:** ninguno (cambio directo en VPS)
 **Deploys:** ninguno
 
-### 2026-04-14h — Spec fix-sessiones: Task 1 — tests de exploración de bugs creados
-
-**Cambios:**
-- Creado `mi3/frontend/lib/__tests__/bug-exploration.test.ts` — 14 tests PBT (fast-check) cubriendo BUG 1, 2, 3, 7, 8.
-
-**Commits:** ninguno nuevo
-**Deploys:** ninguno
-
 ---
 
-> Sesiones anteriores (150 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (151 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

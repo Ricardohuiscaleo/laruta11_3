@@ -195,7 +195,7 @@ export default function RiderDashboard({ position, isActive, gpsError, toggleDel
                 <Map
                   defaultCenter={position}
                   defaultZoom={14}
-                  mapId="rider-map"
+                  mapId="d51ca892b68e9c5e5e2dd701"
                   className="h-full w-full"
                   gestureHandling="greedy"
                   disableDefaultUI
