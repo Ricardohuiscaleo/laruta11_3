@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { apiFetch, ApiError } from '@/lib/api';
-import { getToken, setToken, removeToken } from '@/lib/auth';
+import { apiFetch } from '@/lib/api';
+import { getToken, setToken, removeToken, logout as authLogout } from '@/lib/auth';
 import type { User, ApiResponse } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
@@ -51,19 +51,8 @@ export function useAuth() {
   };
 
   const logout = async () => {
-    try {
-      // Clear httpOnly cookies server-side
-      await fetch(`${API_URL}/api/v1/auth/clear-session`, { method: 'POST', credentials: 'include' });
-      await fetch(`${API_URL}/api/v1/auth/logout`, { method: 'POST', credentials: 'include' });
-    } catch {
-      // Silently fail — still clear local state
-    } finally {
-      removeToken();
-      setUser(null);
-      if (typeof document !== 'undefined') {
-        document.cookie = 'mi3_auth_flag=; path=/; domain=.laruta11.cl; max-age=0';
-      }
-    }
+    setUser(null);
+    await authLogout(); // Delegates to auth.ts: clear-session + logout API + removeToken + mi3_auth_flag + redirect
   };
 
   return { user, loading, login, logout, isAuthenticated: !!user };

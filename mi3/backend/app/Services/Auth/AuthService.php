@@ -21,7 +21,7 @@ class AuthService
             return ['success' => false, 'error' => 'Credenciales inválidas', 'status' => 401];
         }
 
-        // Try hashed password first, then fall back to session_token comparison
+        // Only hashed passwords accepted (session_token plaintext fallback removed 2026-04-14)
         $passwordValid = false;
 
         if (!empty($user->password)) {
