@@ -105,8 +105,8 @@ class AuthService
             ];
         }
 
-        // Revoke existing tokens and create a new one
-        $user->tokens()->delete();
+        // Clean up old tokens (>30 days) but keep recent ones for other devices
+        $user->tokens()->where('created_at', '<', now()->subDays(30))->delete();
         $token = $user->createToken('mi3-auth')->plainTextToken;
 
         return [

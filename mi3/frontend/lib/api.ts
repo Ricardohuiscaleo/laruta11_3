@@ -31,8 +31,15 @@ export async function apiFetch<T>(
   });
 
   if (res.status === 401) {
-    // Unauthenticated — redirect to login
+    // Unauthenticated — clear stale auth data and redirect to login
     if (typeof window !== 'undefined') {
+      // Clear localStorage token
+      localStorage.removeItem('mi3_token');
+      localStorage.removeItem('mi3_user');
+      // Clear cookies by setting them expired
+      document.cookie = 'mi3_token=; path=/; domain=.laruta11.cl; max-age=0';
+      document.cookie = 'mi3_role=; path=/; domain=.laruta11.cl; max-age=0';
+      document.cookie = 'mi3_user=; path=/; domain=.laruta11.cl; max-age=0';
       window.location.href = '/login';
     }
     throw new ApiError(401, 'No autenticado');

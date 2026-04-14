@@ -13,7 +13,13 @@ function authHeaders(): Record<string, string> {
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (res.status === 401) {
-    if (typeof window !== 'undefined') window.location.href = '/login';
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('mi3_token');
+      document.cookie = 'mi3_token=; path=/; domain=.laruta11.cl; max-age=0';
+      document.cookie = 'mi3_role=; path=/; domain=.laruta11.cl; max-age=0';
+      document.cookie = 'mi3_user=; path=/; domain=.laruta11.cl; max-age=0';
+      window.location.href = '/login';
+    }
     throw new ApiError(401, 'No autenticado');
   }
   if (!res.ok) {
