@@ -60,7 +60,6 @@ export default function AdminSidebar() {
           )}
         </Link>
       </nav>
-      </nav>
       <div className="border-t border-red-500 px-2 py-3 space-y-1">
         <ViewSwitcher className="text-red-100 hover:bg-red-500/50 hover:text-white" />
         <button onClick={logout}
