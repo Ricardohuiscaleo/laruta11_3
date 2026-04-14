@@ -98,16 +98,17 @@
 - [ ] 4. BUG 3+7: Google OAuth token to localStorage + fix useAuth hook (HIGH)
 
   - [ ] 4.1 Backend: Pass token as query param in Google OAuth redirect
-    - In `googleCallback()`, change redirect URL from `$frontendUrl . $redirectTo` to `$frontendUrl . '/login?token=' . urlencode($token) . '&redirect=' . urlencode($redirectTo)`
-    - This passes the plainTextToken to the frontend so it can be saved in localStorage
+    - In `googleCallback()`, change redirect URL from `$frontendUrl . $redirectTo` to `$frontendUrl . $redirectTo . '?token=' . urlencode($token)`
+    - This redirects directly to /admin or /dashboard with the token — avoids double redirect through /login
+    - The destination page reads the param, saves to localStorage, and cleans the URL
     - Token is passed via HTTPS redirect (encrypted in transit), consumed once, then cleared from URL
     - _Bug_Condition: Google OAuth callback sets httpOnly cookies but never passes token to frontend for localStorage_
     - _Expected_Behavior: Frontend receives token via query param, saves to localStorage, has Bearer token fallback_
     - _Requirements: 1.3, 2.3_
 
-  - [ ] 4.2 Frontend: Read ?token= param in login/page.tsx and save to localStorage
-    - In `LoginForm` useEffect, check for `searchParams.get('token')` and `searchParams.get('redirect')`
-    - If token exists: `localStorage.setItem('mi3_token', token)`, clean URL params, then `window.location.href = redirect || '/dashboard'`
+  - [ ] 4.2 Frontend: Read ?token= param in app layout or dashboard/admin pages and save to localStorage
+    - In a shared layout or useEffect in dashboard/admin pages, check for `searchParams.get('token')`
+    - If token exists: `localStorage.setItem('mi3_token', token)`, then `router.replace(pathname)` to clean URL
     - This gives Google OAuth users the same localStorage token as email login users
     - _Bug_Condition: Google OAuth users have no localStorage token → no Bearer fallback post-redeploy_
     - _Expected_Behavior: Google OAuth users get token in localStorage → Bearer fallback works_
@@ -115,9 +116,10 @@
 
   - [ ] 4.3 Frontend: Fix useAuth.ts fetchUser() to work without localStorage token
     - Current bug: `fetchUser()` does `if (!token) { setLoading(false); return; }` — Google OAuth users with no localStorage token get `user = null`
-    - Fix: Remove the early return. Always call `/auth/me` (which works via cookie auth through `ExtractTokenFromCookie` middleware)
-    - If `/auth/me` succeeds, set user. If it fails with 401, then set loading false (user is truly unauthenticated)
-    - Handle the 401 from apiFetch gracefully (catch ApiError, don't trigger redirect loop)
+    - Fix: Remove the early return. Always call `/auth/me` using `fetch` directly (NOT `apiFetch`) to avoid triggering the 401 cleanup handler
+    - Use `fetch(API_URL + '/api/v1/auth/me', { headers: { ...Bearer if token exists }, credentials: 'include' })` — this way cookie auth works for Google users AND Bearer auth works for email users
+    - If response is 200, parse user and set state. If 401 or error, set loading false silently (user is truly unauthenticated, no redirect)
+    - IMPORTANT: Do NOT use `apiFetch` here because a 401 would trigger clear-session + redirect, which is wrong during initial page load
     - _Bug_Condition: useAuth.fetchUser() returns early when getToken() is null → Google OAuth users always see user=null_
     - _Expected_Behavior: fetchUser() tries cookie-based auth via /auth/me even without localStorage token_
     - _Requirements: 2.3, 2.5_
@@ -194,10 +196,11 @@
     - _Expected_Behavior: Only Hash::check() authenticates → passwords are never stored/compared in plaintext_
     - _Requirements: 2.1_
 
-  - [ ] 7.2 Create migration to hash existing session_tokens (optional safety net)
-    - Create a Laravel migration that hashes any non-null `session_token` values in the `usuarios` table
-    - Or alternatively, null out session_token fields since the fallback is being removed
-    - This is a data cleanup step to remove plaintext passwords from the database
+  - [ ] 7.2 Create migration to hash existing session_tokens (REQUIRED before 7.1)
+    - Create a Laravel migration that hashes any non-null `session_token` values in the `usuarios` table into the `password` field
+    - For each user with session_token but no password: `$user->password = Hash::make($user->session_token)`
+    - Then null out session_token fields to remove plaintext passwords from the database
+    - MUST run BEFORE removing the fallback code in 7.1, otherwise users with only session_token get locked out
     - _Requirements: 2.1_
 
   - [ ] 7.3 Verify preservation tests still pass

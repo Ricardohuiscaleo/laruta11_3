@@ -2,7 +2,7 @@
 
 ## Overview
 
-Las sesiones de mi3 se pierden completamente cuando el backend Laravel se redeploya en Docker/Coolify. Se identificaron 6 bugs interrelacionados que causan un loop infinito 401 → /login → redirect → 401. El fix aborda cada bug de forma quirúrgica: (1) crear endpoint server-side para limpiar cookies httpOnly, (2) usar cookie no-httpOnly `mi3_auth` como flag de sesión para Next.js middleware, (3) pasar token via query param en Google OAuth callback, (4) eliminar `key:generate` del Dockerfile, (5) excluir `mi3_token` de la encriptación de cookies Laravel, (6) deprecar fallback plaintext de session_token.
+Las sesiones de mi3 se pierden completamente cuando el backend Laravel se redeploya en Docker/Coolify. Se identificaron 6 bugs interrelacionados que causan un loop infinito 401 → /login → redirect → 401. El fix aborda cada bug de forma quirúrgica: (1) crear endpoint server-side para limpiar cookies httpOnly, (2) usar cookie no-httpOnly `mi3_auth_flag` como flag de sesión para Next.js middleware, (3) pasar token via query param en Google OAuth callback, (4) eliminar `key:generate` del Dockerfile, (5) excluir `mi3_token` de la encriptación de cookies Laravel, (6) deprecar fallback plaintext de session_token.
 
 ## Glossary
 
@@ -11,7 +11,7 @@ Las sesiones de mi3 se pierden completamente cuando el backend Laravel se redepl
 - **Preservation**: Login normal (email/password y Google), logout explícito, protección de rutas por rol, y comportamiento multi-dispositivo deben seguir funcionando exactamente igual
 - **`ExtractTokenFromCookie`**: Middleware en `mi3/backend/app/Http/Middleware/ExtractTokenFromCookie.php` que extrae `mi3_token` de la cookie y lo inyecta como Bearer header
 - **`mi3_token`**: Cookie httpOnly que contiene el plainTextToken de Sanctum (actualmente encriptada por Laravel)
-- **`mi3_auth`**: Nueva cookie no-httpOnly que actúa como flag de "sesión activa" para el middleware de Next.js
+- **`mi3_auth_flag`**: Nueva cookie no-httpOnly que actúa como flag de "sesión activa" para el middleware de Next.js
 - **`apiFetch`**: Función en `mi3/frontend/lib/api.ts` que maneja todas las llamadas API incluyendo el 401 handler
 
 ## Bug Details
@@ -125,7 +125,7 @@ _For any_ request con cookie `mi3_token`, el middleware `ExtractTokenFromCookie`
 
 Property 4: Bug Condition - 401 handler limpia cookies httpOnly via servidor
 
-_For any_ respuesta 401, el handler del frontend SHALL llamar al endpoint `/auth/clear-session` del backend para eliminar cookies httpOnly server-side, Y eliminar la cookie `mi3_auth` (no-httpOnly) desde JS, garantizando que el middleware Next.js no vea una sesión activa.
+_For any_ respuesta 401, el handler del frontend SHALL llamar al endpoint `/auth/clear-session` del backend para eliminar cookies httpOnly server-side, Y eliminar la cookie `mi3_auth_flag` (no-httpOnly) desde JS, garantizando que el middleware Next.js no vea una sesión activa.
 
 **Validates: Requirements 2.2**
 
@@ -146,7 +146,7 @@ Assuming our root cause analysis is correct:
 **Changes**:
 1. **Nuevo endpoint `clearSession`**: Crear `POST /api/v1/auth/clear-session` (público, sin auth) que elimine las cookies httpOnly `mi3_token`, `mi3_role`, `mi3_user` server-side
 2. **Google OAuth callback con token en URL**: Modificar `googleCallback()` para incluir `?token={plainTextToken}` en la URL de redirect al frontend
-3. **Setear cookie `mi3_auth`**: En `respondWithAuth()` y `googleCallback()`, agregar cookie `mi3_auth=true` (no-httpOnly, secure, SameSite=Lax) como flag de sesión para Next.js middleware
+3. **Setear cookie `mi3_auth_flag`**: En `respondWithAuth()` y `googleCallback()`, agregar cookie `mi3_auth_flag=true` (no-httpOnly, secure, SameSite=Lax) como flag de sesión para Next.js middleware
 
 ---
 
@@ -174,7 +174,7 @@ Assuming our root cause analysis is correct:
 **File**: `mi3/frontend/lib/api.ts`
 
 **Changes**:
-7. **401 handler mejorado**: Reemplazar `document.cookie` deletion con llamada a `POST /api/v1/auth/clear-session` (credentials: include), luego eliminar `mi3_auth` cookie desde JS, luego redirect a /login
+7. **401 handler mejorado**: Reemplazar `document.cookie` deletion con llamada a `POST /api/v1/auth/clear-session` (credentials: include), luego eliminar `mi3_auth_flag` cookie desde JS, luego redirect a /login
 
 ---
 
@@ -188,7 +188,7 @@ Assuming our root cause analysis is correct:
 **File**: `mi3/frontend/middleware.ts`
 
 **Changes**:
-9. **Verificar `mi3_auth` en vez de `mi3_token`**: Cambiar `request.cookies.get('mi3_token')` por `request.cookies.get('mi3_auth')` como indicador de sesión activa. La cookie `mi3_auth` es no-httpOnly y SÍ puede ser eliminada desde JS, rompiendo el loop
+9. **Verificar `mi3_auth_flag` en vez de `mi3_token`**: Cambiar `request.cookies.get('mi3_token')` por `request.cookies.get('mi3_auth_flag')` como indicador de sesión activa. La cookie `mi3_auth_flag` es no-httpOnly y SÍ puede ser eliminada desde JS, rompiendo el loop
 
 ---
 
@@ -202,7 +202,7 @@ Assuming our root cause analysis is correct:
 **File**: `mi3/frontend/lib/auth.ts`
 
 **Changes**:
-11. **Actualizar `logout()`**: Llamar a `/auth/clear-session` además de `/auth/logout`, y eliminar cookie `mi3_auth` desde JS
+11. **Actualizar `logout()`**: Llamar a `/auth/clear-session` además de `/auth/logout`, y eliminar cookie `mi3_auth_flag` desde JS
 
 ---
 
@@ -250,7 +250,7 @@ END FOR
 
 **Specific checks:**
 - POST `/auth/clear-session` elimina cookies httpOnly correctamente
-- Middleware Next.js con `mi3_auth` no causa loop cuando token es inválido
+- Middleware Next.js con `mi3_auth_flag` no causa loop cuando token es inválido
 - Google OAuth callback pasa token en URL y frontend lo guarda en localStorage
 - Sin `key:generate` en Dockerfile, APP_KEY persiste entre deploys
 - `mi3_token` excluida de encriptación → `ExtractTokenFromCookie` lee plainTextToken
@@ -272,7 +272,7 @@ END FOR
 **Test Plan**: Observar comportamiento en código sin fixear para login normal, logout, y navegación, luego escribir property-based tests que capturen ese comportamiento.
 
 **Test Cases**:
-1. **Login email preservation**: Verificar que login email/password sigue funcionando — envía credenciales, recibe token + cookies + mi3_auth, guarda en localStorage, redirige según rol
+1. **Login email preservation**: Verificar que login email/password sigue funcionando — envía credenciales, recibe token + cookies + mi3_auth_flag, guarda en localStorage, redirige según rol
 2. **Login Google preservation**: Verificar que Google OAuth sigue funcionando — redirect, callback, cookies + token en localStorage, redirect según rol
 3. **Logout preservation**: Verificar que logout elimina token de BD, limpia cookies (via clear-session) y localStorage, redirige a /login
 4. **Route protection preservation**: Verificar que usuarios sin sesión van a /login, workers no acceden a /admin
@@ -281,12 +281,12 @@ END FOR
 ### Unit Tests
 
 - Test `clearSession` endpoint: verifica que elimina las 3 cookies httpOnly + mi3_auth
-- Test `respondWithAuth` setea cookie `mi3_auth` además de las existentes
+- Test `respondWithAuth` setea cookie `mi3_auth_flag` además de las existentes
 - Test `googleCallback` incluye `?token=` en redirect URL
 - Test `ExtractTokenFromCookie` lee plainTextToken (no encriptado) de cookie
 - Test `loginWithEmail` rechaza session_token plaintext match
 - Test 401 handler en api.ts llama a clear-session antes de redirect
-- Test middleware.ts usa `mi3_auth` para decisiones de routing
+- Test middleware.ts usa `mi3_auth_flag` para decisiones de routing
 
 ### Property-Based Tests
 
@@ -298,6 +298,6 @@ END FOR
 
 - Test flujo completo: login email → usar app → simular redeploy (invalidar cookies) → verificar que Bearer token desde localStorage mantiene sesión
 - Test flujo completo: login Google → verificar token en localStorage → simular redeploy → verificar sesión sobrevive
-- Test flujo 401: recibir 401 → clear-session → mi3_auth eliminada → middleware redirige a /login sin loop
+- Test flujo 401: recibir 401 → clear-session → mi3_auth_flag eliminada → middleware redirige a /login sin loop
 - Test SSH en producción: verificar que APP_KEY persiste entre deploys de Coolify
 - Test multi-dispositivo: login en 2 dispositivos → redeploy → ambos mantienen sesión
