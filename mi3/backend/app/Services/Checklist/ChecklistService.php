@@ -80,7 +80,7 @@ class ChecklistService
                     $checklist = Checklist::create([
                         'type' => $type,
                         'scheduled_date' => $fecha,
-                        'scheduled_time' => $type === 'apertura' ? '18:00:00' : '02:00:00',
+                        'scheduled_time' => $type === 'apertura' ? '18:00:00' : '00:45:00',
                         'status' => 'pending',
                         'personal_id' => $personalId,
                         'user_name' => $personal->nombre,
@@ -125,22 +125,26 @@ class ChecklistService
      */
     public function getChecklistsPendientes(int $personalId, string $fecha): Collection
     {
-        // Get current hour in Chile timezone
+        // Shift-day logic (same as caja3): between 00:00-04:00, the shift belongs to yesterday
         $chileNow = now('America/Santiago');
         $chileHour = (int) $chileNow->format('H');
 
-        // Between midnight and 06:00, also include yesterday's incomplete checklists
-        // (night shift workers need their cierre checklist past midnight)
-        $yesterday = \Carbon\Carbon::parse($fecha)->subDay()->format('Y-m-d');
+        // Calculate the "shift date" — the date the current shift started
+        $shiftDate = $chileNow->copy();
+        if ($chileHour < 4) {
+            $shiftDate->subDay();
+        }
+        $shiftFecha = $shiftDate->format('Y-m-d');
 
+        // Query checklists for the shift date (covers night shift crossing midnight)
+        // Also include today's date in case checklists were created for today
         $query = Checklist::with('items')
             ->where('personal_id', $personalId)
             ->pendientes()
-            ->where(function ($q) use ($fecha, $yesterday, $chileHour) {
+            ->where(function ($q) use ($fecha, $shiftFecha) {
                 $q->whereDate('scheduled_date', $fecha);
-                // Between 00:00-06:00, include yesterday's incomplete checklists
-                if ($chileHour < 6) {
-                    $q->orWhereDate('scheduled_date', $yesterday);
+                if ($shiftFecha !== $fecha) {
+                    $q->orWhereDate('scheduled_date', $shiftFecha);
                 }
             })
             ->orderBy('scheduled_date', 'desc')
@@ -447,14 +451,29 @@ class ChecklistService
      */
     public function getChecklistsAdmin(string $fecha, ?string $status = null): Collection
     {
+        // Shift-day logic: between 00:00-04:00, also show yesterday's checklists (night shift)
+        $chileNow = now('America/Santiago');
+        $chileHour = (int) $chileNow->format('H');
+        $shiftDate = $chileNow->copy();
+        if ($chileHour < 4) {
+            $shiftDate->subDay();
+        }
+        $shiftFecha = $shiftDate->format('Y-m-d');
+
         $query = Checklist::with(['personal', 'items'])
-            ->whereDate('scheduled_date', $fecha);
+            ->where(function ($q) use ($fecha, $shiftFecha) {
+                $q->whereDate('scheduled_date', $fecha);
+                if ($shiftFecha !== $fecha) {
+                    $q->orWhereDate('scheduled_date', $shiftFecha);
+                }
+            });
 
         if ($status) {
             $query->where('status', $status);
         }
 
-        return $query->orderBy('type')
+        return $query->orderBy('scheduled_date', 'desc')
+            ->orderBy('type')
             ->orderBy('rol')
             ->get();
     }

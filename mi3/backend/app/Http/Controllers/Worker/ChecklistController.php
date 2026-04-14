@@ -22,14 +22,27 @@ class ChecklistController extends Controller
     public function index(Request $request): JsonResponse
     {
         $personal = $request->get('personal');
-        $fecha = $request->query('fecha', now()->format('Y-m-d'));
+
+        // Shift-day logic: between 00:00-04:00, the shift belongs to yesterday
+        $chileNow = now('America/Santiago');
+        $chileHour = (int) $chileNow->format('H');
+        $fecha = $request->query('fecha', $chileNow->format('Y-m-d'));
 
         $checklists = $this->checklistService->getChecklistsPendientes($personal->id, $fecha);
 
-        // On-demand creation: if worker has a shift today but no checklists, create them now
-        // This handles cases where the daily cron hasn't run yet or was missed
+        // On-demand creation: if worker has a shift but no checklists, create them now
+        // Check both today and shift-date (yesterday if 00:00-04:00)
         if ($checklists->isEmpty()) {
-            $hasTurno = \App\Models\Turno::whereDate('fecha', $fecha)
+            $shiftFecha = $chileHour < 4
+                ? $chileNow->copy()->subDay()->format('Y-m-d')
+                : $fecha;
+
+            $hasTurno = \App\Models\Turno::where(function ($q) use ($fecha, $shiftFecha) {
+                    $q->whereDate('fecha', $fecha);
+                    if ($shiftFecha !== $fecha) {
+                        $q->orWhereDate('fecha', $shiftFecha);
+                    }
+                })
                 ->where(function ($q) use ($personal) {
                     $q->where('personal_id', $personal->id)
                       ->orWhere('reemplazado_por', $personal->id);
@@ -37,6 +50,9 @@ class ChecklistController extends Controller
 
             if ($hasTurno) {
                 $this->checklistService->crearChecklistsDiarios($fecha);
+                if ($shiftFecha !== $fecha) {
+                    $this->checklistService->crearChecklistsDiarios($shiftFecha);
+                }
                 $checklists = $this->checklistService->getChecklistsPendientes($personal->id, $fecha);
             }
         }
@@ -49,7 +65,7 @@ class ChecklistController extends Controller
                         ->orderByDesc('id')
                         ->value('saldo_nuevo') ?? 0;
                     $item->cash_expected = $saldoEsperado;
-                    $item->saveQuietly(); // persist to DB so verify-cash uses the latest
+                    $item->saveQuietly();
                 }
             }
         }

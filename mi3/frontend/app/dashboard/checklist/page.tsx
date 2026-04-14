@@ -524,16 +524,16 @@ export default function ChecklistPage() {
     apiFetch<ApiResponse<Checklist[]>>('/worker/checklists')
       .then(res => {
         const all = res.data || [];
-        // Filter: cierre checklists only visible after 18:00 Chile time
-        // Exception: between 00:00-06:00 show yesterday's cierre (night shift in progress)
+        // Shift-day logic (same as caja3): 00:00-04:00 = night shift still active
         const now = new Date();
         const chileHour = new Date(now.toLocaleString('en-US', { timeZone: 'America/Santiago' })).getHours();
         const filtered = all.filter(c => {
           if (c.type === 'cierre' && c.status !== 'completed') {
-            // Between 00:00-06:00: show cierre checklists (night shift still active)
-            if (chileHour < 6) return true;
-            // Between 06:00-18:00: hide cierre (shift is over, new one not started)
+            // 00:00-04:00: night shift active, show cierre
+            if (chileHour < 4) return true;
+            // 04:00-18:00: shift over, hide cierre
             if (chileHour < 18) return false;
+            // 18:00+: new shift started, show cierre
           }
           return true;
         });
