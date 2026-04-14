@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`3a9180b`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`3a9180b`) |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`82a3f42`) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`82a3f42`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -82,6 +82,18 @@
 
 ## Sesiones Recientes
 
+### 2026-04-14f — Fix auth loop infinito + spec bugfix sesiones
+
+**Cambios:**
+- `api.ts`/`compras-api.ts`: 401 limpia cookies+localStorage antes de redirigir (previene loop infinito).
+- `AuthService`: no borra todos los tokens al login, solo >30 días (multi-dispositivo).
+- `AuthController`: devuelve token en JSON. Login guarda en localStorage. Bearer token en todas las peticiones.
+- `ImagenService`: nombres únicos S3 (time+random). BD: compra 277 deduplicada.
+- Spec bugfix creado: `.kiro/specs/fix-sessiones/bugfix.md` con análisis de 5 defectos + 7 cláusulas preservación.
+
+**Commits:** `82a3f42`
+**Deploys:** mi3-frontend (`c3dfywbm8ao8scqksenizgmt`) ✅, mi3-backend (`zp1qhnm7q86j2qjiz23pac26`) ✅
+
 ### 2026-04-14e — Proveedores neto +IVA + normalización ingredientes Vanni
 
 **Cambios:**
@@ -118,18 +130,7 @@
 **Commits:** `b15e673`, `43323cf`, `cce9b31`
 **Deploys:** mi3-frontend (`xjk16jcai46ne36j36zoun09`) ✅, mi3-backend (`rql7y6p0sj1jrm95q73r4joe`) ✅
 
-### 2026-04-14b — IA báscula feria + equivalencias empaque + modal foto + feedback visible
-
-**Cambios:**
-- Backend: prompt Bedrock mejorado TIPO 3 (báscula feria): lee PESO/PRECIO/TOTAL, notación abreviada (45=$4.500), identifica producto visual
-- Backend: `normalizeAmounts` con safety net para precios abreviados en tipo bascula
-- Frontend: click en thumbnail abre modal fullscreen, feedback IA visible (notas_ia en badge azul, errores en badge rojo), check verde en extracción exitosa
-- BD: 12 equivalencias nuevas en `product_equivalences`: saco papa 25kg, caja tomate 18kg, caja palta 6kg, caja cebolla 18kg, caja lechuga 12u, caja pan brioche 50u, bidón aceite 20kg, etc.
-
-**Commits:** `66e604a`, `fa311ef`
-**Deploys:** mi3-frontend (`j6gwotmzzq6bpdp48gio2f10`) ✅, mi3-backend (`e291smci6yin5xtvl3cfd97g`) ✅
-
 ---
 
-> Sesiones anteriores (145 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (147 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
