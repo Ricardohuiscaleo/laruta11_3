@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { TrendingUp, DollarSign, Wallet, Check, Clock, X, RefreshCw } from 'lucide-react';
 import { comprasApi } from '@/lib/compras-api';
 import { formatearPesosCLP, formatearFecha } from '@/lib/compras-utils';
-import { getEcho } from '@/lib/echo';
+import { useCompras } from '@/contexts/ComprasContext';
 import type { Kpi } from '@/types/compras';
 
 interface HistorialSaldoItem {

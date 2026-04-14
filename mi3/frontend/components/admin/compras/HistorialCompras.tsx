@@ -5,6 +5,7 @@ import { Search, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
 import { comprasApi } from '@/lib/compras-api';
 import { formatearPesosCLP, formatearFecha } from '@/lib/compras-utils';
 import type { Compra } from '@/types/compras';
+import { useCompras } from '@/contexts/ComprasContext';
 import DetalleCompra from './DetalleCompra';
 import RendicionWhatsApp from './RendicionWhatsApp';
 
@@ -27,10 +28,11 @@ interface PaginatedResponse {
 }
 
 export default function HistorialCompras() {
-  const [compras, setCompras] = useState<Compra[]>([]);
+  const { historial: cached, refreshHistorial } = useCompras();
+  const [compras, setCompras] = useState<Compra[]>(cached.compras);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(cached.totalPages);
+  const [total, setTotal] = useState(cached.total);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -53,6 +55,15 @@ export default function HistorialCompras() {
   }, []);
 
   useEffect(() => { fetchCompras(page, query); }, [page, fetchCompras]);
+
+  // Sync from context when page 1 and no search
+  useEffect(() => {
+    if (page === 1 && !query && cached.compras.length > 0) {
+      setCompras(cached.compras);
+      setTotal(cached.total);
+      setTotalPages(cached.totalPages);
+    }
+  }, [cached, page, query]);
 
   // Load rendiciones
   const fetchRendiciones = useCallback(async () => {

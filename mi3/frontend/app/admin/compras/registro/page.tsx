@@ -4,41 +4,14 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Upload, X, Loader2, Check, AlertTriangle, Trash2, ChevronDown, ChevronUp, FileText, Search, Sparkles, Package } from 'lucide-react';
 import { comprasApi } from '@/lib/compras-api';
 import { formatearPesosCLP } from '@/lib/compras-utils';
-import type { ExtractionResult, Kpi, ItemSugerencia } from '@/types/compras';
+import { useCompras } from '@/contexts/ComprasContext';
+import type { ExtractionResult, Kpi, ItemSugerencia, RegistroGroup, RegistroItem, RegistroImage } from '@/types/compras';
 
-interface UploadedImage {
-  tempKey: string;
-  tempUrl: string;
-  status: 'uploading' | 'extracting' | 'extracted' | 'error';
-  extraction?: ExtractionResult;
-  sugerencias?: { proveedor: any; items: ItemSugerencia[] };
-  error?: string;
-}
+// Types imported from @/types/compras: RegistroImage, RegistroItem, RegistroGroup
 
-interface CompraItem {
-  ingrediente_id: number | null;
-  product_id: number | null;
-  item_type: 'ingredient' | 'product';
-  nombre: string;
-  cantidad: number;
-  unidad: string;
-  precio_unitario: number;
-  subtotal: number;
-  empaque_detalle?: string | null;
-  match_score?: number;
-  match_name?: string;
-}
-
-interface CompraGroup {
-  proveedor: string;
-  fecha_compra: string;
-  metodo_pago: string;
-  tipo_compra: string;
-  notas: string;
-  images: UploadedImage[];
-  items: CompraItem[];
-  expanded: boolean;
-}
+type CompraItem = RegistroItem;
+type CompraGroup = RegistroGroup;
+type UploadedImage = RegistroImage;
 
 const METODOS_PAGO = [
   { value: 'cash', label: 'Efectivo' },
@@ -135,17 +108,16 @@ function ProveedorSearch({ value, onChange }: { value: string; onChange: (v: str
 
 // --- Main page component ---
 export default function RegistroPage() {
-  const [groups, setGroups] = useState<CompraGroup[]>([]);
+  const { registroGroups: groups, registroSubmitted: submitted, setRegistroGroups: setGroups, setRegistroSubmitted: setSubmitted, kpis: ctxKpis, refreshAll } = useCompras();
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState<number[]>([]);
-  const [saldo, setSaldo] = useState<number | null>(null);
+  const [saldo, setSaldo] = useState<number | null>(ctxKpis?.saldo_disponible ?? null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Sync saldo from context
   useEffect(() => {
-    comprasApi.get<{ success: boolean; data: Kpi }>('/kpis')
-      .then(r => setSaldo(r.data?.saldo_disponible ?? null)).catch(() => {});
-  }, []);
+    if (ctxKpis) setSaldo(ctxKpis.saldo_disponible);
+  }, [ctxKpis]);
 
   // Upload + extract + group
   const processFiles = useCallback(async (files: FileList | File[]) => {
@@ -318,7 +290,7 @@ export default function RegistroPage() {
         usuario: 'Admin',
       });
       setSubmitted(prev => [...prev, idx]);
-      comprasApi.get<{ success: boolean; data: Kpi }>('/kpis').then(r => setSaldo(r.data?.saldo_disponible ?? null)).catch(() => {});
+      refreshAll();
     } catch { alert('Error al registrar compra'); }
     setSubmitting(false);
   };

@@ -138,3 +138,39 @@ export interface CompraFormData {
   items: CompraFormItem[];
   temp_image_keys: string[];
 }
+
+// --- Registro (estado persistente entre tabs) ---
+
+export interface RegistroImage {
+  tempKey: string;
+  tempUrl: string;
+  status: 'uploading' | 'extracting' | 'extracted' | 'error';
+  extraction?: ExtractionResult;
+  sugerencias?: { proveedor: any; items: ItemSugerencia[] };
+  error?: string;
+}
+
+export interface RegistroItem {
+  ingrediente_id: number | null;
+  product_id: number | null;
+  item_type: 'ingredient' | 'product';
+  nombre: string;
+  cantidad: number;
+  unidad: string;
+  precio_unitario: number;
+  subtotal: number;
+  empaque_detalle?: string | null;
+  match_score?: number;
+  match_name?: string;
+}
+
+export interface RegistroGroup {
+  proveedor: string;
+  fecha_compra: string;
+  metodo_pago: string;
+  tipo_compra: string;
+  notas: string;
+  images: RegistroImage[];
+  items: RegistroItem[];
+  expanded: boolean;
+}
