@@ -28,6 +28,12 @@ export function getEcho(): Echo<'reverb'> | null {
       forceTLS: true,
       enabledTransports: ['ws', 'wss'],
       disableStats: true,
+      authEndpoint: `https://${host}/broadcasting/auth`,
+      auth: {
+        headers: {
+          Authorization: `Bearer ${typeof localStorage !== 'undefined' ? localStorage.getItem('mi3_token') || '' : ''}`,
+        },
+      },
     });
 
     console.log('[Echo] Connected to', `wss://${host}/app/${key}`);
