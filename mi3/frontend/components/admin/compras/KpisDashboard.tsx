@@ -23,7 +23,8 @@ interface RendicionItem {
 }
 
 export default function KpisDashboard() {
-  const [kpis, setKpis] = useState<Kpi | null>(null);
+  const { kpis: ctxKpis, lastEvent } = useCompras();
+  const [kpis, setKpis] = useState<Kpi | null>(ctxKpis);
   const [historial, setHistorial] = useState<HistorialSaldoItem[]>([]);
   const [rendiciones, setRendiciones] = useState<RendicionItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,17 +43,15 @@ export default function KpisDashboard() {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  // Realtime: listen for compra.registrada and rendicion.actualizada
+  // Refresh when context detects a realtime event
   useEffect(() => {
-    const echo = getEcho();
-    if (!echo) return;
+    if (lastEvent && (lastEvent.type === 'compra' || lastEvent.type === 'venta')) {
+      fetchAll();
+    }
+  }, [lastEvent, fetchAll]);
 
-    const channel = echo.channel('compras');
-    channel.listen('.compra.registrada', () => fetchAll());
-    channel.listen('.rendicion.actualizada', () => fetchAll());
-
-    return () => { echo.leave('compras'); };
-  }, [fetchAll]);
+  // Sync KPIs from context
+  useEffect(() => { if (ctxKpis) setKpis(ctxKpis); }, [ctxKpis]);
 
   if (loading) return <div className="p-6 text-center text-sm text-gray-500">Cargando...</div>;
   if (!kpis) return <div className="p-6 text-center text-sm text-gray-500">Error al cargar KPIs</div>;
