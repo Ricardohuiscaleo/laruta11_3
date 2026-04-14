@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2d50f13`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`c2a80da`) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`f9b69c5`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -82,6 +82,15 @@
 
 ## Sesiones Recientes
 
+### 2026-04-14e — Proveedores neto +IVA + normalización ingredientes Vanni
+
+**Cambios:**
+- `ExtraccionController`: proveedores que facturan neto (vanni, arauco) → precios ×1.19 automático para registrar con IVA incluido.
+- BD: ingrediente id=40 renombrado "Caja Sandwich" → "ENVASE CARTULINA SANDWICH GRANDE PAMOLSA". Nuevas equivalencias: ENVASE CARTULINA, ENVASE ALUMINIO, ENVASE HOT DOG BIO-VANNI. RUT 76.979.850-1 corregido a vanni.
+
+**Commits:** `1d0179e`, `f9b69c5`
+**Deploys:** mi3-backend (`ckpn4g064cz1vsc6421l4ozk`) ✅
+
 ### 2026-04-14d — IA descuentos + estructura boleta + equivalencias paquete→unidades + Cencosud
 
 **Cambios:**
@@ -117,27 +126,7 @@
 **Commits:** `66e604a`, `fa311ef`
 **Deploys:** mi3-frontend (`j6gwotmzzq6bpdp48gio2f10`) ✅, mi3-backend (`e291smci6yin5xtvl3cfd97g`) ✅
 
-### 2026-04-14a — Fix registro 500 + estado persistente tabs + KPIs context
-
-**Cambios:**
-- Frontend: `registro/page.tsx` — "Débito" → "Tarjeta" (enum BD), formulario usa `ComprasContext` (groups/submitted persisten entre tabs)
-- Backend: `CompraController.php` — validación `in:` para `tipo_compra`/`metodo_pago` + logging
-- `KpisDashboard.tsx` — eliminado `getEcho()` duplicado, usa context para realtime
-- `HistorialCompras.tsx` — usa cache del context para página 1
-- `ComprasContext.tsx` — agrega `registroGroups`, `registroSubmitted`, `historial`, `refreshHistorial`
-- Types: `RegistroGroup`, `RegistroItem`, `RegistroImage` exportados
-
-**Commits:** `e53bbf7`, `135cdf1`
-**Deploys:** mi3-frontend (`u127n9y02yoglkfr6a9cvwt0`) ✅
-
 ---
 
-> Sesiones anteriores (143 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-
-**Commits:** `913b5ec`
-**Deploys:** mi3-frontend (`w12zr84j`) ✅, mi3-backend (`gzzz0xjz`) ✅, app3 (`i11hjswn`) ✅, caja3 (`hze31et0`) ✅
-
----
-
-> Sesiones anteriores (142 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (145 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
