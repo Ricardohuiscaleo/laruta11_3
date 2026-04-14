@@ -226,7 +226,7 @@ FORMATO B (Unimarc/Rendic): cantidad DEBAJO del producto
    REGLAS para formato B:
    - Cada línea que empieza con código de barras (78...) es un PRODUCTO NUEVO.
    - El monto al final de esa línea ($9580) es el SUBTOTAL de ese producto.
-   - Si la siguiente línea tiene "N x N UN $NNN c/u", es el desglose de cantidad × precio unitario del producto ANTERIOR.
+   - Si la siguiente línea tiene "N x N UN precio c/u", es el desglose de cantidad × precio unitario del producto ANTERIOR.
    - Si NO hay línea de desglose, la cantidad es 1.
    - Extraer CADA producto como un item separado con su subtotal correcto.
    - "SAL LOBOS BOLSA 1 $590" = 1 unidad de sal a $590 (NO confundir con el precio de otro producto).
