@@ -217,9 +217,19 @@ FORMATO A (Jumbo/Santa Isabel/Líder): cantidad ANTES del producto
 FORMATO B (Unimarc/Rendic): cantidad DEBAJO del producto
    "7801965001452  SALCHICHA SURENA P    $9580"
    "    2 x 1 UN $4790 c/u"
-   En este formato: la primera línea tiene código + nombre + VALOR TOTAL de la línea.
-   La segunda línea tiene: cantidad × unidades × precio_unitario c/u.
-   Extraer: cantidad=2, precio_unitario=4790, subtotal=9580.
+   "7803600031275  SAL LOBOS BOLSA 1      $590"
+   "7802950122329  CREMA LARGA VIDA L    $8890"
+   "7803946000331  CIBOULETTE ESTUCHE    $3000"
+   "    4 x 1 UN $750 c/u"
+   "7801340000148  CHAMPIÑON BDJA 20     $3180"
+   "    2 x 1 UN $1590 c/u"
+   REGLAS para formato B:
+   - Cada línea que empieza con código de barras (78...) es un PRODUCTO NUEVO.
+   - El monto al final de esa línea ($9580) es el SUBTOTAL de ese producto.
+   - Si la siguiente línea tiene "N x N UN $NNN c/u", es el desglose de cantidad × precio unitario del producto ANTERIOR.
+   - Si NO hay línea de desglose, la cantidad es 1.
+   - Extraer CADA producto como un item separado con su subtotal correcto.
+   - "SAL LOBOS BOLSA 1 $590" = 1 unidad de sal a $590 (NO confundir con el precio de otro producto).
 
 3. Líneas de descuento JUSTO DEBAJO: "OFERTA SEMANA -1.876", "DESCTO CONVENI -118"
 4. SUB TOTAL / TOTAL: resumen fiscal
