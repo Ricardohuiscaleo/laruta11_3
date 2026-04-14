@@ -40,6 +40,7 @@
 | kiro-cli | v1.29.8 en `/root/.local/bin/kiro-cli` (Builder ID) |
 | Workspace | `/root/laruta11_3` ✅ verificado |
 | ACP | Sesión activa, acceso completo al monorepo |
+| Timeout `session/prompt` | 600s (10 min) — fix aplicado 2026-04-14 |
 
 ---
 
@@ -70,6 +71,16 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-14i — Fix timeout bot SuperKiro (session/prompt pegado)
+
+**Cambios:**
+- `/opt/kiro-acp-telegram-bot/src/acp-client.js` en VPS: timeout `session/prompt` aumentado de 120s → 600s (10 min). Otros requests mantienen 120s.
+- Causa raíz: tareas largas de Kiro (SSH, exploración workspace) superaban 2 min y el bot lanzaba `Timeout: session/prompt`, dejando la sesión sucia.
+- Bot reiniciado vía `pm2 restart kiro-telegram-bot`. Nueva sesión ACP activa.
+
+**Commits:** ninguno (cambio directo en VPS)
+**Deploys:** ninguno
 
 ### 2026-04-14h — Spec fix-sessiones: Task 1 — tests de exploración de bugs creados
 
@@ -106,25 +117,7 @@
 **Commits:** `82a3f42`, `46e0167`
 **Deploys:** mi3-frontend (`c3dfywbm8ao8scqksenizgmt`) ✅, mi3-backend (`zp1qhnm7q86j2qjiz23pac26`) ✅
 
-### 2026-04-14e — Proveedores neto +IVA + normalización ingredientes Vanni
-
-**Cambios:**
-- `ExtraccionController`: proveedores que facturan neto (vanni, arauco) → extracción muestra neto tal cual. IVA ×1.19 se aplica al registrar en `CompraController::store()`. Karina Roco → ARIAKA.
-- Frontend: indicador IVA azul (Neto vs Con IVA) para proveedores neto. Botón Registrar muestra total con IVA. Fix tipo `ExtractionItem` — campos `notas_descuento` y `descuento`.
-- `ImagenService`: fix S3 key collision para nombres únicos. BD: compra 277 deduplicada.
-- Auth: `api.ts` + `compras-api.ts` envían Bearer token de localStorage. `AuthController` devuelve token en JSON. Login guarda token en localStorage. Sesiones sobreviven redeploys.
-- BD: ingrediente id=40 renombrado. Nuevas equivalencias Vanni. RUT 76.979.850-1 = vanni. Karina Roco = ARIAKA.
-
-**Commits:** `1d0179e`→`3a9180b` (11 commits)
-**Deploys:** mi3-backend (`jrf9i38cxe142b679wamudt5`) ✅, mi3-frontend (`zbc8u98mfjwd03olvhb3z8qz`) ✅
-
 ---
 
-> Sesiones anteriores (148 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
-**Deploys:** mi3-frontend (`xjk16jcai46ne36j36zoun09`) ✅, mi3-backend (`rql7y6p0sj1jrm95q73r4joe`) ✅
-
----
-
-> Sesiones anteriores (147 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (149 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
