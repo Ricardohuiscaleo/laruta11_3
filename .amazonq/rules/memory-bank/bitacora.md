@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`82a3f42`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`82a3f42`) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`46e0167`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -51,6 +51,7 @@
 - [ ] **Corregir caja3 `get_turnos.php`** base date cajero (2026-02-01 → 2026-02-02)
 - [ ] **Generar turnos mayo** en producción
 - [ ] **Fix push subscriptions duplicadas** en `push_subscriptions_mi3` (44 registros para 1 usuario)
+- [ ] **Spec fix-sessiones**: 8 bugs auth identificados (loop 401, httpOnly, Google OAuth, useAuth). Spec completo con 9 tareas. Pendiente ejecutar.
 - [x] **Fix duplicate entry turnos** — `updateOrCreate` en ShiftController + ShiftSwapService. Commit `dbe82f8`, deploy `t122hofnf31hazga6zzr5e5v` ✅
 
 ### 🟡 Verificaciones pendientes
@@ -89,9 +90,9 @@
 - `AuthService`: no borra todos los tokens al login, solo >30 días (multi-dispositivo).
 - `AuthController`: devuelve token en JSON. Login guarda en localStorage. Bearer token en todas las peticiones.
 - `ImagenService`: nombres únicos S3 (time+random). BD: compra 277 deduplicada.
-- Spec bugfix creado: `.kiro/specs/fix-sessiones/bugfix.md` con análisis de 5 defectos + 7 cláusulas preservación.
+- Spec bugfix creado: `.kiro/specs/fix-sessiones/` — bugfix.md (8 bugs), design.md (5 properties), tasks.md (9 tareas, 25+ sub-tareas). Auditoría independiente incorporada: BUG 5 descartado, 3 bugs nuevos (7/8/9). APP_KEY confirmado persistente en Coolify.
 
-**Commits:** `82a3f42`
+**Commits:** `82a3f42`, `46e0167`
 **Deploys:** mi3-frontend (`c3dfywbm8ao8scqksenizgmt`) ✅, mi3-backend (`zp1qhnm7q86j2qjiz23pac26`) ✅
 
 ### 2026-04-14e — Proveedores neto +IVA + normalización ingredientes Vanni
