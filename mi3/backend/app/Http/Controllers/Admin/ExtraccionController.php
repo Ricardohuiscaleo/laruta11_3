@@ -283,6 +283,22 @@ class ExtraccionController extends Controller
                             'precio_unitario' => $precioUnitario,
                             'subtotal' => $data['monto_total'] ?? 0,
                         ]];
+                    } elseif ($mapping['item'] && str_contains($mapping['item'], 'gas')) {
+                        // Gas: always override items with correct quantity calculation
+                        $montoTotal = (float) ($data['monto_total'] ?? 0);
+                        $cantidad = 1;
+                        $precioCilindro = 23500;
+                        if ($montoTotal >= $precioCilindro * 1.5) {
+                            $cantidad = (int) round($montoTotal / $precioCilindro);
+                        }
+                        $precioUnitario = $cantidad > 0 ? (int) round($montoTotal / $cantidad) : $montoTotal;
+                        $data['items'] = [[
+                            'nombre' => $mapping['item'],
+                            'cantidad' => $cantidad,
+                            'unidad' => 'unidad',
+                            'precio_unitario' => $precioUnitario,
+                            'subtotal' => (int) $montoTotal,
+                        ]];
                     } elseif ($mapping['item']) {
                         // Replace generic items with the correct one
                         foreach ($data['items'] as &$item) {
