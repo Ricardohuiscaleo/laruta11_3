@@ -229,8 +229,23 @@ Identifica el producto y estima la cantidad. Ejemplos:
 - Bandeja de carne → "Carne", estimar peso por tamaño
 Extrae: items (array con nombre/cantidad_estimada/unidad/confianza_estimacion).
 
-TIPO 3 — FOTO DE BÁSCULA/BALANZA (display digital mostrando peso):
-Lee el número del display digital. Extrae: peso_leido (número), unidad (kg/g), producto_probable (si se ve el producto en la báscula).
+TIPO 3 — FOTO DE BÁSCULA/BALANZA (display digital mostrando peso, precio, total):
+Las básculas de feria/agro en Chile tienen 3 displays:
+- PESO (kg/lb o WEIGHT): muestra el peso en kg con decimales. Ej: "5.275" = 5.275 kg, "2.370" = 2.370 kg
+- PRECIO ($/kg o UNIT PRICE): precio por kilo en NOTACIÓN ABREVIADA de feria. Ej: "45" = $4.500/kg, "90" = $9.000/kg, "107" = $10.700/kg. REGLA: si el número es < 200, multiplicar por 100 para obtener pesos chilenos reales.
+- TOTAL ($ o TOTAL PRICE): total a pagar en NOTACIÓN ABREVIADA. Ej: "237" = $23.700, "107" = $10.700. REGLA: si el número es < 1000, multiplicar por 100.
+
+Marcas comunes de básculas: FERRAWYY, HENKEL, CAMRY, EXCELL, T-SCALE.
+
+Para fotos de báscula, extrae:
+- peso_bascula: el peso EXACTO del display en kg (ej: 5.275, 2.370)
+- unidad_bascula: siempre "kg"
+- items: [{nombre: producto visible o "Producto en báscula", cantidad: peso_en_kg, unidad: "kg", precio_unitario: precio_real_por_kg, subtotal: total_real}]
+- monto_total: el total real en pesos (display TOTAL × 100 si es abreviado)
+- notas_ia: describir qué se ve (ej: "Báscula FERRAWYY: 5.275 kg × $4.500/kg = $23.738")
+
+Si se ve el producto en la foto (paltas, tomates, etc.), identificarlo. Si no, usar "Producto en báscula".
+Si hay bolsas azules/rosadas con productos redondos oscuros = probablemente Palta Hass.
 
 TIPO 4 — COMPROBANTE DE TRANSFERENCIA BANCARIA (Mercado Pago, banco, etc.):
 Extrae: destinatario (nombre de la persona que recibe), monto, fecha de la transferencia.
@@ -686,6 +701,24 @@ PROMPT;
      */
     private function normalizeAmounts(array $extracted): array
     {
+        // For bascula images: fix abbreviated feria pricing (45 → 4500, 237 → 23700)
+        $isBascula = ($extracted['tipo_imagen'] ?? '') === 'bascula';
+        if ($isBascula) {
+            if (isset($extracted['monto_total']) && is_numeric($extracted['monto_total']) && $extracted['monto_total'] < 1000) {
+                $extracted['monto_total'] = (int) ($extracted['monto_total'] * 100);
+            }
+            if (!empty($extracted['items'])) {
+                foreach ($extracted['items'] as &$item) {
+                    if (isset($item['precio_unitario']) && is_numeric($item['precio_unitario']) && $item['precio_unitario'] < 200) {
+                        $item['precio_unitario'] = (int) ($item['precio_unitario'] * 100);
+                    }
+                    if (isset($item['subtotal']) && is_numeric($item['subtotal']) && $item['subtotal'] < 1000) {
+                        $item['subtotal'] = (int) ($item['subtotal'] * 100);
+                    }
+                }
+            }
+        }
+
         $moneyFields = ['monto_neto', 'iva', 'monto_total'];
         foreach ($moneyFields as $field) {
             if (isset($extracted[$field]) && is_numeric($extracted[$field])) {
