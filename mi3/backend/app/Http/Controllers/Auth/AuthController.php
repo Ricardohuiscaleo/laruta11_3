@@ -60,6 +60,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'user' => $result['user'],
+            'token' => $result['token'],
         ])
             ->cookie('mi3_token', $result['token'], $maxAge, '/', '.laruta11.cl', true, true, false, 'Lax')
             ->cookie('mi3_role', $role, $maxAge, '/', '.laruta11.cl', true, false, false, 'Lax')

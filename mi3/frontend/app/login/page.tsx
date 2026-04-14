@@ -35,7 +35,10 @@ function LoginForm() {
       });
       const data = await res.json();
       if (data.success) {
-        // Cookies are set by the backend response (httpOnly)
+        // Save token to localStorage for Bearer auth (survives backend redeploys)
+        if (data.token) {
+          localStorage.setItem('mi3_token', data.token);
+        }
         // Hard redirect to pick up the new cookies
         window.location.href = data.user.is_admin ? '/admin' : '/dashboard';
       } else {
