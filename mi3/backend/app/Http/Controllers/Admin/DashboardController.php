@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Payroll\NominaService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private readonly NominaService $nominaService,
+    ) {}
+
     public function index(): JsonResponse
     {
         $data = [
@@ -30,26 +34,15 @@ class DashboardController extends Controller
             }
         } catch (\Exception $e) {}
 
-        // Nómina from local DB (sueldos base de personal activo)
+        // Nómina: solo centro ruta11, excluyendo dueño (misma lógica que PayrollController)
         try {
-            $personal = DB::table('personal')->where('activo', 1)->get();
-            $totalNomina = 0;
-            foreach ($personal as $p) {
-                $roles = explode(',', $p->rol ?? '');
-                foreach ($roles as $rol) {
-                    $rol = trim($rol);
-                    $field = match($rol) {
-                        'cajero' => 'sueldo_base_cajero',
-                        'planchero' => 'sueldo_base_planchero',
-                        'administrador' => 'sueldo_base_admin',
-                        'seguridad' => 'sueldo_base_seguridad',
-                        default => null,
-                    };
-                    if ($field && isset($p->$field)) {
-                        $totalNomina += (float) $p->$field;
-                    }
-                }
-            }
+            $mes = now()->format('Y-m');
+            $raw = $this->nominaService->getResumen($mes);
+
+            $totalNomina = collect($raw['ruta11']['personal'] ?? [])
+                ->filter(fn($e) => !str_contains($e['personal']->rol ?? '', 'dueño'))
+                ->sum(fn($e) => $e['liquidacion']['sueldo_base']);
+
             $data['nomina_mes'] = $totalNomina;
         } catch (\Exception $e) {}
 
