@@ -280,7 +280,7 @@ END FOR
 
 ### Unit Tests
 
-- Test `clearSession` endpoint: verifica que elimina las 3 cookies httpOnly + mi3_auth
+- Test `clearSession` endpoint: verifica que elimina las 3 cookies httpOnly + mi3_auth_flag
 - Test `respondWithAuth` setea cookie `mi3_auth_flag` además de las existentes
 - Test `googleCallback` incluye `?token=` en redirect URL
 - Test `ExtractTokenFromCookie` lee plainTextToken (no encriptado) de cookie
