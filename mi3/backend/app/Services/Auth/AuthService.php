@@ -178,7 +178,7 @@ class AuthService
             CURLOPT_SSL_VERIFYPEER => false,
         ]);
         $tokenResponse = curl_exec($ch);
-        curl_close($ch);
+        unset($ch);
 
         $tokenData = json_decode($tokenResponse, true);
 
