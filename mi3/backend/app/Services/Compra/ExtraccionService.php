@@ -216,10 +216,11 @@ Ejemplo:
       DESCTO CONVENI                  -119    ← descuento del producto anterior
 
 Tipos de descuento a detectar: OFERTA SEMANA, DESCTO CONVENI, DCTO, PROMO, OFERTA, DESCUENTO, DTO.
-Para cada item, RESTA el descuento de su subtotal:
-- Big Montina: subtotal = 9.380 - 1.876 = 7.504, precio_unitario = 7.504 / 2 = 3.752
-- Champiñón: subtotal = 2.380 - 119 = 2.261, precio_unitario = 2.261 / 2 = 1.131
-El monto_total debe coincidir con el TOTAL impreso en la boleta (después de descuentos), NO con la suma de subtotales sin descuento.
+Para cada item con descuento, extrae el campo "descuento" con el valor POSITIVO del descuento:
+- Big Montina: subtotal = 9380, descuento = 1876
+- Champiñón: subtotal = 2380, descuento = 119
+NO restes el descuento tú mismo. Solo extrae ambos valores tal como aparecen en la boleta.
+El monto_total debe ser el TOTAL impreso en la boleta (después de todos los descuentos).
 
 REGLA CRÍTICA PARA IDENTIFICAR AL PROVEEDOR EN FACTURAS CHILENAS:
 En una factura chilena, el PROVEEDOR (emisor) es la empresa que EMITE la factura, NO el destinatario.
@@ -300,7 +301,7 @@ Formato de respuesta JSON:
   "fecha": "YYYY-MM-DD (fecha de la compra/transferencia)",
   "metodo_pago": "cash" | "transfer" | "card" | "credit",
   "tipo_compra": "ingredientes" | "insumos" | "equipamiento" | "otros",
-  "items": [{"nombre": "nombre LIMPIO sin empaque", "cantidad": N_TOTAL_UNIDADES_O_KG, "unidad": "kg|unidad|g|L", "precio_unitario": N, "subtotal": N, "empaque_detalle": "descripción del cálculo de empaque o null"}],
+  "items": [{"nombre": "nombre LIMPIO sin empaque", "cantidad": N_TOTAL_UNIDADES_O_KG, "unidad": "kg|unidad|g|L", "precio_unitario": N, "subtotal": N, "descuento": N_o_0, "empaque_detalle": "descripción del cálculo de empaque o null"}],
   "monto_neto": N o null,
   "iva": N o null,
   "monto_total": N o null,
@@ -750,6 +751,17 @@ PROMPT;
                 if (isset($item['subtotal']) && is_numeric($item['subtotal'])) {
                     $item['subtotal'] = (int) round((float) $item['subtotal']);
                 }
+
+                // Apply per-item discount: subtract from subtotal, recalculate precio_unitario
+                $descuento = (int) abs((float) ($item['descuento'] ?? 0));
+                if ($descuento > 0 && isset($item['subtotal'])) {
+                    $item['subtotal'] = $item['subtotal'] - $descuento;
+                    $cantidad = max(1, (float) ($item['cantidad'] ?? 1));
+                    $item['precio_unitario'] = (int) round($item['subtotal'] / $cantidad);
+                    $item['notas_descuento'] = "Descuento -\${$descuento} aplicado";
+                }
+                // Clean up: remove descuento field from final output (already applied)
+                unset($item['descuento']);
             }
         }
 
