@@ -340,8 +340,13 @@ Factura con columnas: CÓDIGO | CANTIDAD | U.M. | DESCRIPCIÓN | % DCTO | PRECIO
 - Las cantidades son DIRECTAS (200 = 200 unidades individuales, no empaques)
 - Precio unitario es NETO por unidad (sin IVA)
 - TOTAL de línea = cantidad × precio unitario (neto)
-- El TOTAL de la factura incluye IVA 19%
+- Al final de la factura hay: SUBTOTAL (neto), 0.0% DESCTO, NETO, TOTAL EXENTO, I.V.A. (19%), TOTAL
+- monto_neto = valor de NETO o SUBTOTAL
+- iva = valor de I.V.A. (19%)
+- monto_total = valor de TOTAL (el más grande, incluye IVA) — SIEMPRE usar este valor
+- Los subtotales de items son NETOS (sin IVA). El monto_total INCLUYE IVA.
 - Productos típicos: envases de cartulina, aluminio, hot dog, cajas pizza, bolsas delivery
+- VERIFICACIÓN: suma de subtotales de items debe ser ≈ monto_neto. Si no coincide, revisa los montos.
 {$knownSuppliers}{$rutMapping}{$knownProducts}{$productPatterns}
 
 Formato de respuesta JSON:
