@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`43323cf`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`bd69617`) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`894a957`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -85,13 +85,14 @@
 ### 2026-04-14d — IA descuentos por producto + Cencosud + admin checklists fix
 
 **Cambios:**
-- Prompt IA: regla para descuentos por línea en boletas supermercado (OFERTA SEMANA, DESCTO CONVENI, etc.). Resta descuento del subtotal, recalcula precio_unitario.
+- Prompt IA: campo `descuento` por item (valor positivo, IA solo lee números). Backend aplica resta en `normalizeAmounts` y recalcula `precio_unitario`.
+- Prompt IA: regla para descuentos por línea en boletas supermercado (OFERTA SEMANA, DESCTO CONVENI, etc.).
 - `ExtraccionController`: Cencosud/Jumbo/Santa Isabel agregados a patrones conocidos.
-- `getChecklistsAdmin`: shift-day solo aplica cuando fecha=hoy Y 00:00-04:00 (fix: ya no muestra checklists de todas las fechas).
+- `getChecklistsAdmin`: shift-day solo aplica cuando fecha=hoy Y 00:00-04:00.
 - BD: Jumbo y Santa Isabel agregados a `supplier_index` con RUT 81.201.000-K.
 
-**Commits:** `cce9b31`, `bd69617`
-**Deploys:** mi3-backend (`y142iy6qx9ftxnbsi5aevq7t`) ✅
+**Commits:** `cce9b31`, `bd69617`, `894a957`
+**Deploys:** mi3-backend (`i7u0cxwsv8763f3hko5xt42c`) ✅
 
 ### 2026-04-14c — Fix checklist turno nocturno + shift-day logic alineada con caja3
 
