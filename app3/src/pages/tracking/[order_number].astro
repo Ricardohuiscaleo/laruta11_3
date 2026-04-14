@@ -95,7 +95,7 @@ Astro.response.headers.set(
   <!-- Google Maps -->
   <script>
     window.MAPS_KEY = import.meta.env.PUBLIC_GOOGLE_MAPS_KEY || '';
-    window.ORDER_NUMBER = {JSON.stringify(order_number)};
+    window.ORDER_NUMBER = `{order_number}`;
     window.API_BASE = 'https://api-mi3.laruta11.cl/api/v1';
     window.REVERB_HOST = 'api-mi3.laruta11.cl';
     window.REVERB_PORT = 443;
