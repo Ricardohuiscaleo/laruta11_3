@@ -135,27 +135,6 @@ class ExtraccionController extends Controller
                     }
                 }
                 unset($item);
-
-                // For suppliers that invoice NETO (without IVA), add 19% to prices
-                // so registered amounts match what we actually pay (IVA included)
-                $netoSuppliers = ['vanni', 'arauco'];
-                $provLower = mb_strtolower(trim($data['proveedor'] ?? ''));
-                $isNeto = false;
-                foreach ($netoSuppliers as $ns) {
-                    if (str_contains($provLower, $ns)) { $isNeto = true; break; }
-                }
-                if ($isNeto && !empty($data['items'])) {
-                    foreach ($data['items'] as &$item) {
-                        $item['precio_unitario'] = (int) round(($item['precio_unitario'] ?? 0) * 1.19);
-                        $item['subtotal'] = (int) round(($item['subtotal'] ?? 0) * 1.19);
-                    }
-                    unset($item);
-                    // Use monto_total (which should already include IVA from the factura)
-                    // If the AI extracted the neto as total, recalculate
-                    if (!empty($data['monto_neto']) && !empty($data['iva'])) {
-                        $data['monto_total'] = (int) ($data['monto_neto'] + $data['iva']);
-                    }
-                }
             }
 
             return response()->json([

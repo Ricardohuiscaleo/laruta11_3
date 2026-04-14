@@ -40,7 +40,25 @@ class CompraController extends Controller
         ]);
 
         try {
-            $result = $this->compraService->registrar($request->all());
+            $data = $request->all();
+
+            // Proveedores que facturan NETO: agregar 19% IVA a precios al registrar
+            $netoSuppliers = ['vanni', 'arauco'];
+            $provLower = mb_strtolower(trim($data['proveedor'] ?? ''));
+            $isNeto = false;
+            foreach ($netoSuppliers as $ns) {
+                if (str_contains($provLower, $ns)) { $isNeto = true; break; }
+            }
+            if ($isNeto) {
+                foreach ($data['items'] as &$item) {
+                    $item['precio_unitario'] = round($item['precio_unitario'] * 1.19);
+                    $item['subtotal'] = round($item['subtotal'] * 1.19);
+                }
+                unset($item);
+                $data['monto_total'] = array_sum(array_column($data['items'], 'subtotal'));
+            }
+
+            $result = $this->compraService->registrar($data);
 
             // Move temp images to definitivo if provided
             $imagenes = [];
