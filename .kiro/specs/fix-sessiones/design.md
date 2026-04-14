@@ -2,15 +2,15 @@
 
 ## Overview
 
-Las sesiones de mi3 se pierden completamente cuando el backend Laravel se redeploya en Docker/Coolify. Se identificaron 6 bugs interrelacionados que causan un loop infinito 401 → /login → redirect → 401. El fix aborda cada bug de forma quirúrgica: (1) crear endpoint server-side para limpiar cookies httpOnly, (2) usar cookie no-httpOnly `mi3_auth_flag` como flag de sesión para Next.js middleware, (3) pasar token via query param en Google OAuth callback, (4) eliminar `key:generate` del Dockerfile, (5) excluir `mi3_token` de la encriptación de cookies Laravel, (6) deprecar fallback plaintext de session_token.
+Las sesiones de mi3 se pierden completamente cuando el backend Laravel se redeploya en Docker/Coolify. Se identificaron 6 bugs interrelacionados (1 descartado como falso positivo) que causan un loop infinito 401 → /login → redirect → 401. El fix aborda cada bug de forma quirúrgica: (1) crear endpoint server-side para limpiar cookies httpOnly, (2) usar cookie no-httpOnly `mi3_auth_flag` como flag de sesión para Next.js middleware, (3) pasar token via query param en Google OAuth callback, (4) eliminar `key:generate` del Dockerfile (cleanup preventivo), (5) ~~excluir `mi3_token` de encriptación~~ DESCARTADO, (6) deprecar fallback plaintext de session_token.
 
 ## Glossary
 
-- **Bug_Condition (C)**: Conjunto de condiciones que causan pérdida de sesión — redeploy del backend con cookies encriptadas, httpOnly cookies no eliminables desde JS, Google OAuth sin localStorage, APP_KEY regenerada, cookie encriptada leída como plaintext
+- **Bug_Condition (C)**: Conjunto de condiciones que causan pérdida de sesión — httpOnly cookies no eliminables desde JS, Google OAuth sin localStorage, middleware que no valida token
 - **Property (P)**: Las sesiones de todos los usuarios (email + Google OAuth) sobreviven un redeploy del backend sin loop de redirección
 - **Preservation**: Login normal (email/password y Google), logout explícito, protección de rutas por rol, y comportamiento multi-dispositivo deben seguir funcionando exactamente igual
 - **`ExtractTokenFromCookie`**: Middleware en `mi3/backend/app/Http/Middleware/ExtractTokenFromCookie.php` que extrae `mi3_token` de la cookie y lo inyecta como Bearer header
-- **`mi3_token`**: Cookie httpOnly que contiene el plainTextToken de Sanctum (actualmente encriptada por Laravel)
+- **`mi3_token`**: Cookie httpOnly que contiene el plainTextToken de Sanctum (NO encriptada — EncryptCookies no está en el stack API de Laravel 11)
 - **`mi3_auth_flag`**: Nueva cookie no-httpOnly que actúa como flag de "sesión activa" para el middleware de Next.js
 - **`apiFetch`**: Función en `mi3/frontend/lib/api.ts` que maneja todas las llamadas API incluyendo el 401 handler
 
@@ -44,10 +44,8 @@ FUNCTION isBugCondition(input)
   bug4 := input.event == 'redeploy'
           AND input.context.newAppKey != input.context.previousAppKey
 
-  // BUG 5: ExtractTokenFromCookie lee valor encriptado
-  bug5 := input.event == 'cookie_read'
-          AND input.context.middlewareOrder('ExtractTokenFromCookie') < input.context.middlewareOrder('EncryptCookies')
-          AND input.context.cookieIsEncrypted('mi3_token') == true
+  // BUG 5: DESCARTADO (falso positivo — EncryptCookies no está en stack API)
+  bug5 := false
 
   // BUG 6: session_token plaintext fallback
   bug6 := input.event == 'login_plaintext'
@@ -63,8 +61,8 @@ END FUNCTION
 - **BUG 1**: Usuario logueado recibe 401 → `api.ts` ejecuta `document.cookie = 'mi3_token=; max-age=0'` → cookie httpOnly NO se elimina → middleware Next.js ve cookie existente → redirige a dashboard → 401 → loop infinito
 - **BUG 2**: Backend se redeploya → cookie `mi3_token` sigue en navegador pero token inválido → middleware Next.js ve cookie y asume autenticado → redirige a dashboard → API devuelve 401 → loop
 - **BUG 3**: Usuario hace login con Google → backend setea cookies httpOnly y redirige → frontend NO tiene token en localStorage → `getToken()` retorna null → `apiFetch` no envía Bearer header → depende 100% de cookie que puede ser inválida post-redeploy
-- **BUG 4**: Coolify rebuilds Docker image → `php artisan key:generate --force` genera nueva APP_KEY → todas las cookies encriptadas con la key anterior son ilegibles → 401 masivo
-- **BUG 5**: Request llega → `ExtractTokenFromCookie` (prepended) lee `mi3_token` → valor está encriptado por Laravel → inyecta `Bearer eyJpdiI6...` (encriptado) → Sanctum no reconoce → 401
+- **BUG 4**: ~~Coolify rebuilds Docker image → nueva APP_KEY~~ VERIFICADO: APP_KEY persistente en Coolify. Cleanup preventivo: remover key:generate del Dockerfile.
+- **~~BUG 5~~**: DESCARTADO (falso positivo). EncryptCookies no está en el stack API de Laravel 11.
 - **BUG 6**: Usuario con `session_token = "mipassword123"` en BD → login con password "mipassword123" → match por comparación plaintext → funciona pero es inseguro si BD se compromete
 
 ## Expected Behavior
@@ -97,9 +95,9 @@ Based on the code analysis, the root causes are confirmed:
 
 3. **Google OAuth sin localStorage (BUG 3)**: En `AuthController.php:120-127`, `googleCallback` setea cookies httpOnly y redirige a frontend. El frontend nunca recibe el `plainTextToken` para guardarlo en localStorage. Comparar con el login por email donde `login/page.tsx:42` hace `localStorage.setItem('mi3_token', data.token)`.
 
-4. **APP_KEY regenerada en Dockerfile (BUG 4)**: `Dockerfile:39` ejecuta `RUN php artisan key:generate --force`. Si Coolify no inyecta un APP_KEY persistente como variable de entorno, cada build genera una nueva key, invalidando todas las cookies encriptadas.
+4. **APP_KEY en Dockerfile (BUG 4)**: `Dockerfile:39` ejecuta `RUN php artisan key:generate --force`. VERIFICADO: APP_KEY está configurada como variable persistente en Coolify — este bug NO es el trigger activo. La línea del Dockerfile se elimina como cleanup preventivo.
 
-5. **ExtractTokenFromCookie lee cookie encriptada (BUG 5)**: En `bootstrap/app.php:22`, el middleware se registra con `$middleware->prepend()`, ejecutándose ANTES de `EncryptCookies`. `$request->cookie('mi3_token')` retorna el valor encriptado, no el plainTextToken.
+5. **~~ExtractTokenFromCookie lee cookie encriptada (BUG 5)~~**: FALSO POSITIVO — auditoría independiente confirmó que `EncryptCookies` NO está en el stack API de Laravel 11. La cookie se lee en plaintext correctamente. No requiere fix.
 
 6. **Fallback plaintext de session_token (BUG 6)**: En `AuthService.php:31-32`, `$user->session_token === $password` compara en plaintext. Si la BD se compromete, los passwords quedan expuestos.
 
@@ -107,7 +105,7 @@ Based on the code analysis, the root causes are confirmed:
 
 Property 1: Bug Condition - Sesiones sobreviven redeploy del backend
 
-_For any_ estado del sistema donde el backend se redeploya Y un usuario tiene un token Sanctum válido en `personal_access_tokens` (BD), la función de autenticación fija SHALL continuar autenticando al usuario usando el Bearer token desde localStorage (para login email) o la cookie `mi3_token` desencriptada correctamente (con APP_KEY persistente), sin entrar en loop de redirección.
+_For any_ estado del sistema donde el backend se redeploya Y un usuario tiene un token Sanctum válido en `personal_access_tokens` (BD), la función de autenticación fija SHALL continuar autenticando al usuario usando el Bearer token desde localStorage (para login email) o la cookie `mi3_token` (leída en plaintext por ExtractTokenFromCookie), sin entrar en loop de redirección.
 
 **Validates: Requirements 2.1, 2.2, 2.5**
 
@@ -119,7 +117,7 @@ _For any_ login via Google OAuth callback, el sistema fijo SHALL pasar el plainT
 
 Property 3: Bug Condition - Cookie mi3_token se lee correctamente
 
-_For any_ request con cookie `mi3_token`, el middleware `ExtractTokenFromCookie` SHALL inyectar el plainTextToken (no el valor encriptado) como Bearer header, permitiendo que Sanctum autentique correctamente.
+_For any_ request con cookie `mi3_token`, el middleware `ExtractTokenFromCookie` SHALL inyectar el plainTextToken como Bearer header (la cookie NO está encriptada en el stack API de Laravel 11), permitiendo que Sanctum autentique correctamente.
 
 **Validates: Requirements 2.4**
 
@@ -150,10 +148,9 @@ Assuming our root cause analysis is correct:
 
 ---
 
-**File**: `mi3/backend/bootstrap/app.php`
+~~**File**: `mi3/backend/bootstrap/app.php`~~
 
-**Changes**:
-4. **Excluir `mi3_token` de encriptación**: Usar `$middleware->encryptCookies(except: ['mi3_token'])` para que `ExtractTokenFromCookie` lea el plainTextToken directamente
+~~4. **Excluir `mi3_token` de encriptación**~~: DESCARTADO — auditoría confirmó que `EncryptCookies` no está en el stack API de Laravel 11. No se requiere cambio.
 
 ---
 
@@ -192,10 +189,10 @@ Assuming our root cause analysis is correct:
 
 ---
 
-**File**: `mi3/frontend/app/login/page.tsx`
+**File**: `mi3/frontend/app/admin/layout.tsx` o `mi3/frontend/app/dashboard/layout.tsx`
 
 **Changes**:
-10. **Leer token de query param (Google OAuth)**: En `useEffect`, verificar si hay `?token=` en la URL. Si existe, guardarlo en localStorage y limpiar el query param
+10. **Leer token de query param (Google OAuth)**: En layout compartido o useEffect de las páginas destino (/admin, /dashboard), verificar si hay `?token=` en la URL. Si existe, guardarlo en localStorage y limpiar el query param con `router.replace(pathname)`. El token llega directo a la página destino (no a /login).
 
 ---
 
@@ -227,8 +224,8 @@ La estrategia de testing sigue dos fases: primero, surfear counterexamples que d
 1. **Cookie httpOnly deletion test**: Verificar que `document.cookie = 'mi3_token=; max-age=0'` NO elimina una cookie httpOnly (fallará silenciosamente en código actual)
 2. **Middleware token validity test**: Simular request con cookie `mi3_token` que contiene token inválido → middleware Next.js redirige a dashboard en vez de login (falla en código actual)
 3. **Google OAuth localStorage test**: Simular Google OAuth callback → verificar que localStorage NO tiene `mi3_token` después del redirect (falla en código actual)
-4. **APP_KEY rotation test**: Encriptar cookie con APP_KEY_1, intentar desencriptar con APP_KEY_2 → falla (demuestra BUG 4)
-5. **Encrypted cookie extraction test**: Verificar que `ExtractTokenFromCookie` inyecta valor encriptado como Bearer header (falla en código actual)
+4. **APP_KEY rotation test**: VERIFICADO — APP_KEY persistente en Coolify. Test no necesario.
+5. **~~Encrypted cookie extraction test~~**: DESCARTADO — EncryptCookies no está en stack API
 6. **Plaintext password test**: Verificar que login acepta password que coincide con session_token en plaintext (demuestra BUG 6)
 
 **Expected Counterexamples**:
@@ -252,8 +249,8 @@ END FOR
 - POST `/auth/clear-session` elimina cookies httpOnly correctamente
 - Middleware Next.js con `mi3_auth_flag` no causa loop cuando token es inválido
 - Google OAuth callback pasa token en URL y frontend lo guarda en localStorage
-- Sin `key:generate` en Dockerfile, APP_KEY persiste entre deploys
-- `mi3_token` excluida de encriptación → `ExtractTokenFromCookie` lee plainTextToken
+- Sin `key:generate` en Dockerfile, APP_KEY persiste entre deploys (cleanup preventivo)
+- `ExtractTokenFromCookie` ya lee plainTextToken correctamente (no requiere cambio)
 - Login rechaza session_token plaintext, solo acepta Hash::check
 
 ### Preservation Checking
