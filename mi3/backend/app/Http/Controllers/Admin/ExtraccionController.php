@@ -85,6 +85,50 @@ class ExtraccionController extends Controller
 
             if (!empty($data['items'])) {
                 $itemsMatch = $this->sugerenciaService->matchItems($data['items']);
+
+                // Apply product equivalences: convert package quantities to individual units
+                // e.g., "2 paquetes Big Montina 800GR" → 20 unidades (10 per package)
+                foreach ($data['items'] as $idx => &$item) {
+                    $itemName = mb_strtolower(trim($item['nombre'] ?? ''));
+                    if ($itemName === '') continue;
+
+                    $equiv = \App\Models\ProductEquivalence::where('nombre_normalizado', $itemName)->first();
+                    if (!$equiv) {
+                        // Try fuzzy: check if item name contains the equivalence name
+                        $equiv = \App\Models\ProductEquivalence::get()->first(function ($eq) use ($itemName) {
+                            return str_contains($itemName, mb_strtolower($eq->nombre_normalizado))
+                                || str_contains(mb_strtolower($eq->nombre_normalizado), $itemName);
+                        });
+                    }
+
+                    if ($equiv) {
+                        $originalQty = (float) ($item['cantidad'] ?? 1);
+                        $item['cantidad'] = $originalQty * (float) $equiv->cantidad_por_unidad;
+                        $item['unidad'] = $equiv->unidad_real;
+                        if ($item['cantidad'] > 0) {
+                            $item['precio_unitario'] = (int) round(($item['subtotal'] ?? 0) / $item['cantidad']);
+                        }
+                        $item['empaque_detalle'] = "{$originalQty} {$equiv->unidad_visual} × {$equiv->cantidad_por_unidad} {$equiv->unidad_real}/{$equiv->unidad_visual} = {$item['cantidad']} {$equiv->unidad_real}";
+
+                        // Update the match to point to the equivalence's ingredient
+                        if (isset($itemsMatch[$idx]) && $equiv->ingrediente_id) {
+                            $ing = \App\Models\Ingredient::find($equiv->ingrediente_id);
+                            if ($ing) {
+                                $itemsMatch[$idx]['match'] = [
+                                    'id' => $ing->id,
+                                    'name' => $ing->name,
+                                    'unit' => $ing->unit,
+                                    'cost_per_unit' => $ing->cost_per_unit,
+                                    'current_stock' => $ing->current_stock,
+                                ];
+                                $itemsMatch[$idx]['match_type'] = 'ingredient';
+                                $itemsMatch[$idx]['score'] = 100;
+                                $itemsMatch[$idx]['pre_selected'] = true;
+                            }
+                        }
+                    }
+                }
+                unset($item);
             }
 
             return response()->json([
