@@ -56,8 +56,8 @@ class ImagenService
      */
     public function moverADefinitivo(string $tempKey, int $compraId): string
     {
-        $timestamp = time();
-        $finalKey = "compras/respaldo_{$compraId}_{$timestamp}.jpg";
+        $uniqueId = time() . '_' . bin2hex(random_bytes(4));
+        $finalKey = "compras/respaldo_{$compraId}_{$uniqueId}.jpg";
 
         // Download temp, re-upload to final, delete temp
         $contents = $this->getObject($tempKey);
