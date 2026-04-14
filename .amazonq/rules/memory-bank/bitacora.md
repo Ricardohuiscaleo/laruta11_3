@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`43323cf`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`cce9b31`) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`bd69617`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -82,6 +82,17 @@
 
 ## Sesiones Recientes
 
+### 2026-04-14d — IA descuentos por producto + Cencosud + admin checklists fix
+
+**Cambios:**
+- Prompt IA: regla para descuentos por línea en boletas supermercado (OFERTA SEMANA, DESCTO CONVENI, etc.). Resta descuento del subtotal, recalcula precio_unitario.
+- `ExtraccionController`: Cencosud/Jumbo/Santa Isabel agregados a patrones conocidos.
+- `getChecklistsAdmin`: shift-day solo aplica cuando fecha=hoy Y 00:00-04:00 (fix: ya no muestra checklists de todas las fechas).
+- BD: Jumbo y Santa Isabel agregados a `supplier_index` con RUT 81.201.000-K.
+
+**Commits:** `cce9b31`, `bd69617`
+**Deploys:** mi3-backend (`y142iy6qx9ftxnbsi5aevq7t`) ✅
+
 ### 2026-04-14c — Fix checklist turno nocturno + shift-day logic alineada con caja3
 
 **Cambios:**
@@ -118,15 +129,9 @@
 **Commits:** `e53bbf7`, `135cdf1`
 **Deploys:** mi3-frontend (`u127n9y02yoglkfr6a9cvwt0`) ✅
 
-### 2026-04-13ae — Realtime milisegundos: webhooks venta + ComprasContext + WebSocket
+---
 
-**Cambios:**
-- Backend: webhook `POST /webhook/venta` y `/webhook/stock` (auth por X-Webhook-Secret)
-- Eventos nuevos: `VentaRegistrada`, `StockActualizado` broadcast via Reverb al canal `compras`
-- app3 + caja3: `create_order.php` notifica mi3 después de cada venta (curl async 2s timeout)
-- Frontend: `ComprasContext` con cache global de stock/KPIs + listeners WebSocket (venta.registrada, stock.actualizado, compra.registrada)
-- `StockDashboard` usa context → datos persisten entre tabs, se actualizan en ms
-- `StockController` + `CompraService` disparan `StockActualizado` en edición/consumo/compra
+> Sesiones anteriores (143 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 
 **Commits:** `913b5ec`
 **Deploys:** mi3-frontend (`w12zr84j`) ✅, mi3-backend (`gzzz0xjz`) ✅, app3 (`i11hjswn`) ✅, caja3 (`hze31et0`) ✅
