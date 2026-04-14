@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`b15e673`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`b15e673`) |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`43323cf`) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`43323cf`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -82,18 +82,17 @@
 
 ## Sesiones Recientes
 
-### 2026-04-14c — Fix checklist turno nocturno + compras metodo_pago enum
+### 2026-04-14c — Fix checklist turno nocturno + shift-day logic alineada con caja3
 
 **Cambios:**
-- Backend `ChecklistService`: entre 00:00-06:00 incluye checklists del día anterior (turno nocturno cruzando medianoche). Removido filtro `whereIn('rol')` redundante.
-- Backend `ChecklistController`: creación on-demand si worker tiene turno pero no checklists (cron no corrió o falló)
-- Frontend `checklist/page.tsx`: filtro cierre ajustado — visible 00:00-06:00 (turno activo) y después de 18:00
-- Backend `CompraController`: validación `in:` para `tipo_compra`/`metodo_pago` + logging de errores
-- Frontend `registro/page.tsx`: `debit`→`card` para coincidir con enum BD
-- BD: eliminado checklist corrupto id=188 (personal_id NULL)
+- Backend `ChecklistService`: shift-day logic (00:00-04:00 = día anterior, igual que caja3). Cierre `scheduled_time` corregido de 02:00→00:45. Admin view incluye checklists del turno nocturno.
+- Backend `ChecklistController`: on-demand creation busca turnos en fecha actual y shift-date. Fecha calculada con timezone Chile.
+- Frontend `checklist/page.tsx`: cierre visible 00:00-04:00 (turno nocturno) y 18:00+, oculto 04:00-18:00.
+- BD: corregido `scheduled_time` de checklists cierre existentes. Eliminado checklist corrupto id=188 (personal_id NULL).
+- También incluye fix compras: `metodo_pago` enum `debit`→`card` + validación `in:` en CompraController.
 
-**Commits:** `b15e673`
-**Deploys:** mi3-frontend (`n14a8g0w5zya1borh7gamaxy`) ✅, mi3-backend (`z9sllvbx1fm1p97u5vhxjgzp`) ✅
+**Commits:** `b15e673`, `43323cf`
+**Deploys:** mi3-frontend (`xjk16jcai46ne36j36zoun09`) ✅, mi3-backend (`xaiz4xxityn9euo1menldh9s`) ✅
 
 ### 2026-04-14b — IA báscula feria + equivalencias empaque + modal foto + feedback visible
 
