@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2c33166`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`2c33166`) |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`246848b`) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`246848b`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -51,7 +51,7 @@
 - [ ] **Corregir caja3 `get_turnos.php`** base date cajero (2026-02-01 → 2026-02-02)
 - [ ] **Generar turnos mayo** en producción
 - [ ] **Fix push subscriptions duplicadas** en `push_subscriptions_mi3` (44 registros para 1 usuario)
-- [ ] **Spec fix-sessiones**: Tasks 3+4+5 ejecutadas. Pendiente: Tasks 6 (logout unificado), 7 (session_token), 8 (maxAge), 9 (checkpoint).
+- [x] **Spec fix-sessiones**: COMPLETADO. 8 bugs auth resueltos. Sesiones sobreviven redeploys.
 - [x] **Fix duplicate entry turnos** — `updateOrCreate` en ShiftController + ShiftSwapService. Commit `dbe82f8`, deploy `t122hofnf31hazga6zzr5e5v` ✅
 
 ### 🟡 Verificaciones pendientes
@@ -94,8 +94,8 @@
 - `useAuth.ts`: `fetchUser()` usa `fetch()` directo (no apiFetch) para evitar loop en /auth/me
 - `Dockerfile`: eliminado `key:generate` (APP_KEY persiste via Coolify)
 
-**Commits:** `2c33166`
-**Deploys:** mi3-frontend (`xe2630548lhg6k66avptmrpf`) ✅, mi3-backend (`pgwexouj1yiphgxhd0waxevl`) ✅
+**Commits:** `2c33166`, `246848b`
+**Deploys:** mi3-frontend (`hm5ekprg1dfsjz2mwajjyz10`) ✅, mi3-backend (`nml1ab63cplp1wo6fq1okqwz`) ✅
 
 ### 2026-04-14f — Fix auth loop infinito + spec bugfix sesiones
 
