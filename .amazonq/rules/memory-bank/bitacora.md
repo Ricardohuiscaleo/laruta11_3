@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-13)
+## Estado Actual (2026-04-14)
 
 ### Aplicaciones Desplegadas
 
@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`66e604a`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`fa311ef`) |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`b15e673`) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`b15e673`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -51,7 +51,6 @@
 - [ ] **Corregir caja3 `get_turnos.php`** base date cajero (2026-02-01 → 2026-02-02)
 - [ ] **Generar turnos mayo** en producción
 - [ ] **Fix push subscriptions duplicadas** en `push_subscriptions_mi3` (44 registros para 1 usuario)
-- [x] **Deploy completado**: Fix registro compras 500 + estado persistente entre tabs + KPIs desde context. Commits `e53bbf7`, `135cdf1`. Deploy mi3-frontend (`u127n9y02yoglkfr6a9cvwt0`) ✅
 - [x] **Fix duplicate entry turnos** — `updateOrCreate` en ShiftController + ShiftSwapService. Commit `dbe82f8`, deploy `t122hofnf31hazga6zzr5e5v` ✅
 
 ### 🟡 Verificaciones pendientes
@@ -66,7 +65,6 @@
 - [ ] Verificar upload S3 en compras (end-to-end)
 - [ ] Verificar Gmail Token Refresh funciona 100%
 - [ ] Verificar subida masiva agrupa ARIAKA correctamente
-- [x] **Deploy completado**: ComprasContext con historial + KPIs + registro persistente entre tabs. Commits `e53bbf7`, `135cdf1`. Deploy mi3-frontend (`u127n9y02yoglkfr6a9cvwt0`) ✅
 - [x] **Resolver duplicado Dafne**: migrados 16 turnos + 4 checklists de id=12 → id=18 (user\_id=164). id=12 desactivado, 0 referencias restantes.
 - [x] **Deploy pendiente**: Fix nómina dashboard admin — `DashboardController.php` usa `NominaService`. Commit `c68a96b`, deploy `cs1pqigqq5qz1lzc0vlsfd6c` ✅
 
@@ -83,6 +81,19 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-14c — Fix checklist turno nocturno + compras metodo_pago enum
+
+**Cambios:**
+- Backend `ChecklistService`: entre 00:00-06:00 incluye checklists del día anterior (turno nocturno cruzando medianoche). Removido filtro `whereIn('rol')` redundante.
+- Backend `ChecklistController`: creación on-demand si worker tiene turno pero no checklists (cron no corrió o falló)
+- Frontend `checklist/page.tsx`: filtro cierre ajustado — visible 00:00-06:00 (turno activo) y después de 18:00
+- Backend `CompraController`: validación `in:` para `tipo_compra`/`metodo_pago` + logging de errores
+- Frontend `registro/page.tsx`: `debit`→`card` para coincidir con enum BD
+- BD: eliminado checklist corrupto id=188 (personal_id NULL)
+
+**Commits:** `b15e673`
+**Deploys:** mi3-frontend (`n14a8g0w5zya1borh7gamaxy`) ✅, mi3-backend (`z9sllvbx1fm1p97u5vhxjgzp`) ✅
 
 ### 2026-04-14b — IA báscula feria + equivalencias empaque + modal foto + feedback visible
 
@@ -121,19 +132,7 @@
 **Commits:** `913b5ec`
 **Deploys:** mi3-frontend (`w12zr84j`) ✅, mi3-backend (`gzzz0xjz`) ✅, app3 (`i11hjswn`) ✅, caja3 (`hze31et0`) ✅
 
-### 2026-04-13ad — Stock interactivo + UX registro compras + proveedores unificados
-
-**Cambios:**
-- Backend: `PATCH /stock/{id}` para editar stock/mínimo, `POST /stock/consumir` para registrar consumo con inventory_transaction
-- Frontend stock: botones editar/consumir por tarjeta, checkbox por item y categoría, consumo en lote
-- Frontend registro: proveedor con búsqueda smart/autocomplete, selector de unidad (kg/unidad/litro/g/ml), inputs sin "0" por defecto
-- `comprasApi`: método `patch` agregado
-- BD: proveedores unificados en `compras` e `ingredients` (Ariztía, Jumbo, Abastible, Agro Santa María, etc.)
-
-**Commits:** `aaaea60`, `59ee8a4`
-**Deploys:** mi3-frontend (`tkgutxb1b2o4tjjl9eeq7c1w`) ✅, mi3-backend (`cgc94ihlo1rih6v7mbii7xhv`) ✅
-
 ---
 
-> Sesiones anteriores (141 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (142 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
