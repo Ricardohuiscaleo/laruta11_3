@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`43323cf`) |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2d50f13`) |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`200f2ce`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -91,9 +91,10 @@
 - `ExtraccionController`: Cencosud/Jumbo/Santa Isabel en patrones conocidos.
 - `getChecklistsAdmin`: shift-day solo cuando fecha=hoy Y 00:00-04:00.
 - BD: Jumbo y Santa Isabel en `supplier_index` con RUT 81.201.000-K.
+- Frontend: badge naranja 🏷️ con `notas_descuento` visible en items extraídos. Tipo `RegistroItem` actualizado.
 
-**Commits:** `cce9b31`, `bd69617`, `894a957`, `200f2ce`
-**Deploys:** mi3-backend (`j60rz0cu49d5pj60mmgx3mgf`) ✅
+**Commits:** `cce9b31`, `bd69617`, `894a957`, `200f2ce`, `2d50f13`
+**Deploys:** mi3-backend (`j60rz0cu49d5pj60mmgx3mgf`) ✅, mi3-frontend (`z8mvpf6x0miwtdwmuy20j1h0`) ✅
 
 ### 2026-04-14c — Fix checklist turno nocturno + shift-day logic alineada con caja3
 
