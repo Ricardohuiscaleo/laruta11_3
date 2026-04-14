@@ -181,6 +181,7 @@ export default function RegistroPage() {
             precio_unitario: item.precio_unitario || 0,
             subtotal: item.subtotal || (item.cantidad || 0) * (item.precio_unitario || 0),
             empaque_detalle: item.empaque_detalle || null,
+            notas_descuento: item.notas_descuento || null,
             match_score: sug.score,
             match_name: m.name,
           };
@@ -191,6 +192,7 @@ export default function RegistroPage() {
           unidad: item.unidad || 'unidad', precio_unitario: item.precio_unitario || 0,
           subtotal: item.subtotal || (item.cantidad || 0) * (item.precio_unitario || 0),
           empaque_detalle: item.empaque_detalle || null,
+          notas_descuento: item.notas_descuento || null,
           match_score: sug?.score, match_name: sug?.match?.name,
         };
       });
@@ -454,6 +456,7 @@ export default function RegistroPage() {
                         {/* Match + empaque info */}
                         <div className="flex flex-wrap gap-2 mt-1">
                           {item.empaque_detalle && <span className="text-xs text-blue-600">📦 {item.empaque_detalle}</span>}
+                          {item.notas_descuento && <span className="text-xs text-orange-600">🏷️ {item.notas_descuento}</span>}
                           {item.ingrediente_id && <span className="text-xs text-green-600">✅ {item.match_name} ({Math.round(item.match_score || 0)}%)</span>}
                           {!item.ingrediente_id && !item.product_id && item.match_name && (
                             <span className="text-xs text-amber-600">⚠️ {item.match_name} ({Math.round(item.match_score || 0)}%)</span>

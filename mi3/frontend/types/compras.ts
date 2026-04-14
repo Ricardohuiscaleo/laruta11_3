@@ -160,6 +160,7 @@ export interface RegistroItem {
   precio_unitario: number;
   subtotal: number;
   empaque_detalle?: string | null;
+  notas_descuento?: string | null;
   match_score?: number;
   match_name?: string;
 }
