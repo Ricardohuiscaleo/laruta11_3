@@ -24,7 +24,7 @@ export default function RendicionPublicPage({ params }: { params: { token: strin
   const [observaciones, setObservaciones] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-  const [photoModal, setPhotoModal] = useState<string | null>(null);
+  const [photoModal, setPhotoModal] = useState<{ imgs: string[]; idx: number } | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -34,6 +34,18 @@ export default function RendicionPublicPage({ params }: { params: { token: strin
       .catch(() => setError('Error de conexión'))
       .finally(() => setLoading(false));
   }, [params.token]);
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!photoModal) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') setPhotoModal(p => p && p.idx < p.imgs.length - 1 ? { ...p, idx: p.idx + 1 } : p);
+      if (e.key === 'ArrowLeft')  setPhotoModal(p => p && p.idx > 0 ? { ...p, idx: p.idx - 1 } : p);
+      if (e.key === 'Escape') setPhotoModal(null);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [photoModal]);
 
   const handleAprobar = async () => {
     if (!monto || parseFloat(monto) < 0) return;
@@ -228,9 +240,14 @@ export default function RendicionPublicPage({ params }: { params: { token: strin
               {c.imagenes.length > 0 && (
                 <div className="flex gap-2 overflow-x-auto pt-2">
                   {c.imagenes.map((url, k) => (
-                    <button key={k} onClick={() => setPhotoModal(url)}
+                    <button key={k} onClick={() => setPhotoModal({ imgs: c.imagenes, idx: k })}
                       className="relative h-16 w-16 flex-shrink-0 rounded-lg border overflow-hidden hover:ring-2 hover:ring-blue-400">
                       <img src={url} alt={`Foto ${k + 1}`} className="h-full w-full object-cover" />
+                      {c.imagenes.length > 1 && k === 0 && (
+                        <span className="absolute bottom-0.5 right-0.5 bg-black/60 text-white text-[9px] rounded px-1">
+                          1/{c.imagenes.length}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -324,17 +341,74 @@ export default function RendicionPublicPage({ params }: { params: { token: strin
         </div>
       )}
 
-      {/* Photo modal */}
-      {photoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setPhotoModal(null)}>
-          <div className="relative max-h-[90vh] max-w-[90vw]">
-            <button onClick={() => setPhotoModal(null)} className="absolute -right-2 -top-2 z-10 rounded-full bg-white p-1.5 shadow-lg">
-              <X className="h-5 w-5" />
-            </button>
-            <img src={photoModal} alt="Respaldo" className="max-h-[85vh] rounded-lg object-contain" style={{ imageOrientation: 'from-image' }} />
+      {/* Photo lightbox */}
+      {photoModal && (() => {
+        const { imgs, idx } = photoModal;
+        const hasPrev = idx > 0;
+        const hasNext = idx < imgs.length - 1;
+        return (
+          <div
+            className="fixed inset-0 z-50 flex flex-col bg-black"
+            onClick={() => setPhotoModal(null)}
+          >
+            {/* Top bar */}
+            <div className="flex items-center justify-between px-4 py-3" onClick={e => e.stopPropagation()}>
+              <span className="text-white text-sm font-medium">{idx + 1} / {imgs.length}</span>
+              <button onClick={() => setPhotoModal(null)} className="rounded-full bg-white/10 p-2 hover:bg-white/20 transition-colors">
+                <X className="h-5 w-5 text-white" />
+              </button>
+            </div>
+
+            {/* Main image area with nav arrows */}
+            <div className="flex-1 flex items-center justify-center relative" onClick={e => e.stopPropagation()}>
+              {/* Prev arrow */}
+              {hasPrev && (
+                <button
+                  onClick={() => setPhotoModal({ imgs, idx: idx - 1 })}
+                  className="absolute left-2 z-10 rounded-full bg-black/50 p-2.5 hover:bg-black/70 transition-colors"
+                >
+                  <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                </button>
+              )}
+
+              <img
+                src={imgs[idx]}
+                alt={`Foto ${idx + 1}`}
+                className="max-h-full max-w-full object-contain"
+                style={{ imageOrientation: 'from-image' }}
+                onClick={e => e.stopPropagation()}
+              />
+
+              {/* Next arrow */}
+              {hasNext && (
+                <button
+                  onClick={() => setPhotoModal({ imgs, idx: idx + 1 })}
+                  className="absolute right-2 z-10 rounded-full bg-black/50 p-2.5 hover:bg-black/70 transition-colors"
+                >
+                  <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                </button>
+              )}
+            </div>
+
+            {/* Thumbnail strip */}
+            {imgs.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto px-4 py-3 justify-center" onClick={e => e.stopPropagation()}>
+                {imgs.map((url, k) => (
+                  <button
+                    key={k}
+                    onClick={() => setPhotoModal({ imgs, idx: k })}
+                    className={`flex-shrink-0 h-14 w-14 rounded-lg overflow-hidden border-2 transition-all ${
+                      k === idx ? 'border-white opacity-100 scale-105' : 'border-transparent opacity-50 hover:opacity-75'
+                    }`}
+                  >
+                    <img src={url} alt={`Foto ${k + 1}`} className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
