@@ -230,6 +230,9 @@ FORMATO B (Unimarc/Rendic): cantidad DEBAJO del producto
    - Si NO hay línea de desglose, la cantidad es 1.
    - Extraer CADA producto como un item separado con su subtotal correcto.
    - "SAL LOBOS BOLSA 1 $590" = 1 unidad de sal a $590 (NO confundir con el precio de otro producto).
+   - Al final de la boleta dice "Total items: N" — verifica que extraigas exactamente N items.
+   - La SUMA de todos los subtotales debe coincidir con el TOTAL de la boleta. Si no coincide, revisa que no hayas fusionado o saltado productos.
+   - NUNCA fusiones dos productos en uno. Cada código de barras = 1 item independiente.
 
 3. Líneas de descuento JUSTO DEBAJO: "OFERTA SEMANA -1.876", "DESCTO CONVENI -118"
 4. SUB TOTAL / TOTAL: resumen fiscal
