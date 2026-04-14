@@ -49,21 +49,21 @@
 
 - [x] **Actualizar `checklist_templates`** — overhaul completo con rol explícito, fotos separadas, prompts IA.
 - [x] **Corregir caja3 `get_turnos.php`** — obsoleto, turnos ahora gestionados por mi3.
-- [ ] **Generar turnos mayo** en producción
-- [ ] **Fix push subscriptions duplicadas** en `push_subscriptions_mi3` (44 registros para 1 usuario)
+- [x] **Generar turnos mayo** — automático via cron `mi3:generate-shifts` (monthlyOn 25).
+- [x] **Fix push subscriptions duplicadas** — reparado.
 - [x] **Spec fix-sessiones**: COMPLETADO. 8 bugs auth resueltos. Sesiones sobreviven redeploys.
 - [x] **Fix duplicate entry turnos** — `updateOrCreate` en ShiftController + ShiftSwapService. ✅
 
 ### 🟡 Verificaciones pendientes
 
-- [ ] Verificar upload S3 en compras (end-to-end)
-- [ ] Verificar Gmail Token Refresh funciona 100%
-- [x] Verificar subida masiva agrupa ARIAKA correctamente — sistema de compras IA completamente reescrito, ARIAKA se agrupa correctamente.
+- [x] Verificar upload S3 en compras — funciona correctamente.
+- [x] Verificar Gmail Token Refresh — funciona correctamente.
+- [x] Verificar subida masiva agrupa ARIAKA correctamente — sistema de compras IA completamente reescrito.
 
 ### 🟢 Mejoras futuras
 
-- [ ] Obtener chat_id del grupo "Pedidos 11" para notificaciones de caja
-- [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3 con nueva arquitectura.
+- [x] Obtener chat_id del grupo "Pedidos 11" — no aplica, flujo directo al bot de Telegram configurado.
+- [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3.
 - [ ] Recalcular delivery\_fee server-side en `create_order.php`
 - [ ] Unificar factor descuento RL6 en caja3 (0.6 vs 0.7143)
 
