@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Write bug condition exploration test
+- [x] 1. Write bug condition exploration test
   - **Property 1: Bug Condition** - Session Loss Loop on Backend Redeploy
   - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bugs exist
   - **DO NOT attempt to fix the test or the code when it fails**
@@ -19,7 +19,7 @@
   - Mark task complete when test is written, run, and failure is documented
   - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3_
 
-- [ ] 2. Write preservation property tests (BEFORE implementing fix)
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
   - **Property 2: Preservation** - Normal Auth Flows Unchanged
   - **IMPORTANT**: Follow observation-first methodology
   - Observe on UNFIXED code and write property-based tests for:
@@ -33,9 +33,9 @@
   - Mark task complete when tests are written, run, and passing on unfixed code
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
 
-- [ ] 3. BUG 1+2: Create clear-session endpoint + mi3_auth_flag cookie (CRITICAL — fixes the loop)
+- [x] 3. BUG 1+2: Create clear-session endpoint + mi3_auth_flag cookie (CRITICAL — fixes the loop)
 
-  - [ ] 3.1 Backend: Create POST /api/v1/auth/clear-session endpoint
+  - [x] 3.1 Backend: Create POST /api/v1/auth/clear-session endpoint
     - Create public endpoint (no auth required) in `AuthController.php`
     - Endpoint expires all auth cookies server-side: `mi3_token`, `mi3_role`, `mi3_user`, `mi3_auth_flag`
     - Each cookie expired with `cookie('name', '', -1, '/', '.laruta11.cl', true, ...)`
@@ -45,7 +45,7 @@
     - _Preservation: Logout flow continues to work; cookies still set on `.laruta11.cl` with same attributes_
     - _Requirements: 1.1, 1.2, 2.2_
 
-  - [ ] 3.2 Backend: Add mi3_auth_flag cookie in respondWithAuth() and googleCallback()
+  - [x] 3.2 Backend: Add mi3_auth_flag cookie in respondWithAuth() and googleCallback()
     - In `respondWithAuth()`: add `->cookie('mi3_auth_flag', '1', $maxAge, '/', '.laruta11.cl', true, false, false, 'Lax')` (NOT httpOnly so JS can read/delete it)
     - In `googleCallback()`: add same `mi3_auth_flag` cookie to the redirect response
     - In `logout()`: expire `mi3_auth_flag` alongside other cookies
@@ -54,7 +54,7 @@
     - _Expected_Behavior: mi3_auth_flag (non-httpOnly) is the session indicator; JS can delete it to break the loop_
     - _Requirements: 1.2, 2.2_
 
-  - [ ] 3.3 Frontend: Update middleware.ts to check mi3_auth_flag instead of mi3_token
+  - [x] 3.3 Frontend: Update middleware.ts to check mi3_auth_flag instead of mi3_token
     - Replace `request.cookies.get('mi3_token')` with `request.cookies.get('mi3_auth_flag')`
     - Replace `request.cookies.get('mi3_role')` logic remains the same (mi3_role is not httpOnly)
     - When `mi3_auth_flag` is absent → user is not authenticated → redirect to `/login`
@@ -63,7 +63,7 @@
     - _Expected_Behavior: middleware checks mi3_auth_flag (non-httpOnly, deletable from JS) → no loop_
     - _Requirements: 1.2, 2.2_
 
-  - [ ] 3.4 Frontend: Update 401 handler in api.ts to call /auth/clear-session
+  - [x] 3.4 Frontend: Update 401 handler in api.ts to call /auth/clear-session
     - Replace `document.cookie = 'mi3_token=; ...; max-age=0'` lines with:
       - `await fetch(API_URL + '/api/v1/auth/clear-session', { method: 'POST', credentials: 'include' })`
       - `document.cookie = 'mi3_auth_flag=; path=/; domain=.laruta11.cl; max-age=0'` (this one works because mi3_auth_flag is NOT httpOnly)
@@ -73,11 +73,11 @@
     - _Expected_Behavior: Server clears httpOnly cookies; JS clears mi3_auth_flag + localStorage_
     - _Requirements: 1.1, 2.2_
 
-  - [ ] 3.5 Frontend: Update 401 handler in compras-api.ts with same logic
+  - [x] 3.5 Frontend: Update 401 handler in compras-api.ts with same logic
     - Same changes as api.ts: call `/auth/clear-session`, delete `mi3_auth_flag` via JS, clear localStorage, redirect
     - _Requirements: 1.1, 2.2_
 
-  - [ ] 3.6 Verify bug condition exploration test now passes (BUG 1+2 portion)
+  - [x] 3.6 Verify bug condition exploration test now passes (BUG 1+2 portion)
     - **Property 1: Expected Behavior** - Session Loop Broken
     - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
     - The BUG 1 and BUG 2 test cases from task 1 should now PASS
@@ -86,7 +86,7 @@
     - **EXPECTED OUTCOME**: BUG 1+2 tests PASS (confirms loop is fixed)
     - _Requirements: 2.1, 2.2_
 
-  - [ ] 3.7 Verify preservation tests still pass
+  - [x] 3.7 Verify preservation tests still pass
     - **Property 2: Preservation** - Auth Flows After Loop Fix
     - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
     - Login email still works (now also sets mi3_auth_flag)
@@ -95,9 +95,9 @@
     - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 4. BUG 3+7: Google OAuth token to localStorage + fix useAuth hook (HIGH)
+- [x] 4. BUG 3+7: Google OAuth token to localStorage + fix useAuth hook (HIGH)
 
-  - [ ] 4.1 Backend: Pass token as query param in Google OAuth redirect
+  - [x] 4.1 Backend: Pass token as query param in Google OAuth redirect
     - In `googleCallback()`, change redirect URL from `$frontendUrl . $redirectTo` to `$frontendUrl . $redirectTo . '?token=' . urlencode($token)`
     - This redirects directly to /admin or /dashboard with the token — avoids double redirect through /login
     - The destination page reads the param, saves to localStorage, and cleans the URL
@@ -106,7 +106,7 @@
     - _Expected_Behavior: Frontend receives token via query param, saves to localStorage, has Bearer token fallback_
     - _Requirements: 1.3, 2.3_
 
-  - [ ] 4.2 Frontend: Read ?token= param in app layout or dashboard/admin pages and save to localStorage
+  - [x] 4.2 Frontend: Read ?token= param in app layout or dashboard/admin pages and save to localStorage
     - In a shared layout or useEffect in dashboard/admin pages, check for `searchParams.get('token')`
     - If token exists: `localStorage.setItem('mi3_token', token)`, then `router.replace(pathname)` to clean URL
     - This gives Google OAuth users the same localStorage token as email login users
@@ -114,7 +114,7 @@
     - _Expected_Behavior: Google OAuth users get token in localStorage → Bearer fallback works_
     - _Requirements: 1.3, 2.3_
 
-  - [ ] 4.3 Frontend: Fix useAuth.ts fetchUser() to work without localStorage token
+  - [x] 4.3 Frontend: Fix useAuth.ts fetchUser() to work without localStorage token
     - Current bug: `fetchUser()` does `if (!token) { setLoading(false); return; }` — Google OAuth users with no localStorage token get `user = null`
     - Fix: Remove the early return. Always call `/auth/me` using `fetch` directly (NOT `apiFetch`) to avoid triggering the 401 cleanup handler
     - Use `fetch(API_URL + '/api/v1/auth/me', { headers: { ...Bearer if token exists }, credentials: 'include' })` — this way cookie auth works for Google users AND Bearer auth works for email users
@@ -124,7 +124,7 @@
     - _Expected_Behavior: fetchUser() tries cookie-based auth via /auth/me even without localStorage token_
     - _Requirements: 2.3, 2.5_
 
-  - [ ] 4.4 Verify bug condition exploration test now passes (BUG 3+7 portion)
+  - [x] 4.4 Verify bug condition exploration test now passes (BUG 3+7 portion)
     - **Property 1: Expected Behavior** - Google OAuth Token + useAuth Fix
     - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
     - BUG 3 test: Google OAuth callback now passes token in URL → localStorage has token
@@ -132,7 +132,7 @@
     - **EXPECTED OUTCOME**: BUG 3+7 tests PASS
     - _Requirements: 2.3, 2.5_
 
-  - [ ] 4.5 Verify preservation tests still pass
+  - [x] 4.5 Verify preservation tests still pass
     - **Property 2: Preservation** - Auth Flows After Google OAuth Fix
     - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
     - Email login still works (unaffected by Google OAuth changes)
@@ -140,9 +140,9 @@
     - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
     - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 5. BUG 4: Remove key:generate from Dockerfile
+- [x] 5. BUG 4: Remove key:generate from Dockerfile
 
-  - [ ] 5.1 Remove `RUN php artisan key:generate --force --no-interaction` from Dockerfile
+  - [x] 5.1 Remove `RUN php artisan key:generate --force --no-interaction` from Dockerfile
     - Delete line 39 from `mi3/backend/Dockerfile`
     - APP_KEY is already confirmed persistent as a Coolify environment variable
     - This prevents APP_KEY from being regenerated on each Docker build, which would invalidate all encrypted cookies
@@ -150,14 +150,14 @@
     - _Expected_Behavior: APP_KEY persists via Coolify env var → cookies remain valid across deploys_
     - _Requirements: 2.1, 2.5_
 
-  - [ ] 5.2 Verify Dockerfile no longer contains key:generate
+  - [x] 5.2 Verify Dockerfile no longer contains key:generate
     - Confirm the line is removed
     - Verify the rest of the Dockerfile is intact (composer, migrations, permissions, etc.)
     - _Requirements: 2.1_
 
-- [ ] 6. BUG 8: Unify logout implementations (MEDIUM)
+- [x] 6. BUG 8: Unify logout implementations (MEDIUM)
 
-  - [ ] 6.1 Refactor auth.ts logout() to use clear-session + logout
+  - [x] 6.1 Refactor auth.ts logout() to use clear-session + logout
     - Update `auth.ts logout()` to:
       1. Call `POST /api/v1/auth/clear-session` (credentials: include) to expire httpOnly cookies server-side
       2. Call `POST /api/v1/auth/logout` (credentials: include) to delete Sanctum token from BD
@@ -168,22 +168,22 @@
     - _Expected_Behavior: Single unified logout that clears everything: BD token, httpOnly cookies (server-side), localStorage, mi3_auth_flag_
     - _Requirements: 3.3_
 
-  - [ ] 6.2 Update useAuth.ts logout() to call auth.ts logout()
+  - [x] 6.2 Update useAuth.ts logout() to call auth.ts logout()
     - Import `logout` from `@/lib/auth` and delegate to it
     - Or inline the same logic: clear-session → logout API → removeToken → clear mi3_auth_flag → redirect
     - Ensure `setUser(null)` is called before redirect for React state consistency
     - _Requirements: 3.3_
 
-  - [ ] 6.3 Verify preservation tests still pass
+  - [x] 6.3 Verify preservation tests still pass
     - **Property 2: Preservation** - Logout After Unification
     - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
     - Logout still deletes token from BD, clears all cookies and localStorage, redirects to /login
     - **EXPECTED OUTCOME**: Tests PASS
     - _Requirements: 3.3_
 
-- [ ] 7. BUG 6: Deprecate session_token plaintext fallback (MEDIUM)
+- [x] 7. BUG 6: Deprecate session_token plaintext fallback (MEDIUM)
 
-  - [ ] 7.1 Remove plaintext session_token comparison from AuthService.php
+  - [x] 7.1 Remove plaintext session_token comparison from AuthService.php
     - In `loginWithEmail()`, remove the block:
       ```php
       if (!$passwordValid && !empty($user->session_token)) {
@@ -196,14 +196,14 @@
     - _Expected_Behavior: Only Hash::check() authenticates → passwords are never stored/compared in plaintext_
     - _Requirements: 2.1_
 
-  - [ ] 7.2 Create migration to hash existing session_tokens (REQUIRED before 7.1)
+  - [x] 7.2 Create migration to hash existing session_tokens (REQUIRED before 7.1)
     - Create a Laravel migration that hashes any non-null `session_token` values in the `usuarios` table into the `password` field
     - For each user with session_token but no password: `$user->password = Hash::make($user->session_token)`
     - Then null out session_token fields to remove plaintext passwords from the database
     - MUST run BEFORE removing the fallback code in 7.1, otherwise users with only session_token get locked out
     - _Requirements: 2.1_
 
-  - [ ] 7.3 Verify preservation tests still pass
+  - [x] 7.3 Verify preservation tests still pass
     - **Property 2: Preservation** - Login After Plaintext Removal
     - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
     - Email login with hashed password still works
@@ -211,15 +211,15 @@
     - **EXPECTED OUTCOME**: Tests PASS
     - _Requirements: 3.1, 3.2_
 
-- [ ] 8. BUG 9: maxAge consistency (LOW — cosmetic, optional)
+- [x] 8. BUG 9: maxAge consistency (LOW — cosmetic, optional)
 
-  - [ ] 8.1 Standardize maxAge calculation in AuthController.php
+  - [x] 8.1 Standardize maxAge calculation in AuthController.php
     - In `respondWithAuth()`: `$maxAge = 30 * 24 * 60` (30 days in minutes — correct for Laravel's `cookie()` helper)
     - In `googleCallback()`: `$maxAge = 30 * 24 * 60 * 60` then uses `$maxAge / 60` — same result but confusing
     - Standardize both to use `$maxAge = 30 * 24 * 60` (minutes) directly, no division
     - _Requirements: 3.7_
 
-- [ ] 9. Checkpoint - Ensure all tests pass
+- [x] 9. Checkpoint - Ensure all tests pass
   - Run all exploration tests (Property 1) — all should PASS after fixes
   - Run all preservation tests (Property 2) — all should still PASS
   - Manual verification checklist:

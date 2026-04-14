@@ -47,41 +47,38 @@
 
 ### 🔴 Críticas (afectan producción)
 
-- [x] **Actualizar `checklist_templates`** — overhaul completo: 23 templates nuevos con rol explícito (cajero/planchero), fotos planchero separadas (plancha+freidora / lavaplatos+mesón), prompts IA combinados. Cron legacy caja3 desactivado.
-- [ ] **Corregir caja3 `get_turnos.php`** base date cajero (2026-02-01 → 2026-02-02)
+- [x] **Actualizar `checklist_templates`** — overhaul completo con rol explícito, fotos separadas, prompts IA.
+- [x] **Corregir caja3 `get_turnos.php`** — obsoleto, turnos ahora gestionados por mi3.
 - [ ] **Generar turnos mayo** en producción
 - [ ] **Fix push subscriptions duplicadas** en `push_subscriptions_mi3` (44 registros para 1 usuario)
 - [x] **Spec fix-sessiones**: COMPLETADO. 8 bugs auth resueltos. Sesiones sobreviven redeploys.
-- [x] **Fix duplicate entry turnos** — `updateOrCreate` en ShiftController + ShiftSwapService. Commit `dbe82f8`, deploy `t122hofnf31hazga6zzr5e5v` ✅
+- [x] **Fix duplicate entry turnos** — `updateOrCreate` en ShiftController + ShiftSwapService. ✅
 
 ### 🟡 Verificaciones pendientes
 
-- [x] **Ajustes muestra IDs en vez de nombres** — fix: map personal_nombre en AdjustmentController
-- [x] **Inasistencias automáticas $40.000** — falsos positivos confirmados (código viejo pre-fix D-1). Eliminados ajustes ids 24,27 de Andrés Aguilera. Cron `dailyAt('02:00')` + D-1 fix funcionando correctamente
-- [x] **Nómina vacía** — fix: PayrollController transforma {ruta11,seguridad} → {resumen,centros}. Commit `985ea06`, deploy `z12naxr` ✅
-- [x] **Editar trabajadores: "validation.array"** — fix: rol string→array en personal/page.tsx
-- [x] **Deploy pendiente**: `foto_url` en `personal` — committeado y deployado en 75e15b0
-- [x] **Rotate foto 500** — fix: `use Illuminate\Http\Request` en PersonalController. Commit `5e0dab8`, deploy `985ea06` ✅
-- [x] Verificar prompts IA planchero dan feedback correcto (plancha/lavaplatos/mesón) — prompts actualizados: `plancha_*`, `lavaplatos_meson_*` combinados
 - [ ] Verificar upload S3 en compras (end-to-end)
 - [ ] Verificar Gmail Token Refresh funciona 100%
-- [ ] Verificar subida masiva agrupa ARIAKA correctamente
-- [x] **Resolver duplicado Dafne**: migrados 16 turnos + 4 checklists de id=12 → id=18 (user\_id=164). id=12 desactivado, 0 referencias restantes.
-- [x] **Deploy pendiente**: Fix nómina dashboard admin — `DashboardController.php` usa `NominaService`. Commit `c68a96b`, deploy `cs1pqigqq5qz1lzc0vlsfd6c` ✅
+- [x] Verificar subida masiva agrupa ARIAKA correctamente — sistema de compras IA completamente reescrito, ARIAKA se agrupa correctamente.
 
 ### 🟢 Mejoras futuras
 
-- [x] **Sistema de Rendiciones**: Implementado. Tabla `rendiciones`, página pública /rendicion/{token}, saldo encadenado, 250 compras históricas marcadas como rendidas, saldo actual $68.899
-- [x] Tareas generadas por IA desde fotos de checklist (si score < 50 → tarea automática) — implementado: `checklist_ai_tasks`, escalamiento a 3 detecciones, tab Test IA
-- [x] **Verificar saldo en caja interactivo** — implementado: item_type cash_verification, tarjeta interactiva Sí/No, notificaciones via @laruta11_bot + push. Commit `7eb206d`
-- [ ] Obtener chat_id del grupo "Pedidos 11" para notificaciones de caja (actualmente usa chat personal)
-- [ ] Ejecutar migraciones `checklists_v2` en producción (spec existe pero tabla no)
-- [ ] Recalcular delivery\_fee server-side en `create_order.php` (actualmente confía en frontend)
+- [ ] Obtener chat_id del grupo "Pedidos 11" para notificaciones de caja
+- [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3 con nueva arquitectura.
+- [ ] Recalcular delivery\_fee server-side en `create_order.php`
 - [ ] Unificar factor descuento RL6 en caja3 (0.6 vs 0.7143)
 
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-14h — Spec fix-sessiones: Task 1 — tests de exploración de bugs creados
+
+**Cambios:**
+- Creado `mi3/frontend/lib/__tests__/bug-exploration.test.ts` — 14 tests PBT (fast-check) cubriendo BUG 1, 2, 3, 7, 8. Tests pasaron porque el código ya estaba fixeado en commits anteriores. Sirven como tests de regresión.
+- `vitest.config.ts` ya existía (confirmado).
+
+**Commits:** ninguno nuevo
+**Deploys:** ninguno
 
 ### 2026-04-14g — Spec fix-sessiones: Tasks 3+4+5 ejecutadas (auth loop fix)
 
