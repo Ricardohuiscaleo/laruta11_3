@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Check, X, Clock, Loader2 } from 'lucide-react';
+import { Check, X, Clock, Loader2, Share2 } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-CL');
@@ -25,6 +25,7 @@ export default function RendicionPublicPage({ params }: { params: { token: strin
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [photoModal, setPhotoModal] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetch(`${API}/api/v1/rendicion/${params.token}`, { headers: { Accept: 'application/json' } })
@@ -71,14 +72,66 @@ export default function RendicionPublicPage({ params }: { params: { token: strin
   const exactoRedondeado = saldoNegativo ? roundUp(deuda, 1000) : 0;
   const smart = saldoNegativo ? roundUp(deuda + 100000, 10000) : roundUp(100000, 10000);
 
+  const buildWhatsAppMsg = () => {
+    const url = `https://mi.laruta11.cl/rendicion/${params.token}`;
+    const fecha = new Date(rendicion.created_at).toLocaleDateString('es-CL');
+    const estado = rendicion.estado === 'pendiente' ? '🟡 Pendiente de aprobación' : rendicion.estado === 'aprobada' ? '✅ Aprobada' : '❌ Rechazada';
+    const deudaLine = saldoNegativo
+      ? `⚠️ *Transferir: ${fmt(deuda)}*`
+      : `✅ A favor: *${fmt(rendicion.saldo_resultante)}*`;
+    return [
+      `📊 *RENDICIÓN DE GASTOS — La Ruta 11*`,
+      `📅 ${fecha}  |  ${estado}`,
+      `━━━━━━━━━━━━━━━━━━━━`,
+      `💰 Saldo anterior: *${fmt(rendicion.saldo_anterior)}*`,
+      `🛒 Total compras: *${fmt(rendicion.total_compras)}* (${compras.length} compra${compras.length !== 1 ? 's' : ''})`,
+      deudaLine,
+      `━━━━━━━━━━━━━━━━━━━━`,
+      `🔗 Ver detalle y aprobar:`,
+      url,
+    ].join('\n');
+  };
+
+  const handleShare = async () => {
+    const msg = buildWhatsAppMsg();
+    try {
+      if (navigator.share) {
+        await navigator.share({ text: msg });
+      } else {
+        await navigator.clipboard.writeText(msg);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      }
+    } catch {
+      await navigator.clipboard.writeText(msg);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    }
+  };
+
   return (
     /* Full-width container with only 4px horizontal margin */
     <div style={{ maxWidth: '100%', padding: '0 4px', paddingBottom: '24px' }} className="space-y-2">
 
       {/* Header */}
-      <div className="text-center py-3">
+      <div className="text-center py-3 relative">
         <h1 className="text-xl font-bold text-gray-900">📋 Rendición de Gastos</h1>
-        <p className="text-xs text-gray-400 mt-1">La Ruta 11 — {new Date(rendicion.created_at).toLocaleDateString('es-CL')}</p>
+        <div className="inline-flex items-center gap-1.5 mt-1">
+          <p className="text-xs text-gray-400">La Ruta 11 — {new Date(rendicion.created_at).toLocaleDateString('es-CL')}</p>
+          <button
+            onClick={handleShare}
+            title="Compartir por WhatsApp"
+            className="inline-flex items-center justify-center h-5 w-5 rounded-full text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        {/* Copied toast */}
+        {copied && (
+          <div className="absolute left-1/2 -translate-x-1/2 mt-1 px-3 py-1 rounded-full bg-gray-800 text-white text-[11px] whitespace-nowrap shadow-lg animate-fade-in">
+            ✅ Mensaje copiado
+          </div>
+        )}
       </div>
 
       {/* Status */}
