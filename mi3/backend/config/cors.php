@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'paths' => ['api/*'],
+    'paths' => ['api/*', 'broadcasting/*'],
     'allowed_methods' => ['*'],
     'allowed_origins' => [
         'https://mi.laruta11.cl',
