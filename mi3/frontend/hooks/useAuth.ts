@@ -52,10 +52,17 @@ export function useAuth() {
 
   const logout = async () => {
     try {
-      await apiFetch('/auth/logout', { method: 'POST' });
+      // Clear httpOnly cookies server-side
+      await fetch(`${API_URL}/api/v1/auth/clear-session`, { method: 'POST', credentials: 'include' });
+      await fetch(`${API_URL}/api/v1/auth/logout`, { method: 'POST', credentials: 'include' });
+    } catch {
+      // Silently fail — still clear local state
     } finally {
       removeToken();
       setUser(null);
+      if (typeof document !== 'undefined') {
+        document.cookie = 'mi3_auth_flag=; path=/; domain=.laruta11.cl; max-age=0';
+      }
     }
   };
 

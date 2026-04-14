@@ -28,10 +28,6 @@ class AuthService
             $passwordValid = Hash::check($password, $user->password);
         }
 
-        if (!$passwordValid && !empty($user->session_token)) {
-            $passwordValid = $user->session_token === $password;
-        }
-
         if (!$passwordValid) {
             return ['success' => false, 'error' => 'Credenciales inválidas', 'status' => 401];
         }

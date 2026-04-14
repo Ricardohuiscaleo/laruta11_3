@@ -141,9 +141,9 @@ class AuthController extends Controller
         $token = $result['token'];
         $user = $result['user'];
         $role = $user['is_admin'] ? 'admin' : 'worker';
-        $maxAge = 30 * 24 * 60 * 60; // 30 days
+        $maxAge = 30 * 24 * 60; // 30 days in minutes (consistent with respondWithAuth)
+        $maxAgeMins = $maxAge;
         $redirectTo = $user['is_admin'] ? '/admin' : '/dashboard';
-        $maxAgeMins = (int) ($maxAge / 60); // 30 days in minutes
 
         // Set httpOnly cookies and redirect to frontend with token as query param for localStorage
         return redirect()->away($frontendUrl . $redirectTo . '?token=' . urlencode($token))

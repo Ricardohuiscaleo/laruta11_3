@@ -19,6 +19,13 @@ export function removeToken(): void {
 
 export async function logout(): Promise<void> {
   try {
+    // Call clear-session first to expire httpOnly cookies server-side
+    await fetch(`${API_URL}/api/v1/auth/clear-session`, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' },
+      credentials: 'include',
+    });
+    // Then delete the Sanctum token from DB
     await fetch(`${API_URL}/api/v1/auth/logout`, {
       method: 'POST',
       headers: { 'Accept': 'application/json' },
@@ -26,7 +33,10 @@ export async function logout(): Promise<void> {
     });
   } catch {
     // Even if API fails, clear local state
+  } finally {
+    removeToken();
+    // Clear the non-httpOnly auth flag (JS can delete this)
+    document.cookie = 'mi3_auth_flag=; path=/; domain=.laruta11.cl; max-age=0';
+    window.location.href = '/login';
   }
-  removeToken();
-  window.location.href = '/login';
 }
