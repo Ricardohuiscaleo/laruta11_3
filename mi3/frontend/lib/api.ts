@@ -1,3 +1,5 @@
+import { getToken } from './auth';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 
 export async function apiFetch<T>(
@@ -5,11 +7,17 @@ export async function apiFetch<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const { headers: customHeaders, ...rest } = options;
+  const token = getToken();
 
   const headers: Record<string, string> = {
     Accept: 'application/json',
     ...((customHeaders as Record<string, string>) || {}),
   };
+
+  // Add Bearer token if available
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
 
   // Don't set Content-Type for FormData — browser sets it with boundary
   if (!(rest.body instanceof FormData)) {
@@ -18,7 +26,7 @@ export async function apiFetch<T>(
 
   const res = await fetch(`${API_URL}/api/v1${endpoint}`, {
     headers,
-    credentials: 'include', // Always send httpOnly cookies
+    credentials: 'include',
     ...rest,
   });
 

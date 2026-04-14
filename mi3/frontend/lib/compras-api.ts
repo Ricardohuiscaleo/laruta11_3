@@ -1,7 +1,15 @@
 import { ApiError } from './api';
+import { getToken } from './auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 const BASE = `${API_URL}/api/v1/admin`;
+
+function authHeaders(): Record<string, string> {
+  const token = getToken();
+  const h: Record<string, string> = { Accept: 'application/json' };
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  return h;
+}
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (res.status === 401) {
@@ -18,7 +26,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
 export const comprasApi = {
   async get<T>(path: string): Promise<T> {
     const res = await fetch(`${BASE}${path}`, {
-      headers: { Accept: 'application/json' },
+      headers: authHeaders(),
       credentials: 'include',
     });
     return handleResponse<T>(res);
@@ -27,7 +35,7 @@ export const comprasApi = {
   async post<T>(path: string, data: unknown): Promise<T> {
     const res = await fetch(`${BASE}${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify(data),
     });
@@ -37,7 +45,7 @@ export const comprasApi = {
   async upload<T>(path: string, formData: FormData): Promise<T> {
     const res = await fetch(`${BASE}${path}`, {
       method: 'POST',
-      headers: { Accept: 'application/json' },
+      headers: { ...authHeaders() },
       credentials: 'include',
       body: formData,
     });
@@ -47,7 +55,7 @@ export const comprasApi = {
   async patch<T>(path: string, data: unknown): Promise<T> {
     const res = await fetch(`${BASE}${path}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify(data),
     });
