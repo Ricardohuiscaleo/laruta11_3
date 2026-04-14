@@ -235,6 +235,7 @@ class ExtraccionController extends Controller
             'giovanna loza' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
             'ariel araya' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
             'ariel aliro araya villalobos' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
+            'karina roco' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
             // Gas (Abastible)
             'elton san martin' => ['proveedor' => 'Abastible', 'item' => 'gas 15', 'tipo_compra' => 'ingredientes'],
             'elton san martín' => ['proveedor' => 'Abastible', 'item' => 'gas 15', 'tipo_compra' => 'ingredientes'],
