@@ -1,0 +1,265 @@
+# Plan de Implementación: Delivery Tracking en Tiempo Real
+
+## Overview
+
+Implementación incremental del sistema de tracking de delivery para La Ruta 11. Prioridad: mi3-backend (Laravel 11, PHP 8.3) y mi3-frontend (Next.js 14, TypeScript). La integración con app3 y caja3 queda marcada como opcional para una fase posterior.
+
+## Tasks
+
+- [x] 1. Migraciones y modelos Eloquent (mi3-backend)
+  - [x] 1.1 Crear migración `create_rider_locations_table`
+    - Crear `mi3/backend/database/migrations/..._create_rider_locations_table.php` con el schema definido en el diseño (bigIncrements, rider_id FK → personal, latitud, longitud, precision_metros, velocidad_kmh, heading, created_at, índice compuesto rider_id+created_at)
+    - _Requirements: 7.1_
+  - [x] 1.2 Crear migración `create_delivery_assignments_table`
+    - Crear `mi3/backend/database/migrations/..._create_delivery_assignments_table.php` con el schema definido (order_id FK → tuu_orders, rider_id FK → personal, assigned_by FK → personal, timestamps nullable, enum status, notes)
+    - _Requirements: 7.2_
+  - [x] 1.3 Crear migración `create_daily_settlements_table`
+    - Crear `mi3/backend/database/migrations/..._create_daily_settlements_table.php` con el schema definido (settlement_date UNIQUE, totales, settlement_data JSON, enum status, payment_voucher_url, paid_by FK → personal, compra_id FK → compras)
+    - _Requirements: 7.3_
+  - [x] 1.4 Crear migración `add_tracking_fields_to_tuu_orders`
+    - Agregar `tracking_url`, `rider_last_lat`, `rider_last_lng` a la tabla `tuu_orders`
+    - _Requirements: 7.4, 7.5_
+  - [x] 1.5 Crear modelos Eloquent `RiderLocation`, `DeliveryAssignment`, `DailySettlement`
+    - Crear `mi3/backend/app/Models/RiderLocation.php`, `DeliveryAssignment.php`, `DailySettlement.php` con fillable, casts y relaciones definidas en el diseño
+    - _Requirements: 8.6_
+
+- [x] 2. Eventos Reverb y autorización de canales (mi3-backend)
+  - [x] 2.1 Crear evento `RiderLocationUpdated`
+    - Crear `mi3/backend/app/Events/RiderLocationUpdated.php` implementando `ShouldBroadcast`
+    - Broadcast en canales: `delivery.monitor`, `rider.{rider_id}`, y `order.{order_number}` si hay asignación activa
+    - Payload: rider_id, nombre, latitud, longitud, timestamp, pedido_asignado_id
+    - _Requirements: 6.3_
+  - [x] 2.2 Crear evento `OrderStatusUpdated`
+    - Crear `mi3/backend/app/Events/OrderStatusUpdated.php` implementando `ShouldBroadcast`
+    - Broadcast en canales: `delivery.monitor`, `order.{order_number}`
+    - Payload: order_id, order_number, order_status, rider_id, estimated_delivery_time, updated_at
+    - _Requirements: 6.4_
+  - [x] 2.3 Configurar autorización de canales privados en `routes/channels.php`
+    - Canal `delivery.monitor`: requiere `$user->esAdmin()`
+    - Canal `order.{orderNumber}`: requiere que el order_number exista en tuu_orders
+    - Canal `rider.{riderId}`: requiere que sea el rider autenticado o admin
+    - _Requirements: 6.5, 6.6_
+  - [ ]* 2.4 Escribir test de propiedad para autorización de canales (Property 7)
+    - **Property 7: Autorización de canales privados**
+    - **Validates: Requirements 6.5**
+    - Verificar que usuarios sin rol admin reciben HTTP 403 al intentar suscribirse a `delivery.monitor`
+    - Verificar que un rider no puede suscribirse al canal `rider.{otroRiderId}`
+
+- [x] 3. Servicios de negocio (mi3-backend)
+  - [x] 3.1 Crear `DeliveryService`
+    - Crear `mi3/backend/app/Services/Delivery/DeliveryService.php`
+    - Implementar: `getActiveOrders()`, `assignRider()`, `updateOrderStatus()`, `getAvailableRiders()`
+    - `assignRider()` debe crear registro en `delivery_assignments` y emitir eventos por Canal_Monitor y Canal_Rider
+    - `updateOrderStatus()` debe validar enum y emitir `OrderStatusUpdated`
+    - _Requirements: 2.2, 2.3, 2.5_
+  - [x] 3.2 Crear `LocationService`
+    - Crear `mi3/backend/app/Services/Delivery/LocationService.php`
+    - Implementar: `updateRiderLocation()` (persiste en rider_locations, actualiza rider_last_lat/lng en tuu_orders, emite RiderLocationUpdated) y `pruneOldLocations()` (mantiene solo las últimas 100)
+    - _Requirements: 4.2, 4.3, 4.6_
+  - [ ]* 3.3 Escribir test de propiedad para consistencia GPS (Property 1)
+    - **Property 1: Consistencia GPS — persistencia y broadcast**
+    - **Validates: Requirements 4.2, 6.3**
+    - Para cualquier (lat, lng) válido: verificar que se persiste en rider_locations Y se emite RiderLocationUpdated
+  - [ ]* 3.4 Escribir test de propiedad para broadcast por Canal_Pedido (Property 2)
+    - **Property 2: Broadcast por Canal_Pedido cuando hay asignación activa**
+    - **Validates: Requirements 4.3, 6.3**
+    - Para cualquier rider con DeliveryAssignment activa: verificar que RiderLocationUpdated se emite también por `order.{order_number}`
+  - [ ]* 3.5 Escribir test de propiedad para límite de posiciones GPS (Property 6)
+    - **Property 6: Límite de posiciones GPS por rider**
+    - **Validates: Requirements 4.6**
+    - Insertar 150 posiciones para un rider → COUNT en rider_locations para ese rider ≤ 100
+  - [ ]* 3.6 Escribir test de propiedad para consistencia de estado (Property 3)
+    - **Property 3: Consistencia de estado — persistencia y broadcast**
+    - **Validates: Requirements 2.3, 5.6, 6.4**
+    - Para cualquier order_status válido del enum: verificar que tuu_orders se actualiza Y se emite OrderStatusUpdated con el nuevo estado
+  - [x] 3.7 Crear `SettlementService`
+    - Crear `mi3/backend/app/Services/Delivery/SettlementService.php`
+    - Implementar: `generateDailySettlement(Carbon $date)` (usa updateOrCreate por settlement_date, calcula SUM(delivery_fee), genera JSON de desglose por rider) y `uploadVoucherAndPay()` (sube a S3 con S3Manager existente, actualiza settlement, llama a createCompraFromSettlement) y `createCompraFromSettlement()` (crea registro en compras con los campos requeridos, envuelto en try/catch)
+    - _Requirements: 10.1, 10.4, 10.5, 11.1, 11.2, 11.4_
+  - [ ]* 3.8 Escribir test de propiedad para liquidación completa (Property 4)
+    - **Property 4: Liquidación completa — suma exacta de delivery fees**
+    - **Validates: Requirements 10.1, 10.5**
+    - Para cualquier conjunto de N pedidos delivered: total_delivery_fees del DailySettlement = SUM(delivery_fee) de esos pedidos
+  - [ ]* 3.9 Escribir test de propiedad para idempotencia del settlement (Property 5)
+    - **Property 5: Idempotencia del settlement diario**
+    - **Validates: Requirements 10.1**
+    - Ejecutar generateDailySettlement dos veces para la misma fecha → exactamente 1 registro en daily_settlements; no modifica un settlement ya marcado como 'paid'
+  - [ ]* 3.10 Escribir test de propiedad para trazabilidad settlement → compra (Property 9)
+    - **Property 9: Trazabilidad settlement → compra**
+    - **Validates: Requirements 11.1, 11.2**
+    - Para cualquier DailySettlement marcado como 'paid' con total_delivery_fees > 0: existe un registro en compras con id = settlement.compra_id y monto_total = settlement.total_delivery_fees
+
+- [x] 4. Controladores y rutas API (mi3-backend)
+  - [x] 4.1 Crear `DeliveryController` (admin)
+    - Crear `mi3/backend/app/Http/Controllers/Admin/DeliveryController.php`
+    - Implementar: `index()`, `updateStatus()`, `assignRider()`, `riders()`
+    - `updateStatus()` valida enum y retorna HTTP 422 si estado inválido
+    - _Requirements: 2.1, 2.2, 2.3, 8.1, 8.2_
+  - [x] 4.2 Crear `RiderController`
+    - Crear `mi3/backend/app/Http/Controllers/Rider/RiderController.php`
+    - Implementar: `updateLocation()`, `currentAssignment()`, `updateAssignmentStatus()`
+    - `updateAssignmentStatus()` maneja 'picked_up' (actualiza picked_up_at, cambia order_status a 'out_for_delivery') y 'delivered' (actualiza delivered_at, cambia order_status a 'delivered')
+    - _Requirements: 4.1, 4.2, 9.5, 9.6, 8.1_
+  - [x] 4.3 Crear `SettlementController` (admin)
+    - Crear `mi3/backend/app/Http/Controllers/Admin/SettlementController.php`
+    - Implementar: `index()`, `show()`, `uploadVoucher()`
+    - `uploadVoucher()` retorna `compra_created: false` con alerta si falla la creación de compra
+    - _Requirements: 10.4, 11.1, 11.4, 8.1_
+  - [x] 4.4 Crear `TrackingController` (público)
+    - Crear `mi3/backend/app/Http/Controllers/Public/TrackingController.php`
+    - Implementar: `show(string $orderNumber)` — retorna HTTP 404 si no existe, respuesta sin datos sensibles (sin customer_phone, customer_email, campos de pago)
+    - _Requirements: 5.4, 8.3, 3.6, 3.7_
+  - [ ]* 4.5 Escribir test de propiedad para endpoint público (Property 8)
+    - **Property 8: Endpoint público no expone datos sensibles**
+    - **Validates: Requirements 5.4, 8.3**
+    - Para cualquier order_number válido: la respuesta de GET /public/orders/{order_number}/tracking no contiene customer_phone, customer_email ni campos de pago
+  - [x] 4.6 Registrar rutas API en `routes/api.php`
+    - Agregar grupo de rutas admin (`/api/v1/admin/delivery/*`) con middleware auth:sanctum + EnsureIsAdmin
+    - Agregar grupo de rutas rider (`/api/v1/rider/*`) con middleware auth:sanctum + EnsureIsWorker + verificación de rol rider
+    - Agregar ruta pública (`/api/v1/public/orders/{order_number}/tracking`) sin middleware de auth
+    - _Requirements: 8.1, 8.2_
+
+- [x] 5. Comandos Artisan y cron (mi3-backend)
+  - [x] 5.1 Crear comando `GenerateDailySettlementCommand`
+    - Crear `mi3/backend/app/Console/Commands/GenerateDailySettlementCommand.php`
+    - Signature: `delivery:generate-daily-settlement {--date= : Fecha YYYY-MM-DD, default=hoy}`
+    - Usa `SettlementService::generateDailySettlement()`, idempotente
+    - Si total_orders_delivered = 0: crea el registro pero no genera alerta
+    - _Requirements: 10.1, 10.6_
+  - [x] 5.2 Crear comando `CheckPendingSettlementsCommand`
+    - Crear `mi3/backend/app/Console/Commands/CheckPendingSettlementsCommand.php`
+    - Signature: `delivery:check-pending-settlements`
+    - Envía push notification a admins si hay settlements pending con total_delivery_fees > 0 del día anterior
+    - _Requirements: 10.3_
+  - [x] 5.3 Registrar comandos en el scheduler de Laravel
+    - En `mi3/backend/app/Console/Kernel.php` (o `routes/console.php` en Laravel 11): registrar `delivery:generate-daily-settlement` con cron `59 23 * * *` y `delivery:check-pending-settlements` con cron `0 12 * * *`
+    - _Requirements: 10.1, 10.3_
+
+- [x] 6. Checkpoint — Backend completo
+  - Ejecutar `php artisan migrate` y verificar que las 4 migraciones se aplican sin errores
+  - Ejecutar `php artisan test --filter=Delivery` y asegurar que todos los tests pasan
+  - Verificar que los endpoints responden correctamente con Sanctum auth en entorno local
+
+- [x] 7. Hooks y estado frontend (mi3-frontend)
+  - [x] 7.1 Instalar dependencias y configurar variables de entorno
+    - Verificar que `laravel-echo` y `pusher-js` están en `mi3/frontend/package.json` (ya deberían estar)
+    - Agregar `NEXT_PUBLIC_GOOGLE_MAPS_KEY` a `.env.local` de mi3-frontend
+    - _Requirements: 8.5_
+  - [x] 7.2 Crear hook `useDeliveryTracking`
+    - Crear `mi3/frontend/hooks/useDeliveryTracking.ts`
+    - Suscribirse a `Echo.private('delivery.monitor')`, escuchar `.RiderLocationUpdated` y `.OrderStatusUpdated`
+    - Retornar: `{ orders, riders, metrics, assignRider, updateStatus }`
+    - Manejar reconexión automática y mostrar estado de conexión
+    - _Requirements: 1.2, 1.4, 1.8, 2.6_
+  - [x] 7.3 Crear hook `useRiderGPS`
+    - Crear `mi3/frontend/hooks/useRiderGPS.ts`
+    - Usar Geolocation API del navegador, enviar posición cada 15s vía `POST /api/v1/rider/location`
+    - Retornar: `{ position, isActive, error, toggleDeliveryMode }`
+    - Manejar error de GPS denegado con mensaje descriptivo
+    - _Requirements: 4.1, 4.4, 4.5, 9.3, 9.8_
+  - [ ]* 7.4 Escribir test de propiedad para autorización de canales frontend (Property 7 — frontend)
+    - **Property 7: Autorización de canales privados (frontend)**
+    - **Validates: Requirements 6.5**
+    - Usando fast-check: verificar que usuarios con role != 'admin' no pueden suscribirse a delivery.monitor
+
+- [x] 8. Vista Monitor — página /admin/delivery (mi3-frontend)
+  - [x] 8.1 Crear componente `DeliveryMap`
+    - Crear `mi3/frontend/components/admin/delivery/DeliveryMap.tsx`
+    - Google Maps JS API con markers diferenciados por estado de pedido (preparando, listo, en camino)
+    - Markers de riders con indicador disponible/ocupado
+    - Popup al hacer clic en marker de pedido con detalles y opción de reasignar rider
+    - Trazar ruta con Directions API entre rider y dirección de entrega
+    - _Requirements: 1.1, 1.5, 1.6, 1.7_
+  - [x] 8.2 Crear componente `OrderPanel`
+    - Crear `mi3/frontend/components/admin/delivery/OrderPanel.tsx`
+    - Lista de pedidos activos con: número de orden, cliente, dirección, estado, rider asignado, tiempo estimado
+    - Filtros por estado y por rider
+    - Selector de rider disponible para asignar a pedidos sin rider
+    - _Requirements: 1.3, 2.1, 2.4_
+  - [x] 8.3 Crear componente `DeliveryMetrics`
+    - Crear `mi3/frontend/components/admin/delivery/DeliveryMetrics.tsx`
+    - Mostrar en tiempo real: total pedidos activos, riders disponibles, riders en ruta, tiempo promedio de entrega del día
+    - _Requirements: 2.6_
+  - [x] 8.4 Crear componente `SettlementPanel`
+    - Crear `mi3/frontend/components/admin/delivery/SettlementPanel.tsx`
+    - Listado de liquidaciones diarias con: fecha, total pedidos, desglose por rider, monto total a transferir
+    - Formulario de subida de comprobante (input file → POST /admin/delivery/settlements/{id}/voucher)
+    - Mostrar alerta si hay settlement pending con total > 0
+    - _Requirements: 10.2, 10.3, 10.4_
+  - [x] 8.5 Crear página `app/admin/delivery/page.tsx`
+    - Crear `mi3/frontend/app/admin/delivery/page.tsx`
+    - Requiere rol admin (usar middleware/guard existente)
+    - Componer: `DeliveryMap` + `OrderPanel` + `DeliveryMetrics` + `SettlementPanel`
+    - Usar hook `useDeliveryTracking`
+    - Mostrar indicador "Reconectando..." cuando se pierde la conexión WebSocket
+    - _Requirements: 1.1, 1.8, 8.4_
+
+- [x] 9. Vista Rider — página /rider (mi3-frontend)
+  - [x] 9.1 Crear componente `RiderDashboard`
+    - Crear `mi3/frontend/components/rider/RiderDashboard.tsx`
+    - Mobile-first, diseño optimizado para celular
+    - Toggle de modo delivery (activo/inactivo)
+    - Pedido asignado actual: número de orden, cliente, dirección completa, monto
+    - Mapa pequeño con ruta desde posición actual hasta dirección de entrega
+    - Botones: "Marcar como Recogido" y "Marcar como Entregado"
+    - _Requirements: 9.1, 9.4, 9.5, 9.6, 9.7_
+  - [x] 9.2 Crear página `app/rider/page.tsx`
+    - Crear `mi3/frontend/app/rider/page.tsx`
+    - Ruta protegida: requiere autenticación con rol 'rider'; redirigir al dashboard correspondiente si no tiene rol rider
+    - Usar hooks `useRiderGPS` y `useDeliveryTracking` (canal rider)
+    - _Requirements: 9.2, 9.3, 9.8_
+
+- [x] 10. Panel de liquidaciones ARIAKA (mi3-frontend)
+  - [x] 10.1 Integrar badge de alerta en dashboard de mi3-frontend
+    - Agregar badge/indicador en el layout del dashboard admin cuando hay un DailySettlement con status='pending' y total_delivery_fees > 0 del día anterior
+    - Consumir `GET /api/v1/admin/delivery/settlements` para verificar estado
+    - _Requirements: 10.3_
+  - [x] 10.2 Integrar compra generada en listado de compras existente
+    - Verificar que las compras creadas automáticamente por `SettlementService::createCompraFromSettlement()` aparecen en el listado normal de compras de mi3-frontend
+    - No requiere cambios en el frontend de compras si el backend crea el registro correctamente
+    - _Requirements: 11.3_
+
+- [x] 11. Checkpoint final — Integración completa
+  - Verificar flujo completo: rider actualiza GPS → Vista Monitor recibe actualización en tiempo real
+  - Verificar flujo de asignación: admin asigna rider → rider ve pedido en Vista Rider
+  - Verificar flujo de estado: rider marca entregado → Vista Monitor y canal pedido reciben evento
+  - Verificar flujo de liquidación: cron genera settlement → admin sube comprobante → compra creada automáticamente
+  - Ejecutar todos los tests: `php artisan test` en mi3-backend y `npx vitest --run` en mi3-frontend
+  - Asegurar que todos los tests pasan, consultar al usuario si surgen dudas
+
+- [x]* 12. Vista Cliente embebible — app3 (fase posterior)
+  - [x]* 12.1 Crear página `app3/src/pages/tracking/[order_number].astro`
+    - Página sin auth, sin headers/footers, diseño limpio apto para iframe
+    - Consumir `GET /api/v1/public/orders/{order_number}/tracking`
+    - Mostrar línea de progreso: Recibido → Preparando → Listo → En camino → Entregado
+    - Mapa Google Maps con posición del rider y dirección de entrega
+    - Actualización en tiempo real vía `Echo.private('order.{order_number}')`
+    - Header `Content-Security-Policy: frame-ancestors *`
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.7, 3.9, 3.10_
+  - [x]* 12.2 Embeber Vista Cliente en app3 post-pedido
+    - En `app3/src/pages/order-confirmation.astro` (o equivalente): agregar iframe apuntando a `app.laruta11.cl/tracking/{order_number}`
+    - _Requirements: 3.9_
+  - [ ]* 12.3 Escribir test de propiedad para endpoint público (Property 8 — integración app3)
+    - **Property 8: Endpoint público no expone datos sensibles**
+    - **Validates: Requirements 5.4, 8.3**
+    - Verificar desde el contexto de app3 que la respuesta del endpoint de tracking no contiene datos sensibles
+
+- [x]* 13. Integración webhook caja3 (fase posterior)
+  - [x]* 13.1 Crear endpoint webhook `POST /api/v1/webhooks/order-status` en mi3-backend
+    - Recibir cambios de estado desde caja3, emitir eventos Canal_Monitor y Canal_Pedido correspondientes
+    - _Requirements: 5.2, 5.3_
+  - [x]* 13.2 Llamar al webhook desde caja3 al actualizar order_status
+    - En el script PHP de caja3 que actualiza `order_status` en `tuu_orders`: agregar llamada HTTP a `POST /api/v1/webhooks/order-status`
+    - _Requirements: 5.2_
+  - [x]* 13.3 Mostrar Vista Cliente en panel lateral de caja3
+    - En el monitor de operaciones de caja3: agregar panel lateral con iframe de la Vista Cliente para el pedido seleccionado
+    - _Requirements: 3.9_
+
+## Notes
+
+- Las tareas marcadas con `*` son opcionales (app3 y caja3) y pueden omitirse para el MVP de mi3
+- Cada tarea referencia requerimientos específicos para trazabilidad
+- Los checkpoints en tareas 6 y 11 aseguran validación incremental
+- Los tests de propiedades (PBT) validan las 9 propiedades de corrección definidas en el diseño
+- Backend: usar `eris/eris` o `@dataProvider` de PHPUnit para generación de inputs
+- Frontend: usar `fast-check` para propiedades de hooks y componentes

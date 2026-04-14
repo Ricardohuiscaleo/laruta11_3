@@ -1,0 +1,77 @@
+---
+// Panel de tracking de delivery para operadores de caja3
+// Muestra el tracking de un pedido específico en un iframe embebido
+// Uso: /delivery-monitor?order=ORDER_NUMBER
+export const prerender = false;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitor Delivery — La Ruta 11</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #111827; color: #f9fafb; height: 100vh; display: flex; flex-direction: column; }
+    header { background: #1f2937; padding: .75rem 1rem; display: flex; align-items: center; gap: .75rem; border-bottom: 1px solid #374151; flex-shrink: 0; }
+    header img { height: 2rem; width: auto; }
+    header h1 { font-size: .9rem; font-weight: 600; color: #f9fafb; }
+    .search-bar { display: flex; gap: .5rem; margin-left: auto; }
+    .search-bar input { background: #374151; border: 1px solid #4b5563; color: #f9fafb; border-radius: .5rem; padding: .4rem .75rem; font-size: .8rem; width: 180px; }
+    .search-bar input::placeholder { color: #9ca3af; }
+    .search-bar button { background: #ef4444; color: #fff; border: none; border-radius: .5rem; padding: .4rem .75rem; font-size: .8rem; font-weight: 600; cursor: pointer; }
+    .search-bar button:hover { background: #dc2626; }
+    .iframe-wrap { flex: 1; overflow: hidden; }
+    iframe { width: 100%; height: 100%; border: none; }
+    .placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 1rem; color: #6b7280; }
+    .placeholder .icon { font-size: 3rem; }
+    .placeholder p { font-size: .875rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" />
+    <h1>Monitor Delivery</h1>
+    <div class="search-bar">
+      <input type="text" id="order-input" placeholder="Número de orden..." />
+      <button onclick="loadOrder()">Ver</button>
+    </div>
+  </header>
+
+  <div class="iframe-wrap" id="iframe-wrap">
+    <div class="placeholder" id="placeholder">
+      <div class="icon">🛵</div>
+      <p>Ingresa un número de orden para ver el tracking en tiempo real</p>
+    </div>
+    <iframe id="tracking-frame" src="" style="display:none;" title="Tracking de pedido"></iframe>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const initialOrder = params.get('order');
+    if (initialOrder) {
+      document.getElementById('order-input').value = initialOrder;
+      loadOrder();
+    }
+
+    function loadOrder() {
+      const orderNumber = document.getElementById('order-input').value.trim();
+      if (!orderNumber) return;
+      const frame = document.getElementById('tracking-frame');
+      const placeholder = document.getElementById('placeholder');
+      frame.src = `https://app.laruta11.cl/tracking/${orderNumber}`;
+      frame.style.display = 'block';
+      placeholder.style.display = 'none';
+      // Update URL without reload
+      const url = new URL(window.location.href);
+      url.searchParams.set('order', orderNumber);
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    document.getElementById('order-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') loadOrder();
+    });
+  </script>
+</body>
+</html>

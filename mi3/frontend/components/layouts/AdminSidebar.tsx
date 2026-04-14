@@ -4,11 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home, Users, Calendar, Receipt, SlidersHorizontal,
-  CreditCard, ArrowLeftRight, LogOut, Clock,
+  CreditCard, ArrowLeftRight, LogOut, Clock, Truck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/auth';
 import ViewSwitcher from '@/components/ViewSwitcher';
+import { usePendingSettlementBadge } from '@/hooks/usePendingSettlementBadge';
 
 const links = [
   { href: '/admin', label: 'Inicio', icon: Home },
@@ -23,6 +24,7 @@ const links = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const hasPendingSettlement = usePendingSettlementBadge();
 
   return (
     <aside className="hidden md:flex md:flex-col w-64 bg-red-600 text-white">
@@ -43,6 +45,21 @@ export default function AdminSidebar() {
             </Link>
           );
         })}
+        {/* Delivery link with pending settlement badge */}
+        <Link href="/admin/delivery"
+          className={cn(
+            'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+            pathname === '/admin/delivery' ? 'bg-red-500 text-white' : 'text-red-100 hover:bg-red-500/50'
+          )}>
+          <Truck className="h-5 w-5" />
+          <span className="flex-1">Delivery</span>
+          {hasPendingSettlement && (
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-xs font-bold text-amber-900">
+              !
+            </span>
+          )}
+        </Link>
+      </nav>
       </nav>
       <div className="border-t border-red-500 px-2 py-3 space-y-1">
         <ViewSwitcher className="text-red-100 hover:bg-red-500/50 hover:text-white" />

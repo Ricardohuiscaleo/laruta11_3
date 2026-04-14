@@ -1,0 +1,178 @@
+'use client';
+
+import { useState } from 'react';
+import { MapPin, User, Clock } from 'lucide-react';
+import type { DeliveryOrder, DeliveryRider } from '@/hooks/useDeliveryTracking';
+
+const STATUS_LABELS: Record<string, string> = {
+  sent_to_kitchen: 'Enviado',
+  preparing: 'Preparando',
+  ready: 'Listo',
+  out_for_delivery: 'En camino',
+  delivered: 'Entregado',
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  sent_to_kitchen: 'bg-gray-100 text-gray-700',
+  preparing: 'bg-yellow-100 text-yellow-700',
+  ready: 'bg-green-100 text-green-700',
+  out_for_delivery: 'bg-blue-100 text-blue-700',
+  delivered: 'bg-purple-100 text-purple-700',
+};
+
+const FILTER_OPTIONS = [
+  { value: 'all', label: 'Todos' },
+  { value: 'preparing', label: 'Preparando' },
+  { value: 'ready', label: 'Listo' },
+  { value: 'out_for_delivery', label: 'En camino' },
+];
+
+interface OrderPanelProps {
+  orders: DeliveryOrder[];
+  riders: DeliveryRider[];
+  onAssignRider: (orderId: number, riderId: number) => void;
+  onUpdateStatus: (orderId: number, status: string) => void;
+}
+
+export default function OrderPanel({ orders, riders, onAssignRider, onUpdateStatus }: OrderPanelProps) {
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [riderFilter, setRiderFilter] = useState('all');
+  const [selectedOrder, setSelectedOrder] = useState<number | null>(null);
+  const [assigningRider, setAssigningRider] = useState<number | null>(null);
+
+  const filtered = orders.filter((o) => {
+    if (statusFilter !== 'all' && o.order_status !== statusFilter) return false;
+    if (riderFilter !== 'all' && String(o.rider_id) !== riderFilter) return false;
+    return true;
+  });
+
+  const availableRiders = riders.filter((r) => r.last_lat !== null);
+
+  const handleAssign = async (orderId: number, riderId: number) => {
+    setAssigningRider(riderId);
+    try {
+      await onAssignRider(orderId, riderId);
+      setSelectedOrder(null);
+    } finally {
+      setAssigningRider(null);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-white rounded-xl border shadow-sm overflow-hidden">
+      <div className="p-4 border-b space-y-3">
+        <h2 className="font-semibold text-gray-900">Pedidos activos</h2>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-1">
+          {FILTER_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setStatusFilter(opt.value)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                statusFilter === opt.value
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        <select
+          value={riderFilter}
+          onChange={(e) => setRiderFilter(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+        >
+          <option value="all">Todos los riders</option>
+          {riders.map((r) => (
+            <option key={r.id} value={String(r.id)}>
+              {r.nombre}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="flex-1 overflow-y-auto divide-y">
+        {filtered.length === 0 ? (
+          <p className="p-6 text-center text-sm text-gray-400">Sin pedidos</p>
+        ) : (
+          filtered.map((order) => {
+            const isSelected = selectedOrder === order.id;
+            const statusLabel = STATUS_LABELS[order.order_status] ?? order.order_status;
+            const statusColor = STATUS_COLORS[order.order_status] ?? 'bg-gray-100 text-gray-700';
+
+            return (
+              <div key={order.id} className="p-4 hover:bg-gray-50 transition-colors">
+                <button
+                  className="w-full text-left"
+                  onClick={() => setSelectedOrder(isSelected ? null : order.id)}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        #{order.order_number}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">{order.customer_name}</p>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusColor}`}>
+                      {statusLabel}
+                    </span>
+                  </div>
+
+                  <div className="mt-2 flex items-center gap-1 text-xs text-gray-500">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{order.delivery_address}</span>
+                  </div>
+
+                  {order.rider_nombre && (
+                    <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                      <User className="h-3 w-3 shrink-0" />
+                      <span>{order.rider_nombre}</span>
+                    </div>
+                  )}
+
+                  {order.estimated_delivery_time && (
+                    <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                      <Clock className="h-3 w-3 shrink-0" />
+                      <span>
+                        {new Date(order.estimated_delivery_time).toLocaleTimeString('es-CL', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  )}
+                </button>
+
+                {/* Rider assignment selector */}
+                {isSelected && !order.rider_id && (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-xs font-medium text-gray-700">Asignar rider:</p>
+                    {availableRiders.length === 0 ? (
+                      <p className="text-xs text-gray-400">Sin riders disponibles</p>
+                    ) : (
+                      <div className="space-y-1">
+                        {availableRiders.map((rider) => (
+                          <button
+                            key={rider.id}
+                            onClick={() => handleAssign(order.id, rider.id)}
+                            disabled={assigningRider !== null}
+                            className="w-full rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-left text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50 transition-colors"
+                          >
+                            {assigningRider === rider.id ? 'Asignando...' : rider.nombre}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}

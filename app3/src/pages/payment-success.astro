@@ -179,6 +179,18 @@ const amount = Astro.url.searchParams.get('amount');
             <p>Gracias por elegir La Ruta 11!</p>
             <p>Recibirás notificaciones sobre el estado de tu pedido</p>
         </div>
+
+        <!-- Tracking embed — solo para pedidos delivery -->
+        <div id="tracking-embed" style="display:none; margin-top:1.5rem;">
+            <h3 style="font-size:.875rem; font-weight:600; color:#374151; margin-bottom:.75rem;">📍 Seguimiento en tiempo real</h3>
+            <iframe
+                id="tracking-iframe"
+                src=""
+                style="width:100%; height:520px; border:none; border-radius:1rem; box-shadow:0 1px 4px rgba(0,0,0,.08);"
+                title="Seguimiento de pedido"
+                loading="lazy"
+            ></iframe>
+        </div>
     </div>
 
     <script>
@@ -368,6 +380,16 @@ const amount = Astro.url.searchParams.get('amount');
                 localStorage.removeItem('cart');
                 localStorage.removeItem('cartCount');
             }, 2000);
+
+            // Mostrar iframe de tracking si es pedido delivery
+            if (orderRef && deliveryInfo && deliveryInfo.delivery_type === 'delivery') {
+                const trackingEmbed = document.getElementById('tracking-embed');
+                const trackingIframe = document.getElementById('tracking-iframe');
+                if (trackingEmbed && trackingIframe) {
+                    trackingIframe.src = `https://app.laruta11.cl/tracking/${orderRef}`;
+                    trackingEmbed.style.display = 'block';
+                }
+            }
             
             function displayProducts(products) {
                 const productsList = document.getElementById('products-list');

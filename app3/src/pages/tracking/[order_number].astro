@@ -1,0 +1,367 @@
+---
+// Vista Cliente embebible — Tracking de pedido en tiempo real
+// Accesible sin auth, apta para iframe desde app3 y caja3
+// CSP: frame-ancestors * para permitir embedding
+
+export const prerender = false;
+
+const { order_number } = Astro.params;
+
+Astro.response.headers.set(
+  'Content-Security-Policy',
+  "frame-ancestors *"
+);
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seguimiento de pedido #{order_number}</title>
+  <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9fafb; color: #111827; }
+    .container { max-width: 480px; margin: 0 auto; padding: 1rem; }
+
+    /* Progress bar */
+    .progress-wrap { padding: 1.25rem; background: #fff; border-radius: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 1rem; }
+    .progress-title { font-size: .75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
+    .steps { display: flex; align-items: center; }
+    .step { display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .step-dot { width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; border: 2px solid #e5e7eb; background: #fff; color: #9ca3af; transition: all .3s; }
+    .step-dot.active { background: #ef4444; border-color: #ef4444; color: #fff; }
+    .step-dot.done { background: #22c55e; border-color: #22c55e; color: #fff; }
+    .step-label { font-size: .65rem; color: #9ca3af; margin-top: .35rem; text-align: center; }
+    .step-label.active { color: #ef4444; font-weight: 600; }
+    .step-label.done { color: #22c55e; }
+    .step-line { flex: 1; height: 2px; background: #e5e7eb; margin: 0 .25rem; margin-bottom: 1.25rem; transition: background .3s; }
+    .step-line.done { background: #22c55e; }
+
+    /* Info card */
+    .info-card { background: #fff; border-radius: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); padding: 1.25rem; margin-bottom: 1rem; }
+    .info-card h3 { font-size: .75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .75rem; }
+    .info-row { display: flex; justify-content: space-between; align-items: flex-start; padding: .4rem 0; border-bottom: 1px solid #f3f4f6; font-size: .875rem; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: #6b7280; }
+    .info-value { font-weight: 600; color: #111827; text-align: right; max-width: 60%; }
+
+    /* Rider card */
+    .rider-card { background: #fff; border-radius: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); padding: 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem; }
+    .rider-avatar { width: 3rem; height: 3rem; border-radius: 50%; background: #fee2e2; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+    .rider-name { font-weight: 600; font-size: .9rem; }
+    .rider-sub { font-size: .75rem; color: #6b7280; margin-top: .15rem; }
+
+    /* Map */
+    #map { width: 100%; height: 260px; border-radius: 1rem; overflow: hidden; background: #e5e7eb; margin-bottom: 1rem; }
+
+    /* ETA */
+    .eta-card { background: #fef3c7; border: 1px solid #fde68a; border-radius: 1rem; padding: 1rem 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; gap: .75rem; }
+    .eta-icon { font-size: 1.5rem; }
+    .eta-label { font-size: .75rem; color: #92400e; }
+    .eta-value { font-size: 1.1rem; font-weight: 700; color: #78350f; }
+
+    /* Delivered */
+    .delivered-card { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 1rem; padding: 1.5rem; text-align: center; margin-bottom: 1rem; }
+    .delivered-icon { font-size: 3rem; margin-bottom: .5rem; }
+    .delivered-title { font-size: 1.1rem; font-weight: 700; color: #166534; }
+    .delivered-sub { font-size: .875rem; color: #4ade80; margin-top: .25rem; }
+
+    /* Error */
+    .error-card { background: #fef2f2; border: 1px solid #fecaca; border-radius: 1rem; padding: 1.5rem; text-align: center; }
+    .error-icon { font-size: 2.5rem; margin-bottom: .5rem; }
+    .error-title { font-size: 1rem; font-weight: 600; color: #991b1b; }
+
+    /* Status badge */
+    .badge { display: inline-block; padding: .2rem .6rem; border-radius: 9999px; font-size: .7rem; font-weight: 600; }
+    .badge-yellow { background: #fef9c3; color: #854d0e; }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+    .badge-gray { background: #f3f4f6; color: #374151; }
+
+    /* Notification toast */
+    #toast { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; padding: .6rem 1.2rem; border-radius: 9999px; font-size: .8rem; font-weight: 500; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 100; white-space: nowrap; }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <div style="text-align:center;padding:2rem;color:#9ca3af;font-size:.875rem;">Cargando pedido...</div>
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- Google Maps -->
+  <script>
+    window.MAPS_KEY = import.meta.env.PUBLIC_GOOGLE_MAPS_KEY || '';
+    window.ORDER_NUMBER = {JSON.stringify(order_number)};
+    window.API_BASE = 'https://api-mi3.laruta11.cl/api/v1';
+    window.REVERB_HOST = 'api-mi3.laruta11.cl';
+    window.REVERB_PORT = 443;
+    window.REVERB_SCHEME = 'https';
+    window.REVERB_APP_KEY = import.meta.env.PUBLIC_REVERB_APP_KEY || 'laruta11-key';
+  </script>
+
+  <!-- Pusher for Echo -->
+  <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
+
+  <script>
+    const ORDER_NUMBER = window.ORDER_NUMBER;
+    const API_BASE = window.API_BASE;
+    let map = null;
+    let riderMarker = null;
+    let destMarker = null;
+    let directionsRenderer = null;
+    let orderData = null;
+    let echoChannel = null;
+
+    const STATUS_STEPS = ['pending', 'sent_to_kitchen', 'preparing', 'ready', 'out_for_delivery', 'delivered'];
+    const STATUS_LABELS = {
+      pending: 'Recibido',
+      sent_to_kitchen: 'Recibido',
+      preparing: 'Preparando',
+      ready: 'Listo',
+      out_for_delivery: 'En camino',
+      delivered: 'Entregado',
+    };
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function getStepIndex(status) {
+      const map = { pending: 0, sent_to_kitchen: 0, preparing: 1, ready: 2, out_for_delivery: 3, delivered: 4 };
+      return map[status] ?? 0;
+    }
+
+    function renderProgress(status) {
+      const steps = [
+        { key: 'pending', label: 'Recibido', icon: '📋' },
+        { key: 'preparing', label: 'Preparando', icon: '👨‍🍳' },
+        { key: 'ready', label: 'Listo', icon: '✅' },
+        { key: 'out_for_delivery', label: 'En camino', icon: '🛵' },
+        { key: 'delivered', label: 'Entregado', icon: '🏁' },
+      ];
+      const current = getStepIndex(status);
+
+      let html = '<div class="progress-wrap"><p class="progress-title">Estado del pedido</p><div class="steps">';
+      steps.forEach((s, i) => {
+        const isDone = i < current;
+        const isActive = i === current;
+        html += `<div class="step">
+          <div class="step-dot ${isDone ? 'done' : isActive ? 'active' : ''}">${isDone ? '✓' : s.icon}</div>
+          <div class="step-label ${isDone ? 'done' : isActive ? 'active' : ''}">${s.label}</div>
+        </div>`;
+        if (i < steps.length - 1) {
+          html += `<div class="step-line ${isDone ? 'done' : ''}"></div>`;
+        }
+      });
+      html += '</div></div>';
+      return html;
+    }
+
+    function renderRider(data) {
+      if (!data.rider_name) return '';
+      return `<div class="rider-card">
+        <div class="rider-avatar">🛵</div>
+        <div>
+          <div class="rider-name">${data.rider_name}</div>
+          <div class="rider-sub">Tu rider en camino</div>
+        </div>
+      </div>`;
+    }
+
+    function renderETA(data) {
+      if (!data.estimated_delivery_time) return '';
+      const eta = new Date(data.estimated_delivery_time);
+      const now = new Date();
+      const diffMin = Math.max(0, Math.round((eta - now) / 60000));
+      return `<div class="eta-card">
+        <div class="eta-icon">⏱️</div>
+        <div>
+          <div class="eta-label">Tiempo estimado de entrega</div>
+          <div class="eta-value">${diffMin > 0 ? diffMin + ' min' : 'Llegando ahora'}</div>
+        </div>
+      </div>`;
+    }
+
+    function renderDelivered() {
+      return `<div class="delivered-card">
+        <div class="delivered-icon">🎉</div>
+        <div class="delivered-title">¡Pedido entregado!</div>
+        <div class="delivered-sub">Gracias por elegir La Ruta 11</div>
+      </div>`;
+    }
+
+    function renderInfo(data) {
+      const statusLabel = STATUS_LABELS[data.order_status] || data.order_status;
+      const badgeClass = {
+        preparing: 'badge-yellow', ready: 'badge-green',
+        out_for_delivery: 'badge-blue', delivered: 'badge-green',
+      }[data.order_status] || 'badge-gray';
+
+      return `<div class="info-card">
+        <h3>Detalle del pedido</h3>
+        <div class="info-row"><span class="info-label">Pedido</span><span class="info-value">#${data.order_number}</span></div>
+        <div class="info-row"><span class="info-label">Estado</span><span class="info-value"><span class="badge ${badgeClass}">${statusLabel}</span></span></div>
+        <div class="info-row"><span class="info-label">Cliente</span><span class="info-value">${data.customer_name}</span></div>
+        <div class="info-row"><span class="info-label">Dirección</span><span class="info-value">${data.delivery_address}</span></div>
+      </div>`;
+    }
+
+    function render(data) {
+      const app = document.getElementById('app');
+      if (!data) {
+        app.innerHTML = `<div class="error-card"><div class="error-icon">🔍</div><div class="error-title">Pedido no encontrado</div></div>`;
+        return;
+      }
+
+      let html = renderProgress(data.order_status);
+
+      if (data.order_status === 'delivered') {
+        html += renderDelivered();
+      } else {
+        html += renderETA(data);
+        if (data.rider_name) html += renderRider(data);
+        if (data.rider_lat && data.rider_lng) {
+          html += '<div id="map"></div>';
+        }
+      }
+
+      html += renderInfo(data);
+      app.innerHTML = html;
+
+      if (data.rider_lat && data.rider_lng && data.order_status !== 'delivered') {
+        initMap(data);
+      }
+    }
+
+    function initMap(data) {
+      if (!window.google || !document.getElementById('map')) return;
+      const riderPos = { lat: parseFloat(data.rider_lat), lng: parseFloat(data.rider_lng) };
+      map = new google.maps.Map(document.getElementById('map'), {
+        center: riderPos, zoom: 14,
+        disableDefaultUI: true,
+        zoomControl: true,
+      });
+      riderMarker = new google.maps.Marker({ position: riderPos, map, title: data.rider_name || 'Rider', label: '🛵' });
+
+      // Geocode destination and draw route
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ address: data.delivery_address + ', Santiago, Chile' }, (results, status) => {
+        if (status === 'OK' && results[0]) {
+          destMarker = new google.maps.Marker({ position: results[0].geometry.location, map, title: 'Tu dirección' });
+          const ds = new google.maps.DirectionsService();
+          directionsRenderer = new google.maps.DirectionsRenderer({ suppressMarkers: true });
+          directionsRenderer.setMap(map);
+          ds.route({
+            origin: riderPos,
+            destination: results[0].geometry.location,
+            travelMode: google.maps.TravelMode.DRIVING,
+          }, (result, st) => {
+            if (st === 'OK') directionsRenderer.setDirections(result);
+          });
+        }
+      });
+    }
+
+    function updateRiderPosition(lat, lng) {
+      if (!map || !riderMarker) return;
+      const pos = { lat, lng };
+      riderMarker.setPosition(pos);
+      if (directionsRenderer && destMarker) {
+        const ds = new google.maps.DirectionsService();
+        ds.route({
+          origin: pos,
+          destination: destMarker.getPosition(),
+          travelMode: google.maps.TravelMode.DRIVING,
+        }, (result, st) => {
+          if (st === 'OK') directionsRenderer.setDirections(result);
+        });
+      }
+    }
+
+    // Subscribe to Reverb channel
+    function subscribeRealtime() {
+      if (!window.Pusher) return;
+      const pusher = new Pusher(window.REVERB_APP_KEY, {
+        wsHost: window.REVERB_HOST,
+        wsPort: window.REVERB_PORT,
+        wssPort: window.REVERB_PORT,
+        forceTLS: window.REVERB_SCHEME === 'https',
+        enabledTransports: ['ws', 'wss'],
+        disableStats: true,
+        authEndpoint: window.API_BASE.replace('/api/v1', '') + '/broadcasting/auth',
+      });
+
+      const channel = pusher.subscribe('private-order.' + ORDER_NUMBER);
+
+      channel.bind('rider.location.updated', (data) => {
+        if (orderData) {
+          orderData.rider_lat = data.latitud;
+          orderData.rider_lng = data.longitud;
+          orderData.rider_name = data.nombre || orderData.rider_name;
+        }
+        updateRiderPosition(data.latitud, data.longitud);
+      });
+
+      channel.bind('order.status.updated', (data) => {
+        if (orderData) {
+          const oldStatus = orderData.order_status;
+          orderData.order_status = data.order_status;
+          if (data.rider_id) orderData.rider_id = data.rider_id;
+          if (data.estimated_delivery_time) orderData.estimated_delivery_time = data.estimated_delivery_time;
+          if (oldStatus !== data.order_status) {
+            showToast('Estado actualizado: ' + (STATUS_LABELS[data.order_status] || data.order_status));
+            render(orderData);
+          }
+        }
+      });
+    }
+
+    // Load order data
+    async function loadOrder() {
+      try {
+        const res = await fetch(`${API_BASE}/public/orders/${ORDER_NUMBER}/tracking`);
+        if (!res.ok) { render(null); return; }
+        orderData = await res.json();
+        render(orderData);
+        subscribeRealtime();
+      } catch (e) {
+        render(null);
+      }
+    }
+
+    // ETA countdown
+    setInterval(() => {
+      if (orderData && orderData.estimated_delivery_time && orderData.order_status !== 'delivered') {
+        const etaEl = document.querySelector('.eta-value');
+        if (etaEl) {
+          const eta = new Date(orderData.estimated_delivery_time);
+          const diffMin = Math.max(0, Math.round((eta - new Date()) / 60000));
+          etaEl.textContent = diffMin > 0 ? diffMin + ' min' : 'Llegando ahora';
+        }
+      }
+    }, 60000);
+
+    // Init
+    loadOrder();
+  </script>
+
+  <!-- Load Google Maps after page -->
+  <script>
+    (function() {
+      const key = window.MAPS_KEY;
+      if (!key) return;
+      const s = document.createElement('script');
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`;
+      s.async = true;
+      document.head.appendChild(s);
+    })();
+  </script>
+</body>
+</html>

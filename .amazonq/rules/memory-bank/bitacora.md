@@ -28,7 +28,9 @@
 
 | App | Task | Frecuencia |
 |-----|------|------------|
-| mi3-backend | `php artisan schedule:run` (7 comandos) | `* * * * *` |
+| mi3-backend | `php artisan schedule:run` (9 comandos) | `* * * * *` |
+| mi3-backend | `delivery:generate-daily-settlement` | `23:59` diario |
+| mi3-backend | `delivery:check-pending-settlements` | `12:00` diario |
 | app3 | Gmail Token Refresh | `*/30 * * * *` |
 | caja3 | Daily Checklists (legacy) | ❌ Desactivado (mi3 lo reemplaza) |
 
@@ -67,10 +69,26 @@
 - [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3.
 - [ ] Recalcular delivery\_fee server-side en `create_order.php`
 - [ ] Unificar factor descuento RL6 en caja3 (0.6 vs 0.7143)
+- [ ] **Deploy spec delivery-tracking-realtime** — hacer commit + deploy mi3-backend, mi3-frontend, app3 y caja3. Requiere `php artisan migrate` en mi3-backend. Google Maps key ya configurada en Coolify.
+- [ ] **Integración caja3/app3 delivery** — webhook order-status en caja3, iframe Vista Cliente en app3 (fase posterior del spec)
+- [ ] **Investigar arquitectura SaaS multi-tenant** — AWS Lambda + Aurora PostgreSQL + Amazon Location Service + Stripe. Dominio candidato: pocos.click (caduca 2026-12-21)
 
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-14j — Spec delivery-tracking-realtime: implementación completa (sin deploy)
+
+**Cambios:**
+- **mi3-backend**: 4 migraciones (rider_locations, delivery_assignments, daily_settlements, campos en tuu_orders), 3 modelos Eloquent, 2 eventos Reverb (RiderLocationUpdated, OrderStatusUpdated), routes/channels.php, 3 servicios (DeliveryService, LocationService, SettlementService), 4 controladores (DeliveryController, RiderController, SettlementController, TrackingController), webhook OrderStatusWebhookController, rutas API en routes/api.php, 2 comandos Artisan (delivery:generate-daily-settlement 23:59, delivery:check-pending-settlements 12:00) registrados en routes/console.php
+- **mi3-frontend**: hooks useDeliveryTracking, useRiderGPS, usePendingSettlementBadge; componentes DeliveryMap, OrderPanel, DeliveryMetrics, SettlementPanel, RiderDashboard; páginas /admin/delivery y /rider; badge de alerta en AdminSidebar
+- **app3**: página `/tracking/[order_number].astro` (Vista Cliente embebible, realtime via Pusher); iframe de tracking embebido en payment-success.astro para pedidos delivery; env vars PUBLIC_GOOGLE_MAPS_KEY y PUBLIC_REVERB_APP_KEY agregadas en Coolify
+- **caja3**: `update_order_status.php` llama webhook mi3 al cambiar estado; página `/delivery-monitor.astro` para operadores
+- **Coolify mi3-frontend**: `NEXT_PUBLIC_GOOGLE_MAPS_KEY` agregada vía SSH
+- **Pendiente para activar**: commit + deploy + `php artisan migrate` en producción
+
+**Commits:** ninguno aún
+**Deploys:** ninguno aún
 
 ### 2026-04-14i — Fix timeout bot SuperKiro (session/prompt pegado)
 
@@ -104,18 +122,6 @@
 
 **Commits:** `2c33166`, `246848b`
 **Deploys:** mi3-frontend (`hm5ekprg1dfsjz2mwajjyz10`) ✅, mi3-backend (`nml1ab63cplp1wo6fq1okqwz`) ✅
-
-### 2026-04-14f — Fix auth loop infinito + spec bugfix sesiones
-
-**Cambios:**
-- `api.ts`/`compras-api.ts`: 401 limpia cookies+localStorage antes de redirigir (previene loop infinito).
-- `AuthService`: no borra todos los tokens al login, solo >30 días (multi-dispositivo).
-- `AuthController`: devuelve token en JSON. Login guarda en localStorage. Bearer token en todas las peticiones.
-- `ImagenService`: nombres únicos S3 (time+random). BD: compra 277 deduplicada.
-- Spec bugfix creado: `.kiro/specs/fix-sessiones/` — bugfix.md (8 bugs), design.md (5 properties), tasks.md (9 tareas, 25+ sub-tareas). Auditoría independiente incorporada: BUG 5 descartado, 3 bugs nuevos (7/8/9). APP_KEY confirmado persistente en Coolify.
-
-**Commits:** `82a3f42`, `46e0167`
-**Deploys:** mi3-frontend (`c3dfywbm8ao8scqksenizgmt`) ✅, mi3-backend (`zp1qhnm7q86j2qjiz23pac26`) ✅
 
 ---
 

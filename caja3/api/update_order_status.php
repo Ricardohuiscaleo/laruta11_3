@@ -53,6 +53,11 @@ try {
         if ($orderData) {
             sendOrderNotification($order_id, $orderData['order_number'], $orderData['customer_name'], $order_status, $config);
         }
+
+        // Notificar a mi3 via webhook para broadcast en tiempo real
+        if ($orderData) {
+            notifyMi3Webhook($orderData['order_number'], $order_status);
+        }
     }
     
     if ($payment_status) {
@@ -64,6 +69,25 @@ try {
     
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'error' => 'Error al actualizar estado']);
+}
+
+function notifyMi3Webhook($orderNumber, $orderStatus) {
+    $webhookUrl = 'https://api-mi3.laruta11.cl/api/v1/webhooks/order-status';
+    $secret = getenv('WEBHOOK_SECRET') ?: '';
+    $payload = json_encode(['order_number' => $orderNumber, 'order_status' => $orderStatus]);
+    $ch = curl_init($webhookUrl);
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $payload,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 3,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'X-Webhook-Secret: ' . $secret,
+        ],
+    ]);
+    curl_exec($ch);
+    curl_close($ch);
 }
 
 function sendOrderNotification($orderId, $orderNumber, $customerName, $status, $config) {

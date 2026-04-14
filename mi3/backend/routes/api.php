@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin\DeliveryController;
+use App\Http\Controllers\Admin\SettlementController;
+use App\Http\Controllers\Public\TrackingController;
+use App\Http\Controllers\Rider\RiderController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -172,3 +176,29 @@ Route::prefix('v1')->group(function () {
         Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
     });
 });
+
+// ── Delivery Tracking — Admin ───────────────────────────────────────
+Route::middleware(['auth:sanctum', 'worker', 'admin'])->prefix('v1/admin/delivery')->group(function () {
+    Route::get('/orders', [DeliveryController::class, 'index']);
+    Route::patch('/orders/{id}/status', [DeliveryController::class, 'updateStatus']);
+    Route::post('/orders/{id}/assign-rider', [DeliveryController::class, 'assignRider']);
+    Route::get('/riders', [DeliveryController::class, 'riders']);
+    Route::get('/settlements', [SettlementController::class, 'index']);
+    Route::get('/settlements/{id}', [SettlementController::class, 'show']);
+    Route::post('/settlements/{id}/voucher', [SettlementController::class, 'uploadVoucher']);
+});
+
+// ── Delivery Tracking — Rider ───────────────────────────────────────
+Route::middleware(['auth:sanctum', 'worker'])->prefix('v1/rider')->group(function () {
+    Route::post('/location', [RiderController::class, 'updateLocation']);
+    Route::get('/current-assignment', [RiderController::class, 'currentAssignment']);
+    Route::patch('/current-assignment/status', [RiderController::class, 'updateAssignmentStatus']);
+});
+
+// ── Delivery Tracking — Público (sin auth) ──────────────────────────
+Route::prefix('v1/public')->group(function () {
+    Route::get('/orders/{orderNumber}/tracking', [TrackingController::class, 'show']);
+});
+
+// ── Delivery Tracking — Webhook desde caja3 ─────────────────────────
+Route::post('v1/webhooks/order-status', [\App\Http\Controllers\Webhook\OrderStatusWebhookController::class, 'handle']);

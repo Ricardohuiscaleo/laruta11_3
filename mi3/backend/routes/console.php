@@ -12,14 +12,16 @@ use App\Models\CronExecution;
 */
 
 $commands = [
-    ['cmd' => 'mi3:r11-auto-deduct',         'name' => 'Descuento R11',           'schedule' => fn($s) => $s->monthlyOn(1, '06:00')],
-    ['cmd' => 'mi3:loan-auto-deduct',         'name' => 'Descuento Adelantos',     'schedule' => fn($s) => $s->monthlyOn(1, '06:30')],
-    ['cmd' => 'mi3:r11-reminder',             'name' => 'Recordatorio R11',        'schedule' => fn($s) => $s->monthlyOn(28, '10:00')],
-    ['cmd' => 'mi3:create-daily-checklists',  'name' => 'Checklists Diarios',      'schedule' => fn($s) => $s->dailyAt('14:00')],
-    ['cmd' => 'mi3:check-companion-absence',  'name' => 'Detectar Ausencia',       'schedule' => fn($s) => $s->dailyAt('19:00')],
-    ['cmd' => 'mi3:detect-absences',          'name' => 'Descuento Inasistencias', 'schedule' => fn($s) => $s->dailyAt('02:00')],
-    ['cmd' => 'mi3:generate-shifts',          'name' => 'Generar Turnos',          'schedule' => fn($s) => $s->monthlyOn(25, '10:00')],
-    ['cmd' => 'mi3:checklist-reminder',       'name' => 'Recordatorio Checklist',  'schedule' => fn($s) => $s->dailyAt('18:00')],
+    ['cmd' => 'mi3:r11-auto-deduct',                    'name' => 'Descuento R11',              'schedule' => fn($s) => $s->monthlyOn(1, '06:00')],
+    ['cmd' => 'mi3:loan-auto-deduct',                   'name' => 'Descuento Adelantos',        'schedule' => fn($s) => $s->monthlyOn(1, '06:30')],
+    ['cmd' => 'mi3:r11-reminder',                       'name' => 'Recordatorio R11',           'schedule' => fn($s) => $s->monthlyOn(28, '10:00')],
+    ['cmd' => 'mi3:create-daily-checklists',            'name' => 'Checklists Diarios',         'schedule' => fn($s) => $s->dailyAt('14:00')],
+    ['cmd' => 'mi3:check-companion-absence',            'name' => 'Detectar Ausencia',          'schedule' => fn($s) => $s->dailyAt('19:00')],
+    ['cmd' => 'mi3:detect-absences',                    'name' => 'Descuento Inasistencias',    'schedule' => fn($s) => $s->dailyAt('02:00')],
+    ['cmd' => 'mi3:generate-shifts',                    'name' => 'Generar Turnos',             'schedule' => fn($s) => $s->monthlyOn(25, '10:00')],
+    ['cmd' => 'mi3:checklist-reminder',                 'name' => 'Recordatorio Checklist',     'schedule' => fn($s) => $s->dailyAt('18:00')],
+    ['cmd' => 'delivery:generate-daily-settlement',     'name' => 'Settlement Delivery Diario', 'schedule' => fn($s) => $s->dailyAt('23:59')],
+    ['cmd' => 'delivery:check-pending-settlements',     'name' => 'Verificar Settlements',      'schedule' => fn($s) => $s->dailyAt('12:00')],
 ];
 
 foreach ($commands as $c) {
