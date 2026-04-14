@@ -1,7 +1,7 @@
 import {
   Home, User, Calendar, Receipt, CreditCard, Wallet,
   ClipboardCheck, ArrowLeftRight, Bell, Users, Repeat2,
-  SlidersHorizontal, Clock, ShoppingCart,
+  SlidersHorizontal, Clock, ShoppingCart, Truck,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -43,6 +43,7 @@ export const adminPrimaryNavItems: NavItem[] = [
 ];
 
 export const adminSecondaryNavItems: NavItem[] = [
+  { href: '/admin/delivery', label: 'Delivery', icon: Truck },
   { href: '/admin/compras', label: 'Compras', icon: ShoppingCart },
   { href: '/admin/nomina', label: 'Nómina', icon: Receipt },
   { href: '/admin/checklists', label: 'Checklists', icon: ClipboardCheck },

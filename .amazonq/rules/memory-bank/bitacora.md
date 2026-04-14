@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`351753d`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | 🔄 Pendiente verificar (`351753d`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`b32f647`) — delivery tracking activo |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`9562f5d`) — delivery tracking + Google Maps activo |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`351753d`) — migraciones delivery ejecutadas |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -69,7 +69,7 @@
 - [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3.
 - [ ] Recalcular delivery\_fee server-side en `create_order.php`
 - [ ] Unificar factor descuento RL6 en caja3 (0.6 vs 0.7143)
-- [ ] **Agregar `mi.laruta11.cl` a restricciones HTTP de Google Maps API key** en Google Cloud Console (el mapa no carga sin esto)
+- [x] **Verificar Google Maps en mi3-frontend** — mapId `d51ca892b68e9c5e5e2dd701` + API key funcionando ✅
 - [x] **Deploy spec delivery-tracking-realtime** — commit `70650cf` pusheado. Builds disparados en Coolify. Pendiente verificar builds y ejecutar `php artisan migrate`.
 - [x] **Integración caja3/app3 delivery** — webhook en caja3 y iframe en app3 implementados en commit `70650cf`.
 - [ ] **Investigar arquitectura SaaS multi-tenant** — AWS Lambda + Aurora PostgreSQL + Amazon Location Service + Stripe. Dominio candidato: pocos.click (caduca 2026-12-21)
@@ -84,14 +84,14 @@
 - Fix 1: `app3/src/pages/tracking/[order_number].astro` → error `Expected "}" but found "."`. Commit `10cead8`.
 - Fix 2: app3 es `output: 'static'`, ruta dinámica requiere SSR. Reemplazada por `tracking/index.astro` estática con `?order=`. Commit `351753d`.
 - Fix 3: mi3-frontend fallaba con `npm ci` por `@vis.gl/react-google-maps` faltante en package-lock.json. Commit `f41e223`.
-- Fix 4: `</nav>` duplicado en AdminSidebar.tsx causaba `Expected ',', got 'className'`. Commit `b32f647`.
-- mi3-backend: deployado ✅ (`351753d`). Migraciones ejecutadas: rider_locations, delivery_assignments, daily_settlements, campos tuu_orders.
+- Fix 5: mapId placeholder reemplazado por ID real `d51ca892b68e9c5e5e2dd701`. Commit `bab6fea`.
+- Fix 6: `NEXT_PUBLIC_GOOGLE_MAPS_KEY` no llegaba al build — faltaba `ARG` en Dockerfile + variable agregada via Coolify API con `is_buildtime=true` + duplicado eliminado de BD Coolify. Commit `9562f5d`. Rebuild triggerado.
+- mi3-backend: deployado ✅ (`351753d`). Migraciones ejecutadas.
 - app3: deployado ✅ (`351753d`).
-- caja3: deploy en progreso (`351753d`).
-- mi3-frontend: deployado ✅ (`b32f647`). WebSocket conectado, paneles funcionales. Google Maps requiere agregar `mi.laruta11.cl` en restricciones de la API key en Google Cloud Console.
+- mi3-frontend: deployado ✅ (`9562f5d`). WebSocket + Google Maps funcionales.
 
-**Commits:** `10cead8`, `351753d`, `f41e223`, `b32f647`
-**Deploys:** mi3-backend ✅, app3 ✅, mi3-frontend ✅, caja3 pendiente verificar
+**Commits:** `10cead8`, `351753d`, `f41e223`, `b32f647`, `bab6fea`, `9562f5d`
+**Deploys:** mi3-backend ✅, app3 ✅, mi3-frontend ✅, caja3 pendiente
 
 ### 2026-04-14k — Deploy delivery-tracking-realtime: commit inicial
 
