@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Package, Wine, ChevronDown, ChevronRight, Pencil, Minus, Check, X, CheckSquare, Square } from 'lucide-react';
 import { comprasApi } from '@/lib/compras-api';
+import { useCompras } from '@/contexts/ComprasContext';
 import type { StockItem } from '@/types/compras';
 
 const SEMAFORO_COLORS: Record<string, string> = {
@@ -18,9 +19,10 @@ const CATEGORY_ORDER = [
 ];
 
 export default function StockDashboard() {
+  const { stockIngredientes, stockBebidas, loading: ctxLoading, refreshStock } = useCompras();
   const [tab, setTab] = useState<'ingredientes' | 'bebidas'>('ingredientes');
-  const [items, setItems] = useState<StockItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const items = tab === 'ingredientes' ? stockIngredientes : stockBebidas;
+  const loading = ctxLoading.stock || false;
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   // Edit mode
   const [editId, setEditId] = useState<number | null>(null);
@@ -34,16 +36,7 @@ export default function StockDashboard() {
   const [bulkConsumeQty, setBulkConsumeQty] = useState('');
   const [showBulkConsume, setShowBulkConsume] = useState(false);
 
-  const fetchItems = useCallback(() => {
-    setLoading(true);
-    const path = tab === 'ingredientes' ? '/stock?tipo=ingredientes' : '/stock?tipo=bebidas';
-    comprasApi.get<{ success: boolean; items: StockItem[] }>(path)
-      .then(r => setItems(r.items || []))
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
-  }, [tab]);
-
-  useEffect(() => { fetchItems(); }, [fetchItems]);
+  const fetchItems = refreshStock;
 
   const grouped = useMemo(() => {
     if (tab === 'bebidas') return { 'Bebidas': items };

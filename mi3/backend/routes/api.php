@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
 
+    // ── Webhooks (autenticado por secret, no por sesión) ────────
+    Route::post('webhook/venta', [\App\Http\Controllers\WebhookController::class, 'venta']);
+    Route::post('webhook/stock', [\App\Http\Controllers\WebhookController::class, 'stock']);
+
     // ── Rendiciones (público — accesible desde link WhatsApp) ────────
     Route::get('rendicion/{token}', [\App\Http\Controllers\Admin\RendicionController::class, 'show']);
     Route::post('rendicion/{token}/aprobar', [\App\Http\Controllers\Admin\RendicionController::class, 'aprobar']);

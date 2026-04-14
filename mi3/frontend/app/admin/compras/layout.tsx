@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Plus, FileText, Package, TrendingUp, BarChart3, Wifi, WifiOff } from 'lucide-react';
+import { ComprasProvider } from '@/contexts/ComprasContext';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { getEcho } from '@/lib/echo';
 
@@ -101,6 +102,7 @@ export default function ComprasLayout({ children }: { children: React.ReactNode 
   const formatCLP = (n: number) => '$' + Math.round(n).toLocaleString('es-CL');
 
   return (
+    <ComprasProvider>
     <div className="flex flex-col h-full">
       <nav className="flex items-center gap-1 overflow-x-auto border-b bg-white px-2 py-1.5 md:px-4">
         <div className="flex flex-1 gap-1">
@@ -157,5 +159,6 @@ export default function ComprasLayout({ children }: { children: React.ReactNode 
         </div>
       )}
     </div>
+    </ComprasProvider>
   );
 }

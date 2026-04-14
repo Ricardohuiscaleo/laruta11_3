@@ -108,6 +108,8 @@ class CompraService
                 count($data['items']),
             );
 
+            \App\Events\StockActualizado::dispatch('compra');
+
             return [
                 'compra_id'   => $compra->id,
                 'saldo_nuevo' => $saldoNuevo,

@@ -405,6 +405,25 @@ try {
     }
     
     $pdo->commit();
+
+    // Notificar mi3 en realtime (WebSocket via Reverb)
+    try {
+        $ch = curl_init('https://api-mi3.laruta11.cl/api/v1/webhook/venta');
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'X-Webhook-Secret: r11-webhook-2026'],
+            CURLOPT_POSTFIELDS => json_encode([
+                'order_number' => $order_id,
+                'monto' => $amount,
+                'source' => 'app3',
+                'customer_name' => $customer_name,
+            ]),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 2,
+        ]);
+        curl_exec($ch);
+        curl_close($ch);
+    } catch (Exception $e) {}
     
     // Generar 1% cashback si es usuario autenticado, pagó Y NO está cancelada
     if ($user_id && $payment_status === 'paid' && $order_status !== 'cancelled') {

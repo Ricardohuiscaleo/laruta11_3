@@ -11,6 +11,7 @@ return [
     'faker_locale' => 'es_CL',
     'key' => env('APP_KEY'),
     'cipher' => 'AES-256-CBC',
+    'webhook_secret' => env('WEBHOOK_SECRET', 'r11-webhook-2026'),
     'maintenance' => [
         'driver' => 'file',
     ],

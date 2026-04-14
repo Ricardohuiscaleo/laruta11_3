@@ -109,6 +109,8 @@ class StockController extends Controller
         $ingredient = \App\Models\Ingredient::findOrFail($id);
         $ingredient->update(array_filter($data, fn($v) => $v !== null));
 
+        broadcast(new \App\Events\StockActualizado('edicion', $id));
+
         return response()->json(['success' => true, 'data' => $ingredient]);
     }
 
@@ -145,6 +147,8 @@ class StockController extends Controller
 
             $results[] = ['id' => $item['id'], 'name' => $ingredient->name, 'prev' => $prev, 'new' => $new];
         }
+
+        broadcast(new \App\Events\StockActualizado('consumo'));
 
         return response()->json(['success' => true, 'applied' => $results]);
     }
