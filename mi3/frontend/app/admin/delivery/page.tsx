@@ -34,7 +34,7 @@ export default function DeliveryMonitorPage() {
       {/* Main content: map + panel */}
       <div className="flex flex-col md:flex-row gap-4 flex-1 min-h-[500px]">
         {/* Map — 2/3 width on desktop */}
-        <div className="flex-1 md:w-2/3 min-h-[400px] md:min-h-0">
+        <div className="flex-1 md:w-2/3 h-[400px] md:min-h-0">
           <DeliveryMap
             orders={orders}
             riders={riders}

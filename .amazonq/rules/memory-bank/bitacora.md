@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`351753d`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | 🔄 Pendiente verificar (`351753d`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`9562f5d`) — delivery tracking + Google Maps activo |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`351753d`) — migraciones delivery ejecutadas |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | 🔄 Deploy en progreso (`2871079`) — fix Echo authEndpoint |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | 🔄 Deploy en progreso (`91f868c`) — fix CORS broadcasting |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -78,20 +78,17 @@
 
 ## Sesiones Recientes
 
-### 2026-04-14l — Deploy delivery-tracking-realtime: fixes build + deploys activos
+### 2026-04-14l — Deploy delivery-tracking-realtime: fixes build + broadcasting auth
 
 **Cambios:**
-- Fix 1: `app3/src/pages/tracking/[order_number].astro` → error `Expected "}" but found "."`. Commit `10cead8`.
-- Fix 2: app3 es `output: 'static'`, ruta dinámica requiere SSR. Reemplazada por `tracking/index.astro` estática con `?order=`. Commit `351753d`.
-- Fix 3: mi3-frontend fallaba con `npm ci` por `@vis.gl/react-google-maps` faltante en package-lock.json. Commit `f41e223`.
-- Fix 5: mapId placeholder reemplazado por ID real `d51ca892b68e9c5e5e2dd701`. Commit `bab6fea`.
-- Fix 6: `NEXT_PUBLIC_GOOGLE_MAPS_KEY` no llegaba al build — faltaba `ARG` en Dockerfile + variable agregada via Coolify API con `is_buildtime=true` + duplicado eliminado de BD Coolify. Commit `9562f5d`. Rebuild triggerado.
-- mi3-backend: deployado ✅ (`351753d`). Migraciones ejecutadas.
-- app3: deployado ✅ (`351753d`).
-- mi3-frontend: deployado ✅ (`9562f5d`). WebSocket + Google Maps funcionales.
+- Fixes 1-6: Astro template, static output, package-lock, nav duplicado, mapId, Dockerfile ARGs. Commits `10cead8`→`9562f5d`.
+- Fix 7: Delivery link en mobile nav. Commit `35a23a4`.
+- Fix 8: Broadcasting auth — `channels.php` en `bootstrap/app.php` + Echo `authEndpoint` → `api-mi3.laruta11.cl/broadcasting/auth`. Commit `2871079`.
+- Fix 9: CORS — `broadcasting/*` agregado a `paths` en `cors.php` (solo tenía `api/*`). Commit `91f868c`.
+- Migraciones ejecutadas. Env vars Coolify restauradas por usuario.
 
-**Commits:** `10cead8`, `351753d`, `f41e223`, `b32f647`, `bab6fea`, `9562f5d`
-**Deploys:** mi3-backend ✅, app3 ✅, mi3-frontend ✅, caja3 pendiente
+**Commits:** `10cead8`→`91f868c` (9 commits)
+**Deploys:** mi3-backend 🔄 (`91f868c`), mi3-frontend 🔄 (`2871079`), app3 ✅ (`351753d`)
 
 ### 2026-04-14k — Deploy delivery-tracking-realtime: commit inicial
 
