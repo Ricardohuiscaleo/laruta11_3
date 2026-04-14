@@ -154,6 +154,7 @@ Route::prefix('v1')->group(function () {
         Route::put('checklists/ai-prompts/{id}', [\App\Http\Controllers\Admin\ChecklistController::class, 'aiPromptsUpdate']);
         Route::post('checklists/ai-prompts/{id}/activate', [\App\Http\Controllers\Admin\ChecklistController::class, 'aiPromptsActivate']);
         Route::post('checklists/ai-prompts/{id}/generate-candidate', [\App\Http\Controllers\Admin\ChecklistController::class, 'aiPromptsGenerateCandidate']);
+        Route::delete('checklists/ai-prompts/{id}', [\App\Http\Controllers\Admin\ChecklistController::class, 'aiPromptsDelete']);
         Route::get('checklists/ai-tasks', [\App\Http\Controllers\Admin\ChecklistController::class, 'aiTasks']);
         Route::get('checklists/{id}', [\App\Http\Controllers\Admin\ChecklistController::class, 'show']);
 

@@ -264,6 +264,22 @@ class ChecklistController extends Controller
     }
 
     /**
+     * DELETE /api/v1/admin/checklists/ai-prompts/{id}
+     * Delete a candidate prompt (only non-active).
+     */
+    public function aiPromptsDelete(int $id): JsonResponse
+    {
+        $prompt = ChecklistAiPrompt::findOrFail($id);
+
+        if ($prompt->is_active) {
+            return response()->json(['success' => false, 'error' => 'No se puede eliminar un prompt activo'], 422);
+        }
+
+        $prompt->delete();
+        return response()->json(['success' => true]);
+    }
+
+    /**
      * GET /api/v1/admin/checklists/ai-tasks
      * List AI tasks with filters and summary.
      */

@@ -414,9 +414,14 @@ function PromptsPanel() {
                 <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-blue-700">Candidato v{p.candidate.prompt_version}</span>
-                    <button onClick={() => handleActivate(p.candidate!.id)} className="rounded-lg bg-blue-600 px-3 py-1 text-xs text-white font-medium hover:bg-blue-700">
-                      Activar
-                    </button>
+                    <div className="flex gap-2">
+                      <button onClick={async () => { try { await apiFetch(`/admin/checklists/ai-prompts/${p.candidate!.id}`, { method: 'DELETE' }); fetchPrompts(); } catch {} }} className="rounded-lg border border-red-300 px-3 py-1 text-xs text-red-600 font-medium hover:bg-red-50">
+                        Descartar
+                      </button>
+                      <button onClick={() => handleActivate(p.candidate!.id)} className="rounded-lg bg-blue-600 px-3 py-1 text-xs text-white font-medium hover:bg-blue-700">
+                        Activar
+                      </button>
+                    </div>
                   </div>
                   <pre className="text-xs text-blue-800 whitespace-pre-wrap max-h-32 overflow-y-auto">{p.candidate.prompt_base}</pre>
                 </div>
