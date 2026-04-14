@@ -304,6 +304,7 @@ Mapeo conocido de personas a proveedores:
 - Giovanna Loza Salas = ARIAKA (Servicios Delivery)
 - Ariel Araya = ARIAKA (Servicios Delivery)
 - Ariel Aliro Araya Villalobos = ARIAKA (Servicios Delivery)
+- Elton San Martin = Abastible (gas 15kg)
 - Karina Andrea Muñoz Ahumada = Ariztía (proveedor)
 - Lucila Cacera = agro-lucila
 - Si el destinatario no está en el mapeo, usar el nombre de la persona como proveedor.

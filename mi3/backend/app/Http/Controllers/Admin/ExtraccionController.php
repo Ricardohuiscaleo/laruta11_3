@@ -235,6 +235,9 @@ class ExtraccionController extends Controller
             'giovanna loza' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
             'ariel araya' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
             'ariel aliro araya villalobos' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
+            // Gas (Abastible)
+            'elton san martin' => ['proveedor' => 'Abastible', 'item' => 'gas 15', 'tipo_compra' => 'ingredientes'],
+            'elton san martín' => ['proveedor' => 'Abastible', 'item' => 'gas 15', 'tipo_compra' => 'ingredientes'],
             // Other known persons
             'karina andrea muñoz ahumada' => ['proveedor' => 'Ariztía (proveedor)', 'item' => null, 'tipo_compra' => 'ingredientes'],
             'karina muñoz' => ['proveedor' => 'Ariztía (proveedor)', 'item' => null, 'tipo_compra' => 'ingredientes'],
@@ -260,11 +263,24 @@ class ExtraccionController extends Controller
                     $data['metodo_pago'] = 'transfer';
                     $data['tipo_compra'] = $mapping['tipo_compra'];
                     if ($mapping['item'] && empty($data['items'])) {
+                        $montoTotal = (float) ($data['monto_total'] ?? 0);
+                        $cantidad = 1;
+                        $precioUnitario = $montoTotal;
+
+                        // Special: gas cylinders — estimate quantity from total
+                        if (str_contains($mapping['item'], 'gas')) {
+                            $precioCilindro = 23500; // precio referencia cilindro 15kg
+                            if ($montoTotal >= $precioCilindro * 1.5) {
+                                $cantidad = (int) round($montoTotal / $precioCilindro);
+                                $precioUnitario = (int) round($montoTotal / $cantidad);
+                            }
+                        }
+
                         $data['items'] = [[
                             'nombre' => $mapping['item'],
-                            'cantidad' => 1,
+                            'cantidad' => $cantidad,
                             'unidad' => 'unidad',
-                            'precio_unitario' => $data['monto_total'] ?? 0,
+                            'precio_unitario' => $precioUnitario,
                             'subtotal' => $data['monto_total'] ?? 0,
                         ]];
                     } elseif ($mapping['item']) {
