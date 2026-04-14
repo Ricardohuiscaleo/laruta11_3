@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2d50f13`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`f83474b`) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`8311891`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -88,8 +88,8 @@
 - `ExtraccionController`: proveedores que facturan neto (vanni, arauco) → extracción muestra neto tal cual. IVA ×1.19 se aplica al registrar en `CompraController::store()` (evita redondeos acumulados).
 - BD: ingrediente id=40 renombrado "Caja Sandwich" → "ENVASE CARTULINA SANDWICH GRANDE PAMOLSA". Nuevas equivalencias: ENVASE CARTULINA, ENVASE ALUMINIO, ENVASE HOT DOG BIO-VANNI. RUT 76.979.850-1 corregido a vanni. Karina Roco agregada como ARIAKA.
 
-**Commits:** `1d0179e`, `f9b69c5`, `22a0845`, `f83474b`
-**Deploys:** mi3-backend (`w2myp1sxoy0fxg37hjffcw6t`) ✅
+**Commits:** `1d0179e`, `f9b69c5`, `22a0845`, `f83474b`, `8311891`
+**Deploys:** mi3-backend (`vkqftsy6vexvel23s8f7tsou`) ✅
 
 ### 2026-04-14d — IA descuentos + estructura boleta + equivalencias paquete→unidades + Cencosud
 
