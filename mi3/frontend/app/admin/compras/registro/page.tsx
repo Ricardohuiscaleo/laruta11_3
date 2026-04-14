@@ -307,6 +307,11 @@ export default function RegistroPage() {
   const pendingGroups = groups.filter((_, i) => !submitted.includes(i));
   const grandTotal = pendingGroups.reduce((s, g) => s + groupTotal(g), 0);
 
+  const isProveedorNeto = (prov: string) => {
+    const lower = prov.toLowerCase();
+    return ['vanni', 'arauco'].some(n => lower.includes(n));
+  };
+
   return (
     <div className="space-y-4">
       {/* Saldo */}
@@ -471,9 +476,15 @@ export default function RegistroPage() {
                 )}
 
                 {/* Submit group */}
+                {isProveedorNeto(group.proveedor) && total > 0 && (
+                  <div className="flex items-center justify-between rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-sm">
+                    <span className="text-blue-700">Neto: {formatearPesosCLP(total)}</span>
+                    <span className="font-bold text-blue-900">Con IVA: {formatearPesosCLP(Math.round(total * 1.19))}</span>
+                  </div>
+                )}
                 <button onClick={() => submitGroup(gi)} disabled={submitting || !group.proveedor || group.items.length === 0}
                   className="w-full rounded-lg bg-mi3-500 py-2.5 text-sm font-medium text-white hover:bg-mi3-600 disabled:opacity-50">
-                  {submitting ? 'Registrando...' : `Registrar — ${formatearPesosCLP(total)}`}
+                  {submitting ? 'Registrando...' : `Registrar — ${formatearPesosCLP(isProveedorNeto(group.proveedor) ? Math.round(total * 1.19) : total)}`}
                 </button>
               </div>
             )}
