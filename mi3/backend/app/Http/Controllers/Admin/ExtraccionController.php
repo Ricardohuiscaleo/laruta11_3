@@ -281,6 +281,9 @@ class ExtraccionController extends Controller
             'agrosuper' => 'Agrosuper',
             'ideal' => 'ideal',
             'shipo' => 'Shipo',
+            'cencosud' => 'Jumbo',
+            'santa isabel' => 'Santa Isabel',
+            'jumbo' => 'Jumbo',
         ];
 
         // Check all text fields for supplier clues

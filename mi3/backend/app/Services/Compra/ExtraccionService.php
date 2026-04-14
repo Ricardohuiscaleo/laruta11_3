@@ -205,6 +205,22 @@ Analiza esta imagen y determina qué tipo de contenido es. Responde SOLO con JSO
 TIPO 1 — BOLETA O FACTURA (documento impreso con texto, montos, RUT):
 Extrae: proveedor, rut_proveedor, items (array con nombre/cantidad/unidad/precio_unitario/subtotal), monto_neto, iva, monto_total.
 
+REGLA CRÍTICA — DESCUENTOS POR PRODUCTO EN BOLETAS DE SUPERMERCADO:
+Las boletas de supermercado (Jumbo, Santa Isabel, Líder, Unimarc, etc.) frecuentemente tienen descuentos por línea que aparecen JUSTO DEBAJO del producto:
+Ejemplo:
+  2 X $4.690
+  7801965001452 BIG MONTINA 800GR    9.380
+      OFERTA SEMANA                 -1.876    ← descuento del producto anterior
+  2 X $1.190
+  7801365000284 CHAMPIÑON BANDEJA    2.380
+      DESCTO CONVENI                  -119    ← descuento del producto anterior
+
+Tipos de descuento a detectar: OFERTA SEMANA, DESCTO CONVENI, DCTO, PROMO, OFERTA, DESCUENTO, DTO.
+Para cada item, RESTA el descuento de su subtotal:
+- Big Montina: subtotal = 9.380 - 1.876 = 7.504, precio_unitario = 7.504 / 2 = 3.752
+- Champiñón: subtotal = 2.380 - 119 = 2.261, precio_unitario = 2.261 / 2 = 1.131
+El monto_total debe coincidir con el TOTAL impreso en la boleta (después de descuentos), NO con la suma de subtotales sin descuento.
+
 REGLA CRÍTICA PARA IDENTIFICAR AL PROVEEDOR EN FACTURAS CHILENAS:
 En una factura chilena, el PROVEEDOR (emisor) es la empresa que EMITE la factura, NO el destinatario.
 Estructura típica de una factura chilena:
