@@ -60,7 +60,7 @@ export const prerender = false;
       if (!orderNumber) return;
       const frame = document.getElementById('tracking-frame');
       const placeholder = document.getElementById('placeholder');
-      frame.src = `https://app.laruta11.cl/tracking/${orderNumber}`;
+      frame.src = `https://app.laruta11.cl/tracking/?order=${orderNumber}`;
       frame.style.display = 'block';
       placeholder.style.display = 'none';
       // Update URL without reload

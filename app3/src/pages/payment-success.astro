@@ -386,7 +386,7 @@ const amount = Astro.url.searchParams.get('amount');
                 const trackingEmbed = document.getElementById('tracking-embed');
                 const trackingIframe = document.getElementById('tracking-iframe');
                 if (trackingEmbed && trackingIframe) {
-                    trackingIframe.src = `https://app.laruta11.cl/tracking/${orderRef}`;
+                    trackingIframe.src = `https://app.laruta11.cl/tracking/?order=${orderRef}`;
                     trackingEmbed.style.display = 'block';
                 }
             }

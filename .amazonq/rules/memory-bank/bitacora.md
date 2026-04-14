@@ -69,33 +69,41 @@
 - [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3.
 - [ ] Recalcular delivery\_fee server-side en `create_order.php`
 - [ ] Unificar factor descuento RL6 en caja3 (0.6 vs 0.7143)
-- [ ] **Deploy spec delivery-tracking-realtime** — hacer commit + deploy mi3-backend, mi3-frontend, app3 y caja3. Requiere `php artisan migrate` en mi3-backend. Google Maps key ya configurada en Coolify.
-- [ ] **Integración caja3/app3 delivery** — webhook order-status en caja3, iframe Vista Cliente en app3 (fase posterior del spec)
+- [x] **Deploy spec delivery-tracking-realtime** — commit `70650cf` pusheado. Builds disparados en Coolify. Pendiente verificar builds y ejecutar `php artisan migrate`.
+- [x] **Integración caja3/app3 delivery** — webhook en caja3 y iframe en app3 implementados en commit `70650cf`.
 - [ ] **Investigar arquitectura SaaS multi-tenant** — AWS Lambda + Aurora PostgreSQL + Amazon Location Service + Stripe. Dominio candidato: pocos.click (caduca 2026-12-21)
 
 ---
 
 ## Sesiones Recientes
 
-### 2026-04-14j — Spec delivery-tracking-realtime: implementación completa (sin deploy)
+### 2026-04-14k — Deploy delivery-tracking-realtime: commit + push a main
 
 **Cambios:**
-- **mi3-backend**: 4 migraciones (rider_locations, delivery_assignments, daily_settlements, campos en tuu_orders), 3 modelos Eloquent, 2 eventos Reverb (RiderLocationUpdated, OrderStatusUpdated), routes/channels.php, 3 servicios (DeliveryService, LocationService, SettlementService), 4 controladores (DeliveryController, RiderController, SettlementController, TrackingController), webhook OrderStatusWebhookController, rutas API en routes/api.php, 2 comandos Artisan (delivery:generate-daily-settlement 23:59, delivery:check-pending-settlements 12:00) registrados en routes/console.php
-- **mi3-frontend**: hooks useDeliveryTracking, useRiderGPS, usePendingSettlementBadge; componentes DeliveryMap, OrderPanel, DeliveryMetrics, SettlementPanel, RiderDashboard; páginas /admin/delivery y /rider; badge de alerta en AdminSidebar
-- **app3**: página `/tracking/[order_number].astro` (Vista Cliente embebible, realtime via Pusher); iframe de tracking embebido en payment-success.astro para pedidos delivery; env vars PUBLIC_GOOGLE_MAPS_KEY y PUBLIC_REVERB_APP_KEY agregadas en Coolify
-- **caja3**: `update_order_status.php` llama webhook mi3 al cambiar estado; página `/delivery-monitor.astro` para operadores
-- **Coolify mi3-frontend**: `NEXT_PUBLIC_GOOGLE_MAPS_KEY` agregada vía SSH
-- **Pendiente para activar**: commit + deploy + `php artisan migrate` en producción
+- Commit `70650cf` — 44 archivos, 4736 inserciones. Todo el spec delivery-tracking-realtime pusheado a main.
+- Coolify disparó builds automáticos para mi3-backend, mi3-frontend, app3 y caja3.
+- **Pendiente confirmar**: que los builds completaron y ejecutar `php artisan migrate` en mi3-backend.
 
-**Commits:** ninguno aún
-**Deploys:** ninguno aún
+**Commits:** `70650cf`
+**Deploys:** builds disparados, estado pendiente de verificación
+
+### 2026-04-14j — Spec delivery-tracking-realtime: implementación completa
+
+**Cambios:**
+- **mi3-backend**: 4 migraciones, 3 modelos Eloquent, 2 eventos Reverb, channels.php, 3 servicios, 4 controladores + webhook, rutas API, 2 comandos Artisan en scheduler
+- **mi3-frontend**: hooks useDeliveryTracking/useRiderGPS/usePendingSettlementBadge; Vista Monitor /admin/delivery; Vista Rider /rider; badge alerta en AdminSidebar
+- **app3**: /tracking/[order_number].astro embebible + iframe en payment-success; env vars PUBLIC_GOOGLE_MAPS_KEY y PUBLIC_REVERB_APP_KEY en Coolify
+- **caja3**: webhook call en update_order_status.php; página /delivery-monitor
+- **Coolify mi3-frontend**: NEXT_PUBLIC_GOOGLE_MAPS_KEY agregada vía SSH
+
+**Commits:** ninguno (código local)
+**Deploys:** ninguno
 
 ### 2026-04-14i — Fix timeout bot SuperKiro (session/prompt pegado)
 
 **Cambios:**
-- `/opt/kiro-acp-telegram-bot/src/acp-client.js` en VPS: timeout `session/prompt` aumentado de 120s → 600s (10 min). Otros requests mantienen 120s.
-- Causa raíz: tareas largas de Kiro (SSH, exploración workspace) superaban 2 min y el bot lanzaba `Timeout: session/prompt`, dejando la sesión sucia.
-- Bot reiniciado vía `pm2 restart kiro-telegram-bot`. Nueva sesión ACP activa.
+- `/opt/kiro-acp-telegram-bot/src/acp-client.js` en VPS: timeout `session/prompt` aumentado de 120s → 600s (10 min).
+- Bot reiniciado vía `pm2 restart kiro-telegram-bot`.
 
 **Commits:** ninguno (cambio directo en VPS)
 **Deploys:** ninguno
@@ -103,27 +111,12 @@
 ### 2026-04-14h — Spec fix-sessiones: Task 1 — tests de exploración de bugs creados
 
 **Cambios:**
-- Creado `mi3/frontend/lib/__tests__/bug-exploration.test.ts` — 14 tests PBT (fast-check) cubriendo BUG 1, 2, 3, 7, 8. Tests pasaron porque el código ya estaba fixeado en commits anteriores. Sirven como tests de regresión.
-- `vitest.config.ts` ya existía (confirmado).
+- Creado `mi3/frontend/lib/__tests__/bug-exploration.test.ts` — 14 tests PBT (fast-check) cubriendo BUG 1, 2, 3, 7, 8.
 
 **Commits:** ninguno nuevo
 **Deploys:** ninguno
 
-### 2026-04-14g — Spec fix-sessiones: Tasks 3+4+5 ejecutadas (auth loop fix)
-
-**Cambios:**
-- `POST /auth/clear-session` endpoint público — expira cookies httpOnly server-side
-- `mi3_auth_flag` cookie (non-httpOnly) en login/logout/googleCallback — JS puede borrarla
-- `middleware.ts`: checa `mi3_auth_flag` en vez de `mi3_token` — rompe el loop 401
-- `api.ts`/`compras-api.ts`: 401 llama clear-session + borra mi3_auth_flag
-- Google OAuth: pasa `?token=` en redirect, `TokenFromUrl` component guarda en localStorage
-- `useAuth.ts`: `fetchUser()` usa `fetch()` directo (no apiFetch) para evitar loop en /auth/me
-- `Dockerfile`: eliminado `key:generate` (APP_KEY persiste via Coolify)
-
-**Commits:** `2c33166`, `246848b`
-**Deploys:** mi3-frontend (`hm5ekprg1dfsjz2mwajjyz10`) ✅, mi3-backend (`nml1ab63cplp1wo6fq1okqwz`) ✅
-
 ---
 
-> Sesiones anteriores (149 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (150 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
