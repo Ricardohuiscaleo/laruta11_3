@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`43323cf`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`43323cf`) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`cce9b31`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -85,14 +85,14 @@
 ### 2026-04-14c — Fix checklist turno nocturno + shift-day logic alineada con caja3
 
 **Cambios:**
-- Backend `ChecklistService`: shift-day logic (00:00-04:00 = día anterior, igual que caja3). Cierre `scheduled_time` corregido de 02:00→00:45. Admin view incluye checklists del turno nocturno.
+- Backend `ChecklistService`: shift-day logic (00:00-04:00 = día anterior, igual que caja3). Cierre `scheduled_time` corregido de 02:00→00:45. Admin view: shift-day solo aplica cuando fecha=hoy Y 00:00-04:00 (no en navegación manual).
 - Backend `ChecklistController`: on-demand creation busca turnos en fecha actual y shift-date. Fecha calculada con timezone Chile.
 - Frontend `checklist/page.tsx`: cierre visible 00:00-04:00 (turno nocturno) y 18:00+, oculto 04:00-18:00.
 - BD: corregido `scheduled_time` de checklists cierre existentes. Eliminado checklist corrupto id=188 (personal_id NULL).
 - También incluye fix compras: `metodo_pago` enum `debit`→`card` + validación `in:` en CompraController.
 
-**Commits:** `b15e673`, `43323cf`
-**Deploys:** mi3-frontend (`xjk16jcai46ne36j36zoun09`) ✅, mi3-backend (`xaiz4xxityn9euo1menldh9s`) ✅
+**Commits:** `b15e673`, `43323cf`, `cce9b31`
+**Deploys:** mi3-frontend (`xjk16jcai46ne36j36zoun09`) ✅, mi3-backend (`rql7y6p0sj1jrm95q73r4joe`) ✅
 
 ### 2026-04-14b — IA báscula feria + equivalencias empaque + modal foto + feedback visible
 
