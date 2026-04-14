@@ -366,6 +366,7 @@ class ExtraccionController extends Controller
             'cencosud' => 'Jumbo',
             'santa isabel' => 'Santa Isabel',
             'jumbo' => 'Jumbo',
+            'vanni' => 'vanni',
         ];
 
         // Check all text fields for supplier clues
@@ -410,7 +411,7 @@ class ExtraccionController extends Controller
         $transferSuppliers = [
             'ariztía', 'ariztia', 'ariztía (proveedor)', 'ariztia (proveedor)',
             'agrosuper', 'agrosuper (proveedor)',
-            'ideal', 'agro-lucila', 'ariaka', 'jumboapp',
+            'ideal', 'agro-lucila', 'ariaka', 'jumboapp', 'vanni',
         ];
 
         foreach ($transferSuppliers as $ts) {

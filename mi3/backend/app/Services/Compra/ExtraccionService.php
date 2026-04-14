@@ -332,6 +332,15 @@ Proveedores que SIEMPRE se pagan con transferencia (metodo_pago = "transfer"):
 - agro-lucila, Lucila Cacera → metodo_pago = "transfer"
 - ARIAKA → metodo_pago = "transfer"
 - JumboAPP → metodo_pago = "transfer"
+- Vanni (Maria Angelica Vanni, Fábrica de Bandejas) → metodo_pago = "transfer"
+
+FORMATO FACTURA VANNI (Fábrica de Bandejas Limitada, RUT 76.979.850-1):
+Factura con columnas: CÓDIGO | CANTIDAD | U.M. | DESCRIPCIÓN | % DCTO | PRECIO UNITARIO | TOTAL
+- Las cantidades son DIRECTAS (200 = 200 unidades individuales, no empaques)
+- Precio unitario es NETO por unidad (sin IVA)
+- TOTAL de línea = cantidad × precio unitario (neto)
+- El TOTAL de la factura incluye IVA 19%
+- Productos típicos: envases de cartulina, aluminio, hot dog, cajas pizza, bolsas delivery
 {$knownSuppliers}{$rutMapping}{$knownProducts}{$productPatterns}
 
 Formato de respuesta JSON:
