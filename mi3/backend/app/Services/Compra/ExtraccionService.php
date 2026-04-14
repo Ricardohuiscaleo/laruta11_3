@@ -205,6 +205,22 @@ Analiza esta imagen y determina qué tipo de contenido es. Responde SOLO con JSO
 TIPO 1 — BOLETA O FACTURA (documento impreso con texto, montos, RUT):
 Extrae: proveedor, rut_proveedor, items (array con nombre/cantidad/unidad/precio_unitario/subtotal), monto_neto, iva, monto_total.
 
+REGLA CRÍTICA — ESTRUCTURA DE BOLETAS DE SUPERMERCADO CHILENO:
+Las boletas de supermercado tienen esta estructura (de arriba a abajo):
+1. ENCABEZADO: RUT, nombre empresa (Cencosud, Walmart, SMU), dirección, sucursal
+2. PRODUCTOS: líneas con código de barras + nombre + precio. Formato típico:
+   - "7801965001452 BIG MONTINA 800GR    2.350" (código + nombre + subtotal)
+   - "2 X $4.690" antes del producto = cantidad × precio unitario
+   - Líneas de descuento JUSTO DEBAJO: "OFERTA SEMANA -1.876", "DESCTO CONVENI -118"
+3. SUB TOTAL: suma antes de descuentos
+4. NETO / IVA / DESCUENTOS / TOTAL: resumen fiscal
+5. PUNTOS/FIDELIDAD: "PUNTOS CENCOSUD", "PUNTOS CMR", saldo de puntos — IGNORAR esta sección
+6. VOUCHER DE PAGO: "VENTA DEBITO", número de operación, monto — usar para confirmar total y metodo_pago
+
+IMPORTANTE: Los PRODUCTOS están ENTRE el encabezado y "SUB TOTAL". Todo lo que viene después de "TOTAL" (puntos, voucher) NO son productos.
+Si dice "T. DEBITO" o "VENTA DEBITO" → metodo_pago = "card".
+Si dice "EFECTIVO" o "VUELTO" con monto > 0 → metodo_pago = "cash".
+
 REGLA CRÍTICA — DESCUENTOS POR PRODUCTO EN BOLETAS DE SUPERMERCADO:
 Las boletas de supermercado (Jumbo, Santa Isabel, Líder, Unimarc, etc.) frecuentemente tienen descuentos por línea que aparecen JUSTO DEBAJO del producto:
 Ejemplo:
