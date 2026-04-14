@@ -92,11 +92,17 @@ class ExtraccionController extends Controller
                     $itemName = mb_strtolower(trim($item['nombre'] ?? ''));
                     if ($itemName === '') continue;
 
+                    // Normalize: remove accents for matching
+                    $itemNorm = $this->removeAccentsSimple($itemName);
+
                     $equiv = \App\Models\ProductEquivalence::where('nombre_normalizado', $itemName)->first();
                     if (!$equiv) {
-                        // Try fuzzy: check if item name contains the equivalence name
-                        $equiv = \App\Models\ProductEquivalence::get()->first(function ($eq) use ($itemName) {
-                            return str_contains($itemName, mb_strtolower($eq->nombre_normalizado))
+                        // Try fuzzy: check if item name contains the equivalence name or vice versa
+                        $equiv = \App\Models\ProductEquivalence::get()->first(function ($eq) use ($itemName, $itemNorm) {
+                            $eqNorm = $this->removeAccentsSimple(mb_strtolower($eq->nombre_normalizado));
+                            return str_contains($itemNorm, $eqNorm)
+                                || str_contains($eqNorm, $itemNorm)
+                                || str_contains($itemName, mb_strtolower($eq->nombre_normalizado))
                                 || str_contains(mb_strtolower($eq->nombre_normalizado), $itemName);
                         });
                     }
@@ -445,5 +451,14 @@ class ExtraccionController extends Controller
         // Return the most common supplier
         arsort($supplierCounts);
         return array_key_first($supplierCounts);
+    }
+
+    private function removeAccentsSimple(string $str): string
+    {
+        return strtr($str, [
+            'á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u',
+            'ñ' => 'n', 'ü' => 'u', 'Á' => 'a', 'É' => 'e', 'Í' => 'i',
+            'Ó' => 'o', 'Ú' => 'u', 'Ñ' => 'n', 'Ü' => 'u',
+        ]);
     }
 }

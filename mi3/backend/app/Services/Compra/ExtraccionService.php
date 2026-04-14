@@ -207,19 +207,30 @@ Extrae: proveedor, rut_proveedor, items (array con nombre/cantidad/unidad/precio
 
 REGLA CRÍTICA — ESTRUCTURA DE BOLETAS DE SUPERMERCADO CHILENO:
 Las boletas de supermercado tienen esta estructura (de arriba a abajo):
-1. ENCABEZADO: RUT, nombre empresa (Cencosud, Walmart, SMU), dirección, sucursal
-2. PRODUCTOS: líneas con código de barras + nombre + precio. Formato típico:
-   - "7801965001452 BIG MONTINA 800GR    2.350" (código + nombre + subtotal)
-   - "2 X $4.690" antes del producto = cantidad × precio unitario
-   - Líneas de descuento JUSTO DEBAJO: "OFERTA SEMANA -1.876", "DESCTO CONVENI -118"
-3. SUB TOTAL: suma antes de descuentos
-4. NETO / IVA / DESCUENTOS / TOTAL: resumen fiscal
-5. PUNTOS/FIDELIDAD: "PUNTOS CENCOSUD", "PUNTOS CMR", saldo de puntos — IGNORAR esta sección
-6. VOUCHER DE PAGO: "VENTA DEBITO", número de operación, monto — usar para confirmar total y metodo_pago
+1. ENCABEZADO: RUT, nombre empresa (Cencosud, Walmart, SMU, Rendic), dirección, sucursal
+2. PRODUCTOS: líneas con código de barras + nombre + precio. HAY DOS FORMATOS:
 
-IMPORTANTE: Los PRODUCTOS están ENTRE el encabezado y "SUB TOTAL". Todo lo que viene después de "TOTAL" (puntos, voucher) NO son productos.
-Si dice "T. DEBITO" o "VENTA DEBITO" → metodo_pago = "card".
-Si dice "EFECTIVO" o "VUELTO" con monto > 0 → metodo_pago = "cash".
+FORMATO A (Jumbo/Santa Isabel/Líder): cantidad ANTES del producto
+   "2 X $4.690"
+   "7801965001452 BIG MONTINA 800GR    9.380"
+
+FORMATO B (Unimarc/Rendic): cantidad DEBAJO del producto
+   "7801965001452  SALCHICHA SURENA P    $9580"
+   "    2 x 1 UN $4790 c/u"
+   En este formato: la primera línea tiene código + nombre + VALOR TOTAL de la línea.
+   La segunda línea tiene: cantidad × unidades × precio_unitario c/u.
+   Extraer: cantidad=2, precio_unitario=4790, subtotal=9580.
+
+3. Líneas de descuento JUSTO DEBAJO: "OFERTA SEMANA -1.876", "DESCTO CONVENI -118"
+4. SUB TOTAL / TOTAL: resumen fiscal
+5. PUNTOS/FIDELIDAD — IGNORAR
+6. VOUCHER DE PAGO: "TARJETA DE DEBITO" o "VENTA DEBITO" → metodo_pago = "card"
+
+IMPORTANTE: Los PRODUCTOS están ENTRE el encabezado y "TOTAL". Todo después de "TOTAL" NO son productos.
+Supermercados conocidos por RUT:
+- 81.201.000-K = Jumbo o Santa Isabel (Cencosud)
+- 81.537.600-5 = Unimarc (Rendic Hermanos / SMU)
+- www.unimarc.cl = Unimarc
 
 REGLA CRÍTICA — DESCUENTOS POR PRODUCTO EN BOLETAS DE SUPERMERCADO:
 Las boletas de supermercado (Jumbo, Santa Isabel, Líder, Unimarc, etc.) frecuentemente tienen descuentos por línea que aparecen JUSTO DEBAJO del producto:
