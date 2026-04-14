@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`82a3f42`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`46e0167`) |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2c33166`) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`2c33166`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -51,7 +51,7 @@
 - [ ] **Corregir caja3 `get_turnos.php`** base date cajero (2026-02-01 → 2026-02-02)
 - [ ] **Generar turnos mayo** en producción
 - [ ] **Fix push subscriptions duplicadas** en `push_subscriptions_mi3` (44 registros para 1 usuario)
-- [ ] **Spec fix-sessiones**: 8 bugs auth identificados (loop 401, httpOnly, Google OAuth, useAuth). Spec completo con 9 tareas. Pendiente ejecutar.
+- [ ] **Spec fix-sessiones**: Tasks 3+4+5 ejecutadas. Pendiente: Tasks 6 (logout unificado), 7 (session_token), 8 (maxAge), 9 (checkpoint).
 - [x] **Fix duplicate entry turnos** — `updateOrCreate` en ShiftController + ShiftSwapService. Commit `dbe82f8`, deploy `t122hofnf31hazga6zzr5e5v` ✅
 
 ### 🟡 Verificaciones pendientes
@@ -83,6 +83,20 @@
 
 ## Sesiones Recientes
 
+### 2026-04-14g — Spec fix-sessiones: Tasks 3+4+5 ejecutadas (auth loop fix)
+
+**Cambios:**
+- `POST /auth/clear-session` endpoint público — expira cookies httpOnly server-side
+- `mi3_auth_flag` cookie (non-httpOnly) en login/logout/googleCallback — JS puede borrarla
+- `middleware.ts`: checa `mi3_auth_flag` en vez de `mi3_token` — rompe el loop 401
+- `api.ts`/`compras-api.ts`: 401 llama clear-session + borra mi3_auth_flag
+- Google OAuth: pasa `?token=` en redirect, `TokenFromUrl` component guarda en localStorage
+- `useAuth.ts`: `fetchUser()` usa `fetch()` directo (no apiFetch) para evitar loop en /auth/me
+- `Dockerfile`: eliminado `key:generate` (APP_KEY persiste via Coolify)
+
+**Commits:** `2c33166`
+**Deploys:** mi3-frontend (`xe2630548lhg6k66avptmrpf`) ✅, mi3-backend (`pgwexouj1yiphgxhd0waxevl`) ✅
+
 ### 2026-04-14f — Fix auth loop infinito + spec bugfix sesiones
 
 **Cambios:**
@@ -107,28 +121,10 @@
 **Commits:** `1d0179e`→`3a9180b` (11 commits)
 **Deploys:** mi3-backend (`jrf9i38cxe142b679wamudt5`) ✅, mi3-frontend (`zbc8u98mfjwd03olvhb3z8qz`) ✅
 
-### 2026-04-14d — IA descuentos + estructura boleta + equivalencias paquete→unidades + Cencosud
+---
 
-**Cambios:**
-- Prompt IA: estructura boleta supermercado chileno (secciones: encabezado→productos→subtotal→fiscal→puntos→voucher). Campo `descuento` por item, backend aplica resta en `normalizeAmounts`.
-- `ExtraccionController`: post-match aplica `product_equivalences` — convierte paquetes a unidades individuales (ej: 2 paq Big Montina = 20 unidades). Recalcula precio_unitario. Cencosud/Jumbo/Santa Isabel en patrones. Fuzzy match con normalización de acentos.
-- Frontend: badge naranja 🏷️ `notas_descuento`, badge azul 📦 `empaque_detalle`. Tipo `RegistroItem` actualizado.
-- `getChecklistsAdmin`: shift-day solo cuando fecha=hoy Y 00:00-04:00.
-- BD: Jumbo/Santa Isabel en `supplier_index`. RUT 76.979.850-1 corregido: era ideal, ahora vanni. Equivalencias: Big Montina 800GR, Salchicha Sureña → Montina Big (10u/paq). Crema Larga Vida → Crema (200ml). Champiñón variantes → champiñón (Bandeja) + fix doble-encoding UTF-8 ñ. Envase Cartón/Cartulina → Caja Sandwich. Envase Aluminio C-20 → Caja aluminio c/tapa (M). Nuevo ingrediente: Envase Hot Dog 340-VAMNET (id=155, Packaging).
-
-**Commits:** `cce9b31`→`c2a80da` (13 commits)
-**Deploys:** mi3-backend (`q6wf0vgq2o3mradc3cdg2079`) ✅, mi3-frontend (`z8mvpf6x0miwtdwmuy20j1h0`) ✅
-
-### 2026-04-14c — Fix checklist turno nocturno + shift-day logic alineada con caja3
-
-**Cambios:**
-- Backend `ChecklistService`: shift-day logic (00:00-04:00 = día anterior, igual que caja3). Cierre `scheduled_time` corregido de 02:00→00:45. Admin view: shift-day solo aplica cuando fecha=hoy Y 00:00-04:00 (no en navegación manual).
-- Backend `ChecklistController`: on-demand creation busca turnos en fecha actual y shift-date. Fecha calculada con timezone Chile.
-- Frontend `checklist/page.tsx`: cierre visible 00:00-04:00 (turno nocturno) y 18:00+, oculto 04:00-18:00.
-- BD: corregido `scheduled_time` de checklists cierre existentes. Eliminado checklist corrupto id=188 (personal_id NULL).
-- También incluye fix compras: `metodo_pago` enum `debit`→`card` + validación `in:` en CompraController.
-
-**Commits:** `b15e673`, `43323cf`, `cce9b31`
+> Sesiones anteriores (148 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
 **Deploys:** mi3-frontend (`xjk16jcai46ne36j36zoun09`) ✅, mi3-backend (`rql7y6p0sj1jrm95q73r4joe`) ✅
 
 ---
