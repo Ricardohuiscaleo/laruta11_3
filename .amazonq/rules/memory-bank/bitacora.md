@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`913b5ec`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`a71e1d2`) |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`d59880c`) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`670ca13`) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -87,10 +87,11 @@
 **Cambios:**
 - `ExtraccionController`: proveedores que facturan neto (vanni, arauco) → extracción muestra neto tal cual. IVA ×1.19 se aplica al registrar en `CompraController::store()`. Karina Roco → ARIAKA.
 - Frontend: indicador IVA azul (Neto vs Con IVA) para proveedores neto. Botón Registrar muestra total con IVA. Fix tipo `ExtractionItem` — campos `notas_descuento` y `descuento`.
+- `ImagenService`: fix S3 key collision — `time()` → `time()_random_bytes(4)` para nombres únicos. BD: compra 277 deduplicada (7→3 URLs únicas).
 - BD: ingrediente id=40 renombrado "Caja Sandwich" → "ENVASE CARTULINA SANDWICH GRANDE PAMOLSA". Nuevas equivalencias: ENVASE CARTULINA, ENVASE ALUMINIO, ENVASE HOT DOG BIO-VANNI. RUT 76.979.850-1 corregido a vanni. Karina Roco agregada como ARIAKA.
 
-**Commits:** `1d0179e`→`a71e1d2` (6 commits)
-**Deploys:** mi3-backend (`cuxp0u91th1ixj7e33fwd8fg`) ✅, mi3-frontend (`q7taqymy065vyyix6kkpxa5b`) ✅
+**Commits:** `1d0179e`→`670ca13` (8 commits)
+**Deploys:** mi3-backend (`cboy9waeyfhgssyea46a4v1t`) ✅, mi3-frontend (`q7taqymy065vyyix6kkpxa5b`) ✅
 
 ### 2026-04-14d — IA descuentos + estructura boleta + equivalencias paquete→unidades + Cencosud
 
