@@ -28,6 +28,7 @@ Route::prefix('v1')->group(function () {
             ->middleware('auth:sanctum');
         Route::get('me', [\App\Http\Controllers\Auth\AuthController::class, 'me'])
             ->middleware('auth:sanctum');
+        Route::post('clear-session', [\App\Http\Controllers\Auth\AuthController::class, 'clearSession']);
 
         // Google OAuth (public, no auth required)
         Route::get('google/redirect', [\App\Http\Controllers\Auth\AuthController::class, 'googleRedirect']);

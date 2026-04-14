@@ -16,9 +16,11 @@ export function middleware(request: NextRequest) {
   // Read httpOnly cookies set by the backend
   const token = request.cookies.get('mi3_token')?.value;
   const role = request.cookies.get('mi3_role')?.value;
+  // mi3_auth_flag is non-httpOnly — JS can delete it to break the 401 loop
+  const authFlag = request.cookies.get('mi3_auth_flag')?.value;
 
-  // If user has token and visits login or root → redirect to their dashboard
-  if (token && (pathname === '/login' || pathname === '/')) {
+  // If user has auth flag and visits login or root → redirect to their dashboard
+  if (authFlag && (pathname === '/login' || pathname === '/')) {
     const dest = role === 'admin' ? '/admin' : '/dashboard';
     return NextResponse.redirect(new URL(dest, request.url));
   }
@@ -28,8 +30,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // No token → redirect to login
-  if (!token) {
+  // No auth flag → redirect to login (flag is cleared by 401 handler, breaking the loop)
+  if (!authFlag) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 

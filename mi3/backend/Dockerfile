@@ -32,11 +32,11 @@ COPY bootstrap/app.php /var/www/html/bootstrap/app.php
 COPY docker/supervisord.conf /etc/supervisord.conf
 RUN mkdir -p /var/log/supervisor
 
-# Empty .env — Coolify injects env vars at runtime
+# Empty .env — Coolify injects env vars at runtime (including APP_KEY)
 RUN rm -f .env && touch .env
 
-# Generate APP_KEY for build
-RUN php artisan key:generate --force --no-interaction
+# NOTE: key:generate removed — APP_KEY is injected by Coolify as persistent env var
+# Running key:generate here would generate a new key on each build, invalidating cookies
 
 # Dump autoload with our custom classes
 RUN composer dump-autoload --optimize --no-scripts

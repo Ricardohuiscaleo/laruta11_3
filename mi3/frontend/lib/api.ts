@@ -36,11 +36,13 @@ export async function apiFetch<T>(
       // Clear localStorage token
       localStorage.removeItem('mi3_token');
       localStorage.removeItem('mi3_user');
-      // Clear cookies by setting them expired
-      document.cookie = 'mi3_token=; path=/; domain=.laruta11.cl; max-age=0';
-      document.cookie = 'mi3_role=; path=/; domain=.laruta11.cl; max-age=0';
-      document.cookie = 'mi3_user=; path=/; domain=.laruta11.cl; max-age=0';
-      window.location.href = '/login';
+      // Call server-side clear-session to expire httpOnly cookies (JS cannot delete them)
+      fetch(`${API_URL}/api/v1/auth/clear-session`, { method: 'POST', credentials: 'include' })
+        .finally(() => {
+          // Clear the non-httpOnly auth flag (JS CAN delete this one)
+          document.cookie = 'mi3_auth_flag=; path=/; domain=.laruta11.cl; max-age=0';
+          window.location.href = '/login';
+        });
     }
     throw new ApiError(401, 'No autenticado');
   }

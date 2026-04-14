@@ -5,21 +5,30 @@ import { apiFetch, ApiError } from '@/lib/api';
 import { getToken, setToken, removeToken } from '@/lib/auth';
 import type { User, ApiResponse } from '@/types';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
+
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchUser = useCallback(async () => {
     const token = getToken();
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    // Use fetch() directly (NOT apiFetch) to avoid triggering the 401 cleanup handler
+    // This allows cookie-based auth for Google OAuth users who have no localStorage token
     try {
-      const res = await apiFetch<ApiResponse<User>>('/auth/me');
-      if (res.success && res.data) setUser(res.data);
+      const headers: Record<string, string> = { Accept: 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch(`${API_URL}/api/v1/auth/me`, {
+        headers,
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data: ApiResponse<User> = await res.json();
+        if (data.success && data.data) setUser(data.data);
+      }
+      // If 401: user is not authenticated — silently set loading false, no redirect
     } catch {
-      removeToken();
+      // Network error — silently fail
     } finally {
       setLoading(false);
     }

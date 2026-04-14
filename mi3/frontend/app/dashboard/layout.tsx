@@ -1,6 +1,8 @@
 import WorkerSidebar from '@/components/layouts/WorkerSidebar';
 import MobileNavLayout from '@/components/mobile/MobileNavLayout';
 import PushNotificationInit from '@/components/PushNotificationInit';
+import TokenFromUrl from '@/components/TokenFromUrl';
+import { Suspense } from 'react';
 
 export default function DashboardLayout({
   children,
@@ -9,6 +11,7 @@ export default function DashboardLayout({
 }) {
   return (
     <>
+      <Suspense fallback={null}><TokenFromUrl /></Suspense>
       <PushNotificationInit />
       <MobileNavLayout variant="worker">{children}</MobileNavLayout>
       <div className="hidden md:flex min-h-screen">

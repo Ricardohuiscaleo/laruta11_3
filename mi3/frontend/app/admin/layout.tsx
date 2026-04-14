@@ -1,6 +1,8 @@
 import AdminSidebar from '@/components/layouts/AdminSidebar';
 import MobileNavLayout from '@/components/mobile/MobileNavLayout';
 import PushNotificationInit from '@/components/PushNotificationInit';
+import TokenFromUrl from '@/components/TokenFromUrl';
+import { Suspense } from 'react';
 
 export default function AdminLayout({
   children,
@@ -9,6 +11,7 @@ export default function AdminLayout({
 }) {
   return (
     <>
+      <Suspense fallback={null}><TokenFromUrl /></Suspense>
       <PushNotificationInit />
       <MobileNavLayout variant="admin">{children}</MobileNavLayout>
       <div className="hidden md:flex min-h-screen">

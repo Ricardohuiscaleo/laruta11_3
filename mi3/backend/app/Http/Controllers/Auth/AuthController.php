@@ -64,7 +64,22 @@ class AuthController extends Controller
         ])
             ->cookie('mi3_token', $result['token'], $maxAge, '/', '.laruta11.cl', true, true, false, 'Lax')
             ->cookie('mi3_role', $role, $maxAge, '/', '.laruta11.cl', true, false, false, 'Lax')
-            ->cookie('mi3_user', json_encode($result['user']), $maxAge, '/', '.laruta11.cl', true, false, false, 'Lax');
+            ->cookie('mi3_user', json_encode($result['user']), $maxAge, '/', '.laruta11.cl', true, false, false, 'Lax')
+            ->cookie('mi3_auth_flag', '1', $maxAge, '/', '.laruta11.cl', true, false, false, 'Lax');
+    }
+
+    /**
+     * POST /api/v1/auth/clear-session (public — no auth required)
+     * Expires all auth cookies server-side. Called by frontend 401 handler
+     * to clear httpOnly cookies that JS cannot delete.
+     */
+    public function clearSession(): JsonResponse
+    {
+        return response()->json(['success' => true])
+            ->cookie('mi3_token', '', -1, '/', '.laruta11.cl', true, true, false, 'Lax')
+            ->cookie('mi3_role', '', -1, '/', '.laruta11.cl', true, false, false, 'Lax')
+            ->cookie('mi3_user', '', -1, '/', '.laruta11.cl', true, false, false, 'Lax')
+            ->cookie('mi3_auth_flag', '', -1, '/', '.laruta11.cl', true, false, false, 'Lax');
     }
 
     /**
@@ -77,7 +92,8 @@ class AuthController extends Controller
         return response()->json(['success' => true])
             ->cookie('mi3_token', '', -1, '/', '.laruta11.cl', true, true, false, 'Lax')
             ->cookie('mi3_role', '', -1, '/', '.laruta11.cl', true, false, false, 'Lax')
-            ->cookie('mi3_user', '', -1, '/', '.laruta11.cl', true, false, false, 'Lax');
+            ->cookie('mi3_user', '', -1, '/', '.laruta11.cl', true, false, false, 'Lax')
+            ->cookie('mi3_auth_flag', '', -1, '/', '.laruta11.cl', true, false, false, 'Lax');
     }
 
     /**
@@ -127,12 +143,14 @@ class AuthController extends Controller
         $role = $user['is_admin'] ? 'admin' : 'worker';
         $maxAge = 30 * 24 * 60 * 60; // 30 days
         $redirectTo = $user['is_admin'] ? '/admin' : '/dashboard';
+        $maxAgeMins = (int) ($maxAge / 60); // 30 days in minutes
 
-        // Set httpOnly cookies and redirect to frontend
-        return redirect()->away($frontendUrl . $redirectTo)
-            ->cookie('mi3_token', $token, $maxAge / 60, '/', '.laruta11.cl', true, true, false, 'Lax')
-            ->cookie('mi3_role', $role, $maxAge / 60, '/', '.laruta11.cl', true, false, false, 'Lax')
-            ->cookie('mi3_user', json_encode($user), $maxAge / 60, '/', '.laruta11.cl', true, false, false, 'Lax');
+        // Set httpOnly cookies and redirect to frontend with token as query param for localStorage
+        return redirect()->away($frontendUrl . $redirectTo . '?token=' . urlencode($token))
+            ->cookie('mi3_token', $token, $maxAgeMins, '/', '.laruta11.cl', true, true, false, 'Lax')
+            ->cookie('mi3_role', $role, $maxAgeMins, '/', '.laruta11.cl', true, false, false, 'Lax')
+            ->cookie('mi3_user', json_encode($user), $maxAgeMins, '/', '.laruta11.cl', true, false, false, 'Lax')
+            ->cookie('mi3_auth_flag', '1', $maxAgeMins, '/', '.laruta11.cl', true, false, false, 'Lax');
     }
 
     /**
