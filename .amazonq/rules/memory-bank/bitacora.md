@@ -1,12 +1,12 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-14)
+## Estado Actual (2026-04-15)
 
 ### Aplicaciones Desplegadas
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`351753d`) |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`72e348c`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | 🔄 Pendiente verificar (`351753d`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2ff6733`) — delivery map con coords reales R11 |
@@ -80,6 +80,19 @@
 
 ## Sesiones Recientes
 
+### 2026-04-15a — Tab Crédito R11 en ProfileModalModern + hook inspector
+
+**Cambios:**
+- Nueva tab "R11" en ProfileModalModern de app3 para usuarios con `es_credito_r11=1` y `credito_r11_aprobado=1`.
+- Muestra límite, usado, disponible, relación, historial de transacciones, botón pagar crédito, countdown al día 21.
+- Branding emerald/teal para diferenciar de RL6 (amber). Banner de crédito bloqueado si aplica.
+- Usa API existente `/api/r11/get_credit.php`.
+- Hook `inspector-spec` creado: postTaskExecution que revisa críticamente cada tarea completada.
+- Token Coolify API funcional creado (id=6, `kiro-deploy-direct`).
+
+**Commits:** `72e348c`
+**Deploys:** app3 ✅ (`72e348c`)
+
 ### 2026-04-14l — Deploy delivery-tracking-realtime: fixes build + broadcasting auth
 
 **Cambios:**
@@ -114,15 +127,7 @@
 **Commits:** ninguno (código local)
 **Deploys:** ninguno
 
-### 2026-04-14i — Fix timeout bot SuperKiro (session/prompt pegado)
-
-**Cambios:**
-- `/opt/kiro-acp-telegram-bot/src/acp-client.js` en VPS: timeout `session/prompt` aumentado de 120s → 600s (10 min).
-
-**Commits:** ninguno (cambio directo en VPS)
-**Deploys:** ninguno
-
 ---
 
-> Sesiones anteriores (151 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (152 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
