@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`72e348c`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | 🔄 Pendiente verificar (`351753d`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`e4c126d`) — SPA admin + delivery map + realtime |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`6c40b02`) — Telegram+Push adelantos + admin realtime |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`0992f08`) — SPA admin realtime completo |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`3d12b7a`) — AdminDataUpdatedEvent + Telegram adelantos + shift fix |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -80,6 +80,19 @@
 
 ## Sesiones Recientes
 
+### 2026-04-15d — Fix patrón turnos 4x4 Camila/Dafne + realtime all sections
+
+**Cambios:**
+- `config/mi3.php` + `GenerateDynamicShiftsCommand.php`: Dafne `b_id: 12→18` (Dafne Fum activa), `base_date: 2026-02-02→2026-02-01` (sincronizado con caja3).
+- BD: eliminados 20 turnos duplicados del patrón viejo, regenerados 20 con patrón correcto. Abril ahora tiene bloques 4x4 limpios sin gaps.
+- `AdminDataUpdatedEvent.php`: evento genérico ShouldBroadcast para todas las secciones admin.
+- Broadcasts best-effort en PersonalController, ShiftController, ShiftSwapController, AdjustmentController, CreditController, PayrollController.
+- `useAdminRealtime.ts`: listener `.admin.data.updated` + badges por sección.
+- `AdminShell.tsx`: `refreshCounters` + key-based re-mount para auto-refresh en sección activa.
+
+**Commits:** `0992f08`, `3d12b7a`
+**Deploys:** mi3-backend ✅ (`3d12b7a`), mi3-frontend ✅ (`0992f08`)
+
 ### 2026-04-15c — SPA Admin Panel + Adelantos + Realtime (spec admin-notifications-modals)
 
 **Cambios:**
@@ -91,10 +104,11 @@
 - Backend: LoanRequestedEvent + AdminNotificationEvent (ShouldBroadcast), TelegramService + PushNotificationService en LoanService.solicitarPrestamo(), AdminNotificationEvent en NotificationService.crear().
 - channels.php: auth `admin.{id}` channel.
 - Fix ComprasSection: reemplazado iframe (causaba recursión AdminShell anidado) por componentes React directos con tabs internos + ComprasProvider.
+- Realtime completo: AdminDataUpdatedEvent (ShouldBroadcast genérico) + broadcasts en PersonalController, ShiftController, ShiftSwapController, AdjustmentController, CreditController, PayrollController. useAdminRealtime escucha `.admin.data.updated` + AdminShell auto-refresh via refreshCounters key.
 - Hook `qa-production` creado: smoke tests en producción via SSH (userTriggered).
 
-**Commits:** `6c40b02`, `e4c126d` (47 archivos)
-**Deploys:** mi3-backend ✅ (`6c40b02`), mi3-frontend ✅ (`e4c126d`)
+**Commits:** `6c40b02`, `e4c126d`, `0992f08`
+**Deploys:** mi3-backend ✅ (`0992f08`), mi3-frontend ✅ (`0992f08`)
 
 ### 2026-04-15b — Spec admin-notifications-modals + 5 hooks QA
 
@@ -119,23 +133,7 @@
 **Commits:** `72e348c`
 **Deploys:** app3 ✅ (`72e348c`)
 
-### 2026-04-14l — Deploy delivery-tracking-realtime: fixes build + broadcasting auth
-
-**Cambios:**
-- Fixes 1-6: Astro template, static output, package-lock, nav duplicado, mapId, Dockerfile ARGs. Commits `10cead8`→`9562f5d`.
-- Fix 7: Delivery link en mobile nav. Commit `35a23a4`.
-- Fix 8: Broadcasting auth — `channels.php` en `bootstrap/app.php` + Echo `authEndpoint` → `api-mi3.laruta11.cl/broadcasting/auth`. Commit `2871079`.
-- Fix 9: CORS — `broadcasting/*` agregado a `paths` en `cors.php` (solo tenía `api/*`). Commit `91f868c`.
-- Migraciones ejecutadas. Env vars Coolify restauradas por usuario.
-
-- Fix 11: Responsive móvil delivery — mapa full screen + barra métricas compacta + bottom sheet pedidos. Commit `2daa980`.
-- Fix 12: Métricas como botones que abren modales con backdrop blur + swipe-to-close. "Liquidaciones" → "Cashflow". Modales para Pedidos, Riders, En ruta, Cashflow. Commit `da822cd`.
-- Hook `monitor-deploy-status` v2 — polling cada 60s, max 6 intentos.
-
-**Commits:** `10cead8`→`da822cd` (12 commits)
-**Deploys:** mi3-backend ✅ (`91f868c`), mi3-frontend ✅ (`da822cd`), app3 ✅ (`351753d`)
-
 ---
 
-> Sesiones anteriores (154 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (155 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

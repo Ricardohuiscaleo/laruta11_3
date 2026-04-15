@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Home, Users, Calendar, Bell, MoreHorizontal, LogOut,
   Truck, Wallet, ShoppingCart, Receipt, ClipboardCheck,
@@ -44,12 +44,36 @@ interface MobileBottomNavSPAProps {
 
 export default function MobileBottomNavSPA({ activeSection, onSectionChange, badges = {} }: MobileBottomNavSPAProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetVisible, setSheetVisible] = useState(false);
   const moreActive = secondaryItems.some(item => activeSection === item.key);
 
-  const handleNav = (key: string) => {
+  const hasSecondaryBadge = useMemo(
+    () => secondaryItems.some(item => (badges[item.key] || 0) > 0),
+    [badges]
+  );
+
+  // Animate bottom sheet in/out
+  useEffect(() => {
+    if (sheetOpen) {
+      requestAnimationFrame(() => setSheetVisible(true));
+    }
+  }, [sheetOpen]);
+
+  const closeSheet = useCallback(() => {
+    setSheetVisible(false);
+    setTimeout(() => setSheetOpen(false), 200);
+  }, []);
+
+  const handleNav = useCallback((key: string) => {
+    navigator.vibrate?.(10);
     onSectionChange(key);
-    setSheetOpen(false);
-  };
+    if (sheetOpen) closeSheet();
+  }, [onSectionChange, sheetOpen, closeSheet]);
+
+  const openSheet = useCallback(() => {
+    navigator.vibrate?.(10);
+    setSheetOpen(true);
+  }, []);
 
   return (
     <>
@@ -86,15 +110,20 @@ export default function MobileBottomNavSPA({ activeSection, onSectionChange, bad
           {/* "Más" button */}
           <button
             type="button"
-            onClick={() => setSheetOpen(true)}
+            onClick={openSheet}
             className={cn(
-              'flex flex-col items-center justify-center flex-1 h-full gap-0.5 min-w-[44px] min-h-[44px]',
+              'flex flex-col items-center justify-center flex-1 h-full gap-0.5 min-w-[44px] min-h-[44px] relative',
               moreActive ? 'text-red-500' : 'text-gray-400'
             )}
             aria-label="Más opciones"
             aria-expanded={sheetOpen}
           >
-            <MoreHorizontal className="w-5 h-5" />
+            <div className="relative">
+              <MoreHorizontal className="w-5 h-5" />
+              {hasSecondaryBadge && (
+                <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+              )}
+            </div>
             <span className="text-xs">Más</span>
           </button>
         </div>
@@ -103,8 +132,17 @@ export default function MobileBottomNavSPA({ activeSection, onSectionChange, bad
       {/* Bottom sheet */}
       {sheetOpen && (
         <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Menú de navegación">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setSheetOpen(false)} />
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl pb-[env(safe-area-inset-bottom)]">
+          <div
+            className={cn(
+              'absolute inset-0 backdrop-blur-sm transition-colors duration-200',
+              sheetVisible ? 'bg-black/40' : 'bg-black/0'
+            )}
+            onClick={closeSheet}
+          />
+          <div className={cn(
+            'absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl pb-[env(safe-area-inset-bottom)] transition-transform duration-200',
+            sheetVisible ? 'translate-y-0' : 'translate-y-full'
+          )}>
             <div className="flex justify-center pt-3 pb-2">
               <div className="w-10 h-1 rounded-full bg-gray-300" />
             </div>

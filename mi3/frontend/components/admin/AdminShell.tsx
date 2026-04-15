@@ -16,6 +16,24 @@ export type SectionKey =
   | 'creditos' | 'cambios' | 'cronjobs' | 'delivery'
   | 'notificaciones' | 'adelantos' | 'compras' | 'checklists';
 
+/* ─── Section title mapping ─── */
+
+const SECTION_TITLES: Record<SectionKey, string> = {
+  inicio: 'Panel Admin',
+  personal: 'Personal',
+  turnos: 'Turnos',
+  nomina: 'Nómina',
+  ajustes: 'Ajustes',
+  creditos: 'Créditos R11',
+  cambios: 'Cambios',
+  cronjobs: 'Cronjobs',
+  delivery: 'Delivery',
+  notificaciones: 'Alertas',
+  adelantos: 'Adelantos',
+  compras: 'Compras',
+  checklists: 'Checklists',
+};
+
 /* ─── Lazy-loaded section registry ─── */
 
 const sectionImports: Record<SectionKey, React.LazyExoticComponent<React.ComponentType<any>>> = {
@@ -188,11 +206,11 @@ export default function AdminShell() {
             <div className="flex items-center gap-2">
               <img src="/R11HEADER.jpg" alt="La Ruta 11" className="h-8 w-auto" />
             </div>
-            <span className="text-sm font-semibold text-white">Admin</span>
+            <span className="text-sm font-semibold text-white">{SECTION_TITLES[activeSection] || 'Admin'}</span>
             <div className="w-8" />
           </div>
         </header>
-        <div className="pt-14 pb-20 px-4">
+        <div className="pt-14 pb-20 px-3 sm:px-4 scroll-smooth">
           {Array.from(loadedSections).map(key => {
             const Component = sectionImports[key];
             return (

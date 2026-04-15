@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatMonthES, cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Loader2, Plus, X, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Plus, X, Trash2, ArrowRightLeft } from 'lucide-react';
 import type { ApiResponse } from '@/types';
 
 interface AdminTurno {
@@ -33,6 +33,16 @@ const PERSON_COLORS: Record<number, string> = {
   3: 'bg-green-100 text-green-800',
   5: 'bg-red-100 text-red-800',
   10: 'bg-blue-100 text-blue-800',
+  18: 'bg-purple-100 text-purple-800',
+};
+
+const PERSON_LEGEND_COLORS: Record<number, string> = {
+  1: 'bg-pink-200',
+  12: 'bg-yellow-200',
+  3: 'bg-green-200',
+  5: 'bg-red-200',
+  10: 'bg-blue-200',
+  18: 'bg-purple-200',
 };
 
 export default function TurnosSection() {
@@ -113,6 +123,32 @@ export default function TurnosSection() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }, []);
 
+  // Summary: who works today + shifts per person this month
+  const todayWorkers = useMemo(() => {
+    return (sortedTurnosByDate[todayStr] || []).map(t => t.personal_nombre?.split(' ')[0] || `#${t.personal_id}`);
+  }, [sortedTurnosByDate, todayStr]);
+
+  const shiftsPerPerson = useMemo(() => {
+    const counts: Record<string, number> = {};
+    turnos.forEach(t => {
+      const name = t.personal_nombre?.split(' ')[0] || `#${t.personal_id}`;
+      counts[name] = (counts[name] || 0) + 1;
+    });
+    return counts;
+  }, [turnos]);
+
+  // Color legend: only people who have shifts this month
+  const legendEntries = useMemo(() => {
+    const seen = new Set<number>();
+    turnos.forEach(t => seen.add(t.personal_id));
+    return Array.from(seen).map(id => {
+      const turno = turnos.find(t => t.personal_id === id);
+      const name = turno?.personal_nombre?.split(' ')[0] || `#${id}`;
+      const color = PERSON_LEGEND_COLORS[id] || 'bg-gray-200';
+      return { id, name, color };
+    });
+  }, [turnos]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -155,39 +191,109 @@ export default function TurnosSection() {
         </button>
       </div>
 
-      <div className="flex items-center justify-between">
-        <button onClick={() => setMonthOffset(o => o - 1)} className="rounded-lg p-2 hover:bg-gray-100"><ChevronLeft className="h-5 w-5" /></button>
-        <span className="font-semibold">{formatMonthES(mes)}</span>
-        <button onClick={() => setMonthOffset(o => o + 1)} className="rounded-lg p-2 hover:bg-gray-100"><ChevronRight className="h-5 w-5" /></button>
+      {/* Summary bar */}
+      <div className="rounded-lg bg-white border p-3 space-y-2">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="font-medium text-gray-700">Hoy trabaja:</span>
+          {todayWorkers.length > 0 ? (
+            todayWorkers.map((name, i) => (
+              <span key={i} className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">{name}</span>
+            ))
+          ) : (
+            <span className="text-gray-400 text-xs">Sin turnos hoy</span>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+          {Object.entries(shiftsPerPerson).map(([name, count]) => (
+            <span key={name}>{name}: <span className="font-semibold text-gray-700">{count}</span></span>
+          ))}
+        </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-500">
-        {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => <div key={d}>{d}</div>)}
+      {/* Color legend */}
+      {legendEntries.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {legendEntries.map(({ id, name, color }) => (
+            <div key={id} className="flex items-center gap-1.5 text-xs text-gray-600">
+              <span className={cn('h-3 w-3 rounded-full', color)} />
+              {name}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between">
+        <button onClick={() => setMonthOffset(o => o - 1)} className="rounded-lg p-2 hover:bg-gray-100" aria-label="Mes anterior"><ChevronLeft className="h-5 w-5" /></button>
+        <span className="font-semibold">{formatMonthES(mes)}</span>
+        <button onClick={() => setMonthOffset(o => o + 1)} className="rounded-lg p-2 hover:bg-gray-100" aria-label="Mes siguiente"><ChevronRight className="h-5 w-5" /></button>
       </div>
-      <div className="grid grid-cols-7 gap-1">
-        {calendarDays.map((day, i) => {
-          if (day === null) return <div key={i} />;
+
+      {/* Mobile: list view */}
+      <div className="block md:hidden space-y-1">
+        {calendarDays.filter((d): d is number => d !== null).map(day => {
           const dateStr = `${mes}-${String(day).padStart(2, '0')}`;
           const dayTurnos = sortedTurnosByDate[dateStr] || [];
+          if (dayTurnos.length === 0) return null;
           const isToday = dateStr === todayStr;
           return (
-            <div key={i} className={cn('min-h-[60px] rounded-lg border p-1 text-xs', isToday ? 'border-amber-500 border-2 bg-amber-50' : 'bg-white')}>
-              <span className={cn('font-medium', isToday ? 'text-amber-700 font-bold' : 'text-gray-600')}>{day}</span>
-              <div className="mt-0.5 space-y-0.5">
-                {dayTurnos.slice(0, 3).map(t => (
-                  <div key={t.id} className={cn('flex items-center justify-between rounded px-1 py-0.5 text-[10px]',
-                    PERSON_COLORS[t.personal_id] || workerColorMap[t.personal_id] || 'bg-gray-100')}>
-                    <span className="truncate">{t.personal_nombre?.split(' ')[0] || `#${t.personal_id}`}</span>
+            <div key={day} className={cn('rounded-lg border p-2.5', isToday ? 'border-amber-500 border-2 bg-amber-50' : 'bg-white')}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className={cn('text-sm font-semibold', isToday ? 'text-amber-700' : 'text-gray-700')}>{day}</span>
+                {isToday && <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" /><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" /></span>}
+              </div>
+              <div className="space-y-1">
+                {dayTurnos.map(t => (
+                  <div key={t.id} className={cn('flex items-center gap-2 rounded px-2 py-1 text-xs', PERSON_COLORS[t.personal_id] || workerColorMap[t.personal_id] || 'bg-gray-100')}>
+                    <span className="flex-1 truncate">{t.personal_nombre?.split(' ')[0] || `#${t.personal_id}`}</span>
+                    <span className="text-[10px] opacity-70">{t.tipo}</span>
+                    {t.reemplazado_por && <ArrowRightLeft className="h-3 w-3 opacity-60" />}
                     {!t.is_dynamic && typeof t.id === 'number' && (
-                      <button onClick={() => deleteTurno(t.id)} className="ml-0.5 opacity-50 hover:opacity-100"><Trash2 className="h-2.5 w-2.5" /></button>
+                      <button onClick={() => deleteTurno(t.id)} className="opacity-50 hover:opacity-100" aria-label="Eliminar turno"><Trash2 className="h-3 w-3" /></button>
                     )}
                   </div>
                 ))}
-                {dayTurnos.length > 3 && <span className="text-[10px] text-gray-400">+{dayTurnos.length - 3}</span>}
               </div>
             </div>
           );
         })}
+      </div>
+
+      {/* Desktop: calendar grid */}
+      <div className="hidden md:block">
+        <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-500">
+          {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => <div key={d}>{d}</div>)}
+        </div>
+        <div className="grid grid-cols-7 gap-1 mt-1">
+          {calendarDays.map((day, i) => {
+            if (day === null) return <div key={i} />;
+            const dateStr = `${mes}-${String(day).padStart(2, '0')}`;
+            const dayTurnos = sortedTurnosByDate[dateStr] || [];
+            const isToday = dateStr === todayStr;
+            return (
+              <div key={i} className={cn('min-h-[80px] rounded-lg border p-1.5 text-xs', isToday ? 'border-amber-500 border-2 bg-amber-50 ring-1 ring-amber-300' : 'bg-white')}>
+                <div className="flex items-center gap-1">
+                  <span className={cn('font-medium', isToday ? 'text-amber-700 font-bold' : 'text-gray-600')}>{day}</span>
+                  {isToday && <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" /></span>}
+                </div>
+                <div className="mt-0.5 space-y-0.5">
+                  {dayTurnos.slice(0, 3).map(t => (
+                    <div key={t.id} className={cn('flex items-center justify-between rounded px-1 py-0.5 text-[10px]',
+                      PERSON_COLORS[t.personal_id] || workerColorMap[t.personal_id] || 'bg-gray-100')}>
+                      <span className="truncate flex items-center gap-0.5">
+                        {t.personal_nombre?.split(' ')[0] || `#${t.personal_id}`}
+                        {t.reemplazado_por && <ArrowRightLeft className="h-2.5 w-2.5 opacity-60 shrink-0" />}
+                      </span>
+                      {!t.is_dynamic && typeof t.id === 'number' && (
+                        <button onClick={() => deleteTurno(t.id)} className="ml-0.5 opacity-50 hover:opacity-100" aria-label="Eliminar turno"><Trash2 className="h-2.5 w-2.5" /></button>
+                      )}
+                    </div>
+                  ))}
+                  {dayTurnos.length > 3 && <span className="text-[10px] text-gray-400">+{dayTurnos.length - 3}</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {showModal && (
@@ -195,7 +301,7 @@ export default function TurnosSection() {
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">Asignar Turno</h2>
-              <button onClick={() => setShowModal(false)}><X className="h-5 w-5 text-gray-400" /></button>
+              <button onClick={() => setShowModal(false)} aria-label="Cerrar"><X className="h-5 w-5 text-gray-400" /></button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
