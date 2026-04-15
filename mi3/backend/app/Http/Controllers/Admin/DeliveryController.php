@@ -96,9 +96,9 @@ class DeliveryController extends Controller
      */
     public function simulate(): JsonResponse
     {
-        // Run in background via exec (no queue worker needed)
-        $cmd = 'cd ' . base_path() . ' && php artisan delivery:simulate --steps=20 > /dev/null 2>&1 &';
-        exec($cmd);
+        // Run artisan in background using popen (non-blocking, works in Docker)
+        $cmd = 'php ' . base_path('artisan') . ' delivery:simulate --steps=20 > /dev/null 2>&1 &';
+        pclose(popen($cmd, 'r'));
 
         return response()->json([
             'success' => true,
