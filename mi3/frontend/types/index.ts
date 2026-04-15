@@ -93,6 +93,8 @@ export interface Notificacion {
   titulo: string;
   mensaje: string;
   leida: boolean;
+  referencia_id: number | null;
+  referencia_tipo: string | null;
   created_at: string;
 }
 

@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "QA Pre-Deploy",
+  "description": "Bloquea git push/deploy si hay console.log, credenciales o archivos desincronizados.",
+  "version": "1",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": [
+      "shell"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "SOLO actúa si el comando es git push, git commit, curl.*restart, o curl.*deploy. Para cualquier otro comando, responde \"✅ Allowed\" y nada más.\n\nSi ES un comando de deploy/push, verifica ANTES de permitirlo:\n1. Busca console.log en archivos .tsx/.jsx/.ts modificados (git diff --cached o git diff HEAD)\n2. Busca credenciales hardcodeadas (passwords, tokens, API keys en texto plano)\n3. Verifica que archivos compartidos app3/caja3 estén sincronizados si aplica\n\nSi encuentra problemas: responde \"❌ BLOCKED: [razón]\" — NO permitas el comando.\nSi todo está limpio: responde \"✅ Pre-deploy OK — Proceed\"."
+  }
+}

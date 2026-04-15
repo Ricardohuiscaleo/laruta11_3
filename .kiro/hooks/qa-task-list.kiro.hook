@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "QA Task List",
+  "description": "Revisa task list tras cada tarea: orden, dependencias, archivos concretos, testing, deploy.",
+  "version": "1",
+  "when": {
+    "type": "postTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Actúa como QA de task list para La Ruta 11. Revisa el documento recién creado/modificado:\n\n1. ¿Las tareas están en orden lógico de dependencias? (migraciones antes de modelos, modelos antes de servicios, etc.)\n2. ¿Cada tarea especifica archivos concretos a crear/modificar?\n3. ¿Hay tareas de testing (unit, integration, PBT)?\n4. ¿Hay tarea de deploy con pasos específicos (build, migrate, verify)?\n5. ¿Las sub-tareas son atómicas y verificables?\n6. ¿Se consideran rollback steps?\n\nFormato: ✅ OK | ⚠️ Ajustar (sugerencia) | ❌ Falta (crítico)\nSi está al 100%: \"APROBADO\". Si no, aplica los cambios directamente."
+  }
+}

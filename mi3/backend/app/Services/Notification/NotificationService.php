@@ -51,6 +51,23 @@ class NotificationService
             // Broadcast is best-effort
         }
 
+        // Broadcast to admin channel if the target user is an admin (best-effort)
+        try {
+            $personal = \App\Models\Personal::find($personalId);
+            if ($personal && $personal->isAdmin()) {
+                broadcast(new \App\Events\AdminNotificationEvent(
+                    $personalId,
+                    $titulo,
+                    $mensaje,
+                    $tipo,
+                    $referenciaTipo,
+                    $referenciaId
+                ));
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("AdminNotificationEvent broadcast: {$e->getMessage()}");
+        }
+
         return $notificacion;
     }
 

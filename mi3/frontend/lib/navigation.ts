@@ -44,6 +44,7 @@ export const adminPrimaryNavItems: NavItem[] = [
 
 export const adminSecondaryNavItems: NavItem[] = [
   { href: '/admin/delivery', label: 'Delivery', icon: Truck },
+  { href: '/admin/adelantos', label: 'Adelantos', icon: Wallet },
   { href: '/admin/compras', label: 'Compras', icon: ShoppingCart },
   { href: '/admin/nomina', label: 'Nómina', icon: Receipt },
   { href: '/admin/checklists', label: 'Checklists', icon: ClipboardCheck },

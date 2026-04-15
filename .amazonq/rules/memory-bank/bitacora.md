@@ -56,7 +56,7 @@
 - [x] **Fix push subscriptions duplicadas** — reparado.
 - [x] **Spec fix-sessiones**: COMPLETADO. 8 bugs auth resueltos. Sesiones sobreviven redeploys.
 - [x] **Fix duplicate entry turnos** — `updateOrCreate` en ShiftController + ShiftSwapService. ✅
-- [ ] **Crear vista admin adelantos en mi3-frontend** — API backend existe (`GET /admin/loans`, `POST /admin/loans/{id}/approve|reject`) pero falta la página `/admin/adelantos` y el link en `adminSecondaryNavItems` en `navigation.ts`. Workers solicitan desde `/dashboard/prestamos` pero admin no tiene dónde aprobar/rechazar. Andrés Aguilera tiene solicitud pendiente por $50.000.
+- [ ] **Crear vista admin adelantos en mi3-frontend** — API backend existe (`GET /admin/loans`, `POST /admin/loans/{id}/approve|reject`) pero falta la página `/admin/adelantos` y el link en `adminSecondaryNavItems` en `navigation.ts`. Workers solicitan desde `/dashboard/prestamos` pero admin no tiene dónde aprobar/rechazar. Andrés Aguilera tiene solicitud pendiente por $50.000. Además, `LoanService.solicitarPrestamo()` solo crea notificaciones internas — falta agregar `TelegramService` + `PushNotificationService` para alertar al admin (como hacen checklists y attendance).
 
 ### 🟡 Verificaciones pendientes
 
@@ -79,6 +79,16 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-15b — Spec admin-notifications-modals + 5 hooks QA
+
+**Cambios:**
+- Spec `admin-notifications-modals` creado y expandido a SPA-like completa: requirements.md (7 reqs EARS), design.md (AdminShell + 11 SectionComponents + Reverb realtime + backend), tasks.md (7 tareas, 25 sub-tareas).
+- Scope final: Refactorizar TODO el admin de mi3 a arquitectura SPA con componentes inline (sin page reload), navegación instantánea en desktop Y mobile, realtime via Reverb WebSocket, badges dinámicos, panel adelantos approve/reject, Telegram+Push en LoanService.
+- 5 hooks QA creados: qa-requirements, qa-design, qa-task-list (postTaskExecution), qa-code-quality (postToolUse write), qa-pre-deploy (preToolUse shell).
+
+**Commits:** ninguno (spec local)
+**Deploys:** ninguno
 
 ### 2026-04-15a — Tab Crédito R11 en ProfileModalModern + hook inspector
 
@@ -117,17 +127,7 @@
 **Commits:** `70650cf`
 **Deploys:** builds fallaron (errores de build corregidos en sesión 14l)
 
-### 2026-04-14j — Spec delivery-tracking-realtime: implementación completa
-
-**Cambios:**
-- **mi3-backend**: 4 migraciones, 3 modelos Eloquent, 2 eventos Reverb, channels.php, 3 servicios, 4 controladores + webhook, rutas API, 2 comandos Artisan en scheduler
-- **mi3-frontend**: hooks useDeliveryTracking/useRiderGPS/usePendingSettlementBadge; Vista Monitor /admin/delivery; Vista Rider /rider; badge alerta en AdminSidebar
-- **app3/caja3**: tracking page, webhook, delivery-monitor; env vars en Coolify
-
-**Commits:** ninguno (código local)
-**Deploys:** ninguno
-
 ---
 
-> Sesiones anteriores (152 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (153 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "QA Requirements",
+  "description": "Revisa completitud de requirements tras cada tarea: EARS/INCOSE, trazabilidad, edge cases, seguridad, migración.",
+  "version": "1",
+  "when": {
+    "type": "postTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Actúa como QA de requirements para La Ruta 11. Revisa el documento recién creado/modificado:\n\n1. ¿Cumple formato EARS/INCOSE? (When/If/Shall)\n2. ¿Cada user story tiene criterios de aceptación verificables?\n3. ¿Se cubren edge cases (datos vacíos, errores de red, permisos, concurrencia)?\n4. ¿Se consideró seguridad (auth, CORS, XSS, inyección SQL)?\n5. ¿Se contempla migración de datos existentes si aplica?\n6. ¿Hay trazabilidad entre requirements y diseño?\n\nFormato: ✅ OK | ⚠️ Ajustar (sugerencia) | ❌ Falta (crítico)\nSi está al 100%: \"APROBADO\". Si no, aplica los cambios directamente."
+  }
+}

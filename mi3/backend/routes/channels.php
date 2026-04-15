@@ -28,3 +28,8 @@ Broadcast::channel('rider.{riderId}', function ($user, $riderId) {
 
     return $user->personal && $user->personal->id == $riderId;
 });
+
+// Canal Admin: solo el admin con ese personal_id
+Broadcast::channel('admin.{id}', function ($user, $id) {
+    return $user->personal && $user->personal->isAdmin() && $user->personal->id == $id;
+});

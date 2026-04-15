@@ -2,20 +2,26 @@
 
 namespace App\Services\Loan;
 
+use App\Events\LoanRequestedEvent;
 use App\Models\AjusteCategoria;
 use App\Models\AjusteSueldo;
 use App\Models\Personal;
 use App\Models\Prestamo;
 use App\Models\Turno;
 use App\Services\Notification\NotificationService;
+use App\Services\Notification\PushNotificationService;
+use App\Services\Notification\TelegramService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LoanService
 {
     public function __construct(
         private NotificationService $notificationService,
+        private TelegramService $telegramService,
+        private PushNotificationService $pushNotificationService,
     ) {}
 
     /**
@@ -63,6 +69,36 @@ class LoanService
                 $prestamo->id,
                 'prestamo'
             );
+        }
+
+        // Telegram notification (best-effort)
+        try {
+            $this->telegramService->sendToLaruta11(
+                "💰 Solicitud de adelanto — {$personal->nombre} — \$" . number_format($monto, 0, ',', '.')
+            );
+        } catch (\Throwable $e) {
+            Log::warning('Telegram adelanto: ' . $e->getMessage());
+        }
+
+        // Push notification to each admin (best-effort)
+        foreach ($admins as $admin) {
+            try {
+                $this->pushNotificationService->enviar(
+                    $admin->id,
+                    '💰 Nueva solicitud de adelanto',
+                    "{$personal->nombre} solicita \$" . number_format($monto, 0, ',', '.'),
+                    '/admin/adelantos'
+                );
+            } catch (\Throwable $e) {
+                Log::warning("Push adelanto admin {$admin->id}: " . $e->getMessage());
+            }
+        }
+
+        // Broadcast realtime event (best-effort)
+        try {
+            broadcast(new LoanRequestedEvent($prestamo));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast LoanRequested: ' . $e->getMessage());
         }
 
         return $prestamo;

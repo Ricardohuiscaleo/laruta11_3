@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "QA Code Quality",
+  "description": "Revisa cada archivo escrito: PHP standards, TSX responsive/accesible, migraciones reversibles.",
+  "version": "1",
+  "when": {
+    "type": "postToolUse",
+    "toolTypes": [
+      "write"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Revisa el archivo recién escrito/modificado como QA de código para La Ruta 11:\n\nPara PHP: ¿Sigue PSR-12? ¿Usa tipos estrictos? ¿Maneja errores? ¿SQL parametrizado?\nPara TSX/JSX: ¿Es responsive (mobile-first)? ¿Accesible (aria, roles)? ¿Sin console.log?\nPara migraciones: ¿Tiene down()? ¿Índices correctos? ¿Nullable donde corresponde?\nGeneral: ¿Sin credenciales hardcodeadas? ¿Sin TODO sin resolver? ¿Consistente con el código existente?\n\nSi hay problemas, corrígelos directamente. Si está limpio, di \"✅ Code OK\" y nada más."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "QA Design",
+  "description": "Revisa diseño técnico tras cada tarea: arquitectura, modelos, APIs, rendimiento, UX responsive, deuda técnica.",
+  "version": "1",
+  "when": {
+    "type": "postTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Actúa como QA de diseño técnico para La Ruta 11. Revisa el documento recién creado/modificado:\n\n1. ¿La arquitectura es consistente con el stack? (mi3: Next.js 14 + Laravel 11, app3/caja3: Astro+React+PHP)\n2. ¿Los modelos/migraciones son correctos y reversibles?\n3. ¿Las APIs siguen el patrón existente (rutas, controllers, services)?\n4. ¿Se consideró rendimiento (N+1, índices, caché, lazy loading)?\n5. ¿El diseño UX es responsive y mobile-first?\n6. ¿Se identificó deuda técnica o refactoring necesario?\n\nFormato: ✅ OK | ⚠️ Ajustar (sugerencia) | ❌ Falta (crítico)\nSi está al 100%: \"APROBADO\". Si no, aplica los cambios directamente."
+  }
+}
