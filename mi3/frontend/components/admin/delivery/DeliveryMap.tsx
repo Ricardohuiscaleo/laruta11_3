@@ -11,7 +11,7 @@ import {
 } from '@vis.gl/react-google-maps';
 import type { DeliveryOrder, DeliveryRider } from '@/hooks/useDeliveryTracking';
 
-const SANTIAGO = { lat: -33.4489, lng: -70.6693 };
+const ARICA = { lat: -18.4783, lng: -70.3126 };
 
 const STATUS_PIN_COLORS: Record<string, string> = {
   preparing: '#EAB308',      // yellow
@@ -24,6 +24,13 @@ interface DeliveryMapProps {
   orders: DeliveryOrder[];
   riders: DeliveryRider[];
   onAssignRider: (orderId: number, riderId: number) => void;
+}
+
+/** Safely parse a lat/lng value that may be string or number */
+function toNum(v: unknown): number | null {
+  if (v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 }
 
 // Directions renderer — only shown when a rider has a position and an assigned order
@@ -44,20 +51,24 @@ function DirectionsLayer({ order, rider }: { order: DeliveryOrder; rider: Delive
 
   // Request directions
   if (routesLib && rider.last_lat && rider.last_lng && !directionsResult) {
-    const service = new routesLib.DirectionsService();
-    service.route(
-      {
-        origin: { lat: rider.last_lat, lng: rider.last_lng },
-        destination: order.delivery_address,
-        travelMode: google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === 'OK' && result) {
-          setDirectionsResult(result);
-          renderer?.setDirections(result);
+    const lat = toNum(rider.last_lat);
+    const lng = toNum(rider.last_lng);
+    if (lat && lng) {
+      const service = new routesLib.DirectionsService();
+      service.route(
+        {
+          origin: { lat, lng },
+          destination: order.delivery_address,
+          travelMode: google.maps.TravelMode.DRIVING,
+        },
+        (result, status) => {
+          if (status === 'OK' && result) {
+            setDirectionsResult(result);
+            renderer?.setDirections(result);
+          }
         }
-      }
-    );
+      );
+    }
   }
 
   return null;
@@ -99,13 +110,15 @@ function MapContent({
     <>
       {/* Order markers */}
       {orders.map((order) => {
-        if (!order.rider_last_lat && !order.rider_last_lng) return null;
+        const lat = toNum(order.rider_last_lat);
+        const lng = toNum(order.rider_last_lng);
+        if (!lat || !lng) return null;
         const pinColor = STATUS_PIN_COLORS[order.order_status] ?? '#6B7280';
 
         return (
           <AdvancedMarker
             key={`order-${order.id}`}
-            position={{ lat: order.rider_last_lat!, lng: order.rider_last_lng! }}
+            position={{ lat, lng }}
             onClick={() => setSelectedOrder(order)}
           >
             <div
@@ -121,13 +134,15 @@ function MapContent({
 
       {/* Rider markers */}
       {riders.map((rider) => {
-        if (!rider.last_lat || !rider.last_lng) return null;
+        const lat = toNum(rider.last_lat);
+        const lng = toNum(rider.last_lng);
+        if (!lat || !lng) return null;
         const isBusy = orders.some((o) => o.rider_id === rider.id);
 
         return (
           <AdvancedMarker
             key={`rider-${rider.id}`}
-            position={{ lat: rider.last_lat, lng: rider.last_lng }}
+            position={{ lat, lng }}
           >
             <div
               className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white shadow-md text-base"
@@ -143,11 +158,11 @@ function MapContent({
       {/* InfoWindow for selected order */}
       {selectedOrder && (
         <InfoWindow
-          position={
-            selectedOrder.rider_last_lat && selectedOrder.rider_last_lng
-              ? { lat: selectedOrder.rider_last_lat, lng: selectedOrder.rider_last_lng }
-              : SANTIAGO
-          }
+          position={(() => {
+            const lat = toNum(selectedOrder.rider_last_lat);
+            const lng = toNum(selectedOrder.rider_last_lng);
+            return lat && lng ? { lat, lng } : ARICA;
+          })()}
           onCloseClick={() => setSelectedOrder(null)}
         >
           <div className="min-w-[200px] space-y-2 p-1 text-sm">
@@ -197,7 +212,7 @@ export default function DeliveryMap({ orders, riders, onAssignRider }: DeliveryM
   return (
     <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? ''}>
       <Map
-        defaultCenter={SANTIAGO}
+        defaultCenter={ARICA}
         defaultZoom={13}
         mapId="d51ca892b68e9c5e5e2dd701"
         className="h-full w-full rounded-xl"

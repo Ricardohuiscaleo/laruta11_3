@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`351753d`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | 🔄 Pendiente verificar (`351753d`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`da822cd`) — delivery mobile modals + blur + swipe |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2bbe0e9`) — delivery modals + toFixed fix |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`91f868c`) — CORS broadcasting fix |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -67,7 +67,7 @@
 
 - [x] Obtener chat_id del grupo "Pedidos 11" — no aplica, flujo directo al bot de Telegram configurado.
 - [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3.
-- [ ] **Limpiar datos de prueba delivery** — eliminar pedido `TEST-DLV-001` (id=1776) y revertir rol de Andrés (id=3) de `planchero,rider` a `planchero` cuando termine el testing.
+- [ ] **Limpiar datos de prueba delivery** — eliminar pedidos TEST-DLV-001/002/003 (ids 1776-1778) y revertir rol de Andrés (id=3) de `planchero,rider` a `planchero` cuando termine el testing.
 - [ ] Recalcular delivery\_fee server-side en `create_order.php`
 - [ ] Unificar factor descuento RL6 en caja3 (0.6 vs 0.7143)
 - [x] **Verificar Google Maps en mi3-frontend** — mapId `d51ca892b68e9c5e5e2dd701` + API key funcionando ✅
