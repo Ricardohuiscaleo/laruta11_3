@@ -183,7 +183,7 @@ function ProfileModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -215,8 +215,20 @@ function ProfileModal({
           </div>
           {turno.reemplazado_por && turno.reemplazante_nombre && (
             <div className="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2">
-              <span className="text-xs text-amber-600">Reemplazado por</span>
-              <span className="text-xs font-semibold text-amber-700">{turno.reemplazante_nombre}</span>
+              <span className="text-xs text-amber-600">Reemplaza a</span>
+              <span className="text-xs font-semibold text-amber-700">{turno.personal_nombre}</span>
+            </div>
+          )}
+          {turno.reemplazado_por && turno.reemplazante_nombre && (
+            <div className="flex items-center justify-between rounded-lg bg-green-50 px-3 py-2">
+              <span className="text-xs text-green-600">Reemplazante</span>
+              <span className="text-xs font-semibold text-green-700">{turno.reemplazante_nombre}</span>
+            </div>
+          )}
+          {turno.monto_reemplazo && (
+            <div className="flex items-center justify-between rounded-lg bg-blue-50 px-3 py-2">
+              <span className="text-xs text-blue-600">Monto reemplazo</span>
+              <span className="text-xs font-semibold text-blue-700">{formatCLP(turno.monto_reemplazo)}</span>
             </div>
           )}
         </div>
@@ -411,16 +423,16 @@ export default function TurnosSection() {
 
   /* ── Data fetching ── */
 
-  const fetchShifts = useCallback(() => {
-    setLoading(true);
+  const fetchShifts = useCallback((silent = false) => {
+    if (!silent) setLoading(true);
     apiFetch<ApiResponse<{ turnos: AdminTurno[] }>>(`/admin/shifts?mes=${mes}`)
       .then((res) =>
         setTurnos(
           res.data?.turnos || (Array.isArray(res.data) ? (res.data as unknown as AdminTurno[]) : [])
         )
       )
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+      .catch((e) => { if (!silent) setError(e.message); })
+      .finally(() => { if (!silent) setLoading(false); });
   }, [mes]);
 
   useEffect(() => { fetchShifts(); }, [fetchShifts]);
@@ -623,7 +635,7 @@ export default function TurnosSection() {
       setRemovedWorker(null);
       const replacementName = workers.find((w) => w.id === replacementId)?.nombre?.split(' ')[0] || '';
       setSuccessMsg(`${replacementName} asignado como reemplazo`);
-      fetchShifts();
+      fetchShifts(true);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al crear reemplazo';
       setReplaceError(msg);
@@ -824,8 +836,8 @@ export default function TurnosSection() {
                         )}
                         {isRemoved ? (
                           /* Vacancy placeholder */
-                          <div className="flex flex-col items-center gap-1">
-                            <div className="h-14 w-14 rounded-full border-[3px] border-dashed border-amber-400 flex items-center justify-center bg-amber-50">
+                          <div className="flex flex-col items-center gap-1 animate-in fade-in duration-300">
+                            <div className="h-14 w-14 rounded-full border-[3px] border-dashed border-amber-400 flex items-center justify-center bg-amber-50 animate-pulse">
                               <Plus className="h-5 w-5 text-amber-400" />
                             </div>
                             <span className="text-xs text-amber-600">Vacante</span>
@@ -839,7 +851,7 @@ export default function TurnosSection() {
                         ) : (
                           <div
                             onClick={() => setProfileModal(t)}
-                            className="cursor-pointer"
+                            className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
                             role="button"
                             tabIndex={0}
                             aria-label={`Ver perfil de ${t.personal_nombre}`}
@@ -899,8 +911,8 @@ export default function TurnosSection() {
                           </button>
                         )}
                         {isRemoved ? (
-                          <div className="flex flex-col items-center gap-1">
-                            <div className="h-14 w-14 rounded-full border-[3px] border-dashed border-red-400 flex items-center justify-center bg-red-50">
+                          <div className="flex flex-col items-center gap-1 animate-in fade-in duration-300">
+                            <div className="h-14 w-14 rounded-full border-[3px] border-dashed border-red-400 flex items-center justify-center bg-red-50 animate-pulse">
                               <Plus className="h-5 w-5 text-red-400" />
                             </div>
                             <span className="text-xs text-red-600">Vacante</span>
@@ -914,7 +926,7 @@ export default function TurnosSection() {
                         ) : (
                           <div
                             onClick={() => setProfileModal(t)}
-                            className="cursor-pointer"
+                            className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
                             role="button"
                             tabIndex={0}
                             aria-label={`Ver perfil de ${t.personal_nombre}`}
