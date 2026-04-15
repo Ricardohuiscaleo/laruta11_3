@@ -11,7 +11,7 @@ import {
 } from '@vis.gl/react-google-maps';
 import type { DeliveryOrder, DeliveryRider } from '@/hooks/useDeliveryTracking';
 
-const ARICA = { lat: -18.4783, lng: -70.3126 };
+const RUTA11 = { lat: -18.47141320, lng: -70.28881320 }; // Yumbel 2629, Arica
 
 const STATUS_PIN_COLORS: Record<string, string> = {
   preparing: '#EAB308',      // yellow
@@ -147,7 +147,7 @@ function MapContent({
   return (
     <>
       {/* Food truck marker — La Ruta 11 */}
-      <AdvancedMarker position={ARICA} zIndex={1000}>
+      <AdvancedMarker position={RUTA11} zIndex={1000}>
         <div className="flex flex-col items-center">
           <img
             src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png"
@@ -215,7 +215,7 @@ function MapContent({
           position={(() => {
             const lat = toNum(selectedOrder.rider_last_lat);
             const lng = toNum(selectedOrder.rider_last_lng);
-            return lat && lng ? { lat, lng } : ARICA;
+            return lat && lng ? { lat, lng } : RUTA11;
           })()}
           onCloseClick={() => setSelectedOrder(null)}
         >
@@ -266,7 +266,7 @@ export default function DeliveryMap({ orders, riders, onAssignRider }: DeliveryM
   return (
     <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? ''}>
       <Map
-        defaultCenter={ARICA}
+        defaultCenter={RUTA11}
         defaultZoom={13}
         mapId="d51ca892b68e9c5e5e2dd701"
         className="h-full w-full rounded-xl"

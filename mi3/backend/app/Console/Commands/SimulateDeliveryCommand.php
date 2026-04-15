@@ -28,9 +28,9 @@ class SimulateDeliveryCommand extends Command
         ['addr' => 'Av Comandante San Martin 800, Arica', 'lat' => -18.4720, 'lng' => -70.3200],
     ];
 
-    // Food truck location (start point for riders)
-    private float $startLat = -18.4783;
-    private float $startLng = -70.3126;
+    // Food truck location — Yumbel 2629, Arica (from food_trucks table)
+    private float $startLat = -18.47141320;
+    private float $startLng = -70.28881320;
 
     public function handle(): int
     {

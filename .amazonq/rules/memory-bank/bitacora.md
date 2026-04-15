@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`351753d`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | 🔄 Pendiente verificar (`351753d`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`3c85282`) — delivery map con logo La Ruta 11 |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`f399034`) — delivery:simulate via popen() |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2d3199c`) — delivery car SVG + heading rotation |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`2d3199c`) — 2-phase simulation rider→R11→customer |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
