@@ -133,7 +133,7 @@ export default function DeliveryMonitorPage() {
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{r.nombre}</p>
                   <p className="text-xs text-gray-500">
-                    {r.last_lat ? `GPS: ${r.last_lat.toFixed(4)}, ${r.last_lng?.toFixed(4)}` : 'Sin GPS'}
+                    {r.last_lat ? `GPS: ${Number(r.last_lat).toFixed(4)}, ${Number(r.last_lng).toFixed(4)}` : 'Sin GPS'}
                   </p>
                 </div>
               </div>

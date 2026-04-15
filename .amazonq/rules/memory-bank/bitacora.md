@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`351753d`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | 🔄 Pendiente verificar (`351753d`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2daa980`) — delivery mobile full screen + bottom sheet |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`da822cd`) — delivery mobile modals + blur + swipe |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`91f868c`) — CORS broadcasting fix |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -67,6 +67,7 @@
 
 - [x] Obtener chat_id del grupo "Pedidos 11" — no aplica, flujo directo al bot de Telegram configurado.
 - [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3.
+- [ ] **Limpiar datos de prueba delivery** — eliminar pedido `TEST-DLV-001` (id=1776) y revertir rol de Andrés (id=3) de `planchero,rider` a `planchero` cuando termine el testing.
 - [ ] Recalcular delivery\_fee server-side en `create_order.php`
 - [ ] Unificar factor descuento RL6 en caja3 (0.6 vs 0.7143)
 - [x] **Verificar Google Maps en mi3-frontend** — mapId `d51ca892b68e9c5e5e2dd701` + API key funcionando ✅
@@ -87,12 +88,12 @@
 - Fix 9: CORS — `broadcasting/*` agregado a `paths` en `cors.php` (solo tenía `api/*`). Commit `91f868c`.
 - Migraciones ejecutadas. Env vars Coolify restauradas por usuario.
 
-- Fix 10: Mapa móvil sin altura. Commit `b5491ae`.
 - Fix 11: Responsive móvil delivery — mapa full screen + barra métricas compacta + bottom sheet pedidos. Commit `2daa980`.
-- Hook `monitor-deploy-status` creado — verifica automáticamente estado de deploys post-shell.
+- Fix 12: Métricas como botones que abren modales con backdrop blur + swipe-to-close. "Liquidaciones" → "Cashflow". Modales para Pedidos, Riders, En ruta, Cashflow. Commit `da822cd`.
+- Hook `monitor-deploy-status` v2 — polling cada 60s, max 6 intentos.
 
-**Commits:** `10cead8`→`2daa980` (11 commits)
-**Deploys:** mi3-backend ✅ (`91f868c`), mi3-frontend ✅ (`2daa980`), app3 ✅ (`351753d`)
+**Commits:** `10cead8`→`da822cd` (12 commits)
+**Deploys:** mi3-backend ✅ (`91f868c`), mi3-frontend ✅ (`da822cd`), app3 ✅ (`351753d`)
 
 ### 2026-04-14k — Deploy delivery-tracking-realtime: commit inicial
 
