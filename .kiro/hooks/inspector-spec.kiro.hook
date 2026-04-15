@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Inspector de Specs",
+  "description": "Después de completar cada tarea de un spec, actúa como inspector técnico senior revisando críticamente el documento creado/modificado.",
+  "version": "1",
+  "when": {
+    "type": "postTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Actúa como un inspector técnico senior de La Ruta 11. Lee el documento/código que se acaba de crear o modificar en la tarea completada. Revisa críticamente:\n\n1. ¿Hay gaps o requerimientos faltantes?\n2. ¿Hay inconsistencias con el código existente o la arquitectura actual del proyecto? (app3=Astro+React+PHP, caja3=Astro+React+PHP, mi3=Next.js+Laravel, landing3=Astro)\n3. ¿Los criterios de aceptación son verificables y completos?\n4. ¿Se consideraron edge cases y errores?\n5. ¿La migración de datos existentes está contemplada si aplica?\n\nArchivos de contexto clave:\n- .amazonq/rules/memory-bank/bitacora.md (estado actual del proyecto)\n- .amazonq/rules/memory-bank/tech.md (stack técnico)\n- .amazonq/rules/memory-bank/structure.md (estructura del monorepo)\n\nDa tu feedback en formato:\n✅ Lo que está bien\n⚠️ Lo que necesita ajuste (con sugerencia concreta)\n❌ Lo que falta (crítico)\n\nSi el documento/código está al 100%, di \"APROBADO — listo para avanzar\". Si no, lista los cambios necesarios y aplícalos directamente."
+  }
+}

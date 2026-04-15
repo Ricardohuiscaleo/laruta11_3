@@ -50,12 +50,19 @@ const ProfileModalModern = ({
   const [expandedOrders, setExpandedOrders] = useState({});
   const [rl6Credit, setRl6Credit] = useState(null);
   const [loadingRL6, setLoadingRL6] = useState(false);
+  const [r11Credit, setR11Credit] = useState(null);
+  const [loadingR11, setLoadingR11] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [daysUntilPayment, setDaysUntilPayment] = useState(null);
+  const [r11DaysUntilPayment, setR11DaysUntilPayment] = useState(null);
   
   // Verificar si es militar RL6 aprobado
   const isMilitarRL6 = (user?.es_militar_rl6 == 1 || user?.es_militar_rl6 === '1') && 
                        (user?.credito_aprobado == 1 || user?.credito_aprobado === '1');
+
+  // Verificar si es crédito R11 aprobado
+  const isCreditoR11 = (user?.es_credito_r11 == 1 || user?.es_credito_r11 === '1') && 
+                       (user?.credito_r11_aprobado == 1 || user?.credito_r11_aprobado === '1');
 
   // SSE: escuchar cambios de crédito RL6 en tiempo real
   useEffect(() => {
@@ -133,6 +140,10 @@ const ProfileModalModern = ({
       loadRL6Credit();
       calculateDaysUntilPayment();
     }
+    if (isOpen && user && activeTab === 'r11' && isCreditoR11) {
+      loadR11Credit();
+      calculateR11DaysUntilPayment();
+    }
   }, [isOpen, user, activeTab]);
   
   const loadWalletData = async () => {
@@ -187,6 +198,41 @@ const ProfileModalModern = ({
     
     setDaysUntilPayment({ days, hours, minutes, month: paymentDate.toLocaleString('es-CL', { month: 'long' }) });
   };
+
+  const loadR11Credit = async () => {
+    setLoadingR11(true);
+    try {
+      const userData = JSON.parse(localStorage.getItem('ruta11_user') || localStorage.getItem('laruta11_user') || '{}');
+      const userId = userData.id || user.id;
+      const response = await fetch(`/api/r11/get_credit.php?user_id=${userId}&t=${Date.now()}`);
+      const data = await response.json();
+      if (data.success) {
+        setR11Credit(data);
+      }
+    } catch (error) {
+      console.error('Error loading R11 credit:', error);
+    } finally {
+      setLoadingR11(false);
+    }
+  };
+
+  const calculateR11DaysUntilPayment = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const paymentDate = new Date(currentYear, currentMonth, 21, 23, 59, 59);
+    
+    if (now > paymentDate) {
+      paymentDate.setMonth(currentMonth + 1);
+    }
+    
+    const diff = paymentDate - now;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    setR11DaysUntilPayment({ days, hours, minutes, month: paymentDate.toLocaleString('es-CL', { month: 'long' }) });
+  };
   
   const handleRefreshProfile = async () => {
     setRefreshing(true);
@@ -198,6 +244,9 @@ const ProfileModalModern = ({
         await loadWalletData();
         if (isMilitarRL6) {
           await loadRL6Credit();
+        }
+        if (isCreditoR11) {
+          await loadR11Credit();
         }
       }
     } catch (error) {
@@ -344,6 +393,16 @@ const ProfileModalModern = ({
                 >
                   <CreditCard size={18} />
                   <span>Crédito</span>
+                </button>
+              )}
+
+              {isCreditoR11 && (
+                <button 
+                  onClick={() => setActiveTab('r11')}
+                  className={`flex-1 py-3 text-sm sm:text-base font-extrabold rounded-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'r11' ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                >
+                  <Banknote size={18} />
+                  <span>R11</span>
                 </button>
               )}
               
@@ -735,6 +794,178 @@ const ProfileModalModern = ({
               ) : (
                 <Card className="p-8 text-center">
                   <div className="text-4xl mb-2">🎖️</div>
+                  <p className="text-slate-400">Error al cargar crédito</p>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* TAB: CRÉDITO R11 */}
+          {activeTab === 'r11' && isCreditoR11 && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="text-center mb-2">
+                <h2 className="text-xl font-bold text-white">Crédito R11</h2>
+                <p className="text-slate-400 text-sm">🏪 Crédito exclusivo La Ruta 11</p>
+              </div>
+
+              {loadingR11 ? (
+                <Card className="p-8 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
+                  <p className="text-slate-400 mt-4">Cargando...</p>
+                </Card>
+              ) : r11Credit ? (
+                <>
+                  {/* Crédito Bloqueado Banner */}
+                  {(user?.credito_r11_bloqueado == 1 || user?.credito_r11_bloqueado === '1') && (
+                    <Card className="p-4 bg-red-900/30 border-red-600">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">🚫</span>
+                        <div>
+                          <p className="font-bold text-red-300">Crédito Bloqueado</p>
+                          <p className="text-sm text-red-400">Tu crédito está bloqueado por falta de pago. Paga tu saldo pendiente para reactivarlo.</p>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* Crédito Disponible */}
+                  <Card className="p-6 bg-gradient-to-br from-emerald-900/30 to-teal-800/30 border-emerald-600">
+                    <div className="text-center">
+                      <p className="text-slate-300 text-sm mb-2">Crédito Disponible</p>
+                      <h3 className="text-5xl font-black text-emerald-400">
+                        ${parseInt(r11Credit.credit.credito_disponible || 0).toLocaleString('es-CL')}
+                      </h3>
+                      <p className="text-slate-400 text-xs mt-2">Paga el 21 de cada mes</p>
+                    </div>
+                  </Card>
+
+                  {/* Info R11 */}
+                  <Card className="p-4 bg-slate-800/50">
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Relación:</span>
+                        <span className="text-white font-bold">{r11Credit.credit.relacion_r11 || 'Trabajador'}</span>
+                      </div>
+                      {r11Credit.credit.fecha_aprobacion && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Desde:</span>
+                          <span className="text-white font-bold">
+                            {new Date(r11Credit.credit.fecha_aprobacion).toLocaleDateString('es-CL', { month: 'short', year: 'numeric' })}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+
+                  {/* Estadísticas */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <Card className="p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CreditCard size={18} className="text-emerald-400" />
+                        <span className="text-slate-400 text-xs">Límite Total</span>
+                      </div>
+                      <p className="text-emerald-400 font-bold text-xl">
+                        ${parseInt(r11Credit.credit.limite_credito || 0).toLocaleString('es-CL')}
+                      </p>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <ArrowDownCircle size={18} className="text-red-400" />
+                        <span className="text-slate-400 text-xs">Usado</span>
+                      </div>
+                      <p className="text-red-400 font-bold text-xl">
+                        ${parseInt(r11Credit.credit.credito_usado || 0).toLocaleString('es-CL')}
+                      </p>
+                    </Card>
+                  </div>
+
+                  {/* Botón Pagar Crédito */}
+                  <Card className="p-4 bg-gradient-to-r from-green-900/30 to-green-800/30 border-green-600">
+                    <a 
+                      href="/pagar-credito-r11"
+                      className="block w-full py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition-colors text-center"
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <CreditCard size={20} />
+                        <span>Pagar Crédito</span>
+                      </div>
+                    </a>
+                    {r11Credit.credit.credito_usado > 0 ? (
+                      <>
+                        {r11DaysUntilPayment && (
+                          <p className="text-center text-yellow-300 text-xs mt-3 font-bold">
+                            Paga el 21 de {r11DaysUntilPayment.month}, te quedan {r11DaysUntilPayment.days} días 😊
+                          </p>
+                        )}
+                        <div className="mt-2 bg-black rounded-lg px-3 py-2">
+                          <p className="text-center text-green-400 text-xs font-bold">
+                            Saldo pendiente: ${parseInt(r11Credit.credit.credito_usado).toLocaleString('es-CL')}
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-center text-green-300 text-xs mt-2">
+                        📊 Sin saldo pendiente - Revisa tu historial
+                      </p>
+                    )}
+                  </Card>
+
+                  {/* Historial de Transacciones */}
+                  <div>
+                    <h3 className="text-white font-bold text-sm px-2 mb-3">Historial de Uso</h3>
+                    {r11Credit.transactions && r11Credit.transactions.length > 0 ? (
+                      <div className="space-y-2">
+                        {r11Credit.transactions.map((tx, index) => (
+                          <Card key={index} className="p-3">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <p className="text-white text-sm font-medium">{tx.description}</p>
+                                <p className="text-slate-500 text-xs">
+                                  {new Date(tx.created_at).toLocaleDateString('es-CL', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                              </div>
+                              <span className={`font-bold text-sm ${
+                                tx.type === 'refund' ? 'text-green-400' : 'text-red-400'
+                              }`}>
+                                {tx.type === 'refund' ? '+' : '-'}${parseInt(tx.amount).toLocaleString('es-CL')}
+                              </span>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <Card className="p-6 text-center">
+                        <div className="text-3xl mb-2">🏪</div>
+                        <p className="text-slate-400 text-sm">Sin transacciones aún</p>
+                        <p className="text-slate-500 text-xs mt-2">Usa tu crédito en tu próxima compra</p>
+                      </Card>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <Card className="p-4 bg-emerald-900/20 border-emerald-700">
+                    <div className="flex gap-3">
+                      <Info size={20} className="text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-emerald-300 text-xs font-medium mb-2">¿Cómo funciona?</p>
+                        <ul className="text-slate-400 text-xs space-y-1">
+                          <li>✓ Compra ahora, paga el 21 de cada mes</li>
+                          <li>✓ Usa tu crédito en cualquier compra</li>
+                          <li>✓ Sin intereses ni comisiones</li>
+                          <li>✓ Exclusivo para miembros R11</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </Card>
+                </>
+              ) : (
+                <Card className="p-8 text-center">
+                  <div className="text-4xl mb-2">🏪</div>
                   <p className="text-slate-400">Error al cargar crédito</p>
                 </Card>
               )}

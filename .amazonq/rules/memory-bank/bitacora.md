@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`351753d`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | 🔄 Pendiente verificar (`351753d`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2d3199c`) — delivery car SVG + heading rotation |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`2d3199c`) — 2-phase simulation rider→R11→customer |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2ff6733`) — delivery map con coords reales R11 |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`2ff6733`) — simulation con coords reales R11 |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -56,6 +56,7 @@
 - [x] **Fix push subscriptions duplicadas** — reparado.
 - [x] **Spec fix-sessiones**: COMPLETADO. 8 bugs auth resueltos. Sesiones sobreviven redeploys.
 - [x] **Fix duplicate entry turnos** — `updateOrCreate` en ShiftController + ShiftSwapService. ✅
+- [ ] **Crear vista admin adelantos en mi3-frontend** — API backend existe (`GET /admin/loans`, `POST /admin/loans/{id}/approve|reject`) pero falta la página `/admin/adelantos` y el link en `adminSecondaryNavItems` en `navigation.ts`. Workers solicitan desde `/dashboard/prestamos` pero admin no tiene dónde aprobar/rechazar. Andrés Aguilera tiene solicitud pendiente por $50.000.
 
 ### 🟡 Verificaciones pendientes
 
