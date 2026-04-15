@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Monitor Deploy Status",
+  "description": "After triggering a Coolify deploy, polls every 60s (max 6 attempts) to check if it succeeded or failed. If failed, reads logs and fixes automatically.",
+  "version": "2",
+  "when": {
+    "type": "postToolUse",
+    "toolTypes": [
+      "shell"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "ONLY act if the previous shell command output contained 'Restart request queued'. If it did NOT contain that text, reply 'No deploy detected' and do nothing.\n\nIf a deploy WAS triggered, poll the deployment status every 60 seconds (max 6 attempts = 6 min):\n\n1. Wait 60 seconds: sleep 60\n2. Check status: ssh root@76.13.126.63 \"docker exec coolify-db psql -U coolify -d coolify -t -c \\\"SELECT deployment_uuid, status FROM application_deployment_queues ORDER BY created_at DESC LIMIT 4\\\"\"\n3. If the latest deploy is still 'in_progress' or 'queued': go back to step 1 (max 6 times)\n4. If 'finished': deploy succeeded. Report success briefly.\n5. If 'failed': get error logs via SSH, analyze the error, fix the code, commit, push, and redeploy. Then start polling again for the new deploy.\n\nTo get error details from a failed deploy:\nssh root@76.13.126.63 \"docker exec coolify-db psql -U coolify -d coolify -t -c \\\"SELECT logs::text FROM application_deployment_queues WHERE deployment_uuid='UUID_HERE'\\\"\" | python3 -c \"import sys,json; logs=json.loads(sys.stdin.read().strip()); [print(e.get('output','')[:300]) for e in logs if any(k in e.get('output','') for k in ['Error','error','Failed','failed','npm error','exit code'])]\"\n\nIMPORTANT: Do NOT act if the output did not contain 'Restart request queued'."
+  }
+}

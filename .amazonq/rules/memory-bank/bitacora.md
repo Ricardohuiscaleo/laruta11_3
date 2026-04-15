@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`351753d`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | 🔄 Pendiente verificar (`351753d`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | 🔄 Deploy en progreso (`b5491ae`) — fix mapa móvil delivery |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | 🔄 Deploy en progreso (`91f868c`) — fix CORS broadcasting |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2daa980`) — delivery mobile full screen + bottom sheet |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`91f868c`) — CORS broadcasting fix |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -87,8 +87,12 @@
 - Fix 9: CORS — `broadcasting/*` agregado a `paths` en `cors.php` (solo tenía `api/*`). Commit `91f868c`.
 - Migraciones ejecutadas. Env vars Coolify restauradas por usuario.
 
-**Commits:** `10cead8`→`b5491ae` (10 commits)
-**Deploys:** mi3-backend 🔄 (`91f868c`), mi3-frontend 🔄 (`b5491ae`), app3 ✅ (`351753d`)
+- Fix 10: Mapa móvil sin altura. Commit `b5491ae`.
+- Fix 11: Responsive móvil delivery — mapa full screen + barra métricas compacta + bottom sheet pedidos. Commit `2daa980`.
+- Hook `monitor-deploy-status` creado — verifica automáticamente estado de deploys post-shell.
+
+**Commits:** `10cead8`→`2daa980` (11 commits)
+**Deploys:** mi3-backend ✅ (`91f868c`), mi3-frontend ✅ (`2daa980`), app3 ✅ (`351753d`)
 
 ### 2026-04-14k — Deploy delivery-tracking-realtime: commit inicial
 
