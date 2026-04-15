@@ -200,7 +200,7 @@ export default function DeliveryMap({ orders, riders, onAssignRider }: DeliveryM
         defaultCenter={SANTIAGO}
         defaultZoom={13}
         mapId="d51ca892b68e9c5e5e2dd701"
-        className="h-[400px] md:h-full w-full rounded-xl"
+        className="h-full w-full rounded-xl"
         gestureHandling="greedy"
         disableDefaultUI={false}
       >
