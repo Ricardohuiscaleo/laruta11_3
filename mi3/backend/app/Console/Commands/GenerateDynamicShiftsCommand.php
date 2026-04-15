@@ -18,7 +18,7 @@ class GenerateDynamicShiftsCommand extends Command
      * If person_a == person_b, that person works every day.
      */
     private const CYCLES = [
-        ['base' => '2026-02-02', 'a_id' => 1, 'b_id' => 12, 'tipo' => 'normal'],      // Cajero: Camila / Dafne
+        ['base' => '2026-02-01', 'a_id' => 1, 'b_id' => 18, 'tipo' => 'normal'],      // Cajero: Camila / Dafne Fum
         ['base' => '2026-02-03', 'a_id' => 3, 'b_id' => 3, 'tipo' => 'normal'],        // Planchero: Andres / Andres
         ['base' => '2026-02-11', 'a_id' => 5, 'b_id' => 10, 'tipo' => 'seguridad'],    // Seguridad: Ricardo / Claudio
     ];

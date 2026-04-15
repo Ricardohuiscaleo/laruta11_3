@@ -15,9 +15,9 @@ return [
             'person_b_id' => 10,  // Claudio
         ],
         'cajeros' => [
-            'base_date' => '2026-02-02',
+            'base_date' => '2026-02-01',
             'person_a_id' => 1,   // Camila
-            'person_b_id' => 12,  // Dafne
+            'person_b_id' => 18,  // Dafne Fum
         ],
         'plancheros' => [
             'base_date' => '2026-02-03',
