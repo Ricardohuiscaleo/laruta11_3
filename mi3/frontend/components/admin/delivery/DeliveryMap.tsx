@@ -108,6 +108,20 @@ function MapContent({
 
   return (
     <>
+      {/* Food truck marker — La Ruta 11 */}
+      <AdvancedMarker position={ARICA} zIndex={1000}>
+        <div className="flex flex-col items-center">
+          <img
+            src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png"
+            alt="La Ruta 11"
+            className="h-10 w-10 rounded-full border-2 border-red-500 shadow-lg bg-white"
+          />
+          <div className="mt-0.5 bg-red-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow whitespace-nowrap">
+            La Ruta 11
+          </div>
+        </div>
+      </AdvancedMarker>
+
       {/* Order markers */}
       {orders.map((order) => {
         const lat = toNum(order.rider_last_lat);
