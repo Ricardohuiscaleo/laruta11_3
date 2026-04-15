@@ -111,6 +111,19 @@ export default function DeliveryMonitorPage() {
             <span className={`text-sm font-bold ${isConnected ? 'text-green-500' : 'text-red-500'}`}>●</span>
             <span className="text-[10px] text-gray-400">{isConnected ? 'En línea' : 'Offline'}</span>
           </div>
+          <div className="w-px h-6 bg-gray-200" />
+          <button
+            onClick={async () => {
+              try {
+                const { apiFetch } = await import('@/lib/api');
+                await apiFetch('/admin/delivery/simulate', { method: 'POST' });
+              } catch {}
+            }}
+            className="flex flex-col items-center gap-0.5 active:scale-95 transition-transform"
+          >
+            <span className="text-sm font-bold text-red-500">▶</span>
+            <span className="text-[10px] text-gray-400">Demo</span>
+          </button>
         </div>
 
         {/* Map — fills remaining space */}

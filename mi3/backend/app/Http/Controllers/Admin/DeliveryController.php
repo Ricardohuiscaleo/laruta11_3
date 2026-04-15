@@ -89,4 +89,18 @@ class DeliveryController extends Controller
             'riders'  => $riders,
         ]);
     }
+
+    /**
+     * POST /api/v1/admin/delivery/simulate
+     * Triggers the delivery simulation in the background.
+     */
+    public function simulate(): JsonResponse
+    {
+        \Illuminate\Support\Facades\Artisan::queue('delivery:simulate', ['--steps' => 20]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Simulación iniciada (20 pasos, ~60s)',
+        ]);
+    }
 }

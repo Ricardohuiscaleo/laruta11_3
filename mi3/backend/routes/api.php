@@ -186,6 +186,7 @@ Route::middleware(['auth:sanctum', 'worker', 'admin'])->prefix('v1/admin/deliver
     Route::get('/settlements', [SettlementController::class, 'index']);
     Route::get('/settlements/{id}', [SettlementController::class, 'show']);
     Route::post('/settlements/{id}/voucher', [SettlementController::class, 'uploadVoucher']);
+    Route::post('/simulate', [\App\Http\Controllers\Admin\DeliveryController::class, 'simulate']);
 });
 
 // ── Delivery Tracking — Rider ───────────────────────────────────────
