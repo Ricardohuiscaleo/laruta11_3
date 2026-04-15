@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`72e348c`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | 🔄 Pendiente verificar (`351753d`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`0992f08`) — SPA admin realtime completo |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`3ecd857`) — SPA admin + smart turnos + animations |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`3d12b7a`) — AdminDataUpdatedEvent + Telegram adelantos + shift fix |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -71,6 +71,7 @@
 - [ ] **Limpiar datos de prueba delivery** — eliminar pedidos TEST-DLV-* y SIM-* y revertir roles rider de Camila(1), Andrés(3), Dafne(18) cuando termine el testing.
 - [ ] Recalcular delivery\_fee server-side en `create_order.php`
 - [ ] Unificar factor descuento RL6 en caja3 (0.6 vs 0.7143)
+- [ ] **Fix ShiftService turnos dinámicos + reemplazos** — cuando se crea un reemplazo manual, el turno dinámico del titular sigue apareciendo. `generate4x4Shifts()` debe suprimir dinámicos cuando existe un turno de reemplazo para esa persona/fecha.
 - [x] **Verificar Google Maps en mi3-frontend** — mapId `d51ca892b68e9c5e5e2dd701` + API key funcionando ✅
 - [x] **Deploy spec delivery-tracking-realtime** — commit `70650cf` pusheado. Builds disparados en Coolify. Pendiente verificar builds y ejecutar `php artisan migrate`.
 - [x] **Integración caja3/app3 delivery** — webhook en caja3 y iframe en app3 implementados en commit `70650cf`.
@@ -80,60 +81,41 @@
 
 ## Sesiones Recientes
 
-### 2026-04-15d — Fix patrón turnos 4x4 Camila/Dafne + realtime all sections
+### 2026-04-15g — Smart replacement flow + dojo calendar enhancements
 
 **Cambios:**
-- `config/mi3.php` + `GenerateDynamicShiftsCommand.php`: Dafne `b_id: 12→18` (Dafne Fum activa), `base_date: 2026-02-02→2026-02-01` (sincronizado con caja3).
-- BD: eliminados 20 turnos duplicados del patrón viejo, regenerados 20 con patrón correcto. Abril ahora tiene bloques 4x4 limpios sin gaps.
-- `AdminDataUpdatedEvent.php`: evento genérico ShouldBroadcast para todas las secciones admin.
-- Broadcasts best-effort en PersonalController, ShiftController, ShiftSwapController, AdjustmentController, CreditController, PayrollController.
-- `useAdminRealtime.ts`: listener `.admin.data.updated` + badges por sección.
-- `AdminShell.tsx`: `refreshCounters` + key-based re-mount para auto-refresh en sección activa.
+- Dojo calendar rewrite (`8a5debe`): grid mensual desktop, scroll horizontal mobile, avatares con fotos/bordes por rol, panel detalle con asignar contextual.
+- Smart replacement flow (`8aa5ce8`): panel detalle separado en 🍔 R11 y 🛡️ Seguridad, X en avatar crea vacante (dashed circle), panel "¿Quién reemplaza?" con disponibles filtrados por rol, auto-asigna con montos correctos ($20k R11 / $30k Seguridad), planchero "gestiona internamente".
+- Profile modal: avatar grande, info turno, detalles reemplazo, stats mensuales.
+- Fix cross-role filter (`2d4b479`): seguridad workers disponibles aunque trabajen en R11 ese día.
+- Fix profile modal text + silent refresh + animations (`3ecd857`): "Reemplaza a" correcto, sin reload al asignar, vacancy pulse, avatar scale, modal backdrop-blur.
+- BD: eliminado turno test Ricardo 12-abr.
 
-**Commits:** `0992f08`, `3d12b7a`
-**Deploys:** mi3-backend ✅ (`3d12b7a`), mi3-frontend ✅ (`0992f08`)
+**Commits:** `8a5debe`, `8aa5ce8`, `dedb1b1`, `2d4b479`, `3ecd857`
+**Deploys:** mi3-frontend ✅ (`3ecd857`)
 
-### 2026-04-15c — SPA Admin Panel + Adelantos + Realtime (spec admin-notifications-modals)
-
-**Cambios:**
-- Refactorización completa del admin mi3 a arquitectura SPA: AdminShell con 13 SectionComponents lazy-loaded, keep-alive, URL sync via pushState/popstate.
-- AdminSidebarSPA + MobileBottomNavSPA: navegación onClick sin page reload, badge indicators realtime.
-- AdelantosSection: panel approve/reject con formularios inline, historial colapsable. Página `/admin/adelantos` + link en sidebar.
-- NotificacionesSection: filtros por tabs (Todos/Adelantos/Cambios/Sistema), botones contextuales "Ver adelanto"/"Ver cambio".
-- useAdminRealtime hook: Reverb WebSocket `private-admin.{id}` para badges en tiempo real.
-- Backend: LoanRequestedEvent + AdminNotificationEvent (ShouldBroadcast), TelegramService + PushNotificationService en LoanService.solicitarPrestamo(), AdminNotificationEvent en NotificationService.crear().
-- channels.php: auth `admin.{id}` channel.
-- Fix ComprasSection: reemplazado iframe (causaba recursión AdminShell anidado) por componentes React directos con tabs internos + ComprasProvider.
-- Realtime completo: AdminDataUpdatedEvent (ShouldBroadcast genérico) + broadcasts en PersonalController, ShiftController, ShiftSwapController, AdjustmentController, CreditController, PayrollController. useAdminRealtime escucha `.admin.data.updated` + AdminShell auto-refresh via refreshCounters key.
-- Hook `qa-production` creado: smoke tests en producción via SSH (userTriggered).
-
-**Commits:** `6c40b02`, `e4c126d`, `0992f08`
-**Deploys:** mi3-backend ✅ (`0992f08`), mi3-frontend ✅ (`0992f08`)
-
-### 2026-04-15b — Spec admin-notifications-modals + 5 hooks QA
+### 2026-04-15f — Dojo-style turnos calendar rewrite
 
 **Cambios:**
-- Spec `admin-notifications-modals` creado y expandido a SPA-like completa: requirements.md (7 reqs EARS), design.md (AdminShell + 11 SectionComponents + Reverb realtime + backend), tasks.md (7 tareas, 25 sub-tareas).
-- Scope final: Refactorizar TODO el admin de mi3 a arquitectura SPA con componentes inline (sin page reload), navegación instantánea en desktop Y mobile, realtime via Reverb WebSocket, badges dinámicos, panel adelantos approve/reject, Telegram+Push en LoanService.
-- 5 hooks QA creados: qa-requirements, qa-design, qa-task-list (postTaskExecution), qa-code-quality (postToolUse write), qa-pre-deploy (preToolUse shell).
+- TurnosSection reescrito completo: grid calendario mensual en desktop (cards grandes con día semana, número, count), scroll horizontal en mobile con auto-scroll al hoy.
+- Avatares circulares con fotos y bordes por rol (amber=cajero, green=planchero, red=seguridad), iniciales fallback.
+- Panel detalle "Hoy trabajan en R11" con avatares al seleccionar un día.
+- Botón "Asignar" movido de header a contextual "+" en panel detalle, pre-llena fecha seleccionada.
 
-**Commits:** ninguno (spec local)
-**Deploys:** ninguno
+**Commits:** `8a5debe`
+**Deploys:** mi3-frontend ✅ (`8a5debe`)
 
-### 2026-04-15a — Tab Crédito R11 en ProfileModalModern + hook inspector
+### 2026-04-15e — UX: sidebar colapsable, turnos smart, mobile polish
 
 **Cambios:**
-- Nueva tab "R11" en ProfileModalModern de app3 para usuarios con `es_credito_r11=1` y `credito_r11_aprobado=1`.
-- Muestra límite, usado, disponible, relación, historial de transacciones, botón pagar crédito, countdown al día 21.
-- Branding emerald/teal para diferenciar de RL6 (amber). Banner de crédito bloqueado si aplica.
-- Usa API existente `/api/r11/get_credit.php`.
-- Hook `inspector-spec` creado: postTaskExecution que revisa críticamente cada tarea completada.
-- Token Coolify API funcional creado (id=6, `kiro-deploy-direct`).
+- Sidebar colapsable w-64↔w-16 con localStorage, logo R11HEADER.jpg, React.memo NavItem, nav consolidado, transiciones suaves, tooltips en modo collapsed.
+- Turnos: barra resumen "Hoy trabaja" + turnos/persona, leyenda colores, Dafne purple (id=18), celdas 80px desktop, icono reemplazo, pulsing dot hoy, vista lista en mobile.
+- Mobile: título dinámico en header (SECTION_TITLES), haptic feedback, backdrop-blur en sheet, animación slide-up, red dot en "Más" para badges secundarios.
 
-**Commits:** `72e348c`
-**Deploys:** app3 ✅ (`72e348c`)
+**Commits:** `6207c52`
+**Deploys:** mi3-frontend ✅ (`6207c52`)
 
 ---
 
-> Sesiones anteriores (155 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (158 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

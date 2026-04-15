@@ -136,8 +136,12 @@ class ShiftService
         // Track existing seguridad shifts to avoid duplicates (same as get_turnos.php)
         $turnosSegExistentes = [];
         foreach ($filteredDbShifts as $t) {
-            if ($t->tipo === 'seguridad') {
+            if ($t->tipo === 'seguridad' || $t->tipo === 'reemplazo_seguridad') {
                 $turnosSegExistentes[$t->fecha->format('Y-m-d') . '_' . $t->personal_id] = true;
+                // If someone is being replaced, don't generate automatic shift for that person
+                if (!empty($t->reemplazado_por)) {
+                    $turnosSegExistentes[$t->fecha->format('Y-m-d') . '_' . $t->reemplazado_por] = true;
+                }
             }
         }
 
@@ -186,8 +190,8 @@ class ShiftService
                         'is_dynamic' => true,
                         'reemplazado_por' => null,
                         'reemplazante_nombre' => null,
-                        'monto_reemplazo' => $isSeguridad ? 20000 : null,
-                        'pago_por' => $isSeguridad ? 'empresa' : null,
+                        'monto_reemplazo' => null,
+                        'pago_por' => null,
                     ];
                 }
 
