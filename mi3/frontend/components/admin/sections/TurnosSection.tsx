@@ -542,7 +542,12 @@ export default function TurnosSection() {
   // Available workers for replacement
   const availableWorkers = useMemo(() => {
     if (!removedWorker) return [];
-    const workingIds = new Set(selectedTurnos.map((t) => t.personal_id));
+    // Workers currently assigned that day, EXCLUDING the removed one
+    const workingIds = new Set(
+      selectedTurnos
+        .filter((t) => t.personal_id !== removedWorker.personalId)
+        .map((t) => t.personal_id)
+    );
     const removedRol = workerRolMap[removedWorker.personalId] || '';
 
     return workers.filter((w) => {
