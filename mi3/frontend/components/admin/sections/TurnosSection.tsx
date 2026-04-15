@@ -542,20 +542,27 @@ export default function TurnosSection() {
   // Available workers for replacement
   const availableWorkers = useMemo(() => {
     if (!removedWorker) return [];
-    // Workers currently assigned that day, EXCLUDING the removed one
-    const workingIds = new Set(
+    const isSeg = isSeguridad(removedWorker.tipo);
+
+    // Only exclude workers who have a shift of the SAME category that day
+    // Seguridad replacement: only exclude those with seguridad shifts (not R11)
+    // R11 replacement: only exclude those with R11 shifts (not seguridad)
+    const sameContextIds = new Set(
       selectedTurnos
-        .filter((t) => t.personal_id !== removedWorker.personalId)
+        .filter((t) => {
+          if (t.personal_id === removedWorker.personalId) return false;
+          return isSeg ? isSeguridad(t.tipo) : !isSeguridad(t.tipo);
+        })
         .map((t) => t.personal_id)
     );
     const removedRol = workerRolMap[removedWorker.personalId] || '';
 
     return workers.filter((w) => {
       if (w.activo === false) return false;
-      if (workingIds.has(w.id)) return false;
+      if (sameContextIds.has(w.id)) return false;
       if (w.id === removedWorker.personalId) return false;
 
-      if (isSeguridad(removedWorker.tipo)) {
+      if (isSeg) {
         return w.rol?.includes('seguridad');
       }
 
