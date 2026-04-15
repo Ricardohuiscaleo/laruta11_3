@@ -113,19 +113,43 @@ class SimulateDeliveryCommand extends Command
         }
 
         $this->info("\nSimulando movimiento GPS ({$steps} pasos, 3s entre cada uno)...");
+        $this->info("  Fase 1: Riders → La Ruta 11 (recogida)");
+        $this->info("  Fase 2: La Ruta 11 → Destino (entrega)");
+
+        // Each rider starts from a random nearby position
+        $riderStarts = [];
+        foreach ($orders as $o) {
+            $riderStarts[$o['rider_id']] = [
+                'lat' => $this->startLat + (rand(-30, 30) / 10000),
+                'lng' => $this->startLng + (rand(-30, 30) / 10000),
+            ];
+        }
+
+        $halfSteps = (int)($steps / 2);
 
         // Simulate movement
         for ($step = 0; $step < $steps; $step++) {
-            $progress = ($step + 1) / $steps;
+            $isPhase1 = $step < $halfSteps;
+            $phaseProgress = $isPhase1
+                ? ($step + 1) / $halfSteps
+                : ($step - $halfSteps + 1) / ($steps - $halfSteps);
 
             foreach ($orders as &$o) {
-                // Interpolate position from start to destination
-                $lat = $this->startLat + ($o['dest_lat'] - $this->startLat) * $progress;
-                $lng = $this->startLng + ($o['dest_lng'] - $this->startLng) * $progress;
+                $start = $riderStarts[$o['rider_id']];
+
+                if ($isPhase1) {
+                    // Phase 1: rider start → La Ruta 11
+                    $lat = $start['lat'] + ($this->startLat - $start['lat']) * $phaseProgress;
+                    $lng = $start['lng'] + ($this->startLng - $start['lng']) * $phaseProgress;
+                } else {
+                    // Phase 2: La Ruta 11 → destination
+                    $lat = $this->startLat + ($o['dest_lat'] - $this->startLat) * $phaseProgress;
+                    $lng = $this->startLng + ($o['dest_lng'] - $this->startLng) * $phaseProgress;
+                }
 
                 // Add small random jitter for realism
-                $lat += (rand(-5, 5) / 100000);
-                $lng += (rand(-5, 5) / 100000);
+                $lat += (rand(-3, 3) / 100000);
+                $lng += (rand(-3, 3) / 100000);
 
                 // Persist location
                 RiderLocation::create([
@@ -152,17 +176,19 @@ class SimulateDeliveryCommand extends Command
                     pedidoAsignadoOrderNumber: $o['number'],
                 ));
 
-                // Status transitions
-                if ($step === (int)($steps * 0.2)) {
+                // Status transitions based on phases
+                if ($step === $halfSteps - 1) {
+                    // Arrived at La Ruta 11 → ready for pickup
                     DB::table('tuu_orders')->where('id', $o['id'])->update(['order_status' => 'ready']);
                     broadcast(new OrderStatusUpdated($o['id'], $o['number'], 'ready', $o['rider_id'], null, now()->toISOString()));
-                    $this->info("  [{$o['number']}] → ready");
+                    $this->info("  [{$o['number']}] → ready (arrived at La Ruta 11)");
                 }
-                if ($step === (int)($steps * 0.4)) {
+                if ($step === $halfSteps) {
+                    // Picked up → out for delivery
                     DB::table('tuu_orders')->where('id', $o['id'])->update(['order_status' => 'out_for_delivery']);
                     DB::table('delivery_assignments')->where('order_id', $o['id'])->where('notes', 'simulation')->update(['status' => 'picked_up', 'picked_up_at' => now()]);
                     broadcast(new OrderStatusUpdated($o['id'], $o['number'], 'out_for_delivery', $o['rider_id'], null, now()->toISOString()));
-                    $this->info("  [{$o['number']}] → out_for_delivery");
+                    $this->info("  [{$o['number']}] → out_for_delivery (heading to customer)");
                 }
             }
 

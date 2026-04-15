@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   APIProvider,
   Map,
@@ -31,6 +31,16 @@ function toNum(v: unknown): number | null {
   if (v == null) return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
+}
+
+/** Calculate bearing between two points in degrees (0=north, 90=east) */
+function calcHeading(from: { lat: number; lng: number }, to: { lat: number; lng: number }): number {
+  const dLng = (to.lng - from.lng) * Math.PI / 180;
+  const lat1 = from.lat * Math.PI / 180;
+  const lat2 = to.lat * Math.PI / 180;
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  return ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
 }
 
 // Directions renderer — only shown when a rider has a position and an assigned order
@@ -74,6 +84,33 @@ function DirectionsLayer({ order, rider }: { order: DeliveryOrder; rider: Delive
   return null;
 }
 
+/** SVG delivery car that rotates based on heading */
+function DeliveryCar({ heading, busy, name }: { heading: number; busy: boolean; name: string }) {
+  return (
+    <div className="flex flex-col items-center" title={`${name} — ${busy ? 'En ruta' : 'Disponible'}`}>
+      <div
+        className="transition-transform duration-700 ease-linear"
+        style={{ transform: `rotate(${heading}deg)` }}
+      >
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Car body */}
+          <path d="M5 17h14v-5l-2-4H7L5 12v5z" fill={busy ? '#F97316' : '#22C55E'} stroke="#fff" strokeWidth="1"/>
+          {/* Windshield */}
+          <path d="M7.5 8L6 12h12l-1.5-4H7.5z" fill={busy ? '#FB923C' : '#4ADE80'} stroke="#fff" strokeWidth="0.5"/>
+          {/* Wheels */}
+          <circle cx="7.5" cy="17" r="1.5" fill="#333" stroke="#fff" strokeWidth="0.5"/>
+          <circle cx="16.5" cy="17" r="1.5" fill="#333" stroke="#fff" strokeWidth="0.5"/>
+          {/* Arrow indicator (direction) */}
+          <path d="M12 2L14 6H10L12 2Z" fill={busy ? '#F97316' : '#22C55E'} stroke="#fff" strokeWidth="0.5"/>
+        </svg>
+      </div>
+      <div className={`mt-0.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow whitespace-nowrap text-white ${busy ? 'bg-orange-500' : 'bg-green-500'}`}>
+        {name.split(' ')[0]}
+      </div>
+    </div>
+  );
+}
+
 function MapContent({
   orders,
   riders,
@@ -81,6 +118,7 @@ function MapContent({
 }: DeliveryMapProps) {
   const [selectedOrder, setSelectedOrder] = useState<DeliveryOrder | null>(null);
   const [assigningRider, setAssigningRider] = useState<number | null>(null);
+  const prevPositions = useRef<Record<number, { lat: number; lng: number }>>({});
 
   const availableRiders = riders.filter((r) => r.last_lat !== null && !orders.some((o) => o.rider_id === r.id));
 
@@ -146,25 +184,27 @@ function MapContent({
         );
       })}
 
-      {/* Rider markers */}
+      {/* Rider markers — car icon that rotates based on direction */}
       {riders.map((rider) => {
         const lat = toNum(rider.last_lat);
         const lng = toNum(rider.last_lng);
         if (!lat || !lng) return null;
         const isBusy = orders.some((o) => o.rider_id === rider.id);
 
+        // Calculate heading from previous position
+        const prev = prevPositions.current[rider.id];
+        let heading = 0;
+        if (prev && (prev.lat !== lat || prev.lng !== lng)) {
+          heading = calcHeading(prev, { lat, lng });
+        }
+        prevPositions.current[rider.id] = { lat, lng };
+
         return (
           <AdvancedMarker
             key={`rider-${rider.id}`}
             position={{ lat, lng }}
           >
-            <div
-              className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white shadow-md text-base"
-              style={{ backgroundColor: isBusy ? '#F97316' : '#22C55E' }}
-              title={`${rider.nombre} — ${isBusy ? 'Ocupado' : 'Disponible'}`}
-            >
-              🛵
-            </div>
+            <DeliveryCar heading={heading} busy={isBusy} name={rider.nombre} />
           </AdvancedMarker>
         );
       })}
