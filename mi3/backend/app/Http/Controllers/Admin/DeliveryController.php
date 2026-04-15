@@ -96,7 +96,9 @@ class DeliveryController extends Controller
      */
     public function simulate(): JsonResponse
     {
-        \Illuminate\Support\Facades\Artisan::queue('delivery:simulate', ['--steps' => 20]);
+        // Run in background via exec (no queue worker needed)
+        $cmd = 'cd ' . base_path() . ' && php artisan delivery:simulate --steps=20 > /dev/null 2>&1 &';
+        exec($cmd);
 
         return response()->json([
             'success' => true,

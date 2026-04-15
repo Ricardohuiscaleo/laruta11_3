@@ -72,6 +72,7 @@ export default function DeliveryMonitorPage() {
   const [modal, setModal] = useState<ModalType>(null);
   const [settlementsOpen, setSettlementsOpen] = useState(false);
 
+  const [simRunning, setSimRunning] = useState(false);
   const ridersOnRoute = orders.filter(o => o.order_status === 'out_for_delivery');
 
   return (
@@ -114,15 +115,19 @@ export default function DeliveryMonitorPage() {
           <div className="w-px h-6 bg-gray-200" />
           <button
             onClick={async () => {
+              if (simRunning) return;
+              setSimRunning(true);
               try {
                 const { apiFetch } = await import('@/lib/api');
                 await apiFetch('/admin/delivery/simulate', { method: 'POST' });
-              } catch {}
+                setTimeout(() => setSimRunning(false), 65000);
+              } catch { setSimRunning(false); }
             }}
-            className="flex flex-col items-center gap-0.5 active:scale-95 transition-transform"
+            disabled={simRunning}
+            className="flex flex-col items-center gap-0.5 active:scale-95 transition-transform disabled:opacity-50"
           >
-            <span className="text-sm font-bold text-red-500">▶</span>
-            <span className="text-[10px] text-gray-400">Demo</span>
+            <span className={`text-sm font-bold ${simRunning ? 'text-gray-400 animate-pulse' : 'text-red-500'}`}>{simRunning ? '⏳' : '▶'}</span>
+            <span className="text-[10px] text-gray-400">{simRunning ? 'Sim...' : 'Demo'}</span>
           </button>
         </div>
 
