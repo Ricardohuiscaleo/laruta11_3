@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "QA Production Smoke Test",
+  "description": "Después de cada deploy exitoso, ejecuta tests de smoke en producción via SSH: verifica que las apps responden, APIs funcionan, y servicios están healthy.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Ejecuta smoke tests en producción para La Ruta 11 via SSH y curl:\n\n1. **Health check apps**: curl -s -o /dev/null -w \"%{http_code}\" https://mi.laruta11.cl/admin, https://api-mi3.laruta11.cl/api/v1/health, https://app.laruta11.cl, https://caja.laruta11.cl\n2. **Verificar contenedores**: ssh root@76.13.126.63 \"docker ps --format '{{.Names}} {{.Status}}' | grep -E 'ds24j8|sxdw43|egck4w|xockc'\"\n3. **Verificar API admin loans**: ssh + curl interno al contenedor mi3-backend para GET /api/v1/admin/loans\n4. **Verificar Reverb WebSocket**: ssh root@76.13.126.63 \"docker exec $(docker ps -qf name=ds24j8) php artisan reverb:connections 2>/dev/null || echo 'Reverb check skipped'\"\n5. **Verificar logs de errores recientes**: ssh root@76.13.126.63 \"docker exec $(docker ps -qf name=ds24j8) tail -5 storage/logs/laravel.log 2>/dev/null | grep -i error || echo 'No errors'\"\n\nReporta en formato:\n✅ Servicio OK | ❌ Servicio FALLO (detalle)\n\nSi hay fallos, analiza el error y sugiere fix concreto."
+  }
+}

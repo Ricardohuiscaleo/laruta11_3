@@ -68,7 +68,21 @@ export default function AdminShell() {
 
   // Realtime: connect to admin WebSocket channel for badges
   const { user } = useAuth();
-  const { badges, clearBadge } = useAdminRealtime(user?.is_admin ? user.personal_id : null);
+  const { badges, clearBadge, onEvent } = useAdminRealtime(user?.is_admin ? user.personal_id : null);
+
+  // Auto-refresh: when a realtime event arrives for the active section, force re-mount
+  const [refreshCounters, setRefreshCounters] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    onEvent((event) => {
+      if (event.type === 'admin.data.updated' && event.section === activeSection) {
+        setRefreshCounters(prev => ({
+          ...prev,
+          [event.section]: (prev[event.section] || 0) + 1,
+        }));
+      }
+    });
+  }, [activeSection, onEvent]);
 
   // Initialize from URL on mount
   useEffect(() => {
@@ -157,7 +171,7 @@ export default function AdminShell() {
           {Array.from(loadedSections).map(key => {
             const Component = sectionImports[key];
             return (
-              <div key={key} className={activeSection === key ? 'block' : 'hidden'}>
+              <div key={`${key}-${refreshCounters[key] || 0}`} className={activeSection === key ? 'block' : 'hidden'}>
                 <Suspense fallback={<SectionSkeleton />}>
                   <Component {...getSectionProps(key)} />
                 </Suspense>
@@ -182,7 +196,7 @@ export default function AdminShell() {
           {Array.from(loadedSections).map(key => {
             const Component = sectionImports[key];
             return (
-              <div key={key} className={activeSection === key ? 'block' : 'hidden'}>
+              <div key={`${key}-${refreshCounters[key] || 0}`} className={activeSection === key ? 'block' : 'hidden'}>
                 <Suspense fallback={<SectionSkeleton />}>
                   <Component {...getSectionProps(key)} />
                 </Suspense>

@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`72e348c`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | 🔄 Pendiente verificar (`351753d`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2ff6733`) — delivery map con coords reales R11 |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`2ff6733`) — simulation con coords reales R11 |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`e4c126d`) — SPA admin + delivery map + realtime |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`6c40b02`) — Telegram+Push adelantos + admin realtime |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -56,7 +56,7 @@
 - [x] **Fix push subscriptions duplicadas** — reparado.
 - [x] **Spec fix-sessiones**: COMPLETADO. 8 bugs auth resueltos. Sesiones sobreviven redeploys.
 - [x] **Fix duplicate entry turnos** — `updateOrCreate` en ShiftController + ShiftSwapService. ✅
-- [ ] **Crear vista admin adelantos en mi3-frontend** — API backend existe (`GET /admin/loans`, `POST /admin/loans/{id}/approve|reject`) pero falta la página `/admin/adelantos` y el link en `adminSecondaryNavItems` en `navigation.ts`. Workers solicitan desde `/dashboard/prestamos` pero admin no tiene dónde aprobar/rechazar. Andrés Aguilera tiene solicitud pendiente por $50.000. Además, `LoanService.solicitarPrestamo()` solo crea notificaciones internas — falta agregar `TelegramService` + `PushNotificationService` para alertar al admin (como hacen checklists y attendance).
+- [x] **Crear vista admin adelantos en mi3-frontend** — COMPLETADO. AdelantosSection con approve/reject, link en sidebar, Telegram+Push+broadcast en LoanService. Commit `6c40b02`.
 
 ### 🟡 Verificaciones pendientes
 
@@ -79,6 +79,22 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-15c — SPA Admin Panel + Adelantos + Realtime (spec admin-notifications-modals)
+
+**Cambios:**
+- Refactorización completa del admin mi3 a arquitectura SPA: AdminShell con 13 SectionComponents lazy-loaded, keep-alive, URL sync via pushState/popstate.
+- AdminSidebarSPA + MobileBottomNavSPA: navegación onClick sin page reload, badge indicators realtime.
+- AdelantosSection: panel approve/reject con formularios inline, historial colapsable. Página `/admin/adelantos` + link en sidebar.
+- NotificacionesSection: filtros por tabs (Todos/Adelantos/Cambios/Sistema), botones contextuales "Ver adelanto"/"Ver cambio".
+- useAdminRealtime hook: Reverb WebSocket `private-admin.{id}` para badges en tiempo real.
+- Backend: LoanRequestedEvent + AdminNotificationEvent (ShouldBroadcast), TelegramService + PushNotificationService en LoanService.solicitarPrestamo(), AdminNotificationEvent en NotificationService.crear().
+- channels.php: auth `admin.{id}` channel.
+- Fix ComprasSection: reemplazado iframe (causaba recursión AdminShell anidado) por componentes React directos con tabs internos + ComprasProvider.
+- Hook `qa-production` creado: smoke tests en producción via SSH (userTriggered).
+
+**Commits:** `6c40b02`, `e4c126d` (47 archivos)
+**Deploys:** mi3-backend ✅ (`6c40b02`), mi3-frontend ✅ (`e4c126d`)
 
 ### 2026-04-15b — Spec admin-notifications-modals + 5 hooks QA
 
@@ -119,15 +135,7 @@
 **Commits:** `10cead8`→`da822cd` (12 commits)
 **Deploys:** mi3-backend ✅ (`91f868c`), mi3-frontend ✅ (`da822cd`), app3 ✅ (`351753d`)
 
-### 2026-04-14k — Deploy delivery-tracking-realtime: commit inicial
-
-**Cambios:**
-- Commit `70650cf` — 44 archivos, 4736 inserciones. Todo el spec delivery-tracking-realtime pusheado a main.
-
-**Commits:** `70650cf`
-**Deploys:** builds fallaron (errores de build corregidos en sesión 14l)
-
 ---
 
-> Sesiones anteriores (153 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (154 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

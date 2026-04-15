@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\AdminDataUpdatedEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreShiftRequest;
 use App\Models\Turno;
@@ -9,6 +10,7 @@ use App\Services\Shift\ShiftService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ShiftController extends Controller
 {
@@ -56,6 +58,12 @@ class ShiftController extends Controller
                 $current->addDay();
             }
 
+            try {
+                broadcast(new AdminDataUpdatedEvent('turnos', 'created'));
+            } catch (\Throwable $e) {
+                Log::warning('Broadcast turnos created: ' . $e->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $creados,
@@ -72,6 +80,12 @@ class ShiftController extends Controller
     {
         $turno = Turno::findOrFail($id);
         $turno->delete();
+
+        try {
+            broadcast(new AdminDataUpdatedEvent('turnos', 'deleted'));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast turnos deleted: ' . $e->getMessage());
+        }
 
         return response()->json(['success' => true]);
     }

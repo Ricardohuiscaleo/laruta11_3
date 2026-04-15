@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\AdminDataUpdatedEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAdjustmentRequest;
 use App\Models\AjusteCategoria;
 use App\Models\AjusteSueldo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AdjustmentController extends Controller
 {
@@ -47,6 +49,12 @@ class AdjustmentController extends Controller
 
         $ajuste = AjusteSueldo::create($data);
 
+        try {
+            broadcast(new AdminDataUpdatedEvent('ajustes', 'created'));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast ajustes created: ' . $e->getMessage());
+        }
+
         return response()->json(['success' => true, 'data' => $ajuste], 201);
     }
 
@@ -54,6 +62,12 @@ class AdjustmentController extends Controller
     {
         $ajuste = AjusteSueldo::findOrFail($id);
         $ajuste->delete();
+
+        try {
+            broadcast(new AdminDataUpdatedEvent('ajustes', 'deleted'));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast ajustes deleted: ' . $e->getMessage());
+        }
 
         return response()->json(['success' => true]);
     }

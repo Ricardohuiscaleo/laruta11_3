@@ -48,8 +48,8 @@
 
 ## Task 7: Deploy
 
-- [-] 7.1 Commit all changes, push to main
-- [ ] 7.2 Deploy mi3-backend via Coolify API (UUID: ds24j8jlaf9ov4flk1nq4jek) — token: `6|kiro-deploy-secret-2026`
-- [ ] 7.3 Deploy mi3-frontend via Coolify API (UUID: sxdw43i9nt3cofrzxj28hx1e)
-- [ ] 7.4 Verify both deploys finished successfully
-- [ ] 7.5 Smoke test: open mi.laruta11.cl/admin, verify SPA navigation, verify realtime badges
+- [x] 7.1 Commit all changes, push to main
+- [x] 7.2 Deploy mi3-backend via Coolify API (UUID: ds24j8jlaf9ov4flk1nq4jek) — token: `6|kiro-deploy-secret-2026`
+- [x] 7.3 Deploy mi3-frontend via Coolify API (UUID: sxdw43i9nt3cofrzxj28hx1e)
+- [x] 7.4 Verify both deploys finished successfully
+- [x] 7.5 Smoke test: open mi.laruta11.cl/admin, verify SPA navigation, verify realtime badges

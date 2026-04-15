@@ -69,6 +69,19 @@ export function useAdminRealtime(adminId: number | null) {
       });
     });
 
+    // AdminDataUpdatedEvent → increment badge for affected section
+    channel.listen('.admin.data.updated', (data: { section: string; action: string }) => {
+      setBadges(prev => ({
+        ...prev,
+        [data.section]: (prev[data.section] || 0) + 1,
+      }));
+      callbackRef.current?.({
+        type: 'admin.data.updated',
+        section: data.section,
+        data,
+      });
+    });
+
     // Auto-reconnect handling via pusher connection events
     const pusher = (echo.connector as any)?.pusher;
     if (pusher) {

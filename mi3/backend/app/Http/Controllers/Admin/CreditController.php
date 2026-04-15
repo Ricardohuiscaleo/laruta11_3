@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\AdminDataUpdatedEvent;
 use App\Http\Controllers\Controller;
 use App\Models\R11CreditTransaction;
 use App\Models\Usuario;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class CreditController extends Controller
 {
@@ -47,6 +49,12 @@ class CreditController extends Controller
             'fecha_aprobacion_r11' => now()->toDateString(),
         ]);
 
+        try {
+            broadcast(new AdminDataUpdatedEvent('creditos', 'updated'));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast creditos approve: ' . $e->getMessage());
+        }
+
         return response()->json(['success' => true, 'data' => $usuario]);
     }
 
@@ -57,6 +65,12 @@ class CreditController extends Controller
             'credito_r11_aprobado' => 0,
             'limite_credito_r11' => 0,
         ]);
+
+        try {
+            broadcast(new AdminDataUpdatedEvent('creditos', 'updated'));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast creditos reject: ' . $e->getMessage());
+        }
 
         return response()->json(['success' => true, 'data' => $usuario]);
     }
@@ -89,6 +103,12 @@ class CreditController extends Controller
         }
 
         $usuario->update($updateData);
+
+        try {
+            broadcast(new AdminDataUpdatedEvent('creditos', 'updated'));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast creditos manual-payment: ' . $e->getMessage());
+        }
 
         return response()->json(['success' => true, 'data' => $usuario]);
     }

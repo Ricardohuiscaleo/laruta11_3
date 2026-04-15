@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\AdminDataUpdatedEvent;
 use App\Http\Controllers\Controller;
 use App\Models\SolicitudCambioTurno;
 use App\Services\Shift\ShiftSwapService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ShiftSwapController extends Controller
 {
@@ -29,6 +31,12 @@ class ShiftSwapController extends Controller
 
         $this->shiftSwapService->aprobar($solicitud, $personal->id);
 
+        try {
+            broadcast(new AdminDataUpdatedEvent('cambios', 'updated'));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast cambios approve: ' . $e->getMessage());
+        }
+
         return response()->json(['success' => true]);
     }
 
@@ -38,6 +46,12 @@ class ShiftSwapController extends Controller
         $personal = $request->get('personal');
 
         $this->shiftSwapService->rechazar($solicitud, $personal->id);
+
+        try {
+            broadcast(new AdminDataUpdatedEvent('cambios', 'updated'));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast cambios reject: ' . $e->getMessage());
+        }
 
         return response()->json(['success' => true]);
     }

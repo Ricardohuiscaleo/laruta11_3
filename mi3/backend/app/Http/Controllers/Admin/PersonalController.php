@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\AdminDataUpdatedEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StorePersonalRequest;
 use App\Models\Personal;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PersonalController extends Controller
 {
@@ -27,6 +29,12 @@ class PersonalController extends Controller
         $this->applyDefaultSueldo($data, $roles);
 
         $personal = Personal::create($data);
+
+        try {
+            broadcast(new AdminDataUpdatedEvent('personal', 'created'));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast personal created: ' . $e->getMessage());
+        }
 
         return response()->json(['success' => true, 'data' => $personal], 201);
     }
@@ -61,6 +69,12 @@ class PersonalController extends Controller
 
         $personal->update($data);
 
+        try {
+            broadcast(new AdminDataUpdatedEvent('personal', 'updated'));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast personal updated: ' . $e->getMessage());
+        }
+
         return response()->json(['success' => true, 'data' => $personal]);
     }
 
@@ -68,6 +82,12 @@ class PersonalController extends Controller
     {
         $personal = Personal::findOrFail($id);
         $personal->update(['activo' => !$personal->activo]);
+
+        try {
+            broadcast(new AdminDataUpdatedEvent('personal', 'updated'));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast personal toggle: ' . $e->getMessage());
+        }
 
         return response()->json(['success' => true, 'data' => $personal]);
     }

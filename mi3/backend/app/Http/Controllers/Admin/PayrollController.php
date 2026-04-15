@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\AdminDataUpdatedEvent;
 use App\Http\Controllers\Controller;
 use App\Models\PagoNomina;
 use App\Models\Personal;
@@ -11,6 +12,7 @@ use App\Services\Payroll\LiquidacionService;
 use App\Services\Payroll\NominaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PayrollController extends Controller
 {
@@ -99,6 +101,12 @@ class PayrollController extends Controller
 
         $pago = PagoNomina::create($data);
 
+        try {
+            broadcast(new AdminDataUpdatedEvent('nomina', 'updated'));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast nomina payment: ' . $e->getMessage());
+        }
+
         return response()->json(['success' => true, 'data' => $pago], 201);
     }
 
@@ -114,6 +122,12 @@ class PayrollController extends Controller
             ['mes' => $data['mes'] . '-01', 'centro_costo' => $data['centro_costo']],
             ['monto' => $data['monto']],
         );
+
+        try {
+            broadcast(new AdminDataUpdatedEvent('nomina', 'updated'));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast nomina budget: ' . $e->getMessage());
+        }
 
         return response()->json(['success' => true, 'data' => $presupuesto]);
     }
