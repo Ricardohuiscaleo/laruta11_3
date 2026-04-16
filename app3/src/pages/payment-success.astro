@@ -180,7 +180,7 @@ const amount = Astro.url.searchParams.get('amount');
             <p>Recibirás notificaciones sobre el estado de tu pedido</p>
         </div>
 
-        <!-- Tracking embed — solo para pedidos delivery -->
+        <!-- Tracking embed — DESACTIVADO: se habilitará cuando delivery esté en producción completa
         <div id="tracking-embed" style="display:none; margin-top:1.5rem;">
             <h3 style="font-size:.875rem; font-weight:600; color:#374151; margin-bottom:.75rem;">📍 Seguimiento en tiempo real</h3>
             <iframe
@@ -191,6 +191,7 @@ const amount = Astro.url.searchParams.get('amount');
                 loading="lazy"
             ></iframe>
         </div>
+        -->
     </div>
 
     <script>
@@ -381,7 +382,8 @@ const amount = Astro.url.searchParams.get('amount');
                 localStorage.removeItem('cartCount');
             }, 2000);
 
-            // Mostrar iframe de tracking si es pedido delivery
+            // Tracking embed — DESACTIVADO: se habilitará cuando delivery esté en producción completa
+            /*
             if (orderRef && deliveryInfo && deliveryInfo.delivery_type === 'delivery') {
                 const trackingEmbed = document.getElementById('tracking-embed');
                 const trackingIframe = document.getElementById('tracking-iframe');
@@ -390,6 +392,7 @@ const amount = Astro.url.searchParams.get('amount');
                     trackingEmbed.style.display = 'block';
                 }
             }
+            */
             
             function displayProducts(products) {
                 const productsList = document.getElementById('products-list');
