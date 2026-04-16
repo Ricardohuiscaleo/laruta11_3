@@ -6,11 +6,11 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`72e348c`) |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | 🔄 Pendiente verificar (`351753d`) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`3ecd857`) — SPA admin + smart turnos + animations |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`3d12b7a`) — AdminDataUpdatedEvent + Telegram adelantos + shift fix |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`af6e236`) — ShiftService fix dynamic suppression |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -68,10 +68,12 @@
 
 - [x] Obtener chat_id del grupo "Pedidos 11" — no aplica, flujo directo al bot de Telegram configurado.
 - [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3.
-- [ ] **Limpiar datos de prueba delivery** — eliminar pedidos TEST-DLV-* y SIM-* y revertir roles rider de Camila(1), Andrés(3), Dafne(18) cuando termine el testing.
+- [x] **Limpiar datos de prueba delivery** — eliminados 6 pedidos TEST-DLV-* y SIM-*. Pendiente: revertir roles rider de Camila(1), Andrés(3), Dafne(18) cuando termine el testing.
 - [ ] Recalcular delivery\_fee server-side en `create_order.php`
+- [ ] **Migrar tracking público de app3 a mi3** — `app3/src/pages/tracking/` usa polling HTTP, debería estar en mi3-frontend con Reverb WebSocket nativo para realtime real. Actualmente embebido via iframe en payment-success. Además: ocultar informe técnico al usuario, mostrar tracking en pedidos pending (no solo payment-success), integrar en MiniComandasCliente de app3. No necesario en caja3.
+- [ ] **Integrar checklists mi3 en caja3** — reemplazar `/checklist/` de caja3 con checklists smart de mi3. Flujo: caja3 llama `GET /public/checklists/today?rol=cajero` → mi3 devuelve checklist del cajero de hoy (asignado por turno, no por login) → cajera completa items → `POST /public/checklists/{id}/complete`. Crear endpoints públicos en mi3-backend.
 - [ ] Unificar factor descuento RL6 en caja3 (0.6 vs 0.7143)
-- [ ] **Fix ShiftService turnos dinámicos + reemplazos** — cuando se crea un reemplazo manual, el turno dinámico del titular sigue apareciendo. `generate4x4Shifts()` debe suprimir dinámicos cuando existe un turno de reemplazo para esa persona/fecha.
+- [x] **Fix ShiftService turnos dinámicos + reemplazos** — `generate4x4Shifts()` ahora trackea `reemplazo_seguridad` + `reemplazado_por` para seguridad. Eliminado `monto_reemplazo` falso en dinámicos. Commit `af6e236`.
 - [x] **Verificar Google Maps en mi3-frontend** — mapId `d51ca892b68e9c5e5e2dd701` + API key funcionando ✅
 - [x] **Deploy spec delivery-tracking-realtime** — commit `70650cf` pusheado. Builds disparados en Coolify. Pendiente verificar builds y ejecutar `php artisan migrate`.
 - [x] **Integración caja3/app3 delivery** — webhook en caja3 y iframe en app3 implementados en commit `70650cf`.
@@ -89,10 +91,13 @@
 - Profile modal: avatar grande, info turno, detalles reemplazo, stats mensuales.
 - Fix cross-role filter (`2d4b479`): seguridad workers disponibles aunque trabajen en R11 ese día.
 - Fix profile modal text + silent refresh + animations (`3ecd857`): "Reemplaza a" correcto, sin reload al asignar, vacancy pulse, avatar scale, modal backdrop-blur.
-- BD: eliminado turno test Ricardo 12-abr.
+- Fix ShiftService (`af6e236`): `generate4x4Shifts()` trackea `reemplazo_seguridad` + `reemplazado_por` para seguridad, eliminado `monto_reemplazo` falso en dinámicos.
+- BD: eliminados turnos test Ricardo 12-abr y reemplazo test Claudio 12-abr.
+- app3: comentado tracking iframe en payment-success.astro (se habilitará cuando delivery esté en producción completa).
+- BD: eliminados 162 checklists fantasma (sin personal_id) + 12 templates obsoletos sin rol (legacy caja3). Fix checklists 14-abr Dafne→Camila (generados antes del fix patrón). Fix encoding ajuste id=30 (automÃ¡tico→automático).
 
-**Commits:** `8a5debe`, `8aa5ce8`, `dedb1b1`, `2d4b479`, `3ecd857`
-**Deploys:** mi3-frontend ✅ (`3ecd857`)
+**Commits:** `8a5debe`, `8aa5ce8`, `dedb1b1`, `2d4b479`, `3ecd857`, `af6e236`, `632d7f4`
+**Deploys:** mi3-frontend ✅ (`3ecd857`), mi3-backend ✅ (`af6e236`), app3 ✅ (`632d7f4`)
 
 ### 2026-04-15f — Dojo-style turnos calendar rewrite
 

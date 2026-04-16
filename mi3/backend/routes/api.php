@@ -201,5 +201,14 @@ Route::prefix('v1/public')->group(function () {
     Route::get('/orders/{orderNumber}/tracking', [TrackingController::class, 'show']);
 });
 
+// ── Public checklist endpoints (para caja3, sin auth) ───────────────
+Route::prefix('v1/public/checklists')->group(function () {
+    Route::get('today', [\App\Http\Controllers\Public\ChecklistController::class, 'today']);
+    Route::post('{id}/items/{itemId}/complete', [\App\Http\Controllers\Public\ChecklistController::class, 'completeItem']);
+    Route::post('{id}/items/{itemId}/photo', [\App\Http\Controllers\Public\ChecklistController::class, 'uploadPhoto']);
+    Route::post('{id}/items/{itemId}/verify-cash', [\App\Http\Controllers\Public\ChecklistController::class, 'verifyCash']);
+    Route::post('{id}/complete', [\App\Http\Controllers\Public\ChecklistController::class, 'complete']);
+});
+
 // ── Delivery Tracking — Webhook desde caja3 ─────────────────────────
 Route::post('v1/webhooks/order-status', [\App\Http\Controllers\Webhook\OrderStatusWebhookController::class, 'handle']);
