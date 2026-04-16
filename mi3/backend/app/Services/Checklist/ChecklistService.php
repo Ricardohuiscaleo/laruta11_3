@@ -43,6 +43,12 @@ class ChecklistService
         foreach ($turnos as $turno) {
             // Determine the actual worker: if reemplazado_por is set, the replacement works
             $personalId = $turno->reemplazado_por ?: $turno->personal_id;
+
+            // Skip security shifts — only R11 shifts (normal, reemplazo) generate cajero/planchero checklists
+            if (in_array($turno->tipo, ['seguridad', 'reemplazo_seguridad'])) {
+                continue;
+            }
+
             $personal = Personal::find($personalId);
 
             if (!$personal) {

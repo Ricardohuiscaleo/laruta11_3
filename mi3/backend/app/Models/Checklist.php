@@ -17,7 +17,7 @@ class Checklist extends Model
     ];
 
     protected $casts = [
-        'scheduled_date' => 'date',
+        'scheduled_date' => 'date:Y-m-d',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
         'completion_percentage' => 'float',

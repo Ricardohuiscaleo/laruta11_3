@@ -8,6 +8,38 @@ function detectDefaultTab() {
   return hour >= 21 || hour < 4 ? 'cierre' : 'apertura';
 }
 
+/** Format raw number to Chilean peso display: 29000 → "$29.000" */
+function formatCLP(value) {
+  const digits = String(value).replace(/\D/g, '');
+  if (!digits) return '';
+  const num = parseInt(digits, 10);
+  if (isNaN(num)) return '';
+  return '$' + num.toLocaleString('es-CL');
+}
+
+/** Parse formatted Chilean peso string back to integer: "$29.000" → 29000 */
+function parseCLP(formatted) {
+  const digits = String(formatted).replace(/\D/g, '');
+  if (!digits) return 0;
+  return parseInt(digits, 10) || 0;
+}
+
+/** Derive photo contexto from item description and checklist type */
+function getPhotoContexto(item, checklistType) {
+  const desc = (item?.description || '').toLowerCase();
+  const type = checklistType || 'apertura';
+
+  if (desc.includes('lavaplatos') && (desc.includes('mesón') || desc.includes('meson'))) {
+    return `lavaplatos_meson_${type}`;
+  }
+  if (desc.includes('exterior')) return `exterior_${type}`;
+  if (desc.includes('plancha')) return `plancha_${type}`;
+  if (desc.includes('lavaplatos')) return `lavaplatos_${type}`;
+  if (desc.includes('mesón') || desc.includes('meson')) return `meson_${type}`;
+  if (desc.includes('interior')) return `interior_${type}`;
+  return `interior_${type}`;
+}
+
 export default function ChecklistApp() {
   const [activeTab, setActiveTab] = useState(detectDefaultTab);
   const [checklists, setChecklists] = useState([]);
@@ -68,6 +100,12 @@ export default function ChecklistApp() {
       const compressed = await compressImage(file);
       const formData = new FormData();
       formData.append('photo', compressed, 'photo.jpg');
+
+      const item = checklist.items?.find(i => i.id === itemId);
+      if (item) {
+        const contexto = getPhotoContexto(item, checklist.type);
+        formData.append('contexto', contexto);
+      }
 
       const res = await fetch(`${API_BASE}/${checklist.id}/items/${itemId}/photo`, {
         method: 'POST',
@@ -274,8 +312,8 @@ function ChecklistItemCard({ item, isLoading, onToggle, onUploadPhoto, onVerifyC
   const [cashAmount, setCashAmount] = useState('');
 
   const cashExpected = item.cash_expected ?? 0;
-  const parsedAmount = parseFloat(cashAmount);
-  const difference = !isNaN(parsedAmount) ? parsedAmount - cashExpected : null;
+  const rawAmount = parseCLP(cashAmount);
+  const difference = cashAmount ? rawAmount - cashExpected : null;
 
   // Completed cash result — show sistema vs físico
   if (isCash && item.is_completed) {
@@ -343,21 +381,19 @@ function ChecklistItemCard({ item, isLoading, onToggle, onUploadPhoto, onVerifyC
           <div className="space-y-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">¿Cuánto hay en caja?</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  step="1"
-                  value={cashAmount}
-                  onChange={(e) => setCashAmount(e.target.value)}
-                  placeholder="0"
-                  autoFocus
-                  className="block w-full rounded-xl border border-gray-300 pl-7 pr-3 py-2.5 text-sm focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500 outline-none"
-                  aria-label="Monto real en caja"
-                />
-              </div>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={cashAmount}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/\D/g, '');
+                  setCashAmount(raw ? formatCLP(raw) : '');
+                }}
+                placeholder="$0"
+                autoFocus
+                className="block w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500 outline-none"
+                aria-label="Monto real en caja"
+              />
             </div>
 
             {difference !== null && (
@@ -380,8 +416,8 @@ function ChecklistItemCard({ item, isLoading, onToggle, onUploadPhoto, onVerifyC
               </button>
               <button
                 onClick={() => {
-                  const amount = parseFloat(cashAmount);
-                  if (isNaN(amount) || amount < 0) return;
+                  const amount = parseCLP(cashAmount);
+                  if (!amount || amount < 0) return;
                   onVerifyCash(false, amount);
                 }}
                 disabled={isLoading || !cashAmount}
