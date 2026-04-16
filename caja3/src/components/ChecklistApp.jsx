@@ -14,7 +14,6 @@ export default function ChecklistApp() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState({});
-  const [cashInputs, setCashInputs] = useState({});
   const [fullscreenImage, setFullscreenImage] = useState(null);
 
   const checklist = checklists.find(c => c.type === activeTab) || null;
@@ -80,16 +79,14 @@ export default function ChecklistApp() {
     }
   };
 
-  const handleVerifyCash = async (itemId) => {
+  const handleVerifyCash = async (itemId, confirmed, amount) => {
     if (!checklist) return;
-    const amount = parseFloat(cashInputs[itemId]);
-    if (isNaN(amount) || amount < 0) return;
     setItemLoading(itemId, true);
     try {
       const res = await fetch(`${API_BASE}/${checklist.id}/items/${itemId}/verify-cash`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ actual_amount: amount }),
+        body: JSON.stringify({ confirmed, actual_amount: amount }),
       });
       if (res.ok) await fetchChecklists();
     } catch { /* silent */ } finally {
@@ -137,6 +134,7 @@ export default function ChecklistApp() {
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -223,11 +221,9 @@ export default function ChecklistApp() {
                 key={item.id}
                 item={item}
                 isLoading={!!actionLoading[item.id]}
-                cashValue={cashInputs[item.id] || ''}
-                onCashChange={(val) => setCashInputs(prev => ({ ...prev, [item.id]: val }))}
                 onToggle={() => handleCompleteItem(item.id)}
                 onUploadPhoto={(file) => handleUploadPhoto(item.id, file)}
-                onVerifyCash={() => handleVerifyCash(item.id)}
+                onVerifyCash={(confirmed, amount) => handleVerifyCash(item.id, confirmed, amount)}
                 onImageClick={setFullscreenImage}
               />
             ))}
@@ -270,83 +266,162 @@ export default function ChecklistApp() {
   );
 }
 
-function ChecklistItemCard({ item, isLoading, cashValue, onCashChange, onToggle, onUploadPhoto, onVerifyCash, onImageClick }) {
+
+function ChecklistItemCard({ item, isLoading, onToggle, onUploadPhoto, onVerifyCash, onImageClick }) {
   const isCash = item.item_type === 'cash_verification';
   const isPhoto = !!item.requires_photo;
+  const [showCashInput, setShowCashInput] = useState(false);
+  const [cashAmount, setCashAmount] = useState('');
 
+  const cashExpected = item.cash_expected ?? 0;
+  const parsedAmount = parseFloat(cashAmount);
+  const difference = !isNaN(parsedAmount) ? parsedAmount - cashExpected : null;
+
+  // Completed cash result — show sistema vs físico
+  if (isCash && item.is_completed) {
+    const isOk = item.cash_result === 'ok';
+    return (
+      <div className={`rounded-2xl border-2 p-4 ${isOk ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+        <div className="flex items-center gap-3">
+          {isOk ? (
+            <CheckCircle size={28} className="text-green-500 flex-shrink-0" />
+          ) : (
+            <DollarSign size={28} className="text-red-500 flex-shrink-0" />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-bold ${isOk ? 'text-green-700' : 'text-red-700'}`}>
+              {isOk ? '✅ Caja cuadrada' : '❌ Descuadrado'}
+            </p>
+            <p className="text-xs text-gray-600 mt-1">
+              Sistema: ${Number(item.cash_expected ?? 0).toLocaleString('es-CL')} | Físico: ${Number(item.cash_actual ?? 0).toLocaleString('es-CL')}
+              {!isOk && item.cash_difference != null && (
+                <span className="font-semibold text-red-600">
+                  {' '}| {(item.cash_difference ?? 0) < 0 ? 'Faltan' : 'Sobran'} ${Number(Math.abs(item.cash_difference)).toLocaleString('es-CL')}
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
+  // Pending cash verification — Sí/No flow
+  if (isCash && !item.is_completed) {
+    return (
+      <div className="rounded-2xl border-2 border-yellow-300 bg-yellow-50/50 p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <DollarSign size={22} className="text-yellow-600" />
+          <p className="text-sm font-bold text-gray-800">{item.description}</p>
+        </div>
+
+        <p className="text-lg font-bold text-gray-900 text-center">
+          ¿En caja hay ${Number(cashExpected).toLocaleString('es-CL')}?
+        </p>
+
+        {!showCashInput ? (
+          <div className="flex gap-3">
+            <button
+              onClick={() => onVerifyCash(true, cashExpected)}
+              disabled={isLoading}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-green-600 py-3 text-sm font-bold text-white active:scale-[0.97] transition-all disabled:opacity-50"
+              aria-label="Sí, el monto es correcto"
+            >
+              {isLoading ? <Loader2 size={18} className="animate-spin" /> : '✓'} Sí
+            </button>
+            <button
+              onClick={() => setShowCashInput(true)}
+              disabled={isLoading}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-red-600 py-3 text-sm font-bold text-white active:scale-[0.97] transition-all disabled:opacity-50"
+              aria-label="No, el monto no coincide"
+            >
+              ✕ No
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">¿Cuánto hay en caja?</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  step="1"
+                  value={cashAmount}
+                  onChange={(e) => setCashAmount(e.target.value)}
+                  placeholder="0"
+                  autoFocus
+                  className="block w-full rounded-xl border border-gray-300 pl-7 pr-3 py-2.5 text-sm focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500 outline-none"
+                  aria-label="Monto real en caja"
+                />
+              </div>
+            </div>
+
+            {difference !== null && (
+              <div className={`rounded-xl p-2.5 text-sm font-semibold text-center ${
+                difference === 0 ? 'bg-green-100 text-green-700' : difference > 0 ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'
+              }`}>
+                {difference === 0
+                  ? '✅ Cuadrado'
+                  : <>{difference < 0 ? 'Faltan' : 'Sobran'} ${Number(Math.abs(difference)).toLocaleString('es-CL')}</>
+                }
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowCashInput(false); setCashAmount(''); }}
+                className="flex-1 rounded-xl border border-gray-300 py-2.5 text-sm font-medium text-gray-700 active:bg-gray-50 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  const amount = parseFloat(cashAmount);
+                  if (isNaN(amount) || amount < 0) return;
+                  onVerifyCash(false, amount);
+                }}
+                disabled={isLoading || !cashAmount}
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-yellow-600 py-2.5 text-sm font-bold text-white active:scale-[0.97] transition-all disabled:opacity-50"
+              >
+                {isLoading ? <Loader2 size={16} className="animate-spin" /> : null} Informar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+
+  // Standard item (non-cash)
   return (
     <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
       <div className="flex items-start gap-3">
-        {/* Checkbox / status */}
-        {!isCash && (
-          <button
-            onClick={onToggle}
-            disabled={isLoading || (isPhoto && !item.photo_url && !item.is_completed)}
-            className="flex-shrink-0 mt-1 disabled:opacity-40"
-            aria-label={item.is_completed ? 'Desmarcar tarea' : 'Completar tarea'}
-          >
-            {isLoading ? (
-              <Loader2 size={28} className="animate-spin text-orange-400" />
-            ) : item.is_completed ? (
-              <CheckCircle size={28} className="text-green-500" />
-            ) : (
-              <Circle size={28} className="text-gray-300" />
-            )}
-          </button>
-        )}
-
-        {isCash && (
-          <div className="flex-shrink-0 mt-1">
-            {item.is_completed ? (
-              <CheckCircle size={28} className="text-green-500" />
-            ) : (
-              <DollarSign size={28} className="text-yellow-500" />
-            )}
-          </div>
-        )}
+        <button
+          onClick={onToggle}
+          disabled={isLoading || (isPhoto && !item.photo_url && !item.is_completed)}
+          className="flex-shrink-0 mt-1 disabled:opacity-40"
+          aria-label={item.is_completed ? 'Desmarcar tarea' : 'Completar tarea'}
+        >
+          {isLoading ? (
+            <Loader2 size={28} className="animate-spin text-orange-400" />
+          ) : item.is_completed ? (
+            <CheckCircle size={28} className="text-green-500" />
+          ) : (
+            <Circle size={28} className="text-gray-300" />
+          )}
+        </button>
 
         <div className="flex-1 min-w-0">
           <p className={`text-sm font-bold ${item.is_completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>
             {item.description}
           </p>
 
-          {/* Cash verification UI */}
-          {isCash && !item.is_completed && (
-            <div className="mt-3 space-y-2">
-              {item.cash_expected != null && (
-                <p className="text-xs text-gray-500">
-                  Monto esperado: <span className="font-bold text-gray-700">${Number(item.cash_expected).toLocaleString('es-CL')}</span>
-                </p>
-              )}
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  placeholder="Monto real"
-                  value={cashValue}
-                  onChange={(e) => onCashChange(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                  aria-label="Monto real en caja"
-                />
-                <button
-                  onClick={onVerifyCash}
-                  disabled={isLoading || !cashValue}
-                  className="bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
-                >
-                  {isLoading ? '...' : 'Verificar'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {isCash && item.is_completed && item.cash_result && (
-            <p className={`text-xs mt-1 font-semibold ${item.cash_result === 'ok' ? 'text-green-600' : 'text-red-600'}`}>
-              {item.cash_result === 'ok' ? '✅ Caja cuadrada' : `⚠️ Diferencia: $${Number(item.cash_difference || 0).toLocaleString('es-CL')}`}
-            </p>
-          )}
-
-          {/* Photo upload UI */}
-          {isPhoto && !isCash && (
+          {isPhoto && (
             <div className="mt-3">
               {item.photo_url ? (
                 <div className="relative rounded-xl overflow-hidden shadow-md">
