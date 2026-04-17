@@ -1286,6 +1286,7 @@ export default function App() {
   const [showCheckoutSection, setShowCheckoutSection] = useState(false);
   const [pendingPaymentModal, setPendingPaymentModal] = useState(null);
   const [showCashModal, setShowCashModal] = useState(false);
+  const [showPedidosYAModal, setShowPedidosYAModal] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
   const [checkoutErrors, setCheckoutErrors] = useState([]);
 
@@ -3526,9 +3527,9 @@ export default function App() {
                       if (customerInfo.deliveryType === 'delivery' && !customerInfo.address) errors.push('Dirección de entrega');
                       if (errors.length > 0) { setCheckoutErrors(errors); setTimeout(() => setCheckoutErrors([]), 3000); return; }
                       setCheckoutErrors([]);
-                      setSelectedPaymentMethod('pedidosya');
+                      setShowPedidosYAModal(true);
                     }}
-                    className={`border-2 font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${selectedPaymentMethod === 'pedidosya'
+                    className={`border-2 font-medium py-2 px-1 rounded-lg transition-all text-xs flex flex-col items-center justify-center gap-1 ${selectedPaymentMethod === 'pedidosya' || selectedPaymentMethod === 'pedidosya_cash'
                       ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500'
                       : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
                       }`}
@@ -3552,7 +3553,7 @@ export default function App() {
                         const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
                         const cardSurcharge = selectedPaymentMethod === 'card' && customerInfo.deliveryType === 'delivery' ? 500 : 0;
                         const finalTotal = cartSubtotal + deliveryFee + cardSurcharge - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
-                        const redirectMap = { card: '/card-pending', transfer: '/transfer-pending', pedidosya: '/pedidosya-pending' };
+                        const redirectMap = { card: '/card-pending', transfer: '/transfer-pending', pedidosya: '/pedidosya-pending', pedidosya_cash: '/pedidosya-pending' };
                         const orderData = {
                           amount: finalTotal,
                           customer_name: customerInfo.name,
@@ -3688,6 +3689,39 @@ export default function App() {
       }} />}
       <OrdersListener onOrdersUpdate={(count) => setActiveOrdersCount(count)} />
       <ChecklistsListener onChecklistsUpdate={(count) => setActiveChecklistsCount(count)} />
+
+      {/* PedidosYA Method Modal - Online/Efectivo */}
+      {showPedidosYAModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true">
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">🛵 PedidosYA - Método de Pago</h3>
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-gray-600 mb-1">Total del pedido:</p>
+              <p className="text-3xl font-bold text-orange-600">${(cartTotal || 0).toLocaleString('es-CL')}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <button
+                onClick={() => { setShowPedidosYAModal(false); setSelectedPaymentMethod('pedidosya'); }}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded-lg transition-colors text-base"
+              >
+                🌐 Online
+              </button>
+              <button
+                onClick={() => { setShowPedidosYAModal(false); setSelectedPaymentMethod('pedidosya_cash'); }}
+                className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-4 rounded-lg transition-colors text-base"
+              >
+                💵 Efectivo
+              </button>
+            </div>
+            <button
+              onClick={() => setShowPedidosYAModal(false)}
+              className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-4 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       {showCashModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

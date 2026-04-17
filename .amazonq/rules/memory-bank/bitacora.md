@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`2f8f3dc`) — hide Venta TV + fix descuento delivery |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`a752094`) — pedidosya_cash flow: modal Online/Efectivo + cash modal MiniComandas + registro caja |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`915b894`) — recipe-management-ai: 5 páginas recetas + fix recomendaciones |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`ec38aa7`) — Recipe API: 10 endpoints CRUD + bulk + recommendations + audit |
@@ -88,6 +88,21 @@
 
 ## Sesiones Recientes
 
+### 2026-04-17f — Spec pedidosya-cash-flow: flujo completo PedidosYA Efectivo en caja3
+
+**Cambios:**
+- `caja3/src/components/CheckoutApp.jsx`: Modal de selección PedidosYA (Online/Efectivo), nueva función `handlePedidosYACashPayment` con `payment_method: 'pedidosya_cash'`.
+- `caja3/src/components/MiniComandas.jsx`: Cash Modal inline para confirmar pagos pedidosya_cash (monto exacto, botones rápidos $5K/$10K/$20K, cálculo de vuelto, Enter key), etiqueta "PedidosYA Efectivo" con ícono Banknote.
+- `caja3/api/confirm_transfer_payment.php`: Extendido para registrar ingreso en `caja_movimientos` para `pedidosya_cash` con motivo "Venta PedidosYA Efectivo - Pedido #X".
+- `caja3/api/get_sales_summary.php`: Agregada categoría `pedidosya_cash` al array de resultados.
+- `caja3/src/components/ArqueoApp.jsx`: Tarjeta "PedidosYA Efectivo" con estilo amber, renombrada tarjeta existente a "PedidosYA Online".
+- `caja3/src/components/VentasDetalle.jsx`: Badge "PYA Efectivo" (yellow) y filtro `pedidosya_cash`.
+- `caja3/sql/add_pedidosya_cash_enum.sql`: ALTER TABLE para agregar `pedidosya_cash` al ENUM de `payment_method`.
+- BD: Migración ejecutada en producción — ENUM actualizado.
+
+**Commits:** `a752094`
+**Deploys:** caja3 ✅ (`a752094`), SQL migration ✅
+
 ### 2026-04-17e — Chef_Bot: conversational RAG agent + full DB schema + AWS credentials fix
 
 **Cambios:**
@@ -123,17 +138,7 @@
 **Commits:** `97b23a3`
 **Deploys:** pendiente → deployado en sesión 17d
 
-### 2026-04-17b — Spec recipe-management-ai: backend + frontend layout (tareas 1-5.1)
-
-**Cambios:**
-- mi3-backend: `ProductRecipe` model, `RecipeService` (cost calc, CRUD, bulk adjustment, recommendations, stock audit, CSV export), `RecipeController` con 10 endpoints, 41 unit tests.
-- mi3-frontend: `RecetasSection` con tabs (Listado, Ajuste Masivo, Recomendaciones, Auditoría), link en sidebar + mobile nav con ChefHat icon.
-- Rutas API: `/api/v1/admin/recetas/*` (CRUD + bulk + recommendations + audit).
-
-**Commits:** `97b23a3`
-**Deploys:** pendiente → deployado en sesión 17d
-
 ---
 
-> Sesiones anteriores (164 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (165 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
