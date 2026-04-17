@@ -3397,8 +3397,14 @@ export default function App() {
                 <div className="space-y-2 border-t pt-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Subtotal:</span>
-                    <span className="text-sm font-semibold text-gray-900">${cartSubtotal.toLocaleString('es-CL')}</span>
+                    <span className="text-sm font-semibold text-gray-900">${(selectedPaymentMethod === 'pedidosya_cash' ? cartSubtotalPYA : cartSubtotal).toLocaleString('es-CL')}</span>
                   </div>
+                  {selectedPaymentMethod === 'pedidosya_cash' && cartSubtotalPYA !== cartSubtotal && (
+                    <div className="flex justify-between items-center bg-orange-50 -mx-2 px-3 py-1.5 rounded-lg">
+                      <span className="text-orange-700 text-xs font-medium">🛵 Precio PedidosYA Efectivo aplicado</span>
+                      <span className="text-orange-700 text-xs line-through">${cartSubtotal.toLocaleString('es-CL')}</span>
+                    </div>
+                  )}
                   {customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 && (
                     <div className="bg-gray-50 -mx-2 px-3 py-2.5 rounded-lg space-y-1.5">
                       <div className="flex justify-between items-center">
@@ -3468,7 +3474,8 @@ export default function App() {
                       const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                       const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
                       const surcharge = customerInfo.deliveryType === "delivery" && selectedPaymentMethod === "card" ? 500 : 0;
-                      return (cartSubtotal + deliveryFee + surcharge - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
+                      const effectiveSubtotal = selectedPaymentMethod === 'pedidosya_cash' ? cartSubtotalPYA : cartSubtotal;
+                      return (effectiveSubtotal + deliveryFee + surcharge - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
                     })()}</span>
                   </div>
                 </div>

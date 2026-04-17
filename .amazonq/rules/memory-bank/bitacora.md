@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`40106b6`) — pedidosya_cash flow + fix modal en MenuApp |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`b23f03d`) — pedidosya_cash flow + precios PYA en checkout |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`915b894`) — recipe-management-ai: 5 páginas recetas + fix recomendaciones |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`ec38aa7`) — Recipe API: 10 endpoints CRUD + bulk + recommendations + audit |
@@ -101,9 +101,10 @@
 - `caja3/sql/add_pedidosya_cash_enum.sql`: ALTER TABLE para agregar `pedidosya_cash` al ENUM de `payment_method`.
 - BD: Migración ejecutada en producción — ENUM actualizado.
 - BD: Columna `pedidosya_price` agregada a `products`. 20 productos con precios PYA cargados (hamburguesas, completos, sándwiches, papas, bebidas).
+- `caja3/src/components/MenuApp.jsx`: `cartSubtotalPYA` calcula total con precios PYA, modal muestra ambos precios, orden usa monto PYA para `pedidosya_cash`.
 
-**Commits:** `a752094`, `40106b6`
-**Deploys:** caja3 ✅ (`40106b6`), SQL migration ✅
+**Commits:** `a752094`, `40106b6`, `b23f03d`
+**Deploys:** caja3 ✅ (`b23f03d`), SQL migrations ✅
 
 ### 2026-04-17e — Chef_Bot: conversational RAG agent + full DB schema + AWS credentials fix
 
