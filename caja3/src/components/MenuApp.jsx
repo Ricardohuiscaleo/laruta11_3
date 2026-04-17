@@ -2106,6 +2106,26 @@ export default function App() {
     }, 0);
   }, [cart]);
 
+  // Subtotal con precios PedidosYA (para pedidosya_cash)
+  const cartSubtotalPYA = useMemo(() => {
+    return cart.reduce((total, item) => {
+      let itemPrice = item.pedidosya_price ? parseFloat(item.pedidosya_price) : item.price;
+
+      if (item.customizations && item.customizations.length > 0) {
+        const customizationsPrice = item.customizations.reduce((sum, c) => {
+          let price = (c.pedidosya_price ? parseFloat(c.pedidosya_price) : c.price) * c.quantity;
+          if (c.extraPrice && c.quantity > 1) {
+            price = (c.pedidosya_price ? parseFloat(c.pedidosya_price) : c.price) + (c.quantity - 1) * (c.extraPrice || c.price);
+          }
+          return sum + price;
+        }, 0);
+        itemPrice += customizationsPrice;
+      }
+
+      return total + itemPrice;
+    }, 0);
+  }, [cart]);
+
   const CARD_DELIVERY_SURCHARGE = 500;
 
   const baseDeliveryFee = useMemo(() => {
@@ -3552,7 +3572,8 @@ export default function App() {
                         const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                         const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
                         const cardSurcharge = selectedPaymentMethod === 'card' && customerInfo.deliveryType === 'delivery' ? 500 : 0;
-                        const finalTotal = cartSubtotal + deliveryFee + cardSurcharge - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
+                        const effectiveSubtotal = selectedPaymentMethod === 'pedidosya_cash' ? cartSubtotalPYA : cartSubtotal;
+                        const finalTotal = effectiveSubtotal + deliveryFee + cardSurcharge - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
                         const redirectMap = { card: '/card-pending', transfer: '/transfer-pending', pedidosya: '/pedidosya-pending', pedidosya_cash: '/pedidosya-pending' };
                         const orderData = {
                           amount: finalTotal,
@@ -3696,8 +3717,14 @@ export default function App() {
           <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
             <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">🛵 PedidosYA - Método de Pago</h3>
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
-              <p className="text-sm text-gray-600 mb-1">Total del pedido:</p>
-              <p className="text-3xl font-bold text-orange-600">${(cartTotal || 0).toLocaleString('es-CL')}</p>
+              <p className="text-sm text-gray-600 mb-1">Total caja:</p>
+              <p className="text-xl font-bold text-gray-700">${(cartTotal || 0).toLocaleString('es-CL')}</p>
+              {cartSubtotalPYA !== cartSubtotal && (
+                <>
+                  <p className="text-sm text-gray-600 mb-1 mt-2">Total PedidosYA (efectivo):</p>
+                  <p className="text-3xl font-bold text-orange-600">${(cartSubtotalPYA || 0).toLocaleString('es-CL')}</p>
+                </>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3 mb-4">
               <button

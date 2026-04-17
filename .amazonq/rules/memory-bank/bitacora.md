@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`a752094`) — pedidosya_cash flow: modal Online/Efectivo + cash modal MiniComandas + registro caja |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`40106b6`) — pedidosya_cash flow + fix modal en MenuApp |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`915b894`) — recipe-management-ai: 5 páginas recetas + fix recomendaciones |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`ec38aa7`) — Recipe API: 10 endpoints CRUD + bulk + recommendations + audit |
@@ -92,6 +92,7 @@
 
 **Cambios:**
 - `caja3/src/components/CheckoutApp.jsx`: Modal de selección PedidosYA (Online/Efectivo), nueva función `handlePedidosYACashPayment` con `payment_method: 'pedidosya_cash'`.
+- `caja3/src/components/MenuApp.jsx`: Modal Online/Efectivo en checkout inline (el flujo principal de caja), estado `showPedidosYAModal`, redirect map con `pedidosya_cash`.
 - `caja3/src/components/MiniComandas.jsx`: Cash Modal inline para confirmar pagos pedidosya_cash (monto exacto, botones rápidos $5K/$10K/$20K, cálculo de vuelto, Enter key), etiqueta "PedidosYA Efectivo" con ícono Banknote.
 - `caja3/api/confirm_transfer_payment.php`: Extendido para registrar ingreso en `caja_movimientos` para `pedidosya_cash` con motivo "Venta PedidosYA Efectivo - Pedido #X".
 - `caja3/api/get_sales_summary.php`: Agregada categoría `pedidosya_cash` al array de resultados.
@@ -99,9 +100,10 @@
 - `caja3/src/components/VentasDetalle.jsx`: Badge "PYA Efectivo" (yellow) y filtro `pedidosya_cash`.
 - `caja3/sql/add_pedidosya_cash_enum.sql`: ALTER TABLE para agregar `pedidosya_cash` al ENUM de `payment_method`.
 - BD: Migración ejecutada en producción — ENUM actualizado.
+- BD: Columna `pedidosya_price` agregada a `products`. 20 productos con precios PYA cargados (hamburguesas, completos, sándwiches, papas, bebidas).
 
-**Commits:** `a752094`
-**Deploys:** caja3 ✅ (`a752094`), SQL migration ✅
+**Commits:** `a752094`, `40106b6`
+**Deploys:** caja3 ✅ (`40106b6`), SQL migration ✅
 
 ### 2026-04-17e — Chef_Bot: conversational RAG agent + full DB schema + AWS credentials fix
 
