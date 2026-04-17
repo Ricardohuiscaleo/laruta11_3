@@ -3307,6 +3307,7 @@ export default function App() {
                     const isPYACash = selectedPaymentMethod === 'pedidosya_cash';
                     const basePrice = isPYACash && item.pedidosya_price ? parseFloat(item.pedidosya_price) : item.price;
                     let itemTotal = basePrice * item.quantity;
+                    if (isPYACash) console.log('[PYA DEBUG]', item.name, 'pedidosya_price:', item.pedidosya_price, 'price:', item.price, 'basePrice:', basePrice, 'selectedPM:', selectedPaymentMethod);
 
                     // Sumar personalizaciones regulares
                     if (item.customizations && item.customizations.length > 0) {
