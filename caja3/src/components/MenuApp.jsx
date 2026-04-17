@@ -3304,11 +3304,16 @@ export default function App() {
                 <div className="space-y-3 mb-4">
                   {cart.map((item, index) => {
                     const isCombo = item.type === 'combo' || item.category_name === 'Combos' || item.selections;
-                    let itemTotal = item.price * item.quantity;
+                    const isPYACash = selectedPaymentMethod === 'pedidosya_cash';
+                    const basePrice = isPYACash && item.pedidosya_price ? parseFloat(item.pedidosya_price) : item.price;
+                    let itemTotal = basePrice * item.quantity;
 
                     // Sumar personalizaciones regulares
                     if (item.customizations && item.customizations.length > 0) {
-                      itemTotal += item.customizations.reduce((sum, c) => sum + (c.price * c.quantity), 0);
+                      itemTotal += item.customizations.reduce((sum, c) => {
+                        const cPrice = isPYACash && c.pedidosya_price ? parseFloat(c.pedidosya_price) : c.price;
+                        return sum + (cPrice * c.quantity);
+                      }, 0);
                     }
 
                     // Sumar costos adicionales de selecciones de combo
@@ -3370,9 +3375,16 @@ export default function App() {
                               </div>
                             )}
                           </div>
-                          <p className="font-semibold text-gray-800 text-sm">
-                            ${itemTotal.toLocaleString('es-CL')}
-                          </p>
+                          <div className="text-right">
+                            {isPYACash && item.pedidosya_price && parseFloat(item.pedidosya_price) !== item.price ? (
+                              <>
+                                <p className="font-semibold text-orange-600 text-sm">${itemTotal.toLocaleString('es-CL')}</p>
+                                <p className="text-xs text-gray-400 line-through">${(item.price * item.quantity).toLocaleString('es-CL')}</p>
+                              </>
+                            ) : (
+                              <p className="font-semibold text-gray-800 text-sm">${itemTotal.toLocaleString('es-CL')}</p>
+                            )}
+                          </div>
                         </div>
                         <div className="flex gap-2">
                           <button
