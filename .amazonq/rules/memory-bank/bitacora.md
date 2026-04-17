@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`1e213d9`) — pedidosya_cash: precios PYA visibles en checkout + feedback badge |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4fcef99`) — pedidosya_cash: precios PYA por item + badge feedback + total dinámico |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`915b894`) — recipe-management-ai: 5 páginas recetas + fix recomendaciones |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`ec38aa7`) — Recipe API: 10 endpoints CRUD + bulk + recommendations + audit |
@@ -101,10 +101,10 @@
 - `caja3/sql/add_pedidosya_cash_enum.sql`: ALTER TABLE para agregar `pedidosya_cash` al ENUM de `payment_method`.
 - BD: Migración ejecutada en producción — ENUM actualizado.
 - BD: Columna `pedidosya_price` agregada a `products`. 20 productos con precios PYA cargados (hamburguesas, completos, sándwiches, papas, bebidas).
-- `caja3/src/components/MenuApp.jsx`: `cartSubtotalPYA` calcula total con precios PYA, modal muestra ambos precios, orden usa monto PYA para `pedidosya_cash`. Subtotal y total visibles cambian al seleccionar Efectivo, badge "🛵 Precio PedidosYA Efectivo aplicado" con precio caja tachado.
+- `caja3/src/components/MenuApp.jsx`: `cartSubtotalPYA` calcula total con precios PYA, modal muestra ambos precios, orden usa monto PYA para `pedidosya_cash`. Subtotal y total visibles cambian al seleccionar Efectivo, badge "🛵 Precio PedidosYA Efectivo aplicado" con precio caja tachado. Precios PYA por item en naranja con precio caja strikethrough.
 
-**Commits:** `a752094`, `40106b6`, `b23f03d`, `1e213d9`
-**Deploys:** caja3 ✅ (`1e213d9`), SQL migrations ✅
+**Commits:** `a752094`, `40106b6`, `b23f03d`, `1e213d9`, `4fcef99`
+**Deploys:** caja3 ✅ (`4fcef99`), SQL migrations ✅
 
 ### 2026-04-17e — Chef_Bot: conversational RAG agent + full DB schema + AWS credentials fix
 

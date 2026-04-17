@@ -3376,7 +3376,7 @@ export default function App() {
                             )}
                           </div>
                           <div className="text-right">
-                            {isPYACash && item.pedidosya_price && parseFloat(item.pedidosya_price) !== item.price ? (
+                            {isPYACash && item.pedidosya_price ? (
                               <>
                                 <p className="font-semibold text-orange-600 text-sm">${itemTotal.toLocaleString('es-CL')}</p>
                                 <p className="text-xs text-gray-400 line-through">${(item.price * item.quantity).toLocaleString('es-CL')}</p>
