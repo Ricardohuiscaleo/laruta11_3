@@ -9,7 +9,14 @@
  *   On failure: { ok: false, reason: string }
  */
 
-const ALLOWED_TABLES = new Set(['products', 'ingredients', 'product_recipes']);
+const ALLOWED_TABLES = new Set([
+  'products', 'ingredients', 'product_recipes',
+  'categories', 'subcategories',
+  'tuu_orders', 'tuu_order_items',
+  'tv_orders', 'tv_order_items',
+  'inventory_transactions', 'compras', 'compras_detalle',
+  'combos', 'combo_items',
+]);
 
 const DANGEROUS_STATEMENTS = /\b(DELETE|DROP|ALTER|TRUNCATE|CREATE)\b/i;
 
