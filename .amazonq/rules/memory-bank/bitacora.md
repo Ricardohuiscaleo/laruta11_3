@@ -97,8 +97,9 @@
 - `chef-bot/guards/sqlGuard.js`: Allowlist expandida a 12 tablas (+ tuu_orders, tuu_order_items, tv_orders, tv_order_items, inventory_transactions, compras, compras_detalle, categories, subcategories, combos, combo_items).
 - `mi3/frontend/app/admin/recetas/recomendaciones/page.tsx`: Fix field names mismatch — `price→current_price`, `margin→current_margin` para coincidir con backend.
 - VPS: AWS credentials configuradas en `~/.aws/credentials` para Bedrock access. Bot reiniciado via pm2.
+- `chef-bot/formatters/telegramFormatter.js`: Fix conversión de unidades en cálculo de costos — agregado `UNIT_CONVERSIONS` (kg↔g, L↔ml) y `calculateIngredientCost()`. Tomate 150g×$500/kg ahora muestra $75 (antes $75.000).
 
-**Commits:** `84daa6c`, `915b894`
+**Commits:** `84daa6c`, `915b894`, `fb25e62`
 **Deploys:** chef-bot pm2 restart ✅, mi3-frontend ✅ (`915b894`)
 
 ### 2026-04-17d — Deploy spec recipe-management-ai: mi3-frontend + mi3-backend + Chef_Bot pm2
