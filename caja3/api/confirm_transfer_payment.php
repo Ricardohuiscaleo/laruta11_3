@@ -76,16 +76,17 @@ try {
     // Descontar inventario
     processInventoryDeduction($pdo, $order_items, $order['order_number']);
 
-    // Registrar en caja si es efectivo
-    if ($order['payment_method'] === 'cash') {
-        registerCashIncome($pdo, $order['installment_amount'], $order['order_number']);
+    // Registrar en caja si es efectivo (cash o pedidosya_cash)
+    if (in_array($order['payment_method'], ['cash', 'pedidosya_cash'])) {
+        registerCashIncome($pdo, $order['installment_amount'], $order['order_number'], $order['payment_method']);
     }
 
     $pdo->commit();
 
     $payment_type = $order['payment_method'] === 'card' ? 'tarjeta' :
         ($order['payment_method'] === 'transfer' ? 'transferencia' :
-        ($order['payment_method'] === 'cash' ? 'efectivo' : 'PedidosYA'));
+        ($order['payment_method'] === 'cash' ? 'efectivo' :
+        ($order['payment_method'] === 'pedidosya_cash' ? 'PedidosYA Efectivo' : 'PedidosYA')));
 
     echo json_encode([
         'success' => true,
@@ -109,7 +110,7 @@ catch (Exception $e) {
     exit;
 }
 
-function registerCashIncome($pdo, $amount, $order_number)
+function registerCashIncome($pdo, $amount, $order_number, $payment_method = 'cash')
 {
     try {
         $saldo_stmt = $pdo->query("SELECT saldo_nuevo FROM caja_movimientos ORDER BY id DESC LIMIT 1");
@@ -119,7 +120,9 @@ function registerCashIncome($pdo, $amount, $order_number)
         }
 
         $saldo_nuevo = $saldo_anterior + $amount;
-        $motivo = "Venta en efectivo - Pedido #{$order_number}";
+        $motivo = $payment_method === 'pedidosya_cash'
+            ? "Venta PedidosYA Efectivo - Pedido #{$order_number}"
+            : "Venta en efectivo - Pedido #{$order_number}";
 
         $stmt = $pdo->prepare(
             "INSERT INTO caja_movimientos (tipo, monto, motivo, saldo_anterior, saldo_nuevo, usuario, order_reference) 

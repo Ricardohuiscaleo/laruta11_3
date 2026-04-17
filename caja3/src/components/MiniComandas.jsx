@@ -12,6 +12,9 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const [checkedItems, setCheckedItems] = useState({});
   const [photoModal, setPhotoModal] = useState(null);
   const [viewingOrderPhotos, setViewingOrderPhotos] = useState(null); // { photos: [], currentIndex: 0 }
+  const [cashModalOrder, setCashModalOrder] = useState(null);
+  const [cashAmount, setCashAmount] = useState('');
+  const [cashStep, setCashStep] = useState('input');
   const [showNewFeaturePopup, setShowNewFeaturePopup] = useState(() => {
     const today = new Date();
     const d = today.getDate(), m = today.getMonth() + 1, y = today.getFullYear();
@@ -154,12 +157,96 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
     }
   };
 
+  const formatCurrency = (value) => {
+    const numbers = value.replace(/\D/g, '');
+    return numbers.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  const handleCashInput = (e) => {
+    const formatted = formatCurrency(e.target.value);
+    setCashAmount(formatted);
+  };
+
+  const setCashExactAmount = () => {
+    if (!cashModalOrder) return;
+    setCashAmount(cashModalOrder.total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
+  };
+
+  const setCashQuickAmount = (amount) => {
+    setCashAmount(amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
+  };
+
+  const handleContinueCash = () => {
+    const numericAmount = parseInt(cashAmount.replace(/\./g, ''));
+    if (!numericAmount || numericAmount === 0) {
+      alert('⚠️ Debe ingresar un monto o seleccionar "Monto Exacto"');
+      return;
+    }
+    if (numericAmount < cashModalOrder.total) {
+      const faltante = cashModalOrder.total - numericAmount;
+      alert(`⚠️ Monto insuficiente. Faltan $${faltante.toLocaleString('es-CL')}`);
+      return;
+    }
+    if (numericAmount === cashModalOrder.total) {
+      processCashPayment();
+    } else {
+      setCashStep('confirm');
+    }
+  };
+
+  const processCashPayment = async () => {
+    if (!cashModalOrder) return;
+    setProcessing(cashModalOrder.id);
+    try {
+      const response = await fetch('/api/confirm_transfer_payment.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: cashModalOrder.id })
+      });
+      const text = await response.text();
+      if (text.trim().startsWith('<')) {
+        alert('❌ Error del servidor.');
+        return;
+      }
+      const result = JSON.parse(text);
+      if (result.success) {
+        closeCashModal();
+        await loadOrders();
+      } else {
+        alert('Error: ' + (result.error || 'No se pudo confirmar el pago'));
+      }
+    } catch (error) {
+      alert('Error al confirmar el pago');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const closeCashModal = () => {
+    setCashModalOrder(null);
+    setCashAmount('');
+    setCashStep('input');
+  };
+
   const confirmPayment = async (orderId, orderNumber, paymentMethod) => {
+    if (paymentMethod === 'pedidosya_cash') {
+      const order = orders.find(o => o.id === orderId);
+      setCashModalOrder({
+        id: orderId,
+        orderNumber,
+        total: parseInt(order.installment_amount || 0)
+      });
+      setCashAmount('');
+      setCashStep('input');
+      return;
+    }
+
     const methodName = {
       cash: 'efectivo',
       card: 'tarjeta',
       transfer: 'transferencia',
-      pedidosya: 'PedidosYA'
+      pedidosya: 'PedidosYA',
+      pedidosya_cash: 'PedidosYA Efectivo'
     }[paymentMethod] || paymentMethod;
 
     if (!confirm(`¿Confirmar pago en ${methodName} del pedido ${orderNumber}?`)) return;
@@ -174,8 +261,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
       const text = await response.text();
       if (text.trim().startsWith('<')) {
-        console.error('API devolvió HTML:', text.substring(0, 200));
-        alert('❌ Error del servidor. Revisa la consola.');
+        alert('❌ Error del servidor.');
         return;
       }
 
@@ -186,7 +272,6 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
         alert('Error: ' + (result.error || 'No se pudo confirmar el pago'));
       }
     } catch (error) {
-      console.error('Error confirmando pago:', error);
       alert('Error al confirmar el pago');
     } finally {
       setProcessing(null);
@@ -479,6 +564,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
       case 'cash': return <Banknote size={14} />;
       case 'transfer': return <Smartphone size={14} />;
       case 'pedidosya': return <Package size={14} />;
+      case 'pedidosya_cash': return <Banknote size={14} />;
       default: return <DollarSign size={14} />;
     }
   };
@@ -489,6 +575,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
       case 'cash': return 'Efectivo';
       case 'transfer': return 'Transferencia';
       case 'pedidosya': return 'PedidosYA';
+      case 'pedidosya_cash': return 'PedidosYA Efectivo';
       case 'rl6_credit': return 'Crédito RL6';
       case 'r11_credit': return 'Crédito R11';
       default: return method;
@@ -638,7 +725,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
                     const orderSubtotal = `$${parseInt(order.subtotal || order.installment_amount || 0).toLocaleString('es-CL')}`;
                     const orderTotal = `$${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}`;
-                    const payLabels = { cash: 'Efectivo', card: 'Tarjeta (pagado)', transfer: 'Transferencia', pedidosya: 'PedidosYA', rl6_credit: 'RL6', r11_credit: 'R11' };
+                    const payLabels = { cash: 'Efectivo', card: 'Tarjeta (pagado)', transfer: 'Transferencia', pedidosya: 'PedidosYA', pedidosya_cash: 'PedidosYA Efectivo', rl6_credit: 'RL6', r11_credit: 'R11' };
 
                     // Desglose delivery
                     const baseFee = parseInt(order.delivery_fee || 0);
@@ -1059,6 +1146,132 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           </div>
         )}
       </div>
+
+      {/* Cash Modal for pedidosya_cash */}
+      {cashModalOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            {cashStep === 'input' ? (
+              <>
+                <h3 className="text-xl font-bold text-gray-800 mb-4">💵 PedidosYA - Pago en Efectivo</h3>
+                <p className="text-xs text-gray-500 mb-2">Pedido {cashModalOrder.orderNumber}</p>
+
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-gray-600 mb-1">Total a pagar:</p>
+                  <p className="text-3xl font-bold text-orange-600">${(cashModalOrder.total || 0).toLocaleString('es-CL')}</p>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    ¿Con cuánto paga el cliente?
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg font-semibold">$</span>
+                    <input
+                      type="text"
+                      value={cashAmount}
+                      onChange={handleCashInput}
+                      onKeyDown={(e) => e.key === 'Enter' && handleContinueCash()}
+                      className="w-full pl-8 pr-3 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-lg font-semibold"
+                      placeholder="0"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <button
+                    onClick={setCashExactAmount}
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg transition-colors text-sm"
+                  >
+                    Monto Exacto
+                  </button>
+                  <button
+                    onClick={() => setCashQuickAmount(5000)}
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded-lg transition-colors text-sm"
+                  >
+                    $5.000
+                  </button>
+                  <button
+                    onClick={() => setCashQuickAmount(10000)}
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded-lg transition-colors text-sm"
+                  >
+                    $10.000
+                  </button>
+                  <button
+                    onClick={() => setCashQuickAmount(20000)}
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded-lg transition-colors text-sm"
+                  >
+                    $20.000
+                  </button>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={closeCashModal}
+                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-4 rounded-lg transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleContinueCash}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+                  >
+                    Continuar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl font-bold text-gray-800 mb-4">💰 Confirmar Vuelto</h3>
+                <p className="text-xs text-gray-500 mb-2">Pedido {cashModalOrder.orderNumber}</p>
+
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-600">Total:</span>
+                    <span className="text-lg font-semibold">${cashModalOrder.total.toLocaleString('es-CL')}</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-600">Paga con:</span>
+                    <span className="text-lg font-semibold">${parseInt(cashAmount.replace(/\./g, '')).toLocaleString('es-CL')}</span>
+                  </div>
+                  <div className="border-t border-green-300 pt-2 mt-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-base font-semibold text-gray-700">Vuelto a entregar:</span>
+                      <span className="text-2xl font-bold text-green-600">
+                        ${(parseInt(cashAmount.replace(/\./g, '')) - cashModalOrder.total).toLocaleString('es-CL')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-yellow-800 font-medium text-center">
+                    ⚠️ Confirma que entregarás el vuelto correcto
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setCashStep('input')}
+                    disabled={processing === cashModalOrder.id}
+                    className="flex-1 bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-lg transition-colors"
+                  >
+                    Volver
+                  </button>
+                  <button
+                    onClick={processCashPayment}
+                    disabled={processing === cashModalOrder.id}
+                    className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+                  >
+                    {processing === cashModalOrder.id ? '⏳ Procesando...' : '✓ Confirmar Pago'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

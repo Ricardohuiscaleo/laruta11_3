@@ -112,6 +112,7 @@ try {
         'card' => ['count' => 0, 'total' => 0],
         'transfer' => ['count' => 0, 'total' => 0],
         'pedidosya' => ['count' => 0, 'total' => 0],
+        'pedidosya_cash' => ['count' => 0, 'total' => 0],
         'webpay' => ['count' => 0, 'total' => 0],
         'rl6_credit' => ['count' => 0, 'total' => 0]
     ];

@@ -32,6 +32,7 @@ const CheckoutApp = () => {
   const [cashAmount, setCashAmount] = useState('');
   const [cashStep, setCashStep] = useState('input');
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [showPedidosYAModal, setShowPedidosYAModal] = useState(false);
   const [dynamicDeliveryFee, setDynamicDeliveryFee] = useState(null);
   const [deliveryFeeLabel, setDeliveryFeeLabel] = useState(null);
   const [deliveryDistanceInfo, setDeliveryDistanceInfo] = useState(null);
@@ -381,9 +382,15 @@ const CheckoutApp = () => {
     setCashStep('input');
   };
 
-  const handlePedidosYAPayment = async () => {
+  const handlePedidosYAClick = () => {
     if (isProcessing) return;
     if (!validateForm()) return;
+    setShowPedidosYAModal(true);
+  };
+
+  const handlePedidosYAPayment = async () => {
+    setShowPedidosYAModal(false);
+    if (isProcessing) return;
 
     setIsProcessing(true);
     try {
@@ -421,6 +428,50 @@ const CheckoutApp = () => {
     } catch (error) {
       setIsProcessing(false);
       console.error('Error pedidosya:', error);
+      alert('Error al procesar el pedido: ' + error.message);
+    }
+  };
+
+  const handlePedidosYACashPayment = async () => {
+    setShowPedidosYAModal(false);
+    if (isProcessing) return;
+
+    setIsProcessing(true);
+    try {
+      const orderData = {
+        amount: cartTotal,
+        customer_name: customerInfo.name,
+        customer_phone: customerInfo.phone,
+        customer_email: customerInfo.email || `${customerInfo.phone}@ruta11.cl`,
+        user_id: user?.id || null,
+        cart_items: cart,
+        delivery_fee: deliveryFee,
+        delivery_discount: deliveryDiscountAmount,
+        customer_notes: customerInfo.customerNotes || null,
+        delivery_type: customerInfo.deliveryType,
+        delivery_address: customerInfo.address || null,
+        pickup_time: customerInfo.pickupTime || null,
+        payment_method: 'pedidosya_cash'
+      };
+
+      const response = await fetch('/api/create_order.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData)
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        localStorage.removeItem('ruta11_cart');
+        localStorage.removeItem('ruta11_cart_total');
+        window.location.href = '/pedidosya-pending?order=' + result.order_id;
+      } else {
+        setIsProcessing(false);
+        alert('Error al crear el pedido: ' + (result.error || 'Error desconocido'));
+      }
+    } catch (error) {
+      setIsProcessing(false);
+      console.error('Error pedidosya_cash:', error);
       alert('Error al procesar el pedido: ' + error.message);
     }
   };
@@ -974,7 +1025,7 @@ const CheckoutApp = () => {
                   </button>
 
                   <button
-                    onClick={handlePedidosYAPayment}
+                    onClick={handlePedidosYAClick}
                     disabled={isProcessing}
                     className="bg-white hover:bg-gray-50 disabled:bg-gray-100 border-2 border-gray-300 hover:border-orange-500 disabled:cursor-not-allowed text-gray-700 font-medium py-2 px-1 rounded-lg transition-all text-xs"
                   >
@@ -986,6 +1037,44 @@ const CheckoutApp = () => {
           </div>
         </div>
       </div>
+
+      {showPedidosYAModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-label="PedidosYA método de pago">
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">🛵 PedidosYA - Método de Pago</h3>
+
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-gray-600 mb-1">Total del pedido:</p>
+              <p className="text-3xl font-bold text-orange-600">${(cartTotal || 0).toLocaleString('es-CL')}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <button
+                onClick={handlePedidosYAPayment}
+                disabled={isProcessing}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-4 px-4 rounded-lg transition-colors text-base"
+              >
+                🌐 Online
+              </button>
+              <button
+                onClick={handlePedidosYACashPayment}
+                disabled={isProcessing}
+                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-4 px-4 rounded-lg transition-colors text-base"
+                data-action="pedidosya-cash"
+              >
+                💵 Efectivo
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowPedidosYAModal(false)}
+              className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-4 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       {showCashModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

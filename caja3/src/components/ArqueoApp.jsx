@@ -206,11 +206,21 @@ export default function ArqueoApp() {
 
         <div className="card">
           <div className="card-title">
-            <Bike size={16} /> PedidosYA
+            <Bike size={16} /> PedidosYA Online
           </div>
           <div className="card-amount">${fmt(salesData.summary.pedidosya.total)}</div>
           <div className="card-count">{salesData.summary.pedidosya.count} pedidos</div>
         </div>
+
+        {salesData.summary.pedidosya_cash && (
+          <div className="card card-pedidosya-cash">
+            <div className="card-title">
+              <Banknote size={16} /> PedidosYA Efectivo
+            </div>
+            <div className="card-amount">${fmt(salesData.summary.pedidosya_cash.total)}</div>
+            <div className="card-count">{salesData.summary.pedidosya_cash.count} pedidos</div>
+          </div>
+        )}
 
         <div className="card">
           <div className="card-title">
@@ -382,6 +392,19 @@ export default function ArqueoApp() {
           font-size: clamp(10px, 2.5vw, 12px);
           color: #999;
           margin-top: 4px;
+        }
+        .card-pedidosya-cash {
+          background: #fffbeb;
+          border: 2px solid #d97706;
+        }
+        .card-pedidosya-cash .card-title {
+          color: #92400e;
+        }
+        .card-pedidosya-cash .card-amount {
+          color: #78350f;
+        }
+        .card-pedidosya-cash .card-count {
+          color: #a16207;
         }
         .card-delivery {
           background: #fef3c7;
