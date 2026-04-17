@@ -43,4 +43,15 @@ class Product extends Model
     {
         return $this->hasMany(CompraDetalle::class, 'product_id');
     }
+
+    public function recipes()
+    {
+        return $this->hasMany(ProductRecipe::class);
+    }
+
+    public function ingredients()
+    {
+        return $this->belongsToMany(Ingredient::class, 'product_recipes')
+            ->withPivot('quantity', 'unit');
+    }
 }

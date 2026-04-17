@@ -5,6 +5,7 @@ import {
   Home, Users, Calendar, Bell, MoreHorizontal, LogOut,
   Truck, Wallet, ShoppingCart, Receipt, ClipboardCheck,
   SlidersHorizontal, CreditCard, ArrowLeftRight, Clock,
+  ChefHat,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/auth';
@@ -28,6 +29,7 @@ const secondaryItems: NavItem[] = [
   { key: 'delivery', label: 'Delivery', icon: Truck },
   { key: 'adelantos', label: 'Adelantos', icon: Wallet },
   { key: 'compras', label: 'Compras', icon: ShoppingCart },
+  { key: 'recetas', label: 'Recetas', icon: ChefHat },
   { key: 'nomina', label: 'Nómina', icon: Receipt },
   { key: 'checklists', label: 'Checklists', icon: ClipboardCheck },
   { key: 'ajustes', label: 'Ajustes', icon: SlidersHorizontal },

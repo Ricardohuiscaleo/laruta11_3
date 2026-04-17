@@ -1,286 +1,82 @@
-# Implementation Plan: Verificación de Efectivo en Checklist + Test IA + Training
+# Implementation Plan
 
-## Overview
+- [x] 1. Fix wrong worker assignment — filter security shifts in `crearChecklistsDiarios()`
+  - File: `mi3/backend/app/Services/Checklist/ChecklistService.php`
+  - In `crearChecklistsDiarios()`, after line `$personalId = $turno->reemplazado_por ?: $turno->personal_id;` add a guard clause:
+    ```php
+    if (in_array($turno->tipo, ['seguridad', 'reemplazo_seguridad'])) {
+        continue;
+    }
+    ```
+  - This skips the entire turno iteration for security shifts — no cajero/planchero checklists generated for workers on guard duty
+  - _Bug_Condition: isBugCondition(input) where turno.tipo IN ['seguridad', 'reemplazo_seguridad'] AND worker.rol contains 'cajero' or 'planchero'_
+  - _Expected_Behavior: crearChecklistsDiarios() skips security shifts entirely, only R11 shifts (normal, reemplazo) generate checklists_
+  - _Preservation: Workers with turno tipo='normal' or 'reemplazo' continue receiving checklists as before (Req 3.4)_
+  - _Requirements: 1.1, 2.1, 3.4_
 
-Implementación incremental: primero migraciones de BD y modelos, luego servicios backend (TelegramService multi-bot, PhotoAnalysisService refactorizado, AITrainingService nuevo), después rutas API, y finalmente componentes frontend. Cada paso se integra con el anterior para evitar código huérfano.
+- [x] 2. Fix currency formatting — Chilean peso format in cash verification input
+  - File: `caja3/src/components/ChecklistApp.jsx`
 
-## Tasks
+  - [x] 2.1 Add `formatCLP()` and `parseCLP()` helper functions
+    - `formatCLP(value)`: strips non-digits, formats with dot-separated thousands, prepends "$" (e.g. `29000` → `"$29.000"`)
+    - `parseCLP(formatted)`: strips "$" and dots, returns raw integer (e.g. `"$29.000"` → `29000`)
+    - Place helpers above `ChecklistItemCard` component definition
+    - _Requirements: 2.2_
 
-- [x] 1. Database migrations and model updates
-  - [x] 1.1 Create migration to ALTER `checklist_templates`: add `item_type` ENUM('standard','cash_verification') DEFAULT 'standard'
-    - Add column after `description`
-    - _Requirements: 1.1_
-  - [x] 1.2 Create migration to ALTER `checklist_items`: add `item_type`, `cash_expected`, `cash_actual`, `cash_difference`, `cash_result` columns
-    - `item_type` ENUM('standard','cash_verification') DEFAULT 'standard' after `description`
-    - `cash_expected` DECIMAL(10,2) NULL, `cash_actual` DECIMAL(10,2) NULL, `cash_difference` DECIMAL(10,2) NULL
-    - `cash_result` ENUM('ok','discrepancia') NULL
-    - _Requirements: 1.3, 6.1_
-  - [x] 1.3 Create migration for `checklist_ai_prompts` table
-    - Fields: id, contexto VARCHAR(100), prompt_base TEXT, prompt_version INT DEFAULT 1, is_active TINYINT(1) DEFAULT 1, created_at, updated_at
-    - Index on (contexto, is_active)
-    - _Requirements: 11.1_
-  - [x] 1.4 Create migration for `checklist_ai_training` table
-    - Fields: id, checklist_item_id INT NULL, photo_url VARCHAR(500), contexto VARCHAR(100), ai_score INT NULL, ai_observations TEXT NULL, admin_feedback ENUM('correct','incorrect') NULL, admin_notes TEXT NULL, admin_score INT NULL, prompt_used TEXT NULL, created_at
-    - Indexes on contexto, admin_feedback, (contexto, admin_feedback)
-    - _Requirements: 9.1_
-  - [x] 1.5 Create migration for `checklist_ai_tasks` table
-    - Fields: id, contexto VARCHAR(100), problema_detectado TEXT, foto_url_origen VARCHAR(500), checklist_item_id_origen INT, foto_url_mejora VARCHAR(500) NULL, status ENUM('pendiente','mejorado','no_mejorado','escalado') DEFAULT 'pendiente', veces_detectado INT DEFAULT 1, created_at, updated_at
-    - Index on (contexto, status)
-    - _Requirements: 10.1_
-  - [x] 1.6 Create seed/migration to INSERT existing hardcoded PROMPTS from `PhotoAnalysisService::PROMPTS` into `checklist_ai_prompts` as version 1 active
-    - Migrate all 12 contexts: interior_apertura, exterior_apertura, interior_cierre, exterior_cierre, plancha_apertura, plancha_cierre, lavaplatos_apertura, lavaplatos_cierre, meson_apertura, meson_cierre, lavaplatos_meson_apertura, lavaplatos_meson_cierre
-    - _Requirements: 8.8, 11.3_
-  - [x] 1.7 Update `ChecklistTemplate` model: add `item_type` to $fillable
-    - _Requirements: 1.1_
-  - [x] 1.8 Update `ChecklistItem` model: add `item_type`, `cash_expected`, `cash_actual`, `cash_difference`, `cash_result` to $fillable and $casts
-    - Cast cash_expected, cash_actual, cash_difference as decimal; cash_result as string
-    - _Requirements: 1.3, 6.1_
-  - [x] 1.9 Create `ChecklistAiPrompt` model
-    - Table: checklist_ai_prompts, fillable: contexto, prompt_base, prompt_version, is_active; cast is_active as boolean
-    - _Requirements: 11.1_
-  - [x] 1.10 Create `ChecklistAiTraining` model
-    - Table: checklist_ai_training, UPDATED_AT = null, fillable: checklist_item_id, photo_url, contexto, ai_score, ai_observations, admin_feedback, admin_notes, admin_score, prompt_used
-    - _Requirements: 9.1_
-  - [x] 1.11 Create `ChecklistAiTask` model
-    - Table: checklist_ai_tasks, fillable: contexto, problema_detectado, foto_url_origen, checklist_item_id_origen, foto_url_mejora, status, veces_detectado
-    - _Requirements: 10.1_
+  - [x] 2.2 Replace `type="number"` input with formatted text input
+    - Change `<input type="number" inputMode="numeric" min="0" step="1" ...>` to `<input type="text" inputMode="numeric" ...>`
+    - Remove `min="0"` and `step="1"` attributes (not valid for text inputs)
+    - On `onChange`: pass `e.target.value` through `parseCLP()` to get raw number, then `formatCLP()` to set display value in `setCashAmount()`
+    - Store formatted string in `cashAmount` state, use `parseCLP(cashAmount)` when computing `difference` and when calling `onVerifyCash`
+    - Update the "Informar" button `onClick` to use `parseCLP(cashAmount)` instead of `parseFloat(cashAmount)`
+    - Remove the static "$" prefix `<span>` since `formatCLP` already includes it
+    - _Preservation: "Sí" button flow unchanged — still sends confirmed=true with cash_expected (Req 3.3)_
+    - _Requirements: 1.2, 2.2, 3.3_
 
-- [x] 2. Checkpoint - Run migrations and verify models
-  - Ensure all migrations run without errors on the laruta11 database
-  - Verify all models can be instantiated and fillable fields are correct
-  - Ensure all tests pass, ask the user if questions arise.
+- [x] 3. Fix photo upload — send correct `contexto` parameter
+  - File: `caja3/src/components/ChecklistApp.jsx`
 
-- [x] 3. Refactor TelegramService for multi-bot support
-  - [x] 3.1 Update `config/services.php` to add laruta11 bot config
-    - Add `laruta11_token` => env('TELEGRAM_LARUTA11_TOKEN'), `laruta11_chat_id` => env('TELEGRAM_LARUTA11_CHAT_ID')
-    - _Requirements: 4.2, 5.5_
-  - [x] 3.2 Refactor `TelegramService` to support multiple bots
-    - Add `send(string $message, string $bot = 'default'): bool` with bot parameter
-    - Add `sendToLaruta11(string $message): bool` shortcut method
-    - Keep backward compatibility: existing `send()` calls still work with SuperKiro bot
-    - Read token/chatId from config based on bot name
-    - _Requirements: 4.2, 5.5_
+  - [x] 3.1 Add `getPhotoContexto(item, checklistType)` function
+    - Map item description keywords to contexto values:
+      - "interior" → `interior_{type}` (e.g. `interior_apertura`)
+      - "exterior" → `exterior_{type}`
+      - "plancha" → `plancha_{type}`
+      - "lavaplatos" + "mesón"/"meson" → `lavaplatos_meson_{type}`
+      - "lavaplatos" → `lavaplatos_{type}`
+      - "mesón"/"meson" → `meson_{type}`
+      - Default fallback → `interior_{type}`
+    - `checklistType` is "apertura" or "cierre"
+    - Place helper above `ChecklistApp` component
+    - _Requirements: 2.3_
 
-- [x] 4. Update ChecklistService for cash_verification item_type
-  - [x] 4.1 Update `crearChecklistsDiarios` in ChecklistService to copy `item_type` from template to item
-    - When creating ChecklistItem from template, include `'item_type' => $template->item_type`
-    - For cash_verification items, query `caja_movimientos` for saldo_esperado and set `cash_expected`
-    - _Requirements: 1.2, 2.1, 2.2, 2.3_
-  - [x] 4.2 Add `verificarCaja` method to ChecklistService
-    - Accept itemId, personalId, confirmed (bool), actualAmount (nullable decimal)
-    - If confirmed=true: set cash_actual=cash_expected, cash_result='ok', is_completed=true, completed_at=now()
-    - If confirmed=false: set cash_actual=actualAmount, cash_difference=actualAmount-cash_expected, cash_result='discrepancia', is_completed=true, completed_at=now()
-    - Update checklist progress (completed_items, completion_percentage, status)
-    - _Requirements: 4.1, 4.3, 5.1, 5.2, 6.2, 7.1_
-  - [x] 4.3 Add cash verification notification logic
-    - On "ok": send Telegram to laruta11_bot with "✅ Caja verificada por [nombre]..." format
-    - On "discrepancia": create notificaciones_mi3 for each active admin, send push notifications, send Telegram with "⚠️ Discrepancia de caja..." format
-    - _Requirements: 4.2, 5.3, 5.4, 5.5_
-  - [x] 4.4 Update `completarChecklist` to block completion if cash_verification item is incomplete
-    - Check if any item with item_type='cash_verification' has is_completed=false, reject if so
-    - _Requirements: 7.3_
-  - [ ]* 4.5 Write property test: Propiedad 2 — Persistencia correcta de verificación de caja
-    - **Property 2: Round-trip persistence of cash verification data**
-    - Generate random (expected, actual) pairs, verify is_completed, completed_at, cash_result, cash_difference
-    - **Validates: Requirements 4.1, 4.3, 5.1, 5.2**
-  - [ ]* 4.6 Write property test: Propiedad 3 — Cálculo correcto de discrepancia
-    - **Property 3: Discrepancy calculation correctness**
-    - Generate random non-negative (expected, actual) pairs, verify difference = actual - expected, classification sobrante/faltante/ok
-    - **Validates: Requirement 3.4**
-  - [ ]* 4.7 Write property test: Propiedad 5 — Cálculo de progreso del checklist
-    - **Property 5: Checklist progress calculation**
-    - Generate checklists with N random items, M completed, verify completion_percentage = round((M/N)*100, 2)
-    - **Validates: Requirement 7.1**
-  - [ ]* 4.8 Write property test: Propiedad 1 — Herencia de item_type desde plantilla a ítem
-    - **Property 1: item_type inheritance from template to item**
-    - Generate templates with random item_type, verify created items inherit the same value
-    - **Validates: Requirement 1.2**
-  - [ ]* 4.9 Write property test: Propiedad 4 — Formato de mensaje Telegram según resultado
-    - **Property 4: Telegram message format by result type**
-    - Generate random verification data, verify message contains required fields for ok/discrepancia
-    - **Validates: Requirements 4.2, 5.5**
-  - [ ]* 4.10 Write property test: Propiedad 6 — Ítem cash_verification bloquea completar checklist
-    - **Property 6: Incomplete cash_verification blocks checklist completion**
-    - Generate checklists with incomplete cash_verification items, verify completion is rejected
-    - **Validates: Requirement 7.3**
+  - [x] 3.2 Append `contexto` to FormData in `handleUploadPhoto()`
+    - Find the current item from `checklist.items` using `itemId`
+    - Call `getPhotoContexto(item, checklist.type)` to derive the contexto
+    - Add `formData.append('contexto', contexto)` before the `fetch()` call
+    - _Preservation: Photo compression (800px, JPEG 0.8), S3 upload, AI analysis, and item completion unchanged (Req 3.2)_
+    - _Requirements: 1.3, 2.3, 3.2_
 
-- [x] 5. Checkpoint - Verify cash verification backend logic
-  - Ensure all tests pass, ask the user if questions arise.
+- [x] 4. Fix Invalid Date — change `scheduled_date` cast to `date:Y-m-d`
+  - File: `mi3/backend/app/Models/Checklist.php`
+  - Change `'scheduled_date' => 'date'` to `'scheduled_date' => 'date:Y-m-d'` in the `$casts` array
+  - This makes Laravel serialize the date as `"2026-04-15"` string in JSON responses instead of full ISO 8601 Carbon
+  - _Bug_Condition: scheduled_date cast as 'date' serializes to "2026-04-15T00:00:00.000000Z" which frontend can't parse_
+  - _Expected_Behavior: scheduled_date serializes as "Y-m-d" string (e.g. "2026-04-15")_
+  - _Preservation: All other date fields (started_at, completed_at) unchanged_
+  - _Requirements: 1.4, 2.4_
 
-- [x] 6. Refactor PhotoAnalysisService to read prompts from DB
-  - [x] 6.1 Refactor `getPromptForContext` to read from `checklist_ai_prompts` table
-    - Query active prompt for context from DB, fallback to hardcoded PROMPTS constant if not found
-    - _Requirements: 11.2_
-  - [x] 6.2 Add `buildEnhancedPrompt` method
-    - Inject "ANTECEDENTES DE CORRECCIONES PREVIAS" block with last 5 admin corrections for the context
-    - Inject "PROBLEMAS DETECTADOS PREVIAMENTE" block with pending AI tasks for the context
-    - _Requirements: 9.3, 10.2_
-  - [x] 6.3 Add `registrarTareasSiNecesario` method
-    - If score < 70 or observations contain ⚠️/🚨, create checklist_ai_tasks entry with status 'pendiente'
-    - If existing task for same context+problem, increment veces_detectado instead
-    - _Requirements: 10.1_
-  - [x] 6.4 Update `subirYAnalizar` to use `buildEnhancedPrompt` and register training + tasks
-    - After AI analysis, call AITrainingService.registrarEvaluacion and registrarTareasSiNecesario
-    - _Requirements: 9.1, 10.1_
-  - [ ]* 6.5 Write property test: Propiedad 7 — Inyección de correcciones previas en prompt
-    - **Property 7: Previous corrections injection in prompt**
-    - Generate N corrections (N>0), verify enhanced prompt contains min(N,5) corrections block
-    - **Validates: Requirement 9.3**
-  - [ ]* 6.6 Write property test: Propiedad 9 — Creación de tarea IA en detección de problemas
-    - **Property 9: AI task creation on problem detection**
-    - Generate random scores and observations, verify task creation when score<70 or alert emojis present
-    - **Validates: Requirement 10.1**
-  - [ ]* 6.7 Write property test: Propiedad 10 — Inyección de tareas pendientes en prompt
-    - **Property 10: Pending tasks injection in follow-up prompt**
-    - Generate contexts with pending tasks, verify prompt contains problem list
-    - **Validates: Requirement 10.2**
+- [x] 5. Data fix — correct Camila's checklist wrongly attributed to Ricardo
+  - Run SQL to reassign Ricardo's 15-abr checklist(s) back to Camila (personal_id=1, user_name='Camila')
+  - Identify affected rows: `SELECT * FROM checklists WHERE personal_id = 5 AND scheduled_date = '2026-04-15' AND rol = 'cajero'`
+  - Update: `UPDATE checklists SET personal_id = 1, user_name = 'Camila' WHERE personal_id = 5 AND scheduled_date = '2026-04-15' AND rol = 'cajero'`
+  - Verify Camila's original checklist (personal_id=1) for that date — if it exists at 0%, it may need to be deleted since she completed Ricardo's instead
+  - _Requirements: 2.1_
 
-- [x] 7. Create AITrainingService
-  - [x] 7.1 Implement `registrarEvaluacion` method
-    - Create checklist_ai_training record with item data, photo_url, contexto, ai_score, ai_observations, prompt_used
-    - _Requirements: 9.1_
-  - [x] 7.2 Implement `registrarFeedback` method
-    - Update training record with admin_feedback, admin_notes, admin_score
-    - _Requirements: 9.2_
-  - [x] 7.3 Implement `getCorreccionesPrevias` method
-    - Return last N (default 5) incorrect feedback entries for a context, ordered by created_at desc
-    - _Requirements: 9.3_
-  - [x] 7.4 Implement `calcularPrecision` method
-    - Calculate (correct / total_with_feedback) * 100 per context
-    - _Requirements: 9.4_
-  - [x] 7.5 Implement `generarPromptCandidato` method
-    - Send current prompt + accumulated corrections to Bedrock, save result as new version with is_active=false
-    - _Requirements: 11.6, 11.7_
-  - [x] 7.6 Implement `getResumenTareas` method
-    - Return counts of pendiente, mejorado, no_mejorado, escalado tasks per context
-    - _Requirements: 10.6_
-  - [x] 7.7 Implement prompt versioning: edit creates new version, deactivates previous
-    - Ensure exactly one active version per context at all times
-    - _Requirements: 11.4, 11.5_
-  - [x] 7.8 Implement escalation logic: when veces_detectado >= 3, set status='escalado' and send notifications
-    - Send push notification to admins with "🚨 Problema recurrente" and Telegram to laruta11_bot
-    - _Requirements: 10.4_
-  - [x] 7.9 Implement auto-generation trigger: when corrections >= 10 for a context, generate candidate prompt
-    - Save as new version with is_active=false for admin review
-    - _Requirements: 11.6_
-  - [ ]* 7.10 Write property test: Propiedad 8 — Cálculo de precisión por contexto
-    - **Property 8: Accuracy calculation per context**
-    - Generate random sets of correct/incorrect feedback, verify precision formula and "needs review" threshold at 70%
-    - **Validates: Requirement 9.4**
-  - [ ]* 7.11 Write property test: Propiedad 11 — Escalamiento por problema recurrente
-    - **Property 11: Escalation on recurring problem**
-    - Generate tasks with random veces_detectado, verify escalation triggers at >= 3
-    - **Validates: Requirement 10.4**
-  - [ ]* 7.12 Write property test: Propiedad 12 — Versionamiento de prompts
-    - **Property 12: Prompt versioning correctness**
-    - Generate sequences of prompt edits, verify version increment, previous deactivated, exactly one active per context
-    - **Validates: Requirement 11.4**
-  - [ ]* 7.13 Write property test: Propiedad 13 — Generación automática de prompt candidato
-    - **Property 13: Auto-generation of candidate prompt**
-    - Generate contexts with N corrections, verify candidate generated when N >= 10, not generated when N < 10
-    - **Validates: Requirement 11.6**
-
-- [x] 8. Checkpoint - Verify all backend services
-  - Ensure all tests pass, ask the user if questions arise.
-
-- [x] 9. API routes for cash verification and AI features
-  - [x] 9.1 Add worker route: POST `/worker/checklists/{id}/items/{itemId}/verify-cash`
-    - Add method `verifyCash` to Worker\ChecklistController
-    - Validate: confirmed (bool, required), actual_amount (numeric, min:0, required_if:confirmed,false)
-    - Call ChecklistService::verificarCaja
-    - _Requirements: 4.1, 5.1_
-  - [x] 9.2 Update worker GET `/worker/checklists` response to include cash_expected for cash_verification items
-    - When loading checklist items, if item_type='cash_verification', query caja_movimientos for latest saldo_nuevo
-    - _Requirements: 2.1, 2.2, 2.3_
-  - [x] 9.3 Add admin route: GET `/admin/checklists/ai-photos`
-    - Add method to Admin\ChecklistController
-    - Query checklist_ai_training + checklist_items with photos, paginated, filterable by contexto
-    - Include legacy photos (from caja3 S3 bucket) without ai_score as "Sin evaluar"
-    - _Requirements: 8.2_
-  - [x] 9.4 Add admin route: POST `/admin/checklists/ai-feedback`
-    - Accept training_id, feedback ('correct'|'incorrect'), admin_notes, admin_score
-    - Call AITrainingService::registrarFeedback
-    - _Requirements: 8.3, 9.2_
-  - [x] 9.5 Add admin route: POST `/admin/checklists/ai-test`
-    - Accept FormData with photo (file) or photo_url (string), contexto (string)
-    - Upload photo to S3 if file, run PhotoAnalysisService::analizarConIA with selected context
-    - Return score, observations, prompt_used
-    - _Requirements: 8.5, 8.6_
-  - [x] 9.6 Add admin routes for prompts: GET `/admin/checklists/ai-prompts`, PUT `ai-prompts/{id}`, POST `ai-prompts/{id}/activate`, POST `ai-prompts/{id}/generate-candidate`
-    - GET: list all prompts with stats (version, precision, corrections count)
-    - PUT: edit prompt (creates new version via AITrainingService)
-    - POST activate: set prompt as active (deactivate previous)
-    - POST generate-candidate: call AITrainingService::generarPromptCandidato
-    - _Requirements: 11.4, 11.7, 11.8_
-  - [x] 9.7 Add admin route: GET `/admin/checklists/ai-tasks`
-    - Query checklist_ai_tasks, filterable by contexto and status
-    - Include summary counts (activos, mejorados, escalados)
-    - _Requirements: 10.6, 8.7_
-  - [x] 9.8 Register all new routes in `routes/api.php`
-    - Worker: verify-cash under existing worker checklists group
-    - Admin: ai-photos, ai-feedback, ai-test, ai-prompts, ai-tasks under existing admin checklists group
-    - _Requirements: all API requirements_
-
-- [x] 10. Checkpoint - Verify all API routes
-  - Ensure all tests pass, ask the user if questions arise.
-
-- [x] 11. Frontend: CashVerificationItem component (Worker)
-  - [x] 11.1 Create `CashVerificationItem` React component
-    - Display card with "¿En caja hay $X?" where X is formatted in CLP
-    - Show "Sí" and "No" buttons
-    - On "No": show numeric input for actual amount + real-time discrepancy calculation (sobrante/faltante)
-    - On confirm: call POST verify-cash endpoint
-    - Handle loading, error, and success states
-    - _Requirements: 3.1, 3.2, 3.3, 3.4_
-  - [x] 11.2 Integrate `CashVerificationItem` into worker checklist page
-    - In `ChecklistItemRow`, detect `item_type === 'cash_verification'` and render CashVerificationItem instead of standard checkbox
-    - Pass cash_expected from API response
-    - _Requirements: 7.2_
-  - [x] 11.3 Update TypeScript types to include new fields
-    - Add item_type, cash_expected, cash_actual, cash_difference, cash_result to ChecklistItem type
-    - _Requirements: 6.1_
-
-- [x] 12. Frontend: TabTestIA component (Admin)
-  - [x] 12.1 Create `TabTestIA` React component with sub-sections
-    - Photo list with thumbnails, scores, feedback buttons (✅ Correcto / ❌ Incorrecto)
-    - Context selector dropdown
-    - "Probar prompt" section with file upload + existing photo selector + context selector
-    - Prompts panel per context with stats (version, precision, corrections)
-    - AI tasks summary (activos/mejorados/escalados)
-    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.7, 8.8, 11.8_
-  - [x] 12.2 Integrate `TabTestIA` into admin checklists page
-    - Add "Test IA" tab after "Ideas" tab in AdminChecklistsPage
-    - Update Tab type to include 'test-ia'
-    - _Requirements: 8.1_
-  - [x] 12.3 Implement feedback flow in TabTestIA
-    - On "Incorrecto": show text field for admin notes + score slider
-    - Call POST ai-feedback endpoint
-    - _Requirements: 8.3, 9.2_
-  - [x] 12.4 Implement prompt testing flow in TabTestIA
-    - Upload photo or select existing, choose context, call POST ai-test
-    - Display result: score, observations, prompt used
-    - _Requirements: 8.5, 8.6_
-  - [x] 12.5 Implement prompt management in TabTestIA
-    - Edit prompt inline, activate candidate prompts
-    - Show version history, precision stats, candidate prompts with "Activar" button
-    - _Requirements: 11.4, 11.7, 11.8_
-
-- [x] 13. Environment variables and configuration
-  - [x] 13.1 Add env vars to `.env.example` and document
-    - TELEGRAM_LARUTA11_TOKEN, TELEGRAM_LARUTA11_CHAT_ID
-    - _Requirements: 4.2, 5.5_
-
-- [x] 14. Final checkpoint - Full integration verification
-  - Ensure all tests pass, ask the user if questions arise.
-  - Verify cash verification flow end-to-end: template → daily checklist → worker UI → verify → notifications
-  - Verify AI training flow: photo upload → AI analysis → training record → admin feedback → prompt improvement
-  - Verify prompt management: edit → version → candidate generation → activation
-
-## Notes
-
-- Tasks marked with `*` are optional and can be skipped for faster MVP
-- Each task references specific requirements for traceability
-- Checkpoints ensure incremental validation
-- Property tests validate the 13 correctness properties defined in the design document
-- The project uses Laravel 11 (PHP) for backend and Next.js 14 (TypeScript/React) for frontend
-- All tables live in the shared MySQL database `laruta11`
+- [x] 6. Checkpoint — verify all fixes work end-to-end
+  - Deploy mi3-backend and caja3 to Coolify
+  - Verify Bug 1: `crearChecklistsDiarios()` does NOT generate checklists for security shift workers
+  - Verify Bug 2: cash verification input shows "$29.000" format while typing
+  - Verify Bug 3: photo upload sends correct `contexto` (check backend logs or AI analysis results)
+  - Verify Bug 4: mi3-frontend checklist detail shows valid date, no "Invalid Date"
+  - Verify preservation: "Sí" cash flow, photo upload to S3, progress bar, Telegram notifications all still work
+  - Ask user to confirm fixes in production

@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Spec Feedback via Telegram",
+  "description": "When a spec file (requirements.md, design.md, tasks.md) is created, sends a notification via the Telegram buzón asking the user for feedback. Writes the question to /tmp/kiro-ask.json on the VPS, then polls /tmp/kiro-reply.json for the user's response.",
+  "version": "1",
+  "when": {
+    "type": "fileCreated",
+    "patterns": [
+      ".kiro/specs/*/requirements.md",
+      ".kiro/specs/*/design.md",
+      ".kiro/specs/*/tasks.md",
+      ".kiro/specs/*/bugfix.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A spec document was just created or updated. Send a feedback request to the user via the Telegram buzón system:\n\n1. Determine which document was created (requirements.md, design.md, tasks.md, or bugfix.md)\n2. Write a question to the VPS buzón: ssh root@76.13.126.63 \"echo '{\\\"id\\\": \\\"spec-TIMESTAMP\\\", \\\"question\\\": \\\"DOCUMENT_TYPE listo. ¿Ajustes o continúo con el siguiente paso?\\\", \\\"context\\\": \\\"Spec: FEATURE_NAME\\\"}' > /tmp/kiro-ask.json\"\n3. Clean any previous reply: ssh root@76.13.126.63 \"rm -f /tmp/kiro-reply.json\"\n4. Poll for the user's response every 5 seconds (max 5 minutes): ssh root@76.13.126.63 \"cat /tmp/kiro-reply.json 2>/dev/null\"\n5. When the reply arrives, read the answer and act accordingly:\n   - If the user says \"si\", \"dale\", \"continua\", \"ok\" → proceed to the next phase\n   - If the user provides feedback → apply the changes to the document\n6. Send a confirmation to Telegram: curl to the bot API confirming \"📬 Recibido. [action based on response]\"\n\nIMPORTANT: Use unique IDs for each ask (e.g., spec-{timestamp}). Always clean the reply file before writing a new ask."
+  }
+}

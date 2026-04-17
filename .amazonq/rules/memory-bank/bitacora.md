@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`8c2dbed`) — fix descuento delivery: factor, display, trazabilidad BD |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`2f8f3dc`) — hide Venta TV + fix descuento delivery |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`3ecd857`) — SPA admin + smart turnos + animations |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`e823d67`) — checklist fix: security shift filter + date:Y-m-d |
@@ -43,6 +43,7 @@
 | Workspace | `/root/laruta11_3` ✅ verificado |
 | ACP | Sesión activa, acceso completo al monorepo |
 | Timeout `session/prompt` | 600s (10 min) — fix aplicado 2026-04-14 |
+| Buzón bidireccional | ✅ `/tmp/kiro-ask.json` → Telegram → `/tmp/kiro-reply.json` — Kiro IDE puede preguntar via SSH |
 
 ---
 
@@ -83,38 +84,46 @@
 
 ## Sesiones Recientes
 
+### 2026-04-17c — Spec recipe-management-ai: frontend completo + Chef_Bot completo (tareas 5.2-11)
+
+**Cambios:**
+- mi3-frontend: 5 páginas de recetas creadas — `page.tsx` (listado con search/sort/filter/click-to-detail), `[productId]/page.tsx` (detalle/edición con IngredientAutocomplete + RecipeForm + CostBadge), `ajuste-masivo/page.tsx` (form→preview→success con validación negativos), `recomendaciones/page.tsx` (tabla comparativa con margen objetivo 65%), `auditoria/page.tsx` (stock audit con CSV export). `RecetasSection.tsx` actualizado con 4 tabs lazy-loaded.
+- chef-bot/: Proyecto Node.js completo creado — `ai/bedrockClient.js` (Nova Micro + Converse API + retry), `ai/promptBuilder.js` (schema + ejemplos NL→SQL), `ai/responseParser.js` (JSON + markdown code blocks), `guards/sqlGuard.js` (validación + parametrización + logging), `handlers/messageHandler.js` (flujo query/modify + auth + help), `handlers/callbackHandler.js` (confirm/cancel inline keyboard), `formatters/telegramFormatter.js` (recipe/stock/generic + Levenshtein fuzzy), `api/recipeApi.js` (HTTP client + executeModification), `logger.js` (audit logging), `index.js` (entry point + graceful shutdown), `ecosystem.config.js` (pm2).
+- Tests: 31 tests AI engine + 46 tests SQL_Guard + 33 tests formatter = 110 unit tests.
+- Pendiente: `npm install` en VPS, configurar env vars, `pm2 start`, commit + deploy mi3-frontend y mi3-backend.
+
+**Commits:** pendiente
+**Deploys:** pendiente
+
+### 2026-04-17b — Spec recipe-management-ai: backend + frontend layout (tareas 1-5.1)
+
+**Cambios:**
+- mi3-backend: `ProductRecipe` model, `RecipeService` (cost calc, CRUD, bulk adjustment, recommendations, stock audit, CSV export), `RecipeController` con 10 endpoints, 41 unit tests.
+- mi3-frontend: `RecetasSection` con tabs (Listado, Ajuste Masivo, Recomendaciones, Auditoría), link en sidebar + mobile nav con ChefHat icon.
+- Rutas API: `/api/v1/admin/recetas/*` (CRUD + bulk + recommendations + audit).
+
+**Commits:** pendiente (sin deploy aún)
+**Deploys:** pendiente
+
+### 2026-04-17a — Buzón bidireccional Kiro IDE ↔ Telegram
+
+**Cambios:**
+- VPS `/opt/kiro-acp-telegram-bot/src/telegram.js`: sistema de buzón con flujo conversacional. Watcher cada 3s en `/tmp/kiro-ask.json`, envía pregunta con contexto a Telegram, confirma "📨 esperando respuesta", guarda reply en `/tmp/kiro-reply.json`, confirma "✅ respuesta enviada" con resumen. Timeout 10 min.
+- Bot reiniciado via pm2. Kiro IDE puede preguntar al usuario via SSH→VPS→Telegram y leer respuestas.
+
+**Commits:** N/A (cambio directo en VPS)
+**Deploys:** bot pm2 restart ✅
+
 ### 2026-04-16b — Fix descuento delivery caja3: factor + display + trazabilidad BD
 
 **Cambios:**
 - `CheckoutApp.jsx`: factor descuento corregido de `* 0.6` a `* 0.7143` ($3.500→$2.500). Agregado `deliveryDiscountAmount` y enviado `delivery_discount` en los 5 payloads (TUU, card, cash, pedidosya, transfer).
 - `MenuApp.jsx`: agregado `baseDeliveryFee`, `deliveryFee`, `deliveryDiscountAmount` como `useMemo`. `cartTotal` ahora usa fee con descuento. Confirm dialog corregido "40%"→"28%". Display descuento arreglado (mostraba -$0). `delivery_discount` enviado en los 2 payloads.
-- Antes el monto cobrado era correcto pero `delivery_discount` siempre se guardaba 0 en BD y el display mostraba -$0.
 
-**Commits:** `8ea3957`, `8c2dbed`
-**Deploys:** caja3 ✅ (`8c2dbed`)
-
-### 2026-04-16a — Fix 4 bugs checklist caja3 + data fix BD
-
-**Cambios:**
-- `ChecklistService.php`: filtro `turno->tipo` en `crearChecklistsDiarios()` — skip turnos seguridad/reemplazo_seguridad para no generar checklists cajero/planchero a workers de guardia.
-- `ChecklistApp.jsx`: `formatCLP()`/`parseCLP()` para formato moneda chilena ($XX.XXX) en input verificación caja. `getPhotoContexto()` + `formData.append('contexto')` para análisis IA independiente por foto.
-- `Checklist.php`: cast `scheduled_date` cambiado a `date:Y-m-d` (fix Invalid Date en mi3-frontend).
-- BD: reasignado checklist apertura 16-abr de Ricardo→Camila (id=213). Eliminados checklist cierre Ricardo (id=214) y checklist duplicado Camila 0% (id=215).
-
-**Commits:** `e823d67`
-**Deploys:** mi3-backend ✅ (`e823d67`), caja3 ✅ (`e823d67`)
-
-### 2026-04-15h — Integración checklists caja3→mi3 + limpieza BD
-
-**Cambios:**
-- `Public/ChecklistController.php`: 5 endpoints públicos (today, completeItem, uploadPhoto, verifyCash, complete) sin auth, identifica worker por checklist.personal_id.
-- `caja3/ChecklistApp.jsx`: reescrito para consumir mi3 API, auto-detect apertura/cierre, foto upload con AI, verificación caja, progress bar.
-- BD: eliminado template "Desenchufar juguera" + 3 items. Fix encoding UTF-8 en templates e items (máquinas, mesón, desagüe). Apertura Camila 15-abr marcada completada.
-
-**Commits:** `eaceaab`, `0afe0ea`
-**Deploys:** mi3-backend ✅ (`eaceaab`), caja3 ✅ (`0afe0ea`)
+**Commits:** `8ea3957`, `8c2dbed`, `2f8f3dc`
+**Deploys:** caja3 ✅ (`2f8f3dc`)
 
 ---
 
-> Sesiones anteriores (161 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (162 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

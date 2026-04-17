@@ -5,6 +5,7 @@ import {
   Home, Users, Calendar, Receipt, SlidersHorizontal,
   CreditCard, ArrowLeftRight, LogOut, Clock, Truck,
   Bell, Wallet, ShoppingCart, ClipboardCheck, ChevronLeft, ChevronRight,
+  ChefHat,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/auth';
@@ -31,6 +32,7 @@ const links: SidebarLink[] = [
   { key: 'delivery', label: 'Delivery', icon: Truck },
   { key: 'adelantos', label: 'Adelantos', icon: Wallet },
   { key: 'compras', label: 'Compras', icon: ShoppingCart },
+  { key: 'recetas', label: 'Recetas', icon: ChefHat },
   { key: 'checklists', label: 'Checklists', icon: ClipboardCheck },
 ];
 

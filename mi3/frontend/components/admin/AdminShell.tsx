@@ -14,7 +14,8 @@ import { useAuth } from '@/hooks/useAuth';
 export type SectionKey =
   | 'inicio' | 'personal' | 'turnos' | 'nomina' | 'ajustes'
   | 'creditos' | 'cambios' | 'cronjobs' | 'delivery'
-  | 'notificaciones' | 'adelantos' | 'compras' | 'checklists';
+  | 'notificaciones' | 'adelantos' | 'compras' | 'checklists'
+  | 'recetas';
 
 /* ─── Section title mapping ─── */
 
@@ -32,6 +33,7 @@ const SECTION_TITLES: Record<SectionKey, string> = {
   adelantos: 'Adelantos',
   compras: 'Compras',
   checklists: 'Checklists',
+  recetas: 'Recetas',
 };
 
 /* ─── Lazy-loaded section registry ─── */
@@ -50,6 +52,7 @@ const sectionImports: Record<SectionKey, React.LazyExoticComponent<React.Compone
   adelantos: lazy(() => import('@/components/admin/sections/AdelantosSection')),
   compras: lazy(() => import('@/components/admin/sections/ComprasSection')),
   checklists: lazy(() => import('@/components/admin/sections/ChecklistsSection')),
+  recetas: lazy(() => import('@/components/admin/sections/RecetasSection')),
 };
 
 /* ─── URL ↔ Section mapping ─── */

@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Auto Deploy After Spec",
+  "description": "When the agent finishes executing spec tasks, automatically commits changes, pushes to git, and deploys only the affected apps to Coolify. Then runs smoke tests on production.",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Revisa si en esta sesión se completaron tareas de un spec (archivos creados/modificados en mi3/, app3/, caja3/, chef-bot/, landing3/). Si NO hubo cambios de código, responde \"No hay cambios para deploy\" y termina.\n\nSi SÍ hubo cambios:\n\n1. **Git commit + push**: Ejecuta `git add -A`, luego `git status --short` para ver qué cambió. Haz `git commit -m \"feat: [descripción breve de los cambios]\"` y `git push origin main`.\n\n2. **Smart deploy**: Según las carpetas que cambiaron, despliega SOLO las apps afectadas via Coolify API:\n   - mi3/frontend/ → curl -s -X POST -H \"Authorization: Bearer 3|S52ZUspC6N5G54apjgnKO6sY3VW5OixHlnY9GsMv8dc72ae8\" -H \"Accept: application/json\" \"http://76.13.126.63:8000/api/v1/applications/sxdw43i9nt3cofrzxj28hx1e/restart\"\n   - mi3/backend/ → curl con UUID ds24j8jlaf9ov4flk1nq4jek\n   - app3/ → curl con UUID egck4wwcg0ccc4osck4sw8ow\n   - caja3/ → curl con UUID xockcgsc8k000o8osw8o88ko\n   - landing3/ → curl con UUID dks4cg8s0wsswk08ocwggk0g\n\n3. **Smoke test** (30s después del deploy): Verifica con curl que las apps desplegadas responden HTTP 200:\n   - mi3-frontend: curl -s -o /dev/null -w \"%{http_code}\" https://mi.laruta11.cl\n   - mi3-backend: curl -s -o /dev/null -w \"%{http_code}\" https://api-mi3.laruta11.cl/api/v1/health\n   - app3: curl -s -o /dev/null -w \"%{http_code}\" https://app.laruta11.cl\n   - caja3: curl -s -o /dev/null -w \"%{http_code}\" https://caja.laruta11.cl\n\nReporta: qué se commiteó, qué se desplegó, y resultado de smoke tests."
+  }
+}

@@ -174,6 +174,20 @@ Route::prefix('v1')->group(function () {
 
         // Dashboard KPIs (ventas, compras, nómina)
         Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
+
+        // Recetas (recipe management)
+        // Static routes MUST come before {productId} to avoid route conflicts
+        Route::post('recetas/bulk-adjustment/preview', [\App\Http\Controllers\RecipeController::class, 'bulkPreview']);
+        Route::post('recetas/bulk-adjustment', [\App\Http\Controllers\RecipeController::class, 'bulkApply']);
+        Route::get('recetas/recommendations', [\App\Http\Controllers\RecipeController::class, 'recommendations']);
+        Route::get('recetas/audit/export', [\App\Http\Controllers\RecipeController::class, 'auditExport']);
+        Route::get('recetas/audit', [\App\Http\Controllers\RecipeController::class, 'audit']);
+
+        Route::get('recetas', [\App\Http\Controllers\RecipeController::class, 'index']);
+        Route::get('recetas/{productId}', [\App\Http\Controllers\RecipeController::class, 'show']);
+        Route::post('recetas/{productId}', [\App\Http\Controllers\RecipeController::class, 'store']);
+        Route::put('recetas/{productId}', [\App\Http\Controllers\RecipeController::class, 'update']);
+        Route::delete('recetas/{productId}/{ingredientId}', [\App\Http\Controllers\RecipeController::class, 'destroyIngredient']);
     });
 });
 
