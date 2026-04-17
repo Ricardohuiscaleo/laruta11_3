@@ -1,16 +1,16 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-15)
+## Estado Actual (2026-04-16)
 
 ### Aplicaciones Desplegadas
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | 🔄 Pendiente verificar (`351753d`) |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`8c2dbed`) — fix descuento delivery: factor, display, trazabilidad BD |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`3ecd857`) — SPA admin + smart turnos + animations |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`af6e236`) — ShiftService fix dynamic suppression |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`e823d67`) — checklist fix: security shift filter + date:Y-m-d |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -71,8 +71,8 @@
 - [x] **Limpiar datos de prueba delivery** — eliminados 6 pedidos TEST-DLV-* y SIM-*. Pendiente: revertir roles rider de Camila(1), Andrés(3), Dafne(18) cuando termine el testing.
 - [ ] Recalcular delivery\_fee server-side en `create_order.php`
 - [ ] **Migrar tracking público de app3 a mi3** — `app3/src/pages/tracking/` usa polling HTTP, debería estar en mi3-frontend con Reverb WebSocket nativo para realtime real. Actualmente embebido via iframe en payment-success. Además: ocultar informe técnico al usuario, mostrar tracking en pedidos pending (no solo payment-success), integrar en MiniComandasCliente de app3. No necesario en caja3.
-- [ ] **Integrar checklists mi3 en caja3** — reemplazar `/checklist/` de caja3 con checklists smart de mi3. Flujo: caja3 llama `GET /public/checklists/today?rol=cajero` → mi3 devuelve checklist del cajero de hoy (asignado por turno, no por login) → cajera completa items → `POST /public/checklists/{id}/complete`. Crear endpoints públicos en mi3-backend.
-- [ ] Unificar factor descuento RL6 en caja3 (0.6 vs 0.7143)
+- [x] **Integrar checklists mi3 en caja3** — COMPLETADO. Public/ChecklistController.php con 5 endpoints, ChecklistApp.jsx reescrito para consumir mi3 API. Commit `eaceaab`.
+- [x] Unificar factor descuento RL6 en caja3 (0.6 vs 0.7143) — CheckoutApp.jsx corregido de 0.6→0.7143, delivery_discount ahora se envía en todos los payloads de CheckoutApp y MenuApp.
 - [x] **Fix ShiftService turnos dinámicos + reemplazos** — `generate4x4Shifts()` ahora trackea `reemplazo_seguridad` + `reemplazado_por` para seguridad. Eliminado `monto_reemplazo` falso en dinámicos. Commit `af6e236`.
 - [x] **Verificar Google Maps en mi3-frontend** — mapId `d51ca892b68e9c5e5e2dd701` + API key funcionando ✅
 - [x] **Deploy spec delivery-tracking-realtime** — commit `70650cf` pusheado. Builds disparados en Coolify. Pendiente verificar builds y ejecutar `php artisan migrate`.
@@ -83,44 +83,38 @@
 
 ## Sesiones Recientes
 
-### 2026-04-15g — Smart replacement flow + dojo calendar enhancements
+### 2026-04-16b — Fix descuento delivery caja3: factor + display + trazabilidad BD
 
 **Cambios:**
-- Dojo calendar rewrite (`8a5debe`): grid mensual desktop, scroll horizontal mobile, avatares con fotos/bordes por rol, panel detalle con asignar contextual.
-- Smart replacement flow (`8aa5ce8`): panel detalle separado en 🍔 R11 y 🛡️ Seguridad, X en avatar crea vacante (dashed circle), panel "¿Quién reemplaza?" con disponibles filtrados por rol, auto-asigna con montos correctos ($20k R11 / $30k Seguridad), planchero "gestiona internamente".
-- Profile modal: avatar grande, info turno, detalles reemplazo, stats mensuales.
-- Fix cross-role filter (`2d4b479`): seguridad workers disponibles aunque trabajen en R11 ese día.
-- Fix profile modal text + silent refresh + animations (`3ecd857`): "Reemplaza a" correcto, sin reload al asignar, vacancy pulse, avatar scale, modal backdrop-blur.
-- Fix ShiftService (`af6e236`): `generate4x4Shifts()` trackea `reemplazo_seguridad` + `reemplazado_por` para seguridad, eliminado `monto_reemplazo` falso en dinámicos.
-- BD: eliminados turnos test Ricardo 12-abr y reemplazo test Claudio 12-abr.
-- app3: comentado tracking iframe en payment-success.astro (se habilitará cuando delivery esté en producción completa).
-- BD: eliminados 162 checklists fantasma (sin personal_id) + 12 templates obsoletos sin rol (legacy caja3). Fix checklists 14-abr Dafne→Camila (generados antes del fix patrón). Fix encoding ajuste id=30 (automÃ¡tico→automático).
+- `CheckoutApp.jsx`: factor descuento corregido de `* 0.6` a `* 0.7143` ($3.500→$2.500). Agregado `deliveryDiscountAmount` y enviado `delivery_discount` en los 5 payloads (TUU, card, cash, pedidosya, transfer).
+- `MenuApp.jsx`: agregado `baseDeliveryFee`, `deliveryFee`, `deliveryDiscountAmount` como `useMemo`. `cartTotal` ahora usa fee con descuento. Confirm dialog corregido "40%"→"28%". Display descuento arreglado (mostraba -$0). `delivery_discount` enviado en los 2 payloads.
+- Antes el monto cobrado era correcto pero `delivery_discount` siempre se guardaba 0 en BD y el display mostraba -$0.
 
-**Commits:** `8a5debe`, `8aa5ce8`, `dedb1b1`, `2d4b479`, `3ecd857`, `af6e236`, `632d7f4`
-**Deploys:** mi3-frontend ✅ (`3ecd857`), mi3-backend ✅ (`af6e236`), app3 ✅ (`632d7f4`)
+**Commits:** `8ea3957`, `8c2dbed`
+**Deploys:** caja3 ✅ (`8c2dbed`)
 
-### 2026-04-15f — Dojo-style turnos calendar rewrite
+### 2026-04-16a — Fix 4 bugs checklist caja3 + data fix BD
 
 **Cambios:**
-- TurnosSection reescrito completo: grid calendario mensual en desktop (cards grandes con día semana, número, count), scroll horizontal en mobile con auto-scroll al hoy.
-- Avatares circulares con fotos y bordes por rol (amber=cajero, green=planchero, red=seguridad), iniciales fallback.
-- Panel detalle "Hoy trabajan en R11" con avatares al seleccionar un día.
-- Botón "Asignar" movido de header a contextual "+" en panel detalle, pre-llena fecha seleccionada.
+- `ChecklistService.php`: filtro `turno->tipo` en `crearChecklistsDiarios()` — skip turnos seguridad/reemplazo_seguridad para no generar checklists cajero/planchero a workers de guardia.
+- `ChecklistApp.jsx`: `formatCLP()`/`parseCLP()` para formato moneda chilena ($XX.XXX) en input verificación caja. `getPhotoContexto()` + `formData.append('contexto')` para análisis IA independiente por foto.
+- `Checklist.php`: cast `scheduled_date` cambiado a `date:Y-m-d` (fix Invalid Date en mi3-frontend).
+- BD: reasignado checklist apertura 16-abr de Ricardo→Camila (id=213). Eliminados checklist cierre Ricardo (id=214) y checklist duplicado Camila 0% (id=215).
 
-**Commits:** `8a5debe`
-**Deploys:** mi3-frontend ✅ (`8a5debe`)
+**Commits:** `e823d67`
+**Deploys:** mi3-backend ✅ (`e823d67`), caja3 ✅ (`e823d67`)
 
-### 2026-04-15e — UX: sidebar colapsable, turnos smart, mobile polish
+### 2026-04-15h — Integración checklists caja3→mi3 + limpieza BD
 
 **Cambios:**
-- Sidebar colapsable w-64↔w-16 con localStorage, logo R11HEADER.jpg, React.memo NavItem, nav consolidado, transiciones suaves, tooltips en modo collapsed.
-- Turnos: barra resumen "Hoy trabaja" + turnos/persona, leyenda colores, Dafne purple (id=18), celdas 80px desktop, icono reemplazo, pulsing dot hoy, vista lista en mobile.
-- Mobile: título dinámico en header (SECTION_TITLES), haptic feedback, backdrop-blur en sheet, animación slide-up, red dot en "Más" para badges secundarios.
+- `Public/ChecklistController.php`: 5 endpoints públicos (today, completeItem, uploadPhoto, verifyCash, complete) sin auth, identifica worker por checklist.personal_id.
+- `caja3/ChecklistApp.jsx`: reescrito para consumir mi3 API, auto-detect apertura/cierre, foto upload con AI, verificación caja, progress bar.
+- BD: eliminado template "Desenchufar juguera" + 3 items. Fix encoding UTF-8 en templates e items (máquinas, mesón, desagüe). Apertura Camila 15-abr marcada completada.
 
-**Commits:** `6207c52`
-**Deploys:** mi3-frontend ✅ (`6207c52`)
+**Commits:** `eaceaab`, `0afe0ea`
+**Deploys:** mi3-backend ✅ (`eaceaab`), caja3 ✅ (`0afe0ea`)
 
 ---
 
-> Sesiones anteriores (158 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (161 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
