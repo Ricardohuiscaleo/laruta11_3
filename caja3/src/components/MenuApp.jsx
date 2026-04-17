@@ -2118,7 +2118,7 @@ export default function App() {
 
   const CARD_DELIVERY_SURCHARGE = 500;
 
-  const deliveryFee = useMemo(() => {
+  const baseDeliveryFee = useMemo(() => {
     if (customerInfo.deliveryType === 'delivery') {
       if (dynamicDeliveryFee != null) return dynamicDeliveryFee;
       if (nearbyTrucks.length > 0) return parseInt(nearbyTrucks[0].tarifa_delivery || 0);
@@ -2126,17 +2126,22 @@ export default function App() {
     return 0;
   }, [customerInfo.deliveryType, nearbyTrucks, dynamicDeliveryFee]);
 
+  const deliveryFee = useMemo(() => {
+    return customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
+  }, [baseDeliveryFee, customerInfo.deliveryDiscount]);
+
+  const deliveryDiscountAmount = useMemo(() => {
+    return customerInfo.deliveryDiscount ? baseDeliveryFee - deliveryFee : 0;
+  }, [baseDeliveryFee, deliveryFee, customerInfo.deliveryDiscount]);
+
   const cardDeliverySurcharge = useMemo(() => {
     return customerInfo.deliveryType === 'delivery' && selectedPaymentMethod === 'card' ? CARD_DELIVERY_SURCHARGE : 0;
   }, [customerInfo.deliveryType, selectedPaymentMethod]);
 
   const cartTotal = useMemo(() => {
-    const currentDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0
-      ? parseInt(nearbyTrucks[0].tarifa_delivery || 0)
-      : 0;
     const surcharge = customerInfo.deliveryType === 'delivery' && selectedPaymentMethod === 'card' ? CARD_DELIVERY_SURCHARGE : 0;
-    return cartSubtotal + currentDeliveryFee + surcharge;
-  }, [cartSubtotal, customerInfo.deliveryType, nearbyTrucks, selectedPaymentMethod]);
+    return cartSubtotal + deliveryFee + surcharge;
+  }, [cartSubtotal, deliveryFee, customerInfo.deliveryType, selectedPaymentMethod]);
 
   const cartItemCount = useMemo(() => cart.length, [cart]);
   const getProductQuantity = (productId) => cart.filter(item => item.id === productId).length;
@@ -3095,7 +3100,7 @@ export default function App() {
                     <button
                       onClick={() => {
                         if (!customerInfo.deliveryDiscount) {
-                          const confirmed = window.confirm('🚚 Descuento Delivery (28%)\n\nSe aplicará un 40% de descuento en el costo de delivery. Solo válido para direcciones específicas.\n\n¿Aplicar descuento?');
+                          const confirmed = window.confirm('🚚 Descuento Delivery (28%)\n\nSe aplicará un 28% de descuento en el costo de delivery. Solo válido para direcciones específicas.\n\n¿Aplicar descuento?');
                           if (confirmed) {
                             setCustomerInfo({ ...customerInfo, deliveryDiscount: true, address: '' });
                           }
@@ -3406,13 +3411,13 @@ export default function App() {
                           <Bike size={15} className="text-orange-500" /> Delivery:
                         </span>
                         <span className={customerInfo.deliveryDiscount ? "text-sm line-through text-gray-400" : "text-sm font-semibold"}>
-                          ${(dynamicDeliveryFee != null ? dynamicDeliveryFee : parseInt(nearbyTrucks[0].tarifa_delivery || 0)).toLocaleString('es-CL')}
+                          ${baseDeliveryFee.toLocaleString('es-CL')}
                         </span>
                       </div>
                       {customerInfo.deliveryDiscount && (
                         <div className="flex justify-between items-center ml-6 text-green-600">
                           <span className="text-xs">↳ Desc. Delivery (28%):</span>
-                          <span className="text-xs font-semibold">-${((dynamicDeliveryFee != null ? dynamicDeliveryFee : parseInt(nearbyTrucks[0].tarifa_delivery || 0)) - deliveryFee).toLocaleString('es-CL')}</span>
+                          <span className="text-xs font-semibold">-${deliveryDiscountAmount.toLocaleString('es-CL')}</span>
                         </div>
                       )}
                       {selectedPaymentMethod === 'card' && (
