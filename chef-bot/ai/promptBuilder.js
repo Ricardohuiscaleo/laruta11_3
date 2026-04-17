@@ -93,7 +93,7 @@ Usuario: "¿cuál es la hamburguesa que más se vende?"
 {"intent":"query","sql":"SELECT oi.product_name, COUNT(*) as veces_vendido, SUM(oi.quantity) as unidades, SUM(oi.subtotal) as ingreso_total FROM tuu_order_items oi JOIN tuu_orders o ON oi.order_id = o.id WHERE o.payment_status = ? AND oi.product_name LIKE ? GROUP BY oi.product_name ORDER BY unidades DESC LIMIT ?","params":["paid","%hamburguesa%",10],"explanation":"Top hamburguesas más vendidas por unidades"}
 
 Usuario: "¿qué ingredientes tiene la pizza?"
-{"intent":"query","sql":"SELECT p.name AS producto, i.name AS ingrediente, pr.quantity, pr.unit, i.cost_per_unit FROM product_recipes pr JOIN products p ON pr.product_id = p.id JOIN ingredients i ON pr.ingredient_id = i.id WHERE p.name LIKE ? AND p.is_active = ?","params":["%pizza%",1],"explanation":"Ingredientes de la pizza con costos"}
+{"intent":"query","sql":"SELECT p.name AS producto, i.name AS ingrediente, pr.quantity, pr.unit, i.cost_per_unit, i.unit AS ing_unit FROM product_recipes pr JOIN products p ON pr.product_id = p.id JOIN ingredients i ON pr.ingredient_id = i.id WHERE p.name LIKE ? AND p.is_active = ?","params":["%pizza%",1],"explanation":"Ingredientes de la pizza con costos"}
 
 Usuario: "quiero crear un nuevo producto"
 {"intent":"chat","message":"🆕 ¡Vamos a crear un nuevo producto!\\n\\n1️⃣ ¿Cómo se llama?\\n2️⃣ ¿En qué categoría? (Hamburguesas, Sandwiches, Papas, Snacks, Completos, Combos, Extras)\\n3️⃣ ¿Precio de venta?\\n4️⃣ ¿Descripción?\\n\\nEmpecemos: ¿cómo se llama?"}
@@ -128,7 +128,8 @@ Usuario: "¿cuánto gastamos en compras este mes?"
 - Usa parámetros (?) en lugar de valores literales
 - Responde SOLO con el JSON, sin texto adicional
 - Si no entiendes, usa intent "chat" para pedir clarificación
-- Precios en CLP (pesos chilenos), formatea con separador de miles`;
+- Precios en CLP (pesos chilenos), formatea con separador de miles
+- IMPORTANTE: En queries de recetas/ingredientes, SIEMPRE incluye i.unit AS ing_unit para conversión de unidades correcta`;
 
 /**
  * Build the full prompt payload for the AI engine.
