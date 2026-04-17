@@ -101,8 +101,12 @@ const CheckoutApp = () => {
     : 0;
 
   const deliveryFee = customerInfo.deliveryDiscount
-    ? Math.round(baseDeliveryFee * 0.6)
+    ? Math.round(baseDeliveryFee * 0.7143)
     : baseDeliveryFee;
+
+  const deliveryDiscountAmount = customerInfo.deliveryDiscount
+    ? baseDeliveryFee - deliveryFee
+    : 0;
 
   const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount
     ? Math.round(cartSubtotal * 0.1)
@@ -188,13 +192,12 @@ const CheckoutApp = () => {
         user_id: user?.id || null,
         cart_items: cart,
         delivery_fee: deliveryFee,
+        delivery_discount: deliveryDiscountAmount,
         customer_notes: customerInfo.customerNotes || null,
         delivery_type: customerInfo.deliveryType,
         delivery_address: customerInfo.address || null,
         pickup_time: customerInfo.pickupTime || null
       };
-
-      console.log('Sending payment data:', paymentData);
 
       const response = await fetch('/api/tuu/create_payment_direct.php', {
         method: 'POST',
@@ -251,6 +254,7 @@ const CheckoutApp = () => {
         user_id: user?.id || null,
         cart_items: cart,
         delivery_fee: deliveryFee,
+        delivery_discount: deliveryDiscountAmount,
         customer_notes: customerInfo.customerNotes || null,
         delivery_type: customerInfo.deliveryType,
         delivery_address: customerInfo.address || null,
@@ -339,6 +343,7 @@ const CheckoutApp = () => {
         user_id: user?.id || null,
         cart_items: cart,
         delivery_fee: deliveryFee,
+        delivery_discount: deliveryDiscountAmount,
         customer_notes: customerInfo.customerNotes || null,
         delivery_type: customerInfo.deliveryType,
         delivery_address: customerInfo.address || null,
@@ -390,6 +395,7 @@ const CheckoutApp = () => {
         user_id: user?.id || null,
         cart_items: cart,
         delivery_fee: deliveryFee,
+        delivery_discount: deliveryDiscountAmount,
         customer_notes: customerInfo.customerNotes || null,
         delivery_type: customerInfo.deliveryType,
         delivery_address: customerInfo.address || null,
@@ -433,6 +439,7 @@ const CheckoutApp = () => {
         user_id: user?.id || null,
         cart_items: cart,
         delivery_fee: deliveryFee,
+        delivery_discount: deliveryDiscountAmount,
         customer_notes: customerInfo.customerNotes || null,
         delivery_type: customerInfo.deliveryType,
         delivery_address: customerInfo.address || null,
