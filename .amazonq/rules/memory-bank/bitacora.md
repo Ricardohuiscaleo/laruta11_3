@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-16)
+## Estado Actual (2026-04-17)
 
 ### Aplicaciones Desplegadas
 
@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`2f8f3dc`) — hide Venta TV + fix descuento delivery |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`3ecd857`) — SPA admin + smart turnos + animations |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`e823d67`) — checklist fix: security shift filter + date:Y-m-d |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`ec38aa7`) — recipe-management-ai: 5 páginas recetas + sidebar |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`ec38aa7`) — Recipe API: 10 endpoints CRUD + bulk + recommendations + audit |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -34,11 +34,15 @@
 | app3 | Gmail Token Refresh | `*/30 * * * *` |
 | caja3 | Daily Checklists (legacy) | ❌ Desactivado (mi3 lo reemplaza) |
 
-### Bot Telegram (SuperKiro)
+### Bots Telegram
+
+| Bot | Componente | Estado |
+|-----|-----------|--------|
+| `@SuperKiro_bot` | kiro-telegram-bot (pm2 id 0) | ✅ Running — buzón bidireccional Kiro IDE ↔ Telegram |
+| `@ChefR11_bot` | chef-bot (pm2 id 3) | ✅ Running — recipe AI bot, Nova Micro + SQL_Guard + MySQL |
 
 | Componente | Estado |
 |-----------|--------|
-| Bot | `@SuperKiro_bot` — pm2 auto-start en VPS |
 | kiro-cli | v1.29.8 en `/root/.local/bin/kiro-cli` (Builder ID) |
 | Workspace | `/root/laruta11_3` ✅ verificado |
 | ACP | Sesión activa, acceso completo al monorepo |
@@ -84,16 +88,26 @@
 
 ## Sesiones Recientes
 
+### 2026-04-17d — Deploy spec recipe-management-ai: mi3-frontend + mi3-backend + Chef_Bot pm2
+
+**Cambios:**
+- `chef-bot/ecosystem.config.js`: removidas credenciales hardcodeadas, ahora usa `process.env` con fallbacks.
+- Deploy mi3-frontend y mi3-backend via Coolify API — ambos `finished` ✅.
+- Chef_Bot (`@ChefR11_bot`) iniciado en VPS via pm2 (id 3, pid 2376466) con env vars: DB_HOST=10.0.1.7 (MySQL Docker), DB_USER=laruta11_user, DB_NAME=laruta11. `pm2 save` ejecutado.
+- Spec recipe-management-ai: tarea 11 marcada como completada. Todas las tareas requeridas done.
+
+**Commits:** `ec38aa7`
+**Deploys:** mi3-frontend ✅, mi3-backend ✅, chef-bot pm2 ✅
+
 ### 2026-04-17c — Spec recipe-management-ai: frontend completo + Chef_Bot completo (tareas 5.2-11)
 
 **Cambios:**
 - mi3-frontend: 5 páginas de recetas creadas — `page.tsx` (listado con search/sort/filter/click-to-detail), `[productId]/page.tsx` (detalle/edición con IngredientAutocomplete + RecipeForm + CostBadge), `ajuste-masivo/page.tsx` (form→preview→success con validación negativos), `recomendaciones/page.tsx` (tabla comparativa con margen objetivo 65%), `auditoria/page.tsx` (stock audit con CSV export). `RecetasSection.tsx` actualizado con 4 tabs lazy-loaded.
 - chef-bot/: Proyecto Node.js completo creado — `ai/bedrockClient.js` (Nova Micro + Converse API + retry), `ai/promptBuilder.js` (schema + ejemplos NL→SQL), `ai/responseParser.js` (JSON + markdown code blocks), `guards/sqlGuard.js` (validación + parametrización + logging), `handlers/messageHandler.js` (flujo query/modify + auth + help), `handlers/callbackHandler.js` (confirm/cancel inline keyboard), `formatters/telegramFormatter.js` (recipe/stock/generic + Levenshtein fuzzy), `api/recipeApi.js` (HTTP client + executeModification), `logger.js` (audit logging), `index.js` (entry point + graceful shutdown), `ecosystem.config.js` (pm2).
 - Tests: 31 tests AI engine + 46 tests SQL_Guard + 33 tests formatter = 110 unit tests.
-- Pendiente: `npm install` en VPS, configurar env vars, `pm2 start`, commit + deploy mi3-frontend y mi3-backend.
 
-**Commits:** pendiente
-**Deploys:** pendiente
+**Commits:** `97b23a3`
+**Deploys:** pendiente → deployado en sesión 17d
 
 ### 2026-04-17b — Spec recipe-management-ai: backend + frontend layout (tareas 1-5.1)
 
@@ -102,8 +116,8 @@
 - mi3-frontend: `RecetasSection` con tabs (Listado, Ajuste Masivo, Recomendaciones, Auditoría), link en sidebar + mobile nav con ChefHat icon.
 - Rutas API: `/api/v1/admin/recetas/*` (CRUD + bulk + recommendations + audit).
 
-**Commits:** pendiente (sin deploy aún)
-**Deploys:** pendiente
+**Commits:** `97b23a3`
+**Deploys:** pendiente → deployado en sesión 17d
 
 ### 2026-04-17a — Buzón bidireccional Kiro IDE ↔ Telegram
 
@@ -114,16 +128,7 @@
 **Commits:** N/A (cambio directo en VPS)
 **Deploys:** bot pm2 restart ✅
 
-### 2026-04-16b — Fix descuento delivery caja3: factor + display + trazabilidad BD
-
-**Cambios:**
-- `CheckoutApp.jsx`: factor descuento corregido de `* 0.6` a `* 0.7143` ($3.500→$2.500). Agregado `deliveryDiscountAmount` y enviado `delivery_discount` en los 5 payloads (TUU, card, cash, pedidosya, transfer).
-- `MenuApp.jsx`: agregado `baseDeliveryFee`, `deliveryFee`, `deliveryDiscountAmount` como `useMemo`. `cartTotal` ahora usa fee con descuento. Confirm dialog corregido "40%"→"28%". Display descuento arreglado (mostraba -$0). `delivery_discount` enviado en los 2 payloads.
-
-**Commits:** `8ea3957`, `8c2dbed`, `2f8f3dc`
-**Deploys:** caja3 ✅ (`2f8f3dc`)
-
 ---
 
-> Sesiones anteriores (162 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (163 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
