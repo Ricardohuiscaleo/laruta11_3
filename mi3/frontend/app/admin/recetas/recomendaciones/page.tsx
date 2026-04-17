@@ -11,14 +11,14 @@ import type { ApiResponse } from '@/types';
 interface Recommendation {
   id: number;
   name: string;
-  price: number;
+  current_price: number;
   recipe_cost: number;
-  margin: number;
+  current_margin: number | null;
   recommended_price: number;
   price_difference: number;
 }
 
-type SortField = 'name' | 'price' | 'recipe_cost' | 'margin' | 'recommended_price' | 'price_difference';
+type SortField = 'name' | 'current_price' | 'recipe_cost' | 'current_margin' | 'recommended_price' | 'price_difference';
 type SortDir = 'asc' | 'desc';
 
 const DEFAULT_MARGIN = 65;
@@ -33,7 +33,7 @@ export default function RecomendacionesPage() {
   const [targetMargin, setTargetMargin] = useState<number>(DEFAULT_MARGIN);
   const [marginInput, setMarginInput] = useState<string>(String(DEFAULT_MARGIN));
   const [search, setSearch] = useState('');
-  const [sortField, setSortField] = useState<SortField>('margin');
+  const [sortField, setSortField] = useState<SortField>('current_margin');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   const fetchRecommendations = (margin: number) => {
@@ -71,14 +71,14 @@ export default function RecomendacionesPage() {
         case 'name':
           cmp = a.name.localeCompare(b.name, 'es');
           break;
-        case 'price':
-          cmp = a.price - b.price;
+        case 'current_price':
+          cmp = a.current_price - b.current_price;
           break;
         case 'recipe_cost':
           cmp = a.recipe_cost - b.recipe_cost;
           break;
-        case 'margin':
-          cmp = a.margin - b.margin;
+        case 'current_margin':
+          cmp = (a.current_margin ?? 0) - (b.current_margin ?? 0);
           break;
         case 'recommended_price':
           cmp = a.recommended_price - b.recommended_price;
@@ -102,7 +102,7 @@ export default function RecomendacionesPage() {
     }
   };
 
-  const belowTargetCount = recommendations.filter(r => r.margin < targetMargin).length;
+  const belowTargetCount = recommendations.filter(r => (r.current_margin ?? 0) < targetMargin).length;
 
   return (
     <div className="space-y-4">
@@ -196,9 +196,9 @@ export default function RecomendacionesPage() {
               <thead className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
                 <tr>
                   <SortHeader label="Producto" field="name" current={sortField} dir={sortDir} onSort={toggleSort} />
-                  <SortHeader label="Precio actual" field="price" current={sortField} dir={sortDir} onSort={toggleSort} className="text-right" />
+                  <SortHeader label="Precio actual" field="current_price" current={sortField} dir={sortDir} onSort={toggleSort} className="text-right" />
                   <SortHeader label="Costo receta" field="recipe_cost" current={sortField} dir={sortDir} onSort={toggleSort} className="text-right hidden sm:table-cell" />
-                  <SortHeader label="Margen actual" field="margin" current={sortField} dir={sortDir} onSort={toggleSort} className="text-right" />
+                  <SortHeader label="Margen actual" field="current_margin" current={sortField} dir={sortDir} onSort={toggleSort} className="text-right" />
                   <SortHeader label="Precio sugerido" field="recommended_price" current={sortField} dir={sortDir} onSort={toggleSort} className="text-right" />
                   <SortHeader label="Diferencia" field="price_difference" current={sortField} dir={sortDir} onSort={toggleSort} className="text-right hidden sm:table-cell" />
                 </tr>
@@ -212,7 +212,7 @@ export default function RecomendacionesPage() {
                   </tr>
                 ) : (
                   filtered.map(r => {
-                    const belowTarget = r.margin < targetMargin;
+                    const belowTarget = (r.current_margin ?? 0) < targetMargin;
                     return (
                       <tr
                         key={r.id}
@@ -222,7 +222,7 @@ export default function RecomendacionesPage() {
                         )}
                       >
                         <td className="px-4 py-3 font-medium text-gray-900">{r.name}</td>
-                        <td className="px-4 py-3 text-right tabular-nums">{formatCLP(r.price)}</td>
+                        <td className="px-4 py-3 text-right tabular-nums">{formatCLP(r.current_price)}</td>
                         <td className="px-4 py-3 text-right tabular-nums text-gray-500 hidden sm:table-cell">
                           {formatCLP(r.recipe_cost)}
                         </td>
@@ -234,7 +234,7 @@ export default function RecomendacionesPage() {
                               : 'bg-green-100 text-green-700'
                           )}>
                             {belowTarget && <AlertTriangle className="h-3 w-3" />}
-                            {r.margin.toFixed(1)}%
+                            {(r.current_margin ?? 0).toFixed(1)}%
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right tabular-nums font-medium">
