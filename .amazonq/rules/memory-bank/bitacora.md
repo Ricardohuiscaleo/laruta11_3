@@ -88,6 +88,18 @@
 
 ## Sesiones Recientes
 
+### 2026-04-17e — Chef_Bot: conversational RAG agent + full DB schema + AWS credentials fix
+
+**Cambios:**
+- `chef-bot/ai/promptBuilder.js`: Rediseño completo — agente conversacional con personalidad "Chef R11", esquema completo de BD (products, ingredients, product_recipes, categories, subcategories, tuu_orders, tuu_order_items, tv_orders, inventory_transactions, compras, compras_detalle, combos), ejemplos de saludos, ventas, stock, cambios masivos, descripciones.
+- `chef-bot/ai/responseParser.js`: Soporte para 5 intents (chat, query, modify, api_action, bulk_action). Fallback a chat si JSON parse falla.
+- `chef-bot/handlers/messageHandler.js`: Router por intent, manejo de mensajes largos (split 4096 chars), fallback sin Markdown si parse error, auth check centralizado.
+- `chef-bot/guards/sqlGuard.js`: Allowlist expandida a 12 tablas (+ tuu_orders, tuu_order_items, tv_orders, tv_order_items, inventory_transactions, compras, compras_detalle, categories, subcategories, combos, combo_items).
+- VPS: AWS credentials configuradas en `~/.aws/credentials` para Bedrock access. Bot reiniciado via pm2.
+
+**Commits:** `84daa6c`
+**Deploys:** chef-bot pm2 restart ✅
+
 ### 2026-04-17d — Deploy spec recipe-management-ai: mi3-frontend + mi3-backend + Chef_Bot pm2
 
 **Cambios:**
@@ -119,16 +131,7 @@
 **Commits:** `97b23a3`
 **Deploys:** pendiente → deployado en sesión 17d
 
-### 2026-04-17a — Buzón bidireccional Kiro IDE ↔ Telegram
-
-**Cambios:**
-- VPS `/opt/kiro-acp-telegram-bot/src/telegram.js`: sistema de buzón con flujo conversacional. Watcher cada 3s en `/tmp/kiro-ask.json`, envía pregunta con contexto a Telegram, confirma "📨 esperando respuesta", guarda reply en `/tmp/kiro-reply.json`, confirma "✅ respuesta enviada" con resumen. Timeout 10 min.
-- Bot reiniciado via pm2. Kiro IDE puede preguntar al usuario via SSH→VPS→Telegram y leer respuestas.
-
-**Commits:** N/A (cambio directo en VPS)
-**Deploys:** bot pm2 restart ✅
-
 ---
 
-> Sesiones anteriores (163 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (164 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
