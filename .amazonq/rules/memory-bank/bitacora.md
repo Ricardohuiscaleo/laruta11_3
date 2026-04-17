@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`2f8f3dc`) — hide Venta TV + fix descuento delivery |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`ec38aa7`) — recipe-management-ai: 5 páginas recetas + sidebar |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`915b894`) — recipe-management-ai: 5 páginas recetas + fix recomendaciones |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`ec38aa7`) — Recipe API: 10 endpoints CRUD + bulk + recommendations + audit |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -95,10 +95,11 @@
 - `chef-bot/ai/responseParser.js`: Soporte para 5 intents (chat, query, modify, api_action, bulk_action). Fallback a chat si JSON parse falla.
 - `chef-bot/handlers/messageHandler.js`: Router por intent, manejo de mensajes largos (split 4096 chars), fallback sin Markdown si parse error, auth check centralizado.
 - `chef-bot/guards/sqlGuard.js`: Allowlist expandida a 12 tablas (+ tuu_orders, tuu_order_items, tv_orders, tv_order_items, inventory_transactions, compras, compras_detalle, categories, subcategories, combos, combo_items).
+- `mi3/frontend/app/admin/recetas/recomendaciones/page.tsx`: Fix field names mismatch — `price→current_price`, `margin→current_margin` para coincidir con backend.
 - VPS: AWS credentials configuradas en `~/.aws/credentials` para Bedrock access. Bot reiniciado via pm2.
 
-**Commits:** `84daa6c`
-**Deploys:** chef-bot pm2 restart ✅
+**Commits:** `84daa6c`, `915b894`
+**Deploys:** chef-bot pm2 restart ✅, mi3-frontend ✅ (`915b894`)
 
 ### 2026-04-17d — Deploy spec recipe-management-ai: mi3-frontend + mi3-backend + Chef_Bot pm2
 
