@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`9025e58`) — pedidosya_cash: fix root cause - pedidosya_price en get_menu_products.php |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`9710275`) — pipeline multi-modelo + consola debug |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`9710275`) — pipeline multi-modelo + extraction-logs API |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`c43f225`) — pipeline multi-modelo + consola debug |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`9b290d5`) — pipeline multi-modelo + extraction-logs API |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -87,6 +87,18 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-18b — Consola debug extracción IA + fix type errors Next.js strict mode
+
+**Cambios:**
+- `mi3/backend/app/Http/Controllers/Admin/ExtraccionController.php`: Nuevos endpoints `extractionLogs()` y `extractionLogDetail()` para listar/ver logs de extracción.
+- `mi3/backend/routes/api.php`: Rutas `GET compras/extraction-logs` y `GET compras/extraction-logs/{id}`.
+- `mi3/frontend/app/admin/compras/layout.tsx`: Nueva pestaña "Consola" con ícono Terminal.
+- `mi3/frontend/app/admin/compras/consola/page.tsx`: Nuevo — página debug con stats (total/exitosas/fallidas/tiempo/confianza), lista paginada de logs expandibles con 4 tabs (Fases pipeline, Datos extraídos, Confianza barras, Raw JSON).
+- Fix: `Boolean()` wrap para `unknown && JSX` pattern, `String()`/`Number()` en vez de `as string`/`as number` en JSX children — Next.js strict type check.
+
+**Commits:** `9b290d5`, `40681aa`, `9710275`, `25e7802`, `c43f225`
+**Deploys:** mi3-frontend ✅ (`c43f225`), mi3-backend ✅ (`9b290d5`)
 
 ### 2026-04-18a — Spec compras-pipeline-multimodelo: Rekognition + Nova Micro + Nova Pro + SSE
 
