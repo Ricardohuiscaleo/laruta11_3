@@ -55,7 +55,8 @@
 
 ### 🔴 Críticas (afectan producción)
 
-- [ ] **Re-habilitar acceso Bedrock Nova Pro + Nova Micro en AWS Console** — `HTTP 400 "Operation not allowed"`. Ir a AWS Console → Bedrock → Model access (us-east-1) → Request access para amazon.nova-pro-v1:0 y amazon.nova-micro-v1:0. Sin esto, la extracción IA de compras no funciona.
+- [ ] **🚨 URGENTE: Rotar AWS access key comprometida** — AWS detectó key `AKIAUQ24...WGTE` como comprometida y restringió servicios (Bedrock bloqueado). Deadline: 2026-04-23. Pasos: 1) Crear nueva key en IAM, 2) Actualizar en VPS ~/.aws/credentials + pm2 restart chef-bot, 3) Actualizar env vars en Coolify mi3-backend, 4) Desactivar key vieja, 5) Responder caso de soporte AWS.
+- [ ] **Re-habilitar acceso Bedrock Nova Pro + Nova Micro en AWS Console** — `HTTP 400 "Operation not allowed"`. Causado por key comprometida. Se resolverá al rotar la key y responder al caso de soporte.
 
 - [x] **Actualizar `checklist_templates`** — overhaul completo con rol explícito, fotos separadas, prompts IA.
 - [x] **Corregir caja3 `get_turnos.php`** — obsoleto, turnos ahora gestionados por mi3.
