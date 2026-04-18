@@ -267,12 +267,12 @@ function PhasesTab({ phases, modelId }: { phases: Record<string, unknown> | null
               <p className="text-xs text-gray-500">{desc}</p>
               {key === 'percepcion' && (
                 <p className="text-xs text-gray-600 mt-1">
-                  {phase.labels_count as number || 0} labels · {phase.texts_count as number || 0} textos
+                  {Number(phase.labels_count) || 0} labels · {Number(phase.texts_count) || 0} textos
                 </p>
               )}
               {key === 'clasificacion' && (
                 <p className="text-xs text-gray-600 mt-1">
-                  Tipo: <span className="font-medium">{phase.tipo as string || '—'}</span> · Confianza: {Math.round((phase.confianza as number || 0) * 100)}%
+                  Tipo: <span className="font-medium">{String(phase.tipo || '—')}</span> · Confianza: {Math.round(Number(phase.confianza || 0) * 100)}%
                 </p>
               )}
               {key === 'analisis' && (
@@ -310,7 +310,7 @@ function ExtractedTab({ data }: { data: Record<string, unknown> }) {
         {data.peso_bascula != null && <Field label="Peso báscula" value={`${String(data.peso_bascula)} ${data.unidad_bascula ? String(data.unidad_bascula) : 'kg'}`} />}
       </div>
       {data.notas_ia && (
-        <div className="rounded bg-blue-50 px-2 py-1 text-xs text-blue-700">💡 {data.notas_ia as string}</div>
+        <div className="rounded bg-blue-50 px-2 py-1 text-xs text-blue-700">💡 {String(data.notas_ia)}</div>
       )}
       {items.length > 0 && (
         <div>
@@ -318,8 +318,8 @@ function ExtractedTab({ data }: { data: Record<string, unknown> }) {
           <div className="space-y-1">
             {items.map((item, i) => (
               <div key={i} className="flex items-center gap-2 rounded bg-white border px-2 py-1">
-                <span className="flex-1 truncate font-medium">{item.nombre as string || '?'}</span>
-                <span className="text-gray-500">{item.cantidad as number} {item.unidad as string}</span>
+                <span className="flex-1 truncate font-medium">{String(item.nombre || '?')}</span>
+                <span className="text-gray-500">{String(item.cantidad)} {String(item.unidad)}</span>
                 <span className="text-gray-500">×${Number(item.precio_unitario || 0).toLocaleString('es-CL')}</span>
                 <span className="font-medium text-green-700">${Number(item.subtotal || 0).toLocaleString('es-CL')}</span>
               </div>
