@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, lazy, Suspense } from 'react';
-import { Plus, FileText, Package, TrendingUp, BarChart3, Loader2 } from 'lucide-react';
+import { Plus, FileText, Package, TrendingUp, BarChart3, Loader2, Terminal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ComprasProvider } from '@/contexts/ComprasContext';
 
@@ -10,6 +10,7 @@ const HistorialCompras = lazy(() => import('@/components/admin/compras/Historial
 const StockTab = lazy(() => import('@/app/admin/compras/stock/page'));
 const ProyeccionCompras = lazy(() => import('@/components/admin/compras/ProyeccionCompras'));
 const KpisDashboard = lazy(() => import('@/components/admin/compras/KpisDashboard'));
+const ConsolaPage = lazy(() => import('@/app/admin/compras/consola/page'));
 
 const tabs = [
   { key: 'registro', label: 'Registro', icon: Plus },
@@ -17,6 +18,7 @@ const tabs = [
   { key: 'stock', label: 'Stock', icon: Package },
   { key: 'proyeccion', label: 'Proyección', icon: TrendingUp },
   { key: 'kpis', label: 'KPIs', icon: BarChart3 },
+  { key: 'consola', label: 'Consola', icon: Terminal },
 ] as const;
 
 type TabKey = typeof tabs[number]['key'];
@@ -35,7 +37,7 @@ export default function ComprasSection() {
   return (
     <ComprasProvider>
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900">Compras</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Compras <span className="text-xs text-gray-400 font-normal">v1.5</span></h1>
         <nav className="flex items-center gap-1 overflow-x-auto rounded-lg bg-gray-100 p-1" role="tablist" aria-label="Secciones de compras">
           {tabs.map(({ key, label, icon: Icon }) => (
             <button
@@ -61,6 +63,7 @@ export default function ComprasSection() {
           {activeTab === 'stock' && <StockTab />}
           {activeTab === 'proyeccion' && <ProyeccionCompras />}
           {activeTab === 'kpis' && <KpisDashboard />}
+          {activeTab === 'consola' && <ConsolaPage />}
         </Suspense>
       </div>
     </ComprasProvider>
