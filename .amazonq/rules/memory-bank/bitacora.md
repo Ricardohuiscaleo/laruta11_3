@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`9025e58`) — pedidosya_cash: fix root cause - pedidosya_price en get_menu_products.php |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`79f0187`) — pipeline SSE visual en Registro + consola debug v1.5 |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`2464919`) — pipeline multi-modelo + fix config()??env() credentials |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`e7f83c6`) — pipeline SSE visual + consola debug v1.6 |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`e7f83c6`) — pipeline multi-modelo + error logging detallado. ⚠️ Bedrock "Operation not allowed" — re-habilitar modelo en AWS Console |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -54,6 +54,8 @@
 ## Tareas Pendientes
 
 ### 🔴 Críticas (afectan producción)
+
+- [ ] **Re-habilitar acceso Bedrock Nova Pro + Nova Micro en AWS Console** — `HTTP 400 "Operation not allowed"`. Ir a AWS Console → Bedrock → Model access (us-east-1) → Request access para amazon.nova-pro-v1:0 y amazon.nova-micro-v1:0. Sin esto, la extracción IA de compras no funciona.
 
 - [x] **Actualizar `checklist_templates`** — overhaul completo con rol explícito, fotos separadas, prompts IA.
 - [x] **Corregir caja3 `get_turnos.php`** — obsoleto, turnos ahora gestionados por mi3.
