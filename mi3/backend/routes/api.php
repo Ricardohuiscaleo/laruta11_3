@@ -86,6 +86,7 @@ Route::prefix('v1')->group(function () {
         Route::post('compras/ingrediente', [\App\Http\Controllers\Admin\CompraController::class, 'crearIngrediente']);
         Route::post('compras/upload-temp', [\App\Http\Controllers\Admin\CompraController::class, 'uploadTemp']);
         Route::post('compras/extract', [\App\Http\Controllers\Admin\ExtraccionController::class, 'extract']);
+        Route::post('compras/extract-pipeline', [\App\Http\Controllers\Admin\ExtraccionController::class, 'extractPipeline']);
         Route::get('compras/extraction-quality', [\App\Http\Controllers\Admin\ExtraccionController::class, 'quality']);
         Route::post('compras/pipeline/run', [\App\Http\Controllers\Admin\ExtraccionController::class, 'runPipeline']);
         Route::get('compras/pipeline/report', [\App\Http\Controllers\Admin\ExtraccionController::class, 'pipelineReport']);

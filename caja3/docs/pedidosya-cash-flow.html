@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PedidosYA Cash Flow — Documentación Técnica | La Ruta 11</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+    .header { background: linear-gradient(135deg, #ea580c, #f97316); color: white; padding: 2rem; text-align: center; }
+    .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .header p { opacity: 0.9; font-size: 0.95rem; }
+    .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.8rem; margin-top: 0.5rem; }
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
+    .toc { background: white; border-radius: 12px; padding: 1.5rem 2rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .toc h2 { font-size: 1.1rem; margin-bottom: 0.75rem; color: #ea580c; }
+    .toc ol { padding-left: 1.5rem; }
+    .toc li { margin-bottom: 0.4rem; }
+    .toc a { color: #2563eb; text-decoration: none; font-size: 0.9rem; }
+    .toc a:hover { text-decoration: underline; }
+    section { background: white; border-radius: 12px; padding: 2rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    section h2 { font-size: 1.4rem; color: #ea580c; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #fed7aa; }
+    section h3 { font-size: 1.1rem; color: #1e293b; margin: 1.25rem 0 0.5rem; }
+    p { margin-bottom: 0.75rem; font-size: 0.95rem; }
+    ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+    li { margin-bottom: 0.35rem; font-size: 0.9rem; }
+    code { background: #f1f5f9; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.85rem; color: #be123c; }
+    pre { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; font-size: 0.85rem; line-height: 1.5; }
+    .flow-diagram { background: #fffbeb; border: 2px solid #fbbf24; border-radius: 12px; padding: 1.5rem; margin: 1rem 0; }
+    .flow-step { display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1rem; }
+    .flow-step:last-child { margin-bottom: 0; }
+    .step-num { background: #ea580c; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; flex-shrink: 0; }
+    .step-content { flex: 1; }
+    .step-content strong { color: #1e293b; }
+    .step-content p { margin: 0; font-size: 0.9rem; color: #475569; }
+    .arrow { text-align: center; color: #ea580c; font-size: 1.2rem; margin: 0.25rem 0; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+    th { background: #f1f5f9; padding: 0.6rem 0.75rem; text-align: left; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+    td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #e2e8f0; }
+    tr:hover { background: #f8fafc; }
+    .tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .tag-green { background: #dcfce7; color: #166534; }
+    .tag-orange { background: #ffedd5; color: #9a3412; }
+    .tag-blue { background: #dbeafe; color: #1e40af; }
+    .tag-yellow { background: #fef9c3; color: #854d0e; }
+    .tag-red { background: #fee2e2; color: #991b1b; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 1rem 0; }
+    .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; }
+    .card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+    .card p { font-size: 0.85rem; color: #64748b; margin: 0; }
+    .price-compare { display: flex; align-items: center; gap: 0.5rem; }
+    .price-old { text-decoration: line-through; color: #94a3b8; }
+    .price-new { color: #ea580c; font-weight: 700; }
+    .footer { text-align: center; padding: 2rem; color: #94a3b8; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🛵 PedidosYA Cash Flow</h1>
+  <p>Documentación técnica del flujo de pago PedidosYA con Efectivo</p>
+  <span class="badge">caja3 · caja.laruta11.cl · Abril 2026</span>
+</div>
+
+<div class="container">
+
+  <div class="toc">
+    <h2>📋 Índice</h2>
+    <ol>
+      <li><a href="#resumen">Resumen del Feature</a></li>
+      <li><a href="#flujo">Flujo Completo Paso a Paso</a></li>
+      <li><a href="#precios">Precios PedidosYA vs Caja</a></li>
+      <li><a href="#componentes">Componentes Modificados</a></li>
+      <li><a href="#api">APIs y Backend</a></li>
+      <li><a href="#bd">Cambios en Base de Datos</a></li>
+      <li><a href="#reportes">Reportes y Trazabilidad</a></li>
+      <li><a href="#errores">Manejo de Errores</a></li>
+      <li><a href="#commits">Historial de Commits</a></li>
+      <li><a href="#metricas">Métricas del Proyecto</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. RESUMEN -->
+  <section id="resumen">
+    <h2>1. Resumen del Feature</h2>
+    <p>Cuando un pedido de PedidosYA se paga en efectivo (el rider paga en el local), el cajero necesita:</p>
+    <ul>
+      <li>Registrar que el pago es en efectivo (no online)</li>
+      <li>Cobrar al rider el <strong>precio PedidosYA</strong> (más alto que el precio de caja)</li>
+      <li>Calcular el vuelto si el rider paga con un billete grande</li>
+      <li>Registrar automáticamente el ingreso en caja</li>
+    </ul>
+    <p><strong>Antes:</strong> El cajero registraba manualmente un ingreso a caja por el excedente. Proceso propenso a errores.</p>
+    <p><strong>Ahora:</strong> Todo automatizado — modal de selección Online/Efectivo, precios PYA automáticos, cash modal con vuelto, registro en caja automático.</p>
+  </section>
+
+  <!-- 2. FLUJO -->
+  <section id="flujo">
+    <h2>2. Flujo Completo Paso a Paso</h2>
+
+    <h3>Fase 1: Creación del Pedido</h3>
+    <div class="flow-diagram">
+      <div class="flow-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>Cajero arma el pedido</strong>
+          <p>Agrega productos al carrito desde el menú de caja3. Los precios mostrados son los de caja.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>Presiona "PedidosYA"</strong>
+          <p>Se abre el modal de selección con dos opciones: 🌐 Online y 💵 Efectivo.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>Elige "Efectivo"</strong>
+          <p>Los precios del carrito cambian a precios PedidosYA (naranja, con precio caja tachado). El subtotal y total se actualizan. Aparece badge "🛵 Precio PedidosYA Efectivo aplicado".</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <strong>Confirma el pedido</strong>
+          <p>La orden se crea con <code>payment_method: 'pedidosya_cash'</code> y el monto PYA como total. Se redirige a la página de pedido pendiente.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Fase 2: Cobro al Rider</h3>
+    <div class="flow-diagram">
+      <div class="flow-step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <strong>Pedido aparece en MiniComandas</strong>
+          <p>Se muestra con etiqueta "PedidosYA Efectivo" y ícono 💵. Botón "CONFIRMAR PAGO" visible.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">6</div>
+        <div class="step-content">
+          <strong>Cajero presiona "CONFIRMAR PAGO"</strong>
+          <p>Se abre el Cash Modal mostrando el total PYA a cobrar. Botones rápidos: Monto Exacto, $5.000, $10.000, $20.000.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">7</div>
+        <div class="step-content">
+          <strong>Ingresa monto del rider</strong>
+          <p>Si el monto es mayor al total, muestra pantalla de confirmación con el vuelto. Si es exacto, confirma directo.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">8</div>
+        <div class="step-content">
+          <strong>Confirma el pago</strong>
+          <p>Se ejecuta: UPDATE payment_status → 'paid', INSERT en caja_movimientos, descuento de inventario. Todo en transacción.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. PRECIOS -->
+  <section id="precios">
+    <h2>3. Precios PedidosYA vs Caja</h2>
+    <p>Los precios en PedidosYA son más altos que los de caja (incluyen comisión PYA). Se almacenan en la columna <code>pedidosya_price</code> de la tabla <code>products</code>.</p>
+
+    <table>
+      <thead>
+        <tr><th>Producto</th><th>Precio Caja</th><th>Precio PYA</th><th>Diferencia</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Hamburguesa Clásica</td><td>$7.280</td><td class="price-new">$9.990</td><td>+$2.710</td></tr>
+        <tr><td>Hamburguesa Italiana</td><td>$8.280</td><td class="price-new">$10.990</td><td>+$2.710</td></tr>
+        <tr><td>Hamburguesa Doble Mixta</td><td>$12.280</td><td class="price-new">$16.990</td><td>+$4.710</td></tr>
+        <tr><td>Hamburguesa Doble</td><td>$10.280</td><td class="price-new">$14.990</td><td>+$4.710</td></tr>
+        <tr><td>Hamburguesa Triple XXXL</td><td>$15.980</td><td class="price-new">$21.990</td><td>+$6.010</td></tr>
+        <tr><td>Completo Italiano</td><td>$2.490</td><td class="price-new">$3.990</td><td>+$1.500</td></tr>
+        <tr><td>Tortuga</td><td>$4.280</td><td class="price-new">$6.990</td><td>+$2.710</td></tr>
+        <tr><td>Gorda</td><td>$5.280</td><td class="price-new">$7.990</td><td>+$2.710</td></tr>
+        <tr><td>Barros Luco Lomo Vetado</td><td>$8.490</td><td class="price-new">$11.990</td><td>+$3.500</td></tr>
+        <tr><td>Pichanga Familiar</td><td>$18.980</td><td class="price-new">$26.890</td><td>+$7.910</td></tr>
+        <tr><td>Papas Champi 4XL</td><td>$15.890</td><td class="price-new">$23.823</td><td>+$7.933</td></tr>
+        <tr><td>Latas 350ml (Coca, Pepsi, etc)</td><td>$1.190-$1.290</td><td class="price-new">$1.790</td><td>+$500-$600</td></tr>
+        <tr><td>Agua 500ml</td><td>$1.100</td><td class="price-new">$1.790</td><td>+$690</td></tr>
+      </tbody>
+    </table>
+    <p><em>Productos sin <code>pedidosya_price</code> usan el precio de caja como fallback.</em></p>
+  </section>
+
+  <!-- 4. COMPONENTES -->
+  <section id="componentes">
+    <h2>4. Componentes Modificados</h2>
+
+    <div class="card-grid">
+      <div class="card">
+        <h4>📦 MenuApp.jsx</h4>
+        <p>Modal Online/Efectivo, <code>cartSubtotalPYA</code>, precios PYA por item con strikethrough, badge feedback, redirect map con <code>pedidosya_cash</code>.</p>
+      </div>
+      <div class="card">
+        <h4>📦 CheckoutApp.jsx</h4>
+        <p>Modal de selección PedidosYA, <code>handlePedidosYACashPayment()</code>, estado <code>showPedidosYAModal</code>.</p>
+      </div>
+      <div class="card">
+        <h4>📦 MiniComandas.jsx</h4>
+        <p>Cash Modal inline, etiqueta "PedidosYA Efectivo", ícono Banknote, cálculo de vuelto, botones rápidos.</p>
+      </div>
+      <div class="card">
+        <h4>📦 ArqueoApp.jsx</h4>
+        <p>Tarjeta "PedidosYA Efectivo" con estilo amber. Tarjeta existente renombrada a "PedidosYA Online".</p>
+      </div>
+      <div class="card">
+        <h4>📦 VentasDetalle.jsx</h4>
+        <p>Badge "PYA Efectivo" (yellow), filtro <code>pedidosya_cash</code> en la lista de métodos de pago.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. APIs -->
+  <section id="api">
+    <h2>5. APIs y Backend</h2>
+
+    <h3>get_menu_products.php</h3>
+    <p>Agregado <code>pedidosya_price</code> al SELECT y al array de respuesta JSON. Permite al frontend conocer el precio PYA de cada producto.</p>
+
+    <h3>confirm_transfer_payment.php</h3>
+    <p>Extendida la condición de registro en caja:</p>
+    <pre>// Antes
+if ($order['payment_method'] === 'cash')
+
+// Ahora
+if (in_array($order['payment_method'], ['cash', 'pedidosya_cash']))</pre>
+    <p>Para <code>pedidosya_cash</code>, el motivo en caja_movimientos es: <code>"Venta PedidosYA Efectivo - Pedido #T11-XXXX"</code></p>
+
+    <h3>get_sales_summary.php</h3>
+    <p>Agregada categoría <code>pedidosya_cash</code> al array de resultados para que ArqueoApp pueda mostrar el desglose.</p>
+
+    <h3>create_order.php</h3>
+    <p>No requirió cambios — ya acepta cualquier string como <code>payment_method</code>.</p>
+  </section>
+
+  <!-- 6. BD -->
+  <section id="bd">
+    <h2>6. Cambios en Base de Datos</h2>
+
+    <h3>ALTER TABLE — payment_method ENUM</h3>
+    <pre>ALTER TABLE tuu_orders MODIFY COLUMN payment_method
+  ENUM('webpay','transfer','card','cash','pedidosya',
+       'pedidosya_cash','rl6_credit','r11_credit')
+  DEFAULT 'webpay';</pre>
+
+    <h3>Nueva columna — pedidosya_price</h3>
+    <pre>ALTER TABLE products
+  ADD COLUMN pedidosya_price DECIMAL(10,2) DEFAULT NULL
+  AFTER price;</pre>
+    <p>20 productos con precios PYA cargados (hamburguesas, completos, sándwiches, papas, bebidas).</p>
+
+    <h3>Modelo de datos: Orden PedidosYA Cash</h3>
+    <table>
+      <thead><tr><th>Campo</th><th>Valor</th></tr></thead>
+      <tbody>
+        <tr><td><code>payment_method</code></td><td><span class="tag tag-orange">pedidosya_cash</span></td></tr>
+        <tr><td><code>payment_status</code></td><td><span class="tag tag-yellow">unpaid</span> → <span class="tag tag-green">paid</span></td></tr>
+        <tr><td><code>order_status</code></td><td><span class="tag tag-blue">sent_to_kitchen</span> → <span class="tag tag-green">delivered</span></td></tr>
+        <tr><td><code>installment_amount</code></td><td>Monto PYA (ej: $9.990)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Modelo de datos: Movimiento de Caja</h3>
+    <table>
+      <thead><tr><th>Campo</th><th>Valor</th></tr></thead>
+      <tbody>
+        <tr><td><code>tipo</code></td><td>ingreso</td></tr>
+        <tr><td><code>monto</code></td><td>installment_amount del pedido</td></tr>
+        <tr><td><code>motivo</code></td><td>"Venta PedidosYA Efectivo - Pedido #T11-XXXX"</td></tr>
+        <tr><td><code>saldo_nuevo</code></td><td>saldo_anterior + monto</td></tr>
+        <tr><td><code>usuario</code></td><td>Sistema</td></tr>
+        <tr><td><code>order_reference</code></td><td>order_number</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 7. REPORTES -->
+  <section id="reportes">
+    <h2>7. Reportes y Trazabilidad</h2>
+    <ul>
+      <li><strong>ArqueoApp:</strong> Tarjeta separada "PedidosYA Efectivo" (amber) con total y cantidad. Tarjeta "PedidosYA Online" para pagos online.</li>
+      <li><strong>VentasDetalle:</strong> Badge "PYA Efectivo" en amarillo. Filtro disponible para ver solo pedidos <code>pedidosya_cash</code>.</li>
+      <li><strong>Caja Movimientos:</strong> Cada pago PYA Efectivo genera un ingreso automático con motivo descriptivo y referencia a la orden.</li>
+    </ul>
+  </section>
+
+  <!-- 8. ERRORES -->
+  <section id="errores">
+    <h2>8. Manejo de Errores</h2>
+    <table>
+      <thead><tr><th>Escenario</th><th>Componente</th><th>Comportamiento</th></tr></thead>
+      <tbody>
+        <tr><td>Formulario incompleto</td><td>MenuApp/CheckoutApp</td><td>Modal no se abre, errores de validación visibles</td></tr>
+        <tr><td>Monto vacío o cero</td><td>Cash Modal</td><td>Alert: "Debe ingresar un monto o seleccionar Monto Exacto"</td></tr>
+        <tr><td>Monto insuficiente</td><td>Cash Modal</td><td>Alert: "Monto insuficiente. Faltan $X.XXX"</td></tr>
+        <tr><td>Error de red</td><td>MenuApp/CheckoutApp</td><td>Alert con mensaje, isProcessing se resetea</td></tr>
+        <tr><td>Error de BD</td><td>confirm_transfer_payment.php</td><td>Rollback completo, JSON con error descriptivo</td></tr>
+        <tr><td>Orden ya pagada</td><td>confirm_transfer_payment.php</td><td>"Esta orden ya está pagada"</td></tr>
+        <tr><td>Producto sin precio PYA</td><td>MenuApp</td><td>Usa precio de caja como fallback</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 9. COMMITS -->
+  <section id="commits">
+    <h2>9. Historial de Commits</h2>
+    <table>
+      <thead><tr><th>Commit</th><th>Descripción</th></tr></thead>
+      <tbody>
+        <tr><td><code>a752094</code></td><td>Spec completo: modal, cash modal, confirm API, reportes, SQL migration</td></tr>
+        <tr><td><code>40106b6</code></td><td>Fix: modal Online/Efectivo agregado a MenuApp (flujo principal)</td></tr>
+        <tr><td><code>b23f03d</code></td><td>cartSubtotalPYA, modal muestra ambos precios, orden usa monto PYA</td></tr>
+        <tr><td><code>1e213d9</code></td><td>Subtotal/total visibles cambian, badge "Precio PedidosYA Efectivo aplicado"</td></tr>
+        <tr><td><code>4fcef99</code></td><td>Precios PYA por item en naranja con precio caja strikethrough</td></tr>
+        <tr><td><code>e0050d4</code></td><td>Fix condición tipo string/number en comparación de precios</td></tr>
+        <tr><td><code>9025e58</code></td><td>Root cause fix: pedidosya_price faltaba en get_menu_products.php</td></tr>
+      </tbody>
+    </table>
+    <p><strong>BD:</strong> ALTER TABLE payment_method ENUM + columna pedidosya_price + 20 productos con precios PYA.</p>
+  </section>
+
+  <!-- 10. MÉTRICAS -->
+  <section id="metricas">
+    <h2>10. Métricas del Proyecto</h2>
+
+    <div class="card-grid">
+      <div class="card" style="border-left: 4px solid #ea580c;">
+        <h4>📄 14 archivos</h4>
+        <p>Modificados o creados</p>
+      </div>
+      <div class="card" style="border-left: 4px solid #16a34a;">
+        <h4>📝 962 líneas insertadas</h4>
+        <p>37 eliminadas (~1.000 netas)</p>
+      </div>
+      <div class="card" style="border-left: 4px solid #2563eb;">
+        <h4>🔀 8 commits</h4>
+        <p>7 de código + 1 debug temporal</p>
+      </div>
+      <div class="card" style="border-left: 4px solid #9333ea;">
+        <h4>🚀 6+ deploys</h4>
+        <p>Exitosos en caja3 via Coolify</p>
+      </div>
+    </div>
+
+    <h3>Desglose de líneas</h3>
+    <table>
+      <thead><tr><th>Tipo</th><th>Líneas</th><th>Detalle</th></tr></thead>
+      <tbody>
+        <tr><td>Specs (requirements + design + tasks)</td><td>~495</td><td>Documentación formal del feature</td></tr>
+        <tr><td>Frontend (JSX)</td><td>~443</td><td>MenuApp, CheckoutApp, MiniComandas, ArqueoApp, VentasDetalle</td></tr>
+        <tr><td>Backend (PHP)</td><td>~18</td><td>confirm_transfer_payment, get_sales_summary, get_menu_products</td></tr>
+        <tr><td>SQL</td><td>~8</td><td>ALTER TABLE ENUM + columna pedidosya_price</td></tr>
+        <tr><td>BD (producción)</td><td>3 migraciones</td><td>ENUM, columna, 20 precios PYA</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+</div>
+
+<div class="footer">
+  <p>La Ruta 11 — Documentación generada el 17 de Abril de 2026</p>
+  <p>caja3 · caja.laruta11.cl · Spec: pedidosya-cash-flow</p>
+</div>
+
+</body>
+</html>

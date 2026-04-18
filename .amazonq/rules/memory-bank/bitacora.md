@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`e0050d4`) — pedidosya_cash: precios PYA por item + feedback + fix condición tipo |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`9025e58`) — pedidosya_cash: fix root cause - pedidosya_price en get_menu_products.php |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`915b894`) — recipe-management-ai: 5 páginas recetas + fix recomendaciones |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`ec38aa7`) — Recipe API: 10 endpoints CRUD + bulk + recommendations + audit |
@@ -103,8 +103,10 @@
 - BD: Columna `pedidosya_price` agregada a `products`. 20 productos con precios PYA cargados (hamburguesas, completos, sándwiches, papas, bebidas).
 - `caja3/src/components/MenuApp.jsx`: `cartSubtotalPYA` calcula total con precios PYA, modal muestra ambos precios, orden usa monto PYA para `pedidosya_cash`. Subtotal y total visibles cambian al seleccionar Efectivo, badge "🛵 Precio PedidosYA Efectivo aplicado" con precio caja tachado. Precios PYA por item en naranja con precio caja strikethrough. Fix condición tipo string/number.
 
-**Commits:** `a752094`, `40106b6`, `b23f03d`, `1e213d9`, `4fcef99`, `e0050d4`, `93a9c5c`
-**Deploys:** caja3 ✅ (`e0050d4`), deploy `93a9c5c` en progreso, SQL migrations ✅
+- `caja3/api/get_menu_products.php`: Agregado `pedidosya_price` al SELECT y al array de respuesta — root cause de precios PYA no apareciendo (la API no enviaba el campo).
+
+**Commits:** `a752094`, `40106b6`, `b23f03d`, `1e213d9`, `4fcef99`, `e0050d4`, `93a9c5c`, `9025e58`
+**Deploys:** caja3 ✅ (`9025e58`), SQL migrations ✅
 
 ### 2026-04-17e — Chef_Bot: conversational RAG agent + full DB schema + AWS credentials fix
 

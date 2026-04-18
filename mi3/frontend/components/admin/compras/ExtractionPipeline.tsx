@@ -1,0 +1,281 @@
+'use client';
+
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Search, Brain, Bot, Check, X, Loader2, AlertTriangle, Clock } from 'lucide-react';
+import { getToken } from '@/lib/auth';
+import type { ExtractionResult } from '@/types/compras';
+
+interface PipelinePhase {
+  id: 'percepcion' | 'clasificacion' | 'analisis';
+  label: string;
+  icon: React.ReactNode;
+  status: 'pending' | 'running' | 'done' | 'error';
+  data: Record<string, unknown> | null;
+  elapsedMs: number;
+}
+
+interface PipelineEvent {
+  fase: string;
+  status: string;
+  data: Record<string, unknown> | null;
+  elapsed_ms: number;
+}
+
+interface ExtractionPipelineProps {
+  tempKey: string;
+  onResult: (data: ExtractionResult, sugerencias: ExtractionResult['sugerencias']) => void;
+  onError: () => void;
+  autoStart?: boolean;
+}
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
+
+export default function ExtractionPipeline({ tempKey, onResult, onError, autoStart = true }: ExtractionPipelineProps) {
+  const [phases, setPhases] = useState<PipelinePhase[]>([
+    { id: 'percepcion', label: 'Identificando objetos y textos', icon: <Search className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
+    { id: 'clasificacion', label: 'Clasificando imagen', icon: <Brain className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
+    { id: 'analisis', label: 'Analizando con IA', icon: <Bot className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
+  ]);
+  const [running, setRunning] = useState(false);
+  const [slow, setSlow] = useState(false);
+  const [totalMs, setTotalMs] = useState(0);
+  const startedRef = useRef(false);
+  const slowTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const updatePhase = useCallback((id: string, updates: Partial<PipelinePhase>) => {
+    setPhases(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+  }, []);
+
+  const runPipeline = useCallback(async () => {
+    if (running) return;
+    setRunning(true);
+    setSlow(false);
+
+    slowTimerRef.current = setTimeout(() => setSlow(true), 8000);
+
+    try {
+      const token = getToken();
+      const res = await fetch(`${API_URL}/api/v1/admin/compras/extract-pipeline`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        credentials: 'include',
+        body: JSON.stringify({ temp_key: tempKey }),
+      });
+
+      if (!res.ok || !res.body) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr) continue;
+
+          try {
+            const event: PipelineEvent = JSON.parse(jsonStr);
+            handleEvent(event);
+          } catch {
+            // skip malformed events
+          }
+        }
+      }
+    } catch {
+      onError();
+    } finally {
+      setRunning(false);
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    }
+  }, [tempKey, running, onResult, onError]);
+
+  const handleEvent = useCallback((event: PipelineEvent) => {
+    const { fase, status, data, elapsed_ms } = event;
+
+    if (fase === 'resultado') {
+      setTotalMs(elapsed_ms);
+      if (status === 'done' && data?.success) {
+        const result = data as unknown as {
+          data: ExtractionResult;
+          sugerencias: ExtractionResult['sugerencias'];
+          confianza: ExtractionResult['confianza'];
+        };
+        const extraction: ExtractionResult = {
+          ...result.data,
+          confianza: result.confianza ?? result.data?.confianza,
+          sugerencias: result.sugerencias ?? result.data?.sugerencias,
+        };
+        onResult(extraction, result.sugerencias);
+      } else {
+        onError();
+      }
+      return;
+    }
+
+    if (fase === 'error') {
+      onError();
+      return;
+    }
+
+    const phaseId = fase as PipelinePhase['id'];
+    if (['percepcion', 'clasificacion', 'analisis'].includes(phaseId)) {
+      updatePhase(phaseId, {
+        status: status === 'done' ? 'done' : status === 'error' ? 'error' : 'running',
+        data: data as Record<string, unknown> | null,
+        elapsedMs: elapsed_ms,
+      });
+    }
+  }, [onResult, onError, updatePhase]);
+
+  useEffect(() => {
+    if (autoStart && !startedRef.current) {
+      startedRef.current = true;
+      runPipeline();
+    }
+  }, [autoStart, runPipeline]);
+
+  useEffect(() => {
+    return () => {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    };
+  }, []);
+
+  return (
+    <div className="rounded-xl border bg-white p-4 space-y-3" role="status" aria-live="polite" aria-label="Pipeline de extracción IA">
+      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Extracción inteligente</p>
+
+      <div className="space-y-2">
+        {phases.map((phase) => (
+          <PhaseRow key={phase.id} phase={phase} />
+        ))}
+      </div>
+
+      {slow && (
+        <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">
+          <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>Tomando más tiempo de lo normal...</span>
+        </div>
+      )}
+
+      {totalMs > 0 && (
+        <p className="text-xs text-gray-400 text-right">{(totalMs / 1000).toFixed(1)}s total</p>
+      )}
+    </div>
+  );
+}
+
+function PhaseRow({ phase }: { phase: PipelinePhase }) {
+  const statusIcon = {
+    pending: <div className="h-4 w-4 rounded-full border-2 border-gray-200" />,
+    running: <Loader2 className="h-4 w-4 animate-spin text-blue-500" />,
+    done: <Check className="h-4 w-4 text-green-600" />,
+    error: <X className="h-4 w-4 text-red-500" />,
+  }[phase.status];
+
+  return (
+    <div className={`flex items-start gap-3 rounded-lg px-3 py-2 transition-colors ${
+      phase.status === 'running' ? 'bg-blue-50' :
+      phase.status === 'done' ? 'bg-green-50/50' :
+      phase.status === 'error' ? 'bg-red-50/50' : 'bg-gray-50'
+    }`}>
+      <div className="mt-0.5 flex-shrink-0">{statusIcon}</div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-gray-400">{phase.icon}</span>
+          <span className={`text-sm font-medium ${
+            phase.status === 'done' ? 'text-gray-700' :
+            phase.status === 'running' ? 'text-blue-700' :
+            phase.status === 'error' ? 'text-red-600' : 'text-gray-400'
+          }`}>
+            {phase.label}
+          </span>
+          {phase.elapsedMs > 0 && phase.status === 'done' && (
+            <span className="text-xs text-gray-400">{(phase.elapsedMs / 1000).toFixed(1)}s</span>
+          )}
+        </div>
+
+        {phase.status === 'done' && phase.data && (
+          <PhaseDetails id={phase.id} data={phase.data} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PhaseDetails({ id, data }: { id: string; data: Record<string, unknown> }) {
+  if (id === 'percepcion') {
+    const labels = (data.labels as string[]) || [];
+    const texts = (data.texts_preview as string[]) || [];
+    return (
+      <div className="mt-1 space-y-1">
+        {labels.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {labels.slice(0, 6).map((l, i) => (
+              <span key={i} className="inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">{l}</span>
+            ))}
+          </div>
+        )}
+        {texts.length > 0 && (
+          <p className="text-xs text-gray-500 truncate">
+            📝 {texts.slice(0, 4).join(' · ')}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (id === 'clasificacion') {
+    const tipo = data.tipo_imagen as string;
+    const confianza = data.confianza as number;
+    const proveedores = data.contexto_proveedores as number;
+    const productos = data.contexto_productos as number;
+    const tipoIcons: Record<string, string> = {
+      boleta: '🧾', factura: '📄', producto: '📦', bascula: '⚖️', transferencia: '💸', desconocido: '❓',
+    };
+    return (
+      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+        <span className="font-medium">{tipoIcons[tipo] || '❓'} {tipo}</span>
+        <span className="text-gray-400">({Math.round(confianza * 100)}%)</span>
+        {(proveedores > 0 || productos > 0) && (
+          <span className="text-gray-400">· {proveedores} proveedores, {productos} ingredientes</span>
+        )}
+      </div>
+    );
+  }
+
+  if (id === 'analisis') {
+    const proveedor = data.proveedor as string;
+    const itemsCount = data.items_count as number;
+    const montoTotal = data.monto_total as number;
+    const confidence = data.overall_confidence as number;
+    return (
+      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+        {proveedor && <span className="font-medium text-gray-700">{proveedor}</span>}
+        {itemsCount > 0 && <span className="text-gray-500">{itemsCount} items</span>}
+        {montoTotal > 0 && <span className="text-green-700 font-medium">${montoTotal.toLocaleString('es-CL')}</span>}
+        {confidence > 0 && (
+          <span className={`${confidence >= 0.7 ? 'text-green-600' : 'text-amber-600'}`}>
+            {Math.round(confidence * 100)}% confianza
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  return null;
+}

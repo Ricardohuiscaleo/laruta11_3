@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Upload, X, Image as ImageIcon, ZoomIn, Sparkles, Loader2 } from 'lucide-react';
 import { comprasApi } from '@/lib/compras-api';
 import ExtractionPreview, { ExtractionError } from './ExtractionPreview';
+import ExtractionPipeline from './ExtractionPipeline';
 import type { ExtractionResult } from '@/types/compras';
 
 interface TempImage {
@@ -20,7 +21,7 @@ interface ImageUploaderProps {
 
 export default function ImageUploader({ images, onChange, onExtractionResult }: ImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
-  const [extracting, setExtracting] = useState(false);
+  const [pipelineActive, setPipelineActive] = useState(false);
   const [extractionResult, setExtractionResult] = useState<ExtractionResult | null>(null);
   const [extractionError, setExtractionError] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -54,34 +55,22 @@ export default function ImageUploader({ images, onChange, onExtractionResult }: 
     onChange(images.filter((_, i) => i !== idx));
   };
 
-  const handleExtract = useCallback(async () => {
+  const handleExtract = useCallback(() => {
     if (images.length === 0) return;
-    setExtracting(true);
     setExtractionError(false);
     setExtractionResult(null);
-    try {
-      const res = await comprasApi.post<{
-        success: boolean;
-        data?: ExtractionResult;
-        confianza?: ExtractionResult['confianza'];
-        sugerencias?: ExtractionResult['sugerencias'];
-        error?: string;
-      }>('/compras/extract', { temp_key: images[0].tempKey });
-      if (res.success && res.data) {
-        const result: ExtractionResult = {
-          ...res.data,
-          confianza: res.confianza ?? res.data.confianza,
-          sugerencias: res.sugerencias ?? res.data.sugerencias,
-        };
-        setExtractionResult(result);
-      } else {
-        setExtractionError(true);
-      }
-    } catch {
-      setExtractionError(true);
-    }
-    setExtracting(false);
+    setPipelineActive(true);
   }, [images]);
+
+  const handlePipelineResult = useCallback((data: ExtractionResult) => {
+    setExtractionResult(data);
+    setPipelineActive(false);
+  }, []);
+
+  const handlePipelineError = useCallback(() => {
+    setExtractionError(true);
+    setPipelineActive(false);
+  }, []);
 
   const handleUseData = useCallback((data: ExtractionResult) => {
     onExtractionResult?.(data);
@@ -144,18 +133,24 @@ export default function ImageUploader({ images, onChange, onExtractionResult }: 
       )}
 
       {/* Extract button */}
-      {images.length > 0 && onExtractionResult && !extractionResult && (
+      {images.length > 0 && onExtractionResult && !extractionResult && !pipelineActive && (
         <button
           onClick={handleExtract}
-          disabled={extracting}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-mi3-300 bg-mi3-50 px-3 py-2 text-sm font-medium text-mi3-700 hover:bg-mi3-100 transition-colors disabled:opacity-50"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-mi3-300 bg-mi3-50 px-3 py-2 text-sm font-medium text-mi3-700 hover:bg-mi3-100 transition-colors"
         >
-          {extracting ? (
-            <><Loader2 className="h-4 w-4 animate-spin" /> Extrayendo datos...</>
-          ) : (
-            <><Sparkles className="h-4 w-4" /> Extraer datos de la boleta</>
-          )}
+          <Sparkles className="h-4 w-4" /> Extraer datos de la boleta
         </button>
+      )}
+
+      {/* Pipeline visual */}
+      {pipelineActive && images.length > 0 && (
+        <div className="mt-3">
+          <ExtractionPipeline
+            tempKey={images[0].tempKey}
+            onResult={handlePipelineResult}
+            onError={handlePipelineError}
+          />
+        </div>
       )}
 
       {/* Extraction result */}
