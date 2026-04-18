@@ -5,6 +5,7 @@ import { Upload, X, Loader2, Check, AlertTriangle, Trash2, ChevronDown, ChevronU
 import { comprasApi } from '@/lib/compras-api';
 import { formatearPesosCLP } from '@/lib/compras-utils';
 import { useCompras } from '@/contexts/ComprasContext';
+import ExtractionPipeline from '@/components/admin/compras/ExtractionPipeline';
 import type { ExtractionResult, Kpi, ItemSugerencia, RegistroGroup, RegistroItem, RegistroImage } from '@/types/compras';
 
 // Types imported from @/types/compras: RegistroImage, RegistroItem, RegistroGroup
@@ -114,6 +115,9 @@ export default function RegistroPage() {
   const [saldo, setSaldo] = useState<number | null>(ctxKpis?.saldo_disponible ?? null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [previewImg, setPreviewImg] = useState<string | null>(null);
+  const [pipelineTempKey, setPipelineTempKey] = useState<string | null>(null);
+  const [pipelineTempUrl, setPipelineTempUrl] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
 
   // Sync saldo from context
   useEffect(() => {
@@ -122,11 +126,32 @@ export default function RegistroPage() {
 
   // Upload + extract + group
   const processFiles = useCallback(async (files: FileList | File[]) => {
+    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (imageFiles.length === 0) return;
+
+    // Single photo: upload then show pipeline visual SSE
+    if (imageFiles.length === 1) {
+      setUploading(true);
+      try {
+        const fd = new FormData();
+        fd.append('image', imageFiles[0]);
+        const res = await comprasApi.upload<{ tempKey: string; tempUrl: string }>('/compras/upload-temp', fd);
+        setPipelineTempKey(res.tempKey);
+        setPipelineTempUrl(res.tempUrl);
+      } catch {
+        // fallback: skip pipeline
+      }
+      setUploading(false);
+      return;
+    }
+
+    // Multiple photos: use sync endpoint with progress
     setUploading(true);
     const newGroups: CompraGroup[] = [...groups.filter((_, i) => !submitted.includes(i))];
 
-    for (const file of Array.from(files)) {
-      if (!file.type.startsWith('image/')) continue;
+    for (let fi = 0; fi < imageFiles.length; fi++) {
+      const file = imageFiles[fi];
+      setUploadProgress(`Procesando ${fi + 1}/${imageFiles.length}...`);
 
       let tempKey = '', tempUrl = '';
       try {
@@ -220,7 +245,83 @@ export default function RegistroPage() {
     setGroups(newGroups);
     setSubmitted([]);
     setUploading(false);
+    setUploadProgress(null);
   }, [groups, submitted]);
+
+  // Handle pipeline SSE result (single photo)
+  const handlePipelineResult = useCallback((data: ExtractionResult, sugerencias?: ExtractionResult['sugerencias']) => {
+    const tempKey = pipelineTempKey!;
+    const tempUrl = pipelineTempUrl!;
+    const img: UploadedImage = {
+      tempKey, tempUrl, status: 'extracted',
+      extraction: { ...data, confianza: data.confianza, sugerencias: sugerencias ?? data.sugerencias },
+      sugerencias: sugerencias ?? data.sugerencias,
+    };
+
+    const extractedItems = data.items || [];
+    const sugItems = (sugerencias?.items || data.sugerencias?.items || []) as ItemSugerencia[];
+    const items: CompraItem[] = extractedItems.map((item, idx) => {
+      const sug = sugItems[idx];
+      const matched = sug?.pre_selected && sug?.match;
+      if (matched && sug.match) {
+        const m = sug.match;
+        const isIng = sug.match_type === 'ingredient';
+        return {
+          ingrediente_id: isIng ? m.id : null,
+          product_id: !isIng ? m.id : null,
+          item_type: (sug.match_type || 'ingredient') as 'ingredient' | 'product',
+          nombre: m.name, cantidad: item.cantidad || 0,
+          unidad: m.unit || item.unidad || 'unidad',
+          precio_unitario: item.precio_unitario || 0,
+          subtotal: item.subtotal || (item.cantidad || 0) * (item.precio_unitario || 0),
+          empaque_detalle: item.empaque_detalle || null,
+          notas_descuento: item.notas_descuento || null,
+          match_score: sug.score, match_name: m.name,
+        };
+      }
+      return {
+        ingrediente_id: null, product_id: null, item_type: 'ingredient' as const,
+        nombre: item.nombre || '', cantidad: item.cantidad || 0,
+        unidad: item.unidad || 'unidad', precio_unitario: item.precio_unitario || 0,
+        subtotal: item.subtotal || (item.cantidad || 0) * (item.precio_unitario || 0),
+        empaque_detalle: item.empaque_detalle || null,
+        notas_descuento: item.notas_descuento || null,
+        match_score: sug?.score, match_name: sug?.match?.name,
+      };
+    });
+
+    const provSug = sugerencias?.proveedor || data.sugerencias?.proveedor;
+    const proveedor = (provSug as any)?.nombre_original || data.proveedor || 'Proveedor desconocido';
+    const metodoPago = data.metodo_pago || 'cash';
+    const tipoCompra = data.tipo_compra || 'ingredientes';
+
+    const newGroups = [...groups.filter((_, i) => !submitted.includes(i))];
+    newGroups.push({
+      proveedor, fecha_compra: data.fecha || new Date().toISOString().split('T')[0],
+      metodo_pago: metodoPago, tipo_compra: tipoCompra, notas: '',
+      images: [img], items, expanded: true,
+    });
+    setGroups(newGroups);
+    setSubmitted([]);
+    setPipelineTempKey(null);
+    setPipelineTempUrl(null);
+  }, [pipelineTempKey, pipelineTempUrl, groups, submitted]);
+
+  const handlePipelineError = useCallback(() => {
+    if (pipelineTempKey && pipelineTempUrl) {
+      const img: UploadedImage = { tempKey: pipelineTempKey, tempUrl: pipelineTempUrl, status: 'error', error: 'Error de extracción' };
+      const newGroups = [...groups.filter((_, i) => !submitted.includes(i))];
+      newGroups.push({
+        proveedor: '', fecha_compra: new Date().toISOString().split('T')[0],
+        metodo_pago: 'cash', tipo_compra: 'ingredientes', notas: '',
+        images: [img], items: [], expanded: true,
+      });
+      setGroups(newGroups);
+      setSubmitted([]);
+    }
+    setPipelineTempKey(null);
+    setPipelineTempUrl(null);
+  }, [pipelineTempKey, pipelineTempUrl, groups, submitted]);
 
   // Add manual group (no photo)
   const addManualGroup = () => {
@@ -326,11 +427,11 @@ export default function RegistroPage() {
       <div
         onDragOver={e => e.preventDefault()}
         onDrop={e => { e.preventDefault(); if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); }}
-        onClick={() => inputRef.current?.click()}
+        onClick={() => !pipelineTempKey && inputRef.current?.click()}
         className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center hover:border-mi3-400 hover:bg-mi3-50/30 transition-colors"
       >
         {uploading ? (
-          <><Loader2 className="h-6 w-6 animate-spin text-mi3-500" /><p className="text-sm text-mi3-600">Procesando fotos...</p></>
+          <><Loader2 className="h-6 w-6 animate-spin text-mi3-500" /><p className="text-sm text-mi3-600">{uploadProgress || 'Subiendo foto...'}</p></>
         ) : (
           <><Upload className="h-6 w-6 text-gray-400" />
           <p className="text-sm text-gray-600">Sube 1 o más fotos de boletas/facturas</p>
@@ -339,6 +440,23 @@ export default function RegistroPage() {
         <input ref={inputRef} type="file" accept="image/*" multiple className="hidden"
           onChange={e => { if (e.target.files) processFiles(e.target.files); e.target.value = ''; }} />
       </div>
+
+      {/* Pipeline visual SSE (single photo) */}
+      {pipelineTempKey && (
+        <div className="space-y-3">
+          {pipelineTempUrl && (
+            <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-2">
+              <img src={pipelineTempUrl} alt="" className="h-16 w-16 rounded-lg object-cover border" />
+              <p className="text-sm text-gray-600">Analizando imagen...</p>
+            </div>
+          )}
+          <ExtractionPipeline
+            tempKey={pipelineTempKey}
+            onResult={handlePipelineResult}
+            onError={handlePipelineError}
+          />
+        </div>
+      )}
 
       {/* Manual entry button */}
       {groups.length === 0 && (
