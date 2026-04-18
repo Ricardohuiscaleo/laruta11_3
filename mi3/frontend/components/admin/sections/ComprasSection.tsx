@@ -37,7 +37,7 @@ export default function ComprasSection() {
   return (
     <ComprasProvider>
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900">Compras <span className="text-xs text-gray-400 font-normal">v1.5</span></h1>
+        <h1 className="text-2xl font-bold text-gray-900">Compras <span className="text-xs text-gray-400 font-normal">v1.6</span></h1>
         <nav className="flex items-center gap-1 overflow-x-auto rounded-lg bg-gray-100 p-1" role="tablist" aria-label="Secciones de compras">
           {tabs.map(({ key, label, icon: Icon }) => (
             <button

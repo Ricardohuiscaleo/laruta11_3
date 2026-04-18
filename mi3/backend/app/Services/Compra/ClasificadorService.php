@@ -71,9 +71,13 @@ PROMPT;
 
             $response = $this->signer->signedPost($endpoint, $body, 'bedrock', [], 8);
 
-            if (!$response) {
-                Log::warning('[Clasificador] Nova Micro returned no response');
-                return $this->fallbackClassification($labelNames, $textLines);
+            if (!$response || ($response['__error'] ?? false)) {
+                $errorMsg = $response['__message'] ?? 'no response';
+                $httpCode = $response['__http_code'] ?? 0;
+                Log::warning("[Clasificador] Nova Micro error: HTTP {$httpCode} — {$errorMsg}");
+                $fallback = $this->fallbackClassification($labelNames, $textLines);
+                $fallback['api_error'] = "HTTP {$httpCode}: {$errorMsg}";
+                return $fallback;
             }
 
             $text = $response['output']['message']['content'][0]['text'] ?? '';

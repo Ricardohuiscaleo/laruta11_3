@@ -59,8 +59,10 @@ class AnalisisService
 
         $response = $this->signer->signedPost($endpoint, $body, 'bedrock', [], 20);
 
-        if (!$response) {
-            Log::error('[Analisis] Nova Pro returned no response');
+        if (!$response || ($response['__error'] ?? false)) {
+            $errorMsg = $response['__message'] ?? 'no response';
+            $httpCode = $response['__http_code'] ?? 0;
+            Log::error("[Analisis] Nova Pro error: HTTP {$httpCode} — {$errorMsg}");
             return null;
         }
 

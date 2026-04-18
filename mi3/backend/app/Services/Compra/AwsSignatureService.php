@@ -215,8 +215,9 @@ class AwsSignatureService
                 return json_decode($responseBody, true);
             }
 
-            Log::error("[AwsSignature] {$service} error: HTTP {$httpCode} " . substr($responseBody, 0, 500));
-            return null;
+            $errorBody = substr($responseBody, 0, 500);
+            Log::error("[AwsSignature] {$service} error: HTTP {$httpCode} {$errorBody}");
+            return ['__error' => true, '__http_code' => $httpCode, '__message' => $errorBody, '__service' => $service];
         } catch (\RuntimeException $e) {
             throw $e;
         } catch (\Exception $e) {

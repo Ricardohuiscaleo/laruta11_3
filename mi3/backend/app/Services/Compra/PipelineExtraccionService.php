@@ -53,11 +53,15 @@ class PipelineExtraccionService
             $phaseStart = microtime(true);
 
             $perception = ['labels' => [], 'texts' => [], 'elapsed_ms' => 0];
+            $perceptionError = null;
             try {
                 if ($s3Key) {
                     $perception = $this->rekognition->perceive($s3Key);
+                } else {
+                    $perceptionError = 'No S3 key resolved from image URL: ' . $imageUrl;
                 }
             } catch (\Exception $e) {
+                $perceptionError = $e->getMessage();
                 Log::warning('[Pipeline] Rekognition failed, continuing: ' . $e->getMessage());
             }
 
@@ -65,6 +69,8 @@ class PipelineExtraccionService
                 'elapsed_ms' => (int) round((microtime(true) - $phaseStart) * 1000),
                 'labels_count' => count($perception['labels']),
                 'texts_count' => count($perception['texts']),
+                'error' => $perceptionError,
+                's3_key' => $s3Key,
             ];
 
             $emit('percepcion', 'done', [
@@ -92,6 +98,10 @@ class PipelineExtraccionService
                 'elapsed_ms' => (int) round((microtime(true) - $phaseStart) * 1000),
                 'tipo' => $tipo,
                 'confianza' => $classification['confianza'],
+                'razon' => $classification['razon'] ?? null,
+                'api_error' => $classification['api_error'] ?? null,
+                'contexto_suppliers' => count($contexto['suppliers'] ?? []),
+                'contexto_products' => count($contexto['products'] ?? []),
             ];
 
             $emit('clasificacion', 'done', [
@@ -118,6 +128,9 @@ class PipelineExtraccionService
             $pipelinePhases['analisis'] = [
                 'elapsed_ms' => (int) round((microtime(true) - $phaseStart) * 1000),
                 'success' => $extracted !== null,
+                'error' => $extracted === null ? 'Nova Pro returned null — check model access and credentials' : null,
+                'model_id' => 'amazon.nova-pro-v1:0',
+                'tipo_usado' => $tipo,
             ];
 
             if (!$extracted) {
