@@ -10,6 +10,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Cache buster: change this value to force a fresh build
+ARG CACHEBUST=1
+
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_VAPID_PUBLIC_KEY
 ARG NEXT_PUBLIC_GOOGLE_MAPS_KEY
