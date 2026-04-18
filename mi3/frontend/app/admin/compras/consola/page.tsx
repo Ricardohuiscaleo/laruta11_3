@@ -307,7 +307,7 @@ function ExtractedTab({ data }: { data: Record<string, unknown> }) {
         <Field label="Monto neto" value={data.monto_neto != null ? `$${Number(data.monto_neto).toLocaleString('es-CL')}` : null} />
         <Field label="IVA" value={data.iva != null ? `$${Number(data.iva).toLocaleString('es-CL')}` : null} />
         <Field label="Monto total" value={data.monto_total != null ? `$${Number(data.monto_total).toLocaleString('es-CL')}` : null} />
-        {data.peso_bascula != null && <Field label="Peso báscula" value={`${data.peso_bascula} ${data.unidad_bascula || 'kg'}`} />}
+        {data.peso_bascula != null && <Field label="Peso báscula" value={`${String(data.peso_bascula)} ${String(data.unidad_bascula || 'kg')}`} />}
       </div>
       {data.notas_ia && (
         <div className="rounded bg-blue-50 px-2 py-1 text-xs text-blue-700">💡 {data.notas_ia as string}</div>
