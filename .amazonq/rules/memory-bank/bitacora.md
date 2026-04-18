@@ -103,8 +103,8 @@
 - BD: Columna `pedidosya_price` agregada a `products`. 20 productos con precios PYA cargados (hamburguesas, completos, sándwiches, papas, bebidas).
 - `caja3/src/components/MenuApp.jsx`: `cartSubtotalPYA` calcula total con precios PYA, modal muestra ambos precios, orden usa monto PYA para `pedidosya_cash`. Subtotal y total visibles cambian al seleccionar Efectivo, badge "🛵 Precio PedidosYA Efectivo aplicado" con precio caja tachado. Precios PYA por item en naranja con precio caja strikethrough. Fix condición tipo string/number.
 
-**Commits:** `a752094`, `40106b6`, `b23f03d`, `1e213d9`, `4fcef99`, `e0050d4`
-**Deploys:** caja3 ✅ (`e0050d4`), SQL migrations ✅
+**Commits:** `a752094`, `40106b6`, `b23f03d`, `1e213d9`, `4fcef99`, `e0050d4`, `93a9c5c`
+**Deploys:** caja3 ✅ (`e0050d4`), deploy `93a9c5c` en progreso, SQL migrations ✅
 
 ### 2026-04-17e — Chef_Bot: conversational RAG agent + full DB schema + AWS credentials fix
 

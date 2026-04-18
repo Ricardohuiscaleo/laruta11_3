@@ -54,6 +54,7 @@ p.likes,
 p.is_active,
 p.is_featured,
 p.sale_price,
+p.pedidosya_price,
 p.created_at,
 s.name as subcategory_name,
 s.slug as subcategory_slug,
@@ -148,6 +149,7 @@ ORDER BY p.category_id, p.subcategory_id, p.name
             'active' => (int)$product['is_active'],
             'is_featured' => (int)$product['is_featured'],
             'sale_price' => $product['sale_price'] ? (int)$product['sale_price'] : null,
+            'pedidosya_price' => $product['pedidosya_price'] ? (int)$product['pedidosya_price'] : null,
             'category_name' => $product['category_id'] == 8 ? 'combos' : null
         ];
     }
