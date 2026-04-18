@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-17)
+## Estado Actual (2026-04-18)
 
 ### Aplicaciones Desplegadas
 
@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`9025e58`) — pedidosya_cash: fix root cause - pedidosya_price en get_menu_products.php |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`915b894`) — recipe-management-ai: 5 páginas recetas + fix recomendaciones |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`ec38aa7`) — Recipe API: 10 endpoints CRUD + bulk + recommendations + audit |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`104dc65`) — pipeline multi-modelo extracción compras |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`104dc65`) — pipeline multi-modelo: Rekognition + Nova Micro + Nova Pro + SSE |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -87,6 +87,22 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-18a — Spec compras-pipeline-multimodelo: Rekognition + Nova Micro + Nova Pro + SSE
+
+**Cambios:**
+- `mi3/backend/app/Services/Compra/AwsSignatureService.php`: Nuevo — SigV4 signing reutilizable con soporte curl_multi y headers custom.
+- `mi3/backend/app/Services/Compra/RekognitionService.php`: Nuevo — DetectLabels + DetectText en paralelo via curl_multi.
+- `mi3/backend/app/Services/Compra/ClasificadorService.php`: Nuevo — Nova Micro clasifica tipo imagen (boleta/factura/producto/bascula/transferencia) + carga contexto BD filtrado por tipo.
+- `mi3/backend/app/Services/Compra/AnalisisService.php`: Nuevo — Nova Pro con prompts específicos por tipo (~400-800 tokens vs ~4000 del monolítico anterior).
+- `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: Nuevo — orquestador 3 fases con callback SSE, post-processing completo (mapPersonToSupplier, matchProveedorByRut, applySupplierRules, product equivalences).
+- `mi3/backend/app/Http/Controllers/Admin/ExtraccionController.php`: Reescrito — `extract()` ahora usa pipeline internamente, nuevo `extractPipeline()` con SSE streaming.
+- `mi3/backend/routes/api.php`: Nueva ruta `POST compras/extract-pipeline`.
+- `mi3/frontend/components/admin/compras/ExtractionPipeline.tsx`: Nuevo — componente visual 3 pasos con SSE via ReadableStream, badges labels, tipo detectado, resultado final. Mobile-first, aria-live.
+- `mi3/frontend/components/admin/compras/ImageUploader.tsx`: Integrado con ExtractionPipeline visual.
+
+**Commits:** `104dc65`
+**Deploys:** mi3-frontend ✅, mi3-backend ✅
 
 ### 2026-04-17f — Spec pedidosya-cash-flow: flujo completo PedidosYA Efectivo en caja3
 
