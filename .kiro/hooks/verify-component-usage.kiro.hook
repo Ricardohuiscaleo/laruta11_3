@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Verify Component Usage",
+  "description": "Before writing to a component file, verify it's actually imported and used in the app. Prevents modifying dead code or unused layouts while the real component is elsewhere (e.g., modifying Next.js layout when the app uses an SPA ComprasSection).",
+  "version": "1",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": [
+      "write"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "If the file being written is a React component (.tsx/.jsx) in mi3/frontend, verify: Is this component actually imported and rendered somewhere? Check if it's referenced in ComprasSection.tsx, AdminShell.tsx, or other SPA entry points — NOT just in Next.js app/ pages that may not be used. The app uses SPA routing via AdminShell.tsx with lazy-loaded sections, NOT Next.js file-based routing for admin pages. If the component appears to be unused or you're modifying a layout.tsx that's not the real entry point, warn: \"⚠️ This file may not be used in production. The real component might be in components/admin/sections/\". If the file IS used, say \"✅ Component verified\"."
+  }
+}

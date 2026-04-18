@@ -51,14 +51,13 @@ class AwsSignatureService
         }
 
         $host = parse_url($url, PHP_URL_HOST);
-        $rawPath = parse_url($url, PHP_URL_PATH);
+        $rawPath = parse_url($url, PHP_URL_PATH) ?? '/';
         $pathSegments = explode('/', $rawPath);
         $encodedPath = implode('/', array_map(fn(string $s): string => rawurlencode($s), $pathSegments));
 
         $now = gmdate('Ymd\THis\Z');
         $date = gmdate('Ymd');
 
-        // Build canonical headers (must be sorted by key)
         $headers = [
             'content-type' => 'application/json',
             'host' => $host,
@@ -130,7 +129,7 @@ class AwsSignatureService
         }
 
         $host = parse_url($url, PHP_URL_HOST);
-        $rawPath = parse_url($url, PHP_URL_PATH);
+        $rawPath = parse_url($url, PHP_URL_PATH) ?? '/';
         $pathSegments = explode('/', $rawPath);
         $encodedPath = implode('/', array_map(fn(string $s): string => rawurlencode($s), $pathSegments));
 
