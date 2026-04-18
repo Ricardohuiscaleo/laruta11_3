@@ -106,6 +106,7 @@ export default function ComprasLayout({ children }: { children: React.ReactNode 
     <ComprasProvider>
     <div className="flex flex-col h-full">
       <nav className="flex items-center gap-1 overflow-x-auto border-b bg-white px-2 py-1.5 md:px-4">
+        <span className="text-xs text-gray-300 mr-1 flex-shrink-0">v1.5</span>
         <div className="flex flex-1 gap-1">
           {tabs.map(({ href, label, icon: Icon }) => {
             const active = pathname.startsWith(href);
