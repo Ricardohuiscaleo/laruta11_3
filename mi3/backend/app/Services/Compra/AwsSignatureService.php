@@ -14,9 +14,9 @@ class AwsSignatureService
 
     public function __construct()
     {
-        $this->accessKey = config('services.aws.key', env('AWS_ACCESS_KEY_ID', ''));
-        $this->secretKey = config('services.aws.secret', env('AWS_SECRET_ACCESS_KEY', ''));
-        $this->region = config('services.aws.region', env('AWS_DEFAULT_REGION', 'us-east-1'));
+        $this->accessKey = config('services.aws.key') ?? env('AWS_ACCESS_KEY_ID', '');
+        $this->secretKey = config('services.aws.secret') ?? env('AWS_SECRET_ACCESS_KEY', '');
+        $this->region = config('services.aws.region') ?? env('AWS_DEFAULT_REGION', 'us-east-1');
     }
 
     public function getRegion(): string
