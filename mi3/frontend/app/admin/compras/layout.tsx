@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Plus, FileText, Package, TrendingUp, BarChart3, Wifi, WifiOff } from 'lucide-react';
+import { Plus, FileText, Package, TrendingUp, BarChart3, Wifi, WifiOff, Terminal } from 'lucide-react';
 import { ComprasProvider } from '@/contexts/ComprasContext';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { getEcho } from '@/lib/echo';
@@ -13,6 +13,7 @@ const tabs = [
   { href: '/admin/compras/stock', label: 'Stock', icon: Package },
   { href: '/admin/compras/proyeccion', label: 'Proyección', icon: TrendingUp },
   { href: '/admin/compras/kpis', label: 'KPIs', icon: BarChart3 },
+  { href: '/admin/compras/consola', label: 'Consola', icon: Terminal },
 ];
 
 interface CompraEvent {

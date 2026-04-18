@@ -132,6 +132,46 @@ class ExtraccionController extends Controller
     }
 
     /**
+     * List extraction logs for the debug console.
+     * GET /api/v1/admin/compras/extraction-logs
+     */
+    public function extractionLogs(Request $request): JsonResponse
+    {
+        $perPage = min((int) $request->input('per_page', 20), 50);
+        $status = $request->input('status');
+
+        $query = \App\Models\AiExtractionLog::orderBy('created_at', 'desc');
+
+        if ($status && in_array($status, ['success', 'failed', 'partial'], true)) {
+            $query->where('status', $status);
+        }
+
+        $logs = $query->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'data' => $logs->items(),
+            'total' => $logs->total(),
+            'current_page' => $logs->currentPage(),
+            'total_pages' => $logs->lastPage(),
+        ]);
+    }
+
+    /**
+     * Get a single extraction log with full detail.
+     * GET /api/v1/admin/compras/extraction-logs/{id}
+     */
+    public function extractionLogDetail(int $id): JsonResponse
+    {
+        $log = \App\Models\AiExtractionLog::findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $log,
+        ]);
+    }
+
+    /**
      * Return extraction quality metrics from ai_extraction_logs.
      * GET /api/v1/admin/compras/extraction-quality
      */
