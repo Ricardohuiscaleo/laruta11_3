@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`9025e58`) — pedidosya_cash: fix root cause - pedidosya_price en get_menu_products.php |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`93df1e1`) — pipeline multi-modelo + consola debug v1.5 |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`79f0187`) — pipeline SSE visual en Registro + consola debug v1.5 |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`bb15e1a`) — pipeline multi-modelo + fix parse_url Rekognition |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -88,17 +88,27 @@
 
 ## Sesiones Recientes
 
+### 2026-04-18d — Pipeline SSE visual en RegistroPage + fix parse_url + ComprasSection v1.5
+
+**Cambios:**
+- `mi3/frontend/app/admin/compras/registro/page.tsx`: Integrado `ExtractionPipeline` SSE visual — 1 foto muestra pipeline 3 fases, múltiples fotos usan endpoint síncrono con progreso "Procesando 1/3...".
+- `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Agregada pestaña "Consola" + tag "v1.5" (el componente SPA real, no el layout de Next.js).
+- `mi3/backend/app/Services/Compra/AwsSignatureService.php`: Fix `parse_url()` null path para Rekognition root endpoint (`?? '/'`).
+- `mi3/frontend/Dockerfile`: Agregado `ARG CACHEBUST=1` para invalidar Docker layer cache.
+- Hook QA: `verify-component-usage` — verifica que componentes modificados se usen en producción (previene modificar layouts muertos).
+
+**Commits:** `93df1e1`, `bb15e1a`, `79f0187`
+**Deploys:** mi3-frontend ✅ (`79f0187`), mi3-backend ✅ (`bb15e1a`)
+
 ### 2026-04-18b — Consola debug extracción IA + fix type errors Next.js strict mode
 
 **Cambios:**
-- `mi3/backend/app/Http/Controllers/Admin/ExtraccionController.php`: Nuevos endpoints `extractionLogs()` y `extractionLogDetail()` para listar/ver logs de extracción.
-- `mi3/backend/routes/api.php`: Rutas `GET compras/extraction-logs` y `GET compras/extraction-logs/{id}`.
-- `mi3/frontend/app/admin/compras/layout.tsx`: Nueva pestaña "Consola" con ícono Terminal.
-- `mi3/frontend/app/admin/compras/consola/page.tsx`: Nuevo — página debug con stats (total/exitosas/fallidas/tiempo/confianza), lista paginada de logs expandibles con 4 tabs (Fases pipeline, Datos extraídos, Confianza barras, Raw JSON).
-- Fix: `Boolean()` wrap para `unknown && JSX` pattern, `String()`/`Number()` en vez de `as string`/`as number` en JSX children — Next.js strict type check.
+- `mi3/backend/app/Http/Controllers/Admin/ExtraccionController.php`: Nuevos endpoints `extractionLogs()` y `extractionLogDetail()`.
+- `mi3/frontend/app/admin/compras/consola/page.tsx`: Página debug con stats, logs paginados, 4 tabs (Fases, Datos, Confianza, Raw).
+- Fix: `Boolean()` wrap para `unknown && JSX`, `String()`/`Number()` en JSX children.
 
-**Commits:** `9b290d5`, `40681aa`, `9710275`, `25e7802`, `c43f225`
-**Deploys:** mi3-frontend ✅ (`c43f225`), mi3-backend ✅ (`9b290d5`)
+**Commits:** `9b290d5`, `40681aa`, `c43f225`
+**Deploys:** mi3-frontend ✅, mi3-backend ✅
 
 ### 2026-04-18a — Spec compras-pipeline-multimodelo: Rekognition + Nova Micro + Nova Pro + SSE
 
