@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`7e5ea66`) — ingredient categories: tabs dinámicos, API con categorías |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`0edcde8`) — Pipeline multi-agente 4 fases + ReconciliationQuestions UI |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`0106e5b`) — Pipeline multi-agente + FeedbackService + fix migración duplicada |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`7edf965`) — Compras v1.8 pipeline multi-agente 4 fases |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`b818a04`) — Pipeline multi-agente + SSE engine fix + datos preservados |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -95,6 +95,17 @@
 
 ## Sesiones Recientes
 
+### 2026-04-19f — Fixes post-deploy pipeline multi-agente: SSE engine, datos vacíos, migración, v1.8
+
+**Cambios:**
+- `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: SSE emits cambiados de `engine: 'gemini'` a `engine: 'multi-agent'` en ejecutarMultiAgente(). Validación ya no reemplaza `$extracted` con `datos_validados` vacío. Reconciliación aplica merge selectivo de campos en vez de reemplazar todo.
+- `mi3/backend/app/Http/Controllers/Admin/ExtraccionController.php`: `engine` promovido a nivel raíz del evento SSE (antes estaba enterrado en `data`, frontend no lo detectaba).
+- `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Versión v1.7 → v1.8.
+- Eliminada migración duplicada `2026_04_19_create_extraction_feedback_table.php` (tabla ya existía desde `2026_04_15`).
+
+**Commits:** `0106e5b`, `ee1f561`, `b818a04`, `7edf965`
+**Deploys:** mi3-backend ✅ (×3), mi3-frontend ✅ (`7edf965`)
+
 ### 2026-04-19e — Spec multi-agent-compras-pipeline: implementación completa tareas 2.6-10
 
 **Cambios:**
@@ -136,24 +147,6 @@
 **Commits:** `f31cfe7`, `7e5ea66`
 **Deploys:** caja3 ✅ (`7e5ea66`), mi3-backend ✅ (`7e5ea66`)
 **Pendiente:** ~~Ejecutar `caja3/sql/fix_ingredient_categories.sql` en BD~~ EJECUTADO. Fix adicional: double-encoded UTF-8 corregido con `CONVERT(CAST(CONVERT(category USING latin1) AS BINARY) USING utf8mb4)`. Verificado via API: 13 categorías limpias, sin caracteres corruptos.
-
-### 2026-04-19b — Fixes post-deploy Gemini: equivalencias, fecha, sidebar, presupuesto IA, crear ingrediente inline
-
-**Cambios:**
-- `mi3/backend/app/Services/Compra/GeminiService.php`: Fix google_api_key lowercase fallback para Coolify env. Prompts producto/bascula: "NO uses fechas de vencimiento o fabricación".
-- `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: normalizeFecha() fallback a hoy si fecha null/inválida/empaque. reconcileSingleItemTotal() ajusta subtotal item único al monto_total boleta. applyProductEquivalences() skip cuando item ya viene en unidad base (kg/kilos/g/unidad/litro/ml). Base units expandida con variantes (kilos, litros, gramos).
-- `mi3/backend/app/Services/Loan/LoanService.php`: Adelanto de sueldo se registra como -abs() (descuento, no abono).
-- `mi3/backend/app/Http/Controllers/Admin/ExtraccionController.php`: Nuevo endpoint `GET ai-budget` con tokens, costo USD, saldo CLP.
-- `mi3/backend/routes/api.php`: Ruta `compras/ai-budget`.
-- `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Sticky header con presupuesto IA (saldo/total + barra progreso + tokens + usos).
-- `mi3/frontend/components/admin/AdminShell.tsx`: Sidebar fija desktop (sticky top-0 h-screen).
-- `mi3/frontend/components/admin/AdminSidebarSPA.tsx`: h-full para sidebar.
-- `mi3/frontend/app/admin/compras/registro/page.tsx`: Botón "✨ Crear como ingrediente" cuando match < 75%. Tag "🆕 Nuevo" post-creación.
-- `mi3/frontend/app/admin/compras/consola/page.tsx`: Fases dinámicas Gemini/Bedrock + tokens/costo USD.
-- BD: Compra #281 fecha corregida 2023→2026. Ajuste #38 Andrés: +50000→-50000.
-
-**Commits:** `2de4203`→`2ce0240` (13 commits)
-**Deploys:** mi3-frontend ✅ (`2ce0240`), mi3-backend ✅ (`f91112d`)
 
 ---
 
