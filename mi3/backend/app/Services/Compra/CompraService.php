@@ -2,6 +2,7 @@
 
 namespace App\Services\Compra;
 
+use App\Enums\IngredientCategory;
 use App\Events\CompraRegistrada;
 use App\Models\Compra;
 use App\Models\CompraDetalle;
@@ -287,9 +288,14 @@ class CompraService
      */
     public function crearIngrediente(array $data): Ingredient
     {
+        $category = $data['category'] ?? null;
+        if ($category !== null && !IngredientCategory::isValid($category)) {
+            $category = null;
+        }
+
         return Ingredient::create([
             'name'            => $data['name'],
-            'category'        => $data['category'] ?? null,
+            'category'        => $category,
             'unit'            => $data['unit'] ?? 'unidad',
             'cost_per_unit'   => $data['cost_per_unit'] ?? 0,
             'current_stock'   => 0,

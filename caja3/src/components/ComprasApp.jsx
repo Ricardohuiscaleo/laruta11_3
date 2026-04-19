@@ -5,7 +5,8 @@ export default function ComprasApp() {
   const [activeTab, setActiveTab] = useState('registro');
   const [showKpiMenu, setShowKpiMenu] = useState(false);
   const [showTabMenu, setShowTabMenu] = useState(false);
-  const [stockTab, setStockTab] = useState('ingredientes');
+  const [stockTab, setStockTab] = useState('todos');
+  const [stockCategories, setStockCategories] = useState([]);
   const [stockFilter, setStockFilter] = useState('');
   const [stockSort, setStockSort] = useState('criticidad');
   const [showAjusteMarkdown, setShowAjusteMarkdown] = useState(false);
@@ -109,10 +110,18 @@ export default function ComprasApp() {
         headers: { 'Cache-Control': 'no-cache' }
       });
       const data = await response.json();
-      setIngredientes(Array.isArray(data) ? data : []);
+      if (Array.isArray(data)) {
+        // Legacy format fallback
+        setIngredientes(data);
+        setStockCategories([]);
+      } else {
+        setIngredientes(data.items || []);
+        setStockCategories(data.categories || []);
+      }
     } catch (error) {
       console.error('Error:', error);
       setIngredientes([]);
+      setStockCategories([]);
     }
   };
 
@@ -1130,39 +1139,64 @@ export default function ComprasApp() {
               </div>
             )}
           </div>
-          <div style={{display: 'flex', gap: '8px', marginBottom: '16px'}}>
+          <div style={{display: 'flex', gap: '6px', marginBottom: '16px', overflowX: 'auto', flexWrap: 'nowrap', paddingBottom: '4px'}}>
             <button
-              onClick={() => setStockTab('ingredientes')}
+              onClick={() => setStockTab('todos')}
               style={{
-                flex: 1,
-                padding: '12px',
+                padding: '8px 14px',
                 border: 'none',
-                borderRadius: '8px',
-                background: stockTab === 'ingredientes' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : '#f1f5f9',
-                color: stockTab === 'ingredientes' ? 'white' : '#64748b',
+                borderRadius: '20px',
+                background: stockTab === 'todos' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : '#f1f5f9',
+                color: stockTab === 'todos' ? 'white' : '#64748b',
                 fontWeight: '600',
+                fontSize: '13px',
                 cursor: 'pointer',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
               }}
             >
-              Ingredientes
+              Todos
             </button>
             <button
               onClick={() => setStockTab('bebidas')}
               style={{
-                flex: 1,
-                padding: '12px',
+                padding: '8px 14px',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '20px',
                 background: stockTab === 'bebidas' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : '#f1f5f9',
                 color: stockTab === 'bebidas' ? 'white' : '#64748b',
                 fontWeight: '600',
+                fontSize: '13px',
                 cursor: 'pointer',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
               }}
             >
               Bebidas
             </button>
+            {stockCategories.map(cat => (
+              <button
+                key={cat.category}
+                onClick={() => setStockTab(cat.category)}
+                style={{
+                  padding: '8px 14px',
+                  border: 'none',
+                  borderRadius: '20px',
+                  background: stockTab === cat.category ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : '#f1f5f9',
+                  color: stockTab === cat.category ? 'white' : '#64748b',
+                  fontWeight: '600',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
+                }}
+              >
+                {cat.category} ({cat.count})
+              </button>
+            ))}
           </div>
 
           <div style={{display: 'flex', gap: '8px', marginBottom: '16px'}}>
@@ -1200,12 +1234,13 @@ export default function ComprasApp() {
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px'}}>
               {ingredientes
                 .filter(ing => {
+                  if (stockTab === 'todos') return true;
                   if (stockTab === 'bebidas') {
                     // Bebidas: subcategory_id 10=Jugos, 11=Bebidas, 27=Café, 28=Té
                     return ing.type === 'product' && [10, 11, 27, 28].includes(parseInt(ing.subcategory_id));
                   }
-                  // Ingredientes: todos los ingredientes (type='ingredient')
-                  return ing.type === 'ingredient';
+                  // Category filter for ingredients
+                  return ing.type === 'ingredient' && ing.category === stockTab;
                 })
                 .filter(ing => ing.name.toLowerCase().includes(stockFilter.toLowerCase()))
                 .sort((a, b) => {

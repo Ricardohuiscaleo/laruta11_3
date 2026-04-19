@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Compra;
 
+use App\Enums\IngredientCategory;
 use Illuminate\Support\Facades\Log;
 
 class GeminiService
@@ -308,6 +309,10 @@ class GeminiService
                             'subtotal' => ['type' => 'integer'],
                             'descuento' => ['type' => 'integer'],
                             'empaque_detalle' => ['type' => 'string'],
+                            'categoria_sugerida' => [
+                                'type' => 'string',
+                                'enum' => array_merge(IngredientCategory::VALID_CATEGORIES, ['Sin categoría']),
+                            ],
                         ],
                         'required' => ['nombre', 'cantidad', 'unidad', 'precio_unitario', 'subtotal'],
                     ],
@@ -398,7 +403,7 @@ PROMPT;
   "fecha": "YYYY-MM-DD",
   "metodo_pago": "cash|transfer|card|credit",
   "tipo_compra": "ingredientes|insumos|equipamiento|otros",
-  "items": [{"nombre": "...", "cantidad": N, "unidad": "kg|unidad|g|L", "precio_unitario": N, "subtotal": N, "descuento": 0, "empaque_detalle": null}],
+  "items": [{"nombre": "...", "cantidad": N, "unidad": "kg|unidad|g|L", "precio_unitario": N, "subtotal": N, "descuento": 0, "empaque_detalle": null, "categoria_sugerida": "Carnes|Vegetales|..."}],
   "monto_neto": N, "iva": N, "monto_total": N,
   "peso_bascula": null, "unidad_bascula": null,
   "notas_ia": "observaciones"
@@ -439,6 +444,11 @@ Proveedores conocidos: {$suppliers}
 Ingredientes conocidos: {$products}
 {$patterns}
 
+CATEGORÍAS DE INGREDIENTES:
+Para cada ítem, infiere la categoría más probable entre: Carnes, Vegetales, Salsas, Condimentos, Panes, Embutidos, Pre-elaborados, Lácteos, Bebidas, Gas, Servicios, Packaging, Limpieza.
+Si no puedes inferir con confianza, usa "Sin categoría".
+Incluye el campo "categoria_sugerida" en cada ítem.
+
 Formato respuesta:
 {$this->jsonFormat()}
 PROMPT;
@@ -472,6 +482,11 @@ FORMATO VANNI (RUT 76.979.850-1): cantidades directas, precios netos, TOTAL incl
 Proveedores conocidos: {$suppliers}
 Ingredientes conocidos: {$products}
 
+CATEGORÍAS DE INGREDIENTES:
+Para cada ítem, infiere la categoría más probable entre: Carnes, Vegetales, Salsas, Condimentos, Panes, Embutidos, Pre-elaborados, Lácteos, Bebidas, Gas, Servicios, Packaging, Limpieza.
+Si no puedes inferir con confianza, usa "Sin categoría".
+Incluye el campo "categoria_sugerida" en cada ítem.
+
 Formato respuesta:
 {$this->jsonFormat()}
 PROMPT;
@@ -502,6 +517,11 @@ Equivalencias conocidas:
 
 Ingredientes del negocio: {$products}
 
+CATEGORÍAS DE INGREDIENTES:
+Para cada ítem, infiere la categoría más probable entre: Carnes, Vegetales, Salsas, Condimentos, Panes, Embutidos, Pre-elaborados, Lácteos, Bebidas, Gas, Servicios, Packaging, Limpieza.
+Si no puedes inferir con confianza, usa "Sin categoría".
+Incluye el campo "categoria_sugerida" en cada ítem.
+
 Formato respuesta:
 {$this->jsonFormat()}
 PROMPT;
@@ -525,6 +545,11 @@ REGLAS BÁSCULAS DE FERIA CHILENA:
 - fecha: NO uses fechas de vencimiento o fabricación. Si no hay fecha de compra visible, usa null.
 
 Ingredientes del negocio: {$products}
+
+CATEGORÍAS DE INGREDIENTES:
+Para cada ítem, infiere la categoría más probable entre: Carnes, Vegetales, Salsas, Condimentos, Panes, Embutidos, Pre-elaborados, Lácteos, Bebidas, Gas, Servicios, Packaging, Limpieza.
+Si no puedes inferir con confianza, usa "Sin categoría".
+Incluye el campo "categoria_sugerida" en cada ítem.
 
 Formato respuesta:
 {$this->jsonFormat()}
@@ -552,6 +577,11 @@ Mapeo personas → proveedores:
 - Para ARIAKA: item = "Servicios Delivery", tipo_compra = "otros"
 - Para Abastible/Elton San Martin: item = "gas 15", tipo_compra = "ingredientes"
 
+CATEGORÍAS DE INGREDIENTES:
+Para cada ítem, infiere la categoría más probable entre: Carnes, Vegetales, Salsas, Condimentos, Panes, Embutidos, Pre-elaborados, Lácteos, Bebidas, Gas, Servicios, Packaging, Limpieza.
+Si no puedes inferir con confianza, usa "Sin categoría".
+Incluye el campo "categoria_sugerida" en cada ítem.
+
 Formato respuesta:
 {$this->jsonFormat()}
 PROMPT;
@@ -578,6 +608,11 @@ Montos en pesos chilenos enteros. Si no hay IVA: neto=round(total/1.19).
 {$rutMap}
 Proveedores: {$suppliers}
 Ingredientes: {$products}
+
+CATEGORÍAS DE INGREDIENTES:
+Para cada ítem, infiere la categoría más probable entre: Carnes, Vegetales, Salsas, Condimentos, Panes, Embutidos, Pre-elaborados, Lácteos, Bebidas, Gas, Servicios, Packaging, Limpieza.
+Si no puedes inferir con confianza, usa "Sin categoría".
+Incluye el campo "categoria_sugerida" en cada ítem.
 
 Formato respuesta:
 {$this->jsonFormat()}

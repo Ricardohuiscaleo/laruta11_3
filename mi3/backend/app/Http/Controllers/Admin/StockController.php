@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\IngredientCategory;
 use App\Http\Controllers\Controller;
 use App\Services\Compra\StockService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class StockController extends Controller
 {
@@ -102,7 +104,7 @@ class StockController extends Controller
             'current_stock' => 'nullable|numeric',
             'min_stock_level' => 'nullable|numeric|min:0',
             'name' => 'nullable|string|max:100',
-            'category' => 'nullable|string|max:50',
+            'category' => ['nullable', 'string', Rule::in(IngredientCategory::VALID_CATEGORIES)],
             'is_active' => 'nullable|boolean',
         ]);
 

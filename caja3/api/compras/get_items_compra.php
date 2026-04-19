@@ -133,7 +133,27 @@ try {
     // Combinar ambos arrays
     $items = array_merge($ingredientes, $productos);
 
-    echo json_encode($items);
+    // Get distinct categories with counts
+    $stmt_cats = $pdo->query("
+        SELECT category, COUNT(*) as count 
+        FROM ingredients 
+        WHERE is_active = 1 AND category IS NOT NULL AND category != ''
+        GROUP BY category 
+        ORDER BY category
+    ");
+    $categories = $stmt_cats->fetchAll(PDO::FETCH_ASSOC);
+
+    $valid_categories = [
+        'Carnes', 'Vegetales', 'Salsas', 'Condimentos', 'Panes',
+        'Embutidos', 'Pre-elaborados', 'Lácteos', 'Bebidas',
+        'Gas', 'Servicios', 'Packaging', 'Limpieza'
+    ];
+
+    echo json_encode([
+        'items' => $items,
+        'categories' => $categories,
+        'valid_categories' => $valid_categories
+    ]);
 
 }
 catch (Exception $e) {
