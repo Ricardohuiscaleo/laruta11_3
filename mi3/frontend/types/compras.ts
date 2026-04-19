@@ -165,6 +165,7 @@ export interface RegistroItem {
   notas_descuento?: string | null;
   match_score?: number;
   match_name?: string;
+  categoria_sugerida?: string | null;
 }
 
 export interface RegistroGroup {

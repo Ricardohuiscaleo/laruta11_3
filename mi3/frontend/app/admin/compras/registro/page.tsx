@@ -211,6 +211,7 @@ export default function RegistroPage() {
             subtotal: item.subtotal || (item.cantidad || 0) * (item.precio_unitario || 0),
             empaque_detalle: item.empaque_detalle || null,
             notas_descuento: item.notas_descuento || null,
+            categoria_sugerida: item.categoria_sugerida || null,
             match_score: sug.score,
             match_name: m.name,
           };
@@ -222,6 +223,7 @@ export default function RegistroPage() {
           subtotal: item.subtotal || (item.cantidad || 0) * (item.precio_unitario || 0),
           empaque_detalle: item.empaque_detalle || null,
           notas_descuento: item.notas_descuento || null,
+          categoria_sugerida: item.categoria_sugerida || null,
           match_score: sug?.score, match_name: sug?.match?.name,
         };
       });
@@ -280,6 +282,7 @@ export default function RegistroPage() {
           subtotal: item.subtotal || (item.cantidad || 0) * (item.precio_unitario || 0),
           empaque_detalle: item.empaque_detalle || null,
           notas_descuento: item.notas_descuento || null,
+          categoria_sugerida: item.categoria_sugerida || null,
           match_score: sug.score, match_name: m.name,
         };
       }
@@ -290,6 +293,7 @@ export default function RegistroPage() {
         subtotal: item.subtotal || (item.cantidad || 0) * (item.precio_unitario || 0),
         empaque_detalle: item.empaque_detalle || null,
         notas_descuento: item.notas_descuento || null,
+        categoria_sugerida: item.categoria_sugerida || null,
         match_score: sug?.score, match_name: sug?.match?.name,
       };
     });
@@ -618,7 +622,7 @@ export default function RegistroPage() {
                           <input type="number" value={item.cantidad || ''} step="any" placeholder="Cant."
                             onChange={e => updateItem(gi, ii, 'cantidad', e.target.value === '' ? 0 : parseFloat(e.target.value))}
                             onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
-                            className="w-16 rounded border px-2 py-1 text-[16px] text-center" />
+                            className="w-16 rounded border px-2 py-1 text-[16px] text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                           <select value={item.unidad} onChange={e => updateItem(gi, ii, 'unidad', e.target.value)}
                             className="w-20 rounded border px-1 py-1 text-xs text-gray-600">
                             <option value="kg">kg</option>
@@ -627,11 +631,17 @@ export default function RegistroPage() {
                             <option value="g">g</option>
                             <option value="ml">ml</option>
                           </select>
-                          <input type="number" value={item.precio_unitario || ''} step="any" placeholder="Precio"
-                            onChange={e => updateItem(gi, ii, 'precio_unitario', e.target.value === '' ? 0 : parseFloat(e.target.value))}
-                            onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
-                            className="w-20 rounded border px-2 py-1 text-[16px] text-right" />
-                          <span className="w-20 text-right text-xs font-medium">{formatearPesosCLP(item.subtotal)}</span>
+                          <div className="relative w-24">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[14px]">$</span>
+                            <input type="number" value={item.precio_unitario || ''} step="any" placeholder="Precio"
+                              onChange={e => updateItem(gi, ii, 'precio_unitario', e.target.value === '' ? 0 : parseFloat(e.target.value))}
+                              onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
+                              className="w-full rounded border pl-5 pr-2 py-1 text-[16px] text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                          </div>
+                          <div className="w-20 text-right">
+                            <span className="text-[10px] text-gray-400 block leading-none">Total</span>
+                            <span className="text-xs font-medium">{formatearPesosCLP(item.subtotal)}</span>
+                          </div>
                           <button onClick={() => removeItem(gi, ii)} className="text-red-400 hover:text-red-600"><X className="h-3.5 w-3.5" /></button>
                         </div>
                         {/* Match + empaque info */}
@@ -658,6 +668,7 @@ export default function RegistroPage() {
                                 try {
                                   const res = await comprasApi.post<{ success: boolean; ingrediente: { id: number; name: string; unit: string; cost_per_unit: number } }>('/compras/ingrediente', {
                                     name: item.nombre,
+                                    category: item.categoria_sugerida || null,
                                     unit: item.unidad,
                                     cost_per_unit: item.precio_unitario || 0,
                                     supplier: group.proveedor || null,
@@ -673,9 +684,10 @@ export default function RegistroPage() {
                               className="inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-200 px-2 py-0.5 text-xs text-blue-700 hover:bg-blue-100 transition-colors"
                             >
                               <Sparkles className="h-3 w-3" />
-                              Crear &quot;{item.nombre}&quot; — {
-                                { ingredientes: 'ingrediente', insumos: 'insumo', equipamiento: 'equipamiento', otros: 'otro' }[group.tipo_compra as string] || 'item'
+                              Crear &quot;{item.nombre}&quot; &gt; {
+                                { ingredientes: 'ingredientes', insumos: 'insumos', equipamiento: 'equipamiento', otros: 'otros' }[group.tipo_compra as string] || 'insumos'
                               }
+                              {item.categoria_sugerida && <span className="text-blue-500"> &gt; {item.categoria_sugerida}</span>}
                             </button>
                             </>
                           )}
