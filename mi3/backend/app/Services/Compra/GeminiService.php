@@ -495,6 +495,7 @@ REGLAS:
 - Bolsas azules/rosadas con productos redondos oscuros = probablemente Palta Hass
 - Si hay texto de peso visible, úsalo. Si no, estima.
 - tipo_imagen = "producto", tipo_compra = "ingredientes"
+- fecha: NO uses fechas de vencimiento o fabricación del empaque. Si no hay fecha de compra visible, usa null.
 
 Equivalencias conocidas:
 {$equivalences}
@@ -521,6 +522,7 @@ REGLAS BÁSCULAS DE FERIA CHILENA:
 - Marcas: FERRAWYY, HENKEL, CAMRY, EXCELL, T-SCALE
 - Si se ve el producto (paltas, tomates), identificarlo
 - tipo_imagen = "bascula"
+- fecha: NO uses fechas de vencimiento o fabricación. Si no hay fecha de compra visible, usa null.
 
 Ingredientes del negocio: {$products}
 

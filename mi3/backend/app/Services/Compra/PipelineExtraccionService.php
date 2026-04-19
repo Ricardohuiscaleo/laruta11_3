@@ -507,9 +507,44 @@ class PipelineExtraccionService
      */
     private function postProcess(array $data): array
     {
+        $data = $this->normalizeFecha($data);
         $data = $this->mapPersonToSupplier($data);
         $data = $this->matchProveedorByRut($data);
         $data = $this->applySupplierRules($data);
+        return $data;
+    }
+
+    /**
+     * Normalize fecha: fallback to today if null, empty, or looks like a packaging date.
+     */
+    private function normalizeFecha(array $data): array
+    {
+        $fecha = $data['fecha'] ?? null;
+        $today = date('Y-m-d');
+
+        if (empty($fecha)) {
+            $data['fecha'] = $today;
+            $data['notas_ia'] = ($data['notas_ia'] ?? '') . ' [Fecha: hoy (no detectada)]';
+            return $data;
+        }
+
+        // Validate date format and reject packaging/expiry dates (year too old or too future)
+        $parsed = date_create($fecha);
+        if (!$parsed) {
+            $data['fecha'] = $today;
+            $data['notas_ia'] = ($data['notas_ia'] ?? '') . " [Fecha '{$fecha}' inválida, usando hoy]";
+            return $data;
+        }
+
+        $year = (int) $parsed->format('Y');
+        $currentYear = (int) date('Y');
+
+        // If year is more than 1 year in the past or in the future, it's likely a packaging date
+        if ($year < $currentYear - 1 || $year > $currentYear + 1) {
+            $data['notas_ia'] = ($data['notas_ia'] ?? '') . " [Fecha '{$fecha}' parece empaque/vencimiento, usando hoy]";
+            $data['fecha'] = $today;
+        }
+
         return $data;
     }
 
