@@ -20,13 +20,13 @@ Implementación incremental que comienza con la corrección de datos en BD, lueg
     - Implementar método estático `all(): array`
     - _Requisitos: 6.1, 6.3_
 
-  - [ ]* 1.3 Escribir test unitario para IngredientCategory
+  - [x]* 1.3 Escribir test unitario para IngredientCategory
     - Verificar que `isValid()` acepta todas las categorías válidas
     - Verificar que `isValid()` rechaza strings inválidos y null
     - Verificar que `all()` retorna exactamente 13 elementos
     - _Requisitos: 6.1, 6.2_
 
-- [ ] 2. Backend mi3 - Validación y creación de ingredientes
+- [x] 2. Backend mi3 - Validación y creación de ingredientes
   - [x] 2.1 Agregar validación de categoría en StockController::update()
     - Importar `App\Enums\IngredientCategory`
     - Usar `Rule::in(IngredientCategory::VALID_CATEGORIES)` en la validación del campo `category`
@@ -38,7 +38,7 @@ Implementación incremental que comienza con la corrección de datos en BD, lueg
     - Si categoría inválida, asignar `null` en lugar de rechazar (la IA puede enviar valores incorrectos)
     - _Requisitos: 5.3, 5.5, 2.2_
 
-  - [ ]* 2.3 Escribir test de propiedad: validación acepta/rechaza categorías
+  - [x]* 2.3 Escribir test de propiedad: validación acepta/rechaza categorías
     - **Propiedad 5: Validación de categorías rechaza valores inválidos**
     - **Valida: Requisitos 6.1, 6.2**
 
@@ -61,7 +61,7 @@ Implementación incremental que comienza con la corrección de datos en BD, lueg
     - El campo ya fluye naturalmente en `$extracted['items']`, solo verificar que no se elimine en `postProcess()`
     - _Requisitos: 5.1, 5.3_
 
-  - [ ]* 4.4 Escribir test de propiedad: categoría sugerida se aplica al crear ingrediente
+  - [x]* 4.4 Escribir test de propiedad: categoría sugerida se aplica al crear ingrediente
     - **Propiedad 4: Aplicación de categoría sugerida al crear ingrediente**
     - **Valida: Requisitos 5.3, 5.5**
 
@@ -75,7 +75,7 @@ Implementación incremental que comienza con la corrección de datos en BD, lueg
     - Incluir array `valid_categories` con las 13 categorías hardcodeadas (mismas que la constante en mi3)
     - _Requisitos: 4.1, 4.2, 4.3, 6.3_
 
-  - [ ]* 6.2 Escribir test de propiedad: categorías extraídas correctamente
+  - [x]* 6.2 Escribir test de propiedad: categorías extraídas correctamente
     - **Propiedad 3: Extracción correcta de categorías desde ingredientes activos**
     - **Valida: Requisitos 4.1, 4.2, 4.3**
 
@@ -100,7 +100,7 @@ Implementación incremental que comienza con la corrección de datos en BD, lueg
     - Tabs de categoría: filtra por `category === tabSeleccionado`
     - _Requisitos: 3.2, 3.3, 3.4_
 
-  - [ ]* 7.4 Escribir test de propiedad: filtrado correcto por categoría
+  - [x] 7.4 Escribir test de propiedad: filtrado correcto por categoría
     - **Propiedad 2: Filtrado correcto por categoría seleccionada**
     - **Valida: Requisitos 3.2**
 
