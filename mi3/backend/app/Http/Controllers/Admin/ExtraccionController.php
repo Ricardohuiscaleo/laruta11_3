@@ -158,6 +158,45 @@ class ExtraccionController extends Controller
     }
 
     /**
+     * Get AI budget stats (tokens, cost, remaining budget).
+     * GET /api/v1/admin/compras/ai-budget
+     */
+    public function aiBudget(): JsonResponse
+    {
+        $budgetClp = 10000; // CLP 10,000 prepago
+        $usdToClp = 950; // approximate rate
+
+        $stats = \App\Models\AiExtractionLog::where('model_id', 'like', 'gemini%')
+            ->selectRaw('COUNT(*) as total_extractions')
+            ->selectRaw("SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(raw_response, '$.tokens.total.prompt')) AS UNSIGNED)) as total_prompt_tokens")
+            ->selectRaw("SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(raw_response, '$.tokens.total.candidates')) AS UNSIGNED)) as total_candidates_tokens")
+            ->selectRaw("SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(raw_response, '$.estimated_cost_usd')) AS DECIMAL(10,8))) as total_cost_usd")
+            ->first();
+
+        $totalExtractions = (int) ($stats->total_extractions ?? 0);
+        $promptTokens = (int) ($stats->total_prompt_tokens ?? 0);
+        $candidatesTokens = (int) ($stats->total_candidates_tokens ?? 0);
+        $totalCostUsd = (float) ($stats->total_cost_usd ?? 0);
+        $totalCostClp = (int) round($totalCostUsd * $usdToClp);
+        $remainingClp = $budgetClp - $totalCostClp;
+        $budgetPct = $budgetClp > 0 ? round(($totalCostClp / $budgetClp) * 100, 1) : 0;
+
+        return response()->json([
+            'success' => true,
+            'budget_clp' => $budgetClp,
+            'spent_clp' => $totalCostClp,
+            'remaining_clp' => max(0, $remainingClp),
+            'budget_pct' => $budgetPct,
+            'total_cost_usd' => round($totalCostUsd, 6),
+            'total_extractions' => $totalExtractions,
+            'prompt_tokens' => $promptTokens,
+            'candidates_tokens' => $candidatesTokens,
+            'total_tokens' => $promptTokens + $candidatesTokens,
+            'model' => 'gemini-2.5-flash-lite',
+        ]);
+    }
+
+    /**
      * Get a single extraction log with full detail.
      * GET /api/v1/admin/compras/extraction-logs/{id}
      */
