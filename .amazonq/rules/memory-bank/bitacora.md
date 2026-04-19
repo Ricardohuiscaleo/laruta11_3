@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-18)
+## Estado Actual (2026-04-19)
 
 ### Aplicaciones Desplegadas
 
@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`9025e58`) — pedidosya_cash: fix root cause - pedidosya_price en get_menu_products.php |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`e7f83c6`) — pipeline SSE visual + consola debug v1.6 |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`e7f83c6`) — pipeline multi-modelo + error logging detallado. ⚠️ Bedrock "Operation not allowed" — re-habilitar modelo en AWS Console |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`009259d`) — pipeline Gemini 2 fases + SSE engine detection v1.7 |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`009259d`) — GeminiService + pipeline Gemini con Structured Outputs + token tracking |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -56,7 +56,7 @@
 ### 🔴 Críticas (afectan producción)
 
 - [ ] **🚨 URGENTE: Rotar AWS access key comprometida** — AWS detectó key `AKIAUQ24...WGTE` como comprometida y restringió servicios (Bedrock bloqueado). Key rotada a `...RKT7` en Coolify. Falta: 1) Actualizar `~/.aws/credentials` en VPS para chef-bot, 2) Desactivar key vieja en IAM, 3) Responder caso de soporte AWS (caso #177655445900588 respondido, esperando humano). Bedrock sigue bloqueado a nivel de cuenta.
-- [ ] **Implementar Gemini como proveedor IA principal** — Bedrock bloqueado por security event. Gemini API key creada y verificada funcionando (`AIzaSyA2...`). Modelo recomendado: `gemini-2.5-flash-lite` ($0.10/$0.40 por 1M tokens, free tier gratis). Presupuesto Google Cloud: CLP 10,000 prepago (cuenta `019744-899B0F-61054E`). Crear `GeminiService.php` que reemplace `AnalisisService` + `ClasificadorService`. Gemini es multimodal (analiza imágenes directo, no necesita Rekognition).
+- [x] **Implementar Gemini como proveedor IA principal** — GeminiService.php creado con Structured Outputs, pipeline 2 fases (clasificación + análisis), token tracking, frontend v1.7. Commit `009259d`. Falta: test en vivo con imagen real.
 
 - [x] **Actualizar `checklist_templates`** — overhaul completo con rol explícito, fotos separadas, prompts IA.
 - [x] **Corregir caja3 `get_turnos.php`** — obsoleto, turnos ahora gestionados por mi3.
@@ -90,6 +90,19 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-19a — Spec gemini-compras-pipeline: GeminiService + pipeline 2 fases + frontend v1.7
+
+**Cambios:**
+- `mi3/backend/app/Services/Compra/GeminiService.php`: Nuevo — servicio Gemini con clasificar() + analizar() multimodal, Structured Outputs (responseSchema), prompts por tipo adaptados de AnalisisService, normalizeAmounts(), token tracking (usageMetadata), curl directo a generativelanguage.googleapis.com.
+- `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: Agregado GeminiService al constructor, isGeminiAvailable(), ejecutarGemini() con 2 fases SSE (clasificacion + analisis), campo `engine: gemini` en eventos SSE, cálculo de costo estimado USD, fallback a clasificación por reglas si Gemini falla.
+- `mi3/frontend/components/admin/compras/ExtractionPipeline.tsx`: Detección dinámica de motor (gemini/bedrock) desde SSE, 2 fases para Gemini vs 3 para Bedrock, labels adaptados, tokens en detalles de fase.
+- `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Versión v1.6 → v1.7.
+- `mi3/backend/.env.example`: Agregado `GOOGLE_API_KEY` y `GEMINI_MODEL=gemini-2.5-flash-lite`.
+- Spec completo: requirements.md (8 reqs), design.md (arquitectura + 7 propiedades correctitud), tasks.md.
+
+**Commits:** `009259d`
+**Deploys:** mi3-frontend ✅, mi3-backend ✅
 
 ### 2026-04-18d — Pipeline SSE visual en RegistroPage + fix parse_url + ComprasSection v1.5
 
