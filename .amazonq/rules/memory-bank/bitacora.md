@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`9025e58`) — pedidosya_cash: fix root cause - pedidosya_price en get_menu_products.php |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`009259d`) — pipeline Gemini 2 fases + SSE engine detection v1.7 |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`009259d`) — GeminiService + pipeline Gemini con Structured Outputs + token tracking |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`cbab1fc`) — pipeline Gemini 2 fases + consola debug dinámica v1.7 |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`2de4203`) — GeminiService + pipeline Gemini con Structured Outputs + token tracking |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -101,8 +101,8 @@
 - `mi3/backend/.env.example`: Agregado `GOOGLE_API_KEY` y `GEMINI_MODEL=gemini-2.5-flash-lite`.
 - Spec completo: requirements.md (8 reqs), design.md (arquitectura + 7 propiedades correctitud), tasks.md.
 
-**Commits:** `009259d`
-**Deploys:** mi3-frontend ✅, mi3-backend ✅
+**Commits:** `009259d`, `2de4203`, `cbab1fc`
+**Deploys:** mi3-frontend ✅ (`cbab1fc`), mi3-backend ✅ (`2de4203`)
 
 ### 2026-04-18d — Pipeline SSE visual en RegistroPage + fix parse_url + ComprasSection v1.5
 
