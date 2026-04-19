@@ -508,9 +508,36 @@ class PipelineExtraccionService
     private function postProcess(array $data): array
     {
         $data = $this->normalizeFecha($data);
+        $data = $this->reconcileSingleItemTotal($data);
         $data = $this->mapPersonToSupplier($data);
         $data = $this->matchProveedorByRut($data);
         $data = $this->applySupplierRules($data);
+        return $data;
+    }
+
+    /**
+     * When there's only 1 item and its subtotal doesn't match monto_total,
+     * adjust subtotal to monto_total and recalculate precio_unitario.
+     */
+    private function reconcileSingleItemTotal(array $data): array
+    {
+        $montoTotal = (int) ($data['monto_total'] ?? 0);
+        if ($montoTotal <= 0 || empty($data['items']) || count($data['items']) !== 1) {
+            return $data;
+        }
+
+        $item = &$data['items'][0];
+        $subtotal = (int) ($item['subtotal'] ?? 0);
+
+        // If subtotal differs from total by more than 5%, reconcile
+        if ($subtotal > 0 && abs($subtotal - $montoTotal) > $montoTotal * 0.05) {
+            $cantidad = max(1, (float) ($item['cantidad'] ?? 1));
+            $item['subtotal'] = $montoTotal;
+            $item['precio_unitario'] = (int) round($montoTotal / $cantidad);
+            $data['notas_ia'] = ($data['notas_ia'] ?? '') . " [Subtotal ajustado de \${$subtotal} a \${$montoTotal} (total boleta)]";
+        }
+        unset($item);
+
         return $data;
     }
 
