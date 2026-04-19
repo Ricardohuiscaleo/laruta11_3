@@ -18,6 +18,7 @@ class PipelineExtraccionService
         private ClasificadorService $clasificador,
         private AnalisisService $analisis,
         private SugerenciaService $sugerencias,
+        private GeminiService $gemini,
     ) {}
 
     /**
@@ -35,6 +36,21 @@ class PipelineExtraccionService
                 $onEvent($fase, $status, $data, $startTime);
             }
         };
+
+        // ── Provider detection: Gemini first, then AWS, else error ──
+        if ($this->isGeminiAvailable()) {
+            return $this->ejecutarGemini($imageUrl, $onEvent);
+        }
+
+        // Check if AWS/Bedrock is available as fallback
+        if (empty(env('AWS_ACCESS_KEY_ID'))) {
+            $emit('error', 'error', ['message' => 'No hay proveedor IA disponible (GOOGLE_API_KEY no configurada, Bedrock bloqueado)']);
+            return [
+                'success' => false,
+                'error' => 'No hay proveedor IA disponible (GOOGLE_API_KEY no configurada, Bedrock bloqueado)',
+                'fallback' => 'manual',
+            ];
+        }
 
         $pipelinePhases = [];
 
@@ -218,6 +234,242 @@ class PipelineExtraccionService
     }
 
     // ─── Private helpers ───
+
+    /**
+     * Check if Gemini API is available (GOOGLE_API_KEY configured).
+     */
+    private function isGeminiAvailable(): bool
+    {
+        return !empty(env('GOOGLE_API_KEY'));
+    }
+
+    /**
+     * Execute the Gemini 2-phase pipeline (clasificacion + analisis).
+     */
+    private function ejecutarGemini(string $imageUrl, ?callable $onEvent): array
+    {
+        $startTime = microtime(true);
+        $emit = function (string $fase, string $status, ?array $data) use ($onEvent, $startTime): void {
+            if ($onEvent) {
+                $onEvent($fase, $status, $data, $startTime);
+            }
+        };
+
+        $pipelinePhases = [];
+
+        try {
+            $imageBase64 = $this->getImageBase64($imageUrl);
+
+            if (!$imageBase64) {
+                $emit('error', 'error', ['message' => 'No se pudo obtener la imagen']);
+                return $this->failedResultGemini($imageUrl, 'No se pudo obtener la imagen', $startTime);
+            }
+
+            // ── PHASE 1: Clasificación (Gemini multimodal) ──
+            $emit('clasificacion', 'running', ['engine' => 'gemini']);
+            $phaseStart = microtime(true);
+
+            $classification = $this->gemini->clasificar($imageBase64);
+
+            if (!$classification) {
+                // Fallback: set tipo=desconocido since we have no Rekognition data
+                $tipo = 'desconocido';
+                $confianza = 0.3;
+                $razon = 'Gemini classification failed';
+                $tokensClasificacion = ['prompt' => 0, 'candidates' => 0, 'total' => 0];
+            } else {
+                $tipo = $classification['tipo_imagen'];
+                $confianza = $classification['confianza'];
+                $razon = $classification['razon'];
+                $tokensClasificacion = $classification['tokens'];
+            }
+
+            $contexto = $this->clasificador->cargarContexto($tipo);
+
+            $pipelinePhases['clasificacion'] = [
+                'elapsed_ms' => (int) round((microtime(true) - $phaseStart) * 1000),
+                'tipo' => $tipo,
+                'confianza' => $confianza,
+                'razon' => $razon,
+                'engine' => 'gemini',
+                'tokens' => $tokensClasificacion,
+            ];
+
+            $emit('clasificacion', 'done', [
+                'tipo_imagen' => $tipo,
+                'confianza' => $confianza,
+                'razon' => $razon,
+                'engine' => 'gemini',
+                'tokens' => $tokensClasificacion['total'],
+                'contexto_proveedores' => count($contexto['suppliers']),
+                'contexto_productos' => count($contexto['products']),
+                'elapsed_ms' => $pipelinePhases['clasificacion']['elapsed_ms'],
+            ]);
+
+            // ── PHASE 2: Análisis (Gemini multimodal con contexto) ──
+            $emit('analisis', 'running', ['engine' => 'gemini']);
+            $phaseStart = microtime(true);
+
+            $analysisResult = $this->gemini->analizar($imageBase64, $tipo, $contexto);
+
+            if (!$analysisResult) {
+                $pipelinePhases['analisis'] = [
+                    'elapsed_ms' => (int) round((microtime(true) - $phaseStart) * 1000),
+                    'success' => false,
+                    'error' => 'Gemini analysis returned null',
+                    'engine' => 'gemini',
+                ];
+                $emit('error', 'error', ['message' => 'Gemini no pudo interpretar la imagen', 'engine' => 'gemini']);
+                return $this->failedResultGemini($imageUrl, 'No se pudo interpretar la imagen', $startTime, $pipelinePhases);
+            }
+
+            $extracted = $analysisResult['data'];
+            $tokensAnalisis = $analysisResult['tokens'];
+
+            $pipelinePhases['analisis'] = [
+                'elapsed_ms' => (int) round((microtime(true) - $phaseStart) * 1000),
+                'success' => true,
+                'engine' => 'gemini',
+                'model_id' => 'gemini-2.5-flash-lite',
+                'tipo_usado' => $tipo,
+                'tokens' => $tokensAnalisis,
+            ];
+
+            $emit('analisis', 'done', [
+                'engine' => 'gemini',
+                'tokens' => $tokensAnalisis['total'],
+                'elapsed_ms' => $pipelinePhases['analisis']['elapsed_ms'],
+            ]);
+
+            // ── Post-processing (same as AWS path) ──
+            $extracted = $this->postProcess($extracted);
+
+            // ── Match sugerencias (same as AWS path) ──
+            $proveedorMatch = null;
+            $itemsMatch = [];
+
+            if (!empty($extracted['proveedor'])) {
+                $proveedorMatch = $this->sugerencias->matchProveedor($extracted['proveedor']);
+                if ($proveedorMatch && $proveedorMatch['score'] >= 70) {
+                    $extracted['proveedor'] = $proveedorMatch['nombre_original'];
+                }
+            }
+
+            if (!empty($extracted['items'])) {
+                $itemsMatch = $this->sugerencias->matchItems($extracted['items']);
+
+                if ($this->isProveedorSuspect($extracted['proveedor'])) {
+                    $inferredProv = $this->inferProveedorFromItems($itemsMatch);
+                    if ($inferredProv) {
+                        $extracted['proveedor'] = $inferredProv;
+                        $extracted['notas_ia'] = ($extracted['notas_ia'] ?? '') . ' [Proveedor inferido del ingrediente]';
+                        $proveedorMatch = $this->sugerencias->matchProveedor($inferredProv);
+                    }
+                }
+
+                $itemsMatch = $this->sugerencias->matchItems($extracted['items']);
+                $this->applyProductEquivalences($extracted, $itemsMatch);
+            }
+
+            // ── Confidence scores ──
+            $confidenceScores = $this->calculateConfidence($extracted);
+            $overallConfidence = $this->calculateOverallConfidence($confidenceScores);
+
+            // ── Token tracking and cost (Task 4.3) ──
+            $totalPromptTokens = $tokensClasificacion['prompt'] + $tokensAnalisis['prompt'];
+            $totalCandidatesTokens = $tokensClasificacion['candidates'] + $tokensAnalisis['candidates'];
+            $totalTokens = $tokensClasificacion['total'] + $tokensAnalisis['total'];
+            $estimatedCostUsd = ($totalPromptTokens * 0.10 + $totalCandidatesTokens * 0.40) / 1_000_000;
+
+            // ── Save log ──
+            $processingTimeMs = (int) round((microtime(true) - $startTime) * 1000);
+            $log = AiExtractionLog::create([
+                'image_url' => $imageUrl,
+                'raw_response' => [
+                    'pipeline_phases' => $pipelinePhases,
+                    'tokens' => [
+                        'clasificacion' => $tokensClasificacion,
+                        'analisis' => $tokensAnalisis,
+                        'total' => [
+                            'prompt' => $totalPromptTokens,
+                            'candidates' => $totalCandidatesTokens,
+                            'total' => $totalTokens,
+                        ],
+                    ],
+                    'estimated_cost_usd' => round($estimatedCostUsd, 6),
+                    'engine' => 'gemini',
+                ],
+                'extracted_data' => $extracted,
+                'confidence_scores' => $confidenceScores,
+                'overall_confidence' => $overallConfidence,
+                'processing_time_ms' => $processingTimeMs,
+                'model_id' => 'gemini-2.5-flash-lite',
+                'status' => 'success',
+                'error_message' => null,
+            ]);
+
+            $result = [
+                'success' => true,
+                'extraction_log_id' => $log->id,
+                'data' => $extracted,
+                'confianza' => $confidenceScores,
+                'overall_confidence' => $overallConfidence,
+                'processing_time_ms' => $processingTimeMs,
+                'pipeline_phases' => $pipelinePhases,
+                'sugerencias' => [
+                    'proveedor' => $proveedorMatch,
+                    'items' => $itemsMatch,
+                ],
+            ];
+
+            $emit('completado', 'done', [
+                'proveedor' => $extracted['proveedor'] ?? null,
+                'items_count' => count($extracted['items'] ?? []),
+                'monto_total' => $extracted['monto_total'] ?? null,
+                'overall_confidence' => $overallConfidence,
+                'processing_time_ms' => $processingTimeMs,
+                'engine' => 'gemini',
+                'tokens_total' => $totalTokens,
+                'estimated_cost_usd' => round($estimatedCostUsd, 6),
+            ]);
+
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('[Pipeline:Gemini] Error: ' . $e->getMessage());
+            $emit('error', 'error', ['message' => $e->getMessage(), 'engine' => 'gemini']);
+            return $this->failedResultGemini($imageUrl, $e->getMessage(), $startTime, $pipelinePhases ?? []);
+        }
+    }
+
+    /**
+     * Failed result for Gemini pipeline.
+     */
+    private function failedResultGemini(string $imageUrl, string $error, float $startTime, array $pipelinePhases = []): array
+    {
+        $processingTimeMs = (int) round((microtime(true) - $startTime) * 1000);
+
+        try {
+            AiExtractionLog::create([
+                'image_url' => $imageUrl,
+                'raw_response' => ['pipeline_phases' => $pipelinePhases, 'engine' => 'gemini'],
+                'extracted_data' => [],
+                'confidence_scores' => [],
+                'overall_confidence' => 0,
+                'processing_time_ms' => $processingTimeMs,
+                'model_id' => 'gemini-2.5-flash-lite',
+                'status' => 'failed',
+                'error_message' => $error,
+            ]);
+        } catch (\Exception $e) {
+            Log::warning('[Pipeline:Gemini] Failed to save error log: ' . $e->getMessage());
+        }
+
+        return [
+            'success' => false,
+            'error' => $error,
+            'fallback' => 'manual',
+        ];
+    }
 
     private function resolveS3Key(string $imageUrl): ?string
     {

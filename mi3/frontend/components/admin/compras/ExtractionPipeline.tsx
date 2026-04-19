@@ -5,8 +5,11 @@ import { Search, Brain, Bot, Check, X, Loader2, AlertTriangle, Clock } from 'luc
 import { getToken } from '@/lib/auth';
 import type { ExtractionResult } from '@/types/compras';
 
+type PhaseId = 'percepcion' | 'clasificacion' | 'analisis';
+type EngineType = 'gemini' | 'bedrock' | null;
+
 interface PipelinePhase {
-  id: 'percepcion' | 'clasificacion' | 'analisis';
+  id: PhaseId;
   label: string;
   icon: React.ReactNode;
   status: 'pending' | 'running' | 'done' | 'error';
@@ -17,6 +20,7 @@ interface PipelinePhase {
 interface PipelineEvent {
   fase: string;
   status: string;
+  engine?: string;
   data: Record<string, unknown> | null;
   elapsed_ms: number;
 }
@@ -30,21 +34,84 @@ interface ExtractionPipelineProps {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 
+const BEDROCK_PHASES: PipelinePhase[] = [
+  { id: 'percepcion', label: 'Identificando objetos y textos', icon: <Search className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
+  { id: 'clasificacion', label: 'Clasificando imagen', icon: <Brain className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
+  { id: 'analisis', label: 'Analizando con IA', icon: <Bot className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
+];
+
+const GEMINI_PHASES: PipelinePhase[] = [
+  { id: 'clasificacion', label: 'Clasificando imagen (Gemini)', icon: <Brain className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
+  { id: 'analisis', label: 'Analizando con IA (Gemini)', icon: <Bot className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
+];
+
+
 export default function ExtractionPipeline({ tempKey, onResult, onError, autoStart = true }: ExtractionPipelineProps) {
-  const [phases, setPhases] = useState<PipelinePhase[]>([
-    { id: 'percepcion', label: 'Identificando objetos y textos', icon: <Search className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
-    { id: 'clasificacion', label: 'Clasificando imagen', icon: <Brain className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
-    { id: 'analisis', label: 'Analizando con IA', icon: <Bot className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
-  ]);
+  const [phases, setPhases] = useState<PipelinePhase[]>(BEDROCK_PHASES.map(p => ({ ...p })));
   const [running, setRunning] = useState(false);
   const [slow, setSlow] = useState(false);
   const [totalMs, setTotalMs] = useState(0);
   const startedRef = useRef(false);
   const slowTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const engineRef = useRef<EngineType>(null);
 
   const updatePhase = useCallback((id: string, updates: Partial<PipelinePhase>) => {
     setPhases(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
   }, []);
+
+  const initPhasesForEngine = useCallback((engine: EngineType) => {
+    if (engineRef.current) return;
+    engineRef.current = engine;
+    if (engine === 'gemini') {
+      setPhases(GEMINI_PHASES.map(p => ({ ...p })));
+    }
+  }, []);
+
+  const handleEvent = useCallback((event: PipelineEvent) => {
+    const { fase, status, data, elapsed_ms, engine } = event;
+
+    if (engine && !engineRef.current) {
+      initPhasesForEngine(engine === 'gemini' ? 'gemini' : 'bedrock');
+    }
+
+    if (fase === 'resultado') {
+      setTotalMs(elapsed_ms);
+      if (status === 'done' && data?.success) {
+        const result = data as unknown as {
+          data: ExtractionResult;
+          sugerencias: ExtractionResult['sugerencias'];
+          confianza: ExtractionResult['confianza'];
+        };
+        const extraction: ExtractionResult = {
+          ...result.data,
+          confianza: result.confianza ?? result.data?.confianza,
+          sugerencias: result.sugerencias ?? result.data?.sugerencias,
+        };
+        onResult(extraction, result.sugerencias);
+      } else {
+        onError();
+      }
+      return;
+    }
+
+    if (fase === 'error') {
+      onError();
+      return;
+    }
+
+    const phaseId = fase as PhaseId;
+    const validPhases: PhaseId[] = engineRef.current === 'gemini'
+      ? ['clasificacion', 'analisis']
+      : ['percepcion', 'clasificacion', 'analisis'];
+
+    if (validPhases.includes(phaseId)) {
+      updatePhase(phaseId, {
+        status: status === 'done' ? 'done' : status === 'error' ? 'error' : 'running',
+        data: data as Record<string, unknown> | null,
+        elapsedMs: elapsed_ms,
+      });
+    }
+  }, [onResult, onError, updatePhase, initPhasesForEngine]);
 
   const runPipeline = useCallback(async () => {
     if (running) return;
@@ -101,45 +168,7 @@ export default function ExtractionPipeline({ tempKey, onResult, onError, autoSta
       setRunning(false);
       if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
     }
-  }, [tempKey, running, onResult, onError]);
-
-  const handleEvent = useCallback((event: PipelineEvent) => {
-    const { fase, status, data, elapsed_ms } = event;
-
-    if (fase === 'resultado') {
-      setTotalMs(elapsed_ms);
-      if (status === 'done' && data?.success) {
-        const result = data as unknown as {
-          data: ExtractionResult;
-          sugerencias: ExtractionResult['sugerencias'];
-          confianza: ExtractionResult['confianza'];
-        };
-        const extraction: ExtractionResult = {
-          ...result.data,
-          confianza: result.confianza ?? result.data?.confianza,
-          sugerencias: result.sugerencias ?? result.data?.sugerencias,
-        };
-        onResult(extraction, result.sugerencias);
-      } else {
-        onError();
-      }
-      return;
-    }
-
-    if (fase === 'error') {
-      onError();
-      return;
-    }
-
-    const phaseId = fase as PipelinePhase['id'];
-    if (['percepcion', 'clasificacion', 'analisis'].includes(phaseId)) {
-      updatePhase(phaseId, {
-        status: status === 'done' ? 'done' : status === 'error' ? 'error' : 'running',
-        data: data as Record<string, unknown> | null,
-        elapsedMs: elapsed_ms,
-      });
-    }
-  }, [onResult, onError, updatePhase]);
+  }, [tempKey, running, handleEvent, onError]);
 
   useEffect(() => {
     if (autoStart && !startedRef.current) {
@@ -218,6 +247,8 @@ function PhaseRow({ phase }: { phase: PipelinePhase }) {
 }
 
 function PhaseDetails({ id, data }: { id: string; data: Record<string, unknown> }) {
+  const tokens = data.tokens as number | undefined;
+
   if (id === 'percepcion') {
     const labels = (data.labels as string[]) || [];
     const texts = (data.texts_preview as string[]) || [];
@@ -250,9 +281,12 @@ function PhaseDetails({ id, data }: { id: string; data: Record<string, unknown> 
     return (
       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
         <span className="font-medium">{tipoIcons[tipo] || '❓'} {tipo}</span>
-        <span className="text-gray-400">({Math.round(confianza * 100)}%)</span>
+        {confianza > 0 && <span className="text-gray-400">({Math.round(confianza * 100)}%)</span>}
         {(proveedores > 0 || productos > 0) && (
           <span className="text-gray-400">· {proveedores} proveedores, {productos} ingredientes</span>
+        )}
+        {tokens != null && tokens > 0 && (
+          <span className="text-gray-400">· {tokens} tokens</span>
         )}
       </div>
     );
@@ -272,6 +306,9 @@ function PhaseDetails({ id, data }: { id: string; data: Record<string, unknown> 
           <span className={`${confidence >= 0.7 ? 'text-green-600' : 'text-amber-600'}`}>
             {Math.round(confidence * 100)}% confianza
           </span>
+        )}
+        {tokens != null && tokens > 0 && (
+          <span className="text-gray-400">· {tokens} tokens</span>
         )}
       </div>
     );
