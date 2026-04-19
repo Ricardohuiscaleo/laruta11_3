@@ -24,14 +24,6 @@ const tabs = [
 
 type TabKey = typeof tabs[number]['key'];
 
-function TabSkeleton() {
-  return (
-    <div className="flex items-center justify-center py-16" role="status" aria-label="Cargando">
-      <Loader2 className="h-6 w-6 animate-spin text-red-500" />
-    </div>
-  );
-}
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 
 interface AiBudget {
@@ -42,6 +34,14 @@ interface AiBudget {
   total_cost_usd: number;
   total_extractions: number;
   total_tokens: number;
+}
+
+function TabSkeleton() {
+  return (
+    <div className="flex items-center justify-center py-16" role="status" aria-label="Cargando">
+      <Loader2 className="h-6 w-6 animate-spin text-red-500" />
+    </div>
+  );
 }
 
 export default function ComprasSection() {
@@ -61,52 +61,72 @@ export default function ComprasSection() {
 
   return (
     <ComprasProvider>
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <h1 className="text-2xl font-bold text-gray-900">Compras <span className="text-xs text-gray-400 font-normal">v1.7</span></h1>
-          {budget && (
-            <div className="flex items-center gap-3 rounded-lg bg-gray-50 border px-3 py-1.5 text-xs">
-              <Zap className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
-              <span className="text-gray-500">Presupuesto IA</span>
-              <span className="font-medium text-gray-700">${budget.remaining_clp.toLocaleString('es-CL')}</span>
-              <span className="text-gray-400">/ ${budget.budget_clp.toLocaleString('es-CL')}</span>
-              <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className={cn('h-full rounded-full', budget.budget_pct > 80 ? 'bg-red-500' : budget.budget_pct > 50 ? 'bg-amber-500' : 'bg-green-500')}
-                  style={{ width: `${Math.min(100, budget.budget_pct)}%` }}
-                />
+      <div>
+        {/* ── Sticky header (desktop) ── */}
+        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b pb-2 -mx-4 px-4 pt-2 lg:-mx-6 lg:px-6">
+          {/* Row 1: Title + Budget */}
+          <div className="flex items-center justify-between gap-4 mb-2">
+            <h1 className="text-xl font-bold text-gray-900 shrink-0">
+              Compras <span className="text-xs text-gray-400 font-normal">v1.7</span>
+            </h1>
+
+            {budget && (
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <Zap className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                <span className="hidden sm:inline">Presupuesto IA</span>
+                <span className="font-semibold text-gray-800">
+                  ${budget.remaining_clp.toLocaleString('es-CL')}
+                </span>
+                <span className="text-gray-400">/ ${budget.budget_clp.toLocaleString('es-CL')}</span>
+                <div className="w-12 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className={cn(
+                      'h-full rounded-full transition-all',
+                      budget.budget_pct > 80 ? 'bg-red-500' : budget.budget_pct > 50 ? 'bg-amber-500' : 'bg-green-500',
+                    )}
+                    style={{ width: `${Math.min(100, budget.budget_pct)}%` }}
+                  />
+                </div>
+                <span className="hidden md:inline text-gray-400">
+                  {budget.total_tokens.toLocaleString('es-CL')} tokens · {budget.total_extractions} usos
+                </span>
               </div>
-              <span className="text-gray-400 hidden sm:inline">{budget.total_tokens.toLocaleString('es-CL')} tokens · {budget.total_extractions} usos</span>
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* Row 2: Tabs */}
+          <nav className="flex items-center gap-1 overflow-x-auto rounded-lg bg-gray-100 p-1" role="tablist" aria-label="Secciones de compras">
+            {tabs.map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                role="tab"
+                aria-selected={activeTab === key}
+                onClick={() => setActiveTab(key)}
+                className={cn(
+                  'flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors min-h-[44px]',
+                  activeTab === key
+                    ? 'bg-red-500 text-white shadow-sm'
+                    : 'text-gray-600 hover:bg-white hover:text-gray-900',
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{label}</span>
+              </button>
+            ))}
+          </nav>
         </div>
-        <nav className="flex items-center gap-1 overflow-x-auto rounded-lg bg-gray-100 p-1" role="tablist" aria-label="Secciones de compras">
-          {tabs.map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              role="tab"
-              aria-selected={activeTab === key}
-              onClick={() => setActiveTab(key)}
-              className={cn(
-                'flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors min-h-[44px]',
-                activeTab === key
-                  ? 'bg-red-500 text-white shadow-sm'
-                  : 'text-gray-600 hover:bg-white hover:text-gray-900'
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              <span>{label}</span>
-            </button>
-          ))}
-        </nav>
-        <Suspense fallback={<TabSkeleton />}>
-          {activeTab === 'registro' && <RegistroPage />}
-          {activeTab === 'historial' && <HistorialCompras />}
-          {activeTab === 'stock' && <StockTab />}
-          {activeTab === 'proyeccion' && <ProyeccionCompras />}
-          {activeTab === 'kpis' && <KpisDashboard />}
-          {activeTab === 'consola' && <ConsolaPage />}
-        </Suspense>
+
+        {/* ── Tab content ── */}
+        <div className="pt-4">
+          <Suspense fallback={<TabSkeleton />}>
+            {activeTab === 'registro' && <RegistroPage />}
+            {activeTab === 'historial' && <HistorialCompras />}
+            {activeTab === 'stock' && <StockTab />}
+            {activeTab === 'proyeccion' && <ProyeccionCompras />}
+            {activeTab === 'kpis' && <KpisDashboard />}
+            {activeTab === 'consola' && <ConsolaPage />}
+          </Suspense>
+        </div>
       </div>
     </ComprasProvider>
   );
