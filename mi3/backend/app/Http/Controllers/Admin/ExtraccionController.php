@@ -97,13 +97,17 @@ class ExtraccionController extends Controller
                 $imageUrl,
                 function (string $fase, string $status, ?array $data, float $startTime): void {
                     $elapsed = (int) round((microtime(true) - $startTime) * 1000);
-                    $event = json_encode([
+                    $event = [
                         'fase' => $fase,
                         'status' => $status,
                         'data' => $data,
                         'elapsed_ms' => $elapsed,
-                    ], JSON_UNESCAPED_UNICODE);
-                    echo "data: {$event}\n\n";
+                    ];
+                    // Promote engine to top-level for frontend detection
+                    if (isset($data['engine'])) {
+                        $event['engine'] = $data['engine'];
+                    }
+                    echo "data: " . json_encode($event, JSON_UNESCAPED_UNICODE) . "\n\n";
                     if (ob_get_level() > 0) {
                         ob_flush();
                     }
