@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`7e5ea66`) — ingredient categories: tabs dinámicos, API con categorías |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2ce0240`) — crear ingrediente inline + tag 🆕 Nuevo + sticky header + presupuesto IA v1.7 |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`4a75e68`) — StockDashboard 4 grupos (Ingredientes/Insumos/Bebidas/Operacional) + sticky header fix |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`7e5ea66`) — IngredientCategory enum + validación categorías + GeminiService categoria_sugerida |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -95,6 +95,16 @@
 
 ## Sesiones Recientes
 
+### 2026-04-19d — mi3 StockDashboard: 4 grupos categorías + fix sticky header
+
+**Cambios:**
+- `mi3/frontend/components/admin/compras/StockDashboard.tsx`: Reemplazados 2 tabs (Ingredientes/Bebidas) por 4 grupos lógicos: Ingredientes (Carnes, Vegetales, Salsas, Condimentos, Lácteos, Panes, Embutidos, Pre-elaborados), Insumos (Packaging, Limpieza), Bebidas, Operacional (Gas, Servicios). Cada grupo muestra conteo de items.
+- `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Fix sticky header gap — `-mt-6 pt-6` para que el header pegue al top sin espacio.
+- BD: Fix double-encoded UTF-8 "Lácteos" con `CONVERT(CAST(CONVERT(category USING latin1) AS BINARY) USING utf8mb4)`.
+
+**Commits:** `4a75e68`
+**Deploys:** mi3-frontend ✅ (`4a75e68`)
+
 ### 2026-04-19c — Spec ingredient-categories-improvement: tabs dinámicos, IA categoría, validación
 
 **Cambios:**
@@ -142,18 +152,6 @@
 
 **Commits:** `009259d`, `2de4203`, `cbab1fc`
 **Deploys:** mi3-frontend ✅ (`cbab1fc`), mi3-backend ✅ (`2de4203`)
-
-### 2026-04-18d — Pipeline SSE visual en RegistroPage + fix parse_url + ComprasSection v1.5
-
-**Cambios:**
-- `mi3/frontend/app/admin/compras/registro/page.tsx`: Integrado `ExtractionPipeline` SSE visual — 1 foto muestra pipeline 3 fases, múltiples fotos usan endpoint síncrono con progreso "Procesando 1/3...".
-- `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Agregada pestaña "Consola" + tag "v1.5" (el componente SPA real, no el layout de Next.js).
-- `mi3/backend/app/Services/Compra/AwsSignatureService.php`: Fix `parse_url()` null path para Rekognition root endpoint (`?? '/'`).
-- `mi3/frontend/Dockerfile`: Agregado `ARG CACHEBUST=1` para invalidar Docker layer cache.
-- Hook QA: `verify-component-usage` — verifica que componentes modificados se usen en producción (previene modificar layouts muertos).
-
-**Commits:** `93df1e1`, `bb15e1a`, `79f0187`
-**Deploys:** mi3-frontend ✅ (`79f0187`), mi3-backend ✅ (`bb15e1a`)
 
 ---
 
