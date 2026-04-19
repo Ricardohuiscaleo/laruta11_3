@@ -243,11 +243,23 @@ function PhasesTab({ phases, modelId }: { phases: Record<string, unknown> | null
     return <p className="text-xs text-gray-500">Modelo: {modelId} (sin datos de fases — extracción legacy)</p>;
   }
 
-  const phaseConfig = [
+  const isGemini = modelId.includes('gemini');
+
+  const geminiPhases = [
+    { key: 'clasificacion', label: 'Clasificación', icon: <Brain className="h-3.5 w-3.5" />, desc: 'Gemini — clasificación multimodal' },
+    { key: 'analisis', label: 'Análisis', icon: <Bot className="h-3.5 w-3.5" />, desc: 'Gemini — extracción con Structured Outputs' },
+  ];
+
+  const bedrockPhases = [
     { key: 'percepcion', label: 'Percepción', icon: <Search className="h-3.5 w-3.5" />, desc: 'Rekognition DetectLabels + DetectText' },
     { key: 'clasificacion', label: 'Clasificación', icon: <Brain className="h-3.5 w-3.5" />, desc: 'Nova Micro — tipo de imagen + contexto BD' },
     { key: 'analisis', label: 'Análisis', icon: <Bot className="h-3.5 w-3.5" />, desc: 'Nova Pro — prompt específico por tipo' },
   ];
+
+  const phaseConfig = isGemini ? geminiPhases : bedrockPhases;
+
+  const tokens = (phases as Record<string, unknown>).tokens as Record<string, unknown> | undefined;
+  const costUsd = (phases as Record<string, unknown>).estimated_cost_usd as number | undefined;
 
   return (
     <div className="space-y-2">
@@ -284,6 +296,12 @@ function PhasesTab({ phases, modelId }: { phases: Record<string, unknown> | null
           </div>
         );
       })}
+      {isGemini && tokens && (
+        <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-700 space-y-1">
+          <p>🔢 Tokens: {Number((tokens as Record<string, unknown>).total?.toString() ?? '0').toLocaleString('es-CL')} total ({Number((tokens as Record<string, unknown>).prompt?.toString() ?? '0').toLocaleString('es-CL')} input + {Number((tokens as Record<string, unknown>).candidates?.toString() ?? '0').toLocaleString('es-CL')} output)</p>
+          {costUsd != null && <p>💰 Costo estimado: ${costUsd.toFixed(6)} USD</p>}
+        </div>
+      )}
     </div>
   );
 }
