@@ -110,7 +110,7 @@
 
 **Commits:** `f31cfe7`, `7e5ea66`
 **Deploys:** caja3 ✅ (`7e5ea66`), mi3-backend ✅ (`7e5ea66`)
-**Pendiente:** Ejecutar `caja3/sql/fix_ingredient_categories.sql` en producción.
+**Pendiente:** ~~Ejecutar `caja3/sql/fix_ingredient_categories.sql` en BD~~ EJECUTADO. Fix adicional: double-encoded UTF-8 corregido con `CONVERT(CAST(CONVERT(category USING latin1) AS BINARY) USING utf8mb4)`. Verificado via API: 13 categorías limpias, sin caracteres corruptos.
 
 ### 2026-04-19b — Fixes post-deploy Gemini: equivalencias, fecha, sidebar, presupuesto IA, crear ingrediente inline
 
