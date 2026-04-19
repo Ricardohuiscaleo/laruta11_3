@@ -809,6 +809,33 @@ class PipelineExtraccionService
             }
 
             if ($equiv) {
+                // Skip equivalence if item already has a base unit (kg, g, unidad, litro, ml)
+                // Equivalences are for converting packages (caja, saco, paquete, bidón) to base units
+                $baseUnits = ['kg', 'g', 'unidad', 'litro', 'ml', 'l'];
+                $itemUnit = mb_strtolower(trim($item['unidad'] ?? ''));
+                $equivVisual = mb_strtolower(trim($equiv->unidad_visual ?? ''));
+
+                if (in_array($itemUnit, $baseUnits, true) && !in_array($equivVisual, $baseUnits, true)) {
+                    // Item is already in base units, don't apply package conversion
+                    // But still link to the ingredient if possible
+                    if (isset($itemsMatch[$idx]) && $equiv->ingrediente_id) {
+                        $ing = Ingredient::find($equiv->ingrediente_id);
+                        if ($ing) {
+                            $itemsMatch[$idx]['match'] = [
+                                'id' => $ing->id,
+                                'name' => $ing->name,
+                                'unit' => $ing->unit,
+                                'cost_per_unit' => $ing->cost_per_unit,
+                                'current_stock' => $ing->current_stock,
+                            ];
+                            $itemsMatch[$idx]['match_type'] = 'ingredient';
+                            $itemsMatch[$idx]['score'] = 100;
+                            $itemsMatch[$idx]['pre_selected'] = true;
+                        }
+                    }
+                    continue;
+                }
+
                 $originalQty = (float) ($item['cantidad'] ?? 1);
                 $item['cantidad'] = $originalQty * (float) $equiv->cantidad_por_unidad;
                 $item['unidad'] = $equiv->unidad_real;
