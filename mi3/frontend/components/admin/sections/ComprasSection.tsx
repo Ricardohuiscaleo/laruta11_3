@@ -63,7 +63,7 @@ export default function ComprasSection() {
     <ComprasProvider>
       <div>
         {/* ── Sticky header (desktop) ── */}
-        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b pb-2 -mx-4 px-4 pt-2 lg:-mx-6 lg:px-6">
+        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b pb-2 -mx-4 px-4 -mt-6 pt-6 lg:-mx-6 lg:px-6 lg:-mt-6 lg:pt-6">
           {/* Row 1: Title + Budget */}
           <div className="flex items-center justify-between gap-4 mb-2">
             <h1 className="text-xl font-bold text-gray-900 shrink-0">

@@ -13,15 +13,37 @@ const SEMAFORO_COLORS: Record<string, string> = {
 };
 const SEMAFORO_DOT: Record<string, string> = { rojo: 'bg-red-500', amarillo: 'bg-amber-500', verde: 'bg-green-500' };
 
-const CATEGORY_ORDER = [
-  'Carnes', 'Vegetales', 'Salsas', 'Condimentos', 'Lácteos', 'Panes',
-  'Embutidos', 'Pre-elaborados', 'Packaging', 'Limpieza', 'Bebidas', 'Gas', 'Servicios',
-];
+const CATEGORY_GROUPS: Record<string, { label: string; icon: typeof Package; categories: string[] }> = {
+  ingredientes: {
+    label: 'Ingredientes',
+    icon: Package,
+    categories: ['Carnes', 'Vegetales', 'Salsas', 'Condimentos', 'Lácteos', 'Panes', 'Embutidos', 'Pre-elaborados'],
+  },
+  insumos: {
+    label: 'Insumos',
+    icon: Package,
+    categories: ['Packaging', 'Limpieza'],
+  },
+  bebidas: {
+    label: 'Bebidas',
+    icon: Wine,
+    categories: ['Bebidas'],
+  },
+  operacional: {
+    label: 'Operacional',
+    icon: Package,
+    categories: ['Gas', 'Servicios'],
+  },
+};
+
+type GroupKey = keyof typeof CATEGORY_GROUPS;
 
 export default function StockDashboard() {
   const { stockIngredientes, stockBebidas, loading: ctxLoading, refreshStock } = useCompras();
-  const [tab, setTab] = useState<'ingredientes' | 'bebidas'>('ingredientes');
-  const items = tab === 'ingredientes' ? stockIngredientes : stockBebidas;
+  const [tab, setTab] = useState<GroupKey>('ingredientes');
+  const allItems = [...stockIngredientes, ...stockBebidas];
+  const groupConfig = CATEGORY_GROUPS[tab];
+  const items = allItems.filter(i => groupConfig.categories.includes(i.category || ''));
   const loading = ctxLoading.stock || false;
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   // Edit mode
@@ -39,18 +61,18 @@ export default function StockDashboard() {
   const fetchItems = refreshStock;
 
   const grouped = useMemo(() => {
-    if (tab === 'bebidas') return { 'Bebidas': items };
     const map: Record<string, StockItem[]> = {};
     for (const item of items) {
       const cat = item.category || 'Sin categoría';
       if (!map[cat]) map[cat] = [];
       map[cat].push(item);
     }
+    // Sort by the order defined in the group's categories array
     const sorted: Record<string, StockItem[]> = {};
-    for (const cat of CATEGORY_ORDER) { if (map[cat]) { sorted[cat] = map[cat]; delete map[cat]; } }
+    for (const cat of groupConfig.categories) { if (map[cat]) { sorted[cat] = map[cat]; delete map[cat]; } }
     for (const [cat, its] of Object.entries(map)) { sorted[cat] = its; }
     return sorted;
-  }, [items, tab]);
+  }, [items, groupConfig]);
 
   const pct = (item: StockItem) => {
     const stock = Number(item.current_stock) || 0;
@@ -123,17 +145,18 @@ export default function StockDashboard() {
   return (
     <div className="space-y-3">
       {/* Tabs */}
-      <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
-        <button onClick={() => { setTab('ingredientes'); setSelected(new Set()); }}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-            tab === 'ingredientes' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-          <Package className="h-4 w-4" /> Ingredientes
-        </button>
-        <button onClick={() => { setTab('bebidas'); setSelected(new Set()); }}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-            tab === 'bebidas' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-          <Wine className="h-4 w-4" /> Bebidas
-        </button>
+      <div className="flex gap-1 rounded-lg bg-gray-100 p-1 overflow-x-auto">
+        {(Object.entries(CATEGORY_GROUPS) as [GroupKey, typeof CATEGORY_GROUPS[GroupKey]][]).map(([key, group]) => {
+          const Icon = group.icon;
+          const count = allItems.filter(i => group.categories.includes(i.category || '')).length;
+          return (
+            <button key={key} onClick={() => { setTab(key); setSelected(new Set()); }}
+              className={`flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
+                tab === key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              <Icon className="h-4 w-4" /> {group.label} <span className="text-xs text-gray-400">({count})</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Bulk actions bar */}
