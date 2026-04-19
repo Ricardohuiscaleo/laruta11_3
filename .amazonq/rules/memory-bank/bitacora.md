@@ -55,8 +55,8 @@
 
 ### 🔴 Críticas (afectan producción)
 
-- [ ] **🚨 URGENTE: Rotar AWS access key comprometida** — AWS detectó key `AKIAUQ24...WGTE` como comprometida y restringió servicios (Bedrock bloqueado). Deadline: 2026-04-23. Pasos: 1) Crear nueva key en IAM, 2) Actualizar en VPS ~/.aws/credentials + pm2 restart chef-bot, 3) Actualizar env vars en Coolify mi3-backend, 4) Desactivar key vieja, 5) Responder caso de soporte AWS.
-- [ ] **Re-habilitar acceso Bedrock Nova Pro + Nova Micro en AWS Console** — `HTTP 400 "Operation not allowed"`. Causado por key comprometida. Se resolverá al rotar la key y responder al caso de soporte.
+- [ ] **🚨 URGENTE: Rotar AWS access key comprometida** — AWS detectó key `AKIAUQ24...WGTE` como comprometida y restringió servicios (Bedrock bloqueado). Key rotada a `...RKT7` en Coolify. Falta: 1) Actualizar `~/.aws/credentials` en VPS para chef-bot, 2) Desactivar key vieja en IAM, 3) Responder caso de soporte AWS (caso #177655445900588 respondido, esperando humano). Bedrock sigue bloqueado a nivel de cuenta.
+- [ ] **Implementar Gemini como proveedor IA principal** — Bedrock bloqueado por security event. Gemini API key creada y verificada funcionando (`AIzaSyA2...`). Modelo recomendado: `gemini-2.5-flash-lite` ($0.10/$0.40 por 1M tokens, free tier gratis). Presupuesto Google Cloud: CLP 10,000 prepago (cuenta `019744-899B0F-61054E`). Crear `GeminiService.php` que reemplace `AnalisisService` + `ClasificadorService`. Gemini es multimodal (analiza imágenes directo, no necesita Rekognition).
 
 - [x] **Actualizar `checklist_templates`** — overhaul completo con rol explícito, fotos separadas, prompts IA.
 - [x] **Corregir caja3 `get_turnos.php`** — obsoleto, turnos ahora gestionados por mi3.
