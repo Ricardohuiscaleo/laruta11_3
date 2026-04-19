@@ -811,7 +811,7 @@ class PipelineExtraccionService
             if ($equiv) {
                 // Skip equivalence if item already has a base unit (kg, g, unidad, litro, ml)
                 // Equivalences are for converting packages (caja, saco, paquete, bidón) to base units
-                $baseUnits = ['kg', 'g', 'unidad', 'litro', 'ml', 'l'];
+                $baseUnits = ['kg', 'g', 'unidad', 'litro', 'ml', 'l', 'kilos', 'kilo', 'litros', 'gramos', 'gramo', 'unidades'];
                 $itemUnit = mb_strtolower(trim($item['unidad'] ?? ''));
                 $equivVisual = mb_strtolower(trim($equiv->unidad_visual ?? ''));
 

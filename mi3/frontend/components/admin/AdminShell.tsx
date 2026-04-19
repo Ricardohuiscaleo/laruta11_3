@@ -190,7 +190,7 @@ export default function AdminShell() {
             badges={badges}
           />
         </div>
-        <main className="flex-1 min-w-0 p-6 overflow-y-auto">
+        <main className="flex-1 min-w-0 h-screen overflow-y-auto p-6">
           {Array.from(loadedSections).map(key => {
             const Component = sectionImports[key];
             return (
