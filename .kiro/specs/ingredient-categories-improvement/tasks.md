@@ -100,7 +100,7 @@ Implementación incremental que comienza con la corrección de datos en BD, lueg
     - Tabs de categoría: filtra por `category === tabSeleccionado`
     - _Requisitos: 3.2, 3.3, 3.4_
 
-  - [x] 7.4 Escribir test de propiedad: filtrado correcto por categoría
+  - [x]* 7.4 Escribir test de propiedad: filtrado correcto por categoría
     - **Propiedad 2: Filtrado correcto por categoría seleccionada**
     - **Valida: Requisitos 3.2**
 

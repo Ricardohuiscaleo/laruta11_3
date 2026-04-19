@@ -7,10 +7,10 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`9025e58`) — pedidosya_cash: fix root cause - pedidosya_price en get_menu_products.php |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`7e5ea66`) — ingredient categories: tabs dinámicos, API con categorías |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2ce0240`) — crear ingrediente inline + tag 🆕 Nuevo + sticky header + presupuesto IA v1.7 |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`f91112d`) — GeminiService + reconcilia subtotal item único + equivalencia base units + adelanto negativo |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`7e5ea66`) — IngredientCategory enum + validación categorías + GeminiService categoria_sugerida |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -75,8 +75,8 @@
 ### 🟢 Mejoras futuras
 
 - [ ] **Pipeline multi-agente compras (optimización costos Gemini)** — Refactorizar GeminiService para: Agente 1 (visión, 1 call con imagen → texto raw + clasificación), Agente 2 (texto, análisis con prompt por tipo + contexto BD), Agente 3 (texto, validación coherencia montos/cantidades), Agente 4 (reconciliación o pregunta al usuario). Imagen se procesa 1 sola vez, agentes 2-4 solo texto (más barato). Evolución del pipeline actual, no feature nueva.
-- [ ] **Crear ingrediente smart con categoría inferida** — Cuando se crea ingrediente inline desde compras, inferir categoría automáticamente del contexto (insumos si es envase, ingredientes si es alimento, etc.).
-- [ ] **Refactorizar categorías de ingredientes** — Fix encoding "LÃ¡cteos"→"Lácteos", eliminar categoría vacía "Ingredientes" (0 items), Stock frontend debe mostrar todas las 14 categorías (hoy solo muestra Ingredientes y Bebidas), considerar tabla separada `ingredient_categories` en vez de string libre. Categorías actuales: Carnes(10), Vegetales(20), Salsas(8), Condimentos(8), Panes(4), Embutidos(1), Pre-elaborados(1), Lácteos(4), Bebidas(7), Gas(2), Servicios(4), Packaging(28), Limpieza(15).
+- [x] **Crear ingrediente smart con categoría inferida** — Cuando se crea ingrediente inline desde compras, inferir categoría automáticamente del contexto (insumos si es envase, ingredientes si es alimento, etc.).
+- [x] **Refactorizar categorías de ingredientes** — Fix encoding "LÃ¡cteos"→"Lácteos", eliminar categoría vacía "Ingredientes" (0 items), Stock frontend debe mostrar todas las 14 categorías (hoy solo muestra Ingredientes y Bebidas), considerar tabla separada `ingredient_categories` en vez de string libre. Categorías actuales: Carnes(10), Vegetales(20), Salsas(8), Condimentos(8), Panes(4), Embutidos(1), Pre-elaborados(1), Lácteos(4), Bebidas(7), Gas(2), Servicios(4), Packaging(28), Limpieza(15).
 
 - [x] Obtener chat_id del grupo "Pedidos 11" — no aplica, flujo directo al bot de Telegram configurado.
 - [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3.
@@ -94,6 +94,23 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-19c — Spec ingredient-categories-improvement: tabs dinámicos, IA categoría, validación
+
+**Cambios:**
+- `mi3/backend/app/Enums/IngredientCategory.php`: Nuevo — constante VALID_CATEGORIES (13 categorías), isValid(), all().
+- `mi3/backend/app/Http/Controllers/Admin/StockController.php`: Validación de categoría con Rule::in(VALID_CATEGORIES).
+- `mi3/backend/app/Services/Compra/CompraService.php`: crearIngrediente() valida categoría, inválidas → null.
+- `mi3/backend/app/Services/Compra/GeminiService.php`: campo `categoria_sugerida` en schema extracción + instrucción en 6 prompts para inferir categoría por IA.
+- `caja3/api/compras/get_items_compra.php`: Respuesta cambia de array plano a `{ items, categories, valid_categories }`.
+- `caja3/src/components/ComprasApp.jsx`: Tabs dinámicos por categoría (scroll horizontal), tab "Todos" + "Bebidas" + categorías dinámicas desde API. Filtrado por categoría seleccionada.
+- `caja3/sql/fix_ingredient_categories.sql`: Fix encoding "LÃ¡cteos"→"Lácteos", limpiar categoría legacy "Ingredientes"→NULL.
+- Tests: 5 archivos PBT — IngredientCategoryTest (5 tests), IngredientCategoryPropertyTest (5 tests Eris), CompraServiceCategoryTest (4 tests Eris), CategoryExtractionPropertyTest (4 tests Eris), category-filter.test.mjs (600 iteraciones JS).
+- Spec completo: requirements.md (6 reqs), design.md (5 propiedades correctitud), tasks.md (8 tareas + 4 opcionales).
+
+**Commits:** `f31cfe7`, `7e5ea66`
+**Deploys:** caja3 ✅ (`7e5ea66`), mi3-backend ✅ (`7e5ea66`)
+**Pendiente:** Ejecutar `caja3/sql/fix_ingredient_categories.sql` en producción.
 
 ### 2026-04-19b — Fixes post-deploy Gemini: equivalencias, fecha, sidebar, presupuesto IA, crear ingrediente inline
 
@@ -138,88 +155,7 @@
 **Commits:** `93df1e1`, `bb15e1a`, `79f0187`
 **Deploys:** mi3-frontend ✅ (`79f0187`), mi3-backend ✅ (`bb15e1a`)
 
-### 2026-04-18b — Consola debug extracción IA + fix type errors Next.js strict mode
-
-**Cambios:**
-- `mi3/backend/app/Http/Controllers/Admin/ExtraccionController.php`: Nuevos endpoints `extractionLogs()` y `extractionLogDetail()`.
-- `mi3/frontend/app/admin/compras/consola/page.tsx`: Página debug con stats, logs paginados, 4 tabs (Fases, Datos, Confianza, Raw).
-- Fix: `Boolean()` wrap para `unknown && JSX`, `String()`/`Number()` en JSX children.
-
-**Commits:** `9b290d5`, `40681aa`, `c43f225`
-**Deploys:** mi3-frontend ✅, mi3-backend ✅
-
-### 2026-04-18a — Spec compras-pipeline-multimodelo: Rekognition + Nova Micro + Nova Pro + SSE
-
-**Cambios:**
-- `mi3/backend/app/Services/Compra/AwsSignatureService.php`: Nuevo — SigV4 signing reutilizable con soporte curl_multi y headers custom.
-- `mi3/backend/app/Services/Compra/RekognitionService.php`: Nuevo — DetectLabels + DetectText en paralelo via curl_multi.
-- `mi3/backend/app/Services/Compra/ClasificadorService.php`: Nuevo — Nova Micro clasifica tipo imagen (boleta/factura/producto/bascula/transferencia) + carga contexto BD filtrado por tipo.
-- `mi3/backend/app/Services/Compra/AnalisisService.php`: Nuevo — Nova Pro con prompts específicos por tipo (~400-800 tokens vs ~4000 del monolítico anterior).
-- `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: Nuevo — orquestador 3 fases con callback SSE, post-processing completo (mapPersonToSupplier, matchProveedorByRut, applySupplierRules, product equivalences).
-- `mi3/backend/app/Http/Controllers/Admin/ExtraccionController.php`: Reescrito — `extract()` ahora usa pipeline internamente, nuevo `extractPipeline()` con SSE streaming.
-- `mi3/backend/routes/api.php`: Nueva ruta `POST compras/extract-pipeline`.
-- `mi3/frontend/components/admin/compras/ExtractionPipeline.tsx`: Nuevo — componente visual 3 pasos con SSE via ReadableStream, badges labels, tipo detectado, resultado final. Mobile-first, aria-live.
-- `mi3/frontend/components/admin/compras/ImageUploader.tsx`: Integrado con ExtractionPipeline visual.
-
-**Commits:** `104dc65`
-**Deploys:** mi3-frontend ✅, mi3-backend ✅
-
-### 2026-04-17f — Spec pedidosya-cash-flow: flujo completo PedidosYA Efectivo en caja3
-
-**Cambios:**
-- `caja3/src/components/CheckoutApp.jsx`: Modal de selección PedidosYA (Online/Efectivo), nueva función `handlePedidosYACashPayment` con `payment_method: 'pedidosya_cash'`.
-- `caja3/src/components/MenuApp.jsx`: Modal Online/Efectivo en checkout inline (el flujo principal de caja), estado `showPedidosYAModal`, redirect map con `pedidosya_cash`.
-- `caja3/src/components/MiniComandas.jsx`: Cash Modal inline para confirmar pagos pedidosya_cash (monto exacto, botones rápidos $5K/$10K/$20K, cálculo de vuelto, Enter key), etiqueta "PedidosYA Efectivo" con ícono Banknote.
-- `caja3/api/confirm_transfer_payment.php`: Extendido para registrar ingreso en `caja_movimientos` para `pedidosya_cash` con motivo "Venta PedidosYA Efectivo - Pedido #X".
-- `caja3/api/get_sales_summary.php`: Agregada categoría `pedidosya_cash` al array de resultados.
-- `caja3/src/components/ArqueoApp.jsx`: Tarjeta "PedidosYA Efectivo" con estilo amber, renombrada tarjeta existente a "PedidosYA Online".
-- `caja3/src/components/VentasDetalle.jsx`: Badge "PYA Efectivo" (yellow) y filtro `pedidosya_cash`.
-- `caja3/sql/add_pedidosya_cash_enum.sql`: ALTER TABLE para agregar `pedidosya_cash` al ENUM de `payment_method`.
-- BD: Migración ejecutada en producción — ENUM actualizado.
-- BD: Columna `pedidosya_price` agregada a `products`. 20 productos con precios PYA cargados (hamburguesas, completos, sándwiches, papas, bebidas).
-- `caja3/src/components/MenuApp.jsx`: `cartSubtotalPYA` calcula total con precios PYA, modal muestra ambos precios, orden usa monto PYA para `pedidosya_cash`. Subtotal y total visibles cambian al seleccionar Efectivo, badge "🛵 Precio PedidosYA Efectivo aplicado" con precio caja tachado. Precios PYA por item en naranja con precio caja strikethrough. Fix condición tipo string/number.
-
-- `caja3/api/get_menu_products.php`: Agregado `pedidosya_price` al SELECT y al array de respuesta — root cause de precios PYA no apareciendo (la API no enviaba el campo).
-
-**Commits:** `a752094`, `40106b6`, `b23f03d`, `1e213d9`, `4fcef99`, `e0050d4`, `93a9c5c`, `9025e58`
-**Deploys:** caja3 ✅ (`9025e58`), SQL migrations ✅
-
-### 2026-04-17e — Chef_Bot: conversational RAG agent + full DB schema + AWS credentials fix
-
-**Cambios:**
-- `chef-bot/ai/promptBuilder.js`: Rediseño completo — agente conversacional con personalidad "Chef R11", esquema completo de BD (products, ingredients, product_recipes, categories, subcategories, tuu_orders, tuu_order_items, tv_orders, inventory_transactions, compras, compras_detalle, combos), ejemplos de saludos, ventas, stock, cambios masivos, descripciones.
-- `chef-bot/ai/responseParser.js`: Soporte para 5 intents (chat, query, modify, api_action, bulk_action). Fallback a chat si JSON parse falla.
-- `chef-bot/handlers/messageHandler.js`: Router por intent, manejo de mensajes largos (split 4096 chars), fallback sin Markdown si parse error, auth check centralizado.
-- `chef-bot/guards/sqlGuard.js`: Allowlist expandida a 12 tablas (+ tuu_orders, tuu_order_items, tv_orders, tv_order_items, inventory_transactions, compras, compras_detalle, categories, subcategories, combos, combo_items).
-- `mi3/frontend/app/admin/recetas/recomendaciones/page.tsx`: Fix field names mismatch — `price→current_price`, `margin→current_margin` para coincidir con backend.
-- VPS: AWS credentials configuradas en `~/.aws/credentials` para Bedrock access. Bot reiniciado via pm2.
-- `chef-bot/formatters/telegramFormatter.js`: Fix conversión de unidades en cálculo de costos — agregado `UNIT_CONVERSIONS` (kg↔g, L↔ml) y `calculateIngredientCost()`. Tomate 150g×$500/kg ahora muestra $75 (antes $75.000).
-
-**Commits:** `84daa6c`, `915b894`, `fb25e62`
-**Deploys:** chef-bot pm2 restart ✅, mi3-frontend ✅ (`915b894`)
-
-### 2026-04-17d — Deploy spec recipe-management-ai: mi3-frontend + mi3-backend + Chef_Bot pm2
-
-**Cambios:**
-- `chef-bot/ecosystem.config.js`: removidas credenciales hardcodeadas, ahora usa `process.env` con fallbacks.
-- Deploy mi3-frontend y mi3-backend via Coolify API — ambos `finished` ✅.
-- Chef_Bot (`@ChefR11_bot`) iniciado en VPS via pm2 (id 3, pid 2376466) con env vars: DB_HOST=10.0.1.7 (MySQL Docker), DB_USER=laruta11_user, DB_NAME=laruta11. `pm2 save` ejecutado.
-- Spec recipe-management-ai: tarea 11 marcada como completada. Todas las tareas requeridas done.
-
-**Commits:** `ec38aa7`
-**Deploys:** mi3-frontend ✅, mi3-backend ✅, chef-bot pm2 ✅
-
-### 2026-04-17c — Spec recipe-management-ai: frontend completo + Chef_Bot completo (tareas 5.2-11)
-
-**Cambios:**
-- mi3-frontend: 5 páginas de recetas creadas — `page.tsx` (listado con search/sort/filter/click-to-detail), `[productId]/page.tsx` (detalle/edición con IngredientAutocomplete + RecipeForm + CostBadge), `ajuste-masivo/page.tsx` (form→preview→success con validación negativos), `recomendaciones/page.tsx` (tabla comparativa con margen objetivo 65%), `auditoria/page.tsx` (stock audit con CSV export). `RecetasSection.tsx` actualizado con 4 tabs lazy-loaded.
-- chef-bot/: Proyecto Node.js completo creado — `ai/bedrockClient.js` (Nova Micro + Converse API + retry), `ai/promptBuilder.js` (schema + ejemplos NL→SQL), `ai/responseParser.js` (JSON + markdown code blocks), `guards/sqlGuard.js` (validación + parametrización + logging), `handlers/messageHandler.js` (flujo query/modify + auth + help), `handlers/callbackHandler.js` (confirm/cancel inline keyboard), `formatters/telegramFormatter.js` (recipe/stock/generic + Levenshtein fuzzy), `api/recipeApi.js` (HTTP client + executeModification), `logger.js` (audit logging), `index.js` (entry point + graceful shutdown), `ecosystem.config.js` (pm2).
-- Tests: 31 tests AI engine + 46 tests SQL_Guard + 33 tests formatter = 110 unit tests.
-
-**Commits:** `97b23a3`
-**Deploys:** pendiente → deployado en sesión 17d
-
 ---
 
-> Sesiones anteriores (165 total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (165+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
