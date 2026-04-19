@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`7e5ea66`) — ingredient categories: tabs dinámicos, API con categorías |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`7964cc5`) — Compras v1.8 + mobile upload fix + UX mejorado |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`5813a3a`) — SectionHeader reutilizable + Compras v1.8 |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`bf42896`) — Pipeline multi-agente + ai-budget query fix |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -95,6 +95,15 @@
 
 ## Sesiones Recientes
 
+### 2026-04-19g — SectionHeader reutilizable para mi3-frontend
+
+**Cambios:**
+- `mi3/frontend/components/admin/SectionHeader.tsx`: Nuevo — componente reutilizable con título, versión, tabs responsive (solo icono en móvil <640px, icono+label en sm+), slot `trailing` para contenido extra, 5 colores de acento, sticky por defecto, `min-h-[44px]` touch targets, `overflow-x-auto` scroll horizontal, aria roles.
+- `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Refactorizado para usar SectionHeader. Header inline eliminado, BudgetTrailing extraído como componente separado.
+
+**Commits:** `5813a3a`
+**Deploys:** mi3-frontend ✅ (`5813a3a`)
+
 ### 2026-04-19f — Fixes post-deploy pipeline multi-agente: SSE engine, datos vacíos, migración, v1.8
 
 **Cambios:**
@@ -135,24 +144,8 @@
 **Commits:** `4a75e68`
 **Deploys:** mi3-frontend ✅ (`4a75e68`)
 
-### 2026-04-19c — Spec ingredient-categories-improvement: tabs dinámicos, IA categoría, validación
-
-**Cambios:**
-- `mi3/backend/app/Enums/IngredientCategory.php`: Nuevo — constante VALID_CATEGORIES (13 categorías), isValid(), all().
-- `mi3/backend/app/Http/Controllers/Admin/StockController.php`: Validación de categoría con Rule::in(VALID_CATEGORIES).
-- `mi3/backend/app/Services/Compra/CompraService.php`: crearIngrediente() valida categoría, inválidas → null.
-- `mi3/backend/app/Services/Compra/GeminiService.php`: campo `categoria_sugerida` en schema extracción + instrucción en 6 prompts para inferir categoría por IA.
-- `caja3/api/compras/get_items_compra.php`: Respuesta cambia de array plano a `{ items, categories, valid_categories }`.
-- `caja3/src/components/ComprasApp.jsx`: Tabs dinámicos por categoría (scroll horizontal), tab "Todos" + "Bebidas" + categorías dinámicas desde API. Filtrado por categoría seleccionada.
-- `caja3/sql/fix_ingredient_categories.sql`: Fix encoding "LÃ¡cteos"→"Lácteos", limpiar categoría legacy "Ingredientes"→NULL.
-- Tests: 5 archivos PBT — IngredientCategoryTest (5 tests), IngredientCategoryPropertyTest (5 tests Eris), CompraServiceCategoryTest (4 tests Eris), CategoryExtractionPropertyTest (4 tests Eris), category-filter.test.mjs (600 iteraciones JS).
-- Spec completo: requirements.md (6 reqs), design.md (5 propiedades correctitud), tasks.md (8 tareas + 4 opcionales).
-
-**Commits:** `f31cfe7`, `7e5ea66`
-**Deploys:** caja3 ✅ (`7e5ea66`), mi3-backend ✅ (`7e5ea66`)
-**Pendiente:** ~~Ejecutar `caja3/sql/fix_ingredient_categories.sql` en BD~~ EJECUTADO. Fix adicional: double-encoded UTF-8 corregido con `CONVERT(CAST(CONVERT(category USING latin1) AS BINARY) USING utf8mb4)`. Verificado via API: 13 categorías limpias, sin caracteres corruptos.
-
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesión 2026-04-19c (ingredient-categories-improvement) archivada.
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
