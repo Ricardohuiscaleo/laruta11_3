@@ -580,7 +580,14 @@ export default function RegistroPage() {
                         <div className="flex flex-wrap gap-2 mt-1">
                           {item.empaque_detalle && <span className="text-xs text-blue-600">📦 {item.empaque_detalle}</span>}
                           {item.notas_descuento && <span className="text-xs text-orange-600">🏷️ {item.notas_descuento}</span>}
-                          {item.ingrediente_id && <span className="text-xs text-green-600">✅ {item.match_name} ({Math.round(item.match_score || 0)}%)</span>}
+                          {item.ingrediente_id && (
+                            <span className="text-xs text-green-600">
+                              ✅ {item.match_name} ({Math.round(item.match_score || 0)}%)
+                              {(item.match_score || 0) === 100 && !item.product_id && (
+                                <span className="ml-1 inline-flex items-center rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">🆕 Nuevo</span>
+                              )}
+                            </span>
+                          )}
                           {!item.ingrediente_id && !item.product_id && item.match_name && (item.match_score || 0) >= 75 && (
                             <span className="text-xs text-amber-600">⚠️ {item.match_name} ({Math.round(item.match_score || 0)}%)</span>
                           )}
