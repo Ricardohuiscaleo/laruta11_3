@@ -164,22 +164,31 @@ export default function RegistroPage() {
 
   // Upload + extract + group
   const processFiles = useCallback(async (files: FileList | File[]) => {
-    const imageFiles = Array.from(files).filter(f =>
-      f.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i.test(f.name)
-    );
-    if (imageFiles.length === 0) return;
+    console.log('[Compras] processFiles called, files:', files.length);
+    const imageFiles = Array.from(files).filter(f => {
+      const byType = f.type.startsWith('image/');
+      const byExt = /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i.test(f.name);
+      console.log('[Compras] file:', f.name, 'type:', f.type, 'size:', f.size, 'byType:', byType, 'byExt:', byExt);
+      return byType || byExt;
+    });
+    if (imageFiles.length === 0) { console.warn('[Compras] No image files after filter'); return; }
 
     // Single photo: upload then show pipeline visual SSE
     if (imageFiles.length === 1) {
       setUploading(true);
       try {
+        console.log('[Compras] compressing image...');
         const compressed = await compressImage(imageFiles[0]);
+        console.log('[Compras] compressed:', compressed.name, compressed.size, compressed.type);
         const fd = new FormData();
         fd.append('image', compressed);
+        console.log('[Compras] uploading to /compras/upload-temp...');
         const res = await comprasApi.upload<{ tempKey: string; tempUrl: string }>('/compras/upload-temp', fd);
+        console.log('[Compras] upload OK, tempKey:', res.tempKey);
         setPipelineTempKey(res.tempKey);
         setPipelineTempUrl(res.tempUrl);
       } catch (err) {
+        console.error('[Compras] upload error:', err);
         // Show error to user instead of silently failing
         const newGroups = [...groups.filter((_, i) => !submitted.includes(i))];
         newGroups.push({
@@ -540,13 +549,17 @@ export default function RegistroPage() {
         )}
         <input id="compras-file-input" ref={inputRef} type="file" accept="image/*" multiple className="hidden"
           onChange={e => {
+            console.log('[Compras] onChange fired, files:', e.target.files?.length);
             const files = e.target.files;
             if (files && files.length > 0) {
               // Reset immediately so same file can be re-selected
               const fileList = files;
               e.target.value = '';
               // Defer to next tick to avoid iOS Safari issues with async in onChange
+              console.log('[Compras] scheduling processFiles via setTimeout');
               setTimeout(() => processFiles(fileList), 0);
+            } else {
+              console.warn('[Compras] onChange: no files selected');
             }
           }} />
       </label>
