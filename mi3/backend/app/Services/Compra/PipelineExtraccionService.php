@@ -240,7 +240,7 @@ class PipelineExtraccionService
      */
     private function isGeminiAvailable(): bool
     {
-        return !empty(env('GOOGLE_API_KEY'));
+        return !empty(env('GOOGLE_API_KEY', env('google_api_key')));
     }
 
     /**

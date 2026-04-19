@@ -14,7 +14,7 @@ class GeminiService
 
     public function __construct()
     {
-        $this->apiKey = (string) env('GOOGLE_API_KEY', '');
+        $this->apiKey = (string) env('GOOGLE_API_KEY', env('google_api_key', ''));
         $this->model = (string) env('GEMINI_MODEL', 'gemini-2.5-flash-lite');
     }
 
