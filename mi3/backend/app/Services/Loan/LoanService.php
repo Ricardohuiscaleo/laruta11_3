@@ -156,11 +156,11 @@ class LoanService
                 'notas_admin' => $notas,
             ]);
 
-            // Create positive salary adjustment (adelanto disbursement)
+            // Create negative salary adjustment (adelanto = descuento de sueldo)
             AjusteSueldo::create([
                 'personal_id' => $prestamo->personal_id,
                 'mes' => $mes . '-01',
-                'monto' => $montoAprobado,
+                'monto' => -abs($montoAprobado),
                 'concepto' => 'Adelanto de sueldo aprobado',
                 'categoria_id' => $categoriaId,
             ]);
