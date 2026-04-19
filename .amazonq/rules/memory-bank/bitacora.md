@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`7e5ea66`) — ingredient categories: tabs dinámicos, API con categorías |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`7edf965`) — Compras v1.8 pipeline multi-agente 4 fases |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`0ac68c4`) — Compras v1.8 + UX: sin spinners, $ precio, Total label, crear con categoría |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`b818a04`) — Pipeline multi-agente + SSE engine fix + datos preservados |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -102,9 +102,11 @@
 - `mi3/backend/app/Http/Controllers/Admin/ExtraccionController.php`: `engine` promovido a nivel raíz del evento SSE (antes estaba enterrado en `data`, frontend no lo detectaba).
 - `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Versión v1.7 → v1.8.
 - Eliminada migración duplicada `2026_04_19_create_extraction_feedback_table.php` (tabla ya existía desde `2026_04_15`).
+- `mi3/frontend/app/admin/compras/registro/page.tsx`: UX — quitar spinners de cantidad/precio (appearance:textfield), precio con prefijo $, label "Total" sobre subtotal, botón crear ingrediente muestra categoría (> insumos > Packaging).
+- `mi3/frontend/types/compras.ts`: `categoria_sugerida` agregado a ExtractionItem y RegistroItem.
 
-**Commits:** `0106e5b`, `ee1f561`, `b818a04`, `7edf965`
-**Deploys:** mi3-backend ✅ (×3), mi3-frontend ✅ (`7edf965`)
+**Commits:** `0106e5b`, `ee1f561`, `b818a04`, `7edf965`, `f508b92`, `0ac68c4`
+**Deploys:** mi3-backend ✅ (×3), mi3-frontend ✅ (`0ac68c4`)
 
 ### 2026-04-19e — Spec multi-agent-compras-pipeline: implementación completa tareas 2.6-10
 
