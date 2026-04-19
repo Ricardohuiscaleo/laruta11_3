@@ -581,13 +581,15 @@ export default function RegistroPage() {
                           {item.empaque_detalle && <span className="text-xs text-blue-600">📦 {item.empaque_detalle}</span>}
                           {item.notas_descuento && <span className="text-xs text-orange-600">🏷️ {item.notas_descuento}</span>}
                           {item.ingrediente_id && <span className="text-xs text-green-600">✅ {item.match_name} ({Math.round(item.match_score || 0)}%)</span>}
-                          {!item.ingrediente_id && !item.product_id && item.match_name && (
+                          {!item.ingrediente_id && !item.product_id && item.match_name && (item.match_score || 0) >= 75 && (
                             <span className="text-xs text-amber-600">⚠️ {item.match_name} ({Math.round(item.match_score || 0)}%)</span>
                           )}
-                          {!item.ingrediente_id && !item.product_id && !item.match_name && (
-                            <button
-                              type="button"
-                              onClick={async () => {
+                          {!item.ingrediente_id && !item.product_id && (!(item.match_score) || (item.match_score || 0) < 75) && (
+                            <>
+                              {item.match_name && <span className="text-xs text-gray-400">🤔 {item.match_name} ({Math.round(item.match_score || 0)}%) — no parece correcto</span>}
+                              <button
+                                type="button"
+                                onClick={async () => {
                                 try {
                                   const res = await comprasApi.post<{ success: boolean; ingrediente: { id: number; name: string; unit: string; cost_per_unit: number } }>('/compras/ingrediente', {
                                     name: item.nombre,
@@ -608,6 +610,7 @@ export default function RegistroPage() {
                               <Sparkles className="h-3 w-3" />
                               Crear &quot;{item.nombre}&quot; como ingrediente
                             </button>
+                            </>
                           )}
                         </div>
                       </div>
