@@ -170,7 +170,10 @@ class ExtraccionController extends Controller
         $budgetClp = 10000; // CLP 10,000 prepago
         $usdToClp = 950; // approximate rate
 
-        $stats = \App\Models\AiExtractionLog::where('model_id', 'like', 'gemini%')
+        $stats = \App\Models\AiExtractionLog::where(function ($q) {
+                $q->where('model_id', 'like', 'gemini%')
+                  ->orWhere('model_id', 'like', 'pipeline:%gemini%');
+            })
             ->selectRaw('COUNT(*) as total_extractions')
             ->selectRaw("SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(raw_response, '$.tokens.total.prompt')) AS UNSIGNED)) as total_prompt_tokens")
             ->selectRaw("SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(raw_response, '$.tokens.total.candidates')) AS UNSIGNED)) as total_candidates_tokens")
