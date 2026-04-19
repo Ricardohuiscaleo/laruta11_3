@@ -144,8 +144,17 @@ export default function RegistroPage() {
         const res = await comprasApi.upload<{ tempKey: string; tempUrl: string }>('/compras/upload-temp', fd);
         setPipelineTempKey(res.tempKey);
         setPipelineTempUrl(res.tempUrl);
-      } catch {
-        // fallback: skip pipeline
+      } catch (err) {
+        // Show error to user instead of silently failing
+        const newGroups = [...groups.filter((_, i) => !submitted.includes(i))];
+        newGroups.push({
+          proveedor: '', fecha_compra: new Date().toISOString().split('T')[0],
+          metodo_pago: 'cash', tipo_compra: 'ingredientes', notas: '',
+          images: [{ tempKey: '', tempUrl: '', status: 'error', error: 'Error al subir imagen. Intenta de nuevo.' }],
+          items: [], expanded: true,
+        });
+        setGroups(newGroups);
+        setSubmitted([]);
       }
       setUploading(false);
       return;
@@ -480,10 +489,10 @@ export default function RegistroPage() {
       )}
 
       {/* Drop zone — always visible */}
-      <div
+      <label
+        htmlFor="compras-file-input"
         onDragOver={e => e.preventDefault()}
         onDrop={e => { e.preventDefault(); if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); }}
-        onClick={() => !pipelineTempKey && inputRef.current?.click()}
         className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center hover:border-mi3-400 hover:bg-mi3-50/30 transition-colors"
       >
         {uploading ? (
@@ -493,9 +502,9 @@ export default function RegistroPage() {
           <p className="text-sm text-gray-600">Sube 1 o más fotos de boletas/facturas</p>
           <p className="text-xs text-gray-400">La IA extrae datos y agrupa por proveedor</p></>
         )}
-        <input ref={inputRef} type="file" accept="image/*" multiple className="hidden"
+        <input id="compras-file-input" ref={inputRef} type="file" accept="image/*" multiple className="hidden"
           onChange={e => { if (e.target.files) processFiles(e.target.files); e.target.value = ''; }} />
-      </div>
+      </label>
 
       {/* Pipeline visual SSE (single photo) */}
       {pipelineTempKey && (
