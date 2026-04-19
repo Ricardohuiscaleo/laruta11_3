@@ -76,6 +76,7 @@
 
 - [ ] **Pipeline multi-agente compras (optimización costos Gemini)** — Refactorizar GeminiService para: Agente 1 (visión, 1 call con imagen → texto raw + clasificación), Agente 2 (texto, análisis con prompt por tipo + contexto BD), Agente 3 (texto, validación coherencia montos/cantidades), Agente 4 (reconciliación o pregunta al usuario). Imagen se procesa 1 sola vez, agentes 2-4 solo texto (más barato). Evolución del pipeline actual, no feature nueva.
 - [ ] **Crear ingrediente smart con categoría inferida** — Cuando se crea ingrediente inline desde compras, inferir categoría automáticamente del contexto (insumos si es envase, ingredientes si es alimento, etc.).
+- [ ] **Refactorizar categorías de ingredientes** — Fix encoding "LÃ¡cteos"→"Lácteos", eliminar categoría vacía "Ingredientes" (0 items), Stock frontend debe mostrar todas las 14 categorías (hoy solo muestra Ingredientes y Bebidas), considerar tabla separada `ingredient_categories` en vez de string libre. Categorías actuales: Carnes(10), Vegetales(20), Salsas(8), Condimentos(8), Panes(4), Embutidos(1), Pre-elaborados(1), Lácteos(4), Bebidas(7), Gas(2), Servicios(4), Packaging(28), Limpieza(15).
 
 - [x] Obtener chat_id del grupo "Pedidos 11" — no aplica, flujo directo al bot de Telegram configurado.
 - [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3.
