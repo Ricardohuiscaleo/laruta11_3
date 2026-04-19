@@ -503,7 +503,16 @@ export default function RegistroPage() {
           <p className="text-xs text-gray-400">La IA extrae datos y agrupa por proveedor</p></>
         )}
         <input id="compras-file-input" ref={inputRef} type="file" accept="image/*" multiple className="hidden"
-          onChange={e => { if (e.target.files) processFiles(e.target.files); e.target.value = ''; }} />
+          onChange={e => {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+              // Reset immediately so same file can be re-selected
+              const fileList = files;
+              e.target.value = '';
+              // Defer to next tick to avoid iOS Safari issues with async in onChange
+              setTimeout(() => processFiles(fileList), 0);
+            }
+          }} />
       </label>
 
       {/* Pipeline visual SSE (single photo) */}
