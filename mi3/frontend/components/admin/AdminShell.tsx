@@ -181,14 +181,16 @@ export default function AdminShell() {
       <Suspense fallback={null}><TokenFromUrl /></Suspense>
       <PushNotificationInit />
 
-      {/* Desktop layout: sidebar + content */}
+      {/* Desktop layout: sidebar (fixed) + content (scrollable) */}
       <div className="hidden md:flex min-h-screen">
-        <AdminSidebarSPA
-          activeSection={activeSection}
-          onSectionChange={onSectionChange}
-          badges={badges}
-        />
-        <main className="flex-1 p-6">
+        <div className="sticky top-0 h-screen shrink-0">
+          <AdminSidebarSPA
+            activeSection={activeSection}
+            onSectionChange={onSectionChange}
+            badges={badges}
+          />
+        </div>
+        <main className="flex-1 min-w-0 p-6 overflow-y-auto">
           {Array.from(loadedSections).map(key => {
             const Component = sectionImports[key];
             return (

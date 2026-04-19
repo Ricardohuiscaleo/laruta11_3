@@ -113,7 +113,7 @@ export default function AdminSidebarSPA({ activeSection, onSectionChange, badges
   return (
     <aside
       className={cn(
-        'hidden md:flex md:flex-col bg-red-600 text-white transition-all duration-200',
+        'hidden md:flex md:flex-col h-full bg-red-600 text-white transition-all duration-200',
         collapsed ? 'w-16' : 'w-64'
       )}
       role="navigation"
