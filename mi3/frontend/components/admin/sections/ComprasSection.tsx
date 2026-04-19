@@ -67,7 +67,7 @@ export default function ComprasSection() {
           {/* Row 1: Title + Budget */}
           <div className="flex items-center justify-between gap-4 mb-2">
             <h1 className="text-xl font-bold text-gray-900 shrink-0">
-              Compras <span className="text-xs text-gray-400 font-normal">v1.8.2</span>
+              Compras <span className="text-xs text-gray-400 font-normal">v1.8.3</span>
             </h1>
 
             {budget && (

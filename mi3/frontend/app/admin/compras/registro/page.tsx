@@ -128,6 +128,40 @@ export default function RegistroPage() {
     if (ctxKpis) setSaldo(ctxKpis.saldo_disponible);
   }, [ctxKpis]);
 
+  // Compress image using canvas (max 1200px wide, JPEG quality 0.7)
+  const compressImage = useCallback((file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      // Skip non-image or already small files
+      if (file.size < 500_000) { resolve(file); return; }
+
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const maxW = 1200;
+        const scale = img.width > maxW ? maxW / img.width : 1;
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(file); return; }
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob || blob.size >= file.size) { resolve(file); return; }
+            resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }));
+          },
+          'image/jpeg',
+          0.7
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }, []);
+
   // Upload + extract + group
   const processFiles = useCallback(async (files: FileList | File[]) => {
     const imageFiles = Array.from(files).filter(f =>
@@ -139,8 +173,9 @@ export default function RegistroPage() {
     if (imageFiles.length === 1) {
       setUploading(true);
       try {
+        const compressed = await compressImage(imageFiles[0]);
         const fd = new FormData();
-        fd.append('image', imageFiles[0]);
+        fd.append('image', compressed);
         const res = await comprasApi.upload<{ tempKey: string; tempUrl: string }>('/compras/upload-temp', fd);
         setPipelineTempKey(res.tempKey);
         setPipelineTempUrl(res.tempUrl);
@@ -170,8 +205,9 @@ export default function RegistroPage() {
 
       let tempKey = '', tempUrl = '';
       try {
+        const compressed = await compressImage(file);
         const fd = new FormData();
-        fd.append('image', file);
+        fd.append('image', compressed);
         const res = await comprasApi.upload<{ tempKey: string; tempUrl: string }>('/compras/upload-temp', fd);
         tempKey = res.tempKey;
         tempUrl = res.tempUrl;

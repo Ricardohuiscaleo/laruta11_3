@@ -8,6 +8,9 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo_mysql mbstring gd zip bcmath pcntl \
     && a2enmod rewrite headers
 
+# PHP upload limits (mobile photos can be 5-10MB)
+RUN printf 'upload_max_filesize = 15M\npost_max_size = 20M\nmax_execution_time = 120\n' > /usr/local/etc/php/conf.d/uploads.ini
+
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
