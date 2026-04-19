@@ -585,7 +585,29 @@ export default function RegistroPage() {
                             <span className="text-xs text-amber-600">⚠️ {item.match_name} ({Math.round(item.match_score || 0)}%)</span>
                           )}
                           {!item.ingrediente_id && !item.product_id && !item.match_name && (
-                            <span className="text-xs text-red-500">❌ Sin match — busca arriba para vincular</span>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  const res = await comprasApi.post<{ success: boolean; ingrediente: { id: number; name: string; unit: string; cost_per_unit: number } }>('/compras/ingrediente', {
+                                    name: item.nombre,
+                                    unit: item.unidad,
+                                    cost_per_unit: item.precio_unitario || 0,
+                                    supplier: group.proveedor || null,
+                                  });
+                                  if (res.success && res.ingrediente) {
+                                    updateItem(gi, ii, 'ingrediente_id', res.ingrediente.id);
+                                    updateItem(gi, ii, 'match_name', res.ingrediente.name);
+                                    updateItem(gi, ii, 'match_score', 100);
+                                    updateItem(gi, ii, 'item_type', 'ingredient');
+                                  }
+                                } catch { /* silently fail, user can retry */ }
+                              }}
+                              className="inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-200 px-2 py-0.5 text-xs text-blue-700 hover:bg-blue-100 transition-colors"
+                            >
+                              <Sparkles className="h-3 w-3" />
+                              Crear &quot;{item.nombre}&quot; como ingrediente
+                            </button>
                           )}
                         </div>
                       </div>
