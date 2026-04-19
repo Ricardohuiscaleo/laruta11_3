@@ -9,6 +9,7 @@ export interface ExtractionItem {
   descuento?: number;
   empaque_detalle?: string | null;
   notas_descuento?: string | null;
+  categoria_sugerida?: string | null;
 }
 
 export interface ItemSugerencia {
