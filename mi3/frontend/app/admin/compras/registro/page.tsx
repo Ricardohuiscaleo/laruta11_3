@@ -130,7 +130,9 @@ export default function RegistroPage() {
 
   // Upload + extract + group
   const processFiles = useCallback(async (files: FileList | File[]) => {
-    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    const imageFiles = Array.from(files).filter(f =>
+      f.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i.test(f.name)
+    );
     if (imageFiles.length === 0) return;
 
     // Single photo: upload then show pipeline visual SSE
