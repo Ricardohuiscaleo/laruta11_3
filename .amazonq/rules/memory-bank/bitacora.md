@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`7e5ea66`) — ingredient categories: tabs dinámicos, API con categorías |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`791df66`) — StockDashboard 4 grupos + sticky header fix responsive |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`7e5ea66`) — IngredientCategory enum + validación categorías + GeminiService categoria_sugerida |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`0edcde8`) — Pipeline multi-agente 4 fases + ReconciliationQuestions UI |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`0edcde8`) — Pipeline multi-agente + FeedbackService auto-aprendizaje |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -74,7 +74,7 @@
 
 ### 🟢 Mejoras futuras
 
-- [ ] **Pipeline multi-agente compras (optimización costos Gemini)** — Refactorizar GeminiService para: Agente 1 (visión, 1 call con imagen → texto raw + clasificación), Agente 2 (texto, análisis con prompt por tipo + contexto BD), Agente 3 (texto, validación coherencia montos/cantidades), Agente 4 (reconciliación o pregunta al usuario). Imagen se procesa 1 sola vez, agentes 2-4 solo texto (más barato). Evolución del pipeline actual, no feature nueva.
+- [x] **Pipeline multi-agente compras (optimización costos Gemini)** — COMPLETADO. 4 agentes (Visión→Análisis→Validación→Reconciliación), FeedbackService auto-aprendizaje, frontend 4 fases SSE, ReconciliationQuestions UI, 8 property tests (25K+ assertions). Commit `0edcde8`. Pendiente: ejecutar migración `extraction_feedback` en BD, test en vivo con imagen real.
 - [x] **Crear ingrediente smart con categoría inferida** — Cuando se crea ingrediente inline desde compras, inferir categoría automáticamente del contexto (insumos si es envase, ingredientes si es alimento, etc.).
 - [x] **Refactorizar categorías de ingredientes** — Fix encoding "LÃ¡cteos"→"Lácteos", eliminar categoría vacía "Ingredientes" (0 items), Stock frontend debe mostrar todas las 14 categorías (hoy solo muestra Ingredientes y Bebidas), considerar tabla separada `ingredient_categories` en vez de string libre. Categorías actuales: Carnes(10), Vegetales(20), Salsas(8), Condimentos(8), Panes(4), Embutidos(1), Pre-elaborados(1), Lácteos(4), Bebidas(7), Gas(2), Servicios(4), Packaging(28), Limpieza(15).
 
@@ -94,6 +94,21 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-19e — Spec multi-agent-compras-pipeline: implementación completa tareas 2.6-10
+
+**Cambios:**
+- `mi3/backend/app/Services/Compra/FeedbackService.php`: Nuevo — motor auto-aprendizaje con capturarFeedback(), getFewShotExamples(), formatearEjemplos(), computeDiff(). Captura diff entre datos extraídos y guardados, inyecta correcciones como few-shot en futuras extracciones.
+- `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: ejecutarMultiAgente() orquestando 4 agentes (Visión→Análisis→Validación→Reconciliación) con SSE, degradación graceful (agentes 3-4 opcionales), logging tokens por agente, costo USD, env flag `MULTI_AGENT_PIPELINE=true`. FeedbackService inyectado en constructor.
+- `mi3/backend/app/Http/Controllers/Admin/CompraController.php`: FeedbackService inyectado, captura feedback al guardar compra si extraction_log_id presente (try/catch no-blocking).
+- `mi3/frontend/components/admin/compras/ExtractionPipeline.tsx`: 4 fases multi-agente (Eye/Brain/ShieldCheck/Scale), detección engine "multi-agent", PhaseDetails para validación (inconsistencias) y reconciliación (correcciones auto + preguntas).
+- `mi3/frontend/components/admin/compras/ReconciliationQuestions.tsx`: Nuevo — UI preguntas reconciliación con cards, radio buttons, responsive 320px+.
+- `mi3/frontend/app/admin/compras/registro/page.tsx`: Flujo reconciliación integrado (onReconciliationNeeded → POST respuestas → aplicar correcciones).
+- Tests PBT (8 archivos, 37+ tests, 25K+ assertions): ImageProcessedOnce, VisionOutputStructure, FewShotInjection, FeedbackDiff, ValidationArithmetic, ValidationFiscal, ReconciliationPassThrough, SSEOrder.
+
+**Commits:** `0edcde8`
+**Deploys:** mi3-backend ✅ (`0edcde8`), mi3-frontend ✅ (`0edcde8`)
+**Pendiente:** Ejecutar `php artisan migrate` en producción (tabla extraction_feedback). Test en vivo con imagen real.
 
 ### 2026-04-19d — mi3 StockDashboard: 4 grupos categorías + fix sticky header
 
@@ -140,20 +155,7 @@
 **Commits:** `2de4203`→`2ce0240` (13 commits)
 **Deploys:** mi3-frontend ✅ (`2ce0240`), mi3-backend ✅ (`f91112d`)
 
-### 2026-04-19a — Spec gemini-compras-pipeline: GeminiService + pipeline 2 fases + frontend v1.7
-
-**Cambios:**
-- `mi3/backend/app/Services/Compra/GeminiService.php`: Nuevo — servicio Gemini con clasificar() + analizar() multimodal, Structured Outputs (responseSchema), prompts por tipo adaptados de AnalisisService, normalizeAmounts(), token tracking (usageMetadata), curl directo a generativelanguage.googleapis.com.
-- `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: Agregado GeminiService al constructor, isGeminiAvailable(), ejecutarGemini() con 2 fases SSE (clasificacion + analisis), campo `engine: gemini` en eventos SSE, cálculo de costo estimado USD, fallback a clasificación por reglas si Gemini falla.
-- `mi3/frontend/components/admin/compras/ExtractionPipeline.tsx`: Detección dinámica de motor (gemini/bedrock) desde SSE, 2 fases para Gemini vs 3 para Bedrock, labels adaptados, tokens en detalles de fase.
-- `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Versión v1.6 → v1.7.
-- `mi3/backend/.env.example`: Agregado `GOOGLE_API_KEY` y `GEMINI_MODEL=gemini-2.5-flash-lite`.
-- Spec completo: requirements.md (8 reqs), design.md (arquitectura + 7 propiedades correctitud), tasks.md.
-
-**Commits:** `009259d`, `2de4203`, `cbab1fc`
-**Deploys:** mi3-frontend ✅ (`cbab1fc`), mi3-backend ✅ (`2de4203`)
-
 ---
 
-> Sesiones anteriores (165+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
