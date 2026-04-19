@@ -74,6 +74,9 @@
 
 ### 🟢 Mejoras futuras
 
+- [ ] **Pipeline multi-agente compras (optimización costos Gemini)** — Refactorizar GeminiService para: Agente 1 (visión, 1 call con imagen → texto raw + clasificación), Agente 2 (texto, análisis con prompt por tipo + contexto BD), Agente 3 (texto, validación coherencia montos/cantidades), Agente 4 (reconciliación o pregunta al usuario). Imagen se procesa 1 sola vez, agentes 2-4 solo texto (más barato). Evolución del pipeline actual, no feature nueva.
+- [ ] **Crear ingrediente smart con categoría inferida** — Cuando se crea ingrediente inline desde compras, inferir categoría automáticamente del contexto (insumos si es envase, ingredientes si es alimento, etc.).
+
 - [x] Obtener chat_id del grupo "Pedidos 11" — no aplica, flujo directo al bot de Telegram configurado.
 - [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3.
 - [x] **Limpiar datos de prueba delivery** — eliminados 6 pedidos TEST-DLV-* y SIM-*. Pendiente: revertir roles rider de Camila(1), Andrés(3), Dafne(18) cuando termine el testing.

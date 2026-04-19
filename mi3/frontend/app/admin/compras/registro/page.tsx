@@ -615,7 +615,9 @@ export default function RegistroPage() {
                               className="inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-200 px-2 py-0.5 text-xs text-blue-700 hover:bg-blue-100 transition-colors"
                             >
                               <Sparkles className="h-3 w-3" />
-                              Crear &quot;{item.nombre}&quot; como ingrediente
+                              Crear &quot;{item.nombre}&quot; — {
+                                { ingredientes: 'ingrediente', insumos: 'insumo', equipamiento: 'equipamiento', otros: 'otro' }[group.tipo_compra as string] || 'item'
+                              }
                             </button>
                             </>
                           )}
