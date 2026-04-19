@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`9025e58`) — pedidosya_cash: fix root cause - pedidosya_price en get_menu_products.php |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`37fbfd9`) — sticky header + presupuesto IA + crear ingrediente inline + sidebar fija v1.7 |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`ca13eb2`) — GeminiService + ai-budget + fecha fallback + equivalencia fix + adelanto negativo |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2ce0240`) — crear ingrediente inline + tag 🆕 Nuevo + sticky header + presupuesto IA v1.7 |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`f91112d`) — GeminiService + reconcilia subtotal item único + equivalencia base units + adelanto negativo |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -90,6 +90,24 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-19b — Fixes post-deploy Gemini: equivalencias, fecha, sidebar, presupuesto IA, crear ingrediente inline
+
+**Cambios:**
+- `mi3/backend/app/Services/Compra/GeminiService.php`: Fix google_api_key lowercase fallback para Coolify env. Prompts producto/bascula: "NO uses fechas de vencimiento o fabricación".
+- `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: normalizeFecha() fallback a hoy si fecha null/inválida/empaque. reconcileSingleItemTotal() ajusta subtotal item único al monto_total boleta. applyProductEquivalences() skip cuando item ya viene en unidad base (kg/kilos/g/unidad/litro/ml). Base units expandida con variantes (kilos, litros, gramos).
+- `mi3/backend/app/Services/Loan/LoanService.php`: Adelanto de sueldo se registra como -abs() (descuento, no abono).
+- `mi3/backend/app/Http/Controllers/Admin/ExtraccionController.php`: Nuevo endpoint `GET ai-budget` con tokens, costo USD, saldo CLP.
+- `mi3/backend/routes/api.php`: Ruta `compras/ai-budget`.
+- `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Sticky header con presupuesto IA (saldo/total + barra progreso + tokens + usos).
+- `mi3/frontend/components/admin/AdminShell.tsx`: Sidebar fija desktop (sticky top-0 h-screen).
+- `mi3/frontend/components/admin/AdminSidebarSPA.tsx`: h-full para sidebar.
+- `mi3/frontend/app/admin/compras/registro/page.tsx`: Botón "✨ Crear como ingrediente" cuando match < 75%. Tag "🆕 Nuevo" post-creación.
+- `mi3/frontend/app/admin/compras/consola/page.tsx`: Fases dinámicas Gemini/Bedrock + tokens/costo USD.
+- BD: Compra #281 fecha corregida 2023→2026. Ajuste #38 Andrés: +50000→-50000.
+
+**Commits:** `2de4203`→`2ce0240` (13 commits)
+**Deploys:** mi3-frontend ✅ (`2ce0240`), mi3-backend ✅ (`f91112d`)
 
 ### 2026-04-19a — Spec gemini-compras-pipeline: GeminiService + pipeline 2 fases + frontend v1.7
 
