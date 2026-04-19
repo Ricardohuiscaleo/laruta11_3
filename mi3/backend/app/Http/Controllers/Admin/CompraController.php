@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Compra;
 use App\Services\Compra\CompraService;
+use App\Services\Compra\FeedbackService;
 use App\Services\Compra\ImagenService;
 use App\Services\Compra\SugerenciaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class CompraController extends Controller
@@ -17,6 +19,7 @@ class CompraController extends Controller
         private CompraService $compraService,
         private SugerenciaService $sugerenciaService,
         private ImagenService $imagenService,
+        private FeedbackService $feedbackService,
     ) {}
 
     /**
@@ -65,6 +68,24 @@ class CompraController extends Controller
             $tempKeys = $request->input('temp_keys', []);
             if (!empty($tempKeys)) {
                 $imagenes = $this->imagenService->asociarImagenes($result['compra_id'], $tempKeys);
+            }
+
+            // Capture feedback if extraction_log_id is present (auto-learning)
+            $extractionLogId = $request->input('extraction_log_id');
+            if ($extractionLogId) {
+                try {
+                    $this->feedbackService->capturarFeedback(
+                        (int) $extractionLogId,
+                        $result['compra_id'],
+                        $data,
+                    );
+                } catch (\Exception $e) {
+                    Log::warning('FeedbackService: Error capturando feedback', [
+                        'extraction_log_id' => $extractionLogId,
+                        'compra_id' => $result['compra_id'],
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
 
             return response()->json([

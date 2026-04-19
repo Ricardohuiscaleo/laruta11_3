@@ -1,12 +1,17 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Search, Brain, Bot, Check, X, Loader2, AlertTriangle, Clock } from 'lucide-react';
+import { Search, Brain, Bot, Check, X, Loader2, AlertTriangle, Clock, Eye, ShieldCheck, Scale } from 'lucide-react';
 import { getToken } from '@/lib/auth';
 import type { ExtractionResult } from '@/types/compras';
 
-type PhaseId = 'percepcion' | 'clasificacion' | 'analisis';
-type EngineType = 'gemini' | 'bedrock' | null;
+// Legacy phase IDs (Bedrock/Gemini)
+type LegacyPhaseId = 'percepcion' | 'clasificacion' | 'analisis';
+// Multi-agent phase IDs
+type MultiAgentPhaseId = 'vision' | 'analisis' | 'validacion' | 'reconciliacion';
+// Combined type
+type PhaseId = LegacyPhaseId | MultiAgentPhaseId;
+type EngineType = 'gemini' | 'bedrock' | 'multi-agent' | null;
 
 interface PipelinePhase {
   id: PhaseId;
@@ -25,10 +30,17 @@ interface PipelineEvent {
   elapsed_ms: number;
 }
 
+export interface ReconciliationQuestion {
+  campo: string;
+  descripcion: string;
+  opciones: { valor: string | number; etiqueta: string }[];
+}
+
 interface ExtractionPipelineProps {
   tempKey: string;
   onResult: (data: ExtractionResult, sugerencias: ExtractionResult['sugerencias']) => void;
   onError: () => void;
+  onReconciliationNeeded?: (questions: ReconciliationQuestion[]) => void;
   autoStart?: boolean;
 }
 
@@ -45,8 +57,15 @@ const GEMINI_PHASES: PipelinePhase[] = [
   { id: 'analisis', label: 'Analizando con IA (Gemini)', icon: <Bot className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
 ];
 
+const MULTI_AGENT_PHASES: PipelinePhase[] = [
+  { id: 'vision', label: 'Percibiendo imagen', icon: <Eye className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
+  { id: 'analisis', label: 'Estructurando datos', icon: <Brain className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
+  { id: 'validacion', label: 'Validando coherencia', icon: <ShieldCheck className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
+  { id: 'reconciliacion', label: 'Reconciliando', icon: <Scale className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
+];
 
-export default function ExtractionPipeline({ tempKey, onResult, onError, autoStart = true }: ExtractionPipelineProps) {
+
+export default function ExtractionPipeline({ tempKey, onResult, onError, onReconciliationNeeded, autoStart = true }: ExtractionPipelineProps) {
   const [phases, setPhases] = useState<PipelinePhase[]>(BEDROCK_PHASES.map(p => ({ ...p })));
   const [running, setRunning] = useState(false);
   const [slow, setSlow] = useState(false);
@@ -64,14 +83,21 @@ export default function ExtractionPipeline({ tempKey, onResult, onError, autoSta
     engineRef.current = engine;
     if (engine === 'gemini') {
       setPhases(GEMINI_PHASES.map(p => ({ ...p })));
+    } else if (engine === 'multi-agent') {
+      setPhases(MULTI_AGENT_PHASES.map(p => ({ ...p })));
     }
   }, []);
 
   const handleEvent = useCallback((event: PipelineEvent) => {
     const { fase, status, data, elapsed_ms, engine } = event;
 
+    // Detect engine from first event
     if (engine && !engineRef.current) {
-      initPhasesForEngine(engine === 'gemini' ? 'gemini' : 'bedrock');
+      if (engine === 'multi-agent') {
+        initPhasesForEngine('multi-agent');
+      } else {
+        initPhasesForEngine(engine === 'gemini' ? 'gemini' : 'bedrock');
+      }
     }
 
     if (fase === 'resultado') {
@@ -99,10 +125,20 @@ export default function ExtractionPipeline({ tempKey, onResult, onError, autoSta
       return;
     }
 
+    // Determine valid phases based on engine
     const phaseId = fase as PhaseId;
-    const validPhases: PhaseId[] = engineRef.current === 'gemini'
-      ? ['clasificacion', 'analisis']
-      : ['percepcion', 'clasificacion', 'analisis'];
+    const multiAgentPhases: MultiAgentPhaseId[] = ['vision', 'analisis', 'validacion', 'reconciliacion'];
+    const geminiPhases: LegacyPhaseId[] = ['clasificacion', 'analisis'];
+    const bedrockPhases: LegacyPhaseId[] = ['percepcion', 'clasificacion', 'analisis'];
+
+    let validPhases: PhaseId[];
+    if (engineRef.current === 'multi-agent') {
+      validPhases = multiAgentPhases;
+    } else if (engineRef.current === 'gemini') {
+      validPhases = geminiPhases;
+    } else {
+      validPhases = bedrockPhases;
+    }
 
     if (validPhases.includes(phaseId)) {
       updatePhase(phaseId, {
@@ -110,8 +146,16 @@ export default function ExtractionPipeline({ tempKey, onResult, onError, autoSta
         data: data as Record<string, unknown> | null,
         elapsedMs: elapsed_ms,
       });
+
+      // Handle reconciliation questions from multi-agent pipeline
+      if (phaseId === 'reconciliacion' && status === 'done' && data) {
+        const preguntas = data.preguntas as ReconciliationQuestion[] | undefined;
+        if (preguntas && preguntas.length > 0 && onReconciliationNeeded) {
+          onReconciliationNeeded(preguntas);
+        }
+      }
     }
-  }, [onResult, onError, updatePhase, initPhasesForEngine]);
+  }, [onResult, onError, updatePhase, initPhasesForEngine, onReconciliationNeeded]);
 
   const runPipeline = useCallback(async () => {
     if (running) return;
@@ -206,6 +250,7 @@ export default function ExtractionPipeline({ tempKey, onResult, onError, autoSta
     </div>
   );
 }
+
 
 function PhaseRow({ phase }: { phase: PipelinePhase }) {
   const statusIcon = {
@@ -309,6 +354,88 @@ function PhaseDetails({ id, data }: { id: string; data: Record<string, unknown> 
         )}
         {tokens != null && tokens > 0 && (
           <span className="text-gray-400">· {tokens} tokens</span>
+        )}
+      </div>
+    );
+  }
+
+  // Multi-agent: Vision phase details
+  if (id === 'vision') {
+    const tipo = data.tipo_imagen as string;
+    const confianza = data.confianza as number;
+    const tipoIcons: Record<string, string> = {
+      boleta: '🧾', factura: '📄', producto: '📦', bascula: '⚖️', transferencia: '💸', desconocido: '❓',
+    };
+    return (
+      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+        {tipo && <span className="font-medium">{tipoIcons[tipo] || '❓'} {tipo}</span>}
+        {confianza > 0 && <span className="text-gray-400">({Math.round(confianza * 100)}%)</span>}
+        {tokens != null && tokens > 0 && (
+          <span className="text-gray-400">· {tokens} tokens</span>
+        )}
+      </div>
+    );
+  }
+
+  // Multi-agent: Validation phase details
+  if (id === 'validacion') {
+    const inconsistencias = data.inconsistencias as Array<{ campo: string; descripcion: string; severidad: string }> | undefined;
+    const count = data.inconsistencias_count as number | undefined;
+    const numIssues = inconsistencias?.length ?? count ?? 0;
+    return (
+      <div className="mt-1 space-y-1">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {numIssues === 0 ? (
+            <span className="text-green-600 font-medium">✓ Sin inconsistencias</span>
+          ) : (
+            <span className="text-amber-600 font-medium">⚠️ {numIssues} inconsistencia{numIssues > 1 ? 's' : ''}</span>
+          )}
+          {tokens != null && tokens > 0 && (
+            <span className="text-gray-400">· {tokens} tokens</span>
+          )}
+        </div>
+        {inconsistencias && inconsistencias.length > 0 && (
+          <ul className="space-y-0.5">
+            {inconsistencias.slice(0, 3).map((inc, i) => (
+              <li key={i} className={`text-xs ${inc.severidad === 'error' ? 'text-red-600' : 'text-amber-600'}`}>
+                • {inc.descripcion}
+              </li>
+            ))}
+            {inconsistencias.length > 3 && (
+              <li className="text-xs text-gray-400">...y {inconsistencias.length - 3} más</li>
+            )}
+          </ul>
+        )}
+      </div>
+    );
+  }
+
+  // Multi-agent: Reconciliation phase details
+  if (id === 'reconciliacion') {
+    const correcciones = data.correcciones_aplicadas as string[] | undefined;
+    const preguntas = data.preguntas as ReconciliationQuestion[] | undefined;
+    return (
+      <div className="mt-1 space-y-1">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {correcciones && correcciones.length > 0 && (
+            <span className="text-green-600 font-medium">🔧 {correcciones.length} corrección{correcciones.length > 1 ? 'es' : ''} auto</span>
+          )}
+          {preguntas && preguntas.length > 0 && (
+            <span className="text-blue-600 font-medium">❓ {preguntas.length} pregunta{preguntas.length > 1 ? 's' : ''}</span>
+          )}
+          {(!correcciones || correcciones.length === 0) && (!preguntas || preguntas.length === 0) && (
+            <span className="text-green-600 font-medium">✓ Datos consistentes</span>
+          )}
+          {tokens != null && tokens > 0 && (
+            <span className="text-gray-400">· {tokens} tokens</span>
+          )}
+        </div>
+        {correcciones && correcciones.length > 0 && (
+          <ul className="space-y-0.5">
+            {correcciones.slice(0, 3).map((c, i) => (
+              <li key={i} className="text-xs text-green-700">✓ {c}</li>
+            ))}
+          </ul>
         )}
       </div>
     );

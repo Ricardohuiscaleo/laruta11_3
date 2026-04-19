@@ -6,6 +6,8 @@ import { comprasApi } from '@/lib/compras-api';
 import { formatearPesosCLP } from '@/lib/compras-utils';
 import { useCompras } from '@/contexts/ComprasContext';
 import ExtractionPipeline from '@/components/admin/compras/ExtractionPipeline';
+import ReconciliationQuestions from '@/components/admin/compras/ReconciliationQuestions';
+import type { ReconciliationQuestion } from '@/components/admin/compras/ExtractionPipeline';
 import type { ExtractionResult, Kpi, ItemSugerencia, RegistroGroup, RegistroItem, RegistroImage } from '@/types/compras';
 
 // Types imported from @/types/compras: RegistroImage, RegistroItem, RegistroGroup
@@ -118,6 +120,8 @@ export default function RegistroPage() {
   const [pipelineTempKey, setPipelineTempKey] = useState<string | null>(null);
   const [pipelineTempUrl, setPipelineTempUrl] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const [reconciliationQuestions, setReconciliationQuestions] = useState<ReconciliationQuestion[]>([]);
+  const [reconciliationLoading, setReconciliationLoading] = useState(false);
 
   // Sync saldo from context
   useEffect(() => {
@@ -323,6 +327,52 @@ export default function RegistroPage() {
     setPipelineTempUrl(null);
   }, [pipelineTempKey, pipelineTempUrl, groups, submitted]);
 
+  // Handle reconciliation questions from multi-agent pipeline
+  const handleReconciliationNeeded = useCallback((questions: ReconciliationQuestion[]) => {
+    setReconciliationQuestions(questions);
+  }, []);
+
+  // Submit reconciliation responses to backend and apply corrections
+  const handleReconciliationSubmit = useCallback(async (responses: Record<string, string | number>) => {
+    if (!pipelineTempKey) return;
+    setReconciliationLoading(true);
+    try {
+      const res = await comprasApi.post<{
+        success: boolean;
+        correcciones: Record<string, unknown>;
+      }>('/compras/reconciliar', {
+        temp_key: pipelineTempKey,
+        respuestas: responses,
+      });
+      if (res.success && res.correcciones) {
+        // Apply corrections to the last group added
+        setGroups(prev => {
+          const updated = [...prev];
+          const lastIdx = updated.length - 1;
+          if (lastIdx < 0) return prev;
+          const group = { ...updated[lastIdx] };
+          const corr = res.correcciones;
+          if (corr.proveedor) group.proveedor = corr.proveedor as string;
+          if (corr.fecha_compra) group.fecha_compra = corr.fecha_compra as string;
+          if (corr.metodo_pago) group.metodo_pago = corr.metodo_pago as string;
+          if (corr.items && Array.isArray(corr.items)) {
+            group.items = (corr.items as CompraItem[]).map(item => ({
+              ...item,
+              subtotal: item.subtotal || (item.cantidad || 0) * (item.precio_unitario || 0),
+            }));
+          }
+          updated[lastIdx] = group;
+          return updated;
+        });
+      }
+    } catch {
+      // silently fail — user can still edit manually
+    } finally {
+      setReconciliationLoading(false);
+      setReconciliationQuestions([]);
+    }
+  }, [pipelineTempKey]);
+
   // Add manual group (no photo)
   const addManualGroup = () => {
     setGroups(prev => [...prev, {
@@ -454,7 +504,15 @@ export default function RegistroPage() {
             tempKey={pipelineTempKey}
             onResult={handlePipelineResult}
             onError={handlePipelineError}
+            onReconciliationNeeded={handleReconciliationNeeded}
           />
+          {reconciliationQuestions.length > 0 && (
+            <ReconciliationQuestions
+              questions={reconciliationQuestions}
+              onSubmit={handleReconciliationSubmit}
+              loading={reconciliationLoading}
+            />
+          )}
         </div>
       )}
 
