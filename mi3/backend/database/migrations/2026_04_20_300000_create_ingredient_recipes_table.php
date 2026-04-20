@@ -23,8 +23,8 @@ return new class extends Migration
         if (! Schema::hasTable('ingredient_recipes')) {
             Schema::create('ingredient_recipes', function (Blueprint $table) {
                 $table->increments('id');
-                $table->unsignedInteger('ingredient_id')->comment('parent composite ingredient');
-                $table->unsignedInteger('child_ingredient_id')->comment('child real ingredient');
+                $table->integer('ingredient_id')->comment('parent composite ingredient');
+                $table->integer('child_ingredient_id')->comment('child real ingredient');
                 $table->decimal('quantity', 10, 3)->comment('quantity per 1 unit of parent');
                 $table->string('unit', 20)->default('kg');
                 $table->timestamp('created_at')->useCurrent();
