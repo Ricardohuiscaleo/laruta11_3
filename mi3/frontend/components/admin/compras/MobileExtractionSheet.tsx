@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Loader2, Check, Eye, Brain, ShieldCheck, Scale, Camera } from 'lucide-react';
+import { Check, Eye, Brain, ShieldCheck, Scale, Camera } from 'lucide-react';
 import ExtractionPipeline from './ExtractionPipeline';
 import ReconciliationQuestions from './ReconciliationQuestions';
 import type { ReconciliationQuestion } from './ExtractionPipeline';
@@ -31,150 +31,84 @@ const STEPS = [
 ];
 
 export default function MobileExtractionSheet({
-  open, tempKey, tempUrl, uploading, uploadProgress,
+  open, tempKey, uploading,
   reconciliationQuestions, reconciliationLoading,
   onResult, onError, onReconciliationNeeded, onReconciliationSubmit, onClose,
 }: Props) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [done, setDone] = useState(false);
 
   useEffect(() => {
-    if (uploading) { setCurrentStep(0); setDone(false); }
-    else if (tempKey) { setCurrentStep(1); setDone(false); }
+    if (uploading) setCurrentStep(0);
+    else if (tempKey) setCurrentStep(1);
   }, [uploading, tempKey]);
 
+  // Auto-close when done
   useEffect(() => {
-    if (!uploading && !tempKey && open && currentStep > 0) {
-      setDone(true);
-      setCurrentStep(5);
+    if (!uploading && !tempKey && open && currentStep > 0 && reconciliationQuestions.length === 0) {
+      const timer = setTimeout(() => { setCurrentStep(0); onClose(); }, 800);
+      return () => clearTimeout(timer);
     }
-  }, [uploading, tempKey, open, currentStep]);
+  }, [uploading, tempKey, open, currentStep, reconciliationQuestions.length, onClose]);
 
   if (!open) return null;
 
   const handleResult = (data: ExtractionResult, sug?: ExtractionResult['sugerencias']) => {
-    setDone(true);
     setCurrentStep(5);
     onResult(data, sug);
   };
 
+  const isDone = !uploading && !tempKey && currentStep >= 5;
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900" role="dialog" aria-modal="true">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2 shrink-0">
-        <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Extracción IA</span>
-        <button onClick={onClose} className="rounded-full p-2 hover:bg-white/10 transition-colors" aria-label="Cerrar">
-          <X className="h-5 w-5 text-slate-400" />
-        </button>
-      </div>
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-start" role="dialog" aria-modal="true">
+      {/* Backdrop blur */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-md" />
 
-      {/* Image preview */}
-      {tempUrl && (
-        <div className="mx-4 mb-4 shrink-0">
-          <div className="relative overflow-hidden rounded-2xl border border-white/10">
-            <img src={tempUrl} alt="" className="w-full h-36 object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-            {!done && (
-              <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-xs font-medium text-white/90">Procesando...</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Step indicators */}
-      <div className="mx-4 mb-5 shrink-0">
-        <div className="flex items-center justify-between">
+      {/* Glass card */}
+      <div className="relative mt-20 mx-4 w-[calc(100%-2rem)] max-w-sm rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-5 shadow-2xl">
+        <div className="flex items-center justify-between mb-3">
           {STEPS.map((step, i) => {
             const Icon = step.icon;
             const isActive = i === currentStep;
             const isCompleted = i < currentStep;
-            const isPending = i > currentStep;
             return (
-              <div key={step.id} className="flex flex-col items-center gap-1.5 flex-1">
+              <div key={step.id} className="flex flex-col items-center gap-1 flex-1">
                 <div className={[
-                  'relative flex items-center justify-center h-10 w-10 rounded-full transition-all duration-500',
+                  'flex items-center justify-center h-9 w-9 rounded-full transition-all duration-500',
                   isCompleted ? 'bg-green-500' : '',
-                  isActive ? 'bg-red-500 scale-110 shadow-lg shadow-red-500/30' : '',
-                  isPending ? 'bg-white/10' : '',
+                  isActive ? 'bg-red-500 scale-110 shadow-lg shadow-red-500/40' : '',
+                  !isCompleted && !isActive ? 'bg-white/10' : '',
                 ].join(' ')}>
-                  {isCompleted ? (
-                    <Check className="h-5 w-5 text-white" />
-                  ) : isActive ? (
-                    <Icon className="h-5 w-5 text-white animate-pulse" />
-                  ) : (
-                    <Icon className="h-4 w-4 text-white/30" />
-                  )}
+                  {isCompleted ? <Check className="h-4 w-4 text-white" /> : isActive ? <Icon className="h-4 w-4 text-white animate-pulse" /> : <Icon className="h-3.5 w-3.5 text-white/25" />}
                 </div>
-                <span className={[
-                  'text-[10px] font-medium transition-colors duration-300',
-                  isCompleted ? 'text-green-400' : isActive ? 'text-white' : 'text-white/30',
-                ].join(' ')}>
-                  {step.label}
-                </span>
+                <span className={['text-[9px] font-medium', isCompleted ? 'text-green-300' : isActive ? 'text-white' : 'text-white/25'].join(' ')}>{step.label}</span>
               </div>
             );
           })}
         </div>
-        {/* Progress bar */}
-        <div className="mt-3 h-1 rounded-full bg-white/10 overflow-hidden">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-red-500 to-green-500 transition-all duration-700 ease-out"
-            style={{ width: `${Math.min(100, (currentStep / 5) * 100)}%` }}
-          />
+        <div className="h-0.5 rounded-full bg-white/10 overflow-hidden">
+          <div className="h-full rounded-full bg-gradient-to-r from-red-500 to-green-500 transition-all duration-700" style={{ width: `${Math.min(100, (currentStep / 5) * 100)}%` }} />
         </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-8">
-        {uploading && (
-          <div className="flex flex-col items-center gap-4 pt-8">
-            <Loader2 className="h-12 w-12 animate-spin text-red-400" />
-            <p className="text-sm text-white/70">{uploadProgress || 'Subiendo imagen...'}</p>
-          </div>
-        )}
-
-        {tempKey && !uploading && (
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-            <ExtractionPipeline
-              tempKey={tempKey}
-              onResult={handleResult}
-              onError={onError}
-              onReconciliationNeeded={onReconciliationNeeded}
-            />
-          </div>
-        )}
-
-        {reconciliationQuestions.length > 0 && (
-          <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4">
-            <ReconciliationQuestions
-              questions={reconciliationQuestions}
-              onSubmit={onReconciliationSubmit}
-              loading={reconciliationLoading}
-            />
-          </div>
-        )}
-
-        {done && reconciliationQuestions.length === 0 && (
-          <div className="flex flex-col items-center gap-5 pt-6">
-            <div className="h-20 w-20 rounded-full bg-green-500/20 flex items-center justify-center">
-              <Check className="h-10 w-10 text-green-400" />
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-semibold text-white">Listo</p>
-              <p className="text-sm text-white/50 mt-1">Datos extraídos correctamente</p>
-            </div>
-            <button
-              onClick={() => { setDone(false); setCurrentStep(0); onClose(); }}
-              className="mt-2 w-full max-w-[280px] rounded-xl bg-green-500 py-3.5 text-sm font-semibold text-white active:bg-green-600 transition-colors"
-            >
-              Ver resultado
-            </button>
+        {isDone && (
+          <div className="flex items-center justify-center gap-2 mt-3">
+            <Check className="h-4 w-4 text-green-400" />
+            <span className="text-sm font-medium text-green-300">Listo</span>
           </div>
         )}
       </div>
+
+      {/* Hidden pipeline */}
+      {tempKey && !uploading && (
+        <div className="sr-only">
+          <ExtractionPipeline tempKey={tempKey} onResult={handleResult} onError={onError} onReconciliationNeeded={onReconciliationNeeded} />
+        </div>
+      )}
+
+      {reconciliationQuestions.length > 0 && (
+        <div className="relative mt-4 mx-4 w-[calc(100%-2rem)] max-w-sm rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-4 shadow-2xl">
+          <ReconciliationQuestions questions={reconciliationQuestions} onSubmit={onReconciliationSubmit} loading={reconciliationLoading} />
+        </div>
+      )}
     </div>
   );
 }
