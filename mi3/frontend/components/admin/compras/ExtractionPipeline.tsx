@@ -41,7 +41,7 @@ interface ExtractionPipelineProps {
   onResult: (data: ExtractionResult, sugerencias: ExtractionResult['sugerencias']) => void;
   onError: () => void;
   onReconciliationNeeded?: (questions: ReconciliationQuestion[]) => void;
-  onPhaseChange?: (fase: string, status: string) => void;
+  onPhaseChange?: (fase: string, status: string, data: Record<string, unknown> | null) => void;
   autoStart?: boolean;
 }
 
