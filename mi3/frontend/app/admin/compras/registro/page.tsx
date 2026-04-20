@@ -581,7 +581,6 @@ export default function RegistroPage() {
         }} />
 
       {/* Pipeline visual SSE — DESKTOP ONLY (mobile uses MobileExtractionSheet) */}
-      {(() => { console.log('[Compras] render check: pipelineTempKey=', pipelineTempKey); return null; })()}
       {pipelineTempKey && !mobileSheetOpen && (
         <div className="hidden md:block space-y-3" ref={el => { if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
           {pipelineTempUrl && (
