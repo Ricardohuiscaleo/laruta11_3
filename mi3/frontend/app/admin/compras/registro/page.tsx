@@ -552,12 +552,11 @@ export default function RegistroPage() {
             console.log('[Compras] onChange fired, files:', e.target.files?.length);
             const files = e.target.files;
             if (files && files.length > 0) {
-              // Reset immediately so same file can be re-selected
-              const fileList = files;
+              // Copy files to array BEFORE resetting input (FileList is live, reset empties it)
+              const fileArray = Array.from(files);
               e.target.value = '';
-              // Defer to next tick to avoid iOS Safari issues with async in onChange
-              console.log('[Compras] scheduling processFiles via setTimeout');
-              setTimeout(() => processFiles(fileList), 0);
+              console.log('[Compras] scheduling processFiles, copied', fileArray.length, 'files');
+              setTimeout(() => processFiles(fileArray), 0);
             } else {
               console.warn('[Compras] onChange: no files selected');
             }
