@@ -471,14 +471,46 @@ const reverted = await comprasApi.post<{ success: boolean; data: AiPrompt }>(
 
 ## Correctness Properties
 
-1. **Prompt Integrity**: For all prompts P in the database, if P is active and has slug S and pipeline L, then `getPrompt(S, L)` returns P.prompt_text with all `{var}` placeholders replaced by the corresponding variable values.
+*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-2. **Version Monotonicity**: For all prompts P, after any update operation, `P.prompt_version` is strictly greater than the previous value, and a corresponding row exists in `ai_prompt_versions` with the previous text and version.
+### Property 1: Variable Interpolation Correctness
 
-3. **Cache Consistency**: After any `update()` or `revertToVersion()` call, all cached prompt entries are invalidated. The next `getPrompt()` call reads fresh data from DB.
+*For any* prompt text containing `{placeholder}` tokens and *any* variables map, calling `getPrompt()` SHALL: (a) replace every token whose key exists in the variables map with the string-cast value, (b) leave tokens with no matching key literally unreplaced, and (c) ignore extra keys in the variables map that have no corresponding token in the text.
 
-4. **Seed Completeness**: After running the seed migration, every prompt method in GeminiService has a corresponding row in `ai_prompts` with matching slug+pipeline. The count of seeded rows equals 17.
+**Validates: Requirements 4.1, 4.2, 4.3, 4.4**
 
-5. **Backward Compatibility**: For all extraction operations, the output of GeminiService after migration is identical to before migration when using the seeded (original) prompt texts. No extraction behavior changes unless an admin explicitly edits a prompt.
+### Property 2: Version Snapshot on Mutation
 
-6. **Atomic Updates**: For all update operations, either both the version snapshot AND the prompt update succeed, or neither does (DB transaction). There is no state where a prompt is updated without a version history entry.
+*For any* prompt and *any* mutation operation (update or revert), the previous prompt_text and prompt_version SHALL be preserved as a new row in `ai_prompt_versions` before the mutation is applied.
+
+**Validates: Requirements 5.1, 6.1**
+
+### Property 3: Version Monotonicity
+
+*For any* prompt and *any* sequence of N mutation operations (updates or reverts), the prompt_version SHALL equal the initial version plus N, incrementing by exactly 1 on each mutation.
+
+**Validates: Requirements 5.2, 6.2**
+
+### Property 4: Revert Restores Correct Text
+
+*For any* prompt with a history of versions, reverting to version V SHALL set the current prompt_text to the exact text stored in the `ai_prompt_versions` row for version V.
+
+**Validates: Requirement 6.2**
+
+### Property 5: Pipeline Validation
+
+*For any* string S, the system SHALL accept S as a valid pipeline value if and only if S is one of `legacy`, `multi-agent-rules`, or `multi-agent-phases`. All other strings SHALL be rejected.
+
+**Validates: Requirement 1.3**
+
+### Property 6: Seed Idempotence
+
+*For any* number of times the seed migration is executed, the resulting state of the `ai_prompts` table SHALL be identical — 17 rows with the same slug, pipeline, prompt_text, prompt_version=1, and is_active=true.
+
+**Validates: Requirements 2.1, 2.4, 2.5**
+
+### Property 7: Missing Prompt Fails Fast
+
+*For any* slug and pipeline combination that does not exist as an active row in `ai_prompts`, calling `getPrompt(slug, pipeline)` SHALL throw a RuntimeException.
+
+**Validates: Requirement 3.5**
