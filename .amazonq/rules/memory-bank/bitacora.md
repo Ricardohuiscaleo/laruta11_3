@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`7e5ea66`) — ingredient categories: tabs dinámicos, API con categorías |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`98a4df1`) — SectionHeader gap fix + MobileExtractionSheet glassmorphism con detalle por fase + tabs dinámicas |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`dd7fd15`) — header unificado en AdminShell, tabs renderizadas por shell |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`bc68719`) — hotfix GeminiService restaurado (refactor eliminó métodos públicos) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -95,6 +95,19 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-20b — Header unificado mi3-frontend: eliminar doble header móvil
+
+**Cambios:**
+- `mi3/frontend/components/admin/AdminShell.tsx`: Nuevo `UnifiedHeader` component renderizado por el shell. Secciones pasan tabs/trailing via `onHeaderConfig` callback. Exports: `SectionHeaderConfig`, `TabDef`. Limpieza de config al cambiar sección.
+- `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Refactorizado — usa `onHeaderConfig` para pasar 6 tabs + budget trailing al header unificado. Eliminado import de `SectionHeader`.
+- `mi3/frontend/components/admin/sections/RecetasSection.tsx`: Refactorizado — usa `onHeaderConfig` para 4 tabs (Recetas, Ajuste Masivo, Recomendaciones, Auditoría).
+- `mi3/frontend/components/admin/sections/NotificacionesSection.tsx`: Refactorizado — usa `onHeaderConfig` para 4 filter tabs (Todos, Adelantos, Cambios, Sistema).
+- `mi3/frontend/components/admin/sections/ChecklistsSection.tsx`: Refactorizado — usa `onHeaderConfig` para 4 tabs con accent amber.
+- 11 secciones: `<h1>` cambiado a `hidden md:block` para evitar duplicación con header rojo móvil.
+
+**Commits:** `8914128`, `dd7fd15`
+**Deploys:** mi3-frontend ✅ (`dd7fd15`)
 
 ### 2026-04-20a — Spec ai-prompts-management: implementación completa
 

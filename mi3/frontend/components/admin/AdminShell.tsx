@@ -123,12 +123,12 @@ function UnifiedHeader({
         'bg-white/95 backdrop-blur-sm border-b',
         hasTabs ? 'pb-1 md:pb-2' : 'pb-2 md:pb-3',
         '-mx-3 px-3 sm:-mx-4 sm:px-4 md:-mx-6 md:px-6',
-        'md:-mt-6 md:pt-6',
-        'sticky top-14 md:top-0 z-20',
+        '-mt-6 pt-6',
+        'sticky top-0 z-20',
       )}
     >
       {/* Desktop: Title + trailing */}
-      <div className="hidden md:flex items-center justify-between gap-3 mb-2 min-h-[36px]">
+      <div className="flex items-center justify-between gap-3 mb-2 min-h-[36px]">
         <h1 className="text-xl font-bold text-gray-900 shrink-0">
           {title}
           {version && (
@@ -137,10 +137,6 @@ function UnifiedHeader({
         </h1>
         {trailing && <div className="min-w-0 overflow-hidden">{trailing}</div>}
       </div>
-      {/* Mobile: trailing only (title is in the red header bar) */}
-      {trailing && (
-        <div className="md:hidden mb-1 overflow-hidden">{trailing}</div>
-      )}
       {/* Tabs row */}
       {hasTabs && (
         <nav
@@ -328,22 +324,67 @@ export default function AdminShell() {
         />
       </div>
 
-      {/* Mobile: top header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-red-500 shadow-sm pt-[env(safe-area-inset-top)]">
-        <div className="flex items-center justify-between h-full px-4">
+      {/* Mobile: unified header (red bar + optional tabs/trailing) */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-red-500 shadow-sm pt-[env(safe-area-inset-top)]">
+        {/* Row 1: Logo + Title */}
+        <div className="flex items-center justify-between h-14 px-4">
           <div className="flex items-center gap-2">
             <img src="/R11HEADER.jpg" alt="La Ruta 11" className="h-8 w-auto" />
           </div>
           <span className="text-sm font-semibold text-white">{title}</span>
           <div className="w-8" />
         </div>
+        {/* Row 2: Trailing + Tabs (if section provides them) */}
+        {showUnifiedHeader && (
+          <div className="bg-white/95 backdrop-blur-sm border-b px-3 pb-1 pt-1">
+            {activeHeaderConfig.trailing && (
+              <div className="mb-1 overflow-hidden">{activeHeaderConfig.trailing}</div>
+            )}
+            {activeHeaderConfig.tabs && activeHeaderConfig.tabs.length > 0 && (
+              <nav
+                className="flex items-center gap-1 rounded-lg bg-gray-100 p-1 overflow-x-auto"
+                role="tablist"
+                aria-label={`Secciones de ${title}`}
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {activeHeaderConfig.tabs.map(({ key, label, icon: Icon }) => (
+                  <button
+                    key={key}
+                    role="tab"
+                    aria-selected={activeHeaderConfig.activeTab === key}
+                    onClick={() => activeHeaderConfig.onTabChange?.(key)}
+                    className={cn(
+                      'flex items-center gap-1.5 whitespace-nowrap rounded-lg text-sm font-medium transition-colors',
+                      'min-h-[44px] shrink-0',
+                      Icon ? 'px-2.5 sm:px-3 py-2' : 'px-3 py-2',
+                      activeHeaderConfig.activeTab === key
+                        ? accentStyles[activeHeaderConfig.accent || 'red']
+                        : 'text-gray-600 hover:bg-white hover:text-gray-900',
+                    )}
+                  >
+                    {Icon && <Icon className="h-4 w-4 shrink-0" />}
+                    <span className={cn(
+                      Icon && activeHeaderConfig.activeTab !== key ? 'hidden sm:inline' : '',
+                    )}>{label}</span>
+                    {Icon && activeHeaderConfig.activeTab !== key && <span className="sm:hidden sr-only">{label}</span>}
+                  </button>
+                ))}
+              </nav>
+            )}
+          </div>
+        )}
       </header>
 
       {/* Content */}
-      <main className="min-h-screen pt-14 pb-20 px-3 sm:px-4 md:pt-0 md:pb-0 md:pl-64 md:pr-6 md:py-6 overflow-y-auto">
-        {/* Unified header: rendered by shell, fed by active section */}
+      <main className={cn(
+        'min-h-screen pb-20 px-3 sm:px-4 md:pt-0 md:pb-0 md:pl-64 md:pr-6 md:py-6 overflow-y-auto',
+        showUnifiedHeader ? 'pt-[7.5rem]' : 'pt-14',
+      )}>
+        {/* Desktop: unified header (title + trailing + tabs) */}
         {showUnifiedHeader && (
-          <UnifiedHeader title={title} config={activeHeaderConfig} />
+          <div className="hidden md:block">
+            <UnifiedHeader title={title} config={activeHeaderConfig} />
+          </div>
         )}
 
         {Array.from(loadedSections).map(key => {
