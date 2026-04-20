@@ -56,7 +56,7 @@ try {
         
         if ($table_check->rowCount() > 0) {
             $recipe_stmt = $pdo->prepare("
-                SELECT pr.ingredient_id, pr.quantity, pr.unit, i.current_stock, i.name
+                SELECT pr.ingredient_id, pr.quantity, pr.unit, i.current_stock, i.name, i.is_composite
                 FROM product_recipes pr 
                 JOIN ingredients i ON pr.ingredient_id = i.id 
                 WHERE pr.product_id = ? AND i.is_active = 1
@@ -68,46 +68,58 @@ try {
         if (!empty($recipe)) {
             // Producto preparado - descontar ingredientes Y producto
             foreach ($recipe as $ingredient) {
-                // Convertir gramos a kg si es necesario
-                $ingredient_quantity = $ingredient['quantity'];
-                $transaction_unit = $ingredient['unit'];
-                
-                if ($ingredient['unit'] === 'g') {
-                    $ingredient_quantity = $ingredient_quantity / 1000; // convertir g a kg
-                    $transaction_unit = 'kg'; // Guardar como kg en transacción
+                // Resolve composite ingredients to their children
+                $deductions = resolveIngredientDeductionPSI(
+                    $pdo,
+                    (int) $ingredient['ingredient_id'],
+                    (float) $ingredient['quantity'] * $quantity_sold,
+                    $ingredient['unit'],
+                    !empty($ingredient['is_composite'])
+                );
+
+                foreach ($deductions as $deduction) {
+                    $deduct_qty = $deduction['quantity'];
+                    $deduct_unit = $deduction['unit'];
+                    if ($deduct_unit === 'g') {
+                        $deduct_qty = $deduct_qty / 1000;
+                        $deduct_unit = 'kg';
+                    }
+
+                    // Get current stock
+                    $stock_check = $pdo->prepare("SELECT current_stock, name FROM ingredients WHERE id = ?");
+                    $stock_check->execute([$deduction['ingredient_id']]);
+                    $stock_data = $stock_check->fetch(PDO::FETCH_ASSOC);
+                    $prev_stock = (float) ($stock_data['current_stock'] ?? 0);
+                    $new_stock = $prev_stock - $deduct_qty;
+
+                    if ($new_stock < 0) {
+                        error_log("Advertencia: Stock negativo de " . ($stock_data['name'] ?? $deduction['ingredient_id']) . ": {$new_stock}");
+                    }
+
+                    // Registrar transacción ANTES de actualizar
+                    $trans_stmt = $pdo->prepare("
+                        INSERT INTO inventory_transactions 
+                        (transaction_type, ingredient_id, quantity, unit, previous_stock, new_stock, order_reference, order_item_id)
+                        VALUES ('sale', ?, ?, ?, ?, ?, ?, ?)
+                    ");
+                    $trans_stmt->execute([
+                        $deduction['ingredient_id'],
+                        -$deduct_qty,
+                        $deduct_unit,
+                        $prev_stock,
+                        $new_stock,
+                        $order_reference,
+                        $order_item_id
+                    ]);
+
+                    // Actualizar stock del ingrediente
+                    $update_stmt = $pdo->prepare("
+                        UPDATE ingredients 
+                        SET current_stock = ?, updated_at = NOW() 
+                        WHERE id = ?
+                    ");
+                    $update_stmt->execute([$new_stock, $deduction['ingredient_id']]);
                 }
-                
-                $total_needed = $ingredient_quantity * $quantity_sold;
-                $prev_stock = $ingredient['current_stock'];
-                $new_stock = $prev_stock - $total_needed;
-                
-                if ($new_stock < 0) {
-                    error_log("Advertencia: Stock negativo de {$ingredient['name']}: {$new_stock}");
-                }
-                
-                // Registrar transacción ANTES de actualizar
-                $trans_stmt = $pdo->prepare("
-                    INSERT INTO inventory_transactions 
-                    (transaction_type, ingredient_id, quantity, unit, previous_stock, new_stock, order_reference, order_item_id)
-                    VALUES ('sale', ?, ?, ?, ?, ?, ?, ?)
-                ");
-                $trans_stmt->execute([
-                    $ingredient['ingredient_id'],
-                    -$total_needed,
-                    $transaction_unit,
-                    $prev_stock,
-                    $new_stock,
-                    $order_reference,
-                    $order_item_id
-                ]);
-                
-                // Actualizar stock del ingrediente
-                $update_stmt = $pdo->prepare("
-                    UPDATE ingredients 
-                    SET current_stock = ?, updated_at = NOW() 
-                    WHERE id = ?
-                ");
-                $update_stmt->execute([$new_stock, $ingredient['ingredient_id']]);
             }
             
             // Recalcular stock del producto basado en ingredientes
@@ -225,4 +237,36 @@ try {
         'success' => false,
         'error' => $e->getMessage()
     ]);
+}
+
+/**
+ * Resolve a potentially composite ingredient into actual deductions.
+ */
+function resolveIngredientDeductionPSI($pdo, int $ingredient_id, float $total_quantity, string $unit, bool $is_composite): array
+{
+    if (!$is_composite) {
+        return [['ingredient_id' => $ingredient_id, 'quantity' => $total_quantity, 'unit' => $unit]];
+    }
+
+    $children_stmt = $pdo->prepare("
+        SELECT ir.child_ingredient_id, ir.quantity, ir.unit
+        FROM ingredient_recipes ir
+        WHERE ir.ingredient_id = ?
+    ");
+    $children_stmt->execute([$ingredient_id]);
+    $children = $children_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (empty($children)) {
+        return [['ingredient_id' => $ingredient_id, 'quantity' => $total_quantity, 'unit' => $unit]];
+    }
+
+    $result = [];
+    foreach ($children as $child) {
+        $result[] = [
+            'ingredient_id' => (int) $child['child_ingredient_id'],
+            'quantity' => (float) $child['quantity'] * $total_quantity,
+            'unit' => $child['unit'],
+        ];
+    }
+    return $result;
 }

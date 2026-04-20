@@ -364,7 +364,7 @@ function SubRecipeEditor({ ingredientId, onBack }: { ingredientId: number; onBac
                     </select>
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-gray-500 hidden sm:table-cell">
-                    {formatCLP(item.cost_per_unit)}
+                    {formatCLP(item.cost_per_unit)}/{item.unit}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums font-medium">
                     {item.quantity > 0 ? formatCLP(item.cost_per_unit * item.quantity) : '—'}

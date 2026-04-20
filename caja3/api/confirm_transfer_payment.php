@@ -227,7 +227,7 @@ function deductProduct($pdo, $product_id, $quantity, $order_reference = null, $o
 {
     // Verificar si tiene receta
     $recipe_stmt = $pdo->prepare("
-        SELECT pr.ingredient_id, pr.quantity, pr.unit, i.current_stock
+        SELECT pr.ingredient_id, pr.quantity, pr.unit, i.current_stock, i.is_composite
         FROM product_recipes pr 
         JOIN ingredients i ON pr.ingredient_id = i.id 
         WHERE pr.product_id = ? AND i.is_active = 1
@@ -238,21 +238,37 @@ function deductProduct($pdo, $product_id, $quantity, $order_reference = null, $o
     if (!empty($recipe)) {
         // Producto con receta: descontar ingredientes
         foreach ($recipe as $ingredient) {
-            $deduct_qty = $ingredient['quantity'] * $quantity;
-            if ($ingredient['unit'] === 'g') {
-                $deduct_qty = $deduct_qty / 1000;
+            // Resolve composite ingredients to their children
+            $deductions = resolveIngredientDeduction(
+                $pdo,
+                (int) $ingredient['ingredient_id'],
+                (float) $ingredient['quantity'] * $quantity,
+                $ingredient['unit'],
+                !empty($ingredient['is_composite'])
+            );
+
+            foreach ($deductions as $deduction) {
+                $deduct_qty = $deduction['quantity'];
+                $deduct_unit = $deduction['unit'];
+                if ($deduct_unit === 'g') {
+                    $deduct_qty = $deduct_qty / 1000;
+                    $deduct_unit = 'kg';
+                }
+
+                // Get current stock
+                $stock_stmt = $pdo->prepare("SELECT current_stock FROM ingredients WHERE id = ?");
+                $stock_stmt->execute([$deduction['ingredient_id']]);
+                $prev_stock = (float) $stock_stmt->fetchColumn();
+                $new_stock = $prev_stock - $deduct_qty;
+
+                // Registrar transacción
+                $pdo->prepare("INSERT INTO inventory_transactions (transaction_type, ingredient_id, quantity, unit, previous_stock, new_stock, order_reference, order_item_id) VALUES ('sale', ?, ?, ?, ?, ?, ?, ?)")
+                    ->execute([$deduction['ingredient_id'], -$deduct_qty, $deduct_unit, $prev_stock, $new_stock, $order_reference, $order_item_id]);
+
+                // Actualizar stock
+                $pdo->prepare("UPDATE ingredients SET current_stock = ?, updated_at = NOW() WHERE id = ?")
+                    ->execute([$new_stock, $deduction['ingredient_id']]);
             }
-
-            $prev_stock = $ingredient['current_stock'];
-            $new_stock = $prev_stock - $deduct_qty;
-
-            // Registrar transacción
-            $pdo->prepare("INSERT INTO inventory_transactions (transaction_type, ingredient_id, quantity, unit, previous_stock, new_stock, order_reference, order_item_id) VALUES ('sale', ?, ?, ?, ?, ?, ?, ?)")
-                ->execute([$ingredient['ingredient_id'], -$deduct_qty, $ingredient['unit'], $prev_stock, $new_stock, $order_reference, $order_item_id]);
-
-            // Actualizar stock
-            $pdo->prepare("UPDATE ingredients SET current_stock = ?, updated_at = NOW() WHERE id = ?")
-                ->execute([$new_stock, $ingredient['ingredient_id']]);
         }
 
         // Recalcular stock del producto
@@ -287,4 +303,40 @@ function deductProduct($pdo, $product_id, $quantity, $order_reference = null, $o
                 ->execute([$new_stock, $product_id]);
         }
     }
+}
+
+/**
+ * Resolve a potentially composite ingredient into actual deductions.
+ * If the ingredient is composite (is_composite=1), returns its children scaled by quantity.
+ * Otherwise returns the ingredient itself.
+ */
+function resolveIngredientDeduction($pdo, int $ingredient_id, float $total_quantity, string $unit, bool $is_composite): array
+{
+    if (!$is_composite) {
+        return [['ingredient_id' => $ingredient_id, 'quantity' => $total_quantity, 'unit' => $unit]];
+    }
+
+    // Get children from ingredient_recipes
+    $children_stmt = $pdo->prepare("
+        SELECT ir.child_ingredient_id, ir.quantity, ir.unit
+        FROM ingredient_recipes ir
+        WHERE ir.ingredient_id = ?
+    ");
+    $children_stmt->execute([$ingredient_id]);
+    $children = $children_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (empty($children)) {
+        // Fallback: no children found, deduct from parent
+        return [['ingredient_id' => $ingredient_id, 'quantity' => $total_quantity, 'unit' => $unit]];
+    }
+
+    $result = [];
+    foreach ($children as $child) {
+        $result[] = [
+            'ingredient_id' => (int) $child['child_ingredient_id'],
+            'quantity' => (float) $child['quantity'] * $total_quantity,
+            'unit' => $child['unit'],
+        ];
+    }
+    return $result;
 }
