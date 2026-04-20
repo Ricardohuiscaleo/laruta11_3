@@ -41,6 +41,7 @@ interface ExtractionPipelineProps {
   onResult: (data: ExtractionResult, sugerencias: ExtractionResult['sugerencias']) => void;
   onError: () => void;
   onReconciliationNeeded?: (questions: ReconciliationQuestion[]) => void;
+  onPhaseChange?: (fase: string, status: string) => void;
   autoStart?: boolean;
 }
 
@@ -65,7 +66,7 @@ const MULTI_AGENT_PHASES: PipelinePhase[] = [
 ];
 
 
-export default function ExtractionPipeline({ tempKey, onResult, onError, onReconciliationNeeded, autoStart = true }: ExtractionPipelineProps) {
+export default function ExtractionPipeline({ tempKey, onResult, onError, onReconciliationNeeded, onPhaseChange, autoStart = true }: ExtractionPipelineProps) {
   console.log('[Pipeline] MOUNTED, tempKey:', tempKey, 'autoStart:', autoStart);
   const [phases, setPhases] = useState<PipelinePhase[]>(BEDROCK_PHASES.map(p => ({ ...p })));
   const [running, setRunning] = useState(false);
@@ -149,6 +150,9 @@ export default function ExtractionPipeline({ tempKey, onResult, onError, onRecon
         elapsedMs: elapsed_ms,
       });
 
+      // Notify parent of phase changes
+      onPhaseChange?.(fase, status, data as Record<string, unknown> | null);
+
       // Handle reconciliation questions from multi-agent pipeline
       if (phaseId === 'reconciliacion' && status === 'done' && data) {
         const preguntas = data.preguntas as ReconciliationQuestion[] | undefined;
@@ -157,7 +161,7 @@ export default function ExtractionPipeline({ tempKey, onResult, onError, onRecon
         }
       }
     }
-  }, [onResult, onError, updatePhase, initPhasesForEngine, onReconciliationNeeded]);
+  }, [onResult, onError, updatePhase, initPhasesForEngine, onReconciliationNeeded, onPhaseChange]);
 
   const runPipeline = useCallback(async () => {
     if (running) return;
