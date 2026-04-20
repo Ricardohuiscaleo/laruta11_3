@@ -91,6 +91,7 @@
 - [x] **Deploy spec delivery-tracking-realtime** — commit `70650cf` pusheado. Builds disparados en Coolify. Pendiente verificar builds y ejecutar `php artisan migrate`.
 - [x] **Integración caja3/app3 delivery** — webhook en caja3 y iframe en app3 implementados en commit `70650cf`.
 - [ ] **Investigar arquitectura SaaS multi-tenant** — AWS Lambda + Aurora PostgreSQL + Amazon Location Service + Stripe. Dominio candidato: pocos.click (caduca 2026-12-21)
+- [ ] **Spec sub-recetas-hamburguesas** — Ingredientes compuestos (Hamburguesa R11 = carne molida + tocino + longaniza). Tabla `ingredient_recipes`, flag `is_composite`, API CRUD, UI sub-tab en Recetas, calculadora de producción. 9 tareas en `.kiro/specs/sub-recetas-hamburguesas/`
 
 ---
 
