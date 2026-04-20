@@ -726,6 +726,7 @@ class RecipeService
                 'name'            => $recipeItem->ingredient->name,
                 'quantity'        => (float) $recipeItem->quantity,
                 'unit'            => $recipeItem->unit,
+                'ingredient_unit' => $recipeItem->ingredient->unit,
                 'cost_per_unit'   => (float) $recipeItem->ingredient->cost_per_unit,
                 'ingredient_cost' => $ingredientCost,
             ];

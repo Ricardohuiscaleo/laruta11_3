@@ -26,6 +26,7 @@ interface RecipeIngredient {
   name: string;
   quantity: number;
   unit: string;
+  ingredient_unit: string;
   cost_per_unit: number;
   ingredient_cost: number;
 }
@@ -54,6 +55,7 @@ interface DraftIngredient {
   name: string;
   quantity: number;
   unit: string;
+  ingredient_unit: string;
   cost_per_unit: number;
 }
 
@@ -62,6 +64,26 @@ type SortDir = 'asc' | 'desc';
 
 const TARGET_MARGIN = 65;
 const UNIT_OPTIONS = ['g', 'kg', 'ml', 'L', 'unidad'] as const;
+
+/* ─── Unit conversion for cost estimation ─── */
+const UNIT_FACTORS: Record<string, { base: string; factor: number }> = {
+  kg: { base: 'g', factor: 1000 },
+  g: { base: 'g', factor: 1 },
+  L: { base: 'ml', factor: 1000 },
+  ml: { base: 'ml', factor: 1 },
+  unidad: { base: 'unidad', factor: 1 },
+};
+
+function estimateCost(item: DraftIngredient): number {
+  const ingConv = UNIT_FACTORS[item.ingredient_unit];
+  const recConv = UNIT_FACTORS[item.unit];
+  if (!ingConv || !recConv || ingConv.base !== recConv.base) {
+    return item.cost_per_unit * item.quantity;
+  }
+  const costPerBase = item.cost_per_unit / ingConv.factor;
+  const qtyInBase = item.quantity * recConv.factor;
+  return costPerBase * qtyInBase;
+}
 
 /* ─── Main Page ─── */
 
@@ -292,6 +314,7 @@ function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => 
           name: i.name,
           quantity: i.quantity,
           unit: i.unit,
+          ingredient_unit: i.ingredient_unit || i.unit,
           cost_per_unit: i.cost_per_unit,
         }))
       );
@@ -312,7 +335,7 @@ function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => 
     }
     setIngredients(prev => [
       ...prev,
-      { ingredient_id: opt.id, name: opt.name, quantity: 0, unit: opt.unit || 'g', cost_per_unit: opt.cost_per_unit },
+      { ingredient_id: opt.id, name: opt.name, quantity: 0, unit: opt.unit || 'g', ingredient_unit: opt.unit || 'g', cost_per_unit: opt.cost_per_unit },
     ]);
   };
 
@@ -377,7 +400,7 @@ function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => 
   };
 
   const totalCost = useMemo(
-    () => ingredients.reduce((sum, i) => sum + i.cost_per_unit * i.quantity, 0),
+    () => ingredients.reduce((sum, i) => sum + estimateCost(i), 0),
     [ingredients]
   );
 
@@ -464,7 +487,7 @@ function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => 
             </thead>
             <tbody className="divide-y">
               {ingredients.map((item, index) => {
-                const cost = item.cost_per_unit * item.quantity;
+                const cost = estimateCost(item);
                 return (
                   <tr key={item.ingredient_id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-gray-900">{item.name}</td>
@@ -492,7 +515,7 @@ function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => 
                       </select>
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-gray-500 hidden sm:table-cell">
-                      {formatCLP(item.cost_per_unit)}/{item.unit}
+                      {formatCLP(item.cost_per_unit)}/{item.ingredient_unit}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums font-medium">
                       {item.quantity > 0 ? formatCLP(cost) : '—'}
