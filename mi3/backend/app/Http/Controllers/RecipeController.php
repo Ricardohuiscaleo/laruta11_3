@@ -250,6 +250,11 @@ class RecipeController extends Controller
                 'success' => false,
                 'error' => 'Ingrediente no encontrado',
             ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al reemplazar ingrediente: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
