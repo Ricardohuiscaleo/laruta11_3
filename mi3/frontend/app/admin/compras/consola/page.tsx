@@ -1,8 +1,61 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { comprasApi } from '@/lib/compras-api';
-import { Terminal, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, Check, X, Clock, Eye, Search, Brain, Bot, Image as ImageIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Terminal, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, Check, X, Clock, Eye, Search, Brain, Bot, Image as ImageIcon, Loader2 } from 'lucide-react';
+
+const PromptsManager = lazy(() => import('@/components/admin/compras/PromptsManager'));
+
+type SubTab = 'logs' | 'prompts';
+
+export default function ConsolaPage() {
+  const [activeTab, setActiveTab] = useState<SubTab>('logs');
+
+  return (
+    <div className="space-y-4">
+      {/* Sub-tab navigation */}
+      <div className="flex gap-1 border-b px-3 pt-3 md:px-4">
+        <button
+          onClick={() => setActiveTab('logs')}
+          className={cn(
+            'rounded-t-lg px-4 py-2 text-sm font-medium transition-colors',
+            activeTab === 'logs'
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          )}
+        >
+          Logs
+        </button>
+        <button
+          onClick={() => setActiveTab('prompts')}
+          className={cn(
+            'rounded-t-lg px-4 py-2 text-sm font-medium transition-colors',
+            activeTab === 'prompts'
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          )}
+        >
+          Prompts IA
+        </button>
+      </div>
+
+      {/* Tab content */}
+      {activeTab === 'logs' && <LogsContent />}
+      {activeTab === 'prompts' && (
+        <Suspense fallback={
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          </div>
+        }>
+          <PromptsManager />
+        </Suspense>
+      )}
+    </div>
+  );
+}
+
+/* ─── Logs sub-tab (original consola content) ─── */
 
 interface ExtractionLog {
   id: number;
@@ -27,7 +80,7 @@ interface LogsResponse {
   total_pages: number;
 }
 
-export default function ConsolaPage() {
+function LogsContent() {
   const [logs, setLogs] = useState<ExtractionLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
@@ -165,8 +218,7 @@ function LogRow({ log, expanded, detailTab, onToggle, onTabChange }: {
   const dateStr = date.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' });
 
   return (
-    <div className={`rounded-xl border bg-white transition-shadow ${expanded ? 'shadow-md' : ''}`} role="listitem">
-      {/* Summary row */}
+    <div className={cn('rounded-xl border bg-white transition-shadow', expanded && 'shadow-md')} role="listitem">
       <button
         onClick={onToggle}
         className="flex w-full items-center gap-2 px-3 py-2.5 text-left md:gap-3"
@@ -192,17 +244,14 @@ function LogRow({ log, expanded, detailTab, onToggle, onTabChange }: {
         {expanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
       </button>
 
-      {/* Expanded detail */}
       {expanded && (
         <div className="border-t px-3 pb-3 pt-2 space-y-3">
-          {/* Error message */}
           {log.error_message && (
             <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
               {log.error_message}
             </div>
           )}
 
-          {/* Image preview */}
           {log.image_url && (
             <div className="flex items-center gap-2">
               <ImageIcon className="h-4 w-4 text-gray-400" />
@@ -210,22 +259,21 @@ function LogRow({ log, expanded, detailTab, onToggle, onTabChange }: {
             </div>
           )}
 
-          {/* Detail tabs */}
           <div className="flex gap-1 overflow-x-auto">
             {(['phases', 'extracted', 'confidence', 'raw'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => onTabChange(tab)}
-                className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={cn(
+                  'whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
                   detailTab === tab ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+                )}
               >
                 {tab === 'phases' ? '🔄 Fases' : tab === 'extracted' ? '📋 Datos' : tab === 'confidence' ? '📊 Confianza' : '🔧 Raw'}
               </button>
             ))}
           </div>
 
-          {/* Tab content */}
           <div className="rounded-lg bg-gray-50 p-3">
             {detailTab === 'phases' && <PhasesTab phases={phases} modelId={log.model_id} />}
             {detailTab === 'extracted' && <ExtractedTab data={log.extracted_data} />}
@@ -322,9 +370,9 @@ function ExtractedTab({ data }: { data: Record<string, unknown> }) {
         <Field label="Fecha" value={data.fecha as string} />
         <Field label="Método pago" value={data.metodo_pago as string} />
         <Field label="Tipo compra" value={data.tipo_compra as string} />
-        <Field label="Monto neto" value={data.monto_neto != null ? `$${Number(data.monto_neto).toLocaleString('es-CL')}` : null} />
-        <Field label="IVA" value={data.iva != null ? `$${Number(data.iva).toLocaleString('es-CL')}` : null} />
-        <Field label="Monto total" value={data.monto_total != null ? `$${Number(data.monto_total).toLocaleString('es-CL')}` : null} />
+        <Field label="Monto neto" value={data.monto_neto != null ? `${Number(data.monto_neto).toLocaleString('es-CL')}` : null} />
+        <Field label="IVA" value={data.iva != null ? `${Number(data.iva).toLocaleString('es-CL')}` : null} />
+        <Field label="Monto total" value={data.monto_total != null ? `${Number(data.monto_total).toLocaleString('es-CL')}` : null} />
         {data.peso_bascula != null && <Field label="Peso báscula" value={`${String(data.peso_bascula)} ${data.unidad_bascula ? String(data.unidad_bascula) : 'kg'}`} />}
       </div>
       {Boolean(data.notas_ia) && (

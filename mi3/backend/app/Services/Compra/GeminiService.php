@@ -12,9 +12,11 @@ class GeminiService
     private string $model;
     private string $apiKey;
     private string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
+    private AiPromptService $promptService;
 
-    public function __construct()
+    public function __construct(AiPromptService $promptService)
     {
+        $this->promptService = $promptService;
         $this->apiKey = (string) env('GOOGLE_API_KEY', env('google_api_key', ''));
         $this->model = (string) env('GEMINI_MODEL', 'gemini-2.5-flash-lite');
     }
@@ -56,294 +58,6 @@ class GeminiService
             'razon' => $parsed['razon'] ?? '',
             'tokens' => $tokens,
         ];
-    }
-
-    /**
-     * Analyze image with type-specific prompt and context.
-     *
-     * @return array{data: array, tokens: array}|null
-     */
-    public function analizar(string $imageBase64, string $tipo, array $contexto): ?array
-    {
-        $prompt = $this->buildAnalysisPrompt($tipo, $contexto);
-        $schema = $this->buildExtractionSchema();
-
-        $response = $this->callGemini($prompt, $imageBase64, $schema, 20, 2048);
-
-        if ($response === null) {
-            return null;
-        }
-
-        $parsed = $this->parseResponse($response);
-        if ($parsed === null) {
-            return null;
-        }
-
-        $parsed = $this->normalizeAmounts($parsed);
-        $tokens = $this->extractTokens($response);
-
-        return [
-            'data' => $parsed,
-            'tokens' => $tokens,
-        ];
-    }
-
-    // ─── Core API Call ───
-
-    /**
-     * Execute POST to Gemini generateContent endpoint.
-     */
-    private function callGemini(string $prompt, string $imageBase64, array $schema, int $timeout, int $maxOutputTokens = 2048): ?array
-    {
-        if (empty($this->apiKey)) {
-            Log::error('[GeminiService] GOOGLE_API_KEY not configured');
-            return null;
-        }
-
-        $url = "{$this->baseUrl}/{$this->model}:generateContent?key={$this->apiKey}";
-
-        $payload = [
-            'contents' => [
-                [
-                    'parts' => [
-                        ['inline_data' => ['mime_type' => 'image/jpeg', 'data' => $imageBase64]],
-                        ['text' => $prompt],
-                    ],
-                ],
-            ],
-            'generationConfig' => [
-                'temperature' => 0.1,
-                'maxOutputTokens' => $maxOutputTokens,
-                'responseMimeType' => 'application/json',
-                'responseSchema' => $schema,
-            ],
-        ];
-
-        $jsonPayload = json_encode($payload);
-
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $url,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => $jsonPayload,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => $timeout,
-            CURLOPT_CONNECTTIMEOUT => 5,
-        ]);
-
-        $responseBody = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        curl_close($ch);
-
-        if ($curlError !== '') {
-            Log::error("[GeminiService] cURL error: {$curlError}");
-            return null;
-        }
-
-        if ($httpCode < 200 || $httpCode >= 300) {
-            Log::error("[GeminiService] HTTP {$httpCode}: " . substr((string) $responseBody, 0, 500));
-            return null;
-        }
-
-        $decoded = json_decode((string) $responseBody, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            Log::error('[GeminiService] Failed to decode API response JSON');
-            return null;
-        }
-
-        return $decoded;
-    }
-
-    // ─── New Multi-Agent Methods ───
-
-    /**
-     * Agente 1 (Visión): Multimodal call to extract text + visual description + classification.
-     *
-     * @return array{texto_crudo: string, descripcion_visual: string, tipo_imagen: string, confianza: float, razon: string, tokens: array}|null
-     */
-    public function percibir(string $imageBase64): ?array
-    {
-        $prompt = $this->buildVisionPrompt();
-        $schema = $this->buildVisionSchema();
-        $response = $this->callGemini($prompt, $imageBase64, $schema, 15, 2048);
-        if ($response === null) {
-            return null;
-        }
-        $parsed = $this->parseResponse($response);
-        if ($parsed === null) {
-            return null;
-        }
-
-        // Normalize tipo_imagen
-        $validTypes = ['boleta', 'factura', 'producto', 'bascula', 'transferencia', 'desconocido'];
-        if (!in_array($parsed['tipo_imagen'] ?? '', $validTypes, true)) {
-            $parsed['tipo_imagen'] = 'desconocido';
-        }
-
-        $tokens = $this->extractTokens($response);
-
-        return [
-            'texto_crudo' => $parsed['texto_crudo'] ?? '',
-            'descripcion_visual' => $parsed['descripcion_visual'] ?? '',
-            'tipo_imagen' => $parsed['tipo_imagen'],
-            'confianza' => (float) ($parsed['confianza'] ?? 0.5),
-            'razon' => $parsed['razon'] ?? '',
-            'tokens' => $tokens,
-        ];
-    }
-
-    /**
-     * Agente 2 (Análisis): Text-only analysis that structures data from extracted text.
-     *
-     * @return array{data: array, tokens: array}|null
-     */
-    public function analizarTexto(string $textoCrudo, string $descripcionVisual, string $tipo, array $contexto, array $fewShotExamples = []): ?array
-    {
-        $prompt = $this->buildTextAnalysisPrompt($textoCrudo, $descripcionVisual, $tipo, $contexto, $fewShotExamples);
-        $schema = $this->buildExtractionSchema();
-        $response = $this->callGeminiText($prompt, $schema, 12, 2048);
-        if ($response === null) {
-            return null;
-        }
-        $parsed = $this->parseResponse($response);
-        if ($parsed === null) {
-            return null;
-        }
-        $parsed = $this->normalizeAmounts($parsed);
-        $tokens = $this->extractTokens($response);
-
-        return ['data' => $parsed, 'tokens' => $tokens];
-    }
-
-    /**
-     * Agente 3 (Validación): Text-only validation of extracted data coherence.
-     *
-     * @return array{datos_validados: array, inconsistencias: array, tokens: array}|null
-     */
-    public function validar(array $datosExtraidos, array $contextoBd): ?array
-    {
-        $prompt = $this->buildValidationPrompt($datosExtraidos, $contextoBd);
-        $schema = $this->buildValidationSchema();
-        $response = $this->callGeminiText($prompt, $schema, 8, 1024);
-        if ($response === null) {
-            return null;
-        }
-        $parsed = $this->parseResponse($response);
-        if ($parsed === null) {
-            return null;
-        }
-        $tokens = $this->extractTokens($response);
-
-        return [
-            'datos_validados' => $parsed['datos_validados'] ?? $datosExtraidos,
-            'inconsistencias' => $parsed['inconsistencias'] ?? [],
-            'tokens' => $tokens,
-        ];
-    }
-
-    /**
-     * Agente 4 (Reconciliación): Text-only reconciliation of inconsistencies.
-     *
-     * @return array{datos_finales: array, correcciones_aplicadas: array, preguntas: array, tokens: array}|null
-     */
-    public function reconciliar(array $datos, array $inconsistencias, string $textoCrudo, array $contextoBd): ?array
-    {
-        if (empty($inconsistencias)) {
-            return [
-                'datos_finales' => $datos,
-                'correcciones_aplicadas' => [],
-                'preguntas' => [],
-                'tokens' => ['prompt' => 0, 'candidates' => 0, 'total' => 0],
-            ];
-        }
-
-        $prompt = $this->buildReconciliationPrompt($datos, $inconsistencias, $textoCrudo, $contextoBd);
-        $schema = $this->buildReconciliationSchema();
-        $response = $this->callGeminiText($prompt, $schema, 8, 1024);
-        if ($response === null) {
-            return null;
-        }
-        $parsed = $this->parseResponse($response);
-        if ($parsed === null) {
-            return null;
-        }
-        $tokens = $this->extractTokens($response);
-
-        return [
-            'datos_finales' => $parsed['datos_finales'] ?? $datos,
-            'correcciones_aplicadas' => $parsed['correcciones_aplicadas'] ?? [],
-            'preguntas' => $parsed['preguntas'] ?? [],
-            'tokens' => $tokens,
-        ];
-    }
-
-    // ─── Core API Call (text-only) ───
-
-    /**
-     * Execute POST to Gemini generateContent endpoint WITHOUT image (text-only).
-     */
-    private function callGeminiText(string $prompt, array $schema, int $timeout, int $maxOutputTokens = 2048): ?array
-    {
-        if (empty($this->apiKey)) {
-            Log::error('[GeminiService] GOOGLE_API_KEY not configured');
-            return null;
-        }
-
-        $url = "{$this->baseUrl}/{$this->model}:generateContent?key={$this->apiKey}";
-
-        $payload = [
-            'contents' => [
-                [
-                    'parts' => [
-                        ['text' => $prompt],
-                    ],
-                ],
-            ],
-            'generationConfig' => [
-                'temperature' => 0.1,
-                'maxOutputTokens' => $maxOutputTokens,
-                'responseMimeType' => 'application/json',
-                'responseSchema' => $schema,
-            ],
-        ];
-
-        $jsonPayload = json_encode($payload);
-
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $url,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => $jsonPayload,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => $timeout,
-            CURLOPT_CONNECTTIMEOUT => 5,
-        ]);
-
-        $responseBody = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        curl_close($ch);
-
-        if ($curlError !== '') {
-            Log::error("[GeminiService] cURL error: {$curlError}");
-            return null;
-        }
-
-        if ($httpCode < 200 || $httpCode >= 300) {
-            Log::error("[GeminiService] HTTP {$httpCode}: " . substr((string) $responseBody, 0, 500));
-            return null;
-        }
-
-        $decoded = json_decode((string) $responseBody, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            Log::error('[GeminiService] Failed to decode API response JSON');
-            return null;
-        }
-
-        return $decoded;
     }
 
     // ─── Response Parsing ───
@@ -397,7 +111,6 @@ class GeminiService
 
     /**
      * Normalize monetary amounts to integers (Chilean pesos).
-     * Copied from AnalisisService::normalizeAmounts().
      */
     private function normalizeAmounts(array $data): array
     {
@@ -518,30 +231,16 @@ class GeminiService
         ];
     }
 
-    // ─── Prompt Builders ───
+    // ─── Prompt Builders (DB-backed with hardcoded fallback) ───
 
     private function buildClassificationPrompt(): string
     {
-        return <<<'PROMPT'
-Observa esta imagen y clasifica su tipo.
-
-Tipos posibles:
-- "boleta": documento de venta con RUT, productos, total (supermercado, tienda)
-- "factura": documento tributario formal con RUT emisor/receptor, IVA, detalle de items
-- "producto": foto de un producto físico (caja, saco, bolsa, bandeja de ingrediente)
-- "bascula": foto de báscula/balanza digital mostrando peso en display
-- "transferencia": comprobante de transferencia bancaria o Mercado Pago
-- "desconocido": no se puede determinar
-
-Pistas:
-- Si hay textos con RUT (XX.XXX.XXX-X), montos ($), "BOLETA" o "FACTURA" → boleta o factura
-- Si se ven productos físicos (cajas, sacos, bolsas, bandejas) sin texto de montos → producto
-- Si se ve una báscula/balanza digital con displays numéricos → bascula
-- Si hay textos con "Transferencia", "Mercado Pago", "Comprobante" → transferencia
-- "FACTURA ELECTRÓNICA" en texto → factura (no boleta)
-
-Responde con tipo_imagen, confianza (0.0-1.0) y razon (breve explicación).
-PROMPT;
+        try {
+            return $this->promptService->getPrompt('classification', 'legacy');
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: classification/legacy - " . $e->getMessage());
+            return $this->hardcodedClassificationPrompt();
+        }
     }
 
     private function buildAnalysisPrompt(string $tipo, array $contexto): string
@@ -601,9 +300,359 @@ PROMPT;
 JSON;
     }
 
-    // ─── Type-specific prompts (adapted from AnalisisService for Gemini) ───
+    // ─── Type-specific prompts (DB-backed with hardcoded fallback) ───
 
     private function promptBoleta(array $contexto): string
+    {
+        try {
+            return $this->promptService->getPrompt('boleta', 'legacy', [
+                'suppliers' => $this->formatSuppliers($contexto),
+                'products' => $this->formatProducts($contexto),
+                'rutMap' => $this->formatRutMap($contexto),
+                'patterns' => implode("\n", array_slice($contexto['patterns'] ?? [], 0, 10)),
+                'jsonFormat' => $this->jsonFormat(),
+            ]);
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: boleta/legacy - " . $e->getMessage());
+            return $this->hardcodedPromptBoleta($contexto);
+        }
+    }
+
+    private function promptFactura(array $contexto): string
+    {
+        try {
+            return $this->promptService->getPrompt('factura', 'legacy', [
+                'suppliers' => $this->formatSuppliers($contexto),
+                'products' => $this->formatProducts($contexto),
+                'rutMap' => $this->formatRutMap($contexto),
+                'jsonFormat' => $this->jsonFormat(),
+            ]);
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: factura/legacy - " . $e->getMessage());
+            return $this->hardcodedPromptFactura($contexto);
+        }
+    }
+
+    private function promptProducto(array $contexto): string
+    {
+        try {
+            $equivalences = '';
+            foreach (array_slice($contexto['equivalences'] ?? [], 0, 10) as $eq) {
+                $equivalences .= "- {$eq['nombre']} → {$eq['ingrediente']} ({$eq['cantidad_por_unidad']} {$eq['unidad']})\n";
+            }
+            return $this->promptService->getPrompt('producto', 'legacy', [
+                'products' => $this->formatProducts($contexto),
+                'equivalences' => $equivalences,
+                'jsonFormat' => $this->jsonFormat(),
+            ]);
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: producto/legacy - " . $e->getMessage());
+            return $this->hardcodedPromptProducto($contexto);
+        }
+    }
+
+    private function promptBascula(array $contexto): string
+    {
+        try {
+            return $this->promptService->getPrompt('bascula', 'legacy', [
+                'products' => $this->formatProducts($contexto),
+                'jsonFormat' => $this->jsonFormat(),
+            ]);
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: bascula/legacy - " . $e->getMessage());
+            return $this->hardcodedPromptBascula($contexto);
+        }
+    }
+
+    private function promptTransferencia(array $contexto): string
+    {
+        try {
+            return $this->promptService->getPrompt('transferencia', 'legacy', [
+                'personMap' => '',
+                'jsonFormat' => $this->jsonFormat(),
+            ]);
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: transferencia/legacy - " . $e->getMessage());
+            return $this->hardcodedPromptTransferencia($contexto);
+        }
+    }
+
+    private function promptGeneral(array $contexto): string
+    {
+        try {
+            return $this->promptService->getPrompt('general', 'legacy', [
+                'suppliers' => $this->formatSuppliers($contexto),
+                'products' => $this->formatProducts($contexto),
+                'rutMap' => $this->formatRutMap($contexto),
+                'jsonFormat' => $this->jsonFormat(),
+            ]);
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: general/legacy - " . $e->getMessage());
+            return $this->hardcodedPromptGeneral($contexto);
+        }
+    }
+
+    // ─── Multi-Agent Text Rules (DB-backed with hardcoded fallback) ───
+
+    private function textRulesBoleta(array $contexto): string
+    {
+        try {
+            return $this->promptService->getPrompt('boleta', 'multi-agent-rules', [
+                'patterns' => implode("\n", array_slice($contexto['patterns'] ?? [], 0, 10)),
+            ]);
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: boleta/multi-agent-rules - " . $e->getMessage());
+            return $this->hardcodedTextRulesBoleta($contexto);
+        }
+    }
+
+    private function textRulesFactura(array $contexto): string
+    {
+        try {
+            return $this->promptService->getPrompt('factura', 'multi-agent-rules');
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: factura/multi-agent-rules - " . $e->getMessage());
+            return $this->hardcodedTextRulesFactura($contexto);
+        }
+    }
+
+    private function textRulesProducto(array $contexto): string
+    {
+        try {
+            $equivalences = '';
+            foreach (array_slice($contexto['equivalences'] ?? [], 0, 10) as $eq) {
+                $equivalences .= "- {$eq['nombre']} → {$eq['ingrediente']} ({$eq['cantidad_por_unidad']} {$eq['unidad']})\n";
+            }
+            return $this->promptService->getPrompt('producto', 'multi-agent-rules', [
+                'equivalences' => $equivalences,
+            ]);
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: producto/multi-agent-rules - " . $e->getMessage());
+            return $this->hardcodedTextRulesProducto($contexto);
+        }
+    }
+
+    private function textRulesBascula(array $contexto): string
+    {
+        try {
+            return $this->promptService->getPrompt('bascula', 'multi-agent-rules');
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: bascula/multi-agent-rules - " . $e->getMessage());
+            return $this->hardcodedTextRulesBascula($contexto);
+        }
+    }
+
+    private function textRulesTransferencia(array $contexto): string
+    {
+        try {
+            $personMap = '';
+            foreach ($contexto['person_map'] ?? [] as $person => $supplier) {
+                $personMap .= "- {$person} → {$supplier}\n";
+            }
+            return $this->promptService->getPrompt('transferencia', 'multi-agent-rules', [
+                'personMap' => $personMap,
+            ]);
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: transferencia/multi-agent-rules - " . $e->getMessage());
+            return $this->hardcodedTextRulesTransferencia($contexto);
+        }
+    }
+
+    private function textRulesGeneral(array $contexto): string
+    {
+        try {
+            return $this->promptService->getPrompt('general', 'multi-agent-rules');
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: general/multi-agent-rules - " . $e->getMessage());
+            return $this->hardcodedTextRulesGeneral($contexto);
+        }
+    }
+
+    // ─── Multi-Agent Phase Prompts (DB-backed with hardcoded fallback) ───
+
+    private function buildVisionPrompt(): string
+    {
+        try {
+            return $this->promptService->getPrompt('vision', 'multi-agent-phases');
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: vision/multi-agent-phases - " . $e->getMessage());
+            return $this->hardcodedVisionPrompt();
+        }
+    }
+
+    private function buildTextAnalysisPrompt(string $textoCrudo, string $descripcionVisual, string $tipo, array $contexto, array $fewShotExamples): string
+    {
+        try {
+            $typeRules = match ($tipo) {
+                'boleta' => $this->textRulesBoleta($contexto),
+                'factura' => $this->textRulesFactura($contexto),
+                'producto' => $this->textRulesProducto($contexto),
+                'bascula' => $this->textRulesBascula($contexto),
+                'transferencia' => $this->textRulesTransferencia($contexto),
+                default => $this->textRulesGeneral($contexto),
+            };
+
+            $fewShotSection = '';
+            if (!empty($fewShotExamples)) {
+                $fewShotSection = "\nAPRENDIZAJE DE CORRECCIONES ANTERIORES:\n" . implode("\n", $fewShotExamples) . "\nAplica estas correcciones si el contexto es similar.\n";
+            }
+
+            return $this->promptService->getPrompt('text-analysis', 'multi-agent-phases', [
+                'tipo' => $tipo,
+                'textoCrudo' => $textoCrudo,
+                'descripcionVisual' => $descripcionVisual,
+                'typeRules' => $typeRules,
+                'fewShotSection' => $fewShotSection,
+                'rutMap' => $this->formatRutMap($contexto),
+                'suppliers' => $this->formatSuppliers($contexto),
+                'products' => $this->formatProducts($contexto),
+                'jsonFormat' => $this->jsonFormat(),
+            ]);
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: text-analysis/multi-agent-phases - " . $e->getMessage());
+            return $this->hardcodedTextAnalysisPrompt($textoCrudo, $descripcionVisual, $tipo, $contexto, $fewShotExamples);
+        }
+    }
+
+    private function buildValidationPrompt(array $datos, array $contexto): string
+    {
+        try {
+            $datosJson = json_encode($datos, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            $proveedores = implode(', ', array_slice($contexto['suppliers'] ?? [], 0, 20));
+
+            return $this->promptService->getPrompt('validation', 'multi-agent-phases', [
+                'datosJson' => $datosJson,
+                'proveedores' => $proveedores,
+            ]);
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: validation/multi-agent-phases - " . $e->getMessage());
+            return $this->hardcodedValidationPrompt($datos, $contexto);
+        }
+    }
+
+    private function buildReconciliationPrompt(array $datos, array $inconsistencias, string $textoCrudo, array $contexto): string
+    {
+        try {
+            $datosJson = json_encode($datos, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            $inconsJson = json_encode($inconsistencias, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            $proveedores = implode(', ', array_slice($contexto['suppliers'] ?? [], 0, 20));
+
+            return $this->promptService->getPrompt('reconciliation', 'multi-agent-phases', [
+                'datosJson' => $datosJson,
+                'inconsJson' => $inconsJson,
+                'textoCrudo' => $textoCrudo,
+                'proveedores' => $proveedores,
+            ]);
+        } catch (\RuntimeException $e) {
+            Log::warning("[GeminiService] Fallback to hardcoded prompt: reconciliation/multi-agent-phases - " . $e->getMessage());
+            return $this->hardcodedReconciliationPrompt($datos, $inconsistencias, $textoCrudo, $contexto);
+        }
+    }
+
+    private function buildVisionSchema(): array
+    {
+        return [
+            'type' => 'object',
+            'properties' => [
+                'texto_crudo' => ['type' => 'string'],
+                'descripcion_visual' => ['type' => 'string'],
+                'tipo_imagen' => [
+                    'type' => 'string',
+                    'enum' => ['boleta', 'factura', 'producto', 'bascula', 'transferencia', 'desconocido'],
+                ],
+                'confianza' => ['type' => 'number'],
+                'razon' => ['type' => 'string'],
+            ],
+            'required' => ['texto_crudo', 'descripcion_visual', 'tipo_imagen', 'confianza', 'razon'],
+        ];
+    }
+
+    private function buildValidationSchema(): array
+    {
+        return [
+            'type' => 'object',
+            'properties' => [
+                'datos_validados' => ['type' => 'object'],
+                'inconsistencias' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'campo' => ['type' => 'string'],
+                            'valor_actual' => ['type' => 'string'],
+                            'valor_esperado' => ['type' => 'string'],
+                            'severidad' => ['type' => 'string', 'enum' => ['error', 'advertencia']],
+                            'descripcion' => ['type' => 'string'],
+                        ],
+                        'required' => ['campo', 'valor_actual', 'valor_esperado', 'severidad', 'descripcion'],
+                    ],
+                ],
+            ],
+            'required' => ['datos_validados', 'inconsistencias'],
+        ];
+    }
+
+    private function buildReconciliationSchema(): array
+    {
+        return [
+            'type' => 'object',
+            'properties' => [
+                'datos_finales' => ['type' => 'object'],
+                'correcciones_aplicadas' => ['type' => 'array', 'items' => ['type' => 'string']],
+                'preguntas' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'campo' => ['type' => 'string'],
+                            'descripcion' => ['type' => 'string'],
+                            'opciones' => [
+                                'type' => 'array',
+                                'items' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'valor' => ['type' => 'string'],
+                                        'etiqueta' => ['type' => 'string'],
+                                    ],
+                                    'required' => ['valor', 'etiqueta'],
+                                ],
+                            ],
+                        ],
+                        'required' => ['campo', 'descripcion', 'opciones'],
+                    ],
+                ],
+            ],
+            'required' => ['datos_finales', 'correcciones_aplicadas', 'preguntas'],
+        ];
+    }
+
+    // ─── Hardcoded Fallback Prompts (transition period) ───
+
+    private function hardcodedClassificationPrompt(): string
+    {
+        return <<<'PROMPT'
+Observa esta imagen y clasifica su tipo.
+
+Tipos posibles:
+- "boleta": documento de venta con RUT, productos, total (supermercado, tienda)
+- "factura": documento tributario formal con RUT emisor/receptor, IVA, detalle de items
+- "producto": foto de un producto físico (caja, saco, bolsa, bandeja de ingrediente)
+- "bascula": foto de báscula/balanza digital mostrando peso en display
+- "transferencia": comprobante de transferencia bancaria o Mercado Pago
+- "desconocido": no se puede determinar
+
+Pistas:
+- Si hay textos con RUT (XX.XXX.XXX-X), montos ($), "BOLETA" o "FACTURA" → boleta o factura
+- Si se ven productos físicos (cajas, sacos, bolsas, bandejas) sin texto de montos → producto
+- Si se ve una báscula/balanza digital con displays numéricos → bascula
+- Si hay textos con "Transferencia", "Mercado Pago", "Comprobante" → transferencia
+- "FACTURA ELECTRÓNICA" en texto → factura (no boleta)
+
+Responde con tipo_imagen, confianza (0.0-1.0) y razon (breve explicación).
+PROMPT;
+    }
+
+    private function hardcodedPromptBoleta(array $contexto): string
     {
         $suppliers = $this->formatSuppliers($contexto);
         $products = $this->formatProducts($contexto);
@@ -644,7 +693,7 @@ Formato respuesta:
 PROMPT;
     }
 
-    private function promptFactura(array $contexto): string
+    private function hardcodedPromptFactura(array $contexto): string
     {
         $suppliers = $this->formatSuppliers($contexto);
         $products = $this->formatProducts($contexto);
@@ -682,7 +731,7 @@ Formato respuesta:
 PROMPT;
     }
 
-    private function promptProducto(array $contexto): string
+    private function hardcodedPromptProducto(array $contexto): string
     {
         $products = $this->formatProducts($contexto);
         $equivalences = '';
@@ -707,8 +756,8 @@ NOTAS MANUSCRITAS DE ENTREGA:
   - Un número seguido de un punto antes del nombre del producto (ej: "7. Pan de Churrasco") indica la CANTIDAD de unidades, NO un número de ítem.
   - "Ruta 11", "Ruta II", "R11" = es el DESTINATARIO (nuestro negocio), NO el proveedor. Deja proveedor vacío/null.
   - "Kg X.XXX" = peso total del pedido (informativo), pero la unidad de compra es por UNIDAD, no por kilo.
-  - El precio mostrado (ej: "$3.400") es el TOTAL. Calcula precio_unitario = total / cantidad.
-  - Para panes: siempre se compran por unidad. Si dice "7. Pan..." y "$3.400", son 7 unidades a $486 c/u.
+  - El precio mostrado (ej: "\$3.400") es el TOTAL. Calcula precio_unitario = total / cantidad.
+  - Para panes: siempre se compran por unidad. Si dice "7. Pan..." y "\$3.400", son 7 unidades a \$486 c/u.
 
 Equivalencias conocidas:
 {$equivalences}
@@ -725,7 +774,7 @@ Formato respuesta:
 PROMPT;
     }
 
-    private function promptBascula(array $contexto): string
+    private function hardcodedPromptBascula(array $contexto): string
     {
         $products = $this->formatProducts($contexto);
 
@@ -754,7 +803,7 @@ Formato respuesta:
 PROMPT;
     }
 
-    private function promptTransferencia(array $contexto): string
+    private function hardcodedPromptTransferencia(array $contexto): string
     {
         $personMap = '';
         foreach ($contexto['person_map'] ?? [] as $person => $supplier) {
@@ -785,7 +834,7 @@ Formato respuesta:
 PROMPT;
     }
 
-    private function promptGeneral(array $contexto): string
+    private function hardcodedPromptGeneral(array $contexto): string
     {
         $suppliers = $this->formatSuppliers($contexto);
         $products = $this->formatProducts($contexto);
@@ -801,15 +850,16 @@ Tipos posibles: boleta, factura, producto, bascula, transferencia.
 - Báscula: leer displays (peso, precio/kg, total). Notación abreviada: ×100
 - Transferencia: destinatario = proveedor (NO el banco)
 
-Montos en pesos chilenos enteros. Si no hay IVA: neto=round(total/1.19).
+Montos en pesos chilenos enteros. Si no hay IVA:
+monto_neto = round(total/1.19), iva = total - monto_neto.
 
 NOTAS MANUSCRITAS DE ENTREGA:
 - Si la imagen es una nota escrita a mano (papel con texto manuscrito), interpreta así:
   - Un número seguido de un punto antes del nombre del producto (ej: "7. Pan de Churrasco") indica la CANTIDAD de unidades, NO un número de ítem.
   - "Ruta 11", "Ruta II", "R11" = es el DESTINATARIO (nuestro negocio), NO el proveedor. Deja proveedor vacío/null.
   - "Kg X.XXX" = peso total del pedido (informativo), pero la unidad de compra es por UNIDAD, no por kilo.
-  - El precio mostrado (ej: "$3.400") es el TOTAL. Calcula precio_unitario = total / cantidad.
-  - Para panes: siempre se compran por unidad. Si dice "7. Pan..." y "$3.400", son 7 unidades a $486 c/u.
+  - El precio mostrado (ej: "\$3.400") es el TOTAL. Calcula precio_unitario = total / cantidad.
+  - Para panes: siempre se compran por unidad. Si dice "7. Pan..." y "\$3.400", son 7 unidades a \$486 c/u.
   - tipo_imagen = "producto", tipo_compra = "ingredientes"
 
 {$rutMap}
@@ -826,9 +876,9 @@ Formato respuesta:
 PROMPT;
     }
 
-    // ─── Vision Agent Prompt & Schema (Task 2.2) ───
+    // ─── Hardcoded Fallback: Multi-Agent Phase Prompts ───
 
-    private function buildVisionPrompt(): string
+    private function hardcodedVisionPrompt(): string
     {
         return <<<'PROMPT'
 Observa esta imagen con atención y extrae TODA la información posible.
@@ -858,27 +908,7 @@ Responde con texto_crudo, descripcion_visual, tipo_imagen, confianza (0.0-1.0) y
 PROMPT;
     }
 
-    private function buildVisionSchema(): array
-    {
-        return [
-            'type' => 'object',
-            'properties' => [
-                'texto_crudo' => ['type' => 'string'],
-                'descripcion_visual' => ['type' => 'string'],
-                'tipo_imagen' => [
-                    'type' => 'string',
-                    'enum' => ['boleta', 'factura', 'producto', 'bascula', 'transferencia', 'desconocido'],
-                ],
-                'confianza' => ['type' => 'number'],
-                'razon' => ['type' => 'string'],
-            ],
-            'required' => ['texto_crudo', 'descripcion_visual', 'tipo_imagen', 'confianza', 'razon'],
-        ];
-    }
-
-    // ─── Text Analysis Agent Prompt (Task 2.3) ───
-
-    private function buildTextAnalysisPrompt(string $textoCrudo, string $descripcionVisual, string $tipo, array $contexto, array $fewShotExamples): string
+    private function hardcodedTextAnalysisPrompt(string $textoCrudo, string $descripcionVisual, string $tipo, array $contexto, array $fewShotExamples): string
     {
         $suppliers = $this->formatSuppliers($contexto);
         $products = $this->formatProducts($contexto);
@@ -890,12 +920,12 @@ PROMPT;
         }
 
         $typeRules = match ($tipo) {
-            'boleta' => $this->textRulesBoleta($contexto),
-            'factura' => $this->textRulesFactura($contexto),
-            'producto' => $this->textRulesProducto($contexto),
-            'bascula' => $this->textRulesBascula($contexto),
-            'transferencia' => $this->textRulesTransferencia($contexto),
-            default => $this->textRulesGeneral($contexto),
+            'boleta' => $this->hardcodedTextRulesBoleta($contexto),
+            'factura' => $this->hardcodedTextRulesFactura($contexto),
+            'producto' => $this->hardcodedTextRulesProducto($contexto),
+            'bascula' => $this->hardcodedTextRulesBascula($contexto),
+            'transferencia' => $this->hardcodedTextRulesTransferencia($contexto),
+            default => $this->hardcodedTextRulesGeneral($contexto),
         };
 
         return <<<PROMPT
@@ -924,144 +954,7 @@ Formato respuesta:
 PROMPT;
     }
 
-    // ─── Text-only type-specific rules (Task 2.3) ───
-
-    private function textRulesBoleta(array $contexto): string
-    {
-        $patterns = implode("\n", array_slice($contexto['patterns'] ?? [], 0, 10));
-
-        return <<<RULES
-REGLAS BOLETA SUPERMERCADO CHILENO:
-- Encabezado: RUT, nombre empresa, dirección, sucursal
-- Productos: líneas con código de barras + nombre + precio
-- FORMATO A (Jumbo/Santa Isabel): cantidad ANTES del producto ("2 X \$4.690")
-- FORMATO B (Unimarc/Rendic): cantidad DEBAJO ("2 x 1 UN \$4790 c/u")
-- Cada código de barras (78...) = 1 producto separado. NUNCA fusionar.
-- Descuentos (OFERTA SEMANA, DESCTO CONVENI) van en campo "descuento" como valor positivo
-- Después de "TOTAL" NO hay productos
-- "TARJETA DE DEBITO" o "VENTA DEBITO" → metodo_pago = "card"
-- Montos en pesos chilenos enteros (sin decimales)
-- Si no hay IVA explícito: monto_neto = round(total/1.19), iva = total - monto_neto
-
-RUTs conocidos:
-81.201.000-K = Jumbo/Santa Isabel (Cencosud)
-81.537.600-5 = Unimarc (Rendic/SMU)
-
-{$patterns}
-RULES;
-    }
-
-    private function textRulesFactura(array $contexto): string
-    {
-        return <<<'RULES'
-REGLAS FACTURA CHILENA:
-- PROVEEDOR = empresa EMISORA (arriba/encabezado), NO el destinatario
-- "SEÑORES" o "CLIENTE" = COMPRADOR (La Ruta 11, Ricardo Huiscaleo) — NO es proveedor
-- "Yumbel", "Arica" son direcciones del comprador, NO proveedores
-- RUT del proveedor está en el encabezado, cerca del nombre de la empresa emisora
-- URLs/dominios identifican al proveedor: ariztiaatunegocio.cl → Ariztía, agrosuper.cl → Agrosuper
-
-EMPAQUE EN FACTURAS MAYORISTAS:
-- "SALCHICHA BIG MONT 800G 10U 8X1" CANT=2 → 10×8×2 = 160 unidades
-- "NNu" = unidades/paquete, "NNxN" = paquetes/caja, CANT = bultos comprados
-- nombre: LIMPIO sin empaque. precio_unitario: subtotal/cantidad_total
-- empaque_detalle: "10u/paq × 8paq/caja × 2 cajas = 160 unidades"
-
-FORMATO VANNI (RUT 76.979.850-1): cantidades directas, precios netos, TOTAL incluye IVA.
-RULES;
-    }
-
-    private function textRulesProducto(array $contexto): string
-    {
-        $equivalences = '';
-        foreach (array_slice($contexto['equivalences'] ?? [], 0, 10) as $eq) {
-            $equivalences .= "- {$eq['nombre']} → {$eq['ingrediente']} ({$eq['cantidad_por_unidad']} {$eq['unidad']})\n";
-        }
-
-        return <<<RULES
-REGLAS PRODUCTO FÍSICO:
-- Identifica qué producto es (tomate, papa, carne, pan, etc.)
-- Estima cantidad basándote en el tamaño visual y contexto
-- Caja estándar de tomates ≈ 18-20 kg, saco de papas ≈ 25 kg
-- Bolsas azules/rosadas con productos redondos oscuros = probablemente Palta Hass
-- Si hay texto de peso visible, úsalo. Si no, estima.
-- tipo_imagen = "producto", tipo_compra = "ingredientes"
-- fecha: NO uses fechas de vencimiento o fabricación del empaque. Si no hay fecha de compra visible, usa null.
-
-NOTAS MANUSCRITAS DE ENTREGA:
-- Si el texto proviene de una nota escrita a mano, interpreta así:
-  - Un número seguido de un punto antes del nombre del producto (ej: "7. Pan de Churrasco") indica la CANTIDAD de unidades, NO un número de ítem.
-  - "Ruta 11", "Ruta II", "R11" = es el DESTINATARIO (nuestro negocio), NO el proveedor. Deja proveedor vacío/null.
-  - "Kg X.XXX" = peso total del pedido (informativo), pero la unidad de compra es por UNIDAD, no por kilo.
-  - El precio mostrado (ej: "$3.400") es el TOTAL. Calcula precio_unitario = total / cantidad.
-  - Para panes: siempre se compran por unidad. Si dice "7. Pan..." y "$3.400", son 7 unidades a $486 c/u.
-
-Equivalencias conocidas:
-{$equivalences}
-RULES;
-    }
-
-    private function textRulesBascula(array $contexto): string
-    {
-        return <<<'RULES'
-REGLAS BÁSCULAS DE FERIA CHILENA:
-- 3 displays: PESO (kg), PRECIO ($/kg), TOTAL ($)
-- NOTACIÓN ABREVIADA: si número < 200 en precio → multiplicar ×100 ($45 = $4.500/kg)
-- Si número < 1000 en total → multiplicar ×100 ($237 = $23.700)
-- peso_bascula: número EXACTO del display en kg (ej: 5.275)
-- Marcas: FERRAWYY, HENKEL, CAMRY, EXCELL, T-SCALE
-- Si se ve el producto (paltas, tomates), identificarlo
-- tipo_imagen = "bascula"
-- fecha: NO uses fechas de vencimiento o fabricación. Si no hay fecha de compra visible, usa null.
-RULES;
-    }
-
-    private function textRulesTransferencia(array $contexto): string
-    {
-        $personMap = '';
-        foreach ($contexto['person_map'] ?? [] as $person => $supplier) {
-            $personMap .= "- {$person} → {$supplier}\n";
-        }
-
-        return <<<RULES
-REGLAS TRANSFERENCIA BANCARIA:
-- PROVEEDOR = DESTINATARIO de la transferencia (NO el banco, NO Mercado Pago)
-- metodo_pago = "transfer" siempre
-- Extrae: destinatario, monto, fecha
-
-Mapeo personas → proveedores:
-{$personMap}
-- Si el destinatario no está en el mapeo, usar su nombre como proveedor
-- Para ARIAKA: item = "Servicios Delivery", tipo_compra = "otros"
-- Para Abastible/Elton San Martin: item = "gas 15", tipo_compra = "ingredientes"
-RULES;
-    }
-
-    private function textRulesGeneral(array $contexto): string
-    {
-        return <<<'RULES'
-REGLAS GENERALES:
-- Determina qué tipo de contenido es basándote en el texto y descripción visual
-- Boleta/Factura: proveedor, RUT, items, montos, IVA
-- Producto: identificar producto, estimar cantidad
-- Báscula: leer displays (peso, precio/kg, total). Notación abreviada: ×100
-- Transferencia: destinatario = proveedor (NO el banco)
-- Montos en pesos chilenos enteros. Si no hay IVA: neto=round(total/1.19).
-
-NOTAS MANUSCRITAS DE ENTREGA:
-- Si el texto proviene de una nota escrita a mano, interpreta así:
-  - Un número seguido de un punto antes del nombre del producto (ej: "7. Pan de Churrasco") indica la CANTIDAD de unidades, NO un número de ítem.
-  - "Ruta 11", "Ruta II", "R11" = es el DESTINATARIO (nuestro negocio), NO el proveedor. Deja proveedor vacío/null.
-  - "Kg X.XXX" = peso total del pedido (informativo), pero la unidad de compra es por UNIDAD, no por kilo.
-  - El precio mostrado (ej: "$3.400") es el TOTAL. Calcula precio_unitario = total / cantidad.
-  - Para panes: siempre se compran por unidad. Si dice "7. Pan..." y "$3.400", son 7 unidades a $486 c/u.
-  - tipo_imagen = "producto", tipo_compra = "ingredientes"
-RULES;
-    }
-
-    // ─── Validation Agent Prompt & Schema (Task 2.4) ───
-
-    private function buildValidationPrompt(array $datos, array $contexto): string
+    private function hardcodedValidationPrompt(array $datos, array $contexto): string
     {
         $datosJson = json_encode($datos, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         $proveedores = implode(', ', array_slice($contexto['suppliers'] ?? [], 0, 20));
@@ -1087,34 +980,7 @@ Si todo está correcto, retorna inconsistencias vacías y datos_validados = dato
 PROMPT;
     }
 
-    private function buildValidationSchema(): array
-    {
-        return [
-            'type' => 'object',
-            'properties' => [
-                'datos_validados' => ['type' => 'object'],
-                'inconsistencias' => [
-                    'type' => 'array',
-                    'items' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'campo' => ['type' => 'string'],
-                            'valor_actual' => ['type' => 'string'],
-                            'valor_esperado' => ['type' => 'string'],
-                            'severidad' => ['type' => 'string', 'enum' => ['error', 'advertencia']],
-                            'descripcion' => ['type' => 'string'],
-                        ],
-                        'required' => ['campo', 'valor_actual', 'valor_esperado', 'severidad', 'descripcion'],
-                    ],
-                ],
-            ],
-            'required' => ['datos_validados', 'inconsistencias'],
-        ];
-    }
-
-    // ─── Reconciliation Agent Prompt & Schema (Task 2.5) ───
-
-    private function buildReconciliationPrompt(array $datos, array $inconsistencias, string $textoCrudo, array $contexto): string
+    private function hardcodedReconciliationPrompt(array $datos, array $inconsistencias, string $textoCrudo, array $contexto): string
     {
         $datosJson = json_encode($datos, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         $inconsJson = json_encode($inconsistencias, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
@@ -1144,37 +1010,138 @@ Retorna datos_finales (con correcciones aplicadas), correcciones_aplicadas (list
 PROMPT;
     }
 
-    private function buildReconciliationSchema(): array
+    // ─── Hardcoded Fallback: Multi-Agent Text Rules ───
+
+    private function hardcodedTextRulesBoleta(array $contexto): string
     {
-        return [
-            'type' => 'object',
-            'properties' => [
-                'datos_finales' => ['type' => 'object'],
-                'correcciones_aplicadas' => ['type' => 'array', 'items' => ['type' => 'string']],
-                'preguntas' => [
-                    'type' => 'array',
-                    'items' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'campo' => ['type' => 'string'],
-                            'descripcion' => ['type' => 'string'],
-                            'opciones' => [
-                                'type' => 'array',
-                                'items' => [
-                                    'type' => 'object',
-                                    'properties' => [
-                                        'valor' => ['type' => 'string'],
-                                        'etiqueta' => ['type' => 'string'],
-                                    ],
-                                    'required' => ['valor', 'etiqueta'],
-                                ],
-                            ],
-                        ],
-                        'required' => ['campo', 'descripcion', 'opciones'],
-                    ],
-                ],
-            ],
-            'required' => ['datos_finales', 'correcciones_aplicadas', 'preguntas'],
-        ];
+        $patterns = implode("\n", array_slice($contexto['patterns'] ?? [], 0, 10));
+
+        return <<<RULES
+REGLAS BOLETA SUPERMERCADO CHILENO:
+- Encabezado: RUT, nombre empresa, dirección, sucursal
+- Productos: líneas con código de barras + nombre + precio
+- FORMATO A (Jumbo/Santa Isabel): cantidad ANTES del producto ("2 X \$4.690")
+- FORMATO B (Unimarc/Rendic): cantidad DEBAJO ("2 x 1 UN \$4790 c/u")
+- Cada código de barras (78...) = 1 producto separado. NUNCA fusionar.
+- Descuentos (OFERTA SEMANA, DESCTO CONVENI) van en campo "descuento" como valor positivo
+- Después de "TOTAL" NO hay productos
+- "TARJETA DE DEBITO" o "VENTA DEBITO" → metodo_pago = "card"
+- Montos en pesos chilenos enteros (sin decimales)
+- Si no hay IVA explícito: monto_neto = round(total/1.19), iva = total - monto_neto
+
+RUTs conocidos:
+81.201.000-K = Jumbo/Santa Isabel (Cencosud)
+81.537.600-5 = Unimarc (Rendic/SMU)
+
+{$patterns}
+RULES;
+    }
+
+    private function hardcodedTextRulesFactura(array $contexto): string
+    {
+        return <<<'RULES'
+REGLAS FACTURA CHILENA:
+- PROVEEDOR = empresa EMISORA (arriba/encabezado), NO el destinatario
+- "SEÑORES" o "CLIENTE" = COMPRADOR (La Ruta 11, Ricardo Huiscaleo) — NO es proveedor
+- "Yumbel", "Arica" son direcciones del comprador, NO proveedores
+- RUT del proveedor está en el encabezado, cerca del nombre de la empresa emisora
+- URLs/dominios identifican al proveedor: ariztiaatunegocio.cl → Ariztía, agrosuper.cl → Agrosuper
+
+EMPAQUE EN FACTURAS MAYORISTAS:
+- "SALCHICHA BIG MONT 800G 10U 8X1" CANT=2 → 10×8×2 = 160 unidades
+- "NNu" = unidades/paquete, "NNxN" = paquetes/caja, CANT = bultos comprados
+- nombre: LIMPIO sin empaque. precio_unitario: subtotal/cantidad_total
+- empaque_detalle: "10u/paq × 8paq/caja × 2 cajas = 160 unidades"
+
+FORMATO VANNI (RUT 76.979.850-1): cantidades directas, precios netos, TOTAL incluye IVA.
+RULES;
+    }
+
+    private function hardcodedTextRulesProducto(array $contexto): string
+    {
+        $equivalences = '';
+        foreach (array_slice($contexto['equivalences'] ?? [], 0, 10) as $eq) {
+            $equivalences .= "- {$eq['nombre']} → {$eq['ingrediente']} ({$eq['cantidad_por_unidad']} {$eq['unidad']})\n";
+        }
+
+        return <<<RULES
+REGLAS PRODUCTO FÍSICO:
+- Identifica qué producto es (tomate, papa, carne, pan, etc.)
+- Estima cantidad basándote en el tamaño visual y contexto
+- Caja estándar de tomates ≈ 18-20 kg, saco de papas ≈ 25 kg
+- Bolsas azules/rosadas con productos redondos oscuros = probablemente Palta Hass
+- Si hay texto de peso visible, úsalo. Si no, estima.
+- tipo_imagen = "producto", tipo_compra = "ingredientes"
+- fecha: NO uses fechas de vencimiento o fabricación del empaque. Si no hay fecha de compra visible, usa null.
+
+NOTAS MANUSCRITAS DE ENTREGA:
+- Si el texto proviene de una nota escrita a mano, interpreta así:
+  - Un número seguido de un punto antes del nombre del producto (ej: "7. Pan de Churrasco") indica la CANTIDAD de unidades, NO un número de ítem.
+  - "Ruta 11", "Ruta II", "R11" = es el DESTINATARIO (nuestro negocio), NO el proveedor. Deja proveedor vacío/null.
+  - "Kg X.XXX" = peso total del pedido (informativo), pero la unidad de compra es por UNIDAD, no por kilo.
+  - El precio mostrado (ej: "\$3.400") es el TOTAL. Calcula precio_unitario = total / cantidad.
+  - Para panes: siempre se compran por unidad. Si dice "7. Pan..." y "\$3.400", son 7 unidades a \$486 c/u.
+
+Equivalencias conocidas:
+{$equivalences}
+RULES;
+    }
+
+    private function hardcodedTextRulesBascula(array $contexto): string
+    {
+        return <<<'RULES'
+REGLAS BÁSCULAS DE FERIA CHILENA:
+- 3 displays: PESO (kg), PRECIO ($/kg), TOTAL ($)
+- NOTACIÓN ABREVIADA: si número < 200 en precio → multiplicar ×100 ($45 = $4.500/kg)
+- Si número < 1000 en total → multiplicar ×100 ($237 = $23.700)
+- peso_bascula: número EXACTO del display en kg (ej: 5.275)
+- Marcas: FERRAWYY, HENKEL, CAMRY, EXCELL, T-SCALE
+- Si se ve el producto (paltas, tomates), identificarlo
+- tipo_imagen = "bascula"
+- fecha: NO uses fechas de vencimiento o fabricación. Si no hay fecha de compra visible, usa null.
+RULES;
+    }
+
+    private function hardcodedTextRulesTransferencia(array $contexto): string
+    {
+        $personMap = '';
+        foreach ($contexto['person_map'] ?? [] as $person => $supplier) {
+            $personMap .= "- {$person} → {$supplier}\n";
+        }
+
+        return <<<RULES
+REGLAS TRANSFERENCIA BANCARIA:
+- PROVEEDOR = DESTINATARIO de la transferencia (NO el banco, NO Mercado Pago)
+- metodo_pago = "transfer" siempre
+- Extrae: destinatario, monto, fecha
+
+Mapeo personas → proveedores:
+{$personMap}
+- Si el destinatario no está en el mapeo, usar su nombre como proveedor
+- Para ARIAKA: item = "Servicios Delivery", tipo_compra = "otros"
+- Para Abastible/Elton San Martin: item = "gas 15", tipo_compra = "ingredientes"
+RULES;
+    }
+
+    private function hardcodedTextRulesGeneral(array $contexto): string
+    {
+        return <<<'RULES'
+REGLAS GENERALES:
+- Determina qué tipo de contenido es basándote en el texto y descripción visual
+- Boleta/Factura: proveedor, RUT, items, montos, IVA
+- Producto: identificar producto, estimar cantidad
+- Báscula: leer displays (peso, precio/kg, total). Notación abreviada: ×100
+- Transferencia: destinatario = proveedor (NO el banco)
+- Montos en pesos chilenos enteros. Si no hay IVA: neto=round(total/1.19).
+
+NOTAS MANUSCRITAS DE ENTREGA:
+- Si el texto proviene de una nota escrita a mano, interpreta así:
+  - Un número seguido de un punto antes del nombre del producto (ej: "7. Pan de Churrasco") indica la CANTIDAD de unidades, NO un número de ítem.
+  - "Ruta 11", "Ruta II", "R11" = es el DESTINATARIO (nuestro negocio), NO el proveedor. Deja proveedor vacío/null.
+  - "Kg X.XXX" = peso total del pedido (informativo), pero la unidad de compra es por UNIDAD, no por kilo.
+  - El precio mostrado (ej: "$3.400") es el TOTAL. Calcula precio_unitario = total / cantidad.
+  - Para panes: siempre se compran por unidad. Si dice "7. Pan..." y "$3.400", son 7 unidades a $486 c/u.
+  - tipo_imagen = "producto", tipo_compra = "ingredientes"
+RULES;
     }
 }

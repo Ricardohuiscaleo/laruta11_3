@@ -6,7 +6,7 @@ Migrate the 17 hardcoded AI prompts from `GeminiService.php` to a database-backe
 
 ## Tasks
 
-- [ ] 1. Create database migration for `ai_prompts` and `ai_prompt_versions` tables
+- [x] 1. Create database migration for `ai_prompts` and `ai_prompt_versions` tables
   - Create migration file `2026_04_17_000001_create_ai_prompts_tables.php` in `mi3/backend/database/migrations/`
   - Use raw `DB::statement()` pattern (matching existing migration style)
   - `ai_prompts`: id, slug, pipeline, label, description, prompt_text (MEDIUMTEXT), variables (JSON), prompt_version, is_active, created_at, updated_at
@@ -15,7 +15,7 @@ Migrate the 17 hardcoded AI prompts from `GeminiService.php` to a database-backe
   - Add FOREIGN KEY from ai_prompt_id → ai_prompts(id) ON DELETE CASCADE
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 2. Create seed migration to populate the 17 prompts from GeminiService
+- [x] 2. Create seed migration to populate the 17 prompts from GeminiService
   - Create migration file `2026_04_17_000002_seed_ai_prompts.php`
   - Use reflection or direct reading of GeminiService prompt methods to extract current prompt texts
   - Insert 17 rows with correct slug, pipeline, label, variables JSON, prompt_version=1, is_active=true
@@ -23,18 +23,18 @@ Migrate the 17 hardcoded AI prompts from `GeminiService.php` to a database-backe
   - Make idempotent: use `insertOrIgnore` or check existence before insert
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 10.3_
 
-- [ ] 3. Create Eloquent models
-  - [ ] 3.1 Create `AiPrompt` model in `mi3/backend/app/Models/AiPrompt.php`
+- [x] 3. Create Eloquent models
+  - [x] 3.1 Create `AiPrompt` model in `mi3/backend/app/Models/AiPrompt.php`
     - Define table, fillable, casts (variables → array, is_active → boolean)
     - Add scopes: `scopeActive`, `scopeBySlug`, `scopeByPipeline`
     - Add `versions()` hasMany relationship to AiPromptVersion
     - _Requirements: 1.1, 1.3_
-  - [ ] 3.2 Create `AiPromptVersion` model in `mi3/backend/app/Models/AiPromptVersion.php`
+  - [x] 3.2 Create `AiPromptVersion` model in `mi3/backend/app/Models/AiPromptVersion.php`
     - Define table, fillable, casts
     - Add `prompt()` belongsTo relationship to AiPrompt
     - _Requirements: 1.4_
 
-- [ ] 4. Implement AiPromptService
+- [x] 4. Implement AiPromptService
   - Create `mi3/backend/app/Services/Compra/AiPromptService.php`
   - Implement `getPrompt(string $slug, string $pipeline, array $variables = []): string` with cache-through pattern (key: `ai_prompts:{slug}:{pipeline}`, TTL 3600s, tag `ai_prompts`)
   - Implement variable interpolation: replace `{key}` tokens with string-cast values, ignore extra keys, leave unmatched tokens
@@ -65,7 +65,7 @@ Migrate the 17 hardcoded AI prompts from `GeminiService.php` to a database-backe
 - [ ] 5. Checkpoint — Run migrations and verify seed
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Create AiPromptController
+- [x] 6. Create AiPromptController
   - Create `mi3/backend/app/Http/Controllers/Admin/AiPromptController.php`
   - `index(Request $request): JsonResponse` — return all prompts via AiPromptService::getAll()
   - `show(int $id): JsonResponse` — return prompt with version history
@@ -74,7 +74,7 @@ Migrate the 17 hardcoded AI prompts from `GeminiService.php` to a database-backe
   - Return consistent JSON format: `{ success: true, data: ... }`
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 5.5_
 
-- [ ] 7. Register API routes for ai-prompts
+- [x] 7. Register API routes for ai-prompts
   - Add routes inside the existing admin middleware group in `mi3/backend/routes/api.php`
   - `GET    compras/ai-prompts` → AiPromptController@index
   - `GET    compras/ai-prompts/{id}` → AiPromptController@show
@@ -83,7 +83,7 @@ Migrate the 17 hardcoded AI prompts from `GeminiService.php` to a database-backe
   - Routes inherit `auth:sanctum` + `admin` middleware from the group
   - _Requirements: 7.5, 7.6_
 
-- [ ] 8. Refactor GeminiService to use AiPromptService
+- [x] 8. Refactor GeminiService to use AiPromptService
   - Inject `AiPromptService` via constructor DI in `GeminiService`
   - Replace each hardcoded prompt method (`buildClassificationPrompt`, `promptBoleta`, `promptFactura`, `promptProducto`, `promptBascula`, `promptTransferencia`, `promptGeneral`) to call `$this->promptService->getPrompt(slug, pipeline, variables)`
   - Replace multi-agent prompt methods (`buildVisionPrompt`, `buildTextAnalysisPrompt`, `buildValidationPrompt`, `buildReconciliationPrompt`) similarly
@@ -95,28 +95,28 @@ Migrate the 17 hardcoded AI prompts from `GeminiService.php` to a database-backe
 - [ ] 9. Checkpoint — Verify backend API and GeminiService refactor
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 10. Build PromptsManager frontend component
-  - [ ] 10.1 Create `PromptsManager.tsx` in `mi3/frontend/components/admin/compras/`
+- [x] 10. Build PromptsManager frontend component
+  - [x] 10.1 Create `PromptsManager.tsx` in `mi3/frontend/components/admin/compras/`
     - Fetch all prompts from `GET /compras/ai-prompts` on mount using `comprasApi`
     - Group prompts by pipeline (legacy, multi-agent-rules, multi-agent-phases)
     - Display pipeline sections with collapsible prompt cards showing label, slug, pipeline, version number
     - Show available variables list from the `variables` JSON field for each prompt
     - _Requirements: 8.1, 10.1, 10.2_
-  - [ ] 10.2 Create `PromptEditor.tsx` in `mi3/frontend/components/admin/compras/`
+  - [x] 10.2 Create `PromptEditor.tsx` in `mi3/frontend/components/admin/compras/`
     - Monospace textarea with auto-resize for editing prompt_text
     - Save button calls `PUT /compras/ai-prompts/{id}` with updated text
     - Cancel button reverts to original text
     - Optimistic UI update with error rollback on API failure
     - Display available variables as reference chips/tags next to the editor
     - _Requirements: 8.2, 8.3, 8.6, 10.2_
-  - [ ] 10.3 Create `PromptHistory.tsx` in `mi3/frontend/components/admin/compras/`
+  - [x] 10.3 Create `PromptHistory.tsx` in `mi3/frontend/components/admin/compras/`
     - Fetch version history from `GET /compras/ai-prompts/{id}` (included in show response)
     - Display list of versions with version number and timestamp
     - Revert button calls `POST /compras/ai-prompts/{id}/revert/{versionId}`
     - Optimistic UI with error rollback
     - _Requirements: 8.4, 8.5, 8.6_
 
-- [ ] 11. Integrate PromptsManager into Consola tab
+- [x] 11. Integrate PromptsManager into Consola tab
   - Modify `mi3/frontend/app/admin/compras/consola/page.tsx` (loaded via `ComprasSection.tsx` lazy import)
   - Add sub-tab navigation: "Logs" (existing extraction logs) and "Prompts IA" (new PromptsManager)
   - Default to "Logs" tab, lazy-load PromptsManager when "Prompts IA" is selected

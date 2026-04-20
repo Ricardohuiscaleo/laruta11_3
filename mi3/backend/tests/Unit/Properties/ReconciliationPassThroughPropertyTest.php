@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Properties;
 
+use App\Services\Compra\AiPromptService;
 use App\Services\Compra\GeminiService;
 use Eris\Generator;
 use Eris\TestTrait;
+use Mockery;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -27,7 +29,14 @@ class ReconciliationPassThroughPropertyTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->geminiService = new GeminiService();
+        $promptService = Mockery::mock(AiPromptService::class);
+        $this->geminiService = new GeminiService($promptService);
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
     }
 
     // ─── Generators ───

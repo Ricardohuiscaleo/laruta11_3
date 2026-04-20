@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AiPromptController;
 use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\SettlementController;
 use App\Http\Controllers\Public\TrackingController;
@@ -94,6 +95,13 @@ Route::prefix('v1')->group(function () {
         Route::post('compras/pipeline/run', [\App\Http\Controllers\Admin\ExtraccionController::class, 'runPipeline']);
         Route::get('compras/pipeline/report', [\App\Http\Controllers\Admin\ExtraccionController::class, 'pipelineReport']);
         Route::post('compras/{id}/imagen', [\App\Http\Controllers\Admin\CompraController::class, 'uploadImagen']);
+
+        // AI Prompts (Compras pipeline)
+        Route::get('compras/ai-prompts', [AiPromptController::class, 'index']);
+        Route::get('compras/ai-prompts/{id}', [AiPromptController::class, 'show']);
+        Route::put('compras/ai-prompts/{id}', [AiPromptController::class, 'update']);
+        Route::post('compras/ai-prompts/{id}/revert/{versionId}', [AiPromptController::class, 'revert']);
+
         Route::apiResource('compras', \App\Http\Controllers\Admin\CompraController::class)->only(['index', 'store', 'show', 'destroy']);
 
         // Rendiciones (admin: create, list, preview)
