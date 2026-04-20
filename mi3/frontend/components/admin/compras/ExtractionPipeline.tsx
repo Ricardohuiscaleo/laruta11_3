@@ -67,7 +67,6 @@ const MULTI_AGENT_PHASES: PipelinePhase[] = [
 
 
 export default function ExtractionPipeline({ tempKey, onResult, onError, onReconciliationNeeded, onPhaseChange, autoStart = true }: ExtractionPipelineProps) {
-  console.log('[Pipeline] MOUNTED, tempKey:', tempKey, 'autoStart:', autoStart);
   const [phases, setPhases] = useState<PipelinePhase[]>(BEDROCK_PHASES.map(p => ({ ...p })));
   const [running, setRunning] = useState(false);
   const [slow, setSlow] = useState(false);
@@ -91,7 +90,6 @@ export default function ExtractionPipeline({ tempKey, onResult, onError, onRecon
   }, []);
 
   const handleEvent = useCallback((event: PipelineEvent) => {
-    console.log('[Pipeline] SSE event:', event.fase, event.status, event.engine);
     const { fase, status, data, elapsed_ms, engine } = event;
 
     // Detect engine from first event
@@ -234,7 +232,7 @@ export default function ExtractionPipeline({ tempKey, onResult, onError, onRecon
   }, []);
 
   return (
-    <div className="rounded-xl border bg-white p-4 space-y-3" role="status" aria-live="polite" aria-label="Pipeline de extracción IA">
+    <div className="rounded-xl border border-white/20 bg-white/60 backdrop-blur-sm p-4 space-y-3 shadow-sm" role="status" aria-live="polite" aria-label="Pipeline de extracción IA">
       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Extracción inteligente</p>
 
       <div className="space-y-2">
@@ -267,10 +265,10 @@ function PhaseRow({ phase }: { phase: PipelinePhase }) {
   }[phase.status];
 
   return (
-    <div className={`flex items-start gap-3 rounded-lg px-3 py-2 transition-colors ${
-      phase.status === 'running' ? 'bg-blue-50' :
-      phase.status === 'done' ? 'bg-green-50/50' :
-      phase.status === 'error' ? 'bg-red-50/50' : 'bg-gray-50'
+    <div className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors ${
+      phase.status === 'running' ? 'bg-white border-blue-200 shadow-sm' :
+      phase.status === 'done' ? 'bg-white border-green-200' :
+      phase.status === 'error' ? 'bg-white border-red-200' : 'bg-white border-gray-100'
     }`}>
       <div className="mt-0.5 flex-shrink-0">{statusIcon}</div>
 

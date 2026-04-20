@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`7e5ea66`) — ingredient categories: tabs dinámicos, API con categorías |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`dd7fd15`) — header unificado en AdminShell, tabs renderizadas por shell |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`05038b6`) — header unificado móvil: tabs+trailing integrados en header rojo |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`bc68719`) — hotfix GeminiService restaurado (refactor eliminó métodos públicos) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -106,8 +106,8 @@
 - `mi3/frontend/components/admin/sections/ChecklistsSection.tsx`: Refactorizado — usa `onHeaderConfig` para 4 tabs con accent amber.
 - 11 secciones: `<h1>` cambiado a `hidden md:block` para evitar duplicación con header rojo móvil.
 
-**Commits:** `8914128`, `dd7fd15`
-**Deploys:** mi3-frontend ✅ (`dd7fd15`)
+**Commits:** `8914128`, `dd7fd15`, `05038b6`
+**Deploys:** mi3-frontend ✅ (`05038b6`)
 
 ### 2026-04-20a — Spec ai-prompts-management: implementación completa
 
