@@ -176,8 +176,8 @@ export default function MobileExtractionSheet({
       role="dialog"
       aria-modal="true"
     >
-      {/* Backdrop — almost transparent, minimal blur */}
-      <div className="absolute inset-0 bg-black/[0.07] backdrop-blur-[2px]" />
+      {/* Backdrop — click to close */}
+      <div className="absolute inset-0 bg-black/[0.07] backdrop-blur-[2px]" onClick={onClose} />
 
       {/* Card — solid white, centered */}
       <div className="relative w-full max-w-sm mx-4 sm:mx-auto rounded-2xl bg-white shadow-2xl overflow-hidden">
@@ -222,19 +222,28 @@ export default function MobileExtractionSheet({
                   isPending   ? 'opacity-35' : '',
                 ].join(' ')}
               >
-                {/* Status icon */}
-                <div className={[
-                  'flex items-center justify-center h-8 w-8 rounded-full shrink-0 mt-0.5 transition-all duration-500',
-                  isCompleted ? 'bg-emerald-500 shadow-sm shadow-emerald-200' : '',
-                  isActive    ? 'bg-gray-900 shadow-md shadow-gray-200' : '',
-                  isPending   ? 'bg-gray-100' : '',
-                ].join(' ')}>
-                  {isCompleted ? (
-                    <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
-                  ) : isActive ? (
-                    <Loader2 className="h-4 w-4 text-white animate-spin" />
-                  ) : (
-                    <Icon className="h-3.5 w-3.5 text-gray-300" />
+                {/* Status icon — always show phase icon, badge for status */}
+                <div className="relative shrink-0 mt-0.5">
+                  <div className={[
+                    'flex items-center justify-center h-8 w-8 rounded-full transition-all duration-500',
+                    isCompleted ? 'bg-emerald-50 ring-1 ring-emerald-200' : '',
+                    isActive    ? 'bg-gray-900 shadow-md shadow-gray-200' : '',
+                    isPending   ? 'bg-gray-100' : '',
+                  ].join(' ')}>
+                    {isActive ? (
+                      <Loader2 className="h-4 w-4 text-white animate-spin" />
+                    ) : (
+                      <Icon className={[
+                        'h-4 w-4',
+                        isCompleted ? 'text-emerald-600' : '',
+                        isPending   ? 'text-gray-300'    : '',
+                      ].join(' ')} />
+                    )}
+                  </div>
+                  {isCompleted && (
+                    <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 ring-[1.5px] ring-white">
+                      <Check className="h-2 w-2 text-white" strokeWidth={3} />
+                    </span>
                   )}
                 </div>
 
@@ -283,12 +292,17 @@ export default function MobileExtractionSheet({
           })}
         </div>
 
-        {/* Done footer */}
+        {/* Done footer — click to close */}
         {isDone && (
-          <div className="mx-5 mb-5 flex items-center justify-center gap-2 rounded-xl bg-emerald-50 border border-emerald-100 py-3 animate-in fade-in zoom-in-95 duration-500">
+          <button
+            type="button"
+            onClick={onClose}
+            className="mx-5 mb-5 flex w-[calc(100%-2.5rem)] items-center justify-center gap-2 rounded-xl bg-emerald-50 border border-emerald-100 py-3 animate-in fade-in zoom-in-95 duration-500 hover:bg-emerald-100 transition-colors cursor-pointer"
+            aria-label="Cerrar extracción"
+          >
             <Check className="h-4 w-4 text-emerald-600" strokeWidth={2.5} />
             <span className="text-sm font-bold text-emerald-700">Listo</span>
-          </div>
+          </button>
         )}
 
         {/* Separator if no done yet */}
