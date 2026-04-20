@@ -83,7 +83,7 @@ export default function NominaSection() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Nómina</h1>
+        <h1 className="hidden md:block text-2xl font-bold text-gray-900">Nómina</h1>
         <button onClick={sendAll} disabled={sending === 'all'} className="flex items-center gap-1 rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50">
           <Send className="h-4 w-4" /> {sending === 'all' ? 'Enviando...' : 'Enviar Todas'}
         </button>

@@ -63,7 +63,7 @@ export default function NotificacionesSection({ onNavigate }: NotificacionesSect
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Notificaciones</h1>
+      <h1 className="hidden md:block text-2xl font-bold text-gray-900">Notificaciones</h1>
 
       {/* Filter tabs */}
       <div className="flex gap-1 overflow-x-auto rounded-lg bg-gray-100 p-1" role="tablist" aria-label="Filtrar notificaciones">

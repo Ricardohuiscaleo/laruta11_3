@@ -46,7 +46,7 @@ export default function DashboardSection() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-gray-900">Panel Admin</h1>
+      <h1 className="hidden md:block text-2xl font-bold text-gray-900">Panel Admin</h1>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4">

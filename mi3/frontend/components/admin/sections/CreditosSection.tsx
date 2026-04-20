@@ -45,7 +45,7 @@ export default function CreditosSection() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Créditos R11</h1>
+      <h1 className="hidden md:block text-2xl font-bold text-gray-900">Créditos R11</h1>
 
       {credits.length === 0 ? (
         <div className="rounded-xl border bg-white p-8 text-center shadow-sm">

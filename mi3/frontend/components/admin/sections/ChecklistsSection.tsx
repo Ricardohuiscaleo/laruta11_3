@@ -403,7 +403,7 @@ export default function ChecklistsSection() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Checklists</h1>
+      <h1 className="hidden md:block text-2xl font-bold text-gray-900">Checklists</h1>
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Secciones de checklists">
         <TabButton active={tab === 'checklists'} onClick={() => setTab('checklists')}>
           <span className="flex items-center gap-1.5"><ClipboardCheck className="h-4 w-4" /> Del día</span>

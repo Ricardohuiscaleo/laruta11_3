@@ -43,7 +43,7 @@ export default function CronjobsSection() {
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Clock className="h-6 w-6 text-amber-700" />
-        <h1 className="text-2xl font-bold text-gray-900">Cronjobs</h1>
+        <h1 className="hidden md:block text-2xl font-bold text-gray-900">Cronjobs</h1>
       </div>
 
       {cronjobs.length === 0 ? (

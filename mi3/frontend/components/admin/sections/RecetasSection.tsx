@@ -31,7 +31,7 @@ export default function RecetasSection() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Recetas</h1>
+      <h1 className="hidden md:block text-2xl font-bold text-gray-900">Recetas</h1>
       <nav className="flex items-center gap-1 overflow-x-auto rounded-lg bg-gray-100 p-1" role="tablist" aria-label="Secciones de recetas">
         {tabs.map(({ key, label, icon: Icon }) => (
           <button

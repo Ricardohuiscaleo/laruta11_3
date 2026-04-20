@@ -57,7 +57,7 @@ export default function CambiosSection() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Solicitudes de Cambio</h1>
+      <h1 className="hidden md:block text-2xl font-bold text-gray-900">Solicitudes de Cambio</h1>
 
       {pending.length > 0 && (
         <div className="space-y-2">

@@ -55,7 +55,7 @@ export default function SectionHeader({
         sticky && 'sticky md:top-0 top-14 z-20',
       )}
     >
-      {/* Row 1: Title + trailing — desktop only */}
+      {/* Row 1: Title + trailing — desktop only (mobile title is in AdminShell header) */}
       <div className="hidden md:flex items-center justify-between gap-3 mb-2 min-h-[36px]">
         <h1 className="text-xl font-bold text-gray-900 shrink-0">
           {title}
@@ -67,6 +67,10 @@ export default function SectionHeader({
           <div className="min-w-0 overflow-hidden">{trailing}</div>
         )}
       </div>
+      {/* Mobile: trailing only (no title, it's in the red header) */}
+      {trailing && (
+        <div className="md:hidden mb-1 overflow-hidden">{trailing}</div>
+      )}
 
       {/* Row 2: Tabs — scroll horizontal en móvil, wrap en desktop */}
       {tabs && tabs.length > 0 && (
