@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`7e5ea66`) — ingredient categories: tabs dinámicos, API con categorías |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`a3a1555`) — SectionHeader + fix upload + pipeline auto-scroll móvil |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`7eff98c`) — fix Undefined array key proveedor |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`3aab8e5`) — fix proveedor null + prompts notas manuscritas |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -82,6 +82,7 @@
 - [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3.
 - [x] **Limpiar datos de prueba delivery** — eliminados 6 pedidos TEST-DLV-* y SIM-*. Pendiente: revertir roles rider de Camila(1), Andrés(3), Dafne(18) cuando termine el testing.
 - [ ] Recalcular delivery\_fee server-side en `create_order.php`
+- [ ] **Migrar prompts IA a BD** — Tabla `ai_prompts` con tipo/versión/contenido, CRUD en mi3 admin (Compras → Consola), GeminiService lee de BD con cache. Permite editar prompts sin deploy.
 - [ ] **Migrar tracking público de app3 a mi3** — `app3/src/pages/tracking/` usa polling HTTP, debería estar en mi3-frontend con Reverb WebSocket nativo para realtime real. Actualmente embebido via iframe en payment-success. Además: ocultar informe técnico al usuario, mostrar tracking en pedidos pending (no solo payment-success), integrar en MiniComandasCliente de app3. No necesario en caja3.
 - [x] **Integrar checklists mi3 en caja3** — COMPLETADO. Public/ChecklistController.php con 5 endpoints, ChecklistApp.jsx reescrito para consumir mi3 API. Commit `eaceaab`.
 - [x] Unificar factor descuento RL6 en caja3 (0.6 vs 0.7143) — CheckoutApp.jsx corregido de 0.6→0.7143, delivery_discount ahora se envía en todos los payloads de CheckoutApp y MenuApp.
@@ -103,9 +104,9 @@
 - `mi3/frontend/app/admin/compras/registro/page.tsx`: Fix bug upload — `FileList` es objeto vivo, `e.target.value=''` lo vaciaba. Ahora `Array.from(files)` antes del reset. Debug console.log temporales agregados.
 - `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: Fix `Undefined array key "proveedor"` — 3 llamadas a `isProveedorSuspect($extracted['proveedor'])` cambiadas a `$extracted['proveedor'] ?? null`.
 
-**Commits:** `5813a3a`, `28e83de`, `ba07245`, `7eff98c`, `bafa685`, `a3a1555`
-**Deploys:** mi3-frontend ✅ (`a3a1555`), mi3-backend ✅ (`7eff98c`)
-**Pendiente:** Remover console.log de debug en registro/page.tsx y ExtractionPipeline.tsx después de confirmar que todo funciona. Evaluar modal/bottom-sheet para pipeline en móvil si auto-scroll no es suficiente.
+**Commits:** `5813a3a`, `28e83de`, `ba07245`, `7eff98c`, `bafa685`, `a3a1555`, `cdf607d`, `3aab8e5`
+**Deploys:** mi3-frontend ✅ (`cdf607d`), mi3-backend ✅ (`3aab8e5`)
+**Pendiente:** Remover console.log de debug en registro/page.tsx y ExtractionPipeline.tsx. Evaluar modal/bottom-sheet para pipeline en móvil si auto-scroll no es suficiente.
 
 ### 2026-04-19f — Fixes post-deploy pipeline multi-agente: SSE engine, datos vacíos, migración, v1.8
 
