@@ -536,35 +536,49 @@ export default function RegistroPage() {
         </div>
       )}
 
-      {/* Drop zone — always visible */}
+      {/* Upload — Mobile: botón compacto, Desktop: drop zone con drag */}
+      {/* MOBILE */}
+      <div className="md:hidden">
+        <label
+          htmlFor="compras-file-input"
+          className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-500 px-4 py-3 text-white active:bg-red-600 transition-colors"
+        >
+          {uploading ? (
+            <><Loader2 className="h-5 w-5 animate-spin" /><span className="text-sm font-medium">{uploadProgress || 'Subiendo...'}</span></>
+          ) : (
+            <><Upload className="h-5 w-5" /><span className="text-sm font-medium">Subir foto de boleta</span></>
+          )}
+        </label>
+      </div>
+      {/* DESKTOP */}
       <label
         htmlFor="compras-file-input"
         onDragOver={e => e.preventDefault()}
         onDrop={e => { e.preventDefault(); if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); }}
-        className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center hover:border-mi3-400 hover:bg-mi3-50/30 transition-colors"
+        className="hidden md:flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center hover:border-mi3-400 hover:bg-mi3-50/30 transition-colors"
       >
         {uploading ? (
           <><Loader2 className="h-6 w-6 animate-spin text-mi3-500" /><p className="text-sm text-mi3-600">{uploadProgress || 'Subiendo foto...'}</p></>
         ) : (
           <><Upload className="h-6 w-6 text-gray-400" />
-          <p className="text-sm text-gray-600">Sube 1 o más fotos de boletas/facturas</p>
+          <p className="text-sm text-gray-600">Arrastra o haz clic para subir fotos de boletas/facturas</p>
           <p className="text-xs text-gray-400">La IA extrae datos y agrupa por proveedor</p></>
         )}
-        <input id="compras-file-input" ref={inputRef} type="file" accept="image/*" multiple className="hidden"
-          onChange={e => {
-            console.log('[Compras] onChange fired, files:', e.target.files?.length);
-            const files = e.target.files;
-            if (files && files.length > 0) {
-              // Copy files to array BEFORE resetting input (FileList is live, reset empties it)
-              const fileArray = Array.from(files);
-              e.target.value = '';
-              console.log('[Compras] scheduling processFiles, copied', fileArray.length, 'files');
-              setTimeout(() => processFiles(fileArray), 0);
-            } else {
-              console.warn('[Compras] onChange: no files selected');
-            }
-          }} />
       </label>
+      {/* Shared hidden input */}
+      <input id="compras-file-input" ref={inputRef} type="file" accept="image/*" multiple className="hidden"
+        onChange={e => {
+          console.log('[Compras] onChange fired, files:', e.target.files?.length);
+          const files = e.target.files;
+          if (files && files.length > 0) {
+            const fileArray = Array.from(files);
+            e.target.value = '';
+            console.log('[Compras] scheduling processFiles, copied', fileArray.length, 'files');
+            setTimeout(() => processFiles(fileArray), 0);
+          } else {
+            console.warn('[Compras] onChange: no files selected');
+          }
+        }} />
 
       {/* Pipeline visual SSE — DESKTOP ONLY (mobile uses MobileExtractionSheet) */}
       {(() => { console.log('[Compras] render check: pipelineTempKey=', pipelineTempKey); return null; })()}
