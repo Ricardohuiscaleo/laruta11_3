@@ -75,31 +75,8 @@ export default function ExtractionPipeline({ tempKey, onResult, onError, onRecon
   const slowTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const engineRef = useRef<EngineType>(null);
 
-  const updatePhase = useCallback((id: string, updates: Partial<PipelinePhase>) => {
-    setPhases(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
-  }, []);
-
-  const initPhasesForEngine = useCallback((engine: EngineType) => {
-    if (engineRef.current) return;
-    engineRef.current = engine;
-    if (engine === 'gemini') {
-      setPhases(GEMINI_PHASES.map(p => ({ ...p })));
-    } else if (engine === 'multi-agent') {
-      setPhases(MULTI_AGENT_PHASES.map(p => ({ ...p })));
-    }
-  }, []);
-
   const handleEvent = useCallback((event: PipelineEvent) => {
     const { fase, status, data, elapsed_ms, engine } = event;
-
-    // Detect engine from first event
-    if (engine && !engineRef.current) {
-      if (engine === 'multi-agent') {
-        initPhasesForEngine('multi-agent');
-      } else {
-        initPhasesForEngine(engine === 'gemini' ? 'gemini' : 'bedrock');
-      }
-    }
 
     if (fase === 'resultado') {
       setTotalMs(elapsed_ms);
@@ -126,40 +103,62 @@ export default function ExtractionPipeline({ tempKey, onResult, onError, onRecon
       return;
     }
 
-    // Determine valid phases based on engine
-    const phaseId = fase as PhaseId;
-    const multiAgentPhases: MultiAgentPhaseId[] = ['vision', 'analisis', 'validacion', 'reconciliacion'];
-    const geminiPhases: LegacyPhaseId[] = ['clasificacion', 'analisis'];
-    const bedrockPhases: LegacyPhaseId[] = ['percepcion', 'clasificacion', 'analisis'];
+    // Single atomic setPhases that handles engine init + phase update together
+    // This avoids the race condition where initPhasesForEngine and updatePhase
+    // batch separately, causing updatePhase to operate on stale BEDROCK phases.
+    setPhases(prev => {
+      let basePhaseDefs = prev;
 
-    let validPhases: PhaseId[];
-    if (engineRef.current === 'multi-agent') {
-      validPhases = multiAgentPhases;
-    } else if (engineRef.current === 'gemini') {
-      validPhases = geminiPhases;
-    } else {
-      validPhases = bedrockPhases;
-    }
-
-    if (validPhases.includes(phaseId)) {
-      updatePhase(phaseId, {
-        status: status === 'done' ? 'done' : status === 'error' ? 'error' : 'running',
-        data: data as Record<string, unknown> | null,
-        elapsedMs: elapsed_ms,
-      });
-
-      // Notify parent of phase changes
-      onPhaseChange?.(fase, status, data as Record<string, unknown> | null);
-
-      // Handle reconciliation questions from multi-agent pipeline
-      if (phaseId === 'reconciliacion' && status === 'done' && data) {
-        const preguntas = data.preguntas as ReconciliationQuestion[] | undefined;
-        if (preguntas && preguntas.length > 0 && onReconciliationNeeded) {
-          onReconciliationNeeded(preguntas);
+      // Detect engine from first event and switch phase definitions
+      if (engine && !engineRef.current) {
+        const detectedEngine: EngineType = engine === 'multi-agent' ? 'multi-agent' : engine === 'gemini' ? 'gemini' : 'bedrock';
+        engineRef.current = detectedEngine;
+        if (detectedEngine === 'gemini') {
+          basePhaseDefs = GEMINI_PHASES.map(p => ({ ...p }));
+        } else if (detectedEngine === 'multi-agent') {
+          basePhaseDefs = MULTI_AGENT_PHASES.map(p => ({ ...p }));
         }
       }
+
+      const phaseId = fase as PhaseId;
+      const multiAgentPhases: MultiAgentPhaseId[] = ['vision', 'analisis', 'validacion', 'reconciliacion'];
+      const geminiPhases: LegacyPhaseId[] = ['clasificacion', 'analisis'];
+      const bedrockPhases: LegacyPhaseId[] = ['percepcion', 'clasificacion', 'analisis'];
+
+      let validPhases: PhaseId[];
+      if (engineRef.current === 'multi-agent') {
+        validPhases = multiAgentPhases;
+      } else if (engineRef.current === 'gemini') {
+        validPhases = geminiPhases;
+      } else {
+        validPhases = bedrockPhases;
+      }
+
+      if (!validPhases.includes(phaseId)) return basePhaseDefs;
+
+      return basePhaseDefs.map(p =>
+        p.id === phaseId
+          ? {
+              ...p,
+              status: status === 'done' ? 'done' as const : status === 'error' ? 'error' as const : 'running' as const,
+              data: data as Record<string, unknown> | null,
+              elapsedMs: elapsed_ms,
+            }
+          : p
+      );
+    });
+
+    // Side effects outside setPhases
+    const phaseId = fase as PhaseId;
+    onPhaseChange?.(fase, status, data as Record<string, unknown> | null);
+
+    if (phaseId === 'reconciliacion' && status === 'done' && data) {
+      const preguntas = data.preguntas as ReconciliationQuestion[] | undefined;
+      if (preguntas && preguntas.length > 0 && onReconciliationNeeded) {
+        onReconciliationNeeded(preguntas);
+      }
     }
-  }, [onResult, onError, updatePhase, initPhasesForEngine, onReconciliationNeeded, onPhaseChange]);
+  }, [onResult, onError, onReconciliationNeeded, onPhaseChange]);
 
   const runPipeline = useCallback(async () => {
     if (running) return;
@@ -263,7 +262,7 @@ function PhaseRow({ phase }: { phase: PipelinePhase }) {
       phase.status === 'done' ? 'bg-white border-green-200' :
       phase.status === 'error' ? 'bg-white border-red-200' : 'bg-white border-gray-100'
     }`}>
-      {/* Phase icon with status badge */}
+      {/* Phase icon — always visible, status badge on edge */}
       <div className="mt-0.5 flex-shrink-0 relative">
         <span className={
           phase.status === 'done' ? 'text-green-600' :
@@ -278,13 +277,13 @@ function PhaseRow({ phase }: { phase: PipelinePhase }) {
           }
         </span>
         {phase.status === 'done' && (
-          <span className="absolute -bottom-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-green-500 ring-1 ring-white">
-            <Check className="h-2 w-2 text-white" />
+          <span className="absolute -top-1.5 -right-1.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-green-500 ring-[1.5px] ring-white">
+            <Check className="h-1.5 w-1.5 text-white" strokeWidth={3} />
           </span>
         )}
         {phase.status === 'error' && (
-          <span className="absolute -bottom-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 ring-1 ring-white">
-            <X className="h-2 w-2 text-white" />
+          <span className="absolute -top-1.5 -right-1.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-500 ring-[1.5px] ring-white">
+            <X className="h-1.5 w-1.5 text-white" strokeWidth={3} />
           </span>
         )}
       </div>

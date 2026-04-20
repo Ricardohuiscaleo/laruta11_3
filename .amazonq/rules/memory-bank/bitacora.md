@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0034f3a`) — stock deduction compuestos con resolveIngredientDeduction |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`872ff9f`) — pipeline auto-close 3s, cleanup console.log |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`0d12b15`) — pipeline check badge + auto-close 3s |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`7eaa539`) — ingredient_unit en API recetas |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -98,6 +98,13 @@
 
 ## Sesiones Recientes
 
+### 2026-04-20e — Fix ExtractionPipeline: race condition fases + check badge minimalista
+
+**Cambios:**
+- `mi3/frontend/components/admin/compras/ExtractionPipeline.tsx`: Fix race condition — `initPhasesForEngine` y `updatePhase` eran 2 `setPhases` separados que React batcheaba, causando que el update operara sobre BEDROCK_PHASES viejas cuando el engine era multi-agent. Ahora ambas operaciones son atómicas en un solo `setPhases`. Check badge rediseñado: de `h-3 w-3` en `-bottom-1 -right-1` a `h-2.5 w-2.5` en `-top-1.5 -right-1.5` con `strokeWidth={3}` — tag minimalista en esquina superior que no tapa el icono de fase.
+
+**Deploys:** mi3-frontend (pendiente)
+
 ### 2026-04-20d — Spec recetas-fix-integral: implementación completa
 
 **Cambios:**
@@ -141,70 +148,8 @@
 **Commits:** `8914128`, `dd7fd15`, `05038b6`, `75df621`
 **Deploys:** mi3-frontend ✅ (`75df621`)
 
-### 2026-04-20a — Spec ai-prompts-management: implementación completa
-
-**Cambios:**
-- `mi3/backend/database/migrations/2026_04_20_000001_create_ai_prompts_tables.php`: Tablas `ai_prompts` + `ai_prompt_versions` con índices, FK cascade.
-- `mi3/backend/database/migrations/2026_04_20_000002_seed_ai_prompts.php`: 17 prompts seeded con placeholders `{variable}`, idempotente.
-- `mi3/backend/app/Models/AiPrompt.php` + `AiPromptVersion.php`: Eloquent models con scopes, casts, relaciones.
-- `mi3/backend/app/Services/Compra/AiPromptService.php`: Cache-through (3600s TTL), variable interpolation, versioned updates con DB transaction, revert.
-- `mi3/backend/app/Http/Controllers/Admin/AiPromptController.php`: CRUD REST (index, show, update, revert).
-- `mi3/backend/routes/api.php`: 4 rutas ai-prompts en admin middleware group.
-- `mi3/backend/app/Services/Compra/GeminiService.php`: Refactorizado — 17 métodos ahora leen de BD via AiPromptService con fallback a hardcoded.
-- `mi3/frontend/components/admin/compras/PromptsManager.tsx`: UI agrupada por pipeline, cards colapsables, variables chips.
-- `mi3/frontend/components/admin/compras/PromptEditor.tsx`: Textarea monospace, save/cancel, optimistic UI.
-- `mi3/frontend/components/admin/compras/PromptHistory.tsx`: Lista versiones con revert.
-- `mi3/frontend/app/admin/compras/consola/page.tsx`: Sub-tabs "Logs" + "Prompts IA" con lazy loading.
-
-**Commits:** `e38be7a`, `bc68719` (hotfix)
-**Deploys:** mi3-backend ✅ (`bc68719`), mi3-frontend ✅ (`e38be7a`)
-**BD:** Migración ejecutada — 2 tablas creadas, 17 prompts seeded.
-**⚠️ INCIDENTE:** Refactor de GeminiService (tarea 8) eliminó métodos públicos (percibir, analizar, validar, reconciliar) causando Server Error en extracción. Hotfix: restaurar GeminiService a versión cb5c4a6. GeminiService aún usa prompts hardcoded — la integración con AiPromptService queda pendiente.
-
-### 2026-04-19g — SectionHeader, fix upload FileList, fix Undefined key proveedor, prompts notas manuscritas
-
-**Cambios:**
-- `mi3/frontend/components/admin/SectionHeader.tsx`: Nuevo — componente reutilizable con título, versión, tabs responsive (solo icono en móvil <640px, icono+label en sm+), slot `trailing`, 5 colores de acento, sticky, aria roles.
-- `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Refactorizado para usar SectionHeader. BudgetTrailing extraído como componente.
-- `mi3/frontend/app/admin/compras/registro/page.tsx`: Fix bug upload — `FileList` es objeto vivo, `e.target.value=''` lo vaciaba. Ahora `Array.from(files)` antes del reset. Debug console.log temporales agregados.
-- `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: Fix `Undefined array key "proveedor"` — 3 llamadas a `isProveedorSuspect($extracted['proveedor'])` cambiadas a `$extracted['proveedor'] ?? null`.
-
-**Commits:** `5813a3a`, `28e83de`, `ba07245`, `7eff98c`, `bafa685`, `a3a1555`, `cdf607d`, `3aab8e5`
-**Deploys:** mi3-frontend ✅ (`cdf607d`), mi3-backend ✅ (`3aab8e5`)
-**Pendiente:** Remover console.log de debug en registro/page.tsx y ExtractionPipeline.tsx. Evaluar modal/bottom-sheet para pipeline en móvil si auto-scroll no es suficiente.
-
-### 2026-04-19f — Fixes post-deploy pipeline multi-agente: SSE engine, datos vacíos, migración, v1.8
-
-**Cambios:**
-- `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: SSE emits cambiados de `engine: 'gemini'` a `engine: 'multi-agent'` en ejecutarMultiAgente(). Validación ya no reemplaza `$extracted` con `datos_validados` vacío. Reconciliación aplica merge selectivo de campos en vez de reemplazar todo.
-- `mi3/backend/app/Http/Controllers/Admin/ExtraccionController.php`: `engine` promovido a nivel raíz del evento SSE (antes estaba enterrado en `data`, frontend no lo detectaba).
-- `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Versión v1.7 → v1.8.
-- Eliminada migración duplicada `2026_04_19_create_extraction_feedback_table.php` (tabla ya existía desde `2026_04_15`).
-- `mi3/frontend/app/admin/compras/registro/page.tsx`: UX — quitar spinners de cantidad/precio (appearance:textfield), precio con prefijo $, label "Total" sobre subtotal, botón crear ingrediente muestra categoría (> insumos > Packaging).
-- `mi3/frontend/types/compras.ts`: `categoria_sugerida` agregado a ExtractionItem y RegistroItem.
-- `mi3/backend/app/Http/Controllers/Admin/ExtraccionController.php`: ai-budget query ahora incluye `pipeline:multi-agent-gemini` (antes solo `gemini%`).
-- `mi3/frontend/app/admin/compras/registro/page.tsx`: Fix mobile upload — filtro de archivos acepta por extensión como fallback cuando MIME type está vacío (Safari iOS).
-
-**Commits:** `0106e5b`, `ee1f561`, `b818a04`, `7edf965`, `f508b92`, `0ac68c4`, `bf42896`, `7964cc5`
-**Deploys:** mi3-backend ✅ (×4), mi3-frontend ✅ (`7964cc5`)
-
-### 2026-04-19e — Spec multi-agent-compras-pipeline: implementación completa tareas 2.6-10
-
-**Cambios:**
-- `mi3/backend/app/Services/Compra/FeedbackService.php`: Nuevo — motor auto-aprendizaje con capturarFeedback(), getFewShotExamples(), formatearEjemplos(), computeDiff(). Captura diff entre datos extraídos y guardados, inyecta correcciones como few-shot en futuras extracciones.
-- `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: ejecutarMultiAgente() orquestando 4 agentes (Visión→Análisis→Validación→Reconciliación) con SSE, degradación graceful (agentes 3-4 opcionales), logging tokens por agente, costo USD, env flag `MULTI_AGENT_PIPELINE=true`. FeedbackService inyectado en constructor.
-- `mi3/backend/app/Http/Controllers/Admin/CompraController.php`: FeedbackService inyectado, captura feedback al guardar compra si extraction_log_id presente (try/catch no-blocking).
-- `mi3/frontend/components/admin/compras/ExtractionPipeline.tsx`: 4 fases multi-agente (Eye/Brain/ShieldCheck/Scale), detección engine "multi-agent", PhaseDetails para validación (inconsistencias) y reconciliación (correcciones auto + preguntas).
-- `mi3/frontend/components/admin/compras/ReconciliationQuestions.tsx`: Nuevo — UI preguntas reconciliación con cards, radio buttons, responsive 320px+.
-- `mi3/frontend/app/admin/compras/registro/page.tsx`: Flujo reconciliación integrado (onReconciliationNeeded → POST respuestas → aplicar correcciones).
-- Tests PBT (8 archivos, 37+ tests, 25K+ assertions): ImageProcessedOnce, VisionOutputStructure, FewShotInjection, FeedbackDiff, ValidationArithmetic, ValidationFiscal, ReconciliationPassThrough, SSEOrder.
-
-**Commits:** `0edcde8`
-**Deploys:** mi3-backend ✅ (`0edcde8`), mi3-frontend ✅ (`0edcde8`)
-**Pendiente:** Ejecutar `php artisan migrate` en producción (tabla extraction_feedback). Test en vivo con imagen real.
-
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c (ingredient-categories), 2026-04-19d (StockDashboard) archivadas.
+> Sesiones 2026-04-19c (ingredient-categories), 2026-04-19d (StockDashboard), 2026-04-19e (multi-agent-pipeline), 2026-04-19f (fixes post-deploy), 2026-04-19g (SectionHeader, fix upload), 2026-04-20a (ai-prompts-management), 2026-04-20b (header unificado) archivadas.
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
