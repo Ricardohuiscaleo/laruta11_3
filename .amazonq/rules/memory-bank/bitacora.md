@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0034f3a`) — stock deduction compuestos con resolveIngredientDeduction |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`0034f3a`) — editor inline recetas + label costo/unidad |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`5930ec3`) — sub-recetas ingredientes compuestos |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`7eaa539`) — editor inline recetas + unit conversion costos |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`7eaa539`) — ingredient_unit en API recetas |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -107,8 +107,8 @@
 - `caja3/api/confirm_transfer_payment.php`: `deductProduct()` ahora detecta `is_composite` y descompone en hijos via `resolveIngredientDeduction()`.
 - `caja3/api/process_sale_inventory.php`: Misma lógica de descomposición con `resolveIngredientDeductionPSI()`.
 
-**Commits:** `0034f3a`
-**Deploys:** mi3-frontend ✅, caja3 ✅
+**Commits:** `0034f3a`, `7eaa539` (fix unit conversion)
+**Deploys:** mi3-frontend ✅, mi3-backend ✅, caja3 ✅
 **BD:** Tocino fix 7 recetas, 50 cost_price recalculados, precios ingredientes actualizados.
 
 ### 2026-04-20c — Spec sub-recetas-hamburguesas: implementación completa
