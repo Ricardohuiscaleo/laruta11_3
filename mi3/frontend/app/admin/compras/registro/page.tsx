@@ -566,11 +566,14 @@ export default function RegistroPage() {
       {/* Pipeline visual SSE (single photo) */}
       {(() => { console.log('[Compras] render check: pipelineTempKey=', pipelineTempKey); return null; })()}
       {pipelineTempKey && (
-        <div className="space-y-3">
+        <div className="space-y-3" ref={el => { if (el) { console.log('[Compras] Pipeline container VISIBLE, scrolling into view'); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }}>
           {pipelineTempUrl && (
-            <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-2">
+            <div className="flex items-center gap-3 rounded-lg bg-amber-50 border border-amber-200 p-3">
               <img src={pipelineTempUrl} alt="" className="h-16 w-16 rounded-lg object-cover border" />
-              <p className="text-sm text-gray-600">Analizando imagen...</p>
+              <div>
+                <p className="text-sm font-medium text-amber-800">Analizando imagen...</p>
+                <p className="text-xs text-amber-600">Pipeline multi-agente en curso</p>
+              </div>
             </div>
           )}
           <ExtractionPipeline
