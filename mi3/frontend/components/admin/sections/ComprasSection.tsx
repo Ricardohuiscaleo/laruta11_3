@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Plus, FileText, Package, TrendingUp, BarChart3, Loader2, Terminal, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ComprasProvider } from '@/contexts/ComprasContext';
 import { getToken } from '@/lib/auth';
-import SectionHeader, { type TabDef } from '@/components/admin/SectionHeader';
+import type { SectionHeaderConfig, TabDef } from '@/components/admin/AdminShell';
 
 const RegistroPage = lazy(() => import('@/app/admin/compras/registro/page'));
 const HistorialCompras = lazy(() => import('@/components/admin/compras/HistorialCompras'));
@@ -71,10 +71,19 @@ function BudgetTrailing({ budget }: { budget: AiBudget | null }) {
   );
 }
 
-export default function ComprasSection() {
+interface ComprasSectionProps {
+  onHeaderConfig?: (config: SectionHeaderConfig) => void;
+}
+
+export default function ComprasSection({ onHeaderConfig }: ComprasSectionProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('registro');
   const [budget, setBudget] = useState<AiBudget | null>(null);
 
+  const handleTabChange = useCallback((key: string) => {
+    setActiveTab(key as TabKey);
+  }, []);
+
+  // Fetch AI budget
   useEffect(() => {
     const token = getToken();
     fetch(`${API_URL}/api/v1/admin/compras/ai-budget`, {
@@ -86,30 +95,29 @@ export default function ComprasSection() {
       .catch(() => {});
   }, [activeTab]);
 
+  // Push header config to AdminShell
+  useEffect(() => {
+    onHeaderConfig?.({
+      tabs,
+      activeTab,
+      onTabChange: handleTabChange,
+      trailing: <BudgetTrailing budget={budget} />,
+      accent: 'red',
+      version: 'v1.8.3',
+    });
+  }, [activeTab, budget, handleTabChange, onHeaderConfig]);
+
   return (
     <ComprasProvider>
-      <div>
-        <SectionHeader
-          title="Compras"
-          version="v1.8.3"
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={(key) => setActiveTab(key as TabKey)}
-          trailing={<BudgetTrailing budget={budget} />}
-          accent="red"
-        />
-
-        {/* ── Tab content ── */}
-        <div className="pt-4">
-          <Suspense fallback={<TabSkeleton />}>
-            {activeTab === 'registro' && <RegistroPage />}
-            {activeTab === 'historial' && <HistorialCompras />}
-            {activeTab === 'stock' && <StockTab />}
-            {activeTab === 'proyeccion' && <ProyeccionCompras />}
-            {activeTab === 'kpis' && <KpisDashboard />}
-            {activeTab === 'consola' && <ConsolaPage />}
-          </Suspense>
-        </div>
+      <div className="pt-4">
+        <Suspense fallback={<TabSkeleton />}>
+          {activeTab === 'registro' && <RegistroPage />}
+          {activeTab === 'historial' && <HistorialCompras />}
+          {activeTab === 'stock' && <StockTab />}
+          {activeTab === 'proyeccion' && <ProyeccionCompras />}
+          {activeTab === 'kpis' && <KpisDashboard />}
+          {activeTab === 'consola' && <ConsolaPage />}
+        </Suspense>
       </div>
     </ComprasProvider>
   );

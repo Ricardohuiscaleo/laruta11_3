@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense, type ReactNode, type ComponentType } from 'react';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import PushNotificationInit from '@/components/PushNotificationInit';
 import TokenFromUrl from '@/components/TokenFromUrl';
 import AdminSidebarSPA from '@/components/admin/AdminSidebarSPA';
@@ -16,6 +17,23 @@ export type SectionKey =
   | 'creditos' | 'cambios' | 'cronjobs' | 'delivery'
   | 'notificaciones' | 'adelantos' | 'compras' | 'checklists'
   | 'recetas';
+
+/* ─── Header config that sections can provide ─── */
+
+export interface TabDef {
+  key: string;
+  label: string;
+  icon?: ComponentType<{ className?: string }>;
+}
+
+export interface SectionHeaderConfig {
+  tabs?: TabDef[];
+  activeTab?: string;
+  onTabChange?: (key: string) => void;
+  trailing?: ReactNode;
+  accent?: 'red' | 'amber' | 'blue' | 'green' | 'purple';
+  version?: string;
+}
 
 /* ─── Section title mapping ─── */
 
@@ -34,6 +52,16 @@ const SECTION_TITLES: Record<SectionKey, string> = {
   compras: 'Compras',
   checklists: 'Checklists',
   recetas: 'Recetas',
+};
+
+/* ─── Accent styles for tabs ─── */
+
+const accentStyles: Record<string, string> = {
+  red: 'bg-red-500 text-white shadow-sm',
+  amber: 'bg-amber-500 text-white shadow-sm',
+  blue: 'bg-blue-500 text-white shadow-sm',
+  green: 'bg-green-500 text-white shadow-sm',
+  purple: 'bg-purple-500 text-white shadow-sm',
 };
 
 /* ─── Lazy-loaded section registry ─── */
@@ -77,15 +105,122 @@ function SectionSkeleton() {
   );
 }
 
+/* ─── Unified Header ─── */
+
+function UnifiedHeader({
+  title,
+  config,
+}: {
+  title: string;
+  config: SectionHeaderConfig;
+}) {
+  const { tabs, activeTab, onTabChange, trailing, accent = 'red', version } = config;
+  const hasTabs = tabs && tabs.length > 0;
+
+  return (
+    <div
+      className={cn(
+        'bg-white/95 backdrop-blur-sm border-b',
+        hasTabs ? 'pb-1 md:pb-2' : 'pb-2 md:pb-3',
+        '-mx-3 px-3 sm:-mx-4 sm:px-4 md:-mx-6 md:px-6',
+        'md:-mt-6 md:pt-6',
+        'sticky top-14 md:top-0 z-20',
+      )}
+    >
+      {/* Desktop: Title + trailing */}
+      <div className="hidden md:flex items-center justify-between gap-3 mb-2 min-h-[36px]">
+        <h1 className="text-xl font-bold text-gray-900 shrink-0">
+          {title}
+          {version && (
+            <span className="ml-1.5 text-xs text-gray-400 font-normal">{version}</span>
+          )}
+        </h1>
+        {trailing && <div className="min-w-0 overflow-hidden">{trailing}</div>}
+      </div>
+      {/* Mobile: trailing only (title is in the red header bar) */}
+      {trailing && (
+        <div className="md:hidden mb-1 overflow-hidden">{trailing}</div>
+      )}
+      {/* Tabs row */}
+      {hasTabs && (
+        <nav
+          className="flex items-center gap-1 rounded-lg bg-gray-100 p-1 overflow-x-auto -mx-1 px-1"
+          role="tablist"
+          aria-label={`Secciones de ${title}`}
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {tabs.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              role="tab"
+              aria-selected={activeTab === key}
+              onClick={() => onTabChange?.(key)}
+              className={cn(
+                'flex items-center gap-1.5 whitespace-nowrap rounded-lg text-sm font-medium transition-colors',
+                'min-h-[44px] shrink-0',
+                Icon ? 'px-2.5 sm:px-3 py-2' : 'px-3 py-2',
+                activeTab === key
+                  ? accentStyles[accent]
+                  : 'text-gray-600 hover:bg-white hover:text-gray-900',
+              )}
+            >
+              {Icon && <Icon className="h-4 w-4 shrink-0" />}
+              <span className={cn(
+                Icon && activeTab !== key ? 'hidden sm:inline' : '',
+              )}>{label}</span>
+              {Icon && activeTab !== key && <span className="sm:hidden sr-only">{label}</span>}
+            </button>
+          ))}
+        </nav>
+      )}
+    </div>
+  );
+}
+
 
 /* ─── Main Shell ─── */
 
 export default function AdminShell() {
-  // Parse initial section from URL (client-side only)
   const [activeSection, setActiveSection] = useState<SectionKey>('inicio');
   const [loadedSections, setLoadedSections] = useState<Set<SectionKey>>(new Set());
   const [sectionParams, setSectionParams] = useState<Record<string, any>>({});
   const initialized = useRef(false);
+
+  // Header config from active section
+  const [headerConfigs, setHeaderConfigs] = useState<Record<string, SectionHeaderConfig>>({});
+  const activeHeaderConfig = headerConfigs[activeSection] || {};
+
+  // Clear stale header config when switching sections (sections without tabs won't call onHeaderConfig)
+  const prevSection = useRef(activeSection);
+  useEffect(() => {
+    if (prevSection.current !== activeSection) {
+      prevSection.current = activeSection;
+      // If the new section hasn't registered a config yet, clear it
+      if (!headerConfigs[activeSection]) {
+        setHeaderConfigs(prev => {
+          const next = { ...prev };
+          delete next[activeSection];
+          return next;
+        });
+      }
+    }
+  }, [activeSection, headerConfigs]);
+
+  // Callback for sections to register their header config
+  const setHeaderConfig = useCallback((section: string, config: SectionHeaderConfig) => {
+    setHeaderConfigs(prev => {
+      const existing = prev[section];
+      if (existing &&
+        existing.tabs === config.tabs &&
+        existing.activeTab === config.activeTab &&
+        existing.onTabChange === config.onTabChange &&
+        existing.trailing === config.trailing &&
+        existing.accent === config.accent &&
+        existing.version === config.version
+      ) return prev;
+      return { ...prev, [section]: config };
+    });
+  }, []);
 
   // Realtime: connect to admin WebSocket channel for badges
   const { user } = useAuth();
@@ -147,7 +282,7 @@ export default function AdminShell() {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  // Navigation function for cross-section navigation (used by NotificacionesSection, AdelantosSection)
+  // Navigation function for cross-section navigation
   const onNavigate = useCallback((section: string, params?: any) => {
     const key = section as SectionKey;
     if (!(key in sectionImports)) return;
@@ -155,18 +290,18 @@ export default function AdminShell() {
       setSectionParams(prev => ({ ...prev, [key]: params }));
     }
     setActiveSection(key);
-    // Clear badge for the section being navigated to
     clearBadge(key);
   }, [clearBadge]);
 
-  // Section change handler for sidebar/bottom nav
   const onSectionChange = useCallback((section: string) => {
     onNavigate(section);
   }, [onNavigate]);
 
-  // Render props for sections that accept them
+  // Render props for sections
   const getSectionProps = (key: SectionKey): Record<string, any> => {
-    const props: Record<string, any> = {};
+    const props: Record<string, any> = {
+      onHeaderConfig: (config: SectionHeaderConfig) => setHeaderConfig(key, config),
+    };
     if (key === 'notificaciones' || key === 'adelantos') {
       props.onNavigate = onNavigate;
     }
@@ -175,6 +310,9 @@ export default function AdminShell() {
     }
     return props;
   };
+
+  const title = SECTION_TITLES[activeSection] || 'Admin';
+  const showUnifiedHeader = activeHeaderConfig.tabs || activeHeaderConfig.trailing;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -196,13 +334,18 @@ export default function AdminShell() {
           <div className="flex items-center gap-2">
             <img src="/R11HEADER.jpg" alt="La Ruta 11" className="h-8 w-auto" />
           </div>
-          <span className="text-sm font-semibold text-white">{SECTION_TITLES[activeSection] || 'Admin'}</span>
+          <span className="text-sm font-semibold text-white">{title}</span>
           <div className="w-8" />
         </div>
       </header>
 
-      {/* Content — rendered ONCE, responsive padding */}
+      {/* Content */}
       <main className="min-h-screen pt-14 pb-20 px-3 sm:px-4 md:pt-0 md:pb-0 md:pl-64 md:pr-6 md:py-6 overflow-y-auto">
+        {/* Unified header: rendered by shell, fed by active section */}
+        {showUnifiedHeader && (
+          <UnifiedHeader title={title} config={activeHeaderConfig} />
+        )}
+
         {Array.from(loadedSections).map(key => {
           const Component = sectionImports[key];
           return (

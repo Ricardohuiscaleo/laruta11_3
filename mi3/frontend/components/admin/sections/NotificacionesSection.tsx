@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
-import { cn } from '@/lib/utils';
 import { Loader2, Bell, Calendar, Receipt, CreditCard, SlidersHorizontal, Info, ExternalLink } from 'lucide-react';
 import type { Notificacion } from '@/types';
+import type { SectionHeaderConfig, TabDef } from '@/components/admin/AdminShell';
 
 const tipoIcons: Record<string, typeof Bell> = {
   turno: Calendar, liquidacion: Receipt, credito: CreditCard,
@@ -13,7 +13,7 @@ const tipoIcons: Record<string, typeof Bell> = {
 
 type FilterTab = 'todos' | 'adelantos' | 'cambios' | 'sistema';
 
-const FILTER_TABS: { key: FilterTab; label: string }[] = [
+const tabs: TabDef[] = [
   { key: 'todos', label: 'Todos' },
   { key: 'adelantos', label: 'Adelantos' },
   { key: 'cambios', label: 'Cambios' },
@@ -22,13 +22,28 @@ const FILTER_TABS: { key: FilterTab; label: string }[] = [
 
 interface NotificacionesSectionProps {
   onNavigate?: (section: string, params?: any) => void;
+  onHeaderConfig?: (config: SectionHeaderConfig) => void;
 }
 
-export default function NotificacionesSection({ onNavigate }: NotificacionesSectionProps) {
+export default function NotificacionesSection({ onNavigate, onHeaderConfig }: NotificacionesSectionProps) {
   const [notifications, setNotifications] = useState<Notificacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<FilterTab>('todos');
+
+  const handleTabChange = useCallback((key: string) => {
+    setActiveTab(key as FilterTab);
+  }, []);
+
+  // Push header config
+  useEffect(() => {
+    onHeaderConfig?.({
+      tabs,
+      activeTab,
+      onTabChange: handleTabChange,
+      accent: 'red',
+    });
+  }, [activeTab, handleTabChange, onHeaderConfig]);
 
   useEffect(() => {
     apiFetch<{ success: boolean; data: Notificacion[]; no_leidas: number }>('/worker/notifications')
@@ -62,29 +77,7 @@ export default function NotificacionesSection({ onNavigate }: NotificacionesSect
   if (error) return <div className="rounded-lg bg-red-50 p-4 text-red-600" role="alert">{error}</div>;
 
   return (
-    <div className="space-y-4">
-      <h1 className="hidden md:block text-2xl font-bold text-gray-900">Notificaciones</h1>
-
-      {/* Filter tabs */}
-      <div className="flex gap-1 overflow-x-auto rounded-lg bg-gray-100 p-1" role="tablist" aria-label="Filtrar notificaciones">
-        {FILTER_TABS.map(tab => (
-          <button
-            key={tab.key}
-            role="tab"
-            aria-selected={activeTab === tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'min-h-[44px] flex-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors',
-              activeTab === tab.key
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
+    <div className="space-y-4 pt-4">
       {filtered.length === 0 ? (
         <div className="rounded-xl border bg-white p-8 text-center shadow-sm">
           <Bell className="mx-auto h-12 w-12 text-gray-300" />
@@ -95,7 +88,6 @@ export default function NotificacionesSection({ onNavigate }: NotificacionesSect
           {filtered.map(n => {
             const Icon = tipoIcons[n.tipo] || Bell;
             const hasAction = n.referencia_tipo === 'prestamo' || n.referencia_tipo === 'cambio_turno';
-
             return (
               <div key={n.id} className="w-full rounded-xl border bg-white p-4 text-left shadow-sm">
                 <div className="flex items-start gap-3">

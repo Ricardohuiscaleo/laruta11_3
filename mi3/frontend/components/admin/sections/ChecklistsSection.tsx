@@ -12,6 +12,7 @@ import type {
   Checklist, ChecklistItem, ChecklistDetail, AttendanceSummary,
   ImprovementIdea, ApiResponse,
 } from '@/types';
+import type { SectionHeaderConfig, TabDef } from '@/components/admin/AdminShell';
 
 /* ─── Helpers ─── */
 
@@ -398,26 +399,35 @@ function TabIdeas() {
 
 type Tab = 'checklists' | 'asistencia' | 'ideas' | 'test-ia';
 
-export default function ChecklistsSection() {
+const checklistTabs: TabDef[] = [
+  { key: 'checklists', label: 'Del día', icon: ClipboardCheck },
+  { key: 'asistencia', label: 'Asistencia', icon: Users },
+  { key: 'ideas', label: 'Ideas', icon: Lightbulb },
+  { key: 'test-ia', label: 'Test IA', icon: Brain },
+];
+
+interface ChecklistsSectionProps {
+  onHeaderConfig?: (config: SectionHeaderConfig) => void;
+}
+
+export default function ChecklistsSection({ onHeaderConfig }: ChecklistsSectionProps) {
   const [tab, setTab] = useState<Tab>('checklists');
 
+  const handleTabChange = useCallback((key: string) => {
+    setTab(key as Tab);
+  }, []);
+
+  useEffect(() => {
+    onHeaderConfig?.({
+      tabs: checklistTabs,
+      activeTab: tab,
+      onTabChange: handleTabChange,
+      accent: 'amber',
+    });
+  }, [tab, handleTabChange, onHeaderConfig]);
+
   return (
-    <div className="space-y-4">
-      <h1 className="hidden md:block text-2xl font-bold text-gray-900">Checklists</h1>
-      <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Secciones de checklists">
-        <TabButton active={tab === 'checklists'} onClick={() => setTab('checklists')}>
-          <span className="flex items-center gap-1.5"><ClipboardCheck className="h-4 w-4" /> Del día</span>
-        </TabButton>
-        <TabButton active={tab === 'asistencia'} onClick={() => setTab('asistencia')}>
-          <span className="flex items-center gap-1.5"><Users className="h-4 w-4" /> Asistencia</span>
-        </TabButton>
-        <TabButton active={tab === 'ideas'} onClick={() => setTab('ideas')}>
-          <span className="flex items-center gap-1.5"><Lightbulb className="h-4 w-4" /> Ideas</span>
-        </TabButton>
-        <TabButton active={tab === 'test-ia'} onClick={() => setTab('test-ia')}>
-          <span className="flex items-center gap-1.5"><Brain className="h-4 w-4" /> Test IA</span>
-        </TabButton>
-      </div>
+    <div className="space-y-4 pt-4">
       {tab === 'checklists' && <TabChecklists />}
       {tab === 'asistencia' && <TabAsistencia />}
       {tab === 'ideas' && <TabIdeas />}
