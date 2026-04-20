@@ -175,14 +175,10 @@ export default function RegistroPage() {
     if (imageFiles.length === 1) {
       setUploading(true);
       try {
-        console.log('[Compras] compressing image...');
         const compressed = await compressImage(imageFiles[0]);
-        console.log('[Compras] compressed:', compressed.name, compressed.size, compressed.type);
         const fd = new FormData();
         fd.append('image', compressed);
-        console.log('[Compras] uploading to /compras/upload-temp...');
         const res = await comprasApi.upload<{ tempKey: string; tempUrl: string }>('/compras/upload-temp', fd);
-        console.log('[Compras] upload OK, tempKey:', res.tempKey);
         setPipelineTempKey(res.tempKey);
         setPipelineTempUrl(res.tempUrl);
         // Always open extraction sheet (works on both mobile and desktop)
@@ -312,7 +308,6 @@ export default function RegistroPage() {
 
   // Handle pipeline SSE result (single photo)
   const handlePipelineResult = useCallback((data: ExtractionResult, sugerencias?: ExtractionResult['sugerencias']) => {
-    console.log('[Compras] handlePipelineResult called, data:', data?.proveedor, 'items:', data?.items?.length);
     const tempKey = pipelineTempKey!;
     const tempUrl = pipelineTempUrl!;
     const img: UploadedImage = {
@@ -366,12 +361,13 @@ export default function RegistroPage() {
       metodo_pago: metodoPago, tipo_compra: tipoCompra, notas: '',
       images: [img], items, expanded: true,
     });
-    console.log('[Compras] setGroups with', newGroups.length, 'groups, proveedor:', proveedor, 'items:', items.length);
     setGroups(newGroups);
     setSubmitted([]);
-    setPipelineTempKey(null);
-    setPipelineTempUrl(null);
-    // Don't close mobile sheet immediately — let it show "done" state
+    // Auto-close pipeline after 3 seconds to show completed state
+    setTimeout(() => {
+      setPipelineTempKey(null);
+      setPipelineTempUrl(null);
+    }, 3000);
   }, [pipelineTempKey, pipelineTempUrl, groups, submitted]);
 
   const handlePipelineError = useCallback(() => {
@@ -568,12 +564,10 @@ export default function RegistroPage() {
       {/* Shared hidden input */}
       <input id="compras-file-input" ref={inputRef} type="file" accept="image/*" multiple className="hidden"
         onChange={e => {
-          console.log('[Compras] onChange fired, files:', e.target.files?.length);
           const files = e.target.files;
           if (files && files.length > 0) {
             const fileArray = Array.from(files);
             e.target.value = '';
-            console.log('[Compras] scheduling processFiles, copied', fileArray.length, 'files');
             setTimeout(() => processFiles(fileArray), 0);
           } else {
             console.warn('[Compras] onChange: no files selected');
