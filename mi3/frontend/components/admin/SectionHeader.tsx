@@ -51,7 +51,7 @@ export default function SectionHeader({
       className={cn(
         'bg-white/95 backdrop-blur-sm border-b pb-1 md:pb-2',
         '-mx-3 px-3 sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6',
-        '-mt-6 md:-mt-6 md:pt-6',
+        'md:-mt-6 md:pt-6',
         sticky && 'sticky md:top-0 top-14 z-20',
       )}
     >

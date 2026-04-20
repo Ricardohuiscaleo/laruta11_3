@@ -202,7 +202,7 @@ export default function AdminShell() {
       </header>
 
       {/* Content — rendered ONCE, responsive padding */}
-      <main className="min-h-screen pt-[calc(3.5rem+env(safe-area-inset-top))] pb-20 px-3 sm:px-4 md:pt-0 md:pb-0 md:pl-64 md:pr-6 md:py-6 overflow-y-auto">
+      <main className="min-h-screen pt-14 pb-20 px-3 sm:px-4 md:pt-0 md:pb-0 md:pl-64 md:pr-6 md:py-6 overflow-y-auto">
         {Array.from(loadedSections).map(key => {
           const Component = sectionImports[key];
           return (
