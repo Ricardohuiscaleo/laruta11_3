@@ -92,6 +92,7 @@
 - [x] **Integración caja3/app3 delivery** — webhook en caja3 y iframe en app3 implementados en commit `70650cf`.
 - [ ] **Investigar arquitectura SaaS multi-tenant** — AWS Lambda + Aurora PostgreSQL + Amazon Location Service + Stripe. Dominio candidato: pocos.click (caduca 2026-12-21)
 - [x] **Spec sub-recetas-hamburguesas** — COMPLETADO. Tabla `ingredient_recipes`, flag `is_composite`, API CRUD, UI sub-tab en Recetas con editor y calculadora de producción. Carne Molida creada, Tocino stock corregido, sub-receta Hamburguesa R11 seeded. Commits `09f5a91`, `5930ec3`.
+- [ ] **Spec recetas-fix-integral** — 8 tareas: fix tocino en recetas (7 productos unit=unidad→kg), recalcular cost_price, editor inline recetas, stock deduction compuestos en caja3, label costo con unidad. Spec en `.kiro/specs/recetas-fix-integral/`
 
 ---
 
@@ -112,7 +113,7 @@
 
 **Commits:** `09f5a91`, `5930ec3` (fix FK type)
 **Deploys:** mi3-backend ✅ (`5930ec3`), mi3-frontend ✅ (`09f5a91`)
-**BD:** Migración ejecutada — tabla `ingredient_recipes` creada, Carne Molida (id=163) insertada, Tocino stock corregido (58.50→2.93 kg), Hamburguesa R11 marcada compuesta con 3 hijos.
+**BD:** Migración ejecutada — tabla `ingredient_recipes` creada, Carne Molida (id=163) insertada, Tocino stock corregido (58.50→2.93 kg), Hamburguesa R11 marcada compuesta con 3 hijos. Post-deploy: Tocino cost_per_unit corregido $399.59→$14,000/kg, Longaniza $5,000→$15,980/kg. Costo unitario hamburguesa ahora $1,693.30 (coincide con hc.html).
 
 ### 2026-04-20b — Header unificado mi3-frontend: eliminar doble header móvil
 
