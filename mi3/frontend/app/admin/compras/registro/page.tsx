@@ -7,6 +7,7 @@ import { formatearPesosCLP } from '@/lib/compras-utils';
 import { useCompras } from '@/contexts/ComprasContext';
 import ExtractionPipeline from '@/components/admin/compras/ExtractionPipeline';
 import ReconciliationQuestions from '@/components/admin/compras/ReconciliationQuestions';
+import MobileExtractionSheet from '@/components/admin/compras/MobileExtractionSheet';
 import type { ReconciliationQuestion } from '@/components/admin/compras/ExtractionPipeline';
 import type { ExtractionResult, Kpi, ItemSugerencia, RegistroGroup, RegistroItem, RegistroImage } from '@/types/compras';
 
@@ -122,6 +123,7 @@ export default function RegistroPage() {
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [reconciliationQuestions, setReconciliationQuestions] = useState<ReconciliationQuestion[]>([]);
   const [reconciliationLoading, setReconciliationLoading] = useState(false);
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
 
   // Sync saldo from context
   useEffect(() => {
@@ -183,6 +185,8 @@ export default function RegistroPage() {
         console.log('[Compras] upload OK, tempKey:', res.tempKey);
         setPipelineTempKey(res.tempKey);
         setPipelineTempUrl(res.tempUrl);
+        // Open mobile sheet for extraction progress
+        if (window.innerWidth < 768) setMobileSheetOpen(true);
       } catch (err) {
         console.error('[Compras] upload error:', err);
         // Show error to user instead of silently failing
@@ -367,6 +371,7 @@ export default function RegistroPage() {
     setSubmitted([]);
     setPipelineTempKey(null);
     setPipelineTempUrl(null);
+    // Don't close mobile sheet immediately — let it show "done" state
   }, [pipelineTempKey, pipelineTempUrl, groups, submitted]);
 
   const handlePipelineError = useCallback(() => {
@@ -561,10 +566,10 @@ export default function RegistroPage() {
           }} />
       </label>
 
-      {/* Pipeline visual SSE (single photo) */}
+      {/* Pipeline visual SSE — DESKTOP ONLY (mobile uses MobileExtractionSheet) */}
       {(() => { console.log('[Compras] render check: pipelineTempKey=', pipelineTempKey); return null; })()}
       {pipelineTempKey && (
-        <div className="space-y-3 scroll-mt-24 md:scroll-mt-8" ref={el => { if (el) { console.log('[Compras] Pipeline container VISIBLE, scrolling into view'); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }}>
+        <div className="hidden md:block space-y-3" ref={el => { if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
           {pipelineTempUrl && (
             <div className="flex items-center gap-3 rounded-lg bg-amber-50 border border-amber-200 p-3">
               <img src={pipelineTempUrl} alt="" className="h-16 w-16 rounded-lg object-cover border" />
@@ -589,6 +594,22 @@ export default function RegistroPage() {
           )}
         </div>
       )}
+
+      {/* Pipeline visual — MOBILE: fullscreen overlay */}
+      <MobileExtractionSheet
+        open={mobileSheetOpen}
+        tempKey={pipelineTempKey}
+        tempUrl={pipelineTempUrl}
+        uploading={uploading}
+        uploadProgress={uploadProgress}
+        reconciliationQuestions={reconciliationQuestions}
+        reconciliationLoading={reconciliationLoading}
+        onResult={handlePipelineResult}
+        onError={handlePipelineError}
+        onReconciliationNeeded={handleReconciliationNeeded}
+        onReconciliationSubmit={handleReconciliationSubmit}
+        onClose={() => setMobileSheetOpen(false)}
+      />
 
       {/* Manual entry button */}
       {groups.length === 0 && (
