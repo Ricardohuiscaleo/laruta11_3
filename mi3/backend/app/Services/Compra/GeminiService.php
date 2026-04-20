@@ -702,6 +702,14 @@ REGLAS:
 - tipo_imagen = "producto", tipo_compra = "ingredientes"
 - fecha: NO uses fechas de vencimiento o fabricación del empaque. Si no hay fecha de compra visible, usa null.
 
+NOTAS MANUSCRITAS DE ENTREGA:
+- Si la imagen es una nota escrita a mano (papel con texto manuscrito), interpreta así:
+  - Un número seguido de un punto antes del nombre del producto (ej: "7. Pan de Churrasco") indica la CANTIDAD de unidades, NO un número de ítem.
+  - "Ruta 11", "Ruta II", "R11" = es el DESTINATARIO (nuestro negocio), NO el proveedor. Deja proveedor vacío/null.
+  - "Kg X.XXX" = peso total del pedido (informativo), pero la unidad de compra es por UNIDAD, no por kilo.
+  - El precio mostrado (ej: "$3.400") es el TOTAL. Calcula precio_unitario = total / cantidad.
+  - Para panes: siempre se compran por unidad. Si dice "7. Pan..." y "$3.400", son 7 unidades a $486 c/u.
+
 Equivalencias conocidas:
 {$equivalences}
 
@@ -968,6 +976,14 @@ REGLAS PRODUCTO FÍSICO:
 - Si hay texto de peso visible, úsalo. Si no, estima.
 - tipo_imagen = "producto", tipo_compra = "ingredientes"
 - fecha: NO uses fechas de vencimiento o fabricación del empaque. Si no hay fecha de compra visible, usa null.
+
+NOTAS MANUSCRITAS DE ENTREGA:
+- Si el texto proviene de una nota escrita a mano, interpreta así:
+  - Un número seguido de un punto antes del nombre del producto (ej: "7. Pan de Churrasco") indica la CANTIDAD de unidades, NO un número de ítem.
+  - "Ruta 11", "Ruta II", "R11" = es el DESTINATARIO (nuestro negocio), NO el proveedor. Deja proveedor vacío/null.
+  - "Kg X.XXX" = peso total del pedido (informativo), pero la unidad de compra es por UNIDAD, no por kilo.
+  - El precio mostrado (ej: "$3.400") es el TOTAL. Calcula precio_unitario = total / cantidad.
+  - Para panes: siempre se compran por unidad. Si dice "7. Pan..." y "$3.400", son 7 unidades a $486 c/u.
 
 Equivalencias conocidas:
 {$equivalences}
