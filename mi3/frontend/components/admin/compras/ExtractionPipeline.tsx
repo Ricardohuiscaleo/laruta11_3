@@ -257,24 +257,40 @@ export default function ExtractionPipeline({ tempKey, onResult, onError, onRecon
 
 
 function PhaseRow({ phase }: { phase: PipelinePhase }) {
-  const statusIcon = {
-    pending: <div className="h-4 w-4 rounded-full border-2 border-gray-200" />,
-    running: <Loader2 className="h-4 w-4 animate-spin text-blue-500" />,
-    done: <Check className="h-4 w-4 text-green-600" />,
-    error: <X className="h-4 w-4 text-red-500" />,
-  }[phase.status];
-
   return (
     <div className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors ${
       phase.status === 'running' ? 'bg-white border-blue-200 shadow-sm' :
       phase.status === 'done' ? 'bg-white border-green-200' :
       phase.status === 'error' ? 'bg-white border-red-200' : 'bg-white border-gray-100'
     }`}>
-      <div className="mt-0.5 flex-shrink-0">{statusIcon}</div>
+      {/* Phase icon with status badge */}
+      <div className="mt-0.5 flex-shrink-0 relative">
+        <span className={
+          phase.status === 'done' ? 'text-green-600' :
+          phase.status === 'running' ? 'text-blue-500' :
+          phase.status === 'error' ? 'text-red-500' : 'text-gray-300'
+        }>
+          {phase.status === 'pending'
+            ? <div className="h-4 w-4 rounded-full border-2 border-gray-200" />
+            : phase.status === 'running'
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : phase.icon
+          }
+        </span>
+        {phase.status === 'done' && (
+          <span className="absolute -bottom-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-green-500 ring-1 ring-white">
+            <Check className="h-2 w-2 text-white" />
+          </span>
+        )}
+        {phase.status === 'error' && (
+          <span className="absolute -bottom-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 ring-1 ring-white">
+            <X className="h-2 w-2 text-white" />
+          </span>
+        )}
+      </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-gray-400">{phase.icon}</span>
           <span className={`text-sm font-medium ${
             phase.status === 'done' ? 'text-gray-700' :
             phase.status === 'running' ? 'text-blue-700' :
