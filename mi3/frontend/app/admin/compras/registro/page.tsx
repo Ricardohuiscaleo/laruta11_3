@@ -312,6 +312,7 @@ export default function RegistroPage() {
 
   // Handle pipeline SSE result (single photo)
   const handlePipelineResult = useCallback((data: ExtractionResult, sugerencias?: ExtractionResult['sugerencias']) => {
+    console.log('[Compras] handlePipelineResult called, data:', data?.proveedor, 'items:', data?.items?.length);
     const tempKey = pipelineTempKey!;
     const tempUrl = pipelineTempUrl!;
     const img: UploadedImage = {
@@ -365,6 +366,7 @@ export default function RegistroPage() {
       metodo_pago: metodoPago, tipo_compra: tipoCompra, notas: '',
       images: [img], items, expanded: true,
     });
+    console.log('[Compras] setGroups with', newGroups.length, 'groups, proveedor:', proveedor, 'items:', items.length);
     setGroups(newGroups);
     setSubmitted([]);
     setPipelineTempKey(null);
