@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-19)
+## Estado Actual (2026-04-20)
 
 ### Aplicaciones Desplegadas
 
@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`7e5ea66`) — ingredient categories: tabs dinámicos, API con categorías |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`a3a1555`) — SectionHeader + fix upload + pipeline auto-scroll móvil |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`cb5c4a6`) — prompts notas manuscritas en visión+producto+general |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`e38be7a`) — ai-prompts-management UI en Consola |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`e38be7a`) — ai-prompts-management: 17 prompts en BD + CRUD + cache |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -82,7 +82,7 @@
 - [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3.
 - [x] **Limpiar datos de prueba delivery** — eliminados 6 pedidos TEST-DLV-* y SIM-*. Pendiente: revertir roles rider de Camila(1), Andrés(3), Dafne(18) cuando termine el testing.
 - [ ] Recalcular delivery\_fee server-side en `create_order.php`
-- [ ] **Migrar prompts IA a BD** — Tabla `ai_prompts` con tipo/versión/contenido, CRUD en mi3 admin (Compras → Consola), GeminiService lee de BD con cache. Permite editar prompts sin deploy.
+- [x] **Migrar prompts IA a BD** — COMPLETADO. Tabla `ai_prompts` (17 prompts) + `ai_prompt_versions`, AiPromptService con cache, AiPromptController CRUD, GeminiService refactorizado con fallback, PromptsManager UI en Consola. Commit `e38be7a`.
 - [ ] **Migrar tracking público de app3 a mi3** — `app3/src/pages/tracking/` usa polling HTTP, debería estar en mi3-frontend con Reverb WebSocket nativo para realtime real. Actualmente embebido via iframe en payment-success. Además: ocultar informe técnico al usuario, mostrar tracking en pedidos pending (no solo payment-success), integrar en MiniComandasCliente de app3. No necesario en caja3.
 - [x] **Integrar checklists mi3 en caja3** — COMPLETADO. Public/ChecklistController.php con 5 endpoints, ChecklistApp.jsx reescrito para consumir mi3 API. Commit `eaceaab`.
 - [x] Unificar factor descuento RL6 en caja3 (0.6 vs 0.7143) — CheckoutApp.jsx corregido de 0.6→0.7143, delivery_discount ahora se envía en todos los payloads de CheckoutApp y MenuApp.
@@ -96,7 +96,26 @@
 
 ## Sesiones Recientes
 
-### 2026-04-19g — SectionHeader, fix upload FileList, fix Undefined key proveedor
+### 2026-04-20a — Spec ai-prompts-management: implementación completa
+
+**Cambios:**
+- `mi3/backend/database/migrations/2026_04_20_000001_create_ai_prompts_tables.php`: Tablas `ai_prompts` + `ai_prompt_versions` con índices, FK cascade.
+- `mi3/backend/database/migrations/2026_04_20_000002_seed_ai_prompts.php`: 17 prompts seeded con placeholders `{variable}`, idempotente.
+- `mi3/backend/app/Models/AiPrompt.php` + `AiPromptVersion.php`: Eloquent models con scopes, casts, relaciones.
+- `mi3/backend/app/Services/Compra/AiPromptService.php`: Cache-through (3600s TTL), variable interpolation, versioned updates con DB transaction, revert.
+- `mi3/backend/app/Http/Controllers/Admin/AiPromptController.php`: CRUD REST (index, show, update, revert).
+- `mi3/backend/routes/api.php`: 4 rutas ai-prompts en admin middleware group.
+- `mi3/backend/app/Services/Compra/GeminiService.php`: Refactorizado — 17 métodos ahora leen de BD via AiPromptService con fallback a hardcoded.
+- `mi3/frontend/components/admin/compras/PromptsManager.tsx`: UI agrupada por pipeline, cards colapsables, variables chips.
+- `mi3/frontend/components/admin/compras/PromptEditor.tsx`: Textarea monospace, save/cancel, optimistic UI.
+- `mi3/frontend/components/admin/compras/PromptHistory.tsx`: Lista versiones con revert.
+- `mi3/frontend/app/admin/compras/consola/page.tsx`: Sub-tabs "Logs" + "Prompts IA" con lazy loading.
+
+**Commits:** `e38be7a`
+**Deploys:** mi3-backend ✅, mi3-frontend ✅
+**BD:** Migración ejecutada — 2 tablas creadas, 17 prompts seeded.
+
+### 2026-04-19g — SectionHeader, fix upload FileList, fix Undefined key proveedor, prompts notas manuscritas
 
 **Cambios:**
 - `mi3/frontend/components/admin/SectionHeader.tsx`: Nuevo — componente reutilizable con título, versión, tabs responsive (solo icono en móvil <640px, icono+label en sm+), slot `trailing`, 5 colores de acento, sticky, aria roles.
@@ -138,18 +157,8 @@
 **Deploys:** mi3-backend ✅ (`0edcde8`), mi3-frontend ✅ (`0edcde8`)
 **Pendiente:** Ejecutar `php artisan migrate` en producción (tabla extraction_feedback). Test en vivo con imagen real.
 
-### 2026-04-19d — mi3 StockDashboard: 4 grupos categorías + fix sticky header
-
-**Cambios:**
-- `mi3/frontend/components/admin/compras/StockDashboard.tsx`: Reemplazados 2 tabs (Ingredientes/Bebidas) por 4 grupos lógicos: Ingredientes (Carnes, Vegetales, Salsas, Condimentos, Lácteos, Panes, Embutidos, Pre-elaborados), Insumos (Packaging, Limpieza), Bebidas, Operacional (Gas, Servicios). Cada grupo muestra conteo de items.
-- `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Fix sticky header gap — `-mt-6 pt-6` para que el header pegue al top sin espacio.
-- BD: Fix double-encoded UTF-8 "Lácteos" con `CONVERT(CAST(CONVERT(category USING latin1) AS BINARY) USING utf8mb4)`.
-
-**Commits:** `4a75e68`
-**Deploys:** mi3-frontend ✅ (`4a75e68`)
-
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesión 2026-04-19c (ingredient-categories-improvement) archivada.
+> Sesiones 2026-04-19c (ingredient-categories), 2026-04-19d (StockDashboard) archivadas.
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

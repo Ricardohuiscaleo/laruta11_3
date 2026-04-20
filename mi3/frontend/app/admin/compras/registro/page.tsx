@@ -296,7 +296,7 @@ export default function RegistroPage() {
         existing.images.push(img);
         existing.items.push(...items);
       } else {
-        newGroups.push({
+        newGroups.unshift({ // Put new groups at the top for better mobile UX
           proveedor, fecha_compra: img.extraction?.fecha || new Date().toISOString().split('T')[0],
           metodo_pago: metodoPago, tipo_compra: tipoCompra, notas: '',
           images: [img], items, expanded: true,
@@ -361,7 +361,7 @@ export default function RegistroPage() {
     const tipoCompra = data.tipo_compra || 'ingredientes';
 
     const newGroups = [...groups.filter((_, i) => !submitted.includes(i))];
-    newGroups.push({
+    newGroups.unshift({ // Add to top so new results are instantly visible on mobile
       proveedor, fecha_compra: data.fecha || new Date().toISOString().split('T')[0],
       metodo_pago: metodoPago, tipo_compra: tipoCompra, notas: '',
       images: [img], items, expanded: true,
@@ -377,7 +377,7 @@ export default function RegistroPage() {
     if (pipelineTempKey && pipelineTempUrl) {
       const img: UploadedImage = { tempKey: pipelineTempKey, tempUrl: pipelineTempUrl, status: 'error', error: 'Error de extracción' };
       const newGroups = [...groups.filter((_, i) => !submitted.includes(i))];
-      newGroups.push({
+      newGroups.unshift({
         proveedor: '', fecha_compra: new Date().toISOString().split('T')[0],
         metodo_pago: 'cash', tipo_compra: 'ingredientes', notas: '',
         images: [img], items: [], expanded: true,
@@ -437,11 +437,11 @@ export default function RegistroPage() {
 
   // Add manual group (no photo)
   const addManualGroup = () => {
-    setGroups(prev => [...prev, {
+    setGroups(prev => [{
       proveedor: '', fecha_compra: new Date().toISOString().split('T')[0],
       metodo_pago: 'cash', tipo_compra: 'ingredientes', notas: '',
       images: [], items: [], expanded: true,
-    }]);
+    }, ...prev]);
   };
 
   // Add item from search to a group
@@ -568,7 +568,7 @@ export default function RegistroPage() {
       {/* Pipeline visual SSE (single photo) */}
       {(() => { console.log('[Compras] render check: pipelineTempKey=', pipelineTempKey); return null; })()}
       {pipelineTempKey && (
-        <div className="space-y-3" ref={el => { if (el) { console.log('[Compras] Pipeline container VISIBLE, scrolling into view'); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }}>
+        <div className="space-y-3 scroll-mt-24 md:scroll-mt-8" ref={el => { if (el) { console.log('[Compras] Pipeline container VISIBLE, scrolling into view'); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }}>
           {pipelineTempUrl && (
             <div className="flex items-center gap-3 rounded-lg bg-amber-50 border border-amber-200 p-3">
               <img src={pipelineTempUrl} alt="" className="h-16 w-16 rounded-lg object-cover border" />

@@ -51,12 +51,12 @@ export default function SectionHeader({
       className={cn(
         'bg-white/95 backdrop-blur-sm border-b pb-2',
         '-mx-3 px-3 sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6',
-        '-mt-3 pt-3 md:-mt-6 md:pt-6',
-        sticky && 'sticky top-0 z-20',
+        'md:-mt-6 md:pt-6', // Remove mobile -mt-3 pt-3 so it doesn't clip into mobile pt-14
+        sticky && 'sticky md:top-0 top-14 z-20', // mobile sticks below the 56px red header
       )}
     >
-      {/* Row 1: Title + trailing */}
-      <div className="flex items-center justify-between gap-3 mb-2 min-h-[36px]">
+      {/* Row 1: Title + trailing - hide on mobile since AdminShell already shows the red mobile header */}
+      <div className="hidden md:flex items-center justify-between gap-3 mb-2 min-h-[36px]">
         <h1 className="text-xl font-bold text-gray-900 shrink-0">
           {title}
           {version && (
