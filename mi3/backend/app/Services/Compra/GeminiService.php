@@ -803,6 +803,15 @@ Tipos posibles: boleta, factura, producto, bascula, transferencia.
 
 Montos en pesos chilenos enteros. Si no hay IVA: neto=round(total/1.19).
 
+NOTAS MANUSCRITAS DE ENTREGA:
+- Si la imagen es una nota escrita a mano (papel con texto manuscrito), interpreta así:
+  - Un número seguido de un punto antes del nombre del producto (ej: "7. Pan de Churrasco") indica la CANTIDAD de unidades, NO un número de ítem.
+  - "Ruta 11", "Ruta II", "R11" = es el DESTINATARIO (nuestro negocio), NO el proveedor. Deja proveedor vacío/null.
+  - "Kg X.XXX" = peso total del pedido (informativo), pero la unidad de compra es por UNIDAD, no por kilo.
+  - El precio mostrado (ej: "$3.400") es el TOTAL. Calcula precio_unitario = total / cantidad.
+  - Para panes: siempre se compran por unidad. Si dice "7. Pan..." y "$3.400", son 7 unidades a $486 c/u.
+  - tipo_imagen = "producto", tipo_compra = "ingredientes"
+
 {$rutMap}
 Proveedores: {$suppliers}
 Ingredientes: {$products}
@@ -838,10 +847,12 @@ Observa esta imagen con atención y extrae TODA la información posible.
 3. CLASIFICACIÓN: Determina el tipo de imagen:
    - "boleta": documento de venta con RUT, productos, total
    - "factura": documento tributario formal con RUT emisor/receptor, IVA
-   - "producto": foto de producto físico (caja, saco, bolsa, bandeja)
+   - "producto": foto de producto físico (caja, saco, bolsa, bandeja) O nota manuscrita de entrega de producto (papel con nombre de producto, cantidad, peso, precio escritos a mano)
    - "bascula": báscula/balanza digital mostrando peso
    - "transferencia": comprobante de transferencia bancaria
    - "desconocido": no se puede determinar
+
+IMPORTANTE: Las notas manuscritas de entrega (papel con texto escrito a mano indicando producto, cantidad, peso y precio) deben clasificarse como "producto", NO como "desconocido".
 
 Responde con texto_crudo, descripcion_visual, tipo_imagen, confianza (0.0-1.0) y razon.
 PROMPT;
@@ -1036,6 +1047,15 @@ REGLAS GENERALES:
 - Báscula: leer displays (peso, precio/kg, total). Notación abreviada: ×100
 - Transferencia: destinatario = proveedor (NO el banco)
 - Montos en pesos chilenos enteros. Si no hay IVA: neto=round(total/1.19).
+
+NOTAS MANUSCRITAS DE ENTREGA:
+- Si el texto proviene de una nota escrita a mano, interpreta así:
+  - Un número seguido de un punto antes del nombre del producto (ej: "7. Pan de Churrasco") indica la CANTIDAD de unidades, NO un número de ítem.
+  - "Ruta 11", "Ruta II", "R11" = es el DESTINATARIO (nuestro negocio), NO el proveedor. Deja proveedor vacío/null.
+  - "Kg X.XXX" = peso total del pedido (informativo), pero la unidad de compra es por UNIDAD, no por kilo.
+  - El precio mostrado (ej: "$3.400") es el TOTAL. Calcula precio_unitario = total / cantidad.
+  - Para panes: siempre se compran por unidad. Si dice "7. Pan..." y "$3.400", son 7 unidades a $486 c/u.
+  - tipo_imagen = "producto", tipo_compra = "ingredientes"
 RULES;
     }
 
