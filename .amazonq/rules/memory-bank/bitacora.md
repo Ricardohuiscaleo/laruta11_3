@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`7e5ea66`) — ingredient categories: tabs dinámicos, API con categorías |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`bafa685`) — SectionHeader + fix upload + debug pipeline |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`a3a1555`) — SectionHeader + fix upload + pipeline auto-scroll móvil |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`7eff98c`) — fix Undefined array key proveedor |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -103,9 +103,9 @@
 - `mi3/frontend/app/admin/compras/registro/page.tsx`: Fix bug upload — `FileList` es objeto vivo, `e.target.value=''` lo vaciaba. Ahora `Array.from(files)` antes del reset. Debug console.log temporales agregados.
 - `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: Fix `Undefined array key "proveedor"` — 3 llamadas a `isProveedorSuspect($extracted['proveedor'])` cambiadas a `$extracted['proveedor'] ?? null`.
 
-**Commits:** `5813a3a`, `28e83de`, `ba07245`, `7eff98c`
-**Deploys:** mi3-frontend ✅ (`ba07245`), mi3-backend ✅ (`7eff98c`)
-**Pendiente:** Remover console.log de debug en registro/page.tsx después de confirmar que todo funciona.
+**Commits:** `5813a3a`, `28e83de`, `ba07245`, `7eff98c`, `bafa685`, `a3a1555`
+**Deploys:** mi3-frontend ✅ (`a3a1555`), mi3-backend ✅ (`7eff98c`)
+**Pendiente:** Remover console.log de debug en registro/page.tsx y ExtractionPipeline.tsx después de confirmar que todo funciona. Evaluar modal/bottom-sheet para pipeline en móvil si auto-scroll no es suficiente.
 
 ### 2026-04-19f — Fixes post-deploy pipeline multi-agente: SSE engine, datos vacíos, migración, v1.8
 
