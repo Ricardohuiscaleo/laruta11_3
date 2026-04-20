@@ -90,25 +90,21 @@ export default function MobileBottomNavSPA({ activeSection, onSectionChange, bad
                 type="button"
                 onClick={() => handleNav(key)}
                 className={cn(
-                  'flex items-center justify-center h-full gap-1.5 relative min-h-[44px] transition-all duration-300',
-                  active ? 'text-red-500 bg-red-50 rounded-full px-4 mx-0.5' : 'text-gray-400 flex-col px-2'
+                  'flex flex-col items-center justify-center flex-1 h-full gap-0.5 relative min-w-[44px] min-h-[44px]',
+                  active ? 'text-red-500' : 'text-gray-400'
                 )}
                 aria-current={active ? 'page' : undefined}
                 aria-label={label}
               >
                 <div className="relative">
-                  <Icon className={cn('transition-all duration-300', active ? 'w-5 h-5' : 'w-5 h-5')} />
+                  <Icon className="w-5 h-5" />
                   {badgeCount > 0 && (
                     <span className="absolute -top-1.5 -right-2.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full ring-2 ring-white">
                       {badgeCount > 99 ? '99+' : badgeCount}
                     </span>
                   )}
                 </div>
-                {active ? (
-                  <span className="text-xs font-semibold">{label}</span>
-                ) : (
-                  <span className="text-[10px]">{label}</span>
-                )}
+                <span className="text-xs">{label}</span>
               </button>
             );
           })}
