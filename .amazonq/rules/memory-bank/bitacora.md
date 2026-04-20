@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`7e5ea66`) — ingredient categories: tabs dinámicos, API con categorías |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`75df621`) — header unificado + pipeline glassmorphism |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`bc68719`) — hotfix GeminiService restaurado (refactor eliminó métodos públicos) |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`09f5a91`) — header unificado + pipeline glassmorphism + sub-recetas tab |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`5930ec3`) — sub-recetas ingredientes compuestos, API CRUD, migración ejecutada |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -91,11 +91,28 @@
 - [x] **Deploy spec delivery-tracking-realtime** — commit `70650cf` pusheado. Builds disparados en Coolify. Pendiente verificar builds y ejecutar `php artisan migrate`.
 - [x] **Integración caja3/app3 delivery** — webhook en caja3 y iframe en app3 implementados en commit `70650cf`.
 - [ ] **Investigar arquitectura SaaS multi-tenant** — AWS Lambda + Aurora PostgreSQL + Amazon Location Service + Stripe. Dominio candidato: pocos.click (caduca 2026-12-21)
-- [ ] **Spec sub-recetas-hamburguesas** — Ingredientes compuestos (Hamburguesa R11 = carne molida + tocino + longaniza). Tabla `ingredient_recipes`, flag `is_composite`, API CRUD, UI sub-tab en Recetas, calculadora de producción. 9 tareas en `.kiro/specs/sub-recetas-hamburguesas/`
+- [x] **Spec sub-recetas-hamburguesas** — COMPLETADO. Tabla `ingredient_recipes`, flag `is_composite`, API CRUD, UI sub-tab en Recetas con editor y calculadora de producción. Carne Molida creada, Tocino stock corregido, sub-receta Hamburguesa R11 seeded. Commits `09f5a91`, `5930ec3`.
 
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-20c — Spec sub-recetas-hamburguesas: implementación completa
+
+**Cambios:**
+- `mi3/backend/database/migrations/2026_04_20_300000_create_ingredient_recipes_table.php`: Tabla `ingredient_recipes` + columna `is_composite` en ingredients + seed Carne Molida + fix stock Tocino + sub-receta Hamburguesa R11.
+- `mi3/backend/app/Models/IngredientRecipe.php`: Nuevo model con relaciones parent/child.
+- `mi3/backend/app/Models/Ingredient.php`: Agregado `is_composite` a fillable/casts + relaciones `subRecipeItems()`, `parentRecipes()`.
+- `mi3/backend/app/Services/Recipe/IngredientRecipeService.php`: CRUD + calculateCompositeCost + calculateCompositeStock con unit conversion.
+- `mi3/backend/app/Http/Controllers/Admin/IngredientRecipeController.php`: 4 endpoints REST.
+- `mi3/backend/routes/api.php`: 4 rutas ingredient-recipes en admin group.
+- `mi3/backend/app/Services/Recipe/RecipeService.php`: `calculateRecipeCost()` ahora detecta ingredientes compuestos y calcula costo desde hijos.
+- `mi3/frontend/app/admin/recetas/sub-recetas/page.tsx`: UI completa — lista cards, editor con autocomplete, calculadora de producción integrada.
+- `mi3/frontend/components/admin/sections/RecetasSection.tsx`: Nueva tab "Sub-Recetas" con icono Layers.
+
+**Commits:** `09f5a91`, `5930ec3` (fix FK type)
+**Deploys:** mi3-backend ✅ (`5930ec3`), mi3-frontend ✅ (`09f5a91`)
+**BD:** Migración ejecutada — tabla `ingredient_recipes` creada, Carne Molida (id=163) insertada, Tocino stock corregido (58.50→2.93 kg), Hamburguesa R11 marcada compuesta con 3 hijos.
 
 ### 2026-04-20b — Header unificado mi3-frontend: eliminar doble header móvil
 

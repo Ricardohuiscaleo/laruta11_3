@@ -16,4 +16,4 @@
 
 ## Fase 3: Datos
 
-- [-] 9. Ejecutar migración en producción + verificar datos
+- [x] 9. Ejecutar migración en producción + verificar datos
