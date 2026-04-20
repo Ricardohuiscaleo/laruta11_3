@@ -49,13 +49,13 @@ export default function SectionHeader({
   return (
     <div
       className={cn(
-        'bg-white/95 backdrop-blur-sm border-b pb-2',
+        'bg-white/95 backdrop-blur-sm border-b pb-1 md:pb-2',
         '-mx-3 px-3 sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6',
-        'md:-mt-6 md:pt-6', // Remove mobile -mt-3 pt-3 so it doesn't clip into mobile pt-14
-        sticky && 'sticky md:top-0 top-14 z-20', // mobile sticks below the 56px red header
+        '-mt-4 pt-1 md:-mt-6 md:pt-6',
+        sticky && 'sticky md:top-0 top-14 z-20',
       )}
     >
-      {/* Row 1: Title + trailing - hide on mobile since AdminShell already shows the red mobile header */}
+      {/* Row 1: Title + trailing — desktop only */}
       <div className="hidden md:flex items-center justify-between gap-3 mb-2 min-h-[36px]">
         <h1 className="text-xl font-bold text-gray-900 shrink-0">
           {title}
@@ -96,9 +96,11 @@ export default function SectionHeader({
               )}
             >
               {Icon && <Icon className="h-4 w-4 shrink-0" />}
-              {/* Móvil (<640px): solo icono. sm+: icono + label */}
-              <span className={cn(Icon ? 'hidden sm:inline' : '')}>{label}</span>
-              {Icon && <span className="sm:hidden sr-only">{label}</span>}
+              {/* Móvil: solo icono en inactivas, icono+label en activa. sm+: siempre icono+label */}
+              <span className={cn(
+                Icon && activeTab !== key ? 'hidden sm:inline' : '',
+              )}>{label}</span>
+              {Icon && activeTab !== key && <span className="sm:hidden sr-only">{label}</span>}
             </button>
           ))}
         </nav>
