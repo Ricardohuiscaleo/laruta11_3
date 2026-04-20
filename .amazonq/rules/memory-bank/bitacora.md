@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`7e5ea66`) — ingredient categories: tabs dinámicos, API con categorías |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`28e83de`) — SectionHeader + debug upload compras |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`bf42896`) — Pipeline multi-agente + ai-budget query fix |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`ba07245`) — SectionHeader + fix upload FileList + debug logs |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`7eff98c`) — fix Undefined array key proveedor |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -95,14 +95,17 @@
 
 ## Sesiones Recientes
 
-### 2026-04-19g — SectionHeader reutilizable para mi3-frontend
+### 2026-04-19g — SectionHeader, fix upload FileList, fix Undefined key proveedor
 
 **Cambios:**
-- `mi3/frontend/components/admin/SectionHeader.tsx`: Nuevo — componente reutilizable con título, versión, tabs responsive (solo icono en móvil <640px, icono+label en sm+), slot `trailing` para contenido extra, 5 colores de acento, sticky por defecto, `min-h-[44px]` touch targets, `overflow-x-auto` scroll horizontal, aria roles.
-- `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Refactorizado para usar SectionHeader. Header inline eliminado, BudgetTrailing extraído como componente separado.
+- `mi3/frontend/components/admin/SectionHeader.tsx`: Nuevo — componente reutilizable con título, versión, tabs responsive (solo icono en móvil <640px, icono+label en sm+), slot `trailing`, 5 colores de acento, sticky, aria roles.
+- `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Refactorizado para usar SectionHeader. BudgetTrailing extraído como componente.
+- `mi3/frontend/app/admin/compras/registro/page.tsx`: Fix bug upload — `FileList` es objeto vivo, `e.target.value=''` lo vaciaba. Ahora `Array.from(files)` antes del reset. Debug console.log temporales agregados.
+- `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: Fix `Undefined array key "proveedor"` — 3 llamadas a `isProveedorSuspect($extracted['proveedor'])` cambiadas a `$extracted['proveedor'] ?? null`.
 
-**Commits:** `5813a3a`
-**Deploys:** mi3-frontend ✅ (`5813a3a`)
+**Commits:** `5813a3a`, `28e83de`, `ba07245`, `7eff98c`
+**Deploys:** mi3-frontend ✅ (`ba07245`), mi3-backend ✅ (`7eff98c`)
+**Pendiente:** Remover console.log de debug en registro/page.tsx después de confirmar que todo funciona.
 
 ### 2026-04-19f — Fixes post-deploy pipeline multi-agente: SSE engine, datos vacíos, migración, v1.8
 
