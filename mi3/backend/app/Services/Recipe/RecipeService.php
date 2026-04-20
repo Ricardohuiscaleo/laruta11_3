@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Services\Recipe;
 
 use App\Models\Ingredient;
+use App\Models\IngredientRecipe;
 use App\Models\Product;
 use App\Models\ProductRecipe;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class RecipeService
@@ -496,6 +498,11 @@ class RecipeService
                 $this->recalculateCostPrice($productId);
             }
 
+            // --- Cascade: recalculate composite parents ---------
+            foreach ($ingredientIds as $ingId) {
+                $this->cascadeCompositeCosts($ingId);
+            }
+
             return [
                 'ingredients_affected' => count($ingredientIds),
                 'products_affected'    => count($affectedProductIds),
@@ -841,5 +848,63 @@ class RecipeService
                 'cost_prices_updated' => $updated,
             ];
         });
+    }
+
+    /**
+     * Recalculate cost_per_unit for all composite ingredients that use a given child ingredient.
+     * Also cascades to recalculate cost_price of products using those composites.
+     *
+     * Call this after updating cost_per_unit of any ingredient.
+     *
+     * @param int $childIngredientId The ingredient whose price changed
+     * @return array{composites_updated: int, products_updated: int}
+     */
+    public function cascadeCompositeCosts(int $childIngredientId): array
+    {
+        $parentIds = IngredientRecipe::where('child_ingredient_id', $childIngredientId)
+            ->pluck('ingredient_id')
+            ->unique()
+            ->toArray();
+
+        if (empty($parentIds)) {
+            return ['composites_updated' => 0, 'products_updated' => 0];
+        }
+
+        $compositesUpdated = 0;
+        $productIds = [];
+
+        foreach ($parentIds as $parentId) {
+            $parent = Ingredient::find($parentId);
+            if (!$parent || !$parent->is_composite) {
+                continue;
+            }
+
+            $newCost = $this->calculateCompositeCostPerUnit($parent->load('subRecipeItems.child'));
+            $parent->cost_per_unit = round($newCost, 2);
+            $parent->save();
+            $compositesUpdated++;
+
+            $pIds = ProductRecipe::where('ingredient_id', $parentId)
+                ->pluck('product_id')
+                ->toArray();
+            $productIds = array_merge($productIds, $pIds);
+        }
+
+        $productIds = array_unique($productIds);
+        $productsUpdated = 0;
+
+        foreach ($productIds as $productId) {
+            try {
+                $this->recalculateCostPrice($productId);
+                $productsUpdated++;
+            } catch (\Exception $e) {
+                Log::warning("[RecipeService] cascadeCompositeCosts: failed for product {$productId}: " . $e->getMessage());
+            }
+        }
+
+        return [
+            'composites_updated' => $compositesUpdated,
+            'products_updated'   => $productsUpdated,
+        ];
     }
 }

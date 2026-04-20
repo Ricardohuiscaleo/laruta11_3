@@ -78,6 +78,14 @@ class CompraService
                     DB::table('ingredients')
                         ->where('id', $item['ingrediente_id'])
                         ->update($update);
+
+                    // Cascade: recalculate composite parents that use this ingredient
+                    try {
+                        app(\App\Services\Recipe\RecipeService::class)
+                            ->cascadeCompositeCosts((int) $item['ingrediente_id']);
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::warning('[CompraService] cascadeCompositeCosts failed: ' . $e->getMessage());
+                    }
                 } elseif ($itemType === 'product' && !empty($item['product_id'])) {
                     DB::table('products')
                         ->where('id', $item['product_id'])
