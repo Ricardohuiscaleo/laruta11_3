@@ -181,52 +181,42 @@ export default function AdminShell() {
       <Suspense fallback={null}><TokenFromUrl /></Suspense>
       <PushNotificationInit />
 
-      {/* Desktop layout: sidebar (fixed) + content (scrollable) */}
-      <div className="hidden md:flex min-h-screen">
-        <div className="sticky top-0 h-screen shrink-0">
-          <AdminSidebarSPA
-            activeSection={activeSection}
-            onSectionChange={onSectionChange}
-            badges={badges}
-          />
-        </div>
-        <main className="flex-1 min-w-0 h-screen overflow-y-auto p-6">
-          {Array.from(loadedSections).map(key => {
-            const Component = sectionImports[key];
-            return (
-              <div key={`${key}-${refreshCounters[key] || 0}`} className={activeSection === key ? 'block' : 'hidden'}>
-                <Suspense fallback={<SectionSkeleton />}>
-                  <Component {...getSectionProps(key)} />
-                </Suspense>
-              </div>
-            );
-          })}
-        </main>
+      {/* Desktop: sidebar */}
+      <div className="hidden md:block fixed top-0 left-0 h-screen z-30">
+        <AdminSidebarSPA
+          activeSection={activeSection}
+          onSectionChange={onSectionChange}
+          badges={badges}
+        />
       </div>
 
-      {/* Mobile layout: content + bottom nav */}
-      <div className="md:hidden">
-        <header className="fixed top-0 left-0 right-0 z-40 h-14 bg-red-500 shadow-sm">
-          <div className="flex items-center justify-between h-full px-4">
-            <div className="flex items-center gap-2">
-              <img src="/R11HEADER.jpg" alt="La Ruta 11" className="h-8 w-auto" />
-            </div>
-            <span className="text-sm font-semibold text-white">{SECTION_TITLES[activeSection] || 'Admin'}</span>
-            <div className="w-8" />
+      {/* Mobile: top header */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-red-500 shadow-sm">
+        <div className="flex items-center justify-between h-full px-4">
+          <div className="flex items-center gap-2">
+            <img src="/R11HEADER.jpg" alt="La Ruta 11" className="h-8 w-auto" />
           </div>
-        </header>
-        <div className="pt-14 pb-20 px-3 sm:px-4 scroll-smooth">
-          {Array.from(loadedSections).map(key => {
-            const Component = sectionImports[key];
-            return (
-              <div key={`${key}-${refreshCounters[key] || 0}`} className={activeSection === key ? 'block' : 'hidden'}>
-                <Suspense fallback={<SectionSkeleton />}>
-                  <Component {...getSectionProps(key)} />
-                </Suspense>
-              </div>
-            );
-          })}
+          <span className="text-sm font-semibold text-white">{SECTION_TITLES[activeSection] || 'Admin'}</span>
+          <div className="w-8" />
         </div>
+      </header>
+
+      {/* Content — rendered ONCE, responsive padding */}
+      <main className="min-h-screen pt-14 pb-20 px-3 sm:px-4 md:pt-0 md:pb-0 md:pl-64 md:pr-6 md:py-6 overflow-y-auto">
+        {Array.from(loadedSections).map(key => {
+          const Component = sectionImports[key];
+          return (
+            <div key={`${key}-${refreshCounters[key] || 0}`} className={activeSection === key ? 'block' : 'hidden'}>
+              <Suspense fallback={<SectionSkeleton />}>
+                <Component {...getSectionProps(key)} />
+              </Suspense>
+            </div>
+          );
+        })}
+      </main>
+
+      {/* Mobile: bottom nav */}
+      <div className="md:hidden">
         <MobileBottomNavSPA
           activeSection={activeSection}
           onSectionChange={onSectionChange}

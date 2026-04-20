@@ -1,12 +1,13 @@
 'use client';
 
-import { X, Loader2, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Loader2, Check, Eye, Brain, ShieldCheck, Scale, Camera } from 'lucide-react';
 import ExtractionPipeline from './ExtractionPipeline';
 import ReconciliationQuestions from './ReconciliationQuestions';
 import type { ReconciliationQuestion } from './ExtractionPipeline';
 import type { ExtractionResult } from '@/types/compras';
 
-interface MobileExtractionSheetProps {
+interface Props {
   open: boolean;
   tempKey: string | null;
   tempUrl: string | null;
@@ -21,76 +22,154 @@ interface MobileExtractionSheetProps {
   onClose: () => void;
 }
 
+const STEPS = [
+  { id: 'upload', label: 'Subida', icon: Camera },
+  { id: 'vision', label: 'Visión', icon: Eye },
+  { id: 'analisis', label: 'Análisis', icon: Brain },
+  { id: 'validacion', label: 'Check', icon: ShieldCheck },
+  { id: 'reconciliacion', label: 'Ajuste', icon: Scale },
+];
+
 export default function MobileExtractionSheet({
   open, tempKey, tempUrl, uploading, uploadProgress,
   reconciliationQuestions, reconciliationLoading,
   onResult, onError, onReconciliationNeeded, onReconciliationSubmit, onClose,
-}: MobileExtractionSheetProps) {
+}: Props) {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (uploading) { setCurrentStep(0); setDone(false); }
+    else if (tempKey) { setCurrentStep(1); setDone(false); }
+  }, [uploading, tempKey]);
+
+  useEffect(() => {
+    if (!uploading && !tempKey && open && currentStep > 0) {
+      setDone(true);
+      setCurrentStep(5);
+    }
+  }, [uploading, tempKey, open, currentStep]);
+
   if (!open) return null;
 
-  const isDone = !uploading && !tempKey && reconciliationQuestions.length === 0;
+  const handleResult = (data: ExtractionResult, sug?: ExtractionResult['sugerencias']) => {
+    setDone(true);
+    setCurrentStep(5);
+    onResult(data, sug);
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white" role="dialog" aria-modal="true" aria-label="Extracción IA">
+    <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900" role="dialog" aria-modal="true">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-amber-50 shrink-0">
-        <div className="flex items-center gap-2">
-          {uploading && <Loader2 className="h-4 w-4 animate-spin text-amber-600" />}
-          {tempKey && !uploading && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
-          {isDone && <Check className="h-4 w-4 text-green-600" />}
-          <span className="text-sm font-semibold text-gray-800">
-            {uploading ? 'Subiendo imagen...' : tempKey ? 'Analizando con IA...' : 'Extracción completa'}
-          </span>
-        </div>
-        <button onClick={onClose} className="rounded-full p-1.5 hover:bg-amber-100" aria-label="Cerrar">
-          <X className="h-5 w-5 text-gray-500" />
+      <div className="flex items-center justify-between px-4 pt-3 pb-2 shrink-0">
+        <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Extracción IA</span>
+        <button onClick={onClose} className="rounded-full p-2 hover:bg-white/10 transition-colors" aria-label="Cerrar">
+          <X className="h-5 w-5 text-slate-400" />
         </button>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {tempUrl && (
-          <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-            <img src={tempUrl} alt="" className="h-20 w-20 rounded-lg object-cover border" />
-            <div>
-              <p className="text-sm font-medium text-gray-700">{uploading ? 'Subiendo...' : 'Imagen subida'}</p>
-              {uploadProgress && <p className="text-xs text-gray-500">{uploadProgress}</p>}
-            </div>
+      {/* Image preview */}
+      {tempUrl && (
+        <div className="mx-4 mb-4 shrink-0">
+          <div className="relative overflow-hidden rounded-2xl border border-white/10">
+            <img src={tempUrl} alt="" className="w-full h-36 object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            {!done && (
+              <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-xs font-medium text-white/90">Procesando...</span>
+              </div>
+            )}
           </div>
-        )}
+        </div>
+      )}
 
+      {/* Step indicators */}
+      <div className="mx-4 mb-5 shrink-0">
+        <div className="flex items-center justify-between">
+          {STEPS.map((step, i) => {
+            const Icon = step.icon;
+            const isActive = i === currentStep;
+            const isCompleted = i < currentStep;
+            const isPending = i > currentStep;
+            return (
+              <div key={step.id} className="flex flex-col items-center gap-1.5 flex-1">
+                <div className={[
+                  'relative flex items-center justify-center h-10 w-10 rounded-full transition-all duration-500',
+                  isCompleted ? 'bg-green-500' : '',
+                  isActive ? 'bg-red-500 scale-110 shadow-lg shadow-red-500/30' : '',
+                  isPending ? 'bg-white/10' : '',
+                ].join(' ')}>
+                  {isCompleted ? (
+                    <Check className="h-5 w-5 text-white" />
+                  ) : isActive ? (
+                    <Icon className="h-5 w-5 text-white animate-pulse" />
+                  ) : (
+                    <Icon className="h-4 w-4 text-white/30" />
+                  )}
+                </div>
+                <span className={[
+                  'text-[10px] font-medium transition-colors duration-300',
+                  isCompleted ? 'text-green-400' : isActive ? 'text-white' : 'text-white/30',
+                ].join(' ')}>
+                  {step.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        {/* Progress bar */}
+        <div className="mt-3 h-1 rounded-full bg-white/10 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-red-500 to-green-500 transition-all duration-700 ease-out"
+            style={{ width: `${Math.min(100, (currentStep / 5) * 100)}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-4 pb-8">
         {uploading && (
-          <div className="flex flex-col items-center gap-3 py-8">
-            <Loader2 className="h-10 w-10 animate-spin text-amber-500" />
-            <p className="text-sm text-gray-600">{uploadProgress || 'Subiendo foto...'}</p>
+          <div className="flex flex-col items-center gap-4 pt-8">
+            <Loader2 className="h-12 w-12 animate-spin text-red-400" />
+            <p className="text-sm text-white/70">{uploadProgress || 'Subiendo imagen...'}</p>
           </div>
         )}
 
         {tempKey && !uploading && (
-          <ExtractionPipeline
-            tempKey={tempKey}
-            onResult={onResult}
-            onError={onError}
-            onReconciliationNeeded={onReconciliationNeeded}
-          />
+          <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+            <ExtractionPipeline
+              tempKey={tempKey}
+              onResult={handleResult}
+              onError={onError}
+              onReconciliationNeeded={onReconciliationNeeded}
+            />
+          </div>
         )}
 
         {reconciliationQuestions.length > 0 && (
-          <ReconciliationQuestions
-            questions={reconciliationQuestions}
-            onSubmit={onReconciliationSubmit}
-            loading={reconciliationLoading}
-          />
+          <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4">
+            <ReconciliationQuestions
+              questions={reconciliationQuestions}
+              onSubmit={onReconciliationSubmit}
+              loading={reconciliationLoading}
+            />
+          </div>
         )}
 
-        {isDone && (
-          <div className="flex flex-col items-center gap-3 py-8">
-            <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
-              <Check className="h-8 w-8 text-green-600" />
+        {done && reconciliationQuestions.length === 0 && (
+          <div className="flex flex-col items-center gap-5 pt-6">
+            <div className="h-20 w-20 rounded-full bg-green-500/20 flex items-center justify-center">
+              <Check className="h-10 w-10 text-green-400" />
             </div>
-            <p className="text-sm font-medium text-green-700">Datos extraídos correctamente</p>
-            <p className="text-xs text-gray-500">Revisa y ajusta los datos abajo</p>
-            <button onClick={onClose} className="mt-2 rounded-lg bg-green-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-green-700">
+            <div className="text-center">
+              <p className="text-lg font-semibold text-white">Listo</p>
+              <p className="text-sm text-white/50 mt-1">Datos extraídos correctamente</p>
+            </div>
+            <button
+              onClick={() => { setDone(false); setCurrentStep(0); onClose(); }}
+              className="mt-2 w-full max-w-[280px] rounded-xl bg-green-500 py-3.5 text-sm font-semibold text-white active:bg-green-600 transition-colors"
+            >
               Ver resultado
             </button>
           </div>
