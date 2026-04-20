@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0034f3a`) — stock deduction compuestos con resolveIngredientDeduction |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`5b8ed85`) — fix pipeline race condition + check badge |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`7eaa539`) — ingredient_unit en API recetas |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`f3816c3`) — reemplazo masivo ingredientes + MobileExtractionSheet fix |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`1fa5f65`) — replace-ingredient API + error handler |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -98,13 +98,19 @@
 
 ## Sesiones Recientes
 
-### 2026-04-20e — Fix ExtractionPipeline: race condition fases + check badge minimalista
+### 2026-04-20f — Reemplazo masivo ingredientes + MobileExtractionSheet fix + pipeline race condition
 
 **Cambios:**
-- `mi3/frontend/components/admin/compras/ExtractionPipeline.tsx`: Fix race condition — `initPhasesForEngine` y `updatePhase` eran 2 `setPhases` separados que React batcheaba, causando que el update operara sobre BEDROCK_PHASES viejas cuando el engine era multi-agent. Ahora ambas operaciones son atómicas en un solo `setPhases`. Check badge rediseñado: de `h-3 w-3` en `-bottom-1 -right-1` a `h-2.5 w-2.5` en `-top-1.5 -right-1.5` con `strokeWidth={3}` — tag minimalista en esquina superior que no tapa el icono de fase.
+- `mi3/frontend/components/admin/compras/ExtractionPipeline.tsx`: Fix race condition — `initPhasesForEngine` + `updatePhase` ahora atómicos en un solo `setPhases`. Check badge `h-2.5 w-2.5` en `-top-1.5 -right-1.5`.
+- `mi3/frontend/components/admin/compras/MobileExtractionSheet.tsx`: Check badge minimalista (icono fase siempre visible, badge `h-3.5 w-3.5` en esquina). Backdrop `onClick={onClose}`. Botón "Listo" clickeable para cerrar.
+- `mi3/frontend/app/admin/recetas/ajuste-masivo/page.tsx`: Reescrito — de "Ajuste Masivo de Costos" a "Reemplazo Masivo de Ingredientes" con autocomplete picker, preview tabla productos afectados, detección duplicados, feedback confirmación.
+- `mi3/frontend/components/admin/sections/RecetasSection.tsx`: Tab "Ajuste Masivo" → "Reemplazo" (icono Replace).
+- `mi3/backend/app/Services/Recipe/RecipeService.php`: `replaceIngredientPreview()` + `replaceIngredientApply()` — swap atómico en transacción + recalcula cost_price.
+- `mi3/backend/app/Http/Controllers/RecipeController.php`: 2 endpoints replace-ingredient + catch-all exception handler.
+- `mi3/backend/routes/api.php`: 2 rutas replace-ingredient.
 
-**Commits:** `5b8ed85`
-**Deploys:** mi3-frontend ✅ (`5b8ed85`)
+**Commits:** `5b8ed85`, `b860495`, `f3816c3`, `1fa5f65`
+**Deploys:** mi3-frontend ✅ (`f3816c3`), mi3-backend ✅ (`1fa5f65`)
 
 ### 2026-04-20d — Spec recetas-fix-integral: implementación completa
 

@@ -8,6 +8,8 @@ class ProductRecipe extends Model
 {
     protected $table = 'product_recipes';
 
+    public $timestamps = false;
+
     protected $fillable = [
         'product_id',
         'ingredient_id',
