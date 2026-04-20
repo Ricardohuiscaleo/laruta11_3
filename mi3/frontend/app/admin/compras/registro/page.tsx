@@ -164,14 +164,10 @@ export default function RegistroPage() {
 
   // Upload + extract + group
   const processFiles = useCallback(async (files: FileList | File[]) => {
-    console.log('[Compras] processFiles called, files:', files.length);
-    const imageFiles = Array.from(files).filter(f => {
-      const byType = f.type.startsWith('image/');
-      const byExt = /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i.test(f.name);
-      console.log('[Compras] file:', f.name, 'type:', f.type, 'size:', f.size, 'byType:', byType, 'byExt:', byExt);
-      return byType || byExt;
-    });
-    if (imageFiles.length === 0) { console.warn('[Compras] No image files after filter'); return; }
+    const imageFiles = Array.from(files).filter(f =>
+      f.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i.test(f.name)
+    );
+    if (imageFiles.length === 0) return;
 
     // Single photo: upload then show pipeline visual SSE
     if (imageFiles.length === 1) {
@@ -689,37 +685,57 @@ export default function RegistroPage() {
                 {group.items.length > 0 && (
                   <div className="space-y-1">
                     {group.items.map((item, ii) => (
-                      <div key={ii} className="rounded-lg border bg-gray-50 px-3 py-2 text-sm">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <input type="text" value={item.nombre} onChange={e => updateItem(gi, ii, 'nombre', e.target.value)}
-                            className="min-w-[100px] flex-1 rounded border px-2 py-1 text-[16px] font-medium" />
-                          <input type="number" value={item.cantidad || ''} step="any" placeholder="Cant."
-                            onChange={e => updateItem(gi, ii, 'cantidad', e.target.value === '' ? 0 : parseFloat(e.target.value))}
-                            onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
-                            className="w-16 rounded border px-2 py-1 text-[16px] text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                          <select value={item.unidad} onChange={e => updateItem(gi, ii, 'unidad', e.target.value)}
-                            className="w-20 rounded border px-1 py-1 text-xs text-gray-600">
-                            <option value="kg">kg</option>
-                            <option value="unidad">unidad</option>
-                            <option value="litro">litro</option>
-                            <option value="g">g</option>
-                            <option value="ml">ml</option>
-                          </select>
-                          <div className="relative w-24">
-                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[14px]">$</span>
-                            <input type="number" value={item.precio_unitario || ''} step="any" placeholder="Precio"
-                              onChange={e => updateItem(gi, ii, 'precio_unitario', e.target.value === '' ? 0 : parseFloat(e.target.value))}
-                              onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
-                              className="w-full rounded border pl-5 pr-2 py-1 text-[16px] text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                      <div key={ii} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden mb-2 sm:mb-1">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3">
+                          {/* Row 1: Nombre (Full width on mobile, flex-1 on desktop) */}
+                          <div className="flex items-center gap-2 sm:flex-1 w-full">
+                            <input type="text" value={item.nombre} onChange={e => updateItem(gi, ii, 'nombre', e.target.value)}
+                              className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-[15px] font-medium focus:border-mi3-500 focus:ring-1 focus:ring-mi3-500 transition-colors shadow-sm" />
+                            <button onClick={() => removeItem(gi, ii)} className="sm:hidden text-gray-400 hover:text-red-500 p-1.5 bg-gray-50 rounded-md border border-gray-200"><X className="h-4 w-4" /></button>
                           </div>
-                          <div className="w-20 text-right">
-                            <span className="text-[10px] text-gray-400 block leading-none">Total</span>
-                            <span className="text-xs font-medium">{formatearPesosCLP(item.subtotal)}</span>
+                          
+                          {/* Row 2: Cantidad, Unidad, Precio Unitario (Horizontal flex on mobile and desktop) */}
+                          <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
+                            <div className="flex items-center gap-1.5">
+                              <input type="number" value={item.cantidad || ''} step="any" placeholder="Cant."
+                                onChange={e => updateItem(gi, ii, 'cantidad', e.target.value === '' ? 0 : parseFloat(e.target.value))}
+                                onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
+                                className="w-[4.5rem] rounded-md border border-gray-300 px-1 py-1.5 text-[15px] text-center shadow-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:border-mi3-500 focus:ring-1 focus:ring-mi3-500" />
+                              <select value={item.unidad} onChange={e => updateItem(gi, ii, 'unidad', e.target.value)}
+                                className="w-20 rounded-md border border-gray-300 px-1 py-1.5 text-xs text-gray-700 bg-white shadow-sm focus:border-mi3-500 focus:ring-1 focus:ring-mi3-500">
+                                <option value="kg">kg</option>
+                                <option value="unidad">unidad</option>
+                                <option value="litro">litro</option>
+                                <option value="g">g</option>
+                                <option value="ml">ml</option>
+                              </select>
+                            </div>
+                            
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-gray-400 text-xs sm:hidden">x</span>
+                              <div className="relative w-24">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-[14px]">$</span>
+                                <input type="number" value={item.precio_unitario || ''} step="any" placeholder="Precio"
+                                  onChange={e => updateItem(gi, ii, 'precio_unitario', e.target.value === '' ? 0 : parseFloat(e.target.value))}
+                                  onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
+                                  className="w-full rounded-md border border-gray-300 pl-5 pr-2 py-1.5 text-[15px] text-right shadow-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:border-mi3-500 focus:ring-1 focus:ring-mi3-500" />
+                              </div>
+                            </div>
                           </div>
-                          <button onClick={() => removeItem(gi, ii)} className="text-red-400 hover:text-red-600"><X className="h-3.5 w-3.5" /></button>
+
+                          {/* Row 3: Total and Remove Button (Separated visually on mobile, right-aligned on desktop) */}
+                          <div className="flex items-center justify-between sm:justify-end sm:w-24 mt-2 sm:mt-0 pt-2 sm:pt-0 border-t border-gray-100 sm:border-0 w-full sm:w-auto">
+                            <span className="text-[11px] text-gray-500 uppercase tracking-widest font-semibold sm:hidden">Total</span>
+                            <div className="text-right flex-1 sm:flex-none">
+                              <span className="hidden sm:block text-[10px] text-gray-400 leading-none mb-1 uppercase tracking-wider">Total</span>
+                              <span className="text-[15px] font-bold text-gray-900">{formatearPesosCLP(item.subtotal)}</span>
+                            </div>
+                            <button onClick={() => removeItem(gi, ii)} className="hidden sm:block ml-3 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors border border-transparent hover:border-red-200"><X className="h-4 w-4" /></button>
+                          </div>
                         </div>
-                        {/* Match + empaque info */}
-                        <div className="flex flex-wrap gap-2 mt-1">
+
+                        {/* Match + empaque info (Appears as a footer) */}
+                        <div className="flex flex-wrap gap-2 px-3 pb-3 pt-0 bg-gray-50 border-t border-gray-100 sm:border-t-0 sm:pt-0">
                           {item.empaque_detalle && <span className="text-xs text-blue-600">📦 {item.empaque_detalle}</span>}
                           {item.notas_descuento && <span className="text-xs text-orange-600">🏷️ {item.notas_descuento}</span>}
                           {item.ingrediente_id && (
