@@ -200,6 +200,12 @@ Route::prefix('v1')->group(function () {
         Route::post('recetas/{productId}', [\App\Http\Controllers\RecipeController::class, 'store']);
         Route::put('recetas/{productId}', [\App\Http\Controllers\RecipeController::class, 'update']);
         Route::delete('recetas/{productId}/{ingredientId}', [\App\Http\Controllers\RecipeController::class, 'destroyIngredient']);
+
+        // Sub-recetas (ingredient recipes — composite ingredients)
+        Route::get('ingredient-recipes', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'index']);
+        Route::get('ingredient-recipes/{ingredientId}', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'show']);
+        Route::post('ingredient-recipes/{ingredientId}', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'store']);
+        Route::delete('ingredient-recipes/{ingredientId}', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'destroy']);
     });
 });
 

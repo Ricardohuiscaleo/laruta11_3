@@ -20,6 +20,7 @@ class Ingredient extends Model
         'internal_code',
         'expiry_date',
         'is_active',
+        'is_composite',
     ];
 
     protected $casts = [
@@ -27,6 +28,7 @@ class Ingredient extends Model
         'current_stock' => 'float',
         'min_stock_level' => 'float',
         'is_active' => 'boolean',
+        'is_composite' => 'boolean',
         'expiry_date' => 'date',
     ];
 
@@ -38,5 +40,17 @@ class Ingredient extends Model
     public function recetas()
     {
         return $this->hasMany(\App\Models\ProductRecipe::class, 'ingredient_id');
+    }
+
+    /** Sub-recipe children (this ingredient is composite, these are its components) */
+    public function subRecipeItems()
+    {
+        return $this->hasMany(\App\Models\IngredientRecipe::class, 'ingredient_id');
+    }
+
+    /** Parent recipes where this ingredient is a child component */
+    public function parentRecipes()
+    {
+        return $this->hasMany(\App\Models\IngredientRecipe::class, 'child_ingredient_id');
     }
 }

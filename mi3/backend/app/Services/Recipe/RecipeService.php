@@ -39,7 +39,7 @@ class RecipeService
     public function calculateRecipeCost(int $productId): float
     {
         $recipeItems = ProductRecipe::where('product_id', $productId)
-            ->with('ingredient')
+            ->with(['ingredient.subRecipeItems.child'])
             ->get();
 
         if ($recipeItems->isEmpty()) {
@@ -55,20 +55,51 @@ class RecipeService
                 continue;
             }
 
-            $ingredientUnit = $ingredient->unit;
-            $recipeUnit     = $item->unit;
-            $costPerUnit    = (float) $ingredient->cost_per_unit;
-            $quantity        = (float) $item->quantity;
+            $recipeUnit = $item->unit;
+            $quantity   = (float) $item->quantity;
 
-            $totalCost += $this->calculateIngredientCost(
-                $costPerUnit,
-                $ingredientUnit,
-                $quantity,
-                $recipeUnit
-            );
+            // If ingredient is composite, calculate cost from its children
+            if ($ingredient->is_composite && $ingredient->subRecipeItems->isNotEmpty()) {
+                $compositeCostPerUnit = $this->calculateCompositeCostPerUnit($ingredient);
+                // composite cost is per 1 unit of the ingredient, multiply by quantity
+                $totalCost += $compositeCostPerUnit * $quantity;
+            } else {
+                $ingredientUnit = $ingredient->unit;
+                $costPerUnit    = (float) $ingredient->cost_per_unit;
+
+                $totalCost += $this->calculateIngredientCost(
+                    $costPerUnit,
+                    $ingredientUnit,
+                    $quantity,
+                    $recipeUnit
+                );
+            }
         }
 
         return $totalCost;
+    }
+
+    /**
+     * Calculate the cost per 1 unit of a composite ingredient from its children.
+     */
+    private function calculateCompositeCostPerUnit(Ingredient $ingredient): float
+    {
+        $cost = 0.0;
+
+        foreach ($ingredient->subRecipeItems as $subItem) {
+            if (!$subItem->child) {
+                continue;
+            }
+
+            $cost += $this->calculateIngredientCost(
+                (float) $subItem->child->cost_per_unit,
+                $subItem->child->unit,
+                (float) $subItem->quantity,
+                $subItem->unit
+            );
+        }
+
+        return $cost;
     }
 
     /**
