@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`7e5ea66`) — ingredient categories: tabs dinámicos, API con categorías |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`e38be7a`) — ai-prompts-management UI en Consola |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`e38be7a`) — ai-prompts-management: 17 prompts en BD + CRUD + cache |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`bc68719`) — hotfix GeminiService restaurado (refactor eliminó métodos públicos) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -82,7 +82,7 @@
 - [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3.
 - [x] **Limpiar datos de prueba delivery** — eliminados 6 pedidos TEST-DLV-* y SIM-*. Pendiente: revertir roles rider de Camila(1), Andrés(3), Dafne(18) cuando termine el testing.
 - [ ] Recalcular delivery\_fee server-side en `create_order.php`
-- [x] **Migrar prompts IA a BD** — COMPLETADO. Tabla `ai_prompts` (17 prompts) + `ai_prompt_versions`, AiPromptService con cache, AiPromptController CRUD, GeminiService refactorizado con fallback, PromptsManager UI en Consola. Commit `e38be7a`.
+- [x] **Migrar prompts IA a BD** — PARCIAL. Tablas creadas, 17 prompts seeded, API CRUD funcional, UI PromptsManager en Consola. PERO: GeminiService restaurado a versión hardcoded porque el refactor eliminó métodos públicos (percibir, analizar, validar, reconciliar). Pendiente: re-hacer tarea 8 del spec sin eliminar métodos de API call.
 - [ ] **Migrar tracking público de app3 a mi3** — `app3/src/pages/tracking/` usa polling HTTP, debería estar en mi3-frontend con Reverb WebSocket nativo para realtime real. Actualmente embebido via iframe en payment-success. Además: ocultar informe técnico al usuario, mostrar tracking en pedidos pending (no solo payment-success), integrar en MiniComandasCliente de app3. No necesario en caja3.
 - [x] **Integrar checklists mi3 en caja3** — COMPLETADO. Public/ChecklistController.php con 5 endpoints, ChecklistApp.jsx reescrito para consumir mi3 API. Commit `eaceaab`.
 - [x] Unificar factor descuento RL6 en caja3 (0.6 vs 0.7143) — CheckoutApp.jsx corregido de 0.6→0.7143, delivery_discount ahora se envía en todos los payloads de CheckoutApp y MenuApp.
@@ -111,9 +111,10 @@
 - `mi3/frontend/components/admin/compras/PromptHistory.tsx`: Lista versiones con revert.
 - `mi3/frontend/app/admin/compras/consola/page.tsx`: Sub-tabs "Logs" + "Prompts IA" con lazy loading.
 
-**Commits:** `e38be7a`
-**Deploys:** mi3-backend ✅, mi3-frontend ✅
+**Commits:** `e38be7a`, `bc68719` (hotfix)
+**Deploys:** mi3-backend ✅ (`bc68719`), mi3-frontend ✅ (`e38be7a`)
 **BD:** Migración ejecutada — 2 tablas creadas, 17 prompts seeded.
+**⚠️ INCIDENTE:** Refactor de GeminiService (tarea 8) eliminó métodos públicos (percibir, analizar, validar, reconciliar) causando Server Error en extracción. Hotfix: restaurar GeminiService a versión cb5c4a6. GeminiService aún usa prompts hardcoded — la integración con AiPromptService queda pendiente.
 
 ### 2026-04-19g — SectionHeader, fix upload FileList, fix Undefined key proveedor, prompts notas manuscritas
 
