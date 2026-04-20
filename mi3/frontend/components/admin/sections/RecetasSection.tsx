@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { List, DollarSign, TrendingUp, PackageSearch, Layers, Loader2 } from 'lucide-react';
+import { List, Replace, TrendingUp, PackageSearch, Layers, Loader2 } from 'lucide-react';
 import type { SectionHeaderConfig, TabDef } from '@/components/admin/AdminShell';
 
 const RecetasListTab = lazy(() => import('@/app/admin/recetas/page'));
@@ -12,7 +12,7 @@ const SubRecetasTab = lazy(() => import('@/app/admin/recetas/sub-recetas/page'))
 
 const tabs: TabDef[] = [
   { key: 'listado', label: 'Recetas', icon: List },
-  { key: 'ajuste-masivo', label: 'Ajuste Masivo', icon: DollarSign },
+  { key: 'ajuste-masivo', label: 'Reemplazo', icon: Replace },
   { key: 'recomendaciones', label: 'Recomendaciones', icon: TrendingUp },
   { key: 'auditoria', label: 'Auditoría Stock', icon: PackageSearch },
   { key: 'sub-recetas', label: 'Sub-Recetas', icon: Layers },

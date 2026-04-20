@@ -743,4 +743,103 @@ class RecipeService
             'ingredients'      => $ingredients,
         ];
     }
+
+    /**
+     * Preview replacing one ingredient with another across all recipes.
+     *
+     * @return array{source: array, target: array, affected_products: array}
+     */
+    public function replaceIngredientPreview(int $sourceId, int $targetId): array
+    {
+        $source = Ingredient::findOrFail($sourceId);
+        $target = Ingredient::findOrFail($targetId);
+
+        $affectedRecipes = ProductRecipe::where('ingredient_id', $sourceId)
+            ->with(['product'])
+            ->get();
+
+        $products = [];
+        foreach ($affectedRecipes as $recipe) {
+            if (!$recipe->product || !$recipe->product->is_active) {
+                continue;
+            }
+
+            $targetExists = ProductRecipe::where('product_id', $recipe->product_id)
+                ->where('ingredient_id', $targetId)
+                ->exists();
+
+            $products[] = [
+                'product_id'    => $recipe->product_id,
+                'product_name'  => $recipe->product->name,
+                'quantity'      => (float) $recipe->quantity,
+                'unit'          => $recipe->unit,
+                'target_exists' => $targetExists,
+            ];
+        }
+
+        return [
+            'source' => [
+                'id'   => $source->id,
+                'name' => $source->name,
+                'unit' => $source->unit,
+                'cost_per_unit' => (float) $source->cost_per_unit,
+            ],
+            'target' => [
+                'id'   => $target->id,
+                'name' => $target->name,
+                'unit' => $target->unit,
+                'cost_per_unit' => (float) $target->cost_per_unit,
+            ],
+            'affected_products' => $products,
+        ];
+    }
+
+    /**
+     * Replace one ingredient with another across all recipes and recalculate costs.
+     *
+     * @return array{products_affected: int, cost_prices_updated: int}
+     */
+    public function replaceIngredientApply(int $sourceId, int $targetId): array
+    {
+        Ingredient::findOrFail($sourceId);
+        Ingredient::findOrFail($targetId);
+
+        return DB::transaction(function () use ($sourceId, $targetId) {
+            $affectedProductIds = ProductRecipe::where('ingredient_id', $sourceId)
+                ->pluck('product_id')
+                ->unique()
+                ->toArray();
+
+            foreach ($affectedProductIds as $productId) {
+                $targetExists = ProductRecipe::where('product_id', $productId)
+                    ->where('ingredient_id', $targetId)
+                    ->exists();
+
+                if ($targetExists) {
+                    ProductRecipe::where('product_id', $productId)
+                        ->where('ingredient_id', $sourceId)
+                        ->delete();
+                } else {
+                    ProductRecipe::where('product_id', $productId)
+                        ->where('ingredient_id', $sourceId)
+                        ->update(['ingredient_id' => $targetId]);
+                }
+            }
+
+            $updated = 0;
+            foreach ($affectedProductIds as $productId) {
+                try {
+                    $this->recalculateCostPrice($productId);
+                    $updated++;
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning("[RecipeService] Failed to recalculate cost for product {$productId}: " . $e->getMessage());
+                }
+            }
+
+            return [
+                'products_affected'   => count($affectedProductIds),
+                'cost_prices_updated' => $updated,
+            ];
+        });
+    }
 }

@@ -191,6 +191,8 @@ Route::prefix('v1')->group(function () {
         // Static routes MUST come before {productId} to avoid route conflicts
         Route::post('recetas/bulk-adjustment/preview', [\App\Http\Controllers\RecipeController::class, 'bulkPreview']);
         Route::post('recetas/bulk-adjustment', [\App\Http\Controllers\RecipeController::class, 'bulkApply']);
+        Route::post('recetas/replace-ingredient/preview', [\App\Http\Controllers\RecipeController::class, 'replacePreview']);
+        Route::post('recetas/replace-ingredient', [\App\Http\Controllers\RecipeController::class, 'replaceApply']);
         Route::get('recetas/recommendations', [\App\Http\Controllers\RecipeController::class, 'recommendations']);
         Route::get('recetas/audit/export', [\App\Http\Controllers\RecipeController::class, 'auditExport']);
         Route::get('recetas/audit', [\App\Http\Controllers\RecipeController::class, 'audit']);

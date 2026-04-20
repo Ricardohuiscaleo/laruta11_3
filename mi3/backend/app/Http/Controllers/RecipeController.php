@@ -195,6 +195,65 @@ class RecipeController extends Controller
     }
 
     /**
+     * Preview replacing one ingredient with another across all recipes.
+     * POST /api/v1/admin/recetas/replace-ingredient/preview
+     */
+    public function replacePreview(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'source_id' => 'required|integer|exists:ingredients,id',
+                'target_id' => 'required|integer|exists:ingredients,id|different:source_id',
+            ]);
+
+            $preview = $this->recipeService->replaceIngredientPreview(
+                (int) $request->input('source_id'),
+                (int) $request->input('target_id')
+            );
+
+            return response()->json(['success' => true, 'data' => $preview]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Apply replacing one ingredient with another across all recipes.
+     * POST /api/v1/admin/recetas/replace-ingredient
+     */
+    public function replaceApply(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'source_id' => 'required|integer|exists:ingredients,id',
+                'target_id' => 'required|integer|exists:ingredients,id|different:source_id',
+            ]);
+
+            $result = $this->recipeService->replaceIngredientApply(
+                (int) $request->input('source_id'),
+                (int) $request->input('target_id')
+            );
+
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Ingrediente no encontrado',
+            ], 404);
+        }
+    }
+
+    /**
      * Get price recommendations based on recipe cost and target margin.
      * GET /api/v1/admin/recetas/recommendations
      */

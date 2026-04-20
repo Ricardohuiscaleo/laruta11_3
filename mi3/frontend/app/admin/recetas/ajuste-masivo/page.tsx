@@ -4,108 +4,76 @@ import { useState, useEffect, useMemo } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
 import {
-  Loader2, ArrowLeft, Eye, Check, AlertTriangle, DollarSign, Percent,
+  Loader2, ArrowRight, Check, AlertTriangle, Search, X,
 } from 'lucide-react';
 import type { ApiResponse } from '@/types';
 
 /* ─── Types ─── */
 
-type ScopeType = 'all' | 'category' | 'supplier';
-type AdjustmentType = 'percentage' | 'fixed';
-
-interface PreviewItem {
+interface IngredientOption {
   id: number;
   name: string;
-  current_cost: number;
-  proposed_cost: number;
-  recipe_count: number;
-}
-
-interface StockItem {
-  id: number;
-  name: string;
+  unit: string;
+  cost_per_unit: number;
   category?: string;
-  supplier?: string;
 }
 
-/* ─── Steps ─── */
+interface AffectedProduct {
+  product_id: number;
+  product_name: string;
+  quantity: number;
+  unit: string;
+  target_exists: boolean;
+}
 
-type Step = 'form' | 'preview' | 'success';
+interface PreviewData {
+  source: { id: number; name: string; unit: string; cost_per_unit: number };
+  target: { id: number; name: string; unit: string; cost_per_unit: number };
+  affected_products: AffectedProduct[];
+}
+
+type Step = 'select' | 'preview' | 'success';
 
 /* ─── Main Component ─── */
 
-export default function AjusteMasivoPage() {
-  /* Form state */
-  const [scopeType, setScopeType] = useState<ScopeType>('all');
-  const [scopeValue, setScopeValue] = useState('');
-  const [adjustmentType, setAdjustmentType] = useState<AdjustmentType>('percentage');
-  const [value, setValue] = useState<string>('');
+export default function ReemplazoMasivoPage() {
+  const [ingredients, setIngredients] = useState<IngredientOption[]>([]);
+  const [sourceId, setSourceId] = useState<number | null>(null);
+  const [targetId, setTargetId] = useState<number | null>(null);
 
-  /* Data */
-  const [categories, setCategories] = useState<string[]>([]);
-  const [suppliers, setSuppliers] = useState<string[]>([]);
-  const [preview, setPreview] = useState<PreviewItem[]>([]);
-
-  /* UI state */
-  const [step, setStep] = useState<Step>('form');
+  const [preview, setPreview] = useState<PreviewData | null>(null);
+  const [step, setStep] = useState<Step>('select');
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState('');
-  const [result, setResult] = useState<{ ingredients_affected: number; products_affected: number } | null>(null);
+  const [result, setResult] = useState<{ products_affected: number; cost_prices_updated: number } | null>(null);
 
-  /* Fetch categories and suppliers from stock endpoint */
+  /* Fetch all ingredients */
   useEffect(() => {
-    apiFetch<{ success: boolean; items: StockItem[] }>('/admin/stock')
+    apiFetch<{ success: boolean; items: IngredientOption[] }>('/admin/stock')
       .then(res => {
-        const items = res.items || [];
-        const cats = new Set<string>();
-        const sups = new Set<string>();
-        for (const item of items) {
-          if (item.category) cats.add(item.category);
-          if (item.supplier) sups.add(item.supplier);
-        }
-        setCategories(Array.from(cats).sort((a, b) => a.localeCompare(b, 'es')));
-        setSuppliers(Array.from(sups).sort((a, b) => a.localeCompare(b, 'es')));
+        const items = (res.items || []).sort((a, b) => a.name.localeCompare(b.name, 'es'));
+        setIngredients(items);
       })
-      .catch(() => { /* silently fail — dropdowns will be empty */ });
+      .catch(() => {});
   }, []);
 
-  /* Build scope string for API */
-  const scopeString = useMemo(() => {
-    if (scopeType === 'all') return 'all';
-    if (scopeType === 'category') return `category:${scopeValue}`;
-    return `supplier:${scopeValue}`;
-  }, [scopeType, scopeValue]);
+  const sourceName = useMemo(() => ingredients.find(i => i.id === sourceId)?.name ?? '', [ingredients, sourceId]);
+  const targetName = useMemo(() => ingredients.find(i => i.id === targetId)?.name ?? '', [ingredients, targetId]);
 
-  /* Reset scope value when scope type changes */
-  useEffect(() => {
-    setScopeValue('');
-  }, [scopeType]);
+  const canPreview = sourceId !== null && targetId !== null && sourceId !== targetId;
 
-  const numericValue = parseFloat(value);
-  const isFormValid =
-    !isNaN(numericValue) &&
-    numericValue !== 0 &&
-    (scopeType === 'all' || scopeValue !== '');
-
-  /* ── Preview ── */
+  /* Preview */
   const handlePreview = async () => {
-    if (!isFormValid) return;
+    if (!canPreview) return;
     setLoading(true);
     setError('');
     try {
-      const res = await apiFetch<ApiResponse<PreviewItem[]>>(
-        '/admin/recetas/bulk-adjustment/preview',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            scope: scopeString,
-            type: adjustmentType,
-            value: numericValue,
-          }),
-        }
+      const res = await apiFetch<ApiResponse<PreviewData>>(
+        '/admin/recetas/replace-ingredient/preview',
+        { method: 'POST', body: JSON.stringify({ source_id: sourceId, target_id: targetId }) }
       );
-      setPreview(res.data || []);
+      setPreview(res.data || null);
       setStep('preview');
     } catch (e: any) {
       setError(e.message || 'Error al obtener vista previa');
@@ -114,54 +82,36 @@ export default function AjusteMasivoPage() {
     }
   };
 
-  /* ── Apply ── */
+  /* Apply */
   const handleApply = async () => {
     setApplying(true);
     setError('');
     try {
-      const res = await apiFetch<ApiResponse<{ ingredients_affected: number; products_affected: number }>>(
-        '/admin/recetas/bulk-adjustment',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            scope: scopeString,
-            type: adjustmentType,
-            value: numericValue,
-          }),
-        }
+      const res = await apiFetch<ApiResponse<{ products_affected: number; cost_prices_updated: number }>>(
+        '/admin/recetas/replace-ingredient',
+        { method: 'POST', body: JSON.stringify({ source_id: sourceId, target_id: targetId }) }
       );
       setResult(res.data || null);
       setStep('success');
     } catch (e: any) {
-      setError(e.message || 'Error al aplicar ajuste');
+      setError(e.message || 'Error al aplicar reemplazo');
     } finally {
       setApplying(false);
     }
   };
 
-  /* ── Reset ── */
+  /* Reset */
   const handleReset = () => {
-    setScopeType('all');
-    setScopeValue('');
-    setAdjustmentType('percentage');
-    setValue('');
-    setPreview([]);
+    setSourceId(null);
+    setTargetId(null);
+    setPreview(null);
     setError('');
     setResult(null);
-    setStep('form');
+    setStep('select');
   };
-
-  /* ── Has negative proposed costs ── */
-  const hasNegative = preview.some(i => i.proposed_cost < 0);
-
-  /* Total impacted recipes from preview items */
-  const totalImpactedRecipes = useMemo(() => {
-    return preview.reduce((sum, i) => sum + i.recipe_count, 0);
-  }, [preview]);
 
   return (
     <div className="space-y-4">
-      {/* Error banner */}
       {error && (
         <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert">
           <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -169,223 +119,202 @@ export default function AjusteMasivoPage() {
         </div>
       )}
 
-      {step === 'form' && (
-        <FormStep
-          scopeType={scopeType}
-          setScopeType={setScopeType}
-          scopeValue={scopeValue}
-          setScopeValue={setScopeValue}
-          adjustmentType={adjustmentType}
-          setAdjustmentType={setAdjustmentType}
-          value={value}
-          setValue={setValue}
-          categories={categories}
-          suppliers={suppliers}
-          isFormValid={isFormValid}
+      {step === 'select' && (
+        <SelectStep
+          ingredients={ingredients}
+          sourceId={sourceId}
+          targetId={targetId}
+          onSourceChange={setSourceId}
+          onTargetChange={setTargetId}
+          canPreview={canPreview}
           loading={loading}
           onPreview={handlePreview}
         />
       )}
 
-      {step === 'preview' && (
+      {step === 'preview' && preview && (
         <PreviewStep
           preview={preview}
-          adjustmentType={adjustmentType}
-          value={numericValue}
-          scopeType={scopeType}
-          scopeValue={scopeValue}
-          totalImpactedRecipes={totalImpactedRecipes}
-          hasNegative={hasNegative}
+          sourceName={sourceName}
+          targetName={targetName}
           applying={applying}
           onConfirm={handleApply}
-          onCancel={() => setStep('form')}
+          onCancel={() => setStep('select')}
         />
       )}
 
       {step === 'success' && result && (
-        <SuccessStep result={result} onReset={handleReset} />
+        <SuccessStep
+          result={result}
+          sourceName={sourceName}
+          targetName={targetName}
+          onReset={handleReset}
+        />
       )}
     </div>
   );
 }
 
 
-/* ─── Form Step ─── */
+/* ─── Autocomplete Ingredient Picker ─── */
 
-function FormStep({
-  scopeType,
-  setScopeType,
-  scopeValue,
-  setScopeValue,
-  adjustmentType,
-  setAdjustmentType,
-  value,
-  setValue,
-  categories,
-  suppliers,
-  isFormValid,
+function IngredientPicker({
+  label,
+  ingredients,
+  selectedId,
+  excludeId,
+  onChange,
+}: {
+  label: string;
+  ingredients: IngredientOption[];
+  selectedId: number | null;
+  excludeId: number | null;
+  onChange: (id: number | null) => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase().trim();
+    return ingredients
+      .filter(i => i.id !== excludeId)
+      .filter(i => !q || i.name.toLowerCase().includes(q))
+      .slice(0, 20);
+  }, [ingredients, query, excludeId]);
+
+  const selected = ingredients.find(i => i.id === selectedId);
+
+  return (
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <div className="relative">
+        {selected && !open ? (
+          <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2.5">
+            <span className="flex-1 text-sm font-medium text-gray-900 truncate">{selected.name}</span>
+            <span className="text-xs text-gray-400">{formatCLP(selected.cost_per_unit)}/{selected.unit}</span>
+            <button
+              type="button"
+              onClick={() => { onChange(null); setQuery(''); }}
+              className="p-0.5 rounded hover:bg-gray-100 min-h-[28px] min-w-[28px] flex items-center justify-center"
+              aria-label={`Quitar ${selected.name}`}
+            >
+              <X className="h-3.5 w-3.5 text-gray-400" />
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                value={query}
+                onChange={e => { setQuery(e.target.value); setOpen(true); }}
+                onFocus={() => setOpen(true)}
+                placeholder="Buscar ingrediente..."
+                className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300"
+                aria-label={label}
+              />
+            </div>
+            {open && (
+              <ul
+                className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg"
+                role="listbox"
+                aria-label={`Opciones de ${label}`}
+              >
+                {filtered.length === 0 ? (
+                  <li className="px-3 py-2 text-sm text-gray-400">Sin resultados</li>
+                ) : (
+                  filtered.map(ing => (
+                    <li key={ing.id}>
+                      <button
+                        type="button"
+                        onClick={() => { onChange(ing.id); setQuery(''); setOpen(false); }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 min-h-[40px]"
+                        role="option"
+                        aria-selected={ing.id === selectedId}
+                      >
+                        <span className="flex-1 truncate">{ing.name}</span>
+                        <span className="text-xs text-gray-400 shrink-0">{formatCLP(ing.cost_per_unit)}/{ing.unit}</span>
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+/* ─── Select Step ─── */
+
+function SelectStep({
+  ingredients,
+  sourceId,
+  targetId,
+  onSourceChange,
+  onTargetChange,
+  canPreview,
   loading,
   onPreview,
 }: {
-  scopeType: ScopeType;
-  setScopeType: (v: ScopeType) => void;
-  scopeValue: string;
-  setScopeValue: (v: string) => void;
-  adjustmentType: AdjustmentType;
-  setAdjustmentType: (v: AdjustmentType) => void;
-  value: string;
-  setValue: (v: string) => void;
-  categories: string[];
-  suppliers: string[];
-  isFormValid: boolean;
+  ingredients: IngredientOption[];
+  sourceId: number | null;
+  targetId: number | null;
+  onSourceChange: (id: number | null) => void;
+  onTargetChange: (id: number | null) => void;
+  canPreview: boolean;
   loading: boolean;
   onPreview: () => void;
 }) {
   return (
     <div className="rounded-xl border bg-white p-4 shadow-sm space-y-5">
       <div>
-        <h2 className="text-base font-semibold text-gray-900">Ajuste Masivo de Costos</h2>
+        <h2 className="text-base font-semibold text-gray-900">Reemplazo Masivo de Ingredientes</h2>
         <p className="mt-1 text-sm text-gray-500">
-          Ajusta el costo de ingredientes por porcentaje o monto fijo. Los costos de recetas se recalculan automáticamente.
+          Reemplaza un ingrediente por otro en todas las recetas que lo usen. Los costos se recalculan automáticamente.
         </p>
       </div>
 
-      {/* Scope */}
-      <fieldset>
-        <legend className="text-sm font-medium text-gray-700 mb-2">Alcance</legend>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
-            {([
-              { key: 'all', label: 'Todos' },
-              { key: 'category', label: 'Categoría' },
-              { key: 'supplier', label: 'Proveedor' },
-            ] as const).map(opt => (
-              <button
-                key={opt.key}
-                type="button"
-                onClick={() => setScopeType(opt.key)}
-                className={cn(
-                  'rounded-md px-3 py-1.5 text-sm font-medium transition-colors min-h-[36px]',
-                  scopeType === opt.key
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                )}
-                aria-pressed={scopeType === opt.key}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
+        <IngredientPicker
+          label="Ingrediente actual"
+          ingredients={ingredients}
+          selectedId={sourceId}
+          excludeId={targetId}
+          onChange={onSourceChange}
+        />
 
-          {scopeType === 'category' && (
-            <select
-              value={scopeValue}
-              onChange={e => setScopeValue(e.target.value)}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300"
-              aria-label="Seleccionar categoría"
-            >
-              <option value="">Seleccionar categoría...</option>
-              {categories.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          )}
-
-          {scopeType === 'supplier' && (
-            <select
-              value={scopeValue}
-              onChange={e => setScopeValue(e.target.value)}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300"
-              aria-label="Seleccionar proveedor"
-            >
-              <option value="">Seleccionar proveedor...</option>
-              {suppliers.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          )}
+        <div className="hidden sm:flex items-center justify-center pb-1">
+          <ArrowRight className="h-5 w-5 text-gray-300" />
         </div>
-      </fieldset>
 
-      {/* Type + Value */}
-      <fieldset>
-        <legend className="text-sm font-medium text-gray-700 mb-2">Tipo de ajuste</legend>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
-            <button
-              type="button"
-              onClick={() => setAdjustmentType('percentage')}
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors min-h-[36px]',
-                adjustmentType === 'percentage'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              )}
-              aria-pressed={adjustmentType === 'percentage'}
-            >
-              <Percent className="h-3.5 w-3.5" />
-              Porcentaje
-            </button>
-            <button
-              type="button"
-              onClick={() => setAdjustmentType('fixed')}
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors min-h-[36px]',
-                adjustmentType === 'fixed'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              )}
-              aria-pressed={adjustmentType === 'fixed'}
-            >
-              <DollarSign className="h-3.5 w-3.5" />
-              Monto fijo
-            </button>
-          </div>
+        <IngredientPicker
+          label="Reemplazar por"
+          ingredients={ingredients}
+          selectedId={targetId}
+          excludeId={sourceId}
+          onChange={onTargetChange}
+        />
+      </div>
 
-          <div className="relative flex-1 max-w-xs">
-            <label htmlFor="adjustment-value" className="sr-only">
-              Valor del ajuste
-            </label>
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-              {adjustmentType === 'percentage' ? '%' : '$'}
-            </span>
-            <input
-              id="adjustment-value"
-              type="number"
-              value={value}
-              onChange={e => setValue(e.target.value)}
-              placeholder={adjustmentType === 'percentage' ? 'ej: 10 o -5' : 'ej: 500 o -200'}
-              step="any"
-              className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-8 pr-3 text-sm tabular-nums focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300"
-            />
-          </div>
-        </div>
-        <p className="mt-1.5 text-xs text-gray-400">
-          {adjustmentType === 'percentage'
-            ? 'Valores positivos aumentan, negativos disminuyen. Ej: 10 = +10%'
-            : 'Valores positivos aumentan, negativos disminuyen el costo por unidad.'}
-        </p>
-      </fieldset>
-
-      {/* Preview button */}
       <div className="flex justify-end pt-2">
         <button
           onClick={onPreview}
-          disabled={!isFormValid || loading}
+          disabled={!canPreview || loading}
           className={cn(
-            'inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors',
-            !isFormValid || loading
+            'inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors min-h-[44px]',
+            !canPreview || loading
               ? 'bg-gray-300 cursor-not-allowed'
               : 'bg-red-500 hover:bg-red-600'
           )}
-          aria-label="Ver vista previa del ajuste"
+          aria-label="Ver productos afectados"
         >
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Eye className="h-4 w-4" />
-          )}
-          Vista previa
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+          Ver afectados
         </button>
       </div>
     </div>
@@ -397,118 +326,90 @@ function FormStep({
 
 function PreviewStep({
   preview,
-  adjustmentType,
-  value,
-  scopeType,
-  scopeValue,
-  totalImpactedRecipes,
-  hasNegative,
+  sourceName,
+  targetName,
   applying,
   onConfirm,
   onCancel,
 }: {
-  preview: PreviewItem[];
-  adjustmentType: AdjustmentType;
-  value: number;
-  scopeType: ScopeType;
-  scopeValue: string;
-  totalImpactedRecipes: number;
-  hasNegative: boolean;
+  preview: PreviewData;
+  sourceName: string;
+  targetName: string;
   applying: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  const scopeLabel =
-    scopeType === 'all'
-      ? 'Todos los ingredientes'
-      : scopeType === 'category'
-        ? `Categoría: ${scopeValue}`
-        : `Proveedor: ${scopeValue}`;
-
-  const adjustLabel =
-    adjustmentType === 'percentage'
-      ? `${value > 0 ? '+' : ''}${value}%`
-      : `${value > 0 ? '+' : ''}${formatCLP(value)}`;
+  const products = preview.affected_products;
+  const hasConflicts = products.some(p => p.target_exists);
 
   return (
     <div className="space-y-4">
-      {/* Summary cards */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <p className="text-xs text-gray-500">Alcance</p>
-          <p className="mt-1 text-sm font-semibold text-gray-900">{scopeLabel}</p>
+      {/* Summary */}
+      <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <div className="flex-1 rounded-lg bg-red-50 px-3 py-2">
+            <p className="text-xs text-red-500">Quitar</p>
+            <p className="text-sm font-semibold text-red-700 truncate">{sourceName}</p>
+            <p className="text-xs text-red-400">{formatCLP(preview.source.cost_per_unit)}/{preview.source.unit}</p>
+          </div>
+          <ArrowRight className="h-5 w-5 text-gray-300 shrink-0 hidden sm:block" />
+          <div className="flex-1 rounded-lg bg-green-50 px-3 py-2">
+            <p className="text-xs text-green-500">Poner</p>
+            <p className="text-sm font-semibold text-green-700 truncate">{targetName}</p>
+            <p className="text-xs text-green-400">{formatCLP(preview.target.cost_per_unit)}/{preview.target.unit}</p>
+          </div>
         </div>
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <p className="text-xs text-gray-500">Ajuste</p>
-          <p className="mt-1 text-sm font-semibold text-gray-900">{adjustLabel}</p>
-        </div>
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <p className="text-xs text-gray-500">Impacto</p>
-          <p className="mt-1 text-sm font-semibold text-gray-900">
-            {preview.length} ingrediente{preview.length !== 1 ? 's' : ''} · {totalImpactedRecipes} receta{totalImpactedRecipes !== 1 ? 's' : ''}
-          </p>
-        </div>
+
+        <p className="text-sm text-gray-600">
+          Cambiarás <span className="font-semibold">{sourceName}</span> → <span className="font-semibold">{targetName}</span>,
+          afectando <span className="font-semibold text-red-600">{products.length} producto{products.length !== 1 ? 's' : ''}</span>.
+          ¿Confirmas?
+        </p>
       </div>
 
-      {/* Negative cost warning */}
-      {hasNegative && (
-        <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
-          El ajuste resultaría en costos negativos para algunos ingredientes. No se puede aplicar.
+      {/* Conflict warning */}
+      {hasConflicts && (
+        <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-700" role="alert">
+          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span>Algunos productos ya tienen el ingrediente destino. En esos casos se eliminará el ingrediente origen sin duplicar.</span>
         </div>
       )}
 
-      {/* Preview table */}
-      {preview.length === 0 ? (
+      {/* Products list */}
+      {products.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-sm text-gray-500">
-          No hay ingredientes afectados por este ajuste.
+          Este ingrediente no se usa en ninguna receta activa.
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-white shadow-sm">
           <table className="w-full text-sm">
             <thead className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
               <tr>
-                <th className="px-4 py-3">Ingrediente</th>
-                <th className="px-4 py-3 text-right">Costo actual</th>
-                <th className="px-4 py-3 text-right">Costo propuesto</th>
-                <th className="px-4 py-3 text-right hidden sm:table-cell">Diferencia</th>
-                <th className="px-4 py-3 text-right">Recetas</th>
+                <th className="px-4 py-3">Producto</th>
+                <th className="px-4 py-3 text-right">Cantidad</th>
+                <th className="px-4 py-3 text-right hidden sm:table-cell">Unidad</th>
+                <th className="px-4 py-3 text-center">Estado</th>
               </tr>
             </thead>
             <tbody className="divide-y">
-              {preview.map(item => {
-                const diff = item.proposed_cost - item.current_cost;
-                const isNeg = item.proposed_cost < 0;
-                return (
-                  <tr
-                    key={item.id}
-                    className={cn(
-                      'transition-colors',
-                      isNeg ? 'bg-red-50' : 'hover:bg-gray-50'
+              {products.map(p => (
+                <tr key={p.product_id} className={cn('transition-colors', p.target_exists ? 'bg-amber-50' : 'hover:bg-gray-50')}>
+                  <td className="px-4 py-3 font-medium text-gray-900">{p.product_name}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-gray-500">{p.quantity}</td>
+                  <td className="px-4 py-3 text-right text-gray-500 hidden sm:table-cell">{p.unit}</td>
+                  <td className="px-4 py-3 text-center">
+                    {p.target_exists ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
+                        <AlertTriangle className="h-3 w-3" /> Duplicado
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700">
+                        <Check className="h-3 w-3" /> OK
+                      </span>
                     )}
-                  >
-                    <td className="px-4 py-3 font-medium text-gray-900">{item.name}</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-gray-500">
-                      {formatCLP(item.current_cost)}
-                    </td>
-                    <td className={cn(
-                      'px-4 py-3 text-right tabular-nums font-medium',
-                      isNeg ? 'text-red-600' : 'text-gray-900'
-                    )}>
-                      {formatCLP(item.proposed_cost)}
-                    </td>
-                    <td className={cn(
-                      'px-4 py-3 text-right tabular-nums hidden sm:table-cell',
-                      diff > 0 ? 'text-red-500' : diff < 0 ? 'text-green-600' : 'text-gray-400'
-                    )}>
-                      {diff > 0 ? '+' : ''}{formatCLP(diff)}
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-gray-500">
-                      {item.recipe_count}
-                    </td>
-                  </tr>
-                );
-              })}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -520,41 +421,41 @@ function PreviewStep({
           onClick={onCancel}
           disabled={applying}
           className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 min-h-[44px]"
-          aria-label="Cancelar y volver al formulario"
+          aria-label="Cancelar"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Volver
+          Cancelar
         </button>
         <button
           onClick={onConfirm}
-          disabled={applying || hasNegative || preview.length === 0}
+          disabled={applying || products.length === 0}
           className={cn(
             'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors min-h-[44px]',
-            applying || hasNegative || preview.length === 0
+            applying || products.length === 0
               ? 'bg-gray-300 cursor-not-allowed'
               : 'bg-red-500 hover:bg-red-600'
           )}
-          aria-label="Confirmar y aplicar ajuste"
+          aria-label="Confirmar reemplazo"
         >
-          {applying ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Check className="h-4 w-4" />
-          )}
-          Confirmar ajuste
+          {applying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          Confirmar reemplazo
         </button>
       </div>
     </div>
   );
 }
 
+
 /* ─── Success Step ─── */
 
 function SuccessStep({
   result,
+  sourceName,
+  targetName,
   onReset,
 }: {
-  result: { ingredients_affected: number; products_affected: number };
+  result: { products_affected: number; cost_prices_updated: number };
+  sourceName: string;
+  targetName: string;
   onReset: () => void;
 }) {
   return (
@@ -563,18 +464,19 @@ function SuccessStep({
         <Check className="h-6 w-6 text-green-600" />
       </div>
       <div>
-        <h2 className="text-base font-semibold text-gray-900">Ajuste aplicado correctamente</h2>
+        <h2 className="text-base font-semibold text-gray-900">Reemplazo completado</h2>
         <p className="mt-1 text-sm text-gray-500">
-          Se actualizaron {result.ingredients_affected} ingrediente{result.ingredients_affected !== 1 ? 's' : ''} y
-          se recalcularon {result.products_affected} receta{result.products_affected !== 1 ? 's' : ''}.
+          <span className="font-medium">{sourceName}</span> → <span className="font-medium">{targetName}</span>
+          {' '}en {result.products_affected} producto{result.products_affected !== 1 ? 's' : ''}.
+          Se recalcularon {result.cost_prices_updated} costo{result.cost_prices_updated !== 1 ? 's' : ''}.
         </p>
       </div>
       <button
         onClick={onReset}
         className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 min-h-[44px]"
-        aria-label="Realizar otro ajuste"
+        aria-label="Hacer otro reemplazo"
       >
-        Nuevo ajuste
+        Nuevo reemplazo
       </button>
     </div>
   );
