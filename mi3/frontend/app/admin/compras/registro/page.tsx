@@ -185,8 +185,8 @@ export default function RegistroPage() {
         console.log('[Compras] upload OK, tempKey:', res.tempKey);
         setPipelineTempKey(res.tempKey);
         setPipelineTempUrl(res.tempUrl);
-        // Open mobile sheet for extraction progress
-        if (window.innerWidth < 768) setMobileSheetOpen(true);
+        // Always open extraction sheet (works on both mobile and desktop)
+        setMobileSheetOpen(true);
       } catch (err) {
         console.error('[Compras] upload error:', err);
         // Show error to user instead of silently failing

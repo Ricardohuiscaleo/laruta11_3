@@ -31,7 +31,7 @@ export default function MobileExtractionSheet({
   const isDone = !uploading && !tempKey && reconciliationQuestions.length === 0;
 
   return (
-    <div className="md:hidden fixed inset-0 z-50 flex flex-col bg-white" role="dialog" aria-modal="true" aria-label="Extracción IA">
+    <div className="fixed inset-0 z-50 flex flex-col bg-white" role="dialog" aria-modal="true" aria-label="Extracción IA">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b bg-amber-50 shrink-0">
         <div className="flex items-center gap-2">
