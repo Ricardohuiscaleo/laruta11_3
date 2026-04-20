@@ -17,5 +17,5 @@
 
 ## Fase 4: Deploy + verificación
 
-- [-] 7. Commit + push + deploy mi3-frontend + caja3
-- [ ] 8. Verificar en producción: costos correctos, editor inline funciona, stock deduction descompone compuestos
+- [x] 7. Commit + push + deploy mi3-frontend + caja3
+- [x] 8. Verificar en producción: costos correctos, editor inline funciona, stock deduction descompone compuestos

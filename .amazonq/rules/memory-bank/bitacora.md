@@ -7,10 +7,10 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`7e5ea66`) — ingredient categories: tabs dinámicos, API con categorías |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0034f3a`) — stock deduction compuestos con resolveIngredientDeduction |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`09f5a91`) — header unificado + pipeline glassmorphism + sub-recetas tab |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`5930ec3`) — sub-recetas ingredientes compuestos, API CRUD, migración ejecutada |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`0034f3a`) — editor inline recetas + label costo/unidad |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`5930ec3`) — sub-recetas ingredientes compuestos |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -92,11 +92,24 @@
 - [x] **Integración caja3/app3 delivery** — webhook en caja3 y iframe en app3 implementados en commit `70650cf`.
 - [ ] **Investigar arquitectura SaaS multi-tenant** — AWS Lambda + Aurora PostgreSQL + Amazon Location Service + Stripe. Dominio candidato: pocos.click (caduca 2026-12-21)
 - [x] **Spec sub-recetas-hamburguesas** — COMPLETADO. Tabla `ingredient_recipes`, flag `is_composite`, API CRUD, UI sub-tab en Recetas con editor y calculadora de producción. Carne Molida creada, Tocino stock corregido, sub-receta Hamburguesa R11 seeded. Commits `09f5a91`, `5930ec3`.
-- [ ] **Spec recetas-fix-integral** — 8 tareas: fix tocino en recetas (7 productos unit=unidad→kg), recalcular cost_price, editor inline recetas, stock deduction compuestos en caja3, label costo con unidad. Spec en `.kiro/specs/recetas-fix-integral/`
+- [x] **Spec recetas-fix-integral** — COMPLETADO. Fix tocino 7 recetas, recalcular 50 cost_price, editor inline recetas, stock deduction compuestos en caja3, label costo/unidad. Commit `0034f3a`.
 
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-20d — Spec recetas-fix-integral: implementación completa
+
+**Cambios:**
+- BD: UPDATE tocino en 7 product_recipes (unidad→kg), recalcular cost_price de 50 productos, precios tocino $14,000/kg y longaniza $15,980/kg.
+- `mi3/frontend/app/admin/recetas/page.tsx`: Refactorizado — editor inline con `selectedProductId` en vez de `router.push`. Autocomplete, tabla ingredientes, save POST/PUT.
+- `mi3/frontend/app/admin/recetas/sub-recetas/page.tsx`: Label costo con unidad real (`$14.000/kg`).
+- `caja3/api/confirm_transfer_payment.php`: `deductProduct()` ahora detecta `is_composite` y descompone en hijos via `resolveIngredientDeduction()`.
+- `caja3/api/process_sale_inventory.php`: Misma lógica de descomposición con `resolveIngredientDeductionPSI()`.
+
+**Commits:** `0034f3a`
+**Deploys:** mi3-frontend ✅, caja3 ✅
+**BD:** Tocino fix 7 recetas, 50 cost_price recalculados, precios ingredientes actualizados.
 
 ### 2026-04-20c — Spec sub-recetas-hamburguesas: implementación completa
 
