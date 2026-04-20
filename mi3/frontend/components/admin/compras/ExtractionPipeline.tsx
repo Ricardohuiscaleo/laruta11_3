@@ -66,6 +66,7 @@ const MULTI_AGENT_PHASES: PipelinePhase[] = [
 
 
 export default function ExtractionPipeline({ tempKey, onResult, onError, onReconciliationNeeded, autoStart = true }: ExtractionPipelineProps) {
+  console.log('[Pipeline] MOUNTED, tempKey:', tempKey, 'autoStart:', autoStart);
   const [phases, setPhases] = useState<PipelinePhase[]>(BEDROCK_PHASES.map(p => ({ ...p })));
   const [running, setRunning] = useState(false);
   const [slow, setSlow] = useState(false);
@@ -89,6 +90,7 @@ export default function ExtractionPipeline({ tempKey, onResult, onError, onRecon
   }, []);
 
   const handleEvent = useCallback((event: PipelineEvent) => {
+    console.log('[Pipeline] SSE event:', event.fase, event.status, event.engine);
     const { fase, status, data, elapsed_ms, engine } = event;
 
     // Detect engine from first event

@@ -564,6 +564,7 @@ export default function RegistroPage() {
       </label>
 
       {/* Pipeline visual SSE (single photo) */}
+      {(() => { console.log('[Compras] render check: pipelineTempKey=', pipelineTempKey); return null; })()}
       {pipelineTempKey && (
         <div className="space-y-3">
           {pipelineTempUrl && (
