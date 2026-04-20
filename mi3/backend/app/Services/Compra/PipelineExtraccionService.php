@@ -175,7 +175,7 @@ class PipelineExtraccionService
             if (!empty($extracted['items'])) {
                 $itemsMatch = $this->sugerencias->matchItems($extracted['items']);
 
-                if ($this->isProveedorSuspect($extracted['proveedor'])) {
+                if ($this->isProveedorSuspect($extracted['proveedor'] ?? null)) {
                     $inferredProv = $this->inferProveedorFromItems($itemsMatch);
                     if ($inferredProv) {
                         $extracted['proveedor'] = $inferredProv;
@@ -493,7 +493,7 @@ class PipelineExtraccionService
             if (!empty($extracted['items'])) {
                 $itemsMatch = $this->sugerencias->matchItems($extracted['items']);
 
-                if ($this->isProveedorSuspect($extracted['proveedor'])) {
+                if ($this->isProveedorSuspect($extracted['proveedor'] ?? null)) {
                     $inferredProv = $this->inferProveedorFromItems($itemsMatch);
                     if ($inferredProv) {
                         $extracted['proveedor'] = $inferredProv;
@@ -712,7 +712,7 @@ class PipelineExtraccionService
             if (!empty($extracted['items'])) {
                 $itemsMatch = $this->sugerencias->matchItems($extracted['items']);
 
-                if ($this->isProveedorSuspect($extracted['proveedor'])) {
+                if ($this->isProveedorSuspect($extracted['proveedor'] ?? null)) {
                     $inferredProv = $this->inferProveedorFromItems($itemsMatch);
                     if ($inferredProv) {
                         $extracted['proveedor'] = $inferredProv;
