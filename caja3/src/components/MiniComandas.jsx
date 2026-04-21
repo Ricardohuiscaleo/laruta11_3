@@ -585,8 +585,8 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const activeOrders = orders.filter(o =>
     o.order_status !== 'delivered' &&
     o.order_status !== 'cancelled' &&
-    !o.order_number.startsWith('RL6-') && // Ocultar pagos de crédito RL6
-    !o.order_number.startsWith('R11C-') // Ocultar pagos de crédito R11
+    !o.order_number.startsWith('RL6-') && // Ocultar pagos de crédito RL6 (no son pedidos de comida)
+    !(o.order_number.startsWith('R11-') && !o.order_number.startsWith('R11C-')) // Ocultar pagos R11 pero NO compras R11C
   );
   const activeChecklists = checklists.filter(c => c.status !== 'completed' && c.status !== 'missed');
   const immediateOrders = activeOrders.filter(o => !isScheduledOrder(o));

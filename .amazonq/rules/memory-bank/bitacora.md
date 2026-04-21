@@ -6,7 +6,7 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`9b17c05`) — crédito R11 10% descuento, refund on cancel, effectiveDiscountAmount |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`ae5c180`) — crédito R11 completo: 10% desc, refund cancel, use_credit auth fix |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`9b17c05`) — r11_refund_credit.php + stock deduction compuestos |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`3a8939d`) — botón ⚡ rendición rápida + botón (+) crear ingrediente |
@@ -110,9 +110,9 @@
 - `app3/src/components/MenuApp.jsx`: Eliminado sistema tracking (track_usage.php).
 - `app3/api/track_usage.php`: Eliminado.
 
-**Commits:** `05d6b0a`, `ed1f0ff`, `825708a`, `8931c75`, `4dfd571`, `9b17c05`
-**Deploys:** app3 ✅ (`9b17c05`), caja3 ✅ (`9b17c05`)
-**BD:** Ricardo (id=4) `credito_r11_aprobado = 1`, `limite_credito_r11 = 50000`, `fecha_aprobacion_r11 = 2026-04-21`.
+**Commits:** `05d6b0a`, `ed1f0ff`, `825708a`, `8931c75`, `4dfd571`, `9b17c05`, `4de0f6e`, `ae5c180`
+**Deploys:** app3 ✅ (`ae5c180`), caja3 ✅ (`9b17c05`)
+**BD:** Ricardo (id=4) `credito_r11_aprobado = 1`, `limite_credito_r11 = 50000`, `fecha_aprobacion_r11 = 2026-04-21`. RL6 deshabilitado (`es_militar_rl6 = 0`). `relacion_r11 = 'Administrador'`. Fix orden R11C-1776792155-8230: `pagado_con_credito_r11 = 1`, `credito_r11_usado = 7362`.
 
 ### 2026-04-20f — Reemplazo masivo ingredientes + MobileExtractionSheet fix + pipeline race condition
 
