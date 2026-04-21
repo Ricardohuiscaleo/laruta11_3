@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`13eecde`) — crédito R11 completo: r11c-pending page, 10% desc, refund cancel |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`3231e67`) — R11C visible en MiniComandas, r11_refund_credit.php |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`596945c`) — recetas: secciones producto/ingredientes/insumos, editar nombre/desc/foto |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`821dbec`) — emojis ingredientes + recetas secciones producto/ingredientes/insumos |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`596945c`) — getRecipeDetail devuelve category de ingrediente |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -98,14 +98,18 @@
 
 ## Sesiones Recientes
 
-### 2026-04-21b — Recetas: secciones producto/ingredientes/insumos, editar nombre/desc/foto
+### 2026-04-21b — Recetas: secciones producto/ingredientes/insumos + emojis ingredientes
 
 **Cambios:**
 - `mi3/backend/app/Services/Recipe/RecipeService.php`: `getRecipeDetail()` ahora devuelve `category` de cada ingrediente para separar ingredientes de insumos en frontend.
 - `mi3/frontend/app/admin/recetas/page.tsx`: Reescrito RecipeEditor con 3 secciones: **Producto** (editar nombre, descripción para IA, subir/cambiar foto), **Ingredientes** (Carnes, Vegetales, Salsas, etc.), **Insumos** (Packaging, Limpieza, Gas, Servicios). Buscador autocomplete mejorado con safety check `Array.isArray`, filtro por tipo, categoría visible en resultados. Resumen de costos desglosado ingredientes + insumos.
+- `mi3/frontend/lib/ingredient-emoji.ts`: Nuevo helper — mapeo emoji por keyword (🥑Palta, 🥓Tocino, 🧀Queso, etc.) + fallback por categoría (🥩Carnes, 📦Packaging, 🧹Limpieza). ~75 keywords, 13 categorías.
+- `mi3/frontend/app/admin/recetas/sub-recetas/page.tsx`: Emojis en tabla ingredientes y autocomplete.
+- `mi3/frontend/components/admin/compras/StockDashboard.tsx`: Emojis en inventario stock.
+- `mi3/frontend/components/admin/compras/ItemSearch.tsx`: Emojis en búsqueda de items compras.
 
-**Commits:** `596945c`
-**Deploys:** mi3-frontend ✅ (`596945c`), mi3-backend ✅ (`596945c`)
+**Commits:** `596945c`, `821dbec`
+**Deploys:** mi3-frontend ✅ (`821dbec`), mi3-backend ✅ (`596945c`)
 
 ### 2026-04-21a — Fix crédito R11: prefijo R11C, payment_status, inventario, badge comandas
 
