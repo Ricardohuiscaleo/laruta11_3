@@ -1072,6 +1072,22 @@ class PipelineExtraccionService
     private function matchProveedorByRut(array $data): array
     {
         $rut = $data['rut_proveedor'] ?? null;
+
+        // 1. Check known RUTs first (hardcoded for reliability)
+        $knownRuts = [
+            '81.201.000-K' => 'Jumbo',
+            '81.537.500-5' => 'Unimarc',
+            '96.521.680-9' => 'Ariztía',
+            '91.550.000-7' => 'Agrosuper',
+        ];
+
+        if (!empty($rut) && isset($knownRuts[$rut])) {
+            $data['proveedor'] = $knownRuts[$rut];
+            $data['notas_ia'] = ($data['notas_ia'] ?? '') . " [Proveedor por RUT conocido {$rut}]";
+            return $data;
+        }
+
+        // 2. Check SupplierIndex table
         if (!empty($rut)) {
             $supplier = SupplierIndex::where('rut', $rut)->first();
             if ($supplier) {
@@ -1081,6 +1097,7 @@ class PipelineExtraccionService
             }
         }
 
+        // 3. Pattern matching in extracted text
         $knownPatterns = [
             'ariztia' => 'Ariztía (proveedor)',
             'agrosuper' => 'Agrosuper',

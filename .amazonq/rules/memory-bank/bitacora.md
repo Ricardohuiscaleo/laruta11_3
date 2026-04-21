@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0034f3a`) — stock deduction compuestos con resolveIngredientDeduction |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2e85939`) — smart search ingredientes en registro compras |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`3419f96`) — cascadeCompositeCosts + timestamps fix + replace-ingredient API |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`d162556`) — prompt Unimarc RUT fix + packaging equivalencias + knownPatterns |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -111,9 +111,11 @@
 - `mi3/backend/app/Models/ProductRecipe.php`: `timestamps = false` — tabla no tiene created_at/updated_at.
 - `mi3/backend/app/Services/Compra/CompraService.php`: Cascade al registrar compra — `cascadeCompositeCosts()` recalcula padres compuestos.
 - `mi3/frontend/app/admin/compras/registro/page.tsx`: Smart search ingredientes — al editar nombre se desvincula match, búsqueda en vivo, crear ingrediente inline con selector de categoría.
+- `mi3/backend/app/Services/Compra/GeminiService.php`: Fix RUT Unimarc (600→500), equivalencias packaging (PAN COMPLETO XL 1 bolsa=6 un, PAN HAMBURGUESA 1 bolsa=4 un).
+- `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: knownPatterns: rendic→Unimarc, unimarc→Unimarc, arauco→Arauco.
 
-**Commits:** `5b8ed85`, `b860495`, `f3816c3`, `1fa5f65`, `ce3a50a`, `3419f96`, `2e85939`
-**Deploys:** mi3-frontend ✅ (`2e85939`), mi3-backend ✅ (`3419f96`)
+**Commits:** `5b8ed85`, `b860495`, `f3816c3`, `1fa5f65`, `ce3a50a`, `3419f96`, `2e85939`, `d162556`
+**Deploys:** mi3-frontend ✅ (`2e85939`), mi3-backend ✅ (`d162556`)
 **BD:** Fix compras_detalle #497: ingrediente_id 163→49 (Tocino registrado como Carne Molida). Carne Molida stock 5.38→4.52 kg, precio $14,000→$6,490/kg. Tocino stock 3.92→4.78 kg. cascadeCompositeCosts: Hamburguesa R11 $1,775.75→$1,613.40, 12 productos recalculados.
 
 ### 2026-04-20d — Spec recetas-fix-integral: implementación completa
