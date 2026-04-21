@@ -8,6 +8,7 @@ import {
   Pencil, Calculator, Package,
 } from 'lucide-react';
 import type { ApiResponse } from '@/types';
+import { getIngredientEmoji } from '@/lib/ingredient-emoji';
 
 /* ─── Types ─── */
 
@@ -341,7 +342,9 @@ function SubRecipeEditor({ ingredientId, onBack }: { ingredientId: number; onBac
             <tbody className="divide-y">
               {children.map((item, index) => (
                 <tr key={item.ingredient_id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-900">{item.name}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900">
+                    <span className="mr-1">{getIngredientEmoji(item.name)}</span>{item.name}
+                  </td>
                   <td className="px-4 py-3">
                     <input
                       type="number"
@@ -488,7 +491,7 @@ function ChildAutocomplete({ onSelect, excludeIds }: { onSelect: (opt: Ingredien
               onKeyDown={e => e.key === 'Enter' && handleSelect(opt)}
               tabIndex={0}
             >
-              <span className="font-medium text-gray-900">{opt.name}</span>
+              <span className="font-medium text-gray-900"><span className="mr-1">{getIngredientEmoji(opt.name)}</span>{opt.name}</span>
               <span className="text-xs text-gray-500">{formatCLP(opt.cost_per_unit)}/{opt.unit}</span>
             </li>
           ))}

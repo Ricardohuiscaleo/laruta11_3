@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`13eecde`) — crédito R11 completo: r11c-pending page, 10% desc, refund cancel |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`3231e67`) — R11C visible en MiniComandas, r11_refund_credit.php |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`3a8939d`) — botón ⚡ rendición rápida + botón (+) crear ingrediente |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`1873b95`) — knownRuts + packaging equivalences + cascadeCompositeCosts |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`596945c`) — recetas: secciones producto/ingredientes/insumos, editar nombre/desc/foto |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`596945c`) — getRecipeDetail devuelve category de ingrediente |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -98,6 +98,15 @@
 
 ## Sesiones Recientes
 
+### 2026-04-21b — Recetas: secciones producto/ingredientes/insumos, editar nombre/desc/foto
+
+**Cambios:**
+- `mi3/backend/app/Services/Recipe/RecipeService.php`: `getRecipeDetail()` ahora devuelve `category` de cada ingrediente para separar ingredientes de insumos en frontend.
+- `mi3/frontend/app/admin/recetas/page.tsx`: Reescrito RecipeEditor con 3 secciones: **Producto** (editar nombre, descripción para IA, subir/cambiar foto), **Ingredientes** (Carnes, Vegetales, Salsas, etc.), **Insumos** (Packaging, Limpieza, Gas, Servicios). Buscador autocomplete mejorado con safety check `Array.isArray`, filtro por tipo, categoría visible en resultados. Resumen de costos desglosado ingredientes + insumos.
+
+**Commits:** `596945c`
+**Deploys:** mi3-frontend ✅ (`596945c`), mi3-backend ✅ (`596945c`)
+
 ### 2026-04-21a — Fix crédito R11: prefijo R11C, payment_status, inventario, badge comandas
 
 **Cambios:**
@@ -167,5 +176,5 @@
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-20b archivadas. 2026-04-20b (header unificado) archivada esta sesión.
+> Sesiones 2026-04-19c→2026-04-20b archivadas. 2026-04-20b (header unificado), 2026-04-20c (sub-recetas-hamburguesas) archivadas.
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

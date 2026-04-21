@@ -9,6 +9,7 @@ import {
   UtensilsCrossed, Package,
 } from 'lucide-react';
 import type { ApiResponse } from '@/types';
+import { getIngredientEmoji } from '@/lib/ingredient-emoji';
 
 /* ─── Types ─── */
 
@@ -789,7 +790,10 @@ function IngredientTable({
             const cost = estimateCost(item);
             return (
               <tr key={item.ingredient_id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-3 py-2 font-medium text-gray-900">{item.name}</td>
+                <td className="px-3 py-2 font-medium text-gray-900">
+                  <span className="mr-1">{getIngredientEmoji(item.name, item.category)}</span>
+                  {item.name}
+                </td>
                 <td className="px-3 py-2">
                   <input
                     type="number"
@@ -989,7 +993,10 @@ function IngredientAutocomplete({
               tabIndex={0}
             >
               <div>
-                <span className="font-medium text-gray-900">{opt.name}</span>
+                <span className="font-medium text-gray-900">
+                  <span className="mr-1">{getIngredientEmoji(opt.name, opt.category)}</span>
+                  {opt.name}
+                </span>
                 {opt.category && (
                   <span className="ml-2 text-xs text-gray-400">{opt.category}</span>
                 )}

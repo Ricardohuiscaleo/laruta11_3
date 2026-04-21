@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Search, Plus } from 'lucide-react';
 import { comprasApi } from '@/lib/compras-api';
 import { formatearPesosCLP } from '@/lib/compras-utils';
+import { getIngredientEmoji } from '@/lib/ingredient-emoji';
 
 interface SearchResult {
   id: number;
@@ -86,7 +87,7 @@ export default function ItemSearch({ onSelect, onCreateNew, placeholder = 'Busca
                 className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50"
               >
                 <div>
-                  <span className="font-medium text-gray-900">{item.name}</span>
+                  <span className="font-medium text-gray-900">{getIngredientEmoji(item.name, item.category)} {item.name}</span>
                   <span className="ml-2 text-xs text-gray-500">
                     Stock: {item.current_stock} {item.unit}
                   </span>

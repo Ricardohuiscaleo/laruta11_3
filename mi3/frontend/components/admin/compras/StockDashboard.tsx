@@ -5,6 +5,7 @@ import { Package, Wine, ChevronDown, ChevronRight, Pencil, Minus, Check, X, Chec
 import { comprasApi } from '@/lib/compras-api';
 import { useCompras } from '@/contexts/ComprasContext';
 import type { StockItem } from '@/types/compras';
+import { getIngredientEmoji } from '@/lib/ingredient-emoji';
 
 const SEMAFORO_COLORS: Record<string, string> = {
   rojo: 'bg-red-100 text-red-800 border-red-200',
@@ -236,7 +237,7 @@ export default function StockDashboard() {
                                 {isSelected ? <CheckSquare className="h-3.5 w-3.5 text-mi3-600" /> : <Square className="h-3.5 w-3.5" />}
                               </button>
                               <div className={`h-2 w-2 rounded-full ${SEMAFORO_DOT[semaforo] || SEMAFORO_DOT.verde}`} />
-                              <span className="text-xs font-semibold">{item.name}</span>
+                              <span className="text-xs font-semibold">{getIngredientEmoji(item.name, item.category)} {item.name}</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <button onClick={() => startConsume(item)} title="Consumir"
