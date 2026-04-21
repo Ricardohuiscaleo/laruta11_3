@@ -110,6 +110,132 @@ function ProveedorSearch({ value, onChange }: { value: string; onChange: (v: str
   );
 }
 
+const INGREDIENT_CATEGORIES = [
+  'Carnes', 'Vegetales', 'Salsas', 'Condimentos', 'Panes', 'Embutidos',
+  'Pre-elaborados', 'Lácteos', 'Bebidas', 'Gas', 'Servicios', 'Packaging', 'Limpieza',
+];
+
+function ItemNameSearch({
+  value, ingredienteId, matchName, categoriaSugerida, unidad, precioUnitario, proveedor, tipCompra,
+  onNameChange, onLink, onCreate, onUnlink,
+}: {
+  value: string;
+  ingredienteId: number | null;
+  matchName?: string;
+  categoriaSugerida?: string | null;
+  unidad: string;
+  precioUnitario: number;
+  proveedor: string;
+  tipCompra: string;
+  onNameChange: (v: string) => void;
+  onLink: (id: number, name: string) => void;
+  onCreate: (id: number, name: string) => void;
+  onUnlink: () => void;
+}) {
+  const [results, setResults] = useState<any[]>([]);
+  const [open, setOpen] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [createCat, setCreateCat] = useState(categoriaSugerida || '');
+  const [creating, setCreating] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const timer = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setShowCreate(false); } };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+
+  const search = async (val: string) => {
+    if (val.length < 2) { setResults([]); setOpen(false); return; }
+    try {
+      const data = await comprasApi.get<any[]>(`/compras/items?q=${encodeURIComponent(val)}`);
+      setResults(data);
+      setOpen(data.length > 0);
+    } catch { setResults([]); }
+  };
+
+  const handleChange = (val: string) => {
+    onNameChange(val);
+    if (ingredienteId && matchName && val.toLowerCase() !== matchName.toLowerCase()) {
+      onUnlink();
+    }
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => search(val), 300);
+  };
+
+  const handleCreate = async () => {
+    setCreating(true);
+    try {
+      const res = await comprasApi.post<{ success: boolean; ingrediente: { id: number; name: string; unit: string } }>('/compras/ingrediente', {
+        name: value, category: createCat || null, unit: unidad, cost_per_unit: precioUnitario || 0, supplier: proveedor || null,
+      });
+      if (res.success && res.ingrediente) {
+        onCreate(res.ingrediente.id, res.ingrediente.name);
+        setShowCreate(false);
+        setOpen(false);
+      }
+    } catch { /* user can retry */ }
+    setCreating(false);
+  };
+
+  return (
+    <div ref={ref} className="relative flex-1">
+      <input type="text" value={value} onChange={e => handleChange(e.target.value)}
+        onFocus={() => { if (value.length >= 2 && !ingredienteId) search(value); }}
+        className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-[15px] font-medium focus:border-mi3-500 focus:ring-1 focus:ring-mi3-500 transition-colors shadow-sm"
+        aria-label="Nombre ingrediente" />
+
+      {/* Search results dropdown */}
+      {open && results.length > 0 && !showCreate && (
+        <div className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-lg border bg-white shadow-lg">
+          {results.map((r: any) => (
+            <button key={`${r.type}-${r.id}`} onClick={() => { onLink(r.id, r.name); onNameChange(r.name); setOpen(false); }}
+              className="flex w-full items-center justify-between px-3 py-1.5 text-left text-sm hover:bg-gray-50 min-h-[36px]">
+              <span className="font-medium truncate">{r.name}</span>
+              <span className="text-xs text-gray-400 shrink-0 ml-2">{r.current_stock ?? 0} {r.unit}</span>
+            </button>
+          ))}
+          <button onClick={() => { setShowCreate(true); setCreateCat(categoriaSugerida || ''); }}
+            className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 border-t font-medium min-h-[36px]">
+            <Sparkles className="h-3.5 w-3.5" /> Crear &quot;{value}&quot;
+          </button>
+        </div>
+      )}
+
+      {/* No results — show create directly */}
+      {open && results.length === 0 && value.length >= 2 && !showCreate && (
+        <div className="absolute z-20 mt-1 w-full rounded-lg border bg-white shadow-lg">
+          <div className="px-3 py-2 text-xs text-gray-400">Sin resultados</div>
+          <button onClick={() => { setShowCreate(true); setCreateCat(categoriaSugerida || ''); }}
+            className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 border-t font-medium min-h-[36px]">
+            <Sparkles className="h-3.5 w-3.5" /> Crear &quot;{value}&quot;
+          </button>
+        </div>
+      )}
+
+      {/* Create ingredient inline form */}
+      {showCreate && (
+        <div className="absolute z-20 mt-1 w-full rounded-lg border bg-white shadow-lg p-3 space-y-2">
+          <p className="text-xs font-medium text-gray-700">Crear: {value}</p>
+          <select value={createCat} onChange={e => setCreateCat(e.target.value)}
+            className="w-full rounded-md border border-gray-200 px-2 py-1.5 text-sm bg-white" aria-label="Categoría">
+            <option value="">Sin categoría</option>
+            {INGREDIENT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <div className="flex gap-2">
+            <button onClick={() => setShowCreate(false)} className="flex-1 rounded-md border px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 min-h-[36px]">Cancelar</button>
+            <button onClick={handleCreate} disabled={creating}
+              className="flex-1 rounded-md bg-blue-500 px-2 py-1.5 text-xs text-white hover:bg-blue-600 disabled:opacity-50 min-h-[36px]">
+              {creating ? 'Creando...' : 'Crear'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- Main page component ---
 export default function RegistroPage() {
   const { registroGroups: groups, registroSubmitted: submitted, setRegistroGroups: setGroups, setRegistroSubmitted: setSubmitted, kpis: ctxKpis, refreshAll } = useCompras();
@@ -717,8 +843,20 @@ export default function RegistroPage() {
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3">
                           {/* Row 1: Nombre (Full width on mobile, flex-1 on desktop) */}
                           <div className="flex items-center gap-2 sm:flex-1 w-full">
-                            <input type="text" value={item.nombre} onChange={e => updateItem(gi, ii, 'nombre', e.target.value)}
-                              className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-[15px] font-medium focus:border-mi3-500 focus:ring-1 focus:ring-mi3-500 transition-colors shadow-sm" />
+                            <ItemNameSearch
+                              value={item.nombre}
+                              ingredienteId={item.ingrediente_id}
+                              matchName={item.match_name}
+                              categoriaSugerida={item.categoria_sugerida}
+                              unidad={item.unidad}
+                              precioUnitario={item.precio_unitario}
+                              proveedor={group.proveedor}
+                              tipCompra={group.tipo_compra}
+                              onNameChange={v => updateItem(gi, ii, 'nombre', v)}
+                              onLink={(id, name) => { updateItem(gi, ii, 'ingrediente_id', id); updateItem(gi, ii, 'match_name', name); updateItem(gi, ii, 'match_score', 100); updateItem(gi, ii, 'item_type', 'ingredient'); }}
+                              onCreate={(id, name) => { updateItem(gi, ii, 'ingrediente_id', id); updateItem(gi, ii, 'match_name', name); updateItem(gi, ii, 'match_score', 100); updateItem(gi, ii, 'item_type', 'ingredient'); }}
+                              onUnlink={() => { updateItem(gi, ii, 'ingrediente_id', null); updateItem(gi, ii, 'product_id', null); updateItem(gi, ii, 'match_name', ''); updateItem(gi, ii, 'match_score', 0); }}
+                            />
                             <button onClick={() => removeItem(gi, ii)} className="sm:hidden text-gray-400 hover:text-red-500 p-1.5 bg-gray-50 rounded-md border border-gray-200"><X className="h-4 w-4" /></button>
                           </div>
                           
