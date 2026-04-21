@@ -896,6 +896,7 @@ class PipelineExtraccionService
         $data = $this->mapPersonToSupplier($data);
         $data = $this->matchProveedorByRut($data);
         $data = $this->applySupplierRules($data);
+        $data = $this->applyPackagingEquivalences($data);
         return $data;
     }
 
@@ -1161,6 +1162,50 @@ class PipelineExtraccionService
                 break;
             }
         }
+
+        return $data;
+    }
+
+    /**
+     * Apply packaging equivalences: convert bolsa/pack quantities to individual units.
+     * E.g. "PAN DE COMPLETO XL" × 3 bolsas → 18 unidades (1 bolsa = 6 panes).
+     */
+    private function applyPackagingEquivalences(array $data): array
+    {
+        $equivalences = [
+            'pan de completo'    => 6,
+            'pan completo'       => 6,
+            'pan de hamburguesa' => 4,
+            'pan hamburguesa'    => 4,
+        ];
+
+        if (empty($data['items']) || !is_array($data['items'])) {
+            return $data;
+        }
+
+        foreach ($data['items'] as &$item) {
+            $nombre = mb_strtolower(trim($item['nombre'] ?? ''));
+            $unidad = mb_strtolower(trim($item['unidad'] ?? ''));
+
+            if ($unidad !== 'unidad' && $unidad !== 'un') {
+                continue;
+            }
+
+            foreach ($equivalences as $pattern => $unitsPerPack) {
+                if (str_contains($nombre, $pattern)) {
+                    $originalQty = (float) ($item['cantidad'] ?? 0);
+                    $newQty = $originalQty * $unitsPerPack;
+                    $subtotal = (float) ($item['subtotal'] ?? 0);
+                    $newPrecio = $newQty > 0 ? round($subtotal / $newQty) : 0;
+
+                    $item['cantidad'] = $newQty;
+                    $item['precio_unitario'] = $newPrecio;
+                    $item['notas_ia'] = ($item['notas_ia'] ?? '') . " [Packaging: {$originalQty} bolsas × {$unitsPerPack} = {$newQty} un]";
+                    break;
+                }
+            }
+        }
+        unset($item);
 
         return $data;
     }
