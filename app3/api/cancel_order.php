@@ -53,7 +53,39 @@ try {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$orderId]);
 
-    // 3. Si era transferencia pagada, registrar reembolso pendiente
+    // 3. Restaurar crédito R11 si fue pagado con crédito trabajador
+    if ($order['payment_method'] === 'r11_credit') {
+        $amount = floatval($order['installment_amount']);
+        $userSql = "SELECT user_id FROM tuu_orders WHERE id = ?";
+        $userStmt = $pdo->prepare($userSql);
+        $userStmt->execute([$orderId]);
+        $userId = $userStmt->fetchColumn();
+        
+        if ($userId) {
+            // Restaurar crédito usado
+            $pdo->prepare("UPDATE usuarios SET credito_r11_usado = GREATEST(0, credito_r11_usado - ?) WHERE id = ?")->execute([$amount, $userId]);
+            // Registrar refund en transacciones
+            $pdo->prepare("INSERT INTO r11_credit_transactions (user_id, amount, type, description, order_id) VALUES (?, ?, 'refund', ?, ?)")
+                ->execute([$userId, $amount, "Anulación orden #{$order['order_number']}", $order['order_number']]);
+        }
+    }
+
+    // 4. Restaurar crédito RL6 si fue pagado con crédito militar
+    if ($order['payment_method'] === 'rl6_credit') {
+        $amount = floatval($order['installment_amount']);
+        $userSql = "SELECT user_id FROM tuu_orders WHERE id = ?";
+        $userStmt = $pdo->prepare($userSql);
+        $userStmt->execute([$orderId]);
+        $userId = $userStmt->fetchColumn();
+        
+        if ($userId) {
+            $pdo->prepare("UPDATE usuarios SET credito_usado = GREATEST(0, credito_usado - ?) WHERE id = ?")->execute([$amount, $userId]);
+            $pdo->prepare("INSERT INTO rl6_credit_transactions (user_id, amount, type, description, order_id) VALUES (?, ?, 'refund', ?, ?)")
+                ->execute([$userId, $amount, "Anulación orden #{$order['order_number']}", $order['order_number']]);
+        }
+    }
+
+    // 5. Si era transferencia pagada, registrar reembolso pendiente
     if ($order['payment_method'] === 'transfer' && $order['payment_status'] === 'paid') {
         $refundSql = "INSERT INTO refunds (order_id, order_number, amount, status, created_at) 
                       VALUES (?, ?, ?, 'pending', NOW())";

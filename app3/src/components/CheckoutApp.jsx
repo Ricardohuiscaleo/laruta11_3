@@ -427,8 +427,12 @@ const CheckoutApp = ({ onClose }) => {
   // Calcular total de extras de delivery (sin descuentos ni cashback)
   const deliveryExtrasTotal = selectedDeliveryExtras.reduce((sum, extra) => sum + (extra.price * extra.quantity), 0);
 
+  // Descuento 10% R11 automático al seleccionar crédito R11 (no acumulable con otros descuentos)
+  const r11DiscountAmount = paymentMethod === 'r11' ? Math.round(cartSubtotal * 0.10) : 0;
+  const effectiveDiscountAmount = r11DiscountAmount > 0 ? r11DiscountAmount : discountAmount;
+
   // Cashback solo aplica al subtotal de productos (no al delivery ni extras)
-  const subtotalAfterDiscounts = cartSubtotal - discountAmount - cashbackAmount;
+  const subtotalAfterDiscounts = cartSubtotal - effectiveDiscountAmount - cashbackAmount;
   const finalTotal = subtotalAfterDiscounts + finalDeliveryCost + deliveryExtrasTotal + cardDeliverySurcharge;
 
    const validateForm = () => {
@@ -590,7 +594,7 @@ const CheckoutApp = ({ onClose }) => {
       const orderData = {
         amount: cartTotal,
         subtotal: cartSubtotal,
-        discount_amount: discountAmount,
+        discount_amount: effectiveDiscountAmount,
         delivery_discount: deliveryDiscountAmount,
         delivery_extras_total: deliveryExtrasTotal,
         delivery_extras: selectedDeliveryExtras,
@@ -755,7 +759,7 @@ const CheckoutApp = ({ onClose }) => {
       const orderData = {
         amount: cartTotal,
         subtotal: cartSubtotal,
-        discount_amount: discountAmount,
+        discount_amount: effectiveDiscountAmount,
         delivery_discount: deliveryDiscountAmount,
         customer_name: customerInfo.name,
         customer_phone: customerInfo.phone,
@@ -817,7 +821,7 @@ const CheckoutApp = ({ onClose }) => {
       const orderData = {
         amount: cartTotal,
         subtotal: cartSubtotal,
-        discount_amount: discountAmount,
+        discount_amount: effectiveDiscountAmount,
         delivery_discount: deliveryDiscountAmount,
         customer_name: customerInfo.name,
         customer_phone: customerInfo.phone,
@@ -894,7 +898,7 @@ const CheckoutApp = ({ onClose }) => {
       const orderData = {
         amount: cartTotal,
         subtotal: cartSubtotal,
-        discount_amount: discountAmount,
+        discount_amount: effectiveDiscountAmount,
         delivery_discount: deliveryDiscountAmount,
         customer_name: customerInfo.name,
         customer_phone: customerInfo.phone,
@@ -977,7 +981,7 @@ const CheckoutApp = ({ onClose }) => {
       const orderData = {
         amount: cartTotal,
         subtotal: cartSubtotal,
-        discount_amount: discountAmount,
+        discount_amount: effectiveDiscountAmount,
         delivery_discount: deliveryDiscountAmount,
         customer_name: customerInfo.name,
         customer_phone: customerInfo.phone,
@@ -1510,7 +1514,13 @@ const CheckoutApp = ({ onClose }) => {
 
               <div className="border-t pt-4">
                 <div className="space-y-2">
-                  {discountAmount > 0 && (
+                  {r11DiscountAmount > 0 && (
+                    <div className="flex justify-between items-center bg-green-50 -mx-2 px-3 py-1.5 rounded-lg">
+                      <span className="text-green-700 font-medium text-sm">🍔 Descuento 10% R11:</span>
+                      <span className="font-semibold text-green-600">-${r11DiscountAmount.toLocaleString('es-CL')}</span>
+                    </div>
+                  )}
+                  {discountAmount > 0 && r11DiscountAmount === 0 && (
                     <div className="flex justify-between items-center bg-yellow-50 -mx-2 px-3 py-1.5 rounded-lg">
                       <span className="text-gray-700 font-medium text-sm">🎉 Descuento {discountCode.toUpperCase()}:</span>
                       <span className="font-semibold text-green-600">-${discountAmount.toLocaleString('es-CL')}</span>
@@ -1518,7 +1528,7 @@ const CheckoutApp = ({ onClose }) => {
                   )}
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Subtotal productos:</span>
-                    <span className="text-sm font-semibold text-gray-900">${(cartSubtotal - discountAmount - cashbackAmount).toLocaleString('es-CL')}</span>
+                    <span className="text-sm font-semibold text-gray-900">${(cartSubtotal - effectiveDiscountAmount - cashbackAmount).toLocaleString('es-CL')}</span>
                   </div>
                   {deliveryFee > 0 && customerInfo.addressValidated && (
                     <div className="bg-gray-50 -mx-2 px-3 py-2.5 rounded-lg space-y-1.5">
