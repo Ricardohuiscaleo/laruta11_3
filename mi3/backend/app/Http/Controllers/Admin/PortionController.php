@@ -122,4 +122,34 @@ class PortionController extends Controller
 
         return response()->json(['success' => true, 'data' => $result]);
     }
+
+    /**
+     * POST /api/v1/admin/portions/save-variant
+     */
+    public function saveVariant(Request $request): JsonResponse
+    {
+        $request->validate([
+            'category_id' => 'required|integer|exists:categories,id',
+            'variant' => 'required|array',
+            'variant.name' => 'required|string|max:255',
+            'variant.description' => 'nullable|string|max:500',
+            'variant.suggested_price' => 'required|integer|min:100',
+            'variant.total_cost' => 'nullable|numeric',
+            'variant.ingredients' => 'required|array|min:1',
+            'variant.ingredients.*.ingredient_id' => 'required|integer|exists:ingredients,id',
+            'variant.ingredients.*.quantity' => 'required|numeric|gt:0',
+            'variant.ingredients.*.unit' => 'required|string|in:g,kg,ml,L,unidad',
+        ]);
+
+        try {
+            $result = $this->aiService->saveVariant(
+                $request->input('variant'),
+                (int) $request->input('category_id'),
+            );
+
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
 }

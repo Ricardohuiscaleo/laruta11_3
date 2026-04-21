@@ -214,6 +214,7 @@ Route::prefix('v1')->group(function () {
 
         // Porciones estándar + Creador IA
         Route::post('portions/suggest-recipe', [\App\Http\Controllers\Admin\PortionController::class, 'suggestRecipe']);
+        Route::post('portions/save-variant', [\App\Http\Controllers\Admin\PortionController::class, 'saveVariant']);
         Route::get('portions', [\App\Http\Controllers\Admin\PortionController::class, 'index']);
         Route::get('portions/{categoryId}', [\App\Http\Controllers\Admin\PortionController::class, 'show']);
         Route::put('portions/{categoryId}', [\App\Http\Controllers\Admin\PortionController::class, 'update']);
