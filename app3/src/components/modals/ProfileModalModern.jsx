@@ -399,7 +399,7 @@ const ProfileModalModern = ({
               {isCreditoR11 && (
                 <button 
                   onClick={() => setActiveTab('r11')}
-                  className={`flex-1 py-3 text-sm sm:text-base font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'r11' ? 'bg-emerald-500 text-white shadow-md' : 'text-emerald-400 hover:text-emerald-300'}`}
+                  className={`flex-1 py-3 text-sm sm:text-base font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'r11' ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
                 >
                   <Banknote size={18} />
                   <span>Crédito</span>
@@ -740,14 +740,21 @@ const ProfileModalModern = ({
 
                   {/* Historial de Transacciones */}
                   <div>
-                    <h3 className="text-white font-bold text-sm px-2 mb-3">Historial de Uso</h3>
+                    <h3 className="text-white font-bold text-sm px-2 mb-3">Historial</h3>
                     {rl6Credit.transactions && rl6Credit.transactions.length > 0 ? (
                       <div className="space-y-2">
                         {rl6Credit.transactions.map((tx, index) => (
                           <Card key={index} className="p-3">
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
-                                <p className="text-white text-sm font-medium">{tx.description}</p>
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                    tx.type === 'refund' ? 'bg-green-900/40 text-green-400' : 'bg-red-900/40 text-red-400'
+                                  }`}>
+                                    {tx.type === 'refund' ? '💳 Pago' : '🛒 Compra'}
+                                  </span>
+                                </div>
+                                <p className="text-white text-sm font-medium mt-1">{tx.description}</p>
                                 <p className="text-slate-500 text-xs">
                                   {new Date(tx.created_at).toLocaleDateString('es-CL', {
                                     day: 'numeric',
@@ -944,7 +951,6 @@ const ProfileModalModern = ({
                           <li>✓ Compra ahora, se descuenta de tu sueldo</li>
                           <li>✓ Usa tu crédito en cualquier compra</li>
                           <li>✓ Sin intereses ni comisiones</li>
-                          <li>✓ Descuento automático el día 1 de cada mes</li>
                         </ul>
                       </div>
                     </div>
