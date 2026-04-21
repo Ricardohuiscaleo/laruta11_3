@@ -945,7 +945,7 @@ const CheckoutApp = ({ onClose }) => {
         setOrderCompleted(true);
         localStorage.removeItem('ruta11_cart');
         localStorage.removeItem('ruta11_cart_total');
-        window.location.href = '/payment-success?order=' + orderResult.order_id + '&method=r11_credit';
+        window.location.href = '/r11c-pending?order=' + orderResult.order_id;
       } else {
         setIsProcessingOrder(false);
         alert('❌ Error al usar crédito: ' + creditResult.error);
