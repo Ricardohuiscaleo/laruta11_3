@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, MessageSquare, Zap } from 'lucide-react';
 import { comprasApi } from '@/lib/compras-api';
 import { formatearPesosCLP, formatearFecha } from '@/lib/compras-utils';
 import type { Compra } from '@/types/compras';
@@ -110,6 +110,19 @@ export default function HistorialCompras() {
             placeholder="Buscar por proveedor o notas..."
             className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-mi3-500 focus:outline-none focus:ring-1 focus:ring-mi3-500" />
         </div>
+        <button
+          onClick={() => {
+            const noRendidas = compras.filter(c => !(c as any).rendicion_id).map(c => c.id);
+            if (noRendidas.length === 0) return;
+            setSelected(new Set(noRendidas));
+            setShowRendicion(true);
+          }}
+          className="flex items-center justify-center h-10 w-10 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors shadow-sm shrink-0"
+          aria-label="Seleccionar todo y rendir"
+          title="Seleccionar no rendidas y abrir rendición"
+        >
+          <Zap className="h-4 w-4" />
+        </button>
         {selected.size > 0 && (
           <button onClick={() => setShowRendicion(true)}
             className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700">
