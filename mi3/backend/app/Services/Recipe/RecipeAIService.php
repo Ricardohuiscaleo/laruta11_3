@@ -15,7 +15,7 @@ class RecipeAIService
 
     public function __construct()
     {
-        $this->apiKey = config('services.google.api_key', '');
+        $this->apiKey = (string) env('GOOGLE_API_KEY', '');
     }
 
     /**
