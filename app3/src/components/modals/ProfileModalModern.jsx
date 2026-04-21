@@ -417,7 +417,7 @@ const ProfileModalModern = ({
           </div>
 
           {/* CONTENIDO PRINCIPAL */}
-          <main className="flex-1 p-4 space-y-4 overflow-y-auto pb-6">
+          <main className="flex-1 p-1 space-y-4 overflow-y-auto pb-6">
 
           {/* TAB: PERFIL */}
           {activeTab === 'profile' && (
@@ -804,8 +804,8 @@ const ProfileModalModern = ({
           {activeTab === 'r11' && isCreditoR11 && (
             <div className="space-y-4 animate-fade-in">
               <div className="text-center mb-2">
-                <h2 className="text-xl font-bold text-white">Crédito R11</h2>
-                <p className="text-slate-400 text-sm">🏪 Crédito exclusivo La Ruta 11</p>
+                <h2 className="text-xl font-bold text-white">Mi Crédito</h2>
+                <p className="text-slate-400 text-sm">Crédito de trabajador La Ruta 11</p>
               </div>
 
               {loadingR11 ? (
@@ -835,7 +835,7 @@ const ProfileModalModern = ({
                       <h3 className="text-5xl font-black text-emerald-400">
                         ${parseInt(r11Credit.credit.credito_disponible || 0).toLocaleString('es-CL')}
                       </h3>
-                      <p className="text-slate-400 text-xs mt-2">Paga el 21 de cada mes</p>
+                      <p className="text-slate-400 text-xs mt-2">Se descuenta de tu sueldo el día 1</p>
                     </div>
                   </Card>
 
@@ -879,36 +879,23 @@ const ProfileModalModern = ({
                     </Card>
                   </div>
 
-                  {/* Botón Pagar Crédito */}
-                  <Card className="p-4 bg-gradient-to-r from-green-900/30 to-green-800/30 border-green-600">
-                    <a 
-                      href="/pagar-credito-r11"
-                      className="block w-full py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition-colors text-center"
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        <CreditCard size={20} />
-                        <span>Pagar Crédito</span>
+                  {/* Estado del crédito */}
+                  {r11Credit.credit.credito_usado > 0 ? (
+                    <Card className="p-4 bg-gradient-to-r from-amber-900/30 to-amber-800/30 border-amber-600">
+                      <div className="text-center">
+                        <p className="text-amber-300 text-xs font-bold mb-1">
+                          Saldo pendiente: ${parseInt(r11Credit.credit.credito_usado).toLocaleString('es-CL')}
+                        </p>
+                        <p className="text-slate-400 text-xs">Se descontará de tu próximo sueldo</p>
                       </div>
-                    </a>
-                    {r11Credit.credit.credito_usado > 0 ? (
-                      <>
-                        {r11DaysUntilPayment && (
-                          <p className="text-center text-yellow-300 text-xs mt-3 font-bold">
-                            Paga el 21 de {r11DaysUntilPayment.month}, te quedan {r11DaysUntilPayment.days} días 😊
-                          </p>
-                        )}
-                        <div className="mt-2 bg-black rounded-lg px-3 py-2">
-                          <p className="text-center text-green-400 text-xs font-bold">
-                            Saldo pendiente: ${parseInt(r11Credit.credit.credito_usado).toLocaleString('es-CL')}
-                          </p>
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-center text-green-300 text-xs mt-2">
-                        📊 Sin saldo pendiente - Revisa tu historial
+                    </Card>
+                  ) : (
+                    <Card className="p-3 bg-emerald-900/20 border-emerald-700">
+                      <p className="text-center text-emerald-300 text-xs">
+                        ✅ Sin saldo pendiente
                       </p>
-                    )}
-                  </Card>
+                    </Card>
+                  )}
 
                   {/* Historial de Transacciones */}
                   <div>
@@ -954,10 +941,10 @@ const ProfileModalModern = ({
                       <div>
                         <p className="text-emerald-300 text-xs font-medium mb-2">¿Cómo funciona?</p>
                         <ul className="text-slate-400 text-xs space-y-1">
-                          <li>✓ Compra ahora, paga el 21 de cada mes</li>
+                          <li>✓ Compra ahora, se descuenta de tu sueldo</li>
                           <li>✓ Usa tu crédito en cualquier compra</li>
                           <li>✓ Sin intereses ni comisiones</li>
-                          <li>✓ Exclusivo para miembros R11</li>
+                          <li>✓ Descuento automático el día 1 de cada mes</li>
                         </ul>
                       </div>
                     </div>

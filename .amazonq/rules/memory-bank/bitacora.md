@@ -6,7 +6,7 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`05d6b0a`) — fix crédito R11: prefijo R11C, paid, inventario, badge comandas |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`ed1f0ff`) — fix crédito R11: prefijo R11C, paid, inventario, badge comandas, UI tabs |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0034f3a`) — stock deduction compuestos con resolveIngredientDeduction |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`3a8939d`) — botón ⚡ rendición rápida + botón (+) crear ingrediente |
@@ -105,9 +105,13 @@
 - `app3/src/components/CheckoutApp.jsx`: Redirect a `/payment-success?order=...&method=r11_credit` (antes `/r11-pending` que no existía).
 - `app3/src/pages/payment-success.astro`: Método de pago dinámico — detecta param `method` y muestra label correcto (🏪 Crédito R11, 🎖️ Crédito RL6, etc).
 - `app3/src/pages/comandas/index.astro`: Badge `🏪 R11` verde esmeralda para órdenes `R11C-`.
+- `app3/api/r11/get_credit.php`: Removida auth session_token innecesaria (consistente con RL6 get_credit).
+- `app3/src/components/modals/ProfileModalModern.jsx`: Tabs padding `px-4`→`px-1`, font `extrabold`→`semibold`, tab R11 texto "Crédito" en verde esmeralda.
+- `app3/src/components/MenuApp.jsx`: Eliminado sistema tracking (track_usage.php).
+- `app3/api/track_usage.php`: Eliminado.
 
-**Commits:** `05d6b0a`
-**Deploys:** app3 ✅ (`05d6b0a`)
+**Commits:** `05d6b0a`, `ed1f0ff`
+**Deploys:** app3 ✅ (`ed1f0ff`)
 **BD:** Ricardo (id=4) `credito_r11_aprobado = 1`, `limite_credito_r11 = 50000`, `fecha_aprobacion_r11 = 2026-04-21`.
 
 ### 2026-04-20f — Reemplazo masivo ingredientes + MobileExtractionSheet fix + pipeline race condition
