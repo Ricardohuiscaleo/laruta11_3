@@ -6,8 +6,8 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`8931c75`) — crédito R11 completo, RL6 historial badges compra/pago |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0034f3a`) — stock deduction compuestos con resolveIngredientDeduction |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`9b17c05`) — crédito R11 10% descuento, refund on cancel, effectiveDiscountAmount |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`9b17c05`) — r11_refund_credit.php + stock deduction compuestos |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`3a8939d`) — botón ⚡ rendición rápida + botón (+) crear ingrediente |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`1873b95`) — knownRuts + packaging equivalences + cascadeCompositeCosts |
@@ -110,8 +110,8 @@
 - `app3/src/components/MenuApp.jsx`: Eliminado sistema tracking (track_usage.php).
 - `app3/api/track_usage.php`: Eliminado.
 
-**Commits:** `05d6b0a`, `ed1f0ff`
-**Deploys:** app3 ✅ (`ed1f0ff`)
+**Commits:** `05d6b0a`, `ed1f0ff`, `825708a`, `8931c75`, `4dfd571`, `9b17c05`
+**Deploys:** app3 ✅ (`9b17c05`), caja3 ✅ (`9b17c05`)
 **BD:** Ricardo (id=4) `credito_r11_aprobado = 1`, `limite_credito_r11 = 50000`, `fecha_aprobacion_r11 = 2026-04-21`.
 
 ### 2026-04-20f — Reemplazo masivo ingredientes + MobileExtractionSheet fix + pipeline race condition

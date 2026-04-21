@@ -887,7 +887,7 @@ const CheckoutApp = ({ onClose }) => {
       return;
     }
 
-    if (!confirm(`¿Confirmas usar tu crédito R11? Se descontarán $${cartTotal.toLocaleString('es-CL')} de tu límite. Pagarás el 1 del mes.`)) {
+    if (!confirm(`¿Confirmas usar tu crédito R11? Se descontarán $${cartTotal.toLocaleString('es-CL')} de tu límite.`)) {
       return;
     }
 
