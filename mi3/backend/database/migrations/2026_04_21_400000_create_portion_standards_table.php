@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('portion_standards', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('category_id');
-            $table->unsignedBigInteger('ingredient_id');
+            $table->unsignedInteger('category_id');
+            $table->unsignedInteger('ingredient_id');
             $table->decimal('quantity', 10, 3);
             $table->string('unit', 20)->default('g');
             $table->timestamps();
