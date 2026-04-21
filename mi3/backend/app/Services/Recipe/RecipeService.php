@@ -731,6 +731,7 @@ class RecipeService
             $ingredients[] = [
                 'id'              => $recipeItem->ingredient->id,
                 'name'            => $recipeItem->ingredient->name,
+                'category'        => $recipeItem->ingredient->category,
                 'quantity'        => (float) $recipeItem->quantity,
                 'unit'            => $recipeItem->unit,
                 'ingredient_unit' => $recipeItem->ingredient->unit,
