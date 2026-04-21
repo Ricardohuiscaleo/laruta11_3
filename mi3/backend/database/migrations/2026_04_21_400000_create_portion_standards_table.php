@@ -13,15 +13,15 @@ return new class extends Migration
     {
         Schema::create('portion_standards', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('category_id');
-            $table->unsignedInteger('ingredient_id');
+            $table->integer('category_id');
+            $table->integer('ingredient_id');
             $table->decimal('quantity', 10, 3);
             $table->string('unit', 20)->default('g');
             $table->timestamps();
 
             $table->unique(['category_id', 'ingredient_id']);
-            $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
-            $table->foreign('ingredient_id')->references('id')->on('ingredients')->onDelete('cascade');
+            $table->index('category_id');
+            $table->index('ingredient_id');
         });
 
         // Categories: 3=Hamburguesas, 2=Sandwiches, 4=Completos, 12=Papas, 8=Combos
