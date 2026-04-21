@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`13eecde`) — crédito R11 completo: r11c-pending page, 10% desc, refund cancel |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`3231e67`) — R11C visible en MiniComandas, r11_refund_credit.php |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2826e66`) — porciones estándar + creador recetas IA + emojis ingredientes |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`e686b12`) — RecipeAIService con gemini-2.5-flash-lite ($0.10/M tokens) |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`03c919d`) — creador IA 3 variantes + guardar producto + emojis |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`03c919d`) — RecipeAIService 3 variantes + saveVariant + gemini-2.5-flash-lite |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -110,8 +110,8 @@
 - `mi3/frontend/app/admin/recetas/creador-ia/page.tsx`: Tab "Creador IA" — input descripción + categoría, genera receta con ingredientes, costos, precio, stock check, tips.
 - `mi3/frontend/components/admin/sections/RecetasSection.tsx`: 2 nuevas tabs (Scale, Sparkles).
 
-**Commits:** `2826e66`, `6152f94`, `f03f289`, `e686b12`
-**Deploys:** mi3-frontend ✅ (`2826e66`), mi3-backend ✅ (`e686b12`)
+**Commits:** `2826e66`, `6152f94`, `f03f289`, `e686b12`, `03c919d`
+**Deploys:** mi3-frontend ✅ (`03c919d`), mi3-backend ✅ (`03c919d`)
 **BD:** Migración `portion_standards` ejecutada, 34 porciones seeded. Fix BD: Pan Churrasco Frica duplicados consolidados (160-162→159), 17 txs Brioche→Frica, 21 recetas actualizadas.
 
 ### 2026-04-21b — Recetas: secciones producto/ingredientes/insumos + emojis ingredientes
