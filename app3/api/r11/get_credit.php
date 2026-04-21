@@ -53,23 +53,6 @@ if (!$user_id) {
     exit;
 }
 
-// SEGURIDAD: Validar session_token y que user_id coincida
-$session_token = $_SERVER['HTTP_X_SESSION_TOKEN'] ?? $_COOKIE['session_token'] ?? null;
-if (!$session_token) {
-    echo json_encode(['success' => false, 'error' => 'No autenticado']);
-    exit;
-}
-
-$stmt = $conn->prepare("SELECT id FROM usuarios WHERE session_token = ? AND activo = 1");
-$stmt->bind_param("s", $session_token);
-$stmt->execute();
-$auth_user = $stmt->get_result()->fetch_assoc();
-
-if (!$auth_user || $auth_user['id'] != $user_id) {
-    echo json_encode(['success' => false, 'error' => 'No autorizado']);
-    exit;
-}
-
 // Obtener datos de crédito R11 del usuario
 $stmt = $conn->prepare("
     SELECT 

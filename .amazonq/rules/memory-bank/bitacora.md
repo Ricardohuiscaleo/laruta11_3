@@ -1,15 +1,15 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-20)
+## Estado Actual (2026-04-21)
 
 ### Aplicaciones Desplegadas
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`632d7f4`) |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`05d6b0a`) — fix crédito R11: prefijo R11C, paid, inventario, badge comandas |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0034f3a`) — stock deduction compuestos con resolveIngredientDeduction |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`609acd0`) — botón (+) crear ingrediente con categoría + smart search |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`3a8939d`) — botón ⚡ rendición rápida + botón (+) crear ingrediente |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`1873b95`) — knownRuts + packaging equivalences + cascadeCompositeCosts |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -98,6 +98,18 @@
 
 ## Sesiones Recientes
 
+### 2026-04-21a — Fix crédito R11: prefijo R11C, payment_status, inventario, badge comandas
+
+**Cambios:**
+- `app3/api/create_order.php`: Prefijo `R11C-` para órdenes con `r11_credit` (antes `T11-`). `payment_status = 'paid'` automático (antes `unpaid`). Descuento de inventario para `r11_credit` (antes solo `rl6_credit`). Logs dinámicos con `$payment_method`.
+- `app3/src/components/CheckoutApp.jsx`: Redirect a `/payment-success?order=...&method=r11_credit` (antes `/r11-pending` que no existía).
+- `app3/src/pages/payment-success.astro`: Método de pago dinámico — detecta param `method` y muestra label correcto (🏪 Crédito R11, 🎖️ Crédito RL6, etc).
+- `app3/src/pages/comandas/index.astro`: Badge `🏪 R11` verde esmeralda para órdenes `R11C-`.
+
+**Commits:** `05d6b0a`
+**Deploys:** app3 ✅ (`05d6b0a`)
+**BD:** Ricardo (id=4) `credito_r11_aprobado = 1`, `limite_credito_r11 = 50000`, `fecha_aprobacion_r11 = 2026-04-21`.
+
 ### 2026-04-20f — Reemplazo masivo ingredientes + MobileExtractionSheet fix + pipeline race condition
 
 **Cambios:**
@@ -148,21 +160,8 @@
 **Deploys:** mi3-backend ✅ (`5930ec3`), mi3-frontend ✅ (`09f5a91`)
 **BD:** Migración ejecutada — tabla `ingredient_recipes` creada, Carne Molida (id=163) insertada, Tocino stock corregido (58.50→2.93 kg), Hamburguesa R11 marcada compuesta con 3 hijos. Post-deploy: Tocino cost_per_unit corregido $399.59→$14,000/kg, Longaniza $5,000→$15,980/kg. Costo unitario hamburguesa ahora $1,693.30 (coincide con hc.html).
 
-### 2026-04-20b — Header unificado mi3-frontend: eliminar doble header móvil
-
-**Cambios:**
-- `mi3/frontend/components/admin/AdminShell.tsx`: Nuevo `UnifiedHeader` component renderizado por el shell. Secciones pasan tabs/trailing via `onHeaderConfig` callback. Exports: `SectionHeaderConfig`, `TabDef`. Limpieza de config al cambiar sección.
-- `mi3/frontend/components/admin/sections/ComprasSection.tsx`: Refactorizado — usa `onHeaderConfig` para pasar 6 tabs + budget trailing al header unificado. Eliminado import de `SectionHeader`.
-- `mi3/frontend/components/admin/sections/RecetasSection.tsx`: Refactorizado — usa `onHeaderConfig` para 4 tabs (Recetas, Ajuste Masivo, Recomendaciones, Auditoría).
-- `mi3/frontend/components/admin/sections/NotificacionesSection.tsx`: Refactorizado — usa `onHeaderConfig` para 4 filter tabs (Todos, Adelantos, Cambios, Sistema).
-- `mi3/frontend/components/admin/sections/ChecklistsSection.tsx`: Refactorizado — usa `onHeaderConfig` para 4 tabs con accent amber.
-- 11 secciones: `<h1>` cambiado a `hidden md:block` para evitar duplicación con header rojo móvil.
-
-**Commits:** `8914128`, `dd7fd15`, `05038b6`, `75df621`
-**Deploys:** mi3-frontend ✅ (`75df621`)
-
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c (ingredient-categories), 2026-04-19d (StockDashboard), 2026-04-19e (multi-agent-pipeline), 2026-04-19f (fixes post-deploy), 2026-04-19g (SectionHeader, fix upload), 2026-04-20a (ai-prompts-management), 2026-04-20b (header unificado) archivadas.
+> Sesiones 2026-04-19c→2026-04-20b archivadas. 2026-04-20b (header unificado) archivada esta sesión.
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

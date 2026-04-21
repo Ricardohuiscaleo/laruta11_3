@@ -368,11 +368,11 @@ const ProfileModalModern = ({
           </header>
 
           {/* Navegación de Tabs */}
-          <div className="px-4 mt-4">
+          <div className="px-1 mt-4">
             <div className="flex p-1 bg-slate-800 rounded-xl">
               <button 
                 onClick={() => setActiveTab('profile')}
-                className={`flex-1 py-3 text-sm sm:text-base font-extrabold rounded-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'profile' ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                className={`flex-1 py-3 text-sm sm:text-base font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'profile' ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
               >
                 <User size={18} />
                 <span>Perfil</span>
@@ -380,7 +380,7 @@ const ProfileModalModern = ({
 
               <button 
                 onClick={() => setActiveTab('wallet')}
-                className={`flex-1 py-3 text-sm sm:text-base font-extrabold rounded-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'wallet' ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                className={`flex-1 py-3 text-sm sm:text-base font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'wallet' ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
               >
                 <Wallet size={18} />
                 <span>Cashback</span>
@@ -389,7 +389,7 @@ const ProfileModalModern = ({
               {isMilitarRL6 && (
                 <button 
                   onClick={() => setActiveTab('rl6')}
-                  className={`flex-1 py-3 text-sm sm:text-base font-extrabold rounded-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'rl6' ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                  className={`flex-1 py-3 text-sm sm:text-base font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'rl6' ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
                 >
                   <CreditCard size={18} />
                   <span>Crédito</span>
@@ -399,16 +399,16 @@ const ProfileModalModern = ({
               {isCreditoR11 && (
                 <button 
                   onClick={() => setActiveTab('r11')}
-                  className={`flex-1 py-3 text-sm sm:text-base font-extrabold rounded-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'r11' ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                  className={`flex-1 py-3 text-sm sm:text-base font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'r11' ? 'bg-emerald-500 text-white shadow-md' : 'text-emerald-400 hover:text-emerald-300'}`}
                 >
                   <Banknote size={18} />
-                  <span>R11</span>
+                  <span>Crédito</span>
                 </button>
               )}
               
               <button 
                 onClick={() => setActiveTab('orders')}
-                className={`flex-1 py-3 text-sm sm:text-base font-extrabold rounded-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'orders' ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                className={`flex-1 py-3 text-sm sm:text-base font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'orders' ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
               >
                 <Truck size={18} />
                 <span>Pedidos</span>
