@@ -945,7 +945,12 @@ REGLAS BOLETA SUPERMERCADO CHILENO:
 
 RUTs conocidos:
 81.201.000-K = Jumbo/Santa Isabel (Cencosud)
-81.537.600-5 = Unimarc (Rendic/SMU)
+81.537.500-5 = Unimarc (Rendic Hermanos S.A. / SMU)
+
+EQUIVALENCIAS DE PACKAGING (supermercado):
+- "PAN DE COMPLETO XL" o "PAN COMPLETO": 1 bolsa = 6 unidades de pan. Si la boleta dice "3 x 1 UN", son 3 bolsas = 18 panes. Registrar cantidad=18, unidad=unidad, precio_unitario=total/18.
+- "PAN DE HAMBURGUESA": 1 bolsa = 4 unidades. Misma lógica.
+- Si el nombre del producto incluye "BOLSA" o "PACK", la cantidad de la boleta es bolsas, NO unidades individuales.
 
 {$patterns}
 RULES;

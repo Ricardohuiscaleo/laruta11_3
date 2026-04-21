@@ -1090,6 +1090,9 @@ class PipelineExtraccionService
             'santa isabel' => 'Santa Isabel',
             'jumbo' => 'Jumbo',
             'vanni' => 'vanni',
+            'rendic' => 'Unimarc',
+            'unimarc' => 'Unimarc',
+            'arauco' => 'Arauco',
         ];
 
         $allText = mb_strtolower(
