@@ -6,7 +6,7 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`ed1f0ff`) — fix crédito R11: prefijo R11C, paid, inventario, badge comandas, UI tabs |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`8931c75`) — crédito R11 completo, RL6 historial badges compra/pago |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0034f3a`) — stock deduction compuestos con resolveIngredientDeduction |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`3a8939d`) — botón ⚡ rendición rápida + botón (+) crear ingrediente |

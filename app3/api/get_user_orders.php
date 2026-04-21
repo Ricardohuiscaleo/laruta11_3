@@ -65,6 +65,7 @@ try {
             END as status_display
         FROM tuu_orders 
         WHERE user_id = ? AND payment_status = 'paid' AND order_status != 'cancelled'
+            AND order_number NOT LIKE 'RL6-%' AND order_number NOT LIKE 'RL6-MANUAL%'
         ORDER BY created_at DESC
     ");
     $stmt->execute([$user_id]);
@@ -102,6 +103,7 @@ try {
             SUM(installment_amount - COALESCE(delivery_fee, 0)) as total_spent
         FROM tuu_orders 
         WHERE user_id = ? AND payment_status = 'paid' AND order_status != 'cancelled'
+            AND order_number NOT LIKE 'RL6-%' AND order_number NOT LIKE 'RL6-MANUAL%'
     ");
     $statsStmt->execute([$user_id]);
     $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);

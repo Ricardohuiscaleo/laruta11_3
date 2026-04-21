@@ -842,7 +842,7 @@ const ProfileModalModern = ({
                       <h3 className="text-5xl font-black text-emerald-400">
                         ${parseInt(r11Credit.credit.credito_disponible || 0).toLocaleString('es-CL')}
                       </h3>
-                      <p className="text-slate-400 text-xs mt-2">Se descuenta de tu sueldo el día 1</p>
+                      <p className="text-slate-400 text-xs mt-2">Descuento automático</p>
                     </div>
                   </Card>
 
