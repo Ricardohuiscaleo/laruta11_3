@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`13eecde`) — crédito R11 completo: r11c-pending page, 10% desc, refund cancel |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`3231e67`) — R11C visible en MiniComandas, r11_refund_credit.php |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`821dbec`) — emojis ingredientes + recetas secciones producto/ingredientes/insumos |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`596945c`) — getRecipeDetail devuelve category de ingrediente |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2826e66`) — porciones estándar + creador recetas IA + emojis ingredientes |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`f03f289`) — tabla portion_standards + API porciones + RecipeAIService (Gemini) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -98,14 +98,21 @@
 
 ## Sesiones Recientes
 
-### 2026-04-21c — Fix BD: consolidar Pan Churrasco Frica + reemplazar Brioche en recetas
+### 2026-04-21d — Porciones estándar + Creador de recetas con IA (Gemini)
 
-**Cambios BD:**
-- Consolidar 4 duplicados "Pan de Churrasco Frica" (ids 159,160,161,162) → id 159 único. Ids 160-162 desactivados, stock sumado (7+5+5+5=22), 3 compras reasignadas.
-- Reasignar 17 transacciones de consumo de Pan Artesano Brioche (id 39) → Pan de Churrasco Frica (id 159). Total consumido: 14 unidades. Brioche stock: 104→118 (recuperó), Frica stock: 22→8 (descontó).
-- Reemplazar Brioche por Frica en 21 product_recipes (todos los sándwiches y hamburguesas).
-- Recalcular cost_price de 21 productos afectados.
-- Estado final: Brioche(39) stock=118 sin recetas, Frica(159) stock=8 con 21 recetas.
+**Cambios:**
+- `mi3/backend/database/migrations/2026_04_21_400000_create_portion_standards_table.php`: Tabla `portion_standards` (category_id, ingredient_id, quantity, unit) con 34 porciones seed para Hamburguesas, Sandwiches, Completos, Papas.
+- `mi3/backend/app/Models/PortionStandard.php`: Modelo con relaciones category/ingredient.
+- `mi3/backend/app/Http/Controllers/Admin/PortionController.php`: CRUD porciones + endpoint `POST suggest-recipe` con IA.
+- `mi3/backend/app/Services/Recipe/RecipeAIService.php`: Servicio Gemini 2.0 Flash — genera receta completa usando inventario real, porciones estándar, calcula costos reales, sugiere precio con margen 65%.
+- `mi3/backend/routes/api.php`: 4 rutas portions (GET index, GET show, PUT update, POST suggest-recipe).
+- `mi3/frontend/app/admin/recetas/porciones/page.tsx`: Tab "Porciones" — vista por categoría, edición inline, costo/unidad.
+- `mi3/frontend/app/admin/recetas/creador-ia/page.tsx`: Tab "Creador IA" — input descripción + categoría, genera receta con ingredientes, costos, precio, stock check, tips.
+- `mi3/frontend/components/admin/sections/RecetasSection.tsx`: 2 nuevas tabs (Scale, Sparkles).
+
+**Commits:** `2826e66`, `6152f94`, `f03f289`
+**Deploys:** mi3-frontend ✅ (`2826e66`), mi3-backend ✅ (`f03f289`)
+**BD:** Migración `portion_standards` ejecutada, 34 porciones seeded. Fix BD: Pan Churrasco Frica duplicados consolidados (160-162→159), 17 txs Brioche→Frica, 21 recetas actualizadas.
 
 ### 2026-04-21b — Recetas: secciones producto/ingredientes/insumos + emojis ingredientes
 
@@ -159,5 +166,5 @@
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-20d archivadas. Últimas archivadas: 2026-04-20c (sub-recetas-hamburguesas), 2026-04-20d (recetas-fix-integral).
+> Sesiones 2026-04-19c→2026-04-20f archivadas. Últimas: 2026-04-20d (recetas-fix-integral), 2026-04-20f (reemplazo masivo).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
