@@ -151,7 +151,7 @@ function ItemNameSearch({
     try {
       const data = await comprasApi.get<any[]>(`/compras/items?q=${encodeURIComponent(val)}`);
       setResults(data);
-      setOpen(data.length > 0);
+      setOpen(true);
     } catch { setResults([]); }
   };
 
@@ -179,16 +179,33 @@ function ItemNameSearch({
     setCreating(false);
   };
 
+  const noMatch = !ingredienteId && value.length >= 2;
+
   return (
     <div ref={ref} className="relative flex-1">
-      <input type="text" value={value} onChange={e => handleChange(e.target.value)}
-        onFocus={() => { if (value.length >= 2 && !ingredienteId) search(value); }}
-        className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-[15px] font-medium focus:border-mi3-500 focus:ring-1 focus:ring-mi3-500 transition-colors shadow-sm"
-        aria-label="Nombre ingrediente" />
+      <div className="flex gap-1.5">
+        <input type="text" value={value} onChange={e => handleChange(e.target.value)}
+          onFocus={() => { if (value.length >= 2 && !ingredienteId) search(value); }}
+          className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-[15px] font-medium focus:border-mi3-500 focus:ring-1 focus:ring-mi3-500 transition-colors shadow-sm"
+          aria-label="Nombre ingrediente" />
+
+        {/* (+) button — always visible when no match */}
+        {noMatch && !showCreate && (
+          <button type="button"
+            onClick={() => { setShowCreate(true); setCreateCat(categoriaSugerida || ''); setOpen(false); }}
+            className="shrink-0 flex items-center justify-center h-9 w-9 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition-colors shadow-sm"
+            aria-label="Crear ingrediente nuevo"
+            title="Crear ingrediente nuevo"
+          >
+            <Package className="h-4 w-4" />
+          </button>
+        )}
+      </div>
 
       {/* Search results dropdown */}
-      {open && results.length > 0 && !showCreate && (
-        <div className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-lg border bg-white shadow-lg">
+      {open && !showCreate && (results.length > 0 || (results.length === 0 && value.length >= 2)) && (
+        <div className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-lg border bg-white shadow-lg">
+          {results.length === 0 && <div className="px-3 py-2 text-xs text-gray-400">Sin resultados — usa (+) para crear</div>}
           {results.map((r: any) => (
             <button key={`${r.type}-${r.id}`} onClick={() => { onLink(r.id, r.name); onNameChange(r.name); setOpen(false); }}
               className="flex w-full items-center justify-between px-3 py-1.5 text-left text-sm hover:bg-gray-50 min-h-[36px]">
@@ -196,28 +213,13 @@ function ItemNameSearch({
               <span className="text-xs text-gray-400 shrink-0 ml-2">{r.current_stock ?? 0} {r.unit}</span>
             </button>
           ))}
-          <button onClick={() => { setShowCreate(true); setCreateCat(categoriaSugerida || ''); }}
-            className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 border-t font-medium min-h-[36px]">
-            <Sparkles className="h-3.5 w-3.5" /> Crear &quot;{value}&quot;
-          </button>
-        </div>
-      )}
-
-      {/* No results — show create directly */}
-      {open && results.length === 0 && value.length >= 2 && !showCreate && (
-        <div className="absolute z-20 mt-1 w-full rounded-lg border bg-white shadow-lg">
-          <div className="px-3 py-2 text-xs text-gray-400">Sin resultados</div>
-          <button onClick={() => { setShowCreate(true); setCreateCat(categoriaSugerida || ''); }}
-            className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 border-t font-medium min-h-[36px]">
-            <Sparkles className="h-3.5 w-3.5" /> Crear &quot;{value}&quot;
-          </button>
         </div>
       )}
 
       {/* Create ingredient inline form */}
       {showCreate && (
-        <div className="absolute z-20 mt-1 w-full rounded-lg border bg-white shadow-lg p-3 space-y-2">
-          <p className="text-xs font-medium text-gray-700">Crear: {value}</p>
+        <div className="absolute z-50 mt-1 w-full rounded-lg border bg-white shadow-xl p-3 space-y-2">
+          <p className="text-xs font-semibold text-gray-700">Crear: {value}</p>
           <select value={createCat} onChange={e => setCreateCat(e.target.value)}
             className="w-full rounded-md border border-gray-200 px-2 py-1.5 text-sm bg-white" aria-label="Categoría">
             <option value="">Sin categoría</option>
@@ -839,7 +841,7 @@ export default function RegistroPage() {
                 {group.items.length > 0 && (
                   <div className="space-y-1">
                     {group.items.map((item, ii) => (
-                      <div key={ii} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden mb-2 sm:mb-1">
+                      <div key={ii} className="rounded-xl border border-gray-200 bg-white shadow-sm mb-2 sm:mb-1">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3">
                           {/* Row 1: Nombre (Full width on mobile, flex-1 on desktop) */}
                           <div className="flex items-center gap-2 sm:flex-1 w-full">
