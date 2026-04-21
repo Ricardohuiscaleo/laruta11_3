@@ -5,7 +5,8 @@ import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
 import {
   Loader2, Search, ArrowUpDown, ChevronDown, AlertTriangle,
-  ArrowLeft, Plus, Trash2, Save, X,
+  ArrowLeft, Plus, Trash2, Save, X, Pencil, Image as ImageIcon,
+  Upload, Package, ShoppingBag,
 } from 'lucide-react';
 import type { ApiResponse } from '@/types';
 
@@ -34,7 +35,11 @@ interface RecipeIngredient {
 interface RecipeDetail {
   id: number;
   name: string;
+  description: string | null;
+  image_url: string | null;
+  sku: string | null;
   category_id: number | null;
+  subcategory_id: number | null;
   price: number;
   recipe_cost: number;
   margin: number | null;
@@ -48,6 +53,7 @@ interface IngredientOption {
   unit: string;
   cost_per_unit: number;
   type: string;
+  category?: string;
 }
 
 interface DraftIngredient {
@@ -57,6 +63,18 @@ interface DraftIngredient {
   unit: string;
   ingredient_unit: string;
   cost_per_unit: number;
+  category?: string;
+}
+
+interface CatalogCategory {
+  id: number;
+  name: string;
+}
+
+interface CatalogSubcategory {
+  id: number;
+  name: string;
+  category_id: number;
 }
 
 type SortField = 'name' | 'price' | 'cost' | 'margin';
@@ -64,6 +82,9 @@ type SortDir = 'asc' | 'desc';
 
 const TARGET_MARGIN = 65;
 const UNIT_OPTIONS = ['g', 'kg', 'ml', 'L', 'unidad'] as const;
+
+/* Ingredient categories that count as "insumos" (supplies, not food) */
+const INSUMO_CATEGORIES = ['Packaging', 'Limpieza', 'Gas', 'Servicios'];
 
 /* ─── Unit conversion for cost estimation ─── */
 const UNIT_FACTORS: Record<string, { base: string; factor: number }> = {
@@ -151,7 +172,6 @@ export default function RecetasPage() {
     }
   };
 
-  /* ── Inline editor: show when a product is selected ── */
   if (selectedProductId !== null) {
     return (
       <RecipeEditor
@@ -175,7 +195,6 @@ export default function RecetasPage() {
 
   return (
     <div className="space-y-3">
-      {/* Search + Category filter */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -204,13 +223,11 @@ export default function RecetasPage() {
         </div>
       </div>
 
-      {/* Summary */}
       <div className="text-xs text-gray-500">
         {filtered.length} producto{filtered.length !== 1 ? 's' : ''}
         {search || categoryFilter !== '' ? ` (de ${products.length} total)` : ''}
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto rounded-xl border bg-white shadow-sm">
         <table className="w-full text-sm">
           <thead className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
@@ -289,7 +306,7 @@ export default function RecetasPage() {
 }
 
 
-/* ─── Inline Recipe Editor ─── */
+/* ─── Inline Recipe Editor (with sections) ─── */
 
 function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => void }) {
   const [product, setProduct] = useState<RecipeDetail | null>(null);
@@ -300,6 +317,23 @@ function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => 
   const [ingredients, setIngredients] = useState<DraftIngredient[]>([]);
   const [hasExistingRecipe, setHasExistingRecipe] = useState(false);
 
+  /* Product edit fields */
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editCategoryId, setEditCategoryId] = useState<number | null>(null);
+  const [editSubcategoryId, setEditSubcategoryId] = useState<number | null>(null);
+  const [editImageUrl, setEditImageUrl] = useState<string | null>(null);
+  const [editSku, setEditSku] = useState<string | null>(null);
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  /* Catalog data */
+  const [catalogCategories, setCatalogCategories] = useState<CatalogCategory[]>([]);
+  const [catalogSubcategories, setCatalogSubcategories] = useState<CatalogSubcategory[]>([]);
+
+  /* All ingredients cache for category lookup */
+  const [allIngredients, setAllIngredients] = useState<IngredientOption[]>([]);
+
   const fetchDetail = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -308,6 +342,12 @@ function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => 
       const data = res.data!;
       setProduct(data);
       setHasExistingRecipe(data.ingredient_count > 0);
+      setEditName(data.name);
+      setEditDescription(data.description || '');
+      setEditCategoryId(data.category_id);
+      setEditSubcategoryId(data.subcategory_id);
+      setEditImageUrl(data.image_url);
+      setEditSku(data.sku);
       setIngredients(
         data.ingredients.map(i => ({
           ingredient_id: i.id,
@@ -325,7 +365,52 @@ function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => 
     }
   }, [productId]);
 
-  useEffect(() => { fetchDetail(); }, [fetchDetail]);
+  /* Fetch catalog + all ingredients on mount */
+  useEffect(() => {
+    fetchDetail();
+    apiFetch<ApiResponse<{ categories: CatalogCategory[]; subcategories: CatalogSubcategory[] }>>('/admin/recetas/catalogo')
+      .then(res => {
+        setCatalogCategories(res.data?.categories || []);
+        setCatalogSubcategories(res.data?.subcategories || []);
+      })
+      .catch(() => {});
+  }, [fetchDetail]);
+
+  /* Fetch all ingredients once for category mapping */
+  useEffect(() => {
+    apiFetch<any>('/admin/stock')
+      .then(res => {
+        const items = (res.items || [])
+          .filter((i: any) => i.type === 'ingredient')
+          .map((i: any) => ({
+            id: i.id, name: i.name, unit: i.unit,
+            cost_per_unit: Number(i.cost_per_unit) || 0,
+            type: i.type, category: i.category || '',
+          }));
+        setAllIngredients(items);
+      })
+      .catch(() => {});
+  }, []);
+
+  const filteredSubcategories = useMemo(
+    () => catalogSubcategories.filter(s => s.category_id === editCategoryId),
+    [catalogSubcategories, editCategoryId]
+  );
+
+  /* Enrich ingredients with category from allIngredients cache */
+  const enrichedIngredients = useMemo(() => {
+    const catMap = new Map(allIngredients.map(i => [i.id, i.category || '']));
+    return ingredients.map(i => ({ ...i, category: catMap.get(i.ingredient_id) || i.category || '' }));
+  }, [ingredients, allIngredients]);
+
+  const ingredientItems = useMemo(
+    () => enrichedIngredients.filter(i => !INSUMO_CATEGORIES.includes(i.category || '')),
+    [enrichedIngredients]
+  );
+  const insumoItems = useMemo(
+    () => enrichedIngredients.filter(i => INSUMO_CATEGORIES.includes(i.category || '')),
+    [enrichedIngredients]
+  );
 
   const handleAddIngredient = (opt: IngredientOption) => {
     if (ingredients.some(i => i.ingredient_id === opt.id)) {
@@ -335,7 +420,11 @@ function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => 
     }
     setIngredients(prev => [
       ...prev,
-      { ingredient_id: opt.id, name: opt.name, quantity: 0, unit: opt.unit || 'g', ingredient_unit: opt.unit || 'g', cost_per_unit: opt.cost_per_unit },
+      {
+        ingredient_id: opt.id, name: opt.name, quantity: 0,
+        unit: opt.unit || 'g', ingredient_unit: opt.unit || 'g',
+        cost_per_unit: opt.cost_per_unit, category: opt.category,
+      },
     ]);
   };
 
@@ -343,13 +432,13 @@ function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => 
     setIngredients(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleUpdate = (index: number, field: 'quantity' | 'unit', value: number | string) => {
+  const handleUpdate = (ingredientId: number, field: 'quantity' | 'unit', value: number | string) => {
     setIngredients(prev =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+      prev.map(item => (item.ingredient_id === ingredientId ? { ...item, [field]: value } : item))
     );
   };
 
-  const handleSave = async () => {
+  const handleSaveRecipe = async () => {
     if (ingredients.length === 0) {
       setError('Agrega al menos un ingrediente');
       setTimeout(() => setError(''), 3000);
@@ -376,13 +465,58 @@ function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => 
         method: hasExistingRecipe ? 'PUT' : 'POST',
         body: JSON.stringify(payload),
       });
-      setSuccessMsg('Receta guardada correctamente');
+      setSuccessMsg('Receta guardada');
       setTimeout(() => setSuccessMsg(''), 3000);
       await fetchDetail();
     } catch (e: any) {
       setError(e.message || 'Error al guardar receta');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveProduct = async () => {
+    setSavingProduct(true);
+    setError('');
+    try {
+      await apiFetch(`/admin/recetas/${productId}/producto`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: editName,
+          description: editDescription || null,
+          category_id: editCategoryId,
+          subcategory_id: editSubcategoryId,
+        }),
+      });
+      setSuccessMsg('Producto actualizado');
+      setTimeout(() => setSuccessMsg(''), 3000);
+      await fetchDetail();
+    } catch (e: any) {
+      setError(e.message || 'Error al guardar producto');
+    } finally {
+      setSavingProduct(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await apiFetch<{ success: boolean; image_url: string }>(
+        `/admin/recetas/${productId}/imagen`,
+        { method: 'POST', body: formData }
+      );
+      setEditImageUrl(res.image_url);
+      setSuccessMsg('Imagen subida');
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (e: any) {
+      setError(e.message || 'Error al subir imagen');
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -413,11 +547,7 @@ function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => 
   }
 
   if (!product) {
-    return (
-      <div className="rounded-lg bg-red-50 p-4 text-red-600">
-        {error || 'Producto no encontrado'}
-      </div>
-    );
+    return <div className="rounded-lg bg-red-50 p-4 text-red-600">{error || 'Producto no encontrado'}</div>;
   }
 
   return (
@@ -436,120 +566,248 @@ function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => 
             <h2 className="text-lg font-semibold text-gray-900">{product.name}</h2>
             <p className="text-sm text-gray-500">
               Precio: {formatCLP(product.price)}
-              {product.category_id != null && ` · Categoría ${product.category_id}`}
+              {editSku && <span className="ml-2 text-xs text-gray-400">SKU: {editSku}</span>}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <CostBadge cost={product.recipe_cost} margin={product.margin} />
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className={cn(
-              'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors min-h-[44px]',
-              saving ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'
-            )}
-            aria-label="Guardar receta"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Guardar
-          </button>
-        </div>
+        <CostBadge cost={product.recipe_cost} margin={product.margin} />
       </div>
 
       {/* Messages */}
       {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert">{error}</div>}
       {successMsg && <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600" role="status">{successMsg}</div>}
 
-      {/* Autocomplete */}
-      <IngredientAutocomplete onSelect={handleAddIngredient} excludeIds={ingredients.map(i => i.ingredient_id)} />
-
-      {/* Ingredients table */}
-      {ingredients.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
-          <Plus className="mx-auto h-8 w-8 text-gray-300" />
-          <p className="mt-2 text-sm text-gray-500">
-            Sin ingredientes. Usa el buscador para agregar ingredientes a la receta.
-          </p>
+      {/* ═══ SECTION 1: Producto ═══ */}
+      <section className="rounded-xl border bg-white shadow-sm" aria-labelledby="section-producto">
+        <div className="flex items-center gap-2 border-b bg-gray-50 px-4 py-3">
+          <Pencil className="h-4 w-4 text-gray-500" />
+          <h3 id="section-producto" className="text-sm font-medium text-gray-700">Producto</h3>
         </div>
-      ) : (
-        <div className="overflow-x-auto rounded-xl border bg-white shadow-sm">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
-              <tr>
-                <th className="px-4 py-3">Ingrediente</th>
-                <th className="px-4 py-3">Cantidad</th>
-                <th className="px-4 py-3">Unidad</th>
-                <th className="px-4 py-3 text-right hidden sm:table-cell">Costo/u</th>
-                <th className="px-4 py-3 text-right">Costo</th>
-                <th className="px-4 py-3 w-12"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {ingredients.map((item, index) => {
-                const cost = estimateCost(item);
-                return (
-                  <tr key={item.ingredient_id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-gray-900">{item.name}</td>
-                    <td className="px-4 py-3">
-                      <input
-                        type="number"
-                        value={item.quantity || ''}
-                        onChange={e => handleUpdate(index, 'quantity', Number(e.target.value))}
-                        min={0}
-                        step="any"
-                        className="w-24 rounded-md border border-gray-200 px-2 py-1.5 text-sm tabular-nums focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[44px]"
-                        aria-label={`Cantidad de ${item.name}`}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <select
-                        value={item.unit}
-                        onChange={e => handleUpdate(index, 'unit', e.target.value)}
-                        className="rounded-md border border-gray-200 px-2 py-1.5 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[44px]"
-                        aria-label={`Unidad de ${item.name}`}
-                      >
-                        {UNIT_OPTIONS.map(u => (
-                          <option key={u} value={u}>{u}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-gray-500 hidden sm:table-cell">
-                      {formatCLP(item.cost_per_unit)}/{item.ingredient_unit}
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums font-medium">
-                      {item.quantity > 0 ? formatCLP(cost) : '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() =>
-                          hasExistingRecipe
-                            ? handleDeleteIngredient(item.ingredient_id)
-                            : handleRemove(index)
-                        }
-                        className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
-                        aria-label={`Eliminar ${item.name}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="prod-name" className="block text-xs font-medium text-gray-500 mb-1">Nombre</label>
+              <input
+                id="prod-name" type="text" value={editName}
+                onChange={e => setEditName(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[44px]"
+              />
+            </div>
+            <div>
+              <label htmlFor="prod-sku" className="block text-xs font-medium text-gray-500 mb-1">SKU (automático)</label>
+              <input
+                id="prod-sku" type="text" value={editSku || 'Se genera al guardar'} readOnly
+                className="w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-sm text-gray-500 min-h-[44px]"
+              />
+            </div>
+            <div>
+              <label htmlFor="prod-cat" className="block text-xs font-medium text-gray-500 mb-1">Categoría</label>
+              <select
+                id="prod-cat" value={editCategoryId ?? ''}
+                onChange={e => { const v = e.target.value === '' ? null : Number(e.target.value); setEditCategoryId(v); setEditSubcategoryId(null); }}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[44px]"
+              >
+                <option value="">Sin categoría</option>
+                {catalogCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="prod-subcat" className="block text-xs font-medium text-gray-500 mb-1">Subcategoría</label>
+              <select
+                id="prod-subcat" value={editSubcategoryId ?? ''}
+                onChange={e => setEditSubcategoryId(e.target.value === '' ? null : Number(e.target.value))}
+                disabled={!editCategoryId}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[44px] disabled:bg-gray-50 disabled:text-gray-400"
+              >
+                <option value="">Sin subcategoría</option>
+                {filteredSubcategories.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label htmlFor="prod-desc" className="block text-xs font-medium text-gray-500 mb-1">Descripción</label>
+            <textarea
+              id="prod-desc" value={editDescription} onChange={e => setEditDescription(e.target.value)}
+              rows={3} placeholder="Descripción del producto (útil para IA y menú)..."
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300"
+            />
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-gray-500 mb-1">Foto del producto</label>
+              <div className="flex items-center gap-3">
+                {editImageUrl ? (
+                  <img src={editImageUrl} alt={editName} className="h-16 w-16 rounded-lg object-cover border" />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50">
+                    <ImageIcon className="h-6 w-6 text-gray-300" />
+                  </div>
+                )}
+                <label className={cn(
+                  'inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm hover:bg-gray-50 transition-colors min-h-[44px]',
+                  uploadingImage && 'opacity-50 pointer-events-none'
+                )}>
+                  {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  Subir foto
+                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                </label>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <button
+              onClick={handleSaveProduct} disabled={savingProduct}
+              className={cn(
+                'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors min-h-[44px]',
+                savingProduct ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
+              )}
+              aria-label="Guardar datos del producto"
+            >
+              {savingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Guardar producto
+            </button>
+          </div>
         </div>
-      )}
+      </section>
 
-      {/* Cost summary */}
+      {/* ═══ SECTION 2: Ingredientes ═══ */}
+      <section className="rounded-xl border bg-white shadow-sm" aria-labelledby="section-ingredientes">
+        <div className="flex items-center gap-2 border-b bg-gray-50 px-4 py-3">
+          <Package className="h-4 w-4 text-orange-500" />
+          <h3 id="section-ingredientes" className="text-sm font-medium text-gray-700">
+            Ingredientes <span className="text-xs text-gray-400">({ingredientItems.length})</span>
+          </h3>
+        </div>
+        <div className="p-4 space-y-3">
+          <IngredientAutocomplete onSelect={handleAddIngredient} excludeIds={ingredients.map(i => i.ingredient_id)} />
+          {ingredientItems.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+              <Plus className="mx-auto h-6 w-6 text-gray-300" />
+              <p className="mt-1 text-sm text-gray-500">Sin ingredientes. Usa el buscador para agregar.</p>
+            </div>
+          ) : (
+            <IngredientTable items={ingredientItems} onUpdate={handleUpdate} onDelete={handleDeleteIngredient} hasExistingRecipe={hasExistingRecipe} />
+          )}
+        </div>
+      </section>
+
+      {/* ═══ SECTION 3: Insumos ═══ */}
+      <section className="rounded-xl border bg-white shadow-sm" aria-labelledby="section-insumos">
+        <div className="flex items-center gap-2 border-b bg-gray-50 px-4 py-3">
+          <ShoppingBag className="h-4 w-4 text-purple-500" />
+          <h3 id="section-insumos" className="text-sm font-medium text-gray-700">
+            Insumos <span className="text-xs text-gray-400">({insumoItems.length})</span>
+            <span className="ml-2 text-xs text-gray-400">Packaging, Limpieza, Gas, Servicios</span>
+          </h3>
+        </div>
+        <div className="p-4">
+          {insumoItems.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+              <ShoppingBag className="mx-auto h-6 w-6 text-gray-300" />
+              <p className="mt-1 text-sm text-gray-500">Sin insumos. Agrega ingredientes de categoría Packaging, Limpieza, etc.</p>
+            </div>
+          ) : (
+            <IngredientTable items={insumoItems} onUpdate={handleUpdate} onDelete={handleDeleteIngredient} hasExistingRecipe={hasExistingRecipe} />
+          )}
+        </div>
+      </section>
+
+      {/* Cost summary + Save recipe */}
       {ingredients.length > 0 && (
         <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">Costo total de receta</span>
-            <span className="text-lg font-semibold tabular-nums">{formatCLP(totalCost)}</span>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm">
+              <span className="text-gray-500">Costo total receta: </span>
+              <span className="text-lg font-semibold tabular-nums">{formatCLP(totalCost)}</span>
+            </div>
+            <button
+              onClick={handleSaveRecipe} disabled={saving}
+              className={cn(
+                'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors min-h-[44px]',
+                saving ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'
+              )}
+              aria-label="Guardar receta"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Guardar receta
+            </button>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+
+/* ─── Reusable Ingredient Table ─── */
+
+function IngredientTable({
+  items, onUpdate, onDelete, hasExistingRecipe,
+}: {
+  items: DraftIngredient[];
+  onUpdate: (ingredientId: number, field: 'quantity' | 'unit', value: number | string) => void;
+  onDelete: (ingredientId: number) => void;
+  hasExistingRecipe: boolean;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-lg border">
+      <table className="w-full text-sm">
+        <thead className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
+          <tr>
+            <th className="px-3 py-2">Ingrediente</th>
+            <th className="px-3 py-2">Cantidad</th>
+            <th className="px-3 py-2">Unidad</th>
+            <th className="px-3 py-2 text-right hidden sm:table-cell">Costo/u</th>
+            <th className="px-3 py-2 text-right">Costo</th>
+            <th className="px-3 py-2 w-10"></th>
+          </tr>
+        </thead>
+        <tbody className="divide-y">
+          {items.map(item => {
+            const cost = estimateCost(item);
+            return (
+              <tr key={item.ingredient_id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-3 py-2 font-medium text-gray-900">{item.name}</td>
+                <td className="px-3 py-2">
+                  <input
+                    type="number"
+                    value={item.quantity || ''}
+                    onChange={e => onUpdate(item.ingredient_id, 'quantity', Number(e.target.value))}
+                    min={0} step="any"
+                    className="w-20 rounded-md border border-gray-200 px-2 py-1.5 text-sm tabular-nums focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[44px]"
+                    aria-label={`Cantidad de ${item.name}`}
+                  />
+                </td>
+                <td className="px-3 py-2">
+                  <select
+                    value={item.unit}
+                    onChange={e => onUpdate(item.ingredient_id, 'unit', e.target.value)}
+                    className="rounded-md border border-gray-200 px-2 py-1.5 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[44px]"
+                    aria-label={`Unidad de ${item.name}`}
+                  >
+                    {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums text-gray-500 hidden sm:table-cell">
+                  {formatCLP(item.cost_per_unit)}/{item.ingredient_unit}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums font-medium">
+                  {item.quantity > 0 ? formatCLP(cost) : '—'}
+                </td>
+                <td className="px-3 py-2">
+                  <button
+                    onClick={() => onDelete(item.ingredient_id)}
+                    className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                    aria-label={`Eliminar ${item.name}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -564,29 +822,25 @@ function CostBadge({ cost, margin }: { cost: number; margin: number | null }) {
       <span className="text-sm text-gray-500">Costo:</span>
       <span className="text-sm font-medium tabular-nums">{formatCLP(cost)}</span>
       {margin != null ? (
-        <span
-          className={cn(
-            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-            belowTarget ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
-          )}
-        >
+        <span className={cn(
+          'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+          belowTarget ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+        )}>
           {belowTarget && <AlertTriangle className="h-3 w-3" />}
           {margin.toFixed(1)}%
         </span>
       ) : (
-        <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
-          Sin receta
-        </span>
+        <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">Sin receta</span>
       )}
     </div>
   );
 }
 
-/* ─── IngredientAutocomplete ─── */
+
+/* ─── IngredientAutocomplete (FIXED search) ─── */
 
 function IngredientAutocomplete({
-  onSelect,
-  excludeIds,
+  onSelect, excludeIds,
 }: {
   onSelect: (opt: IngredientOption) => void;
   excludeIds: number[];
@@ -604,17 +858,23 @@ function IngredientAutocomplete({
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const data = await apiFetch<any[]>(`/admin/compras/items?q=${encodeURIComponent(query)}`);
+        const res = await apiFetch<any>(`/admin/compras/items?q=${encodeURIComponent(query)}`);
+        /* The endpoint returns an array directly (not wrapped in {items:...}) */
+        const data: any[] = Array.isArray(res) ? res : (res.items || res.data || []);
         const filtered = data
           .filter((item: any) => item.type === 'ingredient' && !excludeIds.includes(item.id))
           .map((item: any) => ({
             id: item.id, name: item.name, unit: item.unit,
-            cost_per_unit: Number(item.cost_per_unit) || 0, type: item.type,
+            cost_per_unit: Number(item.cost_per_unit) || 0,
+            type: item.type, category: item.category || '',
           }));
         setResults(filtered);
         setOpen(filtered.length > 0);
-      } catch { setResults([]); }
-      finally { setSearching(false); }
+      } catch {
+        setResults([]);
+      } finally {
+        setSearching(false);
+      }
     }, 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [query, excludeIds]);
@@ -629,7 +889,9 @@ function IngredientAutocomplete({
 
   const handleSelect = (opt: IngredientOption) => {
     onSelect(opt);
-    setQuery(''); setResults([]); setOpen(false);
+    setQuery('');
+    setResults([]);
+    setOpen(false);
   };
 
   return (
@@ -643,7 +905,7 @@ function IngredientAutocomplete({
           value={query}
           onChange={e => setQuery(e.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}
-          placeholder="Buscar ingrediente para agregar..."
+          placeholder="Buscar ingrediente o insumo para agregar..."
           className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-10 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[44px]"
           autoComplete="off"
           role="combobox"
@@ -672,7 +934,19 @@ function IngredientAutocomplete({
               onKeyDown={e => e.key === 'Enter' && handleSelect(opt)}
               tabIndex={0}
             >
-              <span className="font-medium text-gray-900">{opt.name}</span>
+              <div>
+                <span className="font-medium text-gray-900">{opt.name}</span>
+                {opt.category && (
+                  <span className={cn(
+                    'ml-2 text-xs rounded-full px-1.5 py-0.5',
+                    INSUMO_CATEGORIES.includes(opt.category)
+                      ? 'bg-purple-50 text-purple-600'
+                      : 'bg-orange-50 text-orange-600'
+                  )}>
+                    {opt.category}
+                  </span>
+                )}
+              </div>
               <span className="text-xs text-gray-500">{formatCLP(opt.cost_per_unit)}/{opt.unit}</span>
             </li>
           ))}
@@ -681,6 +955,7 @@ function IngredientAutocomplete({
     </div>
   );
 }
+
 
 /* ─── Sortable header helper ─── */
 

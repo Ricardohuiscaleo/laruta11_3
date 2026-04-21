@@ -6,8 +6,8 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`ae5c180`) — crédito R11 completo: 10% desc, refund cancel, use_credit auth fix |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`9b17c05`) — r11_refund_credit.php + stock deduction compuestos |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`13eecde`) — crédito R11 completo: r11c-pending page, 10% desc, refund cancel |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`3231e67`) — R11C visible en MiniComandas, r11_refund_credit.php |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`3a8939d`) — botón ⚡ rendición rápida + botón (+) crear ingrediente |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`1873b95`) — knownRuts + packaging equivalences + cascadeCompositeCosts |

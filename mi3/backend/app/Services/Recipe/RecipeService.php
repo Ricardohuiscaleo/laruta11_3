@@ -742,13 +742,81 @@ class RecipeService
         return [
             'id'               => $product->id,
             'name'             => $product->name,
+            'description'      => $product->description,
+            'image_url'        => $product->image_url,
+            'sku'              => $product->sku,
             'category_id'      => $product->category_id,
+            'subcategory_id'   => $product->subcategory_id,
             'price'            => (float) $product->price,
             'recipe_cost'      => $recipeCost,
             'margin'           => $this->calculateMargin((float) $product->price, $recipeCost),
             'ingredient_count' => count($ingredients),
             'ingredients'      => $ingredients,
         ];
+    }
+
+    /**
+     * Get all categories and subcategories for product catalog selectors.
+     */
+    public function getCatalog(): array
+    {
+        $categories = \Illuminate\Support\Facades\DB::select(
+            'SELECT id, name FROM categories WHERE is_active = 1 ORDER BY sort_order, name'
+        );
+
+        $subcategories = \Illuminate\Support\Facades\DB::select(
+            'SELECT id, name, category_id FROM subcategories ORDER BY name'
+        );
+
+        return [
+            'categories'    => array_map(fn ($c) => (array) $c, $categories),
+            'subcategories' => array_map(fn ($s) => (array) $s, $subcategories),
+        ];
+    }
+
+    /**
+     * Update product metadata (name, description, image, category, subcategory).
+     * Auto-generates SKU if not set.
+     */
+    public function updateProduct(int $productId, array $data): array
+    {
+        $product = Product::where('is_active', true)->findOrFail($productId);
+
+        $fillable = ['name', 'description', 'image_url', 'category_id', 'subcategory_id'];
+        foreach ($fillable as $field) {
+            if (array_key_exists($field, $data)) {
+                $product->{$field} = $data[$field];
+            }
+        }
+
+        // Auto-generate SKU if empty
+        if (empty($product->sku)) {
+            $product->sku = $this->generateSku($product);
+        }
+
+        $product->save();
+
+        return [
+            'id'             => $product->id,
+            'name'           => $product->name,
+            'description'    => $product->description,
+            'image_url'      => $product->image_url,
+            'sku'            => $product->sku,
+            'category_id'    => $product->category_id,
+            'subcategory_id' => $product->subcategory_id,
+        ];
+    }
+
+    /**
+     * Generate a SKU like "C01-S02-0042" from category, subcategory, and product id.
+     */
+    private function generateSku(Product $product): string
+    {
+        $catPart = $product->category_id ? sprintf('C%02d', $product->category_id) : 'C00';
+        $subPart = $product->subcategory_id ? sprintf('S%02d', $product->subcategory_id) : 'S00';
+        $idPart  = sprintf('%04d', $product->id);
+
+        return "{$catPart}-{$subPart}-{$idPart}";
     }
 
     /**

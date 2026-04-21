@@ -259,6 +259,82 @@ class RecipeController extends Controller
     }
 
     /**
+     * Get categories and subcategories for product selectors.
+     * GET /api/v1/admin/recetas/catalogo
+     */
+    public function catalogo(): JsonResponse
+    {
+        $catalog = $this->recipeService->getCatalog();
+
+        return response()->json(['success' => true, 'data' => $catalog]);
+    }
+
+    /**
+     * Update product metadata (name, description, image, category, subcategory).
+     * PUT /api/v1/admin/recetas/{productId}/producto
+     */
+    public function updateProduct(Request $request, int $productId): JsonResponse
+    {
+        try {
+            $request->validate([
+                'name'           => 'sometimes|string|max:255',
+                'description'    => 'nullable|string|max:2000',
+                'image_url'      => 'nullable|string|max:500',
+                'category_id'    => 'nullable|integer',
+                'subcategory_id' => 'nullable|integer',
+            ]);
+
+            $result = $this->recipeService->updateProduct($productId, $request->all());
+
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Producto no encontrado',
+            ], 404);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Upload product image.
+     * POST /api/v1/admin/recetas/{productId}/imagen
+     */
+    public function uploadProductImage(Request $request, int $productId): JsonResponse
+    {
+        try {
+            $request->validate([
+                'image' => 'required|image|max:5120',
+            ]);
+
+            $product = \App\Models\Product::where('is_active', true)->findOrFail($productId);
+
+            $file = $request->file('image');
+            $key = "productos/producto_{$productId}_" . time() . '.jpg';
+
+            \Illuminate\Support\Facades\Storage::disk('s3')->put($key, file_get_contents($file->getRealPath()));
+            $url = \Illuminate\Support\Facades\Storage::disk('s3')->url($key);
+
+            $product->image_url = $url;
+            $product->save();
+
+            return response()->json(['success' => true, 'image_url' => $url]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'error' => 'Producto no encontrado'], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al subir imagen: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Get price recommendations based on recipe cost and target margin.
      * GET /api/v1/admin/recetas/recommendations
      */
