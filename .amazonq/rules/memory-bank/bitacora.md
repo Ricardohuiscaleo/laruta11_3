@@ -98,6 +98,15 @@
 
 ## Sesiones Recientes
 
+### 2026-04-21c — Fix BD: consolidar Pan Churrasco Frica + reemplazar Brioche en recetas
+
+**Cambios BD:**
+- Consolidar 4 duplicados "Pan de Churrasco Frica" (ids 159,160,161,162) → id 159 único. Ids 160-162 desactivados, stock sumado (7+5+5+5=22), 3 compras reasignadas.
+- Reasignar 17 transacciones de consumo de Pan Artesano Brioche (id 39) → Pan de Churrasco Frica (id 159). Total consumido: 14 unidades. Brioche stock: 104→118 (recuperó), Frica stock: 22→8 (descontó).
+- Reemplazar Brioche por Frica en 21 product_recipes (todos los sándwiches y hamburguesas).
+- Recalcular cost_price de 21 productos afectados.
+- Estado final: Brioche(39) stock=118 sin recetas, Frica(159) stock=8 con 21 recetas.
+
 ### 2026-04-21b — Recetas: secciones producto/ingredientes/insumos + emojis ingredientes
 
 **Cambios:**
@@ -147,38 +156,8 @@
 **Deploys:** mi3-frontend ✅ (`2e85939`), mi3-backend ✅ (`1873b95`)
 **BD:** Fix compras_detalle #497: ingrediente_id 163→49 (Tocino registrado como Carne Molida). Carne Molida stock 5.38→4.52 kg, precio $14,000→$6,490/kg. Tocino stock 3.92→4.78 kg. cascadeCompositeCosts: Hamburguesa R11 $1,775.75→$1,613.40, 12 productos recalculados.
 
-### 2026-04-20d — Spec recetas-fix-integral: implementación completa
-
-**Cambios:**
-- BD: UPDATE tocino en 7 product_recipes (unidad→kg), recalcular cost_price de 50 productos, precios tocino $14,000/kg y longaniza $15,980/kg.
-- `mi3/frontend/app/admin/recetas/page.tsx`: Refactorizado — editor inline con `selectedProductId` en vez de `router.push`. Autocomplete, tabla ingredientes, save POST/PUT.
-- `mi3/frontend/app/admin/recetas/sub-recetas/page.tsx`: Label costo con unidad real (`$14.000/kg`).
-- `caja3/api/confirm_transfer_payment.php`: `deductProduct()` ahora detecta `is_composite` y descompone en hijos via `resolveIngredientDeduction()`.
-- `caja3/api/process_sale_inventory.php`: Misma lógica de descomposición con `resolveIngredientDeductionPSI()`.
-
-**Commits:** `0034f3a`, `7eaa539` (fix unit conversion)
-**Deploys:** mi3-frontend ✅, mi3-backend ✅, caja3 ✅
-**BD:** Tocino fix 7 recetas, 50 cost_price recalculados, precios ingredientes actualizados.
-
-### 2026-04-20c — Spec sub-recetas-hamburguesas: implementación completa
-
-**Cambios:**
-- `mi3/backend/database/migrations/2026_04_20_300000_create_ingredient_recipes_table.php`: Tabla `ingredient_recipes` + columna `is_composite` en ingredients + seed Carne Molida + fix stock Tocino + sub-receta Hamburguesa R11.
-- `mi3/backend/app/Models/IngredientRecipe.php`: Nuevo model con relaciones parent/child.
-- `mi3/backend/app/Models/Ingredient.php`: Agregado `is_composite` a fillable/casts + relaciones `subRecipeItems()`, `parentRecipes()`.
-- `mi3/backend/app/Services/Recipe/IngredientRecipeService.php`: CRUD + calculateCompositeCost + calculateCompositeStock con unit conversion.
-- `mi3/backend/app/Http/Controllers/Admin/IngredientRecipeController.php`: 4 endpoints REST.
-- `mi3/backend/routes/api.php`: 4 rutas ingredient-recipes en admin group.
-- `mi3/backend/app/Services/Recipe/RecipeService.php`: `calculateRecipeCost()` ahora detecta ingredientes compuestos y calcula costo desde hijos.
-- `mi3/frontend/app/admin/recetas/sub-recetas/page.tsx`: UI completa — lista cards, editor con autocomplete, calculadora de producción integrada.
-- `mi3/frontend/components/admin/sections/RecetasSection.tsx`: Nueva tab "Sub-Recetas" con icono Layers.
-
-**Commits:** `09f5a91`, `5930ec3` (fix FK type)
-**Deploys:** mi3-backend ✅ (`5930ec3`), mi3-frontend ✅ (`09f5a91`)
-**BD:** Migración ejecutada — tabla `ingredient_recipes` creada, Carne Molida (id=163) insertada, Tocino stock corregido (58.50→2.93 kg), Hamburguesa R11 marcada compuesta con 3 hijos. Post-deploy: Tocino cost_per_unit corregido $399.59→$14,000/kg, Longaniza $5,000→$15,980/kg. Costo unitario hamburguesa ahora $1,693.30 (coincide con hc.html).
-
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-20b archivadas. 2026-04-20b (header unificado), 2026-04-20c (sub-recetas-hamburguesas) archivadas.
+> Sesiones 2026-04-19c→2026-04-20d archivadas. Últimas archivadas: 2026-04-20c (sub-recetas-hamburguesas), 2026-04-20d (recetas-fix-integral).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
