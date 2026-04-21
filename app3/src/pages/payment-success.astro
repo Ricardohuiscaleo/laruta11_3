@@ -128,7 +128,7 @@ const amount = Astro.url.searchParams.get('amount');
                 
                 <div class="flex justify-between items-center py-2 border-b border-gray-100">
                     <span class="text-gray-600">Método:</span>
-                    <span class="font-semibold text-gray-800">Webpay</span>
+                    <span class="font-semibold text-gray-800" id="payment-method">Webpay</span>
                 </div>
                 
                 <div class="flex justify-between items-center py-2">
@@ -217,6 +217,21 @@ const amount = Astro.url.searchParams.get('amount');
             let orderProducts = [];
             let customerNotes = '';
             let deliveryInfo = {};
+
+            // Detectar método de pago
+            const method = urlParams.get('method');
+            const paymentMethodEl = document.getElementById('payment-method');
+            if (paymentMethodEl && method) {
+                const methodLabels = {
+                    'r11_credit': '🏪 Crédito R11',
+                    'rl6_credit': '🎖️ Crédito RL6',
+                    'transfer': 'Transferencia',
+                    'cash': 'Efectivo',
+                    'card': 'Tarjeta'
+                };
+                paymentMethodEl.textContent = methodLabels[method] || 'Webpay';
+            }
+
             if (orderRef) {
                 try {
                     const productsResponse = await fetch(`https://app.laruta11.cl/api/tuu/get_order_products_with_extras.php?order=${orderRef}`);

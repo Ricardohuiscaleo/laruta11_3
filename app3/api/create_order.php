@@ -63,13 +63,19 @@ try {
     $user_id = $input['user_id'] ?? null;
     $delivery_fee = $input['delivery_fee'] ?? 0;
     $cart_items = $input['cart_items'];
-    $payment_method = $input['payment_method'] ?? 'cash'; // cash, card, transfer, rl6_credit
-    $order_id = 'T11-' . time() . '-' . rand(1000, 9999);
+    $payment_method = $input['payment_method'] ?? 'cash'; // cash, card, transfer, rl6_credit, r11_credit
+    
+    // Prefijo según método de pago
+    if ($payment_method === 'r11_credit') {
+        $order_id = 'R11C-' . time() . '-' . rand(1000, 9999);
+    } else {
+        $order_id = 'T11-' . time() . '-' . rand(1000, 9999);
+    }
     
     error_log("Creating order $order_id for $customer_name, payment: $payment_method");
     
-    // Crédito RL6 se marca como pagado automáticamente
-    $payment_status = ($payment_method === 'rl6_credit') ? 'paid' : 'unpaid';
+    // Crédito RL6 y R11 se marcan como pagado automáticamente
+    $payment_status = in_array($payment_method, ['rl6_credit', 'r11_credit']) ? 'paid' : 'unpaid';
     // TODAS las órdenes van directo a cocina para que aparezcan en comandas
     $order_status = 'sent_to_kitchen';
     
@@ -287,10 +293,10 @@ try {
         $order_item_ids[$product_id] = $pdo->lastInsertId();
     }
     
-    // Descontar inventario para RL6 Credit ANTES de commit
-    if ($payment_method === 'rl6_credit') {
+    // Descontar inventario para crédito (RL6 y R11) ANTES de commit
+    if (in_array($payment_method, ['rl6_credit', 'r11_credit'])) {
         try {
-            error_log("RL6 Credit - Iniciando descuento de inventario para orden $order_id");
+            error_log("$payment_method - Iniciando descuento de inventario para orden $order_id");
             
             // Procesar cada item del carrito
             foreach ($cart_items as $item) {
@@ -298,7 +304,7 @@ try {
                 $quantity = $item['quantity'];
                 $current_order_item_id = $order_item_ids[$product_id] ?? null;
                 
-                error_log("RL6 Credit - Procesando producto ID: $product_id, cantidad: $quantity");
+                error_log("$payment_method - Procesando producto ID: $product_id, cantidad: $quantity");
                 
                 // Verificar si tiene receta
                 $recipe_stmt = $pdo->prepare("
@@ -311,7 +317,7 @@ try {
                 $recipe = $recipe_stmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 if (!empty($recipe)) {
-                    error_log("RL6 Credit - Producto $product_id tiene receta con " . count($recipe) . " ingredientes");
+                    error_log("$payment_method - Producto $product_id tiene receta con " . count($recipe) . " ingredientes");
                     
                     // Descontar ingredientes
                     foreach ($recipe as $ingredient) {
@@ -347,7 +353,7 @@ try {
                         ");
                         $update_stmt->execute([$new_stock, $ingredient['ingredient_id']]);
                         
-                        error_log("RL6 Credit - Descontado ingrediente {$ingredient['name']}: $total_needed {$ingredient['unit']}");
+                        error_log("$payment_method - Descontado ingrediente {$ingredient['name']}: $total_needed {$ingredient['unit']}");
                     }
                     
                     // Recalcular stock del producto
@@ -372,7 +378,7 @@ try {
                     ");
                     $recalc_stmt->execute([$product_id]);
                 } else {
-                    error_log("RL6 Credit - Producto $product_id SIN receta, descontando stock directo");
+                    error_log("$payment_method - Producto $product_id SIN receta, descontando stock directo");
                     
                     // Sin receta, descontar producto directo
                     $stock_stmt = $pdo->prepare("SELECT stock_quantity FROM products WHERE id = ?");
@@ -397,9 +403,9 @@ try {
                 }
             }
             
-            error_log("RL6 Credit - Inventario procesado exitosamente para orden $order_id");
+            error_log("$payment_method - Inventario procesado exitosamente para orden $order_id");
         } catch (Exception $inv_error) {
-            error_log("RL6 Credit - ERROR procesando inventario: " . $inv_error->getMessage());
+            error_log("$payment_method - ERROR procesando inventario: " . $inv_error->getMessage());
             throw $inv_error; // Re-lanzar para hacer rollback
         }
     }
@@ -463,7 +469,8 @@ try {
         'cash' => 'Orden creada - Confirmar pago en comandas',
         'card' => 'Orden creada - Confirmar pago en comandas',
         'transfer' => 'Orden creada - Confirmar pago en comandas',
-        'rl6_credit' => 'Orden pagada con Crédito RL6'
+        'rl6_credit' => 'Orden pagada con Crédito RL6',
+        'r11_credit' => 'Orden pagada con Crédito R11'
     ];
     
     echo json_encode([

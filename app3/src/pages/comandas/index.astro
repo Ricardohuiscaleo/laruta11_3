@@ -695,6 +695,8 @@
                                                                 order.payment_status === 'paid' ? 'text-green-700' : 'text-red-700'
                                                             }`
                                                         }, order.payment_status === 'paid' ? '✅ Pagado' : '❌ Pendiente'),
+                                                        order.order_number.startsWith('R11C-') ?
+                                                            h('span', { className: 'inline-block px-1 py-0.5 bg-emerald-100 text-emerald-800 rounded text-xs' }, '🏪 R11') :
                                                         order.order_number.startsWith('R11-') ?
                                                             h('span', { className: 'inline-block px-1 py-0.5 bg-blue-100 text-blue-800 rounded text-xs' }, '📱') :
                                                         order.order_number.startsWith('T11-') ?
