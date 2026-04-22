@@ -98,7 +98,7 @@
 
 ## Sesiones Recientes
 
-### 2026-04-22b — Fix pending pages: WhatsApp eliminado, combo_data en r11c, TypeScript en rl6
+### 2026-04-22b — Fix pending pages + uniformizar bebidas combos
 
 **Cambios:**
 - `app3/src/pages/transfer-pending.astro`: Eliminado botón WhatsApp + funciones JS asociadas. "Volver al Menú" como botón primario naranja.
@@ -113,6 +113,7 @@
 
 **Commits:** `0723c72`
 **Deploys:** app3 ✅, caja3 ✅ (ambos `0723c72`)
+**BD:** Uniformización bebidas combos — 6 combos de lata ahora tienen las mismas 15 opciones 350ml. Doble Mixta 8→15, Completo 11→15, Gorda 11→15, Dupla 8→15, Hamburguesa Clásica 5→15, Salchipapa 4→15. Familiar sin cambios (1.5Lt).
 
 ### 2026-04-22a — Spec combos-refactor: Fases 1-4 completas (código + deploy)
 
