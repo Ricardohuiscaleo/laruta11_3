@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Check, Plus } from 'lucide-react';
 
 const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
@@ -19,7 +19,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
 
   useEffect(() => {
     if (isOpen && combo) {
-      setSelections({});  // ✅ Resetear selecciones al abrir
+      setSelections({});
       loadComboData();
     }
   }, [isOpen, combo]);
@@ -27,56 +27,14 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
   const loadComboData = async () => {
     setLoading(true);
     try {
-      console.log('DEBUG-APP3-V4: Cargando combo', combo.name, 'con ID:', combo.id);
-      
-      // Map product names to real combo IDs
-      const comboMapping = {
-        'Combo Doble Mixta': 1,
-        'Combo Completo': 2, 
-        'Combo Gorda': 3,
-        'Combo Dupla': 4,
-        'Combo Salchipapa': 234,
-        'Combo Salchipapas': 234,
-        'Combo Salchipapas x2': 234
-      };
-      
-      let realComboId = comboMapping[combo.name] || combo.id;
-      
-      const fetchCombo = async (id) => {
-        const response = await fetch(`/api/get_combos.php?combo_id=${id}&v=${Date.now()}`);
-        return await response.json();
-      };
+      const response = await fetch(`/api/get_combos.php?product_id=${combo.id}&v=${Date.now()}`);
+      const data = await response.json();
 
-      let data = await fetchCombo(realComboId);
-
-      // Si no se encuentra por ID, intentar buscar por nombre en todos los combos
-      if (!data.success || !data.combos || data.combos.length === 0) {
-        console.log('DEBUG-APP3: Combo ID not found, searching by name...');
-        const allResponse = await fetch(`/api/get_combos.php?v=${Date.now()}`);
-        const allData = await allResponse.json();
-        
-        if (allData.success && allData.combos) {
-          // Buscar coincidencia exacta o por palabra clave
-          const match = allData.combos.find(c => 
-            c.name.toLowerCase() === combo.name.toLowerCase() ||
-            (combo.name.toLowerCase().includes('salchipapa') && c.name.toLowerCase().includes('salchipapa'))
-          );
-          
-          if (match) {
-            console.log('DEBUG-APP3: Match found by name:', match.name, 'ID:', match.id);
-            // Cargar los detalles de ese combo específico
-            data = await fetchCombo(match.id);
-          }
-        }
-      }
-
-      console.log('DEBUG-APP3: Final combo data received:', data);
-      
-      if (data.success && data.combos && data.combos.length > 0) {
-        const comboDetails = data.combos[0];
-        setComboData(comboDetails);
+      if (data.success && data.combo) {
+        setComboData(data.combo);
+      } else if (data.success && data.combos && data.combos.length > 0) {
+        setComboData(data.combos[0]);
       } else {
-        console.warn('DEBUG-APP3: No combo configuration found for:', combo.name);
         onClose();
         onAddToCart({
           ...combo,
@@ -86,7 +44,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
         return;
       }
     } catch (error) {
-      console.error('Error loading combo data:', error);
+      // Silent fail — modal will show error state
     }
     setLoading(false);
   };
@@ -96,19 +54,16 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
       const currentSelections = prev[groupName] || [];
       
       if (maxSelections === 1) {
-        // Single selection
         const isSelected = currentSelections === productId;
         return {
           ...prev,
           [groupName]: isSelected ? null : productId
         };
       } else {
-        // Multiple selection with quantities
         const currentArray = Array.isArray(currentSelections) ? currentSelections : [];
         const totalCount = currentArray.length;
         
         if (action === 'add') {
-          // Add one more of this product
           if (totalCount < maxSelections) {
             return {
               ...prev,
@@ -116,7 +71,6 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
             };
           }
         } else if (action === 'remove') {
-          // Remove one of this product
           const index = currentArray.indexOf(productId);
           if (index > -1) {
             const newArray = [...currentArray];
@@ -132,13 +86,37 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
     });
   };
 
+  // Calculate total price_adjustment from selections
+  const selectionsPriceAdjustment = useMemo(() => {
+    if (!comboData?.selection_groups) return 0;
+    let total = 0;
+    Object.entries(selections).forEach(([groupName, selection]) => {
+      const group = comboData.selection_groups[groupName];
+      if (!group) return;
+      const options = group.options || [];
+      if (Array.isArray(selection)) {
+        selection.forEach(productId => {
+          const opt = options.find(o => o.product_id === productId);
+          if (opt) total += (opt.price_adjustment || 0);
+        });
+      } else if (selection) {
+        const opt = options.find(o => o.product_id === selection);
+        if (opt) total += (opt.price_adjustment || 0);
+      }
+    });
+    return total;
+  }, [selections, comboData]);
+
+  const comboTotalPrice = useMemo(() => {
+    return (combo?.price || 0) + selectionsPriceAdjustment;
+  }, [combo?.price, selectionsPriceAdjustment]);
+
   const handleAddToCart = () => {
     if (!comboData) return;
     
-    // Validar que todas las selecciones requeridas estén completas
     const invalidGroups = [];
-    Object.entries(comboData.selection_groups || {}).forEach(([groupName, options]) => {
-      const maxSelections = options[0]?.max_selections || 1;
+    Object.entries(comboData.selection_groups || {}).forEach(([groupName, group]) => {
+      const maxSelections = group.max_selections || 1;
       const totalSelected = getTotalSelected(groupName);
       if (totalSelected !== maxSelections) {
         invalidGroups.push(`${groupName} (${totalSelected}/${maxSelections})`);
@@ -150,26 +128,26 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
       return;
     }
     
-    // Construir objeto con detalles de selecciones
     const detailedSelections = {};
     Object.entries(selections).forEach(([groupName, selection]) => {
-      const options = comboData.selection_groups?.[groupName];
+      const group = comboData.selection_groups?.[groupName];
+      const options = group?.options || [];
       if (Array.isArray(selection)) {
         detailedSelections[groupName] = selection.map(productId => {
-          const option = options?.find(o => o.product_id === productId);
+          const option = options.find(o => o.product_id === productId);
           return option ? {
             id: option.product_id,
             name: option.product_name,
-            price: option.additional_price || 0
+            price: option.price_adjustment || 0
           } : null;
         }).filter(Boolean);
       } else if (selection) {
-        const option = options?.find(o => o.product_id === selection);
+        const option = options.find(o => o.product_id === selection);
         if (option) {
           detailedSelections[groupName] = {
             id: option.product_id,
             name: option.product_name,
-            price: option.additional_price || 0
+            price: option.price_adjustment || 0
           };
         }
       }
@@ -177,6 +155,8 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
     
     const comboWithSelections = {
       ...combo,
+      price: comboTotalPrice,
+      basePrice: combo.price,
       selections: detailedSelections,
       fixed_items: comboData.fixed_items || [],
       quantity: 1
@@ -186,20 +166,6 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
     onClose();
   };
 
-  const getComboDisplayName = () => {
-    if (!comboData) return combo.name;
-    
-    let name = combo.name;
-    Object.entries(selections).forEach(([groupName, productId]) => {
-      const options = comboData.selection_groups?.[groupName];
-      const option = options?.find(o => o.product_id === productId);
-      if (option) {
-        name += ` + ${option.product_name}`;
-      }
-    });
-    return name;
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -207,7 +173,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
       <div className="bg-white w-full max-w-2xl mx-4 rounded-2xl flex flex-col animate-slide-up max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
         <div className="border-b flex justify-between items-center p-4">
           <h2 className="font-bold text-gray-800 text-xl">Personalizar Combo</h2>
-          <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-800">
+          <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-800" aria-label="Cerrar">
             <X size={24} />
           </button>
         </div>
@@ -227,15 +193,19 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                     src={combo.image_url || comboData.image_url} 
                     alt={combo.name} 
                     className="w-32 h-32 object-cover rounded-lg mx-auto mb-4" 
-                    onError={(e) => {
-                      console.log('Error loading combo image:', e.target.src);
-                      e.target.style.display = 'none';
-                    }}
+                    onError={(e) => { e.target.style.display = 'none'; }}
                   />
                 )}
                 <h3 className="text-2xl font-bold text-gray-800">{combo.name}</h3>
                 <p className="text-gray-600 mt-2">{combo.description}</p>
-                <p className="text-2xl font-bold text-orange-500 mt-2">${parseInt(combo.price).toLocaleString('es-CL')}</p>
+                <p className="text-2xl font-bold text-orange-500 mt-2">
+                  ${comboTotalPrice.toLocaleString('es-CL')}
+                  {selectionsPriceAdjustment > 0 && (
+                    <span className="text-sm font-normal text-gray-500 ml-2">
+                      (base ${parseInt(combo.price).toLocaleString('es-CL')} + ${selectionsPriceAdjustment.toLocaleString('es-CL')})
+                    </span>
+                  )}
+                </p>
               </div>
 
               {/* Fixed Items */}
@@ -250,10 +220,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                             src={item.image_url} 
                             alt={item.product_name} 
                             className="w-12 h-12 object-cover rounded" 
-                            onError={(e) => {
-                              console.log('Error loading item image:', e.target.src);
-                              e.target.style.display = 'none';
-                            }}
+                            onError={(e) => { e.target.style.display = 'none'; }}
                           />
                         )}
                         <div>
@@ -268,8 +235,9 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
               )}
 
               {/* Selection Groups */}
-              {comboData.selection_groups && Object.entries(comboData.selection_groups).map(([groupName, options], groupIndex) => {
-                const baseMaxSelections = options.length > 0 ? (options[0].max_selections || 1) : 1;
+              {comboData.selection_groups && Object.entries(comboData.selection_groups).map(([groupName, group], groupIndex) => {
+                const options = group.options || [];
+                const baseMaxSelections = group.max_selections || 1;
                 const maxSelections = baseMaxSelections * quantity;
                 const totalSelected = getTotalSelected(groupName);
                 return (
@@ -277,75 +245,79 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                     <h4 className="text-lg font-semibold text-gray-800 mb-3">
                       Elige tu {groupName} ({totalSelected}/{maxSelections}):
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {options.map((option, optionIndex) => {
-                        const currentCount = maxSelections === 1 
-                          ? (selections[groupName] === option.product_id ? 1 : 0)
-                          : (Array.isArray(selections[groupName]) ? selections[groupName].filter(id => id === option.product_id).length : 0);
-                        const totalSelected = Array.isArray(selections[groupName]) ? selections[groupName].length : (selections[groupName] ? 1 : 0);
-                        
-                        return (
-                          <div
-                            key={optionIndex}
-                            className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
-                              currentCount > 0
-                                ? 'border-orange-500 bg-orange-50'
-                                : 'border-gray-200'
-                            }`}
-                          >
-                            {option.image_url && (
-                              <img 
-                                src={option.image_url} 
-                                alt={option.product_name} 
-                                className="w-12 h-12 object-cover rounded" 
-                                onError={(e) => {
-                                  console.log('Error loading option image:', e.target.src);
-                                  e.target.style.display = 'none';
-                                }}
-                              />
-                            )}
-                            <div className="flex-1 text-left">
-                              <p className="font-medium text-gray-800">{option.product_name}</p>
-                              {option.additional_price > 0 ? (
-                                <p className="text-sm text-orange-600">+${parseInt(option.additional_price).toLocaleString('es-CL')}</p>
+                    {options.length === 0 ? (
+                      <p className="text-gray-500 italic">Sin opciones disponibles</p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {options.map((option, optionIndex) => {
+                          const currentCount = maxSelections === 1 
+                            ? (selections[groupName] === option.product_id ? 1 : 0)
+                            : (Array.isArray(selections[groupName]) ? selections[groupName].filter(id => id === option.product_id).length : 0);
+                          const totalSelected = Array.isArray(selections[groupName]) ? selections[groupName].length : (selections[groupName] ? 1 : 0);
+                          
+                          return (
+                            <div
+                              key={optionIndex}
+                              className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+                                currentCount > 0
+                                  ? 'border-orange-500 bg-orange-50'
+                                  : 'border-gray-200'
+                              }`}
+                            >
+                              {option.image_url && (
+                                <img 
+                                  src={option.image_url} 
+                                  alt={option.product_name} 
+                                  className="w-12 h-12 object-cover rounded" 
+                                  onError={(e) => { e.target.style.display = 'none'; }}
+                                />
+                              )}
+                              <div className="flex-1 text-left">
+                                <p className="font-medium text-gray-800">{option.product_name}</p>
+                                {option.price_adjustment > 0 ? (
+                                  <p className="text-sm text-orange-600">+${parseInt(option.price_adjustment).toLocaleString('es-CL')}</p>
+                                ) : (
+                                  <p className="text-sm text-green-600 font-medium">Incluido</p>
+                                )}
+                              </div>
+                              {maxSelections > 1 ? (
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections, 'remove')}
+                                    disabled={currentCount === 0}
+                                    className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-gray-700"
+                                    aria-label={`Quitar ${option.product_name}`}
+                                  >
+                                    -
+                                  </button>
+                                  <span className="w-8 text-center font-bold text-gray-800">{currentCount}</span>
+                                  <button
+                                    onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections, 'add')}
+                                    disabled={totalSelected >= maxSelections}
+                                    className="w-8 h-8 rounded-full bg-orange-500 hover:bg-orange-600 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-white"
+                                    aria-label={`Agregar ${option.product_name}`}
+                                  >
+                                    +
+                                  </button>
+                                </div>
                               ) : (
-                                <p className="text-sm text-green-600 font-medium">Incluido</p>
+                                <button
+                                  onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections)}
+                                  className="w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all hover:bg-orange-50"
+                                  aria-label={`Seleccionar ${option.product_name}`}
+                                >
+                                  {currentCount > 0 ? (
+                                    <Check className="text-orange-500" size={24} />
+                                  ) : (
+                                    <div className="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+                                  )}
+                                </button>
                               )}
                             </div>
-                            {maxSelections > 1 ? (
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections, 'remove')}
-                                  disabled={currentCount === 0}
-                                  className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-gray-700"
-                                >
-                                  -
-                                </button>
-                                <span className="w-8 text-center font-bold text-gray-800">{currentCount}</span>
-                                <button
-                                  onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections, 'add')}
-                                  disabled={totalSelected >= maxSelections}
-                                  className="w-8 h-8 rounded-full bg-orange-500 hover:bg-orange-600 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-white"
-                                >
-                                  +
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections)}
-                                className="w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all hover:bg-orange-50"
-                              >
-                                {currentCount > 0 ? (
-                                  <Check className="text-orange-500" size={24} />
-                                ) : (
-                                  <div className="w-5 h-5 rounded-full border-2 border-gray-300"></div>
-                                )}
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -364,7 +336,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
             className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
             <Plus size={20} />
-            Agregar al Carrito - ${combo?.price?.toLocaleString('es-CL')}
+            Agregar al Carrito - ${comboTotalPrice.toLocaleString('es-CL')}
           </button>
         </div>
       </div>

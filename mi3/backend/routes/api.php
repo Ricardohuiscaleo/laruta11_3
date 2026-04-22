@@ -212,6 +212,12 @@ Route::prefix('v1')->group(function () {
         Route::post('ingredient-recipes/{ingredientId}', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'store']);
         Route::delete('ingredient-recipes/{ingredientId}', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'destroy']);
 
+        // Combos (combo component management)
+        Route::get('combos', [\App\Http\Controllers\Admin\ComboController::class, 'index']);
+        Route::get('combos/{productId}', [\App\Http\Controllers\Admin\ComboController::class, 'show']);
+        Route::post('combos/{productId}', [\App\Http\Controllers\Admin\ComboController::class, 'store']);
+        Route::delete('combos/{productId}', [\App\Http\Controllers\Admin\ComboController::class, 'destroy']);
+
         // Porciones estándar + Creador IA
         Route::post('portions/suggest-recipe', [\App\Http\Controllers\Admin\PortionController::class, 'suggestRecipe']);
         Route::post('portions/save-variant', [\App\Http\Controllers\Admin\PortionController::class, 'saveVariant']);
