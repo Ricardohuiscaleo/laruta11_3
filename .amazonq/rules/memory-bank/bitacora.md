@@ -6,7 +6,7 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`7991e02`) — UX: rojo sólido, scroll continuo, sin hamburguesas 100g |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`00e32bc`) — UX: rojo sólido, scroll continuo, iconos rojos, auto-scroll barra |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0723c72`) — pending pages sin WhatsApp, "Volver a Caja" primario |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`f4f134b`) — tab Combos en Recetas, editor inline, autocomplete |
@@ -104,8 +104,8 @@
 - `app3/src/components/MenuApp.jsx`: Selector categorías gradiente→rojo sólido (`bg-red-600`). Eliminada flecha `<>` scroll. Scroll continuo entre categorías con IntersectionObserver + smooth scroll. Fix títulos debajo del header (`scroll-mt-[140px]`, `pt-[140px]`). Helper `getCategoryData()` para renderizar todas las categorías en secuencia.
 - BD: `menu_categories` id=2 (Hamburguesas 100g) desactivada. id=1 renombrada "Hamburguesas (200g)" → "Hamburguesas".
 
-**Commits:** `7991e02`
-**Deploys:** app3 ✅ (`7991e02`)
+**Commits:** `7991e02`, `00e32bc`
+**Deploys:** app3 ✅ (`00e32bc`)
 
 ### 2026-04-22b — Fix pending pages + uniformizar bebidas combos
 
