@@ -1493,6 +1493,15 @@ export default function App() {
     return () => observer.disconnect();
   }, [mainCategories]);
 
+  // Auto-scroll category bar to show active category button
+  useEffect(() => {
+    if (!categoriesScrollRef.current || !activeCategory) return;
+    const activeBtn = categoriesScrollRef.current.querySelector(`[data-cat="${activeCategory}"]`);
+    if (activeBtn) {
+      activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, [activeCategory]);
+
   const handleAddToCart = (product) => {
     // Abrir modal de combo para combos
     if (product.type === 'combo' || product.category_name === 'combos' || product.category_name === 'Combos') {
@@ -1955,10 +1964,10 @@ export default function App() {
                 onClick={() => { vibrate(30); setActiveCategory(cat); document.getElementById(`category-${cat}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
                 className={`w-full flex items-start gap-3 px-4 py-3 rounded-lg transition-all duration-200 mb-1.5 text-sm ${activeCategory === cat
                   ? 'bg-red-600 text-white shadow-md'
-                  : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600'
+                  : 'text-red-600 hover:bg-red-50 hover:text-red-700'
                   }`}
               >
-                <div className="flex items-center justify-center w-6 h-6 flex-shrink-0 mt-0.5" style={{ color: activeCategory === cat ? 'white' : categoryColors[cat] }}>
+                <div className="flex items-center justify-center w-6 h-6 flex-shrink-0 mt-0.5" style={{ color: activeCategory === cat ? 'white' : '#dc2626' }}>
                   {categoryIcons[cat]}
                 </div>
                 <span className="font-bold leading-tight whitespace-pre-line text-left">{categoryDisplayNames[cat]}</span>
@@ -2103,15 +2112,16 @@ export default function App() {
                     {mainCategories.map(cat => (
                       <button
                         key={cat}
+                        data-cat={cat}
                         onClick={() => { vibrate(30); setActiveCategory(cat); document.getElementById(`category-${cat}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
                         className={`flex flex-col items-center justify-center px-3 py-2 transition-all duration-200 text-xs font-bold min-h-[60px] min-w-[80px] rounded-lg ${activeCategory === cat
                           ? 'bg-red-600 text-white shadow-md'
-                          : 'text-gray-700 hover:text-orange-500 hover:bg-white bg-white border border-gray-200'
+                          : 'text-red-600 hover:text-red-700 hover:bg-white bg-white border border-gray-200'
                           }`}
                       >
                         <div
                           className="flex items-center justify-center h-5 mb-1"
-                          style={{ color: activeCategory === cat ? 'white' : categoryColors[cat] }}
+                          style={{ color: activeCategory === cat ? 'white' : '#dc2626' }}
                         >
                           {categoryIcons[cat]}
                         </div>
