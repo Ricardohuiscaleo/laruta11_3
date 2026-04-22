@@ -829,6 +829,7 @@ export default function App() {
   const [showRegisterBanner, setShowRegisterBanner] = useState(!user);
   const sessionLoadedRef = useRef(false);
   const categoriesScrollRef = useRef(null);
+  const scrollLockRef = useRef(false);
   const cartIconRef = useRef(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false);
@@ -1478,9 +1479,10 @@ export default function App() {
     
     let ticking = false;
     const handleScroll = () => {
-      if (ticking) return;
+      if (ticking || scrollLockRef.current) return;
       ticking = true;
       requestAnimationFrame(() => {
+        if (scrollLockRef.current) { ticking = false; return; }
         const headerOffset = 160; // header + categories bar height
         let currentCat = mainCategories[0];
         
@@ -1974,7 +1976,7 @@ export default function App() {
             {mainCategories.map(cat => (
               <button
                 key={cat}
-                onClick={() => { vibrate(30); setActiveCategory(cat); document.getElementById(`category-${cat}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                onClick={() => { vibrate(30); scrollLockRef.current = true; setActiveCategory(cat); document.getElementById(`category-${cat}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => { scrollLockRef.current = false; }, 800); }}
                 className={`w-full flex items-start gap-3 px-4 py-3 rounded-lg transition-all duration-200 mb-1.5 text-sm ${activeCategory === cat
                   ? 'bg-red-600 text-white shadow-md'
                   : 'text-red-600 hover:bg-red-50 hover:text-red-700'
@@ -2126,7 +2128,7 @@ export default function App() {
                       <button
                         key={cat}
                         data-cat={cat}
-                        onClick={() => { vibrate(30); setActiveCategory(cat); document.getElementById(`category-${cat}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                        onClick={() => { vibrate(30); scrollLockRef.current = true; setActiveCategory(cat); document.getElementById(`category-${cat}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => { scrollLockRef.current = false; }, 800); }}
                         className={`flex flex-col items-center justify-center px-3 py-2 transition-all duration-200 text-xs font-bold min-h-[60px] min-w-[80px] rounded-lg ${activeCategory === cat
                           ? 'bg-red-600 text-white shadow-md'
                           : 'text-red-600 hover:text-red-700 hover:bg-white bg-white border border-gray-200'
