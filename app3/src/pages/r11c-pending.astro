@@ -125,6 +125,26 @@
                             if (item.customizations && item.customizations.length > 0) {
                                 details = `<div class="item-details" style="color:#10b981;">+ ${item.customizations.map(c => `${c.quantity}x ${c.name}`).join(', ')}</div>`;
                             }
+                            // Combo items
+                            const comboIncludes = [];
+                            if (item.fixed_items && item.fixed_items.length > 0) {
+                                item.fixed_items.forEach(f => {
+                                    const name = typeof f === 'string' ? f : (f.product_name || f.name);
+                                    comboIncludes.push(`${item.quantity}x ${name}`);
+                                });
+                            }
+                            if (item.selections && typeof item.selections === 'object') {
+                                Object.values(item.selections).forEach(categoryItems => {
+                                    if (Array.isArray(categoryItems)) {
+                                        categoryItems.forEach(s => comboIncludes.push(`${item.quantity}x ${s.name || s.product_name}`));
+                                    } else if (categoryItems && typeof categoryItems === 'object') {
+                                        comboIncludes.push(`${item.quantity}x ${categoryItems.name || categoryItems.product_name}`);
+                                    }
+                                });
+                            }
+                            if (comboIncludes.length > 0) {
+                                details += `<div class="item-details">→ ${comboIncludes.join(', ')}</div>`;
+                            }
                             return `<div class="item"><div class="item-header"><span>${item.quantity}x ${item.name}</span><span>$${(item.price * item.quantity).toLocaleString('es-CL')}</span></div>${details}</div>`;
                         }).join('');
                     }
