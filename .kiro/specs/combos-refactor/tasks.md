@@ -143,12 +143,12 @@
 - [x] Vender 1x con Kem seleccionada
 - [x] Completo Italiano: ingredientes descontados (pan, montina, palta, tomate, mayo)
 - [x] Papas: ingredientes descontados (papa, aceite)
-- [ ] Kem: stock_quantity -1
+- [x] Kem: stock_quantity -1
 - [x] Combo padre (188): SIN descuento de ingredientes crudos
 
 ### T5.5: Inventario Combo Dupla (2 bebidas)
-- [ ] Vender con 2 bebidas diferentes
-- [ ] Hamburguesa -1, Ave Italiana -1, Papas -1, Bebida1 -1, Bebida2 -1
+- [x] Vender con 2 bebidas diferentes
+- [x] Hamburguesa -1, Ave Italiana -1, Papas -1, Bebida1 -1, Bebida2 -1
 
 ### T5.6: Price adjustment
 - [x] Monster +$1,000 en Combo Completo
