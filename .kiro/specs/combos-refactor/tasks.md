@@ -133,7 +133,7 @@
 - [x] Desactivar Coca-Cola (id=99) desde caja3
 - [x] app3: Combo Completo → Coca-Cola NO en opciones
 - [x] caja3: Combo Completo → Coca-Cola NO en opciones
-- [ ] mi3: editor muestra Coca-Cola gris "Inactivo"
+- [x] mi3: editor muestra Coca-Cola gris "Inactivo"
 
 ### T5.3: Reactivar bebida → reaparece
 - [x] Reactivar Coca-Cola
@@ -156,15 +156,15 @@
 - [x] caja3: mismo
 
 ### T5.7: Combo Familiar
-- [ ] 4x Completo + 1x Papas Medianas + 1x Bebida 1.5L
-- [ ] Agregar más opciones 1.5L
-- [ ] Inventario: 4 completos, 1 papas, 1 bebida
+- [x] 4x Completo + 1x Papas Medianas + 1x Bebida 1.5L
+- [x] Agregar más opciones 1.5L
+- [x] Inventario: 4 completos, 1 papas, 1 bebida
 
 ### T5.8: Órdenes históricas
 - [x] Comandas, VentasDetalle, cash-pending, rl6-pending muestran combos antiguos correctamente
 
 ### T5.9: Comandas detalle
-- [ ] Orden con combo → comanda muestra "Incluye:" correcto
+- [x] Orden con combo → comanda muestra "Incluye:" correcto
 
 ### T5.10: Grupo sin opciones activas
 - [x] Desactivar todas las bebidas lata → "Sin opciones disponibles" → botón deshabilitado
@@ -173,10 +173,10 @@
 - [x] Desactivar Papas Individuales → combos con papas fijas muestran warning
 
 ### T5.12: WhatsApp message
-- [ ] Orden con combo → mensaje incluye detalle fijos + selecciones
+- [x] ~~Orden con combo → mensaje incluye detalle fijos + selecciones~~ OBSOLETO — pending pages ya no tienen botón WhatsApp, solo "Volver al menú"
 
 ### T5.13: Cash-pending y rl6-pending
-- [ ] Combo pagado con efectivo/RL6 → detalle correcto en pending pages
+- [x] Combo pagado con efectivo/RL6 → detalle correcto en pending pages
 
 ### T5.14: Creador IA + Combos
 - [ ] Generar "combo familiar" → guardar → configurar como combo en tab Combos
