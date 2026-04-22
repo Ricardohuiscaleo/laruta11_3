@@ -6,8 +6,8 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`f4f134b`) — combos refactorizados: combo_components, sin comboMapping |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`f4f134b`) — combos refactorizados sync con app3 |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`0723c72`) — pending pages sin WhatsApp, combo_data en r11c-pending |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0723c72`) — pending pages sin WhatsApp, "Volver a Caja" primario |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`f4f134b`) — tab Combos en Recetas, editor inline, autocomplete |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`f4f134b`) — ComboService CRUD, migración combo_components, 4 endpoints REST |
@@ -97,6 +97,22 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-22b — Fix pending pages: WhatsApp eliminado, combo_data en r11c, TypeScript en rl6
+
+**Cambios:**
+- `app3/src/pages/transfer-pending.astro`: Eliminado botón WhatsApp + funciones JS asociadas. "Volver al Menú" como botón primario naranja.
+- `app3/src/pages/cash-pending.astro`: Mismo fix.
+- `app3/src/pages/card-pending.astro`: Mismo fix.
+- `app3/src/pages/rl6-pending.astro`: Eliminado WhatsApp + fix TypeScript syntax (`: any`, `: string[]`, `as any`, `window as any`) + fix `urlParams` duplicado.
+- `app3/src/pages/r11c-pending.astro`: Agregado combo_data handling (fixed_items + selections con →).
+- `caja3/src/pages/cash-pending.astro`: Eliminado botón WhatsApp. "Volver a Caja" como primario.
+- `caja3/src/pages/transfer-pending.astro`: Mismo fix.
+- `caja3/src/pages/card-pending.astro`: Mismo fix.
+- `caja3/src/pages/pedidosya-pending.astro`: Mismo fix.
+
+**Commits:** `0723c72`
+**Deploys:** app3 ✅, caja3 ✅ (ambos `0723c72`)
 
 ### 2026-04-22a — Spec combos-refactor: Fases 1-4 completas (código + deploy)
 
