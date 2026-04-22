@@ -130,14 +130,14 @@
 - [ ] Eliminar después
 
 ### T5.2: Desactivar bebida → desaparece de combos
-- [ ] Desactivar Coca-Cola (id=99) desde caja3
-- [ ] app3: Combo Completo → Coca-Cola NO en opciones
-- [ ] caja3: Combo Completo → Coca-Cola NO en opciones
+- [x] Desactivar Coca-Cola (id=99) desde caja3
+- [x] app3: Combo Completo → Coca-Cola NO en opciones
+- [x] caja3: Combo Completo → Coca-Cola NO en opciones
 - [ ] mi3: editor muestra Coca-Cola gris "Inactivo"
 
 ### T5.3: Reactivar bebida → reaparece
-- [ ] Reactivar Coca-Cola
-- [ ] Verificar reaparece en app3, caja3, mi3
+- [x] Reactivar Coca-Cola
+- [x] Verificar reaparece en app3, caja3, mi3
 
 ### T5.4: Inventario Combo Completo
 - [ ] Vender 1x con Kem seleccionada
@@ -161,7 +161,7 @@
 - [ ] Inventario: 4 completos, 1 papas, 1 bebida
 
 ### T5.8: Órdenes históricas
-- [ ] Comandas, VentasDetalle, cash-pending, rl6-pending muestran combos antiguos correctamente
+- [x] Comandas, VentasDetalle, cash-pending, rl6-pending muestran combos antiguos correctamente
 
 ### T5.9: Comandas detalle
 - [ ] Orden con combo → comanda muestra "Incluye:" correcto
