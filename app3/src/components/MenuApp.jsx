@@ -1472,46 +1472,38 @@ export default function App() {
     return categoryData;
   }, [menuWithImages]);
 
-  // IntersectionObserver to update activeCategory on scroll
+  // Scroll-based category tracking — updates activeCategory as user scrolls
   useEffect(() => {
-    // Track which sections are visible and pick the topmost one
-    const visibleSections = new Map();
+    if (mainCategories.length === 0) return;
     
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          const catKey = entry.target.id.replace('category-', '');
-          if (entry.isIntersecting) {
-            visibleSections.set(catKey, entry.boundingClientRect.top);
-          } else {
-            visibleSections.delete(catKey);
-          }
-        });
+    let ticking = false;
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const headerOffset = 160; // header + categories bar height
+        let currentCat = mainCategories[0];
         
-        // Pick the section closest to the top
-        if (visibleSections.size > 0) {
-          let topCat = null;
-          let topPos = Infinity;
-          visibleSections.forEach((top, cat) => {
-            if (top < topPos) {
-              topPos = top;
-              topCat = cat;
+        for (const cat of mainCategories) {
+          const el = document.getElementById(`category-${cat}`);
+          if (el) {
+            const rect = el.getBoundingClientRect();
+            if (rect.top <= headerOffset) {
+              currentCat = cat;
             }
-          });
-          if (topCat) {
-            setActiveCategory(topCat);
           }
         }
-      },
-      { rootMargin: '-140px 0px -30% 0px', threshold: [0, 0.1] }
-    );
-
-    mainCategories.forEach(cat => {
-      const el = document.getElementById(`category-${cat}`);
-      if (el) observer.observe(el);
-    });
-
-    return () => observer.disconnect();
+        
+        setActiveCategory(prev => prev !== currentCat ? currentCat : prev);
+        ticking = false;
+      });
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Run once on mount
+    handleScroll();
+    
+    return () => window.removeEventListener('scroll', handleScroll);
   }, [mainCategories]);
 
   // Auto-scroll category bar to show active category button
