@@ -828,7 +828,6 @@ export default function App() {
   const [isShareAppOpen, setIsShareAppOpen] = useState(false);
   const [showRegisterBanner, setShowRegisterBanner] = useState(!user);
   const sessionLoadedRef = useRef(false);
-  const [isScrolledToEnd, setIsScrolledToEnd] = useState(false);
   const categoriesScrollRef = useRef(null);
   const cartIconRef = useRef(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -1412,6 +1411,88 @@ export default function App() {
     return Array.isArray(menu[activeCategory]) ? menu[activeCategory] : [];
   }, [activeCategory, menuWithImages]);
 
+  // Helper to get category data for a given category key
+  const getCategoryData = useCallback((catKey) => {
+    let categoryData = menuWithImages[catKey];
+
+    if (catKey === 'hamburguesas_100g') {
+      categoryData = {};
+      Object.entries(menuWithImages.hamburguesas || {}).forEach(([subCat, products]) => {
+        const filtered = products.filter(p => p.subcategory_id === 5);
+        if (filtered.length > 0) categoryData[subCat] = filtered;
+      });
+    } else if (catKey === 'hamburguesas') {
+      categoryData = {};
+      Object.entries(menuWithImages.hamburguesas || {}).forEach(([subCat, products]) => {
+        const filtered = products.filter(p => p.subcategory_id !== 5);
+        if (filtered.length > 0) categoryData[subCat] = filtered;
+      });
+    } else if (catKey === 'papas') {
+      categoryData = { papas: menuWithImages.papas?.papas?.filter(p => p.category_id === 12) || [] };
+    } else if (catKey === 'pizzas') {
+      categoryData = { pizzas: [] };
+      Object.values(menuWithImages).forEach(category => {
+        if (Array.isArray(category)) {
+          categoryData.pizzas.push(...category.filter(p => p.category_id === 5 && p.subcategory_id === 60));
+        } else {
+          Object.values(category).forEach(subcat => {
+            if (Array.isArray(subcat)) {
+              categoryData.pizzas.push(...subcat.filter(p => p.category_id === 5 && p.subcategory_id === 60));
+            }
+          });
+        }
+      });
+    } else if (catKey === 'bebidas') {
+      categoryData = {};
+      const bebidasSubcats = { 11: 'bebidas', 10: 'jugos', 28: 'té', 27: 'café' };
+      Object.values(menuWithImages).forEach(category => {
+        if (Array.isArray(category)) {
+          category.filter(p => p.category_id === 5 && [11, 10, 28, 27].includes(p.subcategory_id)).forEach(p => {
+            const subName = bebidasSubcats[p.subcategory_id];
+            if (!categoryData[subName]) categoryData[subName] = [];
+            categoryData[subName].push(p);
+          });
+        } else {
+          Object.values(category).forEach(subcat => {
+            if (Array.isArray(subcat)) {
+              subcat.filter(p => p.category_id === 5 && [11, 10, 28, 27].includes(p.subcategory_id)).forEach(p => {
+                const subName = bebidasSubcats[p.subcategory_id];
+                if (!categoryData[subName]) categoryData[subName] = [];
+                categoryData[subName].push(p);
+              });
+            }
+          });
+        }
+      });
+    } else if (catKey === 'combos') {
+      categoryData = menuWithImages.combos || {};
+    }
+
+    return categoryData;
+  }, [menuWithImages]);
+
+  // IntersectionObserver to update activeCategory on scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const catKey = entry.target.id.replace('category-', '');
+            setActiveCategory(catKey);
+          }
+        });
+      },
+      { rootMargin: '-150px 0px -60% 0px', threshold: 0 }
+    );
+
+    mainCategories.forEach(cat => {
+      const el = document.getElementById(`category-${cat}`);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [mainCategories]);
+
   const handleAddToCart = (product) => {
     // Abrir modal de combo para combos
     if (product.type === 'combo' || product.category_name === 'combos' || product.category_name === 'Combos') {
@@ -1871,9 +1952,9 @@ export default function App() {
             {mainCategories.map(cat => (
               <button
                 key={cat}
-                onClick={() => { vibrate(30); setActiveCategory(cat); }}
+                onClick={() => { vibrate(30); setActiveCategory(cat); document.getElementById(`category-${cat}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
                 className={`w-full flex items-start gap-3 px-4 py-3 rounded-lg transition-all duration-200 mb-1.5 text-sm ${activeCategory === cat
-                  ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-md'
+                  ? 'bg-red-600 text-white shadow-md'
                   : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600'
                   }`}
               >
@@ -2017,18 +2098,14 @@ export default function App() {
                 <div
                   ref={categoriesScrollRef}
                   className="overflow-x-auto scrollbar-visible bg-gray-50 rounded-lg p-2 border border-gray-200"
-                  onScroll={(e) => {
-                    const { scrollLeft, scrollWidth, clientWidth } = e.target;
-                    setIsScrolledToEnd(scrollLeft + clientWidth >= scrollWidth - 5);
-                  }}
                 >
                   <div className="flex gap-2">
                     {mainCategories.map(cat => (
                       <button
                         key={cat}
-                        onClick={() => { vibrate(30); setActiveCategory(cat); }}
+                        onClick={() => { vibrate(30); setActiveCategory(cat); document.getElementById(`category-${cat}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
                         className={`flex flex-col items-center justify-center px-3 py-2 transition-all duration-200 text-xs font-bold min-h-[60px] min-w-[80px] rounded-lg ${activeCategory === cat
-                          ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-md'
+                          ? 'bg-red-600 text-white shadow-md'
                           : 'text-gray-700 hover:text-orange-500 hover:bg-white bg-white border border-gray-200'
                           }`}
                       >
@@ -2134,20 +2211,7 @@ export default function App() {
           </div>
         </header>
 
-        {/* Banner de deslizar categorías - Solo móvil */}
-        <div className={`sm:hidden fixed top-[115px] right-2 z-40 transition-all duration-300`}>
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            className={`transition-transform duration-300 text-gray-600 ${isScrolledToEnd ? 'rotate-180' : ''} ${!isScrolledToEnd ? 'animate-bounce-horizontal' : ''}`}
-          >
-            <path d="M9 5l7 7-7 7" />
-          </svg>
-        </div>
+
 
         {/* Cart Sidebar - Solo PC */}
         <aside className="hidden lg:flex lg:flex-col fixed right-0 top-0 bottom-0 w-96 bg-white border-l border-gray-200 z-30 overflow-y-auto">
@@ -2299,149 +2363,86 @@ export default function App() {
           )}
         </aside>
 
-        <main className={`px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-3xl sm:max-w-3xl lg:max-w-5xl mx-auto pb-20 lg:ml-64 lg:mr-96 ${!user ? 'pt-[180px] sm:pt-[160px]' : 'pt-32 sm:pt-28'
-          }`}>
-          {(activeCategory === 'churrascos' || activeCategory === 'hamburguesas' || activeCategory === 'hamburguesas_100g' || activeCategory === 'completos' || activeCategory === 'papas' || activeCategory === 'pizzas' || activeCategory === 'bebidas' || activeCategory === 'combos') ? (
-            <div className="space-y-8">
-              {(() => {
-                let categoryData = menuWithImages[activeCategory];
+        <main className={`px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-3xl sm:max-w-3xl lg:max-w-5xl mx-auto pb-20 lg:ml-64 lg:mr-96 pt-[140px] sm:pt-[80px]`}>
+          <div className="space-y-10">
+            {mainCategories.filter(cat => cat !== 'personalizar' && cat !== 'extras').map(cat => {
+              const categoryData = getCategoryData(cat);
+              if (!categoryData || (typeof categoryData === 'object' && !Array.isArray(categoryData) && Object.keys(categoryData).length === 0)) return null;
 
-                // Filtro para hamburguesas 100g (solo clásicas)
-                if (activeCategory === 'hamburguesas_100g') {
-                  categoryData = {};
-                  Object.entries(menuWithImages.hamburguesas || {}).forEach(([subCat, products]) => {
-                    const filtered = products.filter(p => p.subcategory_id === 5);
-                    if (filtered.length > 0) categoryData[subCat] = filtered;
-                  });
-                }
+              // Determine if this category has subcategories (object) or is flat (array)
+              const isNested = !Array.isArray(categoryData) && typeof categoryData === 'object';
 
-                // Filtro para hamburguesas 200g (excluir clásicas)
-                if (activeCategory === 'hamburguesas') {
-                  categoryData = {};
-                  Object.entries(menuWithImages.hamburguesas || {}).forEach(([subCat, products]) => {
-                    const filtered = products.filter(p => p.subcategory_id !== 5);
-                    if (filtered.length > 0) categoryData[subCat] = filtered;
-                  });
-                }
+              // Get ordered entries for nested categories
+              let orderedEntries = isNested ? Object.entries(categoryData) : null;
+              if (cat === 'completos' && isNested) {
+                orderedEntries = [
+                  ['tradicionales', categoryData.tradicionales || []],
+                  ['especiales', categoryData.especiales || []]
+                ];
+              }
+              if (cat === 'bebidas' && isNested) {
+                orderedEntries = [
+                  ['bebidas', categoryData.bebidas || []],
+                  ['jugos', categoryData.jugos || []],
+                  ['té', categoryData.té || []],
+                  ['café', categoryData.café || []]
+                ];
+              }
 
-                // Filtro para Papas (Cat 12, Subcat 9 y 57)
-                if (activeCategory === 'papas') {
-                  categoryData = { papas: menuWithImages.papas?.papas?.filter(p => p.category_id === 12) || [] };
-                }
-
-                // Filtro para Pizzas (Cat 5, Subcat 60)
-                if (activeCategory === 'pizzas') {
-                  categoryData = { pizzas: [] };
-                  Object.values(menuWithImages).forEach(category => {
-                    if (Array.isArray(category)) {
-                      categoryData.pizzas.push(...category.filter(p => p.category_id === 5 && p.subcategory_id === 60));
-                    } else {
-                      Object.values(category).forEach(subcat => {
-                        if (Array.isArray(subcat)) {
-                          categoryData.pizzas.push(...subcat.filter(p => p.category_id === 5 && p.subcategory_id === 60));
-                        }
-                      });
-                    }
-                  });
-                }
-
-                // Filtro para Bebidas (Cat 5, Subcat 11, 10, 28, 27)
-                if (activeCategory === 'bebidas') {
-                  categoryData = {};
-                  const bebidasSubcats = { 11: 'bebidas', 10: 'jugos', 28: 'té', 27: 'café' };
-                  Object.values(menuWithImages).forEach(category => {
-                    if (Array.isArray(category)) {
-                      category.filter(p => p.category_id === 5 && [11, 10, 28, 27].includes(p.subcategory_id)).forEach(p => {
-                        const subName = bebidasSubcats[p.subcategory_id];
-                        if (!categoryData[subName]) categoryData[subName] = [];
-                        categoryData[subName].push(p);
-                      });
-                    } else {
-                      Object.values(category).forEach(subcat => {
-                        if (Array.isArray(subcat)) {
-                          subcat.filter(p => p.category_id === 5 && [11, 10, 28, 27].includes(p.subcategory_id)).forEach(p => {
-                            const subName = bebidasSubcats[p.subcategory_id];
-                            if (!categoryData[subName]) categoryData[subName] = [];
-                            categoryData[subName].push(p);
-                          });
-                        }
-                      });
-                    }
-                  });
-                }
-
-                // Filtro para Combos (Cat 8) - Mostrar como productos que abren modal
-                if (activeCategory === 'combos') {
-                  categoryData = menuWithImages.combos || {};
-                }
-
-                if (!categoryData || Object.keys(categoryData).length === 0) return null;
-                let orderedEntries = Object.entries(categoryData);
-
-                // Orden específico para completos
-                if (activeCategory === 'completos') {
-                  orderedEntries = [
-                    ['tradicionales', categoryData.tradicionales || []],
-                    ['especiales', categoryData.especiales || []]
-                  ];
-                }
-
-                // Orden específico para bebidas
-                if (activeCategory === 'bebidas') {
-                  orderedEntries = [
-                    ['bebidas', categoryData.bebidas || []],
-                    ['jugos', categoryData.jugos || []],
-                    ['té', categoryData.té || []],
-                    ['café', categoryData.café || []]
-                  ];
-                }
-
-                return orderedEntries
-                  .filter(([subCategory, products]) => products && products.length > 0)
-                  .map(([subCategory, products]) => (
-                    <section key={subCategory} id={subCategory}>
-                      <h2 className="text-2xl sm:text-3xl font-black text-gray-800 capitalize border-b-2 border-orange-500 pb-2 px-2 mb-2">{subCategory === 'papas' ? 'Papas Fritas ❤️' : subCategory}</h2>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 mt-4">
-                        {products.map(product => (
-                          <MenuItem
-                            key={product.id}
-                            product={product}
-                            type={product.subcategory_name || subCategory}
-                            onSelect={null}
-                            onAddToCart={handleAddToCart}
-                            onRemoveFromCart={handleRemoveFromCart}
-                            quantity={getProductQuantity(product.id)}
-                            isLiked={likedProducts.has(product.id)}
-                            handleLike={handleLike}
-                            setReviewsModalProduct={setReviewsModalProduct}
-                            onShare={setShareModalProduct}
-                            setQuickViewProduct={setQuickViewProduct}
-                          />
+              return (
+                <div key={cat} id={`category-${cat}`} className="scroll-mt-[140px]">
+                  <h2 className="text-xl font-bold text-gray-800 mb-4 pt-4">{categoryDisplayNames[cat]}</h2>
+                  {isNested ? (
+                    <div className="space-y-8">
+                      {orderedEntries
+                        .filter(([, products]) => products && products.length > 0)
+                        .map(([subCategory, products]) => (
+                          <section key={subCategory}>
+                            <h3 className="text-lg font-black text-gray-700 capitalize border-b-2 border-orange-500 pb-2 px-2 mb-2">{subCategory === 'papas' ? 'Papas Fritas ❤️' : subCategory}</h3>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 mt-4">
+                              {products.map(product => (
+                                <MenuItem
+                                  key={product.id}
+                                  product={product}
+                                  type={product.subcategory_name || subCategory}
+                                  onSelect={null}
+                                  onAddToCart={handleAddToCart}
+                                  onRemoveFromCart={handleRemoveFromCart}
+                                  quantity={getProductQuantity(product.id)}
+                                  isLiked={likedProducts.has(product.id)}
+                                  handleLike={handleLike}
+                                  setReviewsModalProduct={setReviewsModalProduct}
+                                  onShare={setShareModalProduct}
+                                  setQuickViewProduct={setQuickViewProduct}
+                                />
+                              ))}
+                            </div>
+                          </section>
                         ))}
-                      </div>
-                    </section>
-                  ));
-              })()}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-              {productsToShow.map(product => (
-                <MenuItem
-                  key={product.id}
-                  product={product}
-                  onSelect={null}
-                  onAddToCart={handleAddToCart}
-                  onRemoveFromCart={handleRemoveFromCart}
-                  quantity={getProductQuantity(product.id)}
-                  isLiked={likedProducts.has(product.id)}
-                  handleLike={handleLike}
-                  setReviewsModalProduct={setReviewsModalProduct}
-                  onShare={setShareModalProduct}
-                  setQuickViewProduct={setQuickViewProduct}
-                />
-              ))}
-            </div>
-          )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
+                      {(Array.isArray(categoryData) ? categoryData : []).map(product => (
+                        <MenuItem
+                          key={product.id}
+                          product={product}
+                          onSelect={null}
+                          onAddToCart={handleAddToCart}
+                          onRemoveFromCart={handleRemoveFromCart}
+                          quantity={getProductQuantity(product.id)}
+                          isLiked={likedProducts.has(product.id)}
+                          handleLike={handleLike}
+                          setReviewsModalProduct={setReviewsModalProduct}
+                          onShare={setShareModalProduct}
+                          setQuickViewProduct={setQuickViewProduct}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </main>
 
         {/* Modal de Búsqueda */}
