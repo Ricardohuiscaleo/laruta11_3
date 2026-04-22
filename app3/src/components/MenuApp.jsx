@@ -1444,10 +1444,11 @@ export default function App() {
       });
     } else if (catKey === 'bebidas') {
       categoryData = {};
-      const bebidasSubcats = { 11: 'bebidas', 10: 'jugos', 28: 'té', 27: 'café' };
+      const bebidasSubcats = { 11: 'bebidas', 10: 'jugos', 28: 'té', 27: 'café', 61: 'aguas', 62: 'latas_350ml', 63: 'energeticas_473ml', 64: 'energeticas_250ml', 65: 'bebidas_1_5l' };
+      const bebidasIds = [11, 10, 28, 27, 61, 62, 63, 64, 65];
       Object.values(menuWithImages).forEach(category => {
         if (Array.isArray(category)) {
-          category.filter(p => p.category_id === 5 && [11, 10, 28, 27].includes(p.subcategory_id)).forEach(p => {
+          category.filter(p => p.category_id === 5 && bebidasIds.includes(p.subcategory_id)).forEach(p => {
             const subName = bebidasSubcats[p.subcategory_id];
             if (!categoryData[subName]) categoryData[subName] = [];
             categoryData[subName].push(p);
@@ -1455,7 +1456,7 @@ export default function App() {
         } else {
           Object.values(category).forEach(subcat => {
             if (Array.isArray(subcat)) {
-              subcat.filter(p => p.category_id === 5 && [11, 10, 28, 27].includes(p.subcategory_id)).forEach(p => {
+              subcat.filter(p => p.category_id === 5 && bebidasIds.includes(p.subcategory_id)).forEach(p => {
                 const subName = bebidasSubcats[p.subcategory_id];
                 if (!categoryData[subName]) categoryData[subName] = [];
                 categoryData[subName].push(p);
@@ -2412,8 +2413,13 @@ export default function App() {
               }
               if (cat === 'bebidas' && isNested) {
                 orderedEntries = [
-                  ['bebidas', categoryData.bebidas || []],
+                  ['aguas', categoryData.aguas || []],
+                  ['latas_350ml', categoryData.latas_350ml || []],
+                  ['energeticas_473ml', categoryData.energeticas_473ml || []],
+                  ['energeticas_250ml', categoryData.energeticas_250ml || []],
+                  ['bebidas_1_5l', categoryData.bebidas_1_5l || []],
                   ['jugos', categoryData.jugos || []],
+                  ['bebidas', categoryData.bebidas || []],
                   ['té', categoryData.té || []],
                   ['café', categoryData.café || []]
                 ];
@@ -2430,7 +2436,18 @@ export default function App() {
                         .filter(([, products]) => products && products.length > 0)
                         .map(([subCategory, products]) => (
                           <section key={subCategory}>
-                            <h3 className="text-lg font-black text-gray-700 capitalize border-b-2 border-orange-500 pb-2 px-2 mb-2">{subCategory === 'papas' ? 'Papas Fritas ❤️' : subCategory}</h3>
+                            <h3 className="text-lg font-black text-gray-700 capitalize border-b-2 border-orange-500 pb-2 px-2 mb-2">{
+                              {
+                                'papas': 'Papas Fritas ❤️',
+                                'aguas': 'Aguas 💧',
+                                'latas_350ml': 'Latas 350ml 🥫',
+                                'energeticas_473ml': 'Energéticas 473ml ⚡',
+                                'energeticas_250ml': 'Energéticas 250ml ⚡',
+                                'bebidas_1_5l': 'Bebidas 1.5L 🍾',
+                                'jugos': 'Jugos 1.5L 🧃',
+                                'bebidas': 'Otras Bebidas',
+                              }[subCategory] || subCategory
+                            }</h3>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 mt-4">
                               {products.map(product => (
                                 <MenuItem

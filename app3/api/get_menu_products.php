@@ -113,7 +113,12 @@ try {
         52 => 'churrasco',
         57 => 'papas',
         59 => 'hipocaloricos',
-        60 => 'pizzas'
+        60 => 'pizzas',
+        61 => 'aguas',
+        62 => 'latas_350ml',
+        63 => 'energeticas_473ml',
+        64 => 'energeticas_250ml',
+        65 => 'bebidas_1_5l'
     ];
     
     // Crear estructura anidada
