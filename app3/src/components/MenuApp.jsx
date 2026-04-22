@@ -2446,6 +2446,7 @@ export default function App() {
                                 'bebidas_1_5l': 'Bebidas 1.5L',
                                 'jugos': 'Jugos 1.5L',
                                 'bebidas': 'Otras Bebidas',
+                                'lomo_vetado': 'Lomo Vetado',
                               }[subCategory] || subCategory
                             }</h3>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 mt-4">
