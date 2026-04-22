@@ -6,7 +6,7 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`0723c72`) — pending pages sin WhatsApp, combo_data en r11c-pending |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`7991e02`) — UX: rojo sólido, scroll continuo, sin hamburguesas 100g |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0723c72`) — pending pages sin WhatsApp, "Volver a Caja" primario |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`f4f134b`) — tab Combos en Recetas, editor inline, autocomplete |
@@ -98,6 +98,15 @@
 
 ## Sesiones Recientes
 
+### 2026-04-22c — UX app3: scroll continuo, rojo sólido, eliminar hamburguesas 100g
+
+**Cambios:**
+- `app3/src/components/MenuApp.jsx`: Selector categorías gradiente→rojo sólido (`bg-red-600`). Eliminada flecha `<>` scroll. Scroll continuo entre categorías con IntersectionObserver + smooth scroll. Fix títulos debajo del header (`scroll-mt-[140px]`, `pt-[140px]`). Helper `getCategoryData()` para renderizar todas las categorías en secuencia.
+- BD: `menu_categories` id=2 (Hamburguesas 100g) desactivada. id=1 renombrada "Hamburguesas (200g)" → "Hamburguesas".
+
+**Commits:** `7991e02`
+**Deploys:** app3 ✅ (`7991e02`)
+
 ### 2026-04-22b — Fix pending pages + uniformizar bebidas combos
 
 **Cambios:**
@@ -151,57 +160,8 @@
 **Deploys:** mi3-frontend ✅ (`03c919d`), mi3-backend ✅ (`03c919d`)
 **BD:** Migración `portion_standards` ejecutada, 34 porciones seeded. Fix BD: Pan Churrasco Frica duplicados consolidados (160-162→159), 17 txs Brioche→Frica, 21 recetas actualizadas.
 
-### 2026-04-21b — Recetas: secciones producto/ingredientes/insumos + emojis ingredientes
-
-**Cambios:**
-- `mi3/backend/app/Services/Recipe/RecipeService.php`: `getRecipeDetail()` ahora devuelve `category` de cada ingrediente para separar ingredientes de insumos en frontend.
-- `mi3/frontend/app/admin/recetas/page.tsx`: Reescrito RecipeEditor con 3 secciones: **Producto** (editar nombre, descripción para IA, subir/cambiar foto), **Ingredientes** (Carnes, Vegetales, Salsas, etc.), **Insumos** (Packaging, Limpieza, Gas, Servicios). Buscador autocomplete mejorado con safety check `Array.isArray`, filtro por tipo, categoría visible en resultados. Resumen de costos desglosado ingredientes + insumos.
-- `mi3/frontend/lib/ingredient-emoji.ts`: Nuevo helper — mapeo emoji por keyword (🥑Palta, 🥓Tocino, 🧀Queso, etc.) + fallback por categoría (🥩Carnes, 📦Packaging, 🧹Limpieza). ~75 keywords, 13 categorías.
-- `mi3/frontend/app/admin/recetas/sub-recetas/page.tsx`: Emojis en tabla ingredientes y autocomplete.
-- `mi3/frontend/components/admin/compras/StockDashboard.tsx`: Emojis en inventario stock.
-- `mi3/frontend/components/admin/compras/ItemSearch.tsx`: Emojis en búsqueda de items compras.
-
-**Commits:** `596945c`, `821dbec`
-**Deploys:** mi3-frontend ✅ (`821dbec`), mi3-backend ✅ (`596945c`)
-
-### 2026-04-21a — Fix crédito R11: prefijo R11C, payment_status, inventario, badge comandas
-
-**Cambios:**
-- `app3/api/create_order.php`: Prefijo `R11C-` para órdenes con `r11_credit` (antes `T11-`). `payment_status = 'paid'` automático (antes `unpaid`). Descuento de inventario para `r11_credit` (antes solo `rl6_credit`). Logs dinámicos con `$payment_method`.
-- `app3/src/components/CheckoutApp.jsx`: Redirect a `/payment-success?order=...&method=r11_credit` (antes `/r11-pending` que no existía).
-- `app3/src/pages/payment-success.astro`: Método de pago dinámico — detecta param `method` y muestra label correcto (🏪 Crédito R11, 🎖️ Crédito RL6, etc).
-- `app3/src/pages/comandas/index.astro`: Badge `🏪 R11` verde esmeralda para órdenes `R11C-`.
-- `app3/api/r11/get_credit.php`: Removida auth session_token innecesaria (consistente con RL6 get_credit).
-- `app3/src/components/modals/ProfileModalModern.jsx`: Tabs padding `px-4`→`px-1`, font `extrabold`→`semibold`, tab R11 texto "Crédito" en verde esmeralda.
-- `app3/src/components/MenuApp.jsx`: Eliminado sistema tracking (track_usage.php).
-- `app3/api/track_usage.php`: Eliminado.
-
-**Commits:** `05d6b0a`, `ed1f0ff`, `825708a`, `8931c75`, `4dfd571`, `9b17c05`, `4de0f6e`, `ae5c180`
-**Deploys:** app3 ✅ (`ae5c180`), caja3 ✅ (`9b17c05`)
-**BD:** Ricardo (id=4) `credito_r11_aprobado = 1`, `limite_credito_r11 = 50000`, `fecha_aprobacion_r11 = 2026-04-21`. RL6 deshabilitado (`es_militar_rl6 = 0`). `relacion_r11 = 'Administrador'`. Fix orden R11C-1776792155-8230: `pagado_con_credito_r11 = 1`, `credito_r11_usado = 7362`.
-
-### 2026-04-20f — Reemplazo masivo ingredientes + MobileExtractionSheet fix + pipeline race condition
-
-**Cambios:**
-- `mi3/frontend/components/admin/compras/ExtractionPipeline.tsx`: Fix race condition — `initPhasesForEngine` + `updatePhase` ahora atómicos en un solo `setPhases`. Check badge `h-2.5 w-2.5` en `-top-1.5 -right-1.5`.
-- `mi3/frontend/components/admin/compras/MobileExtractionSheet.tsx`: Check badge minimalista (icono fase siempre visible, badge `h-3.5 w-3.5` en esquina). Backdrop `onClick={onClose}`. Botón "Listo" clickeable para cerrar.
-- `mi3/frontend/app/admin/recetas/ajuste-masivo/page.tsx`: Reescrito — de "Ajuste Masivo de Costos" a "Reemplazo Masivo de Ingredientes" con autocomplete picker, preview tabla productos afectados, detección duplicados, feedback confirmación.
-- `mi3/frontend/components/admin/sections/RecetasSection.tsx`: Tab "Ajuste Masivo" → "Reemplazo" (icono Replace).
-- `mi3/backend/app/Services/Recipe/RecipeService.php`: `replaceIngredientPreview()` + `replaceIngredientApply()` — swap atómico en transacción + recalcula cost_price.
-- `mi3/backend/app/Http/Controllers/RecipeController.php`: 2 endpoints replace-ingredient + catch-all exception handler.
-- `mi3/backend/routes/api.php`: 2 rutas replace-ingredient.
-- `mi3/backend/app/Models/ProductRecipe.php`: `timestamps = false` — tabla no tiene created_at/updated_at.
-- `mi3/backend/app/Services/Compra/CompraService.php`: Cascade al registrar compra — `cascadeCompositeCosts()` recalcula padres compuestos.
-- `mi3/frontend/app/admin/compras/registro/page.tsx`: Smart search ingredientes — al editar nombre se desvincula match, búsqueda en vivo, crear ingrediente inline con selector de categoría.
-- `mi3/backend/app/Services/Compra/GeminiService.php`: Fix RUT Unimarc (600→500), equivalencias packaging (PAN COMPLETO XL 1 bolsa=6 un, PAN HAMBURGUESA 1 bolsa=4 un).
-- `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: knownPatterns: rendic→Unimarc, unimarc→Unimarc, arauco→Arauco.
-
-**Commits:** `5b8ed85`, `b860495`, `f3816c3`, `1fa5f65`, `ce3a50a`, `3419f96`, `2e85939`, `d162556`, `138ca32`, `1873b95`
-**Deploys:** mi3-frontend ✅ (`2e85939`), mi3-backend ✅ (`1873b95`)
-**BD:** Fix compras_detalle #497: ingrediente_id 163→49 (Tocino registrado como Carne Molida). Carne Molida stock 5.38→4.52 kg, precio $14,000→$6,490/kg. Tocino stock 3.92→4.78 kg. cascadeCompositeCosts: Hamburguesa R11 $1,775.75→$1,613.40, 12 productos recalculados.
-
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-20f archivadas. Últimas: 2026-04-20d (recetas-fix-integral), 2026-04-20f (reemplazo masivo).
+> Sesiones 2026-04-19c→2026-04-21b archivadas. Últimas: 2026-04-21a (fix crédito R11), 2026-04-21b (recetas emojis).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
