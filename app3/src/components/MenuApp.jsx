@@ -1473,16 +1473,36 @@ export default function App() {
 
   // IntersectionObserver to update activeCategory on scroll
   useEffect(() => {
+    // Track which sections are visible and pick the topmost one
+    const visibleSections = new Map();
+    
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
+          const catKey = entry.target.id.replace('category-', '');
           if (entry.isIntersecting) {
-            const catKey = entry.target.id.replace('category-', '');
-            setActiveCategory(catKey);
+            visibleSections.set(catKey, entry.boundingClientRect.top);
+          } else {
+            visibleSections.delete(catKey);
           }
         });
+        
+        // Pick the section closest to the top
+        if (visibleSections.size > 0) {
+          let topCat = null;
+          let topPos = Infinity;
+          visibleSections.forEach((top, cat) => {
+            if (top < topPos) {
+              topPos = top;
+              topCat = cat;
+            }
+          });
+          if (topCat) {
+            setActiveCategory(topCat);
+          }
+        }
       },
-      { rootMargin: '-150px 0px -60% 0px', threshold: 0 }
+      { rootMargin: '-140px 0px -30% 0px', threshold: [0, 0.1] }
     );
 
     mainCategories.forEach(cat => {
@@ -2401,7 +2421,9 @@ export default function App() {
 
               return (
                 <div key={cat} id={`category-${cat}`} className="scroll-mt-[140px]">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4 pt-4">{categoryDisplayNames[cat]}</h2>
+                  <div className="bg-red-600 text-white font-bold text-lg py-3 px-4 -mx-0.5 sm:-mx-4 lg:-mx-8 xl:-mx-12 2xl:-mx-16 mb-4 mt-2">
+                    {categoryDisplayNames[cat]}
+                  </div>
                   {isNested ? (
                     <div className="space-y-8">
                       {orderedEntries
