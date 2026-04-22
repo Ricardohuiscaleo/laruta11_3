@@ -2438,13 +2438,13 @@ export default function App() {
                           <section key={subCategory}>
                             <h3 className="text-lg font-black text-gray-700 capitalize border-b-2 border-orange-500 pb-2 px-2 mb-2">{
                               {
-                                'papas': 'Papas Fritas ❤️',
-                                'aguas': 'Aguas 💧',
-                                'latas_350ml': 'Latas 350ml 🥫',
-                                'energeticas_473ml': 'Energéticas 473ml ⚡',
-                                'energeticas_250ml': 'Energéticas 250ml ⚡',
-                                'bebidas_1_5l': 'Bebidas 1.5L 🍾',
-                                'jugos': 'Jugos 1.5L 🧃',
+                                'papas': 'Papas Fritas',
+                                'aguas': 'Aguas',
+                                'latas_350ml': 'Latas 350ml',
+                                'energeticas_473ml': 'Energéticas 473ml',
+                                'energeticas_250ml': 'Energéticas 250ml',
+                                'bebidas_1_5l': 'Bebidas 1.5L',
+                                'jugos': 'Jugos 1.5L',
                                 'bebidas': 'Otras Bebidas',
                               }[subCategory] || subCategory
                             }</h3>
