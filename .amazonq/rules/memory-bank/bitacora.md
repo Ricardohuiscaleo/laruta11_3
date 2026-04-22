@@ -6,7 +6,7 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`24caa8e`) — UX: divisor rojo secciones, IntersectionObserver mejorado, iconos rojos |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`c6a19b2`) — UX: subcategorías bebidas, Lomo Vetado fix, scroll continuo |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0723c72`) — pending pages sin WhatsApp, "Volver a Caja" primario |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`f4f134b`) — tab Combos en Recetas, editor inline, autocomplete |
@@ -104,8 +104,9 @@
 - `app3/src/components/MenuApp.jsx`: Selector categorías gradiente→rojo sólido (`bg-red-600`). Eliminada flecha `<>` scroll. Scroll continuo entre categorías con IntersectionObserver + smooth scroll. Fix títulos debajo del header (`scroll-mt-[140px]`, `pt-[140px]`). Helper `getCategoryData()` para renderizar todas las categorías en secuencia.
 - BD: `menu_categories` id=2 (Hamburguesas 100g) desactivada. id=1 renombrada "Hamburguesas (200g)" → "Hamburguesas".
 
-**Commits:** `7991e02`, `00e32bc`, `24caa8e`
-**Deploys:** app3 ✅ (`24caa8e`)
+**Commits:** `7991e02`, `00e32bc`, `24caa8e`, `de69ccc`, `fb99aa2`, `c6a19b2`
+**Deploys:** app3 ✅ (`c6a19b2`)
+**BD:** Hamburguesas 100g desactivada, "Hamburguesas (200g)" → "Hamburguesas". 5 nuevas subcategorías bebidas (61-65): Aguas, Latas 350ml, Energéticas 473ml, Energéticas 250ml, Bebidas 1.5L. 43 productos reasignados.
 
 ### 2026-04-22b — Fix pending pages + uniformizar bebidas combos
 
