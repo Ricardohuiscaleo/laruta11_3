@@ -1,16 +1,16 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-21)
+## Estado Actual (2026-04-22)
 
 ### Aplicaciones Desplegadas
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`13eecde`) — crédito R11 completo: r11c-pending page, 10% desc, refund cancel |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`3231e67`) — R11C visible en MiniComandas, r11_refund_credit.php |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`f4f134b`) — combos refactorizados: combo_components, sin comboMapping |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`f4f134b`) — combos refactorizados sync con app3 |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`03c919d`) — creador IA 3 variantes + guardar producto + emojis |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`03c919d`) — RecipeAIService 3 variantes + saveVariant + gemini-2.5-flash-lite |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`f4f134b`) — tab Combos en Recetas, editor inline, autocomplete |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`f4f134b`) — ComboService CRUD, migración combo_components, 4 endpoints REST |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -97,6 +97,26 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-22a — Spec combos-refactor: Fases 1-4 completas (código + deploy)
+
+**Cambios:**
+- `mi3/backend/database/migrations/2026_04_22_100000_create_combo_components_table.php`: Tabla `combo_components` con seed de datos legacy (combo_items→fijos, combo_selections→seleccionables), mapping combos.id→products.id, limpieza product_recipes de combos, fix typo id=233.
+- `mi3/backend/app/Models/ComboComponent.php`: Modelo con fillable, casts (is_fixed→boolean, price_adjustment→float), relaciones combo/childProduct.
+- `mi3/backend/app/Services/Recipe/ComboService.php`: 5 métodos — getComboList, getComboDetail (filtro is_active=1), saveComboComponents (transacción), calculateComboCost (Σfijos + promedio seleccionables), deleteComboComponents.
+- `mi3/backend/app/Http/Controllers/Admin/ComboController.php`: 4 endpoints REST (index, show, store, destroy) con validación estricta y try/catch.
+- `mi3/backend/routes/api.php`: 4 rutas admin/combos.
+- `mi3/frontend/app/admin/recetas/combos/page.tsx`: Página completa — lista responsive (cards mobile + tabla desktop), editor inline con items fijos + grupos de selección + autocomplete productos, badges 🟢/🔴 disponibilidad, cálculo costo/margen.
+- `mi3/frontend/components/admin/sections/RecetasSection.tsx`: Tab "Combos" con icono Package.
+- `app3/api/get_combos.php`: Reescrito — JOIN combo_components + products WHERE is_active=1, backward compat combo_id, prepared statements.
+- `app3/src/components/modals/ComboModal.jsx`: Eliminado comboMapping hardcodeado, fetch directo con product_id, soporte price_adjustment (+$X / Incluido), sin console.log.
+- `caja3/api/get_combos.php`: Sync con app3 (idéntico).
+- `caja3/src/components/modals/ComboModal.jsx`: Mismo refactor que app3, preservando UI POS (wider modal, 3-col grid).
+
+**Commits:** `f4f134b`
+**Deploys:** mi3-backend ✅, mi3-frontend ✅, app3 ✅, caja3 ✅ (todos `f4f134b`)
+**BD:** Migración `combo_components` ejecutada — 62 registros (14 fijos + 48 seleccionables), product_recipes combos = 0, fix typo id=233. Smoke test: Combo Doble Mixta (187) → 2 fijos + 8 bebidas ✅.
+**Pendiente:** Fase 5 QA manual.
 
 ### 2026-04-21d — Porciones estándar + Creador de recetas con IA (Gemini)
 
