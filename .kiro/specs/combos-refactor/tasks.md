@@ -140,11 +140,11 @@
 - [x] Verificar reaparece en app3, caja3, mi3
 
 ### T5.4: Inventario Combo Completo
-- [ ] Vender 1x con Kem seleccionada
-- [ ] Completo Italiano: ingredientes descontados (pan, montina, palta, tomate, mayo)
-- [ ] Papas: ingredientes descontados (papa, aceite)
+- [x] Vender 1x con Kem seleccionada
+- [x] Completo Italiano: ingredientes descontados (pan, montina, palta, tomate, mayo)
+- [x] Papas: ingredientes descontados (papa, aceite)
 - [ ] Kem: stock_quantity -1
-- [ ] Combo padre (188): SIN descuento de ingredientes crudos
+- [x] Combo padre (188): SIN descuento de ingredientes crudos
 
 ### T5.5: Inventario Combo Dupla (2 bebidas)
 - [ ] Vender con 2 bebidas diferentes
@@ -170,7 +170,7 @@
 - [x] Desactivar todas las bebidas lata → "Sin opciones disponibles" → botón deshabilitado
 
 ### T5.11: Producto fijo desactivado
-- [ ] Desactivar Papas Individuales → combos con papas fijas muestran warning
+- [x] Desactivar Papas Individuales → combos con papas fijas muestran warning
 
 ### T5.12: WhatsApp message
 - [ ] Orden con combo → mensaje incluye detalle fijos + selecciones
