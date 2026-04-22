@@ -125,9 +125,9 @@
 ## Fase 5: QA exhaustivo
 
 ### T5.1: Crear combo nuevo desde mi3
-- [ ] Crear "Combo Test": 1x Cheeseburger + 1x Papas Medianas + grupo Bebidas (5 latas)
-- [ ] Verificar en app3 y caja3: aparece, modal funciona, selección funciona
-- [ ] Eliminar después
+- [x] Crear "Combo Test": 1x Cheeseburger + 1x Papas Medianas + grupo Bebidas (5 latas)
+- [x] Verificar en app3 y caja3: aparece, modal funciona, selección funciona
+- [x] Eliminar después
 
 ### T5.2: Desactivar bebida → desaparece de combos
 - [x] Desactivar Coca-Cola (id=99) desde caja3
@@ -151,9 +151,9 @@
 - [ ] Hamburguesa -1, Ave Italiana -1, Papas -1, Bebida1 -1, Bebida2 -1
 
 ### T5.6: Price adjustment
-- [ ] Monster +$1,000 en Combo Completo
-- [ ] app3: precio = $4,980 + $1,000 = $5,980
-- [ ] caja3: mismo
+- [x] Monster +$1,000 en Combo Completo
+- [x] app3: precio = $4,980 + $1,000 = $5,980
+- [x] caja3: mismo
 
 ### T5.7: Combo Familiar
 - [ ] 4x Completo + 1x Papas Medianas + 1x Bebida 1.5L
@@ -167,7 +167,7 @@
 - [ ] Orden con combo → comanda muestra "Incluye:" correcto
 
 ### T5.10: Grupo sin opciones activas
-- [ ] Desactivar todas las bebidas lata → "Sin opciones disponibles" → botón deshabilitado
+- [x] Desactivar todas las bebidas lata → "Sin opciones disponibles" → botón deshabilitado
 
 ### T5.11: Producto fijo desactivado
 - [ ] Desactivar Papas Individuales → combos con papas fijas muestran warning
