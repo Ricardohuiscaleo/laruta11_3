@@ -1620,7 +1620,14 @@ export default function App() {
   const comboItems = useMemo(() => ({
     papas_y_snacks: menuWithImages.papas?.papas || [],
     jugos: menuWithImages.papas_y_snacks?.jugos || [],
-    bebidas: menuWithImages.papas_y_snacks?.bebidas || [],
+    bebidas: [
+      ...(menuWithImages.papas_y_snacks?.bebidas || []),
+      ...(menuWithImages.papas_y_snacks?.aguas || []),
+      ...(menuWithImages.papas_y_snacks?.latas_350ml || []),
+      ...(menuWithImages.papas_y_snacks?.energeticas_473ml || []),
+      ...(menuWithImages.papas_y_snacks?.energeticas_250ml || []),
+      ...(menuWithImages.papas_y_snacks?.bebidas_1_5l || []),
+    ],
     empanadas: menuWithImages.papas_y_snacks?.empanadas || [],
     cafe: menuWithImages.papas_y_snacks?.café || [],
     te: menuWithImages.papas_y_snacks?.té || [],

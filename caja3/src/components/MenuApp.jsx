@@ -2174,7 +2174,14 @@ export default function App() {
   const comboItems = {
     papas_y_snacks: getBySubcategoryId(9),
     jugos: getBySubcategoryId(10),
-    bebidas: getBySubcategoryId(11),
+    bebidas: [
+      ...getBySubcategoryId(11),
+      ...getBySubcategoryId(61),
+      ...getBySubcategoryId(62),
+      ...getBySubcategoryId(63),
+      ...getBySubcategoryId(64),
+      ...getBySubcategoryId(65),
+    ],
     salsas: getBySubcategoryId(12),
     empanadas: getBySubcategoryId(26),
     cafe: getBySubcategoryId(27),
