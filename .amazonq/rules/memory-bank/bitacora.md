@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`fe30703`) — UX: scrollLockRef, bebidas subcategorías sync checkout+personalización |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`440fcdf`) — menú lista compacta, búsqueda inline highlight, arqueo tabla 3-col |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`f4f134b`) — tab Combos en Recetas, editor inline, autocomplete |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`f4f134b`) — ComboService CRUD, migración combo_components, 4 endpoints REST |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`8f2abe6`) — Estado de Resultados P&L en dashboard, tab Combos en Recetas |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`8f2abe6`) — Dashboard P&L endpoint con ventas/CMV/nómina/OPEX, ComboService CRUD |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -98,6 +98,16 @@
 
 ## Sesiones Recientes
 
+### 2026-04-22e — Estado de Resultados P&L en dashboard admin + spec admin-credits-users-tabs
+
+**Cambios:**
+- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: Reescrito — endpoint `/admin/dashboard` ahora retorna P&L detallado: ingresos (ventas_netas, total_ordenes, ticket_promedio), costo_ventas (costo_ingredientes, margen_bruto, margen_bruto_pct), gastos_operacion (nomina_ruta11, compras_insumos, total_opex), resultado (resultado_neto, resultado_neto_pct), meta (meta_mensual, porcentaje_meta, ventas_proyectadas). Datos de ventas/compras via caja3 API, CMV via sales_analytics, nómina via NominaService.
+- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: Reescrito — reemplaza 4 KPI cards por Estado de Resultados completo: header dark con mes/año, barra progreso meta mensual, 3 KPI pills (Pedidos, Ticket, Proyección), tabla P&L con secciones coloreadas (Ingresos verde, CMV naranja, Margen Bruto esmeralda, OPEX rojo, Resultado Neto verde/rojo dinámico). Cada línea muestra monto CLP + % sobre ventas.
+- `.kiro/specs/admin-credits-users-tabs/`: Spec creado con 10 requirements (renombrar sidebar Créditos/Usuarios, tabs R11/RL6, tabs Work/Clientes, API endpoints RL6 con moroso/emails, resumen financiero contextual en header).
+
+**Commits:** `8f2abe6`
+**Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `8f2abe6`)
+
 ### 2026-04-22d — Bebidas sync + Arqueo tabla + caja3 MenuItem lista compacta
 
 **Cambios:**
@@ -139,28 +149,8 @@
 **Deploys:** app3 ✅, caja3 ✅ (ambos `0723c72`)
 **BD:** Uniformización bebidas combos — 6 combos de lata ahora tienen las mismas 15 opciones 350ml. Doble Mixta 8→15, Completo 11→15, Gorda 11→15, Dupla 8→15, Hamburguesa Clásica 5→15, Salchipapa 4→15. Familiar sin cambios (1.5Lt).
 
-### 2026-04-22a — Spec combos-refactor: Fases 1-4 completas (código + deploy)
-
-**Cambios:**
-- `mi3/backend/database/migrations/2026_04_22_100000_create_combo_components_table.php`: Tabla `combo_components` con seed de datos legacy (combo_items→fijos, combo_selections→seleccionables), mapping combos.id→products.id, limpieza product_recipes de combos, fix typo id=233.
-- `mi3/backend/app/Models/ComboComponent.php`: Modelo con fillable, casts (is_fixed→boolean, price_adjustment→float), relaciones combo/childProduct.
-- `mi3/backend/app/Services/Recipe/ComboService.php`: 5 métodos — getComboList, getComboDetail (filtro is_active=1), saveComboComponents (transacción), calculateComboCost (Σfijos + promedio seleccionables), deleteComboComponents.
-- `mi3/backend/app/Http/Controllers/Admin/ComboController.php`: 4 endpoints REST (index, show, store, destroy) con validación estricta y try/catch.
-- `mi3/backend/routes/api.php`: 4 rutas admin/combos.
-- `mi3/frontend/app/admin/recetas/combos/page.tsx`: Página completa — lista responsive (cards mobile + tabla desktop), editor inline con items fijos + grupos de selección + autocomplete productos, badges 🟢/🔴 disponibilidad, cálculo costo/margen.
-- `mi3/frontend/components/admin/sections/RecetasSection.tsx`: Tab "Combos" con icono Package.
-- `app3/api/get_combos.php`: Reescrito — JOIN combo_components + products WHERE is_active=1, backward compat combo_id, prepared statements.
-- `app3/src/components/modals/ComboModal.jsx`: Eliminado comboMapping hardcodeado, fetch directo con product_id, soporte price_adjustment (+$X / Incluido), sin console.log.
-- `caja3/api/get_combos.php`: Sync con app3 (idéntico).
-- `caja3/src/components/modals/ComboModal.jsx`: Mismo refactor que app3, preservando UI POS (wider modal, 3-col grid).
-
-**Commits:** `f4f134b`
-**Deploys:** mi3-backend ✅, mi3-frontend ✅, app3 ✅, caja3 ✅ (todos `f4f134b`)
-**BD:** Migración `combo_components` ejecutada — 62 registros (14 fijos + 48 seleccionables), product_recipes combos = 0, fix typo id=233. Smoke test: Combo Doble Mixta (187) → 2 fijos + 8 bebidas ✅.
-**Pendiente:** Fase 5 QA manual.
-
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-21c archivadas. Últimas: 2026-04-21a (fix crédito R11), 2026-04-21b (recetas emojis), 2026-04-21c (porciones estándar + creador IA).
+> Sesiones 2026-04-19c→2026-04-22a archivadas. Últimas: 2026-04-21c (porciones estándar + creador IA), 2026-04-22a (spec combos-refactor fases 1-4).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
