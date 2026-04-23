@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`fe30703`) — UX: scrollLockRef, bebidas subcategorías sync checkout+personalización |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`5b5d6cf`) — arqueo tabla 3-col, r11_credit, bebidas sync |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`440fcdf`) — menú lista compacta, búsqueda inline highlight, arqueo tabla 3-col |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`f4f134b`) — tab Combos en Recetas, editor inline, autocomplete |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`f4f134b`) — ComboService CRUD, migración combo_components, 4 endpoints REST |
@@ -98,20 +98,19 @@
 
 ## Sesiones Recientes
 
-### 2026-04-22d — Fix scrollLockRef + sync bebidas subcategorías + arqueo listado
+### 2026-04-22d — Bebidas sync + Arqueo tabla + caja3 MenuItem lista compacta
 
 **Cambios:**
-- `app3/src/components/MenuApp.jsx`: scrollLockRef para click-to-scroll. comboItems.bebidas merge subcategorías 11+61-65.
-- `app3/src/components/CheckoutApp.jsx`: Filtro upselling bebidas actualizado con IDs 61-65.
+- `app3/src/components/MenuApp.jsx`: scrollLockRef click-to-scroll. comboItems.bebidas merge subcategorías 11+61-65.
+- `app3/src/components/CheckoutApp.jsx`: Filtro upselling bebidas con IDs 61-65.
 - `caja3/api/get_menu_products.php`: subcategoryMap + IDs 61-65.
-- `caja3/src/components/MenuApp.jsx`: SUBCATEGORY_ID_MAP + bebidasSubcats + comboItems.bebidas merge.
+- `caja3/src/components/MenuApp.jsx`: Rediseño MenuItem de cards grid a lista compacta (imagen 44px + nombre + precio amarillo + ON/OFF + botón agregar). Búsqueda inline filtra listado con highlight amarillo (sin modal sugerencias). Modal fullscreen al tocar foto (descripción + botones). Padding reducido (70px top, pb-24). comboItems.bebidas merge.
 - `caja3/api/get_sales_summary.php`: Agregado `r11_credit` al array de métodos de pago.
-- `caja3/src/components/ArqueoApp.jsx`: Rediseño de grid 3-col a listado vertical tipo estado de resultados. Crédito R11 siempre visible. PedidosYA Efectivo solo si count>0. Total Ventas + Saldo en Caja como cards 2-col abajo.
+- `caja3/src/components/ArqueoApp.jsx`: Tabla 3-col (Método|Pedidos|Total), 8 métodos siempre visibles, sin WhatsApp btn, filas sin color especial.
 - BD: Dr Pepper (id=210) movida de subcategory_id=11 a 62 (Latas 350ml).
 
-**Commits:** `b1862c7`, `7c0a1c1`, `fd5bce2`, `fe30703`, `58e8daa`, `0210bf3`, `92dc7e9`, `5b5d6cf`
-**Deploys:** app3 ✅ (`fe30703`), caja3 ✅ (`5b5d6cf`)
-**Nota:** Token Coolify API v1 expirado. Nuevo token v3 (`3|S52...`) via HTTP directo `http://76.13.126.63:8000`.
+**Commits:** `b1862c7`→`440fcdf` (10 commits)
+**Deploys:** app3 ✅ (`fe30703`), caja3 ✅ (`440fcdf`)
 
 ### 2026-04-22c — UX app3: scroll continuo, rojo sólido, eliminar hamburguesas 100g
 
