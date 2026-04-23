@@ -156,6 +156,18 @@ Route::prefix('v1')->group(function () {
         Route::post('credits/{id}/reject', [\App\Http\Controllers\Admin\CreditController::class, 'reject']);
         Route::post('credits/{id}/manual-payment', [\App\Http\Controllers\Admin\CreditController::class, 'manualPayment']);
 
+        // Créditos RL6 (static route MUST come before {id} routes)
+        Route::post('credits/rl6/send-bulk-emails', [\App\Http\Controllers\Admin\CreditController::class, 'rl6SendBulkEmails']);
+        Route::get('credits/rl6', [\App\Http\Controllers\Admin\CreditController::class, 'rl6Index']);
+        Route::post('credits/rl6/{id}/approve', [\App\Http\Controllers\Admin\CreditController::class, 'rl6Approve']);
+        Route::post('credits/rl6/{id}/reject', [\App\Http\Controllers\Admin\CreditController::class, 'rl6Reject']);
+        Route::post('credits/rl6/{id}/manual-payment', [\App\Http\Controllers\Admin\CreditController::class, 'rl6ManualPayment']);
+        Route::get('credits/rl6/{id}/preview-email', [\App\Http\Controllers\Admin\CreditController::class, 'rl6PreviewEmail']);
+        Route::post('credits/rl6/{id}/send-email', [\App\Http\Controllers\Admin\CreditController::class, 'rl6SendEmail']);
+
+        // Users (customers from app3)
+        Route::get('users/customers', [\App\Http\Controllers\Admin\UserController::class, 'customers']);
+
         // Solicitudes de cambio
         Route::get('shift-swaps', [\App\Http\Controllers\Admin\ShiftSwapController::class, 'index']);
         Route::post('shift-swaps/{id}/approve', [\App\Http\Controllers\Admin\ShiftSwapController::class, 'approve']);

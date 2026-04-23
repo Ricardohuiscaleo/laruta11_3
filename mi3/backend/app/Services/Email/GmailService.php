@@ -33,6 +33,121 @@ class GmailService
     }
 
     /**
+     * Send an RL6 collection email to a user.
+     *
+     * Reuses getValidToken() and sendEmail() infrastructure.
+     * Logs result in email_logs with status 'sent' or 'failed'.
+     *
+     * @return array{success: bool, gmail_message_id: ?string, error?: string}
+     */
+    public function sendRL6CollectionEmail(
+        int $userId,
+        string $email,
+        string $html,
+        string $subject,
+        string $emailType
+    ): array {
+        $token = $this->getValidToken();
+
+        if (!$token) {
+            Log::error('GmailService: No valid Gmail token for RL6 email');
+
+            EmailLog::create([
+                'user_id' => $userId,
+                'email_to' => $email,
+                'email_type' => $emailType,
+                'subject' => $subject,
+                'status' => 'failed',
+                'error_message' => 'No se pudo obtener token de Gmail',
+                'sent_at' => now(),
+            ]);
+
+            return [
+                'success' => false,
+                'gmail_message_id' => null,
+                'error' => 'No se pudo obtener token de Gmail',
+            ];
+        }
+
+        return $this->sendRL6Email($token, $userId, $email, $subject, $html, $emailType);
+    }
+
+    /**
+     * Send an RL6 email via Gmail API and log the result.
+     *
+     * @return array{success: bool, gmail_message_id: ?string, error?: string}
+     */
+    private function sendRL6Email(
+        string $token,
+        int $userId,
+        string $to,
+        string $subject,
+        string $html,
+        string $emailType
+    ): array {
+        $from = config('mi3.gmail.sender_email');
+
+        $message = "From: La Ruta 11 <{$from}>\r\n";
+        $message .= "To: {$to}\r\n";
+        $message .= "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n";
+        $message .= "MIME-Version: 1.0\r\n";
+        $message .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $message .= "Content-Transfer-Encoding: base64\r\n\r\n";
+        $message .= chunk_split(base64_encode($html));
+
+        $encoded = rtrim(strtr(base64_encode($message), '+/', '-_'), '=');
+
+        $ch = curl_init('https://gmail.googleapis.com/gmail/v1/users/me/messages/send');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode(['raw' => $encoded]),
+            CURLOPT_HTTPHEADER => [
+                "Authorization: Bearer {$token}",
+                'Content-Type: application/json',
+            ],
+        ]);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $responseData = json_decode($response, true);
+        $success = $httpCode === 200;
+
+        EmailLog::create([
+            'user_id' => $userId,
+            'email_to' => $to,
+            'email_type' => $emailType,
+            'subject' => $subject,
+            'status' => $success ? 'sent' : 'failed',
+            'gmail_message_id' => $responseData['id'] ?? null,
+            'gmail_thread_id' => $responseData['threadId'] ?? null,
+            'error_message' => $success ? null : ($responseData['error']['message'] ?? 'Gmail API error'),
+            'sent_at' => now(),
+        ]);
+
+        if (!$success) {
+            Log::error('GmailService: Failed to send RL6 email', [
+                'to' => $to,
+                'userId' => $userId,
+                'httpCode' => $httpCode,
+                'response' => $response,
+            ]);
+
+            return [
+                'success' => false,
+                'gmail_message_id' => null,
+                'error' => $responseData['error']['message'] ?? 'Error al enviar email via Gmail',
+            ];
+        }
+
+        return [
+            'success' => true,
+            'gmail_message_id' => $responseData['id'] ?? null,
+        ];
+    }
+
+    /**
      * Get a valid Gmail access token, refreshing if expired.
      *
      * Replicates the logic from caja3/api/gmail/get_token_db.php.

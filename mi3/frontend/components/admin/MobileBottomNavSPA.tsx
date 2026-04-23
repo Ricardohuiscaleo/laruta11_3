@@ -20,7 +20,7 @@ interface NavItem {
 
 const primaryItems: NavItem[] = [
   { key: 'inicio', label: 'Inicio', icon: Home },
-  { key: 'personal', label: 'Personal', icon: Users },
+  { key: 'personal', label: 'Usuarios', icon: Users },
   { key: 'turnos', label: 'Turnos', icon: Calendar },
   { key: 'notificaciones', label: 'Alertas', icon: Bell },
 ];
@@ -33,7 +33,7 @@ const secondaryItems: NavItem[] = [
   { key: 'nomina', label: 'Nómina', icon: Receipt },
   { key: 'checklists', label: 'Checklists', icon: ClipboardCheck },
   { key: 'ajustes', label: 'Ajustes', icon: SlidersHorizontal },
-  { key: 'creditos', label: 'Créditos R11', icon: CreditCard },
+  { key: 'creditos', label: 'Créditos', icon: CreditCard },
   { key: 'cambios', label: 'Cambios', icon: ArrowLeftRight },
   { key: 'cronjobs', label: 'Cronjobs', icon: Clock },
 ];

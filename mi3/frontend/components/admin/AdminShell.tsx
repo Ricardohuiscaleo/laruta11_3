@@ -39,11 +39,11 @@ export interface SectionHeaderConfig {
 
 const SECTION_TITLES: Record<SectionKey, string> = {
   inicio: 'Panel Admin',
-  personal: 'Personal',
+  personal: 'Usuarios',
   turnos: 'Turnos',
   nomina: 'Nómina',
   ajustes: 'Ajustes',
-  creditos: 'Créditos R11',
+  creditos: 'Créditos',
   cambios: 'Cambios',
   cronjobs: 'Cronjobs',
   delivery: 'Delivery',
