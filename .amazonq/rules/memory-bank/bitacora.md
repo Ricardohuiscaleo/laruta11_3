@@ -6,7 +6,7 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`5d6465e`) — UX: scroll tracking fix, subcategorías bebidas, Lomo Vetado |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`b1862c7`) — UX: scrollLockRef fix click-to-scroll, subcategorías bebidas, Lomo Vetado |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0723c72`) — pending pages sin WhatsApp, "Volver a Caja" primario |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`f4f134b`) — tab Combos en Recetas, editor inline, autocomplete |
@@ -98,6 +98,15 @@
 
 ## Sesiones Recientes
 
+### 2026-04-22d — Fix scrollLockRef: click categoría ya no rebota
+
+**Cambios:**
+- `app3/src/components/MenuApp.jsx`: Agregado `scrollLockRef = useRef(false)` que bloquea scroll tracking durante animaciones programáticas. Click en categoría (mobile bar + sidebar) activa lock, scrollIntoView smooth, unlock después de 800ms. handleScroll ignora eventos mientras lock activo. Resuelve el comportamiento "loco" donde el scroll tracker rebotaba entre categorías intermedias durante la animación.
+
+**Commits:** `b1862c7`
+**Deploys:** app3 ✅ (`b1862c7`)
+**Nota:** Token Coolify API v1 (`1|piV...`) expirado. Nuevo token v3 (`3|S52...`) funciona via HTTP directo al VPS (`http://76.13.126.63:8000`).
+
 ### 2026-04-22c — UX app3: scroll continuo, rojo sólido, eliminar hamburguesas 100g
 
 **Cambios:**
@@ -145,24 +154,8 @@
 **BD:** Migración `combo_components` ejecutada — 62 registros (14 fijos + 48 seleccionables), product_recipes combos = 0, fix typo id=233. Smoke test: Combo Doble Mixta (187) → 2 fijos + 8 bebidas ✅.
 **Pendiente:** Fase 5 QA manual.
 
-### 2026-04-21d — Porciones estándar + Creador de recetas con IA (Gemini)
-
-**Cambios:**
-- `mi3/backend/database/migrations/2026_04_21_400000_create_portion_standards_table.php`: Tabla `portion_standards` (category_id, ingredient_id, quantity, unit) con 34 porciones seed para Hamburguesas, Sandwiches, Completos, Papas.
-- `mi3/backend/app/Models/PortionStandard.php`: Modelo con relaciones category/ingredient.
-- `mi3/backend/app/Http/Controllers/Admin/PortionController.php`: CRUD porciones + endpoint `POST suggest-recipe` con IA.
-- `mi3/backend/app/Services/Recipe/RecipeAIService.php`: Servicio Gemini 2.0 Flash — genera receta completa usando inventario real, porciones estándar, calcula costos reales, sugiere precio con margen 65%.
-- `mi3/backend/routes/api.php`: 4 rutas portions (GET index, GET show, PUT update, POST suggest-recipe).
-- `mi3/frontend/app/admin/recetas/porciones/page.tsx`: Tab "Porciones" — vista por categoría, edición inline, costo/unidad.
-- `mi3/frontend/app/admin/recetas/creador-ia/page.tsx`: Tab "Creador IA" — input descripción + categoría, genera receta con ingredientes, costos, precio, stock check, tips.
-- `mi3/frontend/components/admin/sections/RecetasSection.tsx`: 2 nuevas tabs (Scale, Sparkles).
-
-**Commits:** `2826e66`, `6152f94`, `f03f289`, `e686b12`, `03c919d`
-**Deploys:** mi3-frontend ✅ (`03c919d`), mi3-backend ✅ (`03c919d`)
-**BD:** Migración `portion_standards` ejecutada, 34 porciones seeded. Fix BD: Pan Churrasco Frica duplicados consolidados (160-162→159), 17 txs Brioche→Frica, 21 recetas actualizadas.
-
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-21b archivadas. Últimas: 2026-04-21a (fix crédito R11), 2026-04-21b (recetas emojis).
+> Sesiones 2026-04-19c→2026-04-21c archivadas. Últimas: 2026-04-21a (fix crédito R11), 2026-04-21b (recetas emojis), 2026-04-21c (porciones estándar + creador IA).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

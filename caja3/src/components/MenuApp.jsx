@@ -115,6 +115,11 @@ var SUBCATEGORY_ID_MAP = {
   29: 'personalizar',
   30: 'extras',
   57: 'papas',
+  61: 'aguas',
+  62: 'latas_350ml',
+  63: 'energeticas_473ml',
+  64: 'energeticas_250ml',
+  65: 'bebidas_1_5l',
 };
 
 
@@ -2640,10 +2645,11 @@ export default function App() {
                     }
                   });
                 } else if (catKey === 'bebidas') {
-                  const bebidasSubcats = { 11: 'bebidas', 10: 'jugos', 28: 'té', 27: 'café' };
+                  const bebidasSubcats = { 11: 'bebidas', 10: 'jugos', 28: 'té', 27: 'café', 61: 'aguas', 62: 'latas_350ml', 63: 'energeticas_473ml', 64: 'energeticas_250ml', 65: 'bebidas_1_5l' };
+                  const bebidasIds = [11, 10, 28, 27, 61, 62, 63, 64, 65];
                   Object.values(menuWithImages).forEach(category => {
                     if (Array.isArray(category)) {
-                      category.filter(p => p.category_id === 5 && [11, 10, 28, 27].includes(p.subcategory_id)).forEach(p => {
+                      category.filter(p => p.category_id === 5 && bebidasIds.includes(p.subcategory_id)).forEach(p => {
                         const subName = bebidasSubcats[p.subcategory_id];
                         if (!displayData[subName]) displayData[subName] = [];
                         displayData[subName].push(p);
@@ -2651,7 +2657,7 @@ export default function App() {
                     } else {
                       Object.values(category).forEach(subcat => {
                         if (Array.isArray(subcat)) {
-                          subcat.filter(p => p.category_id === 5 && [11, 10, 28, 27].includes(p.subcategory_id)).forEach(p => {
+                          subcat.filter(p => p.category_id === 5 && bebidasIds.includes(p.subcategory_id)).forEach(p => {
                             const subName = bebidasSubcats[p.subcategory_id];
                             if (!displayData[subName]) displayData[subName] = [];
                             displayData[subName].push(p);
