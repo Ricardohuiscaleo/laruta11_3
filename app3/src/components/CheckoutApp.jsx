@@ -317,9 +317,10 @@ const CheckoutApp = ({ onClose }) => {
       .then(response => response.json())
       .then(data => {
         if (Array.isArray(data)) {
-          // category_id 5 = Papas y Snacks, subcategory_id 11, 27, 28 = Bebidas
+          // category_id 5 = Papas y Snacks, subcategory_id 11, 27, 28, 61-65 = Bebidas
+          const bebidasIds = [11, 27, 28, 61, 62, 63, 64, 65];
           const bebidas = data.filter(p =>
-            p.category_id === 5 && (p.subcategory_id === 11 || p.subcategory_id === 27 || p.subcategory_id === 28) && (p.is_active === 1 || p.active === 1)
+            p.category_id === 5 && bebidasIds.includes(p.subcategory_id) && (p.is_active === 1 || p.active === 1)
           ).sort((a, b) => a.subcategory_id - b.subcategory_id);
           setAvailableDrinks(bebidas);
 
