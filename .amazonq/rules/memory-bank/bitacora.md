@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`fe30703`) — UX: scrollLockRef, bebidas subcategorías sync checkout+personalización |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`440fcdf`) — menú lista compacta, búsqueda inline highlight, arqueo tabla 3-col |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`63c3552`) — Tabs Créditos R11/RL6, Usuarios Work/Clientes, email cobranza, métricas trailing |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`63c3552`) — RL6CreditService, 7 endpoints RL6, UserController customers, GmailService RL6 |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`9fb40c3`) — Estado de Resultados P&L dashboard (fix contable), Tabs Créditos/Usuarios |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`9fb40c3`) — Dashboard P&L endpoint (CMV sin duplicar compras), RL6CreditService, GmailService |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -121,15 +121,15 @@
 **Commits:** `63c3552`
 **Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `63c3552`)
 
-### 2026-04-22e — Estado de Resultados P&L en dashboard admin + spec admin-credits-users-tabs
+### 2026-04-22e — Estado de Resultados P&L en dashboard admin + fix duplicación contable
 
 **Cambios:**
-- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: Reescrito — endpoint `/admin/dashboard` ahora retorna P&L detallado: ingresos (ventas_netas, total_ordenes, ticket_promedio), costo_ventas (costo_ingredientes, margen_bruto, margen_bruto_pct), gastos_operacion (nomina_ruta11, compras_insumos, total_opex), resultado (resultado_neto, resultado_neto_pct), meta (meta_mensual, porcentaje_meta, ventas_proyectadas). Datos de ventas/compras via caja3 API, CMV via sales_analytics, nómina via NominaService.
-- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: Reescrito — reemplaza 4 KPI cards por Estado de Resultados completo: header dark con mes/año, barra progreso meta mensual, 3 KPI pills (Pedidos, Ticket, Proyección), tabla P&L con secciones coloreadas (Ingresos verde, CMV naranja, Margen Bruto esmeralda, OPEX rojo, Resultado Neto verde/rojo dinámico). Cada línea muestra monto CLP + % sobre ventas.
-- `.kiro/specs/admin-credits-users-tabs/`: Spec creado con 10 requirements (renombrar sidebar Créditos/Usuarios, tabs R11/RL6, tabs Work/Clientes, API endpoints RL6 con moroso/emails, resumen financiero contextual en header).
+- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: Reescrito — endpoint `/admin/dashboard` retorna P&L: ingresos (ventas_netas, total_ordenes, ticket_promedio), costo_ventas (costo_ingredientes/CMV, margen_bruto, margen_bruto_pct), gastos_operacion (nomina_ruta11 como único OPEX), resultado (resultado_neto, resultado_neto_pct), meta (meta_mensual, porcentaje_meta, ventas_proyectadas), flujo_caja (compras_mes separado del P&L). Fix contable: compras movidas de OPEX a flujo_caja para evitar duplicación con CMV.
+- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: Reescrito — Estado de Resultados: header dark, barra meta mensual, 3 KPI pills (Pedidos, Ticket, Proyección), tabla P&L coloreada (Ingresos→CMV→Margen Bruto→Nómina OPEX→Resultado Neto). Sin línea "Compras e Insumos" en OPEX (fix duplicación).
+- `.kiro/specs/admin-credits-users-tabs/`: Spec con 10 requirements.
 
-**Commits:** `8f2abe6`
-**Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `8f2abe6`)
+**Commits:** `8f2abe6`, `9fb40c3`
+**Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `9fb40c3`)
 
 ### 2026-04-22d — Bebidas sync + Arqueo tabla + caja3 MenuItem lista compacta
 

@@ -95,29 +95,48 @@ function PnlRow({ label, value, pct, bold, color, indent }: {
   );
 }
 
-function MetaProgress({ pct, meta }: { pct: number; meta: number }) {
-  const clampedPct = Math.min(100, Math.max(0, pct));
-  const barColor = pct >= 100 ? 'bg-green-500' : pct >= 70 ? 'bg-amber-500' : 'bg-red-500';
+function MetaProgress({ pct, meta, ventas }: { pct: number; meta: number; ventas: number }) {
+  // La meta es el punto de equilibrio → va al 50% de la barra
+  // 100% de la barra = 2x meta (zona de ganancia plena)
+  const barMax = meta * 2;
+  const barPct = Math.min(100, Math.max(0, (ventas / barMax) * 100));
+  const isPastBreakeven = ventas >= meta;
+  const barColor = isPastBreakeven ? 'bg-green-500' : barPct >= 35 ? 'bg-amber-500' : 'bg-red-500';
+  const label = isPastBreakeven
+    ? `+${formatCLP(ventas - meta)} sobre equilibrio`
+    : `-${formatCLP(meta - ventas)} para equilibrio`;
+
   return (
     <div className="px-3 py-2">
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs font-medium text-gray-500 flex items-center gap-1">
-          <Target className="h-3 w-3" /> Meta mensual
+          <Target className="h-3 w-3" /> {label}
         </span>
         <span className="text-xs font-semibold text-gray-700">
-          {pct.toFixed(0)}% de {formatCLP(meta)}
+          {formatCLP(ventas)} / {formatCLP(barMax)}
         </span>
       </div>
-      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="relative w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
         <div
           className={cn('h-full rounded-full transition-all', barColor)}
-          style={{ width: `${clampedPct}%` }}
+          style={{ width: `${barPct}%` }}
           role="progressbar"
-          aria-valuenow={clampedPct}
+          aria-valuenow={barPct}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label={`${pct.toFixed(0)}% de meta mensual alcanzada`}
+          aria-label={label}
         />
+        {/* Marcador punto de equilibrio al 50% */}
+        <div
+          className="absolute top-0 h-full w-0.5 bg-gray-900/40"
+          style={{ left: '50%' }}
+          title={`Equilibrio: ${formatCLP(meta)}`}
+        />
+      </div>
+      <div className="flex justify-between mt-0.5">
+        <span className="text-[9px] text-gray-400">$0</span>
+        <span className="text-[9px] text-gray-500 font-medium">Equilibrio {formatCLP(meta)}</span>
+        <span className="text-[9px] text-gray-400">{formatCLP(barMax)}</span>
       </div>
     </div>
   );
@@ -161,7 +180,7 @@ export default function DashboardSection() {
 
         {/* Meta progress */}
         {pnl && pnl.meta.meta_mensual > 0 && (
-          <MetaProgress pct={pnl.meta.porcentaje_meta} meta={pnl.meta.meta_mensual} />
+          <MetaProgress pct={pnl.meta.porcentaje_meta} meta={pnl.meta.meta_mensual} ventas={ventas} />
         )}
 
         {/* KPI pills */}
