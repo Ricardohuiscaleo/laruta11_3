@@ -117,6 +117,8 @@ Route::prefix('v1')->group(function () {
         Route::post('stock/preview-ajuste', [\App\Http\Controllers\Admin\StockController::class, 'previewAjuste']);
         Route::patch('stock/{id}', [\App\Http\Controllers\Admin\StockController::class, 'update']);
         Route::post('stock/consumir', [\App\Http\Controllers\Admin\StockController::class, 'consumir']);
+        Route::post('stock/auditoria', [\App\Http\Controllers\Admin\StockController::class, 'auditoria']);
+        Route::get('stock/consumibles', [\App\Http\Controllers\Admin\StockController::class, 'consumibles']);
 
         // KPIs
         Route::get('kpis', [\App\Http\Controllers\Admin\KpiController::class, 'index']);
@@ -198,6 +200,10 @@ Route::prefix('v1')->group(function () {
 
         // Dashboard KPIs (ventas, compras, nómina)
         Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
+
+        // Capital de Trabajo
+        Route::get('capital-trabajo', [\App\Http\Controllers\Admin\CapitalTrabajoController::class, 'resumenMensual']);
+        Route::post('capital-trabajo/cierre', [\App\Http\Controllers\Admin\CapitalTrabajoController::class, 'cierreManual']);
 
         // Recetas (recipe management)
         // Static routes MUST come before {productId} to avoid route conflicts

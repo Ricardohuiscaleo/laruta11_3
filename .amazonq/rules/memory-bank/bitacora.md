@@ -98,6 +98,19 @@
 
 ## Sesiones Recientes
 
+### 2026-04-23b — Auditoría y fix costos productos: mayonesa + recálculo masivo cost_price
+
+**Cambios BD (sin deploy de código):**
+- `ingredients` id=19 (Mayonesa): `cost_per_unit` de $0 → $6.312,17/kg (Kraft 3.78L a $23.860).
+- `products`: 48 productos recalculados via `update_product_costs.php` (usa `CASE WHEN pr.unit='g' THEN 0.001`). 13 con cambios significativos: Completo Italiano $3.134→$1.825, Completo Tocino $3.822→$1.920, Gorda $2.400→$1.914, Palta Extra $47→$451, etc.
+- Auditoría completa: conversión g→kg en `create_order.php` y `process_sale_inventory_fn.php` ya funcionaba correctamente. El problema era solo en `cost_price` de tabla `products` (usado por `get_sales_analytics.php`).
+- CMV corregido: de 47% → 41.3%. Margen bruto: 58.7%. Punto de equilibrio: $2.555.191/mes.
+- Ingredientes con costo $0 restantes: Pocillo Salsero (duplicado id=103 vs id=158), Sweet Relish (2 recetas, impacto menor).
+- Históricos `tuu_order_items.item_cost`: NO modificados (se grabaron correctamente con conversión g→kg al momento de venta, diferencias son por cambios de precios de ingredientes).
+
+**Commits:** ninguno (solo cambios BD directos)
+**Deploys:** ninguno
+
 ### 2026-04-23a — Spec admin-credits-users-tabs: implementación completa + deploy
 
 **Cambios:**
@@ -145,22 +158,8 @@
 **Commits:** `b1862c7`→`440fcdf` (10 commits)
 **Deploys:** app3 ✅ (`fe30703`), caja3 ✅ (`440fcdf`)
 
-### 2026-04-22c — UX app3: scroll continuo, rojo sólido, eliminar hamburguesas 100g
-
-**Cambios:**
-- `app3/src/components/MenuApp.jsx`: Selector categorías gradiente→rojo sólido (`bg-red-600`). Eliminada flecha `<>` scroll. Scroll continuo entre categorías con IntersectionObserver + smooth scroll. Fix títulos debajo del header (`scroll-mt-[140px]`, `pt-[140px]`). Helper `getCategoryData()` para renderizar todas las categorías en secuencia.
-- BD: `menu_categories` id=2 (Hamburguesas 100g) desactivada. id=1 renombrada "Hamburguesas (200g)" → "Hamburguesas".
-
-**Commits:** `7991e02`, `00e32bc`, `24caa8e`, `de69ccc`, `fb99aa2`, `c6a19b2`, `5d6465e`
-**Deploys:** app3 ✅ (`5d6465e`)
-**BD:** Hamburguesas 100g desactivada, "Hamburguesas (200g)" → "Hamburguesas". 5 nuevas subcategorías bebidas (61-65): Aguas, Latas 350ml, Energéticas 473ml, Energéticas 250ml, Bebidas 1.5L. 43 productos reasignados.
-
-**Commits:** `0723c72`
-**Deploys:** app3 ✅, caja3 ✅ (ambos `0723c72`)
-**BD:** Uniformización bebidas combos — 6 combos de lata ahora tienen las mismas 15 opciones 350ml. Doble Mixta 8→15, Completo 11→15, Gorda 11→15, Dupla 8→15, Hamburguesa Clásica 5→15, Salchipapa 4→15. Familiar sin cambios (1.5Lt).
-
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-22b archivadas. Últimas: 2026-04-22a (spec combos-refactor fases 1-4), 2026-04-22b (fix pending pages + uniformizar bebidas combos).
+> Sesiones 2026-04-19c→2026-04-22c archivadas. Últimas: 2026-04-22b (fix pending pages + uniformizar bebidas combos), 2026-04-22c (UX scroll continuo + hamburguesas 100g).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

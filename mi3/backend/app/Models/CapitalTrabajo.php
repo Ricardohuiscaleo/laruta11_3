@@ -12,8 +12,10 @@ class CapitalTrabajo extends Model
         'fecha',
         'saldo_inicial',
         'ingresos_ventas',
+        'desglose_ingresos',
         'egresos_compras',
         'egresos_gastos',
+        'desglose_gastos',
         'saldo_final',
         'notas',
     ];
@@ -22,8 +24,10 @@ class CapitalTrabajo extends Model
         'fecha' => 'date',
         'saldo_inicial' => 'float',
         'ingresos_ventas' => 'float',
+        'desglose_ingresos' => 'array',
         'egresos_compras' => 'float',
         'egresos_gastos' => 'float',
+        'desglose_gastos' => 'array',
         'saldo_final' => 'float',
     ];
 }

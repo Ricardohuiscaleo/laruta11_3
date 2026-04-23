@@ -22,6 +22,7 @@ $commands = [
     ['cmd' => 'mi3:checklist-reminder',                 'name' => 'Recordatorio Checklist',     'schedule' => fn($s) => $s->dailyAt('18:00')],
     ['cmd' => 'delivery:generate-daily-settlement',     'name' => 'Settlement Delivery Diario', 'schedule' => fn($s) => $s->dailyAt('23:59')],
     ['cmd' => 'delivery:check-pending-settlements',     'name' => 'Verificar Settlements',      'schedule' => fn($s) => $s->dailyAt('12:00')],
+    ['cmd' => 'mi3:cierre-diario',                      'name' => 'Cierre Diario Capital',      'schedule' => fn($s) => $s->dailyAt('04:15')],
 ];
 
 foreach ($commands as $c) {

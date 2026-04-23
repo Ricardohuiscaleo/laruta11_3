@@ -23,7 +23,21 @@ interface PnlCostoVentas {
 
 interface PnlGastosOperacion {
   nomina_ruta11: number;
+  nomina_ruta11_pct?: number;
+  gas: number;
+  gas_pct?: number;
+  limpieza: number;
+  limpieza_pct?: number;
+  mermas: number;
+  mermas_pct?: number;
+  otros_gastos: number;
+  otros_gastos_pct?: number;
   total_opex: number;
+  total_opex_pct?: number;
+}
+
+interface PnlMetaEquilibrio {
+  meta_equilibrio: number;
 }
 
 interface PnlFlujoCaja {
@@ -46,7 +60,7 @@ interface PnlData {
   costo_ventas: PnlCostoVentas;
   gastos_operacion: PnlGastosOperacion;
   resultado: PnlResultado;
-  meta: PnlMeta;
+  meta: PnlMeta & PnlMetaEquilibrio;
   flujo_caja: PnlFlujoCaja;
 }
 
@@ -161,8 +175,14 @@ export default function DashboardSection() {
   const ventas = pnl?.ingresos.ventas_netas ?? 0;
 
   const cogsPct = ventas > 0 ? ((pnl?.costo_ventas.costo_ingredientes ?? 0) / ventas) * 100 : 0;
-  const nominaPct = ventas > 0 ? ((pnl?.gastos_operacion.nomina_ruta11 ?? 0) / ventas) * 100 : 0;
-  const opexPct = nominaPct;
+  const go = pnl?.gastos_operacion;
+  const nominaPct = go?.nomina_ruta11_pct ?? (ventas > 0 ? ((go?.nomina_ruta11 ?? 0) / ventas) * 100 : 0);
+  const gasPct = go?.gas_pct ?? (ventas > 0 ? ((go?.gas ?? 0) / ventas) * 100 : 0);
+  const limpiezaPct = go?.limpieza_pct ?? (ventas > 0 ? ((go?.limpieza ?? 0) / ventas) * 100 : 0);
+  const mermasPct = go?.mermas_pct ?? (ventas > 0 ? ((go?.mermas ?? 0) / ventas) * 100 : 0);
+  const otrosPct = go?.otros_gastos_pct ?? (ventas > 0 ? ((go?.otros_gastos ?? 0) / ventas) * 100 : 0);
+  const opexPct = go?.total_opex_pct ?? (ventas > 0 ? ((go?.total_opex ?? 0) / ventas) * 100 : 0);
+  const metaEquilibrio = pnl?.meta.meta_equilibrio ?? 0;
 
   return (
     <div className="space-y-6">
@@ -235,9 +255,25 @@ export default function DashboardSection() {
               <Calculator className="h-3.5 w-3.5 text-red-600" />
               <span className="text-xs font-semibold text-red-700 uppercase tracking-wide">Gastos Operación</span>
             </div>
-            <PnlRow label="Nómina Equipo" value={-(pnl?.gastos_operacion.nomina_ruta11 ?? 0)} pct={nominaPct} indent />
-            <PnlRow label="Total OPEX" value={-(pnl?.gastos_operacion.total_opex ?? 0)} pct={opexPct} bold />
+            <PnlRow label="Nómina Equipo" value={-(go?.nomina_ruta11 ?? 0)} pct={nominaPct} indent />
+            <PnlRow label="Gas" value={-(go?.gas ?? 0)} pct={gasPct} indent />
+            <PnlRow label="Limpieza" value={-(go?.limpieza ?? 0)} pct={limpiezaPct} indent />
+            <PnlRow label="Mermas" value={-(go?.mermas ?? 0)} pct={mermasPct} indent />
+            <PnlRow label="Otros Gastos" value={-(go?.otros_gastos ?? 0)} pct={otrosPct} indent />
+            <PnlRow label="Total OPEX" value={-(go?.total_opex ?? 0)} pct={opexPct} bold />
           </div>
+
+          {/* 4b. META EQUILIBRIO */}
+          {metaEquilibrio > 0 && (
+            <div className="bg-blue-50/50">
+              <PnlRow
+                label="Meta Equilibrio"
+                value={metaEquilibrio}
+                bold
+                color="text-blue-700"
+              />
+            </div>
+          )}
 
           {/* 5. RESULTADO NETO */}
           <div className={cn(

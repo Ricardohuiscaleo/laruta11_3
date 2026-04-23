@@ -36,6 +36,7 @@ const secondaryItems: NavItem[] = [
   { key: 'creditos', label: 'Créditos', icon: CreditCard },
   { key: 'cambios', label: 'Cambios', icon: ArrowLeftRight },
   { key: 'cronjobs', label: 'Cronjobs', icon: Clock },
+  { key: 'capital', label: 'Capital', icon: Wallet },
 ];
 
 interface MobileBottomNavSPAProps {

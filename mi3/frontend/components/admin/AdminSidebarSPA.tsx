@@ -34,6 +34,7 @@ const links: SidebarLink[] = [
   { key: 'compras', label: 'Compras', icon: ShoppingCart },
   { key: 'recetas', label: 'Recetas', icon: ChefHat },
   { key: 'checklists', label: 'Checklists', icon: ClipboardCheck },
+  { key: 'capital', label: 'Capital', icon: Wallet },
 ];
 
 interface NavItemProps {

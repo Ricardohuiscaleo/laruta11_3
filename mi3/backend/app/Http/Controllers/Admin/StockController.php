@@ -133,21 +133,40 @@ class StockController extends Controller
         foreach ($data['items'] as $item) {
             $ingredient = \App\Models\Ingredient::findOrFail($item['id']);
             $prev = (float) $ingredient->current_stock;
-            $new = $prev - $item['cantidad'];
+            $cantidad = (float) $item['cantidad'];
+
+            // Validate stock >= cantidad (Req 2.5)
+            if ($prev < $cantidad) {
+                return response()->json([
+                    'success' => false,
+                    'error' => "Stock insuficiente: disponible {$prev} {$ingredient->unit}",
+                    'ingredient_id' => $item['id'],
+                    'ingredient_name' => $ingredient->name,
+                ], 422);
+            }
+
+            $new = $prev - $cantidad;
+            $cost = $cantidad * (float) $ingredient->cost_per_unit;
             $ingredient->update(['current_stock' => $new]);
 
             \Illuminate\Support\Facades\DB::table('inventory_transactions')->insert([
-                'transaction_type' => 'adjustment',
+                'transaction_type' => 'consumption',
                 'ingredient_id' => $item['id'],
-                'quantity' => -$item['cantidad'],
+                'quantity' => -$cantidad,
                 'unit' => $ingredient->unit,
                 'previous_stock' => $prev,
                 'new_stock' => $new,
-                'notes' => $item['notas'] ?? 'Consumo manual',
+                'notes' => ($item['notas'] ?? 'Consumo manual') . " | costo: $" . number_format($cost, 0, ',', '.'),
                 'created_at' => now(),
             ]);
 
-            $results[] = ['id' => $item['id'], 'name' => $ingredient->name, 'prev' => $prev, 'new' => $new];
+            $results[] = [
+                'id' => $item['id'],
+                'name' => $ingredient->name,
+                'prev' => $prev,
+                'new' => $new,
+                'cost' => $cost,
+            ];
         }
 
         broadcast(new \App\Events\StockActualizado('consumo'));
@@ -155,3 +174,135 @@ class StockController extends Controller
         return response()->json(['success' => true, 'applied' => $results]);
     }
 }
+
+    /**
+     * Auditoría física de inventario — ajuste masivo por conteo.
+     * POST /api/v1/admin/stock/auditoria
+     */
+    public function auditoria(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.ingredient_id' => 'required|integer',
+            'items.*.physical_count' => 'required|numeric|min:0',
+        ]);
+
+        $warnings = [];
+        $modified = [];
+        $valorAntes = 0.0;
+        $valorDespues = 0.0;
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            foreach ($data['items'] as $item) {
+                $ingredient = \App\Models\Ingredient::find($item['ingredient_id']);
+                if (!$ingredient) {
+                    $warnings[] = "ingredient_id {$item['ingredient_id']} no encontrado — ignorado";
+                    continue;
+                }
+
+                $prevStock = (float) $ingredient->current_stock;
+                $newStock = (float) $item['physical_count'];
+                $costUnit = (float) $ingredient->cost_per_unit;
+
+                $valorAntes += $prevStock * $costUnit;
+                $valorDespues += $newStock * $costUnit;
+
+                if (abs($prevStock - $newStock) < 0.001) {
+                    continue; // Sin diferencia
+                }
+
+                $ingredient->update(['current_stock' => $newStock]);
+
+                \Illuminate\Support\Facades\DB::table('inventory_transactions')->insert([
+                    'transaction_type' => 'adjustment',
+                    'ingredient_id' => $ingredient->id,
+                    'quantity' => $newStock - $prevStock,
+                    'unit' => $ingredient->unit,
+                    'previous_stock' => $prevStock,
+                    'new_stock' => $newStock,
+                    'notes' => 'Auditoría física',
+                    'created_at' => now(),
+                ]);
+
+                $modified[] = [
+                    'id' => $ingredient->id,
+                    'name' => $ingredient->name,
+                    'prev' => $prevStock,
+                    'new' => $newStock,
+                    'diff' => $newStock - $prevStock,
+                ];
+            }
+
+            // Recalcular stock_quantity de productos con receta que usen ingredientes ajustados
+            $adjustedIds = collect($modified)->pluck('id')->toArray();
+            if (!empty($adjustedIds)) {
+                $productIds = \Illuminate\Support\Facades\DB::table('product_recipes')
+                    ->whereIn('ingredient_id', $adjustedIds)
+                    ->distinct()
+                    ->pluck('product_id');
+
+                foreach ($productIds as $productId) {
+                    \Illuminate\Support\Facades\DB::statement("
+                        UPDATE products p
+                        SET stock_quantity = (
+                            SELECT COALESCE(FLOOR(MIN(
+                                CASE WHEN pr.unit = 'g' THEN i.current_stock * 1000 / pr.quantity
+                                     ELSE i.current_stock / pr.quantity END
+                            )), 0)
+                            FROM product_recipes pr
+                            JOIN ingredients i ON pr.ingredient_id = i.id
+                            WHERE pr.product_id = p.id AND i.is_active = 1 AND i.current_stock > 0
+                        )
+                        WHERE p.id = ?
+                    ", [$productId]);
+                }
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al aplicar auditoría: ' . $e->getMessage(),
+            ], 500);
+        }
+
+        broadcast(new \App\Events\StockActualizado('auditoria'));
+
+        return response()->json([
+            'success' => true,
+            'summary' => [
+                'items_modified' => count($modified),
+                'valor_antes' => $valorAntes,
+                'valor_despues' => $valorDespues,
+                'diferencia' => $valorDespues - $valorAntes,
+            ],
+            'modified' => $modified,
+            'warnings' => $warnings,
+        ]);
+    }
+
+    /**
+     * Lista de consumibles (Gas, Limpieza, Servicios).
+     * GET /api/v1/admin/stock/consumibles
+     */
+    public function consumibles(): JsonResponse
+    {
+        $items = \App\Models\Ingredient::where('is_active', 1)
+            ->whereIn('category', ['Gas', 'Limpieza', 'Servicios'])
+            ->orderBy('category')
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($i) => [
+                'id' => $i->id,
+                'name' => $i->name,
+                'category' => $i->category,
+                'current_stock' => (float) $i->current_stock,
+                'unit' => $i->unit,
+                'cost_per_unit' => (float) $i->cost_per_unit,
+                'valor_inventario' => (float) $i->current_stock * (float) $i->cost_per_unit,
+            ]);
+
+        return response()->json(['success' => true, 'items' => $items]);
+    }

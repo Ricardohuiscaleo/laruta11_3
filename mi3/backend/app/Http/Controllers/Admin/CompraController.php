@@ -23,6 +23,16 @@ class CompraController extends Controller
     ) {}
 
     /**
+     * Category-to-purchase-type mapping for auto-classification.
+     */
+    private const CATEGORY_TO_TIPO_COMPRA = [
+        'Gas'        => 'gas',
+        'Limpieza'   => 'limpieza',
+        'Packaging'  => 'packaging',
+        'Servicios'  => 'servicios',
+    ];
+
+    /**
      * Registro atómico de compra.
      * POST /api/v1/admin/compras
      */
@@ -31,7 +41,7 @@ class CompraController extends Controller
         $request->validate([
             'fecha_compra' => 'required|date',
             'proveedor'    => 'required|string|max:255',
-            'tipo_compra'  => 'required|string|in:ingredientes,insumos,equipamiento,otros',
+            'tipo_compra'  => 'required|string|in:ingredientes,insumos,equipamiento,otros,gas,limpieza,packaging,servicios',
             'monto_total'  => 'required|numeric|min:0',
             'metodo_pago'  => 'required|string|in:cash,transfer,card,credit',
             'items'        => 'required|array|min:1',
@@ -44,6 +54,9 @@ class CompraController extends Controller
 
         try {
             $data = $request->all();
+
+            // Auto-classify tipo_compra based on ingredient category (Req 3.2)
+            $data['tipo_compra'] = $this->autoClassifyTipoCompra($data);
 
             // Proveedores que facturan NETO: agregar 19% IVA a precios al registrar
             $netoSuppliers = ['vanni', 'arauco'];
@@ -294,5 +307,34 @@ class CompraController extends Controller
                 'error'   => 'Error al subir imagen: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Auto-classify tipo_compra based on ingredient categories in items.
+     * If items have ingredient_id, derive from ingredient category.
+     * Otherwise keep the user-provided tipo_compra.
+     */
+    private function autoClassifyTipoCompra(array $data): string
+    {
+        $items = $data['items'] ?? [];
+        $tipoCompra = $data['tipo_compra'] ?? 'ingredientes';
+
+        // Find the first item with an ingredient_id to derive category
+        foreach ($items as $item) {
+            $ingredienteId = $item['ingrediente_id'] ?? null;
+            if (!$ingredienteId) {
+                continue;
+            }
+
+            $category = \Illuminate\Support\Facades\DB::table('ingredients')
+                ->where('id', $ingredienteId)
+                ->value('category');
+
+            if ($category && isset(self::CATEGORY_TO_TIPO_COMPRA[$category])) {
+                return self::CATEGORY_TO_TIPO_COMPRA[$category];
+            }
+        }
+
+        return $tipoCompra;
     }
 }
