@@ -735,10 +735,18 @@ function NotificationsModal({ isOpen, onClose, onOrdersUpdate, activeOrdersCount
 
 
 
-function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, type, isLiked, handleLike, setReviewsModalProduct, onShare, isCashier }) {
+function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, type, isLiked, handleLike, setReviewsModalProduct, onShare, isCashier, searchQuery }) {
   const [showImageModal, setShowImageModal] = useState(false);
   const [isActive, setIsActive] = useState(product.active !== 0);
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
+
+  const highlightName = (name) => {
+    const q = (searchQuery || '').trim();
+    if (q.length < 2) return name;
+    const idx = name.toLowerCase().indexOf(q.toLowerCase());
+    if (idx === -1) return name;
+    return <>{name.slice(0, idx)}<mark className="bg-yellow-300 rounded-sm px-0.5">{name.slice(idx, idx + q.length)}</mark>{name.slice(idx + q.length)}</>;
+  };
 
   const toggleProductStatus = async () => {
     setIsTogglingStatus(true);
@@ -776,7 +784,7 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
         {/* Name + price */}
         <div className="flex-1 min-w-0">
           <h3 className={`font-bold text-[11px] leading-tight truncate ${!isActive ? 'text-gray-400' : 'text-gray-900'}`}>
-            {product.name}
+            {highlightName(product.name)}
           </h3>
           <div className="flex items-center gap-1.5 mt-0.5">
             {!!product.is_featured && !!product.sale_price ? (
@@ -785,7 +793,7 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
                 <span className="text-gray-400 text-[9px] line-through">${product.price.toLocaleString('es-CL')}</span>
               </>
             ) : (
-              <span className="text-gray-700 font-bold text-[11px]">${product.price ? product.price.toLocaleString('es-CL') : '0'}</span>
+              <span className="bg-yellow-400 text-black font-black text-[12px] px-1.5 py-0.5 rounded">${product.price ? product.price.toLocaleString('es-CL') : '0'}</span>
             )}
             {product.category_name === 'Combos' && (
               <span className="flex items-center gap-0.5">
@@ -793,17 +801,15 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
                 <CupSoda size={8} className="text-orange-500" />
               </span>
             )}
+            {isCashier && (
+              <button onClick={(e) => { e.stopPropagation(); toggleProductStatus(); }}
+                className={`px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase ${isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700 ring-1 ring-red-400'}`}
+                disabled={isTogglingStatus}>
+                {isTogglingStatus ? '..' : (isActive ? 'ON' : 'OFF')}
+              </button>
+            )}
           </div>
         </div>
-
-        {/* ON/OFF toggle for cashier */}
-        {isCashier && (
-          <button onClick={(e) => { e.stopPropagation(); toggleProductStatus(); }}
-            className={`px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase flex-shrink-0 ${isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700 ring-1 ring-red-400'}`}
-            disabled={isTogglingStatus}>
-            {isTogglingStatus ? '..' : (isActive ? 'ON' : 'OFF')}
-          </button>
-        )}
 
         {/* Add/Remove controls */}
         <div className="flex-shrink-0" style={{ width: quantity > 0 ? '90px' : '56px' }}>
@@ -828,20 +834,48 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
         </div>
       </div>
 
-      {/* Fullscreen image modal */}
+      {/* Fullscreen product modal */}
       {showImageModal && (
-        <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center animate-fade-in" onClick={() => setShowImageModal(false)}>
-          <button className="absolute top-4 right-4 z-10 bg-black/50 text-white rounded-full w-10 h-10 flex items-center justify-center"
+        <div className="fixed inset-0 bg-black z-[70] flex flex-col animate-fade-in">
+          <button className="absolute top-3 right-3 z-10 bg-white/20 text-white rounded-full w-9 h-9 flex items-center justify-center backdrop-blur-sm"
             onClick={() => setShowImageModal(false)}>
-            <X size={22} />
+            <X size={20} />
           </button>
           {product.image && (
-            <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" />
+            <div className="flex-1 flex items-center justify-center overflow-hidden">
+              <img src={product.image} alt={product.name} className="w-full h-full object-contain" />
+            </div>
           )}
-          <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/40 text-white text-center">
-            <h3 className="text-lg font-bold">{product.name}</h3>
-            <p className="text-orange-400 font-semibold">${product.price?.toLocaleString('es-CL')}</p>
-            {quantity > 0 && <p className="text-sm text-blue-300">{quantity} en carrito</p>}
+          <div className="bg-white rounded-t-2xl p-4 pb-6">
+            <h3 className="text-lg font-black text-gray-900 mb-1">{product.name}</h3>
+            {product.description && (
+              <p className="text-sm text-gray-600 leading-relaxed mb-3">{product.description}</p>
+            )}
+            <div className="flex items-center justify-between">
+              <span className="bg-yellow-400 text-black px-4 py-2 rounded-xl font-black text-lg">
+                ${product.price?.toLocaleString('es-CL')}
+              </span>
+              <div className="flex items-center gap-2">
+                {quantity > 0 && (
+                  <button onClick={(e) => { e.stopPropagation(); onRemoveFromCart(product.id); }}
+                    className="w-10 h-10 text-red-500 bg-red-50 rounded-lg flex items-center justify-center">
+                    <MinusCircle size={22} />
+                  </button>
+                )}
+                {quantity > 0 && (
+                  <span className="font-black text-lg w-8 text-center">{quantity}</span>
+                )}
+                <button onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+                  className={`px-5 h-10 font-bold rounded-xl active:scale-95 transition-all ${quantity > 0 ? 'bg-yellow-500 text-black' : 'bg-green-600 text-white'}`}>
+                  {quantity > 0 ? '+1' : 'Agregar'}
+                </button>
+              </div>
+            </div>
+            {quantity > 0 && (
+              <div className="mt-2 bg-blue-50 rounded-lg p-2 text-center">
+                <span className="text-xs font-bold text-blue-700">{quantity} en carrito — ${(product.price * quantity).toLocaleString('es-CL')}</span>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1417,54 +1451,7 @@ export default function App() {
 
   const handleSearch = (query) => {
     setSearchQuery(query);
-    if (!query.trim() || query.length < 2) {
-      setFilteredProducts([]);
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-
-    const allProducts = [];
-    const seenIds = new Set();
-
-    Object.entries(menuWithImages).forEach(([categoryKey, category]) => {
-      // Excluir categorías personalizar y extras de la vista principal
-      if (categoryKey === 'personalizar' || categoryKey === 'extras') return;
-
-      if (Array.isArray(category)) {
-        category.forEach(p => {
-          if (!seenIds.has(p.id)) {
-            allProducts.push({ ...p, category: categoryKey });
-            seenIds.add(p.id);
-          }
-        });
-      } else {
-        Object.entries(category).forEach(([subKey, products]) => {
-          products.forEach(p => {
-            if (!seenIds.has(p.id)) {
-              allProducts.push({ ...p, category: categoryKey, subcategory: subKey });
-              seenIds.add(p.id);
-            }
-          });
-        });
-      }
-    });
-
-    const filtered = allProducts.filter(product => {
-      // Excluir productos de categorías personalizar y extras de búsquedas
-      if (product.category === 'personalizar' || product.category === 'extras') return false;
-
-      // Solo mostrar productos activos (active !== 0)
-      if (product.active === 0) return false;
-
-      // Buscar solo por nombre y descripción del producto
-      return product.name.toLowerCase().includes(query.toLowerCase()) ||
-        product.description.toLowerCase().includes(query.toLowerCase());
-    });
-
-    setFilteredProducts(filtered);
-    setSuggestions(filtered.slice(0, 8));
-    setShowSuggestions(query.length >= 2 && filtered.length > 0);
+    setShowSuggestions(false);
   };
 
   const selectSuggestion = (product) => {
@@ -2434,7 +2421,7 @@ export default function App() {
         );
       })()}
 
-      <main className="pb-40 px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 110px)', ...(showSuggestions ? { filter: 'blur(2px)', pointerEvents: 'none' } : {}) }} onClick={() => showSuggestions && setShowSuggestions(false)}>
+      <main className="pb-24 px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 70px)' }}>
         <div className="flex flex-col gap-1">
           {(() => {
             // Build a flat array of all products tagged with their category color and key
@@ -2537,7 +2524,12 @@ export default function App() {
               });
 
             // Render the single continuous list
-            return allItems.map(({ product, catKey, catColor, isFirstInCategory }) => (
+            const q = searchQuery.trim().toLowerCase();
+            const filteredItems = q.length >= 2
+              ? allItems.filter(({ product }) => product.name.toLowerCase().includes(q) || (product.description || '').toLowerCase().includes(q))
+              : allItems;
+
+            return filteredItems.map(({ product, catKey, catColor, isFirstInCategory }) => (
               <div
                 key={product.id}
                 id={isFirstInCategory ? `section-${catKey}` : undefined}
@@ -2555,6 +2547,7 @@ export default function App() {
                   setReviewsModalProduct={setReviewsModalProduct}
                   onShare={setShareModalProduct}
                   isCashier={!!cajaUser}
+                  searchQuery={searchQuery}
                 />
               </div>
             ));
