@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-22)
+## Estado Actual (2026-04-23)
 
 ### Aplicaciones Desplegadas
 
@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`fe30703`) — UX: scrollLockRef, bebidas subcategorías sync checkout+personalización |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`440fcdf`) — menú lista compacta, búsqueda inline highlight, arqueo tabla 3-col |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`8f2abe6`) — Estado de Resultados P&L en dashboard, tab Combos en Recetas |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`8f2abe6`) — Dashboard P&L endpoint con ventas/CMV/nómina/OPEX, ComboService CRUD |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`63c3552`) — Tabs Créditos R11/RL6, Usuarios Work/Clientes, email cobranza, métricas trailing |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`63c3552`) — RL6CreditService, 7 endpoints RL6, UserController customers, GmailService RL6 |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -98,6 +98,29 @@
 
 ## Sesiones Recientes
 
+### 2026-04-23a — Spec admin-credits-users-tabs: implementación completa + deploy
+
+**Cambios:**
+- `mi3/backend/app/Services/Credit/RL6CreditService.php`: Creado — getRL6Users() con cálculo moroso/días_mora/deuda_ciclo_vencido, getSummary(), approveCredit(), rejectCredit(), manualPayment() con desbloqueo automático, calculateEmailEstado(), previewEmail(), buildEmailHtml() replicando caja3 email template.
+- `mi3/backend/app/Http/Controllers/Admin/CreditController.php`: Extendido — 7 métodos RL6: rl6Index, rl6Approve, rl6Reject, rl6ManualPayment, rl6PreviewEmail, rl6SendEmail, rl6SendBulkEmails.
+- `mi3/backend/app/Http/Controllers/Admin/UserController.php`: Creado — customers() con left join tuu_orders, búsqueda LIKE, order by id DESC.
+- `mi3/backend/app/Services/Email/GmailService.php`: Extendido — sendRL6CollectionEmail() con email_logs.
+- `mi3/backend/app/Models/Usuario.php`: Campos RL6 en $fillable + relaciones rl6Transactions/emailLogs.
+- `mi3/backend/app/Models/Rl6CreditTransaction.php`: Creado.
+- `mi3/backend/routes/api.php`: 8 rutas nuevas (7 RL6 + 1 customers).
+- `mi3/frontend/components/admin/AdminSidebarSPA.tsx`: 'Créditos R11'→'Créditos', 'Personal'→'Usuarios'.
+- `mi3/frontend/components/admin/MobileBottomNavSPA.tsx`: Mismos cambios labels.
+- `mi3/frontend/components/admin/AdminShell.tsx`: SECTION_TITLES actualizados.
+- `mi3/frontend/components/admin/sections/CreditosSection.tsx`: Reescrito — tabs R11/RL6, tabla RL6 con badges moroso (rojo/naranja/verde), acciones approve/reject/pago manual, botón email preview/envío, bulk "Cobrar a Morosos", CreditSummaryTrailing integrado.
+- `mi3/frontend/components/admin/EmailPreviewModal.tsx`: Creado — iframe preview, badge tipo email, botones cancelar/enviar.
+- `mi3/frontend/components/admin/CreditSummaryTrailing.tsx`: Creado — 5 métricas RL6 / 4 métricas R11, colores condicionales, responsive mobile 3 métricas, skeleton loading.
+- `mi3/frontend/components/admin/sections/PersonalSection.tsx`: Reescrito — tabs Work/Clientes, tabla clientes app3 con búsqueda debounce 300ms.
+- `mi3/frontend/types/admin.ts`: Creado — RL6CreditUser, RL6Summary, CustomerUser, EmailEstado.
+- Fix: instalado @vis.gl/react-google-maps (dependencia faltante preexistente).
+
+**Commits:** `63c3552`
+**Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `63c3552`)
+
 ### 2026-04-22e — Estado de Resultados P&L en dashboard admin + spec admin-credits-users-tabs
 
 **Cambios:**
@@ -132,19 +155,6 @@
 **Deploys:** app3 ✅ (`5d6465e`)
 **BD:** Hamburguesas 100g desactivada, "Hamburguesas (200g)" → "Hamburguesas". 5 nuevas subcategorías bebidas (61-65): Aguas, Latas 350ml, Energéticas 473ml, Energéticas 250ml, Bebidas 1.5L. 43 productos reasignados.
 
-### 2026-04-22b — Fix pending pages + uniformizar bebidas combos
-
-**Cambios:**
-- `app3/src/pages/transfer-pending.astro`: Eliminado botón WhatsApp + funciones JS asociadas. "Volver al Menú" como botón primario naranja.
-- `app3/src/pages/cash-pending.astro`: Mismo fix.
-- `app3/src/pages/card-pending.astro`: Mismo fix.
-- `app3/src/pages/rl6-pending.astro`: Eliminado WhatsApp + fix TypeScript syntax (`: any`, `: string[]`, `as any`, `window as any`) + fix `urlParams` duplicado.
-- `app3/src/pages/r11c-pending.astro`: Agregado combo_data handling (fixed_items + selections con →).
-- `caja3/src/pages/cash-pending.astro`: Eliminado botón WhatsApp. "Volver a Caja" como primario.
-- `caja3/src/pages/transfer-pending.astro`: Mismo fix.
-- `caja3/src/pages/card-pending.astro`: Mismo fix.
-- `caja3/src/pages/pedidosya-pending.astro`: Mismo fix.
-
 **Commits:** `0723c72`
 **Deploys:** app3 ✅, caja3 ✅ (ambos `0723c72`)
 **BD:** Uniformización bebidas combos — 6 combos de lata ahora tienen las mismas 15 opciones 350ml. Doble Mixta 8→15, Completo 11→15, Gorda 11→15, Dupla 8→15, Hamburguesa Clásica 5→15, Salchipapa 4→15. Familiar sin cambios (1.5Lt).
@@ -152,5 +162,5 @@
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-22a archivadas. Últimas: 2026-04-21c (porciones estándar + creador IA), 2026-04-22a (spec combos-refactor fases 1-4).
+> Sesiones 2026-04-19c→2026-04-22b archivadas. Últimas: 2026-04-22a (spec combos-refactor fases 1-4), 2026-04-22b (fix pending pages + uniformizar bebidas combos).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

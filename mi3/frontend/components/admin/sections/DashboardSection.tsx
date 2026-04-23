@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
 import {
-  Loader2, TrendingUp, ShoppingCart, Users, Calculator,
+  Loader2, TrendingUp, Users, Calculator,
   ShoppingBag, ArrowLeftRight, CreditCard, ClipboardCheck,
   Target, Receipt, ChefHat,
 } from 'lucide-react';
@@ -23,8 +23,11 @@ interface PnlCostoVentas {
 
 interface PnlGastosOperacion {
   nomina_ruta11: number;
-  compras_insumos: number;
   total_opex: number;
+}
+
+interface PnlFlujoCaja {
+  compras_mes: number;
 }
 
 interface PnlResultado {
@@ -44,6 +47,7 @@ interface PnlData {
   gastos_operacion: PnlGastosOperacion;
   resultado: PnlResultado;
   meta: PnlMeta;
+  flujo_caja: PnlFlujoCaja;
 }
 
 interface DashboardData {
@@ -139,8 +143,7 @@ export default function DashboardSection() {
 
   const cogsPct = ventas > 0 ? ((pnl?.costo_ventas.costo_ingredientes ?? 0) / ventas) * 100 : 0;
   const nominaPct = ventas > 0 ? ((pnl?.gastos_operacion.nomina_ruta11 ?? 0) / ventas) * 100 : 0;
-  const comprasPct = ventas > 0 ? ((pnl?.gastos_operacion.compras_insumos ?? 0) / ventas) * 100 : 0;
-  const opexPct = ventas > 0 ? ((pnl?.gastos_operacion.total_opex ?? 0) / ventas) * 100 : 0;
+  const opexPct = nominaPct;
 
   return (
     <div className="space-y-6">
@@ -214,7 +217,6 @@ export default function DashboardSection() {
               <span className="text-xs font-semibold text-red-700 uppercase tracking-wide">Gastos Operación</span>
             </div>
             <PnlRow label="Nómina Equipo" value={-(pnl?.gastos_operacion.nomina_ruta11 ?? 0)} pct={nominaPct} indent />
-            <PnlRow label="Compras e Insumos" value={-(pnl?.gastos_operacion.compras_insumos ?? 0)} pct={comprasPct} indent />
             <PnlRow label="Total OPEX" value={-(pnl?.gastos_operacion.total_opex ?? 0)} pct={opexPct} bold />
           </div>
 

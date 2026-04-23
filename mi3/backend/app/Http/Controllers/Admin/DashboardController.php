@@ -33,8 +33,10 @@ class DashboardController extends Controller
                 ],
                 'gastos_operacion' => [
                     'nomina_ruta11' => 0,
-                    'compras_insumos' => 0,
                     'total_opex' => 0,
+                ],
+                'flujo_caja' => [
+                    'compras_mes' => 0,
                 ],
                 'resultado' => [
                     'resultado_neto' => 0,
@@ -70,7 +72,7 @@ class DashboardController extends Controller
                     $data['pnl']['ingresos']['total_ordenes'] = $totalOrdenes;
                     $data['pnl']['ingresos']['ticket_promedio'] = $ticketPromedio;
 
-                    $data['pnl']['gastos_operacion']['compras_insumos'] = $totalCompras;
+                    $data['pnl']['flujo_caja']['compras_mes'] = $totalCompras;
 
                     $data['pnl']['meta']['meta_mensual'] = $metaMensual;
                     $data['pnl']['meta']['porcentaje_meta'] = $pctMeta;
@@ -118,7 +120,6 @@ class DashboardController extends Controller
         $ventas = $data['pnl']['ingresos']['ventas_netas'];
         $cogs = $data['pnl']['costo_ventas']['costo_ingredientes'];
         $nomina = $data['pnl']['gastos_operacion']['nomina_ruta11'];
-        $compras = $data['pnl']['gastos_operacion']['compras_insumos'];
 
         $margenBruto = $ventas - $cogs;
         $data['pnl']['costo_ventas']['margen_bruto'] = $margenBruto;
@@ -126,16 +127,16 @@ class DashboardController extends Controller
             ? round(($margenBruto / $ventas) * 100, 1)
             : 0;
 
-        $totalOpex = $nomina + $compras;
+        $totalOpex = $nomina;
         $data['pnl']['gastos_operacion']['total_opex'] = $totalOpex;
 
-        $resultadoNeto = $ventas - $cogs - $totalOpex;
+        $resultadoNeto = $margenBruto - $totalOpex;
         $data['pnl']['resultado']['resultado_neto'] = $resultadoNeto;
         $data['pnl']['resultado']['resultado_neto_pct'] = $ventas > 0
             ? round(($resultadoNeto / $ventas) * 100, 1)
             : 0;
 
-        $data['resultado_bruto'] = $ventas - $compras - $nomina;
+        $data['resultado_bruto'] = $resultadoNeto;
 
         return response()->json(['success' => true, 'data' => $data]);
     }
