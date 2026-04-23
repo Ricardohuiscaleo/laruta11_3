@@ -74,10 +74,10 @@ export default function ArqueoApp() {
     { icon: <Banknote size={14} />, label: 'Efectivo', ...s.cash },
     { icon: <Smartphone size={14} />, label: 'Webpay', ...s.webpay },
     { icon: <Bike size={14} />, label: 'PedidosYA Online', ...s.pedidosya },
-    { icon: <Banknote size={14} />, label: 'PedidosYA Efectivo', ...(s.pedidosya_cash || { count: 0, total: 0 }), cls: 'pya' },
+    { icon: <Banknote size={14} />, label: 'PedidosYA Efectivo', ...(s.pedidosya_cash || { count: 0, total: 0 }) },
     { icon: <BadgeDollarSign size={14} />, label: 'Crédito RL6', ...s.rl6_credit },
     { icon: <BadgeDollarSign size={14} />, label: 'Crédito R11', ...s.r11_credit },
-    { icon: <Bike size={14} />, label: 'Delivery', count: deliveryCount, total: deliveryTotal, cls: 'dlv' },
+    { icon: <Bike size={14} />, label: 'Delivery', count: deliveryCount, total: deliveryTotal },
   ];
 
   return (
@@ -104,7 +104,7 @@ export default function ArqueoApp() {
           </div>
         ))}
         {deliveryExtras > 0 && (
-          <div className="tr dlv">
+          <div className="tr">
             <div className="td-m" style={{paddingLeft:30}}><span>Extras Delivery</span></div>
             <div className="td-p"></div>
             <div className="td-t">${fmt(deliveryExtras)}</div>
@@ -149,10 +149,6 @@ export default function ArqueoApp() {
         .td-m{flex:1;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#374151}
         .td-p{width:50px;text-align:center;font-size:12px;font-weight:600;color:#6b7280}
         .td-t{width:90px;text-align:right;font-size:13px;font-weight:700;color:#111827}
-        .tr.pya{background:#fffbeb}
-        .tr.pya .td-m{color:#92400e}.tr.pya .td-t{color:#92400e}
-        .tr.dlv{background:#fef3c7}
-        .tr.dlv .td-m{color:#92400e}.tr.dlv .td-t{color:#92400e}
         .tc{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border-radius:10px;padding:10px 12px;margin-bottom:6px;box-shadow:0 2px 6px rgba(102,126,234,.3)}
         .tc-l{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;opacity:.9}
         .tc-r{text-align:right}
