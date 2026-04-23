@@ -114,7 +114,8 @@ try {
         'pedidosya' => ['count' => 0, 'total' => 0],
         'pedidosya_cash' => ['count' => 0, 'total' => 0],
         'webpay' => ['count' => 0, 'total' => 0],
-        'rl6_credit' => ['count' => 0, 'total' => 0]
+        'rl6_credit' => ['count' => 0, 'total' => 0],
+        'r11_credit' => ['count' => 0, 'total' => 0]
     ];
     
     foreach ($summary as $row) {

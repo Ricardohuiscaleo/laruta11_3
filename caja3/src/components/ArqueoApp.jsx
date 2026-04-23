@@ -171,86 +171,46 @@ export default function ArqueoApp() {
         </div>
       </div>
 
-      <div className={`cards-grid ${isTransitioning ? 'transitioning' : ''}`}>
-        <div className="card">
-          <div className="card-title">
-            <CreditCard size={16} /> Tarjetas
-          </div>
-          <div className="card-amount">${fmt(salesData.summary.card.total)}</div>
-          <div className="card-count">{salesData.summary.card.count} pedidos</div>
-        </div>
-
-        <div className="card">
-          <div className="card-title">
-            <Building2 size={16} /> Transfer
-          </div>
-          <div className="card-amount">${fmt(salesData.summary.transfer.total)}</div>
-          <div className="card-count">{salesData.summary.transfer.count} pedidos</div>
-        </div>
-
-        <div className="card">
-          <div className="card-title">
-            <Banknote size={16} /> Efectivo
-          </div>
-          <div className="card-amount">${fmt(salesData.summary.cash.total)}</div>
-          <div className="card-count">{salesData.summary.cash.count} pedidos</div>
-        </div>
-
-        <div className="card">
-          <div className="card-title">
-            <Smartphone size={16} /> Webpay
-          </div>
-          <div className="card-amount">${fmt(salesData.summary.webpay.total)}</div>
-          <div className="card-count">{salesData.summary.webpay.count} pedidos</div>
-        </div>
-
-        <div className="card">
-          <div className="card-title">
-            <Bike size={16} /> PedidosYA Online
-          </div>
-          <div className="card-amount">${fmt(salesData.summary.pedidosya.total)}</div>
-          <div className="card-count">{salesData.summary.pedidosya.count} pedidos</div>
-        </div>
-
-        {salesData.summary.pedidosya_cash && (
-          <div className="card card-pedidosya-cash">
-            <div className="card-title">
-              <Banknote size={16} /> PedidosYA Efectivo
+      <div className={`sales-list ${isTransitioning ? 'transitioning' : ''}`}>
+        {[
+          { icon: <CreditCard size={18} />, label: 'Tarjetas', data: salesData.summary.card },
+          { icon: <Building2 size={18} />, label: 'Transferencia', data: salesData.summary.transfer },
+          { icon: <Banknote size={18} />, label: 'Efectivo', data: salesData.summary.cash },
+          { icon: <Smartphone size={18} />, label: 'Webpay', data: salesData.summary.webpay },
+          { icon: <Bike size={18} />, label: 'PedidosYA Online', data: salesData.summary.pedidosya },
+          ...(salesData.summary.pedidosya_cash && salesData.summary.pedidosya_cash.count > 0
+            ? [{ icon: <Banknote size={18} />, label: 'PedidosYA Efectivo', data: salesData.summary.pedidosya_cash, highlight: 'pedidosya-cash' }]
+            : []),
+          { icon: <BadgeDollarSign size={18} />, label: 'Crédito RL6', data: salesData.summary.rl6_credit },
+          { icon: <BadgeDollarSign size={18} />, label: 'Crédito R11', data: salesData.summary.r11_credit },
+        ].map((item, i) => (
+          <div key={i} className={`list-row ${item.highlight || ''}`}>
+            <div className="list-row-left">
+              <span className="list-icon">{item.icon}</span>
+              <span className="list-label">{item.label}</span>
             </div>
-            <div className="card-amount">${fmt(salesData.summary.pedidosya_cash.total)}</div>
-            <div className="card-count">{salesData.summary.pedidosya_cash.count} pedidos</div>
+            <div className="list-row-right">
+              <span className="list-amount">${fmt(item.data.total)}</span>
+              <span className="list-count">{item.data.count} pedidos</span>
+            </div>
+          </div>
+        ))}
+
+        {deliveryTotal > 0 && (
+          <div className="list-row delivery-row">
+            <div className="list-row-left">
+              <span className="list-icon"><Bike size={18} /></span>
+              <span className="list-label">Delivery</span>
+            </div>
+            <div className="list-row-right">
+              <span className="list-amount">${fmt(deliveryTotal)}</span>
+              <span className="list-count">{deliveryCount} deliverys{deliveryExtras > 0 ? ` · Extras $${fmt(deliveryExtras)}` : ''}</span>
+            </div>
           </div>
         )}
+      </div>
 
-        <div className="card">
-          <div className="card-title">
-            <BadgeDollarSign size={16} /> Crédito RL6
-          </div>
-          <div className="card-amount">${fmt(salesData.summary.rl6_credit.total)}</div>
-          <div className="card-count">{salesData.summary.rl6_credit.count} pedidos</div>
-        </div>
-
-        {salesData.summary.r11_credit && (
-          <div className="card">
-            <div className="card-title">
-              <BadgeDollarSign size={16} /> Crédito R11
-            </div>
-            <div className="card-amount">${fmt(salesData.summary.r11_credit.total)}</div>
-            <div className="card-count">{salesData.summary.r11_credit.count} pedidos</div>
-          </div>
-        )}
-
-        <div className="card card-delivery">
-          <div className="card-title"><Bike size={16} /> Delivery</div>
-          <div className="card-amount">${fmt(deliveryTotal)}</div>
-          <div className="card-count">{deliveryCount} deliverys</div>
-          {deliveryExtras > 0 && (
-            <div className="extras-badge">
-              ✨ Extras: ${fmt(deliveryExtras)}
-            </div>
-          )}
-        </div>
-
+      <div className="summary-cards">
         <div className="card card-total">
           <div className="card-title">
             <TrendingUp size={16} /> TOTAL VENTAS
@@ -353,16 +313,72 @@ export default function ArqueoApp() {
           padding: 40px;
           color: #666;
         }
-        .cards-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: clamp(10px, 2.5vw, 15px);
+        .sales-list {
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
           margin-bottom: clamp(12px, 3vw, 15px);
+          overflow: hidden;
           transition: opacity 0.3s ease;
         }
-        .cards-grid.transitioning {
+        .sales-list.transitioning {
           opacity: 0.6;
           pointer-events: none;
+        }
+        .list-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: clamp(12px, 3vw, 16px);
+          border-bottom: 1px solid #f3f4f6;
+        }
+        .list-row:last-child {
+          border-bottom: none;
+        }
+        .list-row-left {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .list-icon {
+          color: #6b7280;
+          display: flex;
+          align-items: center;
+        }
+        .list-label {
+          font-size: clamp(13px, 3.2vw, 15px);
+          font-weight: 600;
+          color: #374151;
+        }
+        .list-row-right {
+          text-align: right;
+        }
+        .list-amount {
+          font-size: clamp(16px, 4vw, 20px);
+          font-weight: 700;
+          color: #111827;
+          display: block;
+        }
+        .list-count {
+          font-size: clamp(10px, 2.5vw, 12px);
+          color: #9ca3af;
+        }
+        .list-row.pedidosya-cash {
+          background: #fffbeb;
+        }
+        .list-row.pedidosya-cash .list-icon { color: #d97706; }
+        .list-row.pedidosya-cash .list-label { color: #92400e; }
+        .list-row.delivery-row {
+          background: #fef3c7;
+        }
+        .list-row.delivery-row .list-icon { color: #d97706; }
+        .list-row.delivery-row .list-label { color: #92400e; }
+        .list-row.delivery-row .list-amount { color: #92400e; }
+        .summary-cards {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: clamp(10px, 2.5vw, 15px);
+          margin-bottom: clamp(12px, 3vw, 15px);
         }
         .card {
           background: white;
@@ -393,41 +409,6 @@ export default function ArqueoApp() {
           color: #999;
           margin-top: 4px;
         }
-        .card-pedidosya-cash {
-          background: #fffbeb;
-          border: 2px solid #d97706;
-        }
-        .card-pedidosya-cash .card-title {
-          color: #92400e;
-        }
-        .card-pedidosya-cash .card-amount {
-          color: #78350f;
-        }
-        .card-pedidosya-cash .card-count {
-          color: #a16207;
-        }
-        .card-delivery {
-          background: #fef3c7;
-          border: 2px solid #f59e0b;
-        }
-        .card-delivery .card-title {
-          color: #92400e;
-        }
-        .card-delivery .card-amount {
-          color: #92400e;
-        }
-        .card-delivery .card-count {
-          color: #92400e;
-        }
-        .extras-badge {
-          margin-top: 6px;
-          padding: 4px 8px;
-          background: #fce7f3;
-          border: 1px solid #ec4899;
-          border-radius: 6px;
-          font-size: clamp(10px, 2.5vw, 11px);
-          color: #831843;
-          font-weight: 600;
           text-align: center;
         }
         .card-total {
