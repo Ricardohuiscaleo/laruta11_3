@@ -119,7 +119,7 @@ class DashboardController extends Controller
 
             $totalNomina = collect($raw['ruta11']['personal'] ?? [])
                 ->filter(fn ($e) => ! str_contains($e['personal']->rol ?? '', 'dueño'))
-                ->sum(fn ($e) => $e['liquidacion']['sueldo_base']);
+                ->sum(fn ($e) => $e['liquidacion']['total']);
 
             $data['nomina_mes'] = $totalNomina;
             $data['pnl']['gastos_operacion']['nomina_ruta11'] = $totalNomina;

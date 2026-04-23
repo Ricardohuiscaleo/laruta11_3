@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`fe30703`) — UX: scrollLockRef, bebidas subcategorías sync checkout+personalización |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`440fcdf`) — menú lista compacta, búsqueda inline highlight, arqueo tabla 3-col |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`9fb40c3`) — Estado de Resultados P&L dashboard (fix contable), Tabs Créditos/Usuarios |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`9fb40c3`) — Dashboard P&L endpoint (CMV sin duplicar compras), RL6CreditService, GmailService |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`f48dcac`) — P&L OPEX completo, CapitalTrabajoSection, ConsumiblesPanel, AuditoriaPanel |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`f48dcac`) — CierreDiarioService, StockController auditoría+consumibles, DashboardController OPEX, cron cierre 04:15 |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -28,9 +28,10 @@
 
 | App | Task | Frecuencia |
 |-----|------|------------|
-| mi3-backend | `php artisan schedule:run` (9 comandos) | `* * * * *` |
+| mi3-backend | `php artisan schedule:run` (11 comandos) | `* * * * *` |
 | mi3-backend | `delivery:generate-daily-settlement` | `23:59` diario |
 | mi3-backend | `delivery:check-pending-settlements` | `12:00` diario |
+| mi3-backend | `mi3:cierre-diario` | `04:15` diario (Chile) |
 | app3 | Gmail Token Refresh | `*/30 * * * *` |
 | caja3 | Daily Checklists (legacy) | ❌ Desactivado (mi3 lo reemplaza) |
 
@@ -98,6 +99,41 @@
 
 ## Sesiones Recientes
 
+### 2026-04-23d — Corrección item_cost históricos + auditoría ingredientes + reset consumibles
+
+**Cambios BD (sin deploy de código):**
+- `tuu_order_items`: 2.834 registros de `item_cost` actualizados para coincidir con `products.cost_price` corregido. CMV abril corregido: $608.521.
+- Auditoría ingredientes en recetas: 37 activos, 2 sin costo (Pocillo Salsero id=103, Sweet Relish id=52). Top 15 productos: receta = stored ✅.
+- Sub-receta Hamburguesa R11 (id=48): verificada $1.613.40 ✅.
+- Reset consumibles: Servicios (AWS/VPS/Meta/Delivery) stock→0 (son gastos, no inventario). Gas 15: 4→1 (solo 1 en uso). Gas 5: 1→0. Limpieza antigua (Ariel/Esponja/Magistral/Pala/Toalla): stock→0. Todas con transacciones `consumption` registradas.
+- Auditoría física parcial: Pocillo Salsero cpu $2.000→$20 (100/$2.000), Pan Brioche 118→0, Mango 6.8→0 (botado sin merma), Champiñón 6→2, Maracuyá 2.5→0 (consumido+mermado). Pocillo id=103 497→0 (duplicado).
+- Inventario total: $1.354.378 → $988.702. Pendiente auditar: Packaging ($259K), Salsas ($129K), Embutidos ($80K), Caja aluminio (M), Tocino, Lomo Vetado.
+- Discrepancia nómina: DashboardController $1.5M (excluye dueño) vs caja3 $2.4M (incluye todos excepto seguridad). Pendiente: alinear cálculo.
+
+**Commits:** ninguno (solo cambios BD directos)
+**Deploys:** ninguno
+
+### 2026-04-23c — Spec inventario-financiero-real: implementación completa + deploy + migraciones
+
+**Cambios:**
+- 4 migraciones BD: `consumption` enum en inventory_transactions, `tipo_compra` extendido (gas/limpieza/packaging/servicios), JSON desglose en capital_trabajo, reclasificación compras históricas (Abastible→gas, Limpieza→limpieza, etc.).
+- `mi3/backend/app/Services/CierreDiario/CierreDiarioService.php`: Creado — cerrar() calcula saldo_inicial/ingresos/egresos/saldo_final por turno (17:00-04:00 Chile), getResumenMensual() con días sin cierre.
+- `mi3/backend/app/Console/Commands/CierreDiarioCommand.php`: Cron `mi3:cierre-diario` a las 04:15 Chile.
+- `mi3/backend/app/Console/Commands/RecalcularHistoricoCommand.php`: `mi3:cierre-recalcular-historico` con progress bar.
+- `mi3/backend/app/Http/Controllers/Admin/StockController.php`: Extendido — consumir() con tipo `consumption` + validación stock, auditoria() con DB transaction + recálculo stock productos, consumibles() filtra Gas/Limpieza/Servicios.
+- `mi3/backend/app/Http/Controllers/Admin/CompraController.php`: Auto-clasificación tipo_compra por categoría ingrediente.
+- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: P&L con OPEX completo (gas, limpieza, mermas, otros_gastos) + meta_equilibrio + CMV directo de BD.
+- `mi3/backend/app/Http/Controllers/Admin/CapitalTrabajoController.php`: Creado — resumenMensual + cierreManual.
+- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: OPEX con 5 líneas (Nómina, Gas, Limpieza, Mermas, Otros) + Meta Equilibrio.
+- `mi3/frontend/components/admin/compras/ConsumiblesPanel.tsx`: Creado — lista consumibles con botón consumir.
+- `mi3/frontend/components/admin/compras/AuditoriaPanel.tsx`: Creado — conteo físico multi-fase (idle→counting→preview→applying→done).
+- `mi3/frontend/components/admin/sections/CapitalTrabajoSection.tsx`: Creado — tabla mensual día a día con cierre manual.
+- AdminShell/Sidebar/MobileNav: Sección `capital` registrada con icono Wallet.
+
+**Commits:** `f48dcac`
+**Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `f48dcac`)
+**BD:** 4 migraciones ejecutadas. Pendiente: `php artisan mi3:cierre-recalcular-historico` para recalcular capital_trabajo.
+
 ### 2026-04-23b — Auditoría y fix costos productos: mayonesa + recálculo masivo cost_price
 
 **Cambios BD (sin deploy de código):**
@@ -144,22 +180,8 @@
 **Commits:** `8f2abe6`, `9fb40c3`
 **Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `9fb40c3`)
 
-### 2026-04-22d — Bebidas sync + Arqueo tabla + caja3 MenuItem lista compacta
-
-**Cambios:**
-- `app3/src/components/MenuApp.jsx`: scrollLockRef click-to-scroll. comboItems.bebidas merge subcategorías 11+61-65.
-- `app3/src/components/CheckoutApp.jsx`: Filtro upselling bebidas con IDs 61-65.
-- `caja3/api/get_menu_products.php`: subcategoryMap + IDs 61-65.
-- `caja3/src/components/MenuApp.jsx`: Rediseño MenuItem de cards grid a lista compacta (imagen 44px + nombre + precio amarillo + ON/OFF + botón agregar). Búsqueda inline filtra listado con highlight amarillo (sin modal sugerencias). Modal fullscreen al tocar foto (descripción + botones). Padding reducido (70px top, pb-24). comboItems.bebidas merge.
-- `caja3/api/get_sales_summary.php`: Agregado `r11_credit` al array de métodos de pago.
-- `caja3/src/components/ArqueoApp.jsx`: Tabla 3-col (Método|Pedidos|Total), 8 métodos siempre visibles, sin WhatsApp btn, filas sin color especial.
-- BD: Dr Pepper (id=210) movida de subcategory_id=11 a 62 (Latas 350ml).
-
-**Commits:** `b1862c7`→`440fcdf` (10 commits)
-**Deploys:** app3 ✅ (`fe30703`), caja3 ✅ (`440fcdf`)
-
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-22c archivadas. Últimas: 2026-04-22b (fix pending pages + uniformizar bebidas combos), 2026-04-22c (UX scroll continuo + hamburguesas 100g).
+> Sesiones 2026-04-19c→2026-04-22d archivadas. Últimas: 2026-04-22c (UX scroll continuo + hamburguesas 100g), 2026-04-22d (bebidas sync + arqueo + caja3 MenuItem lista compacta).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
