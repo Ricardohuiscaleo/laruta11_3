@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`fe30703`) — UX: scrollLockRef, bebidas subcategorías sync checkout+personalización |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`92dc7e9`) — arqueo tabla 3-col, r11_credit, bebidas sync |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`5b5d6cf`) — arqueo tabla 3-col, r11_credit, bebidas sync |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`f4f134b`) — tab Combos en Recetas, editor inline, autocomplete |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`f4f134b`) — ComboService CRUD, migración combo_components, 4 endpoints REST |
@@ -109,8 +109,8 @@
 - `caja3/src/components/ArqueoApp.jsx`: Rediseño de grid 3-col a listado vertical tipo estado de resultados. Crédito R11 siempre visible. PedidosYA Efectivo solo si count>0. Total Ventas + Saldo en Caja como cards 2-col abajo.
 - BD: Dr Pepper (id=210) movida de subcategory_id=11 a 62 (Latas 350ml).
 
-**Commits:** `b1862c7`, `7c0a1c1`, `fd5bce2`, `fe30703`, `58e8daa`
-**Deploys:** app3 ✅ (`fe30703`), caja3 ✅ (`58e8daa`)
+**Commits:** `b1862c7`, `7c0a1c1`, `fd5bce2`, `fe30703`, `58e8daa`, `0210bf3`, `92dc7e9`, `5b5d6cf`
+**Deploys:** app3 ✅ (`fe30703`), caja3 ✅ (`5b5d6cf`)
 **Nota:** Token Coolify API v1 expirado. Nuevo token v3 (`3|S52...`) via HTTP directo `http://76.13.126.63:8000`.
 
 ### 2026-04-22c — UX app3: scroll continuo, rojo sólido, eliminar hamburguesas 100g
