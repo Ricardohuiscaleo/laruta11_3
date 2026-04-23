@@ -2,17 +2,56 @@
 
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
-import { formatCLP } from '@/lib/utils';
+import { formatCLP, cn } from '@/lib/utils';
 import {
   Loader2, TrendingUp, ShoppingCart, Users, Calculator,
   ShoppingBag, ArrowLeftRight, CreditCard, ClipboardCheck,
+  Target, Receipt, ChefHat,
 } from 'lucide-react';
+
+interface PnlIngresos {
+  ventas_netas: number;
+  total_ordenes: number;
+  ticket_promedio: number;
+}
+
+interface PnlCostoVentas {
+  costo_ingredientes: number;
+  margen_bruto: number;
+  margen_bruto_pct: number;
+}
+
+interface PnlGastosOperacion {
+  nomina_ruta11: number;
+  compras_insumos: number;
+  total_opex: number;
+}
+
+interface PnlResultado {
+  resultado_neto: number;
+  resultado_neto_pct: number;
+}
+
+interface PnlMeta {
+  meta_mensual: number;
+  porcentaje_meta: number;
+  ventas_proyectadas: number;
+}
+
+interface PnlData {
+  ingresos: PnlIngresos;
+  costo_ventas: PnlCostoVentas;
+  gastos_operacion: PnlGastosOperacion;
+  resultado: PnlResultado;
+  meta: PnlMeta;
+}
 
 interface DashboardData {
   ventas_mes: number;
   compras_mes: number;
   nomina_mes: number;
   resultado_bruto: number;
+  pnl: PnlData;
 }
 
 const apps = [
@@ -21,6 +60,64 @@ const apps = [
   { label: 'Cambios', icon: ArrowLeftRight, color: 'bg-purple-500', href: '/admin/cambios' },
   { label: 'Créditos', icon: CreditCard, color: 'bg-green-600', href: '/admin/creditos' },
 ];
+
+const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function PnlRow({ label, value, pct, bold, color, indent }: {
+  label: string; value: number; pct?: number; bold?: boolean; color?: string; indent?: boolean;
+}) {
+  const isNeg = value < 0;
+  const textColor = color ?? (isNeg ? 'text-red-600' : 'text-gray-900');
+  return (
+    <div className={cn(
+      'flex items-center justify-between py-2 px-3',
+      bold && 'font-semibold',
+      indent && 'pl-6',
+    )}>
+      <span className={cn('text-sm', bold ? 'text-gray-900' : 'text-gray-600')}>
+        {label}
+      </span>
+      <div className="flex items-center gap-3">
+        {pct !== undefined && (
+          <span className="text-xs text-gray-400 tabular-nums w-12 text-right">
+            {pct.toFixed(1)}%
+          </span>
+        )}
+        <span className={cn('text-sm tabular-nums w-28 text-right', textColor)}>
+          {isNeg ? '-' : ''}{formatCLP(Math.abs(value))}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function MetaProgress({ pct, meta }: { pct: number; meta: number }) {
+  const clampedPct = Math.min(100, Math.max(0, pct));
+  const barColor = pct >= 100 ? 'bg-green-500' : pct >= 70 ? 'bg-amber-500' : 'bg-red-500';
+  return (
+    <div className="px-3 py-2">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs font-medium text-gray-500 flex items-center gap-1">
+          <Target className="h-3 w-3" /> Meta mensual
+        </span>
+        <span className="text-xs font-semibold text-gray-700">
+          {pct.toFixed(0)}% de {formatCLP(meta)}
+        </span>
+      </div>
+      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div
+          className={cn('h-full rounded-full transition-all', barColor)}
+          style={{ width: `${clampedPct}%` }}
+          role="progressbar"
+          aria-valuenow={clampedPct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`${pct.toFixed(0)}% de meta mensual alcanzada`}
+        />
+      </div>
+    </div>
+  );
+}
 
 export default function DashboardSection() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -35,38 +132,106 @@ export default function DashboardSection() {
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-amber-600" /></div>;
 
-  const kpis = [
-    { label: 'Ventas Mes', value: data?.ventas_mes ?? 0, icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Compras Mes', value: data?.compras_mes ?? 0, icon: ShoppingCart, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Nómina', value: data?.nomina_mes ?? 0, icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Resultado Bruto', value: data?.resultado_bruto ?? 0, icon: Calculator,
-      color: (data?.resultado_bruto ?? 0) >= 0 ? 'text-green-600' : 'text-red-600',
-      bg: (data?.resultado_bruto ?? 0) >= 0 ? 'bg-green-50' : 'bg-red-50' },
-  ];
+  const pnl = data?.pnl;
+  const mesActual = meses[new Date().getMonth()];
+  const anio = new Date().getFullYear();
+  const ventas = pnl?.ingresos.ventas_netas ?? 0;
+
+  const cogsPct = ventas > 0 ? ((pnl?.costo_ventas.costo_ingredientes ?? 0) / ventas) * 100 : 0;
+  const nominaPct = ventas > 0 ? ((pnl?.gastos_operacion.nomina_ruta11 ?? 0) / ventas) * 100 : 0;
+  const comprasPct = ventas > 0 ? ((pnl?.gastos_operacion.compras_insumos ?? 0) / ventas) * 100 : 0;
+  const opexPct = ventas > 0 ? ((pnl?.gastos_operacion.total_opex ?? 0) / ventas) * 100 : 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <h1 className="hidden md:block text-2xl font-bold text-gray-900">Panel Admin</h1>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4">
-        {kpis.map((kpi, i) => {
-          const Icon = kpi.icon;
-          return (
-            <div key={i} className={`rounded-2xl ${kpi.bg} p-4 sm:p-5`}>
-              <div className="flex items-center gap-2 mb-2">
-                <Icon className={`h-4 w-4 ${kpi.color}`} />
-                <span className="text-xs font-medium text-gray-600">{kpi.label}</span>
-              </div>
-              <p className={`text-lg sm:text-2xl font-bold ${kpi.color}`}>
-                {formatCLP(Math.abs(kpi.value))}
-              </p>
-              {kpi.label === 'Resultado Bruto' && (
-                <p className="text-xs text-gray-500 mt-1">Ventas − Compras − Nómina</p>
-              )}
+      {/* Estado de Resultados */}
+      <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
+        <div className="bg-gray-900 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Receipt className="h-4 w-4 text-amber-400" />
+            <h2 className="text-sm font-semibold text-white">Estado de Resultados</h2>
+          </div>
+          <span className="text-xs text-gray-400">{mesActual} {anio}</span>
+        </div>
+
+        {/* Meta progress */}
+        {pnl && pnl.meta.meta_mensual > 0 && (
+          <MetaProgress pct={pnl.meta.porcentaje_meta} meta={pnl.meta.meta_mensual} />
+        )}
+
+        {/* KPI pills */}
+        <div className="grid grid-cols-3 gap-2 px-3 py-2">
+          <div className="rounded-xl bg-green-50 px-3 py-2 text-center">
+            <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Pedidos</p>
+            <p className="text-lg font-bold text-green-700">{pnl?.ingresos.total_ordenes ?? 0}</p>
+          </div>
+          <div className="rounded-xl bg-blue-50 px-3 py-2 text-center">
+            <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Ticket</p>
+            <p className="text-lg font-bold text-blue-700">{formatCLP(pnl?.ingresos.ticket_promedio ?? 0)}</p>
+          </div>
+          <div className="rounded-xl bg-amber-50 px-3 py-2 text-center">
+            <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Proyección</p>
+            <p className="text-lg font-bold text-amber-700">{formatCLP(pnl?.meta.ventas_proyectadas ?? 0)}</p>
+          </div>
+        </div>
+
+        <div className="divide-y divide-gray-100">
+          {/* 1. INGRESOS */}
+          <div className="bg-green-50/50">
+            <div className="flex items-center gap-1.5 px-3 pt-2 pb-1">
+              <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+              <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">Ingresos</span>
             </div>
-          );
-        })}
+            <PnlRow label="Ventas Netas" value={ventas} pct={100} bold color="text-green-700" />
+          </div>
+
+          {/* 2. COSTO DE VENTAS */}
+          <div>
+            <div className="flex items-center gap-1.5 px-3 pt-2 pb-1">
+              <ChefHat className="h-3.5 w-3.5 text-orange-600" />
+              <span className="text-xs font-semibold text-orange-700 uppercase tracking-wide">Costo de Ventas</span>
+            </div>
+            <PnlRow label="Costo Ingredientes (CMV)" value={-(pnl?.costo_ventas.costo_ingredientes ?? 0)} pct={cogsPct} indent />
+          </div>
+
+          {/* 3. MARGEN BRUTO */}
+          <div className="bg-emerald-50/50">
+            <PnlRow
+              label="Margen Bruto"
+              value={pnl?.costo_ventas.margen_bruto ?? 0}
+              pct={pnl?.costo_ventas.margen_bruto_pct ?? 0}
+              bold
+              color={(pnl?.costo_ventas.margen_bruto ?? 0) >= 0 ? 'text-emerald-700' : 'text-red-600'}
+            />
+          </div>
+
+          {/* 4. GASTOS DE OPERACIÓN */}
+          <div>
+            <div className="flex items-center gap-1.5 px-3 pt-2 pb-1">
+              <Calculator className="h-3.5 w-3.5 text-red-600" />
+              <span className="text-xs font-semibold text-red-700 uppercase tracking-wide">Gastos Operación</span>
+            </div>
+            <PnlRow label="Nómina Equipo" value={-(pnl?.gastos_operacion.nomina_ruta11 ?? 0)} pct={nominaPct} indent />
+            <PnlRow label="Compras e Insumos" value={-(pnl?.gastos_operacion.compras_insumos ?? 0)} pct={comprasPct} indent />
+            <PnlRow label="Total OPEX" value={-(pnl?.gastos_operacion.total_opex ?? 0)} pct={opexPct} bold />
+          </div>
+
+          {/* 5. RESULTADO NETO */}
+          <div className={cn(
+            'py-1',
+            (pnl?.resultado.resultado_neto ?? 0) >= 0 ? 'bg-green-100/60' : 'bg-red-100/60',
+          )}>
+            <PnlRow
+              label="Resultado Neto"
+              value={pnl?.resultado.resultado_neto ?? 0}
+              pct={pnl?.resultado.resultado_neto_pct ?? 0}
+              bold
+              color={(pnl?.resultado.resultado_neto ?? 0) >= 0 ? 'text-green-800' : 'text-red-700'}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Apps internas */}
@@ -75,16 +240,13 @@ export default function DashboardSection() {
         <div className="grid grid-cols-4 gap-3">
           {apps.map((app, i) => {
             const Icon = app.icon;
-            const isExternal = app.href.startsWith('http');
             return (
               <a
                 key={i}
                 href={app.href}
-                target={isExternal ? '_blank' : undefined}
-                rel={isExternal ? 'noopener noreferrer' : undefined}
                 className="flex flex-col items-center gap-2 py-3 rounded-xl hover:bg-gray-50 transition-colors"
               >
-                <div className={`${app.color} h-12 w-12 rounded-2xl flex items-center justify-center shadow-sm`}>
+                <div className={cn(app.color, 'h-12 w-12 rounded-2xl flex items-center justify-center shadow-sm')}>
                   <Icon className="h-6 w-6 text-white" />
                 </div>
                 <span className="text-xs font-medium text-gray-700">{app.label}</span>
