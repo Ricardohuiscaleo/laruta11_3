@@ -6,8 +6,8 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`b1862c7`) — UX: scrollLockRef fix click-to-scroll, subcategorías bebidas, Lomo Vetado |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0723c72`) — pending pages sin WhatsApp, "Volver a Caja" primario |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`fe30703`) — UX: scrollLockRef, bebidas subcategorías sync checkout+personalización |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`fe30703`) — bebidas subcategorías 61-65 sync, comboItems merge |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`f4f134b`) — tab Combos en Recetas, editor inline, autocomplete |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`f4f134b`) — ComboService CRUD, migración combo_components, 4 endpoints REST |
@@ -98,13 +98,16 @@
 
 ## Sesiones Recientes
 
-### 2026-04-22d — Fix scrollLockRef: click categoría ya no rebota
+### 2026-04-22d — Fix scrollLockRef + sync bebidas subcategorías app3/caja3
 
 **Cambios:**
-- `app3/src/components/MenuApp.jsx`: Agregado `scrollLockRef = useRef(false)` que bloquea scroll tracking durante animaciones programáticas. Click en categoría (mobile bar + sidebar) activa lock, scrollIntoView smooth, unlock después de 800ms. handleScroll ignora eventos mientras lock activo. Resuelve el comportamiento "loco" donde el scroll tracker rebotaba entre categorías intermedias durante la animación.
+- `app3/src/components/MenuApp.jsx`: Agregado `scrollLockRef = useRef(false)` que bloquea scroll tracking durante animaciones programáticas (800ms lock). `comboItems.bebidas` ahora merge subcategorías 11+61-65 para ProductDetailModal.
+- `app3/src/components/CheckoutApp.jsx`: Filtro upselling bebidas actualizado de `[11, 27, 28]` a `[11, 27, 28, 61, 62, 63, 64, 65]`.
+- `caja3/api/get_menu_products.php`: Agregados subcategory IDs 61-65 (aguas, latas_350ml, energeticas_473ml, energeticas_250ml, bebidas_1_5l) al subcategoryMap.
+- `caja3/src/components/MenuApp.jsx`: SUBCATEGORY_ID_MAP + bebidasSubcats + bebidasIds actualizados con IDs 61-65. `comboItems.bebidas` merge todas las subcategorías.
 
-**Commits:** `b1862c7`
-**Deploys:** app3 ✅ (`b1862c7`)
+**Commits:** `b1862c7`, `7c0a1c1`, `fd5bce2`, `fe30703`
+**Deploys:** app3 ✅, caja3 ✅ (ambos `fe30703`)
 **Nota:** Token Coolify API v1 (`1|piV...`) expirado. Nuevo token v3 (`3|S52...`) funciona via HTTP directo al VPS (`http://76.13.126.63:8000`).
 
 ### 2026-04-22c — UX app3: scroll continuo, rojo sólido, eliminar hamburguesas 100g
