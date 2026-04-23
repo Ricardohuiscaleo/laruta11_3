@@ -736,36 +736,9 @@ function NotificationsModal({ isOpen, onClose, onOrdersUpdate, activeOrdersCount
 
 
 function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, type, isLiked, handleLike, setReviewsModalProduct, onShare, isCashier }) {
-  const [showFloatingHeart, setShowFloatingHeart] = useState(false);
-  const [heartPosition, setHeartPosition] = useState({ x: 0, y: 0 });
   const [showImageModal, setShowImageModal] = useState(false);
   const [isActive, setIsActive] = useState(product.active !== 0);
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
-  const [editingInfo, setEditingInfo] = useState(false);
-  const [editName, setEditName] = useState(product.name);
-  const [editDesc, setEditDesc] = useState(product.description || '');
-  const [editSending, setEditSending] = useState(false);
-  const [editSent, setEditSent] = useState(false);
-
-  useEffect(() => {
-    if (window.Analytics) {
-      window.Analytics.trackProductView(product.id, product.name);
-    }
-  }, [product.id, product.name]);
-
-  const handleDoubleTap = useDoubleTap((e) => {
-    e.stopPropagation();
-    if (!isLiked) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      setHeartPosition({
-        x: rect.left + rect.width * 0.2,
-        y: rect.bottom - 60
-      });
-      handleLike(product.id);
-      setShowFloatingHeart(true);
-      vibrate([50, 50, 50]);
-    }
-  });
 
   const toggleProductStatus = async () => {
     setIsTogglingStatus(true);
@@ -777,127 +750,77 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
         body: JSON.stringify({ productId: product.id, active: newStatus })
       });
       const data = await res.json();
-      if (data.success) {
-        setIsActive(newStatus === 1);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    }
+      if (data.success) setIsActive(newStatus === 1);
+    } catch (e) {}
     setIsTogglingStatus(false);
   };
 
-  const catColor = categoryColors[product.category_name?.toLowerCase()] || categoryColors[product.category_key] || '#94a3b8';
-
   return (
     <>
-      <div
-        className={`rounded-2xl overflow-hidden animate-fade-in transition-all duration-300 flex flex-col relative ${!isActive && isCashier ? 'ring-2 ring-red-500' : ''}`}
-        style={{
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-          backgroundColor: 'rgba(255,255,255,0.85)',
-          backdropFilter: 'blur(4px)'
-        }}
-      >
-        {!isActive && isCashier && (
-          <div className="absolute inset-0 bg-gray-500 bg-opacity-60 z-10 transition-opacity duration-300 rounded-2xl"></div>
-        )}
+      <div className={`flex items-center gap-2 bg-white rounded-lg px-2 py-1.5 transition-all ${!isActive && isCashier ? 'opacity-40' : ''}`}
+        style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
 
-        {isCashier && (
-          <div className="absolute top-1 left-1.5 z-20">
-            <button
-              onClick={(e) => { e.stopPropagation(); toggleProductStatus(); }}
-              className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase tracking-tighter transition-all shadow-sm border ${isActive
-                ? 'bg-green-100/90 text-green-700 border-green-300'
-                : 'bg-red-100/90 text-red-700 border-red-300 ring-2 ring-red-400 ring-offset-1'
-                }`}
-              disabled={isTogglingStatus}
-            >
-              <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-              {isTogglingStatus ? '...' : (isActive ? 'ON' : 'OFF')}
-            </button>
-          </div>
-        )}
-
-        <div className="absolute top-1.5 right-1.5 z-20 flex flex-col items-end gap-1">
-          {!!product.is_featured && !!product.sale_price ? (
-            <>
-              <span className="bg-red-500 text-white px-1.5 py-0.5 rounded-lg font-black text-[10px] shadow-sm">
-                🔥 ${product.sale_price.toLocaleString('es-CL')}
-              </span>
-              <span className="bg-white/80 px-1.5 py-0.5 rounded-lg font-bold text-[9px] text-gray-400 line-through shadow-sm">
-                ${product.price.toLocaleString('es-CL')}
-              </span>
-            </>
-          ) : (
-            <span className="bg-white/95 px-1.5 py-0.5 rounded-lg font-black text-[10px] text-black shadow-sm backdrop-blur-sm border border-gray-100">
-              ${product.price ? product.price.toLocaleString('es-CL') : '0'}
-            </span>
-          )}
-          {product.category_name === 'Combos' && (
-            <div className={`bg-white/90 p-0.5 rounded flex items-center gap-0.5 shadow-sm transition-opacity ${!isActive ? 'opacity-50' : ''}`}>
-              <GiHamburger size={7} className="text-orange-500" />
-              <CupSoda size={7} className="text-orange-500" />
-            </div>
-          )}
-        </div>
-
-        <div
-          className="w-full relative aspect-square cursor-pointer overflow-hidden group"
-          onTouchStart={handleDoubleTap}
-          onClick={() => product.image && setShowImageModal(true)}
-        >
+        {/* Image thumbnail - click to zoom */}
+        <div className="w-11 h-11 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer"
+          onClick={() => product.image && setShowImageModal(true)}>
           {product.image ? (
-            <img
-              src={product.image}
-              alt={product.name}
-              className={`w-full h-full object-cover transition-transform group-hover:scale-110 duration-500 rounded-t-2xl ${!isActive ? 'grayscale' : ''}`}
-            />
+            <img src={product.image} alt={product.name}
+              className={`w-full h-full object-cover ${!isActive ? 'grayscale' : ''}`} />
           ) : (
-            <div className="w-full h-full bg-white/50 flex items-center justify-center rounded-t-2xl">
-              <ChefHat className="text-gray-300" size={28} />
+            <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+              <ChefHat className="text-gray-300" size={16} />
             </div>
           )}
-
-          <FloatingHeart show={showFloatingHeart} startPosition={heartPosition} onAnimationEnd={() => setShowFloatingHeart(false)} />
         </div>
 
-        <div className="px-1.5 pt-1 pb-0.5">
-          <h3
-            className={`font-black text-[8px] leading-tight line-clamp-2 text-center transition-colors ${!isActive ? 'text-gray-400' : 'text-gray-900'}`}
-            title={product.name}
-          >
+        {/* Name + price */}
+        <div className="flex-1 min-w-0">
+          <h3 className={`font-bold text-[11px] leading-tight truncate ${!isActive ? 'text-gray-400' : 'text-gray-900'}`}>
             {product.name}
           </h3>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            {!!product.is_featured && !!product.sale_price ? (
+              <>
+                <span className="text-red-600 font-black text-[11px]">${product.sale_price.toLocaleString('es-CL')}</span>
+                <span className="text-gray-400 text-[9px] line-through">${product.price.toLocaleString('es-CL')}</span>
+              </>
+            ) : (
+              <span className="text-gray-700 font-bold text-[11px]">${product.price ? product.price.toLocaleString('es-CL') : '0'}</span>
+            )}
+            {product.category_name === 'Combos' && (
+              <span className="flex items-center gap-0.5">
+                <GiHamburger size={8} className="text-orange-500" />
+                <CupSoda size={8} className="text-orange-500" />
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="px-1.5 pb-1.5 flex items-center justify-center mt-auto">
+        {/* ON/OFF toggle for cashier */}
+        {isCashier && (
+          <button onClick={(e) => { e.stopPropagation(); toggleProductStatus(); }}
+            className={`px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase flex-shrink-0 ${isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700 ring-1 ring-red-400'}`}
+            disabled={isTogglingStatus}>
+            {isTogglingStatus ? '..' : (isActive ? 'ON' : 'OFF')}
+          </button>
+        )}
+
+        {/* Add/Remove controls */}
+        <div className="flex-shrink-0" style={{ width: quantity > 0 ? '90px' : '56px' }}>
           {quantity === 0 ? (
-            <button
-              onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-              className="w-full font-bold transition-all duration-200 flex items-center justify-center rounded-lg shadow-sm active:scale-95 bg-green-500 hover:bg-green-600 text-white"
-              style={{ height: 'clamp(33.7px, 8.42vw, 43.8px)' }}
-            >
-              <span className="font-bold whitespace-nowrap" style={{ fontSize: 'clamp(10px, 2.8vw, 14px)' }}>
-                Agregar
-              </span>
+            <button onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+              className="w-full h-8 bg-green-500 hover:bg-green-600 text-white font-bold text-[11px] rounded-lg active:scale-95 transition-all">
+              Agregar
             </button>
           ) : (
-            <div className="flex items-center w-full bg-gray-50 rounded-lg border border-gray-100 shadow-inner" style={{ height: 'clamp(33.7px, 8.42vw, 43.8px)' }}>
-              <button
-                onClick={(e) => { e.stopPropagation(); onRemoveFromCart(product.id); }}
-                className="flex-1 h-full text-red-500 hover:bg-red-50 transition-colors flex items-center justify-center rounded-l-lg"
-              >
-                <MinusCircle style={{ width: 'clamp(16.85px, 4.21vw, 21.9px)', height: 'clamp(16.85px, 4.21vw, 21.9px)' }} />
+            <div className="flex items-center h-8 bg-gray-50 rounded-lg border border-gray-200">
+              <button onClick={(e) => { e.stopPropagation(); onRemoveFromCart(product.id); }}
+                className="w-7 h-full text-red-500 hover:bg-red-50 flex items-center justify-center rounded-l-lg text-sm font-bold">
+                −
               </button>
-
-              <div className="flex-1 h-full flex items-center justify-center text-gray-900 border-x border-gray-100">
-                <span className="font-black text-[13px]">{quantity}</span>
-              </div>
-
-              <button
-                onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-                className="flex-1 h-full bg-yellow-500 text-black hover:bg-yellow-600 transition-colors flex items-center justify-center rounded-r-lg font-black text-xl"
-              >
+              <span className="flex-1 text-center font-black text-xs">{quantity}</span>
+              <button onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+                className="w-7 h-full bg-yellow-500 text-black hover:bg-yellow-600 flex items-center justify-center rounded-r-lg font-black text-sm">
                 +
               </button>
             </div>
@@ -905,120 +828,20 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
         </div>
       </div>
 
+      {/* Fullscreen image modal */}
       {showImageModal && (
-        <div className="fixed inset-0 bg-black/80 z-[70] flex items-end justify-center animate-fade-in" onClick={() => setShowImageModal(false)}>
-          <div
-            className="bg-white w-full max-w-lg rounded-t-3xl overflow-hidden animate-slide-up"
-            style={{ maxHeight: '92vh' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close button */}
-            <button
-              className="absolute top-3 right-3 z-10 bg-black/50 text-white rounded-full w-8 h-8 flex items-center justify-center"
-              onClick={() => setShowImageModal(false)}
-            >
-              <X size={18} />
-            </button>
-
-            {/* Product Image */}
-            {product.image && (
-              <div className="w-full" style={{ maxHeight: '40vh' }}>
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                  style={{ maxHeight: '40vh' }}
-                />
-              </div>
-            )}
-
-            {/* Product Info */}
-            <div className="p-5 overflow-y-auto" style={{ maxHeight: '50vh' }}>
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-xl font-black text-gray-900 leading-tight">{product.name}</h3>
-                {!editSent && (
-                  <button onClick={() => setEditingInfo(v => !v)} className="ml-2 mt-1 text-gray-400 hover:text-orange-500 flex-shrink-0" title="Sugerir edición">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  </button>
-                )}
-              </div>
-
-              {editSent ? (
-                <p className="text-sm text-green-600 font-medium mb-4">✅ Solicitud enviada al administrador.</p>
-              ) : editingInfo ? (
-                <div className="mb-4 space-y-2">
-                  <input value={editName} onChange={e => setEditName(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-semibold" placeholder="Nombre" />
-                  <textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={3}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none" placeholder="Descripción" />
-                  <div className="flex gap-2">
-                    <button onClick={() => setEditingInfo(false)}
-                      className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-600">Cancelar</button>
-                    <button disabled={editSending}
-                      onClick={async () => {
-                        setEditSending(true);
-                        try {
-                          const cashier = JSON.parse(localStorage.getItem('cajaUser') || '{}').full_name || 'Cajera';
-                          const res = await fetch('/api/products/request_product_edit.php', {
-                            method: 'POST', headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ product_id: product.id, name: editName, description: editDesc, cashier })
-                          });
-                          const data = await res.json();
-                          if (data.success) { setEditSent(true); setEditingInfo(false); }
-                          else alert('Error: ' + data.error);
-                        } catch { alert('Error al enviar'); }
-                        finally { setEditSending(false); }
-                      }}
-                      className="flex-1 py-2 rounded-lg bg-orange-500 text-white text-sm font-bold disabled:opacity-50">
-                      {editSending ? 'Enviando...' : 'Enviar para aprobación'}
-                    </button>
-                  </div>
-                </div>
-              ) : product.description ? (
-                <p className="text-sm text-gray-600 leading-relaxed mb-4">{product.description}</p>
-              ) : null}
-
-              {/* Price + Cart Controls */}
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <span className="bg-yellow-400 text-black px-4 py-2 rounded-xl font-black text-lg shadow-sm">
-                  ${product.price ? product.price.toLocaleString('es-CL') : '0'}
-                </span>
-
-                <div className="flex items-center gap-2">
-                  {quantity > 0 && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onRemoveFromCart(product.id); }}
-                      className="text-red-500 hover:text-red-700 transition-colors flex items-center justify-center rounded-lg p-2 bg-red-50"
-                      style={{ height: '44px', width: '44px' }}
-                    >
-                      <MinusCircle size={24} />
-                    </button>
-                  )}
-                  {quantity > 0 && (
-                    <span className="font-black text-xl text-gray-900 w-10 text-center">{quantity}</span>
-                  )}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-                    className={`flex-1 px-6 font-bold transition-all duration-200 flex items-center justify-center rounded-xl shadow-md active:scale-95 h-[44px] ${quantity > 0
-                      ? 'bg-yellow-500 text-black hover:bg-yellow-600'
-                      : 'bg-green-600 hover:bg-green-700 text-white'
-                      }`}
-                  >
-                    <span className="text-sm font-bold">
-                      {quantity > 0 ? 'Agregar más' : 'Agregar'}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              {quantity > 0 && (
-                <div className="mt-3 bg-blue-50 rounded-xl p-2 text-center">
-                  <span className="text-xs font-bold text-blue-700">
-                    {quantity} en carrito — Subtotal: ${(product.price * quantity).toLocaleString('es-CL')}
-                  </span>
-                </div>
-              )}
-            </div>
+        <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center animate-fade-in" onClick={() => setShowImageModal(false)}>
+          <button className="absolute top-4 right-4 z-10 bg-black/50 text-white rounded-full w-10 h-10 flex items-center justify-center"
+            onClick={() => setShowImageModal(false)}>
+            <X size={22} />
+          </button>
+          {product.image && (
+            <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" />
+          )}
+          <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/40 text-white text-center">
+            <h3 className="text-lg font-bold">{product.name}</h3>
+            <p className="text-orange-400 font-semibold">${product.price?.toLocaleString('es-CL')}</p>
+            {quantity > 0 && <p className="text-sm text-blue-300">{quantity} en carrito</p>}
           </div>
         </div>
       )}
@@ -2612,7 +2435,7 @@ export default function App() {
       })()}
 
       <main className="pb-40 px-0.5 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl mx-auto" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 110px)', ...(showSuggestions ? { filter: 'blur(2px)', pointerEvents: 'none' } : {}) }} onClick={() => showSuggestions && setShowSuggestions(false)}>
-        <div className="grid grid-cols-3 gap-1">
+        <div className="flex flex-col gap-1">
           {(() => {
             // Build a flat array of all products tagged with their category color and key
             const allItems = [];
@@ -2713,17 +2536,12 @@ export default function App() {
                 });
               });
 
-            // Render the single continuous grid
+            // Render the single continuous list
             return allItems.map(({ product, catKey, catColor, isFirstInCategory }) => (
               <div
                 key={product.id}
                 id={isFirstInCategory ? `section-${catKey}` : undefined}
                 className="scroll-mt-24"
-                style={{
-                  backgroundColor: catColor,
-                  borderRadius: '16px',
-                  padding: '3px'
-                }}
               >
                 <MenuItem
                   product={product}
