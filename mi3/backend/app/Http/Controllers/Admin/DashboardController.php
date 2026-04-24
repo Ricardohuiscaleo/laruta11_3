@@ -99,16 +99,19 @@ class DashboardController extends Controller
             // Silently fail — dashboard still shows with zeros
         }
 
-        // CMV: direct DB query instead of HTTP call to get_sales_analytics.php
+        // CMV: from caja3 sales analytics (uses shift logic + correct cost_price)
         try {
-            $costoIngredientes = (float) \Illuminate\Support\Facades\DB::table('tuu_order_items as oi')
-                ->join('tuu_orders as o', 'oi.order_id', '=', 'o.id')
-                ->where('o.payment_status', 'paid')
-                ->whereBetween('o.created_at', [$mesInicio, $mesFin])
-                ->selectRaw('SUM(oi.item_cost * oi.quantity) as total')
-                ->value('total') ?? 0;
-
-            $data['pnl']['costo_ventas']['costo_ingredientes'] = $costoIngredientes;
+            $res2 = Http::timeout(8)->get('https://caja.laruta11.cl/api/get_sales_analytics.php', [
+                'period' => 'month',
+            ]);
+            if ($res2->successful()) {
+                $analytics = $res2->json();
+                if ($analytics['success'] ?? false) {
+                    $kpis = $analytics['data']['summary_kpis'] ?? [];
+                    $costoIngredientes = (float) ($kpis['total_cost'] ?? 0);
+                    $data['pnl']['costo_ventas']['costo_ingredientes'] = $costoIngredientes;
+                }
+            }
         } catch (\Exception $e) {
             // Silently fail
         }
@@ -127,26 +130,30 @@ class DashboardController extends Controller
             // Silently fail
         }
 
-        // OPEX lines: gas, limpieza, mermas, otros_gastos from DB
+        // OPEX lines: gas/limpieza from compras (compra=gasto), mermas, otros from consumption
         try {
-            // Consumos por categoría del mes
+            // Gas y Limpieza: compras del mes (son gasto directo, no inventario)
+            $gasCompras = (float) \Illuminate\Support\Facades\DB::table('compras')
+                ->where('tipo_compra', 'gas')
+                ->whereRaw("DATE_FORMAT(fecha_compra, '%Y-%m') = ?", [$mes])
+                ->sum('monto_total');
+            $data['pnl']['gastos_operacion']['gas'] = $gasCompras;
+
+            $limpiezaCompras = (float) \Illuminate\Support\Facades\DB::table('compras')
+                ->where('tipo_compra', 'limpieza')
+                ->whereRaw("DATE_FORMAT(fecha_compra, '%Y-%m') = ?", [$mes])
+                ->sum('monto_total');
+            $data['pnl']['gastos_operacion']['limpieza'] = $limpiezaCompras;
+
+            // Otros gastos: consumos reales registrados (no retroactivos)
             $consumos = \Illuminate\Support\Facades\DB::table('inventory_transactions as it')
                 ->join('ingredients as i', 'it.ingredient_id', '=', 'i.id')
                 ->where('it.transaction_type', 'consumption')
                 ->whereBetween('it.created_at', [$mesInicio, $mesFin])
-                ->select('i.category', \Illuminate\Support\Facades\DB::raw('SUM(ABS(it.quantity) * i.cost_per_unit) as total_cost'))
-                ->groupBy('i.category')
-                ->get();
-
-            foreach ($consumos as $row) {
-                $cost = (float) $row->total_cost;
-                match ($row->category) {
-                    'Gas' => $data['pnl']['gastos_operacion']['gas'] = $cost,
-                    'Limpieza' => $data['pnl']['gastos_operacion']['limpieza'] = $cost,
-                    'Servicios' => $data['pnl']['gastos_operacion']['otros_gastos'] += $cost,
-                    default => $data['pnl']['gastos_operacion']['otros_gastos'] += $cost,
-                };
-            }
+                ->whereNotIn('i.category', ['Gas', 'Limpieza'])
+                ->select(\Illuminate\Support\Facades\DB::raw('SUM(ABS(it.quantity) * i.cost_per_unit) as total_cost'))
+                ->value('total_cost');
+            $data['pnl']['gastos_operacion']['otros_gastos'] = (float) ($consumos ?? 0);
 
             // Mermas del mes
             $mermas = (float) \Illuminate\Support\Facades\DB::table('mermas')

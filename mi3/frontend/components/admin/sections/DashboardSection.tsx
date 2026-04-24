@@ -198,9 +198,9 @@ export default function DashboardSection() {
           <span className="text-xs text-gray-400">{mesActual} {anio}</span>
         </div>
 
-        {/* Meta progress */}
-        {pnl && pnl.meta.meta_mensual > 0 && (
-          <MetaProgress pct={pnl.meta.porcentaje_meta} meta={pnl.meta.meta_mensual} ventas={ventas} />
+        {/* Meta progress — uses meta_equilibrio from DashboardController */}
+        {pnl && metaEquilibrio > 0 && (
+          <MetaProgress pct={0} meta={metaEquilibrio} ventas={ventas} />
         )}
 
         {/* KPI pills */}

@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`440fcdf`) — menú lista compacta, búsqueda inline highlight, arqueo tabla 3-col |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`f48dcac`) — P&L OPEX completo, CapitalTrabajoSection, ConsumiblesPanel, AuditoriaPanel |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`f48dcac`) — CierreDiarioService, StockController auditoría+consumibles, DashboardController OPEX, cron cierre 04:15 |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`3ce2565`) — Nómina P&L con liquidacion total (descuentos), CierreDiarioService, OPEX completo |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -108,10 +108,10 @@
 - Reset consumibles: Servicios (AWS/VPS/Meta/Delivery) stock→0 (son gastos, no inventario). Gas 15: 4→1 (solo 1 en uso). Gas 5: 1→0. Limpieza antigua (Ariel/Esponja/Magistral/Pala/Toalla): stock→0. Todas con transacciones `consumption` registradas.
 - Auditoría física parcial: Pocillo Salsero cpu $2.000→$20 (100/$2.000), Pan Brioche 118→0, Mango 6.8→0 (botado sin merma), Champiñón 6→2, Maracuyá 2.5→0 (consumido+mermado). Pocillo id=103 497→0 (duplicado).
 - Inventario total: $1.354.378 → $988.702. Pendiente auditar: Packaging ($259K), Salsas ($129K), Embutidos ($80K), Caja aluminio (M), Tocino, Lomo Vetado.
-- Discrepancia nómina: DashboardController $1.5M (excluye dueño) vs caja3 $2.4M (incluye todos excepto seguridad). Pendiente: alinear cálculo.
+- Discrepancia nómina: DashboardController $1.5M (excluye dueño) vs caja3 $2.4M (incluye todos excepto seguridad). Fix: DashboardController ahora usa `liquidacion['total']` (con descuentos) → nómina abril = $1.33M real.
 
-**Commits:** ninguno (solo cambios BD directos)
-**Deploys:** ninguno
+**Commits:** `3ce2565` (fix nómina)
+**Deploys:** mi3-backend ✅ (`3ce2565`)
 
 ### 2026-04-23c — Spec inventario-financiero-real: implementación completa + deploy + migraciones
 
