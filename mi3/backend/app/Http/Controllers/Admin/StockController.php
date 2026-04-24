@@ -173,7 +173,6 @@ class StockController extends Controller
 
         return response()->json(['success' => true, 'applied' => $results]);
     }
-}
 
     /**
      * Auditoría física de inventario — ajuste masivo por conteo.
@@ -306,3 +305,4 @@ class StockController extends Controller
 
         return response()->json(['success' => true, 'items' => $items]);
     }
+}
