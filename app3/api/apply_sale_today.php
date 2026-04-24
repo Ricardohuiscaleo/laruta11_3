@@ -45,7 +45,7 @@ try {
     $updateStmt = $pdo->prepare("UPDATE products SET is_featured = 1, sale_price = ? WHERE id = ?");
 
     foreach ($products as $product) {
-        $salePrice = floor($product['price'] * 0.9); // 10% descuento, redondeado hacia abajo
+        $salePrice = floor($product['price'] * 0.9 / 10) * 10; // 10% descuento, redondeado a decena
         $updateStmt->execute([$salePrice, $product['id']]);
         $results[] = [
             'id' => $product['id'],
