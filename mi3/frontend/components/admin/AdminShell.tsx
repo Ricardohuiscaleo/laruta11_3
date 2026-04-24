@@ -379,7 +379,7 @@ export default function AdminShell() {
 
       {/* Content */}
       <main className={cn(
-        'min-h-screen pb-20 px-3 sm:px-4 md:pt-0 md:pb-0 md:pl-64 md:pr-6 md:py-6 overflow-y-auto',
+        'min-h-screen pb-20 px-4 sm:px-5 md:pt-0 md:pb-0 md:pl-60 md:pr-8 md:py-6 overflow-y-auto',
         showUnifiedHeader ? 'pt-[7.5rem]' : 'pt-14',
       )}>
         {/* Desktop: unified header (title + trailing + tabs) */}

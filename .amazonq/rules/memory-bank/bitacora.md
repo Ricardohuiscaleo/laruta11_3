@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`fe30703`) — UX: scrollLockRef, bebidas subcategorías sync checkout+personalización |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`440fcdf`) — menú lista compacta, búsqueda inline highlight, arqueo tabla 3-col |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`f48dcac`) — P&L OPEX completo, CapitalTrabajoSection, ConsumiblesPanel, AuditoriaPanel |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`3ce2565`) — Nómina P&L con liquidacion total (descuentos), CierreDiarioService, OPEX completo |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`8a45857`) — P&L con meta_equilibrio, OPEX gas/limpieza de compras |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`8a45857`) — CMV de caja3 sales_analytics, gas/limpieza OPEX de compras, nómina con descuentos |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -99,19 +99,21 @@
 
 ## Sesiones Recientes
 
-### 2026-04-23d — Corrección item_cost históricos + auditoría ingredientes + reset consumibles
+### 2026-04-23d — Fix P&L completo: CMV turnos, nómina con descuentos, gas/limpieza de compras, meta_equilibrio
 
-**Cambios BD (sin deploy de código):**
-- `tuu_order_items`: 2.834 registros de `item_cost` actualizados para coincidir con `products.cost_price` corregido. CMV abril corregido: $608.521.
-- Auditoría ingredientes en recetas: 37 activos, 2 sin costo (Pocillo Salsero id=103, Sweet Relish id=52). Top 15 productos: receta = stored ✅.
-- Sub-receta Hamburguesa R11 (id=48): verificada $1.613.40 ✅.
-- Reset consumibles: Servicios (AWS/VPS/Meta/Delivery) stock→0 (son gastos, no inventario). Gas 15: 4→1 (solo 1 en uso). Gas 5: 1→0. Limpieza antigua (Ariel/Esponja/Magistral/Pala/Toalla): stock→0. Todas con transacciones `consumption` registradas.
-- Auditoría física parcial: Pocillo Salsero cpu $2.000→$20 (100/$2.000), Pan Brioche 118→0, Mango 6.8→0 (botado sin merma), Champiñón 6→2, Maracuyá 2.5→0 (consumido+mermado). Pocillo id=103 497→0 (duplicado).
-- Inventario total: $1.354.378 → $988.702. Pendiente auditar: Packaging ($259K), Salsas ($129K), Embutidos ($80K), Caja aluminio (M), Tocino, Lomo Vetado.
-- Discrepancia nómina: DashboardController $1.5M (excluye dueño) vs caja3 $2.4M (incluye todos excepto seguridad). Fix: DashboardController ahora usa `liquidacion['total']` (con descuentos) → nómina abril = $1.33M real.
+**Cambios código:**
+- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: CMV ahora de caja3 `get_sales_analytics.php` (con turnos), nómina usa `liquidacion['total']` (con descuentos), gas/limpieza OPEX de `compras` del mes (tipo_compra='gas'/'limpieza'), meta_equilibrio calculado internamente.
+- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: Barra de meta usa `meta_equilibrio` en vez de `meta_mensual` de caja3.
 
-**Commits:** `3ce2565` (fix nómina)
-**Deploys:** mi3-backend ✅ (`3ce2565`)
+**Cambios BD:**
+- `tuu_order_items`: 2.834 `item_cost` actualizados con cost_price corregido.
+- `inventory_transactions`: 19 transacciones retroactivas cambiadas de `consumption` → `adjustment`.
+- `ingredients` Limpieza: todo stock→0 (compra=consumo inmediato).
+- Auditoría física: Pocillo cpu $2K→$20, Pan Brioche→0, Mango→0, Champiñón→2, Maracuyá→0.
+- Inventario total: $1.354K → $947K.
+
+**Commits:** `3ce2565`, `8a45857`
+**Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `8a45857`)
 
 ### 2026-04-23c — Spec inventario-financiero-real: implementación completa + deploy + migraciones
 
