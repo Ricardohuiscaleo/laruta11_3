@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`440fcdf`) — menú lista compacta, búsqueda inline highlight, arqueo tabla 3-col |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`58159fe`) — sidebar w-56, padding fix, Stock/Consumibles/Auditoría funcionando |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`180d707`) — fix UserController customers query (tuu_orders.total→product_price) |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2207cc8`) — nómina expandible con reemplazos, calendario compacto con avatares, crédito R11 pendiente |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`2207cc8`) — PayrollController expone desglose reemplazos + crédito R11 pendiente |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -100,6 +100,16 @@
 
 ## Sesiones Recientes
 
+### 2026-04-25b — Spec turnos-nomina-mejoras: implementación completa + deploy
+
+**Cambios código:**
+- `mi3/backend/app/Http/Controllers/Admin/PayrollController.php`: Extendido — expone `total_reemplazando`, `total_reemplazado`, `reemplazos_realizados[]`, `reemplazos_recibidos[]` agregados de ambos centros de costo. Agrega `credito_r11_pendiente` consultando `usuarios.credito_r11_usado` y verificando si ya se descontó via `ajustes_sueldo`. Recalcula `gran_total = base + reemplazando - reemplazado + ajustes`.
+- `mi3/frontend/components/admin/sections/NominaSection.tsx`: Tarjetas expandibles con ChevronDown/Up, grid compacto con +Reemp (verde) y -Reemp (rojo), desglose completo al expandir (reemplazos realizados/recibidos con días y montos, ajustes, crédito R11 pendiente con "Se descontará el día 1").
+- `mi3/frontend/components/admin/sections/TurnosSection.tsx`: Calendario compacto (72px vs 100px), avatares mini 24px agrupados R11|Seguridad, borde naranja izquierdo en días con reemplazo, punto naranja en móvil, detalle con titular tachado → reemplazante + monto.
+
+**Commits:** `2207cc8`
+**Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `2207cc8`)
+
 ### 2026-04-25a — Fix clientes "Load failed" en admin/personal (500 CORS)
 
 **Causa raíz:** `UserController::customers()` usaba `SUM(tuu_orders.total)` pero la columna `total` no existe en `tuu_orders`. La columna correcta es `product_price`. SQL error → 500 → Laravel no envía headers CORS → navegador reporta error CORS.
@@ -182,5 +192,5 @@
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-23a archivadas. Últimas: 2026-04-23a (admin-credits-users-tabs), 2026-04-22d (bebidas sync + arqueo + caja3 MenuItem lista compacta), 2026-04-22e (P&L dashboard + fix duplicación contable).
+> Sesiones 2026-04-19c→2026-04-23d archivadas. Últimas: 2026-04-23d (Fix P&L completo: CMV turnos, nómina con descuentos), 2026-04-23c (Spec inventario-financiero-real), 2026-04-23a (admin-credits-users-tabs).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
