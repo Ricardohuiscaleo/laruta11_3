@@ -1,16 +1,16 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-23)
+## Estado Actual (2026-04-25)
 
 ### Aplicaciones Desplegadas
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`fe30703`) — UX: scrollLockRef, bebidas subcategorías sync checkout+personalización |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`440fcdf`) — menú lista compacta, búsqueda inline highlight, arqueo tabla 3-col |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`8a45857`) — P&L con meta_equilibrio, OPEX gas/limpieza de compras |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`8a45857`) — CMV de caja3 sales_analytics, gas/limpieza OPEX de compras, nómina con descuentos |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`58159fe`) — sidebar w-56, padding fix, Stock/Consumibles/Auditoría funcionando |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`180d707`) — fix UserController customers query (tuu_orders.total→product_price) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -56,6 +56,7 @@
 
 ### 🔴 Críticas (afectan producción)
 
+- [ ] **🚨 Revertir descuento 10% temporal** — 4 productos con `is_featured=1` + `sale_price` (Completo Italiano, Completo Tocino Ahumado, Hass de Filete Pollo, Hass de Carne). Cron programado en VPS: revert automático sáb 25 abr 08:00 Chile (12:00 UTC) + verificación 10:00 Chile (14:00 UTC), ambos con reporte a Telegram. Post-ejecución: limpiar crons y eliminar scripts `apply_sale_today.php` y `revert_sale_today.php`.
 - [ ] **🚨 URGENTE: Rotar AWS access key comprometida** — AWS detectó key `AKIAUQ24...WGTE` como comprometida y restringió servicios (Bedrock bloqueado). Key rotada a `...RKT7` en Coolify. Falta: 1) Actualizar `~/.aws/credentials` en VPS para chef-bot, 2) Desactivar key vieja en IAM, 3) Responder caso de soporte AWS (caso #177655445900588 respondido, esperando humano). Bedrock sigue bloqueado a nivel de cuenta.
 - [x] **Implementar Gemini como proveedor IA principal** — GeminiService.php creado con Structured Outputs, pipeline 2 fases (clasificación + análisis), token tracking, frontend v1.7. Commit `009259d`. Falta: test en vivo con imagen real.
 
@@ -98,6 +99,35 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-25a — Fix clientes "Load failed" en admin/personal (500 CORS)
+
+**Causa raíz:** `UserController::customers()` usaba `SUM(tuu_orders.total)` pero la columna `total` no existe en `tuu_orders`. La columna correcta es `product_price`. SQL error → 500 → Laravel no envía headers CORS → navegador reporta error CORS.
+
+**Cambios código:**
+- `mi3/backend/app/Http/Controllers/Admin/UserController.php`: `tuu_orders.total` → `tuu_orders.product_price`
+
+**Commits:** `180d707`
+**Deploys:** mi3-backend ✅ (`180d707`)
+
+### 2026-04-24b — Descuento temporal 10% en 4 productos (badge 🔥 OFERTA)
+
+**Cambios código:**
+- `app3/api/apply_sale_today.php`: Creado — aplica `is_featured=1` + `sale_price` (10% OFF redondeado a decena) a Completo Italiano, Completo Tocino Ahumado, Hass de Filete Pollo, Hass de Carne.
+- `app3/api/revert_sale_today.php`: Creado — revierte `is_featured=0` + `sale_price=NULL` en los mismos 4 productos.
+
+**Cambios BD:**
+- `products`: 4 productos actualizados con `is_featured=1` y `sale_price`: Completo Italiano $2.490→$2.240, Completo Tocino Ahumado $3.780→$3.400, Hass de Filete Pollo $4.280→$3.850, Hass de Carne $3.980→$3.580.
+
+**Commits:** `765915f`, `dce8ea6`
+**Deploys:** app3 ✅ (`dce8ea6`)
+
+### 2026-04-24a — Redeploy mi3-frontend: sidebar fix + StockController fix pendientes
+
+**Contexto:** mi3-frontend estaba deployado en `8a45857` pero faltaban commits `ea56a5b` (sidebar w-56 + padding) y `58159fe` (StockController syntax fix). Stock mostraba 0 items por 500 errors del controller roto. Backend ya tenía el fix deployado.
+
+**Acciones:** Redeploy mi3-frontend via Coolify API.
+**Deploys:** mi3-frontend ✅ (`58159fe`)
 
 ### 2026-04-23d — Fix P&L completo: CMV turnos, nómina con descuentos, gas/limpieza de compras, meta_equilibrio
 
@@ -149,41 +179,8 @@
 **Commits:** ninguno (solo cambios BD directos)
 **Deploys:** ninguno
 
-### 2026-04-23a — Spec admin-credits-users-tabs: implementación completa + deploy
-
-**Cambios:**
-- `mi3/backend/app/Services/Credit/RL6CreditService.php`: Creado — getRL6Users() con cálculo moroso/días_mora/deuda_ciclo_vencido, getSummary(), approveCredit(), rejectCredit(), manualPayment() con desbloqueo automático, calculateEmailEstado(), previewEmail(), buildEmailHtml() replicando caja3 email template.
-- `mi3/backend/app/Http/Controllers/Admin/CreditController.php`: Extendido — 7 métodos RL6: rl6Index, rl6Approve, rl6Reject, rl6ManualPayment, rl6PreviewEmail, rl6SendEmail, rl6SendBulkEmails.
-- `mi3/backend/app/Http/Controllers/Admin/UserController.php`: Creado — customers() con left join tuu_orders, búsqueda LIKE, order by id DESC.
-- `mi3/backend/app/Services/Email/GmailService.php`: Extendido — sendRL6CollectionEmail() con email_logs.
-- `mi3/backend/app/Models/Usuario.php`: Campos RL6 en $fillable + relaciones rl6Transactions/emailLogs.
-- `mi3/backend/app/Models/Rl6CreditTransaction.php`: Creado.
-- `mi3/backend/routes/api.php`: 8 rutas nuevas (7 RL6 + 1 customers).
-- `mi3/frontend/components/admin/AdminSidebarSPA.tsx`: 'Créditos R11'→'Créditos', 'Personal'→'Usuarios'.
-- `mi3/frontend/components/admin/MobileBottomNavSPA.tsx`: Mismos cambios labels.
-- `mi3/frontend/components/admin/AdminShell.tsx`: SECTION_TITLES actualizados.
-- `mi3/frontend/components/admin/sections/CreditosSection.tsx`: Reescrito — tabs R11/RL6, tabla RL6 con badges moroso (rojo/naranja/verde), acciones approve/reject/pago manual, botón email preview/envío, bulk "Cobrar a Morosos", CreditSummaryTrailing integrado.
-- `mi3/frontend/components/admin/EmailPreviewModal.tsx`: Creado — iframe preview, badge tipo email, botones cancelar/enviar.
-- `mi3/frontend/components/admin/CreditSummaryTrailing.tsx`: Creado — 5 métricas RL6 / 4 métricas R11, colores condicionales, responsive mobile 3 métricas, skeleton loading.
-- `mi3/frontend/components/admin/sections/PersonalSection.tsx`: Reescrito — tabs Work/Clientes, tabla clientes app3 con búsqueda debounce 300ms.
-- `mi3/frontend/types/admin.ts`: Creado — RL6CreditUser, RL6Summary, CustomerUser, EmailEstado.
-- Fix: instalado @vis.gl/react-google-maps (dependencia faltante preexistente).
-
-**Commits:** `63c3552`
-**Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `63c3552`)
-
-### 2026-04-22e — Estado de Resultados P&L en dashboard admin + fix duplicación contable
-
-**Cambios:**
-- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: Reescrito — endpoint `/admin/dashboard` retorna P&L: ingresos (ventas_netas, total_ordenes, ticket_promedio), costo_ventas (costo_ingredientes/CMV, margen_bruto, margen_bruto_pct), gastos_operacion (nomina_ruta11 como único OPEX), resultado (resultado_neto, resultado_neto_pct), meta (meta_mensual, porcentaje_meta, ventas_proyectadas), flujo_caja (compras_mes separado del P&L). Fix contable: compras movidas de OPEX a flujo_caja para evitar duplicación con CMV.
-- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: Reescrito — Estado de Resultados: header dark, barra meta mensual, 3 KPI pills (Pedidos, Ticket, Proyección), tabla P&L coloreada (Ingresos→CMV→Margen Bruto→Nómina OPEX→Resultado Neto). Sin línea "Compras e Insumos" en OPEX (fix duplicación).
-- `.kiro/specs/admin-credits-users-tabs/`: Spec con 10 requirements.
-
-**Commits:** `8f2abe6`, `9fb40c3`
-**Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `9fb40c3`)
-
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-22d archivadas. Últimas: 2026-04-22c (UX scroll continuo + hamburguesas 100g), 2026-04-22d (bebidas sync + arqueo + caja3 MenuItem lista compacta).
+> Sesiones 2026-04-19c→2026-04-23a archivadas. Últimas: 2026-04-23a (admin-credits-users-tabs), 2026-04-22d (bebidas sync + arqueo + caja3 MenuItem lista compacta), 2026-04-22e (P&L dashboard + fix duplicación contable).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
