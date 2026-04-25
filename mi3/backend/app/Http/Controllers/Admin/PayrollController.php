@@ -12,6 +12,7 @@ use App\Services\Payroll\LiquidacionService;
 use App\Services\Payroll\NominaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PayrollController extends Controller
@@ -41,7 +42,16 @@ class PayrollController extends Controller
                     $workersMap[$pid]['dias_trabajados'] += $liq['dias_trabajados'];
                     $workersMap[$pid]['reemplazos'] += $liq['reemplazos_hechos'];
                     $workersMap[$pid]['ajustes_total'] += $liq['total_ajustes'];
-                    $workersMap[$pid]['gran_total'] += $liq['total'];
+                    $workersMap[$pid]['total_reemplazando'] += $liq['total_reemplazando'] ?? 0;
+                    $workersMap[$pid]['total_reemplazado'] += $liq['total_reemplazados'] ?? 0;
+                    $workersMap[$pid]['reemplazos_realizados'] = array_merge(
+                        $workersMap[$pid]['reemplazos_realizados'],
+                        $liq['reemplazos_realizados'] ?? [],
+                    );
+                    $workersMap[$pid]['reemplazos_recibidos'] = array_merge(
+                        $workersMap[$pid]['reemplazos_recibidos'],
+                        $liq['reemplazos_recibidos'] ?? [],
+                    );
                 } else {
                     $workersMap[$pid] = [
                         'personal_id' => $pid,
@@ -51,11 +61,53 @@ class PayrollController extends Controller
                         'dias_trabajados' => $liq['dias_trabajados'],
                         'reemplazos' => $liq['reemplazos_hechos'],
                         'ajustes_total' => $liq['total_ajustes'],
-                        'gran_total' => $liq['total'],
+                        'total_reemplazando' => $liq['total_reemplazando'] ?? 0,
+                        'total_reemplazado' => $liq['total_reemplazados'] ?? 0,
+                        'reemplazos_realizados' => $liq['reemplazos_realizados'] ?? [],
+                        'reemplazos_recibidos' => $liq['reemplazos_recibidos'] ?? [],
+                        'gran_total' => 0, // recalculated below
                     ];
                 }
+
+                // Recalculate gran_total from components
+                $w = &$workersMap[$pid];
+                $w['gran_total'] = $w['sueldo_base'] + $w['total_reemplazando'] - $w['total_reemplazado'] + $w['ajustes_total'];
+                unset($w);
             }
         }
+
+        // R11 credit pending calculation
+        $mesDate = $mes . '-01';
+        foreach ($workersMap as $pid => &$worker) {
+            $personal = Personal::find($pid);
+            if (!$personal || !$personal->user_id) {
+                continue;
+            }
+
+            $usuario = DB::table('usuarios')
+                ->where('id', $personal->user_id)
+                ->where('es_credito_r11', 1)
+                ->where('credito_r11_usado', '>', 0)
+                ->first();
+
+            if (!$usuario) {
+                continue;
+            }
+
+            $yaDescontado = DB::table('ajustes_sueldo')
+                ->where('personal_id', $pid)
+                ->where('mes', $mesDate)
+                ->where('categoria_id', function ($q) {
+                    $q->select('id')
+                        ->from('ajustes_categorias')
+                        ->where('slug', 'descuento_credito_r11')
+                        ->limit(1);
+                })
+                ->exists();
+
+            $worker['credito_r11_pendiente'] = $yaDescontado ? 0 : (float) $usuario->credito_r11_usado;
+        }
+        unset($worker);
 
         $centros = [];
         foreach (['ruta11', 'seguridad'] as $centro) {

@@ -704,10 +704,12 @@ export default function TurnosSection() {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {allMonthDays.map(({ day, dateStr, dayName }) => {
-            const count = (turnosByDate[dateStr] || []).length;
+            const dayTurnosMobile = turnosByDate[dateStr] || [];
+            const count = dayTurnosMobile.length;
             const isTodayCard = dateStr === todayStr;
             const isPast = dateStr < todayStr;
             const isSelected = dateStr === selectedDate;
+            const hasReplacementMobile = dayTurnosMobile.some((t) => !!t.reemplazado_por);
             return (
               <button
                 key={dateStr}
@@ -729,6 +731,9 @@ export default function TurnosSection() {
                 <span className={cn('text-xs font-semibold', count > 0 ? 'text-amber-600' : 'text-gray-300')}>
                   {count > 0 ? count : '—'}
                 </span>
+                {hasReplacementMobile && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400 mx-auto mt-0.5 block" />
+                )}
               </button>
             );
           })}
@@ -749,36 +754,78 @@ export default function TurnosSection() {
         <div className="grid grid-cols-7 gap-2">
           {calendarDays.map((day, idx) => {
             if (day === null) {
-              return <div key={`pad-${idx}`} className="min-h-[100px]" />;
+              return <div key={`pad-${idx}`} className="min-h-[72px]" />;
             }
             const dateStr = dayToDateStr(day);
-            const count = (turnosByDate[dateStr] || []).length;
+            const dayTurnos = turnosByDate[dateStr] || [];
+            const count = dayTurnos.length;
             const isTodayCard = dateStr === todayStr;
             const isPast = dateStr < todayStr;
             const isSelected = dateStr === selectedDate;
             const dayDate = new Date(dateStr + 'T12:00:00');
             const dayName = DAY_NAMES[isoWeekday(dayDate)];
+            const hasReplacement = dayTurnos.some((t) => !!t.reemplazado_por);
+
+            // Group workers: R11 first, then Seguridad
+            const r11Workers = dayTurnos.filter((t) => !isSeguridad(t.tipo));
+            const segWorkers = dayTurnos.filter((t) => isSeguridad(t.tipo));
+            const allGrouped = [...r11Workers, ...segWorkers];
+            const maxVisible = 5;
+            const visible = allGrouped.slice(0, maxVisible);
+            const overflow = allGrouped.length - maxVisible;
+            const separatorIdx = r11Workers.length; // index where seguridad starts
 
             return (
               <button
                 key={dateStr}
                 onClick={() => handleDayClick(dateStr)}
                 className={cn(
-                  'rounded-xl border-2 p-3 text-center cursor-pointer transition-all hover:shadow-md min-h-[100px] flex flex-col items-center justify-center',
+                  'rounded-xl border-2 p-2 text-center cursor-pointer transition-all hover:shadow-md min-h-[72px] flex flex-col items-center justify-center gap-0.5',
                   isTodayCard ? 'border-amber-400 bg-amber-50 shadow-md' :
                   isPast ? 'border-gray-200 bg-gray-50' : 'border-gray-200 bg-white',
-                  isSelected && 'ring-2 ring-amber-400'
+                  isSelected && 'ring-2 ring-amber-400',
+                  hasReplacement && 'border-l-[3px] border-l-orange-400'
                 )}
                 aria-label={`${dayName} ${day}, ${count} turnos`}
                 aria-pressed={isSelected}
               >
-                <span className="text-[10px] font-medium text-gray-400 uppercase">{dayName}</span>
-                <span className={cn('text-3xl font-bold', isTodayCard ? 'text-amber-700' : 'text-gray-800')}>
-                  {day}
-                </span>
-                <span className={cn('text-sm font-semibold mt-1', count > 0 ? 'text-amber-600' : 'text-gray-300')}>
-                  {count > 0 ? count : '—'}
-                </span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-[10px] font-medium text-gray-400 uppercase">{dayName}</span>
+                  <span className={cn('text-lg font-bold', isTodayCard ? 'text-amber-700' : 'text-gray-800')}>
+                    {day}
+                  </span>
+                </div>
+                {count > 0 ? (
+                  <div className="flex items-center gap-0.5 flex-wrap justify-center">
+                    {visible.map((t, i) => {
+                      const photo = workerPhotos[t.personal_id];
+                      const initial = (t.personal_nombre || photo?.nombre || '?')[0].toUpperCase();
+                      const showSep = separatorIdx > 0 && i === separatorIdx && segWorkers.length > 0;
+                      return (
+                        <span key={`${t.id}-${t.personal_id}`} className="flex items-center gap-0.5">
+                          {showSep && <span className="text-gray-300 text-[10px] mx-0.5">|</span>}
+                          {photo?.foto_url ? (
+                            <img
+                              src={photo.foto_url}
+                              alt={initial}
+                              className="h-6 w-6 rounded-full object-cover border border-gray-200"
+                              style={{ transform: `rotate(${photo.foto_rotation || 0}deg)` }}
+                            />
+                          ) : (
+                            <span className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-[9px] font-bold text-gray-500 border border-gray-300">
+                              {initial}
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })}
+                    {overflow > 0 && (
+                      <span className="text-[9px] font-semibold text-gray-400 ml-0.5">+{overflow}</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-xs font-semibold text-gray-300">—</span>
+                )}
               </button>
             );
           })}
@@ -865,6 +912,20 @@ export default function TurnosSection() {
                               tipo={t.tipo}
                               isReemplazo={!!t.reemplazado_por}
                             />
+                            {t.reemplazado_por && t.reemplazante_nombre && (
+                              <div className="flex flex-col items-center mt-0.5 max-w-[80px]">
+                                <span className="text-[10px] line-through text-gray-400 truncate w-full text-center">
+                                  {t.personal_nombre?.split(' ')[0]}
+                                </span>
+                                <span className="text-[10px] text-gray-400">→</span>
+                                <span className="text-[10px] font-medium text-gray-700 truncate w-full text-center">
+                                  {t.reemplazante_nombre.split(' ')[0]}
+                                </span>
+                                {t.monto_reemplazo != null && (
+                                  <span className="text-xs text-gray-500">{formatCLP(t.monto_reemplazo)}</span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -940,6 +1001,20 @@ export default function TurnosSection() {
                               tipo={t.tipo}
                               isReemplazo={!!t.reemplazado_por}
                             />
+                            {t.reemplazado_por && t.reemplazante_nombre && (
+                              <div className="flex flex-col items-center mt-0.5 max-w-[80px]">
+                                <span className="text-[10px] line-through text-gray-400 truncate w-full text-center">
+                                  {t.personal_nombre?.split(' ')[0]}
+                                </span>
+                                <span className="text-[10px] text-gray-400">→</span>
+                                <span className="text-[10px] font-medium text-gray-700 truncate w-full text-center">
+                                  {t.reemplazante_nombre.split(' ')[0]}
+                                </span>
+                                {t.monto_reemplazo != null && (
+                                  <span className="text-xs text-gray-500">{formatCLP(t.monto_reemplazo)}</span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

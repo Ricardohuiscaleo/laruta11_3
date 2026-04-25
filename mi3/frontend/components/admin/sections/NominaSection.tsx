@@ -3,7 +3,15 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, formatMonthES } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Loader2, Send, DollarSign, Mail } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Loader2, Send, DollarSign, Mail } from 'lucide-react';
+
+interface ReplacementGroup {
+  personal_id: number;
+  nombre: string;
+  dias: number[];
+  monto: number;
+  pago_por: string;
+}
 
 interface WorkerPayroll {
   personal_id: number;
@@ -14,6 +22,11 @@ interface WorkerPayroll {
   reemplazos: number;
   ajustes_total: number;
   gran_total: number;
+  total_reemplazando: number;
+  total_reemplazado: number;
+  reemplazos_realizados: ReplacementGroup[];
+  reemplazos_recibidos: ReplacementGroup[];
+  credito_r11_pendiente?: number;
 }
 
 interface PayrollSummary {
@@ -41,6 +54,7 @@ export default function NominaSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [sending, setSending] = useState<number | 'all' | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const mes = getMonthStr(monthOffset);
 
@@ -114,22 +128,93 @@ export default function NominaSection() {
 
       {/* Worker cards */}
       <div className="space-y-3">
-        {data?.resumen?.map(w => (
-          <div key={w.personal_id} className="rounded-xl border bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold">{w.nombre}</h3>
-                <p className="text-xs text-gray-500 capitalize">{w.rol}</p>
+        {data?.resumen?.map(w => {
+          const isExpanded = expandedId === w.personal_id;
+          return (
+          <div
+            key={w.personal_id}
+            className="rounded-xl border bg-white shadow-sm"
+          >
+            <button
+              type="button"
+              className="w-full p-4 text-left"
+              aria-expanded={isExpanded}
+              onClick={() => setExpandedId(isExpanded ? null : w.personal_id)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {isExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                  <div>
+                    <h3 className="font-semibold">{w.nombre}</h3>
+                    <p className="text-xs text-gray-500 capitalize">{w.rol}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-amber-700">{formatCLP(w.gran_total)}</p>
+                  {w.credito_r11_pendiente != null && w.credito_r11_pendiente > 0 && (
+                    <div className="text-xs text-gray-500">
+                      <span>💳 Crédito R11: -{formatCLP(w.credito_r11_pendiente)}</span>
+                      <p>Se descontará el día 1</p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <p className="text-lg font-bold text-amber-700">{formatCLP(w.gran_total)}</p>
-            </div>
-            <div className="mt-2 grid grid-cols-4 gap-2 text-center text-xs">
-              <div><p className="text-gray-400">Base</p><p className="font-medium">{formatCLP(w.sueldo_base)}</p></div>
-              <div><p className="text-gray-400">Días</p><p className="font-medium">{w.dias_trabajados}</p></div>
-              <div><p className="text-gray-400">Reemp.</p><p className="font-medium">{w.reemplazos}</p></div>
-              <div><p className="text-gray-400">Ajustes</p><p className="font-medium">{formatCLP(w.ajustes_total)}</p></div>
-            </div>
-            <div className="mt-3 flex gap-2">
+              <div className="mt-2 grid grid-cols-3 sm:grid-cols-5 gap-2 text-center text-xs">
+                <div><p className="text-gray-400">Base</p><p className="font-medium">{formatCLP(w.sueldo_base)}</p></div>
+                <div><p className="text-gray-400">Días</p><p className="font-medium">{w.dias_trabajados}</p></div>
+                {w.total_reemplazando > 0 && (
+                  <div><p className="text-gray-400">+Reemp</p><p className="font-medium text-green-600">+{formatCLP(w.total_reemplazando)}</p></div>
+                )}
+                {w.total_reemplazado > 0 && (
+                  <div><p className="text-gray-400">-Reemp</p><p className="font-medium text-red-600">-{formatCLP(w.total_reemplazado)}</p></div>
+                )}
+                <div><p className="text-gray-400">Ajustes</p><p className="font-medium">{formatCLP(w.ajustes_total)}</p></div>
+              </div>
+            </button>
+
+            {isExpanded && (
+              <div className="border-t px-4 pb-4 pt-3 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Sueldo base</span>
+                  <span className="font-medium">{formatCLP(w.sueldo_base)}</span>
+                </div>
+
+                {w.reemplazos_realizados?.length > 0 && (
+                  <div className="space-y-1">
+                    {w.reemplazos_realizados.map((r, i) => (
+                      <p key={`real-${i}`} className="text-green-600">
+                        → {r.nombre}: días {r.dias.join(', ')} — +{formatCLP(r.monto)}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {w.reemplazos_recibidos?.length > 0 && (
+                  <div className="space-y-1">
+                    {w.reemplazos_recibidos.map((r, i) => (
+                      <p key={`rec-${i}`} className="text-red-600">
+                        ← {r.nombre}: días {r.dias.join(', ')} — -{formatCLP(r.monto)}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {w.ajustes_total !== 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Ajustes</span>
+                    <span className="font-medium">{formatCLP(w.ajustes_total)}</span>
+                  </div>
+                )}
+
+                {w.credito_r11_pendiente != null && w.credito_r11_pendiente > 0 && (
+                  <p className="text-gray-500">
+                    💳 Crédito R11 pendiente: {formatCLP(w.credito_r11_pendiente)} — Se descontará el día 1
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="px-4 pb-4 flex gap-2">
               <button onClick={() => registerPayment(w.personal_id)} className="flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium hover:bg-gray-50">
                 <DollarSign className="h-3 w-3" /> Pago
               </button>
@@ -139,7 +224,8 @@ export default function NominaSection() {
               </button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

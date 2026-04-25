@@ -103,6 +103,8 @@ class LiquidacionService
             'reemplazos_recibidos' => $this->groupReemplazos($reemplazosRecibidos),
             'ajustes' => $includeAjustes ? $ajustes->toArray() : [],
             'total_ajustes' => $totalAjustes,
+            'total_reemplazando' => (int) round($totalReemplazando),
+            'total_reemplazados' => (int) round($totalReemplazados),
             'total' => $total,
         ];
     }
