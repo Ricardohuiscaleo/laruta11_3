@@ -22,6 +22,15 @@ class RecipeController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        // Grouped mode: return products organized by category
+        if ($request->query('grouped') === 'true') {
+            $search = $request->query('search');
+            $data = $this->recipeService->getRecipesGroupedByCategory($search);
+
+            return response()->json(['success' => true, 'data' => $data]);
+        }
+
+        // Default flat mode (backward compatible)
         $categoryId = $request->query('category_id') ? (int) $request->query('category_id') : null;
         $search = $request->query('search');
         $sortBy = $request->query('sort_by');

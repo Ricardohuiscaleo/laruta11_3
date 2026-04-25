@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { List, Replace, TrendingUp, PackageSearch, Layers, Loader2, Scale, Sparkles, Package } from 'lucide-react';
+import { List, Replace, TrendingUp, PackageSearch, Layers, Loader2, Scale, Sparkles, Package, Wine } from 'lucide-react';
 import type { SectionHeaderConfig, TabDef } from '@/components/admin/AdminShell';
 
 const RecetasListTab = lazy(() => import('@/app/admin/recetas/page'));
@@ -12,9 +12,11 @@ const SubRecetasTab = lazy(() => import('@/app/admin/recetas/sub-recetas/page'))
 const PorcionesTab = lazy(() => import('@/app/admin/recetas/porciones/page'));
 const CreadorIATab = lazy(() => import('@/app/admin/recetas/creador-ia/page'));
 const CombosTab = lazy(() => import('@/app/admin/recetas/combos/page'));
+const BebidasTab = lazy(() => import('@/app/admin/recetas/bebidas/page'));
 
 const tabs: TabDef[] = [
   { key: 'listado', label: 'Recetas', icon: List },
+  { key: 'bebidas', label: 'Bebidas', icon: Wine },
   { key: 'combos', label: 'Combos', icon: Package },
   { key: 'porciones', label: 'Porciones', icon: Scale },
   { key: 'creador-ia', label: 'Creador IA', icon: Sparkles },
@@ -24,7 +26,7 @@ const tabs: TabDef[] = [
   { key: 'sub-recetas', label: 'Sub-Recetas', icon: Layers },
 ];
 
-type TabKey = 'listado' | 'combos' | 'porciones' | 'creador-ia' | 'ajuste-masivo' | 'recomendaciones' | 'auditoria' | 'sub-recetas';
+type TabKey = 'listado' | 'bebidas' | 'combos' | 'porciones' | 'creador-ia' | 'ajuste-masivo' | 'recomendaciones' | 'auditoria' | 'sub-recetas';
 
 function TabSkeleton() {
   return (
@@ -58,6 +60,7 @@ export default function RecetasSection({ onHeaderConfig }: RecetasSectionProps) 
     <div className="pt-4">
       <Suspense fallback={<TabSkeleton />}>
         {activeTab === 'listado' && <RecetasListTab />}
+        {activeTab === 'bebidas' && <BebidasTab />}
         {activeTab === 'combos' && <CombosTab />}
         {activeTab === 'porciones' && <PorcionesTab />}
         {activeTab === 'creador-ia' && <CreadorIATab />}

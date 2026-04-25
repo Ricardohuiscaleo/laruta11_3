@@ -976,4 +976,110 @@ class RecipeService
             'products_updated'   => $productsUpdated,
         ];
     }
+
+    /**
+     * Get active products grouped by category, excluding "Bebidas" category.
+     * Returns categories with metadata and products keyed by category_id.
+     *
+     * @param  string|null $search  Optional product name filter
+     * @return array { categories: [...], products: { [categoryId]: [...] } }
+     */
+    public function getRecipesGroupedByCategory(?string $search = null): array
+    {
+        // Find the "Bebidas" product category to exclude
+        $bebidasCategory = DB::table('categories')
+            ->where('name', 'Bebidas')
+            ->first();
+        $excludeCategoryId = $bebidasCategory ? $bebidasCategory->id : null;
+
+        $query = Product::where('is_active', true)
+            ->with(['recipes.ingredient']);
+
+        if ($excludeCategoryId !== null) {
+            $query->where(function ($q) use ($excludeCategoryId) {
+                $q->where('category_id', '!=', $excludeCategoryId)
+                  ->orWhereNull('category_id');
+            });
+        }
+
+        if ($search !== null && $search !== '') {
+            $query->where('name', 'like', '%' . $search . '%');
+        }
+
+        $products = $query->get();
+
+        // Build product data with costs
+        $productData = [];
+        foreach ($products as $product) {
+            $recipeCost = 0.0;
+            $ingredientCount = 0;
+
+            foreach ($product->recipes as $recipeItem) {
+                if (!$recipeItem->ingredient) {
+                    continue;
+                }
+                $ingredientCount++;
+                $recipeCost += $this->calculateIngredientCost(
+                    (float) $recipeItem->ingredient->cost_per_unit,
+                    $recipeItem->ingredient->unit,
+                    (float) $recipeItem->quantity,
+                    $recipeItem->unit
+                );
+            }
+
+            $catId = $product->category_id ?? 0;
+
+            if (!isset($productData[$catId])) {
+                $productData[$catId] = [];
+            }
+
+            $productData[$catId][] = [
+                'id' => $product->id,
+                'name' => $product->name,
+                'category_id' => $product->category_id,
+                'price' => (float) $product->price,
+                'recipe_cost' => $recipeCost,
+                'margin' => $this->calculateMargin((float) $product->price, $recipeCost),
+                'ingredient_count' => $ingredientCount,
+            ];
+        }
+
+        // Get category metadata
+        $categoryIds = array_keys($productData);
+        $categories = DB::table('categories')
+            ->whereIn('id', $categoryIds)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'sort_order' => $c->sort_order ?? 0,
+                'product_count' => count($productData[$c->id] ?? []),
+            ])
+            ->values()
+            ->toArray();
+
+        // Add "Sin categoría" if there are uncategorized products
+        if (isset($productData[0]) && count($productData[0]) > 0) {
+            $categories[] = [
+                'id' => 0,
+                'name' => 'Sin categoría',
+                'sort_order' => 999,
+                'product_count' => count($productData[0]),
+            ];
+        }
+
+        // Convert keys to strings for JSON
+        $productsGrouped = [];
+        foreach ($productData as $catId => $items) {
+            $productsGrouped[(string) $catId] = $items;
+        }
+
+        return [
+            'categories' => $categories,
+            'products' => $productsGrouped,
+        ];
+    }
 }
