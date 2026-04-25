@@ -24,7 +24,7 @@ class UserController extends Controller
                 'usuarios.fecha_registro',
                 'usuarios.activo',
                 DB::raw('COUNT(tuu_orders.id) as total_orders'),
-                DB::raw('COALESCE(SUM(tuu_orders.total), 0) as total_spent'),
+                DB::raw('COALESCE(SUM(tuu_orders.product_price), 0) as total_spent'),
                 DB::raw('MAX(tuu_orders.created_at) as last_order_date'),
             ])
             ->groupBy(
