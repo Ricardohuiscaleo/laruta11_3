@@ -211,6 +211,7 @@
             const [copiedAddress, setCopiedAddress] = useState(null);
             const audioUnlockedRef = useRef(false);
             const [trashReminder, setTrashReminder] = useState(null);
+            const [checklist, setChecklist] = useState(null);
 
             const unlockAudio = () => {
                 if (!audioUnlockedRef.current) {
@@ -366,6 +367,7 @@
             useEffect(() => {
                 requestNotificationPermission();
                 loadOrders();
+                loadChecklist();
                 checkTrashReminder();
                 const interval = setInterval(loadOrders, 5000);
                 const timeInterval = setInterval(() => {
@@ -564,6 +566,26 @@
                 }
             };
 
+            const loadChecklist = async () => {
+                try {
+                    const now = new Date();
+                    const hour = now.getHours();
+                    const type = hour < 20 ? 'apertura' : 'cierre';
+                    const res = await fetch(`https://api-mi3.laruta11.cl/api/v1/public/checklists/today?rol=planchero&type=${type}`);
+                    const data = await res.json();
+                    if (data.success && data.data && data.data.length > 0) {
+                        const cl = data.data[0];
+                        const total = cl.items ? cl.items.length : 0;
+                        const done = cl.items ? cl.items.filter(i => i.is_completed).length : 0;
+                        if (done < total) {
+                            setChecklist({ id: cl.id, type: cl.type, total, done, scheduledDate: cl.scheduled_date });
+                        } else {
+                            setChecklist(null);
+                        }
+                    }
+                } catch (e) {}
+            };
+
             const checkTrashReminder = () => {
                 const now = new Date();
                 const currentHours = now.getHours();
@@ -677,6 +699,22 @@
                 ),
 
                 h('main', { className: 'max-w-full mx-auto px-1 py-3' },
+                    // Widget Checklist planchero
+                    checklist && h('div', { className: 'mb-3 bg-amber-50 border-2 border-amber-400 rounded-lg p-3' },
+                        h('div', { className: 'flex items-center gap-2' },
+                            h('span', { className: 'text-2xl' }, '📋'),
+                            h('div', { className: 'flex-1' },
+                                h('div', { className: 'font-black text-gray-900 text-sm' }, `${checklist.type === 'apertura' ? '☀️' : '🌙'} CHECKLIST ${checklist.type.toUpperCase()}`),
+                                h('div', { className: 'text-xs text-gray-600' }, `Progreso: ${checklist.done}/${checklist.total}`)
+                            ),
+                            h('div', { 
+                                style: { width: '60px', height: '8px', backgroundColor: '#e5e7eb', borderRadius: '4px', overflow: 'hidden' }
+                            },
+                                h('div', { style: { width: `${Math.round((checklist.done / checklist.total) * 100)}%`, height: '100%', backgroundColor: checklist.done === checklist.total ? '#22c55e' : '#f59e0b', borderRadius: '4px' } })
+                            ),
+                            h('a', { href: '/checklists', className: 'bg-amber-500 text-white font-bold px-3 py-1 rounded text-xs hover:bg-amber-600' }, 'IR')
+                        )
+                    ),
                     orders.length === 0 ? 
                         h('div', { className: 'text-center py-12' },
                             h(UtensilsCrossed, { size: 64, className: 'mx-auto mb-4 text-gray-400' }),
