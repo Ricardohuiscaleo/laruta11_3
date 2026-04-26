@@ -8,6 +8,7 @@ use App\Services\Recipe\RecipeService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class RecipeController extends Controller
@@ -15,6 +16,52 @@ class RecipeController extends Controller
     public function __construct(
         private RecipeService $recipeService,
     ) {}
+
+    /**
+     * Create a new product (food item).
+     * POST /api/v1/admin/recetas/crear-producto
+     */
+    public function createProduct(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'price' => 'required|numeric|gt:0',
+                'description' => 'nullable|string',
+                'cost_price' => 'nullable|numeric|min:0',
+                'category_id' => 'required|integer|exists:categories,id',
+                'subcategory_id' => 'nullable|integer',
+                'stock_quantity' => 'nullable|integer|min:0',
+                'min_stock_level' => 'nullable|integer|min:0',
+                'sku' => 'nullable|string|max:50',
+            ]);
+
+            $id = DB::table('products')->insertGetId([
+                'name' => $request->name,
+                'description' => $request->description,
+                'price' => $request->price,
+                'cost_price' => $request->cost_price ?? 0,
+                'category_id' => $request->category_id,
+                'subcategory_id' => $request->subcategory_id,
+                'stock_quantity' => $request->stock_quantity ?? 0,
+                'min_stock_level' => $request->min_stock_level ?? 5,
+                'sku' => $request->sku,
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $product = DB::table('products')->find($id);
+
+            return response()->json(['success' => true, 'data' => (array) $product], 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        }
+    }
 
     /**
      * List all active products with recipe costs and margins.

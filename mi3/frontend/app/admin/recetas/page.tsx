@@ -113,6 +113,104 @@ interface GroupedData {
   products: Record<string, RecipeProduct[]>;
 }
 
+interface SubcategoryInfo {
+  id: number;
+  name: string;
+  category_id: number;
+}
+
+interface ProductFormData {
+  name: string;
+  description: string;
+  price: string;
+  cost_price: string;
+  category_id: string;
+  subcategory_id: string;
+  stock_quantity: string;
+  min_stock_level: string;
+  sku: string;
+}
+
+const emptyProductForm: ProductFormData = {
+  name: '', description: '', price: '', cost_price: '',
+  category_id: '', subcategory_id: '', stock_quantity: '',
+  min_stock_level: '', sku: '',
+};
+
+/* ─── ImageDropZone (inline reusable) ─── */
+
+function ImageDropZone({ image, onImageChange }: { image: File | null; onImageChange: (file: File | null) => void }) {
+  const [dragOver, setDragOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const previewUrl = useMemo(() => (image ? URL.createObjectURL(image) : null), [image]);
+
+  useEffect(() => {
+    return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
+  }, [previewUrl]);
+
+  const handleFile = (file: File) => {
+    if (!file.type.match(/^image\/(jpeg|png|webp)$/)) return;
+    if (file.size > 5 * 1024 * 1024) return;
+    onImageChange(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  };
+
+  return (
+    <div className="space-y-1">
+      <span className="block text-xs font-medium text-gray-600">Imagen</span>
+      <div
+        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        onClick={() => inputRef.current?.click()}
+        className={cn(
+          'relative flex h-[120px] w-[120px] cursor-pointer items-center justify-center rounded-lg border-2 border-dashed bg-gray-50 transition-colors',
+          dragOver ? 'border-red-400 bg-red-50' : 'border-gray-300 hover:border-gray-400',
+          'sm:h-[120px] sm:w-[120px]',
+          'max-sm:h-[100px] max-sm:w-full'
+        )}
+        role="button"
+        tabIndex={0}
+        onKeyDown={e => e.key === 'Enter' && inputRef.current?.click()}
+        aria-label="Subir imagen del producto"
+      >
+        {previewUrl ? (
+          <>
+            <img src={previewUrl} alt="Preview" className="h-full w-full rounded-lg object-cover" />
+            <button
+              onClick={e => { e.stopPropagation(); onImageChange(null); }}
+              className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-sm hover:bg-red-600"
+              aria-label="Quitar imagen"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </>
+        ) : (
+          <div className="flex flex-col items-center gap-1 text-gray-400">
+            <ImageIcon className="h-6 w-6" />
+            <span className="text-[10px]">Arrastra o click</span>
+          </div>
+        )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }}
+          className="hidden"
+          aria-label="Seleccionar imagen"
+        />
+      </div>
+      <p className="text-[10px] text-gray-400">JPG, PNG, WebP · Max 5MB</p>
+    </div>
+  );
+}
+
 /* ─── Main Page ─── */
 
 export default function RecetasPage() {
@@ -123,6 +221,104 @@ export default function RecetasPage() {
 
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+
+  /* ─── Add Product form state ─── */
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [productForm, setProductForm] = useState<ProductFormData>(emptyProductForm);
+  const [productFormErrors, setProductFormErrors] = useState<Record<string, string>>({});
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [productImage, setProductImage] = useState<File | null>(null);
+  const [subcategories, setSubcategories] = useState<SubcategoryInfo[]>([]);
+
+  const fetchSubcategories = useCallback(async () => {
+    try {
+      const res = await apiFetch<ApiResponse<{ categories: unknown[]; subcategories: SubcategoryInfo[] }>>('/admin/recetas/catalogo');
+      setSubcategories(res.data?.subcategories || []);
+    } catch { /* non-critical */ }
+  }, []);
+
+  useEffect(() => { if (showAddForm) fetchSubcategories(); }, [showAddForm, fetchSubcategories]);
+
+  const filteredSubcategories = useMemo(
+    () => productForm.category_id ? subcategories.filter(s => s.category_id === Number(productForm.category_id)) : [],
+    [subcategories, productForm.category_id]
+  );
+
+  const updateProductField = (field: keyof ProductFormData, value: string) => {
+    setProductForm(prev => {
+      const next = { ...prev, [field]: value };
+      if (field === 'category_id') next.subcategory_id = '';
+      return next;
+    });
+    setProductFormErrors(prev => { const n = { ...prev }; delete n[field]; return n; });
+  };
+
+  const handleCreateProduct = async () => {
+    const errors: Record<string, string> = {};
+    if (!productForm.name.trim()) errors.name = 'Nombre es requerido';
+    if (!productForm.price || Number(productForm.price) <= 0) errors.price = 'Precio debe ser mayor a 0';
+    if (!productForm.category_id) errors.category_id = 'Categoría es requerida';
+    if (Object.keys(errors).length > 0) { setProductFormErrors(errors); return; }
+
+    setSavingProduct(true);
+    setError('');
+    try {
+      const body: Record<string, unknown> = {
+        name: productForm.name.trim(),
+        price: Number(productForm.price),
+        category_id: Number(productForm.category_id),
+      };
+      if (productForm.description.trim()) body.description = productForm.description.trim();
+      if (productForm.cost_price) body.cost_price = Number(productForm.cost_price);
+      if (productForm.subcategory_id) body.subcategory_id = Number(productForm.subcategory_id);
+      if (productForm.stock_quantity) body.stock_quantity = Number(productForm.stock_quantity);
+      if (productForm.min_stock_level) body.min_stock_level = Number(productForm.min_stock_level);
+      if (productForm.sku.trim()) body.sku = productForm.sku.trim();
+
+      const res = await apiFetch<ApiResponse<{ id: number }>>('/admin/recetas/crear-producto', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+
+      const newId = res.data?.id;
+
+      // Upload image if provided
+      if (productImage && newId) {
+        try {
+          const formData = new FormData();
+          formData.append('image', productImage);
+          await apiFetch(`/admin/recetas/${newId}/imagen`, {
+            method: 'POST',
+            body: formData,
+          });
+        } catch { /* image upload is non-critical */ }
+      }
+
+      setProductForm(emptyProductForm);
+      setProductImage(null);
+      setShowAddForm(false);
+      await fetchProducts();
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        try {
+          const parsed = JSON.parse(e.message);
+          if (parsed.errors) {
+            const fieldErrors: Record<string, string> = {};
+            for (const [k, v] of Object.entries(parsed.errors)) {
+              fieldErrors[k] = Array.isArray(v) ? v[0] : String(v);
+            }
+            setProductFormErrors(fieldErrors);
+          } else {
+            setError(parsed.error || e.message);
+          }
+        } catch {
+          setError(e.message);
+        }
+      }
+    } finally {
+      setSavingProduct(false);
+    }
+  };
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -194,18 +390,122 @@ export default function RecetasPage() {
 
   return (
     <div className="space-y-3">
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar producto..."
-          className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300"
-          aria-label="Buscar producto"
-        />
+      {/* Search + Add Product button */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar producto..."
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[44px]"
+            aria-label="Buscar producto"
+          />
+        </div>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors min-h-[44px] flex-shrink-0',
+            showAddForm
+              ? 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+              : 'bg-red-500 text-white hover:bg-red-600'
+          )}
+          aria-label={showAddForm ? 'Cancelar' : 'Agregar producto'}
+        >
+          {showAddForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          {showAddForm ? 'Cancelar' : 'Agregar Producto'}
+        </button>
       </div>
+
+      {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert">{error}</div>}
+
+      {/* ─── Add Product Form ─── */}
+      {showAddForm && (
+        <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3" role="form" aria-label="Agregar producto">
+          <h3 className="text-sm font-medium text-gray-700">Nuevo Producto</h3>
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <ImageDropZone image={productImage} onImageChange={setProductImage} />
+            <div className="flex-1 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label htmlFor="prod-name" className="block text-xs font-medium text-gray-600 mb-1">Nombre *</label>
+                <input id="prod-name" type="text" value={productForm.name} onChange={e => updateProductField('name', e.target.value)}
+                  className={cn('w-full rounded-lg border px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300', productFormErrors.name ? 'border-red-300' : 'border-gray-200')}
+                  placeholder="Ej: Churrasco Italiano" />
+                {productFormErrors.name && <p className="mt-1 text-xs text-red-500">{productFormErrors.name}</p>}
+              </div>
+              <div>
+                <label htmlFor="prod-price" className="block text-xs font-medium text-gray-600 mb-1">Precio *</label>
+                <input id="prod-price" type="number" value={productForm.price} onChange={e => updateProductField('price', e.target.value)}
+                  className={cn('w-full rounded-lg border px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300', productFormErrors.price ? 'border-red-300' : 'border-gray-200')}
+                  placeholder="4500" min="1" />
+                {productFormErrors.price && <p className="mt-1 text-xs text-red-500">{productFormErrors.price}</p>}
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="prod-desc" className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
+                <input id="prod-desc" type="text" value={productForm.description} onChange={e => updateProductField('description', e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
+                  placeholder="Descripción opcional" />
+              </div>
+              <div>
+                <label htmlFor="prod-category" className="block text-xs font-medium text-gray-600 mb-1">Categoría *</label>
+                <select id="prod-category" value={productForm.category_id} onChange={e => updateProductField('category_id', e.target.value)}
+                  className={cn('w-full rounded-lg border px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300 bg-white', productFormErrors.category_id ? 'border-red-300' : 'border-gray-200')}>
+                  <option value="">Seleccionar categoría</option>
+                  {groupedData?.categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                {productFormErrors.category_id && <p className="mt-1 text-xs text-red-500">{productFormErrors.category_id}</p>}
+              </div>
+              <div>
+                <label htmlFor="prod-subcategory" className="block text-xs font-medium text-gray-600 mb-1">Subcategoría</label>
+                <select id="prod-subcategory" value={productForm.subcategory_id} onChange={e => updateProductField('subcategory_id', e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300 bg-white"
+                  disabled={!productForm.category_id}>
+                  <option value="">Sin subcategoría</option>
+                  {filteredSubcategories.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="prod-cost" className="block text-xs font-medium text-gray-600 mb-1">Costo</label>
+                <input id="prod-cost" type="number" value={productForm.cost_price} onChange={e => updateProductField('cost_price', e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
+                  placeholder="0" min="0" />
+              </div>
+              <div>
+                <label htmlFor="prod-stock" className="block text-xs font-medium text-gray-600 mb-1">Stock</label>
+                <input id="prod-stock" type="number" value={productForm.stock_quantity} onChange={e => updateProductField('stock_quantity', e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
+                  placeholder="0" min="0" />
+              </div>
+              <div>
+                <label htmlFor="prod-min-stock" className="block text-xs font-medium text-gray-600 mb-1">Stock mínimo</label>
+                <input id="prod-min-stock" type="number" value={productForm.min_stock_level} onChange={e => updateProductField('min_stock_level', e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
+                  placeholder="5" min="0" />
+              </div>
+              <div>
+                <label htmlFor="prod-sku" className="block text-xs font-medium text-gray-600 mb-1">SKU</label>
+                <input id="prod-sku" type="text" value={productForm.sku} onChange={e => updateProductField('sku', e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
+                  placeholder="Código opcional" />
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end pt-2">
+            <button onClick={handleCreateProduct} disabled={savingProduct}
+              className={cn('inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors min-h-[44px]',
+                savingProduct ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600')}
+              aria-label="Guardar producto">
+              {savingProduct && <Loader2 className="h-4 w-4 animate-spin" />}
+              Guardar
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="text-xs text-gray-500">
         {totalProducts} producto{totalProducts !== 1 ? 's' : ''} en {filteredCategories.length} categoría{filteredCategories.length !== 1 ? 's' : ''}

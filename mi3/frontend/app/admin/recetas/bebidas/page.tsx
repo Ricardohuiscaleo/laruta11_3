@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
-import { Loader2, Plus, AlertTriangle, X, ChevronDown, ChevronRight } from 'lucide-react';
+import { Loader2, Plus, AlertTriangle, X, ChevronDown, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import type { ApiResponse } from '@/types';
 
 /* ─── Types ─── */
@@ -56,6 +56,80 @@ function truncate(text: string | null, max: number): string {
   return text.length > max ? text.slice(0, max) + '…' : text;
 }
 
+/* ─── ImageDropZone (inline reusable) ─── */
+
+function ImageDropZone({ image, onImageChange }: { image: File | null; onImageChange: (file: File | null) => void }) {
+  const [dragOver, setDragOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const previewUrl = useMemo(() => (image ? URL.createObjectURL(image) : null), [image]);
+
+  useEffect(() => {
+    return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
+  }, [previewUrl]);
+
+  const handleFile = (file: File) => {
+    if (!file.type.match(/^image\/(jpeg|png|webp)$/)) return;
+    if (file.size > 5 * 1024 * 1024) return;
+    onImageChange(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  };
+
+  return (
+    <div className="space-y-1">
+      <span className="block text-xs font-medium text-gray-600">Imagen</span>
+      <div
+        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        onClick={() => inputRef.current?.click()}
+        className={cn(
+          'relative flex h-[120px] w-[120px] cursor-pointer items-center justify-center rounded-lg border-2 border-dashed bg-gray-50 transition-colors',
+          dragOver ? 'border-red-400 bg-red-50' : 'border-gray-300 hover:border-gray-400',
+          'sm:h-[120px] sm:w-[120px]',
+          'max-sm:h-[100px] max-sm:w-full'
+        )}
+        role="button"
+        tabIndex={0}
+        onKeyDown={e => e.key === 'Enter' && inputRef.current?.click()}
+        aria-label="Subir imagen del producto"
+      >
+        {previewUrl ? (
+          <>
+            <img src={previewUrl} alt="Preview" className="h-full w-full rounded-lg object-cover" />
+            <button
+              onClick={e => { e.stopPropagation(); onImageChange(null); }}
+              className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-sm hover:bg-red-600"
+              aria-label="Quitar imagen"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </>
+        ) : (
+          <div className="flex flex-col items-center gap-1 text-gray-400">
+            <ImageIcon className="h-6 w-6" />
+            <span className="text-[10px]">Arrastra o click</span>
+          </div>
+        )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }}
+          className="hidden"
+          aria-label="Seleccionar imagen"
+        />
+      </div>
+      <p className="text-[10px] text-gray-400">JPG, PNG, WebP · Max 5MB</p>
+    </div>
+  );
+}
+
 /* ─── Main Component ─── */
 
 export default function BebidasTab() {
@@ -68,6 +142,7 @@ export default function BebidasTab() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [bevImage, setBevImage] = useState<File | null>(null);
 
   const fetchBeverages = useCallback(async () => {
     setLoading(true);
@@ -136,11 +211,27 @@ export default function BebidasTab() {
       if (form.subcategory_id) body.subcategory_id = Number(form.subcategory_id);
       if (form.sku.trim()) body.sku = form.sku.trim();
 
-      await apiFetch('/admin/bebidas', {
+      const res = await apiFetch<ApiResponse<{ id: number }>>('/admin/bebidas', {
         method: 'POST',
         body: JSON.stringify(body),
       });
+
+      const newId = res.data?.id;
+
+      // Upload image if provided
+      if (bevImage && newId) {
+        try {
+          const formData = new FormData();
+          formData.append('image', bevImage);
+          await apiFetch(`/admin/recetas/${newId}/imagen`, {
+            method: 'POST',
+            body: formData,
+          });
+        } catch { /* image upload is non-critical */ }
+      }
+
       setForm(emptyForm);
+      setBevImage(null);
       setShowAddForm(false);
       await fetchBeverages();
     } catch (e: unknown) {

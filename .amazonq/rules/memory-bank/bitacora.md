@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`5541224`) — minicomandas header legible con separadores, menú lista compacta, búsqueda inline highlight |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`8d024b5`) — fix tiempo negativo comandas, ocultar notas pago en cocina, minicomandas header legible |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`9b63c08`) — bebidas muestra productos reales por subcategoría, recetas accordion por categoría |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`9b63c08`) — BeverageService productos, RecipeService grouped excluye Snacks/Extras/Combos |
@@ -100,13 +100,14 @@
 
 ## Sesiones Recientes
 
-### 2026-04-25d — Fix MiniComandas header legible con separadores
+### 2026-04-25d — Fix comandas: tiempo negativo, notas pago ocultas, minicomandas header legible
 
 **Cambios código:**
-- `caja3/src/components/MiniComandas.jsx`: Header de `renderOrderCard` reescrito — antes todo pegado (`⏱️T11-1777164448-4018ANULAR8:00(A TIEMPO)Juan`), ahora con separadores tipo `/comandas/` (`Retiro | ✓ A TIEMPO | 8:00 | Juan`). Tipo pedido (Retiro/Delivery/Cuartel) con icono, estado tiempo con emoji consistente (✓/⚠️/🚨), botones ANULAR+Copiar a la derecha, order_number en línea separada discreta.
+- `caja3/src/components/MiniComandas.jsx`: Header de `renderOrderCard` reescrito con separadores (`Retiro | ✓ A TIEMPO | 8:00 | Juan`), tipo pedido con icono, botones ANULAR+Copiar a la derecha, order_number en línea separada.
+- `caja3/src/pages/comandas/index.astro`: Fix `getTimeElapsed` y `getMinutesElapsed` — usaban `new Date(createdAt)` + restaban 3h (doble error), ahora usan `.replace(' ','T')+'Z'` como MiniComandas. Filtro en `customer_notes` para ocultar líneas con "EFECTIVO"/"PAGO EN" (info de pago no relevante para cocina).
 
-**Commits:** `5541224`
-**Deploys:** caja3 ✅ (`5541224`)
+**Commits:** `5541224`, `8d024b5`
+**Deploys:** caja3 ✅ (`8d024b5`)
 
 ### 2026-04-25c — Spec recetas-categorias-bebidas: implementación + refactor bebidas a productos reales
 

@@ -212,6 +212,7 @@ Route::prefix('v1')->group(function () {
 
         // Recetas (recipe management)
         // Static routes MUST come before {productId} to avoid route conflicts
+        Route::post('recetas/crear-producto', [\App\Http\Controllers\RecipeController::class, 'createProduct']);
         Route::post('recetas/bulk-adjustment/preview', [\App\Http\Controllers\RecipeController::class, 'bulkPreview']);
         Route::post('recetas/bulk-adjustment', [\App\Http\Controllers\RecipeController::class, 'bulkApply']);
         Route::post('recetas/replace-ingredient/preview', [\App\Http\Controllers\RecipeController::class, 'replacePreview']);
