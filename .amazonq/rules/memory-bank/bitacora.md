@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`5409157`) — comandas: estaciones paralelas/secuenciales, combos unificados, botón LISTO bold, extras con prep |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`f8fc5b7`) — comandas: fix syntax error, barras 8px, estaciones paralelas/secuenciales, combos unificados |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2bde6e8`) — Ventas: timezone Chile, columna Fecha, detalle expandible con ingredientes |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`be6ab63`) — migración prep_method/prep_time en product_recipes |
