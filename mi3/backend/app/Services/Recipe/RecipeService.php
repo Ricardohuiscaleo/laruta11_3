@@ -707,8 +707,7 @@ class RecipeService
      */
     public function getRecipeDetail(int $productId): array
     {
-        $product = Product::where('is_active', true)
-            ->with(['recipes.ingredient'])
+        $product = Product::with(['recipes.ingredient'])
             ->findOrFail($productId);
 
         $recipeCost = 0.0;
@@ -781,7 +780,7 @@ class RecipeService
      */
     public function updateProduct(int $productId, array $data): array
     {
-        $product = Product::where('is_active', true)->findOrFail($productId);
+        $product = Product::findOrFail($productId);
 
         $fillable = ['name', 'description', 'price', 'image_url', 'category_id', 'subcategory_id'];
         foreach ($fillable as $field) {
@@ -992,8 +991,8 @@ class RecipeService
             ->pluck('id')
             ->toArray();
 
-        $query = Product::where('is_active', true)
-            ->with(['recipes.ingredient']);
+        // Include all products (active + inactive) so frontend can filter with eye toggle
+        $query = Product::with(['recipes.ingredient']);
 
         if (!empty($excludeCategoryIds)) {
             $query->where(function ($q) use ($excludeCategoryIds) {
@@ -1041,6 +1040,7 @@ class RecipeService
                 'recipe_cost' => $recipeCost,
                 'margin' => $this->calculateMargin((float) $product->price, $recipeCost),
                 'ingredient_count' => $ingredientCount,
+                'is_active' => (bool) $product->is_active,
             ];
         }
 

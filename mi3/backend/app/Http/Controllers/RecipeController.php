@@ -369,7 +369,7 @@ class RecipeController extends Controller
                 'image' => 'required|image|max:5120',
             ]);
 
-            $product = \App\Models\Product::where('is_active', true)->findOrFail($productId);
+            $product = \App\Models\Product::findOrFail($productId);
 
             $file = $request->file('image');
             $key = "products/producto_{$productId}_" . time() . '.jpg';
