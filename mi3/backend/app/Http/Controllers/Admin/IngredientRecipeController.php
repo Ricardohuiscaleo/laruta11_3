@@ -135,4 +135,38 @@ class IngredientRecipeController extends Controller
             ], 404);
         }
     }
+
+    /**
+     * Produce units of a composite ingredient.
+     * Deducts children stock, adds to composite stock.
+     * POST /api/v1/admin/ingredient-recipes/{ingredientId}/produce
+     */
+    public function produce(Request $request, int $ingredientId): JsonResponse
+    {
+        try {
+            $request->validate([
+                'quantity' => 'required|numeric|gt:0|max:100',
+            ]);
+
+            $result = $this->service->produce($ingredientId, (float) $request->input('quantity'));
+
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Ingrediente compuesto no encontrado',
+            ], 404);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 422);
+        }
+    }
 }

@@ -236,6 +236,7 @@ Route::prefix('v1')->group(function () {
         Route::get('ingredient-recipes/{ingredientId}', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'show']);
         Route::post('ingredient-recipes/{ingredientId}', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'store']);
         Route::delete('ingredient-recipes/{ingredientId}', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'destroy']);
+        Route::post('ingredient-recipes/{ingredientId}/produce', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'produce']);
 
         // Ventas (sales analytics)
         Route::get('ventas/kpis', [\App\Http\Controllers\Admin\VentasController::class, 'kpis']);

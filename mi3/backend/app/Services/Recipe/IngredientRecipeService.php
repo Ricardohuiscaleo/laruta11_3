@@ -163,6 +163,101 @@ class IngredientRecipeService
     }
 
     /**
+     * Produce units of a composite ingredient.
+     * Deducts from children stock, adds to composite stock.
+     *
+     * @param  int   $ingredientId
+     * @param  float $quantity  Number of units to produce
+     * @return array ['produced' => float, 'new_stock' => float, 'deductions' => array]
+     *
+     * @throws ModelNotFoundException
+     * @throws \RuntimeException if insufficient child stock
+     */
+    public function produce(int $ingredientId, float $quantity): array
+    {
+        return DB::transaction(function () use ($ingredientId, $quantity) {
+            $ingredient = Ingredient::findOrFail($ingredientId);
+
+            if (!$ingredient->is_composite) {
+                throw new \RuntimeException('El ingrediente no es compuesto');
+            }
+
+            $children = IngredientRecipe::where('ingredient_id', $ingredientId)
+                ->with('child')
+                ->get();
+
+            if ($children->isEmpty()) {
+                throw new \RuntimeException('No hay sub-receta configurada');
+            }
+
+            // Verify sufficient stock for all children
+            $deductions = [];
+            foreach ($children as $child) {
+                if (!$child->child) {
+                    continue;
+                }
+
+                $needed = $child->quantity * $quantity;
+                $childUnit = $child->unit;
+                $stockUnit = $child->child->unit;
+
+                // Convert needed to stock unit for comparison
+                $neededInStockUnit = $this->convertUnits($needed, $childUnit, $stockUnit);
+
+                if ($child->child->current_stock < $neededInStockUnit) {
+                    throw new \RuntimeException(
+                        "Stock insuficiente de {$child->child->name}: necesita {$neededInStockUnit}{$stockUnit}, tiene {$child->child->current_stock}{$stockUnit}"
+                    );
+                }
+
+                $deductions[] = [
+                    'ingredient_id' => $child->child->id,
+                    'name' => $child->child->name,
+                    'amount' => $neededInStockUnit,
+                    'unit' => $stockUnit,
+                ];
+            }
+
+            // Apply deductions
+            foreach ($deductions as $ded) {
+                Ingredient::where('id', $ded['ingredient_id'])
+                    ->decrement('current_stock', $ded['amount']);
+            }
+
+            // Add to composite stock
+            $ingredient->increment('current_stock', $quantity);
+
+            return [
+                'produced' => $quantity,
+                'new_stock' => $ingredient->fresh()->current_stock,
+                'deductions' => $deductions,
+            ];
+        });
+    }
+
+    /**
+     * Convert quantity between compatible units.
+     */
+    private function convertUnits(float $quantity, string $fromUnit, string $toUnit): float
+    {
+        if ($fromUnit === $toUnit) {
+            return $quantity;
+        }
+
+        $from = self::UNIT_CONVERSIONS[$fromUnit] ?? null;
+        $to = self::UNIT_CONVERSIONS[$toUnit] ?? null;
+
+        if (!$from || !$to || $from['base'] !== $to['base']) {
+            return $quantity; // incompatible, return as-is
+        }
+
+        // Convert to base, then to target
+        $inBase = $quantity * $from['factor'];
+
+        return $inBase / $to['factor'];
+    }
+
+    /**
      * Calculate composite cost based on children: Σ(child.cost_per_unit normalized to child quantity unit).
      *
      * @param  int   $ingredientId

@@ -491,7 +491,7 @@ function SubRecipeEditor({ ingredientId, onBack }: { ingredientId: number; onBac
 
       {/* Production Calculator */}
       {children.length > 0 && (
-        <ProductionCalculator items={children} unitName={detail?.name || 'unidad'} />
+        <ProductionCalculator items={children} unitName={detail?.name || 'unidad'} ingredientId={ingredientId} />
       )}
     </div>
   );
@@ -595,8 +595,30 @@ function ChildAutocomplete({ onSelect, excludeIds }: { onSelect: (opt: Ingredien
 
 /* ─── Production Calculator ─── */
 
-function ProductionCalculator({ items, unitName }: { items: DraftChild[]; unitName: string }) {
+function ProductionCalculator({ items, unitName, ingredientId }: { items: DraftChild[]; unitName: string; ingredientId: number }) {
   const [qty, setQty] = useState(0);
+  const [producing, setProducing] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleProduce = async () => {
+    if (qty <= 0) return;
+    setProducing(true);
+    setError(null);
+    setResult(null);
+    try {
+      const res = await apiFetch<ApiResponse<{ produced: number; new_stock: number }>>(`/admin/ingredient-recipes/${ingredientId}/produce`, {
+        method: 'POST',
+        body: JSON.stringify({ quantity: qty }),
+      });
+      setResult(`✅ Producidas ${res.data?.produced} unidades. Stock: ${res.data?.new_stock}`);
+      setQty(0);
+    } catch (e: any) {
+      setError(e.message || 'Error al producir');
+    } finally {
+      setProducing(false);
+    }
+  };
 
   const rows = useMemo(() => items.map(c => {
     const needed = c.quantity * qty;
@@ -678,6 +700,24 @@ function ProductionCalculator({ items, unitName }: { items: DraftChild[]; unitNa
                 <span className="text-lg font-bold tabular-nums text-amber-900">{formatCLP(grandTotal)}</span>
               </div>
             </div>
+
+            {/* Produce button */}
+            <button
+              onClick={handleProduce}
+              disabled={producing || qty <= 0}
+              className={cn(
+                'w-full rounded-lg py-3 text-sm font-bold transition-colors min-h-[44px]',
+                producing || qty <= 0
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-green-600 text-white hover:bg-green-700'
+              )}
+              aria-label={`Producir ${qty} unidades`}
+            >
+              {producing ? 'Produciendo...' : `🏭 Producir ${qty} ${unitName}`}
+            </button>
+
+            {result && <div className="rounded-lg bg-green-50 p-3 text-sm text-green-700 font-medium" role="status">{result}</div>}
+            {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert">{error}</div>}
           </>
         )}
       </div>
