@@ -817,7 +817,7 @@
                                                                     item.recipe_ingredients && item.recipe_ingredients.length > 0 ? 
                                                                         (() => {
                                                                             const orderCreated = new Date((order.created_at || '').replace(' ', 'T') + 'Z');
-                                                                            const elapsedSec = Math.max(0, (Date.now() - orderCreated.getTime()) / 1000);
+                                                                            const elapsedSec = Math.max(0, (Date.now() - orderCreated.getTime()) / 1000 - 60); // 60s prep general
                                                                             
                                                                             // Agrupar por tipo de estación
                                                                             const paralelas = (item.recipe_ingredients || []).filter(i => ['plancha','fritura','tostado','horno','caramelizado'].includes(i.prep_method));
@@ -901,7 +901,7 @@
                                                                 h('p', { className: 'text-xs font-bold text-blue-700 mb-1' }, 'Extras:'),
                                                                 ...customizations.map((custom, idx) => {
                                                                     const orderCreated = new Date((order.created_at || '').replace(' ', 'T') + 'Z');
-                                                                    const elapsedSec = Math.max(0, (Date.now() - orderCreated.getTime()) / 1000);
+                                                                    const elapsedSec = Math.max(0, (Date.now() - orderCreated.getTime()) / 1000 - 60); // 60s prep general
                                                                     const instruccion = { 'plancha': 'ASAR', 'fritura': 'FREÍR', 'tostado': 'TOSTAR', 'horno': 'HORNO', 'caramelizado': 'CARAM.', 'pelado': 'PELAR', 'moler': 'MOLER' };
                                                                     const fmtTime = (s) => { const m = Math.floor(s / 60); const sec = Math.floor(s % 60); return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`; };
                                                                     
@@ -927,7 +927,7 @@
                                                                 // Render cada hijo del combo (fixed + selections) con estaciones
                                                                 ...(() => {
                                                                     const orderCreated = new Date((order.created_at || '').replace(' ', 'T') + 'Z');
-                                                                    const elapsedSec = Math.max(0, (Date.now() - orderCreated.getTime()) / 1000);
+                                                                    const elapsedSec = Math.max(0, (Date.now() - orderCreated.getTime()) / 1000 - 60); // 60s prep general
                                                                     const instruccion = { 'plancha': 'ASAR', 'fritura': 'FREÍR', 'tostado': 'TOSTAR', 'horno': 'HORNO', 'caramelizado': 'CARAM.', 'pelado': 'PELAR', 'moler': 'MOLER', 'cortar': 'CORTAR' };
                                                                     const fmtTime = (s) => { const m = Math.floor(s / 60); const sec = Math.floor(s % 60); return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`; };
                                                                     
