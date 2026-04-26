@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`51b58fc`) — comandas: estaciones paralelas/secuenciales, instrucciones ASAR/FREÍR/PELAR/MOLER, all prep data |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`5409157`) — comandas: estaciones paralelas/secuenciales, combos unificados, botón LISTO bold, extras con prep |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2bde6e8`) — Ventas: timezone Chile, columna Fecha, detalle expandible con ingredientes |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`be6ab63`) — migración prep_method/prep_time en product_recipes |
@@ -110,9 +110,9 @@
 - `mi3/backend/database/migrations/2026_04_26_000002_seed_prep_data_product_recipes.php`: Seed tiempos industria (hamburguesa 480s, pollo 420s, papas 420s, pan 90s, etc.).
 - `mi3/backend/app/Models/ProductRecipe.php`: Fillable + casts para nuevas columnas.
 
-**Commits:** `fac8eac`, `be6ab63`, `116743a`, `0f30749`, `b5e6abf`, `a9fac59`, `6f9319a`, `3388a21`, `51b58fc`
-**Deploys:** caja3 ✅ (`51b58fc`), mi3-backend ✅ (`be6ab63`)
-**BD:** Migración `add_prep_columns_to_product_recipes` + seed prep data + update manual todos los ingredientes (Montina, Palta, Papa Cardenal, Churrasco, Lomo, Cordero, Tocino, Pre-pizza, etc.)
+**Commits:** `fac8eac`, `be6ab63`, `116743a`, `0f30749`, `b5e6abf`, `a9fac59`, `6f9319a`, `3388a21`, `51b58fc`, `55fedfd`, `5409157`
+**Deploys:** caja3 ✅ (`5409157`), mi3-backend ✅ (`be6ab63`)
+**BD:** Migración `add_prep_columns_to_product_recipes` + seed prep data + update manual todos los ingredientes
 
 ### 2026-04-26c — Spec ventas-detail-improvements: detalle expandible + timezone Chile
 
