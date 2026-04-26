@@ -489,9 +489,9 @@
 
             const getTimeBorderColor = (createdAt) => {
                 const mins = getMinutesElapsed(createdAt);
-                if (mins < 10) return 'border-gray-300 bg-white';
-                if (mins < 20) return 'border-gray-300 bg-yellow-50';
-                return 'border-gray-300 bg-red-50';
+                if (mins < 10) return 'border-gray-300 bg-white text-gray-900';
+                if (mins < 20) return 'border-yellow-600 bg-yellow-400 text-gray-900';
+                return 'border-red-800 bg-red-600 text-white';
             };
 
             const getDetailedTimes = (order) => {
