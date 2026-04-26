@@ -239,6 +239,7 @@ Route::prefix('v1')->group(function () {
 
         // Ventas (sales analytics)
         Route::get('ventas/kpis', [\App\Http\Controllers\Admin\VentasController::class, 'kpis']);
+        Route::get('ventas/{orderNumber}/detail', [\App\Http\Controllers\Admin\VentasController::class, 'detail']);
         Route::get('ventas', [\App\Http\Controllers\Admin\VentasController::class, 'index']);
 
         // Productos — Bulk actions (toggle, price adjust, deactivate)

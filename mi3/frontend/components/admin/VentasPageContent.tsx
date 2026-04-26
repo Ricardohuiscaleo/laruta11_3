@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   DollarSign, TrendingUp, ShoppingCart, Search,
   ChevronDown, ChevronUp, CreditCard, Banknote,
   ArrowLeftRight, Globe, Package, Loader2,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
@@ -56,6 +56,39 @@ interface VentasPageProps {
   period?: string;
 }
 
+/* ─── Order Detail Types ─── */
+
+interface IngredientConsumption {
+  ingredient_name: string;
+  quantity_used: number;
+  unit: string;
+  stock_before: number | null;
+  stock_after: number | null;
+  stock_status: 'ok' | 'warning';
+}
+
+interface OrderDetailItem {
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  item_cost: number;
+  profit: number;
+  ingredients: IngredientConsumption[];
+}
+
+interface OrderDetail {
+  order_number: string;
+  created_at: string;
+  customer_name: string | null;
+  payment_method: string | null;
+  items: OrderDetailItem[];
+  totals: {
+    subtotal: number;
+    total_cost: number;
+    total_profit: number;
+  };
+}
+
 /* ─── Helpers ─── */
 
 const METHOD_META: Record<string, { label: string; icon: typeof CreditCard }> = {
@@ -66,15 +99,16 @@ const METHOD_META: Record<string, { label: string; icon: typeof CreditCard }> = 
   pedidosya: { label: 'PedidosYa', icon: Package },
 };
 
-const SOURCE_BADGES: Record<string, string> = {
-  app: 'bg-blue-100 text-blue-700',
-  caja: 'bg-amber-100 text-amber-700',
-  pedidosya: 'bg-pink-100 text-pink-700',
-};
-
-function formatTime(dateStr: string): string {
+function formatChileDateTime(dateStr: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  return new Intl.DateTimeFormat('es-CL', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'America/Santiago',
+  }).format(d);
 }
 
 function methodLabel(method: string | null): string {
@@ -188,6 +222,86 @@ function Pagination({
   );
 }
 
+/* ─── Order Detail Panel ─── */
+
+function OrderDetailPanel({ detail }: { detail: OrderDetail }) {
+  return (
+    <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+      {/* Header */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+        <span className="font-semibold text-gray-900">Orden #{detail.order_number}</span>
+        <span className="text-gray-500">{formatChileDateTime(detail.created_at)}</span>
+        <span className="text-gray-500">{methodLabel(detail.payment_method)}</span>
+      </div>
+
+      {/* Items */}
+      {detail.items.length === 0 ? (
+        <p className="text-sm text-gray-400">Sin ítems</p>
+      ) : (
+        <div className="space-y-3">
+          {detail.items.map((item, idx) => (
+            <div key={idx} className="bg-white rounded-lg border overflow-hidden">
+              {/* Item row */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 px-3 py-2 text-sm">
+                <span className="font-medium text-gray-800 col-span-2 sm:col-span-1">
+                  {item.product_name} ×{item.quantity}
+                </span>
+                <span className="text-gray-600 text-right sm:text-right">
+                  <span className="sm:hidden text-xs text-gray-400 mr-1">Precio:</span>
+                  {formatCLP(item.unit_price)}
+                </span>
+                <span className="text-gray-600 text-right sm:text-right">
+                  <span className="sm:hidden text-xs text-gray-400 mr-1">Costo:</span>
+                  {formatCLP(item.item_cost)}
+                </span>
+                <span className={cn(
+                  'text-right sm:text-right font-medium',
+                  item.profit >= 0 ? 'text-green-600' : 'text-red-600',
+                )}>
+                  <span className="sm:hidden text-xs text-gray-400 mr-1">Utilidad:</span>
+                  {formatCLP(item.profit)}
+                </span>
+              </div>
+
+              {/* Ingredients sub-table */}
+              {item.ingredients.length > 0 && (
+                <div className="border-t bg-gray-50/50 px-3 py-2">
+                  <p className="text-xs font-medium text-gray-500 mb-1">Ingredientes</p>
+                  <div className="space-y-1">
+                    {item.ingredients.map((ing, iIdx) => (
+                      <div key={iIdx} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-600">
+                        <span className="font-medium min-w-[100px]">{ing.ingredient_name}</span>
+                        <span>{ing.quantity_used} {ing.unit}</span>
+                        {ing.stock_before != null && ing.stock_after != null && (
+                          <span className="text-gray-400">
+                            {ing.stock_before} → {ing.stock_after}
+                          </span>
+                        )}
+                        {ing.stock_status === 'warning' ? (
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-500" aria-label="Stock bajo" />
+                        ) : (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-500" aria-label="Stock OK" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Footer totals */}
+      <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm border-t pt-3">
+        <span className="text-gray-600">Subtotal: <span className="font-semibold text-gray-900">{formatCLP(detail.totals.subtotal)}</span></span>
+        <span className="text-gray-600">Costo: <span className="font-semibold text-gray-900">{formatCLP(detail.totals.total_cost)}</span></span>
+        <span className="text-gray-600">Utilidad: <span className={cn('font-semibold', detail.totals.total_profit >= 0 ? 'text-green-600' : 'text-red-600')}>{formatCLP(detail.totals.total_profit)}</span></span>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Component ─── */
 
 export default function VentasPage({ period = 'shift_today' }: VentasPageProps) {
@@ -201,6 +315,12 @@ export default function VentasPage({ period = 'shift_today' }: VentasPageProps) 
   const [loading, setLoading] = useState(true);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
   const debouncedSearch = useRef(search);
+
+  /* ── Expand/collapse detail state ── */
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [orderDetail, setOrderDetail] = useState<OrderDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
   /* ── Fetch KPIs ── */
   const fetchKpis = useCallback(async () => {
@@ -268,6 +388,34 @@ export default function VentasPage({ period = 'shift_today' }: VentasPageProps) 
     fetchTransactions(p, debouncedSearch.current);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [fetchTransactions]);
+
+  /* ── Toggle order detail expand/collapse ── */
+  const handleToggleDetail = useCallback(async (orderNumber: string) => {
+    if (expandedOrder === orderNumber) {
+      setExpandedOrder(null);
+      setOrderDetail(null);
+      setDetailError(null);
+      return;
+    }
+    setExpandedOrder(orderNumber);
+    setOrderDetail(null);
+    setDetailError(null);
+    setDetailLoading(true);
+    try {
+      const res = await apiFetch<{ success: boolean; data: OrderDetail }>(
+        `/admin/ventas/${orderNumber}/detail`,
+      );
+      if (res.success) {
+        setOrderDetail(res.data);
+      } else {
+        setDetailError('Error al cargar el detalle');
+      }
+    } catch {
+      setDetailError('Error al cargar el detalle');
+    } finally {
+      setDetailLoading(false);
+    }
+  }, [expandedOrder]);
 
   /* ── Task 7.3: Realtime via Echo/Reverb ── */
   useEffect(() => {
@@ -355,21 +503,46 @@ export default function VentasPage({ period = 'shift_today' }: VentasPageProps) 
             <p className="text-center text-sm text-gray-400 py-8">Sin transacciones</p>
           )}
           {transactions.map(tx => (
-            <div key={tx.id} className="bg-white rounded-xl border p-3 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-gray-400">#{tx.order_number}</span>
-                <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', SOURCE_BADGES[tx.source] || 'bg-gray-100 text-gray-600')}>
-                  {tx.source}
-                </span>
+            <div key={tx.id}>
+              <div
+                className="bg-white rounded-xl border p-3 space-y-1 cursor-pointer"
+                onClick={() => handleToggleDetail(tx.order_number)}
+                role="button"
+                aria-expanded={expandedOrder === tx.order_number}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono text-gray-400 inline-flex items-center gap-1">
+                    {expandedOrder === tx.order_number
+                      ? <ChevronDown className="h-3 w-3" />
+                      : <ChevronRight className="h-3 w-3" />}
+                    #{tx.order_number}
+                  </span>
+                  <span className="text-xs text-gray-500">{formatChileDateTime(tx.created_at)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-800 truncate">{tx.customer_name || 'Sin nombre'}</span>
+                  <span className="text-sm font-bold text-gray-900">{formatCLP(tx.net)}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>{methodLabel(tx.payment_method)}</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-800 truncate">{tx.customer_name || 'Sin nombre'}</span>
-                <span className="text-sm font-bold text-gray-900">{formatCLP(tx.net)}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>{methodLabel(tx.payment_method)}</span>
-                <span>{formatTime(tx.created_at)}</span>
-              </div>
+              {expandedOrder === tx.order_number && (
+                <div className="bg-white rounded-b-xl border border-t-0 px-3 py-3">
+                  {detailLoading && (
+                    <div className="flex justify-center py-4" role="status" aria-label="Cargando detalle">
+                      <Loader2 className="h-5 w-5 animate-spin text-green-500" />
+                    </div>
+                  )}
+                  {detailError && (
+                    <div className="flex items-center justify-center gap-2 py-4 text-sm text-red-500">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span>{detailError}</span>
+                    </div>
+                  )}
+                  {orderDetail && <OrderDetailPanel detail={orderDetail} />}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -386,30 +559,56 @@ export default function VentasPage({ period = 'shift_today' }: VentasPageProps) 
                 <th className="px-4 py-3 text-right">Monto</th>
                 <th className="px-4 py-3 text-right">Delivery</th>
                 <th className="px-4 py-3">Pago</th>
-                <th className="px-4 py-3">Fuente</th>
-                <th className="px-4 py-3 text-right">Hora</th>
+                <th className="px-4 py-3 text-right">Fecha</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {transactions.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400">Sin transacciones</td>
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-400">Sin transacciones</td>
                 </tr>
               )}
               {transactions.map(tx => (
-                <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-500">{tx.order_number}</td>
-                  <td className="px-4 py-3 text-gray-800 truncate max-w-[180px]">{tx.customer_name || 'Sin nombre'}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-gray-900">{formatCLP(tx.net)}</td>
-                  <td className="px-4 py-3 text-right text-gray-500">{tx.delivery_fee > 0 ? formatCLP(tx.delivery_fee) : '—'}</td>
-                  <td className="px-4 py-3 text-gray-600">{methodLabel(tx.payment_method)}</td>
-                  <td className="px-4 py-3">
-                    <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', SOURCE_BADGES[tx.source] || 'bg-gray-100 text-gray-600')}>
-                      {tx.source}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right text-gray-500">{formatTime(tx.created_at)}</td>
-                </tr>
+                <React.Fragment key={tx.id}>
+                  <tr
+                    className="hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => handleToggleDetail(tx.order_number)}
+                    role="button"
+                    aria-expanded={expandedOrder === tx.order_number}
+                  >
+                    <td className="px-4 py-3 font-mono text-xs text-gray-500">
+                      <span className="inline-flex items-center gap-1">
+                        {expandedOrder === tx.order_number
+                          ? <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+                          : <ChevronRight className="h-3.5 w-3.5 text-gray-400" />}
+                        {tx.order_number}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-800 truncate max-w-[180px]">{tx.customer_name || 'Sin nombre'}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-gray-900">{formatCLP(tx.net)}</td>
+                    <td className="px-4 py-3 text-right text-gray-500">{tx.delivery_fee > 0 ? formatCLP(tx.delivery_fee) : '—'}</td>
+                    <td className="px-4 py-3 text-gray-600">{methodLabel(tx.payment_method)}</td>
+                    <td className="px-4 py-3 text-right text-gray-500">{formatChileDateTime(tx.created_at)}</td>
+                  </tr>
+                  {expandedOrder === tx.order_number && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-3 bg-white">
+                        {detailLoading && (
+                          <div className="flex justify-center py-6" role="status" aria-label="Cargando detalle">
+                            <Loader2 className="h-5 w-5 animate-spin text-green-500" />
+                          </div>
+                        )}
+                        {detailError && (
+                          <div className="flex items-center justify-center gap-2 py-6 text-sm text-red-500">
+                            <AlertTriangle className="h-4 w-4" />
+                            <span>{detailError}</span>
+                          </div>
+                        )}
+                        {orderDetail && <OrderDetailPanel detail={orderDetail} />}
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>

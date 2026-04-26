@@ -39,6 +39,27 @@ class VentasController extends Controller
     }
 
     /**
+     * GET /api/v1/admin/ventas/{orderNumber}/detail
+     * Full order detail: items, ingredient consumption, totals.
+     */
+    public function detail(string $orderNumber): JsonResponse
+    {
+        $data = $this->ventasService->getOrderDetail($orderNumber);
+
+        if ($data === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Orden no encontrada',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => $data,
+        ]);
+    }
+
+    /**
      * GET /api/v1/admin/ventas/kpis
      * Aggregated KPIs + payment breakdown.
      */

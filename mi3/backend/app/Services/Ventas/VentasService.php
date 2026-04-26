@@ -207,6 +207,160 @@ class VentasService
     }
 
     /**
+     * Full detail for a single order: items, ingredient consumption, totals.
+     *
+     * @return array|null  null when order doesn't exist or isn't paid
+     */
+    public function getOrderDetail(string $orderNumber): ?array
+    {
+        // Query 1 — find the paid order
+        $order = DB::table('tuu_orders')
+            ->where('order_number', $orderNumber)
+            ->where('payment_status', 'paid')
+            ->select([
+                'order_number',
+                'customer_name',
+                'payment_method',
+                'installment_amount',
+                'delivery_fee',
+                'created_at',
+            ])
+            ->first();
+
+        if (!$order) {
+            return null;
+        }
+
+        // Query 2 — order items
+        $items = DB::table('tuu_order_items')
+            ->where('order_reference', $orderNumber)
+            ->select(['product_id', 'product_name', 'product_price', 'item_cost', 'quantity'])
+            ->get();
+
+        // Query 3 — real ingredient consumption (only if table exists)
+        $realConsumption = collect();
+        $hasInventoryTable = $this->tableExists('inventory_transactions');
+
+        if ($hasInventoryTable) {
+            $realConsumption = DB::table('inventory_transactions as it')
+                ->join('ingredients as i', 'it.ingredient_id', '=', 'i.id')
+                ->where('it.order_reference', $orderNumber)
+                ->where('it.transaction_type', 'sale')
+                ->select([
+                    'it.product_id',
+                    'it.ingredient_id',
+                    'i.name as ingredient_name',
+                    'i.unit',
+                    'it.quantity as quantity_used',
+                    'it.previous_stock',
+                    'it.new_stock',
+                    'i.min_stock_level',
+                ])
+                ->get();
+        }
+
+        // Group real consumption by product_id
+        $realByProduct = $realConsumption->groupBy('product_id');
+
+        // Build items array with ingredients
+        $resultItems = [];
+        foreach ($items as $item) {
+            $unitPrice = (float) $item->product_price;
+            $itemCost  = (float) $item->item_cost;
+            $quantity  = (int) $item->quantity;
+            $profit    = $unitPrice - $itemCost;
+
+            $ingredients = [];
+            $productId = $item->product_id;
+
+            if ($productId && $realByProduct->has($productId)) {
+                // Use real consumption from inventory_transactions
+                foreach ($realByProduct->get($productId) as $row) {
+                    $newStock      = (float) $row->new_stock;
+                    $minStockLevel = (float) $row->min_stock_level;
+
+                    $ingredients[] = [
+                        'ingredient_name' => $row->ingredient_name,
+                        'quantity_used'   => (float) $row->quantity_used,
+                        'unit'            => $row->unit,
+                        'stock_before'    => (float) $row->previous_stock,
+                        'stock_after'     => $newStock,
+                        'stock_status'    => $newStock < $minStockLevel ? 'warning' : 'ok',
+                    ];
+                }
+            } elseif ($productId) {
+                // Query 4 (fallback) — theoretical consumption from product_recipes
+                $recipes = DB::table('product_recipes as pr')
+                    ->join('ingredients as i', 'pr.ingredient_id', '=', 'i.id')
+                    ->where('pr.product_id', $productId)
+                    ->select([
+                        'pr.ingredient_id',
+                        'i.name as ingredient_name',
+                        'pr.quantity',
+                        'pr.unit',
+                        'i.min_stock_level',
+                        'i.stock_quantity',
+                    ])
+                    ->get();
+
+                foreach ($recipes as $recipe) {
+                    $quantityUsed  = (float) $recipe->quantity * $quantity;
+                    $currentStock  = (float) $recipe->stock_quantity;
+                    $minStockLevel = (float) $recipe->min_stock_level;
+
+                    $ingredients[] = [
+                        'ingredient_name' => $recipe->ingredient_name,
+                        'quantity_used'   => $quantityUsed,
+                        'unit'            => $recipe->unit,
+                        'stock_before'    => null,
+                        'stock_after'     => null,
+                        'stock_status'    => $currentStock < $minStockLevel ? 'warning' : 'ok',
+                    ];
+                }
+            }
+
+            $resultItems[] = [
+                'product_name' => $item->product_name,
+                'quantity'     => $quantity,
+                'unit_price'   => $unitPrice,
+                'item_cost'    => $itemCost,
+                'profit'       => $profit,
+                'ingredients'  => $ingredients,
+            ];
+        }
+
+        // Calculate totals
+        $subtotal    = 0;
+        $totalCost   = 0;
+        foreach ($resultItems as $ri) {
+            $subtotal  += $ri['unit_price'] * $ri['quantity'];
+            $totalCost += $ri['item_cost'] * $ri['quantity'];
+        }
+        $totalProfit = $subtotal - $totalCost;
+
+        return [
+            'order_number'   => $order->order_number,
+            'created_at'     => $order->created_at,
+            'customer_name'  => $order->customer_name,
+            'payment_method' => $order->payment_method,
+            'items'          => $resultItems,
+            'totals'         => [
+                'subtotal'     => $subtotal,
+                'total_cost'   => $totalCost,
+                'total_profit' => $totalProfit,
+            ],
+        ];
+    }
+
+    /**
+     * Check if a database table exists.
+     */
+    private function tableExists(string $table): bool
+    {
+        return DB::getSchemaBuilder()->hasTable($table);
+    }
+
+    /**
      * Detect order source from order_number prefix.
      */
     private function detectSource(string $orderNumber): string
