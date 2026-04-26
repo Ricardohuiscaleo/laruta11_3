@@ -824,8 +824,8 @@
                                                                             const manuales = (item.recipe_ingredients || []).filter(i => ['pelado','moler','cortar','crudo'].includes(i.prep_method) && i.prep_time > 0);
                                                                             const listos = (item.recipe_ingredients || []).filter(i => i.prep_method === 'listo' || !i.prep_method);
                                                                             
-                                                                            // Instrucciones por método
-                                                                            const instruccion = { 'plancha': 'ASAR', 'fritura': 'FREÍR', 'tostado': 'TOSTAR', 'horno': 'HORNEAR', 'caramelizado': 'CARAMELIZAR', 'pelado': 'PELAR', 'moler': 'MOLER', 'cortar': 'CORTAR', 'crudo': 'PREPARAR' };
+                                                                            // Instrucciones por método (abreviadas para UI)
+                                                                            const instruccion = { 'plancha': 'ASAR', 'fritura': 'FREÍR', 'tostado': 'TOSTAR', 'horno': 'HORNO', 'caramelizado': 'CARAM.', 'pelado': 'PELAR', 'moler': 'MOLER', 'cortar': 'CORTAR', 'crudo': 'PREP.' };
                                                                             
                                                                             const fmtTime = (s) => { const m = Math.floor(s / 60); const sec = Math.floor(s % 60); return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`; };
                                                                             
@@ -902,7 +902,7 @@
                                                                 ...customizations.map((custom, idx) => {
                                                                     const orderCreated = new Date((order.created_at || '').replace(' ', 'T') + 'Z');
                                                                     const elapsedSec = Math.max(0, (Date.now() - orderCreated.getTime()) / 1000);
-                                                                    const instruccion = { 'plancha': 'ASAR', 'fritura': 'FREÍR', 'tostado': 'TOSTAR', 'horno': 'HORNEAR', 'caramelizado': 'CARAMELIZAR', 'pelado': 'PELAR', 'moler': 'MOLER' };
+                                                                    const instruccion = { 'plancha': 'ASAR', 'fritura': 'FREÍR', 'tostado': 'TOSTAR', 'horno': 'HORNO', 'caramelizado': 'CARAM.', 'pelado': 'PELAR', 'moler': 'MOLER' };
                                                                     const fmtTime = (s) => { const m = Math.floor(s / 60); const sec = Math.floor(s % 60); return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`; };
                                                                     
                                                                     return h('div', { key: `custom-${idx}`, className: 'mb-1' },
@@ -928,7 +928,7 @@
                                                                 ...(() => {
                                                                     const orderCreated = new Date((order.created_at || '').replace(' ', 'T') + 'Z');
                                                                     const elapsedSec = Math.max(0, (Date.now() - orderCreated.getTime()) / 1000);
-                                                                    const instruccion = { 'plancha': 'ASAR', 'fritura': 'FREÍR', 'tostado': 'TOSTAR', 'horno': 'HORNEAR', 'caramelizado': 'CARAMELIZAR', 'pelado': 'PELAR', 'moler': 'MOLER', 'cortar': 'CORTAR' };
+                                                                    const instruccion = { 'plancha': 'ASAR', 'fritura': 'FREÍR', 'tostado': 'TOSTAR', 'horno': 'HORNO', 'caramelizado': 'CARAM.', 'pelado': 'PELAR', 'moler': 'MOLER', 'cortar': 'CORTAR' };
                                                                     const fmtTime = (s) => { const m = Math.floor(s / 60); const sec = Math.floor(s % 60); return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`; };
                                                                     
                                                                     // Recopilar todos los hijos
