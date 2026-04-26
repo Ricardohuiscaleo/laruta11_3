@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`3388a21`) — comandas: timers prep, colores sólidos, botón LISTO header, combos con ingredientes hijos |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`51b58fc`) — comandas: estaciones paralelas/secuenciales, instrucciones ASAR/FREÍR/PELAR/MOLER, all prep data |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2bde6e8`) — Ventas: timezone Chile, columna Fecha, detalle expandible con ingredientes |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`be6ab63`) — migración prep_method/prep_time en product_recipes |
@@ -93,7 +93,7 @@
 - [x] **Deploy spec delivery-tracking-realtime** — commit `70650cf` pusheado. Builds disparados en Coolify. Pendiente verificar builds y ejecutar `php artisan migrate`.
 - [x] **Integración caja3/app3 delivery** — webhook en caja3 y iframe en app3 implementados en commit `70650cf`.
 - [ ] **Investigar arquitectura SaaS multi-tenant** — AWS Lambda + Aurora PostgreSQL + Amazon Location Service + Stripe. Dominio candidato: pocos.click (caduca 2026-12-21)
-- [ ] **Completar prep_data 54 ingredientes faltantes** — Churrasco, Cordero, Lomo Cerdo, Tocino Laminado, Tomahawk, Pre-pizza, Champiñón, Pan Completo XL, etc. Opción: asignar manual por lógica o endpoint IA (Gemini) que infiera prep_method+prep_time por contexto producto.
+- [x] **Completar prep_data 54 ingredientes faltantes** — COMPLETADO. Churrasco, Cordero, Lomo Cerdo, Tocino Laminado, Tomahawk, Pre-pizza, Champiñón, Pan Completo XL, Mayonesa, etc. Todos asignados via tinker en BD.
 - [x] **Spec sub-recetas-hamburguesas** — COMPLETADO. Tabla `ingredient_recipes`, flag `is_composite`, API CRUD, UI sub-tab en Recetas con editor y calculadora de producción. Carne Molida creada, Tocino stock corregido, sub-receta Hamburguesa R11 seeded. Commits `09f5a91`, `5930ec3`.
 - [x] **Spec recetas-fix-integral** — COMPLETADO. Fix tocino 7 recetas, recalcular 50 cost_price, editor inline recetas, stock deduction compuestos en caja3, label costo/unidad. Commit `0034f3a`.
 
@@ -110,9 +110,9 @@
 - `mi3/backend/database/migrations/2026_04_26_000002_seed_prep_data_product_recipes.php`: Seed tiempos industria (hamburguesa 480s, pollo 420s, papas 420s, pan 90s, etc.).
 - `mi3/backend/app/Models/ProductRecipe.php`: Fillable + casts para nuevas columnas.
 
-**Commits:** `fac8eac`, `be6ab63`, `116743a`, `0f30749`, `b5e6abf`, `a9fac59`, `6f9319a`, `3388a21`
-**Deploys:** caja3 ✅ (`3388a21`), mi3-backend ✅ (`be6ab63`)
-**BD:** Migración `add_prep_columns_to_product_recipes` + seed prep data + update manual Montina/Palta/Papa Cardenal
+**Commits:** `fac8eac`, `be6ab63`, `116743a`, `0f30749`, `b5e6abf`, `a9fac59`, `6f9319a`, `3388a21`, `51b58fc`
+**Deploys:** caja3 ✅ (`51b58fc`), mi3-backend ✅ (`be6ab63`)
+**BD:** Migración `add_prep_columns_to_product_recipes` + seed prep data + update manual todos los ingredientes (Montina, Palta, Papa Cardenal, Churrasco, Lomo, Cordero, Tocino, Pre-pizza, etc.)
 
 ### 2026-04-26c — Spec ventas-detail-improvements: detalle expandible + timezone Chile
 
