@@ -135,7 +135,7 @@ try {
             }
             
             if ($item['product_id']) {
-                $recipeSql = "SELECT i.name, pr.quantity, pr.unit 
+                $recipeSql = "SELECT i.name, i.category, pr.quantity, pr.unit 
                              FROM product_recipes pr 
                              JOIN ingredients i ON pr.ingredient_id = i.id 
                              WHERE pr.product_id = ? AND i.is_active = 1
@@ -144,13 +144,30 @@ try {
                 $recipeStmt->execute([$item['product_id']]);
                 $ingredients = $recipeStmt->fetchAll(PDO::FETCH_ASSOC);
                 
-                // Crear descripción con ingredientes y cantidades
-                if (!empty($ingredients)) {
+                // Filtrar solo ingredientes reales (excluir insumos: Packaging, Limpieza, Gas, Servicios)
+                $insumoCategories = ['Packaging', 'Limpieza', 'Gas', 'Servicios'];
+                $realIngredients = array_filter($ingredients, function($ing) use ($insumoCategories) {
+                    return !in_array($ing['category'], $insumoCategories);
+                });
+                
+                // Devolver ingredientes como array estructurado
+                $item['recipe_ingredients'] = array_values(array_map(function($ing) {
+                    $qty = (float) $ing['quantity'];
+                    $fmtQty = ($qty == intval($qty)) ? intval($qty) : round($qty, 1);
+                    return [
+                        'name' => $ing['name'],
+                        'quantity' => $fmtQty,
+                        'unit' => $ing['unit'],
+                    ];
+                }, $realIngredients));
+                
+                // Mantener recipe_description para compatibilidad
+                if (!empty($realIngredients)) {
                     $ingredientNames = array_map(function($ing) {
-                        $qty = intval($ing['quantity']); // Sin decimales
+                        $qty = intval($ing['quantity']);
                         $unit = strtolower($ing['unit']);
                         return $ing['name'] . ' (' . $qty . $unit . ')';
-                    }, $ingredients);
+                    }, $realIngredients);
                     $item['recipe_description'] = implode(', ', $ingredientNames);
                 }
             }

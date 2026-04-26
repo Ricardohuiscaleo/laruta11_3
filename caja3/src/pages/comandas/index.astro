@@ -655,7 +655,7 @@
                     )
                 ),
 
-                h('main', { className: 'max-w-full mx-auto px-2 py-3' },
+                h('main', { className: 'max-w-full mx-auto px-1 py-3' },
                     orders.length === 0 ? 
                         h('div', { className: 'text-center py-12' },
                             h(UtensilsCrossed, { size: 64, className: 'mx-auto mb-4 text-gray-400' }),
@@ -737,12 +737,13 @@
                                                             className: `bg-white border-orange-500 border-2 rounded-lg p-3`
                                                         },
                                                             // Producto principal - Layout 2 columnas
-                                                            h('div', { className: 'flex gap-4 mb-2' },
-                                                                // Columna 1: Imagen
+                                                            h('div', { className: 'flex gap-3 mb-2' },
+                                                                // Columna 1: Imagen 4:5 aspect ratio
                                                                 h('img', {
                                                                     src: getProductImage(item.image_url),
                                                                     alt: item.product_name || 'Producto',
-                                                                    className: 'w-24 h-24 object-cover rounded border-2 border-white shadow flex-shrink-0',
+                                                                    style: { width: '115px', height: '144px', objectFit: 'cover' },
+                                                                    className: 'rounded border-2 border-white shadow flex-shrink-0',
                                                                     onError: (e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png'; }
                                                                 }),
                                                                 // Columna 2: Info del producto
@@ -757,25 +758,38 @@
                                                                         ),
                                                                         h('span', { className: 'bg-gray-900 text-white px-2 py-0.5 rounded font-bold text-sm' }, `x${item.quantity}`)
                                                                     ),
-                                                                    // Fila 2: Ingredientes de la receta
-                                                                    item.description && (() => {
-                                                                        const cleaned = item.description
-                                                                            .replace(/\(.*?\)/g, '')
-                                                                            .replace(/\d+(\.\d+)?\s*(g|gr|gramos?|kg|ml|l|litros?|u|unidades?|un|und)/gi, '')
-                                                                            .split(',')
-                                                                            .map(i => i.trim())
-                                                                            .filter(i => {
-                                                                                const lower = i.toLowerCase();
-                                                                                return !lower.includes('bolsa') && 
-                                                                                       !lower.includes('caja') && 
-                                                                                       !lower.includes('packaging') && 
-                                                                                       !lower.includes('delivery') && 
-                                                                                       !lower.includes('envase') &&
-                                                                                       i.length > 0;
-                                                                            })
-                                                                            .join(', ');
-                                                                        return cleaned ? h('p', { className: 'text-sm text-gray-700 mt-1 font-normal' }, cleaned) : null;
-                                                                    })()
+                                                                    // Fila 2: Ingredientes de la receta (estructurados desde mi3)
+                                                                    item.recipe_ingredients && item.recipe_ingredients.length > 0 ? 
+                                                                        h('div', { className: 'mt-1' },
+                                                                            h('div', { className: 'text-xs font-bold text-gray-500 mb-1' }, `Ingredientes (${item.recipe_ingredients.length})`),
+                                                                            h('div', { className: 'flex flex-wrap gap-1' },
+                                                                                ...item.recipe_ingredients.map((ing, i) => 
+                                                                                    h('span', { 
+                                                                                        key: i, 
+                                                                                        className: 'inline-flex items-center bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded-full border border-gray-200'
+                                                                                    }, `${ing.name} ${ing.quantity}${ing.unit}`)
+                                                                                )
+                                                                            )
+                                                                        ) : 
+                                                                        // Fallback: descripción limpia si no hay recipe_ingredients
+                                                                        item.description && (() => {
+                                                                            const cleaned = item.description
+                                                                                .replace(/\(.*?\)/g, '')
+                                                                                .replace(/\d+(\.\d+)?\s*(g|gr|gramos?|kg|ml|l|litros?|u|unidades?|un|und)/gi, '')
+                                                                                .split(',')
+                                                                                .map(i => i.trim())
+                                                                                .filter(i => {
+                                                                                    const lower = i.toLowerCase();
+                                                                                    return !lower.includes('bolsa') && 
+                                                                                           !lower.includes('caja') && 
+                                                                                           !lower.includes('packaging') && 
+                                                                                           !lower.includes('delivery') && 
+                                                                                           !lower.includes('envase') &&
+                                                                                           i.length > 0;
+                                                                                })
+                                                                                .join(', ');
+                                                                            return cleaned ? h('p', { className: 'text-sm text-gray-700 mt-1 font-normal' }, cleaned) : null;
+                                                                        })()
                                                                 )
                                                             ),
                                                             
