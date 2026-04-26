@@ -813,61 +813,67 @@
                                                                         ),
                                                                         h('span', { className: 'bg-gray-900 text-white px-2 py-0.5 rounded font-bold text-xs' }, `x${item.quantity}`)
                                                                     ),
-                                                                    // Fila 2: Lista de ingredientes con barra progreso y status
+                                                                    // Fila 2: Ingredientes agrupados por estación
                                                                     item.recipe_ingredients && item.recipe_ingredients.length > 0 ? 
-                                                                        h('div', { className: 'space-y-1 mt-1' },
-                                                                            ...item.recipe_ingredients.filter(ing => ing.prep_method !== 'listo').map((ing, i) => {
-                                                                                const orderCreated = new Date((order.created_at || '').replace(' ', 'T') + 'Z');
-                                                                                const elapsedSec = Math.max(0, (Date.now() - orderCreated.getTime()) / 1000);
-                                                                                const prepTime = ing.prep_time || 0;
-                                                                                const remaining = Math.max(0, prepTime - elapsedSec);
-                                                                                const isDone = prepTime === 0 || remaining === 0;
-                                                                                const pct = prepTime > 0 ? Math.min(1, elapsedSec / prepTime) : 1;
-                                                                                
-                                                                                const fmtTime = (s) => {
-                                                                                    const m = Math.floor(s / 60);
-                                                                                    const sec = Math.floor(s % 60);
-                                                                                    return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`;
-                                                                                };
-                                                                                
-                                                                                // Status emoji: ✅ done, 🔥 cooking, ⏳ waiting
-                                                                                const statusEmoji = isDone ? '✅' : pct >= 0.3 ? '🔥' : '⏳';
-                                                                                
-                                                                                // Bar color
-                                                                                const barColor = isDone ? '#22c55e' : pct >= 0.6 ? '#eab308' : '#ef4444';
-                                                                                
-                                                                                return h('div', { key: i, className: 'text-sm' },
-                                                                                    // Línea 1: nombre + cantidad + status/timer
-                                                                                    h('div', { className: 'flex items-center gap-1' },
-                                                                                        h('span', { className: 'font-bold flex-1 truncate text-gray-800' }, `${ing.name} ${ing.quantity}${ing.unit}`),
-                                                                                        h('span', { className: 'text-gray-500 italic text-xs' }, ing.prep_method),
-                                                                                        h('span', { className: 'font-mono font-bold whitespace-nowrap' }, 
-                                                                                            isDone ? statusEmoji : `${fmtTime(remaining)} ${statusEmoji}`
+                                                                        (() => {
+                                                                            const orderCreated = new Date((order.created_at || '').replace(' ', 'T') + 'Z');
+                                                                            const elapsedSec = Math.max(0, (Date.now() - orderCreated.getTime()) / 1000);
+                                                                            
+                                                                            // Agrupar por tipo de estación
+                                                                            const paralelas = (item.recipe_ingredients || []).filter(i => ['plancha','fritura','tostado','horno','caramelizado'].includes(i.prep_method));
+                                                                            const manuales = (item.recipe_ingredients || []).filter(i => ['pelado','moler','cortar','crudo'].includes(i.prep_method) && i.prep_time > 0);
+                                                                            const listos = (item.recipe_ingredients || []).filter(i => i.prep_method === 'listo' || !i.prep_method);
+                                                                            
+                                                                            // Instrucciones por método
+                                                                            const instruccion = { 'plancha': 'ASAR', 'fritura': 'FREÍR', 'tostado': 'TOSTAR', 'horno': 'HORNEAR', 'caramelizado': 'CARAMELIZAR', 'pelado': 'PELAR', 'moler': 'MOLER', 'cortar': 'CORTAR', 'crudo': 'PREPARAR' };
+                                                                            
+                                                                            const fmtTime = (s) => { const m = Math.floor(s / 60); const sec = Math.floor(s % 60); return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`; };
+                                                                            
+                                                                            // Timer manual acumulativo
+                                                                            const totalManual = manuales.reduce((sum, i) => sum + (i.prep_time || 0), 0);
+                                                                            
+                                                                            return h('div', { className: 'space-y-1 mt-1' },
+                                                                                // Estaciones paralelas (cada una con su timer independiente)
+                                                                                ...paralelas.map((ing, i) => {
+                                                                                    const remaining = Math.max(0, ing.prep_time - elapsedSec);
+                                                                                    const isDone = remaining === 0;
+                                                                                    const pct = Math.min(1, elapsedSec / ing.prep_time);
+                                                                                    const barColor = isDone ? '#22c55e' : pct >= 0.6 ? '#eab308' : '#ef4444';
+                                                                                    return h('div', { key: `p-${i}`, className: 'text-sm' },
+                                                                                        h('div', { className: 'flex items-center gap-1' },
+                                                                                            h('span', { className: 'font-bold text-orange-700 text-xs uppercase w-14' }, instruccion[ing.prep_method] || ing.prep_method),
+                                                                                            h('span', { className: 'font-bold flex-1 truncate text-gray-800' }, `${ing.name} ${ing.quantity}${ing.unit}`),
+                                                                                            h('span', { className: 'font-mono font-bold whitespace-nowrap' }, isDone ? '✅' : fmtTime(remaining))
+                                                                                        ),
+                                                                                        h('div', { style: { width: '100%', height: '4px', backgroundColor: '#e5e7eb', borderRadius: '2px', overflow: 'hidden', marginTop: '2px' } },
+                                                                                            h('div', { style: { width: `${Math.round(pct * 100)}%`, height: '100%', backgroundColor: barColor, borderRadius: '2px' } })
                                                                                         )
-                                                                                    ),
-                                                                                    // Línea 2: barra de progreso debajo
-                                                                                    prepTime > 0 && h('div', { 
-                                                                                        style: { width: '100%', height: '4px', backgroundColor: '#e5e7eb', borderRadius: '2px', overflow: 'hidden', marginTop: '2px' }
-                                                                                    },
-                                                                                        h('div', { 
-                                                                                            style: { 
-                                                                                                width: `${Math.round(pct * 100)}%`, 
-                                                                                                height: '100%', 
-                                                                                                backgroundColor: barColor,
-                                                                                                borderRadius: '2px',
-                                                                                                transition: 'width 1s linear'
-                                                                                            }
-                                                                                        })
-                                                                                    )
-                                                                                );
-                                                                            }),
-                                                                            // Ingredientes listos agrupados
-                                                                            (() => {
-                                                                                const listos = (item.recipe_ingredients || []).filter(ing => ing.prep_method === 'listo');
-                                                                                return listos.length > 0 ? h('div', { className: 'text-xs text-gray-400 mt-0.5 truncate' },
+                                                                                    );
+                                                                                }),
+                                                                                // Tareas manuales secuenciales (se suman)
+                                                                                manuales.length > 0 && h('div', { className: 'border-t border-gray-200 pt-1 mt-1' },
+                                                                                    ...manuales.map((ing, i) => {
+                                                                                        // Calcular offset secuencial: cada tarea empieza cuando la anterior termina
+                                                                                        const offset = manuales.slice(0, i).reduce((s, m) => s + (m.prep_time || 0), 0);
+                                                                                        const taskElapsed = Math.max(0, elapsedSec - offset);
+                                                                                        const remaining = Math.max(0, ing.prep_time - taskElapsed);
+                                                                                        const isDone = taskElapsed >= ing.prep_time;
+                                                                                        const isActive = !isDone && taskElapsed > 0;
+                                                                                        return h('div', { key: `m-${i}`, className: `text-sm ${isActive ? 'bg-yellow-50 rounded px-1' : ''}` },
+                                                                                            h('div', { className: 'flex items-center gap-1' },
+                                                                                                h('span', { className: 'font-bold text-purple-700 text-xs uppercase w-14' }, instruccion[ing.prep_method] || ing.prep_method),
+                                                                                                h('span', { className: 'font-bold flex-1 truncate text-gray-800' }, `${ing.name} ${ing.quantity}${ing.unit}`),
+                                                                                                h('span', { className: 'font-mono font-bold whitespace-nowrap' }, isDone ? '✅' : isActive ? `${fmtTime(remaining)} 🔪` : '⏳')
+                                                                                            )
+                                                                                        );
+                                                                                    })
+                                                                                ),
+                                                                                // Listos
+                                                                                listos.length > 0 && h('div', { className: 'text-xs text-gray-400 mt-0.5 truncate' },
                                                                                     '✅ ', listos.map(l => l.name).join(', ')
-                                                                                ) : null;
-                                                                            })()
+                                                                                )
+                                                                            );
+                                                                        })()
                                                                         ) : 
                                                                         // Fallback: descripción limpia si no hay recipe_ingredients
                                                                         item.description && (() => {
