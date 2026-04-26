@@ -473,6 +473,10 @@ function RecipeEditor({ productId, onBack, isNew = false }: { productId: number;
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editPrice, setEditPrice] = useState('');
+  const [editCategoryId, setEditCategoryId] = useState('');
+  const [editSubcategoryId, setEditSubcategoryId] = useState('');
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [allSubcategories, setAllSubcategories] = useState<{ id: number; name: string; category_id: number }[]>([]);
   const [savingProduct, setSavingProduct] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -488,6 +492,8 @@ function RecipeEditor({ productId, onBack, isNew = false }: { productId: number;
       setEditName(isNew ? '' : data.name);
       setEditDescription(isNew ? '' : (data.description || ''));
       setEditPrice(isNew ? '' : String(data.price));
+      setEditCategoryId(data.category_id ? String(data.category_id) : '');
+      setEditSubcategoryId((data as any).subcategory_id ? String((data as any).subcategory_id) : '');
       setIngredients(
         data.ingredients.map(i => ({
           ingredient_id: i.id,
@@ -507,6 +513,16 @@ function RecipeEditor({ productId, onBack, isNew = false }: { productId: number;
   }, [productId]);
 
   useEffect(() => { fetchDetail(); }, [fetchDetail]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiFetch<ApiResponse<{ categories: { id: number; name: string }[]; subcategories: { id: number; name: string; category_id: number }[] }>>('/admin/recetas/catalogo');
+        setCategories(res.data?.categories || []);
+        setAllSubcategories(res.data?.subcategories || []);
+      } catch { /* non-critical */ }
+    })();
+  }, []);
 
   const handleAddIngredient = (opt: IngredientOption) => {
     if (ingredients.some(i => i.ingredient_id === opt.id)) {
@@ -596,7 +612,7 @@ function RecipeEditor({ productId, onBack, isNew = false }: { productId: number;
     try {
       await apiFetch(`/admin/recetas/${productId}/producto`, {
         method: 'PUT',
-        body: JSON.stringify({ name: editName.trim(), description: editDescription.trim() || null, price: editPrice ? Number(editPrice) : undefined }),
+        body: JSON.stringify({ name: editName.trim(), description: editDescription.trim() || null, price: editPrice ? Number(editPrice) : undefined, category_id: editCategoryId ? Number(editCategoryId) : undefined, subcategory_id: editSubcategoryId ? Number(editSubcategoryId) : null }),
       });
       setSuccessMsg('Producto actualizado');
       setTimeout(() => setSuccessMsg(''), 3000);
@@ -764,6 +780,33 @@ function RecipeEditor({ productId, onBack, isNew = false }: { productId: number;
                       min="1"
                     />
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="edit-category" className="block text-xs font-medium text-gray-500 mb-1">Categoría</label>
+                      <select
+                        id="edit-category"
+                        value={editCategoryId}
+                        onChange={e => { setEditCategoryId(e.target.value); setEditSubcategoryId(''); }}
+                        className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 bg-white min-h-[38px]"
+                      >
+                        <option value="">Seleccionar</option>
+                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="edit-subcategory" className="block text-xs font-medium text-gray-500 mb-1">Subcategoría</label>
+                      <select
+                        id="edit-subcategory"
+                        value={editSubcategoryId}
+                        onChange={e => setEditSubcategoryId(e.target.value)}
+                        disabled={!editCategoryId}
+                        className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 bg-white min-h-[38px]"
+                      >
+                        <option value="">Sin subcategoría</option>
+                        {allSubcategories.filter(s => s.category_id === Number(editCategoryId)).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
                   <div>
                     <label htmlFor="edit-desc" className="block text-xs font-medium text-gray-500 mb-1">
                       Descripción <span className="text-gray-400 font-normal">(para IA y menú)</span>
@@ -787,7 +830,7 @@ function RecipeEditor({ productId, onBack, isNew = false }: { productId: number;
                       Guardar
                     </button>
                     <button
-                      onClick={() => { setEditingProduct(false); setEditName(product.name); setEditDescription(product.description || ''); setEditPrice(String(product.price)); }}
+                      onClick={() => { setEditingProduct(false); setEditName(product.name); setEditDescription(product.description || ''); setEditPrice(String(product.price)); setEditCategoryId(product.category_id ? String(product.category_id) : ''); setEditSubcategoryId((product as any).subcategory_id ? String((product as any).subcategory_id) : ''); }}
                       className="rounded-md border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 transition-colors min-h-[36px]"
                     >
                       Cancelar
