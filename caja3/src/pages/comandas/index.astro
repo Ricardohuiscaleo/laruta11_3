@@ -109,8 +109,25 @@
         const LoginApp = () => {
             const [username, setUsername] = useState('');
             const [password, setPassword] = useState('');
-            const [loading, setLoading] = useState(false);
+            const [loading, setLoading] = useState(true);
             const [error, setError] = useState('');
+
+            const showComandasApp = () => {
+                document.getElementById('login-app').style.display = 'none';
+                document.getElementById('comandas-app').style.display = 'block';
+                const comandasRoot = createRoot(document.getElementById('comandas-app'));
+                comandasRoot.render(h(ComandasApp));
+            };
+
+            // Check remember token on mount
+            useEffect(() => {
+                const savedToken = localStorage.getItem('comandas_token');
+                if (savedToken) {
+                    showComandasApp();
+                } else {
+                    setLoading(false);
+                }
+            }, []);
 
             const handleLogin = async (e) => {
                 e.preventDefault();
@@ -127,10 +144,8 @@
                     const data = await response.json();
                     
                     if (data.success) {
-                        document.getElementById('login-app').style.display = 'none';
-                        document.getElementById('comandas-app').style.display = 'block';
-                        const comandasRoot = createRoot(document.getElementById('comandas-app'));
-                        comandasRoot.render(h(ComandasApp));
+                        localStorage.setItem('comandas_token', username);
+                        showComandasApp();
                     } else {
                         setError(data.message);
                     }
@@ -140,6 +155,12 @@
                     setLoading(false);
                 }
             };
+
+            if (loading) {
+                return h('div', { className: 'min-h-screen bg-gray-100 flex items-center justify-center' },
+                    h('div', { className: 'animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500' })
+                );
+            }
 
             return h('div', { className: 'min-h-screen bg-gray-100 flex items-center justify-center' },
                 h('div', { className: 'bg-white p-8 rounded-xl shadow-xl w-full max-w-md' },
