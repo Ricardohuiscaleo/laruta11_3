@@ -299,13 +299,13 @@ class VentasService
                         'pr.quantity',
                         'pr.unit',
                         'i.min_stock_level',
-                        'i.stock_quantity',
+                        'i.current_stock',
                     ])
                     ->get();
 
                 foreach ($recipes as $recipe) {
                     $quantityUsed  = (float) $recipe->quantity * $quantity;
-                    $currentStock  = (float) $recipe->stock_quantity;
+                    $currentStock  = (float) $recipe->current_stock;
                     $minStockLevel = (float) $recipe->min_stock_level;
 
                     $ingredients[] = [
