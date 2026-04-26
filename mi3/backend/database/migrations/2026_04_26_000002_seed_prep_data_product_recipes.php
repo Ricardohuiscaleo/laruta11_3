@@ -10,26 +10,26 @@ return new class extends Migration
         // Mapeo por nombre de ingrediente → prep_method, prep_time_seconds, is_prepped
         // is_prepped = true significa que ya viene listo al inicio del turno
         $prepData = [
-            // Carnes — porcionadas pero requieren cocción
-            'Hamburguesa R11 200gr' => ['plancha', 300, true],
-            'Filete Pechuga de Pollo' => ['plancha', 240, true],
-            'Carne Molida' => ['plancha', 300, true],
-            'Tocino' => ['plancha', 120, true],
-            'Chorizo' => ['plancha', 180, true],
-            'Churrasco' => ['plancha', 240, true],
-            'Longaniza' => ['plancha', 180, true],
+            // Carnes — porcionadas pero requieren cocción (tiempos industria well-done)
+            'Hamburguesa R11 200gr' => ['plancha', 480, true],
+            'Filete Pechuga de Pollo' => ['plancha', 420, true],
+            'Carne Molida' => ['plancha', 480, true],
+            'Tocino' => ['plancha', 180, true],
+            'Chorizo' => ['plancha', 300, true],
+            'Churrasco' => ['plancha', 420, true],
+            'Longaniza' => ['plancha', 300, true],
             // Panes — requieren tostado
-            'Pan de Churrasco Frica' => ['tostado', 60, true],
-            'Pan de Hamburguesa' => ['tostado', 60, true],
-            'Pan Frica' => ['tostado', 60, true],
+            'Pan de Churrasco Frica' => ['tostado', 90, true],
+            'Pan de Hamburguesa' => ['tostado', 90, true],
+            'Pan Frica' => ['tostado', 90, true],
             // Vegetales — tomate se pela al momento, resto ya listo
             'Tomate' => ['pelado', 30, false],
             'Lechuga' => ['crudo', 0, true],
             'Palta' => ['pelado', 20, false],
             'Cebolla' => ['caramelizado', 180, true],
-            // Papas — ya picadas al inicio del turno
-            'Papas' => ['fritura', 300, true],
-            'Papa' => ['fritura', 300, true],
+            // Papas — ya picadas al inicio del turno, fritura doble
+            'Papas' => ['fritura', 420, true],
+            'Papa' => ['fritura', 420, true],
             // Salsas y condimentos — listos
             'Mayonesa Kraft' => ['listo', 0, true],
             'Ketchup' => ['listo', 0, true],
