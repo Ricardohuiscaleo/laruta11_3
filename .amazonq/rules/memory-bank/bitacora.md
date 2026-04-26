@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`8d024b5`) — fix tiempo negativo comandas, ocultar notas pago en cocina, minicomandas header legible |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`8b96d47`) — Bulk delete real, eye toggle inline, animaciones, optimistic updates |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`8b96d47`) — DELETE /bulk-delete con product_recipes+combo_components cleanup, VentasService |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2bde6e8`) — Ventas: timezone Chile, columna Fecha, detalle expandible con ingredientes |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`2bde6e8`) — getOrderDetail endpoint, VentasService con consumo ingredientes |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -99,6 +99,17 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-26c — Spec ventas-detail-improvements: detalle expandible + timezone Chile
+
+**Cambios código:**
+- `mi3/backend/app/Services/Ventas/VentasService.php`: Nuevo método `getOrderDetail()` — 4 queries (orden, ítems, inventory_transactions, product_recipes fallback), stock_status ✓/⚠, totales.
+- `mi3/backend/app/Http/Controllers/Admin/VentasController.php`: Nuevo método `detail()` con 404 handling.
+- `mi3/backend/routes/api.php`: Ruta `GET ventas/{orderNumber}/detail`.
+- `mi3/frontend/components/admin/VentasPageContent.tsx`: Reescrito — `formatChileDateTime()` con Intl.DateTimeFormat America/Santiago, columna "Fecha" reemplaza "Fuente"+"Hora", filas expandibles con OrderDetailPanel (ítems, ingredientes, stock ✓/⚠, totales), responsive mobile cards.
+
+**Commits:** `2bde6e8`
+**Deploys:** mi3-backend ✅ (`2bde6e8`), mi3-frontend ✅ (`2bde6e8`)
 
 ### 2026-04-26b — Spec ventas-bulk-actions: implementación completa + deploy
 
