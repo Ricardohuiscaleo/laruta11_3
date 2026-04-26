@@ -93,7 +93,10 @@ class ProductBulkController extends Controller
             $ids = $request->input('product_ids');
 
             // Delete recipe associations first
-            DB::table('recipes')->whereIn('product_id', $ids)->delete();
+            DB::table('product_recipes')->whereIn('product_id', $ids)->delete();
+            // Delete combo component associations
+            DB::table('combo_components')->whereIn('parent_product_id', $ids)->delete();
+            DB::table('combo_components')->whereIn('child_product_id', $ids)->delete();
             // Delete the products
             $deleted = DB::table('products')->whereIn('id', $ids)->delete();
 

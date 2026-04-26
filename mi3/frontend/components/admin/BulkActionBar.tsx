@@ -100,7 +100,8 @@ export default function BulkActionBar({
       {/* Bulk action bar */}
       <div
         className={cn(
-          'fixed bottom-0 left-0 right-0 z-50',
+          'fixed left-0 right-0 z-[55]',
+          'bottom-16 md:bottom-0',
           'transition-transform duration-300 ease-out',
           visible ? 'translate-y-0' : 'translate-y-full',
         )}
