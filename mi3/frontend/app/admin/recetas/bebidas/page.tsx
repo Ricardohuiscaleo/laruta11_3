@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
-import { Loader2, Plus, AlertTriangle, X, ChevronDown, ChevronRight, Image as ImageIcon, Search } from 'lucide-react';
+import { Loader2, Plus, AlertTriangle, X, ChevronDown, ChevronRight, Image as ImageIcon, Search, ToggleLeft, ToggleRight } from 'lucide-react';
+import BulkActionBar from '@/components/admin/BulkActionBar';
 import type { ApiResponse } from '@/types';
 
 /* ─── Types ─── */
@@ -145,6 +146,7 @@ export default function BebidasTab() {
   const [bevImage, setBevImage] = useState<File | null>(null);
   const [search, setSearch] = useState('');
   const [filterSubcategory, setFilterSubcategory] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const fetchBeverages = useCallback(async () => {
     setLoading(true);
@@ -170,6 +172,75 @@ export default function BebidasTab() {
 
   useEffect(() => { fetchBeverages(); fetchSubcategories(); }, [fetchBeverages, fetchSubcategories]);
 
+  /* ─── Selection helpers ─── */
+
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  /* ─── Single toggle ON/OFF ─── */
+
+  const handleSingleToggle = useCallback(async (productId: number) => {
+    try {
+      await apiFetch('/admin/productos/toggle', {
+        method: 'PATCH',
+        body: JSON.stringify({ product_ids: [productId] }),
+      });
+      await fetchBeverages();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al cambiar estado');
+    }
+  }, [fetchBeverages]);
+
+  /* ─── Bulk action handlers ─── */
+
+  const handleBulkToggle = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      await apiFetch('/admin/productos/toggle', {
+        method: 'PATCH',
+        body: JSON.stringify({ product_ids: Array.from(selectedIds) }),
+      });
+      setSelectedIds(new Set());
+      await fetchBeverages();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al cambiar estado');
+    }
+  }, [selectedIds, fetchBeverages]);
+
+  const handleBulkPrice = useCallback(async (amount: number) => {
+    if (selectedIds.size === 0) return;
+    try {
+      await apiFetch('/admin/productos/bulk-price', {
+        method: 'PATCH',
+        body: JSON.stringify({ product_ids: Array.from(selectedIds), adjustment: amount }),
+      });
+      setSelectedIds(new Set());
+      await fetchBeverages();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al ajustar precios');
+    }
+  }, [selectedIds, fetchBeverages]);
+
+  const handleBulkDeactivate = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      await apiFetch('/admin/productos/bulk-deactivate', {
+        method: 'PATCH',
+        body: JSON.stringify({ product_ids: Array.from(selectedIds) }),
+      });
+      setSelectedIds(new Set());
+      await fetchBeverages();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al desactivar productos');
+    }
+  }, [selectedIds, fetchBeverages]);
+
   /* ─── Group by subcategory ─── */
   const filtered = useMemo(() => {
     let result = beverages;
@@ -187,6 +258,21 @@ export default function BebidasTab() {
     return acc;
   }, {});
   const groupKeys = Object.keys(grouped);
+
+  const allVisibleIds = useMemo(
+    () => filtered.map(b => b.id),
+    [filtered]
+  );
+
+  const allSelected = allVisibleIds.length > 0 && allVisibleIds.every(id => selectedIds.has(id));
+
+  const toggleSelectAll = useCallback(() => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allVisibleIds));
+    }
+  }, [allSelected, allVisibleIds]);
 
   const subcategoryNames = useMemo(() => {
     const names = new Set(beverages.map(b => b.subcategory_name || 'Sin subcategoría'));
@@ -355,23 +441,50 @@ export default function BebidasTab() {
                   <div id={`group-${groupName}`}>
                     {/* Mobile: cards */}
                     <div className="divide-y sm:hidden">
-                      {items.map(b => (
-                        <div key={b.id} className={cn('p-4 space-y-1', b.is_low_stock && 'bg-amber-50/50')}>
-                          <div className="flex items-start justify-between">
+                      {items.map(b => {
+                        const isActive = b.is_active !== false && (b.is_active as unknown) !== 0;
+                        const isSelected = selectedIds.has(b.id);
+                        return (
+                        <div key={b.id} className={cn('p-4 space-y-1', b.is_low_stock && 'bg-amber-50/50', !isActive && 'opacity-50')}>
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleSelect(b.id)}
+                              className="mt-1 h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400 cursor-pointer"
+                              aria-label={`Seleccionar ${b.name}`}
+                            />
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium text-gray-900 truncate">{b.name}</p>
                               {b.description && <p className="text-xs text-gray-500 truncate">{truncate(b.description, 60)}</p>}
                             </div>
+                            <button
+                              type="button"
+                              onClick={() => handleSingleToggle(b.id)}
+                              className={cn(
+                                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition-colors min-h-[28px] flex-shrink-0',
+                                isActive
+                                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                  : 'bg-red-100 text-red-600 hover:bg-red-200'
+                              )}
+                              aria-label={isActive ? `Desactivar ${b.name}` : `Activar ${b.name}`}
+                            >
+                              {isActive
+                                ? <><ToggleRight className="h-3 w-3" /> ON</>
+                                : <><ToggleLeft className="h-3 w-3" /> OFF</>
+                              }
+                            </button>
                             <span className="ml-2 text-sm font-semibold tabular-nums text-gray-900 flex-shrink-0">{formatCLP(b.price)}</span>
                           </div>
-                          <div className="flex flex-wrap gap-2 text-xs">
+                          <div className="flex flex-wrap gap-2 text-xs pl-7">
                             <span className={cn('rounded-full px-2 py-0.5', b.is_low_stock ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600')}>
                               Stock: {b.stock_quantity}
                             </span>
                             {b.sku && <span className="rounded-full bg-blue-50 px-2 py-0.5 text-blue-600">{b.sku}</span>}
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     {/* Desktop: table */}
@@ -379,7 +492,17 @@ export default function BebidasTab() {
                       <table className="w-full text-sm">
                         <thead className="border-b bg-gray-50/50 text-left text-xs font-medium text-gray-500">
                           <tr>
+                            <th className="px-2 py-2 w-10">
+                              <input
+                                type="checkbox"
+                                checked={allSelected}
+                                onChange={toggleSelectAll}
+                                className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400 cursor-pointer"
+                                aria-label="Seleccionar todas las bebidas"
+                              />
+                            </th>
                             <th className="px-4 py-2">Nombre</th>
+                            <th className="px-2 py-2 w-16 text-center">Estado</th>
                             <th className="px-4 py-2">Descripción</th>
                             <th className="px-4 py-2 text-right">Precio</th>
                             <th className="px-4 py-2 text-right">Stock</th>
@@ -387,9 +510,39 @@ export default function BebidasTab() {
                           </tr>
                         </thead>
                         <tbody className="divide-y">
-                          {items.map(b => (
-                            <tr key={b.id} className={cn('transition-colors', b.is_low_stock && 'bg-amber-50/50')}>
+                          {items.map(b => {
+                            const isActive = b.is_active !== false && (b.is_active as unknown) !== 0;
+                            const isSelected = selectedIds.has(b.id);
+                            return (
+                            <tr key={b.id} className={cn('transition-colors', b.is_low_stock && 'bg-amber-50/50', !isActive && 'opacity-50')}>
+                              <td className="px-2 py-2.5 w-10">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => toggleSelect(b.id)}
+                                  className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400 cursor-pointer"
+                                  aria-label={`Seleccionar ${b.name}`}
+                                />
+                              </td>
                               <td className="px-4 py-2.5 font-medium text-gray-900">{b.name}</td>
+                              <td className="px-2 py-2.5 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleSingleToggle(b.id)}
+                                  className={cn(
+                                    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition-colors min-h-[28px]',
+                                    isActive
+                                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                      : 'bg-red-100 text-red-600 hover:bg-red-200'
+                                  )}
+                                  aria-label={isActive ? `Desactivar ${b.name}` : `Activar ${b.name}`}
+                                >
+                                  {isActive
+                                    ? <><ToggleRight className="h-3 w-3" /> ON</>
+                                    : <><ToggleLeft className="h-3 w-3" /> OFF</>
+                                  }
+                                </button>
+                              </td>
                               <td className="px-4 py-2.5 text-gray-500 max-w-[200px] truncate">{truncate(b.description, 50)}</td>
                               <td className="px-4 py-2.5 text-right tabular-nums">{formatCLP(b.price)}</td>
                               <td className="px-4 py-2.5 text-right">
@@ -400,7 +553,8 @@ export default function BebidasTab() {
                               </td>
                               <td className="px-4 py-2.5 text-gray-500 text-xs">{b.sku || '—'}</td>
                             </tr>
-                          ))}
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -411,6 +565,15 @@ export default function BebidasTab() {
           })}
         </div>
       )}
+
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={selectedIds.size}
+        onClear={() => setSelectedIds(new Set())}
+        onToggle={handleBulkToggle}
+        onPriceAdjust={handleBulkPrice}
+        onDeactivate={handleBulkDeactivate}
+      />
     </div>
   );
 }

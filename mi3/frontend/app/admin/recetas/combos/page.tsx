@@ -5,8 +5,9 @@ import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
 import {
   Loader2, ArrowLeft, Plus, Trash2, Save, Search, X,
-  Package, ChevronRight, CircleDot,
+  Package, ChevronRight, CircleDot, ToggleLeft, ToggleRight,
 } from 'lucide-react';
+import BulkActionBar from '@/components/admin/BulkActionBar';
 import type { ApiResponse } from '@/types';
 
 /* ─── Types ─── */
@@ -21,6 +22,7 @@ interface ComboRow {
   fixed_count: number;
   selectable_count: number;
   total_components: number;
+  is_active: boolean;
 }
 
 interface FixedItem {
@@ -92,6 +94,7 @@ export default function CombosPage() {
   const [comboPrice, setComboPrice] = useState('');
   const [comboDesc, setComboDesc] = useState('');
   const [savingCombo, setSavingCombo] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const fetchCombos = useCallback(async () => {    setLoading(true);
     setError('');
@@ -111,6 +114,90 @@ export default function CombosPage() {
     const q = search.toLowerCase();
     return q ? combos.filter(c => c.name.toLowerCase().includes(q)) : combos;
   }, [combos, search]);
+
+  /* ─── Selection helpers ─── */
+
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const allVisibleIds = useMemo(
+    () => filteredCombos.map(c => c.id),
+    [filteredCombos]
+  );
+
+  const allSelected = allVisibleIds.length > 0 && allVisibleIds.every(id => selectedIds.has(id));
+
+  const toggleSelectAll = useCallback(() => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allVisibleIds));
+    }
+  }, [allSelected, allVisibleIds]);
+
+  /* ─── Single toggle ON/OFF ─── */
+
+  const handleSingleToggle = useCallback(async (comboId: number) => {
+    try {
+      await apiFetch('/admin/productos/toggle', {
+        method: 'PATCH',
+        body: JSON.stringify({ product_ids: [comboId] }),
+      });
+      await fetchCombos();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al cambiar estado');
+    }
+  }, [fetchCombos]);
+
+  /* ─── Bulk action handlers ─── */
+
+  const handleBulkToggle = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      await apiFetch('/admin/productos/toggle', {
+        method: 'PATCH',
+        body: JSON.stringify({ product_ids: Array.from(selectedIds) }),
+      });
+      setSelectedIds(new Set());
+      await fetchCombos();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al cambiar estado');
+    }
+  }, [selectedIds, fetchCombos]);
+
+  const handleBulkPrice = useCallback(async (amount: number) => {
+    if (selectedIds.size === 0) return;
+    try {
+      await apiFetch('/admin/productos/bulk-price', {
+        method: 'PATCH',
+        body: JSON.stringify({ product_ids: Array.from(selectedIds), adjustment: amount }),
+      });
+      setSelectedIds(new Set());
+      await fetchCombos();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al ajustar precios');
+    }
+  }, [selectedIds, fetchCombos]);
+
+  const handleBulkDeactivate = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      await apiFetch('/admin/productos/bulk-deactivate', {
+        method: 'PATCH',
+        body: JSON.stringify({ product_ids: Array.from(selectedIds) }),
+      });
+      setSelectedIds(new Set());
+      await fetchCombos();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al desactivar combos');
+    }
+  }, [selectedIds, fetchCombos]);
 
   const handleCreateCombo = async () => {
     if (!comboName.trim() || !comboPrice || Number(comboPrice) <= 0) return;
@@ -244,34 +331,67 @@ export default function CombosPage() {
         <>
           {/* Mobile: cards */}
           <div className="space-y-3 sm:hidden">
-            {filteredCombos.map(combo => (
-              <button
+            {filteredCombos.map(combo => {
+              const isActive = combo.is_active !== false && (combo.is_active as unknown) !== 0;
+              const isSelected = selectedIds.has(combo.id);
+              return (
+              <div
                 key={combo.id}
-                onClick={() => setEditingCombo(combo)}
-                className="w-full rounded-xl border bg-white p-4 shadow-sm text-left active:bg-gray-50 transition-colors"
-                aria-label={`Editar ${combo.name}`}
+                className={cn('w-full rounded-xl border bg-white p-4 shadow-sm', !isActive && 'opacity-50')}
               >
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900 text-sm">{combo.name}</h3>
-                  <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleSelect(combo.id)}
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400 cursor-pointer"
+                    aria-label={`Seleccionar ${combo.name}`}
+                  />
+                  <button
+                    onClick={() => setEditingCombo(combo)}
+                    className="flex-1 text-left active:bg-gray-50 transition-colors"
+                    aria-label={`Editar ${combo.name}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-gray-900 text-sm">{combo.name}</h3>
+                      <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-600">
+                        {formatCLP(combo.price)}
+                      </span>
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-blue-600">
+                        {combo.fixed_count} fijos
+                      </span>
+                      <span className="rounded-full bg-purple-50 px-2 py-0.5 text-purple-600">
+                        {combo.selectable_count} selec.
+                      </span>
+                      <MarginBadge margin={combo.margin} />
+                    </div>
+                    <div className="mt-1 text-xs text-gray-500">
+                      Costo: {formatCLP(combo.cost_price)}
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSingleToggle(combo.id)}
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition-colors min-h-[28px] flex-shrink-0',
+                      isActive
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                        : 'bg-red-100 text-red-600 hover:bg-red-200'
+                    )}
+                    aria-label={isActive ? `Desactivar ${combo.name}` : `Activar ${combo.name}`}
+                  >
+                    {isActive
+                      ? <><ToggleRight className="h-3 w-3" /> ON</>
+                      : <><ToggleLeft className="h-3 w-3" /> OFF</>
+                    }
+                  </button>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-600">
-                    {formatCLP(combo.price)}
-                  </span>
-                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-blue-600">
-                    {combo.fixed_count} fijos
-                  </span>
-                  <span className="rounded-full bg-purple-50 px-2 py-0.5 text-purple-600">
-                    {combo.selectable_count} selec.
-                  </span>
-                  <MarginBadge margin={combo.margin} />
-                </div>
-                <div className="mt-1 text-xs text-gray-500">
-                  Costo: {formatCLP(combo.cost_price)}
-                </div>
-              </button>
-            ))}
+              </div>
+              );
+            })}
           </div>
 
           {/* Desktop: table */}
@@ -279,7 +399,17 @@ export default function CombosPage() {
             <table className="w-full text-sm">
               <thead className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
                 <tr>
+                  <th className="px-2 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={toggleSelectAll}
+                      className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400 cursor-pointer"
+                      aria-label="Seleccionar todos los combos"
+                    />
+                  </th>
                   <th className="px-4 py-3">Nombre</th>
+                  <th className="px-2 py-3 w-16 text-center">Estado</th>
                   <th className="px-4 py-3 text-right">Precio</th>
                   <th className="px-4 py-3 text-right">Costo</th>
                   <th className="px-4 py-3 text-right">Margen</th>
@@ -289,17 +419,50 @@ export default function CombosPage() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {filteredCombos.map(combo => (
+                {filteredCombos.map(combo => {
+                  const isActive = combo.is_active !== false && (combo.is_active as unknown) !== 0;
+                  const isSelected = selectedIds.has(combo.id);
+                  return (
                   <tr
                     key={combo.id}
-                    onClick={() => setEditingCombo(combo)}
-                    className="cursor-pointer hover:bg-gray-50 transition-colors"
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={e => e.key === 'Enter' && setEditingCombo(combo)}
-                    aria-label={`Editar ${combo.name}`}
+                    className={cn('hover:bg-gray-50 transition-colors', !isActive && 'opacity-50')}
                   >
-                    <td className="px-4 py-3 font-medium text-gray-900">{combo.name}</td>
+                    <td className="px-2 py-3 w-10">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(combo.id)}
+                        className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400 cursor-pointer"
+                        aria-label={`Seleccionar ${combo.name}`}
+                      />
+                    </td>
+                    <td
+                      className="px-4 py-3 font-medium text-gray-900 cursor-pointer"
+                      onClick={() => setEditingCombo(combo)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={e => e.key === 'Enter' && setEditingCombo(combo)}
+                    >
+                      {combo.name}
+                    </td>
+                    <td className="px-2 py-3 text-center">
+                      <button
+                        type="button"
+                        onClick={() => handleSingleToggle(combo.id)}
+                        className={cn(
+                          'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition-colors min-h-[28px]',
+                          isActive
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                            : 'bg-red-100 text-red-600 hover:bg-red-200'
+                        )}
+                        aria-label={isActive ? `Desactivar ${combo.name}` : `Activar ${combo.name}`}
+                      >
+                        {isActive
+                          ? <><ToggleRight className="h-3 w-3" /> ON</>
+                          : <><ToggleLeft className="h-3 w-3" /> OFF</>
+                        }
+                      </button>
+                    </td>
                     <td className="px-4 py-3 text-right tabular-nums">{formatCLP(combo.price)}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-gray-500">{formatCLP(combo.cost_price)}</td>
                     <td className="px-4 py-3 text-right">
@@ -307,16 +470,33 @@ export default function CombosPage() {
                     </td>
                     <td className="px-4 py-3 text-center tabular-nums">{combo.fixed_count}</td>
                     <td className="px-4 py-3 text-center tabular-nums">{combo.selectable_count}</td>
-                    <td className="px-4 py-3">
+                    <td
+                      className="px-4 py-3 cursor-pointer"
+                      onClick={() => setEditingCombo(combo)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={e => e.key === 'Enter' && setEditingCombo(combo)}
+                      aria-label={`Editar ${combo.name}`}
+                    >
                       <ChevronRight className="h-4 w-4 text-gray-400" />
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </>
       )}
+
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={selectedIds.size}
+        onClear={() => setSelectedIds(new Set())}
+        onToggle={handleBulkToggle}
+        onPriceAdjust={handleBulkPrice}
+        onDeactivate={handleBulkDeactivate}
+      />
     </div>
   );
 }

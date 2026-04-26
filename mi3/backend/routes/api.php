@@ -237,6 +237,15 @@ Route::prefix('v1')->group(function () {
         Route::post('ingredient-recipes/{ingredientId}', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'store']);
         Route::delete('ingredient-recipes/{ingredientId}', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'destroy']);
 
+        // Ventas (sales analytics)
+        Route::get('ventas/kpis', [\App\Http\Controllers\Admin\VentasController::class, 'kpis']);
+        Route::get('ventas', [\App\Http\Controllers\Admin\VentasController::class, 'index']);
+
+        // Productos — Bulk actions (toggle, price adjust, deactivate)
+        Route::patch('productos/toggle', [\App\Http\Controllers\Admin\ProductBulkController::class, 'toggle']);
+        Route::patch('productos/bulk-price', [\App\Http\Controllers\Admin\ProductBulkController::class, 'bulkPrice']);
+        Route::patch('productos/bulk-deactivate', [\App\Http\Controllers\Admin\ProductBulkController::class, 'bulkDeactivate']);
+
         // Combos (combo component management)
         Route::get('combos', [\App\Http\Controllers\Admin\ComboController::class, 'index']);
         Route::post('combos', [\App\Http\Controllers\Admin\ComboController::class, 'create']);

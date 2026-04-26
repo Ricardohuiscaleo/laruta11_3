@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Events\StockActualizado;
+use App\Events\VentaNueva;
 use App\Events\VentaRegistrada;
+use App\Services\Ventas\VentasService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -35,6 +37,10 @@ class WebhookController extends Controller
         ));
 
         broadcast(new StockActualizado('venta'));
+
+        // Broadcast updated KPIs for the admin Ventas realtime section
+        $kpis = app(VentasService::class)->getKpis('shift_today');
+        broadcast(new VentaNueva($kpis));
 
         return response()->json(['success' => true]);
     }

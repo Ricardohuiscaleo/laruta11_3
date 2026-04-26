@@ -6,8 +6,9 @@ import { formatCLP, cn } from '@/lib/utils';
 import {
   Loader2, Search, ArrowUpDown, ChevronDown, ChevronRight, AlertTriangle,
   ArrowLeft, Plus, Trash2, Save, X, Pencil, Upload, Image as ImageIcon,
-  UtensilsCrossed, Package,
+  UtensilsCrossed, Package, ToggleLeft, ToggleRight,
 } from 'lucide-react';
+import BulkActionBar from '@/components/admin/BulkActionBar';
 import type { ApiResponse } from '@/types';
 import { getIngredientEmoji } from '@/lib/ingredient-emoji';
 
@@ -21,6 +22,7 @@ interface RecipeProduct {
   recipe_cost: number;
   margin: number | null;
   ingredient_count: number;
+  is_active: boolean;
 }
 
 interface RecipeIngredient {
@@ -222,6 +224,7 @@ export default function RecetasPage() {
 
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   /* ─── Add Product: create + open editor ─── */
   const [creatingProduct, setCreatingProduct] = useState(false);
@@ -279,6 +282,75 @@ export default function RecetasPage() {
     });
   };
 
+  /* ─── Selection helpers ─── */
+
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  /* ─── Single toggle ON/OFF ─── */
+
+  const handleSingleToggle = useCallback(async (productId: number) => {
+    try {
+      await apiFetch('/admin/productos/toggle', {
+        method: 'PATCH',
+        body: JSON.stringify({ product_ids: [productId] }),
+      });
+      await fetchProducts();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al cambiar estado');
+    }
+  }, [fetchProducts]);
+
+  /* ─── Bulk action handlers ─── */
+
+  const handleBulkToggle = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      await apiFetch('/admin/productos/toggle', {
+        method: 'PATCH',
+        body: JSON.stringify({ product_ids: Array.from(selectedIds) }),
+      });
+      setSelectedIds(new Set());
+      await fetchProducts();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al cambiar estado');
+    }
+  }, [selectedIds, fetchProducts]);
+
+  const handleBulkPrice = useCallback(async (amount: number) => {
+    if (selectedIds.size === 0) return;
+    try {
+      await apiFetch('/admin/productos/bulk-price', {
+        method: 'PATCH',
+        body: JSON.stringify({ product_ids: Array.from(selectedIds), adjustment: amount }),
+      });
+      setSelectedIds(new Set());
+      await fetchProducts();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al ajustar precios');
+    }
+  }, [selectedIds, fetchProducts]);
+
+  const handleBulkDeactivate = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      await apiFetch('/admin/productos/bulk-deactivate', {
+        method: 'PATCH',
+        body: JSON.stringify({ product_ids: Array.from(selectedIds) }),
+      });
+      setSelectedIds(new Set());
+      await fetchProducts();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al desactivar productos');
+    }
+  }, [selectedIds, fetchProducts]);
+
   // Client-side search filter across all categories
   const filteredCategories = useMemo(() => {
     if (!groupedData) return [];
@@ -299,6 +371,21 @@ export default function RecetasPage() {
     () => filteredCategories.reduce((sum, c) => sum + c.filteredProducts.length, 0),
     [filteredCategories]
   );
+
+  const allVisibleIds = useMemo(
+    () => filteredCategories.flatMap(c => c.filteredProducts.map(p => p.id)),
+    [filteredCategories]
+  );
+
+  const allSelected = allVisibleIds.length > 0 && allVisibleIds.every(id => selectedIds.has(id));
+
+  const toggleSelectAll = useCallback(() => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allVisibleIds));
+    }
+  }, [allSelected, allVisibleIds]);
 
   if (selectedProductId !== null) {
     return (
@@ -393,7 +480,17 @@ export default function RecetasPage() {
                     <table className="w-full text-sm">
                       <thead className="border-b border-t bg-gray-50/50 text-left text-xs font-medium text-gray-500">
                         <tr>
+                          <th className="px-2 py-2 w-10">
+                            <input
+                              type="checkbox"
+                              checked={allSelected}
+                              onChange={toggleSelectAll}
+                              className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400 cursor-pointer"
+                              aria-label="Seleccionar todos los productos"
+                            />
+                          </th>
                           <th className="px-4 py-2">Producto</th>
+                          <th className="px-2 py-2 w-16 text-center">Estado</th>
                           <th className="px-4 py-2 text-right hidden sm:table-cell">Precio</th>
                           <th className="px-4 py-2 text-right hidden sm:table-cell">Costo</th>
                           <th className="px-4 py-2 text-right">Margen</th>
@@ -404,25 +501,69 @@ export default function RecetasPage() {
                         {cat.filteredProducts.map(p => {
                           const hasRecipe = p.ingredient_count > 0;
                           const belowTarget = hasRecipe && p.margin != null && p.margin < TARGET_MARGIN;
+                          const isActive = p.is_active !== false && (p.is_active as unknown) !== 0;
+                          const isSelected = selectedIds.has(p.id);
                           return (
                             <tr
                               key={p.id}
-                              onClick={() => setSelectedProductId(p.id)}
                               className={cn(
-                                'hover:bg-gray-50 transition-colors cursor-pointer',
-                                belowTarget && 'bg-amber-50/50'
+                                'hover:bg-gray-50 transition-colors',
+                                belowTarget && 'bg-amber-50/50',
+                                !isActive && 'opacity-50',
                               )}
-                              role="button"
-                              tabIndex={0}
-                              onKeyDown={e => e.key === 'Enter' && setSelectedProductId(p.id)}
-                              aria-label={`Ver receta de ${p.name}`}
                             >
-                              <td className="px-4 py-3 font-medium text-gray-900">{p.name}</td>
-                              <td className="px-4 py-3 text-right tabular-nums hidden sm:table-cell">{formatCLP(p.price)}</td>
-                              <td className="px-4 py-3 text-right tabular-nums hidden sm:table-cell">
+                              <td className="px-2 py-3 w-10">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => toggleSelect(p.id)}
+                                  className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400 cursor-pointer"
+                                  aria-label={`Seleccionar ${p.name}`}
+                                />
+                              </td>
+                              <td
+                                className="px-4 py-3 font-medium text-gray-900 cursor-pointer"
+                                onClick={() => setSelectedProductId(p.id)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={e => e.key === 'Enter' && setSelectedProductId(p.id)}
+                              >
+                                {p.name}
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); handleSingleToggle(p.id); }}
+                                  className={cn(
+                                    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition-colors min-h-[28px]',
+                                    isActive
+                                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                      : 'bg-red-100 text-red-600 hover:bg-red-200'
+                                  )}
+                                  aria-label={isActive ? `Desactivar ${p.name}` : `Activar ${p.name}`}
+                                >
+                                  {isActive
+                                    ? <><ToggleRight className="h-3 w-3" /> ON</>
+                                    : <><ToggleLeft className="h-3 w-3" /> OFF</>
+                                  }
+                                </button>
+                              </td>
+                              <td
+                                className="px-4 py-3 text-right tabular-nums hidden sm:table-cell cursor-pointer"
+                                onClick={() => setSelectedProductId(p.id)}
+                              >
+                                {formatCLP(p.price)}
+                              </td>
+                              <td
+                                className="px-4 py-3 text-right tabular-nums hidden sm:table-cell cursor-pointer"
+                                onClick={() => setSelectedProductId(p.id)}
+                              >
                                 {hasRecipe ? formatCLP(p.recipe_cost) : <span className="text-gray-400">$0</span>}
                               </td>
-                              <td className="px-4 py-3 text-right">
+                              <td
+                                className="px-4 py-3 text-right cursor-pointer"
+                                onClick={() => setSelectedProductId(p.id)}
+                              >
                                 {hasRecipe ? (
                                   <span className={cn(
                                     'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
@@ -437,7 +578,10 @@ export default function RecetasPage() {
                                   </span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-right tabular-nums text-gray-500 hidden sm:table-cell">
+                              <td
+                                className="px-4 py-3 text-right tabular-nums text-gray-500 hidden sm:table-cell cursor-pointer"
+                                onClick={() => setSelectedProductId(p.id)}
+                              >
                                 {hasRecipe ? p.ingredient_count : '—'}
                               </td>
                             </tr>
@@ -452,6 +596,15 @@ export default function RecetasPage() {
           })}
         </div>
       )}
+
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={selectedIds.size}
+        onClear={() => setSelectedIds(new Set())}
+        onToggle={handleBulkToggle}
+        onPriceAdjust={handleBulkPrice}
+        onDeactivate={handleBulkDeactivate}
+      />
     </div>
   );
 }

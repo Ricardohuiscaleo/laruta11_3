@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`8d024b5`) — fix tiempo negativo comandas, ocultar notas pago en cocina, minicomandas header legible |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`c1a3b5b`) — Agregar Producto abre editor directo con campos en blanco |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`7a8095c`) — endpoints crear combo y sub-receta, fix S3 visibility |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`b7e5b92`) — RecipeEditor con categoría/subcategoría editables |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`14eb695`) — updateProduct acepta price, endpoints crear combo/sub-receta |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -113,8 +113,8 @@
 - `mi3/frontend/app/admin/recetas/porciones/page.tsx`: Barra de búsqueda.
 - `mi3/frontend/app/admin/recetas/sub-recetas/page.tsx`: Barra de búsqueda + botón "Agregar Sub-Receta" + form (crea y abre editor).
 
-**Commits:** `51f8593`, `2610cde`, `c12a542`, `7a8095c`, `921063c`, `f94c203`, `c1a3b5b`
-**Deploys:** mi3-backend ✅ (`7a8095c`), mi3-frontend ✅ (`c1a3b5b`)
+**Commits:** `51f8593`, `2610cde`, `c12a542`, `7a8095c`, `921063c`, `f94c203`, `c1a3b5b`, `14eb695`, `b7e5b92`
+**Deploys:** mi3-backend ✅ (`14eb695`), mi3-frontend ✅ (`b7e5b92`)
 
 ### 2026-04-25d — Fix comandas: tiempo negativo, notas pago ocultas, minicomandas header legible
 
