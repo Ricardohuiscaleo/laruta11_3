@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`8d024b5`) — fix tiempo negativo comandas, ocultar notas pago en cocina, minicomandas header legible |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2610cde`) — search bars en Bebidas, Combos, Porciones, Sub-Recetas |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`51f8593`) — fix S3 upload 403: visibility public + prefijo products/ |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`7a8095c`) — botones Agregar en Combos y Sub-Recetas, search bars, fix hooks |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`7a8095c`) — endpoints crear combo y sub-receta, fix S3 visibility |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -100,18 +100,21 @@
 
 ## Sesiones Recientes
 
-### 2026-04-25e — Fix S3 upload 403 + search bars en tabs Recetas
+### 2026-04-26a — Search bars + botones Agregar en Recetas, endpoints crear combo/sub-receta, fix S3 403
 
 **Cambios código:**
-- `mi3/backend/app/Http/Controllers/RecipeController.php`: Fix S3 403 — prefijo `productos/` → `products/`, visibility `'public'` en `Storage::put()`.
+- `mi3/backend/app/Http/Controllers/RecipeController.php`: Fix S3 403 — prefijo `productos/` → `products/`, visibility `'public'`.
 - `mi3/backend/app/Http/Controllers/Admin/CompraController.php`: Mismo fix visibility `'public'`.
-- `mi3/frontend/app/admin/recetas/bebidas/page.tsx`: Barra de búsqueda + filtro por nombre.
-- `mi3/frontend/app/admin/recetas/combos/page.tsx`: Barra de búsqueda + filtro por nombre.
-- `mi3/frontend/app/admin/recetas/porciones/page.tsx`: Barra de búsqueda + filtro por ingrediente/categoría.
-- `mi3/frontend/app/admin/recetas/sub-recetas/page.tsx`: Barra de búsqueda + filtro por nombre.
+- `mi3/backend/app/Http/Controllers/Admin/ComboController.php`: Nuevo método `create()` — crea producto tipo combo (category_id=8).
+- `mi3/backend/app/Http/Controllers/Admin/IngredientRecipeController.php`: Nuevo método `create()` — crea ingrediente compuesto (is_composite=true).
+- `mi3/backend/routes/api.php`: Rutas `POST /admin/combos` y `POST /admin/ingredient-recipes`.
+- `mi3/frontend/app/admin/recetas/bebidas/page.tsx`: Barra de búsqueda.
+- `mi3/frontend/app/admin/recetas/combos/page.tsx`: Barra de búsqueda + botón "Agregar Combo" + form + fix useMemo hooks order.
+- `mi3/frontend/app/admin/recetas/porciones/page.tsx`: Barra de búsqueda.
+- `mi3/frontend/app/admin/recetas/sub-recetas/page.tsx`: Barra de búsqueda + botón "Agregar Sub-Receta" + form (crea y abre editor).
 
-**Commits:** `51f8593`, `2610cde`
-**Deploys:** mi3-backend ✅ (`51f8593`), mi3-frontend ✅ (`2610cde`)
+**Commits:** `51f8593`, `2610cde`, `c12a542`, `7a8095c`
+**Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `7a8095c`)
 
 ### 2026-04-25d — Fix comandas: tiempo negativo, notas pago ocultas, minicomandas header legible
 

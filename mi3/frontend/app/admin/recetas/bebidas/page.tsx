@@ -144,6 +144,7 @@ export default function BebidasTab() {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [bevImage, setBevImage] = useState<File | null>(null);
   const [search, setSearch] = useState('');
+  const [filterSubcategory, setFilterSubcategory] = useState('');
 
   const fetchBeverages = useCallback(async () => {
     setLoading(true);
@@ -171,9 +172,13 @@ export default function BebidasTab() {
 
   /* ─── Group by subcategory ─── */
   const filtered = useMemo(() => {
+    let result = beverages;
+    if (filterSubcategory) {
+      result = result.filter(b => (b.subcategory_name || 'Sin subcategoría') === filterSubcategory);
+    }
     const q = search.toLowerCase();
-    return q ? beverages.filter(b => b.name.toLowerCase().includes(q)) : beverages;
-  }, [beverages, search]);
+    return q ? result.filter(b => b.name.toLowerCase().includes(q)) : result;
+  }, [beverages, search, filterSubcategory]);
 
   const grouped = filtered.reduce<Record<string, Beverage[]>>((acc, b) => {
     const key = b.subcategory_name || 'Sin subcategoría';
@@ -182,6 +187,11 @@ export default function BebidasTab() {
     return acc;
   }, {});
   const groupKeys = Object.keys(grouped);
+
+  const subcategoryNames = useMemo(() => {
+    const names = new Set(beverages.map(b => b.subcategory_name || 'Sin subcategoría'));
+    return Array.from(names).sort((a, b) => a.localeCompare(b, 'es'));
+  }, [beverages]);
 
   const toggleGroup = (key: string) => {
     setCollapsed(prev => {
@@ -285,19 +295,17 @@ export default function BebidasTab() {
             aria-label="Buscar bebida"
           />
         </div>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className={cn(
-            'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors min-h-[44px] flex-shrink-0',
-            showAddForm
-              ? 'border border-gray-200 text-gray-600 hover:bg-gray-50'
-              : 'bg-red-500 text-white hover:bg-red-600'
-          )}
-          aria-label={showAddForm ? 'Cancelar' : 'Agregar bebida'}
+        <select
+          value={filterSubcategory}
+          onChange={e => setFilterSubcategory(e.target.value)}
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm min-h-[44px] focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 flex-shrink-0"
+          aria-label="Filtrar por subcategoría"
         >
-          {showAddForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-          {showAddForm ? 'Cancelar' : 'Agregar Bebida'}
-        </button>
+          <option value="">Todas las subcategorías</option>
+          {subcategoryNames.map(name => (
+            <option key={name} value={name}>{name}</option>
+          ))}
+        </select>
       </div>
 
       <div className="text-xs text-gray-500">
@@ -305,81 +313,6 @@ export default function BebidasTab() {
       </div>
 
       {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert">{error}</div>}
-
-      {/* ─── Add Beverage Form ─── */}
-      {showAddForm && (
-        <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3" role="form" aria-label="Agregar bebida">
-          <h3 className="text-sm font-medium text-gray-700">Nueva Bebida</h3>
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <ImageDropZone image={bevImage} onImageChange={setBevImage} />
-            <div className="flex-1 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <label htmlFor="bev-name" className="block text-xs font-medium text-gray-600 mb-1">Nombre *</label>
-              <input id="bev-name" type="text" value={form.name} onChange={e => updateField('name', e.target.value)}
-                className={cn('w-full rounded-lg border px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300', formErrors.name ? 'border-red-300' : 'border-gray-200')}
-                placeholder="Ej: Coca-Cola Lata 350ml" />
-              {formErrors.name && <p className="mt-1 text-xs text-red-500">{formErrors.name}</p>}
-            </div>
-            <div>
-              <label htmlFor="bev-price" className="block text-xs font-medium text-gray-600 mb-1">Precio *</label>
-              <input id="bev-price" type="number" value={form.price} onChange={e => updateField('price', e.target.value)}
-                className={cn('w-full rounded-lg border px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300', formErrors.price ? 'border-red-300' : 'border-gray-200')}
-                placeholder="1200" min="1" />
-              {formErrors.price && <p className="mt-1 text-xs text-red-500">{formErrors.price}</p>}
-            </div>
-            <div className="sm:col-span-2">
-              <label htmlFor="bev-desc" className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
-              <input id="bev-desc" type="text" value={form.description} onChange={e => updateField('description', e.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
-                placeholder="Descripción opcional" />
-            </div>
-            <div>
-              <label htmlFor="bev-cost" className="block text-xs font-medium text-gray-600 mb-1">Costo</label>
-              <input id="bev-cost" type="number" value={form.cost_price} onChange={e => updateField('cost_price', e.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
-                placeholder="0" min="0" />
-            </div>
-            <div>
-              <label htmlFor="bev-stock" className="block text-xs font-medium text-gray-600 mb-1">Stock</label>
-              <input id="bev-stock" type="number" value={form.stock_quantity} onChange={e => updateField('stock_quantity', e.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
-                placeholder="0" min="0" />
-            </div>
-            <div>
-              <label htmlFor="bev-min" className="block text-xs font-medium text-gray-600 mb-1">Stock mínimo</label>
-              <input id="bev-min" type="number" value={form.min_stock_level} onChange={e => updateField('min_stock_level', e.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
-                placeholder="5" min="0" />
-            </div>
-            <div>
-              <label htmlFor="bev-sub" className="block text-xs font-medium text-gray-600 mb-1">Subcategoría</label>
-              <select id="bev-sub" value={form.subcategory_id} onChange={e => updateField('subcategory_id', e.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300 bg-white">
-                <option value="">Sin subcategoría</option>
-                {subcategories.map(sc => (
-                  <option key={sc.id} value={sc.id}>{sc.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="bev-sku" className="block text-xs font-medium text-gray-600 mb-1">SKU</label>
-              <input id="bev-sku" type="text" value={form.sku} onChange={e => updateField('sku', e.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
-                placeholder="Código opcional" />
-            </div>
-            </div>
-          </div>
-          <div className="flex justify-end pt-2">
-            <button onClick={handleSubmit} disabled={saving}
-              className={cn('inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors min-h-[44px]',
-                saving ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600')}
-              aria-label="Guardar bebida">
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              Guardar
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ─── Empty state ─── */}
       {beverages.length === 0 ? (

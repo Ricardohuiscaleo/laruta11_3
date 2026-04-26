@@ -117,7 +117,7 @@ export default function CombosPage() {
     setSavingCombo(true);
     setError('');
     try {
-      await apiFetch<ApiResponse<{ id: number }>>('/admin/combos', {
+      const res = await apiFetch<ApiResponse<{ id: number }>>('/admin/combos', {
         method: 'POST',
         body: JSON.stringify({
           name: comboName.trim(),
@@ -125,9 +125,22 @@ export default function CombosPage() {
           description: comboDesc.trim() || undefined,
         }),
       });
+      const newId = res.data?.id;
       setComboName(''); setComboPrice(''); setComboDesc('');
       setShowAddForm(false);
-      await fetchCombos();
+      if (newId) {
+        setEditingCombo({
+          id: newId,
+          name: comboName.trim(),
+          price: Number(comboPrice),
+          cost_price: 0,
+          margin: null,
+          image_url: null,
+          fixed_count: 0,
+          selectable_count: 0,
+          total_components: 0,
+        });
+      }
     } catch (e: any) {
       setError(e.message || 'Error al crear combo');
     } finally {

@@ -297,7 +297,12 @@ export default function RecetasPage() {
       setProductForm(emptyProductForm);
       setProductImage(null);
       setShowAddForm(false);
-      await fetchProducts();
+      if (newId) {
+        await fetchProducts();
+        setSelectedProductId(newId);
+      } else {
+        await fetchProducts();
+      }
     } catch (e: unknown) {
       if (e instanceof Error) {
         try {
