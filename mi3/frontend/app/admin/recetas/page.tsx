@@ -472,6 +472,7 @@ function RecipeEditor({ productId, onBack, isNew = false }: { productId: number;
   const [editingProduct, setEditingProduct] = useState(isNew);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editPrice, setEditPrice] = useState('');
   const [savingProduct, setSavingProduct] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -486,6 +487,7 @@ function RecipeEditor({ productId, onBack, isNew = false }: { productId: number;
       setHasExistingRecipe(data.ingredient_count > 0);
       setEditName(isNew ? '' : data.name);
       setEditDescription(isNew ? '' : (data.description || ''));
+      setEditPrice(isNew ? '' : String(data.price));
       setIngredients(
         data.ingredients.map(i => ({
           ingredient_id: i.id,
@@ -594,7 +596,7 @@ function RecipeEditor({ productId, onBack, isNew = false }: { productId: number;
     try {
       await apiFetch(`/admin/recetas/${productId}/producto`, {
         method: 'PUT',
-        body: JSON.stringify({ name: editName.trim(), description: editDescription.trim() || null }),
+        body: JSON.stringify({ name: editName.trim(), description: editDescription.trim() || null, price: editPrice ? Number(editPrice) : undefined }),
       });
       setSuccessMsg('Producto actualizado');
       setTimeout(() => setSuccessMsg(''), 3000);
@@ -747,6 +749,19 @@ function RecipeEditor({ productId, onBack, isNew = false }: { productId: number;
                       value={editName}
                       onChange={e => setEditName(e.target.value)}
                       className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300"
+                      placeholder="Nombre del producto"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="edit-price" className="block text-xs font-medium text-gray-500 mb-1">Precio</label>
+                    <input
+                      id="edit-price"
+                      type="number"
+                      value={editPrice}
+                      onChange={e => setEditPrice(e.target.value)}
+                      className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300"
+                      placeholder="4500"
+                      min="1"
                     />
                   </div>
                   <div>
@@ -772,7 +787,7 @@ function RecipeEditor({ productId, onBack, isNew = false }: { productId: number;
                       Guardar
                     </button>
                     <button
-                      onClick={() => { setEditingProduct(false); setEditName(product.name); setEditDescription(product.description || ''); }}
+                      onClick={() => { setEditingProduct(false); setEditName(product.name); setEditDescription(product.description || ''); setEditPrice(String(product.price)); }}
                       className="rounded-md border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 transition-colors min-h-[36px]"
                     >
                       Cancelar

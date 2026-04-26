@@ -335,6 +335,7 @@ class RecipeController extends Controller
             $request->validate([
                 'name'           => 'sometimes|string|max:255',
                 'description'    => 'nullable|string|max:2000',
+                'price'          => 'nullable|numeric|gt:0',
                 'image_url'      => 'nullable|string|max:500',
                 'category_id'    => 'nullable|integer',
                 'subcategory_id' => 'nullable|integer',

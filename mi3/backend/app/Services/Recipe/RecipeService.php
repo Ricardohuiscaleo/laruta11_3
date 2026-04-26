@@ -783,7 +783,7 @@ class RecipeService
     {
         $product = Product::where('is_active', true)->findOrFail($productId);
 
-        $fillable = ['name', 'description', 'image_url', 'category_id', 'subcategory_id'];
+        $fillable = ['name', 'description', 'price', 'image_url', 'category_id', 'subcategory_id'];
         foreach ($fillable as $field) {
             if (array_key_exists($field, $data)) {
                 $product->{$field} = $data[$field];
