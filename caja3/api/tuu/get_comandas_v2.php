@@ -228,12 +228,33 @@ try {
                 $item['recipe_ingredients'] = array_values(array_map(function($ing) {
                     $qty = (float) $ing['quantity'];
                     $fmtQty = ($qty == intval($qty)) ? intval($qty) : round($qty, 1);
+                    
+                    // Auto-inferir prep_method si es null, basado en categoría
+                    $method = $ing['prep_method'] ?? null;
+                    $time = (int) ($ing['prep_time_seconds'] ?? 0);
+                    if (!$method) {
+                        $cat = $ing['category'] ?? '';
+                        if (in_array($cat, ['Carnes', 'Embutidos', 'Pre-elaborados'])) {
+                            $method = 'plancha';
+                            $time = 300; // 5min default carnes
+                        } elseif ($cat === 'Panes') {
+                            $method = 'tostado';
+                            $time = 90;
+                        } elseif ($cat === 'Vegetales') {
+                            $method = 'pelado';
+                            $time = 30;
+                        } elseif (in_array($cat, ['Salsas', 'Condimentos', 'Lácteos', 'Bebidas'])) {
+                            $method = 'listo';
+                            $time = 0;
+                        }
+                    }
+                    
                     return [
                         'name' => $ing['name'],
                         'quantity' => $fmtQty,
                         'unit' => $ing['unit'],
-                        'prep_method' => $ing['prep_method'] ?? null,
-                        'prep_time' => (int) ($ing['prep_time_seconds'] ?? 0),
+                        'prep_method' => $method,
+                        'prep_time' => $time,
                         'is_prepped' => (bool) ($ing['is_prepped'] ?? false),
                     ];
                 }, $realIngredients));
