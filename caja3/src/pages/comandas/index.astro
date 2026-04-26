@@ -670,45 +670,52 @@
                                 },
                                     h('div', { className: 'p-3' },
                                         // HEADER: Todo en una línea con estado de tiempo
-                                        h('div', { className: 'mb-3 pb-2 border-b border-gray-200' },
-                                            h('div', { className: 'flex flex-wrap items-center gap-1 text-xs mb-2' },
-                                                h('span', { className: 'flex items-center gap-1 text-gray-600' }, 
-                                                    order.delivery_type === 'delivery' ? [h(Bike, { size: 12, key: 'icon' }), ' Delivery'] : [h(Store, { size: 12, key: 'icon' }), ' Retiro']
+                                        (() => {
+                                            const mins = getMinutesElapsed(order.created_at);
+                                            // Colores texto según fondo tarjeta: <10 normal, 10-20 negro, >20 blanco
+                                            const txtMain = mins >= 20 ? 'text-white' : 'text-gray-900';
+                                            const txtSub = mins >= 20 ? 'text-white/80' : mins >= 10 ? 'text-gray-700' : 'text-gray-600';
+                                            const txtSep = mins >= 20 ? 'text-white/50' : 'text-gray-400';
+                                            const borderCol = mins >= 20 ? 'border-white/30' : mins >= 10 ? 'border-gray-800/20' : 'border-gray-200';
+                                            return h('div', { className: `mb-3 pb-2 border-b ${borderCol}` },
+                                                h('div', { className: `flex flex-wrap items-center gap-1 text-xs mb-2` },
+                                                    h('span', { className: `flex items-center gap-1 ${txtSub}` }, 
+                                                        order.delivery_type === 'delivery' ? [h(Bike, { size: 12, key: 'icon' }), ' Delivery'] : [h(Store, { size: 12, key: 'icon' }), ' Retiro']
+                                                    ),
+                                                    h('span', { className: txtSep }, '|'),
+                                                    (() => {
+                                                        if (mins >= 20) {
+                                                            return h('span', { className: `font-bold ${txtMain}` }, '🚨 MUY ATRASADO');
+                                                        } else if (mins >= 10) {
+                                                            return h('span', { className: 'font-bold text-gray-900' }, '⚠️ ATRASADO');
+                                                        }
+                                                        return h('span', { className: 'font-bold text-green-600' }, '✓ A TIEMPO');
+                                                    })(),
+                                                    h('span', { className: txtSep }, '|'),
+                                                    h('span', { className: `font-bold ${txtMain} text-sm` }, order.customer_name),
+                                                    h('span', { className: txtSep }, '|'),
+                                                    h('span', { className: `font-bold ${txtSub}` }, getTimeElapsed(order.created_at)),
+                                                    order.delivery_type === 'delivery' && order.delivery_address && h('a', {
+                                                        href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.delivery_address)}`,
+                                                        target: '_blank',
+                                                        rel: 'noopener noreferrer',
+                                                        className: 'bg-blue-500 text-white px-2 py-0.5 rounded font-medium hover:bg-blue-600 transition-colors ml-2',
+                                                        title: 'Abrir en Google Maps'
+                                                    }, order.delivery_address),
+                                                    order.customer_phone && h('a', {
+                                                        href: `tel:${formatPhone(order.customer_phone)}`,
+                                                        className: 'bg-purple-500 text-white px-2 py-0.5 rounded font-medium hover:bg-purple-600 transition-colors ml-2',
+                                                        title: 'Llamar'
+                                                    }, formatPhone(order.customer_phone))
                                                 ),
-                                                h('span', { className: 'text-gray-400' }, '|'),
-                                                (() => {
-                                                    const mins = getMinutesElapsed(order.created_at);
-                                                    if (mins >= 20) {
-                                                        return h('span', { className: 'font-bold text-red-800' }, '🚨 MUY ATRASADO');
-                                                    } else if (mins >= 10) {
-                                                        return h('span', { className: 'font-bold text-yellow-800' }, '⚠️ ATRASADO');
-                                                    }
-                                                    return h('span', { className: 'font-bold text-green-600' }, '✓ A TIEMPO');
-                                                })(),
-                                                h('span', { className: 'text-gray-400' }, '|'),
-                                                h('span', { className: 'font-bold text-gray-900 text-sm' }, order.customer_name),
-                                                h('span', { className: 'text-gray-400' }, '|'),
-                                                h('span', { className: 'font-bold text-gray-600' }, getTimeElapsed(order.created_at)),
-                                                order.delivery_type === 'delivery' && order.delivery_address && h('a', {
-                                                    href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.delivery_address)}`,
-                                                    target: '_blank',
-                                                    rel: 'noopener noreferrer',
-                                                    className: 'bg-blue-500 text-white px-2 py-0.5 rounded font-medium hover:bg-blue-600 transition-colors ml-2',
-                                                    title: 'Abrir en Google Maps'
-                                                }, order.delivery_address),
-                                                order.customer_phone && h('a', {
-                                                    href: `tel:${formatPhone(order.customer_phone)}`,
-                                                    className: 'bg-purple-500 text-white px-2 py-0.5 rounded font-medium hover:bg-purple-600 transition-colors ml-2',
-                                                    title: 'Llamar'
-                                                }, formatPhone(order.customer_phone))
-                                            ),
-                                            (order.customer_notes || order.special_instructions) && h('div', { className: 'text-sm font-bold text-gray-900 bg-yellow-300 border-2 border-yellow-400 rounded-lg px-3 py-2 mt-2 flex items-start gap-2' },
-                                                h(FileText, { size: 14, className: 'mt-0.5 flex-shrink-0' }),
-                                                h('span', {}, (order.customer_notes || '').split('\n').filter(l => !l.includes('EFECTIVO') && !l.includes('PAGO EN')).join('\n').trim()),
-                                                order.customer_notes && order.special_instructions && h('span', {}, ' • '),
-                                                !order.customer_notes && order.special_instructions && h('span', {}, order.special_instructions)
-                                            )
-                                        ),
+                                                (order.customer_notes || order.special_instructions) && h('div', { className: 'text-sm font-bold text-gray-900 bg-yellow-300 border-2 border-yellow-400 rounded-lg px-3 py-2 mt-2 flex items-start gap-2' },
+                                                    h(FileText, { size: 14, className: 'mt-0.5 flex-shrink-0' }),
+                                                    h('span', {}, (order.customer_notes || '').split('\n').filter(l => !l.includes('EFECTIVO') && !l.includes('PAGO EN')).join('\n').trim()),
+                                                    order.customer_notes && order.special_instructions && h('span', {}, ' • '),
+                                                    !order.customer_notes && order.special_instructions && h('span', {}, order.special_instructions)
+                                                )
+                                            );
+                                        })(),
 
                                         // PRODUCTOS (sin tarjeta padre)
                                         h('div', { className: 'space-y-2 mb-3' },
