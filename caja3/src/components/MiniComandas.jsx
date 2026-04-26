@@ -609,34 +609,45 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
     return (
       <div key={order.id} className={`p-4 ${isScheduled ? 'bg-purple-50 border-l-4 border-purple-500' : `${timeAlert.color} border-l-4`}`}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-lg">{isScheduled ? '🕐' : timeAlert.icon}</span>
-            <span className="text-xs font-mono">{order.order_number}</span>
-            <button
-              onClick={() => cancelOrder(order.id, order.order_number)}
-              disabled={processing === order.id}
-              className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white font-bold py-0.5 px-2 rounded text-xs"
-            >
-              ANULAR
-            </button>
-            {isScheduled && scheduledTimeDisplay && (
-              <span className="text-xs font-bold text-purple-700 bg-purple-200 px-2 py-1 rounded">Para las {scheduledTimeDisplay}</span>
-            )}
-            {!isScheduled && (
-              <>
-                <span className={`text-xs font-mono ${timeAlert.textColor}`}>{formatTime(seconds)}</span>
-                <span className={`text-xs font-bold ${timeAlert.statusColor}`}>({timeAlert.status})</span>
-              </>
-            )}
+        <div className="mb-3 pb-2 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-wrap items-center gap-1 text-xs">
+              <span className="flex items-center gap-1 text-gray-600">
+                {order.delivery_type === 'delivery' ? <><Bike size={12} /> Delivery</> : order.delivery_type === 'cuartel' ? <span>🎖️ Cuartel</span> : <><Store size={12} /> Retiro</>}
+              </span>
+              <span className="text-gray-400">|</span>
+              {isScheduled ? (
+                <span className="font-bold text-purple-700">🕐 Programado{scheduledTimeDisplay ? ` ${scheduledTimeDisplay}` : ''}</span>
+              ) : (
+                <>
+                  <span className={`font-bold ${timeAlert.statusColor}`}>
+                    {timeAlert.status === 'MUY ATRASADO' ? '🚨' : timeAlert.status === 'ATRASADO' ? '⚠️' : '✓'} {timeAlert.status}
+                  </span>
+                  <span className="text-gray-400">|</span>
+                  <span className={`font-mono ${timeAlert.textColor}`}>{formatTime(seconds)}</span>
+                </>
+              )}
+              <span className="text-gray-400">|</span>
+              <span className="font-bold text-gray-900 text-sm">{order.customer_name}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => cancelOrder(order.id, order.order_number)}
+                disabled={processing === order.id}
+                className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white font-bold py-0.5 px-2 rounded text-xs"
+              >
+                ANULAR
+              </button>
+              <button onClick={() => {
+                const text = `Pedido ${order.order_number}\nCliente: ${order.customer_name}\nTotal: $${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}`;
+                navigator.clipboard.writeText(text);
+                alert('✓ Copiado');
+              }} className="bg-gray-500 hover:bg-gray-600 text-white p-1.5 rounded">
+                <Copy size={14} />
+              </button>
+            </div>
           </div>
-          <button onClick={() => {
-            const text = `Pedido ${order.order_number}\nCliente: ${order.customer_name}\nTotal: $${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}`;
-            navigator.clipboard.writeText(text);
-            alert('✓ Copiado');
-          }} className="bg-gray-500 hover:bg-gray-600 text-white p-1.5 rounded">
-            <Copy size={14} />
-          </button>
+          <div className="text-[10px] text-gray-500 font-mono">{order.order_number}</div>
         </div>
 
         <div className="mb-3">
