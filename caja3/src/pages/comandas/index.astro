@@ -698,24 +698,40 @@
                                             const txtSub = mins >= 20 ? 'text-white/80' : mins >= 10 ? 'text-gray-700' : 'text-gray-600';
                                             const txtSep = mins >= 20 ? 'text-white/50' : 'text-gray-400';
                                             const borderCol = mins >= 20 ? 'border-white/30' : mins >= 10 ? 'border-gray-800/20' : 'border-gray-200';
-                                            return h('div', { className: `mb-3 pb-2 border-b ${borderCol}` },
-                                                h('div', { className: `flex flex-wrap items-center gap-1 text-xs mb-2` },
-                                                    h('span', { className: `flex items-center gap-1 ${txtSub}` }, 
-                                                        order.delivery_type === 'delivery' ? [h(Bike, { size: 12, key: 'icon' }), ' Delivery'] : [h(Store, { size: 12, key: 'icon' }), ' Retiro']
+                                            // Botón color adaptativo
+                                            const btnClass = mins >= 20 
+                                                ? 'bg-white text-red-700 hover:bg-gray-100' 
+                                                : mins >= 10 
+                                                    ? 'bg-gray-900 text-yellow-400 hover:bg-gray-800'
+                                                    : 'bg-green-600 text-white hover:bg-green-700';
+                                            return h('div', { className: `mb-2 pb-2 border-b ${borderCol}` },
+                                                h('div', { className: 'flex items-center gap-1 mb-1' },
+                                                    h('div', { className: `flex flex-wrap items-center gap-1 text-xs flex-1` },
+                                                        h('span', { className: `flex items-center gap-1 ${txtSub}` }, 
+                                                            order.delivery_type === 'delivery' ? [h(Bike, { size: 12, key: 'icon' }), ' Delivery'] : [h(Store, { size: 12, key: 'icon' }), ' Retiro']
+                                                        ),
+                                                        h('span', { className: txtSep }, '|'),
+                                                        (() => {
+                                                            if (mins >= 20) {
+                                                                return h('span', { className: `font-bold ${txtMain}` }, '🚨 MUY ATRASADO');
+                                                            } else if (mins >= 10) {
+                                                                return h('span', { className: 'font-bold text-gray-900' }, '⚠️ ATRASADO');
+                                                            }
+                                                            return h('span', { className: 'font-bold text-green-600' }, '✓ A TIEMPO');
+                                                        })(),
+                                                        h('span', { className: txtSep }, '|'),
+                                                        h('span', { className: `font-bold ${txtMain} text-sm` }, order.customer_name),
+                                                        h('span', { className: txtSep }, '|'),
+                                                        h('span', { className: `font-bold ${txtSub}` }, getTimeElapsed(order.created_at))
                                                     ),
-                                                    h('span', { className: txtSep }, '|'),
-                                                    (() => {
-                                                        if (mins >= 20) {
-                                                            return h('span', { className: `font-bold ${txtMain}` }, '🚨 MUY ATRASADO');
-                                                        } else if (mins >= 10) {
-                                                            return h('span', { className: 'font-bold text-gray-900' }, '⚠️ ATRASADO');
-                                                        }
-                                                        return h('span', { className: 'font-bold text-green-600' }, '✓ A TIEMPO');
-                                                    })(),
-                                                    h('span', { className: txtSep }, '|'),
-                                                    h('span', { className: `font-bold ${txtMain} text-sm` }, order.customer_name),
-                                                    h('span', { className: txtSep }, '|'),
-                                                    h('span', { className: `font-bold ${txtSub}` }, getTimeElapsed(order.created_at)),
+                                                    // Botón LISTO en header
+                                                    h('button', {
+                                                        onClick: () => markAsReady(order.id, order.order_number),
+                                                        className: `font-bold py-1.5 px-3 rounded text-xs flex-shrink-0 ${btnClass}`
+                                                    }, '✅ LISTO')
+                                                ),
+                                                // Segunda línea: dirección/teléfono si delivery
+                                                (order.delivery_type === 'delivery' && order.delivery_address || order.customer_phone) && h('div', { className: 'flex flex-wrap gap-1 text-xs mt-1' },
                                                     order.delivery_type === 'delivery' && order.delivery_address && h('a', {
                                                         href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.delivery_address)}`,
                                                         target: '_blank',
@@ -894,34 +910,66 @@
                                                                 )
                                                             ),
                                                             
-                                                            // Detalles del combo
-                                                            isCombo && comboData && h('div', { className: 'mt-2 pl-2 border-l-2 border-orange-300 space-y-1' },
-                                                                // Fixed items
+                                                            // Detalles del combo con ingredientes de hijos
+                                                            isCombo && comboData && h('div', { className: 'mt-2 pl-2 border-l-2 border-orange-300 space-y-2' },
+                                                                // Fixed items con ingredientes
                                                                 comboData.fixed_items && comboData.fixed_items.length > 0 && h('div', {},
-                                                                    h('p', { className: 'text-xs font-bold text-orange-700 mb-1' }, 'Incluye:'),
                                                                     ...comboData.fixed_items.map((fixed, idx) => 
-                                                                        h('div', { key: `fixed-${idx}`, className: 'text-xs text-gray-700 flex items-center gap-1' },
-                                                                            h('span', { className: 'text-orange-500' }, '•'),
-                                                                            h('span', {}, `${item.quantity * fixed.quantity}x ${fixed.product_name}`)
+                                                                        h('div', { key: `fixed-${idx}`, className: 'mb-1' },
+                                                                            h('div', { className: 'text-sm font-bold text-orange-700' }, `${item.quantity * fixed.quantity}x ${(fixed.product_name || '').replace(/\s*\(\d+g?\)/gi, '')}`),
+                                                                            fixed.recipe_ingredients && fixed.recipe_ingredients.filter(ing => ing.prep_method !== 'listo').length > 0 && h('div', { className: 'space-y-0.5 ml-2 mt-0.5' },
+                                                                                ...fixed.recipe_ingredients.filter(ing => ing.prep_method !== 'listo').map((ing, i) => {
+                                                                                    const orderCreated = new Date((order.created_at || '').replace(' ', 'T') + 'Z');
+                                                                                    const elapsedSec = Math.max(0, (Date.now() - orderCreated.getTime()) / 1000);
+                                                                                    const prepTime = ing.prep_time || 0;
+                                                                                    const isDone = prepTime === 0 || elapsedSec >= prepTime;
+                                                                                    const pct = prepTime > 0 ? Math.min(1, elapsedSec / prepTime) : 1;
+                                                                                    const barColor = isDone ? '#22c55e' : pct >= 0.6 ? '#eab308' : '#ef4444';
+                                                                                    const statusEmoji = isDone ? '✅' : pct >= 0.3 ? '🔥' : '⏳';
+                                                                                    return h('div', { key: i, className: 'text-xs' },
+                                                                                        h('div', { className: 'flex items-center gap-1' },
+                                                                                            h('span', { className: 'font-medium flex-1 truncate' }, `${ing.name} ${ing.quantity}${ing.unit}`),
+                                                                                            h('span', { className: 'font-mono' }, statusEmoji)
+                                                                                        ),
+                                                                                        prepTime > 0 && h('div', { style: { width: '100%', height: '3px', backgroundColor: '#e5e7eb', borderRadius: '2px', overflow: 'hidden', marginTop: '1px' } },
+                                                                                            h('div', { style: { width: `${Math.round(pct * 100)}%`, height: '100%', backgroundColor: barColor, borderRadius: '2px' } })
+                                                                                        )
+                                                                                    );
+                                                                                })
+                                                                            )
                                                                         )
                                                                     )
                                                                 ),
-                                                                // Selections
+                                                                // Selections con ingredientes
                                                                 comboData.selections && Object.keys(comboData.selections).length > 0 && h('div', { className: 'mt-1' },
-                                                                    h('p', { className: 'text-xs font-bold text-blue-700 mb-1' }, 'Seleccionado:'),
                                                                     ...Object.entries(comboData.selections).map(([group, selection]) => {
+                                                                        const renderSelItem = (sel, key) => h('div', { key, className: 'mb-1' },
+                                                                            h('div', { className: 'text-sm font-bold text-blue-700' }, `${item.quantity}x ${(sel.name || '').replace(/\s*\(\d+g?\)/gi, '')}`),
+                                                                            sel.recipe_ingredients && sel.recipe_ingredients.filter(ing => ing.prep_method !== 'listo').length > 0 && h('div', { className: 'space-y-0.5 ml-2 mt-0.5' },
+                                                                                ...sel.recipe_ingredients.filter(ing => ing.prep_method !== 'listo').map((ing, i) => {
+                                                                                    const orderCreated = new Date((order.created_at || '').replace(' ', 'T') + 'Z');
+                                                                                    const elapsedSec = Math.max(0, (Date.now() - orderCreated.getTime()) / 1000);
+                                                                                    const prepTime = ing.prep_time || 0;
+                                                                                    const isDone = prepTime === 0 || elapsedSec >= prepTime;
+                                                                                    const pct = prepTime > 0 ? Math.min(1, elapsedSec / prepTime) : 1;
+                                                                                    const barColor = isDone ? '#22c55e' : pct >= 0.6 ? '#eab308' : '#ef4444';
+                                                                                    const statusEmoji = isDone ? '✅' : pct >= 0.3 ? '🔥' : '⏳';
+                                                                                    return h('div', { key: i, className: 'text-xs' },
+                                                                                        h('div', { className: 'flex items-center gap-1' },
+                                                                                            h('span', { className: 'font-medium flex-1 truncate' }, `${ing.name} ${ing.quantity}${ing.unit}`),
+                                                                                            h('span', { className: 'font-mono' }, statusEmoji)
+                                                                                        ),
+                                                                                        prepTime > 0 && h('div', { style: { width: '100%', height: '3px', backgroundColor: '#e5e7eb', borderRadius: '2px', overflow: 'hidden', marginTop: '1px' } },
+                                                                                            h('div', { style: { width: `${Math.round(pct * 100)}%`, height: '100%', backgroundColor: barColor, borderRadius: '2px' } })
+                                                                                        )
+                                                                                    );
+                                                                                })
+                                                                            )
+                                                                        );
                                                                         if (Array.isArray(selection)) {
-                                                                            return selection.map((sel, idx) => 
-                                                                                h('div', { key: `sel-${group}-${idx}`, className: 'text-xs text-gray-700 flex items-center gap-1' },
-                                                                                    h('span', { className: 'text-blue-500' }, '•'),
-                                                                                    h('span', {}, `${item.quantity}x ${sel.name}`)
-                                                                                )
-                                                                            );
+                                                                            return selection.map((sel, idx) => renderSelItem(sel, `sel-${group}-${idx}`));
                                                                         } else if (selection && selection.name) {
-                                                                            return h('div', { key: `sel-${group}`, className: 'text-xs text-gray-700 flex items-center gap-1' },
-                                                                                h('span', { className: 'text-blue-500' }, '•'),
-                                                                                h('span', {}, `${item.quantity}x ${selection.name}`)
-                                                                            );
+                                                                            return renderSelItem(selection, `sel-${group}`);
                                                                         }
                                                                         return null;
                                                                     })
@@ -930,16 +978,6 @@
                                                         );
                                                     }) :
                                                     h('p', { className: 'text-gray-500 text-center text-xs' }, 'Sin productos específicos')
-                                        ),
-
-                                        // BOTONES DE ACCIÓN (al final)
-                                        h('div', { className: 'flex flex-col gap-2 mt-3' },
-                                            h('div', { className: 'flex gap-2' },
-                                                h('button', {
-                                                    onClick: () => markAsReady(order.id, order.order_number),
-                                                    className: 'flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded text-xs'
-                                                }, '✅ ESTÁ LISTO')
-                                            )
                                         )
                                     )
                                 )

@@ -103,13 +103,51 @@ try {
         
         // Obtener ingredientes de la receta para cada item
         foreach ($items as &$item) {
-            // Enriquecer combo_data con imágenes de selections
+            // Enriquecer combo_data con imágenes y recetas de selections
             if (!empty($item['combo_data'])) {
                 $comboData = json_decode($item['combo_data'], true);
+                
+                // Helper: obtener ingredientes de un producto hijo
+                $getChildIngredients = function($productId) use ($pdo, $hasPrepColumns) {
+                    if (!$productId) return [];
+                    try {
+                        $sql = "SELECT i.name, i.category, pr.quantity, pr.unit,
+                                       pr.prep_method, pr.prep_time_seconds, pr.is_prepped
+                                FROM product_recipes pr 
+                                JOIN ingredients i ON pr.ingredient_id = i.id 
+                                WHERE pr.product_id = ? AND i.is_active = 1
+                                ORDER BY pr.prep_time_seconds DESC, i.name";
+                        $stmt = $pdo->prepare($sql);
+                        $stmt->execute([$productId]);
+                        $ings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    } catch (Exception $e) {
+                        $sql = "SELECT i.name, i.category, pr.quantity, pr.unit
+                                FROM product_recipes pr 
+                                JOIN ingredients i ON pr.ingredient_id = i.id 
+                                WHERE pr.product_id = ? AND i.is_active = 1
+                                ORDER BY i.name";
+                        $stmt = $pdo->prepare($sql);
+                        $stmt->execute([$productId]);
+                        $ings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    }
+                    $insumos = ['Packaging', 'Limpieza', 'Gas', 'Servicios'];
+                    $filtered = array_filter($ings, fn($i) => !in_array($i['category'], $insumos));
+                    return array_values(array_map(function($i) {
+                        $qty = (float) $i['quantity'];
+                        return [
+                            'name' => $i['name'],
+                            'quantity' => ($qty == intval($qty)) ? intval($qty) : round($qty, 1),
+                            'unit' => $i['unit'],
+                            'prep_method' => $i['prep_method'] ?? null,
+                            'prep_time' => (int) ($i['prep_time_seconds'] ?? 0),
+                            'is_prepped' => (bool) ($i['is_prepped'] ?? false),
+                        ];
+                    }, $filtered));
+                };
+                
                 if (isset($comboData['selections'])) {
                     foreach ($comboData['selections'] as $group => $selection) {
                         if (is_array($selection) && isset($selection[0])) {
-                            // Si es array de selecciones
                             foreach ($selection as $idx => $sel) {
                                 if (isset($sel['id'])) {
                                     $imgStmt = $pdo->prepare("SELECT image_url FROM products WHERE id = ?");
@@ -118,20 +156,31 @@ try {
                                     if ($imgResult) {
                                         $comboData['selections'][$group][$idx]['image_url'] = $imgResult['image_url'];
                                     }
+                                    $comboData['selections'][$group][$idx]['recipe_ingredients'] = $getChildIngredients($sel['id']);
                                 }
                             }
                         } elseif (isset($selection['id'])) {
-                            // Si es una sola selección
                             $imgStmt = $pdo->prepare("SELECT image_url FROM products WHERE id = ?");
                             $imgStmt->execute([$selection['id']]);
                             $imgResult = $imgStmt->fetch(PDO::FETCH_ASSOC);
                             if ($imgResult) {
                                 $comboData['selections'][$group]['image_url'] = $imgResult['image_url'];
                             }
+                            $comboData['selections'][$group]['recipe_ingredients'] = $getChildIngredients($selection['id']);
                         }
                     }
-                    $item['combo_data'] = json_encode($comboData);
                 }
+                
+                // Enriquecer fixed_items con ingredientes
+                if (isset($comboData['fixed_items'])) {
+                    foreach ($comboData['fixed_items'] as $idx => $fixed) {
+                        if (isset($fixed['product_id'])) {
+                            $comboData['fixed_items'][$idx]['recipe_ingredients'] = $getChildIngredients($fixed['product_id']);
+                        }
+                    }
+                }
+                
+                $item['combo_data'] = json_encode($comboData);
             }
             
             if ($item['product_id']) {
