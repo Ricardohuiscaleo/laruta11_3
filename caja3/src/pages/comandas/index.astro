@@ -598,7 +598,7 @@
                 className: 'min-h-screen bg-white'
             },
                 h('header', { className: 'bg-white shadow-sm border-b sticky top-0 z-10' },
-                    h('div', { className: 'max-w-7xl mx-auto px-4 py-2' },
+                    h('div', { className: 'max-w-7xl mx-auto px-1 py-2' },
                         h('div', { className: 'flex items-center justify-between gap-4 mb-2' },
                             h('div', { className: 'flex items-center gap-2' },
                                 h('img', { src: 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png', alt: 'La Ruta 11', className: 'w-6 h-6' }),
@@ -765,7 +765,7 @@
                                                                             className: `font-bold text-gray-900 text-lg leading-tight ${isCombo ? 'text-orange-600' : ''} flex items-center gap-1`
                                                                         }, 
                                                                             isCombo && h(Gift, { size: 16 }), 
-                                                                            item.product_name || 'Producto'
+                                                                            (item.product_name || 'Producto').replace(/\s*\(\d+g?\)/gi, '')
                                                                         ),
                                                                         h('span', { className: 'bg-gray-900 text-white px-2 py-0.5 rounded font-bold text-xs' }, `x${item.quantity}`)
                                                                     ),
@@ -792,11 +792,11 @@
                                                                                 // Bar color
                                                                                 const barColor = isDone ? '#22c55e' : pct >= 0.6 ? '#eab308' : '#ef4444';
                                                                                 
-                                                                                return h('div', { key: i, className: 'text-xs' },
+                                                                                return h('div', { key: i, className: 'text-sm' },
                                                                                     // Línea 1: nombre + cantidad + status/timer
                                                                                     h('div', { className: 'flex items-center gap-1' },
                                                                                         h('span', { className: 'font-bold flex-1 truncate text-gray-800' }, `${ing.name} ${ing.quantity}${ing.unit}`),
-                                                                                        h('span', { className: 'text-gray-500 italic' }, ing.prep_method),
+                                                                                        h('span', { className: 'text-gray-500 italic text-xs' }, ing.prep_method),
                                                                                         h('span', { className: 'font-mono font-bold whitespace-nowrap' }, 
                                                                                             isDone ? statusEmoji : `${fmtTime(remaining)} ${statusEmoji}`
                                                                                         )
