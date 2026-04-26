@@ -268,12 +268,6 @@ export default function RecetasPage() {
         price: Number(productForm.price),
         category_id: Number(productForm.category_id),
       };
-      if (productForm.description.trim()) body.description = productForm.description.trim();
-      if (productForm.cost_price) body.cost_price = Number(productForm.cost_price);
-      if (productForm.subcategory_id) body.subcategory_id = Number(productForm.subcategory_id);
-      if (productForm.stock_quantity) body.stock_quantity = Number(productForm.stock_quantity);
-      if (productForm.min_stock_level) body.min_stock_level = Number(productForm.min_stock_level);
-      if (productForm.sku.trim()) body.sku = productForm.sku.trim();
 
       const res = await apiFetch<ApiResponse<{ id: number }>>('/admin/recetas/crear-producto', {
         method: 'POST',
@@ -282,20 +276,7 @@ export default function RecetasPage() {
 
       const newId = res.data?.id;
 
-      // Upload image if provided
-      if (productImage && newId) {
-        try {
-          const formData = new FormData();
-          formData.append('image', productImage);
-          await apiFetch(`/admin/recetas/${newId}/imagen`, {
-            method: 'POST',
-            body: formData,
-          });
-        } catch { /* image upload is non-critical */ }
-      }
-
       setProductForm(emptyProductForm);
-      setProductImage(null);
       setShowAddForm(false);
       if (newId) {
         await fetchProducts();
@@ -425,88 +406,44 @@ export default function RecetasPage() {
 
       {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert">{error}</div>}
 
-      {/* ─── Add Product Form ─── */}
+      {/* ─── Quick Add: nombre + precio + categoría → abre editor ─── */}
       {showAddForm && (
         <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3" role="form" aria-label="Agregar producto">
           <h3 className="text-sm font-medium text-gray-700">Nuevo Producto</h3>
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <ImageDropZone image={productImage} onImageChange={setProductImage} />
-            <div className="flex-1 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <label htmlFor="prod-name" className="block text-xs font-medium text-gray-600 mb-1">Nombre *</label>
-                <input id="prod-name" type="text" value={productForm.name} onChange={e => updateProductField('name', e.target.value)}
-                  className={cn('w-full rounded-lg border px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300', productFormErrors.name ? 'border-red-300' : 'border-gray-200')}
-                  placeholder="Ej: Churrasco Italiano" />
-                {productFormErrors.name && <p className="mt-1 text-xs text-red-500">{productFormErrors.name}</p>}
-              </div>
-              <div>
-                <label htmlFor="prod-price" className="block text-xs font-medium text-gray-600 mb-1">Precio *</label>
-                <input id="prod-price" type="number" value={productForm.price} onChange={e => updateProductField('price', e.target.value)}
-                  className={cn('w-full rounded-lg border px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300', productFormErrors.price ? 'border-red-300' : 'border-gray-200')}
-                  placeholder="4500" min="1" />
-                {productFormErrors.price && <p className="mt-1 text-xs text-red-500">{productFormErrors.price}</p>}
-              </div>
-              <div className="sm:col-span-2">
-                <label htmlFor="prod-desc" className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
-                <input id="prod-desc" type="text" value={productForm.description} onChange={e => updateProductField('description', e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
-                  placeholder="Descripción opcional" />
-              </div>
-              <div>
-                <label htmlFor="prod-category" className="block text-xs font-medium text-gray-600 mb-1">Categoría *</label>
-                <select id="prod-category" value={productForm.category_id} onChange={e => updateProductField('category_id', e.target.value)}
-                  className={cn('w-full rounded-lg border px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300 bg-white', productFormErrors.category_id ? 'border-red-300' : 'border-gray-200')}>
-                  <option value="">Seleccionar categoría</option>
-                  {groupedData?.categories.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-                {productFormErrors.category_id && <p className="mt-1 text-xs text-red-500">{productFormErrors.category_id}</p>}
-              </div>
-              <div>
-                <label htmlFor="prod-subcategory" className="block text-xs font-medium text-gray-600 mb-1">Subcategoría</label>
-                <select id="prod-subcategory" value={productForm.subcategory_id} onChange={e => updateProductField('subcategory_id', e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300 bg-white"
-                  disabled={!productForm.category_id}>
-                  <option value="">Sin subcategoría</option>
-                  {filteredSubcategories.map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="prod-cost" className="block text-xs font-medium text-gray-600 mb-1">Costo</label>
-                <input id="prod-cost" type="number" value={productForm.cost_price} onChange={e => updateProductField('cost_price', e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
-                  placeholder="0" min="0" />
-              </div>
-              <div>
-                <label htmlFor="prod-stock" className="block text-xs font-medium text-gray-600 mb-1">Stock</label>
-                <input id="prod-stock" type="number" value={productForm.stock_quantity} onChange={e => updateProductField('stock_quantity', e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
-                  placeholder="0" min="0" />
-              </div>
-              <div>
-                <label htmlFor="prod-min-stock" className="block text-xs font-medium text-gray-600 mb-1">Stock mínimo</label>
-                <input id="prod-min-stock" type="number" value={productForm.min_stock_level} onChange={e => updateProductField('min_stock_level', e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
-                  placeholder="5" min="0" />
-              </div>
-              <div>
-                <label htmlFor="prod-sku" className="block text-xs font-medium text-gray-600 mb-1">SKU</label>
-                <input id="prod-sku" type="text" value={productForm.sku} onChange={e => updateProductField('sku', e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
-                  placeholder="Código opcional" />
-              </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <label htmlFor="prod-name" className="block text-xs font-medium text-gray-600 mb-1">Nombre *</label>
+              <input id="prod-name" type="text" value={productForm.name} onChange={e => updateProductField('name', e.target.value)}
+                className={cn('w-full rounded-lg border px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300', productFormErrors.name ? 'border-red-300' : 'border-gray-200')}
+                placeholder="Ej: Churrasco Italiano" />
+              {productFormErrors.name && <p className="mt-1 text-xs text-red-500">{productFormErrors.name}</p>}
+            </div>
+            <div>
+              <label htmlFor="prod-price" className="block text-xs font-medium text-gray-600 mb-1">Precio *</label>
+              <input id="prod-price" type="number" value={productForm.price} onChange={e => updateProductField('price', e.target.value)}
+                className={cn('w-full rounded-lg border px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300', productFormErrors.price ? 'border-red-300' : 'border-gray-200')}
+                placeholder="4500" min="1" />
+              {productFormErrors.price && <p className="mt-1 text-xs text-red-500">{productFormErrors.price}</p>}
+            </div>
+            <div>
+              <label htmlFor="prod-category" className="block text-xs font-medium text-gray-600 mb-1">Categoría *</label>
+              <select id="prod-category" value={productForm.category_id} onChange={e => updateProductField('category_id', e.target.value)}
+                className={cn('w-full rounded-lg border px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300 bg-white', productFormErrors.category_id ? 'border-red-300' : 'border-gray-200')}>
+                <option value="">Seleccionar</option>
+                {groupedData?.categories.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              {productFormErrors.category_id && <p className="mt-1 text-xs text-red-500">{productFormErrors.category_id}</p>}
             </div>
           </div>
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end">
             <button onClick={handleCreateProduct} disabled={savingProduct}
               className={cn('inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors min-h-[44px]',
                 savingProduct ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600')}
-              aria-label="Guardar producto">
+              aria-label="Crear y editar producto">
               {savingProduct && <Loader2 className="h-4 w-4 animate-spin" />}
-              Guardar
+              Crear y Editar
             </button>
           </div>
         </div>

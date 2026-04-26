@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`8d024b5`) — fix tiempo negativo comandas, ocultar notas pago en cocina, minicomandas header legible |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`7a8095c`) — botones Agregar en Combos y Sub-Recetas, search bars, fix hooks |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`921063c`) — Agregar abre editor, Bebidas con selector subcategoría |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`7a8095c`) — endpoints crear combo y sub-receta, fix S3 visibility |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -113,8 +113,8 @@
 - `mi3/frontend/app/admin/recetas/porciones/page.tsx`: Barra de búsqueda.
 - `mi3/frontend/app/admin/recetas/sub-recetas/page.tsx`: Barra de búsqueda + botón "Agregar Sub-Receta" + form (crea y abre editor).
 
-**Commits:** `51f8593`, `2610cde`, `c12a542`, `7a8095c`
-**Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `7a8095c`)
+**Commits:** `51f8593`, `2610cde`, `c12a542`, `7a8095c`, `921063c`
+**Deploys:** mi3-backend ✅ (`7a8095c`), mi3-frontend ✅ (`921063c`)
 
 ### 2026-04-25d — Fix comandas: tiempo negativo, notas pago ocultas, minicomandas header legible
 
