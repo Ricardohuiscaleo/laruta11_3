@@ -135,15 +135,29 @@ try {
             }
             
             if ($item['product_id']) {
-                $recipeSql = "SELECT i.name, i.category, pr.quantity, pr.unit,
-                                    pr.prep_method, pr.prep_time_seconds, pr.is_prepped
-                             FROM product_recipes pr 
-                             JOIN ingredients i ON pr.ingredient_id = i.id 
-                             WHERE pr.product_id = ? AND i.is_active = 1
-                             ORDER BY pr.prep_time_seconds DESC, i.name";
-                $recipeStmt = $pdo->prepare($recipeSql);
-                $recipeStmt->execute([$item['product_id']]);
-                $ingredients = $recipeStmt->fetchAll(PDO::FETCH_ASSOC);
+                // Intentar con columnas de prep (post-migración), fallback sin ellas
+                $hasPrepColumns = true;
+                try {
+                    $recipeSql = "SELECT i.name, i.category, pr.quantity, pr.unit,
+                                        pr.prep_method, pr.prep_time_seconds, pr.is_prepped
+                                 FROM product_recipes pr 
+                                 JOIN ingredients i ON pr.ingredient_id = i.id 
+                                 WHERE pr.product_id = ? AND i.is_active = 1
+                                 ORDER BY pr.prep_time_seconds DESC, i.name";
+                    $recipeStmt = $pdo->prepare($recipeSql);
+                    $recipeStmt->execute([$item['product_id']]);
+                    $ingredients = $recipeStmt->fetchAll(PDO::FETCH_ASSOC);
+                } catch (Exception $e) {
+                    $hasPrepColumns = false;
+                    $recipeSql = "SELECT i.name, i.category, pr.quantity, pr.unit
+                                 FROM product_recipes pr 
+                                 JOIN ingredients i ON pr.ingredient_id = i.id 
+                                 WHERE pr.product_id = ? AND i.is_active = 1
+                                 ORDER BY i.name";
+                    $recipeStmt = $pdo->prepare($recipeSql);
+                    $recipeStmt->execute([$item['product_id']]);
+                    $ingredients = $recipeStmt->fetchAll(PDO::FETCH_ASSOC);
+                }
                 
                 // Filtrar solo ingredientes reales (excluir insumos: Packaging, Limpieza, Gas, Servicios)
                 $insumoCategories = ['Packaging', 'Limpieza', 'Gas', 'Servicios'];
