@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`8d024b5`) — fix tiempo negativo comandas, ocultar notas pago en cocina, minicomandas header legible |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`d779dfa`) — Optimistic updates bulk actions, eye toggle filter activos/inactivos, Desactivar en vez de Eliminar |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`cc3b765`) — ProductBulkController, VentasController+Service, evento VentaNueva Reverb |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`74010b5`) — Eliminar real, animaciones feedback, eye toggle, optimistic updates, responsive mobile |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`74010b5`) — ProductBulkController DELETE real, VentasController+Service, VentaNueva, RecipeService sin filtro is_active |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -119,8 +119,8 @@
 - `mi3/frontend/components/admin/AdminSidebarSPA.tsx`: Ventas en sidebar con DollarSign.
 - `mi3/frontend/components/admin/MobileBottomNavSPA.tsx`: Ventas en mobile nav.
 
-**Commits:** `cc3b765`, `6dab65c`, `3aa317b`, `d779dfa`
-**Deploys:** mi3-backend ✅ (`cc3b765`), mi3-frontend ✅ (`d779dfa`)
+**Commits:** `cc3b765`, `6dab65c`, `3aa317b`, `d779dfa`, `bff6a8b`, `74010b5`
+**Deploys:** mi3-backend ✅ (`74010b5`), mi3-frontend ✅ (`74010b5`)
 
 ### 2026-04-26a — Search bars + botones Agregar en Recetas, endpoints crear combo/sub-receta, fix S3 403
 
