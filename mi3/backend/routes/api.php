@@ -244,7 +244,7 @@ Route::prefix('v1')->group(function () {
         // Productos — Bulk actions (toggle, price adjust, deactivate)
         Route::patch('productos/toggle', [\App\Http\Controllers\Admin\ProductBulkController::class, 'toggle']);
         Route::patch('productos/bulk-price', [\App\Http\Controllers\Admin\ProductBulkController::class, 'bulkPrice']);
-        Route::patch('productos/bulk-deactivate', [\App\Http\Controllers\Admin\ProductBulkController::class, 'bulkDeactivate']);
+        Route::delete('productos/bulk-delete', [\App\Http\Controllers\Admin\ProductBulkController::class, 'bulkDelete']);
 
         // Combos (combo component management)
         Route::get('combos', [\App\Http\Controllers\Admin\ComboController::class, 'index']);

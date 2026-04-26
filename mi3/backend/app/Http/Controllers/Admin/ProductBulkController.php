@@ -80,9 +80,9 @@ class ProductBulkController extends Controller
 
     /**
      * Bulk delete selected products (permanent).
-     * PATCH /api/v1/admin/productos/bulk-deactivate
+     * DELETE /api/v1/admin/productos/bulk-delete
      */
-    public function bulkDeactivate(Request $request): JsonResponse
+    public function bulkDelete(Request $request): JsonResponse
     {
         try {
             $request->validate([
@@ -95,8 +95,14 @@ class ProductBulkController extends Controller
             // Delete recipe associations first
             DB::table('product_recipes')->whereIn('product_id', $ids)->delete();
             // Delete combo component associations
-            DB::table('combo_components')->whereIn('parent_product_id', $ids)->delete();
+            DB::table('combo_components')->whereIn('combo_product_id', $ids)->delete();
             DB::table('combo_components')->whereIn('child_product_id', $ids)->delete();
+            // Also clean combo_items legacy table if exists
+            try {
+                DB::table('combo_items')->whereIn('combo_id', $ids)->delete();
+            } catch (\Exception $e) {
+                // Table may not exist — ignore
+            }
             // Delete the products
             $deleted = DB::table('products')->whereIn('id', $ids)->delete();
 

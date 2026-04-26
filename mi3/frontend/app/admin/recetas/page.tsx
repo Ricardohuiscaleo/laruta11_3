@@ -372,8 +372,8 @@ export default function RecetasPage() {
     }, 300);
     setSelectedIds(new Set());
     try {
-      await apiFetch('/admin/productos/bulk-deactivate', {
-        method: 'PATCH',
+      await apiFetch('/admin/productos/bulk-delete', {
+        method: 'DELETE',
         body: JSON.stringify({ product_ids: ids }),
       });
     } catch (e: unknown) {
@@ -447,8 +447,8 @@ export default function RecetasPage() {
 
   return (
     <div className="space-y-3">
-      {/* Search + Eye toggle + Add Product button */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      {/* Search + Eye toggle (same row) */}
+      <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
@@ -464,7 +464,7 @@ export default function RecetasPage() {
           type="button"
           onClick={() => setShowInactive(v => !v)}
           className={cn(
-            'inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors min-h-[44px] flex-shrink-0',
+            'rounded-lg p-2.5 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0',
             showInactive
               ? 'bg-red-500 text-white'
               : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
@@ -473,7 +473,6 @@ export default function RecetasPage() {
           title={showInactive ? 'Ocultar inactivos' : 'Mostrar inactivos'}
         >
           {showInactive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          <span className="hidden sm:inline">{showInactive ? 'Ocultar OFF' : 'Ver OFF'}</span>
         </button>
         <button
           onClick={handleAddProduct}

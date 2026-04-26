@@ -198,8 +198,8 @@ export default function CombosPage() {
       setCombos(prev => prev.filter(c => !ids.includes(c.id)));
       setAnimatingIds(new Set());
       try {
-        await apiFetch('/admin/productos/bulk-deactivate', {
-          method: 'PATCH',
+        await apiFetch('/admin/productos/bulk-delete', {
+          method: 'DELETE',
           body: JSON.stringify({ product_ids: ids }),
         });
       } catch {
