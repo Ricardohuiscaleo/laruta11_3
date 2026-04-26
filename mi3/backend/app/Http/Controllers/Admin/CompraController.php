@@ -287,7 +287,7 @@ class CompraController extends Controller
             $timestamp = time();
             $key = "compras/respaldo_{$id}_{$timestamp}.jpg";
 
-            $path = Storage::disk('s3')->put($key, file_get_contents($file->getRealPath()));
+            $path = Storage::disk('s3')->put($key, file_get_contents($file->getRealPath()), 'public');
 
             $url = Storage::disk('s3')->url($key);
 

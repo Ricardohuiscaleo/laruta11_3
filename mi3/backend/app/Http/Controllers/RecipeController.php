@@ -371,9 +371,9 @@ class RecipeController extends Controller
             $product = \App\Models\Product::where('is_active', true)->findOrFail($productId);
 
             $file = $request->file('image');
-            $key = "productos/producto_{$productId}_" . time() . '.jpg';
+            $key = "products/producto_{$productId}_" . time() . '.jpg';
 
-            \Illuminate\Support\Facades\Storage::disk('s3')->put($key, file_get_contents($file->getRealPath()));
+            \Illuminate\Support\Facades\Storage::disk('s3')->put($key, file_get_contents($file->getRealPath()), 'public');
             $url = \Illuminate\Support\Facades\Storage::disk('s3')->url($key);
 
             $product->image_url = $url;
