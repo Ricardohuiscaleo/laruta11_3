@@ -453,11 +453,10 @@
             };
 
             const getTimeElapsed = (createdAt) => {
-                const now = new Date();
-                const created = new Date(createdAt);
-                // Convertir UTC a hora Chile (UTC-3)
-                const createdChile = new Date(created.getTime() - (3 * 60 * 60 * 1000));
-                const diffMs = now - createdChile;
+                if (!createdAt) return '0s';
+                const created = new Date(createdAt.replace(' ', 'T') + 'Z');
+                if (isNaN(created.getTime())) return '0s';
+                const diffMs = Math.max(0, Date.now() - created.getTime());
                 const diffSecs = Math.floor(diffMs / 1000);
                 const diffMins = Math.floor(diffSecs / 60);
                 const diffHours = Math.floor(diffMins / 60);
@@ -473,10 +472,10 @@
             };
 
             const getMinutesElapsed = (createdAt) => {
-                const now = new Date();
-                const created = new Date(createdAt);
-                const createdChile = new Date(created.getTime() - (3 * 60 * 60 * 1000));
-                const diffMs = now - createdChile;
+                if (!createdAt) return 0;
+                const created = new Date(createdAt.replace(' ', 'T') + 'Z');
+                if (isNaN(created.getTime())) return 0;
+                const diffMs = Math.max(0, Date.now() - created.getTime());
                 return Math.floor(diffMs / (1000 * 60));
             };
 
@@ -705,7 +704,7 @@
                                             ),
                                             (order.customer_notes || order.special_instructions) && h('div', { className: 'text-sm font-bold text-gray-900 bg-yellow-300 border-2 border-yellow-400 rounded-lg px-3 py-2 mt-2 flex items-start gap-2' },
                                                 h(FileText, { size: 14, className: 'mt-0.5 flex-shrink-0' }),
-                                                h('span', {}, order.customer_notes || ''),
+                                                h('span', {}, (order.customer_notes || '').split('\n').filter(l => !l.includes('EFECTIVO') && !l.includes('PAGO EN')).join('\n').trim()),
                                                 order.customer_notes && order.special_instructions && h('span', {}, ' • '),
                                                 !order.customer_notes && order.special_instructions && h('span', {}, order.special_instructions)
                                             )
