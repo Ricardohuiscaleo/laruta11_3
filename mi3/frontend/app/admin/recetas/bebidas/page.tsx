@@ -292,7 +292,9 @@ export default function BebidasTab() {
       {showAddForm && (
         <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3" role="form" aria-label="Agregar bebida">
           <h3 className="text-sm font-medium text-gray-700">Nueva Bebida</h3>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <ImageDropZone image={bevImage} onImageChange={setBevImage} />
+            <div className="flex-1 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label htmlFor="bev-name" className="block text-xs font-medium text-gray-600 mb-1">Nombre *</label>
               <input id="bev-name" type="text" value={form.name} onChange={e => updateField('name', e.target.value)}
@@ -346,6 +348,7 @@ export default function BebidasTab() {
               <input id="bev-sku" type="text" value={form.sku} onChange={e => updateField('sku', e.target.value)}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
                 placeholder="Código opcional" />
+            </div>
             </div>
           </div>
           <div className="flex justify-end pt-2">
