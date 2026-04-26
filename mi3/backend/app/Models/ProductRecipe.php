@@ -15,10 +15,15 @@ class ProductRecipe extends Model
         'ingredient_id',
         'quantity',
         'unit',
+        'prep_method',
+        'prep_time_seconds',
+        'is_prepped',
     ];
 
     protected $casts = [
         'quantity' => 'float',
+        'prep_time_seconds' => 'integer',
+        'is_prepped' => 'boolean',
     ];
 
     public function product()

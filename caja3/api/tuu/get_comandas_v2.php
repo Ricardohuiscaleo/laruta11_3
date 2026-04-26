@@ -135,11 +135,12 @@ try {
             }
             
             if ($item['product_id']) {
-                $recipeSql = "SELECT i.name, i.category, pr.quantity, pr.unit 
+                $recipeSql = "SELECT i.name, i.category, pr.quantity, pr.unit,
+                                    pr.prep_method, pr.prep_time_seconds, pr.is_prepped
                              FROM product_recipes pr 
                              JOIN ingredients i ON pr.ingredient_id = i.id 
                              WHERE pr.product_id = ? AND i.is_active = 1
-                             ORDER BY i.name";
+                             ORDER BY pr.prep_time_seconds DESC, i.name";
                 $recipeStmt = $pdo->prepare($recipeSql);
                 $recipeStmt->execute([$item['product_id']]);
                 $ingredients = $recipeStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -158,6 +159,9 @@ try {
                         'name' => $ing['name'],
                         'quantity' => $fmtQty,
                         'unit' => $ing['unit'],
+                        'prep_method' => $ing['prep_method'] ?? null,
+                        'prep_time' => (int) ($ing['prep_time_seconds'] ?? 0),
+                        'is_prepped' => (bool) ($ing['is_prepped'] ?? false),
                     ];
                 }, $realIngredients));
                 
