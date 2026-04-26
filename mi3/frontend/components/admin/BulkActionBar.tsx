@@ -4,7 +4,6 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   X,
   DollarSign,
-  ToggleLeft,
   Trash2,
   Plus,
   Minus,
@@ -15,17 +14,15 @@ import { cn } from '@/lib/utils';
 interface BulkActionBarProps {
   selectedCount: number;
   onClear: () => void;
-  onToggle: () => void;
   onPriceAdjust: (amount: number) => void;
-  onDeactivate: () => void;
+  onDelete: () => void;
 }
 
 export default function BulkActionBar({
   selectedCount,
   onClear,
-  onToggle,
   onPriceAdjust,
-  onDeactivate,
+  onDelete,
 }: BulkActionBarProps) {
   const [customAmount, setCustomAmount] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
@@ -56,10 +53,10 @@ export default function BulkActionBar({
     [handleCustomSubmit],
   );
 
-  const confirmDeactivate = useCallback(() => {
-    onDeactivate();
+  const confirmDelete = useCallback(() => {
+    onDelete();
     setShowConfirm(false);
-  }, [onDeactivate]);
+  }, [onDelete]);
 
   if (selectedCount <= 0) return null;
 
@@ -71,14 +68,14 @@ export default function BulkActionBar({
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
           role="dialog"
           aria-modal="true"
-          aria-label="Confirmar desactivación"
+          aria-label="Confirmar eliminación"
         >
           <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-5">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
-              ¿Desactivar {selectedCount} producto{selectedCount > 1 ? 's' : ''}?
+              ¿Eliminar {selectedCount} producto{selectedCount > 1 ? 's' : ''}?
             </h3>
             <p className="text-sm text-gray-500 mb-5">
-              Los productos seleccionados quedarán inactivos y no se mostrarán en la app.
+              Esta acción es permanente. Los productos y sus recetas asociadas se eliminarán de la base de datos.
             </p>
             <div className="flex gap-3">
               <button
@@ -90,10 +87,10 @@ export default function BulkActionBar({
               </button>
               <button
                 type="button"
-                onClick={confirmDeactivate}
+                onClick={confirmDelete}
                 className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 text-sm font-medium text-white hover:bg-red-700 transition-colors min-h-[44px]"
               >
-                Desactivar
+                Eliminar
               </button>
             </div>
           </div>
@@ -118,76 +115,118 @@ export default function BulkActionBar({
             'pb-[calc(0.75rem+env(safe-area-inset-bottom))]',
           )}
         >
-          {/* Top row: count + clear (mobile only) */}
-          <div className="flex items-center justify-between mb-2 sm:mb-0 sm:hidden">
-            <span className="text-sm font-medium">
-              {selectedCount} seleccionado{selectedCount > 1 ? 's' : ''}
-            </span>
-            <button
-              type="button"
-              onClick={onClear}
-              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label="Limpiar selección"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Actions row */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Desktop: count badge + clear */}
-            <div className="hidden sm:flex items-center gap-2 mr-1">
-              <span className="bg-white/20 text-sm font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap">
+          {/* Mobile layout: 2 rows */}
+          <div className="sm:hidden space-y-2">
+            {/* Row 1: count + clear */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">
                 {selectedCount} seleccionado{selectedCount > 1 ? 's' : ''}
               </span>
               <button
                 type="button"
                 onClick={onClear}
-                className="p-2 rounded-lg hover:bg-white/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 aria-label="Limpiar selección"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
+            {/* Row 2: actions */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onPriceAdjust(100)}
+                className="flex-1 flex items-center justify-center gap-1 px-2 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-sm font-medium transition-colors min-h-[44px]"
+                aria-label="Subir precio $100"
+              >
+                <Plus className="w-4 h-4" />100
+              </button>
+              <button
+                type="button"
+                onClick={() => onPriceAdjust(-100)}
+                className="flex-1 flex items-center justify-center gap-1 px-2 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-sm font-medium transition-colors min-h-[44px]"
+                aria-label="Bajar precio $100"
+              >
+                <Minus className="w-4 h-4" />100
+              </button>
+              <div className="flex items-center gap-1 flex-1">
+                <div className="relative flex-1">
+                  <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+                  <input
+                    ref={inputRef}
+                    type="number"
+                    value={customAmount}
+                    onChange={(e) => setCustomAmount(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="±"
+                    className="w-full pl-6 pr-1 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/40 min-h-[44px]"
+                    aria-label="Monto personalizado"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCustomSubmit}
+                  disabled={!customAmount || parseInt(customAmount, 10) === 0}
+                  className="p-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  aria-label="Aplicar monto"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowConfirm(true)}
+                className="p-2.5 rounded-lg bg-red-600 hover:bg-red-700 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                aria-label="Eliminar seleccionados"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
 
-            {/* Divider desktop */}
-            <div className="hidden sm:block w-px h-6 bg-white/20" />
+          {/* Desktop layout: single row */}
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="bg-white/20 text-sm font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap">
+              {selectedCount} seleccionado{selectedCount > 1 ? 's' : ''}
+            </span>
+            <button
+              type="button"
+              onClick={onClear}
+              className="p-2 rounded-lg hover:bg-white/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Limpiar selección"
+            >
+              <X className="w-4 h-4" />
+            </button>
 
-            {/* Price buttons */}
+            <div className="w-px h-6 bg-white/20" />
+
             <button
               type="button"
               onClick={() => onPriceAdjust(100)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-sm font-medium transition-colors min-h-[44px]"
               aria-label="Subir precio $100"
             >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">$100</span>
-              <span className="sm:hidden">100</span>
+              <Plus className="w-4 h-4" />$100
             </button>
-
             <button
               type="button"
               onClick={() => onPriceAdjust(-100)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-sm font-medium transition-colors min-h-[44px]"
               aria-label="Bajar precio $100"
             >
-              <Minus className="w-4 h-4" />
-              <span className="hidden sm:inline">$100</span>
-              <span className="sm:hidden">100</span>
+              <Minus className="w-4 h-4" />$100
             </button>
 
-            {/* Custom price input */}
             <div className="flex items-center gap-1">
               <div className="relative">
                 <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                 <input
-                  ref={inputRef}
                   type="number"
                   value={customAmount}
                   onChange={(e) => setCustomAmount(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="±"
-                  className="w-20 sm:w-24 pl-7 pr-2 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/40 min-h-[44px]"
+                  className="w-24 pl-7 pr-2 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/40 min-h-[44px]"
                   aria-label="Monto personalizado"
                 />
               </div>
@@ -202,29 +241,16 @@ export default function BulkActionBar({
               </button>
             </div>
 
-            {/* Divider desktop */}
-            <div className="hidden sm:block w-px h-6 bg-white/20" />
+            <div className="w-px h-6 bg-white/20" />
 
-            {/* Toggle ON/OFF */}
-            <button
-              type="button"
-              onClick={onToggle}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-sm font-medium transition-colors min-h-[44px]"
-              aria-label="Toggle activar/desactivar"
-            >
-              <ToggleLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Toggle ON/OFF</span>
-            </button>
-
-            {/* Deactivate */}
             <button
               type="button"
               onClick={() => setShowConfirm(true)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-sm font-medium transition-colors min-h-[44px]"
-              aria-label="Desactivar seleccionados"
+              aria-label="Eliminar seleccionados"
             >
               <Trash2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Desactivar</span>
+              Eliminar
             </button>
           </div>
         </div>

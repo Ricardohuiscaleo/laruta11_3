@@ -147,6 +147,8 @@ export default function BebidasTab() {
   const [search, setSearch] = useState('');
   const [filterSubcategory, setFilterSubcategory] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [animatingIds, setAnimatingIds] = useState<Set<number>>(new Set());
+  const [flashIds, setFlashIds] = useState<Set<number>>(new Set());
 
   const fetchBeverages = useCallback(async () => {
     setLoading(true);
@@ -201,6 +203,8 @@ export default function BebidasTab() {
         method: 'PATCH',
         body: JSON.stringify({ product_ids: [productId] }),
       });
+      setFlashIds(new Set([productId]));
+      setTimeout(() => setFlashIds(new Set()), 800);
     } catch (e: unknown) {
       updateBeverages(b => ({ ...b, is_active: !b.is_active }), [productId]);
       setError(e instanceof Error ? e.message : 'Error al cambiar estado');
@@ -208,22 +212,6 @@ export default function BebidasTab() {
   }, [updateBeverages]);
 
   /* ─── Bulk action handlers ─── */
-
-  const handleBulkToggle = useCallback(async () => {
-    if (selectedIds.size === 0) return;
-    const ids = Array.from(selectedIds);
-    updateBeverages(b => ({ ...b, is_active: !b.is_active }), selectedIds);
-    setSelectedIds(new Set());
-    try {
-      await apiFetch('/admin/productos/toggle', {
-        method: 'PATCH',
-        body: JSON.stringify({ product_ids: ids }),
-      });
-    } catch (e: unknown) {
-      updateBeverages(b => ({ ...b, is_active: !b.is_active }), ids);
-      setError(e instanceof Error ? e.message : 'Error al cambiar estado');
-    }
-  }, [selectedIds, updateBeverages]);
 
   const handleBulkPrice = useCallback(async (amount: number) => {
     if (selectedIds.size === 0) return;
@@ -235,27 +223,32 @@ export default function BebidasTab() {
         method: 'PATCH',
         body: JSON.stringify({ product_ids: ids, adjustment: amount }),
       });
+      setFlashIds(new Set(ids));
+      setTimeout(() => setFlashIds(new Set()), 800);
     } catch (e: unknown) {
       updateBeverages(b => ({ ...b, price: b.price - amount }), ids);
       setError(e instanceof Error ? e.message : 'Error al ajustar precios');
     }
   }, [selectedIds, updateBeverages]);
 
-  const handleBulkDeactivate = useCallback(async () => {
+  const handleBulkDelete = useCallback(async () => {
     if (selectedIds.size === 0) return;
     const ids = Array.from(selectedIds);
-    updateBeverages(b => ({ ...b, is_active: false }), selectedIds);
+    setAnimatingIds(new Set(ids));
     setSelectedIds(new Set());
-    try {
-      await apiFetch('/admin/productos/bulk-deactivate', {
-        method: 'PATCH',
-        body: JSON.stringify({ product_ids: ids }),
-      });
-    } catch (e: unknown) {
-      updateBeverages(b => ({ ...b, is_active: true }), ids);
-      setError(e instanceof Error ? e.message : 'Error al desactivar productos');
-    }
-  }, [selectedIds, updateBeverages]);
+    setTimeout(async () => {
+      setBeverages(prev => prev.filter(b => !ids.includes(b.id)));
+      setAnimatingIds(new Set());
+      try {
+        await apiFetch('/admin/productos/bulk-deactivate', {
+          method: 'PATCH',
+          body: JSON.stringify({ product_ids: ids }),
+        });
+      } catch {
+        fetchBeverages();
+      }
+    }, 300);
+  }, [selectedIds, fetchBeverages]);
 
   /* ─── Group by subcategory ─── */
   const filtered = useMemo(() => {
@@ -461,7 +454,7 @@ export default function BebidasTab() {
                         const isActive = b.is_active !== false && (b.is_active as unknown) !== 0;
                         const isSelected = selectedIds.has(b.id);
                         return (
-                        <div key={b.id} className={cn('p-4 space-y-1', b.is_low_stock && 'bg-amber-50/50', !isActive && 'opacity-50')}>
+                        <div key={b.id} className={cn('p-4 space-y-1', b.is_low_stock && 'bg-amber-50/50', !isActive && 'opacity-50', animatingIds.has(b.id) && 'opacity-0 scale-95 transition-all duration-300', flashIds.has(b.id) && 'bg-green-100 transition-colors duration-500')}>
                           <div className="flex items-start gap-3">
                             <input
                               type="checkbox"
@@ -530,7 +523,7 @@ export default function BebidasTab() {
                             const isActive = b.is_active !== false && (b.is_active as unknown) !== 0;
                             const isSelected = selectedIds.has(b.id);
                             return (
-                            <tr key={b.id} className={cn('transition-colors', b.is_low_stock && 'bg-amber-50/50', !isActive && 'opacity-50')}>
+                            <tr key={b.id} className={cn('transition-colors', b.is_low_stock && 'bg-amber-50/50', !isActive && 'opacity-50', animatingIds.has(b.id) && 'opacity-0 scale-95 transition-all duration-300', flashIds.has(b.id) && 'bg-green-100 transition-colors duration-500')}>
                               <td className="px-2 py-2.5 w-10">
                                 <input
                                   type="checkbox"
@@ -586,9 +579,8 @@ export default function BebidasTab() {
       <BulkActionBar
         selectedCount={selectedIds.size}
         onClear={() => setSelectedIds(new Set())}
-        onToggle={handleBulkToggle}
         onPriceAdjust={handleBulkPrice}
-        onDeactivate={handleBulkDeactivate}
+        onDelete={handleBulkDelete}
       />
     </div>
   );

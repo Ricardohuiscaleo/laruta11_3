@@ -95,6 +95,8 @@ export default function CombosPage() {
   const [comboDesc, setComboDesc] = useState('');
   const [savingCombo, setSavingCombo] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [animatingIds, setAnimatingIds] = useState<Set<number>>(new Set());
+  const [flashIds, setFlashIds] = useState<Set<number>>(new Set());
 
   const fetchCombos = useCallback(async () => {    setLoading(true);
     setError('');
@@ -159,6 +161,8 @@ export default function CombosPage() {
         method: 'PATCH',
         body: JSON.stringify({ product_ids: [comboId] }),
       });
+      setFlashIds(new Set([comboId]));
+      setTimeout(() => setFlashIds(new Set()), 800);
     } catch (e: unknown) {
       updateCombos(c => ({ ...c, is_active: !c.is_active }), [comboId]);
       setError(e instanceof Error ? e.message : 'Error al cambiar estado');
@@ -166,22 +170,6 @@ export default function CombosPage() {
   }, [updateCombos]);
 
   /* ─── Bulk action handlers ─── */
-
-  const handleBulkToggle = useCallback(async () => {
-    if (selectedIds.size === 0) return;
-    const ids = Array.from(selectedIds);
-    updateCombos(c => ({ ...c, is_active: !c.is_active }), selectedIds);
-    setSelectedIds(new Set());
-    try {
-      await apiFetch('/admin/productos/toggle', {
-        method: 'PATCH',
-        body: JSON.stringify({ product_ids: ids }),
-      });
-    } catch (e: unknown) {
-      updateCombos(c => ({ ...c, is_active: !c.is_active }), ids);
-      setError(e instanceof Error ? e.message : 'Error al cambiar estado');
-    }
-  }, [selectedIds, updateCombos]);
 
   const handleBulkPrice = useCallback(async (amount: number) => {
     if (selectedIds.size === 0) return;
@@ -193,27 +181,32 @@ export default function CombosPage() {
         method: 'PATCH',
         body: JSON.stringify({ product_ids: ids, adjustment: amount }),
       });
+      setFlashIds(new Set(ids));
+      setTimeout(() => setFlashIds(new Set()), 800);
     } catch (e: unknown) {
       updateCombos(c => ({ ...c, price: c.price - amount }), ids);
       setError(e instanceof Error ? e.message : 'Error al ajustar precios');
     }
   }, [selectedIds, updateCombos]);
 
-  const handleBulkDeactivate = useCallback(async () => {
+  const handleBulkDelete = useCallback(async () => {
     if (selectedIds.size === 0) return;
     const ids = Array.from(selectedIds);
-    updateCombos(c => ({ ...c, is_active: false }), selectedIds);
+    setAnimatingIds(new Set(ids));
     setSelectedIds(new Set());
-    try {
-      await apiFetch('/admin/productos/bulk-deactivate', {
-        method: 'PATCH',
-        body: JSON.stringify({ product_ids: ids }),
-      });
-    } catch (e: unknown) {
-      updateCombos(c => ({ ...c, is_active: true }), ids);
-      setError(e instanceof Error ? e.message : 'Error al desactivar combos');
-    }
-  }, [selectedIds, updateCombos]);
+    setTimeout(async () => {
+      setCombos(prev => prev.filter(c => !ids.includes(c.id)));
+      setAnimatingIds(new Set());
+      try {
+        await apiFetch('/admin/productos/bulk-deactivate', {
+          method: 'PATCH',
+          body: JSON.stringify({ product_ids: ids }),
+        });
+      } catch {
+        fetchCombos();
+      }
+    }, 300);
+  }, [selectedIds, fetchCombos]);
 
   const handleCreateCombo = async () => {
     if (!comboName.trim() || !comboPrice || Number(comboPrice) <= 0) return;
@@ -354,7 +347,7 @@ export default function CombosPage() {
               return (
               <div
                 key={combo.id}
-                className={cn('w-full rounded-xl border bg-white p-4 shadow-sm', !isActive && 'opacity-50')}
+                className={cn('w-full rounded-xl border bg-white p-4 shadow-sm', !isActive && 'opacity-50', animatingIds.has(combo.id) && 'opacity-0 scale-95 transition-all duration-300', flashIds.has(combo.id) && 'bg-green-100 transition-colors duration-500')}
               >
                 <div className="flex items-start gap-3">
                   <input
@@ -442,7 +435,7 @@ export default function CombosPage() {
                   return (
                   <tr
                     key={combo.id}
-                    className={cn('hover:bg-gray-50 transition-colors', !isActive && 'opacity-50')}
+                    className={cn('hover:bg-gray-50 transition-colors', !isActive && 'opacity-50', animatingIds.has(combo.id) && 'opacity-0 scale-95 transition-all duration-300', flashIds.has(combo.id) && 'bg-green-100 transition-colors duration-500')}
                   >
                     <td className="px-2 py-3 w-10">
                       <input
@@ -510,9 +503,8 @@ export default function CombosPage() {
       <BulkActionBar
         selectedCount={selectedIds.size}
         onClear={() => setSelectedIds(new Set())}
-        onToggle={handleBulkToggle}
         onPriceAdjust={handleBulkPrice}
-        onDeactivate={handleBulkDeactivate}
+        onDelete={handleBulkDelete}
       />
     </div>
   );

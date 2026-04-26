@@ -79,7 +79,7 @@ class ProductBulkController extends Controller
     }
 
     /**
-     * Bulk deactivate selected products (soft delete).
+     * Bulk delete selected products (permanent).
      * PATCH /api/v1/admin/productos/bulk-deactivate
      */
     public function bulkDeactivate(Request $request): JsonResponse
@@ -92,13 +92,14 @@ class ProductBulkController extends Controller
 
             $ids = $request->input('product_ids');
 
-            $deactivated = DB::table('products')
-                ->whereIn('id', $ids)
-                ->update(['is_active' => 0]);
+            // Delete recipe associations first
+            DB::table('recipes')->whereIn('product_id', $ids)->delete();
+            // Delete the products
+            $deleted = DB::table('products')->whereIn('id', $ids)->delete();
 
             return response()->json([
                 'success' => true,
-                'deactivated' => $deactivated,
+                'deleted' => $deleted,
             ]);
         } catch (ValidationException $e) {
             return response()->json([

@@ -226,6 +226,8 @@ export default function RecetasPage() {
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [showInactive, setShowInactive] = useState(false);
+  const [animatingIds, setAnimatingIds] = useState<Set<number>>(new Set());
+  const [flashIds, setFlashIds] = useState<Set<number>>(new Set());
 
   /* ─── Add Product: create + open editor ─── */
   const [creatingProduct, setCreatingProduct] = useState(false);
@@ -320,6 +322,8 @@ export default function RecetasPage() {
         method: 'PATCH',
         body: JSON.stringify({ product_ids: [productId] }),
       });
+      setFlashIds(new Set([productId]));
+      setTimeout(() => setFlashIds(new Set()), 800);
     } catch (e: unknown) {
       // Revert on error
       updateProducts(p => ({ ...p, is_active: !p.is_active }), [productId]);
@@ -328,24 +332,6 @@ export default function RecetasPage() {
   }, [updateProducts]);
 
   /* ─── Bulk action handlers ─── */
-
-  const handleBulkToggle = useCallback(async () => {
-    if (selectedIds.size === 0) return;
-    const ids = Array.from(selectedIds);
-    // Optimistic: flip locally
-    updateProducts(p => ({ ...p, is_active: !p.is_active }), selectedIds);
-    setSelectedIds(new Set());
-    try {
-      await apiFetch('/admin/productos/toggle', {
-        method: 'PATCH',
-        body: JSON.stringify({ product_ids: ids }),
-      });
-    } catch (e: unknown) {
-      // Revert on error
-      updateProducts(p => ({ ...p, is_active: !p.is_active }), ids);
-      setError(e instanceof Error ? e.message : 'Error al cambiar estado');
-    }
-  }, [selectedIds, updateProducts]);
 
   const handleBulkPrice = useCallback(async (amount: number) => {
     if (selectedIds.size === 0) return;
@@ -358,6 +344,8 @@ export default function RecetasPage() {
         method: 'PATCH',
         body: JSON.stringify({ product_ids: ids, adjustment: amount }),
       });
+      setFlashIds(new Set(selectedIds));
+      setTimeout(() => setFlashIds(new Set()), 800);
     } catch (e: unknown) {
       // Revert on error
       updateProducts(p => ({ ...p, price: p.price - amount }), ids);
@@ -365,11 +353,23 @@ export default function RecetasPage() {
     }
   }, [selectedIds, updateProducts]);
 
-  const handleBulkDeactivate = useCallback(async () => {
+  const handleBulkDelete = useCallback(async () => {
     if (selectedIds.size === 0) return;
     const ids = Array.from(selectedIds);
-    // Optimistic: deactivate locally
-    updateProducts(p => ({ ...p, is_active: false }), selectedIds);
+    // Optimistic: remove from UI with animation
+    setAnimatingIds(new Set(ids));
+    setTimeout(() => {
+      updateProducts(p => ({ ...p, _deleted: true } as any), selectedIds);
+      setGroupedData(prev => {
+        if (!prev) return prev;
+        const newProducts: Record<string, RecipeProduct[]> = {};
+        for (const [catId, products] of Object.entries(prev.products)) {
+          newProducts[catId] = products.filter(p => !selectedIds.has(p.id));
+        }
+        return { ...prev, products: newProducts };
+      });
+      setAnimatingIds(new Set());
+    }, 300);
     setSelectedIds(new Set());
     try {
       await apiFetch('/admin/productos/bulk-deactivate', {
@@ -377,11 +377,11 @@ export default function RecetasPage() {
         body: JSON.stringify({ product_ids: ids }),
       });
     } catch (e: unknown) {
-      // Revert on error
-      updateProducts(p => ({ ...p, is_active: true }), ids);
-      setError(e instanceof Error ? e.message : 'Error al desactivar productos');
+      // Revert on error — refetch
+      await fetchProducts();
+      setError(e instanceof Error ? e.message : 'Error al eliminar productos');
     }
-  }, [selectedIds, fetchProducts]);
+  }, [selectedIds, updateProducts, fetchProducts]);
 
   // Client-side search filter across all categories
   const filteredCategories = useMemo(() => {
@@ -561,6 +561,8 @@ export default function RecetasPage() {
                                 'hover:bg-gray-50 transition-colors',
                                 belowTarget && 'bg-amber-50/50',
                                 !isActive && 'opacity-50',
+                                animatingIds.has(p.id) && 'opacity-0 scale-95 transition-all duration-300',
+                                flashIds.has(p.id) && 'bg-green-100 transition-colors duration-500',
                               )}
                             >
                               <td className="px-2 py-3 w-10">
@@ -652,9 +654,8 @@ export default function RecetasPage() {
       <BulkActionBar
         selectedCount={selectedIds.size}
         onClear={() => setSelectedIds(new Set())}
-        onToggle={handleBulkToggle}
         onPriceAdjust={handleBulkPrice}
-        onDeactivate={handleBulkDeactivate}
+        onDelete={handleBulkDelete}
       />
     </div>
   );
