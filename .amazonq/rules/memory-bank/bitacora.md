@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`116743a`) — comandas: timers preparación por ingrediente, colores dinámicos, API resiliente |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`6f9319a`) — comandas: timers prep, colores sólidos, remember token, padding 4px |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2bde6e8`) — Ventas: timezone Chile, columna Fecha, detalle expandible con ingredientes |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`be6ab63`) — migración prep_method/prep_time en product_recipes |
@@ -100,14 +100,17 @@
 
 ## Sesiones Recientes
 
-### 2026-04-26d — Comandas: ingredientes estructurados desde mi3, imagen 4:5, padding reducido
+### 2026-04-26d — Comandas: timers preparación, colores sólidos, remember token, padding 4px
 
 **Cambios código:**
-- `caja3/api/tuu/get_comandas_v2.php`: API devuelve `recipe_ingredients[]` como array estructurado (name, quantity, unit), filtrando insumos (Packaging, Limpieza, Gas, Servicios) via `i.category`.
-- `caja3/src/pages/comandas/index.astro`: Imagen de 96x96 → 115x144 (aspect ratio 4:5), descripción larga reemplazada por tags pill con ingredientes+cantidad+unidad (sin costo), padding main de px-2 → px-1.
+- `caja3/api/tuu/get_comandas_v2.php`: API devuelve `recipe_ingredients[]` con `prep_method`, `prep_time`, `is_prepped`. Filtra insumos. Try/catch resiliente a columnas faltantes. Orden por prep_time DESC.
+- `caja3/src/pages/comandas/index.astro`: Timers automáticos por ingrediente con barra progreso debajo, colores tarjeta sólidos (blanco/amarillo/rojo) con texto adaptativo, imagen 4:5, padding 4px, ocultar peso "(580g)", remember token localStorage, texto ingredientes `text-sm`.
+- `mi3/backend/database/migrations/2026_04_26_000001_add_prep_columns_to_product_recipes.php`: Agrega `prep_method`, `prep_time_seconds`, `is_prepped` a product_recipes.
+- `mi3/backend/database/migrations/2026_04_26_000002_seed_prep_data_product_recipes.php`: Seed tiempos industria (hamburguesa 480s, pollo 420s, papas 420s, pan 90s, etc.).
+- `mi3/backend/app/Models/ProductRecipe.php`: Fillable + casts para nuevas columnas.
 
-**Commits:** `fac8eac`
-**Deploys:** caja3 ✅ (`fac8eac`)
+**Commits:** `fac8eac`, `be6ab63`, `116743a`, `0f30749`, `b5e6abf`, `a9fac59`, `6f9319a`
+**Deploys:** caja3 ✅ (`6f9319a`), mi3-backend ✅ (`be6ab63`)
 
 ### 2026-04-26c — Spec ventas-detail-improvements: detalle expandible + timezone Chile
 
