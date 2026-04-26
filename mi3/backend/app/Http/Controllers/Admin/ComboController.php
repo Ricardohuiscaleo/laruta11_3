@@ -29,6 +29,45 @@ class ComboController extends Controller
     }
 
     /**
+     * Create a new combo product.
+     * POST /api/v1/admin/combos
+     */
+    public function create(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'price' => 'required|numeric|gt:0',
+                'description' => 'nullable|string|max:500',
+                'cost_price' => 'nullable|numeric|min:0',
+                'image_url' => 'nullable|string|max:500',
+            ]);
+
+            $product = \App\Models\Product::create([
+                'name' => $request->input('name'),
+                'price' => $request->input('price'),
+                'description' => $request->input('description'),
+                'cost_price' => $request->input('cost_price', 0),
+                'image_url' => $request->input('image_url'),
+                'category_id' => 8, // Combos category
+                'is_active' => true,
+                'stock_quantity' => 0,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => ['id' => $product->id],
+            ], 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
+        }
+    }
+
+    /**
      * Get combo detail: fixed items + selection groups.
      * GET /api/v1/admin/combos/{productId}
      */

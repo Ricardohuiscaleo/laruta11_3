@@ -69,6 +69,10 @@ export default function SubRecetasPage() {
   const [deleting, setDeleting] = useState<number | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
   const [search, setSearch] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newUnit, setNewUnit] = useState('g');
+  const [savingNew, setSavingNew] = useState(false);
   const fetchList = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -121,6 +125,27 @@ export default function SubRecetasPage() {
     return q ? composites.filter(c => c.name.toLowerCase().includes(q)) : composites;
   }, [composites, search]);
 
+  const handleCreateComposite = async () => {
+    if (!newName.trim()) return;
+    setSavingNew(true);
+    setError('');
+    try {
+      const res = await apiFetch<ApiResponse<{ id: number }>>('/admin/ingredient-recipes', {
+        method: 'POST',
+        body: JSON.stringify({ name: newName.trim(), unit: newUnit }),
+      });
+      const newId = res.data?.id;
+      setNewName(''); setNewUnit('g');
+      setShowAddForm(false);
+      await fetchList();
+      if (newId) setEditingId(newId);
+    } catch (e: any) {
+      setError(e.message || 'Error al crear sub-receta');
+    } finally {
+      setSavingNew(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -135,7 +160,50 @@ export default function SubRecetasPage() {
             aria-label="Buscar sub-receta"
           />
         </div>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors min-h-[44px] flex-shrink-0',
+            showAddForm
+              ? 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+              : 'bg-red-500 text-white hover:bg-red-600'
+          )}
+          aria-label={showAddForm ? 'Cancelar' : 'Agregar sub-receta'}
+        >
+          {showAddForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          {showAddForm ? 'Cancelar' : 'Agregar Sub-Receta'}
+        </button>
       </div>
+
+      {showAddForm && (
+        <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3" role="form" aria-label="Agregar sub-receta">
+          <h3 className="text-sm font-medium text-gray-700">Nuevo Ingrediente Compuesto</h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <label htmlFor="sr-name" className="block text-xs font-medium text-gray-600 mb-1">Nombre *</label>
+              <input id="sr-name" type="text" value={newName} onChange={e => setNewName(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
+                placeholder="Ej: Carne Molida Preparada" />
+            </div>
+            <div>
+              <label htmlFor="sr-unit" className="block text-xs font-medium text-gray-600 mb-1">Unidad *</label>
+              <select id="sr-unit" value={newUnit} onChange={e => setNewUnit(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300 bg-white">
+                {['g', 'kg', 'ml', 'L', 'unidad'].map(u => <option key={u} value={u}>{u}</option>)}
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button onClick={handleCreateComposite} disabled={savingNew || !newName.trim()}
+                className={cn('inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors min-h-[44px] w-full justify-center',
+                  savingNew || !newName.trim() ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600')}
+                aria-label="Crear sub-receta">
+                {savingNew && <Loader2 className="h-4 w-4 animate-spin" />}
+                Crear y Editar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="text-xs text-gray-500">
         {filteredComposites.length} sub-receta{filteredComposites.length !== 1 ? 's' : ''}

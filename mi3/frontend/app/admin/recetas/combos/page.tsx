@@ -87,6 +87,11 @@ export default function CombosPage() {
   const [error, setError] = useState('');
   const [editingCombo, setEditingCombo] = useState<ComboRow | null>(null);
   const [search, setSearch] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [comboName, setComboName] = useState('');
+  const [comboPrice, setComboPrice] = useState('');
+  const [comboDesc, setComboDesc] = useState('');
+  const [savingCombo, setSavingCombo] = useState(false);
 
   const fetchCombos = useCallback(async () => {    setLoading(true);
     setError('');
@@ -106,6 +111,29 @@ export default function CombosPage() {
     const q = search.toLowerCase();
     return q ? combos.filter(c => c.name.toLowerCase().includes(q)) : combos;
   }, [combos, search]);
+
+  const handleCreateCombo = async () => {
+    if (!comboName.trim() || !comboPrice || Number(comboPrice) <= 0) return;
+    setSavingCombo(true);
+    setError('');
+    try {
+      await apiFetch<ApiResponse<{ id: number }>>('/admin/combos', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: comboName.trim(),
+          price: Number(comboPrice),
+          description: comboDesc.trim() || undefined,
+        }),
+      });
+      setComboName(''); setComboPrice(''); setComboDesc('');
+      setShowAddForm(false);
+      await fetchCombos();
+    } catch (e: any) {
+      setError(e.message || 'Error al crear combo');
+    } finally {
+      setSavingCombo(false);
+    }
+  };
 
   if (editingCombo) {
     return (
@@ -138,7 +166,55 @@ export default function CombosPage() {
             aria-label="Buscar combo"
           />
         </div>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors min-h-[44px] flex-shrink-0',
+            showAddForm
+              ? 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+              : 'bg-red-500 text-white hover:bg-red-600'
+          )}
+          aria-label={showAddForm ? 'Cancelar' : 'Agregar combo'}
+        >
+          {showAddForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          {showAddForm ? 'Cancelar' : 'Agregar Combo'}
+        </button>
       </div>
+
+      {showAddForm && (
+        <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3" role="form" aria-label="Agregar combo">
+          <h3 className="text-sm font-medium text-gray-700">Nuevo Combo</h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <label htmlFor="combo-name" className="block text-xs font-medium text-gray-600 mb-1">Nombre *</label>
+              <input id="combo-name" type="text" value={comboName} onChange={e => setComboName(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
+                placeholder="Ej: Combo Familiar" />
+            </div>
+            <div>
+              <label htmlFor="combo-price" className="block text-xs font-medium text-gray-600 mb-1">Precio *</label>
+              <input id="combo-price" type="number" value={comboPrice} onChange={e => setComboPrice(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
+                placeholder="9990" min="1" />
+            </div>
+            <div>
+              <label htmlFor="combo-desc" className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
+              <input id="combo-desc" type="text" value={comboDesc} onChange={e => setComboDesc(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300"
+                placeholder="Opcional" />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <button onClick={handleCreateCombo} disabled={savingCombo || !comboName.trim() || !comboPrice}
+              className={cn('inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors min-h-[44px]',
+                savingCombo || !comboName.trim() || !comboPrice ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600')}
+              aria-label="Guardar combo">
+              {savingCombo && <Loader2 className="h-4 w-4 animate-spin" />}
+              Guardar
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="text-xs text-gray-500">
         {filteredCombos.length} combo{filteredCombos.length !== 1 ? 's' : ''}

@@ -232,12 +232,14 @@ Route::prefix('v1')->group(function () {
 
         // Sub-recetas (ingredient recipes — composite ingredients)
         Route::get('ingredient-recipes', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'index']);
+        Route::post('ingredient-recipes', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'create']);
         Route::get('ingredient-recipes/{ingredientId}', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'show']);
         Route::post('ingredient-recipes/{ingredientId}', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'store']);
         Route::delete('ingredient-recipes/{ingredientId}', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'destroy']);
 
         // Combos (combo component management)
         Route::get('combos', [\App\Http\Controllers\Admin\ComboController::class, 'index']);
+        Route::post('combos', [\App\Http\Controllers\Admin\ComboController::class, 'create']);
         Route::get('combos/{productId}', [\App\Http\Controllers\Admin\ComboController::class, 'show']);
         Route::post('combos/{productId}', [\App\Http\Controllers\Admin\ComboController::class, 'store']);
         Route::delete('combos/{productId}', [\App\Http\Controllers\Admin\ComboController::class, 'destroy']);

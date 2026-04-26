@@ -29,6 +29,41 @@ class IngredientRecipeController extends Controller
     }
 
     /**
+     * Create a new ingredient and mark it as composite.
+     * POST /api/v1/admin/ingredient-recipes
+     */
+    public function create(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'unit' => 'required|string|in:g,kg,ml,L,unidad',
+                'category' => 'nullable|string|max:100',
+            ]);
+
+            $ingredient = \App\Models\Ingredient::create([
+                'nombre' => $request->input('name'),
+                'unidad' => $request->input('unit'),
+                'categoria' => $request->input('category', 'Pre-elaborados'),
+                'is_composite' => true,
+                'costo_unitario' => 0,
+                'stock' => 0,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => ['id' => $ingredient->id],
+            ], 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
+        }
+    }
+
+    /**
      * Get sub-recipe detail for a composite ingredient.
      * GET /api/v1/admin/ingredient-recipes/{ingredientId}
      */

@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`8d024b5`) — fix tiempo negativo comandas, ocultar notas pago en cocina, minicomandas header legible |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`9b63c08`) — bebidas muestra productos reales por subcategoría, recetas accordion por categoría |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2610cde`) — search bars en Bebidas, Combos, Porciones, Sub-Recetas |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`51f8593`) — fix S3 upload 403: visibility public + prefijo products/ |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -100,16 +100,18 @@
 
 ## Sesiones Recientes
 
-### 2026-04-25e — Fix S3 upload 403 Forbidden en fotos de productos
-
-**Causa raíz:** `RecipeController::uploadProductImage()` subía a S3 con prefijo `productos/` sin ACL público. El bucket tiene bucket policy que permite lectura pública en `products/` (usado por caja3) pero no en `productos/`. Además, `Storage::put()` no pasaba visibility `'public'`.
+### 2026-04-25e — Fix S3 upload 403 + search bars en tabs Recetas
 
 **Cambios código:**
-- `mi3/backend/app/Http/Controllers/RecipeController.php`: Prefijo `productos/` → `products/`, agregado `'public'` como tercer parámetro en `Storage::put()`.
-- `mi3/backend/app/Http/Controllers/Admin/CompraController.php`: Agregado `'public'` en `Storage::put()` para respaldos de compras.
+- `mi3/backend/app/Http/Controllers/RecipeController.php`: Fix S3 403 — prefijo `productos/` → `products/`, visibility `'public'` en `Storage::put()`.
+- `mi3/backend/app/Http/Controllers/Admin/CompraController.php`: Mismo fix visibility `'public'`.
+- `mi3/frontend/app/admin/recetas/bebidas/page.tsx`: Barra de búsqueda + filtro por nombre.
+- `mi3/frontend/app/admin/recetas/combos/page.tsx`: Barra de búsqueda + filtro por nombre.
+- `mi3/frontend/app/admin/recetas/porciones/page.tsx`: Barra de búsqueda + filtro por ingrediente/categoría.
+- `mi3/frontend/app/admin/recetas/sub-recetas/page.tsx`: Barra de búsqueda + filtro por nombre.
 
-**Commits:** `51f8593`
-**Deploys:** mi3-backend ✅ (`51f8593`)
+**Commits:** `51f8593`, `2610cde`
+**Deploys:** mi3-backend ✅ (`51f8593`), mi3-frontend ✅ (`2610cde`)
 
 ### 2026-04-25d — Fix comandas: tiempo negativo, notas pago ocultas, minicomandas header legible
 
