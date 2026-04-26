@@ -986,18 +986,18 @@ class RecipeService
      */
     public function getRecipesGroupedByCategory(?string $search = null): array
     {
-        // Find the "Bebidas" product category to exclude
-        $bebidasCategory = DB::table('categories')
-            ->where('name', 'Bebidas')
-            ->first();
-        $excludeCategoryId = $bebidasCategory ? $bebidasCategory->id : null;
+        // Exclude non-food categories from the recipe grouped view
+        $excludeCategoryIds = DB::table('categories')
+            ->whereIn('name', ['Bebidas', 'Snacks', 'Personalizar', 'Extras', 'Combos'])
+            ->pluck('id')
+            ->toArray();
 
         $query = Product::where('is_active', true)
             ->with(['recipes.ingredient']);
 
-        if ($excludeCategoryId !== null) {
-            $query->where(function ($q) use ($excludeCategoryId) {
-                $q->where('category_id', '!=', $excludeCategoryId)
+        if (!empty($excludeCategoryIds)) {
+            $query->where(function ($q) use ($excludeCategoryIds) {
+                $q->whereNotIn('category_id', $excludeCategoryIds)
                   ->orWhereNull('category_id');
             });
         }

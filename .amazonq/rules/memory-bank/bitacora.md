@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`440fcdf`) — menú lista compacta, búsqueda inline highlight, arqueo tabla 3-col |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2207cc8`) — nómina expandible con reemplazos, calendario compacto con avatares, crédito R11 pendiente |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`2207cc8`) — PayrollController expone desglose reemplazos + crédito R11 pendiente |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`b2a0623`) — tab Bebidas CRUD, recetas agrupadas por categoría accordion, nómina expandible con reemplazos |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`b2a0623`) — BeverageService+Controller, RecipeService grouped, PayrollController desglose reemplazos + R11 |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -99,6 +99,21 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-25c — Spec recetas-categorias-bebidas: implementación completa + deploy
+
+**Cambios código:**
+- `mi3/backend/app/Services/Recipe/BeverageService.php`: Creado — getBeverages() con linked_products via product_recipes, createBeverageIngredient() con validación nombre case-insensitive, createBeverageProduct() con find-or-create categoría Bebidas + transaction.
+- `mi3/backend/app/Http/Controllers/Admin/BeverageController.php`: Creado — index/store/storeProduct con validación strict types.
+- `mi3/backend/routes/api.php`: 3 rutas bebidas registradas en admin group.
+- `mi3/backend/app/Services/Recipe/RecipeService.php`: getRecipesGroupedByCategory() — agrupa productos por categoría, excluye Bebidas, incluye "Sin categoría".
+- `mi3/backend/app/Http/Controllers/RecipeController.php`: index() soporta ?grouped=true con backward compatibility.
+- `mi3/frontend/app/admin/recetas/bebidas/page.tsx`: Creado — BebidasTab con tabla responsive (desktop table + mobile cards), formularios inline para crear bebidas e ingredientes, amber low-stock, "Sin producto" badge.
+- `mi3/frontend/components/admin/sections/RecetasSection.tsx`: Tab Bebidas (Wine icon) con lazy import.
+- `mi3/frontend/app/admin/recetas/page.tsx`: Refactorizado a accordion por categoría con expand/collapse, búsqueda client-side que oculta grupos vacíos.
+
+**Commits:** `b2a0623`
+**Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `b2a0623`)
 
 ### 2026-04-25b — Spec turnos-nomina-mejoras: implementación completa + deploy
 
@@ -192,5 +207,5 @@
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-23d archivadas. Últimas: 2026-04-23d (Fix P&L completo: CMV turnos, nómina con descuentos), 2026-04-23c (Spec inventario-financiero-real), 2026-04-23a (admin-credits-users-tabs).
+> Sesiones 2026-04-19c→2026-04-24a archivadas. Últimas: 2026-04-24a (Redeploy mi3-frontend), 2026-04-23d (Fix P&L completo), 2026-04-23c (Spec inventario-financiero-real).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
