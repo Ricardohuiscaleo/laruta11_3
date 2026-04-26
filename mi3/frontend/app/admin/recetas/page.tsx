@@ -218,91 +218,38 @@ export default function RecetasPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [isNewProduct, setIsNewProduct] = useState(false);
 
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
-  /* ─── Add Product form state ─── */
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [productForm, setProductForm] = useState<ProductFormData>(emptyProductForm);
-  const [productFormErrors, setProductFormErrors] = useState<Record<string, string>>({});
-  const [savingProduct, setSavingProduct] = useState(false);
-  const [productImage, setProductImage] = useState<File | null>(null);
-  const [subcategories, setSubcategories] = useState<SubcategoryInfo[]>([]);
+  /* ─── Add Product: create + open editor ─── */
+  const [creatingProduct, setCreatingProduct] = useState(false);
 
-  const fetchSubcategories = useCallback(async () => {
-    try {
-      const res = await apiFetch<ApiResponse<{ categories: unknown[]; subcategories: SubcategoryInfo[] }>>('/admin/recetas/catalogo');
-      setSubcategories(res.data?.subcategories || []);
-    } catch { /* non-critical */ }
-  }, []);
-
-  useEffect(() => { if (showAddForm) fetchSubcategories(); }, [showAddForm, fetchSubcategories]);
-
-  const filteredSubcategories = useMemo(
-    () => productForm.category_id ? subcategories.filter(s => s.category_id === Number(productForm.category_id)) : [],
-    [subcategories, productForm.category_id]
-  );
-
-  const updateProductField = (field: keyof ProductFormData, value: string) => {
-    setProductForm(prev => {
-      const next = { ...prev, [field]: value };
-      if (field === 'category_id') next.subcategory_id = '';
-      return next;
-    });
-    setProductFormErrors(prev => { const n = { ...prev }; delete n[field]; return n; });
-  };
-
-  const handleCreateProduct = async () => {
-    const errors: Record<string, string> = {};
-    if (!productForm.name.trim()) errors.name = 'Nombre es requerido';
-    if (!productForm.price || Number(productForm.price) <= 0) errors.price = 'Precio debe ser mayor a 0';
-    if (!productForm.category_id) errors.category_id = 'Categoría es requerida';
-    if (Object.keys(errors).length > 0) { setProductFormErrors(errors); return; }
-
-    setSavingProduct(true);
+  const handleAddProduct = async () => {
+    if (creatingProduct) return;
+    setCreatingProduct(true);
     setError('');
     try {
-      const body: Record<string, unknown> = {
-        name: productForm.name.trim(),
-        price: Number(productForm.price),
-        category_id: Number(productForm.category_id),
-      };
-
+      const defaultCategoryId = groupedData?.categories[0]?.id || 1;
       const res = await apiFetch<ApiResponse<{ id: number }>>('/admin/recetas/crear-producto', {
         method: 'POST',
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          name: 'Nuevo Producto',
+          price: 1000,
+          category_id: defaultCategoryId,
+        }),
       });
-
       const newId = res.data?.id;
-
-      setProductForm(emptyProductForm);
-      setShowAddForm(false);
       if (newId) {
         await fetchProducts();
+        setIsNewProduct(true);
         setSelectedProductId(newId);
-      } else {
-        await fetchProducts();
       }
     } catch (e: unknown) {
-      if (e instanceof Error) {
-        try {
-          const parsed = JSON.parse(e.message);
-          if (parsed.errors) {
-            const fieldErrors: Record<string, string> = {};
-            for (const [k, v] of Object.entries(parsed.errors)) {
-              fieldErrors[k] = Array.isArray(v) ? v[0] : String(v);
-            }
-            setProductFormErrors(fieldErrors);
-          } else {
-            setError(parsed.error || e.message);
-          }
-        } catch {
-          setError(e.message);
-        }
-      }
+      setError(e instanceof Error ? e.message : 'Error al crear producto');
     } finally {
-      setSavingProduct(false);
+      setCreatingProduct(false);
     }
   };
 
@@ -357,7 +304,8 @@ export default function RecetasPage() {
     return (
       <RecipeEditor
         productId={selectedProductId}
-        onBack={() => { setSelectedProductId(null); fetchProducts(); }}
+        isNew={isNewProduct}
+        onBack={() => { setSelectedProductId(null); setIsNewProduct(false); fetchProducts(); }}
       />
     );
   }
@@ -390,64 +338,20 @@ export default function RecetasPage() {
           />
         </div>
         <button
-          onClick={() => setShowAddForm(!showAddForm)}
+          onClick={handleAddProduct}
+          disabled={creatingProduct}
           className={cn(
             'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors min-h-[44px] flex-shrink-0',
-            showAddForm
-              ? 'border border-gray-200 text-gray-600 hover:bg-gray-50'
-              : 'bg-red-500 text-white hover:bg-red-600'
+            creatingProduct ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 text-white hover:bg-red-600'
           )}
-          aria-label={showAddForm ? 'Cancelar' : 'Agregar producto'}
+          aria-label="Agregar producto"
         >
-          {showAddForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-          {showAddForm ? 'Cancelar' : 'Agregar Producto'}
+          {creatingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+          {creatingProduct ? 'Creando...' : 'Agregar Producto'}
         </button>
       </div>
 
       {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert">{error}</div>}
-
-      {/* ─── Quick Add: nombre + precio + categoría → abre editor ─── */}
-      {showAddForm && (
-        <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3" role="form" aria-label="Agregar producto">
-          <h3 className="text-sm font-medium text-gray-700">Nuevo Producto</h3>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div>
-              <label htmlFor="prod-name" className="block text-xs font-medium text-gray-600 mb-1">Nombre *</label>
-              <input id="prod-name" type="text" value={productForm.name} onChange={e => updateProductField('name', e.target.value)}
-                className={cn('w-full rounded-lg border px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300', productFormErrors.name ? 'border-red-300' : 'border-gray-200')}
-                placeholder="Ej: Churrasco Italiano" />
-              {productFormErrors.name && <p className="mt-1 text-xs text-red-500">{productFormErrors.name}</p>}
-            </div>
-            <div>
-              <label htmlFor="prod-price" className="block text-xs font-medium text-gray-600 mb-1">Precio *</label>
-              <input id="prod-price" type="number" value={productForm.price} onChange={e => updateProductField('price', e.target.value)}
-                className={cn('w-full rounded-lg border px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300', productFormErrors.price ? 'border-red-300' : 'border-gray-200')}
-                placeholder="4500" min="1" />
-              {productFormErrors.price && <p className="mt-1 text-xs text-red-500">{productFormErrors.price}</p>}
-            </div>
-            <div>
-              <label htmlFor="prod-category" className="block text-xs font-medium text-gray-600 mb-1">Categoría *</label>
-              <select id="prod-category" value={productForm.category_id} onChange={e => updateProductField('category_id', e.target.value)}
-                className={cn('w-full rounded-lg border px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-red-300 bg-white', productFormErrors.category_id ? 'border-red-300' : 'border-gray-200')}>
-                <option value="">Seleccionar</option>
-                {groupedData?.categories.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-              {productFormErrors.category_id && <p className="mt-1 text-xs text-red-500">{productFormErrors.category_id}</p>}
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <button onClick={handleCreateProduct} disabled={savingProduct}
-              className={cn('inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors min-h-[44px]',
-                savingProduct ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600')}
-              aria-label="Crear y editar producto">
-              {savingProduct && <Loader2 className="h-4 w-4 animate-spin" />}
-              Crear y Editar
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="text-xs text-gray-500">
         {totalProducts} producto{totalProducts !== 1 ? 's' : ''} en {filteredCategories.length} categoría{filteredCategories.length !== 1 ? 's' : ''}
@@ -555,7 +459,7 @@ export default function RecetasPage() {
 
 /* ─── Inline Recipe Editor ─── */
 
-function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => void }) {
+function RecipeEditor({ productId, onBack, isNew = false }: { productId: number; onBack: () => void; isNew?: boolean }) {
   const [product, setProduct] = useState<RecipeDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -565,7 +469,7 @@ function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => 
   const [hasExistingRecipe, setHasExistingRecipe] = useState(false);
 
   /* Product info editing */
-  const [editingProduct, setEditingProduct] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(isNew);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [savingProduct, setSavingProduct] = useState(false);
@@ -580,8 +484,8 @@ function RecipeEditor({ productId, onBack }: { productId: number; onBack: () => 
       const data = res.data!;
       setProduct(data);
       setHasExistingRecipe(data.ingredient_count > 0);
-      setEditName(data.name);
-      setEditDescription(data.description || '');
+      setEditName(isNew ? '' : data.name);
+      setEditDescription(isNew ? '' : (data.description || ''));
       setIngredients(
         data.ingredients.map(i => ({
           ingredient_id: i.id,
