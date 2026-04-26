@@ -180,6 +180,16 @@ try {
                     }
                 }
                 
+                // Enriquecer customizations con ingredientes
+                if (isset($comboData['customizations'])) {
+                    foreach ($comboData['customizations'] as $idx => $custom) {
+                        $customId = $custom['id'] ?? $custom['product_id'] ?? null;
+                        if ($customId) {
+                            $comboData['customizations'][$idx]['recipe_ingredients'] = $getChildIngredients($customId);
+                        }
+                    }
+                }
+                
                 $item['combo_data'] = json_encode($comboData);
             }
             
