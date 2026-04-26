@@ -141,63 +141,79 @@ export default function CombosPage() {
     }
   }, [allSelected, allVisibleIds]);
 
+  /* ─── Optimistic update helper ─── */
+
+  const updateCombos = useCallback((updater: (c: ComboRow) => ComboRow, ids?: Set<number> | number[]) => {
+    setCombos(prev => {
+      const idSet = ids instanceof Set ? ids : ids ? new Set(ids) : null;
+      return prev.map(c => (!idSet || idSet.has(c.id)) ? updater(c) : c);
+    });
+  }, []);
+
   /* ─── Single toggle ON/OFF ─── */
 
   const handleSingleToggle = useCallback(async (comboId: number) => {
+    updateCombos(c => ({ ...c, is_active: !c.is_active }), [comboId]);
     try {
       await apiFetch('/admin/productos/toggle', {
         method: 'PATCH',
         body: JSON.stringify({ product_ids: [comboId] }),
       });
-      await fetchCombos();
     } catch (e: unknown) {
+      updateCombos(c => ({ ...c, is_active: !c.is_active }), [comboId]);
       setError(e instanceof Error ? e.message : 'Error al cambiar estado');
     }
-  }, [fetchCombos]);
+  }, [updateCombos]);
 
   /* ─── Bulk action handlers ─── */
 
   const handleBulkToggle = useCallback(async () => {
     if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    updateCombos(c => ({ ...c, is_active: !c.is_active }), selectedIds);
+    setSelectedIds(new Set());
     try {
       await apiFetch('/admin/productos/toggle', {
         method: 'PATCH',
-        body: JSON.stringify({ product_ids: Array.from(selectedIds) }),
+        body: JSON.stringify({ product_ids: ids }),
       });
-      setSelectedIds(new Set());
-      await fetchCombos();
     } catch (e: unknown) {
+      updateCombos(c => ({ ...c, is_active: !c.is_active }), ids);
       setError(e instanceof Error ? e.message : 'Error al cambiar estado');
     }
-  }, [selectedIds, fetchCombos]);
+  }, [selectedIds, updateCombos]);
 
   const handleBulkPrice = useCallback(async (amount: number) => {
     if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    updateCombos(c => ({ ...c, price: Math.max(0, c.price + amount) }), selectedIds);
+    setSelectedIds(new Set());
     try {
       await apiFetch('/admin/productos/bulk-price', {
         method: 'PATCH',
-        body: JSON.stringify({ product_ids: Array.from(selectedIds), adjustment: amount }),
+        body: JSON.stringify({ product_ids: ids, adjustment: amount }),
       });
-      setSelectedIds(new Set());
-      await fetchCombos();
     } catch (e: unknown) {
+      updateCombos(c => ({ ...c, price: c.price - amount }), ids);
       setError(e instanceof Error ? e.message : 'Error al ajustar precios');
     }
-  }, [selectedIds, fetchCombos]);
+  }, [selectedIds, updateCombos]);
 
   const handleBulkDeactivate = useCallback(async () => {
     if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    updateCombos(c => ({ ...c, is_active: false }), selectedIds);
+    setSelectedIds(new Set());
     try {
       await apiFetch('/admin/productos/bulk-deactivate', {
         method: 'PATCH',
-        body: JSON.stringify({ product_ids: Array.from(selectedIds) }),
+        body: JSON.stringify({ product_ids: ids }),
       });
-      setSelectedIds(new Set());
-      await fetchCombos();
     } catch (e: unknown) {
+      updateCombos(c => ({ ...c, is_active: true }), ids);
       setError(e instanceof Error ? e.message : 'Error al desactivar combos');
     }
-  }, [selectedIds, fetchCombos]);
+  }, [selectedIds, updateCombos]);
 
   const handleCreateCombo = async () => {
     if (!comboName.trim() || !comboPrice || Number(comboPrice) <= 0) return;

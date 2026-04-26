@@ -6,7 +6,7 @@ import { formatCLP, cn } from '@/lib/utils';
 import {
   Loader2, Search, ArrowUpDown, ChevronDown, ChevronRight, AlertTriangle,
   ArrowLeft, Plus, Trash2, Save, X, Pencil, Upload, Image as ImageIcon,
-  UtensilsCrossed, Package, ToggleLeft, ToggleRight,
+  UtensilsCrossed, Package, ToggleLeft, ToggleRight, Eye, EyeOff,
 } from 'lucide-react';
 import BulkActionBar from '@/components/admin/BulkActionBar';
 import type { ApiResponse } from '@/types';
@@ -225,6 +225,7 @@ export default function RecetasPage() {
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [showInactive, setShowInactive] = useState(false);
 
   /* ─── Add Product: create + open editor ─── */
   const [creatingProduct, setCreatingProduct] = useState(false);
@@ -293,60 +294,91 @@ export default function RecetasPage() {
     });
   }, []);
 
+  /* ─── Optimistic update helper ─── */
+
+  const updateProducts = useCallback((updater: (p: RecipeProduct) => RecipeProduct, ids?: Set<number> | number[]) => {
+    setGroupedData(prev => {
+      if (!prev) return prev;
+      const idSet = ids instanceof Set ? ids : ids ? new Set(ids) : null;
+      const newProducts: Record<string, RecipeProduct[]> = {};
+      for (const [catId, products] of Object.entries(prev.products)) {
+        newProducts[catId] = products.map(p =>
+          (!idSet || idSet.has(p.id)) ? updater(p) : p
+        );
+      }
+      return { ...prev, products: newProducts };
+    });
+  }, []);
+
   /* ─── Single toggle ON/OFF ─── */
 
   const handleSingleToggle = useCallback(async (productId: number) => {
+    // Optimistic: flip locally
+    updateProducts(p => ({ ...p, is_active: !p.is_active }), [productId]);
     try {
       await apiFetch('/admin/productos/toggle', {
         method: 'PATCH',
         body: JSON.stringify({ product_ids: [productId] }),
       });
-      await fetchProducts();
     } catch (e: unknown) {
+      // Revert on error
+      updateProducts(p => ({ ...p, is_active: !p.is_active }), [productId]);
       setError(e instanceof Error ? e.message : 'Error al cambiar estado');
     }
-  }, [fetchProducts]);
+  }, [updateProducts]);
 
   /* ─── Bulk action handlers ─── */
 
   const handleBulkToggle = useCallback(async () => {
     if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    // Optimistic: flip locally
+    updateProducts(p => ({ ...p, is_active: !p.is_active }), selectedIds);
+    setSelectedIds(new Set());
     try {
       await apiFetch('/admin/productos/toggle', {
         method: 'PATCH',
-        body: JSON.stringify({ product_ids: Array.from(selectedIds) }),
+        body: JSON.stringify({ product_ids: ids }),
       });
-      setSelectedIds(new Set());
-      await fetchProducts();
     } catch (e: unknown) {
+      // Revert on error
+      updateProducts(p => ({ ...p, is_active: !p.is_active }), ids);
       setError(e instanceof Error ? e.message : 'Error al cambiar estado');
     }
-  }, [selectedIds, fetchProducts]);
+  }, [selectedIds, updateProducts]);
 
   const handleBulkPrice = useCallback(async (amount: number) => {
     if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    // Optimistic: adjust price locally
+    updateProducts(p => ({ ...p, price: Math.max(0, p.price + amount) }), selectedIds);
+    setSelectedIds(new Set());
     try {
       await apiFetch('/admin/productos/bulk-price', {
         method: 'PATCH',
-        body: JSON.stringify({ product_ids: Array.from(selectedIds), adjustment: amount }),
+        body: JSON.stringify({ product_ids: ids, adjustment: amount }),
       });
-      setSelectedIds(new Set());
-      await fetchProducts();
     } catch (e: unknown) {
+      // Revert on error
+      updateProducts(p => ({ ...p, price: p.price - amount }), ids);
       setError(e instanceof Error ? e.message : 'Error al ajustar precios');
     }
-  }, [selectedIds, fetchProducts]);
+  }, [selectedIds, updateProducts]);
 
   const handleBulkDeactivate = useCallback(async () => {
     if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    // Optimistic: deactivate locally
+    updateProducts(p => ({ ...p, is_active: false }), selectedIds);
+    setSelectedIds(new Set());
     try {
       await apiFetch('/admin/productos/bulk-deactivate', {
         method: 'PATCH',
-        body: JSON.stringify({ product_ids: Array.from(selectedIds) }),
+        body: JSON.stringify({ product_ids: ids }),
       });
-      setSelectedIds(new Set());
-      await fetchProducts();
     } catch (e: unknown) {
+      // Revert on error
+      updateProducts(p => ({ ...p, is_active: true }), ids);
       setError(e instanceof Error ? e.message : 'Error al desactivar productos');
     }
   }, [selectedIds, fetchProducts]);
@@ -359,13 +391,17 @@ export default function RecetasPage() {
     return groupedData.categories
       .map(cat => {
         const products = groupedData.products[String(cat.id)] || [];
-        const filtered = q
+        let filtered = q
           ? products.filter(p => p.name.toLowerCase().includes(q))
           : products;
+        // Filter inactive unless showInactive is on
+        if (!showInactive) {
+          filtered = filtered.filter(p => p.is_active !== false && (p.is_active as unknown) !== 0);
+        }
         return { ...cat, product_count: filtered.length, filteredProducts: filtered };
       })
       .filter(cat => cat.filteredProducts.length > 0);
-  }, [groupedData, search]);
+  }, [groupedData, search, showInactive]);
 
   const totalProducts = useMemo(
     () => filteredCategories.reduce((sum, c) => sum + c.filteredProducts.length, 0),
@@ -411,7 +447,7 @@ export default function RecetasPage() {
 
   return (
     <div className="space-y-3">
-      {/* Search + Add Product button */}
+      {/* Search + Eye toggle + Add Product button */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -424,6 +460,21 @@ export default function RecetasPage() {
             aria-label="Buscar producto"
           />
         </div>
+        <button
+          type="button"
+          onClick={() => setShowInactive(v => !v)}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors min-h-[44px] flex-shrink-0',
+            showInactive
+              ? 'bg-red-500 text-white'
+              : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+          )}
+          aria-label={showInactive ? 'Ocultar inactivos' : 'Mostrar inactivos'}
+          title={showInactive ? 'Ocultar inactivos' : 'Mostrar inactivos'}
+        >
+          {showInactive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          <span className="hidden sm:inline">{showInactive ? 'Ocultar OFF' : 'Ver OFF'}</span>
+        </button>
         <button
           onClick={handleAddProduct}
           disabled={creatingProduct}

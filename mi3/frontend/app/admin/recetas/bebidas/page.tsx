@@ -183,63 +183,79 @@ export default function BebidasTab() {
     });
   }, []);
 
+  /* ─── Optimistic update helper ─── */
+
+  const updateBeverages = useCallback((updater: (b: Beverage) => Beverage, ids?: Set<number> | number[]) => {
+    setBeverages(prev => {
+      const idSet = ids instanceof Set ? ids : ids ? new Set(ids) : null;
+      return prev.map(b => (!idSet || idSet.has(b.id)) ? updater(b) : b);
+    });
+  }, []);
+
   /* ─── Single toggle ON/OFF ─── */
 
   const handleSingleToggle = useCallback(async (productId: number) => {
+    updateBeverages(b => ({ ...b, is_active: !b.is_active }), [productId]);
     try {
       await apiFetch('/admin/productos/toggle', {
         method: 'PATCH',
         body: JSON.stringify({ product_ids: [productId] }),
       });
-      await fetchBeverages();
     } catch (e: unknown) {
+      updateBeverages(b => ({ ...b, is_active: !b.is_active }), [productId]);
       setError(e instanceof Error ? e.message : 'Error al cambiar estado');
     }
-  }, [fetchBeverages]);
+  }, [updateBeverages]);
 
   /* ─── Bulk action handlers ─── */
 
   const handleBulkToggle = useCallback(async () => {
     if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    updateBeverages(b => ({ ...b, is_active: !b.is_active }), selectedIds);
+    setSelectedIds(new Set());
     try {
       await apiFetch('/admin/productos/toggle', {
         method: 'PATCH',
-        body: JSON.stringify({ product_ids: Array.from(selectedIds) }),
+        body: JSON.stringify({ product_ids: ids }),
       });
-      setSelectedIds(new Set());
-      await fetchBeverages();
     } catch (e: unknown) {
+      updateBeverages(b => ({ ...b, is_active: !b.is_active }), ids);
       setError(e instanceof Error ? e.message : 'Error al cambiar estado');
     }
-  }, [selectedIds, fetchBeverages]);
+  }, [selectedIds, updateBeverages]);
 
   const handleBulkPrice = useCallback(async (amount: number) => {
     if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    updateBeverages(b => ({ ...b, price: Math.max(0, b.price + amount) }), selectedIds);
+    setSelectedIds(new Set());
     try {
       await apiFetch('/admin/productos/bulk-price', {
         method: 'PATCH',
-        body: JSON.stringify({ product_ids: Array.from(selectedIds), adjustment: amount }),
+        body: JSON.stringify({ product_ids: ids, adjustment: amount }),
       });
-      setSelectedIds(new Set());
-      await fetchBeverages();
     } catch (e: unknown) {
+      updateBeverages(b => ({ ...b, price: b.price - amount }), ids);
       setError(e instanceof Error ? e.message : 'Error al ajustar precios');
     }
-  }, [selectedIds, fetchBeverages]);
+  }, [selectedIds, updateBeverages]);
 
   const handleBulkDeactivate = useCallback(async () => {
     if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    updateBeverages(b => ({ ...b, is_active: false }), selectedIds);
+    setSelectedIds(new Set());
     try {
       await apiFetch('/admin/productos/bulk-deactivate', {
         method: 'PATCH',
-        body: JSON.stringify({ product_ids: Array.from(selectedIds) }),
+        body: JSON.stringify({ product_ids: ids }),
       });
-      setSelectedIds(new Set());
-      await fetchBeverages();
     } catch (e: unknown) {
+      updateBeverages(b => ({ ...b, is_active: true }), ids);
       setError(e instanceof Error ? e.message : 'Error al desactivar productos');
     }
-  }, [selectedIds, fetchBeverages]);
+  }, [selectedIds, updateBeverages]);
 
   /* ─── Group by subcategory ─── */
   const filtered = useMemo(() => {
