@@ -88,8 +88,7 @@ export default function CombosPage() {
   const [editingCombo, setEditingCombo] = useState<ComboRow | null>(null);
   const [search, setSearch] = useState('');
 
-  const fetchCombos = useCallback(async () => {
-    setLoading(true);
+  const fetchCombos = useCallback(async () => {    setLoading(true);
     setError('');
     try {
       const res = await apiFetch<ApiResponse<ComboRow[]>>('/admin/combos');
@@ -102,6 +101,11 @@ export default function CombosPage() {
   }, []);
 
   useEffect(() => { fetchCombos(); }, [fetchCombos]);
+
+  const filteredCombos = useMemo(() => {
+    const q = search.toLowerCase();
+    return q ? combos.filter(c => c.name.toLowerCase().includes(q)) : combos;
+  }, [combos, search]);
 
   if (editingCombo) {
     return (
@@ -119,11 +123,6 @@ export default function CombosPage() {
       </div>
     );
   }
-
-  const filteredCombos = useMemo(() => {
-    const q = search.toLowerCase();
-    return q ? combos.filter(c => c.name.toLowerCase().includes(q)) : combos;
-  }, [combos, search]);
 
   return (
     <div className="space-y-4">
