@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`8d024b5`) — fix tiempo negativo comandas, ocultar notas pago en cocina, minicomandas header legible |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`b7e5b92`) — RecipeEditor con categoría/subcategoría editables |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`14eb695`) — updateProduct acepta price, endpoints crear combo/sub-receta |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`6dab65c`) — Bulk actions recetas/bebidas/combos + sección Ventas con KPIs realtime |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`cc3b765`) — ProductBulkController, VentasController+Service, evento VentaNueva Reverb |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -99,6 +99,28 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-26b — Spec ventas-bulk-actions: implementación completa + deploy
+
+**Cambios código:**
+- `mi3/backend/app/Http/Controllers/Admin/ProductBulkController.php`: Nuevo — toggle, bulkPrice, bulkDeactivate con validación exists:products.
+- `mi3/backend/app/Http/Controllers/Admin/VentasController.php`: Nuevo — index (transacciones paginadas) + kpis (agregados + breakdown).
+- `mi3/backend/app/Services/Ventas/VentasService.php`: Nuevo — lógica turnos Chile 17:30→04:00, KPIs, paginación, breakdown por método pago.
+- `mi3/backend/app/Events/VentaNueva.php`: Nuevo — ShouldBroadcast en canal admin.ventas, evento venta.nueva.
+- `mi3/backend/app/Http/Controllers/WebhookController.php`: Dispatch VentaNueva con KPIs actualizados.
+- `mi3/backend/routes/api.php`: 5 rutas nuevas (3 PATCH productos, 2 GET ventas).
+- `mi3/frontend/components/admin/BulkActionBar.tsx`: Nuevo — barra sticky responsive con +$100/-$100/custom/toggle/eliminar.
+- `mi3/frontend/components/admin/VentasPageContent.tsx`: Nuevo — KPI cards, tabla transacciones, desglose pago, paginación, realtime Echo.
+- `mi3/frontend/components/admin/sections/VentasSection.tsx`: Nuevo — tabs Turno/Hoy/Semana/Mes con accent green.
+- `mi3/frontend/app/admin/recetas/page.tsx`: Checkboxes, toggle ON/OFF, BulkActionBar integrado.
+- `mi3/frontend/app/admin/recetas/bebidas/page.tsx`: Ídem.
+- `mi3/frontend/app/admin/recetas/combos/page.tsx`: Ídem.
+- `mi3/frontend/components/admin/AdminShell.tsx`: SectionKey 'ventas' + lazy import.
+- `mi3/frontend/components/admin/AdminSidebarSPA.tsx`: Ventas en sidebar con DollarSign.
+- `mi3/frontend/components/admin/MobileBottomNavSPA.tsx`: Ventas en mobile nav.
+
+**Commits:** `cc3b765`, `6dab65c`
+**Deploys:** mi3-backend ✅ (`cc3b765`), mi3-frontend ✅ (`6dab65c`)
 
 ### 2026-04-26a — Search bars + botones Agregar en Recetas, endpoints crear combo/sub-receta, fix S3 403
 

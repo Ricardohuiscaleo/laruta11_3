@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Clock, CalendarDays, CalendarRange, CalendarCheck, Loader2 } from 'lucide-react';
 import type { SectionHeaderConfig, TabDef } from '@/components/admin/AdminShell';
 
-const VentasPage = lazy(() => import('@/app/admin/ventas/page'));
+const VentasPage = lazy(() => import('@/components/admin/VentasPageContent'));
 
 const tabs: TabDef[] = [
   { key: 'shift_today', label: 'Turno', icon: Clock },

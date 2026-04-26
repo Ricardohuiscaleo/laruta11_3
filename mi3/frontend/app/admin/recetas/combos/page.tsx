@@ -226,6 +226,7 @@ export default function CombosPage() {
           fixed_count: 0,
           selectable_count: 0,
           total_components: 0,
+          is_active: true,
         });
       }
     } catch (e: any) {
