@@ -923,70 +923,69 @@
                                                                 })
                                                             ),
                                                             
-                                                            // Detalles del combo con ingredientes de hijos
+                                                            // Detalles del combo con ingredientes agrupados por estación
                                                             isCombo && comboData && h('div', { className: 'mt-2 pl-2 border-l-2 border-orange-300 space-y-2' },
-                                                                // Fixed items con ingredientes
-                                                                comboData.fixed_items && comboData.fixed_items.length > 0 && h('div', {},
-                                                                    ...comboData.fixed_items.map((fixed, idx) => 
-                                                                        h('div', { key: `fixed-${idx}`, className: 'mb-1' },
-                                                                            h('div', { className: 'text-sm font-bold text-orange-700' }, `${item.quantity * fixed.quantity}x ${(fixed.product_name || '').replace(/\s*\(\d+g?\)/gi, '')}`),
-                                                                            fixed.recipe_ingredients && fixed.recipe_ingredients.filter(ing => ing.prep_method !== 'listo').length > 0 && h('div', { className: 'space-y-0.5 ml-2 mt-0.5' },
-                                                                                ...fixed.recipe_ingredients.filter(ing => ing.prep_method !== 'listo').map((ing, i) => {
-                                                                                    const orderCreated = new Date((order.created_at || '').replace(' ', 'T') + 'Z');
-                                                                                    const elapsedSec = Math.max(0, (Date.now() - orderCreated.getTime()) / 1000);
-                                                                                    const prepTime = ing.prep_time || 0;
-                                                                                    const isDone = prepTime === 0 || elapsedSec >= prepTime;
-                                                                                    const pct = prepTime > 0 ? Math.min(1, elapsedSec / prepTime) : 1;
+                                                                // Render cada hijo del combo (fixed + selections) con estaciones
+                                                                ...(() => {
+                                                                    const orderCreated = new Date((order.created_at || '').replace(' ', 'T') + 'Z');
+                                                                    const elapsedSec = Math.max(0, (Date.now() - orderCreated.getTime()) / 1000);
+                                                                    const instruccion = { 'plancha': 'ASAR', 'fritura': 'FREÍR', 'tostado': 'TOSTAR', 'horno': 'HORNEAR', 'caramelizado': 'CARAMELIZAR', 'pelado': 'PELAR', 'moler': 'MOLER', 'cortar': 'CORTAR' };
+                                                                    const fmtTime = (s) => { const m = Math.floor(s / 60); const sec = Math.floor(s % 60); return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`; };
+                                                                    
+                                                                    // Recopilar todos los hijos
+                                                                    const children = [];
+                                                                    if (comboData.fixed_items) {
+                                                                        comboData.fixed_items.forEach(f => children.push({ name: f.product_name, qty: item.quantity * (f.quantity || 1), ings: f.recipe_ingredients || [], color: 'text-orange-700' }));
+                                                                    }
+                                                                    if (comboData.selections) {
+                                                                        Object.values(comboData.selections).forEach(sel => {
+                                                                            const items = Array.isArray(sel) ? sel : [sel];
+                                                                            items.forEach(s => { if (s && s.name) children.push({ name: s.name, qty: item.quantity, ings: s.recipe_ingredients || [], color: 'text-blue-700' }); });
+                                                                        });
+                                                                    }
+                                                                    
+                                                                    return children.map((child, ci) => {
+                                                                        const activeIngs = child.ings.filter(i => i.prep_method && i.prep_method !== 'listo').sort((a, b) => (b.prep_time || 0) - (a.prep_time || 0));
+                                                                        const paralelas = activeIngs.filter(i => ['plancha','fritura','tostado','horno','caramelizado'].includes(i.prep_method));
+                                                                        const manuales = activeIngs.filter(i => ['pelado','moler','cortar','crudo'].includes(i.prep_method));
+                                                                        
+                                                                        if (activeIngs.length === 0) return h('div', { key: `child-${ci}`, className: 'text-sm font-bold ' + child.color }, `${child.qty}x ${(child.name || '').replace(/\s*\(\d+g?\)/gi, '')} ✅`);
+                                                                        
+                                                                        return h('div', { key: `child-${ci}`, className: 'mb-1' },
+                                                                            h('div', { className: `text-sm font-bold ${child.color}` }, `${child.qty}x ${(child.name || '').replace(/\s*\(\d+g?\)/gi, '')}`),
+                                                                            h('div', { className: 'space-y-0.5 ml-2 mt-0.5' },
+                                                                                ...paralelas.map((ing, i) => {
+                                                                                    const remaining = Math.max(0, ing.prep_time - elapsedSec);
+                                                                                    const isDone = remaining === 0;
+                                                                                    const pct = Math.min(1, elapsedSec / ing.prep_time);
                                                                                     const barColor = isDone ? '#22c55e' : pct >= 0.6 ? '#eab308' : '#ef4444';
-                                                                                    const statusEmoji = isDone ? '✅' : pct >= 0.3 ? '🔥' : '⏳';
-                                                                                    return h('div', { key: i, className: 'text-xs' },
+                                                                                    return h('div', { key: `p-${i}`, className: 'text-xs' },
                                                                                         h('div', { className: 'flex items-center gap-1' },
+                                                                                            h('span', { className: 'font-bold text-orange-700 uppercase w-12' }, instruccion[ing.prep_method] || ing.prep_method),
                                                                                             h('span', { className: 'font-medium flex-1 truncate' }, `${ing.name} ${ing.quantity}${ing.unit}`),
-                                                                                            h('span', { className: 'font-mono' }, statusEmoji)
+                                                                                            h('span', { className: 'font-mono font-bold' }, isDone ? '✅' : fmtTime(remaining))
                                                                                         ),
-                                                                                        prepTime > 0 && h('div', { style: { width: '100%', height: '3px', backgroundColor: '#e5e7eb', borderRadius: '2px', overflow: 'hidden', marginTop: '1px' } },
+                                                                                        h('div', { style: { width: '100%', height: '3px', backgroundColor: '#e5e7eb', borderRadius: '2px', overflow: 'hidden', marginTop: '1px' } },
                                                                                             h('div', { style: { width: `${Math.round(pct * 100)}%`, height: '100%', backgroundColor: barColor, borderRadius: '2px' } })
                                                                                         )
                                                                                     );
-                                                                                })
-                                                                            )
-                                                                        )
-                                                                    )
-                                                                ),
-                                                                // Selections con ingredientes
-                                                                comboData.selections && Object.keys(comboData.selections).length > 0 && h('div', { className: 'mt-1' },
-                                                                    ...Object.entries(comboData.selections).map(([group, selection]) => {
-                                                                        const renderSelItem = (sel, key) => h('div', { key, className: 'mb-1' },
-                                                                            h('div', { className: 'text-sm font-bold text-blue-700' }, `${item.quantity}x ${(sel.name || '').replace(/\s*\(\d+g?\)/gi, '')}`),
-                                                                            sel.recipe_ingredients && sel.recipe_ingredients.filter(ing => ing.prep_method !== 'listo').length > 0 && h('div', { className: 'space-y-0.5 ml-2 mt-0.5' },
-                                                                                ...sel.recipe_ingredients.filter(ing => ing.prep_method !== 'listo').map((ing, i) => {
-                                                                                    const orderCreated = new Date((order.created_at || '').replace(' ', 'T') + 'Z');
-                                                                                    const elapsedSec = Math.max(0, (Date.now() - orderCreated.getTime()) / 1000);
-                                                                                    const prepTime = ing.prep_time || 0;
-                                                                                    const isDone = prepTime === 0 || elapsedSec >= prepTime;
-                                                                                    const pct = prepTime > 0 ? Math.min(1, elapsedSec / prepTime) : 1;
-                                                                                    const barColor = isDone ? '#22c55e' : pct >= 0.6 ? '#eab308' : '#ef4444';
-                                                                                    const statusEmoji = isDone ? '✅' : pct >= 0.3 ? '🔥' : '⏳';
-                                                                                    return h('div', { key: i, className: 'text-xs' },
-                                                                                        h('div', { className: 'flex items-center gap-1' },
-                                                                                            h('span', { className: 'font-medium flex-1 truncate' }, `${ing.name} ${ing.quantity}${ing.unit}`),
-                                                                                            h('span', { className: 'font-mono' }, statusEmoji)
-                                                                                        ),
-                                                                                        prepTime > 0 && h('div', { style: { width: '100%', height: '3px', backgroundColor: '#e5e7eb', borderRadius: '2px', overflow: 'hidden', marginTop: '1px' } },
-                                                                                            h('div', { style: { width: `${Math.round(pct * 100)}%`, height: '100%', backgroundColor: barColor, borderRadius: '2px' } })
-                                                                                        )
+                                                                                }),
+                                                                                ...manuales.map((ing, i) => {
+                                                                                    const offset = manuales.slice(0, i).reduce((s, m) => s + (m.prep_time || 0), 0);
+                                                                                    const taskElapsed = Math.max(0, elapsedSec - offset);
+                                                                                    const isDone = taskElapsed >= (ing.prep_time || 0);
+                                                                                    const isActive = !isDone && taskElapsed > 0;
+                                                                                    const remaining = Math.max(0, (ing.prep_time || 0) - taskElapsed);
+                                                                                    return h('div', { key: `m-${i}`, className: 'text-xs flex items-center gap-1' },
+                                                                                        h('span', { className: 'font-bold text-purple-700 uppercase w-12' }, instruccion[ing.prep_method] || ing.prep_method),
+                                                                                        h('span', { className: 'font-medium flex-1 truncate' }, `${ing.name} ${ing.quantity}${ing.unit}`),
+                                                                                        h('span', { className: 'font-mono font-bold' }, isDone ? '✅' : isActive ? `${fmtTime(remaining)} 🔪` : '⏳')
                                                                                     );
                                                                                 })
                                                                             )
                                                                         );
-                                                                        if (Array.isArray(selection)) {
-                                                                            return selection.map((sel, idx) => renderSelItem(sel, `sel-${group}-${idx}`));
-                                                                        } else if (selection && selection.name) {
-                                                                            return renderSelItem(selection, `sel-${group}`);
-                                                                        }
-                                                                        return null;
-                                                                    })
-                                                                )
+                                                                    });
+                                                                })()
                                                             )
                                                         );
                                                     }) :
