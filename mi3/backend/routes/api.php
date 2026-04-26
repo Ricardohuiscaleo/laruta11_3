@@ -205,10 +205,10 @@ Route::prefix('v1')->group(function () {
         Route::get('capital-trabajo', [\App\Http\Controllers\Admin\CapitalTrabajoController::class, 'resumenMensual']);
         Route::post('capital-trabajo/cierre', [\App\Http\Controllers\Admin\CapitalTrabajoController::class, 'cierreManual']);
 
-        // Bebidas (beverage management)
+        // Bebidas (beverage product management)
         Route::get('bebidas', [\App\Http\Controllers\Admin\BeverageController::class, 'index']);
         Route::post('bebidas', [\App\Http\Controllers\Admin\BeverageController::class, 'store']);
-        Route::post('bebidas/producto', [\App\Http\Controllers\Admin\BeverageController::class, 'storeProduct']);
+        Route::get('bebidas/subcategorias', [\App\Http\Controllers\Admin\BeverageController::class, 'subcategories']);
 
         // Recetas (recipe management)
         // Static routes MUST come before {productId} to avoid route conflicts

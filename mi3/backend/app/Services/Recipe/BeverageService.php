@@ -11,154 +11,127 @@ use Illuminate\Validation\ValidationException;
 class BeverageService
 {
     /**
-     * Get all beverage ingredients with linked product info.
-     * GET /api/v1/admin/bebidas
+     * Get all beverage products (from Snacks and Bebidas categories).
+     * Returns products grouped by subcategory with stock and cost info.
      */
     public function getBeverages(): Collection
     {
-        $beverages = DB::table('ingredients')
-            ->where('category', 'Bebidas')
-            ->where('is_active', true)
-            ->orderBy('name')
+        // Get Snacks and Bebidas category IDs
+        $categoryIds = DB::table('categories')
+            ->whereIn('name', ['Snacks', 'Bebidas'])
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($categoryIds)) {
+            return collect();
+        }
+
+        $products = DB::table('products')
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->leftJoin('subcategories', 'products.subcategory_id', '=', 'subcategories.id')
+            ->whereIn('products.category_id', $categoryIds)
+            ->where('products.is_active', true)
+            ->select([
+                'products.*',
+                'categories.name as category_name',
+                'subcategories.name as subcategory_name',
+            ])
+            ->orderBy('subcategories.sort_order')
+            ->orderBy('subcategories.name')
+            ->orderBy('products.name')
             ->get();
 
-        $ingredientIds = $beverages->pluck('id')->toArray();
+        // Get ingredient costs via product_recipes
+        $productIds = $products->pluck('id')->toArray();
+        $recipeCosts = DB::table('product_recipes')
+            ->join('ingredients', 'ingredients.id', '=', 'product_recipes.ingredient_id')
+            ->whereIn('product_recipes.product_id', $productIds)
+            ->select('product_recipes.product_id', DB::raw('SUM(ingredients.cost_per_unit * product_recipes.quantity) as recipe_cost'))
+            ->groupBy('product_recipes.product_id')
+            ->pluck('recipe_cost', 'product_id');
 
-        // Get linked products via product_recipes → products
-        $linkedProducts = DB::table('product_recipes')
-            ->join('products', 'products.id', '=', 'product_recipes.product_id')
-            ->whereIn('product_recipes.ingredient_id', $ingredientIds)
-            ->where('products.is_active', true)
-            ->select(
-                'product_recipes.ingredient_id',
-                'products.id',
-                'products.name',
-                'products.price'
-            )
-            ->get()
-            ->groupBy('ingredient_id');
-
-        return $beverages->map(function ($b) use ($linkedProducts) {
-            $products = $linkedProducts->get($b->id, collect());
+        return $products->map(function ($p) use ($recipeCosts) {
+            $cost = (float) ($recipeCosts[$p->id] ?? 0);
+            $price = (float) $p->price;
 
             return [
-                'id' => $b->id,
-                'name' => $b->name,
-                'category' => $b->category,
-                'unit' => $b->unit,
-                'cost_per_unit' => (float) $b->cost_per_unit,
-                'current_stock' => (float) $b->current_stock,
-                'min_stock_level' => (float) $b->min_stock_level,
-                'supplier' => $b->supplier,
-                'is_low_stock' => (float) $b->current_stock < (float) $b->min_stock_level,
-                'linked_products' => $products->map(fn ($p) => [
-                    'id' => $p->id,
-                    'name' => $p->name,
-                    'price' => (float) $p->price,
-                ])->values()->toArray(),
+                'id' => $p->id,
+                'name' => $p->name,
+                'description' => $p->description,
+                'price' => $price,
+                'cost_price' => (float) $p->cost_price,
+                'recipe_cost' => $cost,
+                'stock_quantity' => (int) $p->stock_quantity,
+                'min_stock_level' => (int) $p->min_stock_level,
+                'is_low_stock' => (int) $p->stock_quantity < (int) $p->min_stock_level,
+                'category_id' => $p->category_id,
+                'category_name' => $p->category_name,
+                'subcategory_id' => $p->subcategory_id,
+                'subcategory_name' => $p->subcategory_name,
+                'sku' => $p->sku,
+                'image_url' => $p->image_url,
+                'is_active' => (bool) $p->is_active,
             ];
         });
     }
 
     /**
-     * Create a new beverage ingredient.
-     * Validates name uniqueness (case-insensitive).
-     *
-     * @param  array $data  Keys: name, unit, cost_per_unit, supplier?, min_stock_level?
-     * @return array The created ingredient record
-     *
-     * @throws ValidationException
+     * Create a new beverage product in the products table.
+     * Defaults to Snacks category (where beverages live).
      */
-    public function createBeverageIngredient(array $data): array
+    public function createBeverageProduct(array $data): array
     {
-        // Case-insensitive duplicate check
-        $exists = DB::table('ingredients')
+        // Find Snacks category (where beverages live)
+        $category = DB::table('categories')->where('name', 'Snacks')->first();
+        if (! $category) {
+            $category = DB::table('categories')->where('name', 'Bebidas')->first();
+        }
+        $categoryId = $category ? $category->id : null;
+
+        // Case-insensitive duplicate check on products
+        $exists = DB::table('products')
             ->whereRaw('LOWER(name) = ?', [mb_strtolower($data['name'])])
             ->exists();
 
         if ($exists) {
             throw ValidationException::withMessages([
-                'name' => ['El nombre ya existe en ingredientes'],
+                'name' => ['Ya existe un producto con ese nombre'],
             ]);
         }
 
-        $id = DB::table('ingredients')->insertGetId([
+        $id = DB::table('products')->insertGetId([
             'name' => $data['name'],
-            'category' => 'Bebidas',
-            'unit' => $data['unit'],
-            'cost_per_unit' => $data['cost_per_unit'],
-            'supplier' => $data['supplier'] ?? null,
-            'min_stock_level' => $data['min_stock_level'] ?? 1,
-            'current_stock' => 0,
+            'description' => $data['description'] ?? null,
+            'price' => $data['price'],
+            'cost_price' => $data['cost_price'] ?? 0,
+            'stock_quantity' => $data['stock_quantity'] ?? 0,
+            'min_stock_level' => $data['min_stock_level'] ?? 5,
+            'category_id' => $categoryId,
+            'subcategory_id' => $data['subcategory_id'] ?? null,
+            'sku' => $data['sku'] ?? null,
             'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        $record = DB::table('ingredients')->find($id);
-
-        return (array) $record;
+        return (array) DB::table('products')->find($id);
     }
 
     /**
-     * Create a beverage product + product_recipes link.
-     * Finds or creates "Bebidas" product category.
-     *
-     * @param  array $data  Keys: name, price, description?, ingredient_id
-     * @return array { product: [...], recipe: [...] }
+     * Get subcategories for Snacks/Bebidas categories.
      */
-    public function createBeverageProduct(array $data): array
+    public function getSubcategories(): Collection
     {
-        return DB::transaction(function () use ($data) {
-            // Find or create "Bebidas" product category
-            $category = DB::table('categories')
-                ->where('name', 'Bebidas')
-                ->first();
+        $categoryIds = DB::table('categories')
+            ->whereIn('name', ['Snacks', 'Bebidas'])
+            ->pluck('id')
+            ->toArray();
 
-            if (!$category) {
-                $categoryId = DB::table('categories')->insertGetId([
-                    'name' => 'Bebidas',
-                    'is_active' => true,
-                    'sort_order' => 99,
-                ]);
-            } else {
-                $categoryId = $category->id;
-            }
-
-            // Get the ingredient to know its unit
-            $ingredient = DB::table('ingredients')->find($data['ingredient_id']);
-
-            // Create product
-            $productId = DB::table('products')->insertGetId([
-                'name' => $data['name'],
-                'price' => $data['price'],
-                'description' => $data['description'] ?? null,
-                'category_id' => $categoryId,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            $unit = $ingredient ? $ingredient->unit : 'unidad';
-
-            // Create product_recipes link (quantity=1)
-            DB::table('product_recipes')->insert([
-                'product_id' => $productId,
-                'ingredient_id' => $data['ingredient_id'],
-                'quantity' => 1,
-                'unit' => $unit,
-            ]);
-
-            $product = DB::table('products')->find($productId);
-            $recipe = DB::table('product_recipes')
-                ->where('product_id', $productId)
-                ->where('ingredient_id', $data['ingredient_id'])
-                ->first();
-
-            return [
-                'product' => (array) $product,
-                'recipe' => (array) $recipe,
-            ];
-        });
+        return DB::table('subcategories')
+            ->whereIn('category_id', $categoryIds)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
     }
 }
