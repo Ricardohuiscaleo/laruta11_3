@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
-import { Loader2, Pencil, Check, X } from 'lucide-react';
+import { Loader2, Pencil, Check, X, Search } from 'lucide-react';
 import { getIngredientEmoji } from '@/lib/ingredient-emoji';
 import type { ApiResponse } from '@/types';
 
@@ -27,7 +27,7 @@ export default function PorcionesPage() {
   const [draft, setDraft] = useState<PortionRow[]>([]);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
-
+  const [search, setSearch] = useState('');
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
@@ -43,13 +43,15 @@ export default function PorcionesPage() {
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const grouped = useMemo(() => {
+    const q = search.toLowerCase();
+    const filtered = q ? rows.filter(r => r.ingredient_name.toLowerCase().includes(q) || r.category_name.toLowerCase().includes(q)) : rows;
     const map = new Map<number, { name: string; items: PortionRow[] }>();
-    for (const r of rows) {
+    for (const r of filtered) {
       if (!map.has(r.category_id)) map.set(r.category_id, { name: r.category_name, items: [] });
       map.get(r.category_id)!.items.push(r);
     }
     return Array.from(map.entries()).sort((a, b) => a[1].name.localeCompare(b[1].name, 'es'));
-  }, [rows]);
+  }, [rows, search]);
 
   const startEdit = (catId: number) => {
     setEditingCat(catId);
@@ -94,6 +96,20 @@ export default function PorcionesPage() {
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar ingrediente..."
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[44px]"
+            aria-label="Buscar ingrediente"
+          />
+        </div>
+      </div>
+
       <p className="text-sm text-gray-500">
         Porciones estándar por categoría. Al agregar un ingrediente a una receta, se sugiere la porción de su categoría.
       </p>

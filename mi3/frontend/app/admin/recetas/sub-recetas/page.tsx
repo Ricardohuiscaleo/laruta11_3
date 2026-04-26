@@ -68,7 +68,7 @@ export default function SubRecetasPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
-
+  const [search, setSearch] = useState('');
   const fetchList = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -116,19 +116,42 @@ export default function SubRecetasPage() {
     );
   }
 
+  const filteredComposites = useMemo(() => {
+    const q = search.toLowerCase();
+    return q ? composites.filter(c => c.name.toLowerCase().includes(q)) : composites;
+  }, [composites, search]);
+
   return (
     <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar sub-receta..."
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[44px]"
+            aria-label="Buscar sub-receta"
+          />
+        </div>
+      </div>
+
+      <div className="text-xs text-gray-500">
+        {filteredComposites.length} sub-receta{filteredComposites.length !== 1 ? 's' : ''}
+      </div>
+
       {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert">{error}</div>}
       {successMsg && <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600" role="status">{successMsg}</div>}
 
-      {composites.length === 0 ? (
+      {filteredComposites.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
           <Package className="mx-auto h-8 w-8 text-gray-300" />
-          <p className="mt-2 text-sm text-gray-500">No hay ingredientes compuestos configurados.</p>
+          <p className="mt-2 text-sm text-gray-500">{search ? 'No se encontraron sub-recetas.' : 'No hay ingredientes compuestos configurados.'}</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {composites.map(c => (
+          {filteredComposites.map(c => (
             <div key={c.id} className="rounded-xl border bg-white p-4 shadow-sm space-y-3">
               <div className="flex items-start justify-between gap-2">
                 <div>

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
-import { Loader2, Plus, AlertTriangle, X, ChevronDown, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Plus, AlertTriangle, X, ChevronDown, ChevronRight, Image as ImageIcon, Search } from 'lucide-react';
 import type { ApiResponse } from '@/types';
 
 /* ─── Types ─── */
@@ -143,6 +143,7 @@ export default function BebidasTab() {
   const [saving, setSaving] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [bevImage, setBevImage] = useState<File | null>(null);
+  const [search, setSearch] = useState('');
 
   const fetchBeverages = useCallback(async () => {
     setLoading(true);
@@ -169,7 +170,12 @@ export default function BebidasTab() {
   useEffect(() => { fetchBeverages(); fetchSubcategories(); }, [fetchBeverages, fetchSubcategories]);
 
   /* ─── Group by subcategory ─── */
-  const grouped = beverages.reduce<Record<string, Beverage[]>>((acc, b) => {
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return q ? beverages.filter(b => b.name.toLowerCase().includes(q)) : beverages;
+  }, [beverages, search]);
+
+  const grouped = filtered.reduce<Record<string, Beverage[]>>((acc, b) => {
     const key = b.subcategory_name || 'Sin subcategoría';
     if (!acc[key]) acc[key] = [];
     acc[key].push(b);
@@ -267,14 +273,22 @@ export default function BebidasTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-gray-500">
-          {beverages.length} productos en {groupKeys.length} subcategorías
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar bebida..."
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[44px]"
+            aria-label="Buscar bebida"
+          />
+        </div>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
           className={cn(
-            'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors min-h-[44px]',
+            'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors min-h-[44px] flex-shrink-0',
             showAddForm
               ? 'border border-gray-200 text-gray-600 hover:bg-gray-50'
               : 'bg-red-500 text-white hover:bg-red-600'
@@ -284,6 +298,10 @@ export default function BebidasTab() {
           {showAddForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           {showAddForm ? 'Cancelar' : 'Agregar Bebida'}
         </button>
+      </div>
+
+      <div className="text-xs text-gray-500">
+        {filtered.length} bebida{filtered.length !== 1 ? 's' : ''} en {groupKeys.length} subcategoría{groupKeys.length !== 1 ? 's' : ''}
       </div>
 
       {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert">{error}</div>}

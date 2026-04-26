@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`8d024b5`) — fix tiempo negativo comandas, ocultar notas pago en cocina, minicomandas header legible |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`9b63c08`) — bebidas muestra productos reales por subcategoría, recetas accordion por categoría |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`9b63c08`) — BeverageService productos, RecipeService grouped excluye Snacks/Extras/Combos |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`51f8593`) — fix S3 upload 403: visibility public + prefijo products/ |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -56,7 +56,7 @@
 
 ### 🔴 Críticas (afectan producción)
 
-- [ ] **🚨 Revertir descuento 10% temporal** — 4 productos con `is_featured=1` + `sale_price` (Completo Italiano, Completo Tocino Ahumado, Hass de Filete Pollo, Hass de Carne). Cron programado en VPS: revert automático sáb 25 abr 08:00 Chile (12:00 UTC) + verificación 10:00 Chile (14:00 UTC), ambos con reporte a Telegram. Post-ejecución: limpiar crons y eliminar scripts `apply_sale_today.php` y `revert_sale_today.php`.
+- [x] **🚨 Revertir descuento 10% temporal** — 4 productos revertidos manualmente (cron VPS no se ejecutó). is_featured=0, sale_price=NULL. Crons eliminados del VPS. Scripts apply/revert pendientes de eliminar del repo.
 - [ ] **🚨 URGENTE: Rotar AWS access key comprometida** — AWS detectó key `AKIAUQ24...WGTE` como comprometida y restringió servicios (Bedrock bloqueado). Key rotada a `...RKT7` en Coolify. Falta: 1) Actualizar `~/.aws/credentials` en VPS para chef-bot, 2) Desactivar key vieja en IAM, 3) Responder caso de soporte AWS (caso #177655445900588 respondido, esperando humano). Bedrock sigue bloqueado a nivel de cuenta.
 - [x] **Implementar Gemini como proveedor IA principal** — GeminiService.php creado con Structured Outputs, pipeline 2 fases (clasificación + análisis), token tracking, frontend v1.7. Commit `009259d`. Falta: test en vivo con imagen real.
 
@@ -100,6 +100,17 @@
 
 ## Sesiones Recientes
 
+### 2026-04-25e — Fix S3 upload 403 Forbidden en fotos de productos
+
+**Causa raíz:** `RecipeController::uploadProductImage()` subía a S3 con prefijo `productos/` sin ACL público. El bucket tiene bucket policy que permite lectura pública en `products/` (usado por caja3) pero no en `productos/`. Además, `Storage::put()` no pasaba visibility `'public'`.
+
+**Cambios código:**
+- `mi3/backend/app/Http/Controllers/RecipeController.php`: Prefijo `productos/` → `products/`, agregado `'public'` como tercer parámetro en `Storage::put()`.
+- `mi3/backend/app/Http/Controllers/Admin/CompraController.php`: Agregado `'public'` en `Storage::put()` para respaldos de compras.
+
+**Commits:** `51f8593`
+**Deploys:** mi3-backend ✅ (`51f8593`)
+
 ### 2026-04-25d — Fix comandas: tiempo negativo, notas pago ocultas, minicomandas header legible
 
 **Cambios código:**
@@ -134,18 +145,8 @@
 **Commits:** `2207cc8`
 **Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `2207cc8`)
 
-### 2026-04-25a — Fix clientes "Load failed" en admin/personal (500 CORS)
-
-**Causa raíz:** `UserController::customers()` usaba `SUM(tuu_orders.total)` pero la columna `total` no existe en `tuu_orders`. La columna correcta es `product_price`. SQL error → 500 → Laravel no envía headers CORS → navegador reporta error CORS.
-
-**Cambios código:**
-- `mi3/backend/app/Http/Controllers/Admin/UserController.php`: `tuu_orders.total` → `tuu_orders.product_price`
-
-**Commits:** `180d707`
-**Deploys:** mi3-backend ✅ (`180d707`)
-
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-24b archivadas. Últimas: 2026-04-24b (Descuento temporal 10%), 2026-04-24a (Redeploy mi3-frontend), 2026-04-23d (Fix P&L completo).
+> Sesiones 2026-04-19c→2026-04-25a archivadas. Últimas: 2026-04-25a (Fix clientes Load failed CORS), 2026-04-24b (Descuento temporal 10%), 2026-04-24a (Redeploy mi3-frontend).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

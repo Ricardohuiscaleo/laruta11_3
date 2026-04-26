@@ -86,6 +86,7 @@ export default function CombosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editingCombo, setEditingCombo] = useState<ComboRow | null>(null);
+  const [search, setSearch] = useState('');
 
   const fetchCombos = useCallback(async () => {
     setLoading(true);
@@ -119,24 +120,43 @@ export default function CombosPage() {
     );
   }
 
+  const filteredCombos = useMemo(() => {
+    const q = search.toLowerCase();
+    return q ? combos.filter(c => c.name.toLowerCase().includes(q)) : combos;
+  }, [combos, search]);
+
   return (
     <div className="space-y-4">
-      <p className="text-sm text-gray-500">
-        Gestión de combos: items fijos, grupos de selección, costos y márgenes.
-      </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar combo..."
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[44px]"
+            aria-label="Buscar combo"
+          />
+        </div>
+      </div>
+
+      <div className="text-xs text-gray-500">
+        {filteredCombos.length} combo{filteredCombos.length !== 1 ? 's' : ''}
+      </div>
 
       {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert">{error}</div>}
 
-      {combos.length === 0 ? (
+      {filteredCombos.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
           <Package className="mx-auto h-8 w-8 text-gray-300" />
-          <p className="mt-2 text-sm text-gray-500">No hay combos configurados.</p>
+          <p className="mt-2 text-sm text-gray-500">{search ? 'No se encontraron combos.' : 'No hay combos configurados.'}</p>
         </div>
       ) : (
         <>
           {/* Mobile: cards */}
           <div className="space-y-3 sm:hidden">
-            {combos.map(combo => (
+            {filteredCombos.map(combo => (
               <button
                 key={combo.id}
                 onClick={() => setEditingCombo(combo)}
@@ -181,7 +201,7 @@ export default function CombosPage() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {combos.map(combo => (
+                {filteredCombos.map(combo => (
                   <tr
                     key={combo.id}
                     onClick={() => setEditingCombo(combo)}
