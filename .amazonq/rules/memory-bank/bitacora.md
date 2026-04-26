@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`440fcdf`) — menú lista compacta, búsqueda inline highlight, arqueo tabla 3-col |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`5541224`) — minicomandas header legible con separadores, menú lista compacta, búsqueda inline highlight |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`9b63c08`) — bebidas muestra productos reales por subcategoría, recetas accordion por categoría |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`9b63c08`) — BeverageService productos, RecipeService grouped excluye Snacks/Extras/Combos |
@@ -100,6 +100,14 @@
 
 ## Sesiones Recientes
 
+### 2026-04-25d — Fix MiniComandas header legible con separadores
+
+**Cambios código:**
+- `caja3/src/components/MiniComandas.jsx`: Header de `renderOrderCard` reescrito — antes todo pegado (`⏱️T11-1777164448-4018ANULAR8:00(A TIEMPO)Juan`), ahora con separadores tipo `/comandas/` (`Retiro | ✓ A TIEMPO | 8:00 | Juan`). Tipo pedido (Retiro/Delivery/Cuartel) con icono, estado tiempo con emoji consistente (✓/⚠️/🚨), botones ANULAR+Copiar a la derecha, order_number en línea separada discreta.
+
+**Commits:** `5541224`
+**Deploys:** caja3 ✅ (`5541224`)
+
 ### 2026-04-25c — Spec recetas-categorias-bebidas: implementación + refactor bebidas a productos reales
 
 **Cambios código:**
@@ -135,77 +143,8 @@
 **Commits:** `180d707`
 **Deploys:** mi3-backend ✅ (`180d707`)
 
-### 2026-04-24b — Descuento temporal 10% en 4 productos (badge 🔥 OFERTA)
-
-**Cambios código:**
-- `app3/api/apply_sale_today.php`: Creado — aplica `is_featured=1` + `sale_price` (10% OFF redondeado a decena) a Completo Italiano, Completo Tocino Ahumado, Hass de Filete Pollo, Hass de Carne.
-- `app3/api/revert_sale_today.php`: Creado — revierte `is_featured=0` + `sale_price=NULL` en los mismos 4 productos.
-
-**Cambios BD:**
-- `products`: 4 productos actualizados con `is_featured=1` y `sale_price`: Completo Italiano $2.490→$2.240, Completo Tocino Ahumado $3.780→$3.400, Hass de Filete Pollo $4.280→$3.850, Hass de Carne $3.980→$3.580.
-
-**Commits:** `765915f`, `dce8ea6`
-**Deploys:** app3 ✅ (`dce8ea6`)
-
-### 2026-04-24a — Redeploy mi3-frontend: sidebar fix + StockController fix pendientes
-
-**Contexto:** mi3-frontend estaba deployado en `8a45857` pero faltaban commits `ea56a5b` (sidebar w-56 + padding) y `58159fe` (StockController syntax fix). Stock mostraba 0 items por 500 errors del controller roto. Backend ya tenía el fix deployado.
-
-**Acciones:** Redeploy mi3-frontend via Coolify API.
-**Deploys:** mi3-frontend ✅ (`58159fe`)
-
-### 2026-04-23d — Fix P&L completo: CMV turnos, nómina con descuentos, gas/limpieza de compras, meta_equilibrio
-
-**Cambios código:**
-- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: CMV ahora de caja3 `get_sales_analytics.php` (con turnos), nómina usa `liquidacion['total']` (con descuentos), gas/limpieza OPEX de `compras` del mes (tipo_compra='gas'/'limpieza'), meta_equilibrio calculado internamente.
-- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: Barra de meta usa `meta_equilibrio` en vez de `meta_mensual` de caja3.
-
-**Cambios BD:**
-- `tuu_order_items`: 2.834 `item_cost` actualizados con cost_price corregido.
-- `inventory_transactions`: 19 transacciones retroactivas cambiadas de `consumption` → `adjustment`.
-- `ingredients` Limpieza: todo stock→0 (compra=consumo inmediato).
-- Auditoría física: Pocillo cpu $2K→$20, Pan Brioche→0, Mango→0, Champiñón→2, Maracuyá→0.
-- Inventario total: $1.354K → $947K.
-
-**Commits:** `3ce2565`, `8a45857`
-**Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `8a45857`)
-
-### 2026-04-23c — Spec inventario-financiero-real: implementación completa + deploy + migraciones
-
-**Cambios:**
-- 4 migraciones BD: `consumption` enum en inventory_transactions, `tipo_compra` extendido (gas/limpieza/packaging/servicios), JSON desglose en capital_trabajo, reclasificación compras históricas (Abastible→gas, Limpieza→limpieza, etc.).
-- `mi3/backend/app/Services/CierreDiario/CierreDiarioService.php`: Creado — cerrar() calcula saldo_inicial/ingresos/egresos/saldo_final por turno (17:00-04:00 Chile), getResumenMensual() con días sin cierre.
-- `mi3/backend/app/Console/Commands/CierreDiarioCommand.php`: Cron `mi3:cierre-diario` a las 04:15 Chile.
-- `mi3/backend/app/Console/Commands/RecalcularHistoricoCommand.php`: `mi3:cierre-recalcular-historico` con progress bar.
-- `mi3/backend/app/Http/Controllers/Admin/StockController.php`: Extendido — consumir() con tipo `consumption` + validación stock, auditoria() con DB transaction + recálculo stock productos, consumibles() filtra Gas/Limpieza/Servicios.
-- `mi3/backend/app/Http/Controllers/Admin/CompraController.php`: Auto-clasificación tipo_compra por categoría ingrediente.
-- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: P&L con OPEX completo (gas, limpieza, mermas, otros_gastos) + meta_equilibrio + CMV directo de BD.
-- `mi3/backend/app/Http/Controllers/Admin/CapitalTrabajoController.php`: Creado — resumenMensual + cierreManual.
-- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: OPEX con 5 líneas (Nómina, Gas, Limpieza, Mermas, Otros) + Meta Equilibrio.
-- `mi3/frontend/components/admin/compras/ConsumiblesPanel.tsx`: Creado — lista consumibles con botón consumir.
-- `mi3/frontend/components/admin/compras/AuditoriaPanel.tsx`: Creado — conteo físico multi-fase (idle→counting→preview→applying→done).
-- `mi3/frontend/components/admin/sections/CapitalTrabajoSection.tsx`: Creado — tabla mensual día a día con cierre manual.
-- AdminShell/Sidebar/MobileNav: Sección `capital` registrada con icono Wallet.
-
-**Commits:** `f48dcac`
-**Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `f48dcac`)
-**BD:** 4 migraciones ejecutadas. Pendiente: `php artisan mi3:cierre-recalcular-historico` para recalcular capital_trabajo.
-
-### 2026-04-23b — Auditoría y fix costos productos: mayonesa + recálculo masivo cost_price
-
-**Cambios BD (sin deploy de código):**
-- `ingredients` id=19 (Mayonesa): `cost_per_unit` de $0 → $6.312,17/kg (Kraft 3.78L a $23.860).
-- `products`: 48 productos recalculados via `update_product_costs.php` (usa `CASE WHEN pr.unit='g' THEN 0.001`). 13 con cambios significativos: Completo Italiano $3.134→$1.825, Completo Tocino $3.822→$1.920, Gorda $2.400→$1.914, Palta Extra $47→$451, etc.
-- Auditoría completa: conversión g→kg en `create_order.php` y `process_sale_inventory_fn.php` ya funcionaba correctamente. El problema era solo en `cost_price` de tabla `products` (usado por `get_sales_analytics.php`).
-- CMV corregido: de 47% → 41.3%. Margen bruto: 58.7%. Punto de equilibrio: $2.555.191/mes.
-- Ingredientes con costo $0 restantes: Pocillo Salsero (duplicado id=103 vs id=158), Sweet Relish (2 recetas, impacto menor).
-- Históricos `tuu_order_items.item_cost`: NO modificados (se grabaron correctamente con conversión g→kg al momento de venta, diferencias son por cambios de precios de ingredientes).
-
-**Commits:** ninguno (solo cambios BD directos)
-**Deploys:** ninguno
-
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-24a archivadas. Últimas: 2026-04-24a (Redeploy mi3-frontend), 2026-04-23d (Fix P&L completo), 2026-04-23c (Spec inventario-financiero-real).
+> Sesiones 2026-04-19c→2026-04-24b archivadas. Últimas: 2026-04-24b (Descuento temporal 10%), 2026-04-24a (Redeploy mi3-frontend), 2026-04-23d (Fix P&L completo).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
