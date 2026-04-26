@@ -1,13 +1,13 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-25)
+## Estado Actual (2026-04-26)
 
 ### Aplicaciones Desplegadas
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`8d024b5`) — fix tiempo negativo comandas, ocultar notas pago en cocina, minicomandas header legible |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`fac8eac`) — comandas: ingredientes estructurados mi3, imagen 4:5, padding reducido |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`2bde6e8`) — Ventas: timezone Chile, columna Fecha, detalle expandible con ingredientes |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`6e3a67a`) — Fix current_stock column en getOrderDetail |
@@ -99,6 +99,15 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-26d — Comandas: ingredientes estructurados desde mi3, imagen 4:5, padding reducido
+
+**Cambios código:**
+- `caja3/api/tuu/get_comandas_v2.php`: API devuelve `recipe_ingredients[]` como array estructurado (name, quantity, unit), filtrando insumos (Packaging, Limpieza, Gas, Servicios) via `i.category`.
+- `caja3/src/pages/comandas/index.astro`: Imagen de 96x96 → 115x144 (aspect ratio 4:5), descripción larga reemplazada por tags pill con ingredientes+cantidad+unidad (sin costo), padding main de px-2 → px-1.
+
+**Commits:** `fac8eac`
+**Deploys:** caja3 ✅ (`fac8eac`)
 
 ### 2026-04-26c — Spec ventas-detail-improvements: detalle expandible + timezone Chile
 
