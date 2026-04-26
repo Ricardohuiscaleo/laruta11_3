@@ -845,8 +845,8 @@
                                                                                             h('span', { className: 'font-bold flex-1 truncate text-gray-800' }, `${ing.name} ${ing.quantity}${ing.unit}`),
                                                                                             h('span', { className: 'font-mono font-bold whitespace-nowrap' }, isDone ? '✅' : fmtTime(remaining))
                                                                                         ),
-                                                                                        h('div', { style: { width: '100%', height: '4px', backgroundColor: '#e5e7eb', borderRadius: '2px', overflow: 'hidden', marginTop: '2px' } },
-                                                                                            h('div', { style: { width: `${Math.round(pct * 100)}%`, height: '100%', backgroundColor: barColor, borderRadius: '2px' } })
+                                                                                        h('div', { style: { width: '100%', height: '8px', backgroundColor: '#e5e7eb', borderRadius: '4px', overflow: 'hidden', marginTop: '2px' } },
+                                                                                            h('div', { style: { width: `${Math.round(pct * 100)}%`, height: '100%', backgroundColor: barColor, borderRadius: '4px' } })
                                                                                         )
                                                                                     );
                                                                                 }),
@@ -873,8 +873,7 @@
                                                                                     '✅ ', listos.map(l => l.name).join(', ')
                                                                                 )
                                                                             );
-                                                                        })()
-                                                                        ) : 
+                                                                        })() : 
                                                                         // Fallback: descripción limpia si no hay recipe_ingredients
                                                                         item.description && (() => {
                                                                             const cleaned = item.description
@@ -965,8 +964,8 @@
                                                                                             h('span', { className: 'font-medium flex-1 truncate' }, `${ing.name} ${ing.quantity}${ing.unit}`),
                                                                                             h('span', { className: 'font-mono font-bold' }, isDone ? '✅' : fmtTime(remaining))
                                                                                         ),
-                                                                                        h('div', { style: { width: '100%', height: '3px', backgroundColor: '#e5e7eb', borderRadius: '2px', overflow: 'hidden', marginTop: '1px' } },
-                                                                                            h('div', { style: { width: `${Math.round(pct * 100)}%`, height: '100%', backgroundColor: barColor, borderRadius: '2px' } })
+                                                                                        h('div', { style: { width: '100%', height: '8px', backgroundColor: '#e5e7eb', borderRadius: '4px', overflow: 'hidden', marginTop: '2px' } },
+                                                                                            h('div', { style: { width: `${Math.round(pct * 100)}%`, height: '100%', backgroundColor: barColor, borderRadius: '4px' } })
                                                                                         )
                                                                                     );
                                                                                 }),
