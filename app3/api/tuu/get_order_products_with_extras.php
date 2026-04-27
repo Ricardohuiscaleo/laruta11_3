@@ -28,19 +28,21 @@ try {
         throw new Exception('Config file not found');
     }
     
-    // Crear conexión PDO directamente si no existe
-    if (!isset($pdo)) {
-        try {
-            $pdo = new PDO(
-                "mysql:host=localhost;dbname=u958525313_app;charset=utf8mb4",
-                "u958525313_app",
-                "wEzho0-hujzoz-cevzin",
-                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-            );
-        } catch (PDOException $e) {
-            throw new Exception('Database connection failed: ' . $e->getMessage());
+    // Usar config para conexión BD (config.php retorna array)
+    $config = null;
+    foreach ($config_paths as $path) {
+        if (file_exists($path)) {
+            $config = require $path;
+            break;
         }
     }
+    
+    $pdo = new PDO(
+        "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
+        $config['app_db_user'],
+        $config['app_db_pass'],
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
     
     $orderRef = $_GET['order'];
     
@@ -53,6 +55,7 @@ try {
             toi.quantity,
             toi.subtotal,
             toi.item_type,
+            toi.combo_data,
             tuo.customer_notes,
             tuo.special_instructions,
             tuo.delivery_type,

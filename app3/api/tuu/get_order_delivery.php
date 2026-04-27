@@ -32,7 +32,8 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
     
-    $sql = "SELECT delivery_type, delivery_address, delivery_fee, special_instructions, customer_notes 
+    $sql = "SELECT delivery_type, delivery_address, delivery_fee, special_instructions, customer_notes,
+                   product_price, subtotal, delivery_discount, scheduled_time, is_scheduled
             FROM tuu_orders 
             WHERE order_number = ?";
     

@@ -248,6 +248,10 @@ const amount = Astro.url.searchParams.get('amount');
                     if (deliveryData.success) {
                         deliveryInfo = deliveryData.delivery;
                         displayDeliveryInfo(deliveryInfo);
+                        // Mostrar total desde BD si no vino en URL
+                        if (!amount && deliveryInfo.product_price && orderAmountEl) {
+                            orderAmountEl.textContent = `$${parseInt(deliveryInfo.product_price).toLocaleString('es-CL')}`;
+                        }
                     }
                 } catch (error) {
                     console.log('Error obteniendo datos del pedido:', error);
