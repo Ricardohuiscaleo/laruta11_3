@@ -66,10 +66,10 @@ export default function ArqueoPanel({ onClose }) {
         </div>
         <style>{`
           @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-          .aq-header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:white;border-bottom:1px solid #e5e7eb;flex-shrink:0}
-          .aq-header h1{font-size:16px;color:#333;margin:0;display:flex;align-items:center;gap:6px}
-          .aq-close{background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;color:#6b7280;display:flex;align-items:center;justify-content:center}
-          .aq-close:hover{background:#f3f4f6;color:#111827}
+          .aq-header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:linear-gradient(to right,#ef4444,#f97316);flex-shrink:0;padding-top:max(0.75rem,env(safe-area-inset-top))}
+          .aq-header h1{font-size:18px;color:white;margin:0;display:flex;align-items:center;gap:6px;font-weight:700}
+          .aq-close{background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;color:white;display:flex;align-items:center;justify-content:center}
+          .aq-close:hover{background:rgba(255,255,255,0.2);color:white}
         `}</style>
       </div>
     );
@@ -159,10 +159,10 @@ export default function ArqueoPanel({ onClose }) {
       <SaldoCajaModal isOpen={showSaldoModal} onClose={() => setShowSaldoModal(false)} />
 
       <style>{`
-        .aq-header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:white;border-bottom:1px solid #e5e7eb;flex-shrink:0}
-        .aq-header h1{font-size:16px;color:#333;margin:0;display:flex;align-items:center;gap:6px}
-        .aq-close{background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;color:#6b7280;display:flex;align-items:center;justify-content:center}
-        .aq-close:hover{background:#f3f4f6;color:#111827}
+        .aq-header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:linear-gradient(to right,#ef4444,#f97316);flex-shrink:0;padding-top:max(0.75rem,env(safe-area-inset-top))}
+        .aq-header h1{font-size:18px;color:white;margin:0;display:flex;align-items:center;gap:6px;font-weight:700}
+        .aq-close{background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;color:white;display:flex;align-items:center;justify-content:center}
+        .aq-close:hover{background:rgba(255,255,255,0.2);color:white}
         .aq{max-width:600px;margin:0 auto;padding:4px}
         .hd{background:white;padding:8px 10px;border-radius:10px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
         .hd-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}

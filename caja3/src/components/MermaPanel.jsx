@@ -116,20 +116,19 @@ export default function MermaPanel({ onClose }) {
 
   return (
     <div className="fixed inset-0 bg-gray-50 z-50 flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-      {/* Header rojo */}
-      <header className="flex-shrink-0 bg-red-600 text-white px-4 py-3 flex items-center gap-3 shadow-md">
+      {/* Header gradiente rojo→naranja */}
+      <header className="flex-shrink-0 bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-3 flex items-center gap-3 shadow-lg" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
         {canGoBack ? (
           <button
             onClick={() => setStep(step - 1)}
-            className="p-2 rounded-full hover:bg-red-700 transition-colors"
+            className="p-2 rounded-full hover:bg-white/20 transition-colors"
             aria-label="Volver"
           >
             <ArrowLeft size={22} />
           </button>
         ) : <div className="w-[38px]" />}
         <div className="flex-1">
-          <h1 className="text-base font-bold">🗑️ Mermas</h1>
-          <p className="text-xs text-red-100">{headerTitle}</p>
+          <h1 className="text-lg font-bold">Mermas</h1>
         </div>
         {mermaItems.length > 0 && step === 1 && (
           <button
@@ -141,7 +140,7 @@ export default function MermaPanel({ onClose }) {
         )}
         <button
           onClick={onClose}
-          className="p-2 rounded-full hover:bg-red-700 transition-colors"
+          className="p-2 rounded-full hover:bg-white/20 transition-colors"
           aria-label="Cerrar"
         >
           <X size={22} />
