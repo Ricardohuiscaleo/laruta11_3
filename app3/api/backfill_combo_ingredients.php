@@ -23,7 +23,7 @@ $pdo = new PDO(
 );
 
 // Find combo items with ONLY product-level transactions (no ingredient expansion)
-$sql = "SELECT DISTINCT oi.order_reference, oi.id as item_id, oi.product_id, oi.quantity, oi.combo_data
+$sql = "SELECT oi.order_reference, oi.id as item_id, oi.product_id, oi.quantity, oi.combo_data
 FROM tuu_order_items oi
 JOIN tuu_orders o ON oi.order_reference = o.order_number
 WHERE oi.item_type = 'combo'
@@ -40,7 +40,7 @@ AND NOT EXISTS (
     WHERE it.order_reference = oi.order_reference 
     AND it.ingredient_id IS NOT NULL
 )
-ORDER BY o.created_at DESC";
+ORDER BY oi.id DESC";
 
 $rows = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 echo "BAD combo items to fix: " . count($rows) . "\n";
