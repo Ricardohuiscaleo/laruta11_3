@@ -37,7 +37,9 @@ import { vibrate, playNotificationSound, createConfetti, initAudio, playComandaS
 import { validateCheckoutForm, getFormDisabledState } from '../utils/validation.js';
 import AddressAutocomplete from './AddressAutocomplete.jsx';
 
-
+// Lazy-loaded inline panels
+const MermaPanel = React.lazy(() => import('./MermaPanel.jsx'));
+const ArqueoPanel = React.lazy(() => import('./ArqueoPanel.jsx'));
 
 // ============================================
 // CAJA3: UBICACIÓN DESACTIVADA
@@ -1050,6 +1052,26 @@ export default function App() {
     setTvOrderId(id);
   };
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [activePanel, setActivePanel] = useState(null);
+  const savedScrollRef = useRef(0);
+  const savedCategoryRef = useRef(null);
+
+  const openPanel = (panel) => {
+    savedScrollRef.current = window.scrollY;
+    savedCategoryRef.current = activeCategory;
+    setActivePanel(panel);
+    window.scrollTo(0, 0);
+  };
+  const closePanel = () => {
+    setActivePanel(null);
+    requestAnimationFrame(() => {
+      window.scrollTo(0, savedScrollRef.current);
+      if (savedCategoryRef.current) {
+        setActiveCategory(savedCategoryRef.current);
+      }
+    });
+  };
+
   const [showCheckout, setShowCheckout] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
@@ -2231,6 +2253,15 @@ export default function App() {
     return <LoadingScreen onComplete={() => setIsLoading(false)} />;
   }
 
+  if (activePanel) {
+    return (
+      <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-300 border-t-orange-500" /></div>}>
+        {activePanel === 'merma' && <MermaPanel onClose={closePanel} />}
+        {activePanel === 'arqueo' && <ArqueoPanel onClose={closePanel} />}
+      </React.Suspense>
+    );
+  }
+
   return (
     <div className="bg-white font-sans min-h-screen w-full pb-24" style={{ backgroundColor: '#ffffff', background: '#ffffff' }}>
 
@@ -2620,7 +2651,7 @@ export default function App() {
         {/* Fila superior: Mermar | Búsqueda | Caja */}
         <div className="flex items-center gap-2 px-3 pt-2 pb-1">
           <button
-            onClick={() => window.location.href = '/mermas'}
+            onClick={() => openPanel('merma')}
             className="flex flex-col items-center justify-center gap-0.5 flex-shrink-0 active:scale-95 transition-all"
             style={{ width: '48px' }}
           >
@@ -2653,7 +2684,7 @@ export default function App() {
             )}
           </div>
           <button
-            onClick={() => window.location.href = '/arqueo'}
+            onClick={() => openPanel('arqueo')}
             className="flex flex-col items-center justify-center gap-0.5 flex-shrink-0 active:scale-95 transition-all"
             style={{ width: '48px' }}
           >
