@@ -87,17 +87,31 @@ function processSaleInventory($pdo, $items, $order_reference) {
                 $combo_id = $item['combo_id'];
                 $quantity_sold = $item['cantidad'];
 
-                $combo_items_stmt = $pdo->prepare("
-                    SELECT ci.product_id, ci.quantity
-                    FROM combo_items ci
-                    WHERE ci.combo_id = ? AND ci.is_selectable = 0
-                ");
-                $combo_items_stmt->execute([$combo_id]);
-                $combo_items = $combo_items_stmt->fetchAll(PDO::FETCH_ASSOC);
+                // Usar fixed_items del pedido (combo_data JSON) — fuente de verdad
+                // Fallback a combo_items tabla solo si fixed_items no viene en el array
+                if (!empty($item['fixed_items'])) {
+                    foreach ($item['fixed_items'] as $fixed) {
+                        $fixed_pid = $fixed['product_id'] ?? $fixed['id'] ?? null;
+                        $fixed_qty = $fixed['quantity'] ?? 1;
+                        if ($fixed_pid) {
+                            processProductInventory($pdo, $fixed_pid,
+                                $fixed_qty * $quantity_sold, $order_reference, $order_item_id);
+                        }
+                    }
+                } else {
+                    // Fallback: consultar combo_items tabla
+                    $combo_items_stmt = $pdo->prepare("
+                        SELECT ci.product_id, ci.quantity
+                        FROM combo_items ci
+                        WHERE ci.combo_id = ? AND ci.is_selectable = 0
+                    ");
+                    $combo_items_stmt->execute([$combo_id]);
+                    $combo_items = $combo_items_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                foreach ($combo_items as $combo_item) {
-                    processProductInventory($pdo, $combo_item['product_id'],
-                        $combo_item['quantity'] * $quantity_sold, $order_reference, $order_item_id);
+                    foreach ($combo_items as $combo_item) {
+                        processProductInventory($pdo, $combo_item['product_id'],
+                            $combo_item['quantity'] * $quantity_sold, $order_reference, $order_item_id);
+                    }
                 }
 
                 if (!empty($item['selections'])) {
