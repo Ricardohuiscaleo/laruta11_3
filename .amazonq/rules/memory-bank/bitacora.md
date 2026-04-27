@@ -102,6 +102,13 @@
 
 ## Sesiones Recientes
 
+### 2026-04-27c — Backfill subtotal para 359 órdenes históricas con subtotal=0
+
+**BD:** Recalculado subtotal desde tuu_order_items para 359 órdenes pagadas que tenían subtotal=0 (R11, T11, CAJA). Precio validado contra tabla products. 47 órdenes RL6 sin items saltadas (legacy sin detalle). Incluye R11-1777252234-7988 (Combo Salchipapa) subtotal corregido a $5.490.
+
+**Commits:** ninguno (solo cambio BD)
+**Deploys:** ninguno
+
 ### 2026-04-27b — Fix combos inventario: fixed_items JSON en vez de combo_items tabla + backfill
 
 **Cambios código:**
