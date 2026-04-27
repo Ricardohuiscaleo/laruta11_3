@@ -24,6 +24,50 @@ if (!$config) {
     exit;
 }
 
+// Task 5.1: Include centralized inventory function
+require_once __DIR__ . '/process_sale_inventory_fn.php';
+
+/**
+ * Task 5.1: Convert cart_items + order_item_ids into the format expected by processSaleInventory().
+ * @param array $cart_items - Cart items from client input
+ * @param array $order_item_ids - Map of product_id => order_item_id from tuu_order_items inserts
+ * @return array Items formatted for processSaleInventory()
+ */
+function buildInventoryItems(array $cart_items, array $order_item_ids): array {
+    $items = [];
+    foreach ($cart_items as $ci) {
+        $product_id = $ci['id'] ?? null;
+        if (!$product_id) continue;
+
+        $is_combo = isset($ci['type']) && $ci['type'] === 'combo' ||
+                    isset($ci['category_name']) && $ci['category_name'] === 'Combos' ||
+                    isset($ci['selections']);
+
+        if ($is_combo) {
+            $items[] = [
+                'id' => $product_id,
+                'name' => $ci['name'] ?? '',
+                'cantidad' => $ci['quantity'] ?? 1,
+                'is_combo' => true,
+                'combo_id' => $ci['combo_id'] ?? $product_id,
+                'fixed_items' => $ci['fixed_items'] ?? [],
+                'selections' => $ci['selections'] ?? [],
+                'order_item_id' => $order_item_ids[$product_id] ?? null,
+                'customizations' => $ci['customizations'] ?? [],
+            ];
+        } else {
+            $items[] = [
+                'id' => $product_id,
+                'name' => $ci['name'] ?? '',
+                'cantidad' => $ci['quantity'] ?? 1,
+                'order_item_id' => $order_item_ids[$product_id] ?? null,
+                'customizations' => $ci['customizations'] ?? [],
+            ];
+        }
+    }
+    return $items;
+}
+
 try {
     $input = json_decode(file_get_contents('php://input'), true);
     
@@ -88,6 +132,141 @@ try {
     
     $pdo->beginTransaction();
     
+    // === Task 5.3: SERVER-SIDE SUBTOTAL CALCULATION ===
+    $calculated_subtotal = 0;
+    if (!empty($cart_items)) {
+        foreach ($cart_items as $ci) {
+            $ci_id = $ci['id'] ?? null;
+            $ci_qty = $ci['quantity'] ?? 1;
+            $db_price = $ci['price'] ?? 0; // fallback to client price
+
+            if ($ci_id) {
+                $price_stmt = $pdo->prepare("SELECT price FROM products WHERE id = ?");
+                $price_stmt->execute([$ci_id]);
+                $price_row = $price_stmt->fetch(PDO::FETCH_ASSOC);
+                if ($price_row) {
+                    $db_price = (int)$price_row['price'];
+                }
+            }
+
+            $calculated_subtotal += $db_price * $ci_qty;
+
+            // Add customization prices
+            if (!empty($ci['customizations'])) {
+                foreach ($ci['customizations'] as $cust) {
+                    $cust_id = $cust['id'] ?? null;
+                    $cust_qty = $cust['quantity'] ?? 1;
+                    $cust_price = $cust['price'] ?? 0;
+
+                    if ($cust_id) {
+                        $cust_price_stmt = $pdo->prepare("SELECT price FROM products WHERE id = ?");
+                        $cust_price_stmt->execute([$cust_id]);
+                        $cust_price_row = $cust_price_stmt->fetch(PDO::FETCH_ASSOC);
+                        if ($cust_price_row) {
+                            $cust_price = (int)$cust_price_row['price'];
+                        }
+                    }
+
+                    $calculated_subtotal += $cust_price * $cust_qty;
+                }
+            }
+        }
+    }
+
+    // === Task 5.3: SERVER-SIDE DELIVERY FEE CALCULATION ===
+    $delivery_type = $input['delivery_type'] ?? 'pickup';
+    $calculated_delivery_fee = 0;
+
+    if ($delivery_type === 'pickup') {
+        $calculated_delivery_fee = 0;
+    } elseif ($delivery_type === 'delivery') {
+        $client_delivery_fee = (int)($input['delivery_fee'] ?? 0);
+        $delivery_address = $input['delivery_address'] ?? null;
+
+        try {
+            // Get active truck location and base fee
+            $truck_stmt = $pdo->query("SELECT latitud, longitud, tarifa_delivery FROM food_trucks WHERE activo = 1 ORDER BY id ASC LIMIT 1");
+            $truck = $truck_stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($truck && $delivery_address) {
+                $truck_lat = (float)$truck['latitud'];
+                $truck_lng = (float)$truck['longitud'];
+                $base_fee = (int)$truck['tarifa_delivery'];
+
+                // Geocode delivery address
+                $api_key = $config['ruta11_google_maps_api_key'] ?? $config['google_maps_api_key'] ?? '';
+                $addr = $delivery_address;
+                if (stripos($addr, 'arica') === false) {
+                    $addr .= ', Arica, Chile';
+                }
+                $encoded_addr = urlencode($addr);
+                $geo_url = "https://maps.googleapis.com/maps/api/geocode/json?address={$encoded_addr}&key={$api_key}&language=es&region=cl";
+                $geo_response = @file_get_contents($geo_url);
+                $geo_data = json_decode($geo_response, true);
+
+                if ($geo_data && $geo_data['status'] === 'OK' && !empty($geo_data['results'])) {
+                    $dest_lat = $geo_data['results'][0]['geometry']['location']['lat'];
+                    $dest_lng = $geo_data['results'][0]['geometry']['location']['lng'];
+
+                    // Try Google Directions, fallback to Haversine
+                    $distance_km = null;
+                    $dir_url = "https://maps.googleapis.com/maps/api/directions/json?origin={$truck_lat},{$truck_lng}&destination={$dest_lat},{$dest_lng}&key={$api_key}&mode=driving";
+                    $dir_response = @file_get_contents($dir_url);
+                    $dir_data = json_decode($dir_response, true);
+
+                    if ($dir_data && $dir_data['status'] === 'OK' && !empty($dir_data['routes'])) {
+                        $distance_km = round($dir_data['routes'][0]['legs'][0]['distance']['value'] / 1000, 1);
+                    } else {
+                        // Haversine fallback
+                        $R = 6371;
+                        $dLat = deg2rad($dest_lat - $truck_lat);
+                        $dLng = deg2rad($dest_lng - $truck_lng);
+                        $a = sin($dLat/2)*sin($dLat/2) + cos(deg2rad($truck_lat))*cos(deg2rad($dest_lat))*sin($dLng/2)*sin($dLng/2);
+                        $distance_km = round($R * 2 * atan2(sqrt($a), sqrt(1-$a)), 1);
+                    }
+
+                    // Calculate surcharge: +$1000 per 2km beyond 6km
+                    $surcharge = 0;
+                    if ($distance_km > 6) {
+                        $extra_km = $distance_km - 6;
+                        $brackets = ceil($extra_km / 2);
+                        $surcharge = $brackets * 1000;
+                    }
+                    $calculated_delivery_fee = $base_fee + $surcharge;
+                } else {
+                    // Geocoding failed — fallback to client value
+                    $calculated_delivery_fee = $client_delivery_fee;
+                    error_log("create_order: delivery fee geocoding failed for '{$delivery_address}', using client value: {$client_delivery_fee}");
+                }
+            } else {
+                // No truck or no address — fallback to client value
+                $calculated_delivery_fee = $client_delivery_fee;
+                error_log("create_order: no truck or address, using client value: {$client_delivery_fee}");
+            }
+        } catch (Exception $fee_err) {
+            // Any error — fallback to client value
+            $calculated_delivery_fee = $client_delivery_fee;
+            error_log("create_order: delivery fee calculation error: " . $fee_err->getMessage() . ", using client value: {$client_delivery_fee}");
+        }
+    }
+
+    // Override client-provided values with server-calculated ones
+    $delivery_fee = $calculated_delivery_fee;
+
+    // === Task 5.4: SERVER-SIDE TOTAL RECALCULATION ===
+    $discount_amount = (int)($input['discount_amount'] ?? 0);
+    $delivery_discount = (int)($input['delivery_discount'] ?? 0);
+    $delivery_extras_total = (int)($input['delivery_extras_total'] ?? 0);
+    $cashback_used = (int)($input['cashback_used'] ?? 0);
+
+    $calculated_total = $calculated_subtotal + $calculated_delivery_fee + $delivery_extras_total - $discount_amount - $delivery_discount - $cashback_used;
+    if ($calculated_total < 0) {
+        $calculated_total = 0;
+    }
+
+    // Use server-calculated total for product_price and installment_amount
+    $amount = $calculated_total;
+
     // Crear descripción de productos
     $product_summary = count($cart_items) . ' productos: ' . 
         implode(', ', array_slice(array_map(function($item) {
@@ -128,12 +307,12 @@ try {
         $input['delivery_address'] ?? null,
         $input['pickup_time'] ?? null,
         $input['customer_notes'] ?? null,
-        $input['subtotal'] ?? 0,
-        $input['discount_amount'] ?? 0,
-        $input['delivery_discount'] ?? 0,
-        $input['delivery_extras_total'] ?? 0,
+        $calculated_subtotal,
+        $discount_amount,
+        $delivery_discount,
+        $delivery_extras_total,
         $delivery_extras_json,
-        $input['cashback_used'] ?? 0,
+        $cashback_used,
         $input['scheduled_time'] ?? null,
         isset($input['is_scheduled']) ? ($input['is_scheduled'] ? 1 : 0) : 0,
         $input['delivery_distance_km'] ?? null,
@@ -293,124 +472,27 @@ try {
         $order_item_ids[$product_id] = $pdo->lastInsertId();
     }
     
-    // Descontar inventario para crédito (RL6 y R11) ANTES de commit
+    $pdo->commit();
+
+    // Task 5.2: Descontar inventario para crédito (RL6 y R11) DESPUÉS del commit
+    // Usa processSaleInventory() centralizado en vez de código inline duplicado
     if (in_array($payment_method, ['rl6_credit', 'r11_credit'])) {
         try {
-            error_log("$payment_method - Iniciando descuento de inventario para orden $order_id");
-            
-            // Procesar cada item del carrito
-            foreach ($cart_items as $item) {
-                $product_id = $item['id'];
-                $quantity = $item['quantity'];
-                $current_order_item_id = $order_item_ids[$product_id] ?? null;
-                
-                error_log("$payment_method - Procesando producto ID: $product_id, cantidad: $quantity");
-                
-                // Verificar si tiene receta
-                $recipe_stmt = $pdo->prepare("
-                    SELECT pr.ingredient_id, pr.quantity, pr.unit, i.current_stock, i.name
-                    FROM product_recipes pr 
-                    JOIN ingredients i ON pr.ingredient_id = i.id 
-                    WHERE pr.product_id = ? AND i.is_active = 1
-                ");
-                $recipe_stmt->execute([$product_id]);
-                $recipe = $recipe_stmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                if (!empty($recipe)) {
-                    error_log("$payment_method - Producto $product_id tiene receta con " . count($recipe) . " ingredientes");
-                    
-                    // Descontar ingredientes
-                    foreach ($recipe as $ingredient) {
-                        $ingredient_quantity = $ingredient['quantity'];
-                        if ($ingredient['unit'] === 'g') {
-                            $ingredient_quantity = $ingredient_quantity / 1000;
-                        }
-                        
-                        $total_needed = $ingredient_quantity * $quantity;
-                        $new_stock = $ingredient['current_stock'] - $total_needed;
-                        
-                        // Registrar transacción
-                        $trans_stmt = $pdo->prepare("
-                            INSERT INTO inventory_transactions 
-                            (transaction_type, ingredient_id, quantity, unit, previous_stock, new_stock, order_reference, order_item_id)
-                            VALUES ('sale', ?, ?, ?, ?, ?, ?, ?)
-                        ");
-                        $trans_stmt->execute([
-                            $ingredient['ingredient_id'],
-                            -$total_needed,
-                            $ingredient['unit'],
-                            $ingredient['current_stock'],
-                            $new_stock,
-                            $order_id,
-                            $current_order_item_id
-                        ]);
-                        
-                        // Actualizar stock
-                        $update_stmt = $pdo->prepare("
-                            UPDATE ingredients 
-                            SET current_stock = ?, updated_at = NOW() 
-                            WHERE id = ?
-                        ");
-                        $update_stmt->execute([$new_stock, $ingredient['ingredient_id']]);
-                        
-                        error_log("$payment_method - Descontado ingrediente {$ingredient['name']}: $total_needed {$ingredient['unit']}");
-                    }
-                    
-                    // Recalcular stock del producto
-                    $recalc_stmt = $pdo->prepare("
-                        UPDATE products p 
-                        SET stock_quantity = (
-                            SELECT COALESCE(
-                                FLOOR(MIN(
-                                    CASE 
-                                        WHEN pr.unit = 'g' THEN i.current_stock * 1000 / pr.quantity
-                                        ELSE i.current_stock / pr.quantity
-                                    END
-                                )), 0
-                            )
-                            FROM product_recipes pr
-                            JOIN ingredients i ON pr.ingredient_id = i.id
-                            WHERE pr.product_id = p.id 
-                            AND i.is_active = 1
-                            AND i.current_stock > 0
-                        )
-                        WHERE p.id = ?
-                    ");
-                    $recalc_stmt->execute([$product_id]);
-                } else {
-                    error_log("$payment_method - Producto $product_id SIN receta, descontando stock directo");
-                    
-                    // Sin receta, descontar producto directo
-                    $stock_stmt = $pdo->prepare("SELECT stock_quantity FROM products WHERE id = ?");
-                    $stock_stmt->execute([$product_id]);
-                    $current = $stock_stmt->fetch(PDO::FETCH_ASSOC);
-                    $prev_stock = $current['stock_quantity'] ?? 0;
-                    $new_stock = $prev_stock - $quantity;
-                    
-                    $trans_stmt = $pdo->prepare("
-                        INSERT INTO inventory_transactions 
-                        (transaction_type, product_id, quantity, unit, previous_stock, new_stock, order_reference, order_item_id)
-                        VALUES ('sale', ?, ?, 'unit', ?, ?, ?, ?)
-                    ");
-                    $trans_stmt->execute([$product_id, -$quantity, $prev_stock, $new_stock, $order_id, $current_order_item_id]);
-                    
-                    $product_stmt = $pdo->prepare("
-                        UPDATE products 
-                        SET stock_quantity = stock_quantity - ?, updated_at = NOW() 
-                        WHERE id = ?
-                    ");
-                    $product_stmt->execute([$quantity, $product_id]);
-                }
+            error_log("$payment_method - Iniciando descuento de inventario (centralizado) para orden $order_id");
+            $inventory_items = buildInventoryItems($cart_items, $order_item_ids);
+            $inv_result = processSaleInventory($pdo, $inventory_items, $order_id);
+            if (!empty($inv_result['skipped'])) {
+                error_log("$payment_method - Inventario ya procesado para orden $order_id, skipped");
+            } elseif (!$inv_result['success']) {
+                error_log("$payment_method - ERROR inventario para orden $order_id: " . ($inv_result['error'] ?? 'unknown'));
+            } else {
+                error_log("$payment_method - Inventario procesado exitosamente para orden $order_id");
             }
-            
-            error_log("$payment_method - Inventario procesado exitosamente para orden $order_id");
         } catch (Exception $inv_error) {
-            error_log("$payment_method - ERROR procesando inventario: " . $inv_error->getMessage());
-            throw $inv_error; // Re-lanzar para hacer rollback
+            // No re-lanzar: la orden ya fue committed, solo loguear el error de inventario
+            error_log("$payment_method - ERROR procesando inventario post-commit: " . $inv_error->getMessage());
         }
     }
-    
-    $pdo->commit();
 
     // Notificar mi3 en realtime (WebSocket via Reverb)
     try {
@@ -434,7 +516,7 @@ try {
     // Generar 1% cashback si es usuario autenticado, pagó Y NO está cancelada
     if ($user_id && $payment_status === 'paid' && $order_status !== 'cancelled') {
         try {
-            $subtotal = $input['subtotal'] ?? $amount;
+            $subtotal = $calculated_subtotal;
             $cashback = round($subtotal * 0.01);
             
             if ($cashback > 0) {
@@ -484,12 +566,12 @@ try {
             'delivery_type' => $input['delivery_type'] ?? 'pickup',
             'delivery_address' => $input['delivery_address'] ?? null,
             'delivery_fee' => $delivery_fee,
-            'subtotal' => $input['subtotal'] ?? 0,
-            'discount_amount' => $input['discount_amount'] ?? 0,
-            'delivery_discount' => $input['delivery_discount'] ?? 0,
-            'delivery_extras' => $input['delivery_extras_total'] ?? 0,
+            'subtotal' => $calculated_subtotal,
+            'discount_amount' => $discount_amount,
+            'delivery_discount' => $delivery_discount,
+            'delivery_extras' => $delivery_extras_total,
             'delivery_extras_items' => $input['delivery_extras'] ?? [],
-            'cashback_used' => $input['cashback_used'] ?? 0,
+            'cashback_used' => $cashback_used,
             'total' => $amount,
             'items' => $cart_items,
             'scheduled_time' => $input['scheduled_time'] ?? null,

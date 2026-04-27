@@ -1,7 +1,7 @@
 # Tasks: Fix Inventario, Ventas y Comandas
 
 ## Task 1: Guard de idempotencia en processSaleInventory
-- [ ] 1.1 Agregar guard de duplicados al inicio de `processSaleInventory()` en `app3/api/process_sale_inventory_fn.php`: si ya existen `inventory_transactions` para el `order_reference`, retornar `['success' => true, 'skipped' => true]` sin iniciar transacción
+- [x] 1.1 Agregar guard de duplicados al inicio de `processSaleInventory()` en `app3/api/process_sale_inventory_fn.php`: si ya existen `inventory_transactions` para el `order_reference`, retornar `['success' => true, 'skipped' => true]` sin iniciar transacción
 - [ ] 1.2 Deploy y verificar en SSH:
   ```
   # Buscar una orden que YA tiene inventory_transactions
@@ -10,10 +10,10 @@
   ```
 
 ## Task 2: Fix order_status en create_payment_direct.php (R11 Webpay)
-- [ ] 2.1 En `app3/api/tuu/create_payment_direct.php`, cambiar `order_status` de `'pending'` a `'sent_to_kitchen'` en el INSERT SQL
-- [ ] 2.2 Agregar cálculo server-side de subtotal: iterar cart_items, buscar precio real en tabla products, calcular SUM(db_price * quantity) + customizations
-- [ ] 2.3 Agregar cálculo server-side de delivery_fee: pickup=0, delivery=base_fee + surcharge, fallback al valor del cliente si geocoding falla
-- [ ] 2.4 Recalcular total como subtotal + delivery_fee + delivery_extras - discount_amount - delivery_discount - cashback_used
+- [x] 2.1 En `app3/api/tuu/create_payment_direct.php`, cambiar `order_status` de `'pending'` a `'sent_to_kitchen'` en el INSERT SQL
+- [x] 2.2 Agregar cálculo server-side de subtotal: iterar cart_items, buscar precio real en tabla products, calcular SUM(db_price * quantity) + customizations
+- [x] 2.3 Agregar cálculo server-side de delivery_fee: pickup=0, delivery=base_fee + surcharge, fallback al valor del cliente si geocoding falla
+- [x] 2.4 Recalcular total como subtotal + delivery_fee + delivery_extras - discount_amount - delivery_discount - cashback_used
 - [ ] 2.5 Deploy y verificar en SSH:
   ```
   mysql -e "SELECT order_number, order_status, payment_status, subtotal, delivery_fee, product_price FROM tuu_orders WHERE order_number LIKE 'R11-%' ORDER BY created_at DESC LIMIT 3;"
@@ -22,9 +22,9 @@
   ```
 
 ## Task 3: Fix callback_simple.php (preservar order_status + inventario)
-- [ ] 3.1 Modificar UPDATE para pago aprobado: solo actualizar status='completed' y payment_status='paid' SIN tocar order_status
-- [ ] 3.2 Agregar manejo de pago fallido/cancelado: SET order_status='cancelled'
-- [ ] 3.3 Agregar guard de duplicados antes de llamar processSaleInventory()
+- [x] 3.1 Modificar UPDATE para pago aprobado: solo actualizar status='completed' y payment_status='paid' SIN tocar order_status
+- [x] 3.2 Agregar manejo de pago fallido/cancelado: SET order_status='cancelled'
+- [x] 3.3 Agregar guard de duplicados antes de llamar processSaleInventory()
 - [ ] 3.4 Deploy y verificar en SSH:
   ```
   mysql -e "SELECT order_number, order_status, payment_status FROM tuu_orders WHERE order_number LIKE 'R11-%' AND payment_status='paid' ORDER BY created_at DESC LIMIT 3;"
@@ -33,9 +33,9 @@
   ```
 
 ## Task 4: Fix callback.php (no cambiar order_status a delivered)
-- [ ] 4.1 Para result=completed: eliminar order_status del UPDATE, solo actualizar status y payment_status
-- [ ] 4.2 Para result failed/cancelled: SET order_status='cancelled', payment_status='unpaid'
-- [ ] 4.3 Agregar guard de duplicados antes del bloque de inventario
+- [x] 4.1 Para result=completed: eliminar order_status del UPDATE, solo actualizar status y payment_status
+- [x] 4.2 Para result failed/cancelled: SET order_status='cancelled', payment_status='unpaid'
+- [x] 4.3 Agregar guard de duplicados antes del bloque de inventario
 - [ ] 4.4 Deploy y verificar en SSH:
   ```
   mysql -e "SELECT order_number, order_status FROM tuu_orders WHERE order_number LIKE 'R11-%' AND order_status='delivered' AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR);"
@@ -43,10 +43,10 @@
   ```
 
 ## Task 5: Refactorizar inventario en create_order.php (R11C + validación fees)
-- [ ] 5.1 Agregar require_once de process_sale_inventory_fn.php y función helper buildInventoryItems()
-- [ ] 5.2 Reemplazar bloque inline de inventario (~80 líneas) por llamada a processSaleInventory() — llamar DESPUÉS del commit de la transacción principal
-- [ ] 5.3 Agregar cálculo server-side de subtotal y delivery_fee (misma lógica que task 2)
-- [ ] 5.4 Recalcular total y usar en product_price e installment_amount
+- [x] 5.1 Agregar require_once de process_sale_inventory_fn.php y función helper buildInventoryItems()
+- [x] 5.2 Reemplazar bloque inline de inventario (~80 líneas) por llamada a processSaleInventory() — llamar DESPUÉS del commit de la transacción principal
+- [x] 5.3 Agregar cálculo server-side de subtotal y delivery_fee (misma lógica que task 2)
+- [x] 5.4 Recalcular total y usar en product_price e installment_amount
 - [ ] 5.5 Deploy y verificar en SSH:
   ```
   mysql -e "SELECT order_number, subtotal, delivery_fee FROM tuu_orders WHERE order_number LIKE 'R11C-%' ORDER BY created_at DESC LIMIT 3;"
@@ -54,7 +54,7 @@
   ```
 
 ## Task 6: Expandir backfill para todos los prefijos
-- [ ] 6.1 Cambiar WHERE de backfill_r11_inventory.php para cubrir R11-%, R11C-%, T11-%
+- [x] 6.1 Cambiar WHERE de backfill_r11_inventory.php para cubrir R11-%, R11C-%, T11-%
 - [ ] 6.2 Deploy y verificar en SSH:
   ```
   mysql -e "SELECT SUBSTRING_INDEX(o.order_number, '-', 1) as prefix, COUNT(*) as missing FROM tuu_orders o WHERE o.payment_status='paid' AND o.order_status NOT IN ('cancelled','failed') AND NOT EXISTS (SELECT 1 FROM inventory_transactions it WHERE it.order_reference = o.order_number) GROUP BY prefix;"

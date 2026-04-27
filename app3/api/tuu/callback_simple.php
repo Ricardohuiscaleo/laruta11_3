@@ -21,30 +21,33 @@ error_log("POST: " . json_encode($_POST));
 $x_message = $_GET['x_message'] ?? '';
 $is_approved = ($x_message === 'Transaccion aprobada');
 
-if (isset($_GET['x_reference']) && isset($_GET['x_result']) && $_GET['x_result'] === 'completed') {
+if (isset($_GET['x_reference']) && isset($_GET['x_result'])) {
     $order_reference = $_GET['x_reference'];
+    $x_result = $_GET['x_result'];
 
     try {
         $pdo = new PDO(
             "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
             $config['app_db_user'],
             $config['app_db_pass'],
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-            );
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
 
-        error_log("callback_simple: Order $order_reference, x_message: $x_message, approved: " . ($is_approved ? 'YES' : 'NO'));
+        error_log("callback_simple: Order $order_reference, x_result: $x_result, x_message: $x_message, approved: " . ($is_approved ? 'YES' : 'NO'));
 
-        // Actualizar estado — payment_status = 'paid' SOLO si aprobado
-        $update_stmt = $pdo->prepare("UPDATE tuu_orders SET status = 'completed', payment_status = ?, order_status = 'pending', updated_at = NOW() WHERE order_number = ?");
-        $update_stmt->execute([$is_approved ? 'paid' : 'pending_payment', $order_reference]);
-
-        // Procesar inventario SOLO si aprobado
-        if (!$is_approved) {
-            error_log("callback_simple: Pago NO aprobado para $order_reference, inventario NO procesado");
+        // Task 3.2: Manejo de pago fallido/cancelado
+        if ($x_result !== 'completed' || !$is_approved) {
+            $update_stmt = $pdo->prepare("UPDATE tuu_orders SET status = ?, payment_status = 'unpaid', order_status = 'cancelled', updated_at = NOW() WHERE order_number = ?");
+            $update_stmt->execute([$x_result, $order_reference]);
+            error_log("callback_simple: Pago NO aprobado para $order_reference (result=$x_result), orden cancelada, inventario NO procesado");
             http_response_code(200);
             echo "OK";
             exit;
         }
+
+        // Task 3.1: Pago aprobado — solo actualizar status y payment_status, SIN tocar order_status (preservar sent_to_kitchen)
+        $update_stmt = $pdo->prepare("UPDATE tuu_orders SET status = 'completed', payment_status = 'paid', updated_at = NOW() WHERE order_number = ?");
+        $update_stmt->execute([$order_reference]);
 
         // Obtener items de la orden para procesar inventario
         $items_stmt = $pdo->prepare("
@@ -93,11 +96,17 @@ if (isset($_GET['x_reference']) && isset($_GET['x_result']) && $_GET['x_result']
             }
         }
 
-        // Procesar inventario directamente (sin HTTP)
+        // Task 3.3: Guard de duplicados antes de procesar inventario
         if (!empty($inventory_items)) {
             require_once __DIR__ . '/../process_sale_inventory_fn.php';
-            $inv_result = processSaleInventory($pdo, $inventory_items, $order_reference);
-            error_log("Inventario para orden $order_reference: " . ($inv_result['success'] ? 'OK' : $inv_result['error']));
+            $dup_check = $pdo->prepare("SELECT COUNT(*) FROM inventory_transactions WHERE order_reference = ?");
+            $dup_check->execute([$order_reference]);
+            if ($dup_check->fetchColumn() > 0) {
+                error_log("callback_simple: Inventario ya procesado para $order_reference, skip duplicado");
+            } else {
+                $inv_result = processSaleInventory($pdo, $inventory_items, $order_reference);
+                error_log("Inventario para orden $order_reference: " . ($inv_result['success'] ? 'OK' : ($inv_result['error'] ?? 'unknown')));
+            }
         }
 
         // Obtener datos completos de la orden para WhatsApp

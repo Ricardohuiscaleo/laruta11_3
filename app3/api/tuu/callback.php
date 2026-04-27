@@ -56,28 +56,36 @@ try {
         default => 'unpaid'
     };
 
-    // Determinar order_status basado en el resultado
-    $order_status = match($result) {
-        'completed' => 'delivered',
-        'failed', 'cancelled' => 'cancelled',
-        default => 'pending'
-    };
-
-    $sql = "UPDATE tuu_orders SET 
-            status = ?, 
-            payment_status = ?,
-            order_status = ?,
-            tuu_transaction_id = ?,
-            tuu_message = ?,
-            tuu_amount = ?,
-            tuu_timestamp = NOW(),
-            updated_at = NOW()
-            WHERE order_number = ?";
-    
     $tuu_message = ($result === 'completed') ? 'Transaccion aprobada' : "Transaccion $result";
-    
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([$new_status, $payment_status, $order_status, $transaction_id, $tuu_message, $amount, $order_id]);
+
+    if ($result === 'completed') {
+        // Pago exitoso: NO tocar order_status para preservar 'sent_to_kitchen'
+        $sql = "UPDATE tuu_orders SET 
+                status = 'completed', 
+                payment_status = 'paid',
+                tuu_transaction_id = ?,
+                tuu_message = ?,
+                tuu_amount = ?,
+                tuu_timestamp = NOW(),
+                updated_at = NOW()
+                WHERE order_number = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$transaction_id, $tuu_message, $amount, $order_id]);
+    } else {
+        // Pago fallido/cancelado: marcar order_status='cancelled'
+        $sql = "UPDATE tuu_orders SET 
+                status = ?, 
+                payment_status = 'unpaid',
+                order_status = 'cancelled',
+                tuu_transaction_id = ?,
+                tuu_message = ?,
+                tuu_amount = ?,
+                tuu_timestamp = NOW(),
+                updated_at = NOW()
+                WHERE order_number = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$new_status, $transaction_id, $tuu_message, $amount, $order_id]);
+    }
 
     // NUEVO: Registrar en tuu_pagos_online si hay user_id
     $user_sql = "SELECT user_id, customer_name, customer_email, customer_phone FROM tuu_orders WHERE order_number = ?";
@@ -128,61 +136,68 @@ try {
     // NUEVO: Procesar inventario si el pago fue exitoso
     if ($new_status === 'completed') {
         try {
-            // Obtener items de la orden
-            $items_stmt = $pdo->prepare("
-                SELECT oi.id as order_item_id, oi.product_id, oi.product_name, oi.quantity, 
-                       oi.item_type, oi.combo_data
-                FROM tuu_order_items oi
-                WHERE oi.order_reference = ?
-            ");
-            $items_stmt->execute([$order_id]);
-            $order_items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            if (!empty($order_items)) {
-                // Preparar datos para process_sale_inventory.php
-                $inventory_items = [];
-                foreach ($order_items as $item) {
-                    $inventory_item = [
-                        'id' => $item['product_id'],
-                        'name' => $item['product_name'],
-                        'cantidad' => $item['quantity'],
-                        'order_item_id' => $item['order_item_id']
+            // Guard de duplicados: si ya existen inventory_transactions, skip
+            $dup_check = $pdo->prepare("SELECT COUNT(*) FROM inventory_transactions WHERE order_reference = ?");
+            $dup_check->execute([$order_id]);
+            if ($dup_check->fetchColumn() > 0) {
+                error_log("TUU Callback - Inventario ya procesado para orden $order_id, skipping");
+            } else {
+                // Obtener items de la orden
+                $items_stmt = $pdo->prepare("
+                    SELECT oi.id as order_item_id, oi.product_id, oi.product_name, oi.quantity, 
+                           oi.item_type, oi.combo_data
+                    FROM tuu_order_items oi
+                    WHERE oi.order_reference = ?
+                ");
+                $items_stmt->execute([$order_id]);
+                $order_items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                if (!empty($order_items)) {
+                    // Preparar datos para process_sale_inventory.php
+                    $inventory_items = [];
+                    foreach ($order_items as $item) {
+                        $inventory_item = [
+                            'id' => $item['product_id'],
+                            'name' => $item['product_name'],
+                            'cantidad' => $item['quantity'],
+                            'order_item_id' => $item['order_item_id']
+                        ];
+                        
+                        // Soporte para combos
+                        if ($item['item_type'] === 'combo' && $item['combo_data']) {
+                            $combo_data = json_decode($item['combo_data'], true);
+                            $inventory_item['is_combo'] = true;
+                            // combo_id real está en product_id del item, no en combo_data
+                            $inventory_item['combo_id'] = $item['product_id'];
+                            $inventory_item['fixed_items'] = $combo_data['fixed_items'] ?? [];
+                            $inventory_item['selections'] = $combo_data['selections'] ?? [];
+                        }
+                        
+                        // Soporte para customizations
+                        if ($item['item_type'] === 'product' && $item['combo_data']) {
+                            $combo_data = json_decode($item['combo_data'], true);
+                            if (isset($combo_data['customizations'])) {
+                                $inventory_item['customizations'] = $combo_data['customizations'];
+                            }
+                        }
+                        
+                        $inventory_items[] = $inventory_item;
+                    }
+                    
+                    // Llamar a process_sale_inventory.php
+                    $inventory_data = [
+                        'items' => $inventory_items,
+                        'order_reference' => $order_id
                     ];
                     
-                    // Soporte para combos
-                    if ($item['item_type'] === 'combo' && $item['combo_data']) {
-                        $combo_data = json_decode($item['combo_data'], true);
-                        $inventory_item['is_combo'] = true;
-                        // combo_id real está en product_id del item, no en combo_data
-                        $inventory_item['combo_id'] = $item['product_id'];
-                        $inventory_item['fixed_items'] = $combo_data['fixed_items'] ?? [];
-                        $inventory_item['selections'] = $combo_data['selections'] ?? [];
-                    }
+                    require_once __DIR__ . '/../process_sale_inventory_fn.php';
+                    $inv_result = processSaleInventory($pdo, $inventory_data['items'], $inventory_data['order_reference']);
                     
-                    // Soporte para customizations
-                    if ($item['item_type'] === 'product' && $item['combo_data']) {
-                        $combo_data = json_decode($item['combo_data'], true);
-                        if (isset($combo_data['customizations'])) {
-                            $inventory_item['customizations'] = $combo_data['customizations'];
-                        }
+                    if (!$inv_result['success']) {
+                        error_log("TUU Callback - Error procesando inventario para orden $order_id: " . ($inv_result['error'] ?? 'Unknown'));
+                    } else {
+                        error_log("TUU Callback - Inventario procesado exitosamente para orden $order_id");
                     }
-                    
-                    $inventory_items[] = $inventory_item;
-                }
-                
-                // Llamar a process_sale_inventory.php
-                $inventory_data = [
-                    'items' => $inventory_items,
-                    'order_reference' => $order_id
-                ];
-                
-                require_once __DIR__ . '/../process_sale_inventory_fn.php';
-                $inv_result = processSaleInventory($pdo, $inventory_data['items'], $inventory_data['order_reference']);
-                
-                if (!$inv_result['success']) {
-                    error_log("TUU Callback - Error procesando inventario para orden $order_id: " . ($inv_result['error'] ?? 'Unknown'));
-                } else {
-                    error_log("TUU Callback - Inventario procesado exitosamente para orden $order_id");
                 }
             }
         } catch (Exception $inv_error) {

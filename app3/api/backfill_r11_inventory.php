@@ -26,7 +26,7 @@ $pdo = new PDO(
 $orders_stmt = $pdo->query("
     SELECT o.id, o.order_number
     FROM tuu_orders o
-    WHERE o.order_number LIKE 'R11-%'
+    WHERE (o.order_number LIKE 'R11-%' OR o.order_number LIKE 'R11C-%' OR o.order_number LIKE 'T11-%')
     AND o.payment_status = 'paid'
     AND o.order_status NOT IN ('cancelled', 'failed')
     AND NOT EXISTS (

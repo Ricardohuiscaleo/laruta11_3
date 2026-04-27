@@ -71,6 +71,13 @@ function processProductInventory($pdo, $product_id, $quantity_sold, $order_refer
 
 function processSaleInventory($pdo, $items, $order_reference) {
     try {
+        // Guard de idempotencia: si ya existen transactions para esta orden, skip
+        $check = $pdo->prepare("SELECT COUNT(*) FROM inventory_transactions WHERE order_reference = ?");
+        $check->execute([$order_reference]);
+        if ($check->fetchColumn() > 0) {
+            return ['success' => true, 'skipped' => true];
+        }
+
         $pdo->beginTransaction();
 
         foreach ($items as $item) {

@@ -46,6 +46,141 @@ try {
         
         $pdo->beginTransaction();
         
+        // === SERVER-SIDE SUBTOTAL CALCULATION (Task 2.2) ===
+        $calculated_subtotal = 0;
+        if (!empty($cart_items)) {
+            foreach ($cart_items as $ci) {
+                $ci_id = $ci['id'] ?? null;
+                $ci_qty = $ci['quantity'] ?? 1;
+                $db_price = $ci['price'] ?? 0; // fallback to client price
+                
+                if ($ci_id) {
+                    $price_stmt = $pdo->prepare("SELECT price FROM products WHERE id = ?");
+                    $price_stmt->execute([$ci_id]);
+                    $price_row = $price_stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($price_row) {
+                        $db_price = (int)$price_row['price'];
+                    }
+                }
+                
+                $calculated_subtotal += $db_price * $ci_qty;
+                
+                // Add customization prices
+                if (!empty($ci['customizations'])) {
+                    foreach ($ci['customizations'] as $cust) {
+                        $cust_id = $cust['id'] ?? null;
+                        $cust_qty = $cust['quantity'] ?? 1;
+                        $cust_price = $cust['price'] ?? 0;
+                        
+                        if ($cust_id) {
+                            $cust_price_stmt = $pdo->prepare("SELECT price FROM products WHERE id = ?");
+                            $cust_price_stmt->execute([$cust_id]);
+                            $cust_price_row = $cust_price_stmt->fetch(PDO::FETCH_ASSOC);
+                            if ($cust_price_row) {
+                                $cust_price = (int)$cust_price_row['price'];
+                            }
+                        }
+                        
+                        $calculated_subtotal += $cust_price * $cust_qty;
+                    }
+                }
+            }
+        }
+        
+        // === SERVER-SIDE DELIVERY FEE CALCULATION (Task 2.3) ===
+        $delivery_type = $input['delivery_type'] ?? 'pickup';
+        $calculated_delivery_fee = 0;
+        
+        if ($delivery_type === 'pickup') {
+            $calculated_delivery_fee = 0;
+        } elseif ($delivery_type === 'delivery') {
+            $client_delivery_fee = (int)($input['delivery_fee'] ?? 0);
+            $delivery_address = $input['delivery_address'] ?? null;
+            
+            try {
+                // Get active truck location and base fee
+                $truck_stmt = $pdo->query("SELECT latitud, longitud, tarifa_delivery FROM food_trucks WHERE activo = 1 ORDER BY id ASC LIMIT 1");
+                $truck = $truck_stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($truck && $delivery_address) {
+                    $truck_lat = (float)$truck['latitud'];
+                    $truck_lng = (float)$truck['longitud'];
+                    $base_fee = (int)$truck['tarifa_delivery'];
+                    
+                    // Geocode delivery address
+                    $api_key = $config['ruta11_google_maps_api_key'] ?? $config['google_maps_api_key'] ?? '';
+                    $addr = $delivery_address;
+                    if (stripos($addr, 'arica') === false) {
+                        $addr .= ', Arica, Chile';
+                    }
+                    $encoded_addr = urlencode($addr);
+                    $geo_url = "https://maps.googleapis.com/maps/api/geocode/json?address={$encoded_addr}&key={$api_key}&language=es&region=cl";
+                    $geo_response = @file_get_contents($geo_url);
+                    $geo_data = json_decode($geo_response, true);
+                    
+                    if ($geo_data && $geo_data['status'] === 'OK' && !empty($geo_data['results'])) {
+                        $dest_lat = $geo_data['results'][0]['geometry']['location']['lat'];
+                        $dest_lng = $geo_data['results'][0]['geometry']['location']['lng'];
+                        
+                        // Try Google Directions, fallback to Haversine
+                        $distance_km = null;
+                        $dir_url = "https://maps.googleapis.com/maps/api/directions/json?origin={$truck_lat},{$truck_lng}&destination={$dest_lat},{$dest_lng}&key={$api_key}&mode=driving";
+                        $dir_response = @file_get_contents($dir_url);
+                        $dir_data = json_decode($dir_response, true);
+                        
+                        if ($dir_data && $dir_data['status'] === 'OK' && !empty($dir_data['routes'])) {
+                            $distance_km = round($dir_data['routes'][0]['legs'][0]['distance']['value'] / 1000, 1);
+                        } else {
+                            // Haversine fallback
+                            $R = 6371;
+                            $dLat = deg2rad($dest_lat - $truck_lat);
+                            $dLng = deg2rad($dest_lng - $truck_lng);
+                            $a = sin($dLat/2)*sin($dLat/2) + cos(deg2rad($truck_lat))*cos(deg2rad($dest_lat))*sin($dLng/2)*sin($dLng/2);
+                            $distance_km = round($R * 2 * atan2(sqrt($a), sqrt(1-$a)), 1);
+                        }
+                        
+                        // Calculate surcharge: +$1000 per 2km beyond 6km
+                        $surcharge = 0;
+                        if ($distance_km > 6) {
+                            $extra_km = $distance_km - 6;
+                            $brackets = ceil($extra_km / 2);
+                            $surcharge = $brackets * 1000;
+                        }
+                        $calculated_delivery_fee = $base_fee + $surcharge;
+                    } else {
+                        // Geocoding failed — fallback to client value
+                        $calculated_delivery_fee = $client_delivery_fee;
+                        error_log("Delivery fee: geocoding failed for '{$delivery_address}', using client value: {$client_delivery_fee}");
+                    }
+                } else {
+                    // No truck or no address — fallback to client value
+                    $calculated_delivery_fee = $client_delivery_fee;
+                    error_log("Delivery fee: no truck or address, using client value: {$client_delivery_fee}");
+                }
+            } catch (Exception $fee_err) {
+                // Any error — fallback to client value
+                $calculated_delivery_fee = $client_delivery_fee;
+                error_log("Delivery fee calculation error: " . $fee_err->getMessage() . ", using client value: {$client_delivery_fee}");
+            }
+        }
+        
+        // Override client-provided values with server-calculated ones
+        $delivery_fee = $calculated_delivery_fee;
+        
+        // === SERVER-SIDE TOTAL RECALCULATION (Task 2.4) ===
+        $discount_amount = (int)($input['discount_amount'] ?? 0);
+        $delivery_discount = (int)($input['delivery_discount'] ?? 0);
+        $delivery_extras_total = (int)($input['delivery_extras_total'] ?? 0);
+        $cashback_used = (int)($input['cashback_used'] ?? 0);
+        
+        $calculated_total = $calculated_subtotal + $calculated_delivery_fee + $delivery_extras_total - $discount_amount - $delivery_discount - $cashback_used;
+        if ($calculated_total < 0) {
+            $calculated_total = 0;
+        }
+        
+        // Use server-calculated total for the order amount
+        $amount = $calculated_total;
+        
         if (!empty($cart_items)) {
             // Crear descripción de productos
             $product_summary = count($cart_items) . ' productos: ' . 
@@ -64,7 +199,7 @@ try {
                 delivery_extras, delivery_extras_items, cashback_used,
                 scheduled_time, is_scheduled,
                 delivery_distance_km, delivery_duration_min
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, 'pending', 'unpaid', 'pending',
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, 'pending', 'unpaid', 'sent_to_kitchen',
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
             $delivery_extras_json = null;
@@ -79,12 +214,12 @@ try {
                 $input['delivery_type'] ?? 'pickup',
                 $input['delivery_address'] ?? null,
                 $input['customer_notes'] ?? null,
-                $input['subtotal'] ?? 0,
-                $input['discount_amount'] ?? 0,
-                $input['delivery_discount'] ?? 0,
-                $input['delivery_extras_total'] ?? 0,
+                $calculated_subtotal,
+                $discount_amount,
+                $delivery_discount,
+                $delivery_extras_total,
                 $delivery_extras_json,
-                $input['cashback_used'] ?? 0,
+                $cashback_used,
                 $input['scheduled_time'] ?? null,
                 isset($input['is_scheduled']) ? ($input['is_scheduled'] ? 1 : 0) : 0,
                 $input['delivery_distance_km'] ?? null,
@@ -107,7 +242,36 @@ try {
                 $product_name = $item['name'] ?? 'Producto sin nombre';
                 $product_price = $item['price'] ?? 0;
                 $quantity = $item['quantity'] ?? 1;
-                $subtotal = $product_price * $quantity;
+                
+                // Validate product_price against DB (Req 4.4)
+                if ($product_id) {
+                    $db_price_stmt = $pdo->prepare("SELECT price FROM products WHERE id = ?");
+                    $db_price_stmt->execute([$product_id]);
+                    $db_price_row = $db_price_stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($db_price_row) {
+                        $product_price = (int)$db_price_row['price'];
+                    }
+                }
+                
+                // Item subtotal = base price * qty + customizations total (Req 4.3)
+                $item_customizations_total = 0;
+                if (!empty($item['customizations'])) {
+                    foreach ($item['customizations'] as $ic) {
+                        $ic_id = $ic['id'] ?? null;
+                        $ic_price = $ic['price'] ?? 0;
+                        $ic_qty = $ic['quantity'] ?? 1;
+                        if ($ic_id) {
+                            $ic_stmt = $pdo->prepare("SELECT price FROM products WHERE id = ?");
+                            $ic_stmt->execute([$ic_id]);
+                            $ic_row = $ic_stmt->fetch(PDO::FETCH_ASSOC);
+                            if ($ic_row) {
+                                $ic_price = (int)$ic_row['price'];
+                            }
+                        }
+                        $item_customizations_total += $ic_price * $ic_qty;
+                    }
+                }
+                $subtotal = ($product_price * $quantity) + $item_customizations_total;
                 
                 // Calcular item_cost desde receta o cost_price
                 $item_cost = 0;
@@ -317,7 +481,7 @@ try {
                 order_number, user_id, customer_name, customer_phone, 
                 product_name, product_price, installment_amount, 
                 status, payment_status, order_status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', 'pending')";
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', 'sent_to_kitchen')";
             
             $order_stmt = $pdo->prepare($order_sql);
             $order_stmt->execute([
