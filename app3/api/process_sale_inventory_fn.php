@@ -116,7 +116,16 @@ function processSaleInventory($pdo, $items, $order_reference) {
 
                 if (!empty($item['selections'])) {
                     foreach ($item['selections'] as $selection) {
-                        if (!empty($selection['id'])) {
+                        // selections puede ser un array de items (agrupado por categoría)
+                        // o un item individual con 'id'
+                        if (is_array($selection) && !isset($selection['id'])) {
+                            // Es un grupo de selections (ej: "Bebidas" => [{id:95}, {id:99}])
+                            foreach ($selection as $sel) {
+                                if (!empty($sel['id'])) {
+                                    processProductInventory($pdo, $sel['id'], $quantity_sold, $order_reference, $order_item_id);
+                                }
+                            }
+                        } elseif (!empty($selection['id'])) {
                             processProductInventory($pdo, $selection['id'], $quantity_sold, $order_reference, $order_item_id);
                         }
                     }
