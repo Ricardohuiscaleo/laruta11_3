@@ -128,9 +128,14 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
   const formatTime = (seconds) => {
     if (seconds < 60) return `${seconds}s`;
-    const mins = Math.floor(seconds / 60);
+    const totalMins = Math.floor(seconds / 60);
+    if (totalMins >= 60) {
+      const hours = Math.floor(totalMins / 60);
+      const mins = totalMins % 60;
+      return `${hours}h ${mins}m`;
+    }
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${totalMins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const getTimeAlert = (seconds) => {
