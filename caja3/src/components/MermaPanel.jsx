@@ -118,13 +118,15 @@ export default function MermaPanel({ onClose }) {
     <div className="fixed inset-0 bg-gray-50 z-50 flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       {/* Header rojo */}
       <header className="flex-shrink-0 bg-red-600 text-white px-4 py-3 flex items-center gap-3 shadow-md">
-        <button
-          onClick={canGoBack ? () => setStep(step - 1) : onClose}
-          className="p-2 rounded-full hover:bg-red-700 transition-colors"
-          aria-label={canGoBack ? 'Volver' : 'Cerrar'}
-        >
-          {canGoBack ? <ArrowLeft size={22} /> : <X size={22} />}
-        </button>
+        {canGoBack ? (
+          <button
+            onClick={() => setStep(step - 1)}
+            className="p-2 rounded-full hover:bg-red-700 transition-colors"
+            aria-label="Volver"
+          >
+            <ArrowLeft size={22} />
+          </button>
+        ) : <div className="w-[38px]" />}
         <div className="flex-1">
           <h1 className="text-base font-bold">🗑️ Mermas</h1>
           <p className="text-xs text-red-100">{headerTitle}</p>
@@ -137,6 +139,13 @@ export default function MermaPanel({ onClose }) {
             Siguiente →
           </button>
         )}
+        <button
+          onClick={onClose}
+          className="p-2 rounded-full hover:bg-red-700 transition-colors"
+          aria-label="Cerrar"
+        >
+          <X size={22} />
+        </button>
       </header>
 
       {/* Tabs mermar/historial */}
@@ -288,7 +297,7 @@ export default function MermaPanel({ onClose }) {
                     <Hl name={item.name} q={searchTerm} />
                   </p>
                 </div>
-                <span className="text-xs text-gray-400 flex-shrink-0">{stock} {unit}</span>
+                {itemType === 'ingredient' && <span className="text-xs text-gray-400 flex-shrink-0">{stock} {unit}</span>}
                 {alreadyAdded && <span className="text-xs text-green-600 font-bold">✓</span>}
               </button>
             );

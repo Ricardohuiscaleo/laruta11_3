@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`9b2eaa6`) — backfill combo ingredients + pending pages RL6 |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`89b1e4b`) — MermaPanel rediseñado: header rojo, 3 pasos, motivos grid, cantidad inline |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`ee5e687`) — MermaPanel: solo búsqueda, excluye extras/personalizar |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28d16d6`) — endpoint produce sub-recetas, prep_method columns |
