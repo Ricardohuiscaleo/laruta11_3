@@ -103,23 +103,6 @@ export default function SubRecetasPage() {
     }
   };
 
-  if (editingId !== null) {
-    return (
-      <SubRecipeEditor
-        ingredientId={editingId}
-        onBack={() => { setEditingId(null); fetchList(); }}
-      />
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="flex justify-center py-16" role="status" aria-label="Cargando sub-recetas">
-        <Loader2 className="h-6 w-6 animate-spin text-red-500" />
-      </div>
-    );
-  }
-
   const filteredComposites = useMemo(() => {
     const q = search.toLowerCase();
     return q ? composites.filter(c => c.name.toLowerCase().includes(q)) : composites;
@@ -145,6 +128,23 @@ export default function SubRecetasPage() {
       setSavingNew(false);
     }
   };
+
+  if (editingId !== null) {
+    return (
+      <SubRecipeEditor
+        ingredientId={editingId}
+        onBack={() => { setEditingId(null); fetchList(); }}
+      />
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-16" role="status" aria-label="Cargando sub-recetas">
+        <Loader2 className="h-6 w-6 animate-spin text-red-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
