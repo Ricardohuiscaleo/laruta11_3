@@ -6,7 +6,7 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`dce8ea6`) — scripts sale temporal 10% (apply/revert), badge 🔥 OFERTA activo en 4 productos |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`bdee29d`) — fix inventario/ventas/comandas: idempotencia, order_status, subtotal/delivery_fee server-side |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4ed0589`) — comandas: widget checklist planchero, auto-inferir prep, 60s offset, barras 8px |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
@@ -58,7 +58,7 @@
 
 - [x] **🚨 Revertir descuento 10% temporal** — 4 productos revertidos manualmente (cron VPS no se ejecutó). is_featured=0, sale_price=NULL. Crons eliminados del VPS. Scripts apply/revert pendientes de eliminar del repo.
 - [ ] **🚨 URGENTE: Rotar AWS access key comprometida** — AWS detectó key `AKIAUQ24...WGTE` como comprometida y restringió servicios (Bedrock bloqueado). Key rotada a `...RKT7` en Coolify. Falta: 1) Actualizar `~/.aws/credentials` en VPS para chef-bot, 2) Desactivar key vieja en IAM, 3) Responder caso de soporte AWS (caso #177655445900588 respondido, esperando humano). Bedrock sigue bloqueado a nivel de cuenta.
-- [ ] **🚨 CRÍTICO: Inventario no descuenta para R11/R11C/combos** — Solo pedidos T11 (Tuu) descuentan stock. Webpay (R11-*), Crédito R11 (R11C-*) y combos NO descuentan. Webpay no aparece en comandas. delivery_fee y subtotal incorrectos en Webpay. Spec creado: `.kiro/specs/fix-inventario-ventas-comandas/`.
+- [x] **🚨 CRÍTICO: Inventario no descuenta para R11/R11C/combos** — CORREGIDO. Guard idempotencia en processSaleInventory(), order_status=sent_to_kitchen en create_payment_direct, callbacks preservan order_status, create_order usa processSaleInventory centralizado, subtotal/delivery_fee server-side, backfill expandido. Commit `bdee29d`. Pendiente: ejecutar backfill en producción (Task 7) y tests e2e (Task 8).
 - [x] **Implementar Gemini como proveedor IA principal** — GeminiService.php creado con Structured Outputs, pipeline 2 fases (clasificación + análisis), token tracking, frontend v1.7. Commit `009259d`. Falta: test en vivo con imagen real.
 
 - [x] **Actualizar `checklist_templates`** — overhaul completo con rol explícito, fotos separadas, prompts IA.
@@ -84,7 +84,7 @@
 - [x] Obtener chat_id del grupo "Pedidos 11" — no aplica, flujo directo al bot de Telegram configurado.
 - [x] **Ejecutar migraciones `checklists_v2`** — obsoleto, sistema de checklists reescrito en mi3.
 - [x] **Limpiar datos de prueba delivery** — eliminados 6 pedidos TEST-DLV-* y SIM-*. Pendiente: revertir roles rider de Camila(1), Andrés(3), Dafne(18) cuando termine el testing.
-- [ ] Recalcular delivery\_fee server-side en `create_order.php`
+- [x] Recalcular delivery\_fee server-side en `create_order.php` — COMPLETADO en spec fix-inventario-ventas-comandas Task 5.3. Commit `bdee29d`.
 - [x] **Migrar prompts IA a BD** — PARCIAL. Tablas creadas, 17 prompts seeded, API CRUD funcional, UI PromptsManager en Consola. PERO: GeminiService restaurado a versión hardcoded porque el refactor eliminó métodos públicos (percibir, analizar, validar, reconciliar). Pendiente: re-hacer tarea 8 del spec sin eliminar métodos de API call.
 - [ ] **Migrar tracking público de app3 a mi3** — `app3/src/pages/tracking/` usa polling HTTP, debería estar en mi3-frontend con Reverb WebSocket nativo para realtime real. Actualmente embebido via iframe en payment-success. Además: ocultar informe técnico al usuario, mostrar tracking en pedidos pending (no solo payment-success), integrar en MiniComandasCliente de app3. No necesario en caja3.
 - [x] **Integrar checklists mi3 en caja3** — COMPLETADO. Public/ChecklistController.php con 5 endpoints, ChecklistApp.jsx reescrito para consumir mi3 API. Commit `eaceaab`.
@@ -101,6 +101,20 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-27a — Spec fix-inventario-ventas-comandas: Tasks 1-6 implementadas + deploy app3
+
+**Cambios código:**
+- `app3/api/process_sale_inventory_fn.php`: Guard idempotencia — si ya existen `inventory_transactions` para `order_reference`, retorna `skipped=true` sin transacción.
+- `app3/api/tuu/create_payment_direct.php`: `order_status='sent_to_kitchen'` (era `pending`), subtotal server-side validando precios contra BD, delivery_fee server-side (base_fee + surcharge por distancia, Directions→Haversine fallback), total recalculado.
+- `app3/api/tuu/callback_simple.php`: Pago aprobado preserva `order_status` (no lo cambia a `pending`), pago fallido→`cancelled`, guard duplicados antes de inventario.
+- `app3/api/tuu/callback.php`: Pago aprobado preserva `order_status` (no lo cambia a `delivered`), pago fallido→`cancelled`, guard duplicados antes de inventario.
+- `app3/api/create_order.php`: Reemplaza ~80 líneas inventario inline por `processSaleInventory()` centralizado (post-commit), `buildInventoryItems()` helper, subtotal/delivery_fee server-side, total recalculado.
+- `app3/api/backfill_r11_inventory.php`: WHERE expandido de `R11-%` a `R11-% OR R11C-% OR T11-%`.
+
+**Commits:** `bdee29d`
+**Deploys:** app3 ✅ (`bdee29d`)
+**Pendiente:** Ejecutar backfill en producción (Task 7) y tests e2e (Task 8)
 
 ### 2026-04-26d — Comandas: timers preparación, colores sólidos, remember token, padding 4px
 
@@ -148,58 +162,8 @@
 **Commits:** `cc3b765`, `6dab65c`, `3aa317b`, `d779dfa`, `bff6a8b`, `74010b5`, `ce4234f`, `8b96d47`
 **Deploys:** mi3-backend ✅ (`8b96d47`), mi3-frontend ✅ (`8b96d47`)
 
-### 2026-04-26a — Search bars + botones Agregar en Recetas, endpoints crear combo/sub-receta, fix S3 403
-
-**Cambios código:**
-- `mi3/backend/app/Http/Controllers/RecipeController.php`: Fix S3 403 — prefijo `productos/` → `products/`, visibility `'public'`.
-- `mi3/backend/app/Http/Controllers/Admin/CompraController.php`: Mismo fix visibility `'public'`.
-- `mi3/backend/app/Http/Controllers/Admin/ComboController.php`: Nuevo método `create()` — crea producto tipo combo (category_id=8).
-- `mi3/backend/app/Http/Controllers/Admin/IngredientRecipeController.php`: Nuevo método `create()` — crea ingrediente compuesto (is_composite=true).
-- `mi3/backend/routes/api.php`: Rutas `POST /admin/combos` y `POST /admin/ingredient-recipes`.
-- `mi3/frontend/app/admin/recetas/bebidas/page.tsx`: Barra de búsqueda.
-- `mi3/frontend/app/admin/recetas/combos/page.tsx`: Barra de búsqueda + botón "Agregar Combo" + form + fix useMemo hooks order.
-- `mi3/frontend/app/admin/recetas/porciones/page.tsx`: Barra de búsqueda.
-- `mi3/frontend/app/admin/recetas/sub-recetas/page.tsx`: Barra de búsqueda + botón "Agregar Sub-Receta" + form (crea y abre editor).
-
-**Commits:** `51f8593`, `2610cde`, `c12a542`, `7a8095c`, `921063c`, `f94c203`, `c1a3b5b`, `14eb695`, `b7e5b92`
-**Deploys:** mi3-backend ✅ (`14eb695`), mi3-frontend ✅ (`b7e5b92`)
-
-### 2026-04-25d — Fix comandas: tiempo negativo, notas pago ocultas, minicomandas header legible
-
-**Cambios código:**
-- `caja3/src/components/MiniComandas.jsx`: Header de `renderOrderCard` reescrito con separadores (`Retiro | ✓ A TIEMPO | 8:00 | Juan`), tipo pedido con icono, botones ANULAR+Copiar a la derecha, order_number en línea separada.
-- `caja3/src/pages/comandas/index.astro`: Fix `getTimeElapsed` y `getMinutesElapsed` — usaban `new Date(createdAt)` + restaban 3h (doble error), ahora usan `.replace(' ','T')+'Z'` como MiniComandas. Filtro en `customer_notes` para ocultar líneas con "EFECTIVO"/"PAGO EN" (info de pago no relevante para cocina).
-
-**Commits:** `5541224`, `8d024b5`
-**Deploys:** caja3 ✅ (`8d024b5`)
-
-### 2026-04-25c — Spec recetas-categorias-bebidas: implementación + refactor bebidas a productos reales
-
-**Cambios código:**
-- `mi3/backend/app/Services/Recipe/BeverageService.php`: Reescrito — getBeverages() ahora consulta productos de categorías Snacks/Bebidas (53 productos reales), no ingredientes. createBeverageProduct() crea producto con todos los campos (nombre, precio, descripción, costo, stock, subcategoría, SKU). getSubcategories() para Snacks/Bebidas.
-- `mi3/backend/app/Http/Controllers/Admin/BeverageController.php`: store() crea producto (no ingrediente), storeProduct() eliminado, subcategories() agregado.
-- `mi3/backend/routes/api.php`: POST bebidas/producto → GET bebidas/subcategorias.
-- `mi3/backend/app/Services/Recipe/RecipeService.php`: getRecipesGroupedByCategory() excluye Bebidas+Snacks+Personalizar+Extras+Combos.
-- `mi3/backend/app/Http/Controllers/RecipeController.php`: index() soporta ?grouped=true.
-- `mi3/frontend/app/admin/recetas/bebidas/page.tsx`: Reescrito — muestra productos agrupados por subcategoría (Aguas, Latas 350ml, Energéticas, etc.) con accordion, formulario con campos completos.
-- `mi3/frontend/app/admin/recetas/page.tsx`: Refactorizado a accordion por categoría.
-- `mi3/frontend/components/admin/sections/RecetasSection.tsx`: Tab Bebidas (Wine icon).
-
-**Commits:** `b2a0623`, `ea72361`, `9b63c08`
-**Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `9b63c08`)
-
-### 2026-04-25b — Spec turnos-nomina-mejoras: implementación completa + deploy
-
-**Cambios código:**
-- `mi3/backend/app/Http/Controllers/Admin/PayrollController.php`: Extendido — expone `total_reemplazando`, `total_reemplazado`, `reemplazos_realizados[]`, `reemplazos_recibidos[]` agregados de ambos centros de costo. Agrega `credito_r11_pendiente` consultando `usuarios.credito_r11_usado` y verificando si ya se descontó via `ajustes_sueldo`. Recalcula `gran_total = base + reemplazando - reemplazado + ajustes`.
-- `mi3/frontend/components/admin/sections/NominaSection.tsx`: Tarjetas expandibles con ChevronDown/Up, grid compacto con +Reemp (verde) y -Reemp (rojo), desglose completo al expandir (reemplazos realizados/recibidos con días y montos, ajustes, crédito R11 pendiente con "Se descontará el día 1").
-- `mi3/frontend/components/admin/sections/TurnosSection.tsx`: Calendario compacto (72px vs 100px), avatares mini 24px agrupados R11|Seguridad, borde naranja izquierdo en días con reemplazo, punto naranja en móvil, detalle con titular tachado → reemplazante + monto.
-
-**Commits:** `2207cc8`
-**Deploys:** mi3-backend ✅, mi3-frontend ✅ (ambos `2207cc8`)
-
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-25a archivadas. Últimas: 2026-04-25a (Fix clientes Load failed CORS), 2026-04-24b (Descuento temporal 10%), 2026-04-24a (Redeploy mi3-frontend).
+> Sesiones 2026-04-19c→2026-04-26a archivadas. Últimas archivadas: 2026-04-26a (Search bars + botones Agregar Recetas), 2026-04-25d (Fix comandas tiempo negativo), 2026-04-25c (Spec recetas-categorias-bebidas), 2026-04-25b (Spec turnos-nomina-mejoras).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
