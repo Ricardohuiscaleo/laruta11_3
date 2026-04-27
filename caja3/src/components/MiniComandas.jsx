@@ -656,11 +656,9 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
         <div className="mb-3">
           <div className="flex items-center gap-1 text-xs flex-wrap">
-            <User size={12} />
-            <span className="font-medium">{order.customer_name}</span>
             {order.customer_phone && (
               <>
-                <span className="text-gray-400">|</span>
+                <Phone size={12} className="text-gray-500" />
                 <span className="text-gray-600">{order.customer_phone}</span>
                 <span className="text-gray-400">|</span>
                 <a href={`tel:${order.customer_phone}`} className="bg-blue-500 hover:bg-blue-600 text-white py-0.5 px-2 rounded flex items-center gap-1">
