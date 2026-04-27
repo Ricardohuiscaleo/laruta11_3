@@ -6,7 +6,7 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`5b0865f`) — pending pages con delivery_discount RL6 |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`9b2eaa6`) — backfill combo ingredients + pending pages RL6 |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`098a4d2`) — MiniComandas: formatTime horas, nombre no duplicado, R11 visible |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
@@ -101,6 +101,16 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-27g — Backfill combo ingredients históricos
+
+**Cambios código:**
+- `app3/api/backfill_combo_ingredients.php`: Nuevo script — identifica combos con solo product-level transactions (sin ingredient expansion), elimina txs viejas, revierte stock_quantity, y re-procesa con processSaleInventory que expande fixed_items + selections.
+
+**BD:** 26 combos históricos corregidos (Combo Dupla, Combo Completo, Combo Gorda, etc.). Transactions product-level reemplazadas por ingredient-level. Incluye R11C-1777244854-5529 (Combo Dupla).
+
+**Commits:** `014f44e`, `9b2eaa6`
+**Deploys:** app3 ✅ (`9b2eaa6`)
 
 ### 2026-04-27f — MiniComandas muestra R11 Webpay + delivery_discount en ventas-detalle + payment-success RL6
 
