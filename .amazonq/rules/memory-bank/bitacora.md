@@ -6,7 +6,7 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`cb0a05f`) — fix selections agrupadas en combos + subtotal/delivery_discount backfill |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`e96eedd`) — fix payment-success Cargando, BD config, combo_data en API |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4ed0589`) — comandas: widget checklist planchero, auto-inferir prep, 60s offset, barras 8px |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
@@ -102,6 +102,16 @@
 
 ## Sesiones Recientes
 
+### 2026-04-27e — Fix payment-success "Cargando..." + limpieza disco
+
+**Cambios código:**
+- `app3/api/tuu/get_order_products_with_extras.php`: Reemplazadas credenciales hardcodeadas de Hostinger por `$config` (causaba "Database connection failed" en Docker). Agregado `combo_data` al SELECT para que payment-success muestre componentes de combos.
+- `app3/api/tuu/get_order_delivery.php`: Agregados campos `product_price`, `subtotal`, `delivery_discount`, `scheduled_time`, `is_scheduled` al SELECT.
+- `app3/src/pages/payment-success.astro`: Total se carga desde BD via `product_price` cuando no viene en URL params.
+
+**Commits:** `e96eedd`
+**Deploys:** app3 ✅ (`e96eedd`)
+
 ### 2026-04-27d — Fix selections agrupadas en combos + backfill subtotal/delivery_discount
 
 **Cambios código:**
@@ -186,5 +196,5 @@
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-26b archivadas. Últimas archivadas: 2026-04-26b (Spec ventas-bulk-actions), 2026-04-26a (Search bars + botones Agregar Recetas), 2026-04-25d (Fix comandas tiempo negativo), 2026-04-25c (Spec recetas-categorias-bebidas).
+> Sesiones 2026-04-19c→2026-04-26c archivadas. Últimas archivadas: 2026-04-26c (Spec ventas-detail-improvements), 2026-04-26b (Spec ventas-bulk-actions), 2026-04-26a (Search bars + botones Agregar Recetas).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
