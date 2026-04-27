@@ -781,12 +781,12 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
           )}
         </div>
 
-        {/* Name + price */}
+        {/* Name + price + controls in compact layout */}
         <div className="flex-1 min-w-0">
-          <h3 className={`font-bold text-[11px] leading-tight truncate ${!isActive ? 'text-gray-400' : 'text-gray-900'}`}>
+          <h3 className={`font-bold text-sm leading-tight truncate ${!isActive ? 'text-gray-400' : 'text-gray-900'}`}>
             {highlightName(product.name)}
           </h3>
-          <div className="flex items-center gap-1.5 mt-0.5">
+          <div className="flex items-center gap-1.5 mt-1">
             {!!product.is_featured && !!product.sale_price ? (
               <>
                 <span className="text-red-600 font-black text-[11px]">${product.sale_price.toLocaleString('es-CL')}</span>
@@ -808,29 +808,28 @@ function MenuItem({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
                 {isTogglingStatus ? '..' : (isActive ? 'ON' : 'OFF')}
               </button>
             )}
-          </div>
-        </div>
-
-        {/* Add/Remove controls */}
-        <div className="flex-shrink-0" style={{ width: quantity > 0 ? '90px' : '56px' }}>
-          {quantity === 0 ? (
-            <button onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-              className="w-full h-8 bg-green-500 hover:bg-green-600 text-white font-bold text-[11px] rounded-lg active:scale-95 transition-all">
-              Agregar
-            </button>
-          ) : (
-            <div className="flex items-center h-8 bg-gray-50 rounded-lg border border-gray-200">
-              <button onClick={(e) => { e.stopPropagation(); onRemoveFromCart(product.id); }}
-                className="w-7 h-full text-red-500 hover:bg-red-50 flex items-center justify-center rounded-l-lg text-sm font-bold">
-                −
-              </button>
-              <span className="flex-1 text-center font-black text-xs">{quantity}</span>
-              <button onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-                className="w-7 h-full bg-yellow-500 text-black hover:bg-yellow-600 flex items-center justify-center rounded-r-lg font-black text-sm">
-                +
-              </button>
+            {/* Agregar/cantidad inline */}
+            <div className="ml-auto flex-shrink-0">
+              {quantity === 0 ? (
+                <button onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+                  className="px-3 h-6 bg-green-500 hover:bg-green-600 text-white font-bold text-[10px] rounded-md active:scale-95 transition-all">
+                  Agregar
+                </button>
+              ) : (
+                <div className="flex items-center h-6 bg-gray-50 rounded-md border border-gray-200">
+                  <button onClick={(e) => { e.stopPropagation(); onRemoveFromCart(product.id); }}
+                    className="w-6 h-full text-red-500 hover:bg-red-50 flex items-center justify-center rounded-l-md text-xs font-bold">
+                    −
+                  </button>
+                  <span className="w-5 text-center font-black text-[10px]">{quantity}</span>
+                  <button onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+                    className="w-6 h-full bg-yellow-500 text-black hover:bg-yellow-600 flex items-center justify-center rounded-r-md font-black text-xs">
+                    +
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -2556,20 +2555,82 @@ export default function App() {
       </main>
 
       {/* Barra de búsqueda con botones */}
-      <div className="fixed left-4 right-4 flex items-center gap-2 lg:left-1/2 lg:transform lg:-translate-x-1/2 lg:max-w-xl" style={{ bottom: 'calc(env(safe-area-inset-bottom, 12px) + 60px)', zIndex: 35 }}>
-        <button
-          onClick={() => window.location.href = '/mermas'}
-          className="bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg transition-all flex items-center justify-center flex-shrink-0"
-          style={{ width: '40px', height: '40px' }}
-          title="Mermas"
+      {/* Sugerencias de búsqueda (fuera del nav para posicionamiento correcto) */}
+      {showSuggestions && (
+        <div
+          className="fixed left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] max-h-[55vh] overflow-y-auto z-[45]"
+          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 110px)' }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
-          </svg>
-        </button>
-        <div className="flex-1 bg-white border border-gray-200 rounded-full shadow-lg">
-          <div className="relative">
-            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+          {suggestions.map(product => {
+            const quantity = getProductQuantity(product.id);
+            return (
+              <div
+                key={product.id}
+                className="w-full px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 flex items-center gap-2"
+              >
+                <div
+                  className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer"
+                  onClick={() => selectSuggestion(product)}
+                >
+                  {product.image ? (
+                    <img src={product.image} alt={product.name} className="w-10 h-10 object-cover rounded" loading="lazy" decoding="async" />
+                  ) : (
+                    <div className="w-10 h-10 bg-gray-200 rounded"></div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">{product.name}</p>
+                    <p className="text-xs text-gray-500">{categoryDisplayNames[product.category]}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <p className="text-sm font-bold bg-yellow-400 text-black px-2 py-1 rounded">${product.price.toLocaleString('es-CL')}</p>
+                  {quantity > 0 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        vibrate(30);
+                        playRemoveSound();
+                        handleRemoveFromCart(product.id);
+                      }}
+                      className="bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center font-bold text-lg"
+                    >
+                      -
+                    </button>
+                  )}
+                  {quantity > 0 && <span className="font-bold text-sm text-gray-800 w-5 text-center">{quantity}</span>}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      vibrate(30);
+                      playAddSound();
+                      handleAddToCart(product);
+                    }}
+                    className="bg-green-500 hover:bg-green-600 text-white rounded-full w-7 h-7 flex items-center justify-center font-bold text-lg"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <nav className="fixed bottom-0 left-0 right-0 z-40 lg:left-1/2 lg:transform lg:-translate-x-1/2 lg:max-w-4xl" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', backgroundColor: '#1a1a1a' }}>
+        {/* Fila superior: Mermar | Búsqueda | Caja */}
+        <div className="flex items-center gap-2 px-3 pt-2 pb-1">
+          <button
+            onClick={() => window.location.href = '/mermas'}
+            className="flex flex-col items-center justify-center gap-0.5 flex-shrink-0 active:scale-95 transition-all"
+            style={{ width: '48px' }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#ef4444">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+            </svg>
+            <span className="text-[10px] font-bold text-red-400">Mermar</span>
+          </button>
+          <div className="flex-1 relative">
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
             <input
               type="text"
               placeholder="Buscar productos..."
@@ -2580,124 +2641,60 @@ export default function App() {
                   setShowSuggestions(true);
                 }
               }}
-              className="w-full pl-9 pr-8 py-2 bg-transparent rounded-full text-sm focus:outline-none transition-all"
+              className="w-full pl-8 pr-7 py-1.5 bg-white/10 border border-gray-600 rounded-full text-sm text-white placeholder-gray-400 focus:outline-none focus:border-gray-400 transition-all"
             />
             {searchQuery && (
               <button
                 onClick={() => handleSearch('')}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200"
               >
-                <X size={16} />
+                <X size={14} />
               </button>
             )}
-            {/* Sugerencias */}
-            {showSuggestions && (
-              <div
-                className="fixed md:absolute bottom-[105px] md:bottom-full left-0 right-0 md:left-[-48px] md:right-[-16px] bg-white/95 backdrop-blur-md border-t md:border border-gray-200 md:rounded-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.15)] max-h-[55vh] md:max-h-80 overflow-y-auto z-[40]"
-                style={{ height: 'auto' }}
-              >
-                {suggestions.map(product => {
-                  const quantity = getProductQuantity(product.id);
-                  return (
-                    <div
-                      key={product.id}
-                      className="w-full px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 flex items-center gap-2"
-                    >
-                      <div
-                        className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer"
-                        onClick={() => selectSuggestion(product)}
-                      >
-                        {product.image ? (
-                          <img src={product.image} alt={product.name} className="w-10 h-10 object-cover rounded" loading="lazy" decoding="async" />
-                        ) : (
-                          <div className="w-10 h-10 bg-gray-200 rounded"></div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800 truncate">{product.name}</p>
-                          <p className="text-xs text-gray-500">{categoryDisplayNames[product.category]}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <p className="text-sm font-bold bg-yellow-400 text-black px-2 py-1 rounded">${product.price.toLocaleString('es-CL')}</p>
-                        {quantity > 0 && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              vibrate(30);
-                              playRemoveSound();
-                              handleRemoveFromCart(product.id);
-                            }}
-                            className="bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center font-bold text-lg"
-                          >
-                            -
-                          </button>
-                        )}
-                        {quantity > 0 && <span className="font-bold text-sm text-gray-800 w-5 text-center">{quantity}</span>}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            vibrate(30);
-                            playAddSound();
-                            handleAddToCart(product);
-                          }}
-                          className="bg-green-500 hover:bg-green-600 text-white rounded-full w-7 h-7 flex items-center justify-center font-bold text-lg"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
-        </div>
-        <button
-          onClick={() => window.location.href = '/arqueo'}
-          className="bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg transition-all flex items-center justify-center flex-shrink-0"
-          style={{ width: '40px', height: '40px' }}
-          title="Arqueo de Caja"
-        >
-          <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
-        </button>
-      </div>
-
-      <nav className="fixed bottom-0 left-0 right-0 z-40 lg:left-1/2 lg:transform lg:-translate-x-1/2 lg:max-w-4xl lg:rounded-t-2xl" style={{ paddingBottom: 'env(safe-area-inset-bottom, 12px)', backgroundColor: '#000' }}>
-        <div className="bg-black shadow-[0_-4px_10px_-2px_rgba(0,0,0,0.3)] rounded-t-2xl">
-          <div
-            className="flex items-center overflow-x-auto px-4 py-3 gap-0"
-            style={{
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              WebkitOverflowScrolling: 'touch'
-            }}
+          <button
+            onClick={() => window.location.href = '/arqueo'}
+            className="flex flex-col items-center justify-center gap-0.5 flex-shrink-0 active:scale-95 transition-all"
+            style={{ width: '48px' }}
           >
-            {mainCategories.map((cat, index) => {
-              const isActive = activeCategory === cat;
-              const catColor = categoryColors[cat] || '#f97316';
-              return (
-                <React.Fragment key={cat}>
-                  <button
-                    onClick={() => {
-                      const element = document.getElementById(`section-${cat}`);
-                      if (element) {
-                        element.scrollIntoView({ behavior: 'smooth' });
-                      }
-                      setActiveCategory(cat);
-                    }}
-                    className={`flex-shrink-0 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap active:scale-95 ${isActive ? '' : 'text-gray-500 hover:text-gray-300'
-                      }`}
-                    style={{ color: isActive ? catColor : undefined }}
-                  >
-                    {categoryDisplayNames[cat] || cat}
-                  </button>
-                  {index < mainCategories.length - 1 && (
-                    <span className="text-gray-200 font-light select-none">|</span>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
+            <span className="text-green-400 font-black text-lg">$</span>
+            <span className="text-[10px] font-bold text-green-400">Caja</span>
+          </button>
+        </div>
+        {/* Fila inferior: Categorías deslizables */}
+        <div
+          className="flex items-center overflow-x-auto px-3 pb-2 pt-1 gap-0"
+          style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            WebkitOverflowScrolling: 'touch'
+          }}
+        >
+          {mainCategories.map((cat, index) => {
+            const isActive = activeCategory === cat;
+            const catColor = categoryColors[cat] || '#f97316';
+            return (
+              <React.Fragment key={cat}>
+                <button
+                  onClick={() => {
+                    const element = document.getElementById(`section-${cat}`);
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth' });
+                    }
+                    setActiveCategory(cat);
+                  }}
+                  className={`flex-shrink-0 px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap active:scale-95 ${isActive ? '' : 'text-gray-500 hover:text-gray-300'
+                    }`}
+                  style={{ color: isActive ? catColor : undefined }}
+                >
+                  {categoryDisplayNames[cat] || cat}
+                </button>
+                {index < mainCategories.length - 1 && (
+                  <span className="text-gray-600 font-light select-none">|</span>
+                )}
+              </React.Fragment>
+            );
+          })}
         </div>
       </nav>
 

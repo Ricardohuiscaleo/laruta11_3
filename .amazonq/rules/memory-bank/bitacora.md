@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`9b2eaa6`) — backfill combo ingredients + pending pages RL6 |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`204fffb`) — fix checklist link en comandas planchero |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`ecfa390`) — navbar unificada + títulos producto grandes + Agregar inline |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28d16d6`) — endpoint produce sub-recetas, prep_method columns |
@@ -102,13 +102,16 @@
 
 ## Sesiones Recientes
 
-### 2026-04-27h — Fix checklist link 404 en comandas planchero
+### 2026-04-27h — Checklist por rol + rediseño navbar caja3 + títulos producto grandes
 
 **Cambios código:**
-- `caja3/src/pages/comandas/index.astro`: Widget checklist apuntaba a `/checklists` (404) → corregido a `/checklist`.
+- `caja3/src/components/ChecklistApp.jsx`: Acepta prop `rol` (default `'cajero'`), fetch usa `rol` dinámico, `rol` en dependencias de `useCallback`.
+- `caja3/src/pages/checklist-planchero.astro`: Nueva página — `ChecklistApp` con `rol="planchero"`.
+- `caja3/src/pages/comandas/index.astro`: Widget checklist link corregido `/checklists`→`/checklist-planchero`.
+- `caja3/src/components/MenuApp.jsx`: Navbar unificada en 1 bloque fijo `#1a1a1a` — fila superior (Mermar icono+texto | búsqueda | Caja icono+texto) + fila inferior (categorías deslizables). Títulos producto de `text-[11px]`→`text-sm`. Botón Agregar movido inline con precio y toggle ON.
 
-**Commits:** `204fffb`
-**Deploys:** caja3 ✅ (`204fffb`)
+**Commits:** `204fffb`, `490ef42`, `ecfa390`
+**Deploys:** caja3 ✅ (`ecfa390`)
 
 ### 2026-04-27g — Backfill combo ingredients históricos
 
