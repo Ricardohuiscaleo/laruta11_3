@@ -55,10 +55,10 @@ export default function MermaPanel({ onClose }) {
   }, []);
   useEffect(() => { if (activeTab === 'historial') loadHistorial(); }, [activeTab, loadHistorial]);
 
-  const items = itemType === 'ingredient' ? ingredientes : productos;
-  const filtered = searchTerm.trim()
+  const items = itemType === 'ingredient' ? ingredientes : productos.filter(p => ![6, 7].includes(parseInt(p.category_id)));
+  const filtered = searchTerm.trim().length >= 2
     ? items.map(i => ({ ...i, score: fuzzyMatch(i.name, searchTerm) })).filter(i => i.score > 0).sort((a, b) => b.score - a.score).slice(0, 20)
-    : items.slice(0, 40);
+    : [];
   const totalCost = calculateMermaTotal(mermaItems);
 
   const addItem = (item) => {
@@ -254,8 +254,16 @@ export default function MermaPanel({ onClose }) {
         )}
 
         {/* Listado de items */}
-        {filtered.length === 0 && searchTerm.trim() && (
+        {filtered.length === 0 && searchTerm.trim().length >= 2 && (
           <p className="text-center text-sm text-gray-400 py-8">No se encontró &quot;{searchTerm}&quot;</p>
+        )}
+
+        {filtered.length === 0 && searchTerm.trim().length < 2 && mermaItems.length === 0 && (
+          <div className="text-center py-12 text-gray-400">
+            <Search size={40} className="mx-auto mb-3 text-gray-300" />
+            <p className="text-sm font-medium">Escribe para buscar</p>
+            <p className="text-xs mt-1">ingredientes o productos</p>
+          </div>
         )}
 
         <div className="space-y-1">
