@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { CreditCard, Building2, Banknote, Smartphone, Bike, TrendingUp, Pencil, ChevronLeft, ChevronRight, BarChart3, Clock, Wallet, Moon, Calendar, BadgeDollarSign, X } from 'lucide-react';
 import SaldoCajaModal from './modals/SaldoCajaModal.jsx';
 
-export default function ArqueoPanel({ onClose }) {
+export default function ArqueoPanel({ onClose, openPanel }) {
   const [salesData, setSalesData] = useState(null);
   const [saldoCaja, setSaldoCaja] = useState(0);
   const [ingresosHoy, setIngresosHoy] = useState(0);
@@ -46,7 +46,11 @@ export default function ArqueoPanel({ onClose }) {
   const openCajaModal = () => setShowSaldoModal(true);
   const showDetail = () => {
     if (!salesData) return;
-    window.location.href = `/ventas-detalle?start=${encodeURIComponent(salesData.period.start)}&end=${encodeURIComponent(salesData.period.end)}`;
+    if (openPanel) {
+      openPanel('ventas-detalle', { start: salesData.period.start, end: salesData.period.end });
+    } else {
+      window.location.href = `/ventas-detalle?start=${encodeURIComponent(salesData.period.start)}&end=${encodeURIComponent(salesData.period.end)}`;
+    }
   };
   const fmt = (n) => Math.round(n).toLocaleString('es-CL');
 

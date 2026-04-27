@@ -40,6 +40,7 @@ import AddressAutocomplete from './AddressAutocomplete.jsx';
 // Lazy-loaded inline panels
 const MermaPanel = React.lazy(() => import('./MermaPanel.jsx'));
 const ArqueoPanel = React.lazy(() => import('./ArqueoPanel.jsx'));
+const VentasDetalle = React.lazy(() => import('./VentasDetalle.jsx'));
 
 // ============================================
 // CAJA3: UBICACIÓN DESACTIVADA
@@ -1053,17 +1054,20 @@ export default function App() {
   };
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [activePanel, setActivePanel] = useState(null);
+  const [panelParams, setPanelParams] = useState(null);
   const savedScrollRef = useRef(0);
   const savedCategoryRef = useRef(null);
 
-  const openPanel = (panel) => {
+  const openPanel = (panel, params = null) => {
     savedScrollRef.current = window.scrollY;
     savedCategoryRef.current = activeCategory;
     setActivePanel(panel);
+    setPanelParams(params);
     window.scrollTo(0, 0);
   };
   const closePanel = () => {
     setActivePanel(null);
+    setPanelParams(null);
     requestAnimationFrame(() => {
       window.scrollTo(0, savedScrollRef.current);
       if (savedCategoryRef.current) {
@@ -2257,7 +2261,8 @@ export default function App() {
     return (
       <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-300 border-t-orange-500" /></div>}>
         {activePanel === 'merma' && <MermaPanel onClose={closePanel} />}
-        {activePanel === 'arqueo' && <ArqueoPanel onClose={closePanel} />}
+        {activePanel === 'arqueo' && <ArqueoPanel onClose={closePanel} openPanel={openPanel} />}
+        {activePanel === 'ventas-detalle' && panelParams && <VentasDetalle startDate={panelParams.start} endDate={panelParams.end} onClose={closePanel} />}
       </React.Suspense>
     );
   }

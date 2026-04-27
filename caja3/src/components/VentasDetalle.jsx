@@ -37,7 +37,7 @@ function IngredientToggle({ ingredients, label }) {
   );
 }
 
-export default function VentasDetalle() {
+export default function VentasDetalle({ startDate: propStart, endDate: propEnd, onClose }) {
   const [allOrders, setAllOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [stats, setStats] = useState(null);
@@ -49,14 +49,13 @@ export default function VentasDetalle() {
   const [viewingPhotos, setViewingPhotos] = useState(null); // { photos: [], currentIndex: 0 }
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const startDate = urlParams.get('start');
-    const endDate = urlParams.get('end');
+    const start = propStart || new URLSearchParams(window.location.search).get('start');
+    const end = propEnd || new URLSearchParams(window.location.search).get('end');
 
-    if (startDate && endDate) {
-      loadDetail(startDate, endDate);
+    if (start && end) {
+      loadDetail(start, end);
     }
-  }, []);
+  }, [propStart, propEnd]);
 
   const loadDetail = async (startDate, endDate) => {
     try {
@@ -142,29 +141,29 @@ export default function VentasDetalle() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-black shadow-lg sticky top-0 z-10">
+      <div className="bg-gradient-to-r from-red-500 to-orange-500 shadow-lg sticky top-0 z-10" style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}>
         <div className="max-w-6xl mx-auto p-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => window.location.href = '/arqueo'} className="text-yellow-400 hover:text-yellow-300 transition-colors">
-              <ArrowLeft size={32} />
+            <button onClick={() => onClose ? onClose() : window.location.href = '/arqueo'} className="text-white hover:text-white/80 transition-colors">
+              <ArrowLeft size={28} />
             </button>
             <div className="flex-1 flex items-center gap-2 text-xs flex-wrap">
               <span className="font-bold text-white text-sm">Detalle de Ventas</span>
-              <span className="text-gray-500">|</span>
-              <span className="text-gray-300">{period}</span>
+              <span className="text-white/40">|</span>
+              <span className="text-white/80">{period}</span>
               {stats && (
                 <>
-                  <span className="text-gray-500">|</span>
-                  <span className="text-green-400 font-bold">${Math.round(stats.total_sales || 0).toLocaleString('es-CL')}</span>
-                  <span className="text-gray-500">|</span>
-                  <ArrowDown size={12} className="text-red-500" />
-                  <span className="text-orange-400 font-semibold">${Math.round(stats.total_discounts || 0).toLocaleString('es-CL')}</span>
-                  <span className="text-gray-500">|</span>
-                  <Bike size={12} className="text-blue-400" />
-                  <span className="text-blue-400 font-semibold">{(stats.delivery_types && stats.delivery_types.delivery) || 0}</span>
-                  <span className="text-gray-500">|</span>
-                  <Home size={12} className="text-green-400" />
-                  <span className="text-green-400 font-semibold">{(stats.delivery_types && stats.delivery_types.pickup) || 0}</span>
+                  <span className="text-white/40">|</span>
+                  <span className="text-white font-bold">${Math.round(stats.total_sales || 0).toLocaleString('es-CL')}</span>
+                  <span className="text-white/40">|</span>
+                  <ArrowDown size={12} className="text-white/70" />
+                  <span className="text-white/90 font-semibold">${Math.round(stats.total_discounts || 0).toLocaleString('es-CL')}</span>
+                  <span className="text-white/40">|</span>
+                  <Bike size={12} className="text-white/80" />
+                  <span className="text-white/90 font-semibold">{(stats.delivery_types && stats.delivery_types.delivery) || 0}</span>
+                  <span className="text-white/40">|</span>
+                  <Home size={12} className="text-white/80" />
+                  <span className="text-white/90 font-semibold">{(stats.delivery_types && stats.delivery_types.pickup) || 0}</span>
                 </>
               )}
             </div>
