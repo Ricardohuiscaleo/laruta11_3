@@ -6,7 +6,7 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`98c5565`) — fix combos inventario: usa fixed_items JSON en vez de combo_items tabla |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`cb0a05f`) — fix selections agrupadas en combos + subtotal/delivery_discount backfill |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4ed0589`) — comandas: widget checklist planchero, auto-inferir prep, 60s offset, barras 8px |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
@@ -102,12 +102,16 @@
 
 ## Sesiones Recientes
 
-### 2026-04-27c — Backfill subtotal + delivery_discount para órdenes históricas
+### 2026-04-27d — Fix selections agrupadas en combos + backfill subtotal/delivery_discount
 
-**BD:** Recalculado subtotal desde tuu_order_items para 359 órdenes pagadas con subtotal=0 (R11, T11, CAJA). Precio validado contra tabla products. Además, recalculado delivery_discount para 56 órdenes delivery donde el descuento RL6 no se había guardado (delivery_discount=0 pero total ya incluía el descuento). Fórmula: delivery_discount = subtotal + delivery_fee - product_price. Incluye R11-1777252234-7988 (delivery_discount corregido a $1.000).
+**Cambios código:**
+- `app3/api/process_sale_inventory_fn.php`: Fix selections agrupadas por categoría — el JSON viene como `{"Bebidas": [{id:95}, {id:99}]}` pero el código asumía array plano. Ahora detecta grupo vs item individual e itera correctamente. Las bebidas de combos ahora se descuentan del stock.
 
-**Commits:** ninguno (solo cambio BD)
-**Deploys:** ninguno
+**BD:** Backfill subtotal para 359 órdenes con subtotal=0 (recalculado desde tuu_order_items). Backfill delivery_discount para 56 órdenes delivery donde el descuento RL6 no se había guardado.
+
+**Commits:** `cb0a05f`
+**Deploys:** app3 ✅ (`cb0a05f`), smoke test HTTP 200
+**Pendiente:** Backfill específico para selections de combos históricos (guard de idempotencia las salta)
 
 ### 2026-04-27b — Fix combos inventario: fixed_items JSON en vez de combo_items tabla + backfill
 
