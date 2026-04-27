@@ -49,7 +49,7 @@ Convertir las páginas separadas de Merma (`/mermas`) y Arqueo (`/arqueo`) en pa
 - [ ] 2. Checkpoint — Verificar que tests pasan
   - Ejecutar `npm test` en caja3, asegurar que todas las funciones utilitarias y property tests pasan. Preguntar al usuario si hay dudas.
 
-- [-] 3. Integrar estado de panel inline en MenuApp.jsx
+- [x] 3. Integrar estado de panel inline en MenuApp.jsx
   - [x] 3.1 Agregar estado `activePanel` y funciones de apertura/cierre en MenuApp.jsx
     - Agregar `const [activePanel, setActivePanel] = useState(null)` — valores: null, 'merma', 'arqueo'
     - Agregar `savedScrollRef` y `savedCategoryRef` con `useRef`
@@ -69,7 +69,7 @@ Convertir las páginas separadas de Merma (`/mermas`) y Arqueo (`/arqueo`) en pa
     - **Propiedad 1: Round-trip de estado del menú al abrir/cerrar panel** — Generar estados aleatorios (categoría, scrollY), simular openPanel + closePanel, verificar que se restauran los valores originales
     - **Valida: Requisitos 1.5, 7.1, 7.2, 7.4**
 
-- [-] 4. Implementar MermaPanel.jsx — Panel inline de merma
+- [x] 4. Implementar MermaPanel.jsx — Panel inline de merma
   - [x] 4.1 Crear estructura base de MermaPanel.jsx con header, tabs, y flujo de 3 pasos
     - Crear `caja3/src/components/MermaPanel.jsx` con prop `onClose`
     - Implementar header fijo con título "Gestión de Mermas" y botón X para cerrar (llama `onClose`)
@@ -120,7 +120,7 @@ Convertir las páginas separadas de Merma (`/mermas`) y Arqueo (`/arqueo`) en pa
 - [ ] 5. Checkpoint — Verificar MermaPanel funcional
   - Ejecutar tests, verificar que MermaPanel se renderiza correctamente como panel inline. Preguntar al usuario si hay dudas.
 
-- [-] 6. Implementar ArqueoPanel.jsx — Panel inline de arqueo
+- [x] 6. Implementar ArqueoPanel.jsx — Panel inline de arqueo
   - [x] 6.1 Crear ArqueoPanel.jsx adaptado de ArqueoApp.jsx
     - Crear `caja3/src/components/ArqueoPanel.jsx` con prop `onClose`
     - Copiar lógica de `ArqueoApp.jsx`: estados, loadSalesData, loadSaldoCaja, updateClock, polling cada 15s
@@ -140,8 +140,8 @@ Convertir las páginas separadas de Merma (`/mermas`) y Arqueo (`/arqueo`) en pa
     - **Propiedad 12: Tabla de ventas por método de pago** — Para cualquier datos de resumen de ventas, verificar que la tabla contiene una fila por cada método de pago con conteo y total
     - **Valida: Requisito 6.2**
 
-- [ ] 7. Limpieza y verificación final
-  - [ ] 7.1 Eliminar navegación legacy de window.location.href
+- [x] 7. Limpieza y verificación final
+  - [x] 7.1 Eliminar navegación legacy de window.location.href
     - Verificar que no existen llamadas a `window.location.href` para `/mermas` o `/arqueo` en MenuApp.jsx
     - Verificar que ArqueoPanel no usa `window.dispatchEvent` para SaldoCajaModal
     - Verificar que MermaPanel no usa `window.location.href = '/'` para cerrar
