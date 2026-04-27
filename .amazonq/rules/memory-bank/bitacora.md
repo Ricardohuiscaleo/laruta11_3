@@ -6,8 +6,8 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`e96eedd`) — fix payment-success Cargando, BD config, combo_data en API |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4ed0589`) — comandas: widget checklist planchero, auto-inferir prep, 60s offset, barras 8px |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3c17c68`) — fix payment-success + descuento RL6 delivery |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`f214140`) — MiniComandas muestra R11 Webpay + delivery_discount en ventas-detalle |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28d16d6`) — endpoint produce sub-recetas, prep_method columns |
@@ -101,6 +101,19 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-27f — MiniComandas muestra R11 Webpay + delivery_discount en ventas-detalle + payment-success RL6
+
+**Cambios código:**
+- `caja3/src/components/MiniComandas.jsx`: Eliminado filtro que excluía TODAS las R11-* de activeOrders. Bug raíz: `!(o.order_number.startsWith('R11-'))` impedía que órdenes Webpay aparecieran en comandas.
+- `caja3/api/get_sales_detail.php`: Agregados `delivery_discount` y `subtotal` al SELECT.
+- `caja3/src/components/VentasDetalle.jsx`: Badge verde con descuento RL6 en delivery fee.
+- `app3/src/pages/payment-success.astro`: Muestra descuento RL6 en delivery (`$3.500 (-$1.000 desc. RL6 = $2.500)`).
+
+**BD:** Orden R11-1777252234-7988 cambiada a sent_to_kitchen para testing.
+
+**Commits:** `5ffc205`, `3c17c68`, `f214140`
+**Deploys:** app3 ✅ (`3c17c68`), caja3 ✅ (`f214140`)
 
 ### 2026-04-27e — Fix payment-success "Cargando..." + limpieza disco
 
