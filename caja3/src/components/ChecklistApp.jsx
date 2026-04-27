@@ -40,7 +40,7 @@ function getPhotoContexto(item, checklistType) {
   return `interior_${type}`;
 }
 
-export default function ChecklistApp() {
+export default function ChecklistApp({ rol = 'cajero' }) {
   const [activeTab, setActiveTab] = useState(detectDefaultTab);
   const [checklists, setChecklists] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +57,7 @@ export default function ChecklistApp() {
   const fetchChecklists = useCallback(async () => {
     try {
       setError(null);
-      const res = await fetch(`${API_BASE}/today?rol=cajero`);
+      const res = await fetch(`${API_BASE}/today?rol=${rol}`);
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const data = await res.json();
       if (data.success) {
@@ -70,7 +70,7 @@ export default function ChecklistApp() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [rol]);
 
   useEffect(() => {
     fetchChecklists();

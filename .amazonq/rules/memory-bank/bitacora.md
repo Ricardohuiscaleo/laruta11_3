@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`9b2eaa6`) — backfill combo ingredients + pending pages RL6 |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`098a4d2`) — MiniComandas: formatTime horas, nombre no duplicado, R11 visible |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`204fffb`) — fix checklist link en comandas planchero |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28d16d6`) — endpoint produce sub-recetas, prep_method columns |
@@ -102,6 +102,14 @@
 
 ## Sesiones Recientes
 
+### 2026-04-27h — Fix checklist link 404 en comandas planchero
+
+**Cambios código:**
+- `caja3/src/pages/comandas/index.astro`: Widget checklist apuntaba a `/checklists` (404) → corregido a `/checklist`.
+
+**Commits:** `204fffb`
+**Deploys:** caja3 ✅ (`204fffb`)
+
 ### 2026-04-27g — Backfill combo ingredients históricos
 
 **Cambios código:**
@@ -135,89 +143,8 @@
 **Commits:** `e96eedd`
 **Deploys:** app3 ✅ (`e96eedd`)
 
-### 2026-04-27d — Fix selections agrupadas en combos + backfill subtotal/delivery_discount
-
-**Cambios código:**
-- `app3/api/process_sale_inventory_fn.php`: Fix selections agrupadas por categoría — el JSON viene como `{"Bebidas": [{id:95}, {id:99}]}` pero el código asumía array plano. Ahora detecta grupo vs item individual e itera correctamente. Las bebidas de combos ahora se descuentan del stock.
-
-**BD:** Backfill subtotal para 359 órdenes con subtotal=0 (recalculado desde tuu_order_items). Backfill delivery_discount para 56 órdenes delivery donde el descuento RL6 no se había guardado.
-
-**Commits:** `cb0a05f`
-**Deploys:** app3 ✅ (`cb0a05f`), smoke test HTTP 200
-**Pendiente:** Backfill específico para selections de combos históricos (guard de idempotencia las salta)
-
-### 2026-04-27b — Fix combos inventario: fixed_items JSON en vez de combo_items tabla + backfill
-
-**Cambios código:**
-- `app3/api/process_sale_inventory_fn.php`: `processSaleInventory()` para combos ahora usa `$item['fixed_items']` (del combo_data JSON del pedido) como fuente de verdad. Fallback a tabla `combo_items` solo si fixed_items no viene. Bug: combos sin registros en `combo_items` (ej: Combo Salchipapa 242) no descontaban inventario.
-
-**BD:** Backfill 2da pasada: 6 órdenes procesadas (5 T11 + R11-1777252234-7988 Combo Salchipapa). 8 inventory_transactions creadas para el combo (2x Salchipapa Individual × 4 ingredientes).
-
-**Commits:** `98c5565`
-**Deploys:** app3 ✅ (`98c5565`)
-
-### 2026-04-27a — Spec fix-inventario-ventas-comandas: Tasks 1-6 implementadas + deploy app3
-
-**Cambios código:**
-- `app3/api/process_sale_inventory_fn.php`: Guard idempotencia — si ya existen `inventory_transactions` para `order_reference`, retorna `skipped=true` sin transacción.
-- `app3/api/tuu/create_payment_direct.php`: `order_status='sent_to_kitchen'` (era `pending`), subtotal server-side validando precios contra BD, delivery_fee server-side (base_fee + surcharge por distancia, Directions→Haversine fallback), total recalculado.
-- `app3/api/tuu/callback_simple.php`: Pago aprobado preserva `order_status` (no lo cambia a `pending`), pago fallido→`cancelled`, guard duplicados antes de inventario.
-- `app3/api/tuu/callback.php`: Pago aprobado preserva `order_status` (no lo cambia a `delivered`), pago fallido→`cancelled`, guard duplicados antes de inventario.
-- `app3/api/create_order.php`: Reemplaza ~80 líneas inventario inline por `processSaleInventory()` centralizado (post-commit), `buildInventoryItems()` helper, subtotal/delivery_fee server-side, total recalculado.
-- `app3/api/backfill_r11_inventory.php`: WHERE expandido de `R11-%` a `R11-% OR R11C-% OR T11-%`.
-
-**Commits:** `bdee29d`
-**Deploys:** app3 ✅ (`bdee29d`)
-**Pendiente:** Ejecutar backfill en producción (Task 7) y tests e2e (Task 8)
-
-### 2026-04-26d — Comandas: timers preparación, colores sólidos, remember token, padding 4px
-
-**Cambios código:**
-- `caja3/api/tuu/get_comandas_v2.php`: API devuelve `recipe_ingredients[]` con `prep_method`, `prep_time`, `is_prepped`. Filtra insumos. Try/catch resiliente a columnas faltantes. Orden por prep_time DESC.
-- `caja3/src/pages/comandas/index.astro`: Timers automáticos por ingrediente con barra progreso debajo, colores tarjeta sólidos (blanco/amarillo/rojo) con texto adaptativo, imagen 4:5, padding 4px, ocultar peso "(580g)", remember token localStorage, texto ingredientes `text-sm`.
-- `mi3/backend/database/migrations/2026_04_26_000001_add_prep_columns_to_product_recipes.php`: Agrega `prep_method`, `prep_time_seconds`, `is_prepped` a product_recipes.
-- `mi3/backend/database/migrations/2026_04_26_000002_seed_prep_data_product_recipes.php`: Seed tiempos industria (hamburguesa 480s, pollo 420s, papas 420s, pan 90s, etc.).
-- `mi3/backend/app/Models/ProductRecipe.php`: Fillable + casts para nuevas columnas.
-
-**Commits:** `fac8eac`, `be6ab63`, `116743a`, `0f30749`, `b5e6abf`, `a9fac59`, `6f9319a`, `3388a21`, `51b58fc`, `55fedfd`, `5409157`
-**Deploys:** caja3 ✅ (`5409157`), mi3-backend ✅ (`be6ab63`)
-**BD:** Migración `add_prep_columns_to_product_recipes` + seed prep data + update manual todos los ingredientes
-
-### 2026-04-26c — Spec ventas-detail-improvements: detalle expandible + timezone Chile
-
-**Cambios código:**
-- `mi3/backend/app/Services/Ventas/VentasService.php`: Nuevo método `getOrderDetail()` — 4 queries (orden, ítems, inventory_transactions, product_recipes fallback), stock_status ✓/⚠, totales.
-- `mi3/backend/app/Http/Controllers/Admin/VentasController.php`: Nuevo método `detail()` con 404 handling.
-- `mi3/backend/routes/api.php`: Ruta `GET ventas/{orderNumber}/detail`.
-- `mi3/frontend/components/admin/VentasPageContent.tsx`: Reescrito — `formatChileDateTime()` con Intl.DateTimeFormat America/Santiago, columna "Fecha" reemplaza "Fuente"+"Hora", filas expandibles con OrderDetailPanel (ítems, ingredientes, stock ✓/⚠, totales), responsive mobile cards.
-
-**Commits:** `2bde6e8`
-**Deploys:** mi3-backend ✅ (`2bde6e8`), mi3-frontend ✅ (`2bde6e8`)
-
-### 2026-04-26b — Spec ventas-bulk-actions: implementación completa + deploy
-
-**Cambios código:**
-- `mi3/backend/app/Http/Controllers/Admin/ProductBulkController.php`: Nuevo — toggle, bulkPrice, bulkDeactivate con validación exists:products.
-- `mi3/backend/app/Http/Controllers/Admin/VentasController.php`: Nuevo — index (transacciones paginadas) + kpis (agregados + breakdown).
-- `mi3/backend/app/Services/Ventas/VentasService.php`: Nuevo — lógica turnos Chile 17:30→04:00, KPIs, paginación, breakdown por método pago.
-- `mi3/backend/app/Events/VentaNueva.php`: Nuevo — ShouldBroadcast en canal admin.ventas, evento venta.nueva.
-- `mi3/backend/app/Http/Controllers/WebhookController.php`: Dispatch VentaNueva con KPIs actualizados.
-- `mi3/backend/routes/api.php`: 5 rutas nuevas (3 PATCH productos, 2 GET ventas).
-- `mi3/frontend/components/admin/BulkActionBar.tsx`: Nuevo — barra sticky responsive con +$100/-$100/custom/toggle/eliminar.
-- `mi3/frontend/components/admin/VentasPageContent.tsx`: Nuevo — KPI cards, tabla transacciones, desglose pago, paginación, realtime Echo.
-- `mi3/frontend/components/admin/sections/VentasSection.tsx`: Nuevo — tabs Turno/Hoy/Semana/Mes con accent green.
-- `mi3/frontend/app/admin/recetas/page.tsx`: Checkboxes, toggle ON/OFF, BulkActionBar integrado.
-- `mi3/frontend/app/admin/recetas/bebidas/page.tsx`: Ídem.
-- `mi3/frontend/app/admin/recetas/combos/page.tsx`: Ídem.
-- `mi3/frontend/components/admin/AdminShell.tsx`: SectionKey 'ventas' + lazy import.
-- `mi3/frontend/components/admin/AdminSidebarSPA.tsx`: Ventas en sidebar con DollarSign.
-- `mi3/frontend/components/admin/MobileBottomNavSPA.tsx`: Ventas en mobile nav.
-
-**Commits:** `cc3b765`, `6dab65c`, `3aa317b`, `d779dfa`, `bff6a8b`, `74010b5`, `ce4234f`, `8b96d47`
-**Deploys:** mi3-backend ✅ (`8b96d47`), mi3-frontend ✅ (`8b96d47`)
-
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-26c archivadas. Últimas archivadas: 2026-04-26c (Spec ventas-detail-improvements), 2026-04-26b (Spec ventas-bulk-actions), 2026-04-26a (Search bars + botones Agregar Recetas).
+> Sesiones 2026-04-19c→2026-04-27d archivadas. Últimas archivadas: 2026-04-27d (Fix selections agrupadas en combos), 2026-04-27b (Fix combos inventario fixed_items), 2026-04-27a (Spec fix-inventario Tasks 1-6), 2026-04-26d (Comandas timers preparación).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
