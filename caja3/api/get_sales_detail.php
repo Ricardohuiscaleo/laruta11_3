@@ -47,6 +47,8 @@ try {
                 delivery_type,
                 delivery_address,
                 delivery_fee,
+                delivery_discount,
+                subtotal,
                 delivery_distance_km,
                 delivery_duration_min,
                 pickup_time,

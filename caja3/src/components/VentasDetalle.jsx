@@ -377,6 +377,9 @@ export default function VentasDetalle() {
                       <span className="inline-flex items-center gap-1 bg-yellow-50 border border-yellow-200 text-yellow-800 px-1.5 py-0.5 rounded text-[10px] font-semibold">
                         <Truck size={10} />
                         ${Math.round(order.delivery_fee).toLocaleString('es-CL')}
+                        {parseFloat(order.delivery_discount || 0) > 0 && (
+                          <span className="text-green-600">(-${Math.round(order.delivery_discount).toLocaleString('es-CL')} RL6 = ${(Math.round(order.delivery_fee) - Math.round(order.delivery_discount)).toLocaleString('es-CL')})</span>
+                        )}
                         {order.delivery_distance_km && (
                           <span className="text-yellow-600">· {order.delivery_distance_km} km · ~{order.delivery_duration_min} min</span>
                         )}
