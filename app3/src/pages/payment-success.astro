@@ -481,7 +481,7 @@ const amount = Astro.url.searchParams.get('amount');
                                 <span class="font-semibold text-blue-800">Delivery a domicilio</span>
                             </div>
                             ${'delivery_address' in delivery && delivery.delivery_address ? `<p class="text-sm text-blue-700"><strong>Dirección:</strong> ${delivery.delivery_address}</p>` : ''}
-                            ${'delivery_fee' in delivery && Number(delivery.delivery_fee) > 0 ? `<p class="text-sm text-blue-700"><strong>Costo delivery:</strong> $${parseInt(String(delivery.delivery_fee)).toLocaleString('es-CL')}</p>` : ''}
+                            ${'delivery_fee' in delivery && Number(delivery.delivery_fee) > 0 ? `<p class="text-sm text-blue-700"><strong>Costo delivery:</strong> $${parseInt(String(delivery.delivery_fee)).toLocaleString('es-CL')}${Number(delivery.delivery_discount || 0) > 0 ? ' <span style="color:#16a34a">(-$' + parseInt(String(delivery.delivery_discount)).toLocaleString('es-CL') + ' desc. RL6 = $' + (parseInt(String(delivery.delivery_fee)) - parseInt(String(delivery.delivery_discount))).toLocaleString('es-CL') + ')</span>' : ''}</p>` : ''}
                         </div>
                     `;
                 } else if (delivery.delivery_type === 'pickup') {
