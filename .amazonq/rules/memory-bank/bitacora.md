@@ -58,6 +58,7 @@
 
 - [x] **🚨 Revertir descuento 10% temporal** — 4 productos revertidos manualmente (cron VPS no se ejecutó). is_featured=0, sale_price=NULL. Crons eliminados del VPS. Scripts apply/revert pendientes de eliminar del repo.
 - [ ] **🚨 URGENTE: Rotar AWS access key comprometida** — AWS detectó key `AKIAUQ24...WGTE` como comprometida y restringió servicios (Bedrock bloqueado). Key rotada a `...RKT7` en Coolify. Falta: 1) Actualizar `~/.aws/credentials` en VPS para chef-bot, 2) Desactivar key vieja en IAM, 3) Responder caso de soporte AWS (caso #177655445900588 respondido, esperando humano). Bedrock sigue bloqueado a nivel de cuenta.
+- [ ] **🚨 CRÍTICO: Inventario no descuenta para R11/R11C/combos** — Solo pedidos T11 (Tuu) descuentan stock. Webpay (R11-*), Crédito R11 (R11C-*) y combos NO descuentan. Webpay no aparece en comandas. delivery_fee y subtotal incorrectos en Webpay. Spec creado: `.kiro/specs/fix-inventario-ventas-comandas/`.
 - [x] **Implementar Gemini como proveedor IA principal** — GeminiService.php creado con Structured Outputs, pipeline 2 fases (clasificación + análisis), token tracking, frontend v1.7. Commit `009259d`. Falta: test en vivo con imagen real.
 
 - [x] **Actualizar `checklist_templates`** — overhaul completo con rol explícito, fotos separadas, prompts IA.
