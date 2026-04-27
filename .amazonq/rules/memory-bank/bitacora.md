@@ -6,8 +6,8 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3c17c68`) — fix payment-success + descuento RL6 delivery |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`f214140`) — MiniComandas muestra R11 Webpay + delivery_discount en ventas-detalle |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`5b0865f`) — pending pages con delivery_discount RL6 |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`098a4d2`) — MiniComandas: formatTime horas, nombre no duplicado, R11 visible |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28d16d6`) — endpoint produce sub-recetas, prep_method columns |
@@ -112,8 +112,8 @@
 
 **BD:** Orden R11-1777252234-7988 cambiada a sent_to_kitchen para testing.
 
-**Commits:** `5ffc205`, `3c17c68`, `f214140`
-**Deploys:** app3 ✅ (`3c17c68`), caja3 ✅ (`f214140`)
+**Commits:** `5ffc205`, `3c17c68`, `f214140`, `5e9e739`, `5b0865f`, `098a4d2`
+**Deploys:** app3 ✅ (`5b0865f`), caja3 ✅ (`098a4d2`)
 
 ### 2026-04-27e — Fix payment-success "Cargando..." + limpieza disco
 
