@@ -1,12 +1,12 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-26)
+## Estado Actual (2026-04-27)
 
 ### Aplicaciones Desplegadas
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`bdee29d`) — fix inventario/ventas/comandas: idempotencia, order_status, subtotal/delivery_fee server-side |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`98c5565`) — fix combos inventario: usa fixed_items JSON en vez de combo_items tabla |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4ed0589`) — comandas: widget checklist planchero, auto-inferir prep, 60s offset, barras 8px |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
@@ -58,7 +58,7 @@
 
 - [x] **🚨 Revertir descuento 10% temporal** — 4 productos revertidos manualmente (cron VPS no se ejecutó). is_featured=0, sale_price=NULL. Crons eliminados del VPS. Scripts apply/revert pendientes de eliminar del repo.
 - [ ] **🚨 URGENTE: Rotar AWS access key comprometida** — AWS detectó key `AKIAUQ24...WGTE` como comprometida y restringió servicios (Bedrock bloqueado). Key rotada a `...RKT7` en Coolify. Falta: 1) Actualizar `~/.aws/credentials` en VPS para chef-bot, 2) Desactivar key vieja en IAM, 3) Responder caso de soporte AWS (caso #177655445900588 respondido, esperando humano). Bedrock sigue bloqueado a nivel de cuenta.
-- [x] **🚨 CRÍTICO: Inventario no descuenta para R11/R11C/combos** — CORREGIDO. Guard idempotencia en processSaleInventory(), order_status=sent_to_kitchen en create_payment_direct, callbacks preservan order_status, create_order usa processSaleInventory centralizado, subtotal/delivery_fee server-side, backfill expandido. Commit `bdee29d`. Pendiente: ejecutar backfill en producción (Task 7) y tests e2e (Task 8).
+- [x] **🚨 CRÍTICO: Inventario no descuenta para R11/R11C/combos** — COMPLETADO. Guard idempotencia, order_status=sent_to_kitchen, callbacks preservan order_status, create_order centralizado, subtotal/delivery_fee server-side, backfill expandido, fix combos usa fixed_items JSON. Commits `bdee29d`, `98c5565`. Backfill: 218 órdenes procesadas, 0 errores.
 - [x] **Implementar Gemini como proveedor IA principal** — GeminiService.php creado con Structured Outputs, pipeline 2 fases (clasificación + análisis), token tracking, frontend v1.7. Commit `009259d`. Falta: test en vivo con imagen real.
 
 - [x] **Actualizar `checklist_templates`** — overhaul completo con rol explícito, fotos separadas, prompts IA.
@@ -101,6 +101,16 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-27b — Fix combos inventario: fixed_items JSON en vez de combo_items tabla + backfill
+
+**Cambios código:**
+- `app3/api/process_sale_inventory_fn.php`: `processSaleInventory()` para combos ahora usa `$item['fixed_items']` (del combo_data JSON del pedido) como fuente de verdad. Fallback a tabla `combo_items` solo si fixed_items no viene. Bug: combos sin registros en `combo_items` (ej: Combo Salchipapa 242) no descontaban inventario.
+
+**BD:** Backfill 2da pasada: 6 órdenes procesadas (5 T11 + R11-1777252234-7988 Combo Salchipapa). 8 inventory_transactions creadas para el combo (2x Salchipapa Individual × 4 ingredientes).
+
+**Commits:** `98c5565`
+**Deploys:** app3 ✅ (`98c5565`)
 
 ### 2026-04-27a — Spec fix-inventario-ventas-comandas: Tasks 1-6 implementadas + deploy app3
 
@@ -165,5 +175,5 @@
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-26a archivadas. Últimas archivadas: 2026-04-26a (Search bars + botones Agregar Recetas), 2026-04-25d (Fix comandas tiempo negativo), 2026-04-25c (Spec recetas-categorias-bebidas), 2026-04-25b (Spec turnos-nomina-mejoras).
+> Sesiones 2026-04-19c→2026-04-26b archivadas. Últimas archivadas: 2026-04-26b (Spec ventas-bulk-actions), 2026-04-26a (Search bars + botones Agregar Recetas), 2026-04-25d (Fix comandas tiempo negativo), 2026-04-25c (Spec recetas-categorias-bebidas).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
