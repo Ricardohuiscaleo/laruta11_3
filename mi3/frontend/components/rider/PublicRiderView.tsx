@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { APIProvider, Map, AdvancedMarker, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { usePublicRiderGPS } from '@/hooks/usePublicRiderGPS';
 import type { GeoPosition } from '@/hooks/usePublicRiderGPS';
@@ -8,7 +8,6 @@ import type { GeoPosition } from '@/hooks/usePublicRiderGPS';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 
 interface OrderItem { product_name: string; quantity: number; product_price: number; }
-
 interface PublicOrderData {
   id: number; order_number: string; order_status: string;
   customer_name: string; customer_phone: string; delivery_address: string;
@@ -38,7 +37,7 @@ function RouteLayer({ origin, destination }: { origin: { lat: number; lng: numbe
   return null;
 }
 
-/* ── Pan map to position ── */
+/* ── Pan map ── */
 function PanToPosition({ position, trigger }: { position: GeoPosition; trigger: number }) {
   const map = useMap();
   useEffect(() => {
@@ -47,7 +46,13 @@ function PanToPosition({ position, trigger }: { position: GeoPosition; trigger: 
   return null;
 }
 
-/* ── Main ── */
+/*
+ * Rider flow — 3 phases:
+ * 1. "Ir al local"     → GPS on, route to food truck, no status change
+ * 2. "Recibir pedido"  → at food truck, picks up → status = out_for_delivery
+ * 3. "Entregar"        → at destination → status = delivered
+ */
+
 export default function PublicRiderView({ orderId }: { orderId: string }) {
   const [order, setOrder] = useState<PublicOrderData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,10 +60,10 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
   const [updating, setUpdating] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-  const [gpsManualActive, setGpsManualActive] = useState(false);
+  const [gpsActive, setGpsActive] = useState(false);
   const [panTrigger, setPanTrigger] = useState(0);
 
-  const gpsEnabled = order?.order_status === 'out_for_delivery' || gpsManualActive;
+  const gpsEnabled = gpsActive || order?.order_status === 'out_for_delivery';
   const { position, gpsError } = usePublicRiderGPS({ orderId, enabled: gpsEnabled });
 
   useEffect(() => {
@@ -84,19 +89,16 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
     } catch { setActionError('Sin conexión'); } finally { setUpdating(false); }
   }, [orderId]);
 
-  /* Loading */
   if (loading) return (
     <div className="flex items-center justify-center h-dvh bg-gray-900">
       <div className="h-10 w-10 border-4 border-gray-600 border-t-white rounded-full animate-spin" />
     </div>
   );
-  /* Error */
   if (error || !order) return (
     <div className="flex items-center justify-center h-dvh bg-gray-50 p-6 text-center">
       <div><p className="text-4xl mb-3">🔍</p><p className="font-semibold text-gray-800">Pedido no encontrado</p><p className="text-sm text-gray-500 mt-1">{error}</p></div>
     </div>
   );
-  /* Delivered */
   if (order.order_status === 'delivered') return (
     <div className="flex items-center justify-center h-dvh bg-gray-50 p-6 text-center">
       <div>
@@ -107,94 +109,75 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
     </div>
   );
 
-  const origin = order.food_truck ? { lat: Number(order.food_truck.latitud), lng: Number(order.food_truck.longitud) } : null;
-  const canStart = ['ready', 'preparing', 'sent_to_kitchen'].includes(order.order_status);
+  const foodTruck = order.food_truck ? { lat: Number(order.food_truck.latitud), lng: Number(order.food_truck.longitud) } : null;
   const isOnRoute = order.order_status === 'out_for_delivery';
+  const isPrePickup = ['sent_to_kitchen', 'preparing', 'ready'].includes(order.order_status);
+
+  // Route: phase 1 → rider to food truck, phase 2/3 → rider to delivery address
+  const routeOrigin = position && gpsEnabled ? position : foodTruck;
+  const routeDest = isOnRoute ? order.delivery_address : (foodTruck ? `${foodTruck.lat},${foodTruck.lng}` : order.delivery_address);
 
   return (
     <div className="relative h-dvh w-full overflow-hidden">
-
-      {/* ── HEADER: dirección + info rápida ── */}
-      <div className="absolute top-0 left-0 right-0 z-10 safe-top">
-        {/* GPS error */}
-        {gpsError && (
-          <div className="mx-3 mt-2 rounded-lg bg-amber-500/90 backdrop-blur px-3 py-2 text-xs text-white" role="alert">
-            ⚠️ {gpsError}
-          </div>
-        )}
-        {actionError && (
-          <div className="mx-3 mt-2 rounded-lg bg-red-500/90 backdrop-blur px-3 py-2 text-xs text-white" role="alert">
-            ❌ {actionError}
-          </div>
-        )}
-
-        {/* Address bar */}
+      {/* ── HEADER ── */}
+      <div className="absolute top-0 left-0 right-0 z-10">
+        {gpsError && <div className="mx-3 mt-2 rounded-lg bg-amber-500/90 backdrop-blur px-3 py-2 text-xs text-white" role="alert">⚠️ {gpsError}</div>}
+        {actionError && <div className="mx-3 mt-2 rounded-lg bg-red-500/90 backdrop-blur px-3 py-2 text-xs text-white" role="alert">❌ {actionError}</div>}
         <div className="mx-3 mt-2 rounded-2xl bg-white/95 backdrop-blur-md shadow-lg px-4 py-3">
           <div className="flex items-start gap-3">
             <div className="shrink-0 mt-0.5">
-              <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-sm">📍</div>
+              <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-sm">{isOnRoute ? '📍' : '🏪'}</div>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs text-gray-400 font-medium">Entregar en</p>
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.delivery_address)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-semibold text-gray-900 leading-tight line-clamp-2"
-              >
-                {order.delivery_address}
-              </a>
+              <p className="text-xs text-gray-400 font-medium">{isOnRoute ? 'Entregar en' : gpsActive ? 'Ir a retirar en' : 'Pedido para'}</p>
+              <p className="text-sm font-semibold text-gray-900 leading-tight line-clamp-2">{isOnRoute ? order.delivery_address : 'La Ruta 11 — Yumbel 2629'}</p>
               <div className="flex items-center gap-3 mt-1">
-                {order.delivery_distance_km != null && (
-                  <span className="text-xs text-gray-500">📏 {order.delivery_distance_km} km</span>
-                )}
-                {order.delivery_duration_min != null && (
-                  <span className="text-xs text-gray-500">⏱️ {order.delivery_duration_min} min</span>
-                )}
+                {order.delivery_distance_km != null && <span className="text-xs text-gray-500">📏 {order.delivery_distance_km} km</span>}
+                {order.delivery_duration_min != null && <span className="text-xs text-gray-500">⏱️ {order.delivery_duration_min} min</span>}
                 <span className="text-xs font-bold text-green-600">{fmt(order.product_price)}</span>
               </div>
             </div>
-            {/* Call button */}
             {order.customer_phone && (
-              <a
-                href={`tel:${order.customer_phone}`}
-                className="shrink-0 h-10 w-10 rounded-full bg-green-500 flex items-center justify-center shadow-md active:scale-95 transition-transform"
-                aria-label={`Llamar a ${order.customer_name}`}
-              >
+              <a href={`tel:${order.customer_phone}`} className="shrink-0 h-10 w-10 rounded-full bg-green-500 flex items-center justify-center shadow-md active:scale-95 transition-transform" aria-label={`Llamar a ${order.customer_name}`}>
                 <span className="text-lg">📞</span>
               </a>
             )}
           </div>
-          {/* GPS indicator */}
+          {/* Progress bar — 3 steps */}
+          <div className="flex items-center gap-1 mt-2 pt-2 border-t border-gray-100">
+            <div className={`flex-1 h-1.5 rounded-full ${gpsActive || isOnRoute ? 'bg-blue-500' : 'bg-gray-200'}`} />
+            <div className={`flex-1 h-1.5 rounded-full ${isOnRoute ? 'bg-amber-500' : 'bg-gray-200'}`} />
+            <div className="flex-1 h-1.5 rounded-full bg-gray-200" />
+            <span className="text-[10px] text-gray-400 ml-1 whitespace-nowrap">
+              {isOnRoute ? '3/3 Entregando' : gpsActive ? '1/3 Al local' : 'Esperando'}
+            </span>
+          </div>
           {gpsEnabled && position && (
-            <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-gray-100">
+            <div className="flex items-center gap-1.5 mt-1">
               <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[10px] text-green-600 font-medium">GPS activo — compartiendo ubicación</span>
+              <span className="text-[10px] text-green-600 font-medium">GPS activo</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* ── MAP: fullscreen ── */}
+      {/* ── MAP ── */}
       <div className="absolute inset-0">
-        {origin && order.delivery_address ? (
+        {foodTruck ? (
           <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? ''}>
-            <Map
-              defaultCenter={origin}
-              defaultZoom={14}
-              mapId="d51ca892b68e9c5e5e2dd701"
-              className="h-full w-full"
-              gestureHandling="greedy"
-              disableDefaultUI
-            >
-              <RouteLayer origin={position && gpsEnabled ? position : origin} destination={order.delivery_address} />
-              {/* Rider position marker — car with heading rotation */}
+            <Map defaultCenter={foodTruck} defaultZoom={14} mapId="d51ca892b68e9c5e5e2dd701" className="h-full w-full" gestureHandling="greedy" disableDefaultUI>
+              {routeOrigin && <RouteLayer origin={routeOrigin} destination={routeDest} />}
+              {/* Food truck marker */}
+              <AdvancedMarker position={foodTruck} zIndex={100}>
+                <div className="flex flex-col items-center">
+                  <div className="h-8 w-8 rounded-full bg-red-500 border-2 border-white shadow-lg flex items-center justify-center text-sm">🏪</div>
+                  <span className="text-[8px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded-full mt-0.5 shadow">R11</span>
+                </div>
+              </AdvancedMarker>
+              {/* Rider car with orientation cone */}
               {position && gpsEnabled && (
-                <AdvancedMarker position={position}>
-                  <div
-                    className="h-12 w-12 drop-shadow-lg"
-                    style={{ transform: `rotate(${position.heading ?? 0}deg)`, transition: 'transform 0.5s ease' }}
-                  >
+                <AdvancedMarker position={position} zIndex={200}>
+                  <div className="h-14 w-14 drop-shadow-lg" style={{ transform: `rotate(${position.heading ?? 0}deg)`, transition: 'transform 0.5s ease' }}>
                     <img src="/rider-car.svg" alt="Rider" className="h-full w-full" />
                   </div>
                 </AdvancedMarker>
@@ -203,29 +186,19 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
             </Map>
           </APIProvider>
         ) : (
-          <div className="h-full w-full bg-gray-200 flex items-center justify-center">
-            <p className="text-sm text-gray-500">Mapa no disponible</p>
-          </div>
+          <div className="h-full w-full bg-gray-200 flex items-center justify-center"><p className="text-sm text-gray-500">Mapa no disponible</p></div>
         )}
       </div>
 
-      {/* ── BOTTOM: action button + detail toggle ── */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 safe-bottom">
-        {/* Detail sheet */}
+      {/* ── BOTTOM ── */}
+      <div className="absolute bottom-0 left-0 right-0 z-10">
         {detailOpen && (
           <div className="mx-3 mb-2 rounded-2xl bg-white/95 backdrop-blur-md shadow-lg max-h-[50vh] overflow-y-auto">
             <div className="p-4 space-y-3">
-              {/* Customer */}
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Cliente</p>
-                  <p className="text-sm font-semibold text-gray-900">{order.customer_name}</p>
-                </div>
-                <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-700">
-                  #{order.order_number}
-                </span>
+                <div><p className="text-xs text-gray-400">Cliente</p><p className="text-sm font-semibold text-gray-900">{order.customer_name}</p></div>
+                <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-700">#{order.order_number}</span>
               </div>
-              {/* Products */}
               <div>
                 <p className="text-xs text-gray-400 mb-1">Productos</p>
                 {order.items.map((item, i) => (
@@ -235,86 +208,42 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
                   </div>
                 ))}
               </div>
-              {/* Totals */}
               <div className="border-t border-gray-100 pt-2 space-y-1">
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>Subtotal</span><span>{fmt(order.subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>Delivery</span><span>{fmt(order.delivery_fee)}</span>
-                </div>
-                {order.card_surcharge > 0 && (
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>Recargo tarjeta</span><span>{fmt(order.card_surcharge)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-sm font-bold text-gray-900 pt-1 border-t border-gray-100">
-                  <span>Total</span><span>{fmt(order.product_price)}</span>
-                </div>
-                <div className="text-xs text-gray-400 text-right">
-                  {payLabel[order.payment_method] || order.payment_method}
-                </div>
+                <div className="flex justify-between text-xs text-gray-500"><span>Subtotal</span><span>{fmt(order.subtotal)}</span></div>
+                <div className="flex justify-between text-xs text-gray-500"><span>Delivery</span><span>{fmt(order.delivery_fee)}</span></div>
+                {order.card_surcharge > 0 && <div className="flex justify-between text-xs text-gray-500"><span>Recargo</span><span>{fmt(order.card_surcharge)}</span></div>}
+                <div className="flex justify-between text-sm font-bold text-gray-900 pt-1 border-t border-gray-100"><span>Total</span><span>{fmt(order.product_price)}</span></div>
+                <div className="text-xs text-gray-400 text-right">{payLabel[order.payment_method] || order.payment_method}</div>
+              </div>
+              <div className="pt-1">
+                <p className="text-xs text-gray-400">Dirección entrega</p>
+                <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.delivery_address)}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 font-medium underline">{order.delivery_address}</a>
               </div>
             </div>
           </div>
         )}
-
-        {/* Action bar */}
         <div className="mx-3 mb-3 flex gap-2">
-          {/* My location — navigation arrow like Google Maps */}
-          <button
-            onClick={() => {
-              if (!gpsManualActive) setGpsManualActive(true);
-              setPanTrigger(t => t + 1);
-            }}
-            className={`h-14 w-14 shrink-0 rounded-2xl shadow-lg flex items-center justify-center active:scale-95 transition-all ${
-              gpsEnabled
-                ? 'bg-blue-500 ring-2 ring-blue-300'
-                : 'bg-white/95 backdrop-blur-md'
-            }`}
-            aria-label={gpsEnabled ? 'Centrar en mi ubicación' : 'Activar mi ubicación'}
-          >
-            {/* Navigation arrow icon */}
-            <svg className={`h-6 w-6 ${gpsEnabled ? 'text-white' : 'text-gray-600'}`} viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z" />
-            </svg>
+          <button onClick={() => { if (!gpsActive) setGpsActive(true); setPanTrigger(t => t + 1); }} className={`h-14 w-14 shrink-0 rounded-2xl shadow-lg flex items-center justify-center active:scale-95 transition-all ${gpsEnabled ? 'bg-blue-500 ring-2 ring-blue-300' : 'bg-white/95 backdrop-blur-md'}`} aria-label="Mi ubicación">
+            <svg className={`h-6 w-6 ${gpsEnabled ? 'text-white' : 'text-gray-600'}`} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z" /></svg>
           </button>
-
-          {/* Main action button */}
-          {canStart && (
-            <button
-              onClick={() => { setGpsManualActive(true); updateStatus('out_for_delivery'); }}
-              disabled={updating}
-              className="flex-1 h-14 rounded-2xl bg-amber-500 text-white font-bold text-base shadow-lg hover:bg-amber-600 active:scale-[0.98] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-              aria-label="Marcar en camino"
-            >
-              {updating ? <span className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '🛵'}
-              {updating ? 'Enviando...' : 'En camino'}
+          {isPrePickup && !gpsActive && (
+            <button onClick={() => setGpsActive(true)} className="flex-1 h-14 rounded-2xl bg-blue-500 text-white font-bold text-base shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2" aria-label="Ir al local">
+              🏪 Ir al local
             </button>
           )}
-
+          {isPrePickup && gpsActive && (
+            <button onClick={() => updateStatus('out_for_delivery')} disabled={updating} className="flex-1 h-14 rounded-2xl bg-amber-500 text-white font-bold text-base shadow-lg active:scale-[0.98] disabled:opacity-50 transition-all flex items-center justify-center gap-2" aria-label="Recibir pedido">
+              {updating ? <span className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '📦'}
+              {updating ? 'Enviando...' : 'Recibir pedido'}
+            </button>
+          )}
           {isOnRoute && (
-            <button
-              onClick={() => updateStatus('delivered')}
-              disabled={updating}
-              className="flex-1 h-14 rounded-2xl bg-green-500 text-white font-bold text-base shadow-lg hover:bg-green-600 active:scale-[0.98] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-              aria-label="Marcar como entregado"
-            >
+            <button onClick={() => updateStatus('delivered')} disabled={updating} className="flex-1 h-14 rounded-2xl bg-green-500 text-white font-bold text-base shadow-lg active:scale-[0.98] disabled:opacity-50 transition-all flex items-center justify-center gap-2" aria-label="Entregar">
               {updating ? <span className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '✅'}
-              {updating ? 'Enviando...' : 'Entregado'}
+              {updating ? 'Enviando...' : 'Entregar'}
             </button>
           )}
-
-          {/* Detail toggle — "Pedido" */}
-          <button
-            onClick={() => setDetailOpen(v => !v)}
-            className={`h-14 px-4 shrink-0 rounded-2xl shadow-lg flex items-center justify-center gap-1.5 active:scale-95 transition-all ${
-              detailOpen
-                ? 'bg-blue-500 text-white'
-                : 'bg-white/95 backdrop-blur-md text-gray-700'
-            }`}
-            aria-label={detailOpen ? 'Cerrar detalle' : 'Ver detalle del pedido'}
-          >
+          <button onClick={() => setDetailOpen(v => !v)} className={`h-14 px-4 shrink-0 rounded-2xl shadow-lg flex items-center justify-center gap-1.5 active:scale-95 transition-all ${detailOpen ? 'bg-blue-500 text-white' : 'bg-white/95 backdrop-blur-md text-gray-700'}`} aria-label="Ver pedido">
             <span className="text-base">{detailOpen ? '✕' : '🧾'}</span>
             <span className="text-xs font-semibold">{detailOpen ? 'Cerrar' : 'Pedido'}</span>
           </button>

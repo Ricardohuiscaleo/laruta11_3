@@ -51,7 +51,7 @@ function DirectionsLayer({ order, rider }: { order: DeliveryOrder; rider: Delive
   const [directionsResult, setDirectionsResult] = useState<google.maps.DirectionsResult | null>(null);
   const [renderer] = useState(() => {
     if (typeof window === 'undefined' || !routesLib) return null;
-    return new routesLib.DirectionsRenderer({ suppressMarkers: true });
+    return new routesLib.DirectionsRenderer({ suppressMarkers: false });
   });
 
   // Attach renderer to map
