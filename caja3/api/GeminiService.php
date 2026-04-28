@@ -162,53 +162,61 @@ class GeminiService
     {
         $itemsList = '';
         foreach ($itemsPedido as $item) {
-            $nombre = $item['nombre'] ?? $item['name'] ?? 'Item desconocido';
-            $cantidad = $item['cantidad'] ?? $item['quantity'] ?? 1;
+            $nombre = $item['product_name'] ?? $item['nombre'] ?? $item['name'] ?? 'Item desconocido';
+            $cantidad = $item['quantity'] ?? $item['cantidad'] ?? 1;
             $itemsList .= "- {$nombre} x{$cantidad}\n";
         }
 
         if ($tipoFoto === 'productos') {
             return <<<PROMPT
-Eres un verificador de calidad para un restaurante de comida rápida chileno (La Ruta 11).
-Analiza esta foto de los PRODUCTOS de un pedido delivery antes de empacar.
+Eres un verificador de calidad de despacho para La Ruta 11 (food truck chileno: completos, hamburguesas, papas fritas, salchipapas, combos).
 
-ITEMS DEL PEDIDO:
+PEDIDO DEL CLIENTE:
 {$itemsList}
-VERIFICA:
-1. ¿Se ven los productos del pedido? ¿Están todos los items visibles?
-2. ¿Las cantidades parecen correctas según lo pedido?
-3. ¿Los productos están en orientación correcta (horizontal, no volcados ni de lado)?
-4. ¿El empaque/presentación se ve en buen estado?
+TAREA: Analiza esta foto y verifica que los productos del pedido estén presentes.
 
-REGLAS:
-- Si la foto está borrosa o muy oscura, indica que se necesita retomar.
-- Si no se pueden distinguir los productos, indica que se necesita una foto más clara.
-- Puntaje 80-100: todo se ve bien. 50-79: hay observaciones menores. 0-49: problemas serios.
-- Sé breve y directo en el feedback (máximo 2 oraciones).
-- Usa emojis al inicio del feedback: ✅ si aprobado, ⚠️ si hay problemas.
-- Responde en español chileno informal.
+VERIFICACIÓN OBLIGATORIA:
+1. COMPARA lo que ves en la foto contra la lista del pedido. ¿Cada item del pedido es visible en la foto?
+2. Si el pedido dice "Cheeseburger" y ves papas fritas, eso es un PROBLEMA — falta la hamburguesa.
+3. Si el pedido dice "Completo" y ves algo volcado o de lado, eso es un PROBLEMA de orientación.
+4. Si ves productos que NO están en el pedido, menciónalo como observación.
+5. ¿Las cantidades coinciden? (ej: si pide 2x y solo se ve 1, es problema)
+
+CRITERIOS DE PUNTAJE:
+- 80-100: Todos los items del pedido visibles, bien presentados, orientación correcta.
+- 50-79: Se ven los items pero hay observaciones (empaque abierto, orientación dudosa).
+- 0-49: Faltan items del pedido, productos incorrectos, o foto no muestra los productos.
+
+REGLAS DE RESPUESTA:
+- Sé específico: nombra qué items del pedido ves y cuáles NO ves.
+- Máximo 2 oraciones en el feedback.
+- Emojis: ✅ si todo coincide, ⚠️ si hay problemas.
+- Español chileno informal y directo.
 PROMPT;
         }
 
         // tipoFoto === 'bolsa'
         return <<<PROMPT
-Eres un verificador de calidad para un restaurante de comida rápida chileno (La Ruta 11).
-Analiza esta foto de la BOLSA SELLADA de un pedido delivery listo para despacho.
+Eres un verificador de calidad de despacho para La Ruta 11 (food truck chileno).
 
-ITEMS DEL PEDIDO:
+PEDIDO DEL CLIENTE:
 {$itemsList}
-VERIFICA:
-1. ¿Se ve una bolsa cerrada/sellada lista para entregar?
-2. ¿La bolsa parece estar en buen estado para transporte delivery?
-3. ¿Se ve segura y bien cerrada para que no se abra durante el transporte?
+TAREA: Verifica que la bolsa esté correctamente sellada y lista para delivery.
 
-REGLAS:
-- Si la foto está borrosa o muy oscura, indica que se necesita retomar.
-- Si no se ve una bolsa sellada, indica el problema.
-- Puntaje 80-100: bolsa bien sellada y lista. 50-79: observaciones menores. 0-49: problemas serios.
-- Sé breve y directo en el feedback (máximo 2 oraciones).
-- Usa emojis al inicio del feedback: ✅ si aprobado, ⚠️ si hay problemas.
-- Responde en español chileno informal.
+VERIFICACIÓN:
+1. ¿Se ve una bolsa cerrada/sellada? Si la bolsa está abierta, es PROBLEMA.
+2. ¿Parece segura para transporte? (no se va a abrir, no se va a volcar el contenido)
+3. ¿El tamaño de la bolsa parece adecuado para la cantidad de items del pedido?
+
+CRITERIOS DE PUNTAJE:
+- 80-100: Bolsa bien cerrada, sellada, lista para despacho.
+- 50-79: Bolsa cerrada pero con observaciones (no sellada, doblada irregular).
+- 0-49: Bolsa abierta, rota, o no se ve una bolsa.
+
+REGLAS DE RESPUESTA:
+- Máximo 2 oraciones en el feedback.
+- Emojis: ✅ si está bien sellada, ⚠️ si hay problemas.
+- Español chileno informal y directo.
 PROMPT;
     }
 
