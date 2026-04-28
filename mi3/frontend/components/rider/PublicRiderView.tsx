@@ -46,8 +46,9 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
   const [updating, setUpdating] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [gpsManualActive, setGpsManualActive] = useState(false);
 
-  const gpsEnabled = order?.order_status === 'out_for_delivery';
+  const gpsEnabled = order?.order_status === 'out_for_delivery' || gpsManualActive;
   const { position, gpsError } = usePublicRiderGPS({ orderId, enabled: gpsEnabled });
 
   useEffect(() => {
@@ -155,7 +156,7 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
             )}
           </div>
           {/* GPS indicator */}
-          {isOnRoute && position && (
+          {gpsEnabled && position && (
             <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-gray-100">
               <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
               <span className="text-[10px] text-green-600 font-medium">GPS activo — compartiendo ubicación</span>
@@ -176,12 +177,12 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
               gestureHandling="greedy"
               disableDefaultUI
             >
-              <RouteLayer origin={position && isOnRoute ? position : origin} destination={order.delivery_address} />
-              {/* Rider position marker */}
-              {position && isOnRoute && (
+              <RouteLayer origin={position && gpsEnabled ? position : origin} destination={order.delivery_address} />
+              {/* Rider position marker — shown whenever GPS is active */}
+              {position && gpsEnabled && (
                 <AdvancedMarker position={position}>
-                  <div className="h-8 w-8 rounded-full bg-blue-600 border-3 border-white shadow-lg flex items-center justify-center">
-                    <span className="text-sm">🛵</span>
+                  <div className="h-10 w-10 rounded-full bg-blue-600 border-[3px] border-white shadow-lg flex items-center justify-center">
+                    <span className="text-base">🛵</span>
                   </div>
                 </AdvancedMarker>
               )}
@@ -246,19 +247,25 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
 
         {/* Action bar */}
         <div className="mx-3 mb-3 flex gap-2">
-          {/* Detail toggle */}
+          {/* My location button — activates GPS sharing */}
           <button
-            onClick={() => setDetailOpen(v => !v)}
-            className="h-14 w-14 shrink-0 rounded-2xl bg-white/95 backdrop-blur-md shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-            aria-label={detailOpen ? 'Cerrar detalle' : 'Ver detalle del pedido'}
+            onClick={() => setGpsManualActive(v => !v)}
+            className={`h-14 w-14 shrink-0 rounded-2xl shadow-lg flex items-center justify-center active:scale-95 transition-all ${
+              gpsEnabled
+                ? 'bg-blue-500 ring-2 ring-blue-300'
+                : 'bg-white/95 backdrop-blur-md'
+            }`}
+            aria-label={gpsEnabled ? 'GPS activo' : 'Activar mi ubicación'}
           >
-            <span className="text-xl">{detailOpen ? '✕' : '📋'}</span>
+            <svg className={`h-6 w-6 ${gpsEnabled ? 'text-white' : 'text-gray-600'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" /><path d="M12 2v4m0 12v4m10-10h-4M6 12H2" />
+            </svg>
           </button>
 
           {/* Main action button */}
           {canStart && (
             <button
-              onClick={() => updateStatus('out_for_delivery')}
+              onClick={() => { setGpsManualActive(true); updateStatus('out_for_delivery'); }}
               disabled={updating}
               className="flex-1 h-14 rounded-2xl bg-amber-500 text-white font-bold text-base shadow-lg hover:bg-amber-600 active:scale-[0.98] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
               aria-label="Marcar en camino"
@@ -280,16 +287,19 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
             </button>
           )}
 
-          {/* Navigate button */}
-          <a
-            href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.delivery_address)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="h-14 w-14 shrink-0 rounded-2xl bg-blue-500 shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-            aria-label="Navegar con Google Maps"
+          {/* Detail toggle — "Pedido" */}
+          <button
+            onClick={() => setDetailOpen(v => !v)}
+            className={`h-14 px-4 shrink-0 rounded-2xl shadow-lg flex items-center justify-center gap-1.5 active:scale-95 transition-all ${
+              detailOpen
+                ? 'bg-blue-500 text-white'
+                : 'bg-white/95 backdrop-blur-md text-gray-700'
+            }`}
+            aria-label={detailOpen ? 'Cerrar detalle' : 'Ver detalle del pedido'}
           >
-            <span className="text-xl">🧭</span>
-          </a>
+            <span className="text-base">{detailOpen ? '✕' : '🧾'}</span>
+            <span className="text-xs font-semibold">{detailOpen ? 'Cerrar' : 'Pedido'}</span>
+          </button>
         </div>
       </div>
     </div>
