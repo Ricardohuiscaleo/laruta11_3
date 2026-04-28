@@ -15,6 +15,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const [cashModalOrder, setCashModalOrder] = useState(null);
   const [cashAmount, setCashAmount] = useState('');
   const [cashStep, setCashStep] = useState('input');
+  const [viewMode, setViewMode] = useState('card');
   const [showNewFeaturePopup, setShowNewFeaturePopup] = useState(() => {
     const today = new Date();
     const d = today.getDate(), m = today.getMonth() + 1, y = today.getFullYear();
@@ -596,6 +597,13 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const immediateOrders = activeOrders.filter(o => !isScheduledOrder(o));
   const scheduledOrders = activeOrders.filter(o => isScheduledOrder(o));
 
+  const abbreviateName = (name) => {
+    if (!name) return '';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0];
+    return `${parts[0]} ${parts[1][0]}.`;
+  };
+
   const renderOrderCard = (order, isScheduled = false) => {
     // Validar pago: para webpay/credit debe tener tuu_message === "Transaccion aprobada"
     const isPaid = order.payment_status === 'paid' &&
@@ -616,7 +624,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
         <div className="mb-1 pb-1 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1 text-xs flex-1 min-w-0">
-              <span className="font-bold text-gray-900 text-sm truncate">{order.customer_name}</span>
+              <span className="font-bold text-gray-900 text-xs truncate">{abbreviateName(order.customer_name)}</span>
               {!isScheduled && (
                 <>
                   <span className="text-gray-400">·</span>
@@ -629,6 +637,13 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                   <span className="font-bold text-purple-700 text-xs">🕐 {scheduledTimeDisplay}</span>
                 </>
               )}
+              <button
+                onClick={(e) => { e.stopPropagation(); setViewMode(v => v === 'card' ? 'list' : 'card'); }}
+                className="text-gray-500 hover:text-gray-700 p-0.5 rounded text-[10px]"
+                title={viewMode === 'card' ? 'Ver listado' : 'Ver tarjetas'}
+              >
+                {viewMode === 'card' ? '📋' : '🔲'}
+              </button>
             </div>
             <button
               onClick={() => cancelOrder(order.id, order.order_number)}
@@ -668,11 +683,29 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           </div>
         </div>
 
-        <div className="bg-gray-50 rounded p-1 mb-1">
-          <div className="grid grid-cols-3 gap-1">
-            {order.items && order.items.map(item => renderProductDetails(item, order.id))}
+        {viewMode === 'list' ? (
+          <div className="bg-gray-50 rounded p-1 mb-1 space-y-0.5">
+            {order.items && order.items.map(item => {
+              const isChecked = !!checkedItems[`${order.id}-${item.id}`];
+              return (
+                <label key={item.id} className={`flex items-center gap-1 px-1 py-0.5 rounded cursor-pointer text-[10px] ${isChecked ? 'bg-green-50 line-through text-gray-400' : 'bg-white'}`}>
+                  <input type="checkbox" checked={isChecked} onChange={e => {
+                    const updates = { [`${order.id}-${item.id}`]: e.target.checked };
+                    setCheckedItems(prev => ({ ...prev, ...updates }));
+                  }} className="w-2.5 h-2.5 accent-green-500" />
+                  <span className="flex-1 truncate font-medium">{item.quantity}x {item.product_name}</span>
+                  <span className="font-bold text-orange-600">${parseInt(item.product_price || item.price || 0).toLocaleString('es-CL')}</span>
+                </label>
+              );
+            })}
           </div>
-        </div>
+        ) : (
+          <div className="bg-gray-50 rounded p-1 mb-1">
+            <div className="grid grid-cols-3 gap-1">
+              {order.items && order.items.map(item => renderProductDetails(item, order.id))}
+            </div>
+          </div>
+        )}
 
         {renderDeliveryExtras(order)}
 
@@ -1057,11 +1090,11 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           </div>
         </div>
       )}
-      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 shadow-lg flex items-center justify-between" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
-        <h2 className="text-xl font-bold flex items-center gap-2">
+      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-2 shadow-lg flex items-center justify-between" style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}>
+        <h2 className="text-sm font-bold flex items-center gap-1">
           📋 Comandas Activas
           {activeOrdersCount > 0 && (
-            <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold">
+            <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-semibold">
               {activeOrdersCount}
             </span>
           )}
