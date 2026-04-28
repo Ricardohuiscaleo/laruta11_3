@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Banknote, Smartphone, Store, Truck, Clock, XCircle, CheckCircle, X, Send, Bike, Camera } from 'lucide-react';
+import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Banknote, Smartphone, Store, Truck, Clock, XCircle, CheckCircle, X, Send, Bike, Camera, List, LayoutGrid } from 'lucide-react';
 import ChecklistCard from './ChecklistCard.jsx';
 
 function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
@@ -15,7 +15,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const [cashModalOrder, setCashModalOrder] = useState(null);
   const [cashAmount, setCashAmount] = useState('');
   const [cashStep, setCashStep] = useState('input');
-  const [viewMode, setViewMode] = useState('card');
+  const [viewMode, setViewMode] = useState('list');
   const [showNewFeaturePopup, setShowNewFeaturePopup] = useState(() => {
     const today = new Date();
     const d = today.getDate(), m = today.getMonth() + 1, y = today.getFullYear();
@@ -639,10 +639,10 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
               )}
               <button
                 onClick={(e) => { e.stopPropagation(); setViewMode(v => v === 'card' ? 'list' : 'card'); }}
-                className="text-gray-500 hover:text-gray-700 p-0.5 rounded text-[10px]"
+                className="text-gray-500 hover:text-gray-700 p-0.5 rounded"
                 title={viewMode === 'card' ? 'Ver listado' : 'Ver tarjetas'}
               >
-                {viewMode === 'card' ? '📋' : '🔲'}
+                {viewMode === 'card' ? <List size={14} /> : <LayoutGrid size={14} />}
               </button>
             </div>
             <button
@@ -686,16 +686,46 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
         {viewMode === 'list' ? (
           <div className="bg-gray-50 rounded p-1 mb-1 space-y-0.5">
             {order.items && order.items.map(item => {
+              const comboData = item.combo_data ? JSON.parse(item.combo_data) : null;
+              const isCombo = item.item_type === 'combo' && comboData;
               const isChecked = !!checkedItems[`${order.id}-${item.id}`];
+              const imageUrl = item.image_url || item.image || 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png';
               return (
-                <label key={item.id} className={`flex items-center gap-1 px-1 py-0.5 rounded cursor-pointer text-[10px] ${isChecked ? 'bg-green-50 line-through text-gray-400' : 'bg-white'}`}>
-                  <input type="checkbox" checked={isChecked} onChange={e => {
-                    const updates = { [`${order.id}-${item.id}`]: e.target.checked };
-                    setCheckedItems(prev => ({ ...prev, ...updates }));
-                  }} className="w-2.5 h-2.5 accent-green-500" />
-                  <span className="flex-1 truncate font-medium">{item.quantity}x {item.product_name}</span>
-                  <span className="font-bold text-orange-600">${parseInt(item.product_price || item.price || 0).toLocaleString('es-CL')}</span>
-                </label>
+                <div key={item.id}>
+                  <label className={`flex items-center gap-2 px-1 py-1 rounded cursor-pointer ${isChecked ? 'bg-green-50 opacity-60' : 'bg-white'}`}>
+                    <input type="checkbox" checked={isChecked} onChange={e => {
+                      const updates = { [`${order.id}-${item.id}`]: e.target.checked };
+                      if (isCombo && comboData) {
+                        if (comboData.fixed_items) comboData.fixed_items.forEach((_, idx) => { updates[`${order.id}-fixed-${item.id}-${idx}`] = e.target.checked; });
+                        if (comboData.selections) Object.entries(comboData.selections).forEach(([group, sel]) => { const arr = Array.isArray(sel) ? sel : [sel]; arr.forEach((_, sidx) => { updates[`${order.id}-sel-${item.id}-${group}-${sidx}`] = e.target.checked; }); });
+                        if (comboData.customizations) comboData.customizations.forEach((_, idx) => { updates[`${order.id}-cust-${item.id}-${idx}`] = e.target.checked; });
+                      }
+                      setCheckedItems(prev => ({ ...prev, ...updates }));
+                    }} className="w-3 h-3 accent-green-500 flex-shrink-0" />
+                    <div className="w-11 h-11 flex-shrink-0 rounded overflow-hidden cursor-pointer" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewingOrderPhotos({ photos: [imageUrl], currentIndex: 0 }); }}>
+                      <img src={imageUrl} alt={item.product_name} className="w-full h-full object-cover" onError={(e) => { e.target.src = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png'; }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className={`text-sm font-bold block truncate ${isChecked ? 'line-through text-gray-400' : 'text-gray-800'}`}>{item.quantity}x {item.product_name}</span>
+                      <span className="text-xs text-orange-600 block">${parseInt(item.product_price || item.price || 0).toLocaleString('es-CL')}</span>
+                    </div>
+                    {isChecked && <CheckCircle size={16} className="text-green-500 flex-shrink-0" />}
+                  </label>
+                  {isCombo && !isChecked && (
+                    <div className="ml-16 text-[9px] space-y-0.5 pb-1">
+                      {comboData.fixed_items && comboData.fixed_items.map((fixed, idx) => (
+                        <div key={idx} className="text-blue-700">• {item.quantity * (fixed.quantity || 1)}x {fixed.product_name || fixed.name}</div>
+                      ))}
+                      {comboData.selections && Object.entries(comboData.selections).map(([group, sel]) => {
+                        const arr = Array.isArray(sel) ? sel : [sel];
+                        return arr.map((s, sidx) => s?.name ? <div key={`${group}-${sidx}`} className="text-purple-700">• {item.quantity}x {s.name}</div> : null);
+                      })}
+                      {comboData.customizations && comboData.customizations.length > 0 && comboData.customizations.map((c, idx) => (
+                        <div key={idx} className="text-orange-700 font-bold">+ {c.quantity || item.quantity}x {c.name}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>

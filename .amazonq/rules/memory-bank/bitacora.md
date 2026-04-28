@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`9b2eaa6`) — backfill combo ingredients + pending pages RL6 |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`c87f465`) — MiniComandas compacto + paneles inline + headers gradiente |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`1a3fb2d`) — MiniComandas: nombre abreviado, switch listado/tarjeta, header compacto |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28d16d6`) — endpoint produce sub-recetas, prep_method columns |
@@ -113,10 +113,10 @@
 - `caja3/src/components/ArqueoPanel.jsx`: Header gradiente rojo→naranja, X blanco, `openPanel` prop para VentasDetalle inline.
 - `caja3/src/components/VentasDetalle.jsx`: Acepta props `startDate`/`endDate`/`onClose`, header gradiente, funciona como panel inline desde ArqueoPanel.
 
-- `caja3/src/components/MiniComandas.jsx`: Compacto — padding 1px, header solo nombre+tiempo, grid gap-1, headers sección xs, eliminado botón Copy y order_number visible.
+- `caja3/src/components/MiniComandas.jsx`: Compacto — padding 1px, nombre abreviado (Ricardo H.), switch 📋/🔲 listado/tarjeta, header solo nombre+tiempo, grid gap-1, headers sección xs.
 
-**Commits:** `204fffb`→`c87f465` (11 commits)
-**Deploys:** caja3 ✅ (`c87f465`)
+**Commits:** `204fffb`→`1a3fb2d` (13 commits)
+**Deploys:** caja3 ✅ (`1a3fb2d`)
 
 ### 2026-04-27g — Backfill combo ingredients históricos
 
