@@ -144,7 +144,7 @@ try {
                 $verification['puntaje'],
                 $verification['feedback'],
                 $verification['tokens_total'] ?? 0,
-                'gemini-2.5-flash',
+                'gemini-3.1-flash-lite-preview',
                 $verification['processing_ms'] ?? 0,
                 $userRetook,
             ]);
@@ -179,7 +179,7 @@ try {
                     0,
                     $verificationFallback['feedback'],
                     0,
-                    'gemini-2.5-flash',
+                    'gemini-3.1-flash-lite-preview',
                     0,
                     $userRetook,
                 ]);
