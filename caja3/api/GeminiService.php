@@ -206,9 +206,15 @@ class GeminiService
                     $ingName = $ing['name'] ?? '';
                     if (in_array($cat, ['Packaging', 'Limpieza', 'Servicios', 'Gas'])) {
                         $packaging[] = $ingName;
-                    } elseif (in_array($cat, ['Salsas', 'Condimentos'])) {
+                    } elseif (in_array($cat, ['Salsas', 'Condimentos', 'Panes'])) {
+                        $noVisibles[] = $ingName;
+                    } elseif (stripos($ingName, 'Pan ') === 0 || stripos($ingName, 'Pan de') === 0) {
+                        // Panes son estructura del sandwich, no verificar por separado
                         $noVisibles[] = $ingName;
                     } elseif (in_array($cat, ['Lácteos']) && stripos($ingName, 'Queso') === false) {
+                        $noVisibles[] = $ingName;
+                    } elseif (stripos($ingName, 'Aceite') === 0) {
+                        // Aceites no son visibles
                         $noVisibles[] = $ingName;
                     } else {
                         $visibles[] = $ingName;
@@ -262,14 +268,18 @@ CRITERIOS DE PUNTAJE:
 
 REGLAS DE RESPUESTA:
 - Describe brevemente lo que ves, luego señala problemas.
-- Pon entre ** los nombres de productos/ingredientes que faltan o sobran: "No veo la **Bilz**" o "Parece tener **lomo extra** ¿está bien?"
+- OBLIGATORIO: Pon entre ** los nombres de productos/ingredientes que faltan o sobran. Esto es CRÍTICO para el formato visual.
+  Correcto: "no veo la **Bilz**" / "parece tener **lomo extra**"
+  Incorrecto: "no veo la Bilz" / "parece tener lomo extra"
 - Máximo 2 oraciones cortas. Tono casual como compañero de trabajo.
+- Si ves ingredientes EXTRA que NO están en la lista del pedido (ej: un trozo de carne blanca, pollo, lomo), SIEMPRE pregunta: "parece tener **pollo extra** ¿está bien?"
 - Ejemplos buenos:
   "Se ve la hamburguesa clásica completa ✅"
-  "Se ve la hamburguesa pero *no veo la **Bilz*** ⚠️"
-  "Se ve la hamburguesa clásica pero parece tener **lomo extra** ¿está bien? ⚠️"
+  "Se ve la hamburguesa pero no veo la **Bilz** ⚠️"
+  "Se ve la hamburguesa pero tiene **un trozo de carne extra** que no está en el pedido ¿está bien? ⚠️"
   "Todo bien, hamburguesa + papas + bebida ✅"
 - NUNCA digas "se asume", "Retoma la foto", ni uses formato de reporte.
+- NUNCA comentes sobre el tipo de pan — es parte de la estructura del producto.
 - Emojis: ✅ todo OK, ⚠️ algo que revisar.
 PROMPT;
         }
