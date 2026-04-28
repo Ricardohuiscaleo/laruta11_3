@@ -38,6 +38,15 @@ function RouteLayer({ origin, destination }: { origin: { lat: number; lng: numbe
   return null;
 }
 
+/* ── Pan map to position ── */
+function PanToPosition({ position, trigger }: { position: GeoPosition; trigger: number }) {
+  const map = useMap();
+  useEffect(() => {
+    if (map && trigger > 0) { map.panTo(position); map.setZoom(16); }
+  }, [map, position, trigger]);
+  return null;
+}
+
 /* ── Main ── */
 export default function PublicRiderView({ orderId }: { orderId: string }) {
   const [order, setOrder] = useState<PublicOrderData | null>(null);
@@ -47,6 +56,7 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
   const [actionError, setActionError] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [gpsManualActive, setGpsManualActive] = useState(false);
+  const [panTrigger, setPanTrigger] = useState(0);
 
   const gpsEnabled = order?.order_status === 'out_for_delivery' || gpsManualActive;
   const { position, gpsError } = usePublicRiderGPS({ orderId, enabled: gpsEnabled });
@@ -186,6 +196,7 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
                   </div>
                 </AdvancedMarker>
               )}
+              {position && gpsEnabled && <PanToPosition position={position} trigger={panTrigger} />}
             </Map>
           </APIProvider>
         ) : (
@@ -247,18 +258,22 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
 
         {/* Action bar */}
         <div className="mx-3 mb-3 flex gap-2">
-          {/* My location button — activates GPS sharing */}
+          {/* My location — navigation arrow like Google Maps */}
           <button
-            onClick={() => setGpsManualActive(v => !v)}
+            onClick={() => {
+              if (!gpsManualActive) setGpsManualActive(true);
+              setPanTrigger(t => t + 1);
+            }}
             className={`h-14 w-14 shrink-0 rounded-2xl shadow-lg flex items-center justify-center active:scale-95 transition-all ${
               gpsEnabled
                 ? 'bg-blue-500 ring-2 ring-blue-300'
                 : 'bg-white/95 backdrop-blur-md'
             }`}
-            aria-label={gpsEnabled ? 'GPS activo' : 'Activar mi ubicación'}
+            aria-label={gpsEnabled ? 'Centrar en mi ubicación' : 'Activar mi ubicación'}
           >
-            <svg className={`h-6 w-6 ${gpsEnabled ? 'text-white' : 'text-gray-600'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3" /><path d="M12 2v4m0 12v4m10-10h-4M6 12H2" />
+            {/* Navigation arrow icon */}
+            <svg className={`h-6 w-6 ${gpsEnabled ? 'text-white' : 'text-gray-600'}`} viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z" />
             </svg>
           </button>
 
