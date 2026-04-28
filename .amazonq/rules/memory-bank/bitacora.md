@@ -6,11 +6,11 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`493dd52`) — get_comandas_v2 includes ingredient category for IA classification |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`493dd52`) — Fotos delivery IA: Lucide icons, shimmer loader, upload blocking, 40s timeout, ingredient classification by DB category |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado, MenuApp+CheckoutApp migrados |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28d16d6`) — endpoint produce sub-recetas, prep_method columns |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`d880e70`) — DeliveryConfigSection admin, sección Config Delivery en sidebar |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`d880e70`) — delivery_config table, card_surcharge column, API CRUD delivery-config |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -102,6 +102,25 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-28b — Spec delivery-config-centralized: centralizar config delivery en BD
+
+**Cambios código:**
+- `mi3/backend/database/migrations/`: Tabla `delivery_config` (key-value, 6 params seed) + columna `tuu_orders.card_surcharge`.
+- `mi3/backend/app/`: DeliveryConfig model, DeliveryConfigController (GET/PUT), UpdateDeliveryConfigRequest (validación numérica + rango rl6).
+- `mi3/backend/routes/api.php`: Rutas delivery-config en grupo admin.
+- `mi3/frontend/`: DeliveryConfigSection.tsx (formulario, validación inline, vista previa cálculo), registrada en AdminShell + sidebars.
+- `app3/api/delivery/`: delivery_config_helper.php + get_config.php (endpoint público con fallback).
+- `caja3/api/delivery/`: Copia idéntica helper + endpoint.
+- `app3/api/location/get_delivery_fee.php`: Lee distance params de BD.
+- `app3/api/create_order.php` + `caja3/api/create_order.php`: card_surcharge separado, no suma a delivery_fee.
+- `app3/src/components/CheckoutApp.jsx`: Fetch config on mount, valores dinámicos.
+- `caja3/src/components/CheckoutApp.jsx` + `MenuApp.jsx`: Idem, usa `(1 - factor)` para RL6.
+
+**BD pendiente:** Ejecutar `php artisan migrate` para crear tabla `delivery_config` y columna `tuu_orders.card_surcharge`.
+
+**Commits:** `d880e70` (22 archivos, 1701 insertions)
+**Deploys:** mi3-frontend ✅, mi3-backend ✅, app3 ✅, caja3 ✅
 
 ### 2026-04-28a — Spec dispatch-photo-verification: verificación fotos delivery con Gemini IA
 
