@@ -1,13 +1,13 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-27)
+## Estado Actual (2026-04-28)
 
 ### Aplicaciones Desplegadas
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`9b2eaa6`) — backfill combo ingredients + pending pages RL6 |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`a8ac18a`) — bebidas con foto en combos, FOTOS DEL PEDIDO rojo obligatorio |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`6201bd8`) — Verificación fotos delivery con Gemini IA, botón DESPACHAR A DELIVERY |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28d16d6`) — endpoint produce sub-recetas, prep_method columns |
@@ -56,6 +56,7 @@
 
 ### 🔴 Críticas (afectan producción)
 
+- [x] **🚨 Ejecutar SQL `dispatch_photo_feedback` en BD** — Tabla creada en producción via docker exec.
 - [x] **🚨 Revertir descuento 10% temporal** — 4 productos revertidos manualmente (cron VPS no se ejecutó). is_featured=0, sale_price=NULL. Crons eliminados del VPS. Scripts apply/revert pendientes de eliminar del repo.
 - [ ] **🚨 URGENTE: Rotar AWS access key comprometida** — AWS detectó key `AKIAUQ24...WGTE` como comprometida y restringió servicios (Bedrock bloqueado). Key rotada a `...RKT7` en Coolify. Falta: 1) Actualizar `~/.aws/credentials` en VPS para chef-bot, 2) Desactivar key vieja en IAM, 3) Responder caso de soporte AWS (caso #177655445900588 respondido, esperando humano). Bedrock sigue bloqueado a nivel de cuenta.
 - [x] **🚨 CRÍTICO: Inventario no descuenta para R11/R11C/combos** — COMPLETADO. Guard idempotencia, order_status=sent_to_kitchen, callbacks preservan order_status, create_order centralizado, subtotal/delivery_fee server-side, backfill expandido, fix combos usa fixed_items JSON. Commits `bdee29d`, `98c5565`. Backfill: 218 órdenes procesadas, 0 errores.
@@ -101,6 +102,20 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-28a — Spec dispatch-photo-verification: verificación fotos delivery con Gemini IA
+
+**Cambios código:**
+- `caja3/src/utils/photoRequirements.js`: Nueva función pura `generatePhotoRequirements(deliveryType)` + helpers `getButtonState`, `formatPhotoProgress`.
+- `caja3/api/GeminiService.php`: Nuevo servicio standalone — `verificarFotoDespacho()` con cURL a Gemini `gemini-2.5-flash-lite`, prompts por tipo (productos/bolsa), responseSchema JSON, timeout 8s, fallback silencioso.
+- `caja3/api/orders/save_dispatch_photo.php`: Integración IA — acepta `photo_type`, `order_items`, `user_retook`; llama GeminiService después de S3 upload; inserta en `dispatch_photo_feedback`; backward compatible sin `photo_type`.
+- `caja3/src/components/MiniComandas.jsx`: Delivery → 2 slots etiquetados (productos + bolsa sellada) en grid-cols-2, botón "📦 DESPACHAR A DELIVERY" / "📷 FALTAN FOTOS", panel feedback IA debajo de slots, eliminar/re-subir con `user_retook`. Local → sin fotos, botón "✅ ENTREGAR" sin cambios.
+- `caja3/create_dispatch_photo_feedback.sql`: Nueva tabla con order_id, photo_type, ai_aprobado, ai_puntaje, ai_feedback, user_retook.
+
+**Pendiente:** Ejecutar SQL `dispatch_photo_feedback` en BD producción.
+
+**Commits:** `6201bd8`
+**Deploys:** caja3 ✅ (`6201bd8`)
 
 ### 2026-04-27h — Spec caja3-inline-merma-arqueo: paneles inline + rediseño UX completo
 
@@ -154,5 +169,5 @@
 ---
 
 > Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-27d archivadas. Últimas archivadas: 2026-04-27d (Fix selections agrupadas en combos), 2026-04-27b (Fix combos inventario fixed_items), 2026-04-27a (Spec fix-inventario Tasks 1-6), 2026-04-26d (Comandas timers preparación).
+> Sesiones 2026-04-19c→2026-04-27e archivadas. Últimas archivadas: 2026-04-27e (Fix payment-success "Cargando..." + limpieza disco), 2026-04-27f (MiniComandas R11 Webpay + delivery_discount), 2026-04-27g (Backfill combo ingredients), 2026-04-27d (Fix selections agrupadas en combos).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
