@@ -116,7 +116,7 @@
 - `mi3/frontend/components/admin/delivery/OrderPanel.tsx`: Botones "Link rider" (copiar portapapeles) + "QR" (código QR con `qrcode.react`).
 
 **Commits:** `bec0544` (14 archivos, 1324 insertions)
-**Deploys:** Pendiente — disparar builds mi3-frontend + mi3-backend desde Coolify UI
+**Deploys:** mi3-frontend ✅ (`pazj6z4hqkoawhk3f0ubz0v4`), mi3-backend ✅ (`hyfsunzpb7qxt78boke4djlj`)
 
 ### 2026-04-28c — Mejoras dispatch photos + comandas bebidas compactas
 
