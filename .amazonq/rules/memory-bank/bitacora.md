@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`b820505`) — prompts Gemini dispatch v2: feedback coloreado puntaje, bold rojo faltantes, bolsa abierta OK |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`5658275`) — comandas bebidas compactas, fotos dispatch persistentes, compresión Gemini 800px/70% |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`d880e70`) — DeliveryConfigSection admin, sección Config Delivery en sidebar |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`d880e70`) — delivery_config table, card_surcharge column, API CRUD delivery-config |
@@ -103,14 +103,16 @@
 
 ## Sesiones Recientes
 
-### 2026-04-28c — Fix prompts Gemini dispatch: tono casual + bolsa abierta OK + feedback coloreado
+### 2026-04-28c — Mejoras dispatch photos + comandas bebidas compactas
 
 **Cambios código:**
-- `caja3/api/GeminiService.php`: Prompt productos: feedback máximo 1 oración casual, items faltantes entre `**` para bold rojo, sin "se asume", sin "Retoma la foto". Prompt bolsa: foto desde arriba con bolsa abierta es correcto (inspección pre-sellado), verifica cajas cerradas y posición estable.
-- `caja3/src/components/MiniComandas.jsx`: Feedback coloreado por puntaje (verde ≥80, amarillo ≥50, rojo <50) con borde en foto y texto. `**texto**` renderizado como negrita roja para items faltantes.
+- `caja3/api/GeminiService.php`: Prompts productos y bolsa reescritos — tono casual (1 oración), items faltantes entre `**` para bold rojo, sin "se asume", bolsa abierta es correcto (inspección pre-sellado).
+- `caja3/api/orders/save_dispatch_photo.php`: Compresión imagen antes de Gemini (resize 800px max, JPEG 70%) para ahorrar tokens.
+- `caja3/src/components/MiniComandas.jsx`: Feedback coloreado por puntaje (verde ≥80, amarillo ≥50, rojo <50), borde foto por puntaje, `**texto**` renderizado como negrita roja. Fotos dispatch se restauran al recargar desde `dispatch_photo_url` de BD.
+- `caja3/src/pages/comandas/index.astro`: Bebidas (category_id 5) layout compacto inline — foto 48x60px + nombre + cantidad, sin descripción ni ingredientes.
 
-**Commits:** `075b79e`, `b820505`
-**Deploys:** caja3 ✅
+**Commits:** `075b79e`, `b820505`, `60c80cf`, `5658275`
+**Deploys:** caja3 ✅ (4 deploys)
 
 ### 2026-04-28b — Spec delivery-config-centralized: centralizar config delivery en BD
 
