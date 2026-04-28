@@ -1159,38 +1159,52 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
         <div className="flex flex-col gap-2">
           <div className="flex gap-2">
-            {!isPaid ? (
-              <button onClick={() => confirmPayment(order.id, order.order_number, order.payment_method)} disabled={processing === order.id} className="flex-1 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-400 text-white font-bold py-2 px-3 rounded text-xs">
-                {processing === order.id ? '⏳' : '✓ CONFIRMAR PAGO'}
-              </button>
-            ) : (() => {
+            {(() => {
               const isDelivery = order.delivery_type === 'delivery';
-              if (!isDelivery) {
+              
+              // Delivery: siempre mostrar botón DESPACHAR (fotos obligatorias), independiente del pago
+              if (isDelivery) {
+                const photoReqs = generatePhotoRequirements('delivery');
+                const orderSlots = photoSlots[order.id] || {};
+                const uploadedMap = {};
+                photoReqs.forEach(r => { if (orderSlots[r.id] && orderSlots[r.id].photoUrl) uploadedMap[r.id] = orderSlots[r.id].photoUrl; });
+                const btnState = getButtonState(photoReqs, uploadedMap);
+                const missingCount = photoReqs.length - Object.keys(uploadedMap).length;
                 return (
-                  <button onClick={() => deliverOrder(order.id, order.order_number)} disabled={processing === order.id} className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-2 px-3 rounded text-xs">
-                    {processing === order.id ? '⏳' : '✅ ENTREGAR'}
+                  <>
+                    {!isPaid && (
+                      <button onClick={() => confirmPayment(order.id, order.order_number, order.payment_method)} disabled={processing === order.id} className="flex-1 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-400 text-white font-bold py-2 px-3 rounded text-xs">
+                        {processing === order.id ? '⏳' : '✓ CONFIRMAR PAGO'}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        if (btnState.enabled) {
+                          deliverOrder(order.id, order.order_number);
+                        } else {
+                          alert(`Faltan ${missingCount} de 2 fotos`);
+                        }
+                      }}
+                      disabled={processing === order.id}
+                      className={`flex-1 ${processing === order.id ? 'bg-gray-400 text-gray-200' : btnState.className} font-bold py-2 px-3 rounded text-xs`}
+                    >
+                      {processing === order.id ? '⏳' : btnState.text}
+                    </button>
+                  </>
+                );
+              }
+              
+              // Local: flujo original sin cambios
+              if (!isPaid) {
+                return (
+                  <button onClick={() => confirmPayment(order.id, order.order_number, order.payment_method)} disabled={processing === order.id} className="flex-1 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-400 text-white font-bold py-2 px-3 rounded text-xs">
+                    {processing === order.id ? '⏳' : '✓ CONFIRMAR PAGO'}
                   </button>
                 );
               }
-              const photoReqs = generatePhotoRequirements('delivery');
-              const orderSlots = photoSlots[order.id] || {};
-              const uploadedMap = {};
-              photoReqs.forEach(r => { if (orderSlots[r.id] && orderSlots[r.id].photoUrl) uploadedMap[r.id] = orderSlots[r.id].photoUrl; });
-              const btnState = getButtonState(photoReqs, uploadedMap);
-              const missingCount = photoReqs.length - Object.keys(uploadedMap).length;
               return (
-                <button
-                  onClick={() => {
-                    if (btnState.enabled) {
-                      deliverOrder(order.id, order.order_number);
-                    } else {
-                      alert(`Faltan ${missingCount} de 2 fotos`);
-                    }
-                  }}
-                  disabled={processing === order.id}
-                  className={`flex-1 ${processing === order.id ? 'bg-gray-400 text-gray-200' : btnState.className} font-bold py-2 px-3 rounded text-xs`}
-                >
-                  {processing === order.id ? '⏳' : btnState.text}
+                <button onClick={() => deliverOrder(order.id, order.order_number)} disabled={processing === order.id} className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-2 px-3 rounded text-xs">
+                  {processing === order.id ? '⏳' : '✅ ENTREGAR'}
                 </button>
               );
             })()}
