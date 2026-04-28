@@ -117,10 +117,11 @@
 - `app3/src/components/CheckoutApp.jsx`: Fetch config on mount, valores dinámicos.
 - `caja3/src/components/CheckoutApp.jsx` + `MenuApp.jsx`: Idem, usa `(1 - factor)` para RL6.
 
-**BD pendiente:** Ejecutar `php artisan migrate` para crear tabla `delivery_config` y columna `tuu_orders.card_surcharge`.
+**BD pendiente:** ~~Ejecutar `php artisan migrate` para crear tabla `delivery_config` y columna `tuu_orders.card_surcharge`.~~ EJECUTADO manualmente via docker exec MySQL.
 
 **Commits:** `d880e70` (22 archivos, 1701 insertions), `b01b344` (fix: force-add caja3/api/delivery/ ignorado por root .gitignore)
 **Deploys:** mi3-frontend ✅, mi3-backend ✅, app3 ✅, caja3 ✅ (redeploy fix `b01b344`)
+**BD:** `tuu_orders.card_surcharge` DECIMAL(10,2) creada, tabla `delivery_config` con 6 registros seeded
 
 ### 2026-04-28a — Spec dispatch-photo-verification: verificación fotos delivery con Gemini IA
 
