@@ -61,12 +61,19 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                 const urls = JSON.parse(order.dispatch_photo_url);
                 if (urls && typeof urls === 'object') {
                   const slots = {};
-                  if (urls.productos) slots.productos = { status: 'approved', photoUrl: urls.productos, verification: null };
-                  if (urls.bolsa) slots.bolsa = { status: 'approved', photoUrl: urls.bolsa, verification: null };
+                  ['productos', 'bolsa'].forEach(type => {
+                    const entry = urls[type];
+                    if (!entry) return;
+                    // New format: {url, verification} or legacy string
+                    const photoUrl = typeof entry === 'string' ? entry : entry.url;
+                    const verification = (typeof entry === 'object' && entry.verification) ? entry.verification : null;
+                    const p = verification?.puntaje ?? 100;
+                    slots[type] = { status: p >= 80 ? 'approved' : 'warning', photoUrl, verification };
+                  });
                   if (Object.keys(slots).length > 0) restored[order.id] = slots;
                 }
               } catch (e) {
-                // dispatch_photo_url might be a single URL string (legacy)
+                // Legacy single URL string
                 if (typeof order.dispatch_photo_url === 'string' && order.dispatch_photo_url.startsWith('http')) {
                   restored[order.id] = { productos: { status: 'approved', photoUrl: order.dispatch_photo_url, verification: null } };
                 }

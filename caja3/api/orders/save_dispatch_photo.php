@@ -64,9 +64,9 @@ try {
         }
     }
 
-    // Add new photo with type key
+    // Add new photo with type key + verification placeholder
     $photoType = $_POST['photo_type'] ?? 'productos';
-    $photos[$photoType] = $url;
+    $photos[$photoType] = ['url' => $url];
     $jsonPhotos = json_encode($photos);
 
     $pdo->prepare("UPDATE tuu_orders SET dispatch_photo_url = ? WHERE id = ?")->execute([$jsonPhotos, $orderId]);
@@ -154,6 +154,13 @@ try {
                 'puntaje' => $verification['puntaje'],
                 'feedback' => $verification['feedback'],
             ];
+
+            // Update dispatch_photo_url with verification data for persistence
+            $photos[$photoType] = [
+                'url' => $url,
+                'verification' => $response['verification'],
+            ];
+            $pdo->prepare("UPDATE tuu_orders SET dispatch_photo_url = ? WHERE id = ?")->execute([json_encode($photos), $orderId]);
         } catch (\Throwable $e) {
             error_log("[save_dispatch_photo] Verification error: " . $e->getMessage());
 

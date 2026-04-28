@@ -245,9 +245,10 @@ TAREA: Analiza esta foto y verifica que los productos del pedido estén presente
 
 VERIFICACIÓN OBLIGATORIA:
 1. COMPARA lo que ves en la foto contra la lista del pedido. ¿Cada item del pedido es visible?
-2. Si ves productos o ingredientes que NO están en el pedido (ej: un trozo de carne extra, pollo extra), pregunta si está bien.
+2. Si ves productos o ingredientes que NO están en el pedido (ej: un trozo de carne extra, pollo extra, lomo), pregunta si está bien.
 3. ¿Las cantidades coinciden? (ej: si pide 2x y solo se ve 1, es problema)
 4. Si hay NOTAS DEL CLIENTE, verifica que se cumplan (sin tomate = no debe verse tomate, extra lomo = debe verse lomo extra).
+5. IMPORTANTE: Verifica que el PRODUCTO CORRECTO esté en la foto. Si el pedido dice "Hamburguesa Clásica" (solo carne) pero ves una hamburguesa con lomo o pollo extra, eso NO es una clásica — es otro producto. Alerta.
 
 IMPORTANTE — INGREDIENTES:
 - Los marcados "NO visibles" van dentro del pan o son de cocción. No penalizar.
