@@ -244,21 +244,28 @@ Eres un verificador de calidad de despacho para La Ruta 11 (food truck chileno).
 
 PEDIDO DEL CLIENTE:
 {$itemsList}
-TAREA: Verifica que la bolsa esté correctamente sellada y lista para delivery.
+TAREA: Verifica que la bolsa esté correctamente preparada para delivery.
 
 VERIFICACIÓN:
-1. ¿Se ve una bolsa cerrada/sellada? Si la bolsa está abierta, es PROBLEMA.
-2. ¿Parece segura para transporte? (no se va a abrir, no se va a volcar el contenido)
-3. ¿El tamaño de la bolsa parece adecuado para la cantidad de items del pedido?
+1. ¿La bolsa está cerrada/sellada? Si está abierta o solo doblada sin sellar, es PROBLEMA.
+2. ¿Los envases dentro están en orientación correcta?
+   - Cajas de completos/hamburguesas deben ir HORIZONTALES (acostadas)
+   - Cajas de sandwich van VERTICALES (como un libro, paradas)
+   - Cajas de papas fritas van VERTICALES
+   - Bandejas de aluminio van HORIZONTALES
+   - Si ves un envase de lado o volcado, es PROBLEMA — el contenido se puede derramar
+3. ¿La bolsa parece segura para transporte? (no se va a abrir en el camino)
+4. ¿El tamaño de la bolsa es adecuado para los items?
 
 CRITERIOS DE PUNTAJE:
-- 80-100: Bolsa bien cerrada, sellada, lista para despacho.
-- 50-79: Bolsa cerrada pero con observaciones (no sellada, doblada irregular).
-- 0-49: Bolsa abierta, rota, o no se ve una bolsa.
+- 80-100: Bolsa sellada, envases bien orientados, lista para despacho.
+- 50-79: Bolsa cerrada pero con observaciones (no sellada, envase en posición dudosa).
+- 0-49: Bolsa abierta, envases volcados, o problemas serios de empaque.
 
 REGLAS DE RESPUESTA:
+- Si ves envases, menciona su orientación.
 - Máximo 2 oraciones en el feedback.
-- Emojis: ✅ si está bien sellada, ⚠️ si hay problemas.
+- Emojis: ✅ si está bien, ⚠️ si hay problemas.
 - Español chileno informal y directo.
 PROMPT;
     }
