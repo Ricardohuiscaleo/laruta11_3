@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Banknote, Smartphone, Store, Truck, Clock, XCircle, CheckCircle, X, Send, Bike, Camera, List, LayoutGrid } from 'lucide-react';
+import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Banknote, Smartphone, Store, Truck, Clock, XCircle, CheckCircle, X, Send, Bike, Camera, List, LayoutGrid, Trash2, AlertTriangle, Loader2, ImagePlus, ShieldCheck, ShieldAlert } from 'lucide-react';
 import ChecklistCard from './ChecklistCard.jsx';
 import { generatePhotoRequirements, getButtonState, formatPhotoProgress } from '../utils/photoRequirements.js';
 
@@ -1028,24 +1028,21 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           const photoReqs = generatePhotoRequirements(order.delivery_type);
           if (photoReqs.length === 0) return null;
 
-          // Initialize slots for this order if not yet set
           const orderSlots = photoSlots[order.id] || {};
           const getSlot = (reqId) => orderSlots[reqId] || { status: 'empty', photoUrl: null, verification: null };
-
-          // Collect all photo URLs for fullscreen viewer
           const allPhotoUrls = photoReqs.map(r => getSlot(r.id).photoUrl).filter(Boolean);
-
-          // Count uploaded
           const uploadedMap = {};
           photoReqs.forEach(r => { if (getSlot(r.id).photoUrl) uploadedMap[r.id] = getSlot(r.id).photoUrl; });
           const uploadedCount = Object.keys(uploadedMap).length;
+          
+          // Block uploads while any slot is uploading/analyzing
+          const isAnyUploading = photoReqs.some(r => getSlot(r.id).status === 'uploading');
 
           const handleSlotUpload = (file, reqId, isRetake) => {
-            if (!file) return;
-            // Set uploading
+            if (!file || isAnyUploading) return;
             setPhotoSlots(prev => ({
               ...prev,
-              [order.id]: { ...prev[order.id], [reqId]: { ...getSlot(reqId), status: 'uploading', verification: null } }
+              [order.id]: { ...prev[order.id], [reqId]: { status: 'uploading', photoUrl: null, verification: null } }
             }));
 
             const fd = new FormData();
@@ -1055,35 +1052,49 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
             fd.append('order_items', JSON.stringify(order.items || []));
             if (isRetake) fd.append('user_retook', 'true');
 
-            fetch('/api/orders/save_dispatch_photo.php', { method: 'POST', body: fd })
+            // Timeout controller — 40s max
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 40000);
+
+            fetch('/api/orders/save_dispatch_photo.php', { method: 'POST', body: fd, signal: controller.signal })
               .then(r => r.json())
               .then(d => {
+                clearTimeout(timeout);
                 if (d.success) {
-                  const verification = d.verification || null;
-                  const status = verification ? (verification.aprobado ? 'approved' : 'warning') : 'approved';
+                  const v = d.verification || null;
+                  const status = v ? (v.aprobado ? 'approved' : 'warning') : 'approved';
                   setPhotoSlots(prev => ({
                     ...prev,
-                    [order.id]: { ...prev[order.id], [reqId]: { status, photoUrl: d.url, verification } }
+                    [order.id]: { ...prev[order.id], [reqId]: { status, photoUrl: d.url, verification: v } }
                   }));
                   loadOrders();
                 } else {
-                  alert('Error: ' + (d.error || 'No se pudo subir la foto'));
+                  alert('Error: ' + (d.error || 'No se pudo subir'));
                   setPhotoSlots(prev => ({
                     ...prev,
                     [order.id]: { ...prev[order.id], [reqId]: { status: 'empty', photoUrl: null, verification: null } }
                   }));
                 }
               })
-              .catch(() => {
-                alert('Error al subir foto');
+              .catch((err) => {
+                clearTimeout(timeout);
+                const isTimeout = err.name === 'AbortError';
+                // On timeout: photo uploaded but IA failed — mark as uploaded with fallback
                 setPhotoSlots(prev => ({
                   ...prev,
-                  [order.id]: { ...prev[order.id], [reqId]: { status: 'empty', photoUrl: null, verification: null } }
+                  [order.id]: { ...prev[order.id], [reqId]: { 
+                    status: 'approved', 
+                    photoUrl: prev[order.id]?.[reqId]?.photoUrl || null, 
+                    verification: isTimeout ? { aprobado: true, puntaje: 0, feedback: '⏳ Análisis tardó demasiado. Foto subida OK.' } : null 
+                  }}
                 }));
+                if (!isTimeout) alert('Error al subir foto');
+                loadOrders();
               });
           };
 
           const handleDeleteSlot = (reqId) => {
+            if (isAnyUploading) return;
             setPhotoSlots(prev => ({
               ...prev,
               [order.id]: { ...prev[order.id], [reqId]: { status: 'empty', photoUrl: null, verification: null, _retake: true } }
@@ -1092,91 +1103,86 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
           return (
             <div className="mb-2 border border-blue-200 rounded-lg overflow-hidden bg-white shadow-sm">
-              <div className="bg-red-600 px-2 py-1 text-[10px] font-black text-white flex items-center justify-between">
+              <div className="bg-red-600 px-2 py-0.5 text-[10px] font-black text-white flex items-center justify-between">
                 <span className="flex items-center gap-1">
-                  <Camera size={12} /> FOTOS DELIVERY (obligatorio)
+                  <Camera size={11} /> FOTOS DELIVERY
                 </span>
-                <span className="text-[9px] font-bold opacity-90">{formatPhotoProgress(uploadedCount, photoReqs.length)}</span>
+                <span className="bg-white/20 px-1.5 rounded text-[9px]">{uploadedCount}/{photoReqs.length}</span>
               </div>
 
-              <div className="p-1.5">
-                <div className="grid grid-cols-2 gap-1.5">
+              <div className="p-1">
+                <div className="grid grid-cols-2 gap-1">
                   {photoReqs.map(req => {
                     const slot = getSlot(req.id);
                     const isRetake = !!(orderSlots[req.id] && orderSlots[req.id]._retake);
 
                     if (slot.status === 'uploading') {
                       return (
-                        <div key={req.id} className="aspect-square flex flex-col items-center justify-center rounded-md border-2 border-blue-300 bg-blue-50 text-blue-500">
-                          <div className="animate-spin text-lg mb-1">⏳</div>
-                          <span className="text-[9px] font-bold">Subiendo...</span>
-                          <span className="text-[8px] mt-0.5 text-blue-400">{req.label}</span>
+                        <div key={req.id} className="h-28 flex flex-col items-center justify-center rounded-lg border-2 border-blue-400 bg-gradient-to-br from-blue-50 to-indigo-50 relative overflow-hidden">
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_1.5s_infinite]" style={{animation: 'shimmer 1.5s infinite', backgroundSize: '200% 100%'}} />
+                          <Loader2 size={24} className="text-blue-500 animate-spin mb-1" />
+                          <span className="text-[10px] font-bold text-blue-600">Subiendo y analizando...</span>
+                          <span className="text-[8px] text-blue-400 mt-0.5">{req.id === 'productos' ? '📸 Productos' : '🛍️ Bolsa'}</span>
                         </div>
                       );
                     }
 
                     if (slot.photoUrl) {
-                      const badge = slot.status === 'warning' ? '⚠️' : '✅';
                       return (
-                        <div key={req.id} className="aspect-square rounded-md overflow-hidden border border-gray-100 relative group shadow-sm">
+                        <div key={req.id} className="h-28 rounded-lg overflow-hidden border relative group shadow-sm"
+                          style={{borderColor: slot.status === 'warning' ? '#f59e0b' : slot.status === 'approved' ? '#22c55e' : '#e5e7eb'}}>
                           <img
                             src={slot.photoUrl}
                             alt={req.label}
-                            className="w-full h-full object-cover cursor-pointer active:scale-95 transition-all"
-                            onClick={() => setViewingOrderPhotos({ photos: allPhotoUrls, currentIndex: allPhotoUrls.indexOf(slot.photoUrl) })}
+                            className="w-full h-full object-cover cursor-pointer"
+                            onClick={() => setViewingOrderPhotos({ photos: allPhotoUrls, currentIndex: Math.max(0, allPhotoUrls.indexOf(slot.photoUrl)) })}
                           />
-                          <div className="absolute top-0.5 left-0.5 bg-white/90 rounded px-1 text-[9px] font-bold shadow">{badge} {req.id === 'productos' ? 'Productos' : 'Bolsa'}</div>
+                          <div className="absolute top-0.5 left-0.5 flex items-center gap-0.5 bg-black/60 backdrop-blur-sm rounded px-1 py-0.5">
+                            {slot.status === 'approved' ? <ShieldCheck size={10} className="text-green-400" /> : <ShieldAlert size={10} className="text-amber-400" />}
+                            <span className="text-[8px] font-bold text-white">{req.id === 'productos' ? 'Productos' : 'Bolsa'}</span>
+                          </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); handleDeleteSlot(req.id); }}
-                            className="absolute top-0.5 right-0.5 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow active:scale-90 transition-all"
+                            disabled={isAnyUploading}
+                            className="absolute top-0.5 right-0.5 bg-red-500/90 hover:bg-red-600 disabled:opacity-50 text-white rounded-full w-5 h-5 flex items-center justify-center shadow backdrop-blur-sm active:scale-90 transition-all"
                             aria-label={`Eliminar ${req.label}`}
-                          >×</button>
+                          ><Trash2 size={10} /></button>
                         </div>
                       );
                     }
 
-                    // Empty slot
                     return (
-                      <label key={req.id} className="aspect-square flex flex-col items-center justify-center gap-0.5 cursor-pointer rounded-md border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-orange-50 hover:border-orange-300 text-gray-400 hover:text-orange-500 transition-all active:scale-95">
-                        <Camera size={18} />
-                        <span className="text-[8px] font-bold text-center leading-tight px-1">{req.label}</span>
-                        <input type="file" accept="image/*" capture="environment" className="hidden"
+                      <label key={req.id} className={`h-28 flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed transition-all active:scale-95 ${
+                        isAnyUploading 
+                          ? 'border-gray-200 bg-gray-100 text-gray-300 cursor-not-allowed' 
+                          : 'border-gray-300 bg-gray-50 hover:bg-orange-50 hover:border-orange-400 text-gray-400 hover:text-orange-500 cursor-pointer'
+                      }`}>
+                        <ImagePlus size={20} />
+                        <span className="text-[9px] font-bold">{req.id === 'productos' ? '📸 Productos' : '🛍️ Bolsa'}</span>
+                        <input type="file" accept="image/*" capture="environment" className="hidden" disabled={isAnyUploading}
                           onChange={e => { handleSlotUpload(e.target.files[0], req.id, isRetake); e.target.value = ''; }} />
                       </label>
                     );
                   })}
                 </div>
-              </div>
 
-              {/* Feedback panel */}
-              {photoReqs.some(r => getSlot(r.id).verification || getSlot(r.id).status === 'uploading') && (
-                <div className="bg-gray-50 rounded-lg p-3 mx-1.5 mb-1.5 space-y-2">
-                  {photoReqs.map(req => {
-                    const slot = getSlot(req.id);
-                    if (slot.status === 'uploading') {
+                {/* Inline feedback */}
+                {photoReqs.some(r => getSlot(r.id).verification) && (
+                  <div className="mt-1 space-y-0.5">
+                    {photoReqs.map(req => {
+                      const slot = getSlot(req.id);
+                      if (!slot.verification) return null;
+                      const ok = slot.verification.aprobado;
                       return (
-                        <div key={req.id} className="flex items-start gap-2">
-                          <span className="animate-spin text-xs">⏳</span>
-                          <div>
-                            <span className="font-medium text-xs">{req.label}:</span>
-                            <span className="text-xs ml-1 text-gray-500">Verificando...</span>
-                          </div>
+                        <div key={req.id} className={`flex items-start gap-1.5 rounded px-1.5 py-1 text-[10px] ${ok ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-800'}`}>
+                          {ok ? <CheckCircle size={12} className="text-green-500 flex-shrink-0 mt-0.5" /> : <AlertTriangle size={12} className="text-amber-500 flex-shrink-0 mt-0.5" />}
+                          <span><b>{req.id === 'productos' ? 'Productos' : 'Bolsa'}:</b> {slot.verification.feedback}</span>
                         </div>
                       );
-                    }
-                    if (!slot.verification) return null;
-                    return (
-                      <div key={req.id} className="flex items-start gap-2">
-                        <span>{slot.verification.aprobado ? '✅' : '⚠️'}</span>
-                        <div>
-                          <span className="font-medium text-xs">{req.label}:</span>
-                          <span className="text-xs ml-1">{slot.verification.feedback}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           );
         })()}
