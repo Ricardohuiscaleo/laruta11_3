@@ -548,7 +548,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
       if (!Array.isArray(extras) || extras.length === 0) return null;
 
       return (
-        <div className="mb-3 bg-orange-50 border border-orange-200 rounded p-2">
+        <div className="mb-1 bg-orange-50 border border-orange-200 rounded p-2">
           <div className="text-xs font-semibold text-orange-800 mb-1">✨ Extras de Delivery:</div>
           {extras.map((extra, idx) => (
             <div key={idx} className="flex justify-between items-center text-xs text-orange-700">
@@ -612,49 +612,35 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
     const scheduledTimeDisplay = isScheduled ? getScheduledTimeDisplay(order.scheduled_time) : null;
 
     return (
-      <div key={order.id} className={`p-4 ${isScheduled ? 'bg-purple-50 border-l-4 border-purple-500' : `${timeAlert.color} border-l-4`}`}>
-        <div className="mb-3 pb-2 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex flex-wrap items-center gap-1 text-xs">
-              <span className="flex items-center gap-1 text-gray-600">
-                {order.delivery_type === 'delivery' ? <><Bike size={12} /> Delivery</> : order.delivery_type === 'cuartel' ? <span>🎖️ Cuartel</span> : <><Store size={12} /> Retiro</>}
-              </span>
-              <span className="text-gray-400">|</span>
-              {isScheduled ? (
-                <span className="font-bold text-purple-700">🕐 Programado{scheduledTimeDisplay ? ` ${scheduledTimeDisplay}` : ''}</span>
-              ) : (
+      <div key={order.id} className={`p-1 ${isScheduled ? 'bg-purple-50 border-l-4 border-purple-500' : `${timeAlert.color} border-l-4`}`}>
+        <div className="mb-1 pb-1 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1 text-xs flex-1 min-w-0">
+              <span className="font-bold text-gray-900 text-sm truncate">{order.customer_name}</span>
+              {!isScheduled && (
                 <>
-                  <span className={`font-bold ${timeAlert.statusColor}`}>
-                    {timeAlert.status === 'MUY ATRASADO' ? '🚨' : timeAlert.status === 'ATRASADO' ? '⚠️' : '✓'} {timeAlert.status}
-                  </span>
-                  <span className="text-gray-400">|</span>
-                  <span className={`font-mono ${timeAlert.textColor}`}>{formatTime(seconds)}</span>
+                  <span className="text-gray-400">·</span>
+                  <span className={`font-mono text-xs ${timeAlert.textColor}`}>{formatTime(seconds)}</span>
                 </>
               )}
-              <span className="text-gray-400">|</span>
-              <span className="font-bold text-gray-900 text-sm">{order.customer_name}</span>
+              {isScheduled && scheduledTimeDisplay && (
+                <>
+                  <span className="text-gray-400">·</span>
+                  <span className="font-bold text-purple-700 text-xs">🕐 {scheduledTimeDisplay}</span>
+                </>
+              )}
             </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => cancelOrder(order.id, order.order_number)}
-                disabled={processing === order.id}
-                className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white font-bold py-0.5 px-2 rounded text-xs"
-              >
-                ANULAR
-              </button>
-              <button onClick={() => {
-                const text = `Pedido ${order.order_number}\nCliente: ${order.customer_name}\nTotal: $${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}`;
-                navigator.clipboard.writeText(text);
-                alert('✓ Copiado');
-              }} className="bg-gray-500 hover:bg-gray-600 text-white p-1.5 rounded">
-                <Copy size={14} />
-              </button>
-            </div>
+            <button
+              onClick={() => cancelOrder(order.id, order.order_number)}
+              disabled={processing === order.id}
+              className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white font-bold py-0.5 px-1.5 rounded text-[10px] flex-shrink-0"
+            >
+              ANULAR
+            </button>
           </div>
-          <div className="text-[10px] text-gray-500 font-mono">{order.order_number}</div>
         </div>
 
-        <div className="mb-3">
+        <div className="mb-1">
           <div className="flex items-center gap-1 text-xs flex-wrap">
             {order.customer_phone && (
               <>
@@ -682,8 +668,8 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           </div>
         </div>
 
-        <div className="bg-gray-50 rounded p-3 mb-3">
-          <div className="grid grid-cols-3 gap-2">
+        <div className="bg-gray-50 rounded p-1 mb-1">
+          <div className="grid grid-cols-3 gap-1">
             {order.items && order.items.map(item => renderProductDetails(item, order.id))}
           </div>
         </div>
@@ -793,7 +779,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           </div>
         )}
 
-        <div className="mb-3 p-2 bg-white rounded">
+        <div className="mb-1 p-1 bg-white rounded">
           <div className="flex items-center justify-between mb-2">
             <div className="flex flex-col gap-1.5 flex-1">
               <div className="flex justify-between text-xs">
@@ -929,7 +915,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
         </div>
 
         {order.customer_notes && (
-          <div className="mb-3 bg-yellow-200 border border-yellow-400 rounded p-2">
+          <div className="mb-1 bg-yellow-200 border border-yellow-400 rounded p-2">
             <div className="flex items-start gap-1">
               <MessageSquare size={14} className="mt-0.5 flex-shrink-0 text-black" />
               <span className="text-sm text-black font-bold">{order.customer_notes}</span>
@@ -1120,13 +1106,13 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           <div className="divide-y divide-gray-200">
             {checklists.length > 0 && (
               <>
-                <div className="sticky top-0 bg-blue-100 border-b-2 border-blue-400 px-4 py-2 z-10">
-                  <div className="flex items-center gap-2 text-blue-800 font-bold text-sm">
+                <div className="sticky top-0 bg-blue-100 border-b-2 border-blue-400 px-2 py-1 z-10">
+                  <div className="flex items-center gap-2 text-blue-800 font-bold text-xs">
                     📋 Checklists Pendientes ({checklists.length})
                   </div>
                 </div>
                 {checklists.map(checklist => (
-                  <div key={checklist.id} className="p-4">
+                  <div key={checklist.id} className="p-1">
                     <ChecklistCard checklist={checklist} />
                   </div>
                 ))}
@@ -1134,8 +1120,8 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
             )}
             {scheduledOrders.length > 0 && (
               <>
-                <div className="sticky top-0 bg-purple-100 border-b-2 border-purple-400 px-4 py-2 z-10">
-                  <div className="flex items-center gap-2 text-purple-800 font-bold text-sm">
+                <div className="sticky top-0 bg-purple-100 border-b-2 border-purple-400 px-2 py-1 z-10">
+                  <div className="flex items-center gap-2 text-purple-800 font-bold text-xs">
                     <Clock size={16} />
                     Pedidos Programados ({scheduledOrders.length})
                   </div>
@@ -1146,8 +1132,8 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
             {immediateOrders.length > 0 && (
               <>
                 {scheduledOrders.length > 0 && (
-                  <div className="sticky top-0 bg-orange-100 border-b-2 border-orange-400 px-4 py-2 z-10">
-                    <div className="flex items-center gap-2 text-orange-800 font-bold text-sm">
+                  <div className="sticky top-0 bg-orange-100 border-b-2 border-orange-400 px-2 py-1 z-10">
+                    <div className="flex items-center gap-2 text-orange-800 font-bold text-xs">
                       <Package size={16} />
                       Pedidos Inmediatos ({immediateOrders.length})
                     </div>

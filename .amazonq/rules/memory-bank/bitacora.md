@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`9b2eaa6`) — backfill combo ingredients + pending pages RL6 |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`ee5e687`) — MermaPanel: solo búsqueda, excluye extras/personalizar |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`8ecea96`) — paneles inline: Merma 3 pasos, Arqueo, VentasDetalle, headers gradiente |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28d16d6`) — endpoint produce sub-recetas, prep_method columns |
@@ -102,17 +102,19 @@
 
 ## Sesiones Recientes
 
-### 2026-04-27h — Checklist por rol + rediseño navbar + MermaPanel 3 pasos
+### 2026-04-27h — Spec caja3-inline-merma-arqueo: paneles inline + rediseño UX completo
 
 **Cambios código:**
-- `caja3/src/components/ChecklistApp.jsx`: Acepta prop `rol` (default `'cajero'`), fetch usa `rol` dinámico.
-- `caja3/src/pages/checklist-planchero.astro`: Nueva página — `ChecklistApp` con `rol="planchero"`.
-- `caja3/src/pages/comandas/index.astro`: Widget checklist link corregido `/checklists`→`/checklist-planchero`.
-- `caja3/src/components/MenuApp.jsx`: Navbar unificada `#1a1a1a` (Mermar+búsqueda+Caja con iconos+texto), categorías deslizables. Títulos producto `text-sm`. Botón Agregar inline con precio y ON. Paneles inline con `openPanel`/`closePanel` + lazy loading.
-- `caja3/src/components/MermaPanel.jsx`: Rediseño completo — header rojo con safe areas, 3 pasos (seleccionar items con highlight amarillo + cantidad/unidad inline → motivos grid 3x4 con emojis → resumen + confirmar), navegación atrás, historial con total diario.
+- `caja3/src/components/ChecklistApp.jsx`: Prop `rol` dinámico (cajero/planchero).
+- `caja3/src/pages/checklist-planchero.astro`: Nueva página checklist planchero.
+- `caja3/src/pages/comandas/index.astro`: Fix link checklist.
+- `caja3/src/components/MenuApp.jsx`: Navbar unificada `#1a1a1a`, títulos producto `text-sm`, Agregar inline, `openPanel`/`closePanel` con params + lazy loading (MermaPanel, ArqueoPanel, VentasDetalle).
+- `caja3/src/components/MermaPanel.jsx`: Rediseño completo — header gradiente rojo→naranja, 3 pasos (buscar con highlight amarillo → motivos grid 3x4 emojis → resumen), cantidad/unidad inline, excluye extras/personalizar, solo búsqueda (sin listado), stock oculto en productos.
+- `caja3/src/components/ArqueoPanel.jsx`: Header gradiente rojo→naranja, X blanco, `openPanel` prop para VentasDetalle inline.
+- `caja3/src/components/VentasDetalle.jsx`: Acepta props `startDate`/`endDate`/`onClose`, header gradiente, funciona como panel inline desde ArqueoPanel.
 
-**Commits:** `204fffb`, `490ef42`, `01c9a7c`, `89b1e4b`
-**Deploys:** caja3 ✅ (`89b1e4b`)
+**Commits:** `204fffb`→`8ecea96` (9 commits)
+**Deploys:** caja3 ✅ (`8ecea96`)
 
 ### 2026-04-27g — Backfill combo ingredients históricos
 
