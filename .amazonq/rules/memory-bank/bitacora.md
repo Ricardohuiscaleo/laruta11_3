@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0b64e90`) — Gemini prompt v3: pan/aceite no visibles, ** obligatorio, detecta extras, no comenta pan |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`f534d63`) — Gemini upgrade a 2.5-flash (mejor visión), resize 768px (1 tile óptimo) |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`d880e70`) — DeliveryConfigSection admin, sección Config Delivery en sidebar |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`d880e70`) — delivery_config table, card_surcharge column, API CRUD delivery-config |
@@ -111,8 +111,8 @@
 - `caja3/src/components/MiniComandas.jsx`: Feedback coloreado por puntaje (verde ≥80, amarillo ≥50, rojo <50), borde foto por puntaje, `**texto**` renderizado como negrita roja. Fotos dispatch se restauran al recargar desde `dispatch_photo_url` de BD.
 - `caja3/src/pages/comandas/index.astro`: Bebidas (category_id 5) layout compacto inline — foto 48x60px + nombre + cantidad, sin descripción ni ingredientes.
 
-**Commits:** `075b79e`, `b820505`, `60c80cf`, `5658275`, `757b02d`
-**Deploys:** caja3 ✅ (5 deploys)
+**Commits:** `075b79e`, `b820505`, `60c80cf`, `5658275`, `757b02d`, `a6e649d`, `0b64e90`, `f534d63`
+**Deploys:** caja3 ✅ (8 deploys)
 
 ### 2026-04-28b — Spec delivery-config-centralized: centralizar config delivery en BD
 
