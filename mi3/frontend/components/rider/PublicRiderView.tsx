@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { APIProvider, Map, AdvancedMarker, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { usePublicRiderGPS } from '@/hooks/usePublicRiderGPS';
 import type { GeoPosition } from '@/hooks/usePublicRiderGPS';
@@ -20,20 +20,24 @@ interface PublicOrderData {
 const fmt = (n: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(n);
 const payLabel: Record<string, string> = { cash: 'Efectivo', card: 'Tarjeta', transfer: 'Transferencia' };
 
-/* ── Route overlay ── */
-function RouteLayer({ origin, destination }: { origin: { lat: number; lng: number }; destination: string }) {
+/* ── Dynamic Route overlay — re-renders when origin moves ── */
+function RouteLayer({ origin, destination, routeKey }: { origin: { lat: number; lng: number }; destination: string; routeKey: string }) {
   const map = useMap();
   const routesLib = useMapsLibrary('routes');
+  const rendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+
   useEffect(() => {
     if (!map || !routesLib) return;
-    const renderer = new routesLib.DirectionsRenderer({ suppressMarkers: false });
-    renderer.setMap(map);
+    if (!rendererRef.current) {
+      rendererRef.current = new routesLib.DirectionsRenderer({ suppressMarkers: true, polylineOptions: { strokeColor: '#4285F4', strokeWeight: 5, strokeOpacity: 0.8 } });
+      rendererRef.current.setMap(map);
+    }
     new routesLib.DirectionsService().route(
       { origin, destination, travelMode: google.maps.TravelMode.DRIVING },
-      (r, s) => { if (s === 'OK' && r) renderer.setDirections(r); },
+      (r, s) => { if (s === 'OK' && r && rendererRef.current) rendererRef.current.setDirections(r); },
     );
-    return () => { renderer.setMap(null); };
-  }, [map, routesLib, origin.lat, origin.lng, destination]);
+    return () => { if (rendererRef.current) { rendererRef.current.setMap(null); rendererRef.current = null; } };
+  }, [map, routesLib, routeKey, destination]);
   return null;
 }
 
@@ -166,12 +170,12 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
         {foodTruck ? (
           <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? ''}>
             <Map defaultCenter={foodTruck} defaultZoom={14} mapId="d51ca892b68e9c5e5e2dd701" className="h-full w-full" gestureHandling="greedy" disableDefaultUI>
-              {routeOrigin && <RouteLayer origin={routeOrigin} destination={routeDest} />}
-              {/* Food truck marker */}
+              {routeOrigin && <RouteLayer origin={routeOrigin} destination={routeDest} routeKey={`${Math.round((position?.lat ?? 0) * 1000)}-${Math.round((position?.lng ?? 0) * 1000)}-${isOnRoute ? 'd' : 'f'}`} />}
+              {/* Food truck marker — R11 logo */}
               <AdvancedMarker position={foodTruck} zIndex={100}>
                 <div className="flex flex-col items-center">
-                  <div className="h-8 w-8 rounded-full bg-red-500 border-2 border-white shadow-lg flex items-center justify-center text-sm">🏪</div>
-                  <span className="text-[8px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded-full mt-0.5 shadow">R11</span>
+                  <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" className="h-10 w-10 rounded-full border-2 border-red-500 shadow-lg bg-white" />
+                  <span className="text-[8px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded-full mt-0.5 shadow">La Ruta 11</span>
                 </div>
               </AdvancedMarker>
               {/* Rider car with orientation cone */}
