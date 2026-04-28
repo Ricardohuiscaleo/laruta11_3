@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { MapPin, User, Clock } from 'lucide-react';
+import { MapPin, User, Clock, Copy, QrCode, Check } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import type { DeliveryOrder, DeliveryRider } from '@/hooks/useDeliveryTracking';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -39,6 +40,16 @@ export default function OrderPanel({ orders, riders, onAssignRider, onUpdateStat
   const [riderFilter, setRiderFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<number | null>(null);
   const [assigningRider, setAssigningRider] = useState<number | null>(null);
+  const [showQR, setShowQR] = useState<number | null>(null);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+
+  const copyRiderUrl = async (orderId: number, url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedId(orderId);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch { /* fallback: noop */ }
+  };
 
   const filtered = orders.filter((o) => {
     if (statusFilter !== 'all' && o.order_status !== statusFilter) return false;
@@ -145,6 +156,39 @@ export default function OrderPanel({ orders, riders, onAssignRider, onUpdateStat
                     </div>
                   )}
                 </button>
+
+                {/* Rider URL actions */}
+                {isSelected && order.rider_url && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <button
+                      onClick={() => copyRiderUrl(order.id, order.rider_url!)}
+                      className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                      aria-label="Copiar link del rider"
+                    >
+                      {copiedId === order.id ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                      {copiedId === order.id ? 'Copiado' : 'Link rider'}
+                    </button>
+                    <button
+                      onClick={() => setShowQR(showQR === order.id ? null : order.id)}
+                      className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        showQR === order.id
+                          ? 'border-blue-300 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100'
+                      }`}
+                      aria-label="Mostrar código QR"
+                    >
+                      <QrCode className="h-3 w-3" />
+                      QR
+                    </button>
+                  </div>
+                )}
+
+                {/* QR Code */}
+                {showQR === order.id && order.rider_url && (
+                  <div className="mt-2 flex justify-center rounded-lg bg-white border p-3">
+                    <QRCodeSVG value={order.rider_url} size={160} />
+                  </div>
+                )}
 
                 {/* Rider assignment selector */}
                 {isSelected && !order.rider_id && (

@@ -17,6 +17,7 @@ export interface DeliveryOrder {
   rider_last_lng: number | null;
   estimated_delivery_time: string | null;
   created_at: string;
+  rider_url: string | null;
 }
 
 export interface DeliveryRider {

@@ -68,6 +68,10 @@ class DeliveryService
             ])
             ->orderBy('o.created_at', 'asc')
             ->get();
+
+        $orders->transform(fn ($o) => tap($o, fn ($o) => $o->rider_url = "https://mi.laruta11.cl/rider/{$o->id}"));
+
+        return $orders;
     }
 
     /**

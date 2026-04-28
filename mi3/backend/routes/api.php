@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AiPromptController;
 use App\Http\Controllers\Admin\DeliveryConfigController;
 use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\SettlementController;
+use App\Http\Controllers\Public\PublicRiderController;
 use App\Http\Controllers\Public\TrackingController;
 use App\Http\Controllers\Rider\RiderController;
 use Illuminate\Support\Facades\Route;
@@ -291,6 +292,13 @@ Route::middleware(['auth:sanctum', 'worker'])->prefix('v1/rider')->group(functio
 // ── Delivery Tracking — Público (sin auth) ──────────────────────────
 Route::prefix('v1/public')->group(function () {
     Route::get('/orders/{orderNumber}/tracking', [TrackingController::class, 'show']);
+});
+
+// ── Public Rider Orders (sin auth) ────────────────────────────────
+Route::prefix('v1/public/rider-orders')->group(function () {
+    Route::get('{orderId}', [PublicRiderController::class, 'show']);
+    Route::patch('{orderId}/status', [PublicRiderController::class, 'updateStatus']);
+    Route::post('{orderId}/location', [PublicRiderController::class, 'updateLocation']);
 });
 
 // ── Public checklist endpoints (para caja3, sin auth) ───────────────
