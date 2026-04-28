@@ -6,8 +6,8 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`9b2eaa6`) — backfill combo ingredients + pending pages RL6 |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`8ad06ac`) — Verificación fotos delivery Gemini IA con descripciones, token tracking, flujo 2 fases |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`493dd52`) — get_comandas_v2 includes ingredient category for IA classification |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`493dd52`) — Fotos delivery IA: Lucide icons, shimmer loader, upload blocking, 40s timeout, ingredient classification by DB category |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28d16d6`) — endpoint produce sub-recetas, prep_method columns |
@@ -107,15 +107,16 @@
 
 **Cambios código:**
 - `caja3/src/utils/photoRequirements.js`: Nueva función pura `generatePhotoRequirements(deliveryType)` + helpers `getButtonState`, `formatPhotoProgress`.
-- `caja3/api/GeminiService.php`: Nuevo servicio standalone — `verificarFotoDespacho()` con cURL a Gemini `gemini-2.5-flash-lite`, prompts por tipo (productos/bolsa), responseSchema JSON, timeout 8s, fallback silencioso.
-- `caja3/api/orders/save_dispatch_photo.php`: Integración IA — acepta `photo_type`, `order_items`, `user_retook`; llama GeminiService después de S3 upload; inserta en `dispatch_photo_feedback`; backward compatible sin `photo_type`.
-- `caja3/src/components/MiniComandas.jsx`: Delivery → 2 slots etiquetados (productos + bolsa sellada) en grid-cols-2, flujo 2 fases: "📦 DESPACHAR A DELIVERY" (fotos + status→ready) → "✅ ENTREGAR" (status→delivered). Botón despacho visible siempre en delivery (independiente de isPaid). `dispatchToDelivery()` nueva función. Panel feedback IA debajo de slots, eliminar/re-subir con `user_retook`. Local → sin fotos, botón "✅ ENTREGAR" sin cambios.
+- `caja3/api/GeminiService.php`: Prompts inteligentes — recipe_description priorizado, clasificación dinámica ingredientes por categoría BD (visible/no visible/packaging), verificación orientación envases en bolsa, sugerencias de corrección específicas, token tracking con `_tokens` + `_processing_ms`.
+- `caja3/api/orders/save_dispatch_photo.php`: INSERT con `ai_tokens_total`, `ai_model`, `processing_time_ms`. Fallback también con columnas nuevas.
+- `caja3/src/components/MiniComandas.jsx`: Delivery → 2 slots etiquetados (productos + bolsa sellada) en grid-cols-2, flujo 2 fases: "📦 DESPACHAR A DELIVERY" (fotos + status→ready) → "✅ ENTREGAR" (status→delivered). Botón despacho visible siempre en delivery (independiente de isPaid). `dispatchToDelivery()` nueva función. UX overhaul: Lucide icons (Trash2, ShieldCheck, ShieldAlert, Loader2, ImagePlus), shimmer loader moderno, bloqueo subida durante análisis IA, timeout 40s con fallback, slots compactos h-28, feedback inline coloreado. Local → sin fotos, botón "✅ ENTREGAR" sin cambios.
+- `app3/api/tuu/get_comandas_v2.php`: Agrega `i.category` al SELECT de recipe ingredients + `recipe_ingredients` array con categoría para clasificación IA.
 - `caja3/create_dispatch_photo_feedback.sql`: Nueva tabla con order_id, photo_type, ai_aprobado, ai_puntaje, ai_feedback, user_retook.
 
-**BD:** Tabla `dispatch_photo_feedback` creada en producción + columnas `ai_tokens_total`, `ai_model`, `processing_time_ms` agregadas.
+**BD:** Tabla `dispatch_photo_feedback` creada + columnas `ai_tokens_total`, `ai_model`, `processing_time_ms` agregadas.
 
-**Commits:** `6201bd8`, `3db0dfb`, `d0dba60`, `8ad06ac`
-**Deploys:** caja3 ✅ (`8ad06ac`)
+**Commits:** `6201bd8`→`493dd52` (9 commits)
+**Deploys:** caja3 ✅ (`493dd52`), app3 ✅ (`493dd52`)
 
 ### 2026-04-27h — Spec caja3-inline-merma-arqueo: paneles inline + rediseño UX completo
 
