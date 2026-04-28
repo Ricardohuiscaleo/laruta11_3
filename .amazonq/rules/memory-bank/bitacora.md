@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`b01b344`) — delivery config centralizado BD, card_surcharge separado, MenuApp+CheckoutApp migrados, fix api/delivery/ gitignore |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`075b79e`) — prompts Gemini dispatch: tono casual, bolsa abierta OK, menos tokens |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`d880e70`) — DeliveryConfigSection admin, sección Config Delivery en sidebar |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`d880e70`) — delivery_config table, card_surcharge column, API CRUD delivery-config |
@@ -102,6 +102,14 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-28c — Fix prompts Gemini dispatch: tono casual + bolsa abierta OK
+
+**Cambios código:**
+- `caja3/api/GeminiService.php`: Prompt productos: feedback máximo 1 oración casual (no reporte formal), ejemplos buenos/malos, sin "Retoma la foto mostrando X". Prompt bolsa: foto desde arriba con bolsa abierta es correcto (inspección pre-sellado), verifica cajas cerradas y posición estable, no penaliza bolsa abierta.
+
+**Commits:** `075b79e`
+**Deploys:** caja3 ✅
 
 ### 2026-04-28b — Spec delivery-config-centralized: centralizar config delivery en BD
 
