@@ -190,16 +190,44 @@ class GeminiService
         foreach ($itemsPedido as $item) {
             $nombre = $item['product_name'] ?? $item['nombre'] ?? $item['name'] ?? 'Item desconocido';
             $cantidad = $item['quantity'] ?? $item['cantidad'] ?? 1;
+            $recipeIngredients = $item['recipe_ingredients'] ?? [];
             $receta = $item['recipe_description'] ?? '';
             $descripcion = $item['description'] ?? '';
             
-            $itemsList .= "- {$nombre} x{$cantidad}";
-            if (!empty($receta)) {
-                $itemsList .= "\n  Ingredientes: {$receta}";
+            $itemsList .= "- {$nombre} x{$cantidad}\n";
+            
+            // Classify ingredients by category for smart verification
+            if (!empty($recipeIngredients)) {
+                $visibles = [];
+                $noVisibles = [];
+                $packaging = [];
+                foreach ($recipeIngredients as $ing) {
+                    $cat = $ing['category'] ?? '';
+                    $ingName = $ing['name'] ?? '';
+                    if (in_array($cat, ['Packaging', 'Limpieza', 'Servicios', 'Gas'])) {
+                        $packaging[] = $ingName;
+                    } elseif (in_array($cat, ['Salsas', 'Condimentos'])) {
+                        $noVisibles[] = $ingName;
+                    } elseif (in_array($cat, ['Lácteos']) && stripos($ingName, 'Queso') === false) {
+                        $noVisibles[] = $ingName;
+                    } else {
+                        $visibles[] = $ingName;
+                    }
+                }
+                if (!empty($visibles)) {
+                    $itemsList .= "  Ingredientes visibles: " . implode(', ', $visibles) . "\n";
+                }
+                if (!empty($noVisibles)) {
+                    $itemsList .= "  NO visibles (dentro del pan/cocción): " . implode(', ', $noVisibles) . "\n";
+                }
+                if (!empty($packaging)) {
+                    $itemsList .= "  Envase: " . implode(', ', $packaging) . "\n";
+                }
+            } elseif (!empty($receta)) {
+                $itemsList .= "  Ingredientes: {$receta}\n";
             } elseif (!empty($descripcion)) {
-                $itemsList .= "\n  Descripción: {$descripcion}";
+                $itemsList .= "  Descripción: {$descripcion}\n";
             }
-            $itemsList .= "\n";
         }
 
         if ($tipoFoto === 'productos') {
@@ -217,13 +245,10 @@ VERIFICACIÓN OBLIGATORIA:
 4. Si ves productos que NO están en el pedido, menciónalo como observación.
 5. ¿Las cantidades coinciden? (ej: si pide 2x y solo se ve 1, es problema)
 
-IMPORTANTE — INGREDIENTES NO VISIBLES:
-- SALSAS van DENTRO del pan, NO se ven: Mayonesa, Ketchup, Sweet Relish, Mostaza, Salsa BBQ, Salsa de Ostras, Salsa de Soya. No penalizar.
-- CONDIMENTOS no se ven: Sal, Pimienta, Comino, Merkén, Orégano, Aceite, Azúcar, Vino. No penalizar.
-- QUESOS se funden y pueden no distinguirse: Queso Cheddar, Queso Gauda, Queso Chanco. No penalizar si no se ven claramente.
-- LÁCTEOS de cocción no se ven: Crema, Leche, Mantequilla. No penalizar.
-- PACKAGING (cajas, bolsas, servilletas) son el envase, no el producto.
-- Enfócate SOLO en componentes PRINCIPALES visibles: panes, carnes/hamburguesas, tocino, papas fritas, bebidas (latas/botellas), vegetales grandes (lechuga, tomate, palta).
+IMPORTANTE — INGREDIENTES:
+- Los ingredientes marcados como "NO visibles" van dentro del pan o son de cocción. No penalizar por no verlos.
+- Los ingredientes marcados como "Envase" son el packaging — verifica que el envase correcto esté presente.
+- Enfócate en los ingredientes marcados como "visibles": panes, carnes, tocino, papas, bebidas, vegetales grandes.
 
 CRITERIOS DE PUNTAJE:
 - 80-100: Todos los items del pedido visibles, bien presentados, orientación correcta.

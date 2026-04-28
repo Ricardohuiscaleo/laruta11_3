@@ -102,7 +102,7 @@ try {
         // Obtener ingredientes de la receta para cada item
         foreach ($items as &$item) {
             if ($item['product_id']) {
-                $recipeSql = "SELECT i.name, pr.quantity, pr.unit 
+                $recipeSql = "SELECT i.name, pr.quantity, pr.unit, i.category 
                              FROM product_recipes pr 
                              JOIN ingredients i ON pr.ingredient_id = i.id 
                              WHERE pr.product_id = ? AND i.is_active = 1
@@ -119,6 +119,7 @@ try {
                         return $ing['name'] . ' (' . $qty . $unit . ')';
                     }, $ingredients);
                     $item['recipe_description'] = implode(', ', $ingredientNames);
+                    $item['recipe_ingredients'] = $ingredients;
                 }
             }
         }
