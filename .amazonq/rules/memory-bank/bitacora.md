@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`757b02d`) — dispatch photos: fotos keyed por tipo, customer_notes a Gemini, detecta extras, fondo blanco |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`0b64e90`) — Gemini prompt v3: pan/aceite no visibles, ** obligatorio, detecta extras, no comenta pan |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`d880e70`) — DeliveryConfigSection admin, sección Config Delivery en sidebar |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`d880e70`) — delivery_config table, card_surcharge column, API CRUD delivery-config |

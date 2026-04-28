@@ -9,7 +9,7 @@
 class GeminiService
 {
     private string $apiKey;
-    private string $model = 'gemini-2.5-flash-lite';
+    private string $model = 'gemini-2.5-flash';
     private string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
 
     public function __construct()

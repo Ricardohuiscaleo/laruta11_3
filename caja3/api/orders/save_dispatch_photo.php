@@ -91,12 +91,12 @@ try {
                 throw new Exception('No se pudo leer imagen desde S3 URL');
             }
             
-            // Compress: resize to max 800px and JPEG quality 70 for token efficiency
+            // Compress: resize to max 768px (1 Gemini tile = 258 tokens) and JPEG quality 70
             $srcImg = @imagecreatefromstring($imageData);
             if ($srcImg) {
                 $w = imagesx($srcImg);
                 $h = imagesy($srcImg);
-                $maxDim = 800;
+                $maxDim = 768;
                 if ($w > $maxDim || $h > $maxDim) {
                     $ratio = min($maxDim / $w, $maxDim / $h);
                     $newW = (int)($w * $ratio);
@@ -144,7 +144,7 @@ try {
                 $verification['puntaje'],
                 $verification['feedback'],
                 $verification['tokens_total'] ?? 0,
-                'gemini-2.5-flash-lite',
+                'gemini-2.5-flash',
                 $verification['processing_ms'] ?? 0,
                 $userRetook,
             ]);
@@ -179,7 +179,7 @@ try {
                     0,
                     $verificationFallback['feedback'],
                     0,
-                    'gemini-2.5-flash-lite',
+                    'gemini-2.5-flash',
                     0,
                     $userRetook,
                 ]);
