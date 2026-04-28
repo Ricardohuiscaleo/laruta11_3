@@ -54,7 +54,10 @@ function PanToPosition({ position, trigger }: { position: GeoPosition; trigger: 
 function MapHeading({ heading }: { heading: number | null }) {
   const map = useMap();
   useEffect(() => {
-    if (map && heading != null) map.setHeading(heading);
+    if (map && heading != null) {
+      // moveCamera is instant — no slow animation
+      (map as any).moveCamera({ heading });
+    }
   }, [map, heading]);
   return null;
 }
