@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`9b2eaa6`) — backfill combo ingredients + pending pages RL6 |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`3db0dfb`) — Verificación fotos delivery con Gemini IA, flujo 2 fases DESPACHAR→ENTREGAR |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`8ad06ac`) — Verificación fotos delivery Gemini IA con descripciones, token tracking, flujo 2 fases |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28d16d6`) — endpoint produce sub-recetas, prep_method columns |
@@ -112,10 +112,10 @@
 - `caja3/src/components/MiniComandas.jsx`: Delivery → 2 slots etiquetados (productos + bolsa sellada) en grid-cols-2, flujo 2 fases: "📦 DESPACHAR A DELIVERY" (fotos + status→ready) → "✅ ENTREGAR" (status→delivered). Botón despacho visible siempre en delivery (independiente de isPaid). `dispatchToDelivery()` nueva función. Panel feedback IA debajo de slots, eliminar/re-subir con `user_retook`. Local → sin fotos, botón "✅ ENTREGAR" sin cambios.
 - `caja3/create_dispatch_photo_feedback.sql`: Nueva tabla con order_id, photo_type, ai_aprobado, ai_puntaje, ai_feedback, user_retook.
 
-**BD:** Tabla `dispatch_photo_feedback` creada en producción. SQL ejecutado OK.
+**BD:** Tabla `dispatch_photo_feedback` creada en producción + columnas `ai_tokens_total`, `ai_model`, `processing_time_ms` agregadas.
 
-**Commits:** `6201bd8`, `3db0dfb`
-**Deploys:** caja3 ✅ (`3db0dfb`)
+**Commits:** `6201bd8`, `3db0dfb`, `d0dba60`, `8ad06ac`
+**Deploys:** caja3 ✅ (`8ad06ac`)
 
 ### 2026-04-27h — Spec caja3-inline-merma-arqueo: paneles inline + rediseño UX completo
 
