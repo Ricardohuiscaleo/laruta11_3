@@ -84,12 +84,36 @@ try {
         ];
 
         try {
-            // Read uploaded image from S3 and convert to base64
+            // Read uploaded image from S3 and compress for Gemini (save tokens)
             $imageData = @file_get_contents($url);
             if ($imageData === false) {
                 throw new Exception('No se pudo leer imagen desde S3 URL');
             }
-            $imageBase64 = base64_encode($imageData);
+            
+            // Compress: resize to max 800px and JPEG quality 70 for token efficiency
+            $srcImg = @imagecreatefromstring($imageData);
+            if ($srcImg) {
+                $w = imagesx($srcImg);
+                $h = imagesy($srcImg);
+                $maxDim = 800;
+                if ($w > $maxDim || $h > $maxDim) {
+                    $ratio = min($maxDim / $w, $maxDim / $h);
+                    $newW = (int)($w * $ratio);
+                    $newH = (int)($h * $ratio);
+                    $dst = imagecreatetruecolor($newW, $newH);
+                    imagecopyresampled($dst, $srcImg, 0, 0, 0, 0, $newW, $newH, $w, $h);
+                    imagedestroy($srcImg);
+                    $srcImg = $dst;
+                }
+                ob_start();
+                imagejpeg($srcImg, null, 70);
+                $compressedData = ob_get_clean();
+                imagedestroy($srcImg);
+                $imageBase64 = base64_encode($compressedData);
+            } else {
+                // Fallback: use original if GD fails
+                $imageBase64 = base64_encode($imageData);
+            }
 
             // Parse order items
             $orderItemsJson = $_POST['order_items'] ?? '[]';

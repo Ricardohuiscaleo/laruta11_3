@@ -49,7 +49,32 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
       const response = await fetch(`/api/tuu/get_comandas_v2.php?t=${Date.now()}`);
       const data = await response.json();
       if (data.success) {
-        setOrders(data.orders || []);
+        const orders = data.orders || [];
+        setOrders(orders);
+        
+        // Restore photoSlots from dispatch_photo_url for delivery orders
+        setPhotoSlots(prev => {
+          const restored = { ...prev };
+          orders.forEach(order => {
+            if (order.delivery_type === 'delivery' && order.dispatch_photo_url && !restored[order.id]) {
+              try {
+                const urls = JSON.parse(order.dispatch_photo_url);
+                if (urls && typeof urls === 'object') {
+                  const slots = {};
+                  if (urls.productos) slots.productos = { status: 'approved', photoUrl: urls.productos, verification: null };
+                  if (urls.bolsa) slots.bolsa = { status: 'approved', photoUrl: urls.bolsa, verification: null };
+                  if (Object.keys(slots).length > 0) restored[order.id] = slots;
+                }
+              } catch (e) {
+                // dispatch_photo_url might be a single URL string (legacy)
+                if (typeof order.dispatch_photo_url === 'string' && order.dispatch_photo_url.startsWith('http')) {
+                  restored[order.id] = { productos: { status: 'approved', photoUrl: order.dispatch_photo_url, verification: null } };
+                }
+              }
+            }
+          });
+          return restored;
+        });
       }
     } catch (error) {
       console.error('Error cargando pedidos:', error);
