@@ -299,9 +299,11 @@ CONTEXTO IMPORTANTE:
 
 VERIFICACIÓN:
 1. ¿Las cajas/envases están CERRADOS? (tapas puestas, no abiertos)
-2. ¿Los envases están en posición estable para transporte?
-   - Cajas deben verse planas desde arriba (bien asentadas, no inclinadas ni volcadas)
-   - Si una caja está de lado o inclinada, el contenido se puede derramar al transportar
+2. ¿Los envases están en posición correcta? CLAVE: debes ver la TAPA SUPERIOR de cada envase.
+   - Si ves la tapa/cierre de una caja = bien posicionado ✅
+   - Si ves el FONDO de aluminio o plástico de un envase = está VOLTEADO ⚠️
+   - Si ves el lateral de un envase (no la tapa) = está INCLINADO ⚠️
+   - Bandejas de aluminio: la tapa transparente debe verse desde arriba. Si ves el fondo plateado, está al revés.
 3. ¿Se ven todos los items del pedido empacados? (cantidad de envases vs items pedidos)
 4. ¿Hay bebidas si el pedido las incluye?
 
