@@ -258,6 +258,7 @@ CRITERIOS DE PUNTAJE:
 REGLAS DE RESPUESTA:
 - Sé específico: nombra qué items del pedido ves y cuáles NO ves.
 - Máximo 2 oraciones en el feedback.
+- Si hay problemas, sugiere la corrección: "Retoma la foto mostrando [lo que falta]".
 - Emojis: ✅ si todo coincide, ⚠️ si hay problemas.
 - Español chileno informal y directo.
 PROMPT;
@@ -290,6 +291,7 @@ CRITERIOS DE PUNTAJE:
 REGLAS DE RESPUESTA:
 - Si ves envases, menciona su orientación.
 - Máximo 2 oraciones en el feedback.
+- Si hay problemas, sugiere la corrección: "Sella la bolsa y retoma la foto" o "Endereza [envase] y retoma".
 - Emojis: ✅ si está bien, ⚠️ si hay problemas.
 - Español chileno informal y directo.
 PROMPT;
