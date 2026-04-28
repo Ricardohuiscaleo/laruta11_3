@@ -311,6 +311,30 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
     }
   };
 
+  const dispatchToDelivery = async (orderId, orderNumber) => {
+    if (!confirm(`¿Despachar pedido ${orderNumber} al rider?`)) return;
+
+    setProcessing(orderId);
+    try {
+      const response = await fetch('/api/tuu/update_order_status.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId, order_status: 'ready' })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        await loadOrders();
+      } else {
+        alert('Error: ' + (result.error || 'No se pudo despachar el pedido'));
+      }
+    } catch (error) {
+      alert('Error al despachar el pedido');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
   const cancelOrder = async (orderId, orderNumber) => {
     const order = orders.find(o => o.id === orderId);
     const isRL6 = order?.payment_method === 'rl6_credit';
@@ -1162,8 +1186,29 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
             {(() => {
               const isDelivery = order.delivery_type === 'delivery';
               
-              // Delivery: siempre mostrar botón DESPACHAR (fotos obligatorias), independiente del pago
+              // Delivery: flujo en 2 fases
+              // Fase 1 (sent_to_kitchen/pending): fotos + DESPACHAR A DELIVERY → cambia a 'ready'
+              // Fase 2 (ready): ENTREGAR → cambia a 'delivered'
               if (isDelivery) {
+                const isReadyForDelivery = order.order_status === 'ready';
+                
+                if (isReadyForDelivery) {
+                  // Fase 2: ya despachado, esperando confirmación de entrega
+                  return (
+                    <>
+                      {!isPaid && (
+                        <button onClick={() => confirmPayment(order.id, order.order_number, order.payment_method)} disabled={processing === order.id} className="flex-1 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-400 text-white font-bold py-2 px-3 rounded text-xs">
+                          {processing === order.id ? '⏳' : '✓ CONFIRMAR PAGO'}
+                        </button>
+                      )}
+                      <button onClick={() => deliverOrder(order.id, order.order_number)} disabled={processing === order.id} className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-2 px-3 rounded text-xs">
+                        {processing === order.id ? '⏳' : '✅ ENTREGAR'}
+                      </button>
+                    </>
+                  );
+                }
+                
+                // Fase 1: necesita fotos + despachar
                 const photoReqs = generatePhotoRequirements('delivery');
                 const orderSlots = photoSlots[order.id] || {};
                 const uploadedMap = {};
@@ -1180,7 +1225,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                     <button
                       onClick={() => {
                         if (btnState.enabled) {
-                          deliverOrder(order.id, order.order_number);
+                          dispatchToDelivery(order.id, order.order_number);
                         } else {
                           alert(`Faltan ${missingCount} de 2 fotos`);
                         }
