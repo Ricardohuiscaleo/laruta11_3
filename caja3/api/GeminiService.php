@@ -51,10 +51,25 @@ class GeminiService
                 return $fallback;
             }
 
+            // Log token usage for cost monitoring
+            $tokens = 0;
+            $processingMs = 0;
+            if (isset($result['_tokens'])) {
+                $tokens = $result['_tokens']['total'];
+                error_log("[GeminiService] Tokens — prompt: {$result['_tokens']['prompt']}, response: {$result['_tokens']['candidates']}, total: {$tokens}");
+                unset($result['_tokens']);
+            }
+            if (isset($result['_processing_ms'])) {
+                $processingMs = $result['_processing_ms'];
+                unset($result['_processing_ms']);
+            }
+
             return [
                 'aprobado' => (bool) ($result['aprobado'] ?? true),
                 'puntaje' => (int) ($result['puntaje'] ?? 0),
                 'feedback' => (string) ($result['feedback'] ?? $fallback['feedback']),
+                'tokens_total' => $tokens,
+                'processing_ms' => $processingMs,
             ];
         } catch (\Throwable $e) {
             error_log("[GeminiService] Exception in verificarFotoDespacho: " . $e->getMessage());
@@ -112,7 +127,9 @@ class GeminiService
             CURLOPT_CONNECTTIMEOUT => 5,
         ]);
 
+        $t0 = microtime(true);
         $responseBody = curl_exec($ch);
+        $elapsedMs = (int) round((microtime(true) - $t0) * 1000);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
         curl_close($ch);
@@ -146,6 +163,15 @@ class GeminiService
             return null;
         }
 
+        // Attach token usage and timing metadata
+        $usage = $decoded['usageMetadata'] ?? [];
+        $parsed['_tokens'] = [
+            'prompt' => (int) ($usage['promptTokenCount'] ?? 0),
+            'candidates' => (int) ($usage['candidatesTokenCount'] ?? 0),
+            'total' => (int) ($usage['totalTokenCount'] ?? 0),
+        ];
+        $parsed['_processing_ms'] = $elapsedMs;
+
         return $parsed;
     }
 
@@ -164,7 +190,16 @@ class GeminiService
         foreach ($itemsPedido as $item) {
             $nombre = $item['product_name'] ?? $item['nombre'] ?? $item['name'] ?? 'Item desconocido';
             $cantidad = $item['quantity'] ?? $item['cantidad'] ?? 1;
-            $itemsList .= "- {$nombre} x{$cantidad}\n";
+            $descripcion = $item['description'] ?? '';
+            $receta = $item['recipe_description'] ?? '';
+            
+            $itemsList .= "- {$nombre} x{$cantidad}";
+            if (!empty($descripcion)) {
+                $itemsList .= " → {$descripcion}";
+            } elseif (!empty($receta)) {
+                $itemsList .= " → Ingredientes: {$receta}";
+            }
+            $itemsList .= "\n";
         }
 
         if ($tipoFoto === 'productos') {

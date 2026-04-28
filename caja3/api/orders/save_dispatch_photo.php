@@ -107,8 +107,8 @@ try {
             $userRetook = ($_POST['user_retook'] ?? 'false') === 'true' ? 1 : 0;
 
             $insertStmt = $pdo->prepare(
-                "INSERT INTO dispatch_photo_feedback (order_id, photo_type, photo_url, ai_aprobado, ai_puntaje, ai_feedback, user_retook)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO dispatch_photo_feedback (order_id, photo_type, photo_url, ai_aprobado, ai_puntaje, ai_feedback, ai_tokens_total, ai_model, processing_time_ms, user_retook)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
             $insertStmt->execute([
                 $orderId,
@@ -117,10 +117,17 @@ try {
                 $verification['aprobado'] ? 1 : 0,
                 $verification['puntaje'],
                 $verification['feedback'],
+                $verification['tokens_total'] ?? 0,
+                'gemini-2.5-flash-lite',
+                $verification['processing_ms'] ?? 0,
                 $userRetook,
             ]);
 
-            $response['verification'] = $verification;
+            $response['verification'] = [
+                'aprobado' => $verification['aprobado'],
+                'puntaje' => $verification['puntaje'],
+                'feedback' => $verification['feedback'],
+            ];
         } catch (\Throwable $e) {
             error_log("[save_dispatch_photo] Verification error: " . $e->getMessage());
 
@@ -128,8 +135,8 @@ try {
             try {
                 $userRetook = ($_POST['user_retook'] ?? 'false') === 'true' ? 1 : 0;
                 $insertStmt = $pdo->prepare(
-                    "INSERT INTO dispatch_photo_feedback (order_id, photo_type, photo_url, ai_aprobado, ai_puntaje, ai_feedback, user_retook)
-                     VALUES (?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO dispatch_photo_feedback (order_id, photo_type, photo_url, ai_aprobado, ai_puntaje, ai_feedback, ai_tokens_total, ai_model, processing_time_ms, user_retook)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 );
                 $insertStmt->execute([
                     $orderId,
@@ -138,6 +145,9 @@ try {
                     1,
                     0,
                     $verificationFallback['feedback'],
+                    0,
+                    'gemini-2.5-flash-lite',
+                    0,
                     $userRetook,
                 ]);
             } catch (\Throwable $dbErr) {
