@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`f534d63`) — Gemini upgrade a 2.5-flash (mejor visión), resize 768px (1 tile óptimo) |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`8cb1100`) — Gemini 2.5-flash, timeout 15s, resize 768px |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`d880e70`) — DeliveryConfigSection admin, sección Config Delivery en sidebar |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`d880e70`) — delivery_config table, card_surcharge column, API CRUD delivery-config |
