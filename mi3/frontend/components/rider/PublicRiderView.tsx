@@ -41,12 +41,21 @@ function RouteLayer({ origin, destination, routeKey }: { origin: { lat: number; 
   return null;
 }
 
-/* ── Pan map ── */
+/* ── Pan map + rotate heading ── */
 function PanToPosition({ position, trigger }: { position: GeoPosition; trigger: number }) {
   const map = useMap();
   useEffect(() => {
     if (map && trigger > 0) { map.panTo(position); map.setZoom(16); }
   }, [map, position, trigger]);
+  return null;
+}
+
+/* ── Rotate map based on heading (car always points up) ── */
+function MapHeading({ heading }: { heading: number | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (map && heading != null) map.setHeading(heading);
+  }, [map, heading]);
   return null;
 }
 
@@ -178,15 +187,16 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
                   <span className="text-[8px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded-full mt-0.5 shadow">La Ruta 11</span>
                 </div>
               </AdvancedMarker>
-              {/* Rider car with orientation cone */}
+              {/* Rider car — always points up, map rotates instead */}
               {position && gpsEnabled && (
                 <AdvancedMarker position={position} zIndex={200}>
-                  <div className="h-14 w-14 drop-shadow-lg" style={{ transform: `rotate(${position.heading ?? 0}deg)`, transition: 'transform 0.5s ease' }}>
+                  <div className="h-14 w-14 drop-shadow-lg">
                     <img src="/rider-car.svg" alt="Rider" className="h-full w-full" />
                   </div>
                 </AdvancedMarker>
               )}
               {position && gpsEnabled && <PanToPosition position={position} trigger={panTrigger} />}
+              {position && gpsEnabled && <MapHeading heading={position.heading} />}
             </Map>
           </APIProvider>
         ) : (
