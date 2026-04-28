@@ -70,7 +70,85 @@ try {
 
     $pdo->prepare("UPDATE tuu_orders SET dispatch_photo_url = ? WHERE id = ?")->execute([$jsonPhotos, $orderId]);
 
-    echo json_encode(['success' => true, 'url' => $url, 'all_photos' => $photos]);
+    // Build response
+    $response = ['success' => true, 'url' => $url, 'all_photos' => $photos];
+
+    // ── Verification IA (only when photo_type is present) ──
+    $photoType = $_POST['photo_type'] ?? null;
+
+    if ($photoType) {
+        $verificationFallback = [
+            'aprobado' => true,
+            'puntaje' => 0,
+            'feedback' => '⏳ Verificación no disponible',
+        ];
+
+        try {
+            // Read uploaded image from S3 and convert to base64
+            $imageData = @file_get_contents($url);
+            if ($imageData === false) {
+                throw new Exception('No se pudo leer imagen desde S3 URL');
+            }
+            $imageBase64 = base64_encode($imageData);
+
+            // Parse order items
+            $orderItemsJson = $_POST['order_items'] ?? '[]';
+            $orderItems = json_decode($orderItemsJson, true);
+            if (!is_array($orderItems)) {
+                $orderItems = [];
+            }
+
+            // Call GeminiService for verification
+            require_once __DIR__ . '/../GeminiService.php';
+            $gemini = new GeminiService();
+            $verification = $gemini->verificarFotoDespacho($imageBase64, $orderItems, $photoType);
+
+            // Insert result into dispatch_photo_feedback
+            $userRetook = ($_POST['user_retook'] ?? 'false') === 'true' ? 1 : 0;
+
+            $insertStmt = $pdo->prepare(
+                "INSERT INTO dispatch_photo_feedback (order_id, photo_type, photo_url, ai_aprobado, ai_puntaje, ai_feedback, user_retook)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)"
+            );
+            $insertStmt->execute([
+                $orderId,
+                $photoType,
+                $url,
+                $verification['aprobado'] ? 1 : 0,
+                $verification['puntaje'],
+                $verification['feedback'],
+                $userRetook,
+            ]);
+
+            $response['verification'] = $verification;
+        } catch (\Throwable $e) {
+            error_log("[save_dispatch_photo] Verification error: " . $e->getMessage());
+
+            // Insert fallback into dispatch_photo_feedback
+            try {
+                $userRetook = ($_POST['user_retook'] ?? 'false') === 'true' ? 1 : 0;
+                $insertStmt = $pdo->prepare(
+                    "INSERT INTO dispatch_photo_feedback (order_id, photo_type, photo_url, ai_aprobado, ai_puntaje, ai_feedback, user_retook)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)"
+                );
+                $insertStmt->execute([
+                    $orderId,
+                    $photoType,
+                    $url,
+                    1,
+                    0,
+                    $verificationFallback['feedback'],
+                    $userRetook,
+                ]);
+            } catch (\Throwable $dbErr) {
+                error_log("[save_dispatch_photo] Failed to insert fallback feedback: " . $dbErr->getMessage());
+            }
+
+            $response['verification'] = $verificationFallback;
+        }
+    }
+
+    echo json_encode($response);
 }
 catch (Exception $e) {
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);

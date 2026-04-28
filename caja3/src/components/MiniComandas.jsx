@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Banknote, Smartphone, Store, Truck, Clock, XCircle, CheckCircle, X, Send, Bike, Camera, List, LayoutGrid } from 'lucide-react';
 import ChecklistCard from './ChecklistCard.jsx';
+import { generatePhotoRequirements, getButtonState, formatPhotoProgress } from '../utils/photoRequirements.js';
 
 function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const [orders, setOrders] = useState([]);
@@ -15,6 +16,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const [cashModalOrder, setCashModalOrder] = useState(null);
   const [cashAmount, setCashAmount] = useState('');
   const [cashStep, setCashStep] = useState('input');
+  const [photoSlots, setPhotoSlots] = useState({}); // keyed by order ID → {productos: {status, photoUrl, verification}, bolsa: {status, photoUrl, verification}}
   const [viewMode, setViewMode] = useState('list');
   const [showNewFeaturePopup, setShowNewFeaturePopup] = useState(() => {
     const today = new Date();
@@ -997,58 +999,163 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           </div>
         )}
 
-        <div className="mb-2 border border-blue-200 rounded-lg overflow-hidden bg-white shadow-sm">
-          <div className="bg-red-600 px-2 py-1 text-[10px] font-black text-white flex items-center justify-between">
-            <span className="flex items-center gap-1">
-              <Camera size={12} /> FOTOS DEL PEDIDO (obligatorio)
-            </span>
-          </div>
+        {/* Photo slots — only for delivery orders */}
+        {(() => {
+          const photoReqs = generatePhotoRequirements(order.delivery_type);
+          if (photoReqs.length === 0) return null;
 
-          <div className="p-1.5">
-            <div className="grid grid-cols-3 gap-1.5">
-              {(() => {
-                let photos = [];
-                try {
-                  const url = order.dispatch_photo_url;
-                  if (url) {
-                    const decoded = JSON.parse(url);
-                    photos = Array.isArray(decoded) ? decoded : [url];
-                  }
-                } catch (e) {
-                  photos = [order.dispatch_photo_url];
+          // Initialize slots for this order if not yet set
+          const orderSlots = photoSlots[order.id] || {};
+          const getSlot = (reqId) => orderSlots[reqId] || { status: 'empty', photoUrl: null, verification: null };
+
+          // Collect all photo URLs for fullscreen viewer
+          const allPhotoUrls = photoReqs.map(r => getSlot(r.id).photoUrl).filter(Boolean);
+
+          // Count uploaded
+          const uploadedMap = {};
+          photoReqs.forEach(r => { if (getSlot(r.id).photoUrl) uploadedMap[r.id] = getSlot(r.id).photoUrl; });
+          const uploadedCount = Object.keys(uploadedMap).length;
+
+          const handleSlotUpload = (file, reqId, isRetake) => {
+            if (!file) return;
+            // Set uploading
+            setPhotoSlots(prev => ({
+              ...prev,
+              [order.id]: { ...prev[order.id], [reqId]: { ...getSlot(reqId), status: 'uploading', verification: null } }
+            }));
+
+            const fd = new FormData();
+            fd.append('photo', file);
+            fd.append('order_id', order.id);
+            fd.append('photo_type', reqId);
+            fd.append('order_items', JSON.stringify(order.items || []));
+            if (isRetake) fd.append('user_retook', 'true');
+
+            fetch('/api/orders/save_dispatch_photo.php', { method: 'POST', body: fd })
+              .then(r => r.json())
+              .then(d => {
+                if (d.success) {
+                  const verification = d.verification || null;
+                  const status = verification ? (verification.aprobado ? 'approved' : 'warning') : 'approved';
+                  setPhotoSlots(prev => ({
+                    ...prev,
+                    [order.id]: { ...prev[order.id], [reqId]: { status, photoUrl: d.url, verification } }
+                  }));
+                  loadOrders();
+                } else {
+                  alert('Error: ' + (d.error || 'No se pudo subir la foto'));
+                  setPhotoSlots(prev => ({
+                    ...prev,
+                    [order.id]: { ...prev[order.id], [reqId]: { status: 'empty', photoUrl: null, verification: null } }
+                  }));
                 }
+              })
+              .catch(() => {
+                alert('Error al subir foto');
+                setPhotoSlots(prev => ({
+                  ...prev,
+                  [order.id]: { ...prev[order.id], [reqId]: { status: 'empty', photoUrl: null, verification: null } }
+                }));
+              });
+          };
 
-                return photos.map((url, idx) => (
-                  <div
-                    key={idx}
-                    className="aspect-square rounded-md overflow-hidden border border-gray-100 relative group cursor-pointer shadow-sm active:scale-95 transition-all"
-                    onClick={() => setViewingOrderPhotos({ photos, currentIndex: idx })}
-                  >
-                    <img src={url} alt={`foto-${idx}`} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors" />
-                  </div>
-                ));
-              })()}
+          const handleDeleteSlot = (reqId) => {
+            setPhotoSlots(prev => ({
+              ...prev,
+              [order.id]: { ...prev[order.id], [reqId]: { status: 'empty', photoUrl: null, verification: null, _retake: true } }
+            }));
+          };
 
-              <label className="aspect-square flex flex-col items-center justify-center gap-0.5 cursor-pointer rounded-md border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-orange-50 hover:border-orange-300 text-gray-400 hover:text-orange-500 transition-all active:scale-95">
-                <Camera size={18} />
-                <span className="text-[9px] font-black uppercase">Subir</span>
-                <input type="file" accept="image/*" className="hidden"
-                  onChange={e => {
-                    const f = e.target.files[0];
-                    if (!f) return;
-                    const fd = new FormData();
-                    fd.append('photo', f);
-                    fd.append('order_id', order.id);
-                    fetch('/api/orders/save_dispatch_photo.php', { method: 'POST', body: fd })
-                      .then(r => r.json())
-                      .then(d => { if (d.success) loadOrders(); else alert('Error: ' + d.error); })
-                      .catch(() => alert('Error al subir foto'));
-                  }} />
-              </label>
+          return (
+            <div className="mb-2 border border-blue-200 rounded-lg overflow-hidden bg-white shadow-sm">
+              <div className="bg-red-600 px-2 py-1 text-[10px] font-black text-white flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <Camera size={12} /> FOTOS DELIVERY (obligatorio)
+                </span>
+                <span className="text-[9px] font-bold opacity-90">{formatPhotoProgress(uploadedCount, photoReqs.length)}</span>
+              </div>
+
+              <div className="p-1.5">
+                <div className="grid grid-cols-2 gap-1.5">
+                  {photoReqs.map(req => {
+                    const slot = getSlot(req.id);
+                    const isRetake = !!(orderSlots[req.id] && orderSlots[req.id]._retake);
+
+                    if (slot.status === 'uploading') {
+                      return (
+                        <div key={req.id} className="aspect-square flex flex-col items-center justify-center rounded-md border-2 border-blue-300 bg-blue-50 text-blue-500">
+                          <div className="animate-spin text-lg mb-1">⏳</div>
+                          <span className="text-[9px] font-bold">Subiendo...</span>
+                          <span className="text-[8px] mt-0.5 text-blue-400">{req.label}</span>
+                        </div>
+                      );
+                    }
+
+                    if (slot.photoUrl) {
+                      const badge = slot.status === 'warning' ? '⚠️' : '✅';
+                      return (
+                        <div key={req.id} className="aspect-square rounded-md overflow-hidden border border-gray-100 relative group shadow-sm">
+                          <img
+                            src={slot.photoUrl}
+                            alt={req.label}
+                            className="w-full h-full object-cover cursor-pointer active:scale-95 transition-all"
+                            onClick={() => setViewingOrderPhotos({ photos: allPhotoUrls, currentIndex: allPhotoUrls.indexOf(slot.photoUrl) })}
+                          />
+                          <div className="absolute top-0.5 left-0.5 bg-white/90 rounded px-1 text-[9px] font-bold shadow">{badge} {req.id === 'productos' ? 'Productos' : 'Bolsa'}</div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteSlot(req.id); }}
+                            className="absolute top-0.5 right-0.5 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow active:scale-90 transition-all"
+                            aria-label={`Eliminar ${req.label}`}
+                          >×</button>
+                        </div>
+                      );
+                    }
+
+                    // Empty slot
+                    return (
+                      <label key={req.id} className="aspect-square flex flex-col items-center justify-center gap-0.5 cursor-pointer rounded-md border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-orange-50 hover:border-orange-300 text-gray-400 hover:text-orange-500 transition-all active:scale-95">
+                        <Camera size={18} />
+                        <span className="text-[8px] font-bold text-center leading-tight px-1">{req.label}</span>
+                        <input type="file" accept="image/*" capture="environment" className="hidden"
+                          onChange={e => { handleSlotUpload(e.target.files[0], req.id, isRetake); e.target.value = ''; }} />
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Feedback panel */}
+              {photoReqs.some(r => getSlot(r.id).verification || getSlot(r.id).status === 'uploading') && (
+                <div className="bg-gray-50 rounded-lg p-3 mx-1.5 mb-1.5 space-y-2">
+                  {photoReqs.map(req => {
+                    const slot = getSlot(req.id);
+                    if (slot.status === 'uploading') {
+                      return (
+                        <div key={req.id} className="flex items-start gap-2">
+                          <span className="animate-spin text-xs">⏳</span>
+                          <div>
+                            <span className="font-medium text-xs">{req.label}:</span>
+                            <span className="text-xs ml-1 text-gray-500">Verificando...</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (!slot.verification) return null;
+                    return (
+                      <div key={req.id} className="flex items-start gap-2">
+                        <span>{slot.verification.aprobado ? '✅' : '⚠️'}</span>
+                        <div>
+                          <span className="font-medium text-xs">{req.label}:</span>
+                          <span className="text-xs ml-1">{slot.verification.feedback}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
-        </div>
+          );
+        })()}
 
         <div className="flex flex-col gap-2">
           <div className="flex gap-2">
@@ -1056,11 +1163,37 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
               <button onClick={() => confirmPayment(order.id, order.order_number, order.payment_method)} disabled={processing === order.id} className="flex-1 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-400 text-white font-bold py-2 px-3 rounded text-xs">
                 {processing === order.id ? '⏳' : '✓ CONFIRMAR PAGO'}
               </button>
-            ) : (
-              <button onClick={() => deliverOrder(order.id, order.order_number)} disabled={processing === order.id} className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-2 px-3 rounded text-xs">
-                {processing === order.id ? '⏳' : '✅ ENTREGAR'}
-              </button>
-            )}
+            ) : (() => {
+              const isDelivery = order.delivery_type === 'delivery';
+              if (!isDelivery) {
+                return (
+                  <button onClick={() => deliverOrder(order.id, order.order_number)} disabled={processing === order.id} className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-2 px-3 rounded text-xs">
+                    {processing === order.id ? '⏳' : '✅ ENTREGAR'}
+                  </button>
+                );
+              }
+              const photoReqs = generatePhotoRequirements('delivery');
+              const orderSlots = photoSlots[order.id] || {};
+              const uploadedMap = {};
+              photoReqs.forEach(r => { if (orderSlots[r.id] && orderSlots[r.id].photoUrl) uploadedMap[r.id] = orderSlots[r.id].photoUrl; });
+              const btnState = getButtonState(photoReqs, uploadedMap);
+              const missingCount = photoReqs.length - Object.keys(uploadedMap).length;
+              return (
+                <button
+                  onClick={() => {
+                    if (btnState.enabled) {
+                      deliverOrder(order.id, order.order_number);
+                    } else {
+                      alert(`Faltan ${missingCount} de 2 fotos`);
+                    }
+                  }}
+                  disabled={processing === order.id}
+                  className={`flex-1 ${processing === order.id ? 'bg-gray-400 text-gray-200' : btnState.className} font-bold py-2 px-3 rounded text-xs`}
+                >
+                  {processing === order.id ? '⏳' : btnState.text}
+                </button>
+              );
+            })()}
           </div>
         </div>
       </div>

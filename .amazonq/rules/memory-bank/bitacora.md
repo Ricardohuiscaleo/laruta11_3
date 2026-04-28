@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`9b2eaa6`) — backfill combo ingredients + pending pages RL6 |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`6a54dd7`) — MiniComandas: listado con fotos+zoom, combos detalle, Lucide icons, nombre grande |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`a8ac18a`) — bebidas con foto en combos, FOTOS DEL PEDIDO rojo obligatorio |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`65db473`) — Sub-recetas: botón Producir, fix React #310 hooks order |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28d16d6`) — endpoint produce sub-recetas, prep_method columns |
@@ -115,8 +115,8 @@
 
 - `caja3/src/components/MiniComandas.jsx`: Compacto — padding 1px, nombre abreviado (Ricardo H.), switch List/LayoutGrid (Lucide), modo listado default con fotos thumbnail+click-to-zoom, detalle combos expandido, nombre `text-sm` con precio abajo.
 
-**Commits:** `204fffb`→`6a54dd7` (15 commits)
-**Deploys:** caja3 ✅ (`6a54dd7`)
+**Commits:** `204fffb`→`a8ac18a` (16 commits)
+**Deploys:** caja3 ✅ (`a8ac18a`)
 
 ### 2026-04-27g — Backfill combo ingredients históricos
 
