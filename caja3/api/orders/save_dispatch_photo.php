@@ -64,8 +64,9 @@ try {
         }
     }
 
-    // Add new photo
-    $photos[] = $url;
+    // Add new photo with type key
+    $photoType = $_POST['photo_type'] ?? 'productos';
+    $photos[$photoType] = $url;
     $jsonPhotos = json_encode($photos);
 
     $pdo->prepare("UPDATE tuu_orders SET dispatch_photo_url = ? WHERE id = ?")->execute([$jsonPhotos, $orderId]);
@@ -121,11 +122,12 @@ try {
             if (!is_array($orderItems)) {
                 $orderItems = [];
             }
+            $customerNotes = $_POST['customer_notes'] ?? '';
 
             // Call GeminiService for verification
             require_once __DIR__ . '/../GeminiService.php';
             $gemini = new GeminiService();
-            $verification = $gemini->verificarFotoDespacho($imageBase64, $orderItems, $photoType);
+            $verification = $gemini->verificarFotoDespacho($imageBase64, $orderItems, $photoType, $customerNotes);
 
             // Insert result into dispatch_photo_feedback
             $userRetook = ($_POST['user_retook'] ?? 'false') === 'true' ? 1 : 0;

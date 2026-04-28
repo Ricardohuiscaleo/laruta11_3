@@ -1075,6 +1075,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
             fd.append('order_id', order.id);
             fd.append('photo_type', reqId);
             fd.append('order_items', JSON.stringify(order.items || []));
+            fd.append('customer_notes', order.customer_notes || '');
             if (isRetake) fd.append('user_retook', 'true');
 
             // Timeout controller — 40s max
@@ -1202,17 +1203,17 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                       const slot = getSlot(req.id);
                       if (!slot.verification) return null;
                       const p = slot.verification.puntaje ?? 0;
-                      const colorClass = p >= 80 ? 'bg-green-50 text-green-800 border border-green-200' : p >= 50 ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-red-50 text-red-800 border border-red-200';
+                      const borderColor = p >= 80 ? 'border-green-400' : p >= 50 ? 'border-amber-400' : 'border-red-400';
                       const Icon = p >= 80 ? CheckCircle : AlertTriangle;
                       const iconColor = p >= 80 ? 'text-green-500' : p >= 50 ? 'text-amber-500' : 'text-red-500';
-                      // Render **text** as bold red
+                      // Render **text** as bold red, rest is black
                       const renderFeedback = (text) => {
                         if (!text) return null;
                         const parts = text.split(/\*\*(.*?)\*\*/g);
-                        return parts.map((part, i) => i % 2 === 1 ? <b key={i} className="text-red-600 font-bold">{part}</b> : part);
+                        return parts.map((part, i) => i % 2 === 1 ? <b key={i} className="text-red-600 font-bold">{part}</b> : <span key={i} className="text-gray-800">{part}</span>);
                       };
                       return (
-                        <div key={req.id} className={`flex items-start gap-1.5 rounded px-1.5 py-1 text-[10px] ${colorClass}`}>
+                        <div key={req.id} className={`flex items-start gap-1.5 rounded px-1.5 py-1 text-[10px] bg-white border ${borderColor}`}>
                           <Icon size={12} className={`${iconColor} flex-shrink-0 mt-0.5`} />
                           <span>{renderFeedback(slot.verification.feedback)}</span>
                         </div>

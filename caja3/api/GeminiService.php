@@ -34,7 +34,7 @@ class GeminiService
      * @param string $tipoFoto   'productos' or 'bolsa'
      * @return array {aprobado: bool, puntaje: int, feedback: string}
      */
-    public function verificarFotoDespacho(string $imageBase64, array $itemsPedido, string $tipoFoto): array
+    public function verificarFotoDespacho(string $imageBase64, array $itemsPedido, string $tipoFoto, string $customerNotes = ''): array
     {
         $fallback = [
             'aprobado' => true,
@@ -43,7 +43,7 @@ class GeminiService
         ];
 
         try {
-            $prompt = $this->buildVerificationPrompt($itemsPedido, $tipoFoto);
+            $prompt = $this->buildVerificationPrompt($itemsPedido, $tipoFoto, $customerNotes);
             $schema = $this->buildVerificationSchema();
             $result = $this->callGemini($prompt, $imageBase64, $schema);
 
@@ -184,7 +184,7 @@ class GeminiService
      * @param string $tipoFoto   'productos' or 'bolsa'
      * @return string The constructed prompt
      */
-    private function buildVerificationPrompt(array $itemsPedido, string $tipoFoto): string
+    private function buildVerificationPrompt(array $itemsPedido, string $tipoFoto, string $customerNotes = ''): string
     {
         $itemsList = '';
         foreach ($itemsPedido as $item) {
@@ -231,46 +231,45 @@ class GeminiService
         }
 
         if ($tipoFoto === 'productos') {
+            $notesSection = '';
+            if (!empty($customerNotes)) {
+                $notesSection = "\nNOTAS DEL CLIENTE: {$customerNotes}\n- Si dice 'sin tomate', 'sin cebolla', etc., verifica que NO esté presente.\n- Si dice 'extra lomo', 'extra pollo', etc., verifica que SÍ se vea el ingrediente extra.\n";
+            }
+
             return <<<PROMPT
 Eres un verificador de calidad de despacho para La Ruta 11 (food truck chileno: completos, hamburguesas, papas fritas, salchipapas, combos).
 
 PEDIDO DEL CLIENTE:
-{$itemsList}
+{$itemsList}{$notesSection}
 TAREA: Analiza esta foto y verifica que los productos del pedido estén presentes.
 
 VERIFICACIÓN OBLIGATORIA:
-1. COMPARA lo que ves en la foto contra la lista del pedido. ¿Cada item del pedido es visible en la foto?
-2. Si el pedido dice "Cheeseburger" y ves papas fritas, eso es un PROBLEMA — falta la hamburguesa.
-3. Si el pedido dice "Completo" y ves algo volcado o de lado, eso es un PROBLEMA de orientación.
-4. Si ves productos que NO están en el pedido, menciónalo como observación.
-5. ¿Las cantidades coinciden? (ej: si pide 2x y solo se ve 1, es problema)
+1. COMPARA lo que ves en la foto contra la lista del pedido. ¿Cada item del pedido es visible?
+2. Si ves productos o ingredientes que NO están en el pedido (ej: un trozo de carne extra, pollo extra), pregunta si está bien.
+3. ¿Las cantidades coinciden? (ej: si pide 2x y solo se ve 1, es problema)
+4. Si hay NOTAS DEL CLIENTE, verifica que se cumplan (sin tomate = no debe verse tomate, extra lomo = debe verse lomo extra).
 
 IMPORTANTE — INGREDIENTES:
-- Los ingredientes marcados como "NO visibles" van dentro del pan o son de cocción. No penalizar por no verlos.
-- Los ingredientes marcados como "Envase" son el packaging — verifica que el envase correcto esté presente.
-- Enfócate en los ingredientes marcados como "visibles": panes, carnes, tocino, papas, bebidas, vegetales grandes.
+- Los marcados "NO visibles" van dentro del pan o son de cocción. No penalizar.
+- Los marcados "Envase" son packaging. Verifica que esté presente.
+- Enfócate en los "visibles": panes, carnes, tocino, papas, bebidas, vegetales grandes.
 
 CRITERIOS DE PUNTAJE:
-- 80-100: Todos los items del pedido visibles, bien presentados, orientación correcta.
-- 50-79: Se ven los items pero hay observaciones (empaque abierto, orientación dudosa).
-- 0-49: Faltan items del pedido, productos incorrectos, o foto no muestra los productos.
+- 80-100: Todo coincide con el pedido, bien presentado.
+- 50-79: Se ven los items pero hay observaciones (algo extra no pedido, orientación dudosa).
+- 0-49: Faltan items del pedido, productos incorrectos.
 
 REGLAS DE RESPUESTA:
-- Sé específico: nombra qué items del pedido ves y cuáles NO ves.
-- Máximo 1 oración corta en el feedback, como si le hablaras a un compañero de trabajo.
-- Tono casual y amigable, NO formal ni de reporte. Ejemplos buenos:
-  "Todo bien, se ve completo ✅"
-  "Verifica si lleva tocino, no lo alcanzo a ver ⚠️"
-  "Falta la bebida del combo ⚠️"
-  "No veo la **Bilz** en la foto ⚠️"
-- Si NO ves un producto o ingrediente, pon su nombre entre ** para destacarlo: "No veo la **Bilz**"
-- Ejemplos MALOS (no hagas esto):
-  "Productos: Falta el tocino laminado, que es un ingrediente visible. Retoma la foto mostrando el tocino en la hamburguesa."
-  "Se observa que el pedido no incluye..."
-  "No se ve la Bilz, pero se asume que va en el despacho."
-- NUNCA digas "se asume" — si no lo ves, dilo directo.
-- Emojis: ✅ si todo coincide, ⚠️ si hay algo que revisar.
-- Español chileno informal y directo. Nada de "Retoma la foto mostrando X".
+- Describe brevemente lo que ves, luego señala problemas.
+- Pon entre ** los nombres de productos/ingredientes que faltan o sobran: "No veo la **Bilz**" o "Parece tener **lomo extra** ¿está bien?"
+- Máximo 2 oraciones cortas. Tono casual como compañero de trabajo.
+- Ejemplos buenos:
+  "Se ve la hamburguesa clásica completa ✅"
+  "Se ve la hamburguesa pero *no veo la **Bilz*** ⚠️"
+  "Se ve la hamburguesa clásica pero parece tener **lomo extra** ¿está bien? ⚠️"
+  "Todo bien, hamburguesa + papas + bebida ✅"
+- NUNCA digas "se asume", "Retoma la foto", ni uses formato de reporte.
+- Emojis: ✅ todo OK, ⚠️ algo que revisar.
 PROMPT;
         }
 
