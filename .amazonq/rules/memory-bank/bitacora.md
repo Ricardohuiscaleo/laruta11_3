@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`05f10b8`) — Gemini 3.1-flash-lite-preview, model tracking fix, timeout 15s, 768px |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`d880e70`) — DeliveryConfigSection admin, sección Config Delivery en sidebar |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`d880e70`) — delivery_config table, card_surcharge column, API CRUD delivery-config |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`bec0544`) — Página pública rider /rider/{order_id}, QR admin, GPS realtime |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`bec0544`) — PublicRiderController 3 endpoints públicos, rider_url en delivery orders |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -102,6 +102,21 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-28d — Spec rider-public-page: página pública rider sin auth
+
+**Cambios código:**
+- `mi3/backend/app/Http/Controllers/Public/PublicRiderController.php`: Nuevo controlador con 3 endpoints públicos — `show()` (datos completos pedido + items + food truck), `updateStatus()` (out_for_delivery/delivered con eventos Reverb), `updateLocation()` (GPS con persistencia condicional en rider_locations).
+- `mi3/backend/routes/api.php`: Grupo `v1/public/rider-orders` con GET, PATCH status, POST location.
+- `mi3/backend/app/Services/Delivery/DeliveryService.php`: `rider_url` agregado a `getActiveOrders()` con formato `https://mi.laruta11.cl/rider/{id}`.
+- `mi3/frontend/hooks/usePublicRiderGPS.ts`: Hook GPS público — `fetch` directo (sin auth), intervalo 10s, `watchPosition` con `enableHighAccuracy`.
+- `mi3/frontend/components/rider/PublicRiderView.tsx`: Componente mobile-first — datos pedido, productos, montos CLP, link tel:, link Google Maps, mapa embebido con ruta Directions API, botones "En camino"→"Entregado", pantalla confirmación entrega.
+- `mi3/frontend/app/rider/[orderId]/page.tsx`: Server component wrapper sin auth.
+- `mi3/frontend/hooks/useDeliveryTracking.ts`: `rider_url` agregado a interfaz `DeliveryOrder`.
+- `mi3/frontend/components/admin/delivery/OrderPanel.tsx`: Botones "Link rider" (copiar portapapeles) + "QR" (código QR con `qrcode.react`).
+
+**Commits:** `bec0544` (14 archivos, 1324 insertions)
+**Deploys:** Pendiente — disparar builds mi3-frontend + mi3-backend desde Coolify UI
 
 ### 2026-04-28c — Mejoras dispatch photos + comandas bebidas compactas
 
