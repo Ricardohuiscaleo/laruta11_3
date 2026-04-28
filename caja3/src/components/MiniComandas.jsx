@@ -718,7 +718,18 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                       ))}
                       {comboData.selections && Object.entries(comboData.selections).map(([group, sel]) => {
                         const arr = Array.isArray(sel) ? sel : [sel];
-                        return arr.map((s, sidx) => s?.name ? <div key={`${group}-${sidx}`} className="text-purple-700">• {item.quantity}x {s.name}</div> : null);
+                        return arr.map((s, sidx) => {
+                          if (!s?.name) return null;
+                          const selImg = s.image_url || s.image || null;
+                          return (
+                            <div key={`${group}-${sidx}`} className="flex items-center gap-1.5 text-purple-700">
+                              {selImg && (
+                                <img src={selImg} alt={s.name} className="w-8 h-8 rounded object-cover flex-shrink-0 border border-purple-300" onError={(e) => { e.target.style.display = 'none'; }} />
+                              )}
+                              <span className="text-[11px] font-medium">• {item.quantity}x {s.name}</span>
+                            </div>
+                          );
+                        });
                       })}
                       {comboData.customizations && comboData.customizations.length > 0 && comboData.customizations.map((c, idx) => (
                         <div key={idx} className="text-orange-700 font-bold">+ {c.quantity || item.quantity}x {c.name}</div>
@@ -987,9 +998,9 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
         )}
 
         <div className="mb-2 border border-blue-200 rounded-lg overflow-hidden bg-white shadow-sm">
-          <div className="bg-blue-600 px-2 py-1 text-[10px] font-black text-white flex items-center justify-between">
+          <div className="bg-red-600 px-2 py-1 text-[10px] font-black text-white flex items-center justify-between">
             <span className="flex items-center gap-1">
-              <Camera size={12} /> FOTOS DEL PEDIDO
+              <Camera size={12} /> FOTOS DEL PEDIDO (obligatorio)
             </span>
           </div>
 
