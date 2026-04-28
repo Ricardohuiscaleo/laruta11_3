@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 export interface GeoPosition {
   lat: number;
   lng: number;
+  heading: number | null;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
@@ -61,6 +62,7 @@ export function usePublicRiderGPS({ orderId, enabled }: UsePublicRiderGPSOptions
         const pos: GeoPosition = {
           lat: geoPos.coords.latitude,
           lng: geoPos.coords.longitude,
+          heading: geoPos.coords.heading,
         };
         setPosition(pos);
         setGpsError(null);

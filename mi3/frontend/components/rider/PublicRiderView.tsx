@@ -188,11 +188,14 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
               disableDefaultUI
             >
               <RouteLayer origin={position && gpsEnabled ? position : origin} destination={order.delivery_address} />
-              {/* Rider position marker — shown whenever GPS is active */}
+              {/* Rider position marker — car with heading rotation */}
               {position && gpsEnabled && (
                 <AdvancedMarker position={position}>
-                  <div className="h-10 w-10 rounded-full bg-blue-600 border-[3px] border-white shadow-lg flex items-center justify-center">
-                    <span className="text-base">🛵</span>
+                  <div
+                    className="h-12 w-12 drop-shadow-lg"
+                    style={{ transform: `rotate(${position.heading ?? 0}deg)`, transition: 'transform 0.5s ease' }}
+                  >
+                    <img src="/rider-car.svg" alt="Rider" className="h-full w-full" />
                   </div>
                 </AdvancedMarker>
               )}
