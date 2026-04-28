@@ -832,51 +832,36 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
             </div>
             {order.delivery_type === 'delivery' && (
               <div className="flex items-center justify-between bg-white border border-gray-200 rounded p-2">
-                <span className="text-xs font-bold text-gray-800">Enviar al rider 🚚</span>
-                <button
-                  onClick={() => {
-                    // Normalizar direcciones
-                    let normalizedAddress = order.delivery_address || '';
-                    if (normalizedAddress.toLowerCase().includes('ctel.')) {
-                      if (normalizedAddress.toLowerCase().includes('domeyco')) normalizedAddress = 'Domeyco 1540, Arica, Chile';
-                      else if (normalizedAddress.toLowerCase().includes('oscar quina')) normalizedAddress = 'Oscar Quina 1333, Arica, Chile';
-                      else if (normalizedAddress.toLowerCase().includes('santa mar')) normalizedAddress = 'Av. Santa María 3000, Arica, Chile';
-                    } else if (normalizedAddress && !normalizedAddress.toLowerCase().includes('arica')) {
-                      normalizedAddress += ', Arica, Chile';
-                    }
-                    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(normalizedAddress)}`;
+                <span className="text-xs font-bold text-gray-800">Rider 🚚</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => {
+                      const riderUrl = `https://mi.laruta11.cl/rider/${order.id}`;
+                      const delFee = parseInt(order.delivery_fee || 0);
+                      const msg = `🛵 *Delivery #${order.order_number}*
 
-                    // Productos
-                    const itemsList = (order.items || []).map((it, i) => {
-                      let line = `${i + 1}. ${it.product_name} x${it.quantity} - $${parseInt(it.product_price * it.quantity).toLocaleString('es-CL')}`;
-                      const cd = it.combo_data ? JSON.parse(it.combo_data) : null;
-                      if (cd?.customizations?.length) line += '\n' + cd.customizations.map(c => `   + ${c.quantity || 1}x ${c.name}`).join('\n');
-                      return line;
-                    }).join('\n');
+💰 Delivery: $${delFee.toLocaleString('es-CL')}
+📍 ${order.delivery_address || 'Sin dirección'}${order.delivery_distance_km ? ` (${order.delivery_distance_km}km)` : ''}
 
-                    const orderSubtotal = `$${parseInt(order.subtotal || order.installment_amount || 0).toLocaleString('es-CL')}`;
-                    const orderTotal = `$${parseInt(order.installment_amount || 0).toLocaleString('es-CL')}`;
-                    const payLabels = { cash: 'Efectivo', card: 'Tarjeta (pagado)', transfer: 'Transferencia', pedidosya: 'PedidosYA', pedidosya_cash: 'PedidosYA Efectivo', rl6_credit: 'RL6', r11_credit: 'R11' };
-
-                    // Desglose delivery
-                    const baseFee = parseInt(order.delivery_fee || 0);
-                    const disc = parseInt(order.delivery_discount || 0);
-                    const surcharge = (order.payment_method === 'card') ? 500 : 0;
-                    const totalDel = baseFee - disc + surcharge;
-                    let delMsg = `- Delivery: $${baseFee.toLocaleString('es-CL')}`;
-                    if (disc > 0) delMsg += `\n- Desc. (28%): -$${disc.toLocaleString('es-CL')}`;
-                    if (surcharge > 0) delMsg += `\n- Recargo tarjeta: +$500`;
-                    delMsg += `\n- *TOTAL DELIVERY: $${totalDel.toLocaleString('es-CL')}*`;
-
-                    const msg = `> *Pedido ${order.order_number}*\n\n*Cliente:* ${order.customer_name}\n*Tel:* ${order.customer_phone || '-'}\n\n*Productos:*\n${itemsList}\n\n*Montos:*\n- Subtotal: ${orderSubtotal}\n${delMsg}\n\n> *TOTAL: ${orderTotal}*\n\n*Pago:* ${payLabels[order.payment_method] || order.payment_method}${order.delivery_address ? `\n\n*Direccion:*\n> ${order.delivery_address}${order.delivery_distance_km ? `\n${order.delivery_distance_km} km ~ ${order.delivery_duration_min} min` : ''}\n\nMapa: ${mapsUrl}` : ''}`;
-
-                    window.location.href = `whatsapp://send?text=${encodeURIComponent(msg)}`;
-                  }}
-                  className="flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
-                >
-                  <Send size={12} />
-                  Rider
-                </button>
+👉 Tomar pedido:
+${riderUrl}`;
+                      window.location.href = `whatsapp://send?text=${encodeURIComponent(msg)}`;
+                    }}
+                    className="flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
+                  >
+                    <Send size={12} />
+                    WhatsApp
+                  </button>
+                  <a
+                    href={`https://mi.laruta11.cl/rider/${order.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
+                  >
+                    <Bike size={12} />
+                    Ver
+                  </a>
+                </div>
               </div>
             )}
           </div>
@@ -1253,6 +1238,14 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                           {processing === order.id ? '⏳' : '✓ CONFIRMAR PAGO'}
                         </button>
                       )}
+                      <a
+                        href={`https://mi.laruta11.cl/rider/${order.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded text-xs flex items-center gap-1"
+                      >
+                        <Bike size={14} /> Rider
+                      </a>
                       <button onClick={() => deliverOrder(order.id, order.order_number)} disabled={processing === order.id} className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-2 px-3 rounded text-xs">
                         {processing === order.id ? '⏳' : '✅ ENTREGAR'}
                       </button>
