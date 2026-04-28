@@ -78,6 +78,17 @@ const CheckoutApp = ({ onClose }) => {
   const [shakesAddress, setShakesAddress] = useState(false);
   const [formErrors, setFormErrors] = useState([]); // Array de campos con error
 
+  // Delivery config from DB with fallback defaults
+  const DELIVERY_CONFIG_DEFAULTS = {
+    tarifa_base: 3500,
+    card_surcharge: 500,
+    distance_threshold_km: 6,
+    surcharge_per_bracket: 1000,
+    bracket_size_km: 2,
+    rl6_discount_factor: 0.2857,
+  };
+  const [deliveryConfig, setDeliveryConfig] = useState(DELIVERY_CONFIG_DEFAULTS);
+
   // Verificar si es militar RL6 aprobado (loose equality para manejar strings y numbers)
   const isMilitarRL6 = (user?.es_militar_rl6 == 1 || user?.es_militar_rl6 === '1') &&
     (user?.credito_aprobado == 1 || user?.credito_aprobado === '1');
@@ -86,6 +97,27 @@ const CheckoutApp = ({ onClose }) => {
   const isR11Credit = (user?.es_credito_r11 == 1 || user?.es_credito_r11 === '1') &&
     (user?.credito_r11_aprobado == 1 || user?.credito_r11_aprobado === '1') &&
     (user?.credito_r11_bloqueado == 0 || user?.credito_r11_bloqueado === '0' || !user?.credito_r11_bloqueado);
+
+  // Fetch delivery config from DB on mount
+  useEffect(() => {
+    fetch('/api/delivery/get_config.php')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setDeliveryConfig({
+            tarifa_base: data.tarifa_base ?? DELIVERY_CONFIG_DEFAULTS.tarifa_base,
+            card_surcharge: data.card_surcharge ?? DELIVERY_CONFIG_DEFAULTS.card_surcharge,
+            distance_threshold_km: data.distance_threshold_km ?? DELIVERY_CONFIG_DEFAULTS.distance_threshold_km,
+            surcharge_per_bracket: data.surcharge_per_bracket ?? DELIVERY_CONFIG_DEFAULTS.surcharge_per_bracket,
+            bracket_size_km: data.bracket_size_km ?? DELIVERY_CONFIG_DEFAULTS.bracket_size_km,
+            rl6_discount_factor: data.rl6_discount_factor ?? DELIVERY_CONFIG_DEFAULTS.rl6_discount_factor,
+          });
+        }
+      })
+      .catch(() => {
+        // Fallback to defaults silently
+      });
+  }, []);
 
   // Cargar beneficios del usuario desde tuu_orders
   useEffect(() => {
@@ -421,9 +453,9 @@ const CheckoutApp = ({ onClose }) => {
     ? (dynamicDeliveryFee != null ? dynamicDeliveryFee : (nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0))
     : 0;
 
-  const deliveryDiscountAmount = deliveryDiscountActive ? Math.round(deliveryFee * 0.2857) : 0;
+  const deliveryDiscountAmount = deliveryDiscountActive ? Math.round(deliveryFee * deliveryConfig.rl6_discount_factor) : 0;
   const finalDeliveryCost = deliveryFee - deliveryDiscountAmount;
-  const cardDeliverySurcharge = customerInfo.deliveryType === 'delivery' && paymentMethod === 'card' ? 500 : 0;
+  const cardDeliverySurcharge = customerInfo.deliveryType === 'delivery' && paymentMethod === 'card' ? deliveryConfig.card_surcharge : 0;
 
   // Calcular total de extras de delivery (sin descuentos ni cashback)
   const deliveryExtrasTotal = selectedDeliveryExtras.reduce((sum, extra) => sum + (extra.price * extra.quantity), 0);
@@ -500,6 +532,7 @@ const CheckoutApp = ({ onClose }) => {
         user_id: user?.id || null,
         cart_items: cart,
         delivery_fee: deliveryFee,
+        card_surcharge: cardDeliverySurcharge,
         delivery_extras: selectedDeliveryExtras,
         customer_notes: customerInfo.customerNotes || null,
         delivery_type: customerInfo.deliveryType,
@@ -605,6 +638,7 @@ const CheckoutApp = ({ onClose }) => {
         user_id: user?.id || null,
         cart_items: cart,
         delivery_fee: deliveryFee,
+        card_surcharge: cardDeliverySurcharge,
         customer_notes: customerInfo.customerNotes || null,
         delivery_type: customerInfo.deliveryType,
         delivery_address: customerInfo.address || null,
@@ -768,6 +802,7 @@ const CheckoutApp = ({ onClose }) => {
         user_id: user?.id || null,
         cart_items: cart,
         delivery_fee: deliveryFee,
+        card_surcharge: cardDeliverySurcharge,
         delivery_extras: selectedDeliveryExtras,
         customer_notes: finalNotes,
         delivery_type: customerInfo.deliveryType,
@@ -830,6 +865,7 @@ const CheckoutApp = ({ onClose }) => {
         user_id: user?.id || null,
         cart_items: cart,
         delivery_fee: deliveryFee,
+        card_surcharge: cardDeliverySurcharge,
         customer_notes: customerInfo.customerNotes || null,
         delivery_type: customerInfo.deliveryType,
         delivery_address: customerInfo.address || null,
@@ -907,6 +943,7 @@ const CheckoutApp = ({ onClose }) => {
         user_id: user?.id || null,
         cart_items: cart,
         delivery_fee: deliveryFee,
+        card_surcharge: cardDeliverySurcharge,
         customer_notes: customerInfo.customerNotes || null,
         delivery_type: customerInfo.deliveryType,
         delivery_address: customerInfo.address || null,
@@ -989,8 +1026,9 @@ const CheckoutApp = ({ onClose }) => {
         customer_email: customerInfo.email || `${customerInfo.phone}@ruta11.cl`,
         user_id: user?.id || null,
         cart_items: cart,
-        delivery_fee: deliveryFee + cardDeliverySurcharge,
-        customer_notes: customerInfo.customerNotes || (cardDeliverySurcharge ? '+$500 recargo tarjeta delivery' : null),
+        delivery_fee: deliveryFee,
+        card_surcharge: cardDeliverySurcharge,
+        customer_notes: customerInfo.customerNotes || null,
         delivery_type: customerInfo.deliveryType,
         delivery_address: customerInfo.address || null,
         pickup_time: customerInfo.pickupTime || null,
@@ -1543,14 +1581,14 @@ const CheckoutApp = ({ onClose }) => {
                       </div>
                       {deliveryDiscountAmount > 0 && (
                         <div className="flex justify-between items-center ml-6 text-green-600">
-                          <span className="text-xs">↳ Desc. Delivery (28%):</span>
+                          <span className="text-xs">↳ Desc. Delivery ({Math.round(deliveryConfig.rl6_discount_factor * 100)}%):</span>
                           <span className="text-xs font-semibold">-${(deliveryFee - (deliveryFee - deliveryDiscountAmount)).toLocaleString('es-CL')}</span>
                         </div>
                       )}
                       {cardDeliverySurcharge > 0 && (
                         <div className="flex justify-between items-center ml-6 text-red-600">
                           <span className="text-xs">↳ 💳 Recargo tarjeta:</span>
-                          <span className="text-xs font-semibold">+$500</span>
+                          <span className="text-xs font-semibold">+${cardDeliverySurcharge.toLocaleString('es-CL')}</span>
                         </div>
                       )}
                       {deliveryDistanceInfo && (

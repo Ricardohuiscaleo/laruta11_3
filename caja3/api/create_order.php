@@ -24,6 +24,9 @@ if (!$config) {
     exit;
 }
 
+// Task 7.3: Include delivery config helper for centralized BD params
+require_once __DIR__ . '/delivery/delivery_config_helper.php';
+
 try {
     $input = json_decode(file_get_contents('php://input'), true);
     
@@ -85,6 +88,21 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
     
+    // === Task 7.3: card_surcharge — read from BD, validate, store separately ===
+    $delivery_config = get_delivery_config($pdo);
+    $bd_card_surcharge = $delivery_config['card_surcharge']; // default: 500
+
+    // Determine card_surcharge: only applies to delivery + card payment
+    $card_surcharge = 0;
+    if (($input['delivery_type'] ?? 'pickup') === 'delivery' && ($input['payment_method'] ?? 'cash') === 'card') {
+        $client_card_surcharge = (int)($input['card_surcharge'] ?? 0);
+        if ($client_card_surcharge > 0 && $client_card_surcharge !== $bd_card_surcharge) {
+            error_log("create_order [caja3]: card_surcharge mismatch — client={$client_card_surcharge}, BD={$bd_card_surcharge}. Using BD value.");
+        }
+        // BD value is source of truth (Req 8.3)
+        $card_surcharge = $bd_card_surcharge;
+    }
+
     $pdo->beginTransaction();
     
     // Crear descripción de productos
@@ -98,17 +116,17 @@ try {
     if ($user_id !== null) {
         $order_sql = "INSERT INTO tuu_orders (
             order_number, user_id, customer_name, customer_phone, 
-            product_name, product_price, delivery_fee, installment_amount, 
+            product_name, product_price, delivery_fee, card_surcharge, installment_amount, 
             has_item_details, status, payment_status, payment_method, order_status, delivery_type, 
             delivery_address, pickup_time, customer_notes, 
             subtotal, discount_amount, discount_10, discount_30, discount_birthday, discount_pizza, delivery_discount, delivery_extras, delivery_extras_items, cashback_used, tv_order_id,
             delivery_distance_km, delivery_duration_min
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $order_stmt = $pdo->prepare($order_sql);
         $order_stmt->execute([
             $order_id, $user_id, $customer_name, $customer_phone,
-            $product_summary, $amount, $delivery_fee, $amount,
+            $product_summary, $amount, $delivery_fee, $card_surcharge, $amount,
             'pending',
             $payment_status,
             $payment_method,
@@ -134,17 +152,17 @@ try {
     } else {
         $order_sql = "INSERT INTO tuu_orders (
             order_number, customer_name, customer_phone, 
-            product_name, product_price, delivery_fee, installment_amount, 
+            product_name, product_price, delivery_fee, card_surcharge, installment_amount, 
             has_item_details, status, payment_status, payment_method, order_status, delivery_type, 
             delivery_address, pickup_time, customer_notes, 
             subtotal, discount_amount, discount_10, discount_30, discount_birthday, discount_pizza, delivery_discount, delivery_extras, delivery_extras_items, cashback_used, tv_order_id,
             delivery_distance_km, delivery_duration_min
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $order_stmt = $pdo->prepare($order_sql);
         $order_stmt->execute([
             $order_id, $customer_name, $customer_phone,
-            $product_summary, $amount, $delivery_fee, $amount,
+            $product_summary, $amount, $delivery_fee, $card_surcharge, $amount,
             'pending',
             $payment_status,
             $payment_method,

@@ -27,6 +27,9 @@ if (!$config) {
 // Task 5.1: Include centralized inventory function
 require_once __DIR__ . '/process_sale_inventory_fn.php';
 
+// Task 7.2: Include delivery config helper for centralized BD params
+require_once __DIR__ . '/delivery/delivery_config_helper.php';
+
 /**
  * Task 5.1: Convert cart_items + order_item_ids into the format expected by processSaleInventory().
  * @param array $cart_items - Cart items from client input
@@ -225,12 +228,18 @@ try {
                         $distance_km = round($R * 2 * atan2(sqrt($a), sqrt(1-$a)), 1);
                     }
 
-                    // Calculate surcharge: +$1000 per 2km beyond 6km
+                    // Task 7.2: Read distance params from BD config
+                    $delivery_config = get_delivery_config($pdo);
+                    $distance_threshold_km = $delivery_config['distance_threshold_km'];
+                    $surcharge_per_bracket = $delivery_config['surcharge_per_bracket'];
+                    $bracket_size_km       = $delivery_config['bracket_size_km'];
+
+                    // Calculate surcharge using BD params
                     $surcharge = 0;
-                    if ($distance_km > 6) {
-                        $extra_km = $distance_km - 6;
-                        $brackets = ceil($extra_km / 2);
-                        $surcharge = $brackets * 1000;
+                    if ($distance_km > $distance_threshold_km) {
+                        $extra_km = $distance_km - $distance_threshold_km;
+                        $brackets = ceil($extra_km / $bracket_size_km);
+                        $surcharge = $brackets * $surcharge_per_bracket;
                     }
                     $calculated_delivery_fee = $base_fee + $surcharge;
                 } else {
@@ -253,13 +262,31 @@ try {
     // Override client-provided values with server-calculated ones
     $delivery_fee = $calculated_delivery_fee;
 
+    // === Task 7.2: card_surcharge — read from BD, validate, store separately ===
+    // Read delivery config (may already be loaded above, but safe to call again — helper is idempotent)
+    if (!isset($delivery_config)) {
+        $delivery_config = get_delivery_config($pdo);
+    }
+    $bd_card_surcharge = $delivery_config['card_surcharge']; // default: 500
+
+    // Determine card_surcharge: only applies to delivery + card payment
+    $card_surcharge = 0;
+    if (($input['delivery_type'] ?? 'pickup') === 'delivery' && ($input['payment_method'] ?? 'cash') === 'card') {
+        $client_card_surcharge = (int)($input['card_surcharge'] ?? 0);
+        if ($client_card_surcharge > 0 && $client_card_surcharge !== $bd_card_surcharge) {
+            error_log("create_order: card_surcharge mismatch — client={$client_card_surcharge}, BD={$bd_card_surcharge}. Using BD value.");
+        }
+        // BD value is source of truth (Req 8.3)
+        $card_surcharge = $bd_card_surcharge;
+    }
+
     // === Task 5.4: SERVER-SIDE TOTAL RECALCULATION ===
     $discount_amount = (int)($input['discount_amount'] ?? 0);
     $delivery_discount = (int)($input['delivery_discount'] ?? 0);
     $delivery_extras_total = (int)($input['delivery_extras_total'] ?? 0);
     $cashback_used = (int)($input['cashback_used'] ?? 0);
 
-    $calculated_total = $calculated_subtotal + $calculated_delivery_fee + $delivery_extras_total - $discount_amount - $delivery_discount - $cashback_used;
+    $calculated_total = $calculated_subtotal + $calculated_delivery_fee + $card_surcharge + $delivery_extras_total - $discount_amount - $delivery_discount - $cashback_used;
     if ($calculated_total < 0) {
         $calculated_total = 0;
     }
@@ -277,12 +304,12 @@ try {
     // Guardar orden principal
     $order_sql = "INSERT INTO tuu_orders (
         order_number, user_id, customer_name, customer_phone, 
-        product_name, product_price, delivery_fee, installment_amount, 
+        product_name, product_price, delivery_fee, card_surcharge, installment_amount, 
         has_item_details, status, payment_status, payment_method, order_status, delivery_type, 
         delivery_address, pickup_time, customer_notes, subtotal, discount_amount, delivery_discount, 
         delivery_extras, delivery_extras_items, cashback_used, scheduled_time, is_scheduled,
         delivery_distance_km, delivery_duration_min
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
     $delivery_extras_json = null;
     if (!empty($input['delivery_extras']) && is_array($input['delivery_extras'])) {
@@ -298,6 +325,7 @@ try {
         $product_summary, 
         $amount, 
         $delivery_fee, 
+        $card_surcharge,
         $amount,
         'pending',
         $payment_status,
@@ -566,6 +594,7 @@ try {
             'delivery_type' => $input['delivery_type'] ?? 'pickup',
             'delivery_address' => $input['delivery_address'] ?? null,
             'delivery_fee' => $delivery_fee,
+            'card_surcharge' => $card_surcharge,
             'subtotal' => $calculated_subtotal,
             'discount_amount' => $discount_amount,
             'delivery_discount' => $delivery_discount,

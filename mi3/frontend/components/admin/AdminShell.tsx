@@ -14,7 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export type SectionKey =
   | 'inicio' | 'personal' | 'turnos' | 'nomina' | 'ajustes'
-  | 'creditos' | 'cambios' | 'cronjobs' | 'delivery'
+  | 'creditos' | 'cambios' | 'cronjobs' | 'delivery' | 'delivery-config'
   | 'notificaciones' | 'adelantos' | 'compras' | 'checklists'
   | 'recetas' | 'capital' | 'ventas';
 
@@ -47,6 +47,7 @@ const SECTION_TITLES: Record<SectionKey, string> = {
   cambios: 'Cambios',
   cronjobs: 'Cronjobs',
   delivery: 'Delivery',
+  'delivery-config': 'Config Delivery',
   notificaciones: 'Alertas',
   adelantos: 'Adelantos',
   compras: 'Compras',
@@ -78,6 +79,7 @@ const sectionImports: Record<SectionKey, React.LazyExoticComponent<React.Compone
   cambios: lazy(() => import('@/components/admin/sections/CambiosSection')),
   cronjobs: lazy(() => import('@/components/admin/sections/CronjobsSection')),
   delivery: lazy(() => import('@/components/admin/sections/DeliverySection')),
+  'delivery-config': lazy(() => import('@/components/admin/sections/DeliveryConfigSection')),
   notificaciones: lazy(() => import('@/components/admin/sections/NotificacionesSection')),
   adelantos: lazy(() => import('@/components/admin/sections/AdelantosSection')),
   compras: lazy(() => import('@/components/admin/sections/ComprasSection')),

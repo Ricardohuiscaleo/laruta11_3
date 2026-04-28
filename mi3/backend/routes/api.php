@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AiPromptController;
+use App\Http\Controllers\Admin\DeliveryConfigController;
 use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\SettlementController;
 use App\Http\Controllers\Public\TrackingController;
@@ -261,6 +262,10 @@ Route::prefix('v1')->group(function () {
         Route::get('portions', [\App\Http\Controllers\Admin\PortionController::class, 'index']);
         Route::get('portions/{categoryId}', [\App\Http\Controllers\Admin\PortionController::class, 'show']);
         Route::put('portions/{categoryId}', [\App\Http\Controllers\Admin\PortionController::class, 'update']);
+
+        // Delivery Config (parámetros de pricing de delivery)
+        Route::get('delivery-config', [DeliveryConfigController::class, 'index']);
+        Route::put('delivery-config', [DeliveryConfigController::class, 'update']);
     });
 });
 

@@ -963,6 +963,16 @@ const HeaderRightActions = ({
 // Helper to use clamp-like logic in JS if needed or just pass the string
 const clamp = (min, vw, max) => `clamp(${min}px, ${vw}vw, ${max}px)`;
 
+// Delivery config defaults (fallback if fetch fails)
+const DELIVERY_CONFIG_DEFAULTS = {
+  tarifa_base: 3500,
+  card_surcharge: 500,
+  distance_threshold_km: 6,
+  surcharge_per_bracket: 1000,
+  bracket_size_km: 2,
+  rl6_discount_factor: 0.2857,
+};
+
 export default function App() {
   const cartIconRef = useRef(null);
   const bellIconRef = useRef(null);
@@ -1041,6 +1051,7 @@ export default function App() {
   const [dynamicDeliveryFee, setDynamicDeliveryFee] = useState(null);
   const [deliveryFeeLabel, setDeliveryFeeLabel] = useState(null);
   const [deliveryDistanceInfo, setDeliveryDistanceInfo] = useState(null);
+  const [deliveryConfig, setDeliveryConfig] = useState(DELIVERY_CONFIG_DEFAULTS);
 
   const [tvOrderId, setTvOrderId] = useState(() => {
     const saved = localStorage.getItem('tv_order_id');
@@ -1100,6 +1111,25 @@ export default function App() {
         .catch(() => {});
     }
   }, [customerInfo.address, customerInfo.deliveryType]);
+
+  // Fetch delivery config from DB on mount
+  useEffect(() => {
+    fetch('/api/delivery/get_config.php')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setDeliveryConfig({
+            tarifa_base: data.tarifa_base ?? DELIVERY_CONFIG_DEFAULTS.tarifa_base,
+            card_surcharge: data.card_surcharge ?? DELIVERY_CONFIG_DEFAULTS.card_surcharge,
+            distance_threshold_km: data.distance_threshold_km ?? DELIVERY_CONFIG_DEFAULTS.distance_threshold_km,
+            surcharge_per_bracket: data.surcharge_per_bracket ?? DELIVERY_CONFIG_DEFAULTS.surcharge_per_bracket,
+            bracket_size_km: data.bracket_size_km ?? DELIVERY_CONFIG_DEFAULTS.bracket_size_km,
+            rl6_discount_factor: data.rl6_discount_factor ?? DELIVERY_CONFIG_DEFAULTS.rl6_discount_factor,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Polling pedidos TV
   useEffect(() => {
@@ -1228,7 +1258,7 @@ export default function App() {
 
   const setExactAmount = () => {
     const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-    const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
+    const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * (1 - deliveryConfig.rl6_discount_factor)) : baseDeliveryFee;
     const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
     const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
     const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
@@ -1243,7 +1273,7 @@ export default function App() {
 
   const handleContinueCash = () => {
     const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-    const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
+    const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * (1 - deliveryConfig.rl6_discount_factor)) : baseDeliveryFee;
     const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
     const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
     const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
@@ -1276,7 +1306,7 @@ export default function App() {
     try {
       console.log('💵 Procesando pago en EFECTIVO...');
       const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-      const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
+      const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * (1 - deliveryConfig.rl6_discount_factor)) : baseDeliveryFee;
       const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
       const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
       const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
@@ -1299,6 +1329,7 @@ export default function App() {
         user_id: user?.id || null,
         cart_items: cart,
         delivery_fee: deliveryFee,
+        card_surcharge: cardDeliverySurcharge,
         delivery_discount: customerInfo.deliveryDiscount ? baseDeliveryFee - deliveryFee : 0,
         discount_amount: pickupDiscountAmount + discount30Amount + birthdayDiscountAmount + pizzaDiscountAmount,
         discount_10: pickupDiscountAmount,
@@ -1966,8 +1997,6 @@ export default function App() {
     }, 0);
   }, [cart]);
 
-  const CARD_DELIVERY_SURCHARGE = 500;
-
   const baseDeliveryFee = useMemo(() => {
     if (customerInfo.deliveryType === 'delivery') {
       if (dynamicDeliveryFee != null) return dynamicDeliveryFee;
@@ -1977,21 +2006,21 @@ export default function App() {
   }, [customerInfo.deliveryType, nearbyTrucks, dynamicDeliveryFee]);
 
   const deliveryFee = useMemo(() => {
-    return customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
-  }, [baseDeliveryFee, customerInfo.deliveryDiscount]);
+    return customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * (1 - deliveryConfig.rl6_discount_factor)) : baseDeliveryFee;
+  }, [baseDeliveryFee, customerInfo.deliveryDiscount, deliveryConfig.rl6_discount_factor]);
 
   const deliveryDiscountAmount = useMemo(() => {
     return customerInfo.deliveryDiscount ? baseDeliveryFee - deliveryFee : 0;
   }, [baseDeliveryFee, deliveryFee, customerInfo.deliveryDiscount]);
 
   const cardDeliverySurcharge = useMemo(() => {
-    return customerInfo.deliveryType === 'delivery' && selectedPaymentMethod === 'card' ? CARD_DELIVERY_SURCHARGE : 0;
-  }, [customerInfo.deliveryType, selectedPaymentMethod]);
+    return customerInfo.deliveryType === 'delivery' && selectedPaymentMethod === 'card' ? deliveryConfig.card_surcharge : 0;
+  }, [customerInfo.deliveryType, selectedPaymentMethod, deliveryConfig.card_surcharge]);
 
   const cartTotal = useMemo(() => {
-    const surcharge = customerInfo.deliveryType === 'delivery' && selectedPaymentMethod === 'card' ? CARD_DELIVERY_SURCHARGE : 0;
+    const surcharge = customerInfo.deliveryType === 'delivery' && selectedPaymentMethod === 'card' ? deliveryConfig.card_surcharge : 0;
     return cartSubtotal + deliveryFee + surcharge;
-  }, [cartSubtotal, deliveryFee, customerInfo.deliveryType, selectedPaymentMethod]);
+  }, [cartSubtotal, deliveryFee, customerInfo.deliveryType, selectedPaymentMethod, deliveryConfig.card_surcharge]);
 
   const cartItemCount = useMemo(() => cart.length, [cart]);
   const getProductQuantity = (productId) => cart.filter(item => item.id === productId).length;
@@ -3286,14 +3315,14 @@ export default function App() {
                       </div>
                       {customerInfo.deliveryDiscount && (
                         <div className="flex justify-between items-center ml-6 text-green-600">
-                          <span className="text-xs">↳ Desc. Delivery (28%):</span>
+                          <span className="text-xs">↳ Desc. Delivery ({Math.round(deliveryConfig.rl6_discount_factor * 100)}%):</span>
                           <span className="text-xs font-semibold">-${deliveryDiscountAmount.toLocaleString('es-CL')}</span>
                         </div>
                       )}
                       {selectedPaymentMethod === 'card' && (
                         <div className="flex justify-between items-center ml-6 text-red-600">
                           <span className="text-xs">↳ 💳 Recargo tarjeta:</span>
-                          <span className="text-xs font-semibold">+$500</span>
+                          <span className="text-xs font-semibold">+${deliveryConfig.card_surcharge.toLocaleString('es-CL')}</span>
                         </div>
                       )}
                       {deliveryDistanceInfo && (
@@ -3304,7 +3333,7 @@ export default function App() {
                       {(customerInfo.deliveryDiscount || selectedPaymentMethod === 'card') && (
                         <div className="flex justify-between items-center pt-1.5 border-t border-gray-200">
                           <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Total Delivery:</span>
-                          <span className="text-sm font-bold text-gray-900">${(deliveryFee + (selectedPaymentMethod === 'card' ? 500 : 0)).toLocaleString('es-CL')}</span>
+                          <span className="text-sm font-bold text-gray-900">${(deliveryFee + (selectedPaymentMethod === 'card' ? deliveryConfig.card_surcharge : 0)).toLocaleString('es-CL')}</span>
                         </div>
                       )}
                     </div>
@@ -3337,12 +3366,12 @@ export default function App() {
                     <span className="text-lg font-black text-gray-800">Total:</span>
                     <span className="text-xl font-black text-orange-500">${(() => {
                       const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-                      const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
+                      const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * (1 - deliveryConfig.rl6_discount_factor)) : baseDeliveryFee;
                       const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                       const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                       const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                       const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-                      const surcharge = customerInfo.deliveryType === "delivery" && selectedPaymentMethod === "card" ? 500 : 0;
+                      const surcharge = customerInfo.deliveryType === "delivery" && selectedPaymentMethod === "card" ? deliveryConfig.card_surcharge : 0;
                       const effectiveSubtotal = selectedPaymentMethod === 'pedidosya_cash' ? cartSubtotalPYA : cartSubtotal;
                       return (effectiveSubtotal + deliveryFee + surcharge - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
                     })()}</span>
@@ -3442,12 +3471,12 @@ export default function App() {
                       setIsProcessingOrder(true);
                       try {
                         const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-                        const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
+                        const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * (1 - deliveryConfig.rl6_discount_factor)) : baseDeliveryFee;
                         const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                         const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                         const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                         const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-                        const cardSurcharge = selectedPaymentMethod === 'card' && customerInfo.deliveryType === 'delivery' ? 500 : 0;
+                        const cardSurcharge = selectedPaymentMethod === 'card' && customerInfo.deliveryType === 'delivery' ? deliveryConfig.card_surcharge : 0;
                         const effectiveSubtotal = selectedPaymentMethod === 'pedidosya_cash' ? cartSubtotalPYA : cartSubtotal;
                         const finalTotal = effectiveSubtotal + deliveryFee + cardSurcharge - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount;
                         const redirectMap = { card: '/card-pending', transfer: '/transfer-pending', pedidosya: '/pedidosya-pending', pedidosya_cash: '/pedidosya-pending' };
@@ -3458,14 +3487,15 @@ export default function App() {
                           customer_email: customerInfo.email || `${customerInfo.phone}@ruta11.cl`,
                           user_id: user?.id || null,
                           cart_items: cart,
-                          delivery_fee: deliveryFee + cardSurcharge,
+                          delivery_fee: deliveryFee,
+                          card_surcharge: cardSurcharge,
                           delivery_discount: customerInfo.deliveryDiscount ? baseDeliveryFee - deliveryFee : 0,
                           discount_amount: pickupDiscountAmount + discount30Amount + birthdayDiscountAmount + pizzaDiscountAmount,
                           discount_10: pickupDiscountAmount,
                           discount_30: discount30Amount,
                           discount_birthday: birthdayDiscountAmount,
                           discount_pizza: pizzaDiscountAmount,
-                          customer_notes: customerInfo.customerNotes || (cardSurcharge ? '+$500 recargo tarjeta delivery' : null),
+                          customer_notes: customerInfo.customerNotes || null,
                           delivery_type: customerInfo.deliveryType,
                           delivery_address: customerInfo.address || null,
                           payment_method: selectedPaymentMethod,
@@ -3637,12 +3667,12 @@ export default function App() {
                   <p className="text-sm text-gray-600 mb-1">Total a pagar:</p>
                   <p className="text-3xl font-bold text-orange-600">${(() => {
                     const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-                    const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
+                    const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * (1 - deliveryConfig.rl6_discount_factor)) : baseDeliveryFee;
                     const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                     const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                     const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                     const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-                    const surcharge3752 = customerInfo.deliveryType === "delivery" && selectedPaymentMethod === "card" ? 500 : 0; return (cartSubtotal + deliveryFee + surcharge3752 - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
+                    const surcharge3752 = customerInfo.deliveryType === "delivery" && selectedPaymentMethod === "card" ? deliveryConfig.card_surcharge : 0; return (cartSubtotal + deliveryFee + surcharge3752 - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
                   })()}</p>
                 </div>
 
@@ -3715,12 +3745,12 @@ export default function App() {
                     <span className="text-sm text-gray-600">Total:</span>
                     <span className="text-lg font-semibold">${(() => {
                       const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-                      const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
+                      const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * (1 - deliveryConfig.rl6_discount_factor)) : baseDeliveryFee;
                       const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                       const discount30Amount = customerInfo.discount30 ? Math.round(cartSubtotal * 0.3) : 0;
                       const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                       const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;
-                      const surcharge3830 = customerInfo.deliveryType === "delivery" && selectedPaymentMethod === "card" ? 500 : 0; return (cartSubtotal + deliveryFee + surcharge3830 - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
+                      const surcharge3830 = customerInfo.deliveryType === "delivery" && selectedPaymentMethod === "card" ? deliveryConfig.card_surcharge : 0; return (cartSubtotal + deliveryFee + surcharge3830 - pickupDiscountAmount - discount30Amount - birthdayDiscountAmount - pizzaDiscountAmount).toLocaleString('es-CL');
                     })()}</span>
                   </div>
                   <div className="flex justify-between items-center mb-2">
@@ -3733,7 +3763,7 @@ export default function App() {
                       <span className="text-2xl font-bold text-green-600">
                         ${(() => {
                           const baseDeliveryFee = customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0 ? parseInt(nearbyTrucks[0].tarifa_delivery || 0) : 0;
-                          const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * 0.7143) : baseDeliveryFee;
+                          const deliveryFee = customerInfo.deliveryDiscount ? Math.round(baseDeliveryFee * (1 - deliveryConfig.rl6_discount_factor)) : baseDeliveryFee;
                           const pickupDiscountAmount = customerInfo.deliveryType === 'pickup' && customerInfo.pickupDiscount ? Math.round(cartSubtotal * 0.1) : 0;
                           const birthdayDiscountAmount = customerInfo.birthdayDiscount && cart.some(item => item.id === 9) ? cart.find(item => item.id === 9).price : 0;
                           const pizzaDiscountAmount = discountCode === 'PIZZA11' && cart.some(item => item.id === 231) ? Math.round(cart.find(item => item.id === 231).price * 0.2) : 0;

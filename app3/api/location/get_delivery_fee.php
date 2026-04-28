@@ -70,6 +70,13 @@ $truck_lat = (float)$truck['latitud'];
 $truck_lng = (float)$truck['longitud'];
 $base_fee  = (int)$truck['tarifa_delivery'];
 
+// Leer configuración de delivery desde BD (con fallback a defaults)
+require_once __DIR__ . '/../delivery/delivery_config_helper.php';
+$delivery_config = get_delivery_config($pdo);
+$distance_threshold_km = $delivery_config['distance_threshold_km'];  // default: 6
+$surcharge_per_bracket = $delivery_config['surcharge_per_bracket'];  // default: 1000
+$bracket_size_km       = $delivery_config['bracket_size_km'];        // default: 2
+
 // 3. Calcular distancia con Google Directions (fallback Haversine)
 $distance_km = null;
 $duration_min = null;
@@ -92,13 +99,12 @@ if ($dir_data && $dir_data['status'] === 'OK' && !empty($dir_data['routes'])) {
     $duration_min = round(($distance_km / 30) * 60);
 }
 
-// 4. Calcular tarifa dinámica
-// base: 0-6km, luego +$1.000 cada 2km adicionales
+// 4. Calcular tarifa dinámica usando params de BD
 $surcharge = 0;
-if ($distance_km > 6) {
-    $extra_km = $distance_km - 6;
-    $brackets = ceil($extra_km / 2); // cada 2km = +$1.000
-    $surcharge = $brackets * 1000;
+if ($distance_km > $distance_threshold_km) {
+    $extra_km = $distance_km - $distance_threshold_km;
+    $brackets = ceil($extra_km / $bracket_size_km);
+    $surcharge = $brackets * $surcharge_per_bracket;
 }
 $dynamic_fee = $base_fee + $surcharge;
 
