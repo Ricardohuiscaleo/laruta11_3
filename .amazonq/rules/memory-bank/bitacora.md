@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`05f10b8`) — Gemini 3.1-flash-lite-preview, model tracking fix, timeout 15s, 768px |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`fe153e8`) — Rider page fullscreen map-first, header dirección, bottom sheet detalle, GPS marker |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`8f7acd0`) — Rider page fullscreen: 3 fases, logo R11, brújula, ruta dinámica, SVG auto |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`bec0544`) — PublicRiderController 3 endpoints públicos, rider_url en delivery orders |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
