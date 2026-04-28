@@ -190,14 +190,14 @@ class GeminiService
         foreach ($itemsPedido as $item) {
             $nombre = $item['product_name'] ?? $item['nombre'] ?? $item['name'] ?? 'Item desconocido';
             $cantidad = $item['quantity'] ?? $item['cantidad'] ?? 1;
-            $descripcion = $item['description'] ?? '';
             $receta = $item['recipe_description'] ?? '';
+            $descripcion = $item['description'] ?? '';
             
             $itemsList .= "- {$nombre} x{$cantidad}";
-            if (!empty($descripcion)) {
-                $itemsList .= " → {$descripcion}";
-            } elseif (!empty($receta)) {
-                $itemsList .= " → Ingredientes: {$receta}";
+            if (!empty($receta)) {
+                $itemsList .= "\n  Ingredientes: {$receta}";
+            } elseif (!empty($descripcion)) {
+                $itemsList .= "\n  Descripción: {$descripcion}";
             }
             $itemsList .= "\n";
         }
@@ -216,6 +216,14 @@ VERIFICACIÓN OBLIGATORIA:
 3. Si el pedido dice "Completo" y ves algo volcado o de lado, eso es un PROBLEMA de orientación.
 4. Si ves productos que NO están en el pedido, menciónalo como observación.
 5. ¿Las cantidades coinciden? (ej: si pide 2x y solo se ve 1, es problema)
+
+IMPORTANTE — INGREDIENTES NO VISIBLES:
+- SALSAS van DENTRO del pan, NO se ven: Mayonesa, Ketchup, Sweet Relish, Mostaza, Salsa BBQ, Salsa de Ostras, Salsa de Soya. No penalizar.
+- CONDIMENTOS no se ven: Sal, Pimienta, Comino, Merkén, Orégano, Aceite, Azúcar, Vino. No penalizar.
+- QUESOS se funden y pueden no distinguirse: Queso Cheddar, Queso Gauda, Queso Chanco. No penalizar si no se ven claramente.
+- LÁCTEOS de cocción no se ven: Crema, Leche, Mantequilla. No penalizar.
+- PACKAGING (cajas, bolsas, servilletas) son el envase, no el producto.
+- Enfócate SOLO en componentes PRINCIPALES visibles: panes, carnes/hamburguesas, tocino, papas fritas, bebidas (latas/botellas), vegetales grandes (lechuga, tomate, palta).
 
 CRITERIOS DE PUNTAJE:
 - 80-100: Todos los items del pedido visibles, bien presentados, orientación correcta.
