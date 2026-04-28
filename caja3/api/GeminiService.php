@@ -88,7 +88,7 @@ class GeminiService
      * @param int    $timeout     Request timeout in seconds
      * @return array|null Decoded response or null on failure
      */
-    private function callGemini(string $prompt, string $imageBase64, array $schema, int $timeout = 8): ?array
+    private function callGemini(string $prompt, string $imageBase64, array $schema, int $timeout = 15): ?array
     {
         if (empty($this->apiKey)) {
             error_log('[GeminiService] GEMINI_API_KEY not configured');
