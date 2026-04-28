@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado, MenuApp+CheckoutApp migrados |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`b01b344`) — delivery config centralizado BD, card_surcharge separado, MenuApp+CheckoutApp migrados, fix api/delivery/ gitignore |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`d880e70`) — DeliveryConfigSection admin, sección Config Delivery en sidebar |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`d880e70`) — delivery_config table, card_surcharge column, API CRUD delivery-config |
@@ -119,8 +119,8 @@
 
 **BD pendiente:** Ejecutar `php artisan migrate` para crear tabla `delivery_config` y columna `tuu_orders.card_surcharge`.
 
-**Commits:** `d880e70` (22 archivos, 1701 insertions)
-**Deploys:** mi3-frontend ✅, mi3-backend ✅, app3 ✅, caja3 ✅
+**Commits:** `d880e70` (22 archivos, 1701 insertions), `b01b344` (fix: force-add caja3/api/delivery/ ignorado por root .gitignore)
+**Deploys:** mi3-frontend ✅, mi3-backend ✅, app3 ✅, caja3 ✅ (redeploy fix `b01b344`)
 
 ### 2026-04-28a — Spec dispatch-photo-verification: verificación fotos delivery con Gemini IA
 
