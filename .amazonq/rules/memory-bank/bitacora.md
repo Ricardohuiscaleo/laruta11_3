@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`05f10b8`) — Gemini 3.1-flash-lite-preview, model tracking fix, timeout 15s, 768px |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`bec0544`) — Página pública rider /rider/{order_id}, QR admin, GPS realtime |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`fe153e8`) — Rider page fullscreen map-first, header dirección, bottom sheet detalle, GPS marker |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`bec0544`) — PublicRiderController 3 endpoints públicos, rider_url en delivery orders |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -102,6 +102,14 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-28e — Rider page rediseño fullscreen map-first
+
+**Cambios código:**
+- `mi3/frontend/components/rider/PublicRiderView.tsx`: Reescritura completa — mapa fullscreen como fondo, header flotante con dirección + distancia + total + botón llamar, bottom sheet desplegable con detalle pedido (productos, montos, cliente), botones flotantes (📋 detalle, 🛵 En camino / ✅ Entregado, 🧭 navegar Google Maps), GPS marker 🛵 en mapa cuando en ruta, `AdvancedMarker` para posición rider.
+
+**Commits:** `fe153e8` (1 archivo, 230 insertions, 258 deletions)
+**Deploys:** mi3-frontend ✅ (`enyh70js756se06pdp32az0w`)
 
 ### 2026-04-28d — Spec rider-public-page: página pública rider sin auth
 
