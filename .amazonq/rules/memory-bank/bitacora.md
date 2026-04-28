@@ -113,7 +113,7 @@
 - `app3/api/tuu/get_comandas_v2.php`: Agrega `i.category` al SELECT de recipe ingredients + `recipe_ingredients` array con categoría para clasificación IA.
 - `caja3/create_dispatch_photo_feedback.sql`: Nueva tabla con order_id, photo_type, ai_aprobado, ai_puntaje, ai_feedback, user_retook.
 
-**BD:** Tabla `dispatch_photo_feedback` creada + columnas `ai_tokens_total`, `ai_model`, `processing_time_ms` agregadas.
+**BD:** Tabla `dispatch_photo_feedback` creada + columnas `ai_tokens_total`, `ai_model`, `processing_time_ms` agregadas. Fix: `tuu_orders.dispatch_photo_url` cambiado de `varchar(500)` a `TEXT` (truncaba JSON con múltiples URLs).
 
 **Commits:** `6201bd8`→`493dd52` (9 commits)
 **Deploys:** caja3 ✅ (`493dd52`), app3 ✅ (`493dd52`)
