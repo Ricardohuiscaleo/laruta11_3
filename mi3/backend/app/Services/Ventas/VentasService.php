@@ -443,14 +443,20 @@ class VentasService
             ->selectRaw('COALESCE(SUM(installment_amount) - SUM(COALESCE(delivery_fee, 0)), 0) as net')
             ->value('net');
 
-        // Total CMV from order items
-        $totalCmv = (float) DB::table('tuu_order_items as oi')
-            ->join('tuu_orders as o', 'oi.order_reference', '=', 'o.order_number')
-            ->where('o.payment_status', 'paid')
-            ->where('o.order_number', 'NOT LIKE', 'RL6-%')
-            ->whereBetween('o.created_at', [$start, $end])
-            ->selectRaw('COALESCE(SUM(oi.item_cost * oi.quantity), 0) as total')
-            ->value('total');
+        // Total CMV from inventory_transactions (real ingredient consumption × current cost)
+        // This is more accurate than item_cost which may have stale prices
+        $totalCmv = 0;
+        if ($this->tableExists('inventory_transactions')) {
+            $totalCmv = (float) DB::table('inventory_transactions as it')
+                ->join('ingredients as i', 'it.ingredient_id', '=', 'i.id')
+                ->join('tuu_orders as o', 'it.order_reference', '=', 'o.order_number')
+                ->where('it.transaction_type', 'sale')
+                ->where('o.payment_status', 'paid')
+                ->where('o.order_number', 'NOT LIKE', 'RL6-%')
+                ->whereBetween('o.created_at', [$start, $end])
+                ->selectRaw('COALESCE(SUM(ABS(it.quantity) * i.cost_per_unit), 0) as total')
+                ->value('total');
+        }
 
         // Ingredient breakdown from inventory_transactions
         $ingredients = [];
@@ -490,14 +496,10 @@ class VentasService
             $ingredientsCmvTotal = array_sum(array_column($ingredients, 'total_cost'));
         }
 
-        // Gap between item_cost CMV and ingredient-level CMV (orders without inventory tracking)
-        $untrackedCmv = max(0, $totalCmv - $ingredientsCmvTotal);
-
         return [
             'total_cmv'      => $totalCmv,
             'cmv_percentage' => $totalSales > 0 ? round(($totalCmv / $totalSales) * 100, 1) : 0,
             'ingredients'    => $ingredients,
-            'untracked_cmv'  => round($untrackedCmv),
         ];
     }
 
