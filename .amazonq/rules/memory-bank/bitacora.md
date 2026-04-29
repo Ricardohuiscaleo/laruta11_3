@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4540368`) — MiniComandas: chevron "Ver pedido 👀" mapa embed, "Enviar a Rider" azul |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`03636c0`) — Dashboard: nav meses ◀▶, header neutral-800, resultado neto sólido, Pareto diagnóstico |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`4c82ec6`) — Fix tocino unidades→kg, monthly NominaService mes actual, CONVERT_TZ Chile |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`5df2228`) — CMV untracked row, limit 50 ingredientes |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`5df2228`) — CMV limit 50, untracked_cmv field, NominaService mes actual |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -107,15 +107,16 @@
 
 ## Sesiones Recientes
 
-### 2026-04-29e — Fix Tocino Laminado + nómina abril real + timezone monthly
+### 2026-04-29e — Fix datos: Tocino, Montina Big, CMV trazabilidad, nómina real
 
 **Cambios código:**
-- `mi3/backend/app/Services/Ventas/VentasService.php`: `getMonthlyAggregates` — `CONVERT_TZ` UTC→Chile para coincidir con EdR, NominaService para mes actual (fallback proyección), `nomina_projected` flag.
-- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: Param `?month=YYYY-MM` para navegar meses históricos, `$isCurrentMonth` para fuente datos.
+- `mi3/backend/app/Services/Ventas/VentasService.php`: `getMonthlyAggregates` — CONVERT_TZ Chile, NominaService mes actual, `nomina_projected` flag. `getCmvBreakdown` — limit 50, `untracked_cmv` field para gap trazabilidad.
+- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: Param `?month=YYYY-MM`, `$isCurrentMonth` para fuente datos.
+- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: Nav meses ◀▶, header neutral-800, resultado neto sólido rojo/verde, fila "Sin trazabilidad" en CMV.
 
-**BD:** 246 transacciones `inventory_transactions` corregidas para Tocino Laminado (id=49): `quantity * 0.05` (unidades→kg). Costos reducidos $4.715.760→$273.560 (Nov 2025→Abr 2026).
+**BD:** Tocino Laminado: 246 txs corregidas `quantity*0.05` (unidades→kg), costos $4.7M→$274k. Montina Big: cost_per_unit $479→$269. Nómina histórica: 4 registros pagos_nomina Oct-Ene.
 
-**Commits:** `c21b21e`, `3db1082`, `03636c0`, `4c82ec6`
+**Commits:** `c21b21e`→`5df2228` (8 commits)
 **Deploys:** mi3-frontend ✅, mi3-backend ✅.
 
 ### 2026-04-29d — Dashboard Pro: split layout, charts, monitor turno, UX fixes iterativos
