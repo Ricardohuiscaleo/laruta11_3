@@ -38,7 +38,7 @@ class DeliveryService
     {
         $statuses = self::ACTIVE_STATUSES;
 
-        return DB::table('tuu_orders as o')
+        $orders = DB::table('tuu_orders as o')
             ->leftJoin('personal as p', 'o.rider_id', '=', 'p.id')
             ->leftJoin('delivery_assignments as da', function ($join) {
                 $join->on('da.order_id', '=', 'o.id')
@@ -53,10 +53,17 @@ class DeliveryService
                 'o.delivery_type',
                 'o.delivery_address',
                 'o.delivery_fee',
+                'o.delivery_distance_km',
+                'o.delivery_duration_min',
                 'o.rider_id',
                 'o.rider_last_lat',
                 'o.rider_last_lng',
                 'o.tracking_url',
+                'o.customer_name',
+                'o.customer_phone',
+                'o.product_price',
+                'o.subtotal',
+                'o.payment_method',
                 'o.created_at',
                 'p.nombre as rider_nombre',
                 'p.foto_url as rider_foto_url',

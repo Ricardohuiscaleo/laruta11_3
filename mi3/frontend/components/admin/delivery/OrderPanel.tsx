@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MapPin, User, Clock, Copy, QrCode, Check } from 'lucide-react';
+import { MapPin, User, Clock, Copy, QrCode, Check, Phone, Navigation, DollarSign } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { DeliveryOrder, DeliveryRider } from '@/hooks/useDeliveryTracking';
 
@@ -20,6 +20,8 @@ const STATUS_COLORS: Record<string, string> = {
   out_for_delivery: 'bg-blue-100 text-blue-700',
   delivered: 'bg-purple-100 text-purple-700',
 };
+
+const fmt = (n: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(n);
 
 const FILTER_OPTIONS = [
   { value: 'all', label: 'Todos' },
@@ -155,7 +157,50 @@ export default function OrderPanel({ orders, riders, onAssignRider, onUpdateStat
                       </span>
                     </div>
                   )}
+
+                  {/* Distance & duration */}
+                  {(order.delivery_distance_km != null || order.delivery_duration_min != null) && (
+                    <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                      {order.delivery_distance_km != null && (
+                        <span className="flex items-center gap-0.5">
+                          <Navigation className="h-3 w-3 shrink-0" />
+                          {order.delivery_distance_km} km
+                        </span>
+                      )}
+                      {order.delivery_duration_min != null && (
+                        <span className="flex items-center gap-0.5">
+                          <Clock className="h-3 w-3 shrink-0" />
+                          {order.delivery_duration_min} min
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Total & payment */}
+                  {order.product_price != null && (
+                    <div className="mt-1 flex items-center gap-1 text-xs">
+                      <DollarSign className="h-3 w-3 shrink-0 text-green-600" />
+                      <span className="font-semibold text-green-700">{fmt(order.product_price)}</span>
+                      {order.payment_method && (
+                        <span className="text-gray-400 ml-1">
+                          ({order.payment_method === 'cash' ? 'Efectivo' : order.payment_method === 'card' ? 'Tarjeta' : order.payment_method === 'transfer' ? 'Transferencia' : order.payment_method})
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </button>
+
+                {/* Phone call button */}
+                {isSelected && order.customer_phone && (
+                  <a
+                    href={`tel:${order.customer_phone}`}
+                    className="mt-2 flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors"
+                    aria-label={`Llamar a ${order.customer_name}`}
+                  >
+                    <Phone className="h-3 w-3" />
+                    Llamar cliente
+                  </a>
+                )}
 
                 {/* Rider URL actions */}
                 {isSelected && order.rider_url && (

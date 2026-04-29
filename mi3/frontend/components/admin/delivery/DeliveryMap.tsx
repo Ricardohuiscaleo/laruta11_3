@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   APIProvider,
   Map,
@@ -43,43 +43,100 @@ function calcHeading(from: { lat: number; lng: number }, to: { lat: number; lng:
   return ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
 }
 
-// Directions renderer — only shown when a rider has a position and an assigned order
-function DirectionsLayer({ order, rider }: { order: DeliveryOrder; rider: DeliveryRider }) {
+/** Geocode an address and cache the result */
+const geocodeCacheStore: Record<string, { lat: number; lng: number }> = {};
+
+function useGeocode(address: string | null) {
+  const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null);
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || !address) return;
+    if (geocodeCacheStore[address]) {
+      setPos(geocodeCacheStore[address]);
+      return;
+    }
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address }, (results, status) => {
+      if (status === 'OK' && results?.[0]) {
+        const loc = results[0].geometry.location;
+        const p = { lat: loc.lat(), lng: loc.lng() };
+        geocodeCacheStore[address] = p;
+        setPos(p);
+      }
+    });
+  }, [map, address]);
+
+  return pos;
+}
+
+/** Destination pin marker for an order */
+function DestinationPin({ address, orderNumber, status }: {
+  address: string; orderNumber: string; status: string;
+}) {
+  const pos = useGeocode(address);
+  if (!pos) return null;
+
+  const isOnRoute = status === 'out_for_delivery';
+  return (
+    <AdvancedMarker position={pos} zIndex={50}>
+      <div className="flex flex-col items-center">
+        <div className={`h-7 w-7 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold ${isOnRoute ? 'bg-blue-500 animate-pulse' : 'bg-red-500'}`}>
+          📍
+        </div>
+        <span className={`text-[7px] font-bold text-white px-1 py-0.5 rounded-full mt-0.5 shadow max-w-[80px] truncate ${isOnRoute ? 'bg-blue-600' : 'bg-red-600'}`}>
+          #{orderNumber.replace(/^R11-/, '').slice(-4)}
+        </span>
+      </div>
+    </AdvancedMarker>
+  );
+}
+
+/** Route line from rider to destination — updates in real time */
+function RiderRoute({ riderLat, riderLng, destination, routeKey }: {
+  riderLat: number; riderLng: number; destination: string; routeKey: string;
+}) {
   const map = useMap();
   const routesLib = useMapsLibrary('routes');
+  const rendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  const lastKeyRef = useRef('');
 
-  const [directionsResult, setDirectionsResult] = useState<google.maps.DirectionsResult | null>(null);
-  const [renderer] = useState(() => {
-    if (typeof window === 'undefined' || !routesLib) return null;
-    return new routesLib.DirectionsRenderer({ suppressMarkers: false });
-  });
+  useEffect(() => {
+    if (!map || !routesLib) return;
 
-  // Attach renderer to map
-  if (renderer && map && !renderer.getMap()) {
-    renderer.setMap(map);
-  }
+    // Throttle: only re-route when key changes significantly
+    const roundedKey = `${Math.round(riderLat * 500)}-${Math.round(riderLng * 500)}-${destination}`;
+    if (lastKeyRef.current === roundedKey) return;
+    lastKeyRef.current = roundedKey;
 
-  // Request directions
-  if (routesLib && rider.last_lat && rider.last_lng && !directionsResult) {
-    const lat = toNum(rider.last_lat);
-    const lng = toNum(rider.last_lng);
-    if (lat && lng) {
-      const service = new routesLib.DirectionsService();
-      service.route(
-        {
-          origin: { lat, lng },
-          destination: order.delivery_address,
-          travelMode: google.maps.TravelMode.DRIVING,
-        },
-        (result, status) => {
-          if (status === 'OK' && result) {
-            setDirectionsResult(result);
-            renderer?.setDirections(result);
-          }
-        }
-      );
+    if (!rendererRef.current) {
+      rendererRef.current = new routesLib.DirectionsRenderer({
+        suppressMarkers: true,
+        polylineOptions: { strokeColor: '#4285F4', strokeWeight: 4, strokeOpacity: 0.7 },
+      });
+      rendererRef.current.setMap(map);
     }
-  }
+
+    new routesLib.DirectionsService().route(
+      {
+        origin: { lat: riderLat, lng: riderLng },
+        destination,
+        travelMode: google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === 'OK' && result && rendererRef.current) {
+          rendererRef.current.setDirections(result);
+        }
+      },
+    );
+
+    return () => {
+      if (rendererRef.current) {
+        rendererRef.current.setMap(null);
+        rendererRef.current = null;
+      }
+    };
+  }, [map, routesLib, riderLat, riderLng, destination, routeKey]);
 
   return null;
 }
@@ -92,15 +149,11 @@ function DeliveryCar({ heading, busy, name }: { heading: number; busy: boolean; 
         className="transition-transform duration-700 ease-linear"
         style={{ transform: `rotate(${heading}deg)` }}
       >
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          {/* Car body */}
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label={`Rider ${name}`}>
           <path d="M5 17h14v-5l-2-4H7L5 12v5z" fill={busy ? '#F97316' : '#22C55E'} stroke="#fff" strokeWidth="1"/>
-          {/* Windshield */}
           <path d="M7.5 8L6 12h12l-1.5-4H7.5z" fill={busy ? '#FB923C' : '#4ADE80'} stroke="#fff" strokeWidth="0.5"/>
-          {/* Wheels */}
           <circle cx="7.5" cy="17" r="1.5" fill="#333" stroke="#fff" strokeWidth="0.5"/>
           <circle cx="16.5" cy="17" r="1.5" fill="#333" stroke="#fff" strokeWidth="0.5"/>
-          {/* Arrow indicator (direction) */}
           <path d="M12 2L14 6H10L12 2Z" fill={busy ? '#F97316' : '#22C55E'} stroke="#fff" strokeWidth="0.5"/>
         </svg>
       </div>
@@ -111,11 +164,9 @@ function DeliveryCar({ heading, busy, name }: { heading: number; busy: boolean; 
   );
 }
 
-function MapContent({
-  orders,
-  riders,
-  onAssignRider,
-}: DeliveryMapProps) {
+const fmt = (n: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(n);
+
+function MapContent({ orders, riders, onAssignRider }: DeliveryMapProps) {
   const [selectedOrder, setSelectedOrder] = useState<DeliveryOrder | null>(null);
   const [assigningRider, setAssigningRider] = useState<number | null>(null);
   const prevPositions = useRef<Record<number, { lat: number; lng: number }>>({});
@@ -135,15 +186,6 @@ function MapContent({
     [onAssignRider]
   );
 
-  // Pairs of (order, rider) that have a route to draw
-  const routePairs = orders
-    .filter((o) => o.rider_id && o.rider_last_lat && o.rider_last_lng)
-    .map((o) => ({
-      order: o,
-      rider: riders.find((r) => r.id === o.rider_id),
-    }))
-    .filter((p): p is { order: DeliveryOrder; rider: DeliveryRider } => !!p.rider);
-
   return (
     <>
       {/* Food truck marker — La Ruta 11 */}
@@ -160,7 +202,56 @@ function MapContent({
         </div>
       </AdvancedMarker>
 
-      {/* Order markers */}
+      {/* Destination pins for ALL delivery orders */}
+      {orders.map((order) => (
+        <DestinationPin
+          key={`dest-${order.id}`}
+          address={order.delivery_address}
+          orderNumber={order.order_number}
+          status={order.order_status}
+        />
+      ))}
+
+      {/* Route lines: rider → destination (only for out_for_delivery with GPS) */}
+      {orders
+        .filter((o) => o.order_status === 'out_for_delivery' && o.rider_last_lat && o.rider_last_lng)
+        .map((o) => {
+          const lat = toNum(o.rider_last_lat);
+          const lng = toNum(o.rider_last_lng);
+          if (!lat || !lng) return null;
+          return (
+            <RiderRoute
+              key={`route-${o.id}`}
+              riderLat={lat}
+              riderLng={lng}
+              destination={o.delivery_address}
+              routeKey={`${o.id}-${Math.round(lat * 500)}-${Math.round(lng * 500)}`}
+            />
+          );
+        })}
+
+      {/* Rider markers — car icon that rotates based on direction */}
+      {riders.map((rider) => {
+        const lat = toNum(rider.last_lat);
+        const lng = toNum(rider.last_lng);
+        if (!lat || !lng) return null;
+        const isBusy = orders.some((o) => o.rider_id === rider.id);
+
+        const prev = prevPositions.current[rider.id];
+        let heading = 0;
+        if (prev && (prev.lat !== lat || prev.lng !== lng)) {
+          heading = calcHeading(prev, { lat, lng });
+        }
+        prevPositions.current[rider.id] = { lat, lng };
+
+        return (
+          <AdvancedMarker key={`rider-${rider.id}`} position={{ lat, lng }}>
+            <DeliveryCar heading={heading} busy={isBusy} name={rider.nombre} />
+          </AdvancedMarker>
+        );
+      })}
+
+      {/* Order markers — only for orders with rider GPS (rider position) */}
       {orders.map((order) => {
         const lat = toNum(order.rider_last_lat);
         const lng = toNum(order.rider_last_lng);
@@ -177,34 +268,11 @@ function MapContent({
               className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white shadow-md text-white text-xs font-bold"
               style={{ backgroundColor: pinColor }}
               title={`#${order.order_number}`}
+              role="button"
+              aria-label={`Pedido ${order.order_number} — ${order.customer_name}`}
             >
               📦
             </div>
-          </AdvancedMarker>
-        );
-      })}
-
-      {/* Rider markers — car icon that rotates based on direction */}
-      {riders.map((rider) => {
-        const lat = toNum(rider.last_lat);
-        const lng = toNum(rider.last_lng);
-        if (!lat || !lng) return null;
-        const isBusy = orders.some((o) => o.rider_id === rider.id);
-
-        // Calculate heading from previous position
-        const prev = prevPositions.current[rider.id];
-        let heading = 0;
-        if (prev && (prev.lat !== lat || prev.lng !== lng)) {
-          heading = calcHeading(prev, { lat, lng });
-        }
-        prevPositions.current[rider.id] = { lat, lng };
-
-        return (
-          <AdvancedMarker
-            key={`rider-${rider.id}`}
-            position={{ lat, lng }}
-          >
-            <DeliveryCar heading={heading} busy={isBusy} name={rider.nombre} />
           </AdvancedMarker>
         );
       })}
@@ -219,20 +287,29 @@ function MapContent({
           })()}
           onCloseClick={() => setSelectedOrder(null)}
         >
-          <div className="min-w-[200px] space-y-2 p-1 text-sm">
-            <p className="font-semibold text-gray-900">#{selectedOrder.order_number}</p>
-            <p className="text-gray-600">{selectedOrder.customer_name}</p>
-            <p className="text-gray-500 text-xs">{selectedOrder.delivery_address}</p>
-            <p className="text-xs">
-              Estado:{' '}
-              <span className="font-medium capitalize">
+          <div className="min-w-[220px] space-y-2 p-1 text-sm">
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-semibold text-gray-900">#{selectedOrder.order_number}</p>
+              <span className="text-xs rounded-full px-2 py-0.5 font-medium"
+                style={{ backgroundColor: `${STATUS_PIN_COLORS[selectedOrder.order_status] ?? '#6B7280'}20`, color: STATUS_PIN_COLORS[selectedOrder.order_status] ?? '#6B7280' }}>
                 {selectedOrder.order_status.replace(/_/g, ' ')}
               </span>
-            </p>
+            </div>
+            <p className="text-gray-600">{selectedOrder.customer_name}</p>
+            <p className="text-gray-500 text-xs">📍 {selectedOrder.delivery_address}</p>
+            {selectedOrder.delivery_distance_km != null && (
+              <p className="text-xs text-gray-500">
+                📏 {selectedOrder.delivery_distance_km} km
+                {selectedOrder.delivery_duration_min != null && ` · ⏱️ ${selectedOrder.delivery_duration_min} min`}
+              </p>
+            )}
+            {selectedOrder.product_price != null && (
+              <p className="text-xs font-semibold text-green-700">Total: {fmt(selectedOrder.product_price)}</p>
+            )}
             {selectedOrder.rider_nombre ? (
-              <p className="text-xs text-gray-500">Rider: {selectedOrder.rider_nombre}</p>
+              <p className="text-xs text-blue-600 font-medium">🛵 {selectedOrder.rider_nombre}</p>
             ) : (
-              <div className="space-y-1 pt-1">
+              <div className="space-y-1 pt-1 border-t border-gray-100">
                 <p className="text-xs font-medium text-gray-700">Asignar rider:</p>
                 {availableRiders.length === 0 ? (
                   <p className="text-xs text-gray-400">Sin riders disponibles</p>
@@ -253,11 +330,6 @@ function MapContent({
           </div>
         </InfoWindow>
       )}
-
-      {/* Directions */}
-      {routePairs.map(({ order, rider }) => (
-        <DirectionsLayer key={`route-${order.id}`} order={order} rider={rider} />
-      ))}
     </>
   );
 }

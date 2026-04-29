@@ -9,8 +9,14 @@ export interface DeliveryOrder {
   order_number: string;
   order_status: string;
   customer_name: string;
+  customer_phone: string | null;
   delivery_address: string;
   delivery_fee: number;
+  delivery_distance_km: number | null;
+  delivery_duration_min: number | null;
+  product_price: number | null;
+  subtotal: number | null;
+  payment_method: string | null;
   rider_id: number | null;
   rider_nombre: string | null;
   rider_last_lat: number | null;

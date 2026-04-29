@@ -172,6 +172,23 @@ export default function DeliverySection() {
                 <p className="text-xs text-gray-600">{o.customer_name}</p>
                 <p className="text-xs text-gray-500">{o.delivery_address}</p>
                 {o.rider_nombre && <p className="text-xs text-blue-600">Rider: {o.rider_nombre}</p>}
+                {(o.delivery_distance_km != null || o.delivery_duration_min != null) && (
+                  <p className="text-xs text-gray-500">
+                    {o.delivery_distance_km != null && `📏 ${o.delivery_distance_km} km`}
+                    {o.delivery_distance_km != null && o.delivery_duration_min != null && ' · '}
+                    {o.delivery_duration_min != null && `⏱️ ${o.delivery_duration_min} min`}
+                  </p>
+                )}
+                {o.product_price != null && (
+                  <p className="text-xs font-semibold text-green-700">
+                    💰 {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(o.product_price)}
+                  </p>
+                )}
+                {o.customer_phone && (
+                  <a href={`tel:${o.customer_phone}`} className="inline-flex items-center gap-1 text-xs text-green-600 font-medium" aria-label={`Llamar a ${o.customer_name}`}>
+                    📞 Llamar
+                  </a>
+                )}
               </div>
             ))}
           </div>
