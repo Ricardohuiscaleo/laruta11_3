@@ -503,13 +503,14 @@ class VentasService
     {
         $meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
+        // Use Chile timezone for correct month boundaries (UTC-3/UTC-4)
         $rows = DB::table('tuu_orders')
             ->where('payment_status', 'paid')
             ->where('order_number', 'NOT LIKE', 'RL6-%')
             ->where('created_at', '>=', now()->subMonths($months)->startOfMonth())
-            ->groupByRaw("DATE_FORMAT(created_at, '%Y-%m')")
+            ->groupByRaw("DATE_FORMAT(CONVERT_TZ(created_at, '+00:00', '-03:00'), '%Y-%m')")
             ->selectRaw("
-                DATE_FORMAT(created_at, '%Y-%m') as month,
+                DATE_FORMAT(CONVERT_TZ(created_at, '+00:00', '-03:00'), '%Y-%m') as month,
                 COALESCE(SUM(installment_amount) - SUM(COALESCE(delivery_fee, 0)), 0) as total_sales,
                 COALESCE(SUM(COALESCE(delivery_fee, 0)), 0) as total_delivery
             ")
@@ -519,12 +520,12 @@ class VentasService
         return $rows->map(function ($row) use ($meses) {
             $monthNum = (int) substr($row->month, 5, 2);
 
-            // Cost from order items
+            // Cost from order items (also using Chile timezone for month matching)
             $cost = (float) DB::table('tuu_order_items as oi')
                 ->join('tuu_orders as o', 'oi.order_reference', '=', 'o.order_number')
                 ->where('o.payment_status', 'paid')
                 ->where('o.order_number', 'NOT LIKE', 'RL6-%')
-                ->whereRaw("DATE_FORMAT(o.created_at, '%Y-%m') = ?", [$row->month])
+                ->whereRaw("DATE_FORMAT(CONVERT_TZ(o.created_at, '+00:00', '-03:00'), '%Y-%m') = ?", [$row->month])
                 ->selectRaw('COALESCE(SUM(oi.item_cost * oi.quantity), 0) as c')
                 ->value('c');
 
