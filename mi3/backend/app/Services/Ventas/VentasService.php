@@ -542,17 +542,34 @@ class VentasService
                     ->sum('monto_total');
             }
 
-            // If still no data (current/future month), project from avg of last 3 months
+            // If still no data (current/future month), use NominaService for current month
             $isProjected = false;
             if ($nomina === 0.0) {
-                $avgNomina = (float) DB::table('pagos_nomina')
-                    ->where('mes', '<', $row->month . '-01')
-                    ->orderByDesc('mes')
-                    ->limit(3)
-                    ->avg('monto');
-                if ($avgNomina > 0) {
-                    $nomina = round($avgNomina);
-                    $isProjected = true;
+                $currentMonth = now()->format('Y-m');
+                if ($row->month === $currentMonth) {
+                    // For current month, use NominaService (same as DashboardController)
+                    try {
+                        $nominaService = app(\App\Services\Payroll\NominaService::class);
+                        $raw = $nominaService->getResumen($row->month);
+                        $nomina = collect($raw['ruta11']['personal'] ?? [])
+                            ->filter(fn ($e) => ! str_contains($e['personal']->rol ?? '', 'dueño'))
+                            ->sum(fn ($e) => $e['liquidacion']['total']);
+                    } catch (\Throwable $e) {
+                        // Fallback to projection if NominaService fails
+                    }
+                }
+
+                // If still 0, project from avg of last 3 months
+                if ($nomina === 0.0) {
+                    $avgNomina = (float) DB::table('pagos_nomina')
+                        ->where('mes', '<', $row->month . '-01')
+                        ->orderByDesc('mes')
+                        ->limit(3)
+                        ->avg('monto');
+                    if ($avgNomina > 0) {
+                        $nomina = round($avgNomina);
+                        $isProjected = true;
+                    }
                 }
             }
 
