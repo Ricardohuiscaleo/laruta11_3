@@ -383,6 +383,161 @@ class VentasService
     }
 
     /**
+     * Top products by quantity sold or profit for the given period.
+     *
+     * @return array<int, array{product_name: string, quantity_sold: int, total_revenue: float, total_cost: float, total_profit: float, margin_pct: float}>
+     */
+    public function getTopProducts(string $period, int $limit = 10, string $sort = 'quantity'): array
+    {
+        [$start, $end] = $this->getDateRange($period);
+
+        $orderBy = $sort === 'profit' ? 'total_profit' : 'quantity_sold';
+
+        return DB::table('tuu_order_items as oi')
+            ->join('tuu_orders as o', 'oi.order_reference', '=', 'o.order_number')
+            ->where('o.payment_status', 'paid')
+            ->where('o.order_number', 'NOT LIKE', 'RL6-%')
+            ->whereBetween('o.created_at', [$start, $end])
+            ->groupBy('oi.product_name')
+            ->selectRaw("
+                oi.product_name,
+                SUM(oi.quantity) as quantity_sold,
+                SUM(oi.product_price * oi.quantity) as total_revenue,
+                SUM(oi.item_cost * oi.quantity) as total_cost,
+                SUM((oi.product_price - oi.item_cost) * oi.quantity) as total_profit
+            ")
+            ->orderByDesc($orderBy)
+            ->limit($limit)
+            ->get()
+            ->map(function ($row) {
+                $revenue = (float) $row->total_revenue;
+                $cost = (float) $row->total_cost;
+                $profit = (float) $row->total_profit;
+
+                return [
+                    'product_name'  => $row->product_name,
+                    'quantity_sold' => (int) $row->quantity_sold,
+                    'total_revenue' => $revenue,
+                    'total_cost'    => $cost,
+                    'total_profit'  => $profit,
+                    'margin_pct'    => $revenue > 0 ? round(($profit / $revenue) * 100, 1) : 0,
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * CMV breakdown by ingredient for the given period.
+     *
+     * @return array{total_cmv: float, cmv_percentage: float, ingredients: array}
+     */
+    public function getCmvBreakdown(string $period): array
+    {
+        [$start, $end] = $this->getDateRange($period);
+
+        // Total sales for percentage calculation
+        $totalSales = (float) DB::table('tuu_orders')
+            ->where('payment_status', 'paid')
+            ->where('order_number', 'NOT LIKE', 'RL6-%')
+            ->whereBetween('created_at', [$start, $end])
+            ->selectRaw('COALESCE(SUM(installment_amount) - SUM(COALESCE(delivery_fee, 0)), 0) as net')
+            ->value('net');
+
+        // Total CMV from order items
+        $totalCmv = (float) DB::table('tuu_order_items as oi')
+            ->join('tuu_orders as o', 'oi.order_reference', '=', 'o.order_number')
+            ->where('o.payment_status', 'paid')
+            ->where('o.order_number', 'NOT LIKE', 'RL6-%')
+            ->whereBetween('o.created_at', [$start, $end])
+            ->selectRaw('COALESCE(SUM(oi.item_cost * oi.quantity), 0) as total')
+            ->value('total');
+
+        // Ingredient breakdown from inventory_transactions
+        $ingredients = [];
+        if ($this->tableExists('inventory_transactions')) {
+            $ingredients = DB::table('inventory_transactions as it')
+                ->join('ingredients as i', 'it.ingredient_id', '=', 'i.id')
+                ->join('tuu_orders as o', 'it.order_reference', '=', 'o.order_number')
+                ->where('it.transaction_type', 'sale')
+                ->where('o.payment_status', 'paid')
+                ->where('o.order_number', 'NOT LIKE', 'RL6-%')
+                ->whereBetween('o.created_at', [$start, $end])
+                ->groupBy('it.ingredient_id', 'i.name', 'i.unit', 'i.cost_per_unit')
+                ->selectRaw("
+                    it.ingredient_id,
+                    i.name,
+                    i.unit,
+                    SUM(ABS(it.quantity)) as total_quantity,
+                    SUM(ABS(it.quantity) * i.cost_per_unit) as total_cost
+                ")
+                ->orderByDesc('total_cost')
+                ->limit(30)
+                ->get()
+                ->map(function ($row) use ($totalCmv) {
+                    $cost = (float) $row->total_cost;
+                    return [
+                        'ingredient_id'  => $row->ingredient_id,
+                        'name'           => $row->name,
+                        'total_quantity' => round((float) $row->total_quantity, 2),
+                        'unit'           => $row->unit,
+                        'total_cost'     => $cost,
+                        'percentage'     => $totalCmv > 0 ? round(($cost / $totalCmv) * 100, 1) : 0,
+                    ];
+                })
+                ->toArray();
+        }
+
+        return [
+            'total_cmv'      => $totalCmv,
+            'cmv_percentage' => $totalSales > 0 ? round(($totalCmv / $totalSales) * 100, 1) : 0,
+            'ingredients'    => $ingredients,
+        ];
+    }
+
+    /**
+     * Monthly aggregates for the last N months.
+     *
+     * @return array<int, array{month: string, label: string, total_sales: float, total_cost: float, total_delivery: float}>
+     */
+    public function getMonthlyAggregates(int $months = 6): array
+    {
+        $meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+        return DB::table('tuu_orders')
+            ->where('payment_status', 'paid')
+            ->where('order_number', 'NOT LIKE', 'RL6-%')
+            ->where('created_at', '>=', now()->subMonths($months)->startOfMonth())
+            ->groupByRaw("DATE_FORMAT(created_at, '%Y-%m')")
+            ->selectRaw("
+                DATE_FORMAT(created_at, '%Y-%m') as month,
+                COALESCE(SUM(installment_amount) - SUM(COALESCE(delivery_fee, 0)), 0) as total_sales,
+                COALESCE(SUM(COALESCE(delivery_fee, 0)), 0) as total_delivery
+            ")
+            ->orderBy('month')
+            ->get()
+            ->map(function ($row) use ($meses) {
+                $monthNum = (int) substr($row->month, 5, 2);
+                // Get cost for this month
+                $cost = (float) DB::table('tuu_order_items as oi')
+                    ->join('tuu_orders as o', 'oi.order_reference', '=', 'o.order_number')
+                    ->where('o.payment_status', 'paid')
+                    ->where('o.order_number', 'NOT LIKE', 'RL6-%')
+                    ->whereRaw("DATE_FORMAT(o.created_at, '%Y-%m') = ?", [$row->month])
+                    ->selectRaw('COALESCE(SUM(oi.item_cost * oi.quantity), 0) as c')
+                    ->value('c');
+
+                return [
+                    'month'          => $row->month,
+                    'label'          => $meses[$monthNum - 1] ?? $row->month,
+                    'total_sales'    => (float) $row->total_sales,
+                    'total_cost'     => $cost,
+                    'total_delivery' => (float) $row->total_delivery,
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
      * Detect order source from order_number prefix.
      */
     private function detectSource(string $orderNumber): string

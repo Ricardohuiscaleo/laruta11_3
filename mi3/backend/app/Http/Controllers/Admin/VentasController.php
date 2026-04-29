@@ -82,4 +82,62 @@ class VentasController extends Controller
             ],
         ]);
     }
+
+    /**
+     * GET /api/v1/admin/ventas/top-products
+     * Top products by quantity or profit.
+     */
+    public function topProducts(Request $request): JsonResponse
+    {
+        $request->validate([
+            'period' => 'sometimes|string|in:shift_today,today,week,month',
+            'limit'  => 'sometimes|integer|min:1|max:50',
+            'sort'   => 'sometimes|string|in:quantity,profit',
+        ]);
+
+        $period = $request->query('period', 'month');
+        $limit  = (int) $request->query('limit', 10);
+        $sort   = $request->query('sort', 'quantity');
+
+        return response()->json([
+            'success' => true,
+            'data'    => $this->ventasService->getTopProducts($period, $limit, $sort),
+        ]);
+    }
+
+    /**
+     * GET /api/v1/admin/ventas/cmv
+     * CMV breakdown by ingredient.
+     */
+    public function cmv(Request $request): JsonResponse
+    {
+        $request->validate([
+            'period' => 'sometimes|string|in:shift_today,today,week,month',
+        ]);
+
+        $period = $request->query('period', 'month');
+
+        return response()->json([
+            'success' => true,
+            'data'    => $this->ventasService->getCmvBreakdown($period),
+        ]);
+    }
+
+    /**
+     * GET /api/v1/admin/ventas/monthly
+     * Monthly aggregates for charts.
+     */
+    public function monthly(Request $request): JsonResponse
+    {
+        $request->validate([
+            'months' => 'sometimes|integer|min:1|max:24',
+        ]);
+
+        $months = (int) $request->query('months', 6);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $this->ventasService->getMonthlyAggregates($months),
+        ]);
+    }
 }

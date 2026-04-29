@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AiPromptController;
 use App\Http\Controllers\Admin\DeliveryConfigController;
 use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\SettlementController;
+use App\Http\Controllers\Admin\VentasController;
 use App\Http\Controllers\Public\PublicRiderController;
 use App\Http\Controllers\Public\TrackingController;
 use App\Http\Controllers\Rider\RiderController;
@@ -241,9 +242,12 @@ Route::prefix('v1')->group(function () {
         Route::post('ingredient-recipes/{ingredientId}/produce', [\App\Http\Controllers\Admin\IngredientRecipeController::class, 'produce']);
 
         // Ventas (sales analytics)
-        Route::get('ventas/kpis', [\App\Http\Controllers\Admin\VentasController::class, 'kpis']);
-        Route::get('ventas/{orderNumber}/detail', [\App\Http\Controllers\Admin\VentasController::class, 'detail']);
-        Route::get('ventas', [\App\Http\Controllers\Admin\VentasController::class, 'index']);
+        Route::get('ventas/kpis', [VentasController::class, 'kpis']);
+        Route::get('ventas/top-products', [VentasController::class, 'topProducts']);
+        Route::get('ventas/cmv', [VentasController::class, 'cmv']);
+        Route::get('ventas/monthly', [VentasController::class, 'monthly']);
+        Route::get('ventas/{orderNumber}/detail', [VentasController::class, 'detail']);
+        Route::get('ventas', [VentasController::class, 'index']);
 
         // Productos — Bulk actions (toggle, price adjust, deactivate)
         Route::patch('productos/toggle', [\App\Http\Controllers\Admin\ProductBulkController::class, 'toggle']);
