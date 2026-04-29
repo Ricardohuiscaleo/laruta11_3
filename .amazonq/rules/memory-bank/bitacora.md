@@ -7,9 +7,9 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`092c312`) — MiniComandas: botón Rider + WhatsApp corto con link tomar pedido |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4540368`) — MiniComandas: chevron "Ver pedido 👀" mapa embed, "Enviar a Rider" azul |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`092c312`) — Rider page: mapa rota tipo Waze moveCamera instantáneo |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`d962650`) — Rider page + embed map, OG metadata delivery 11.png |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`bec0544`) — PublicRiderController 3 endpoints públicos, rider_url en delivery orders |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -103,14 +103,17 @@
 
 ## Sesiones Recientes
 
-### 2026-04-28f — caja3 MiniComandas integración rider + rotación mapa instantánea
+### 2026-04-28f — caja3 MiniComandas chevron embed + OG metadata rider
 
 **Cambios código:**
-- `caja3/src/components/MiniComandas.jsx`: Botón "Rider" azul en delivery ready (link a mi.laruta11.cl/rider/{id}), mensaje WhatsApp corto (delivery fee + dirección + link "Tomar pedido"), botón "Ver" para abrir página rider.
-- `mi3/frontend/components/rider/PublicRiderView.tsx`: Rotación mapa instantánea con `moveCamera()` en vez de `setHeading()` (sin animación lenta).
+- `caja3/src/components/MiniComandas.jsx`: "Enviar a Rider 👉🏻" + botón "Rider" azul (WhatsApp con link tomar pedido), chevron "Ver pedido 👀" con mapa embed iframe (`/rider/{id}/embed`), botón "Rider" en fase ready, eliminado botón "Ver". JSX fragment fix para múltiples siblings.
+- `mi3/frontend/components/rider/RiderMapEmbed.tsx`: Nuevo componente mapa-only (3 puntos: R11 logo, rider car SVG, destino ruta) con refresh 15s.
+- `mi3/frontend/app/rider/[orderId]/embed/page.tsx`: Página embed sin UI.
+- `mi3/frontend/app/rider/[orderId]/page.tsx`: OG metadata "La Ruta 11 — Delivery" con 11.png absoluto para WhatsApp preview.
+- `mi3/frontend/public/11.png`: Ícono copiado de caja3.
 
-**Commits:** `75a155e`, `092c312`
-**Deploys:** mi3-frontend ✅, caja3 ✅
+**Commits:** `092c312`, `efc7043`, `bd4d84f`, `d962650`, `4540368`
+**Deploys:** mi3-frontend ✅, caja3 ✅ (múltiples iteraciones, 2 fix build errors JSX)
 
 ### 2026-04-28e — Rider page: fullscreen map-first + UX iteraciones
 
