@@ -1250,14 +1250,6 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                           {processing === order.id ? '⏳' : '✓ CONFIRMAR PAGO'}
                         </button>
                       )}
-                      <a
-                        href={`https://mi.laruta11.cl/rider/${order.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded text-xs flex items-center gap-1"
-                      >
-                        <Bike size={14} /> Rider
-                      </a>
                       <button onClick={() => deliverOrder(order.id, order.order_number)} disabled={processing === order.id} className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-2 px-3 rounded text-xs">
                         {processing === order.id ? '⏳' : '✅ ENTREGAR'}
                       </button>
