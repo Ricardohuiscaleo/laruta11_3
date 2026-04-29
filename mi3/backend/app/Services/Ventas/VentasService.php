@@ -454,6 +454,7 @@ class VentasService
 
         // Ingredient breakdown from inventory_transactions
         $ingredients = [];
+        $ingredientsCmvTotal = 0;
         if ($this->tableExists('inventory_transactions')) {
             $ingredients = DB::table('inventory_transactions as it')
                 ->join('ingredients as i', 'it.ingredient_id', '=', 'i.id')
@@ -471,7 +472,7 @@ class VentasService
                     SUM(ABS(it.quantity) * i.cost_per_unit) as total_cost
                 ")
                 ->orderByDesc('total_cost')
-                ->limit(30)
+                ->limit(50)
                 ->get()
                 ->map(function ($row) use ($totalCmv) {
                     $cost = (float) $row->total_cost;
@@ -485,12 +486,18 @@ class VentasService
                     ];
                 })
                 ->toArray();
+
+            $ingredientsCmvTotal = array_sum(array_column($ingredients, 'total_cost'));
         }
+
+        // Gap between item_cost CMV and ingredient-level CMV (orders without inventory tracking)
+        $untrackedCmv = max(0, $totalCmv - $ingredientsCmvTotal);
 
         return [
             'total_cmv'      => $totalCmv,
             'cmv_percentage' => $totalSales > 0 ? round(($totalCmv / $totalSales) * 100, 1) : 0,
             'ingredients'    => $ingredients,
+            'untracked_cmv'  => round($untrackedCmv),
         ];
     }
 

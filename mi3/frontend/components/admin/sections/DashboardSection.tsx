@@ -36,7 +36,7 @@ interface ShiftKpis { total_sales: number; total_delivery: number; total_cost: n
 interface PaymentBreakdown { method: string; order_count: number; total_sales: number; total_cost: number; profit: number }
 interface LiveSale { order_number: string; customer_name: string; total: number; timestamp: string }
 interface CmvIngredient { ingredient_id: number; name: string; total_quantity: number; unit: string; total_cost: number; percentage: number }
-interface CmvData { total_cmv: number; cmv_percentage: number; ingredients: CmvIngredient[] }
+interface CmvData { total_cmv: number; cmv_percentage: number; ingredients: CmvIngredient[]; untracked_cmv?: number }
 
 /* ─── Helpers ─── */
 const apps = [
@@ -296,6 +296,12 @@ export default function DashboardSection() {
                     </table>
                   </div>
                 ) : <p className="px-3 py-2 text-xs text-gray-400">Sin datos</p>}
+                {cmvData && (cmvData.untracked_cmv ?? 0) > 0 && (
+                  <div className="px-3 py-1.5 bg-amber-50 border-t text-[11px] flex items-center justify-between">
+                    <span className="text-amber-700">⚠ Sin trazabilidad (órdenes sin inventario)</span>
+                    <span className="font-medium text-amber-800 tabular-nums">{formatCLP(cmvData.untracked_cmv ?? 0)}</span>
+                  </div>
+                )}
               </PnlRowExpandable>
               <PnlRow label="Margen Bruto" value={pnl?.costo_ventas.margen_bruto ?? 0} pct={pnl?.costo_ventas.margen_bruto_pct ?? 0} bold color={(pnl?.costo_ventas.margen_bruto ?? 0) >= 0 ? 'text-emerald-700' : 'text-red-600'} />
               <PnlRowExpandable label="Gastos Operación" value={-(go?.total_opex ?? 0)} pct={go?.total_opex_pct ?? 0} color="text-red-600" icon={<Calculator className="h-3 w-3 text-red-600" />}>
