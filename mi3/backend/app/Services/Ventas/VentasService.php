@@ -534,12 +534,26 @@ class VentasService
                 ->whereRaw("DATE_FORMAT(mes, '%Y-%m') = ?", [$row->month])
                 ->sum('monto');
 
-            // If no payroll table data, try compras with tipo_compra = 'nomina'
+            // If no payroll data, try compras with tipo_compra = 'nomina'
             if ($nomina === 0.0) {
                 $nomina = (float) DB::table('compras')
                     ->where('tipo_compra', 'nomina')
                     ->whereRaw("DATE_FORMAT(fecha_compra, '%Y-%m') = ?", [$row->month])
                     ->sum('monto_total');
+            }
+
+            // If still no data (current/future month), project from avg of last 3 months
+            $isProjected = false;
+            if ($nomina === 0.0) {
+                $avgNomina = (float) DB::table('pagos_nomina')
+                    ->where('mes', '<', $row->month . '-01')
+                    ->orderByDesc('mes')
+                    ->limit(3)
+                    ->avg('monto');
+                if ($avgNomina > 0) {
+                    $nomina = round($avgNomina);
+                    $isProjected = true;
+                }
             }
 
             $sales = (float) $row->total_sales;
@@ -553,6 +567,7 @@ class VentasService
                 'total_cost'     => $cost,
                 'total_delivery' => $delivery,
                 'total_nomina'   => $nomina,
+                'nomina_projected' => $isProjected,
                 'resultado'      => $resultado,
             ];
         })->toArray();

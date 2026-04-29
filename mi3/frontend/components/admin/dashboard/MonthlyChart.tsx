@@ -14,6 +14,7 @@ interface MonthData {
   total_cost: number;
   total_delivery: number;
   total_nomina: number;
+  nomina_projected?: boolean;
   resultado: number;
 }
 
@@ -36,7 +37,7 @@ function CustomTooltip({ active, payload, label }: any) {
       <p className="font-semibold text-gray-900">{label}</p>
       <p className="text-green-600">Ventas: {fmtCLP(d.total_sales)}</p>
       <p className="text-red-500">Costo: {fmtCLP(d.total_cost)}</p>
-      <p className="text-purple-500">Nómina: {fmtCLP(d.total_nomina)}</p>
+      <p className="text-purple-500">Nómina: {fmtCLP(d.total_nomina)}{d.nomina_projected ? ' (proy.)' : ''}</p>
       <p className="text-blue-500">Delivery: {fmtCLP(d.total_delivery)}</p>
       <div className="border-t pt-1 mt-1">
         <p className={`font-bold ${d.resultado >= 0 ? 'text-green-700' : 'text-red-700'}`}>
