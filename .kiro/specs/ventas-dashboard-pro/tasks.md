@@ -1,14 +1,14 @@
 # Ventas Dashboard Pro — Tasks
 
 ## Task 1: CollapsibleSection component + Layout split
-- [ ] Create `mi3/frontend/components/admin/ventas/CollapsibleSection.tsx` — reusable chevron section with `title`, `summary`, `children`, `defaultOpen`, `accentColor` props. Animated chevron rotation, `aria-expanded`, border-left accent color.
-- [ ] Refactor `VentasPageContent.tsx` — split into 2-column grid on desktop (`md:grid-cols-2`), single column on mobile. Left column: data sections. Right column: charts/map (placeholder divs for now).
-- [ ] Wrap existing KPI cards in a `CollapsibleSection` titled "Ventas Netas" with summary showing total sales + margin + order count.
-- [ ] Move existing `PaymentBreakdownPanel` inside the "Ventas Netas" collapsible as a sub-section.
-- [ ] Verify mobile layout stacks correctly with Estado de Resultados first.
+- [ ] Create `mi3/frontend/components/admin/dashboard/CollapsibleSection.tsx` — reusable chevron section with `title`, `summary`, `children`, `defaultOpen`, `accentColor` props. Animated chevron rotation, `aria-expanded`, border-left accent color.
+- [ ] Refactor `DashboardSection.tsx` — split into 2-column grid on desktop (`md:grid-cols-2`), single column on mobile. Left column: monitor + EdR colapsable + CMV + Nómina. Right column: charts/map.
+- [ ] Wrap existing Estado de Resultados card in a `CollapsibleSection` titled "Estado de Resultados" with summary showing ventas netas + margen % + resultado neto. Keep existing PnlRow components inside.
+- [ ] Add chevron to each major section (Ingresos, Costo Ventas, Gastos Operación) so they can expand/collapse independently.
+- [ ] Verify mobile layout stacks correctly with Monitor first, then EdR, then charts.
 
 ## Task 2: LiveSalesMonitor component (realtime)
-- [ ] Create `mi3/frontend/components/admin/ventas/LiveSalesMonitor.tsx` — card with gradient bg, shows shift total + pedidos + ticket promedio + WS indicator.
+- [ ] Create `mi3/frontend/components/admin/dashboard/LiveSalesMonitor.tsx` — card with gradient bg, shows shift total + pedidos + ticket promedio + WS indicator.
 - [ ] Add chevron to expand last 5 sales with slide-in animation (CSS transition).
 - [ ] Connect to Echo channel `admin.ventas` event `.venta.nueva` — on event: prepend sale to list, animate counter increment.
 - [ ] Add sound toggle (🔔/🔕) persisted in localStorage. Play short notification sound on new sale.
@@ -21,13 +21,13 @@
 - [ ] Style: compact rows, right-aligned numbers, bold totals, green/red for profit/loss.
 
 ## Task 4: CMV Ingredientes section
-- [ ] Create `mi3/frontend/components/admin/ventas/CmvSection.tsx` — CollapsibleSection with summary "CMV $XXX | XX% sobre ventas".
+- [ ] Create `mi3/frontend/components/admin/dashboard/CmvSection.tsx` — CollapsibleSection with summary "CMV $XXX | XX% sobre ventas".
 - [ ] Table: ingredient name, qty consumed, unit, total cost, % of CMV. Sorted by cost desc.
 - [ ] Highlight rows where ingredient >10% of total CMV (red-50 bg).
 - [ ] Fetch from new endpoint `GET /admin/ventas/cmv?period=X` (Task 7).
 
 ## Task 5: Nómina section
-- [ ] Create `mi3/frontend/components/admin/ventas/PayrollSummary.tsx` — CollapsibleSection with summary "Nómina $XXX | N trabajadores".
+- [ ] Create `mi3/frontend/components/admin/dashboard/PayrollSummary.tsx` — CollapsibleSection with summary "Nómina $XXX | N trabajadores".
 - [ ] Show: total sueldos, total adelantos, total créditos R11, nómina como % de ventas.
 - [ ] Fetch from existing `GET /admin/payroll` endpoint, extract summary totals.
 
@@ -52,7 +52,7 @@
 
 ## Task 9: Install Recharts + Monthly Stacked Bar Chart
 - [ ] Install recharts: `npm install recharts` in mi3/frontend.
-- [ ] Create `mi3/frontend/components/admin/ventas/MonthlyChart.tsx` — Recharts `BarChart` stacked.
+- [ ] Create `mi3/frontend/components/admin/dashboard/MonthlyChart.tsx` — Recharts `BarChart` stacked.
 - [ ] 3 stacked series: Ventas (green-500), Costo (red-400), Delivery (blue-400).
 - [ ] Tooltip with CLP formatting. Responsive container.
 - [ ] Lazy load with `dynamic(() => import(...), { ssr: false })`.
@@ -60,7 +60,7 @@
 - [ ] Fetch from `GET /admin/ventas/monthly?months=6`.
 
 ## Task 10: Top Products Horizontal Bar Chart
-- [ ] Create `mi3/frontend/components/admin/ventas/TopProductsChart.tsx` — Recharts horizontal `BarChart`.
+- [ ] Create `mi3/frontend/components/admin/dashboard/TopProductsChart.tsx` — Recharts horizontal `BarChart`.
 - [ ] Each bar split: Costo (red) + Utilidad (green). Label with margin %.
 - [ ] Toggle button: "Más vendidos" (sort by qty) / "Más rentables" (sort by profit).
 - [ ] Lazy load with `dynamic(() => import(...), { ssr: false })`.
@@ -68,7 +68,7 @@
 
 ## Task 11: Install Leaflet + Sales Heatmap
 - [ ] Install: `npm install react-leaflet leaflet leaflet.heat @types/leaflet` in mi3/frontend.
-- [ ] Create `mi3/frontend/components/admin/ventas/SalesHeatmap.tsx`.
+- [ ] Create `mi3/frontend/components/admin/dashboard/SalesHeatmap.tsx`.
 - [ ] OpenStreetMap tiles, centered Arica (-18.4747, -70.2989), zoom 13.
 - [ ] Heatmap layer from delivery coordinates (orders with `delivery_lat`/`delivery_lng`).
 - [ ] Lazy load with `dynamic(() => import(...), { ssr: false })`.
@@ -84,7 +84,7 @@
 - [ ] Backend: `DeliveryZoneController` with CRUD endpoints.
 
 ## Task 13: Realtime updates for all sections
-- [ ] In `VentasPageContent.tsx`, on `.venta.nueva` event: refetch KPIs, CMV, top products.
+- [ ] In `DashboardSection.tsx`, on `.venta.nueva` event: refetch dashboard data, CMV, top products.
 - [ ] Add subtle animation to numbers that change (green flash + counter animation).
 - [ ] LiveSalesMonitor already handles its own realtime (Task 2).
 - [ ] Charts auto-refresh: MonthlyChart refetches on period change, TopProducts on event.
@@ -98,7 +98,7 @@
 - [ ] Endpoint to return delivery coordinates for heatmap: `GET /admin/ventas/delivery-points?period=X`.
 
 ## Task 15: Final integration + polish
-- [ ] Wire all sections together in `VentasPageContent.tsx` with correct layout.
+- [ ] Wire all sections together in `DashboardSection.tsx` with correct layout.
 - [ ] Verify mobile layout: Monitor → EdR → CMV → Nómina → Charts → Map → Transacciones.
 - [ ] Verify desktop layout: 50/50 split with data left, charts right.
 - [ ] Performance: ensure lazy loading works, no layout shift on chart load.

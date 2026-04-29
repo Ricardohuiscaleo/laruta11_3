@@ -60,10 +60,10 @@
 - Counter animation con `requestAnimationFrame`
 
 ### 2. `PnLSection.tsx` (Estado de Resultados)
-- Componente colapsable reutilizable `CollapsibleSection`
+- Refactor del EdR existente en `DashboardSection.tsx` como componente colapsable
 - Props: `title`, `summary`, `children`, `defaultOpen`
-- Dentro: tabla EdR + sub-secciones método pago + top productos
-- Datos del endpoint existente `GET /admin/ventas/kpis`
+- Dentro: tabla EdR existente (ingresos, CMV, margen, OPEX, resultado) + sub-secciones método pago + top productos
+- Datos del endpoint existente `GET /admin/dashboard`
 
 ### 3. `CmvSection.tsx` (Costo Ingredientes)
 - Colapsable con tabla de ingredientes

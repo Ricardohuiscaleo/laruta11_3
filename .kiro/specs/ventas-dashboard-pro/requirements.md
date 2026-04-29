@@ -2,14 +2,14 @@
 
 ## Contexto
 
-El panel de ventas actual (`mi.laruta11.cl/admin/ventas`) muestra KPIs básicos, desglose por método de pago, y una lista de transacciones con detalle expandible. Necesita evolucionar a un dashboard profesional de Estado de Resultados con gráficos, mapa de concentración, monitor en vivo, y layout split desktop/mobile-first.
+El Panel Admin de Inicio (`mi.laruta11.cl/admin` → `DashboardSection.tsx`) ya tiene un Estado de Resultados mensual con: barra meta equilibrio, KPIs (pedidos, ticket, proyección), ingresos, costo de ventas (CMV), margen bruto, gastos operación (nómina, gas, limpieza, mermas, otros), OPEX total, meta equilibrio, resultado neto, y accesos rápidos a aplicaciones. Necesita evolucionar con chevrones colapsables, gráficos en panel lateral, mapa de concentración, monitor en vivo, y layout split desktop.
 
 ## Archivos existentes relevantes
 
-- #[[file:mi3/frontend/components/admin/VentasPageContent.tsx]] — Componente principal actual
-- #[[file:mi3/frontend/components/admin/sections/VentasSection.tsx]] — Wrapper con tabs período
-- #[[file:mi3/backend/app/Services/Ventas/VentasService.php]] — Backend: KPIs, transacciones, breakdown, detalle
-- #[[file:mi3/backend/app/Http/Controllers/Admin/VentasController.php]] — Controller API
+- #[[file:mi3/frontend/components/admin/sections/DashboardSection.tsx]] — Componente principal actual (Inicio/Panel Admin)
+- #[[file:mi3/backend/app/Http/Controllers/Admin/DashboardController.php]] — Backend: endpoint `/admin/dashboard` con PnL completo
+- #[[file:mi3/backend/app/Services/Ventas/VentasService.php]] — Backend: KPIs ventas, transacciones, breakdown, detalle
+- #[[file:mi3/frontend/components/admin/VentasPageContent.tsx]] — Referencia de patrón transacciones expandibles
 - #[[file:mi3/frontend/hooks/useDeliveryTracking.ts]] — Referencia de patrón Echo/Reverb realtime
 
 ## Requirements
