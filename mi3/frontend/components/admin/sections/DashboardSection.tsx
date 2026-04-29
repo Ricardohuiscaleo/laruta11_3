@@ -284,8 +284,16 @@ export default function DashboardSection() {
                 </div>
               </PnlRowExpandable>
               {metaEquilibrio > 0 && <PnlRow label="Meta Equilibrio" value={metaEquilibrio} bold color="text-blue-700" />}
-              <div className={cn('py-0.5', (pnl?.resultado.resultado_neto ?? 0) >= 0 ? 'bg-green-50' : 'bg-red-50')}>
-                <PnlRow label="Resultado Neto" value={pnl?.resultado.resultado_neto ?? 0} pct={pnl?.resultado.resultado_neto_pct ?? 0} bold color={(pnl?.resultado.resultado_neto ?? 0) >= 0 ? 'text-green-800' : 'text-red-700'} />
+              <div className={cn('py-2', (pnl?.resultado.resultado_neto ?? 0) >= 0 ? 'bg-green-50' : 'bg-red-50')}>
+                <div className="flex items-center justify-between px-3">
+                  <span className="text-sm font-bold text-gray-900">Resultado Neto</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-gray-400 tabular-nums">{(pnl?.resultado.resultado_neto_pct ?? 0).toFixed(1)}%</span>
+                    <span className={cn('text-lg font-black tabular-nums', (pnl?.resultado.resultado_neto ?? 0) >= 0 ? 'text-green-700' : 'text-red-700')}>
+                      {(pnl?.resultado.resultado_neto ?? 0) < 0 ? '-' : ''}{formatCLP(Math.abs(pnl?.resultado.resultado_neto ?? 0))}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

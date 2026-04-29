@@ -495,15 +495,15 @@ class VentasService
     }
 
     /**
-     * Monthly aggregates for the last N months.
+     * Monthly aggregates for the last N months (includes nómina from payroll).
      *
-     * @return array<int, array{month: string, label: string, total_sales: float, total_cost: float, total_delivery: float}>
+     * @return array<int, array{month: string, label: string, total_sales: float, total_cost: float, total_delivery: float, total_nomina: float, resultado: float}>
      */
     public function getMonthlyAggregates(int $months = 6): array
     {
         $meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-        return DB::table('tuu_orders')
+        $rows = DB::table('tuu_orders')
             ->where('payment_status', 'paid')
             ->where('order_number', 'NOT LIKE', 'RL6-%')
             ->where('created_at', '>=', now()->subMonths($months)->startOfMonth())
@@ -514,27 +514,47 @@ class VentasService
                 COALESCE(SUM(COALESCE(delivery_fee, 0)), 0) as total_delivery
             ")
             ->orderBy('month')
-            ->get()
-            ->map(function ($row) use ($meses) {
-                $monthNum = (int) substr($row->month, 5, 2);
-                // Get cost for this month
-                $cost = (float) DB::table('tuu_order_items as oi')
-                    ->join('tuu_orders as o', 'oi.order_reference', '=', 'o.order_number')
-                    ->where('o.payment_status', 'paid')
-                    ->where('o.order_number', 'NOT LIKE', 'RL6-%')
-                    ->whereRaw("DATE_FORMAT(o.created_at, '%Y-%m') = ?", [$row->month])
-                    ->selectRaw('COALESCE(SUM(oi.item_cost * oi.quantity), 0) as c')
-                    ->value('c');
+            ->get();
 
-                return [
-                    'month'          => $row->month,
-                    'label'          => $meses[$monthNum - 1] ?? $row->month,
-                    'total_sales'    => (float) $row->total_sales,
-                    'total_cost'     => $cost,
-                    'total_delivery' => (float) $row->total_delivery,
-                ];
-            })
-            ->toArray();
+        return $rows->map(function ($row) use ($meses) {
+            $monthNum = (int) substr($row->month, 5, 2);
+
+            // Cost from order items
+            $cost = (float) DB::table('tuu_order_items as oi')
+                ->join('tuu_orders as o', 'oi.order_reference', '=', 'o.order_number')
+                ->where('o.payment_status', 'paid')
+                ->where('o.order_number', 'NOT LIKE', 'RL6-%')
+                ->whereRaw("DATE_FORMAT(o.created_at, '%Y-%m') = ?", [$row->month])
+                ->selectRaw('COALESCE(SUM(oi.item_cost * oi.quantity), 0) as c')
+                ->value('c');
+
+            // Nómina from pagos_nomina or estimate from personal
+            $nomina = (float) DB::table('pagos_nomina')
+                ->whereRaw("DATE_FORMAT(fecha_pago, '%Y-%m') = ?", [$row->month])
+                ->sum('monto');
+
+            // If no payroll table data, try compras with tipo_compra = 'nomina'
+            if ($nomina === 0.0) {
+                $nomina = (float) DB::table('compras')
+                    ->where('tipo_compra', 'nomina')
+                    ->whereRaw("DATE_FORMAT(fecha_compra, '%Y-%m') = ?", [$row->month])
+                    ->sum('monto_total');
+            }
+
+            $sales = (float) $row->total_sales;
+            $delivery = (float) $row->total_delivery;
+            $resultado = $sales - $cost - $nomina;
+
+            return [
+                'month'          => $row->month,
+                'label'          => $meses[$monthNum - 1] ?? $row->month,
+                'total_sales'    => $sales,
+                'total_cost'     => $cost,
+                'total_delivery' => $delivery,
+                'total_nomina'   => $nomina,
+                'resultado'      => $resultado,
+            ];
+        })->toArray();
     }
 
     /**
