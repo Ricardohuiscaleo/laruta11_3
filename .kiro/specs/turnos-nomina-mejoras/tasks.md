@@ -7,7 +7,7 @@
   - Add `'total_reemplazando' => (int) round($totalReemplazando)` and `'total_reemplazados' => (int) round($totalReemplazados)` to the return array, before the `'total'` key
   - These variables already exist in the method (lines 83-91), they just need to be included in the return
 
-- [~] 1.2 Write property test: gran_total invariant
+- [ ] 1.2 Write property test: gran_total invariant
   - File: `mi3/backend/tests/Unit/Payroll/LiquidacionReplacementPropertyTest.php`
   - Generate random sueldo_base, replacement amounts, and ajustes using Faker
   - Verify: `total == sueldo_base + total_reemplazando - total_reemplazados + total_ajustes` for 100 iterations
@@ -22,7 +22,7 @@
   - Map `$liq['total_reemplazados']` (with 's') to response field `total_reemplazado` (without 's')
   - Recalculate `gran_total` as `sueldo_base + total_reemplazando - total_reemplazado + ajustes_total`
 
-- [~] 2.2 Write property test: aggregation consistency across cost centers
+- [ ] 2.2 Write property test: aggregation consistency across cost centers
   - File: `mi3/backend/tests/Unit/Payroll/PayrollAggregationPropertyTest.php`
   - Generate workers with random replacement data in both ruta11 and seguridad contexts
   - Verify: aggregated `total_reemplazando == ruta11.total_reemplazando + seguridad.total_reemplazando`
@@ -40,7 +40,7 @@
   - Set `credito_r11_pendiente` to 0 if already deducted, otherwise to `credito_r11_usado`
   - Only include the field if the worker has an R11 credit user linked
 
-- [~] 3.2 Write edge-case test: R11 credit pending is 0 when already deducted
+- [ ] 3.2 Write edge-case test: R11 credit pending is 0 when already deducted
   - File: `mi3/backend/tests/Unit/Payroll/R11CreditPendingTest.php`
   - Create a personal record linked to a usuario with `es_credito_r11 = 1` and `credito_r11_usado = 5000`
   - Create an `ajustes_sueldo` record with `descuento_credito_r11` category for the current month

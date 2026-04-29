@@ -335,7 +335,7 @@ export default function AdminShell() {
         {/* Row 1: Logo + Title */}
         <div className="flex items-center justify-between h-14 px-4">
           <div className="flex items-center gap-2">
-            <img src="/R11HEADER.jpg" alt="La Ruta 11" className="h-8 w-auto" />
+            <img src="/R11WORK.png" alt="La Ruta 11" className="h-8 w-8 rounded-lg" />
           </div>
           <span className="text-sm font-semibold text-white">{title}</span>
           <div className="w-8" />

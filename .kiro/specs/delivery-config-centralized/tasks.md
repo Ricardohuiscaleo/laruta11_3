@@ -23,7 +23,7 @@ Centralizar los 6 parámetros de pricing de delivery en una tabla `delivery_conf
     - Método estático `getAllAsMap()` que retorna array asociativo ['tarifa_base' => '3500', ...]
     - _Requisitos: 1.1, 1.4_
 
-  - [~] 1.4 Ejecutar migraciones y verificar que la tabla y columna existen
+  - [ ] 1.4 Ejecutar migraciones y verificar que la tabla y columna existen
     - Ejecutar `php artisan migrate` en mi3/backend
     - Verificar que `delivery_config` tiene 6 registros y `tuu_orders` tiene columna `card_surcharge`
     - _Requisitos: 1.1, 1.2, 2.1_
