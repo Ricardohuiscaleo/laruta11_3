@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4540368`) — MiniComandas: chevron "Ver pedido 👀" mapa embed, "Enviar a Rider" azul |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`a99ecb7`) — Dashboard: monthly stacked, Pareto dual-axis + diagnóstico auto, resultado neto grande |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`a99ecb7`) — monthly con nómina (pagos_nomina.mes), resultado por mes |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`03636c0`) — Dashboard: nav meses ◀▶, header neutral-800, resultado neto sólido, Pareto diagnóstico |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`03636c0`) — Dashboard ?month param, monthly CONVERT_TZ Chile, nómina proyectada |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -106,18 +106,18 @@
 ### 2026-04-29d — Dashboard Pro: split layout, charts, monitor turno, UX fixes iterativos
 
 **Cambios código:**
-- `mi3/backend/app/Services/Ventas/VentasService.php`: 3 métodos nuevos (`getTopProducts`, `getCmvBreakdown`, `getMonthlyAggregates` con nómina de `pagos_nomina.mes` + resultado). Fix column `fecha_pago`→`mes`.
+- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: Param `?month=YYYY-MM` para navegar meses históricos. Meses pasados usan tuu_orders directo (no caja3). `$isCurrentMonth` controla qué fuente usar.
+- `mi3/backend/app/Services/Ventas/VentasService.php`: 3 métodos nuevos + `getMonthlyAggregates` con `CONVERT_TZ` UTC→Chile, nómina de `pagos_nomina.mes`, proyección avg 3 meses si no hay datos, `nomina_projected` flag.
 - `mi3/backend/app/Http/Controllers/Admin/VentasController.php`: 3 endpoints — `GET top-products`, `GET cmv`, `GET monthly`.
-- `mi3/backend/routes/api.php`: Rutas nuevas + import VentasController.
-- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: Reescritura iterativa — split 50/50, monitor turno actual (shift_today + WS), EdR single card con chevrones inline (Ventas→breakdown, CMV→ingredientes, OPEX→detalle), sin sombras verdes, CMV integrado, Resultado Neto text-lg font-black.
-- `mi3/frontend/components/admin/dashboard/MonthlyChart.tsx`: 1 columna apilada (ventas+costo+nómina+delivery) con header resultado (+Xk/-Xk) por mes.
-- `mi3/frontend/components/admin/dashboard/TopProductsChart.tsx`: ComposedChart con Pareto dual-axis (barras revenue + línea % acumulado), diagnóstico auto expandible con insights Pareto/margen/oportunidad.
-- `mi3/frontend/components/admin/dashboard/CollapsibleSection.tsx`: Componente reutilizable chevron.
+- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: Reescritura iterativa — split 50/50, monitor turno (shift_today + WS), EdR single card con chevrones inline, header `bg-neutral-800` con nav meses ◀▶, Resultado Neto sólido (`bg-red-600`/`bg-green-600` + white text `text-xl font-black`).
+- `mi3/frontend/components/admin/dashboard/MonthlyChart.tsx`: 1 columna apilada (ventas+costo+nómina+delivery), header resultado, tooltip "(proy.)" para nómina proyectada.
+- `mi3/frontend/components/admin/dashboard/TopProductsChart.tsx`: Pareto dual-axis + diagnóstico auto expandible (insights Pareto/margen/oportunidad).
 - Dependencia: `recharts` instalada.
 
-**Commits:** `470d95c`, `c26cfcf`, `a9d5266`, `f790af5`, `a99ecb7`
-**Deploys:** mi3-frontend ✅, mi3-backend ✅ (múltiples iteraciones UX).
-**BD:** Insertados 4 registros en `pagos_nomina`: Oct 2025 ($1.590.000), Nov 2025 ($1.590.000), Dic 2025 ($1.590.000), Ene 2026 ($1.500.000). Feb y Mar ya existían.
+**BD:** Insertados 4 registros `pagos_nomina`: Oct-Dic 2025 ($1.590.000 c/u), Ene 2026 ($1.500.000).
+
+**Commits:** `470d95c`→`03636c0` (10+ commits iterativos)
+**Deploys:** mi3-frontend ✅, mi3-backend ✅ (múltiples iteraciones).
 
 ### 2026-04-29c — Ventas: excluir RL6 de métricas + detalle compacto con stock
 
