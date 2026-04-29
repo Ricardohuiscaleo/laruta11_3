@@ -7,9 +7,9 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`05f10b8`) — Gemini 3.1-flash-lite-preview, model tracking fix, timeout 15s, 768px |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`092c312`) — MiniComandas: botón Rider + WhatsApp corto con link tomar pedido |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`be2046a`) — Rider page: mapa rota tipo Waze, auto fijo arriba, 3 fases, logo R11, brújula |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`092c312`) — Rider page: mapa rota tipo Waze moveCamera instantáneo |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`bec0544`) — PublicRiderController 3 endpoints públicos, rider_url en delivery orders |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -103,6 +103,15 @@
 
 ## Sesiones Recientes
 
+### 2026-04-28f — caja3 MiniComandas integración rider + rotación mapa instantánea
+
+**Cambios código:**
+- `caja3/src/components/MiniComandas.jsx`: Botón "Rider" azul en delivery ready (link a mi.laruta11.cl/rider/{id}), mensaje WhatsApp corto (delivery fee + dirección + link "Tomar pedido"), botón "Ver" para abrir página rider.
+- `mi3/frontend/components/rider/PublicRiderView.tsx`: Rotación mapa instantánea con `moveCamera()` en vez de `setHeading()` (sin animación lenta).
+
+**Commits:** `75a155e`, `092c312`
+**Deploys:** mi3-frontend ✅, caja3 ✅
+
 ### 2026-04-28e — Rider page: fullscreen map-first + UX iteraciones
 
 **Cambios código:**
@@ -130,37 +139,6 @@
 **Deploys:** mi3-frontend ✅ (`pazj6z4hqkoawhk3f0ubz0v4`), mi3-backend ✅ (`hyfsunzpb7qxt78boke4djlj`)
 
 ### 2026-04-28c — Mejoras dispatch photos + comandas bebidas compactas
-
-**Cambios código:**
-- `caja3/api/GeminiService.php`: Prompts productos y bolsa reescritos — tono casual (1 oración), items faltantes entre `**` para bold rojo, sin "se asume", bolsa abierta es correcto (inspección pre-sellado).
-- `caja3/api/orders/save_dispatch_photo.php`: Compresión imagen antes de Gemini (resize 800px max, JPEG 70%) para ahorrar tokens.
-- `caja3/src/components/MiniComandas.jsx`: Feedback coloreado por puntaje (verde ≥80, amarillo ≥50, rojo <50), borde foto por puntaje, `**texto**` renderizado como negrita roja. Fotos dispatch se restauran al recargar desde `dispatch_photo_url` de BD.
-- `caja3/src/pages/comandas/index.astro`: Bebidas (category_id 5) layout compacto inline — foto 48x60px + nombre + cantidad, sin descripción ni ingredientes.
-
-**Commits:** `075b79e`, `b820505`, `60c80cf`, `5658275`, `757b02d`, `a6e649d`, `0b64e90`, `f534d63`
-**Deploys:** caja3 ✅ (8 deploys)
-
-### 2026-04-28b — Spec delivery-config-centralized: centralizar config delivery en BD
-
-**Cambios código:**
-- `mi3/backend/database/migrations/`: Tabla `delivery_config` (key-value, 6 params seed) + columna `tuu_orders.card_surcharge`.
-- `mi3/backend/app/`: DeliveryConfig model, DeliveryConfigController (GET/PUT), UpdateDeliveryConfigRequest (validación numérica + rango rl6).
-- `mi3/backend/routes/api.php`: Rutas delivery-config en grupo admin.
-- `mi3/frontend/`: DeliveryConfigSection.tsx (formulario, validación inline, vista previa cálculo), registrada en AdminShell + sidebars.
-- `app3/api/delivery/`: delivery_config_helper.php + get_config.php (endpoint público con fallback).
-- `caja3/api/delivery/`: Copia idéntica helper + endpoint.
-- `app3/api/location/get_delivery_fee.php`: Lee distance params de BD.
-- `app3/api/create_order.php` + `caja3/api/create_order.php`: card_surcharge separado, no suma a delivery_fee.
-- `app3/src/components/CheckoutApp.jsx`: Fetch config on mount, valores dinámicos.
-- `caja3/src/components/CheckoutApp.jsx` + `MenuApp.jsx`: Idem, usa `(1 - factor)` para RL6.
-
-**BD pendiente:** ~~Ejecutar `php artisan migrate` para crear tabla `delivery_config` y columna `tuu_orders.card_surcharge`.~~ EJECUTADO manualmente via docker exec MySQL.
-
-**Commits:** `d880e70` (22 archivos, 1701 insertions), `b01b344` (fix: force-add caja3/api/delivery/ ignorado por root .gitignore)
-**Deploys:** mi3-frontend ✅, mi3-backend ✅, app3 ✅, caja3 ✅ (redeploy fix `b01b344`)
-**BD:** `tuu_orders.card_surcharge` DECIMAL(10,2) creada, tabla `delivery_config` con 6 registros seeded
-
-### 2026-04-28a — Spec dispatch-photo-verification: verificación fotos delivery con Gemini IA
 
 **Cambios código:**
 - `caja3/src/utils/photoRequirements.js`: Nueva función pura `generatePhotoRequirements(deliveryType)` + helpers `getButtonState`, `formatPhotoProgress`.

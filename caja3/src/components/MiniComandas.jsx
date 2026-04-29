@@ -832,6 +832,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
               </div>
             </div>
             {order.delivery_type === 'delivery' && (
+              <>
               <div className="flex items-center justify-between bg-white border border-gray-200 rounded p-2">
                 <span className="text-xs font-bold text-gray-800">Rider 🚚</span>
                 <div className="flex items-center gap-1">
@@ -886,6 +887,7 @@ ${riderUrl}`;
                   />
                 </div>
               )}
+              </>
             )}
           </div>
         ) : order.delivery_type === 'cuartel' ? (
