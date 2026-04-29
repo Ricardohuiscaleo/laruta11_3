@@ -2,7 +2,10 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'La Ruta 11 — Work',
+  title: {
+    default: 'La Ruta 11 — Work',
+    template: '%s',
+  },
   description: 'Portal de control y gestión para colaboradores y administración de La Ruta 11',
 };
 
