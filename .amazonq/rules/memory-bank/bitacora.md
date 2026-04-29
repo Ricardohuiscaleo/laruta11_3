@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4540368`) — MiniComandas: chevron "Ver pedido 👀" mapa embed, "Enviar a Rider" azul |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`03636c0`) — Dashboard: nav meses ◀▶, header neutral-800, resultado neto sólido, Pareto diagnóstico |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`03636c0`) — Dashboard ?month param, monthly CONVERT_TZ Chile, nómina proyectada |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`4c82ec6`) — Fix tocino unidades→kg, monthly NominaService mes actual, CONVERT_TZ Chile |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -72,7 +72,7 @@
 
 ### 🟡 Verificaciones pendientes
 
-- [ ] **🚨 Fix Tocino Laminado unidades→kg en inventory_transactions** — Transacciones Nov 2025→Mar 2026 registran tocino en "unidades" (1, 2, 3) pero ingrediente tiene unit=kg, cost_per_unit=$14.000/kg. Infla costos ~$4M en 5 meses. Fix: multiplicar `quantity` por 0.05 en txs donde `ingredient_id=49 AND ABS(quantity)>=1`. ~289 transacciones afectadas. Pendiente confirmación usuario.
+- [x] **🚨 Fix Tocino Laminado unidades→kg en inventory_transactions** — COMPLETADO. 246 txs corregidas (`quantity * 0.05`). Costos reducidos de $4.715.760 a $273.560. Commit `4c82ec6`.
 - [ ] **Nómina abril $593.333 proyectada** — Es promedio de últimos 3 meses (pagos_nomina). Falta registrar nómina real de abril cuando se pague. Además: trazabilidad nómina↔créditos↔ajustes no está conectada en el dashboard (Andrés: base $600k, ajustes -$210k, crédito -$27.8k = $362.154 pero dashboard muestra diferente).
 - [ ] **Discrepancia ventas mensuales vs EdR** — Gráfico mensual usa CONVERT_TZ pero puede haber diferencia residual con caja3 API. Verificar que ambos coincidan para abril.
 
@@ -106,6 +106,17 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-29e — Fix Tocino Laminado + nómina abril real + timezone monthly
+
+**Cambios código:**
+- `mi3/backend/app/Services/Ventas/VentasService.php`: `getMonthlyAggregates` — `CONVERT_TZ` UTC→Chile para coincidir con EdR, NominaService para mes actual (fallback proyección), `nomina_projected` flag.
+- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: Param `?month=YYYY-MM` para navegar meses históricos, `$isCurrentMonth` para fuente datos.
+
+**BD:** 246 transacciones `inventory_transactions` corregidas para Tocino Laminado (id=49): `quantity * 0.05` (unidades→kg). Costos reducidos $4.715.760→$273.560 (Nov 2025→Abr 2026).
+
+**Commits:** `c21b21e`, `3db1082`, `03636c0`, `4c82ec6`
+**Deploys:** mi3-frontend ✅, mi3-backend ✅.
 
 ### 2026-04-29d — Dashboard Pro: split layout, charts, monitor turno, UX fixes iterativos
 
@@ -144,18 +155,8 @@
 **Commits:** `19852fe`
 **Deploys:** mi3-frontend ✅, mi3-backend ✅
 
-### 2026-04-29a — Botón cancelar delivery rider + waypoints ruta embed
-
-**Cambios código:**
-- `mi3/backend/app/Http/Controllers/Public/PublicRiderController.php`: Status `reject` — limpia `rider_last_lat/lng` a NULL, revierte `order_status` a `ready`.
-- `mi3/frontend/components/rider/PublicRiderView.tsx`: Botón rojo ✕ cancelar (visible cuando GPS activo), `rejectDelivery()` con confirm dialog.
-- `mi3/frontend/components/rider/RiderMapEmbed.tsx`: Ruta con waypoints Rider→R11→Destino, pin destino geocodificado, 3 markers.
-
-**Commits:** `23c1885`, `9240f7f`
-**Deploys:** mi3-frontend ✅, mi3-backend ✅
-
 ---
 
-> Sesiones anteriores (185+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-28f archivadas. Últimas archivadas: 2026-04-29a (Botón cancelar rider), 2026-04-28f (MiniComandas chevron embed), 2026-04-28e (Rider fullscreen map-first).
+> Sesiones anteriores (190+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones 2026-04-19c→2026-04-29a archivadas. Últimas archivadas: 2026-04-29a (Botón cancelar rider + waypoints), 2026-04-28f (MiniComandas chevron embed), 2026-04-28e (Rider fullscreen map-first).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
