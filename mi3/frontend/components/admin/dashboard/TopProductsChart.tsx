@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronRight } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -38,6 +38,66 @@ function CustomTooltip({ active, payload }: any) {
       <p className="text-green-600">Utilidad: <span className="font-medium">{fmtCLP(d.total_profit)}</span></p>
       <p className="text-gray-600">Margen: <span className="font-bold">{d.margin_pct}%</span></p>
       <p className="text-amber-600">Acumulado: <span className="font-bold">{d.cumulative_pct.toFixed(0)}%</span></p>
+    </div>
+  );
+}
+
+/** Auto-diagnostic from Pareto data */
+function ParetoDiagnostic({ data, sort }: { data: ParetoItem[]; sort: string }) {
+  const [open, setOpen] = useState(false);
+
+  const totalRevenue = data.reduce((s, d) => s + d.total_revenue, 0);
+  const totalProfit = data.reduce((s, d) => s + d.total_profit, 0);
+  const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+
+  // Pareto: products that make up 80% of revenue
+  const pareto80 = data.filter(d => d.cumulative_pct <= 80);
+  const paretoCount = Math.max(pareto80.length, 1);
+
+  // Best and worst margin products
+  const bestMargin = [...data].sort((a, b) => b.margin_pct - a.margin_pct)[0];
+  const worstMargin = [...data].sort((a, b) => a.margin_pct - b.margin_pct)[0];
+
+  // High revenue but low margin (opportunity)
+  const highRevLowMargin = data.filter(d => d.total_revenue > totalRevenue * 0.08 && d.margin_pct < avgMargin);
+
+  const insights: string[] = [];
+
+  insights.push(`${paretoCount} de ${data.length} productos generan el 80% de los ingresos (Pareto).`);
+
+  if (bestMargin) {
+    insights.push(`Mayor margen: ${bestMargin.product_name} (${bestMargin.margin_pct}%).`);
+  }
+  if (worstMargin && worstMargin.margin_pct < 30) {
+    insights.push(`⚠️ ${worstMargin.product_name} tiene margen bajo (${worstMargin.margin_pct}%) — revisar costo.`);
+  }
+  if (highRevLowMargin.length > 0) {
+    const names = highRevLowMargin.map(d => d.product_name).join(', ');
+    insights.push(`Oportunidad: ${names} vende bien pero margen bajo el promedio (${avgMargin.toFixed(0)}%).`);
+  }
+
+  if (sort === 'profit' && data[0]) {
+    insights.push(`Más rentable: ${data[0].product_name} con ${fmtCLP(data[0].total_profit)} de utilidad.`);
+  }
+
+  return (
+    <div className="mt-2">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-gray-600 transition-colors mx-auto"
+        aria-expanded={open}
+      >
+        <ChevronRight className={cn('h-3 w-3 transition-transform', open && 'rotate-90')} />
+        Diagnóstico
+      </button>
+      {open && (
+        <div className="mt-1.5 px-3 py-2 bg-gray-50 rounded-lg space-y-1">
+          {insights.map((text, i) => (
+            <p key={i} className="text-[11px] text-gray-600 leading-relaxed">{text}</p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -102,6 +162,8 @@ export default function TopProductsChart() {
           <span className="flex items-center gap-1"><span className="h-2 w-4 bg-[#F59E0B] rounded-full" style={{ height: 2 }} />Pareto %</span>
         </div>
       )}
+      {/* Diagnostic — auto-generated from data */}
+      {data.length > 0 && <ParetoDiagnostic data={data} sort={sort} />}
     </div>
   );
 }
