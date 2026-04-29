@@ -105,6 +105,20 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
     } catch { setActionError('Sin conexión'); } finally { setUpdating(false); }
   }, [orderId]);
 
+  const rejectDelivery = useCallback(async () => {
+    if (!confirm('¿Cancelar este delivery? Se dejará de compartir tu ubicación.')) return;
+    setUpdating(true); setActionError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/v1/public/rider-orders/${orderId}/status`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ status: 'reject' }),
+      });
+      if (!res.ok) { const b = await res.json().catch(() => ({})); setActionError(b.error || 'Error'); return; }
+      setGpsActive(false);
+      setOrder(p => p ? { ...p, order_status: 'ready', rider_last_lat: null, rider_last_lng: null } : p);
+    } catch { setActionError('Sin conexión'); } finally { setUpdating(false); }
+  }, [orderId]);
+
   if (loading) return (
     <div className="flex items-center justify-center h-dvh bg-gray-900">
       <div className="h-10 w-10 border-4 border-gray-600 border-t-white rounded-full animate-spin" />
@@ -264,6 +278,12 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
             <span className="text-base">{detailOpen ? '✕' : '🧾'}</span>
             <span className="text-xs font-semibold">{detailOpen ? 'Cerrar' : 'Pedido'}</span>
           </button>
+          {/* Cancel button — visible when GPS active */}
+          {gpsActive && (
+            <button onClick={rejectDelivery} disabled={updating} className="h-14 w-14 shrink-0 rounded-2xl bg-red-500/90 shadow-lg flex items-center justify-center active:scale-95 transition-all disabled:opacity-50" aria-label="Cancelar delivery">
+              <span className="text-white text-lg font-bold">✕</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

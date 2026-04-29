@@ -80,10 +80,10 @@ class PublicRiderController extends Controller
     {
         $status = $request->input('status');
 
-        if (!in_array($status, ['out_for_delivery', 'delivered'], true)) {
+        if (!in_array($status, ['out_for_delivery', 'delivered', 'reject'], true)) {
             return response()->json([
                 'success' => false,
-                'error'   => 'Status inválido. Valores permitidos: out_for_delivery, delivered',
+                'error'   => 'Status inválido. Valores permitidos: out_for_delivery, delivered, reject',
             ], 422);
         }
 
@@ -96,6 +96,22 @@ class PublicRiderController extends Controller
                 'success' => false,
                 'error'   => 'Pedido no encontrado',
             ], 404);
+        }
+
+        // Reject: rider cancels — clear GPS, revert to ready
+        if ($status === 'reject') {
+            DB::table('tuu_orders')
+                ->where('id', $orderId)
+                ->update([
+                    'rider_last_lat' => null,
+                    'rider_last_lng' => null,
+                    'order_status'   => 'ready',
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'order'   => DB::table('tuu_orders')->where('id', $orderId)->first(),
+            ]);
         }
 
         $updatedOrder = $this->deliveryService->updateOrderStatus($orderId, $status);
