@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4540368`) — MiniComandas: chevron "Ver pedido 👀" mapa embed, "Enviar a Rider" azul |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`4668094`) — Ventas: excluir RL6, detalle compacto stock + delivery fee |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`4668094`) — VentasService: filtro RL6, stock via order_item_id, delivery_fee en totals |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`470d95c`) — Dashboard Pro: split layout, collapsible EdR, CMV, charts Recharts, monitor vivo |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`470d95c`) — 3 endpoints nuevos: top-products, cmv, monthly |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -103,6 +103,22 @@
 
 ## Sesiones Recientes
 
+### 2026-04-29d — Dashboard Pro: split layout, charts Recharts, CMV, monitor vivo
+
+**Cambios código:**
+- `mi3/backend/app/Services/Ventas/VentasService.php`: 3 métodos nuevos — `getTopProducts()` (top 10 por qty/profit), `getCmvBreakdown()` (ingredientes por costo), `getMonthlyAggregates()` (últimos 6 meses apilados).
+- `mi3/backend/app/Http/Controllers/Admin/VentasController.php`: 3 endpoints nuevos — `GET top-products`, `GET cmv`, `GET monthly`.
+- `mi3/backend/routes/api.php`: Rutas nuevas + import VentasController.
+- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: Reescritura completa — split 50/50 desktop (datos izq, charts der), mobile apilado. LiveSalesMonitor con WS indicator + sonido toggle + últimas ventas expandibles. EdR en CollapsibleSection con chevron.
+- `mi3/frontend/components/admin/dashboard/CollapsibleSection.tsx`: Componente reutilizable chevron con accent color, aria-expanded.
+- `mi3/frontend/components/admin/dashboard/CmvSection.tsx`: Tabla ingredientes por costo, highlight >10% CMV.
+- `mi3/frontend/components/admin/dashboard/MonthlyChart.tsx`: Recharts barras apiladas (ventas/costo/delivery) últimos 6 meses.
+- `mi3/frontend/components/admin/dashboard/TopProductsChart.tsx`: Recharts horizontal bar, toggle vendidos/rentables.
+- Dependencia: `recharts` instalada.
+
+**Commits:** `470d95c`
+**Deploys:** mi3-frontend ✅, mi3-backend ✅. Endpoints verificados en producción via SSH.
+
 ### 2026-04-29c — Ventas: excluir RL6 de métricas + detalle compacto con stock
 
 **Cambios código:**
@@ -134,20 +150,8 @@
 **Commits:** `23c1885`, `9240f7f`
 **Deploys:** mi3-frontend ✅, mi3-backend ✅
 
-### 2026-04-28f — caja3 MiniComandas chevron embed + OG metadata rider
-
-**Cambios código:**
-- `caja3/src/components/MiniComandas.jsx`: "Enviar a Rider 👉🏻" + botón "Rider" azul (WhatsApp con link tomar pedido), chevron "Ver pedido 👀" con mapa embed iframe (`/rider/{id}/embed`), botón "Rider" en fase ready, eliminado botón "Ver". JSX fragment fix para múltiples siblings.
-- `mi3/frontend/components/rider/RiderMapEmbed.tsx`: Nuevo componente mapa-only (3 puntos: R11 logo, rider car SVG, destino ruta) con refresh 15s.
-- `mi3/frontend/app/rider/[orderId]/embed/page.tsx`: Página embed sin UI.
-- `mi3/frontend/app/rider/[orderId]/page.tsx`: OG metadata "La Ruta 11 — Delivery" con 11.png absoluto para WhatsApp preview.
-- `mi3/frontend/public/11.png`: Ícono copiado de caja3.
-
-**Commits:** `092c312`, `efc7043`, `bd4d84f`, `d962650`, `4540368`
-**Deploys:** mi3-frontend ✅, caja3 ✅ (múltiples iteraciones, 2 fix build errors JSX)
-
 ---
 
-> Sesiones anteriores (180+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-28e archivadas. Últimas archivadas: 2026-04-28e (Rider page fullscreen map-first), 2026-04-28d (Spec rider-public-page), 2026-04-28c (Mejoras dispatch photos + comandas).
+> Sesiones anteriores (185+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones 2026-04-19c→2026-04-28f archivadas. Últimas archivadas: 2026-04-29a (Botón cancelar rider), 2026-04-28f (MiniComandas chevron embed), 2026-04-28e (Rider fullscreen map-first).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
