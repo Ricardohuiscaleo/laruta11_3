@@ -876,6 +876,11 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
               )}
               </>
             )}
+          </div>
+        ) : order.delivery_type === 'cuartel' ? (
+          <div className="text-xs bg-green-50 border border-green-200 rounded p-2 mb-2">
+            <div className="flex items-center gap-2 text-green-800">
+              <span className="font-medium">🎖️ Retirado en Cuartel RL6</span>
               {!isScheduled && order.created_at && (
                 <><Clock size={12} /><span>{new Date(order.created_at.replace(' ', 'T') + 'Z').toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' })}</span></>
               )}
