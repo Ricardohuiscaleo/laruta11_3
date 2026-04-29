@@ -65,6 +65,15 @@ class VentasService
     }
 
     /**
+     * Scope: exclude credit payment orders (RL6-*) from sales queries.
+     * These are credit repayments, not product sales.
+     */
+    private function excludeCreditPayments(\Illuminate\Database\Query\Builder $query, string $column = 'order_number'): \Illuminate\Database\Query\Builder
+    {
+        return $query->where($column, 'NOT LIKE', 'RL6-%');
+    }
+
+    /**
      * Aggregated KPIs for the given period.
      * total_sales = installment_amount - delivery_fee (net sales)
      * total_cost = SUM(item_cost * quantity) from tuu_order_items
@@ -77,6 +86,7 @@ class VentasService
 
         $row = DB::table('tuu_orders')
             ->where('payment_status', 'paid')
+            ->where('order_number', 'NOT LIKE', 'RL6-%')
             ->whereBetween('created_at', [$start, $end])
             ->selectRaw('
                 COALESCE(SUM(installment_amount), 0) as gross_sales,
@@ -94,6 +104,7 @@ class VentasService
         $totalCost = (float) DB::table('tuu_order_items as oi')
             ->join('tuu_orders as o', 'oi.order_reference', '=', 'o.order_number')
             ->where('o.payment_status', 'paid')
+            ->where('o.order_number', 'NOT LIKE', 'RL6-%')
             ->whereBetween('o.created_at', [$start, $end])
             ->selectRaw('COALESCE(SUM(oi.item_cost * oi.quantity), 0) as total_cost')
             ->value('total_cost');
@@ -122,6 +133,7 @@ class VentasService
 
         $query = DB::table('tuu_orders')
             ->where('payment_status', 'paid')
+            ->where('order_number', 'NOT LIKE', 'RL6-%')
             ->whereBetween('created_at', [$start, $end]);
 
         if ($search) {
@@ -178,6 +190,7 @@ class VentasService
 
         $rows = DB::table('tuu_orders as o')
             ->where('o.payment_status', 'paid')
+            ->where('o.order_number', 'NOT LIKE', 'RL6-%')
             ->whereBetween('o.created_at', [$start, $end])
             ->groupBy('o.payment_method')
             ->selectRaw('

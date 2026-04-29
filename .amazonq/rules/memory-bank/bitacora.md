@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-28)
+## Estado Actual (2026-04-29)
 
 ### Aplicaciones Desplegadas
 
@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4540368`) — MiniComandas: chevron "Ver pedido 👀" mapa embed, "Enviar a Rider" azul |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`9240f7f`) — Rider: botón cancelar ✕ limpia GPS, reject endpoint |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`9240f7f`) — PublicRiderController reject status, limpia rider_last_lat/lng |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`19852fe`) — Monitor delivery: pin destino, ruta realtime, datos extra panel |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`19852fe`) — DeliveryService: fix rider_url bug, campos extra en getActiveOrders |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -103,6 +103,18 @@
 
 ## Sesiones Recientes
 
+### 2026-04-29b — Monitor delivery: pin destino + ruta realtime + datos extra
+
+**Cambios código:**
+- `mi3/backend/app/Services/Delivery/DeliveryService.php`: Fix bug `return` antes de `->transform()` (rider_url nunca se agregaba). Campos nuevos en `getActiveOrders()`: `customer_name`, `customer_phone`, `product_price`, `subtotal`, `payment_method`, `delivery_distance_km`, `delivery_duration_min`.
+- `mi3/frontend/components/admin/delivery/DeliveryMap.tsx`: Reescritura — pin destino 📍 geocodificado para TODOS los pedidos (azul pulsante en ruta, rojo otros), ruta Directions API rider→destino en tiempo real (throttled), InfoWindow con distancia/duración/total/pago/rider, cache geocode para no repetir llamadas.
+- `mi3/frontend/components/admin/delivery/OrderPanel.tsx`: Distancia km + duración min, total CLP + método pago, botón "Llamar cliente" con tel: link.
+- `mi3/frontend/components/admin/sections/DeliverySection.tsx`: Bottom sheet "En ruta" mobile con distancia, duración, total, botón llamar.
+- `mi3/frontend/hooks/useDeliveryTracking.ts`: Interface `DeliveryOrder` extendida con campos nuevos del backend.
+
+**Commits:** `19852fe`
+**Deploys:** mi3-frontend ✅, mi3-backend ✅
+
 ### 2026-04-29a — Botón cancelar delivery rider + waypoints ruta embed
 
 **Cambios código:**
@@ -151,72 +163,8 @@
 **Commits:** `bec0544` (14 archivos, 1324 insertions)
 **Deploys:** mi3-frontend ✅ (`pazj6z4hqkoawhk3f0ubz0v4`), mi3-backend ✅ (`hyfsunzpb7qxt78boke4djlj`)
 
-### 2026-04-28c — Mejoras dispatch photos + comandas bebidas compactas
-
-**Cambios código:**
-- `caja3/src/utils/photoRequirements.js`: Nueva función pura `generatePhotoRequirements(deliveryType)` + helpers `getButtonState`, `formatPhotoProgress`.
-- `caja3/api/GeminiService.php`: Prompts inteligentes — recipe_description priorizado, clasificación dinámica ingredientes por categoría BD (visible/no visible/packaging), verificación orientación envases en bolsa, sugerencias de corrección específicas, token tracking con `_tokens` + `_processing_ms`.
-- `caja3/api/orders/save_dispatch_photo.php`: INSERT con `ai_tokens_total`, `ai_model`, `processing_time_ms`. Fallback también con columnas nuevas.
-- `caja3/src/components/MiniComandas.jsx`: Delivery → 2 slots etiquetados (productos + bolsa sellada) en grid-cols-2, flujo 2 fases: "📦 DESPACHAR A DELIVERY" (fotos + status→ready) → "✅ ENTREGAR" (status→delivered). Botón despacho visible siempre en delivery (independiente de isPaid). `dispatchToDelivery()` nueva función. UX overhaul: Lucide icons (Trash2, ShieldCheck, ShieldAlert, Loader2, ImagePlus), shimmer loader moderno, bloqueo subida durante análisis IA, timeout 40s con fallback, slots compactos h-28, feedback inline coloreado. Local → sin fotos, botón "✅ ENTREGAR" sin cambios.
-- `app3/api/tuu/get_comandas_v2.php`: Agrega `i.category` al SELECT de recipe ingredients + `recipe_ingredients` array con categoría para clasificación IA.
-- `caja3/create_dispatch_photo_feedback.sql`: Nueva tabla con order_id, photo_type, ai_aprobado, ai_puntaje, ai_feedback, user_retook.
-
-**BD:** Tabla `dispatch_photo_feedback` creada + columnas `ai_tokens_total`, `ai_model`, `processing_time_ms` agregadas. Fix: `tuu_orders.dispatch_photo_url` cambiado de `varchar(500)` a `TEXT` (truncaba JSON con múltiples URLs).
-
-**Commits:** `6201bd8`→`493dd52` (9 commits)
-**Deploys:** caja3 ✅ (`493dd52`), app3 ✅ (`493dd52`)
-
-### 2026-04-27h — Spec caja3-inline-merma-arqueo: paneles inline + rediseño UX completo
-
-**Cambios código:**
-- `caja3/src/components/ChecklistApp.jsx`: Prop `rol` dinámico (cajero/planchero).
-- `caja3/src/pages/checklist-planchero.astro`: Nueva página checklist planchero.
-- `caja3/src/pages/comandas/index.astro`: Fix link checklist.
-- `caja3/src/components/MenuApp.jsx`: Navbar unificada `#1a1a1a`, títulos producto `text-sm`, Agregar inline, `openPanel`/`closePanel` con params + lazy loading (MermaPanel, ArqueoPanel, VentasDetalle).
-- `caja3/src/components/MermaPanel.jsx`: Rediseño completo — header gradiente rojo→naranja, 3 pasos (buscar con highlight amarillo → motivos grid 3x4 emojis → resumen), cantidad/unidad inline, excluye extras/personalizar, solo búsqueda (sin listado), stock oculto en productos.
-- `caja3/src/components/ArqueoPanel.jsx`: Header gradiente rojo→naranja, X blanco, `openPanel` prop para VentasDetalle inline.
-- `caja3/src/components/VentasDetalle.jsx`: Acepta props `startDate`/`endDate`/`onClose`, header gradiente, funciona como panel inline desde ArqueoPanel.
-
-- `caja3/src/components/MiniComandas.jsx`: Compacto — padding 1px, nombre abreviado (Ricardo H.), switch List/LayoutGrid (Lucide), modo listado default con fotos thumbnail+click-to-zoom, detalle combos expandido, nombre `text-sm` con precio abajo.
-
-**Commits:** `204fffb`→`a8ac18a` (16 commits)
-**Deploys:** caja3 ✅ (`a8ac18a`)
-
-### 2026-04-27g — Backfill combo ingredients históricos
-
-**Cambios código:**
-- `app3/api/backfill_combo_ingredients.php`: Nuevo script — identifica combos con solo product-level transactions (sin ingredient expansion), elimina txs viejas, revierte stock_quantity, y re-procesa con processSaleInventory que expande fixed_items + selections.
-
-**BD:** 26 combos históricos corregidos (Combo Dupla, Combo Completo, Combo Gorda, etc.). Transactions product-level reemplazadas por ingredient-level. Incluye R11C-1777244854-5529 (Combo Dupla).
-
-**Commits:** `014f44e`, `9b2eaa6`
-**Deploys:** app3 ✅ (`9b2eaa6`)
-
-### 2026-04-27f — MiniComandas muestra R11 Webpay + delivery_discount en ventas-detalle + payment-success RL6
-
-**Cambios código:**
-- `caja3/src/components/MiniComandas.jsx`: Eliminado filtro que excluía TODAS las R11-* de activeOrders. Bug raíz: `!(o.order_number.startsWith('R11-'))` impedía que órdenes Webpay aparecieran en comandas.
-- `caja3/api/get_sales_detail.php`: Agregados `delivery_discount` y `subtotal` al SELECT.
-- `caja3/src/components/VentasDetalle.jsx`: Badge verde con descuento RL6 en delivery fee.
-- `app3/src/pages/payment-success.astro`: Muestra descuento RL6 en delivery (`$3.500 (-$1.000 desc. RL6 = $2.500)`).
-
-**BD:** Orden R11-1777252234-7988 cambiada a sent_to_kitchen para testing.
-
-**Commits:** `5ffc205`, `3c17c68`, `f214140`, `5e9e739`, `5b0865f`, `098a4d2`
-**Deploys:** app3 ✅ (`5b0865f`), caja3 ✅ (`098a4d2`)
-
-### 2026-04-27e — Fix payment-success "Cargando..." + limpieza disco
-
-**Cambios código:**
-- `app3/api/tuu/get_order_products_with_extras.php`: Reemplazadas credenciales hardcodeadas de Hostinger por `$config` (causaba "Database connection failed" en Docker). Agregado `combo_data` al SELECT para que payment-success muestre componentes de combos.
-- `app3/api/tuu/get_order_delivery.php`: Agregados campos `product_price`, `subtotal`, `delivery_discount`, `scheduled_time`, `is_scheduled` al SELECT.
-- `app3/src/pages/payment-success.astro`: Total se carga desde BD via `product_price` cuando no viene en URL params.
-
-**Commits:** `e96eedd`
-**Deploys:** app3 ✅ (`e96eedd`)
-
 ---
 
-> Sesiones anteriores (170+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-27e archivadas. Últimas archivadas: 2026-04-27e (Fix payment-success "Cargando..." + limpieza disco), 2026-04-27f (MiniComandas R11 Webpay + delivery_discount), 2026-04-27g (Backfill combo ingredients), 2026-04-27d (Fix selections agrupadas en combos).
+> Sesiones anteriores (180+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
+> Sesiones 2026-04-19c→2026-04-28c archivadas. Últimas archivadas: 2026-04-28c (Mejoras dispatch photos + comandas), 2026-04-27h (caja3-inline-merma-arqueo), 2026-04-27g (Backfill combo ingredients), 2026-04-27f (MiniComandas R11 Webpay + delivery_discount), 2026-04-27e (Fix payment-success).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

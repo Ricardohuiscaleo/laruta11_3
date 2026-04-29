@@ -226,65 +226,80 @@ function Pagination({
 
 function OrderDetailPanel({ detail }: { detail: OrderDetail }) {
   return (
-    <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-      {/* Header */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-        <span className="font-semibold text-gray-900">Orden #{detail.order_number}</span>
-        <span className="text-gray-500">{formatChileDateTime(detail.created_at)}</span>
-        <span className="text-gray-500">{methodLabel(detail.payment_method)}</span>
+    <div className="space-y-3 p-3 bg-gray-50 rounded-lg">
+      {/* Header — compact */}
+      <div className="flex items-center gap-2 text-xs text-gray-500">
+        <span className="font-semibold text-gray-900 text-sm">#{detail.order_number}</span>
+        <span>·</span>
+        <span>{formatChileDateTime(detail.created_at)}</span>
+        <span>·</span>
+        <span>{methodLabel(detail.payment_method)}</span>
+        {detail.customer_name && (
+          <>
+            <span>·</span>
+            <span className="text-gray-700">{detail.customer_name}</span>
+          </>
+        )}
       </div>
 
       {/* Items */}
       {detail.items.length === 0 ? (
         <p className="text-sm text-gray-400">Sin ítems</p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {detail.items.map((item, idx) => (
             <div key={idx} className="bg-white rounded-lg border overflow-hidden">
-              {/* Item row */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 px-3 py-2 text-sm">
-                <span className="font-medium text-gray-800 col-span-2 sm:col-span-1">
-                  {item.product_name} ×{item.quantity}
+              {/* Item header row */}
+              <div className="flex items-center justify-between px-3 py-2 text-sm">
+                <span className="font-medium text-gray-800">
+                  {item.product_name} <span className="text-gray-400">×{item.quantity}</span>
                 </span>
-                <span className="text-gray-600 text-right sm:text-right">
-                  <span className="sm:hidden text-xs text-gray-400 mr-1">Precio:</span>
-                  {formatCLP(item.unit_price)}
-                </span>
-                <span className="text-gray-600 text-right sm:text-right">
-                  <span className="sm:hidden text-xs text-gray-400 mr-1">Costo:</span>
-                  {formatCLP(item.item_cost)}
-                </span>
-                <span className={cn(
-                  'text-right sm:text-right font-medium',
-                  item.profit >= 0 ? 'text-green-600' : 'text-red-600',
-                )}>
-                  <span className="sm:hidden text-xs text-gray-400 mr-1">Utilidad:</span>
-                  {formatCLP(item.profit)}
-                </span>
+                <div className="flex items-center gap-3 text-xs shrink-0">
+                  <span className="text-gray-600">{formatCLP(item.unit_price)}</span>
+                  <span className="text-gray-400">C: {formatCLP(item.item_cost)}</span>
+                  <span className={cn('font-semibold', item.profit >= 0 ? 'text-green-600' : 'text-red-600')}>
+                    {formatCLP(item.profit)}
+                  </span>
+                </div>
               </div>
 
-              {/* Ingredients sub-table */}
+              {/* Ingredients table — compact with stock columns */}
               {item.ingredients.length > 0 && (
-                <div className="border-t bg-gray-50/50 px-3 py-2">
-                  <p className="text-xs font-medium text-gray-500 mb-1">Ingredientes</p>
-                  <div className="space-y-1">
-                    {item.ingredients.map((ing, iIdx) => (
-                      <div key={iIdx} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-600">
-                        <span className="font-medium min-w-[100px]">{ing.ingredient_name}</span>
-                        <span>{ing.quantity_used} {ing.unit}</span>
-                        {ing.stock_before != null && ing.stock_after != null && (
-                          <span className="text-gray-400">
-                            {ing.stock_before} → {ing.stock_after}
-                          </span>
-                        )}
-                        {ing.stock_status === 'warning' ? (
-                          <AlertTriangle className="h-3.5 w-3.5 text-amber-500" aria-label="Stock bajo" />
-                        ) : (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-green-500" aria-label="Stock OK" />
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                <div className="border-t bg-gray-50/50">
+                  <table className="w-full text-xs" role="table">
+                    <thead>
+                      <tr className="text-gray-400 text-[10px] uppercase tracking-wider">
+                        <th className="text-left px-3 py-1 font-medium">Ingrediente</th>
+                        <th className="text-right px-2 py-1 font-medium">Antes</th>
+                        <th className="text-right px-2 py-1 font-medium">Consumo</th>
+                        <th className="text-right px-2 py-1 font-medium">Después</th>
+                        <th className="text-center px-1 py-1 font-medium w-6"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {item.ingredients.map((ing, iIdx) => (
+                        <tr key={iIdx} className="text-gray-600">
+                          <td className="px-3 py-1 font-medium text-gray-700">{ing.ingredient_name}</td>
+                          <td className="text-right px-2 py-1 text-gray-400 tabular-nums">
+                            {ing.stock_before != null ? `${ing.stock_before}` : '—'}
+                          </td>
+                          <td className="text-right px-2 py-1 font-medium text-amber-600 tabular-nums">
+                            -{ing.quantity_used} {ing.unit}
+                          </td>
+                          <td className="text-right px-2 py-1 tabular-nums">
+                            {ing.stock_after != null ? `${ing.stock_after}` : '—'}
+                          </td>
+                          <td className="text-center px-1 py-1">
+                            {ing.stock_status === 'warning' ? (
+                              <AlertTriangle className="h-3 w-3 text-amber-500 inline" aria-label="Stock bajo" />
+                            ) : (
+                              <CheckCircle2 className="h-3 w-3 text-green-500 inline" aria-label="Stock OK" />
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
@@ -292,11 +307,11 @@ function OrderDetailPanel({ detail }: { detail: OrderDetail }) {
         </div>
       )}
 
-      {/* Footer totals */}
-      <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm border-t pt-3">
-        <span className="text-gray-600">Subtotal: <span className="font-semibold text-gray-900">{formatCLP(detail.totals.subtotal)}</span></span>
-        <span className="text-gray-600">Costo: <span className="font-semibold text-gray-900">{formatCLP(detail.totals.total_cost)}</span></span>
-        <span className="text-gray-600">Utilidad: <span className={cn('font-semibold', detail.totals.total_profit >= 0 ? 'text-green-600' : 'text-red-600')}>{formatCLP(detail.totals.total_profit)}</span></span>
+      {/* Footer totals — compact inline */}
+      <div className="flex items-center gap-4 text-xs border-t pt-2">
+        <span className="text-gray-500">Subtotal: <span className="font-bold text-gray-900">{formatCLP(detail.totals.subtotal)}</span></span>
+        <span className="text-gray-500">Costo: <span className="font-bold text-gray-900">{formatCLP(detail.totals.total_cost)}</span></span>
+        <span className="text-gray-500">Utilidad: <span className={cn('font-bold', detail.totals.total_profit >= 0 ? 'text-green-600' : 'text-red-600')}>{formatCLP(detail.totals.total_profit)}</span></span>
       </div>
     </div>
   );
