@@ -366,6 +366,8 @@ class VentasService
             'items'          => $resultItems,
             'totals'         => [
                 'subtotal'     => $subtotal,
+                'delivery_fee' => (float) ($order->delivery_fee ?? 0),
+                'total'        => $subtotal + (float) ($order->delivery_fee ?? 0),
                 'total_cost'   => $totalCost,
                 'total_profit' => $totalProfit,
             ],

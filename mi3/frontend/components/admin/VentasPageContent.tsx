@@ -84,6 +84,8 @@ interface OrderDetail {
   items: OrderDetailItem[];
   totals: {
     subtotal: number;
+    delivery_fee: number;
+    total: number;
     total_cost: number;
     total_profit: number;
   };
@@ -308,8 +310,14 @@ function OrderDetailPanel({ detail }: { detail: OrderDetail }) {
       )}
 
       {/* Footer totals — compact inline */}
-      <div className="flex items-center gap-4 text-xs border-t pt-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs border-t pt-2">
         <span className="text-gray-500">Subtotal: <span className="font-bold text-gray-900">{formatCLP(detail.totals.subtotal)}</span></span>
+        {detail.totals.delivery_fee > 0 && (
+          <span className="text-gray-500">Delivery: <span className="font-bold text-gray-900">{formatCLP(detail.totals.delivery_fee)}</span></span>
+        )}
+        {detail.totals.delivery_fee > 0 && (
+          <span className="text-gray-500">Total: <span className="font-bold text-gray-900">{formatCLP(detail.totals.total)}</span></span>
+        )}
         <span className="text-gray-500">Costo: <span className="font-bold text-gray-900">{formatCLP(detail.totals.total_cost)}</span></span>
         <span className="text-gray-500">Utilidad: <span className={cn('font-bold', detail.totals.total_profit >= 0 ? 'text-green-600' : 'text-red-600')}>{formatCLP(detail.totals.total_profit)}</span></span>
       </div>
