@@ -184,11 +184,33 @@ export default function DashboardSection() {
   const [loading, setLoading] = useState(true);
   const [shiftLoading, setShiftLoading] = useState(true);
   const [liveSales, setLiveSales] = useState<LiveSale[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+
+  const isCurrentMonth = selectedMonth === (() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  })();
+
+  const navigateMonth = (dir: -1 | 1) => {
+    const [y, m] = selectedMonth.split('-').map(Number);
+    const d = new Date(y, m - 1 + dir, 1);
+    setSelectedMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  };
+
+  const selectedMonthLabel = (() => {
+    const [y, m] = selectedMonth.split('-').map(Number);
+    return `${meses[m - 1]} ${y}`;
+  })();
 
   const fetchData = useCallback(async () => {
+    setLoading(true);
     try {
+      const monthParam = isCurrentMonth ? '' : `?month=${selectedMonth}`;
       const [dashRes, shiftRes, cmvRes] = await Promise.all([
-        apiFetch<{ success: boolean; data: DashboardData }>('/admin/dashboard'),
+        apiFetch<{ success: boolean; data: DashboardData }>(`/admin/dashboard${monthParam}`),
         apiFetch<{ success: boolean; data: { kpis: ShiftKpis; payment_breakdown: PaymentBreakdown[] } }>('/admin/ventas/kpis?period=shift_today'),
         apiFetch<{ success: boolean; data: CmvData }>('/admin/ventas/cmv?period=month'),
       ]);
@@ -197,7 +219,7 @@ export default function DashboardSection() {
       if (cmvRes.data) setCmvData(cmvRes.data);
     } catch { /* silent */ }
     finally { setLoading(false); setShiftLoading(false); }
-  }, []);
+  }, [selectedMonth, isCurrentMonth]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -217,8 +239,6 @@ export default function DashboardSection() {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-amber-600" /></div>;
 
   const pnl = data?.pnl;
-  const mesActual = meses[new Date().getMonth()];
-  const anio = new Date().getFullYear();
   const ventas = pnl?.ingresos.ventas_netas ?? 0;
   const go = pnl?.gastos_operacion;
   const metaEquilibrio = pnl?.meta.meta_equilibrio ?? 0;
@@ -233,9 +253,13 @@ export default function DashboardSection() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-3">
           <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
-            <div className="bg-gray-900 px-4 py-2.5 flex items-center justify-between">
+            <div className="bg-neutral-800 px-4 py-2.5 flex items-center justify-between">
               <div className="flex items-center gap-2"><Receipt className="h-4 w-4 text-amber-400" /><h2 className="text-sm font-semibold text-white">Estado de Resultados</h2></div>
-              <span className="text-xs text-gray-400">{mesActual} {anio}</span>
+              <div className="flex items-center gap-1">
+                <button type="button" onClick={() => navigateMonth(-1)} className="h-7 w-7 flex items-center justify-center rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors" aria-label="Mes anterior">◀</button>
+                <span className="text-xs text-gray-300 font-medium min-w-[90px] text-center">{selectedMonthLabel}</span>
+                <button type="button" onClick={() => navigateMonth(1)} disabled={isCurrentMonth} className="h-7 w-7 flex items-center justify-center rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" aria-label="Mes siguiente">▶</button>
+              </div>
             </div>
             {pnl && metaEquilibrio > 0 && <MetaProgress meta={metaEquilibrio} ventas={ventas} />}
             <div className="grid grid-cols-3 gap-2 px-3 py-2">
@@ -284,12 +308,12 @@ export default function DashboardSection() {
                 </div>
               </PnlRowExpandable>
               {metaEquilibrio > 0 && <PnlRow label="Meta Equilibrio" value={metaEquilibrio} bold color="text-blue-700" />}
-              <div className={cn('py-2', (pnl?.resultado.resultado_neto ?? 0) >= 0 ? 'bg-green-50' : 'bg-red-50')}>
-                <div className="flex items-center justify-between px-3">
-                  <span className="text-sm font-bold text-gray-900">Resultado Neto</span>
+              <div className={cn('py-3 rounded-b-xl', (pnl?.resultado.resultado_neto ?? 0) >= 0 ? 'bg-green-600' : 'bg-red-600')}>
+                <div className="flex items-center justify-between px-4">
+                  <span className="text-sm font-bold text-white">Resultado Neto</span>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-400 tabular-nums">{(pnl?.resultado.resultado_neto_pct ?? 0).toFixed(1)}%</span>
-                    <span className={cn('text-lg font-black tabular-nums', (pnl?.resultado.resultado_neto ?? 0) >= 0 ? 'text-green-700' : 'text-red-700')}>
+                    <span className="text-sm text-white/80 tabular-nums font-semibold">{(pnl?.resultado.resultado_neto_pct ?? 0).toFixed(1)}%</span>
+                    <span className="text-xl font-black tabular-nums text-white">
                       {(pnl?.resultado.resultado_neto ?? 0) < 0 ? '-' : ''}{formatCLP(Math.abs(pnl?.resultado.resultado_neto ?? 0))}
                     </span>
                   </div>

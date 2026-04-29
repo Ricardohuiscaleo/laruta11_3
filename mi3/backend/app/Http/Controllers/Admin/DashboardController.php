@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Services\Payroll\NominaService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
 class DashboardController extends Controller
@@ -13,11 +14,19 @@ class DashboardController extends Controller
         private readonly NominaService $nominaService,
     ) {}
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $mes = now()->format('Y-m');
-        $mesInicio = now()->startOfMonth();
-        $mesFin = now()->endOfMonth();
+        // Support navigating to previous months: ?month=2026-03
+        $monthParam = $request->query('month');
+        if ($monthParam && preg_match('/^\d{4}-\d{2}$/', $monthParam)) {
+            $baseDate = \Carbon\Carbon::createFromFormat('Y-m', $monthParam)->startOfMonth();
+        } else {
+            $baseDate = now();
+        }
+
+        $mes = $baseDate->format('Y-m');
+        $mesInicio = $baseDate->copy()->startOfMonth();
+        $mesFin = $baseDate->copy()->endOfMonth();
 
         $data = [
             'ventas_mes' => 0,
@@ -66,29 +75,32 @@ class DashboardController extends Controller
             ],
         ];
 
-        // Fetch ventas/meta/proyección from caja3 (keep HTTP call for smart projection)
-        try {
-            $res = Http::timeout(8)->get('https://caja.laruta11.cl/api/get_dashboard_cards.php');
-            if ($res->successful()) {
-                $cards = $res->json();
-                if ($cards['success'] ?? false) {
-                    $d = $cards['data'];
-                    $ventasReal = (float) ($d['ventas']['real'] ?? 0);
-                    $totalCompras = (float) ($d['compras']['total_mes'] ?? 0);
-                    $totalOrdenes = (int) ($d['ventas']['total_ordenes'] ?? 0);
-                    $ticketPromedio = (float) ($d['ventas']['ticket_promedio'] ?? 0);
-                    $metaMensual = (float) ($d['ventas']['meta_mensual'] ?? 0);
-                    $pctMeta = (float) ($d['ventas']['porcentaje_meta'] ?? 0);
-                    $ventasProyectadas = (float) ($d['ventas']['proyectado'] ?? 0);
+        $isCurrentMonth = $baseDate->format('Y-m') === now()->format('Y-m');
 
-                    $data['ventas_mes'] = $ventasReal;
-                    $data['compras_mes'] = $totalCompras;
+        // Fetch ventas — current month from caja3, historical from VentasService
+        if ($isCurrentMonth) {
+            try {
+                $res = Http::timeout(8)->get('https://caja.laruta11.cl/api/get_dashboard_cards.php');
+                if ($res->successful()) {
+                    $cards = $res->json();
+                    if ($cards['success'] ?? false) {
+                        $d = $cards['data'];
+                        $ventasReal = (float) ($d['ventas']['real'] ?? 0);
+                        $totalCompras = (float) ($d['compras']['total_mes'] ?? 0);
+                        $totalOrdenes = (int) ($d['ventas']['total_ordenes'] ?? 0);
+                        $ticketPromedio = (float) ($d['ventas']['ticket_promedio'] ?? 0);
+                        $metaMensual = (float) ($d['ventas']['meta_mensual'] ?? 0);
+                        $pctMeta = (float) ($d['ventas']['porcentaje_meta'] ?? 0);
+                        $ventasProyectadas = (float) ($d['ventas']['proyectado'] ?? 0);
 
-                    $data['pnl']['ingresos']['ventas_netas'] = $ventasReal;
-                    $data['pnl']['ingresos']['total_ordenes'] = $totalOrdenes;
-                    $data['pnl']['ingresos']['ticket_promedio'] = $ticketPromedio;
+                        $data['ventas_mes'] = $ventasReal;
+                        $data['compras_mes'] = $totalCompras;
 
-                    $data['pnl']['flujo_caja']['compras_mes'] = $totalCompras;
+                        $data['pnl']['ingresos']['ventas_netas'] = $ventasReal;
+                        $data['pnl']['ingresos']['total_ordenes'] = $totalOrdenes;
+                        $data['pnl']['ingresos']['ticket_promedio'] = $ticketPromedio;
+
+                        $data['pnl']['flujo_caja']['compras_mes'] = $totalCompras;
 
                     $data['pnl']['meta']['meta_mensual'] = $metaMensual;
                     $data['pnl']['meta']['porcentaje_meta'] = $pctMeta;
@@ -98,8 +110,37 @@ class DashboardController extends Controller
         } catch (\Exception $e) {
             // Silently fail — dashboard still shows with zeros
         }
+        } else {
+            // Historical month — query tuu_orders directly
+            $histStart = $mesInicio->copy()->setTimezone('America/Santiago')->startOfDay()->utc();
+            $histEnd = $mesFin->copy()->setTimezone('America/Santiago')->endOfDay()->utc();
 
-        // CMV: from caja3 sales analytics (uses shift logic + correct cost_price)
+            $histRow = \Illuminate\Support\Facades\DB::table('tuu_orders')
+                ->where('payment_status', 'paid')
+                ->where('order_number', 'NOT LIKE', 'RL6-%')
+                ->whereBetween('created_at', [$histStart, $histEnd])
+                ->selectRaw('COALESCE(SUM(installment_amount) - SUM(COALESCE(delivery_fee, 0)), 0) as net, COUNT(*) as cnt')
+                ->first();
+
+            $histCost = (float) \Illuminate\Support\Facades\DB::table('tuu_order_items as oi')
+                ->join('tuu_orders as o', 'oi.order_reference', '=', 'o.order_number')
+                ->where('o.payment_status', 'paid')
+                ->where('o.order_number', 'NOT LIKE', 'RL6-%')
+                ->whereBetween('o.created_at', [$histStart, $histEnd])
+                ->selectRaw('COALESCE(SUM(oi.item_cost * oi.quantity), 0) as c')
+                ->value('c');
+
+            $ventasReal = (float) ($histRow->net ?? 0);
+            $totalOrdenes = (int) ($histRow->cnt ?? 0);
+            $data['ventas_mes'] = $ventasReal;
+            $data['pnl']['ingresos']['ventas_netas'] = $ventasReal;
+            $data['pnl']['ingresos']['total_ordenes'] = $totalOrdenes;
+            $data['pnl']['ingresos']['ticket_promedio'] = $totalOrdenes > 0 ? round($ventasReal / $totalOrdenes) : 0;
+            $data['pnl']['costo_ventas']['costo_ingredientes'] = $histCost;
+        }
+
+        // CMV: from caja3 sales analytics (uses shift logic + correct cost_price) — only current month
+        if ($isCurrentMonth) {
         try {
             $res2 = Http::timeout(8)->get('https://caja.laruta11.cl/api/get_sales_analytics.php', [
                 'period' => 'month',
@@ -115,6 +156,7 @@ class DashboardController extends Controller
         } catch (\Exception $e) {
             // Silently fail
         }
+        } // end isCurrentMonth CMV block
 
         // Nómina: solo centro ruta11, excluyendo dueño
         try {
@@ -204,6 +246,6 @@ class DashboardController extends Controller
         $data['pnl']['meta']['meta_equilibrio'] = $margenBrutoPct > 0
             ? round($totalOpex / ($margenBrutoPct / 100)) : 0;
 
-        return response()->json(['success' => true, 'data' => $data]);
+        return response()->json(['success' => true, 'data' => $data, 'month' => $mes]);
     }
 }
