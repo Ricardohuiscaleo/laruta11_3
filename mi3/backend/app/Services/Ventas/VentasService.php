@@ -247,7 +247,7 @@ class VentasService
         // Query 2 — order items
         $items = DB::table('tuu_order_items')
             ->where('order_reference', $orderNumber)
-            ->select(['product_id', 'product_name', 'product_price', 'item_cost', 'quantity'])
+            ->select(['id', 'product_id', 'product_name', 'product_price', 'item_cost', 'quantity'])
             ->get();
 
         // Query 3 — real ingredient consumption (only if table exists)
@@ -260,6 +260,7 @@ class VentasService
                 ->where('it.order_reference', $orderNumber)
                 ->where('it.transaction_type', 'sale')
                 ->select([
+                    'it.order_item_id',
                     'it.product_id',
                     'it.ingredient_id',
                     'i.name as ingredient_name',
@@ -272,8 +273,9 @@ class VentasService
                 ->get();
         }
 
-        // Group real consumption by product_id
-        $realByProduct = $realConsumption->groupBy('product_id');
+        // Group by order_item_id first (preferred), fallback to product_id
+        $realByItemId = $realConsumption->groupBy('order_item_id');
+        $realByProduct = $realConsumption->filter(fn ($r) => $r->product_id !== null)->groupBy('product_id');
 
         // Build items array with ingredients
         $resultItems = [];
@@ -284,21 +286,26 @@ class VentasService
             $profit    = $unitPrice - $itemCost;
 
             $ingredients = [];
+            $itemId    = $item->id;
             $productId = $item->product_id;
 
-            if ($productId && $realByProduct->has($productId)) {
-                // Use real consumption from inventory_transactions
-                foreach ($realByProduct->get($productId) as $row) {
-                    $newStock      = (float) $row->new_stock;
+            // Priority: match by order_item_id, then by product_id
+            $matched = $realByItemId->get($itemId) ?? ($productId ? $realByProduct->get($productId) : null);
+
+            if ($matched && $matched->isNotEmpty()) {
+                foreach ($matched as $row) {
+                    $prevStock     = $row->previous_stock !== null ? (float) $row->previous_stock : null;
+                    $newStock      = $row->new_stock !== null ? (float) $row->new_stock : null;
                     $minStockLevel = (float) $row->min_stock_level;
+                    $qtyUsed       = abs((float) $row->quantity_used);
 
                     $ingredients[] = [
                         'ingredient_name' => $row->ingredient_name,
-                        'quantity_used'   => (float) $row->quantity_used,
+                        'quantity_used'   => $qtyUsed,
                         'unit'            => $row->unit,
-                        'stock_before'    => (float) $row->previous_stock,
+                        'stock_before'    => $prevStock,
                         'stock_after'     => $newStock,
-                        'stock_status'    => $newStock < $minStockLevel ? 'warning' : 'ok',
+                        'stock_status'    => ($newStock !== null && $newStock < $minStockLevel) ? 'warning' : 'ok',
                     ];
                 }
             } elseif ($productId) {

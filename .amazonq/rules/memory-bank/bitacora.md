@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4540368`) — MiniComandas: chevron "Ver pedido 👀" mapa embed, "Enviar a Rider" azul |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`19852fe`) — Monitor delivery: pin destino, ruta realtime, datos extra panel |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`19852fe`) — DeliveryService: fix rider_url bug, campos extra en getActiveOrders |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`0e533cd`) — Ventas: excluir RL6, detalle compacto stock antes/consumo/después |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`0e533cd`) — VentasService: filtro RL6 en KPIs/transacciones/breakdown |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -103,6 +103,15 @@
 
 ## Sesiones Recientes
 
+### 2026-04-29c — Ventas: excluir RL6 de métricas + detalle compacto con stock
+
+**Cambios código:**
+- `mi3/backend/app/Services/Ventas/VentasService.php`: `WHERE order_number NOT LIKE 'RL6-%'` en `getKpis()`, `getTransactions()`, `getPaymentBreakdown()`. Pagos de crédito RL6/RL6-MANUAL ya no inflan ventas. Helper `excludeCreditPayments()`.
+- `mi3/frontend/components/admin/VentasPageContent.tsx`: `OrderDetailPanel` rediseñado — header compacto 1 línea (orden·fecha·pago·cliente), items con precio/costo/utilidad inline, ingredientes en tabla con columnas Antes|Consumo|Después (tabular-nums), totales compactos.
+
+**Commits:** `0e533cd`
+**Deploys:** mi3-frontend ✅, mi3-backend ✅
+
 ### 2026-04-29b — Monitor delivery: pin destino + ruta realtime + datos extra
 
 **Cambios código:**
@@ -137,34 +146,8 @@
 **Commits:** `092c312`, `efc7043`, `bd4d84f`, `d962650`, `4540368`
 **Deploys:** mi3-frontend ✅, caja3 ✅ (múltiples iteraciones, 2 fix build errors JSX)
 
-### 2026-04-28e — Rider page: fullscreen map-first + UX iteraciones
-
-**Cambios código:**
-- `mi3/frontend/components/rider/PublicRiderView.tsx`: Reescritura completa iterativa — mapa fullscreen, header flotante dirección, 3 fases rider (Ir al local → Recibir pedido → Entregar), progress bar 3 pasos, pin R11 con logo real S3, ruta dinámica con routeKey, botón ubicación flechita, bottom sheet "Pedido", SVG auto negro fondo transparente con cono orientación, mapa rota según heading tipo Waze (auto siempre apunta arriba via `map.setHeading()`).
-- `mi3/frontend/hooks/usePublicRiderGPS.ts`: Heading GPS + brújula dispositivo (DeviceOrientationEvent iOS/Android), fallback compass cuando quieto.
-- `mi3/frontend/public/rider-car.svg`: SVG auto negro fondo transparente con cono azul orientación.
-- `mi3/frontend/components/admin/delivery/DeliveryMap.tsx`: `suppressMarkers: false` para mostrar pins destino.
-
-**Commits:** `fe153e8`, `f44ffa7`, `c1d0b9a`, `d5d3518`, `0825448`, `8f7acd0`, `be2046a`
-**Deploys:** mi3-frontend ✅ (7 deploys iterativos)
-
-### 2026-04-28d — Spec rider-public-page: página pública rider sin auth
-
-**Cambios código:**
-- `mi3/backend/app/Http/Controllers/Public/PublicRiderController.php`: Nuevo controlador con 3 endpoints públicos — `show()` (datos completos pedido + items + food truck), `updateStatus()` (out_for_delivery/delivered con eventos Reverb), `updateLocation()` (GPS con persistencia condicional en rider_locations).
-- `mi3/backend/routes/api.php`: Grupo `v1/public/rider-orders` con GET, PATCH status, POST location.
-- `mi3/backend/app/Services/Delivery/DeliveryService.php`: `rider_url` agregado a `getActiveOrders()` con formato `https://mi.laruta11.cl/rider/{id}`.
-- `mi3/frontend/hooks/usePublicRiderGPS.ts`: Hook GPS público — `fetch` directo (sin auth), intervalo 10s, `watchPosition` con `enableHighAccuracy`.
-- `mi3/frontend/components/rider/PublicRiderView.tsx`: Componente mobile-first — datos pedido, productos, montos CLP, link tel:, link Google Maps, mapa embebido con ruta Directions API, botones "En camino"→"Entregado", pantalla confirmación entrega.
-- `mi3/frontend/app/rider/[orderId]/page.tsx`: Server component wrapper sin auth.
-- `mi3/frontend/hooks/useDeliveryTracking.ts`: `rider_url` agregado a interfaz `DeliveryOrder`.
-- `mi3/frontend/components/admin/delivery/OrderPanel.tsx`: Botones "Link rider" (copiar portapapeles) + "QR" (código QR con `qrcode.react`).
-
-**Commits:** `bec0544` (14 archivos, 1324 insertions)
-**Deploys:** mi3-frontend ✅ (`pazj6z4hqkoawhk3f0ubz0v4`), mi3-backend ✅ (`hyfsunzpb7qxt78boke4djlj`)
-
 ---
 
 > Sesiones anteriores (180+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-28c archivadas. Últimas archivadas: 2026-04-28c (Mejoras dispatch photos + comandas), 2026-04-27h (caja3-inline-merma-arqueo), 2026-04-27g (Backfill combo ingredients), 2026-04-27f (MiniComandas R11 Webpay + delivery_discount), 2026-04-27e (Fix payment-success).
+> Sesiones 2026-04-19c→2026-04-28e archivadas. Últimas archivadas: 2026-04-28e (Rider page fullscreen map-first), 2026-04-28d (Spec rider-public-page), 2026-04-28c (Mejoras dispatch photos + comandas).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
