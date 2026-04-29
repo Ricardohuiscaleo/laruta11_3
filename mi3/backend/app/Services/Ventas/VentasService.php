@@ -528,9 +528,9 @@ class VentasService
                 ->selectRaw('COALESCE(SUM(oi.item_cost * oi.quantity), 0) as c')
                 ->value('c');
 
-            // Nómina from pagos_nomina or estimate from personal
+            // Nómina from pagos_nomina (column: mes, type: date)
             $nomina = (float) DB::table('pagos_nomina')
-                ->whereRaw("DATE_FORMAT(fecha_pago, '%Y-%m') = ?", [$row->month])
+                ->whereRaw("DATE_FORMAT(mes, '%Y-%m') = ?", [$row->month])
                 ->sum('monto');
 
             // If no payroll table data, try compras with tipo_compra = 'nomina'
