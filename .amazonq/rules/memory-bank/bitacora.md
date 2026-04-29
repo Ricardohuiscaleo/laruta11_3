@@ -117,6 +117,7 @@
 
 **Commits:** `470d95c`, `c26cfcf`, `a9d5266`, `f790af5`, `a99ecb7`
 **Deploys:** mi3-frontend ✅, mi3-backend ✅ (múltiples iteraciones UX).
+**BD:** Insertados 4 registros en `pagos_nomina`: Oct 2025 ($1.590.000), Nov 2025 ($1.590.000), Dic 2025 ($1.590.000), Ene 2026 ($1.500.000). Feb y Mar ya existían.
 
 ### 2026-04-29c — Ventas: excluir RL6 de métricas + detalle compacto con stock
 
