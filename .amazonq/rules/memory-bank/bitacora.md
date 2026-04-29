@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4540368`) — MiniComandas: chevron "Ver pedido 👀" mapa embed, "Enviar a Rider" azul |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`470d95c`) — Dashboard Pro: split layout, collapsible EdR, CMV, charts Recharts, monitor vivo |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`c26cfcf`) — Dashboard: monitor turno, EdR chevrones inline, CMV integrado, Pareto, monthly stacked |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`470d95c`) — 3 endpoints nuevos: top-products, cmv, monthly |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -103,21 +103,20 @@
 
 ## Sesiones Recientes
 
-### 2026-04-29d — Dashboard Pro: split layout, charts Recharts, CMV, monitor vivo
+### 2026-04-29d — Dashboard Pro: split layout, charts, monitor turno, UX fixes
 
 **Cambios código:**
-- `mi3/backend/app/Services/Ventas/VentasService.php`: 3 métodos nuevos — `getTopProducts()` (top 10 por qty/profit), `getCmvBreakdown()` (ingredientes por costo), `getMonthlyAggregates()` (últimos 6 meses apilados).
-- `mi3/backend/app/Http/Controllers/Admin/VentasController.php`: 3 endpoints nuevos — `GET top-products`, `GET cmv`, `GET monthly`.
+- `mi3/backend/app/Services/Ventas/VentasService.php`: 3 métodos nuevos — `getTopProducts()`, `getCmvBreakdown()`, `getMonthlyAggregates()`.
+- `mi3/backend/app/Http/Controllers/Admin/VentasController.php`: 3 endpoints — `GET top-products`, `GET cmv`, `GET monthly`.
 - `mi3/backend/routes/api.php`: Rutas nuevas + import VentasController.
-- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: Reescritura completa — split 50/50 desktop (datos izq, charts der), mobile apilado. LiveSalesMonitor con WS indicator + sonido toggle + últimas ventas expandibles. EdR en CollapsibleSection con chevron.
-- `mi3/frontend/components/admin/dashboard/CollapsibleSection.tsx`: Componente reutilizable chevron con accent color, aria-expanded.
-- `mi3/frontend/components/admin/dashboard/CmvSection.tsx`: Tabla ingredientes por costo, highlight >10% CMV.
-- `mi3/frontend/components/admin/dashboard/MonthlyChart.tsx`: Recharts barras apiladas (ventas/costo/delivery) últimos 6 meses.
-- `mi3/frontend/components/admin/dashboard/TopProductsChart.tsx`: Recharts horizontal bar, toggle vendidos/rentables.
+- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: Reescritura — split 50/50 desktop, monitor turno actual (shift_today + realtime WS), EdR single card con chevrones inline por fila (Ventas→breakdown, CMV→ingredientes, OPEX→detalle), sin sombras verdes, CMV integrado.
+- `mi3/frontend/components/admin/dashboard/MonthlyChart.tsx`: Recharts barras con header pérdidas/ganancias (+Xk/-Xk) por columna.
+- `mi3/frontend/components/admin/dashboard/TopProductsChart.tsx`: ComposedChart con línea Pareto amarilla (% acumulado), toggle vendidos/rentables.
+- `mi3/frontend/components/admin/dashboard/CollapsibleSection.tsx`: Componente reutilizable chevron.
 - Dependencia: `recharts` instalada.
 
-**Commits:** `470d95c`
-**Deploys:** mi3-frontend ✅, mi3-backend ✅. Endpoints verificados en producción via SSH.
+**Commits:** `470d95c`, `c26cfcf`
+**Deploys:** mi3-frontend ✅, mi3-backend ✅. Endpoints verificados SSH.
 
 ### 2026-04-29c — Ventas: excluir RL6 de métricas + detalle compacto con stock
 
