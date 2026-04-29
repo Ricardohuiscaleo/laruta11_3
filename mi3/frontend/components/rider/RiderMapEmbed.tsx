@@ -12,23 +12,74 @@ interface OrderData {
   food_truck: { latitud: number; longitud: number } | null;
 }
 
-function RouteLayer({ origin, destination }: { origin: { lat: number; lng: number }; destination: string }) {
+/* Route with waypoint: Rider → R11 → Destino (or R11 → Destino if no rider) */
+function MultiRoute({ riderPos, foodTruck, destination }: {
+  riderPos: { lat: number; lng: number } | null;
+  foodTruck: { lat: number; lng: number } | null;
+  destination: string;
+}) {
   const map = useMap();
   const routesLib = useMapsLibrary('routes');
   const rendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  const keyRef = useRef('');
+
+  const origin = riderPos || foodTruck;
+  const key = `${origin?.lat?.toFixed(3)}-${origin?.lng?.toFixed(3)}-${foodTruck?.lat}-${destination}`;
+
   useEffect(() => {
-    if (!map || !routesLib) return;
+    if (!map || !routesLib || !origin) return;
+    if (keyRef.current === key) return;
+    keyRef.current = key;
+
     if (!rendererRef.current) {
-      rendererRef.current = new routesLib.DirectionsRenderer({ suppressMarkers: true, polylineOptions: { strokeColor: '#4285F4', strokeWeight: 4, strokeOpacity: 0.8 } });
+      rendererRef.current = new routesLib.DirectionsRenderer({
+        suppressMarkers: true,
+        polylineOptions: { strokeColor: '#4285F4', strokeWeight: 4, strokeOpacity: 0.8 },
+      });
       rendererRef.current.setMap(map);
     }
+
+    const waypoints: google.maps.DirectionsWaypoint[] = [];
+    if (riderPos && foodTruck) {
+      waypoints.push({ location: foodTruck, stopover: true });
+    }
+
     new routesLib.DirectionsService().route(
-      { origin, destination, travelMode: google.maps.TravelMode.DRIVING },
+      { origin, destination, waypoints, travelMode: google.maps.TravelMode.DRIVING },
       (r, s) => { if (s === 'OK' && r && rendererRef.current) rendererRef.current.setDirections(r); },
     );
+
     return () => { if (rendererRef.current) { rendererRef.current.setMap(null); rendererRef.current = null; } };
-  }, [map, routesLib, origin.lat, origin.lng, destination]);
+  }, [map, routesLib, key, origin, riderPos, foodTruck, destination]);
+
   return null;
+}
+
+/* Destination pin — geocoded from address, cached */
+function DestinationPin({ address }: { address: string }) {
+  const map = useMap();
+  const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null);
+
+  useEffect(() => {
+    if (!map || !address) return;
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address }, (results, status) => {
+      if (status === 'OK' && results?.[0]) {
+        const loc = results[0].geometry.location;
+        setPos({ lat: loc.lat(), lng: loc.lng() });
+      }
+    });
+  }, [map, address]);
+
+  if (!pos) return null;
+  return (
+    <AdvancedMarker position={pos} zIndex={150}>
+      <div className="flex flex-col items-center">
+        <div className="h-7 w-7 rounded-full bg-red-500 border-2 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold">📍</div>
+        <span className="text-[7px] font-bold bg-red-500 text-white px-1 py-0.5 rounded-full mt-0.5 shadow max-w-[80px] truncate">Destino</span>
+      </div>
+    </AdvancedMarker>
+  );
 }
 
 export default function RiderMapEmbed({ orderId }: { orderId: string }) {
@@ -57,7 +108,7 @@ export default function RiderMapEmbed({ orderId }: { orderId: string }) {
   return (
     <div className="h-dvh w-full">
       <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? ''}>
-        <Map defaultCenter={center} defaultZoom={14} mapId="d51ca892b68e9c5e5e2dd701" className="h-full w-full" gestureHandling="greedy" disableDefaultUI>
+        <Map defaultCenter={center} defaultZoom={13} mapId="d51ca892b68e9c5e5e2dd701" className="h-full w-full" gestureHandling="greedy" disableDefaultUI>
           {foodTruck && (
             <AdvancedMarker position={foodTruck} zIndex={100}>
               <div className="flex flex-col items-center">
@@ -66,7 +117,8 @@ export default function RiderMapEmbed({ orderId }: { orderId: string }) {
               </div>
             </AdvancedMarker>
           )}
-          {order.delivery_address && <RouteLayer origin={riderPos || foodTruck || center} destination={order.delivery_address} />}
+          {order.delivery_address && <DestinationPin address={order.delivery_address} />}
+          {order.delivery_address && <MultiRoute riderPos={riderPos} foodTruck={foodTruck} destination={order.delivery_address} />}
           {riderPos && (
             <AdvancedMarker position={riderPos} zIndex={200}>
               <div className="h-10 w-10 drop-shadow-lg">
