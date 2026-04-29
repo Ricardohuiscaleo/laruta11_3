@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Banknote, Smartphone, Store, Truck, Clock, XCircle, CheckCircle, X, Send, Bike, Camera, List, LayoutGrid, Trash2, AlertTriangle, Loader2, ImagePlus, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Banknote, Smartphone, Store, Truck, Clock, XCircle, CheckCircle, X, Send, Bike, Camera, List, LayoutGrid, Trash2, AlertTriangle, Loader2, ImagePlus, ShieldCheck, ShieldAlert, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
 import ChecklistCard from './ChecklistCard.jsx';
 import { generatePhotoRequirements, getButtonState, formatPhotoProgress } from '../utils/photoRequirements.js';
 
@@ -18,6 +18,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const [cashStep, setCashStep] = useState('input');
   const [photoSlots, setPhotoSlots] = useState({}); // keyed by order ID → {productos: {status, photoUrl, verification}, bolsa: {status, photoUrl, verification}}
   const [viewMode, setViewMode] = useState('list');
+  const [riderMonitor, setRiderMonitor] = useState(null); // order.id of expanded rider monitor
   const [showNewFeaturePopup, setShowNewFeaturePopup] = useState(() => {
     const today = new Date();
     const d = today.getDate(), m = today.getMonth() + 1, y = today.getFullYear();
@@ -863,6 +864,28 @@ ${riderUrl}`;
                   </a>
                 </div>
               </div>
+              {/* Rider monitor chevron */}
+              <button
+                onClick={() => setRiderMonitor(prev => prev === order.id ? null : order.id)}
+                className="w-full flex items-center justify-between bg-gray-50 border border-gray-200 rounded p-2 mt-1 text-xs text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                <div className="flex items-center gap-1.5">
+                  <MapPin size={12} className={order.order_status === 'ready' || order.order_status === 'out_for_delivery' ? 'text-blue-500' : 'text-gray-400'} />
+                  <span className="font-medium">
+                    {order.order_status === 'out_for_delivery' ? '🛵 Rider en camino' : order.order_status === 'ready' ? '📦 Listo para rider' : '⏳ Preparando'}
+                  </span>
+                </div>
+                {riderMonitor === order.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+              {riderMonitor === order.id && (
+                <div className="mt-1 rounded border border-blue-200 overflow-hidden bg-white">
+                  <iframe
+                    src={`https://mi.laruta11.cl/rider/${order.id}`}
+                    className="w-full h-64 border-0"
+                    title={`Rider tracking ${order.order_number}`}
+                  />
+                </div>
+              )}
             )}
           </div>
         ) : order.delivery_type === 'cuartel' ? (
