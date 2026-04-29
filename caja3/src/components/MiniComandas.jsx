@@ -834,36 +834,19 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
             {order.delivery_type === 'delivery' && (
               <>
               <div className="flex items-center justify-between bg-white border border-gray-200 rounded p-2">
-                <span className="text-xs font-bold text-gray-800">Rider 🚚</span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => {
-                      const riderUrl = `https://mi.laruta11.cl/rider/${order.id}`;
-                      const delFee = parseInt(order.delivery_fee || 0);
-                      const msg = `🛵 *Delivery #${order.order_number}*
-
-💰 Delivery: $${delFee.toLocaleString('es-CL')}
-📍 ${order.delivery_address || 'Sin dirección'}${order.delivery_distance_km ? ` (${order.delivery_distance_km}km)` : ''}
-
-👉 Tomar pedido:
-${riderUrl}`;
-                      window.location.href = `whatsapp://send?text=${encodeURIComponent(msg)}`;
-                    }}
-                    className="flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
-                  >
-                    <Send size={12} />
-                    WhatsApp
-                  </button>
-                  <a
-                    href={`https://mi.laruta11.cl/rider/${order.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
-                  >
-                    <Bike size={12} />
-                    Ver
-                  </a>
-                </div>
+                <span className="text-xs font-bold text-gray-800">Enviar a Rider 👉🏻</span>
+                <button
+                  onClick={() => {
+                    const riderUrl = `https://mi.laruta11.cl/rider/${order.id}`;
+                    const delFee = parseInt(order.delivery_fee || 0);
+                    const msg = `🛵 *Delivery #${order.order_number}*\n\n💰 Delivery: $${delFee.toLocaleString('es-CL')}\n📍 ${order.delivery_address || 'Sin dirección'}${order.delivery_distance_km ? ` (${order.delivery_distance_km}km)` : ''}\n\n👉 Tomar pedido:\n${riderUrl}`;
+                    window.location.href = `whatsapp://send?text=${encodeURIComponent(msg)}`;
+                  }}
+                  className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                >
+                  <Send size={12} />
+                  Rider
+                </button>
               </div>
               {/* Rider monitor chevron */}
               <button
@@ -873,7 +856,11 @@ ${riderUrl}`;
                 <div className="flex items-center gap-1.5">
                   <MapPin size={12} className={order.order_status === 'ready' || order.order_status === 'out_for_delivery' ? 'text-blue-500' : 'text-gray-400'} />
                   <span className="font-medium">
-                    {order.order_status === 'out_for_delivery' ? '🛵 Rider en camino' : order.order_status === 'ready' ? '📦 Listo para rider' : '⏳ Preparando'}
+                    {order.order_status === 'out_for_delivery'
+                      ? '🛵 Rider en camino'
+                      : order.order_status === 'ready'
+                        ? '📦 Listo para rider'
+                        : 'Ver pedido 👀'}
                   </span>
                 </div>
                 {riderMonitor === order.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -881,19 +868,14 @@ ${riderUrl}`;
               {riderMonitor === order.id && (
                 <div className="mt-1 rounded border border-blue-200 overflow-hidden bg-white">
                   <iframe
-                    src={`https://mi.laruta11.cl/rider/${order.id}`}
-                    className="w-full h-64 border-0"
-                    title={`Rider tracking ${order.order_number}`}
+                    src={`https://mi.laruta11.cl/rider/${order.id}/embed`}
+                    className="w-full h-56 border-0"
+                    title={`Rider map ${order.order_number}`}
                   />
                 </div>
               )}
               </>
             )}
-          </div>
-        ) : order.delivery_type === 'cuartel' ? (
-          <div className="text-xs bg-green-50 border border-green-200 rounded p-2 mb-2">
-            <div className="flex items-center gap-2 text-green-800">
-              <span className="font-medium">🎖️ Retirado en Cuartel RL6</span>
               {!isScheduled && order.created_at && (
                 <><Clock size={12} /><span>{new Date(order.created_at.replace(' ', 'T') + 'Z').toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' })}</span></>
               )}
