@@ -72,6 +72,10 @@
 
 ### 🟡 Verificaciones pendientes
 
+- [ ] **🚨 Fix Tocino Laminado unidades→kg en inventory_transactions** — Transacciones Nov 2025→Mar 2026 registran tocino en "unidades" (1, 2, 3) pero ingrediente tiene unit=kg, cost_per_unit=$14.000/kg. Infla costos ~$4M en 5 meses. Fix: multiplicar `quantity` por 0.05 en txs donde `ingredient_id=49 AND ABS(quantity)>=1`. ~289 transacciones afectadas. Pendiente confirmación usuario.
+- [ ] **Nómina abril $593.333 proyectada** — Es promedio de últimos 3 meses (pagos_nomina). Falta registrar nómina real de abril cuando se pague. Además: trazabilidad nómina↔créditos↔ajustes no está conectada en el dashboard (Andrés: base $600k, ajustes -$210k, crédito -$27.8k = $362.154 pero dashboard muestra diferente).
+- [ ] **Discrepancia ventas mensuales vs EdR** — Gráfico mensual usa CONVERT_TZ pero puede haber diferencia residual con caja3 API. Verificar que ambos coincidan para abril.
+
 - [x] Verificar upload S3 en compras — funciona correctamente.
 - [x] Verificar Gmail Token Refresh — funciona correctamente.
 - [x] Verificar subida masiva agrupa ARIAKA correctamente — sistema de compras IA completamente reescrito.
