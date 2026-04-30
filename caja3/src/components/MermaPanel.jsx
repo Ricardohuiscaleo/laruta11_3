@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, ArrowLeft, Search, Trash2, Loader2, CheckCircle, AlertTriangle, Minus, Plus } from 'lucide-react';
+import { X, ArrowLeft, Search, Loader2, CheckCircle, AlertTriangle, Minus, Plus } from 'lucide-react';
 import {
   MERMA_REASONS, getStockColor, calculateMermaTotal,
   canSubmitMerma, fuzzyMatch, formatDateChilean, getDailyMermaTotal,
@@ -10,6 +10,8 @@ import {
 
 const fmt = (n) => Math.round(n).toLocaleString('es-CL');
 const STOCK_DOT = { green: 'bg-green-500', yellow: 'bg-yellow-500', red: 'bg-red-500' };
+// Hide native number spinners
+const HIDE_SPINNERS = '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 
 function Hl({ name, q }) {
   if (!q || q.length < 2) return name;
@@ -260,47 +262,55 @@ export default function MermaPanel({ onClose }) {
               const unitLabel = isNatural
                 ? (it.nombre_unidad_natural || 'un')
                 : (isUnit ? 'un' : it.unidad);
+              const conversionKg = isNatural && q > 0 && it._raw ? convertToBaseUnit(q, it._raw) : null;
 
               return (
-                <div key={idx} className={`flex items-center gap-2 bg-white rounded-lg px-2.5 py-2 border ${validation.blocked ? 'border-red-300 bg-red-50/50' : 'border-gray-200'}`}>
-                  {/* Nombre truncado */}
-                  <p className="text-xs font-semibold text-gray-900 truncate min-w-0 flex-1">{it.nombre_item}</p>
-
-                  {/* Stepper o input — sin select nativo */}
-                  {useIntStepper ? (
-                    <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden flex-shrink-0">
-                      <button onClick={() => stepQty(idx, -1)}
-                        className="w-8 h-8 flex items-center justify-center bg-gray-50 active:bg-gray-200"
-                        aria-label="Menos">
-                        <Minus size={13} />
-                      </button>
-                      <input type="number" inputMode="numeric" value={it.cantidad}
-                        onChange={(e) => updateQty(idx, e.target.value)} placeholder="0"
-                        className={`w-10 h-8 text-center text-xs font-bold border-x border-gray-300 ${validation.blocked ? 'text-red-600' : 'text-gray-900'}`} />
-                      <button onClick={() => stepQty(idx, 1)}
-                        className="w-8 h-8 flex items-center justify-center bg-gray-50 active:bg-gray-200"
-                        aria-label="M&aacute;s">
-                        <Plus size={13} />
-                      </button>
+                <div key={idx} className={`bg-white rounded-lg px-2.5 py-2 border ${validation.blocked ? 'border-red-300 bg-red-50/50' : 'border-gray-200'}`}>
+                  <div className="flex items-center gap-2">
+                    {/* Col 1: Nombre */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-gray-900 truncate">{it.nombre_item}</p>
+                      {conversionKg !== null && (
+                        <p className="text-[10px] text-gray-400">= {conversionKg.toFixed(3)} {it.unidad}</p>
+                      )}
                     </div>
-                  ) : (
-                    <input type="number" step="0.01" inputMode="decimal" value={it.cantidad}
-                      onChange={(e) => updateQty(idx, e.target.value)}
-                      placeholder={it._raw ? getSmartPlaceholder(it._raw) : '0'}
-                      className={`w-16 h-8 px-1.5 border rounded-lg text-xs text-center font-bold flex-shrink-0 ${validation.blocked ? 'border-red-400 text-red-600' : 'border-gray-300'}`} />
-                  )}
 
-                  {/* Unidad como texto */}
-                  <span className="text-[10px] text-gray-400 w-5 flex-shrink-0">{unitLabel}</span>
+                    {/* Col 2: Stepper o input */}
+                    {useIntStepper ? (
+                      <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden flex-shrink-0">
+                        <button onClick={() => stepQty(idx, -1)}
+                          className="w-8 h-8 flex items-center justify-center bg-gray-50 active:bg-gray-200"
+                          aria-label="Menos">
+                          <Minus size={13} />
+                        </button>
+                        <input type="number" inputMode="numeric" value={it.cantidad}
+                          onChange={(e) => updateQty(idx, e.target.value)} placeholder="0"
+                          className={`w-10 h-8 text-center text-xs font-bold border-x border-gray-300 ${HIDE_SPINNERS} ${validation.blocked ? 'text-red-600' : 'text-gray-900'}`} />
+                        <button onClick={() => stepQty(idx, 1)}
+                          className="w-8 h-8 flex items-center justify-center bg-gray-50 active:bg-gray-200"
+                          aria-label="M&aacute;s">
+                          <Plus size={13} />
+                        </button>
+                      </div>
+                    ) : (
+                      <input type="number" step="0.01" inputMode="decimal" value={it.cantidad}
+                        onChange={(e) => updateQty(idx, e.target.value)}
+                        placeholder={it._raw ? getSmartPlaceholder(it._raw) : '0'}
+                        className={`w-16 h-8 px-1.5 border rounded-lg text-xs text-center font-bold flex-shrink-0 ${HIDE_SPINNERS} ${validation.blocked ? 'border-red-400 text-red-600' : 'border-gray-300'}`} />
+                    )}
 
-                  {/* Costo */}
-                  {q > 0 && <span className="text-[10px] font-bold text-red-600 flex-shrink-0 w-12 text-right">${fmt(it.subtotal)}</span>}
+                    {/* Col 3: Unidad */}
+                    <span className="text-[10px] text-gray-400 w-8 flex-shrink-0 text-center">{unitLabel}</span>
 
-                  {/* Eliminar */}
-                  <button onClick={() => removeItem(idx)} className="p-1 text-gray-300 hover:text-red-500 flex-shrink-0"
-                    aria-label="Eliminar">
-                    <X size={14} />
-                  </button>
+                    {/* Col 4: Costo */}
+                    <span className="text-[10px] font-bold text-red-600 flex-shrink-0 w-12 text-right">{q > 0 ? `$${fmt(it.subtotal)}` : ''}</span>
+
+                    {/* Col 5: Eliminar */}
+                    <button onClick={() => removeItem(idx)} className="p-1 text-gray-300 hover:text-red-500 flex-shrink-0"
+                      aria-label="Eliminar">
+                      <X size={14} />
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -331,22 +341,35 @@ export default function MermaPanel({ onClose }) {
             const naturalCount = isIng ? stockInNaturalUnits(item) : null;
 
             return (
-              <button key={`${item._type}-${item.id}`} onClick={() => !alreadyAdded && addItem(item)}
-                disabled={alreadyAdded}
-                className={`w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${alreadyAdded ? 'bg-gray-50 border-gray-200 opacity-50' : 'bg-white border-gray-200 hover:border-red-300 active:bg-red-50'}`}
+              <div key={`${item._type}-${item.id}`}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${alreadyAdded ? 'bg-gray-50 border-gray-200 opacity-50' : 'bg-white border-gray-200'}`}
                 style={{ minHeight: '44px' }}>
+                {/* Col 1: Indicador stock */}
                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${STOCK_DOT[color]}`} />
+
+                {/* Col 2: Nombre */}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 truncate">
                     <Hl name={item.name} q={searchTerm} />
                   </p>
                 </div>
-                <span className="text-[10px] text-gray-400 flex-shrink-0">
-                  {naturalCount !== null ? `${naturalCount} ${item.nombre_unidad_natural || 'un'}` : `${stock} ${unit}`}
+
+                {/* Col 3: Stock */}
+                <span className="text-[10px] text-gray-400 flex-shrink-0 w-16 text-right tabular-nums">
+                  {naturalCount !== null ? `\u2248${naturalCount} ${item.nombre_unidad_natural || 'un'}` : `${stock} ${unit}`}
                 </span>
+
+                {/* Col 4: Badge tipo (solo productos) */}
                 {!isIng && <span className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium flex-shrink-0">prod</span>}
-                {alreadyAdded && <span className="text-xs text-green-600 font-bold flex-shrink-0">&check;</span>}
-              </button>
+
+                {/* Col 5: Bot&oacute;n agregar */}
+                <button onClick={() => !alreadyAdded && addItem(item)}
+                  disabled={alreadyAdded}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg flex-shrink-0 transition-colors ${alreadyAdded ? 'text-green-500' : 'bg-red-50 text-red-500 active:bg-red-100 border border-red-200'}`}
+                  aria-label={`Agregar ${item.name}`}>
+                  {alreadyAdded ? <CheckCircle size={16} /> : <Plus size={16} />}
+                </button>
+              </div>
             );
           })}
         </div>
