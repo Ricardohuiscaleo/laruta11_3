@@ -11,6 +11,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('delivery_config')) {
+            return;
+        }
+
         Schema::create('delivery_config', function (Blueprint $table) {
             $table->id();
             $table->string('config_key', 50)->unique();
