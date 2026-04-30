@@ -355,7 +355,7 @@ export default function DashboardSection() {
                       {((go as any)?.limpieza_items ?? []).length > 0
                         ? (go as any).limpieza_items.map((item: any, i: number) => (
                           <div key={i} className="flex items-center justify-between text-[11px] text-gray-600">
-                            <span>{item.proveedor} <span className="text-gray-400">· {item.fecha?.slice(0, 10)}</span></span>
+                            <span>{item.proveedor} ({item.cantidad} {item.unidad}) <span className="text-gray-400">· {item.fecha?.slice(0, 10)}</span></span>
                             <span className="tabular-nums font-medium">{formatCLP(item.monto)}</span>
                           </div>
                         ))

@@ -620,10 +620,12 @@ class VentasService
                 ->whereRaw("DATE_FORMAT(fecha_compra, '%Y-%m') = ?", [$row->month])
                 ->sum('monto_total');
 
-            $limpieza = (float) DB::table('compras')
-                ->where('tipo_compra', 'limpieza')
-                ->whereRaw("DATE_FORMAT(fecha_compra, '%Y-%m') = ?", [$row->month])
-                ->sum('monto_total');
+            $limpieza = (float) DB::table('compras_detalle as cd')
+                ->join('compras as c', 'cd.compra_id', '=', 'c.id')
+                ->join('ingredients as i', 'cd.ingrediente_id', '=', 'i.id')
+                ->where('i.category', 'Limpieza')
+                ->whereRaw("DATE_FORMAT(c.fecha_compra, '%Y-%m') = ?", [$row->month])
+                ->sum('cd.subtotal');
 
             $mermas = (float) DB::table('mermas')
                 ->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$row->month])

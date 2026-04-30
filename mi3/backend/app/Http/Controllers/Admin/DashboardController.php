@@ -204,14 +204,16 @@ class DashboardController extends Controller
             $data['pnl']['gastos_operacion']['gas'] = $gasCompras;
             $data['pnl']['gastos_operacion']['gas_items'] = $gasItems;
 
-            // Limpieza: compras del mes con detalle
-            $limpiezaItems = \Illuminate\Support\Facades\DB::table('compras')
-                ->where('tipo_compra', 'limpieza')
-                ->whereRaw("DATE_FORMAT(fecha_compra, '%Y-%m') = ?", [$mes])
-                ->select('id', 'proveedor', 'monto_total', 'fecha_compra')
-                ->orderBy('fecha_compra')
+            // Limpieza: compras de ingredientes con categoría "Limpieza"
+            $limpiezaItems = \Illuminate\Support\Facades\DB::table('compras_detalle as cd')
+                ->join('compras as c', 'cd.compra_id', '=', 'c.id')
+                ->join('ingredients as i', 'cd.ingrediente_id', '=', 'i.id')
+                ->where('i.category', 'Limpieza')
+                ->whereRaw("DATE_FORMAT(c.fecha_compra, '%Y-%m') = ?", [$mes])
+                ->select('cd.nombre_item', 'cd.cantidad', 'cd.unidad', 'cd.subtotal', 'c.fecha_compra')
+                ->orderBy('cd.subtotal', 'desc')
                 ->get()
-                ->map(fn ($r) => ['proveedor' => $r->proveedor ?? 'Limpieza', 'monto' => (float) $r->monto_total, 'fecha' => $r->fecha_compra])
+                ->map(fn ($r) => ['proveedor' => $r->nombre_item, 'monto' => (float) $r->subtotal, 'fecha' => $r->fecha_compra, 'cantidad' => (float) $r->cantidad, 'unidad' => $r->unidad])
                 ->toArray();
             $limpiezaCompras = array_sum(array_column($limpiezaItems, 'monto'));
             $data['pnl']['gastos_operacion']['limpieza'] = $limpiezaCompras;
