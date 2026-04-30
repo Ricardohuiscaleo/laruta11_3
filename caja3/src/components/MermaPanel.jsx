@@ -3,7 +3,7 @@ import { X, ArrowLeft, Search, Trash2, Loader2, CheckCircle, AlertTriangle, Minu
 import {
   MERMA_REASONS, getStockColor, calculateMermaTotal,
   canSubmitMerma, fuzzyMatch, formatDateChilean, getDailyMermaTotal,
-  getMermaInputType, getSmartQuestion, getSmartPlaceholder,
+  getMermaInputType, getSmartPlaceholder,
   convertToBaseUnit, calculateSmartCost, getConversionText,
   stockInNaturalUnits, validateSmartQuantity,
 } from '../utils/mermaUtils.js';
@@ -25,7 +25,6 @@ export default function MermaPanel({ onClose }) {
   const [productos, setProductos] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [dataError, setDataError] = useState(false);
-  const [itemType, setItemType] = useState('ingredient');
   const [searchTerm, setSearchTerm] = useState('');
   const [mermaItems, setMermaItems] = useState([]);
   const [reason, setReason] = useState('');
@@ -44,7 +43,7 @@ export default function MermaPanel({ onClose }) {
       ]);
       const iD = await iR.json(), pD = await pR.json();
       setIngredientes(Array.isArray(iD) ? iD.filter(i => i.is_active) : []);
-      setProductos(Array.isArray(pD) ? pD.filter(p => p.is_active) : []);
+      setProductos(Array.isArray(pD) ? pD.filter(p => p.is_active && ![6, 7].includes(parseInt(p.category_id))) : []);
     } catch { setDataError(true); }
     finally { setLoadingData(false); }
   }, []);
@@ -61,45 +60,44 @@ export default function MermaPanel({ onClose }) {
   }, []);
   useEffect(() => { if (activeTab === 'historial') loadHistorial(); }, [activeTab, loadHistorial]);
 
-  const items = itemType === 'ingredient'
-    ? ingredientes
-    : productos.filter(p => ![6, 7].includes(parseInt(p.category_id)));
+  // Fusionar ingredientes + productos en una sola lista
+  const allItems = [
+    ...ingredientes.map(i => ({ ...i, _type: 'ingredient' })),
+    ...productos.map(p => ({ ...p, _type: 'product' })),
+  ];
 
   const filtered = searchTerm.trim().length >= 2
-    ? items.map(i => ({ ...i, score: fuzzyMatch(i.name, searchTerm) }))
-        .filter(i => i.score > 0).sort((a, b) => b.score - a.score).slice(0, 20)
+    ? allItems.map(i => ({ ...i, score: fuzzyMatch(i.name, searchTerm) }))
+        .filter(i => i.score > 0).sort((a, b) => b.score - a.score).slice(0, 25)
     : [];
 
   const totalCost = calculateMermaTotal(mermaItems);
 
   const addItem = (item) => {
-    const isIngredient = itemType === 'ingredient';
-    const stock = parseFloat(isIngredient ? item.current_stock : item.stock_quantity) || 0;
-    const cost = parseFloat(isIngredient ? item.cost_per_unit : item.cost_price) || 0;
-    const unit = isIngredient ? (item.unit || 'kg') : 'unidad';
+    const isIng = item._type === 'ingredient';
+    const stock = parseFloat(isIng ? item.current_stock : item.stock_quantity) || 0;
+    const cost = parseFloat(isIng ? item.cost_per_unit : item.cost_price) || 0;
+    const unit = isIng ? (item.unit || 'kg') : 'unidad';
     const min = parseFloat(item.min_stock_level) || 0;
-    const inputType = isIngredient ? getMermaInputType(item) : 'unidad';
+    const inputType = isIng ? getMermaInputType(item) : 'unidad';
 
     setMermaItems(prev => [...prev, {
-      item_id: item.id, item_type: itemType, nombre_item: item.name,
+      item_id: item.id, item_type: item._type, nombre_item: item.name,
       cantidad: '', unidad: unit, costo_unitario: cost, subtotal: 0,
       stock_actual: stock, min_stock: min, category: item.category || null,
       inputType, peso_por_unidad: parseFloat(item.peso_por_unidad) || 0,
       nombre_unidad_natural: item.nombre_unidad_natural || null,
       _raw: item,
     }]);
+    setSearchTerm('');
   };
 
   const updateQty = (idx, val) => {
     setMermaItems(prev => prev.map((it, i) => {
       if (i !== idx) return it;
       const q = parseFloat(val) || 0;
-      let subtotal = 0;
-      if (it.item_type === 'ingredient' && it._raw) {
-        subtotal = calculateSmartCost(q, it._raw);
-      } else {
-        subtotal = q * it.costo_unitario;
-      }
+      let subtotal = it.item_type === 'ingredient' && it._raw
+        ? calculateSmartCost(q, it._raw) : q * it.costo_unitario;
       return { ...it, cantidad: val, subtotal };
     }));
   };
@@ -110,29 +108,22 @@ export default function MermaPanel({ onClose }) {
       const cur = parseInt(it.cantidad) || 0;
       const next = Math.max(0, cur + delta);
       const val = String(next);
-      let subtotal = 0;
-      if (it.item_type === 'ingredient' && it._raw) {
-        subtotal = calculateSmartCost(next, it._raw);
-      } else {
-        subtotal = next * it.costo_unitario;
-      }
+      let subtotal = it.item_type === 'ingredient' && it._raw
+        ? calculateSmartCost(next, it._raw) : next * it.costo_unitario;
       return { ...it, cantidad: val, subtotal };
     }));
   };
 
   const removeItem = (idx) => setMermaItems(prev => prev.filter((_, i) => i !== idx));
 
-  const getValidItems = () => mermaItems.filter(it => {
+  const validItems = mermaItems.filter(it => {
     const q = parseFloat(it.cantidad) || 0;
     if (q <= 0) return false;
     if (it.item_type === 'ingredient' && it._raw) {
-      const baseQty = convertToBaseUnit(q, it._raw);
-      return baseQty <= it.stock_actual;
+      return convertToBaseUnit(q, it._raw) <= it.stock_actual;
     }
     return q <= it.stock_actual;
   });
-
-  const validItems = getValidItems();
 
   const handleSubmit = async () => {
     if (!canSubmitMerma(validItems, reason)) return;
@@ -142,20 +133,10 @@ export default function MermaPanel({ onClose }) {
         const q = parseFloat(item.cantidad) || 0;
         const isNatural = item.inputType === 'natural';
         const baseQty = item._raw ? convertToBaseUnit(q, item._raw) : q;
-
-        const body = {
-          item_type: item.item_type,
-          item_id: item.item_id,
-          quantity: baseQty,
-          reason,
-        };
-        if (isNatural && item.peso_por_unidad > 0) {
-          body.cantidad_natural = Math.round(q);
-        }
-
+        const body = { item_type: item.item_type, item_id: item.item_id, quantity: baseQty, reason };
+        if (isNatural && item.peso_por_unidad > 0) body.cantidad_natural = Math.round(q);
         const res = await fetch('/api/registrar_merma.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
         });
         if (!res.ok) throw new Error(`Error: ${item.nombre_item}`);
@@ -182,6 +163,7 @@ export default function MermaPanel({ onClose }) {
   return (
     <div className="fixed inset-0 bg-gray-50 z-50 flex flex-col"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      {/* Header */}
       <header className="flex-shrink-0 bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-3 flex items-center gap-3 shadow-lg"
         style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
         {step > 1 ? (
@@ -193,18 +175,13 @@ export default function MermaPanel({ onClose }) {
         <div className="flex-1">
           <h1 className="text-lg font-bold">Mermas</h1>
         </div>
-        {mermaItems.length > 0 && step === 1 && (
-          <button onClick={() => setStep(2)}
-            className="bg-white text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold active:scale-95">
-            Siguiente &rarr;
-          </button>
-        )}
         <button onClick={onClose}
           className="p-2 rounded-full hover:bg-white/20 transition-colors" aria-label="Cerrar">
           <X size={22} />
         </button>
       </header>
 
+      {/* Tabs */}
       <div className="flex-shrink-0 flex bg-white border-b" role="tablist">
         {[['mermar', '\uD83D\uDDD1\uFE0F Mermar'], ['historial', '\uD83D\uDCCB Historial']].map(([key, label]) => (
           <button key={key} role="tab" aria-selected={activeTab === key}
@@ -217,9 +194,25 @@ export default function MermaPanel({ onClose }) {
         ))}
       </div>
 
+      {/* Content — scrollable */}
       <div className="flex-1 overflow-y-auto">
         {activeTab === 'mermar' ? renderMermar() : renderHistorial()}
       </div>
+
+      {/* Footer fijo — bot&oacute;n Siguiente (solo step 1 con items) */}
+      {activeTab === 'mermar' && step === 1 && mermaItems.length > 0 && (
+        <div className="flex-shrink-0 bg-white border-t px-4 py-3 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]"
+          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+          <button onClick={() => setStep(2)}
+            className="w-full py-3.5 bg-red-600 text-white rounded-xl font-bold text-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            style={{ minHeight: '48px' }}>
+            <span>Siguiente</span>
+            <span className="bg-white/20 px-2 py-0.5 rounded-md text-xs">
+              {mermaItems.length} item{mermaItems.length > 1 ? 's' : ''} &middot; ${fmt(totalCost)}
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 
@@ -246,92 +239,75 @@ export default function MermaPanel({ onClose }) {
   function renderStep1() {
     return (
       <div className="p-3 space-y-3">
-        <div className="flex gap-2">
-          {[['ingredient', 'Ingredientes'], ['product', 'Productos']].map(([t, l]) => (
-            <button key={t} onClick={() => { setItemType(t); setSearchTerm(''); }}
-              className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-colors ${itemType === t ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700'}`}
-              style={{ minHeight: '44px' }}>{l}</button>
-          ))}
-        </div>
-
+        {/* Buscador unificado */}
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input type="text"
-            placeholder={`Buscar ${itemType === 'ingredient' ? 'ingrediente' : 'producto'}...`}
+          <input type="text" placeholder="Buscar ingrediente o producto..."
             value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:border-red-400 focus:outline-none"
             style={{ minHeight: '44px' }} />
         </div>
 
+        {/* Items agregados — 1 fila compacta cada uno */}
         {mermaItems.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-2 space-y-2">
-            <div className="flex justify-between items-center px-1">
-              <span className="text-xs font-semibold text-red-800">
-                {mermaItems.length} item{mermaItems.length > 1 ? 's' : ''}
-              </span>
-              <span className="text-sm font-bold text-red-600">${fmt(totalCost)}</span>
-            </div>
+          <div className="space-y-1.5">
             {mermaItems.map((it, idx) => {
               const q = parseFloat(it.cantidad) || 0;
               const isNatural = it.inputType === 'natural';
               const isUnit = it.inputType === 'unidad' || it.item_type === 'product';
               const useIntStepper = isNatural || isUnit;
               const validation = it._raw ? validateSmartQuantity(q, it._raw) : { blocked: q > it.stock_actual };
-              const nombre = it.nombre_unidad_natural || (isUnit ? 'un' : it.unidad);
+              const unitLabel = isNatural
+                ? (it.nombre_unidad_natural || 'un')
+                : (isUnit ? 'un' : it.unidad);
 
               return (
-                <div key={idx} className="bg-white rounded-lg p-2.5 border border-gray-100">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-xs font-semibold text-gray-900 truncate flex-1 mr-2">{it.nombre_item}</p>
-                    <button onClick={() => removeItem(idx)} className="p-1 text-red-400 hover:text-red-600 rounded"
-                      aria-label="Eliminar item">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {useIntStepper ? (
-                      <div className="flex items-center gap-0 border border-gray-300 rounded-lg overflow-hidden">
-                        <button onClick={() => stepQty(idx, -1)}
-                          className="w-9 h-9 flex items-center justify-center bg-gray-50 active:bg-gray-200 transition-colors"
-                          aria-label="Disminuir cantidad">
-                          <Minus size={14} />
-                        </button>
-                        <input type="number" inputMode="numeric" value={it.cantidad}
-                          onChange={(e) => updateQty(idx, e.target.value)} placeholder="0"
-                          className={`w-12 h-9 text-center text-sm font-bold border-x border-gray-300 ${validation.blocked ? 'text-red-600 bg-red-50' : 'text-gray-900'}`} />
-                        <button onClick={() => stepQty(idx, 1)}
-                          className="w-9 h-9 flex items-center justify-center bg-gray-50 active:bg-gray-200 transition-colors"
-                          aria-label="Aumentar cantidad">
-                          <Plus size={14} />
-                        </button>
-                      </div>
-                    ) : (
-                      <input type="number" step="0.01" inputMode="decimal" value={it.cantidad}
-                        onChange={(e) => updateQty(idx, e.target.value)}
-                        placeholder={it._raw ? getSmartPlaceholder(it._raw) : '0'}
-                        className={`w-20 px-2 py-1.5 border rounded-lg text-sm text-center font-bold ${validation.blocked ? 'border-red-400 bg-red-50 text-red-600' : 'border-gray-300'}`} />
-                    )}
-                    <span className="text-xs text-gray-500 font-medium">{nombre}</span>
-                    <div className="flex-1 text-right">
-                      {q > 0 && <span className="text-xs font-bold text-red-600">${fmt(it.subtotal)}</span>}
+                <div key={idx} className={`flex items-center gap-2 bg-white rounded-lg px-2.5 py-2 border ${validation.blocked ? 'border-red-300 bg-red-50/50' : 'border-gray-200'}`}>
+                  {/* Nombre truncado */}
+                  <p className="text-xs font-semibold text-gray-900 truncate min-w-0 flex-1">{it.nombre_item}</p>
+
+                  {/* Stepper o input — sin select nativo */}
+                  {useIntStepper ? (
+                    <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden flex-shrink-0">
+                      <button onClick={() => stepQty(idx, -1)}
+                        className="w-8 h-8 flex items-center justify-center bg-gray-50 active:bg-gray-200"
+                        aria-label="Menos">
+                        <Minus size={13} />
+                      </button>
+                      <input type="number" inputMode="numeric" value={it.cantidad}
+                        onChange={(e) => updateQty(idx, e.target.value)} placeholder="0"
+                        className={`w-10 h-8 text-center text-xs font-bold border-x border-gray-300 ${validation.blocked ? 'text-red-600' : 'text-gray-900'}`} />
+                      <button onClick={() => stepQty(idx, 1)}
+                        className="w-8 h-8 flex items-center justify-center bg-gray-50 active:bg-gray-200"
+                        aria-label="M&aacute;s">
+                        <Plus size={13} />
+                      </button>
                     </div>
-                  </div>
-                  {isNatural && q > 0 && it._raw && (
-                    <p className="text-[10px] text-gray-400 mt-1">
-                      = {convertToBaseUnit(q, it._raw).toFixed(3)} {it.unidad}
-                    </p>
+                  ) : (
+                    <input type="number" step="0.01" inputMode="decimal" value={it.cantidad}
+                      onChange={(e) => updateQty(idx, e.target.value)}
+                      placeholder={it._raw ? getSmartPlaceholder(it._raw) : '0'}
+                      className={`w-16 h-8 px-1.5 border rounded-lg text-xs text-center font-bold flex-shrink-0 ${validation.blocked ? 'border-red-400 text-red-600' : 'border-gray-300'}`} />
                   )}
-                  {validation.blocked && (
-                    <p className="text-[10px] text-red-500 mt-1 font-medium">
-                      Supera stock ({it.stock_actual} {it.unidad})
-                    </p>
-                  )}
+
+                  {/* Unidad como texto */}
+                  <span className="text-[10px] text-gray-400 w-5 flex-shrink-0">{unitLabel}</span>
+
+                  {/* Costo */}
+                  {q > 0 && <span className="text-[10px] font-bold text-red-600 flex-shrink-0 w-12 text-right">${fmt(it.subtotal)}</span>}
+
+                  {/* Eliminar */}
+                  <button onClick={() => removeItem(idx)} className="p-1 text-gray-300 hover:text-red-500 flex-shrink-0"
+                    aria-label="Eliminar">
+                    <X size={14} />
+                  </button>
                 </div>
               );
             })}
           </div>
         )}
 
+        {/* Resultados de b&uacute;squeda */}
         {filtered.length === 0 && searchTerm.trim().length >= 2 && (
           <p className="text-center text-sm text-gray-400 py-8">No se encontr&oacute; &quot;{searchTerm}&quot;</p>
         )}
@@ -340,44 +316,43 @@ export default function MermaPanel({ onClose }) {
           <div className="text-center py-12 text-gray-400">
             <Search size={40} className="mx-auto mb-3 text-gray-300" />
             <p className="text-sm font-medium">Escribe para buscar</p>
-            <p className="text-xs mt-1">ingredientes o productos</p>
+            <p className="text-xs mt-1">ingredientes y productos</p>
           </div>
         )}
 
         <div className="space-y-1">
           {filtered.map((item) => {
-            const isIng = itemType === 'ingredient';
+            const isIng = item._type === 'ingredient';
             const stock = parseFloat(isIng ? item.current_stock : item.stock_quantity) || 0;
             const min = parseFloat(item.min_stock_level) || 0;
             const color = isIng ? getStockColor(stock, min) : 'green';
             const unit = isIng ? (item.unit || 'kg') : 'un';
-            const alreadyAdded = mermaItems.some(m => m.item_id === item.id && m.item_type === itemType);
+            const alreadyAdded = mermaItems.some(m => m.item_id === item.id && m.item_type === item._type);
             const naturalCount = isIng ? stockInNaturalUnits(item) : null;
 
             return (
-              <button key={item.id} onClick={() => !alreadyAdded && addItem(item)}
+              <button key={`${item._type}-${item.id}`} onClick={() => !alreadyAdded && addItem(item)}
                 disabled={alreadyAdded}
-                className={`w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-lg border transition-colors ${alreadyAdded ? 'bg-gray-50 border-gray-200 opacity-50' : 'bg-white border-gray-200 hover:border-red-300 active:bg-red-50'}`}
-                style={{ minHeight: '48px' }}>
-                <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${STOCK_DOT[color]}`} />
+                className={`w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${alreadyAdded ? 'bg-gray-50 border-gray-200 opacity-50' : 'bg-white border-gray-200 hover:border-red-300 active:bg-red-50'}`}
+                style={{ minHeight: '44px' }}>
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${STOCK_DOT[color]}`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 truncate">
                     <Hl name={item.name} q={searchTerm} />
                   </p>
-                  {isIng && naturalCount !== null && (
-                    <p className="text-[10px] text-gray-400 mt-0.5">
-                      {stock} {unit} &asymp; {naturalCount} {item.nombre_unidad_natural || 'un'}
-                    </p>
-                  )}
                 </div>
-                {isIng && naturalCount === null && (
-                  <span className="text-xs text-gray-400 flex-shrink-0">{stock} {unit}</span>
-                )}
-                {alreadyAdded && <span className="text-xs text-green-600 font-bold">&check;</span>}
+                <span className="text-[10px] text-gray-400 flex-shrink-0">
+                  {naturalCount !== null ? `${naturalCount} ${item.nombre_unidad_natural || 'un'}` : `${stock} ${unit}`}
+                </span>
+                {!isIng && <span className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium flex-shrink-0">prod</span>}
+                {alreadyAdded && <span className="text-xs text-green-600 font-bold flex-shrink-0">&check;</span>}
               </button>
             );
           })}
         </div>
+
+        {/* Espacio para que el footer no tape contenido */}
+        {mermaItems.length > 0 && <div className="h-16" />}
       </div>
     );
   }
