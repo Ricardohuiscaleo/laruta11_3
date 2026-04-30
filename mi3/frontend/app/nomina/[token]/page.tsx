@@ -60,34 +60,18 @@ export default function NominaPublicPage({ params }: { params: { token: string }
   const buildMessage = () => {
     const lines: string[] = [
       `📋 *NÓMINA ${fmtMonth(mes).toUpperCase()}*`,
-      `━━━━━━━━━━━━━━━━━━━━`,
-      ``,
+      `━━━━━━━━━━`,
       `🍔 *LA RUTA 11*`,
+      `*Subtotal: ${fmt(r11.summary.total_a_pagar)}*`,
     ];
-    r11Workers.forEach(w => {
-      let detail = `  • ${w.nombre}: *${fmt(w.total_a_pagar)}*`;
-      const parts: string[] = [];
-      if (w.total_descuentos !== 0) parts.push(`desc ${fmt(w.total_descuentos)}`);
-      if (w.credito_r11_pendiente > 0) parts.push(`crédito -${fmt(w.credito_r11_pendiente)}`);
-      if (parts.length > 0) detail += ` (${parts.join(', ')})`;
-      lines.push(detail);
-    });
-    lines.push(`  ─────────────────`);
-    lines.push(`  *Total Ruta 11: ${fmt(r11.summary.total_a_pagar)}*`);
     if (segWorkers.length > 0) {
-      lines.push(``);
       lines.push(`🔒 *CAM SEGURIDAD*`);
-      segWorkers.forEach(w => {
-        lines.push(`  • ${w.nombre}: *${fmt(w.total_a_pagar)}*`);
-      });
-      lines.push(`  ─────────────────`);
-      lines.push(`  *Total Seguridad: ${fmt(seg.summary.total_a_pagar)}*`);
+      lines.push(`*Subtotal: ${fmt(seg.summary.total_a_pagar)}*`);
     }
-    lines.push(``);
-    lines.push(`━━━━━━━━━━━━━━━━━━━━`);
+    lines.push(`━━━━━━━━━━`);
     lines.push(`💰 *TOTAL NÓMINA: ${fmt(grandTotal)}*`);
     lines.push(``);
-    lines.push(`🔗 https://mi.laruta11.cl/nomina/${params.token}`);
+    lines.push(`Ver detalle 👉🏻 https://mi.laruta11.cl/nomina/${params.token}`);
     return lines.join('\n');
   };
 
@@ -135,12 +119,6 @@ export default function NominaPublicPage({ params }: { params: { token: string }
           Ruta 11: {fmt(r11.summary.total_a_pagar)} · Seguridad: {fmt(seg.summary.total_a_pagar)}
         </p>
       </div>
-
-      {/* Copy button */}
-      <button onClick={handleShare} className="w-full rounded-xl bg-amber-600 py-3 text-sm font-semibold text-white hover:bg-amber-700 flex items-center justify-center gap-2">
-        <Share2 className="h-4 w-4" />
-        {copied ? '✅ Copiado' : 'Copiar Resumen'}
-      </button>
     </div>
   );
 }
