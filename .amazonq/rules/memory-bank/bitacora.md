@@ -73,6 +73,8 @@
 ### 🟡 Verificaciones pendientes
 
 - [x] **🚨 Fix Tocino Laminado unidades→kg en inventory_transactions** — COMPLETADO. 246 txs corregidas (`quantity * 0.05`). Costos reducidos de $4.715.760 a $273.560. Commit `4c82ec6`.
+- [ ] **Spec: Refactor clasificación gastos EdR** — El EdR necesita un spec dedicado. Problemas: 1) Limpieza/Gas se compran como ingredientes pero son OPEX, no CMV. 2) `tipo_compra` en tabla `compras` no refleja la categoría real (todo es 'ingredientes'). 3) Packaging es CMV (se vende con el producto) pero no está separado. 4) Flujo compras IA necesita clasificar correctamente. Incluir: cómo se registran compras, qué es CMV vs OPEX, mermas, consumos directos.
+- [ ] **Bug NominaService: Yojhans dueño -$322k con 0 días** — Dueño no debería tener liquidación negativa. Probablemente resta créditos/adelantos sin base salarial. Verificar lógica de NominaService para rol 'dueño'.
 - [ ] **Nómina abril $593.333 proyectada** — Es promedio de últimos 3 meses (pagos_nomina). Falta registrar nómina real de abril cuando se pague. ~~Además: trazabilidad nómina↔créditos↔ajustes no está conectada en el dashboard~~ RESUELTO: NominaSection reescrita con tabs Ruta11/Seguridad, detalle ajustes+créditos inline por trabajador, resumen de pagos modal. Falta: registrar pago real de abril.
 - [ ] **Discrepancia ventas mensuales vs EdR** — Gráfico mensual usa CONVERT_TZ pero puede haber diferencia residual con caja3 API. Verificar que ambos coincidan para abril.
 
