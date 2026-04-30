@@ -7,9 +7,9 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4540368`) — MiniComandas: chevron "Ver pedido 👀" mapa embed, "Enviar a Rider" azul |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`a41e39d`) — Merma Smart: conversión auto unidades, stepper +/- |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`ce290c5`) — Error boundaries admin SPA, null-safety DashboardSection |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`c7e857f`) — Checklists removidos de worker app, solo en comandas/caja |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28563f3`) — Nómina: snapshot API, tabla nomina_snapshots, guards migraciones |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -109,17 +109,44 @@
 
 ## Sesiones Recientes
 
+### 2026-04-30f — Merma Smart: conversión automática unidades para personal no técnico
+
+**Cambios código:**
+- `caja3/src/components/MermaPanel.jsx`: Reescritura completa — ingredientes con `peso_por_unidad` (Tomate, Cebolla, Palta, etc.) ahora muestran stepper +/- con pregunta "¿Cuántos tomates?" en vez de input decimal. Conversión automática a kg. Stock muestra equivalencia natural ("3.2 kg ≈ 21 tomates"). Items `unit=unidad` (Pan, Bebidas, Packaging) usan stepper entero. Items `unit=kg` sin peso_por_unidad (Carne Molida) mantienen input decimal. Resumen muestra conversión ("3 tomates = 0.450 kg → $XXX").
+- `caja3/src/utils/mermaUtils.js`: 8 funciones smart nuevas — `getMermaInputType()` (natural/unidad/peso), `getSmartQuestion()`, `convertToBaseUnit()`, `calculateSmartCost()`, `getConversionText()`, `stockInNaturalUnits()`, `validateSmartQuantity()`, `getSmartPlaceholder()`.
+- `caja3/api/registrar_merma.php`: Acepta `cantidad_natural` (enteros), auto-convierte via `peso_por_unidad` del ingrediente. Nota de conversión en reason ("Podrido (3 tomates)"). `GREATEST(stock - qty, 0)` previene stock negativo.
+- `caja3/sql/merma_smart_columns.sql`: Migración + seed data.
+
+**BD:** `ALTER TABLE ingredients ADD COLUMN peso_por_unidad DECIMAL(10,4), ADD COLUMN nombre_unidad_natural VARCHAR(50)`. Seeded: Tomate 0.150, Cebolla 0.200, Cebolla morada 0.200, Palta 0.200, Papa 0.200, Mango 0.300, Maracuyá 0.150.
+
+**Commits:** `a41e39d`
+**Deploys:** caja3 ✅.
+
+### 2026-04-30e — Quitar checklists de app trabajadores (mi3 worker)
+
+**Cambios código:**
+- `mi3/frontend/lib/navigation.ts`: Eliminado item `checklist` de `secondaryNavItems` (worker). Ya no aparece en navegación.
+- `mi3/frontend/components/layouts/WorkerSidebar.tsx`: Eliminado import y uso de `usePendingChecklistBadge`. Sidebar desktop sin badge checklist.
+- `mi3/frontend/components/mobile/MobileBottomNav.tsx`: Eliminado import y uso de `usePendingChecklistBadge`. Nav mobile sin badge checklist.
+- `mi3/frontend/app/dashboard/checklist/page.tsx`: Reemplazado con redirect a `/dashboard` (URLs cacheadas no dan error).
+
+**Decisión:** Checklists solo se usan en comandas (planchero) y caja (cajeras). Worker app no los necesita. Backend API y cron jobs intactos.
+
+**Commits:** `c7e857f`
+**Deploys:** mi3-frontend ✅.
+
 ### 2026-04-30d — Fix error boundaries admin SPA + null-safety DashboardSection
 
 **Cambios código:**
 - `mi3/frontend/app/admin/error.tsx`: NUEVO. Error boundary a nivel de ruta Next.js — fallback con botón "Reintentar" e "Ir al inicio" en vez del error críptico genérico.
-- `mi3/frontend/components/admin/AdminShell.tsx`: `SectionErrorBoundary` class component — cada sección lazy-loaded envuelta en su propio error boundary. Si una sección crashea, solo esa muestra error con botón reintentar, las demás siguen funcionando.
-- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: `Promise.all` → `Promise.allSettled` para que un API fallido no mate al otro. Null-coalescing en WebSocket payload (`payload?.order`). `console.error` en catches para diagnóstico (antes eran `catch {}` silenciosos).
+- `mi3/frontend/components/admin/AdminShell.tsx`: `SectionErrorBoundary` class component — cada sección lazy-loaded envuelta en su propio error boundary. Eliminado `refreshCounters` key-based re-mount que causaba loop infinito (re-mount → re-subscribe WebSocket → evento → re-mount).
+- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: `Promise.all` → `Promise.allSettled`. WebSocket listener estabilizado con refs (subscribe once, never re-subscribe). Null-coalescing en payload. `console.error` en catches.
+- `mi3/frontend/components/mobile/MobileBottomNav.tsx`: Fix import faltante `usePendingChecklistBadge`.
 
-**Diagnóstico:** "Application error: a client-side exception has occurred" aparecía porque no había ningún Error Boundary en la app admin. Cualquier error en cualquier componente (dato null del API, red, WebSocket) crasheaba toda la página sin recuperación.
+**Diagnóstico:** React error #185 (Maximum update depth exceeded) causado por: 1) AdminShell `refreshCounters` cambiaba key del componente → re-mount → re-subscribe WebSocket → evento → setState → re-mount = loop infinito. 2) DashboardSection WebSocket useEffect tenía `[fetchData, fetchShift, isCurrentMonth]` como deps → cada cambio de mes re-suscribía al canal.
 
-**Commits:** `ce290c5`
-**Deploys:** mi3-frontend ✅.
+**Commits:** `ce290c5`, `c7e857f`
+**Deploys:** mi3-frontend ✅ (×2).
 
 ### 2026-04-30c — Nómina: página pública /nomina/TOKEN, créditos R11 solo Ruta11, encoding BD
 
@@ -164,57 +191,8 @@
 **Commits:** `4ada487`, `3dafb96`, `2ef6474`, `8ea3fa1`, `3df0f63`, `e4d6c04`, `1974508`, `df68714`
 **Deploys:** mi3-backend ✅ (×6), mi3-frontend ✅ (×3), app3 ✅.
 
-### 2026-04-29e — Fix datos: Tocino, Montina Big, CMV trazabilidad, nómina real
-
-**Cambios código:**
-- `mi3/backend/app/Services/Ventas/VentasService.php`: `getMonthlyAggregates` — CONVERT_TZ Chile, NominaService mes actual, `nomina_projected` flag. `getCmvBreakdown` — limit 50, `untracked_cmv` field para gap trazabilidad.
-- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: Param `?month=YYYY-MM`, `$isCurrentMonth` para fuente datos.
-- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: Nav meses ◀▶, header neutral-800, resultado neto sólido rojo/verde, fila "Sin trazabilidad" en CMV.
-
-**BD:** Tocino Laminado: 246 txs corregidas `quantity*0.05` (unidades→kg), costos $4.7M→$274k. Montina Big: cost_per_unit $479→$269. Nómina histórica: 4 registros pagos_nomina Oct-Ene.
-
-**Commits:** `c21b21e`→`863b921` (10+ commits)
-**Deploys:** mi3-frontend ✅, mi3-backend ✅.
-
-### 2026-04-29d — Dashboard Pro: split layout, charts, monitor turno, UX fixes iterativos
-
-**Cambios código:**
-- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: Param `?month=YYYY-MM` para navegar meses históricos. Meses pasados usan tuu_orders directo (no caja3). `$isCurrentMonth` controla qué fuente usar.
-- `mi3/backend/app/Services/Ventas/VentasService.php`: 3 métodos nuevos + `getMonthlyAggregates` con `CONVERT_TZ` UTC→Chile, nómina de `pagos_nomina.mes`, proyección avg 3 meses si no hay datos, `nomina_projected` flag.
-- `mi3/backend/app/Http/Controllers/Admin/VentasController.php`: 3 endpoints — `GET top-products`, `GET cmv`, `GET monthly`.
-- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: Reescritura iterativa — split 50/50, monitor turno (shift_today + WS), EdR single card con chevrones inline, header `bg-neutral-800` con nav meses ◀▶, Resultado Neto sólido (`bg-red-600`/`bg-green-600` + white text `text-xl font-black`).
-- `mi3/frontend/components/admin/dashboard/MonthlyChart.tsx`: 1 columna apilada (ventas+costo+nómina+delivery), header resultado, tooltip "(proy.)" para nómina proyectada.
-- `mi3/frontend/components/admin/dashboard/TopProductsChart.tsx`: Pareto dual-axis + diagnóstico auto expandible (insights Pareto/margen/oportunidad).
-- Dependencia: `recharts` instalada.
-
-**BD:** Insertados 4 registros `pagos_nomina`: Oct-Dic 2025 ($1.590.000 c/u), Ene 2026 ($1.500.000).
-
-**Commits:** `470d95c`→`03636c0` (10+ commits iterativos)
-**Deploys:** mi3-frontend ✅, mi3-backend ✅ (múltiples iteraciones).
-
-### 2026-04-29c — Ventas: excluir RL6 de métricas + detalle compacto con stock
-
-**Cambios código:**
-- `mi3/backend/app/Services/Ventas/VentasService.php`: `WHERE order_number NOT LIKE 'RL6-%'` en `getKpis()`, `getTransactions()`, `getPaymentBreakdown()`. Pagos de crédito RL6/RL6-MANUAL ya no inflan ventas. Helper `excludeCreditPayments()`. Fix stock data: agrupar ingredientes por `order_item_id` (antes usaba `product_id` que era NULL), `abs()` en quantity_used (BD guarda negativos), null-safe en previous_stock/new_stock.
-- `mi3/frontend/components/admin/VentasPageContent.tsx`: `OrderDetailPanel` rediseñado — header compacto 1 línea (orden·fecha·pago·cliente), items con precio/costo/utilidad inline, ingredientes en tabla con columnas Antes|Consumo|Después (tabular-nums), totales compactos.
-
-**Commits:** `0e533cd`, `7d5505c`, `4668094`
-**Deploys:** mi3-frontend ✅, mi3-backend ✅ (1 retry por error infra Coolify)
-
-### 2026-04-29b — Monitor delivery: pin destino + ruta realtime + datos extra
-
-**Cambios código:**
-- `mi3/backend/app/Services/Delivery/DeliveryService.php`: Fix bug `return` antes de `->transform()` (rider_url nunca se agregaba). Campos nuevos en `getActiveOrders()`: `customer_name`, `customer_phone`, `product_price`, `subtotal`, `payment_method`, `delivery_distance_km`, `delivery_duration_min`.
-- `mi3/frontend/components/admin/delivery/DeliveryMap.tsx`: Reescritura — pin destino 📍 geocodificado para TODOS los pedidos (azul pulsante en ruta, rojo otros), ruta Directions API rider→destino en tiempo real (throttled), InfoWindow con distancia/duración/total/pago/rider, cache geocode para no repetir llamadas.
-- `mi3/frontend/components/admin/delivery/OrderPanel.tsx`: Distancia km + duración min, total CLP + método pago, botón "Llamar cliente" con tel: link.
-- `mi3/frontend/components/admin/sections/DeliverySection.tsx`: Bottom sheet "En ruta" mobile con distancia, duración, total, botón llamar.
-- `mi3/frontend/hooks/useDeliveryTracking.ts`: Interface `DeliveryOrder` extendida con campos nuevos del backend.
-
-**Commits:** `19852fe`
-**Deploys:** mi3-frontend ✅, mi3-backend ✅
-
 ---
 
 > Sesiones anteriores (190+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-29b archivadas. Últimas archivadas: 2026-04-29b (Monitor delivery pin destino + ruta realtime), 2026-04-29a (Botón cancelar rider + waypoints), 2026-04-28f (MiniComandas chevron embed).
+> Sesiones 2026-04-19c→2026-04-29e archivadas. Últimas archivadas: 2026-04-29e (Fix datos Tocino/CMV), 2026-04-29d (Dashboard Pro charts), 2026-04-29c (Ventas excluir RL6), 2026-04-29b (Monitor delivery pin destino).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
