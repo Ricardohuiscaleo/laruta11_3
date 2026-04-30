@@ -459,16 +459,34 @@ class VentasService
         }
 
         // Ingredient breakdown from inventory_transactions
+        // Exclude children of composite ingredients that are NOT used directly in any product recipe
+        // (e.g., Carne Molida is only a sub-recipe of Hamburguesa R11, so exclude it to avoid double counting)
         $ingredients = [];
         $ingredientsCmvTotal = 0;
         if ($this->tableExists('inventory_transactions')) {
-            $ingredients = DB::table('inventory_transactions as it')
+            // Find child ingredient IDs that are ONLY sub-recipe components (not in product_recipes)
+            $exclusiveChildIds = DB::table('ingredient_recipes')
+                ->whereNotIn('child_ingredient_id', function ($q) {
+                    $q->select('ingredient_id')->from('product_recipes');
+                })
+                ->pluck('child_ingredient_id')
+                ->unique()
+                ->toArray();
+
+            $query = DB::table('inventory_transactions as it')
                 ->join('ingredients as i', 'it.ingredient_id', '=', 'i.id')
                 ->join('tuu_orders as o', 'it.order_reference', '=', 'o.order_number')
                 ->where('it.transaction_type', 'sale')
                 ->where('o.payment_status', 'paid')
                 ->where('o.order_number', 'NOT LIKE', 'RL6-%')
-                ->whereBetween('o.created_at', [$start, $end])
+                ->whereBetween('o.created_at', [$start, $end]);
+
+            // Exclude exclusive sub-recipe children to avoid double counting with composites
+            if (!empty($exclusiveChildIds)) {
+                $query->whereNotIn('it.ingredient_id', $exclusiveChildIds);
+            }
+
+            $ingredients = $query
                 ->groupBy('it.ingredient_id', 'i.name', 'i.unit', 'i.cost_per_unit')
                 ->selectRaw("
                     it.ingredient_id,
