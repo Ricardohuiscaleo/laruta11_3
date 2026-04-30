@@ -117,12 +117,12 @@
 - `mi3/backend/database/migrations/2026_04_30_000001_create_nomina_snapshots_table.php`: Tabla `nomina_snapshots` (token unique, mes, data JSON).
 - `mi3/backend/database/migrations/2026_04_28_*`: Guards `Schema::hasTable`/`hasColumn` para delivery_config y card_surcharge (ya existían en prod).
 - `mi3/backend/routes/api.php`: Ruta pública `GET /nomina/{token}`, ruta admin `POST /payroll/snapshot`.
-- `mi3/frontend/app/nomina/[token]/page.tsx`: Página pública estilo rendición — 2 secciones separadas (Ruta11/Seguridad) con totales independientes, chevrones expandibles, iconos lucide (Wallet/TrendingDown/CreditCard/ArrowUpRight/ArrowDownRight), detalle ajustes/créditos/reemplazos, share button genera mensaje corto (solo subtotales + link).
+- `mi3/frontend/app/nomina/[token]/page.tsx`: Página pública estilo rendición — 2 secciones separadas (Ruta11/Seguridad) con totales independientes, chevrones expandibles, iconos lucide (Wallet/TrendingDown/CreditCard/ArrowUpRight/ArrowDownRight), detalle ajustes/créditos/reemplazos, share button genera mensaje corto (solo subtotales + link). Texto reemplazos descriptivo: `→ Reemplazó a Claudio · 12 abr` en vez de `→ Ricardo · días 14`.
 - `mi3/frontend/components/admin/sections/NominaSection.tsx`: Botón "Resumen" genera snapshot y abre `/nomina/TOKEN` en nueva pestaña. Eliminado `ResumenPagosModal` (250 líneas dead code), limpieza imports.
 
-**BD:** Fix encoding `ajustes_categorias` id=8: `PrÃ©stamo` → `Préstamo`. Migración `nomina_snapshots` ejecutada. Guards migraciones delivery_config + card_surcharge.
+**BD:** Fix encoding `ajustes_categorias` id=8: `PrÃ©stamo` → `Préstamo`. Migración `nomina_snapshots` ejecutada. Guards migraciones delivery_config + card_surcharge. Fix turno reemplazo Ricardo→Claudio: fecha 14→12 abr (swap tipos entre turnos id=1380 y id=1310).
 
-**Commits:** `a6a2255`, `85ac51e`, `8b4697d`, `f555b17`, `28563f3`, `6cc614e`, `ace82cb`
+**Commits:** `a6a2255`, `85ac51e`, `8b4697d`, `f555b17`, `28563f3`, `6cc614e`, `ace82cb`, `25ca83b`
 **Deploys:** mi3-backend ✅ (×3), mi3-frontend ✅ (×3).
 
 ### 2026-04-30b — Nómina: tabs Ruta11/Seguridad, detalle ajustes/créditos, resumen pagos
