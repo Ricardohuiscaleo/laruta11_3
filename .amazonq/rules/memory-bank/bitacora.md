@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`a41e39d`) — Merma Smart: conversión auto unidades, stepper +/- |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`900cc23`) — Merma Smart: lista unificada, 1 fila, footer fijo |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`c7e857f`) — Checklists removidos de worker app, solo en comandas/caja |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28563f3`) — Nómina: snapshot API, tabla nomina_snapshots, guards migraciones |
@@ -109,18 +109,18 @@
 
 ## Sesiones Recientes
 
-### 2026-04-30f — Merma Smart: conversión automática unidades para personal no técnico
+### 2026-04-30f — Merma Smart: conversión auto + UX lista unificada
 
 **Cambios código:**
-- `caja3/src/components/MermaPanel.jsx`: Reescritura completa — ingredientes con `peso_por_unidad` (Tomate, Cebolla, Palta, etc.) ahora muestran stepper +/- con pregunta "¿Cuántos tomates?" en vez de input decimal. Conversión automática a kg. Stock muestra equivalencia natural ("3.2 kg ≈ 21 tomates"). Items `unit=unidad` (Pan, Bebidas, Packaging) usan stepper entero. Items `unit=kg` sin peso_por_unidad (Carne Molida) mantienen input decimal. Resumen muestra conversión ("3 tomates = 0.450 kg → $XXX").
-- `caja3/src/utils/mermaUtils.js`: 8 funciones smart nuevas — `getMermaInputType()` (natural/unidad/peso), `getSmartQuestion()`, `convertToBaseUnit()`, `calculateSmartCost()`, `getConversionText()`, `stockInNaturalUnits()`, `validateSmartQuantity()`, `getSmartPlaceholder()`.
-- `caja3/api/registrar_merma.php`: Acepta `cantidad_natural` (enteros), auto-convierte via `peso_por_unidad` del ingrediente. Nota de conversión en reason ("Podrido (3 tomates)"). `GREATEST(stock - qty, 0)` previene stock negativo.
+- `caja3/src/components/MermaPanel.jsx`: Reescritura completa — (1) Lista unificada ingredientes+productos en un solo buscador (productos con badge "prod"). (2) Items agregados en 1 fila compacta: nombre + stepper[-1+] o input decimal + unidad texto + costo + X. (3) Sin `<select>` nativo de unidades. (4) Botón "Siguiente" como footer fijo abajo con total visible. (5) Ingredientes con `peso_por_unidad` muestran stepper entero con conversión auto a kg. Stock muestra equivalencia natural ("≈ 21 tomates").
+- `caja3/src/utils/mermaUtils.js`: 8 funciones smart — `getMermaInputType()`, `convertToBaseUnit()`, `calculateSmartCost()`, `getConversionText()`, `stockInNaturalUnits()`, `validateSmartQuantity()`, `getSmartPlaceholder()`, `getSmartQuestion()`.
+- `caja3/api/registrar_merma.php`: Acepta `cantidad_natural`, auto-convierte via `peso_por_unidad`. `GREATEST(stock - qty, 0)` previene stock negativo.
 - `caja3/sql/merma_smart_columns.sql`: Migración + seed data.
 
 **BD:** `ALTER TABLE ingredients ADD COLUMN peso_por_unidad DECIMAL(10,4), ADD COLUMN nombre_unidad_natural VARCHAR(50)`. Seeded: Tomate 0.150, Cebolla 0.200, Cebolla morada 0.200, Palta 0.200, Papa 0.200, Mango 0.300, Maracuyá 0.150.
 
-**Commits:** `a41e39d`
-**Deploys:** caja3 ✅.
+**Commits:** `a41e39d`, `900cc23`
+**Deploys:** caja3 ✅ (×2).
 
 ### 2026-04-30e — Quitar checklists de app trabajadores (mi3 worker)
 
