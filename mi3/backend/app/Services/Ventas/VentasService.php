@@ -436,7 +436,7 @@ class VentasService
     public function getCmvBreakdown(string $period, ?string $month = null): array
     {
         if ($month && preg_match('/^\d{4}-\d{2}$/', $month)) {
-            $base = Carbon::createFromFormat('Y-m', $month, 'America/Santiago');
+            $base = Carbon::createFromFormat('Y-m-d', $month . '-01', 'America/Santiago');
             $start = $base->copy()->startOfMonth()->startOfDay()->utc();
             $end = $base->copy()->endOfMonth()->endOfDay()->utc();
         } else {

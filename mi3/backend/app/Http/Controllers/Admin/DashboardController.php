@@ -19,7 +19,7 @@ class DashboardController extends Controller
         // Support navigating to previous months: ?month=2026-03
         $monthParam = $request->query('month');
         if ($monthParam && preg_match('/^\d{4}-\d{2}$/', $monthParam)) {
-            $baseDate = \Carbon\Carbon::createFromFormat('Y-m', $monthParam)->startOfMonth();
+            $baseDate = \Carbon\Carbon::createFromFormat('Y-m-d', $monthParam . '-01')->startOfMonth();
         } else {
             $baseDate = now();
         }
