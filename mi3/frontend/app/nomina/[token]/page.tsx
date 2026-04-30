@@ -6,7 +6,12 @@ import { Loader2, Share2, ChevronDown, ChevronUp, Wallet, TrendingDown, CreditCa
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-CL');
 
+const MONTH_SHORT = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function fmtDias(dias: number[], mes: string) {
+  const m = parseInt(mes.split('-')[1], 10) - 1;
+  return dias.map(d => `${d} ${MONTH_SHORT[m]}`).join(', ');
+}
 function fmtMonth(mes: string) {
   const [y, m] = mes.split('-');
   return `${MONTH_NAMES[parseInt(m, 10) - 1]} ${y}`;
@@ -104,11 +109,11 @@ export default function NominaPublicPage({ params }: { params: { token: string }
       </div>
 
       {/* ═══ LA RUTA 11 ═══ */}
-      <CentroCard title="🍔 La Ruta 11" workers={r11Workers} summary={r11.summary} showCredits />
+      <CentroCard title="🍔 La Ruta 11" workers={r11Workers} summary={r11.summary} mes={mes} showCredits />
 
       {/* ═══ CAM SEGURIDAD ═══ */}
       {segWorkers.length > 0 && (
-        <CentroCard title="🔒 Cam Seguridad" workers={segWorkers} summary={seg.summary} />
+        <CentroCard title="🔒 Cam Seguridad" workers={segWorkers} summary={seg.summary} mes={mes} />
       )}
 
       {/* Grand total */}
@@ -125,10 +130,11 @@ export default function NominaPublicPage({ params }: { params: { token: string }
 
 /* ─── Centro Card ─── */
 
-function CentroCard({ title, workers, summary, showCredits }: {
+function CentroCard({ title, workers, summary, mes, showCredits }: {
   title: string;
   workers: Worker[];
   summary: CentroData['summary'];
+  mes: string;
   showCredits?: boolean;
 }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -211,7 +217,7 @@ function CentroCard({ title, workers, summary, showCredits }: {
                       <p className="font-medium text-gray-500 mb-0.5">Reemplazos realizados (+)</p>
                       {w.reemplazos_realizados.map((r, i) => (
                         <div key={i} className="flex justify-between text-green-600 py-0.5">
-                          <span>→ {r.nombre} · días {r.dias.join(', ')}</span>
+                          <span>→ Reemplazó a {r.nombre} · {fmtDias(r.dias, mes)}</span>
                           <span>+{fmt(r.monto)}</span>
                         </div>
                       ))}
@@ -222,7 +228,7 @@ function CentroCard({ title, workers, summary, showCredits }: {
                       <p className="font-medium text-gray-500 mb-0.5">Reemplazos recibidos (-)</p>
                       {w.reemplazos_recibidos.map((r, i) => (
                         <div key={i} className="flex justify-between text-red-600 py-0.5">
-                          <span>← {r.nombre} · días {r.dias.join(', ')}</span>
+                          <span>← {r.nombre} lo reemplazó · {fmtDias(r.dias, mes)}</span>
                           <span>-{fmt(r.monto)}</span>
                         </div>
                       ))}
