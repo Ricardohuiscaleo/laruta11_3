@@ -139,23 +139,15 @@ class DashboardController extends Controller
             $data['pnl']['costo_ventas']['costo_ingredientes'] = $histCost;
         }
 
-        // CMV: from caja3 sales analytics (uses shift logic + correct cost_price) — only current month
+        // CMV: from VentasService (inventory_transactions — single source of truth)
         if ($isCurrentMonth) {
-        try {
-            $res2 = Http::timeout(8)->get('https://caja.laruta11.cl/api/get_sales_analytics.php', [
-                'period' => 'month',
-            ]);
-            if ($res2->successful()) {
-                $analytics = $res2->json();
-                if ($analytics['success'] ?? false) {
-                    $kpis = $analytics['data']['summary_kpis'] ?? [];
-                    $costoIngredientes = (float) ($kpis['total_cost'] ?? 0);
-                    $data['pnl']['costo_ventas']['costo_ingredientes'] = $costoIngredientes;
-                }
+            try {
+                $ventasService = app(\App\Services\Ventas\VentasService::class);
+                $cmvData = $ventasService->getCmvBreakdown('month');
+                $data['pnl']['costo_ventas']['costo_ingredientes'] = $cmvData['total_cmv'];
+            } catch (\Exception $e) {
+                // Silently fail
             }
-        } catch (\Exception $e) {
-            // Silently fail
-        }
         } // end isCurrentMonth CMV block
 
         // Nómina: solo centro ruta11, excluyendo dueño
