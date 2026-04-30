@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4540368`) — MiniComandas: chevron "Ver pedido 👀" mapa embed, "Enviar a Rider" azul |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`85ac51e`) — Nómina: tabs Ruta11/Seguridad, resumen pagos estilo rendición con copiar/compartir |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`a6a2255`) — Nómina: créditos R11 solo en Ruta11, fix encoding categorías |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`ace82cb`) — Nómina: página pública /nomina/TOKEN, share corto, chevrones+iconos lucide |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28563f3`) — Nómina: snapshot API, tabla nomina_snapshots, guards migraciones |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -109,16 +109,21 @@
 
 ## Sesiones Recientes
 
-### 2026-04-30c — Fix créditos R11 solo en Ruta11 + encoding categorías BD + resumen pagos estilo rendición
+### 2026-04-30c — Nómina: página pública /nomina/TOKEN, créditos R11 solo Ruta11, encoding BD
 
 **Cambios código:**
-- `mi3/backend/app/Http/Controllers/Admin/PayrollController.php`: Crédito R11 pendiente solo se calcula cuando `$centro === 'ruta11'` (antes se incluía también en seguridad).
-- `mi3/frontend/components/admin/sections/NominaSection.tsx`: ResumenPagosModal reescrito estilo rendición — pills compactas (Ruta11|Seguridad|Total), detalle por trabajador con breakdown (base, desc, créditos, reemp), subtotales, botón "Copiar Resumen" genera mensaje WhatsApp estructurado con emojis. Bottom-sheet en mobile, modal centrado en desktop. Import `Share2`.
+- `mi3/backend/app/Http/Controllers/Admin/PayrollController.php`: Crédito R11 solo en `$centro === 'ruta11'`. Nuevos métodos `generateSnapshot()` (POST snapshot JSON a BD) y `showSnapshot()` (GET público sin auth).
+- `mi3/backend/app/Models/NominaSnapshot.php`: Modelo con token auto-generado `Str::random(12)`, cast `data` a array.
+- `mi3/backend/database/migrations/2026_04_30_000001_create_nomina_snapshots_table.php`: Tabla `nomina_snapshots` (token unique, mes, data JSON).
+- `mi3/backend/database/migrations/2026_04_28_*`: Guards `Schema::hasTable`/`hasColumn` para delivery_config y card_surcharge (ya existían en prod).
+- `mi3/backend/routes/api.php`: Ruta pública `GET /nomina/{token}`, ruta admin `POST /payroll/snapshot`.
+- `mi3/frontend/app/nomina/[token]/page.tsx`: Página pública estilo rendición — 2 secciones separadas (Ruta11/Seguridad) con totales independientes, chevrones expandibles, iconos lucide (Wallet/TrendingDown/CreditCard/ArrowUpRight/ArrowDownRight), detalle ajustes/créditos/reemplazos, share button genera mensaje corto (solo subtotales + link).
+- `mi3/frontend/components/admin/sections/NominaSection.tsx`: Botón "Resumen" genera snapshot y abre `/nomina/TOKEN` en nueva pestaña. Eliminado `ResumenPagosModal` (250 líneas dead code), limpieza imports.
 
-**BD:** Fix encoding `ajustes_categorias` id=8: `Cuota PrÃ©stamo` → `Cuota Préstamo`, icono roto → 💰.
+**BD:** Fix encoding `ajustes_categorias` id=8: `PrÃ©stamo` → `Préstamo`. Migración `nomina_snapshots` ejecutada. Guards migraciones delivery_config + card_surcharge.
 
-**Commits:** `a6a2255`, `85ac51e`
-**Deploys:** mi3-backend ✅, mi3-frontend ✅.
+**Commits:** `a6a2255`, `85ac51e`, `8b4697d`, `f555b17`, `28563f3`, `6cc614e`, `ace82cb`
+**Deploys:** mi3-backend ✅ (×3), mi3-frontend ✅ (×3).
 
 ### 2026-04-30b — Nómina: tabs Ruta11/Seguridad, detalle ajustes/créditos, resumen pagos
 
