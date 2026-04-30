@@ -113,13 +113,15 @@ class VentasController extends Controller
     {
         $request->validate([
             'period' => 'sometimes|string|in:shift_today,today,week,month',
+            'month'  => 'sometimes|nullable|string|regex:/^\d{4}-\d{2}$/',
         ]);
 
         $period = $request->query('period', 'month');
+        $month  = $request->query('month');
 
         return response()->json([
             'success' => true,
-            'data'    => $this->ventasService->getCmvBreakdown($period),
+            'data'    => $this->ventasService->getCmvBreakdown($period, $month),
         ]);
     }
 

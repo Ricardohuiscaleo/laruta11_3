@@ -429,11 +429,19 @@ class VentasService
     /**
      * CMV breakdown by ingredient for the given period.
      *
+     * @param string $period  Period key (shift_today, today, week, month)
+     * @param string|null $month  Optional YYYY-MM to override period with a specific month
      * @return array{total_cmv: float, cmv_percentage: float, ingredients: array}
      */
-    public function getCmvBreakdown(string $period): array
+    public function getCmvBreakdown(string $period, ?string $month = null): array
     {
-        [$start, $end] = $this->getDateRange($period);
+        if ($month && preg_match('/^\d{4}-\d{2}$/', $month)) {
+            $base = Carbon::createFromFormat('Y-m', $month, 'America/Santiago');
+            $start = $base->copy()->startOfMonth()->startOfDay()->utc();
+            $end = $base->copy()->endOfMonth()->endOfDay()->utc();
+        } else {
+            [$start, $end] = $this->getDateRange($period);
+        }
 
         // Total sales for percentage calculation
         $totalSales = (float) DB::table('tuu_orders')

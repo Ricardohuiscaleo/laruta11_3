@@ -212,7 +212,7 @@ export default function DashboardSection() {
       const [dashRes, shiftRes, cmvRes] = await Promise.all([
         apiFetch<{ success: boolean; data: DashboardData }>(`/admin/dashboard${monthParam}`),
         apiFetch<{ success: boolean; data: { kpis: ShiftKpis; payment_breakdown: PaymentBreakdown[] } }>('/admin/ventas/kpis?period=shift_today'),
-        apiFetch<{ success: boolean; data: CmvData }>('/admin/ventas/cmv?period=month'),
+        apiFetch<{ success: boolean; data: CmvData }>(`/admin/ventas/cmv?period=month${isCurrentMonth ? '' : `&month=${selectedMonth}`}`),
       ]);
       if (dashRes.data) setData(dashRes.data);
       if (shiftRes.data) { setShiftKpis(shiftRes.data.kpis); setBreakdown(shiftRes.data.payment_breakdown); }

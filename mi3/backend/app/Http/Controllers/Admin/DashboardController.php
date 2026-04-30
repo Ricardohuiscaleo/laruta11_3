@@ -136,7 +136,15 @@ class DashboardController extends Controller
             $data['pnl']['ingresos']['ventas_netas'] = $ventasReal;
             $data['pnl']['ingresos']['total_ordenes'] = $totalOrdenes;
             $data['pnl']['ingresos']['ticket_promedio'] = $totalOrdenes > 0 ? round($ventasReal / $totalOrdenes) : 0;
-            $data['pnl']['costo_ventas']['costo_ingredientes'] = $histCost;
+
+            // CMV for historical months: use VentasService (same source as breakdown)
+            try {
+                $ventasService = app(\App\Services\Ventas\VentasService::class);
+                $cmvData = $ventasService->getCmvBreakdown('month', $mes);
+                $data['pnl']['costo_ventas']['costo_ingredientes'] = $cmvData['total_cmv'];
+            } catch (\Exception $e) {
+                $data['pnl']['costo_ventas']['costo_ingredientes'] = $histCost;
+            }
         }
 
         // CMV: from VentasService (inventory_transactions — single source of truth)
