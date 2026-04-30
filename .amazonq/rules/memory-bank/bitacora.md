@@ -1,16 +1,16 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-29)
+## Estado Actual (2026-04-30)
 
 ### Aplicaciones Desplegadas
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`d880e70`) — delivery config centralizado BD, card_surcharge separado |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4540368`) — MiniComandas: chevron "Ver pedido 👀" mapa embed, "Enviar a Rider" azul |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`659e7d2`) — R11WORK.png iconos, CMV untracked row, limit 50 |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`863b921`) — CMV fuente única inventory_transactions, limit 50, NominaService mes actual |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`4ada487`) — CMV totalCmv excluye hijos compuestos (mismo filtro que breakdown) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -107,6 +107,19 @@
 
 ## Sesiones Recientes
 
+### 2026-04-30a — Fix CMV doble conteo compuestos + leaf-only tracking app3
+
+**Cambios código:**
+- `mi3/backend/app/Services/Ventas/VentasService.php`: `getCmvBreakdown()` — `totalCmv` ahora excluye `exclusiveChildIds` (antes solo el breakdown los excluía, inflando el % CMV). Guard `tableExists('ingredient_recipes')`. Commits `4ada487`.
+- `app3/api/process_sale_inventory_fn.php`: Agregado `resolveIngredientDeductionApp()` — explota ingredientes compuestos a hijos (leaf-only). Query `product_recipes` ahora incluye `i.is_composite`. Commit `3dafb96`.
+
+**BD:** Eliminadas 132 transacciones duplicadas de Hamburguesa R11 (id=48) en órdenes donde ya existían txs de hijos (Carne Molida, Tocino, Longaniza). Costo inflado eliminado: $261.468. Overlap: 0.
+
+**Diagnóstico:** app3 no tenía `resolveIngredientDeduction` (caja3 sí). Desde 2025-11-11 cuando Hamburguesa R11 se marcó `is_composite=1`, app3 seguía creando txs del padre + caja3 creaba txs de hijos = doble conteo en 94 órdenes (132 txs).
+
+**Commits:** `4ada487` (mi3-backend), `3dafb96` (app3)
+**Deploys:** mi3-backend ✅, app3 ✅.
+
 ### 2026-04-29e — Fix datos: Tocino, Montina Big, CMV trazabilidad, nómina real
 
 **Cambios código:**
@@ -159,5 +172,5 @@
 ---
 
 > Sesiones anteriores (190+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-29a archivadas. Últimas archivadas: 2026-04-29a (Botón cancelar rider + waypoints), 2026-04-28f (MiniComandas chevron embed), 2026-04-28e (Rider fullscreen map-first).
+> Sesiones 2026-04-19c→2026-04-29b archivadas. Últimas archivadas: 2026-04-29b (Monitor delivery pin destino + ruta realtime), 2026-04-29a (Botón cancelar rider + waypoints), 2026-04-28f (MiniComandas chevron embed).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
