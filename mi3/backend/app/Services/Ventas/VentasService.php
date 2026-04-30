@@ -613,7 +613,24 @@ class VentasService
 
             $sales = (float) $row->total_sales;
             $delivery = (float) $row->total_delivery;
-            $resultado = $sales - $cost - $nomina;
+
+            // OPEX: gas, limpieza, mermas (same sources as DashboardController)
+            $gas = (float) DB::table('compras')
+                ->where('tipo_compra', 'gas')
+                ->whereRaw("DATE_FORMAT(fecha_compra, '%Y-%m') = ?", [$row->month])
+                ->sum('monto_total');
+
+            $limpieza = (float) DB::table('compras')
+                ->where('tipo_compra', 'limpieza')
+                ->whereRaw("DATE_FORMAT(fecha_compra, '%Y-%m') = ?", [$row->month])
+                ->sum('monto_total');
+
+            $mermas = (float) DB::table('mermas')
+                ->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$row->month])
+                ->sum('cost');
+
+            $totalOpex = $nomina + $gas + $limpieza + $mermas;
+            $resultado = $sales - $cost - $totalOpex;
 
             return [
                 'month'          => $row->month,
@@ -622,6 +639,9 @@ class VentasService
                 'total_cost'     => $cost,
                 'total_delivery' => $delivery,
                 'total_nomina'   => $nomina,
+                'total_gas'      => $gas,
+                'total_limpieza' => $limpieza,
+                'total_mermas'   => $mermas,
                 'nomina_projected' => $isProjected,
                 'resultado'      => $resultado,
             ];

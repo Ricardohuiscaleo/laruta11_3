@@ -158,13 +158,30 @@ class DashboardController extends Controller
             }
         } // end isCurrentMonth CMV block
 
-        // Nómina: solo centro ruta11, excluyendo dueño
+        // Nómina: pagos_nomina for historical, NominaService for current month
         try {
-            $raw = $this->nominaService->getResumen($mes);
+            $totalNomina = 0;
 
-            $totalNomina = collect($raw['ruta11']['personal'] ?? [])
-                ->filter(fn ($e) => ! str_contains($e['personal']->rol ?? '', 'dueño'))
-                ->sum(fn ($e) => $e['liquidacion']['total']);
+            // First try pagos_nomina (actual payments — source of truth for historical)
+            $totalNomina = (float) \Illuminate\Support\Facades\DB::table('pagos_nomina')
+                ->whereRaw("DATE_FORMAT(mes, '%Y-%m') = ?", [$mes])
+                ->sum('monto');
+
+            // Fallback: compras with tipo_compra = 'nomina'
+            if ($totalNomina === 0.0) {
+                $totalNomina = (float) \Illuminate\Support\Facades\DB::table('compras')
+                    ->where('tipo_compra', 'nomina')
+                    ->whereRaw("DATE_FORMAT(fecha_compra, '%Y-%m') = ?", [$mes])
+                    ->sum('monto_total');
+            }
+
+            // Current month: use NominaService (calculated from shifts/contracts)
+            if ($totalNomina === 0.0 && $isCurrentMonth) {
+                $raw = $this->nominaService->getResumen($mes);
+                $totalNomina = collect($raw['ruta11']['personal'] ?? [])
+                    ->filter(fn ($e) => ! str_contains($e['personal']->rol ?? '', 'dueño'))
+                    ->sum(fn ($e) => $e['liquidacion']['total']);
+            }
 
             $data['nomina_mes'] = $totalNomina;
             $data['pnl']['gastos_operacion']['nomina_ruta11'] = $totalNomina;
