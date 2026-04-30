@@ -72,9 +72,9 @@ class PayrollController extends Controller
                     }
                 }
 
-                // R11 credit pending
+                // R11 credit pending — only applies to ruta11 cost center
                 $creditoPendiente = 0;
-                if ($p->user_id) {
+                if ($centro === 'ruta11' && $p->user_id) {
                     $usuario = DB::table('usuarios')
                         ->where('id', $p->user_id)
                         ->where('es_credito_r11', 1)
