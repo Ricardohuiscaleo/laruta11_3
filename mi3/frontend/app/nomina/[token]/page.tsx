@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Share2 } from 'lucide-react';
+import { Loader2, Share2, ChevronDown, ChevronUp, Wallet, TrendingDown, CreditCard, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-CL');
@@ -72,14 +72,16 @@ export default function NominaPublicPage({ params }: { params: { token: string }
       if (parts.length > 0) detail += ` (${parts.join(', ')})`;
       lines.push(detail);
     });
-    lines.push(`  *Subtotal: ${fmt(r11.summary.total_a_pagar)}*`);
+    lines.push(`  ─────────────────`);
+    lines.push(`  *Total Ruta 11: ${fmt(r11.summary.total_a_pagar)}*`);
     if (segWorkers.length > 0) {
       lines.push(``);
       lines.push(`🔒 *CAM SEGURIDAD*`);
       segWorkers.forEach(w => {
         lines.push(`  • ${w.nombre}: *${fmt(w.total_a_pagar)}*`);
       });
-      lines.push(`  *Subtotal: ${fmt(seg.summary.total_a_pagar)}*`);
+      lines.push(`  ─────────────────`);
+      lines.push(`  *Total Seguridad: ${fmt(seg.summary.total_a_pagar)}*`);
     }
     lines.push(``);
     lines.push(`━━━━━━━━━━━━━━━━━━━━`);
@@ -100,7 +102,7 @@ export default function NominaPublicPage({ params }: { params: { token: string }
   const fecha = createdAt ? new Date(createdAt).toLocaleDateString('es-CL') : '';
 
   return (
-    <div style={{ maxWidth: '100%', padding: '0 4px', paddingBottom: '24px' }} className="space-y-2">
+    <div style={{ maxWidth: '100%', padding: '0 4px', paddingBottom: '24px' }} className="space-y-3">
       {/* Header */}
       <div className="text-center py-3 relative">
         <h1 className="text-xl font-bold text-gray-900">📋 Nómina {fmtMonth(mes)}</h1>
@@ -117,31 +119,22 @@ export default function NominaPublicPage({ params }: { params: { token: string }
         )}
       </div>
 
-      {/* Summary pills */}
-      <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
-        <div className="grid grid-cols-3">
-          <div className="p-2.5 text-center border-r">
-            <p className="text-[10px] text-gray-500 leading-tight">Ruta 11</p>
-            <p className="text-sm font-bold mt-0.5">{fmt(r11.summary.total_a_pagar)}</p>
-          </div>
-          <div className="p-2.5 text-center border-r">
-            <p className="text-[10px] text-gray-500 leading-tight">Seguridad</p>
-            <p className="text-sm font-bold mt-0.5">{fmt(seg.summary.total_a_pagar)}</p>
-          </div>
-          <div className="p-2.5 text-center bg-amber-50">
-            <p className="text-[10px] text-gray-500 leading-tight">Total</p>
-            <p className="text-sm font-bold text-amber-700 mt-0.5">{fmt(grandTotal)}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* La Ruta 11 */}
+      {/* ═══ LA RUTA 11 ═══ */}
       <CentroCard title="🍔 La Ruta 11" workers={r11Workers} summary={r11.summary} showCredits />
 
-      {/* Cam Seguridad */}
+      {/* ═══ CAM SEGURIDAD ═══ */}
       {segWorkers.length > 0 && (
         <CentroCard title="🔒 Cam Seguridad" workers={segWorkers} summary={seg.summary} />
       )}
+
+      {/* Grand total */}
+      <div className="rounded-xl bg-gray-100 p-3 text-center">
+        <p className="text-xs text-gray-500">Total Nómina</p>
+        <p className="text-lg font-bold text-gray-800">{fmt(grandTotal)}</p>
+        <p className="text-[11px] text-gray-400 mt-0.5">
+          Ruta 11: {fmt(r11.summary.total_a_pagar)} · Seguridad: {fmt(seg.summary.total_a_pagar)}
+        </p>
+      </div>
 
       {/* Copy button */}
       <button onClick={handleShare} className="w-full rounded-xl bg-amber-600 py-3 text-sm font-semibold text-white hover:bg-amber-700 flex items-center justify-center gap-2">
@@ -164,18 +157,15 @@ function CentroCard({ title, workers, summary, showCredits }: {
 
   return (
     <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
-      <div className="px-3 py-2 border-b bg-gray-50 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700">{title} ({workers.length})</h3>
-        <span className="text-sm font-bold text-amber-700">{fmt(summary.total_a_pagar)}</span>
+      {/* Header */}
+      <div className="px-3 py-2.5 border-b bg-gray-50">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
+          <span className="text-xs text-gray-400">{workers.length} persona{workers.length !== 1 ? 's' : ''}</span>
+        </div>
       </div>
 
-      {/* Summary breakdown */}
-      <div className="px-3 py-2 border-b bg-gray-50/50 flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-gray-500">
-        <span>Sueldos: {fmt(summary.total_sueldos_base)}</span>
-        {summary.total_descuentos !== 0 && <span className="text-red-500">Desc: {fmt(summary.total_descuentos)}</span>}
-        {showCredits && summary.total_creditos > 0 && <span className="text-red-500">Créditos: -{fmt(summary.total_creditos)}</span>}
-      </div>
-
+      {/* Workers */}
       <div className="divide-y">
         {workers.map(w => {
           const isExpanded = expandedId === w.personal_id;
@@ -188,29 +178,56 @@ function CentroCard({ title, workers, summary, showCredits }: {
             <div key={w.personal_id}>
               <button
                 type="button"
-                className="w-full px-3 py-2 text-left"
-                onClick={() => hasDetail && setExpandedId(isExpanded ? null : w.personal_id)}
+                className="w-full px-3 py-2.5 text-left"
+                onClick={() => setExpandedId(isExpanded ? null : w.personal_id)}
                 aria-expanded={isExpanded}
               >
                 <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-sm font-semibold text-gray-800">{w.nombre}</span>
-                    <span className="ml-1.5 text-[10px] text-gray-400 capitalize">{w.rol}</span>
+                  <div className="flex items-center gap-1.5">
+                    {hasDetail ? (
+                      isExpanded
+                        ? <ChevronUp className="h-4 w-4 text-gray-400 shrink-0" />
+                        : <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
+                    ) : (
+                      <div className="w-4 shrink-0" />
+                    )}
+                    <div>
+                      <span className="text-sm font-semibold text-gray-800">{w.nombre}</span>
+                      <span className="ml-1.5 text-[10px] text-gray-400 capitalize">{w.rol}</span>
+                    </div>
                   </div>
                   <span className="text-sm font-bold tabular-nums">{fmt(w.total_a_pagar)}</span>
                 </div>
-                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-[11px] text-gray-500">
-                  <span>Base: {fmt(w.sueldo_base)}</span>
-                  <span>Días: {w.dias_trabajados}</span>
-                  {w.total_descuentos !== 0 && <span className="text-red-500">Desc: {fmt(w.total_descuentos)}</span>}
-                  {w.credito_r11_pendiente > 0 && <span className="text-red-500">💳 -{fmt(w.credito_r11_pendiente)}</span>}
-                  {w.total_reemplazando > 0 && <span className="text-green-600">+Reemp: {fmt(w.total_reemplazando)}</span>}
-                  {w.total_reemplazado > 0 && <span className="text-red-500">-Reemp: {fmt(w.total_reemplazado)}</span>}
+                {/* Inline: Base, Descuentos, Créditos — with lucide icons */}
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 ml-[22px] text-[11px] text-gray-500">
+                  <span className="inline-flex items-center gap-0.5">
+                    <Wallet className="h-3 w-3" /> {fmt(w.sueldo_base)}
+                  </span>
+                  {w.total_descuentos !== 0 && (
+                    <span className="inline-flex items-center gap-0.5 text-red-500">
+                      <TrendingDown className="h-3 w-3" /> {fmt(w.total_descuentos)}
+                    </span>
+                  )}
+                  {w.credito_r11_pendiente > 0 && (
+                    <span className="inline-flex items-center gap-0.5 text-red-500">
+                      <CreditCard className="h-3 w-3" /> -{fmt(w.credito_r11_pendiente)}
+                    </span>
+                  )}
+                  {w.total_reemplazando > 0 && (
+                    <span className="inline-flex items-center gap-0.5 text-green-600">
+                      <ArrowUpRight className="h-3 w-3" /> +{fmt(w.total_reemplazando)}
+                    </span>
+                  )}
+                  {w.total_reemplazado > 0 && (
+                    <span className="inline-flex items-center gap-0.5 text-red-500">
+                      <ArrowDownRight className="h-3 w-3" /> -{fmt(w.total_reemplazado)}
+                    </span>
+                  )}
                 </div>
               </button>
 
               {isExpanded && (
-                <div className="px-3 pb-3 space-y-2 text-xs">
+                <div className="px-3 pb-3 ml-[22px] space-y-2 text-xs">
                   {w.reemplazos_realizados.length > 0 && (
                     <div>
                       <p className="font-medium text-gray-500 mb-0.5">Reemplazos realizados (+)</p>
@@ -268,9 +285,10 @@ function CentroCard({ title, workers, summary, showCredits }: {
         })}
       </div>
 
-      <div className="px-3 py-2 border-t bg-gray-50 flex justify-between">
-        <span className="text-sm font-semibold text-gray-700">Total a Pagar</span>
-        <span className="text-sm font-bold text-amber-700 tabular-nums">{fmt(summary.total_a_pagar)}</span>
+      {/* Total footer */}
+      <div className="px-3 py-3 border-t bg-amber-50 flex justify-between items-center">
+        <span className="text-sm font-bold text-gray-800">Total a Pagar</span>
+        <span className="text-lg font-bold text-amber-700 tabular-nums">{fmt(summary.total_a_pagar)}</span>
       </div>
     </div>
   );
