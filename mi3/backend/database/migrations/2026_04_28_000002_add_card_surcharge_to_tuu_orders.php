@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('tuu_orders', 'card_surcharge')) {
+            return;
+        }
+
         Schema::table('tuu_orders', function (Blueprint $table) {
             $table->decimal('card_surcharge', 10, 2)
                 ->default(0.00)
