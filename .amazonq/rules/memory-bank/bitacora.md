@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4540368`) — MiniComandas: chevron "Ver pedido 👀" mapa embed, "Enviar a Rider" azul |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`ace82cb`) — Nómina: página pública /nomina/TOKEN, share corto, chevrones+iconos lucide |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`5a485fb`) — Nómina pública /nomina/TOKEN sin login, middleware excluido |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28563f3`) — Nómina: snapshot API, tabla nomina_snapshots, guards migraciones |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -122,8 +122,8 @@
 
 **BD:** Fix encoding `ajustes_categorias` id=8: `PrÃ©stamo` → `Préstamo`. Migración `nomina_snapshots` ejecutada. Guards migraciones delivery_config + card_surcharge. Fix turno reemplazo Ricardo→Claudio: fecha 14→12 abr (swap tipos entre turnos id=1380 y id=1310).
 
-**Commits:** `a6a2255`, `85ac51e`, `8b4697d`, `f555b17`, `28563f3`, `6cc614e`, `ace82cb`, `25ca83b`
-**Deploys:** mi3-backend ✅ (×3), mi3-frontend ✅ (×3).
+**Commits:** `a6a2255`, `85ac51e`, `8b4697d`, `f555b17`, `28563f3`, `6cc614e`, `ace82cb`, `25ca83b`, `5a485fb`
+**Deploys:** mi3-backend ✅ (×3), mi3-frontend ✅ (×4).
 
 ### 2026-04-30b — Nómina: tabs Ruta11/Seguridad, detalle ajustes/créditos, resumen pagos
 
