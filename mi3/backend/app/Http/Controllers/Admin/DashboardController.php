@@ -191,18 +191,31 @@ class DashboardController extends Controller
 
         // OPEX lines: gas/limpieza from compras (compra=gasto), mermas, otros from consumption
         try {
-            // Gas y Limpieza: compras del mes (son gasto directo, no inventario)
-            $gasCompras = (float) \Illuminate\Support\Facades\DB::table('compras')
+            // Gas: compras del mes con detalle
+            $gasItems = \Illuminate\Support\Facades\DB::table('compras')
                 ->where('tipo_compra', 'gas')
                 ->whereRaw("DATE_FORMAT(fecha_compra, '%Y-%m') = ?", [$mes])
-                ->sum('monto_total');
+                ->select('id', 'proveedor', 'monto_total', 'fecha_compra')
+                ->orderBy('fecha_compra')
+                ->get()
+                ->map(fn ($r) => ['proveedor' => $r->proveedor ?? 'Gas', 'monto' => (float) $r->monto_total, 'fecha' => $r->fecha_compra])
+                ->toArray();
+            $gasCompras = array_sum(array_column($gasItems, 'monto'));
             $data['pnl']['gastos_operacion']['gas'] = $gasCompras;
+            $data['pnl']['gastos_operacion']['gas_items'] = $gasItems;
 
-            $limpiezaCompras = (float) \Illuminate\Support\Facades\DB::table('compras')
+            // Limpieza: compras del mes con detalle
+            $limpiezaItems = \Illuminate\Support\Facades\DB::table('compras')
                 ->where('tipo_compra', 'limpieza')
                 ->whereRaw("DATE_FORMAT(fecha_compra, '%Y-%m') = ?", [$mes])
-                ->sum('monto_total');
+                ->select('id', 'proveedor', 'monto_total', 'fecha_compra')
+                ->orderBy('fecha_compra')
+                ->get()
+                ->map(fn ($r) => ['proveedor' => $r->proveedor ?? 'Limpieza', 'monto' => (float) $r->monto_total, 'fecha' => $r->fecha_compra])
+                ->toArray();
+            $limpiezaCompras = array_sum(array_column($limpiezaItems, 'monto'));
             $data['pnl']['gastos_operacion']['limpieza'] = $limpiezaCompras;
+            $data['pnl']['gastos_operacion']['limpieza_items'] = $limpiezaItems;
 
             // Otros gastos: consumos reales registrados (no retroactivos)
             $consumos = \Illuminate\Support\Facades\DB::table('inventory_transactions as it')
@@ -214,11 +227,29 @@ class DashboardController extends Controller
                 ->value('total_cost');
             $data['pnl']['gastos_operacion']['otros_gastos'] = (float) ($consumos ?? 0);
 
-            // Mermas del mes
-            $mermas = (float) \Illuminate\Support\Facades\DB::table('mermas')
+            // Mermas del mes con detalle
+            $mermaItems = \Illuminate\Support\Facades\DB::table('mermas')
                 ->whereBetween('created_at', [$mesInicio, $mesFin])
-                ->sum('cost');
+                ->select('id', 'item_name', 'quantity', 'unit', 'cost', 'reason', 'created_at')
+                ->orderByDesc('cost')
+                ->get()
+                ->map(fn ($r) => ['name' => $r->item_name, 'quantity' => (float) $r->quantity, 'unit' => $r->unit, 'cost' => (float) $r->cost, 'reason' => $r->reason, 'fecha' => $r->created_at])
+                ->toArray();
+            $mermas = array_sum(array_column($mermaItems, 'cost'));
             $data['pnl']['gastos_operacion']['mermas'] = $mermas;
+            $data['pnl']['gastos_operacion']['mermas_items'] = $mermaItems;
+
+            // Payment breakdown for the selected month (for Ventas Netas chevron)
+            $paymentBreakdown = \Illuminate\Support\Facades\DB::table('tuu_orders')
+                ->where('payment_status', 'paid')
+                ->where('order_number', 'NOT LIKE', 'RL6-%')
+                ->whereBetween('created_at', [$mesInicio->copy()->setTimezone('America/Santiago')->startOfDay()->utc(), $mesFin->copy()->setTimezone('America/Santiago')->endOfDay()->utc()])
+                ->groupBy('payment_method')
+                ->selectRaw('payment_method as method, COUNT(*) as order_count, COALESCE(SUM(installment_amount) - SUM(COALESCE(delivery_fee, 0)), 0) as total_sales')
+                ->get()
+                ->map(fn ($r) => ['method' => $r->method ?? 'otros', 'order_count' => (int) $r->order_count, 'total_sales' => (float) $r->total_sales])
+                ->toArray();
+            $data['pnl']['ingresos']['payment_breakdown'] = $paymentBreakdown;
         } catch (\Exception $e) {
             // Silently fail
         }

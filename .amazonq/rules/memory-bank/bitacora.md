@@ -73,7 +73,7 @@
 ### 🟡 Verificaciones pendientes
 
 - [x] **🚨 Fix Tocino Laminado unidades→kg en inventory_transactions** — COMPLETADO. 246 txs corregidas (`quantity * 0.05`). Costos reducidos de $4.715.760 a $273.560. Commit `4c82ec6`.
-- [ ] **Nómina abril $593.333 proyectada** — Es promedio de últimos 3 meses (pagos_nomina). Falta registrar nómina real de abril cuando se pague. Además: trazabilidad nómina↔créditos↔ajustes no está conectada en el dashboard (Andrés: base $600k, ajustes -$210k, crédito -$27.8k = $362.154 pero dashboard muestra diferente).
+- [ ] **Nómina abril $593.333 proyectada** — Es promedio de últimos 3 meses (pagos_nomina). Falta registrar nómina real de abril cuando se pague. ~~Además: trazabilidad nómina↔créditos↔ajustes no está conectada en el dashboard~~ RESUELTO: NominaSection reescrita con tabs Ruta11/Seguridad, detalle ajustes+créditos inline por trabajador, resumen de pagos modal. Falta: registrar pago real de abril.
 - [ ] **Discrepancia ventas mensuales vs EdR** — Gráfico mensual usa CONVERT_TZ pero puede haber diferencia residual con caja3 API. Verificar que ambos coincidan para abril.
 
 - [x] Verificar upload S3 en compras — funciona correctamente.
@@ -106,6 +106,16 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-30b — Nómina: tabs Ruta11/Seguridad, detalle ajustes/créditos, resumen pagos
+
+**Cambios código:**
+- `mi3/backend/app/Http/Controllers/Admin/PayrollController.php`: Reescrito `index()` — respuesta separada por centro de costo (`ruta11`, `seguridad`), cada uno con `workers`, `summary`, `pagos`. Workers incluyen `descuentos` y `bonos` detallados (ajustes negativos/positivos separados con id para eliminar), `credito_r11_pendiente`, `total_a_pagar` (sueldo_base + reemplazos + ajustes - créditos). Summary: `total_sueldos_base`, `total_descuentos`, `total_creditos`, `total_a_pagar`.
+- `mi3/frontend/components/admin/sections/NominaSection.tsx`: Reescritura completa — 2 tabs (La Ruta 11 / Cam Seguridad) via `onHeaderConfig`, resumen por centro con Presupuesto→Sueldos→Descuentos→Créditos→Total a Pagar, cards expandibles por trabajador con detalle de reemplazos/bonos/descuentos (cada uno con botón eliminar), crédito R11 pendiente, breakdown total. Modal "Resumen de Pagos" con lista por centro + TOTAL NÓMINA combinado. Trailing en header muestra total del tab activo.
+- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: EdR skeleton loading — `edrLoading` state separado para no re-renderizar panel completo al navegar meses.
+
+**Commits:** `62acbee`
+**Deploys:** mi3-frontend ✅, mi3-backend ✅.
 
 ### 2026-04-30a — Fix CMV doble conteo compuestos + leaf-only tracking app3
 

@@ -292,12 +292,20 @@ export default function DashboardSection() {
             <div className="divide-y divide-gray-100">
               <PnlRowExpandable label="Ventas Netas" value={ventas} pct={100} bold color="text-green-700" icon={<TrendingUp className="h-3 w-3 text-green-600" />}>
                 <div className="px-3 py-2 space-y-1">
-                  {breakdown.map(b => (
-                    <div key={b.method} className="flex items-center justify-between text-xs text-gray-600">
-                      <span>{methodLabels[b.method] ?? b.method} ({b.order_count})</span>
-                      <span className="tabular-nums font-medium">{formatCLP(b.total_sales)}</span>
-                    </div>
-                  ))}
+                  {(pnl?.ingresos as any)?.payment_breakdown?.length > 0
+                    ? (pnl?.ingresos as any).payment_breakdown.map((b: any) => (
+                      <div key={b.method} className="flex items-center justify-between text-xs text-gray-600">
+                        <span>{methodLabels[b.method] ?? b.method} ({b.order_count})</span>
+                        <span className="tabular-nums font-medium">{formatCLP(b.total_sales)}</span>
+                      </div>
+                    ))
+                    : breakdown.map(b => (
+                      <div key={b.method} className="flex items-center justify-between text-xs text-gray-600">
+                        <span>{methodLabels[b.method] ?? b.method} ({b.order_count})</span>
+                        <span className="tabular-nums font-medium">{formatCLP(b.total_sales)}</span>
+                      </div>
+                    ))
+                  }
                 </div>
               </PnlRowExpandable>
               <PnlRowExpandable label="Costo Ingredientes (CMV)" value={-(pnl?.costo_ventas.costo_ingredientes ?? 0)} pct={cogsPct} color="text-red-600" icon={<ChefHat className="h-3 w-3 text-orange-600" />}>
@@ -329,9 +337,45 @@ export default function DashboardSection() {
               <PnlRowExpandable label="Gastos Operación" value={-(go?.total_opex ?? 0)} pct={go?.total_opex_pct ?? 0} color="text-red-600" icon={<Calculator className="h-3 w-3 text-red-600" />}>
                 <div>
                   <PnlRow label="Nómina" value={-(go?.nomina_ruta11 ?? 0)} pct={go?.nomina_ruta11_pct ?? 0} indent />
-                  <PnlRow label="Gas" value={-(go?.gas ?? 0)} pct={go?.gas_pct ?? 0} indent />
-                  <PnlRow label="Limpieza" value={-(go?.limpieza ?? 0)} pct={go?.limpieza_pct ?? 0} indent />
-                  <PnlRow label="Mermas" value={-(go?.mermas ?? 0)} pct={go?.mermas_pct ?? 0} indent />
+                  <PnlRowExpandable label="Gas" value={-(go?.gas ?? 0)} pct={go?.gas_pct ?? 0}>
+                    <div className="px-6 py-1 space-y-1">
+                      {((go as any)?.gas_items ?? []).length > 0
+                        ? (go as any).gas_items.map((item: any, i: number) => (
+                          <div key={i} className="flex items-center justify-between text-[11px] text-gray-600">
+                            <span>{item.proveedor} <span className="text-gray-400">· {item.fecha?.slice(0, 10)}</span></span>
+                            <span className="tabular-nums font-medium">{formatCLP(item.monto)}</span>
+                          </div>
+                        ))
+                        : <p className="text-[11px] text-gray-400">Sin compras de gas</p>
+                      }
+                    </div>
+                  </PnlRowExpandable>
+                  <PnlRowExpandable label="Limpieza" value={-(go?.limpieza ?? 0)} pct={go?.limpieza_pct ?? 0}>
+                    <div className="px-6 py-1 space-y-1">
+                      {((go as any)?.limpieza_items ?? []).length > 0
+                        ? (go as any).limpieza_items.map((item: any, i: number) => (
+                          <div key={i} className="flex items-center justify-between text-[11px] text-gray-600">
+                            <span>{item.proveedor} <span className="text-gray-400">· {item.fecha?.slice(0, 10)}</span></span>
+                            <span className="tabular-nums font-medium">{formatCLP(item.monto)}</span>
+                          </div>
+                        ))
+                        : <p className="text-[11px] text-gray-400">Sin compras de limpieza</p>
+                      }
+                    </div>
+                  </PnlRowExpandable>
+                  <PnlRowExpandable label="Mermas" value={-(go?.mermas ?? 0)} pct={go?.mermas_pct ?? 0}>
+                    <div className="px-6 py-1 space-y-1">
+                      {((go as any)?.mermas_items ?? []).length > 0
+                        ? (go as any).mermas_items.map((item: any, i: number) => (
+                          <div key={i} className="flex items-center justify-between text-[11px] text-gray-600">
+                            <span>{item.name} ({item.quantity} {item.unit}) {item.reason && <span className="text-gray-400">— {item.reason}</span>}</span>
+                            <span className="tabular-nums font-medium">{formatCLP(item.cost)}</span>
+                          </div>
+                        ))
+                        : <p className="text-[11px] text-gray-400">Sin mermas</p>
+                      }
+                    </div>
+                  </PnlRowExpandable>
                   <PnlRow label="Otros" value={-(go?.otros_gastos ?? 0)} pct={go?.otros_gastos_pct ?? 0} indent />
                 </div>
               </PnlRowExpandable>
