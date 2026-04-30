@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Events\AdminDataUpdatedEvent;
 use App\Http\Controllers\Controller;
 use App\Models\AjusteSueldo;
+use App\Models\NominaSnapshot;
 use App\Models\PagoNomina;
 use App\Models\Personal;
 use App\Models\PresupuestoNomina;
@@ -281,6 +282,51 @@ class PayrollController extends Controller
                 'errores' => $errores,
                 'total' => $enviados + $errores,
             ],
+        ]);
+    }
+
+    /**
+     * Generate a public snapshot of the current payroll data.
+     * POST /admin/payroll/snapshot
+     */
+    public function generateSnapshot(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'mes' => 'required|date_format:Y-m',
+        ]);
+
+        $mes = $data['mes'];
+
+        // Reuse the index() logic to get the full payroll data
+        $fakeRequest = Request::create('/admin/payroll', 'GET', ['mes' => $mes]);
+        $response = $this->index($fakeRequest);
+        $payrollData = json_decode($response->getContent(), true)['data'] ?? [];
+
+        $snapshot = NominaSnapshot::create([
+            'mes' => $mes,
+            'data' => $payrollData,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'token' => $snapshot->token,
+            'url' => "https://mi.laruta11.cl/nomina/{$snapshot->token}",
+        ]);
+    }
+
+    /**
+     * Show a public payroll snapshot (no auth required).
+     * GET /nomina/{token}
+     */
+    public static function showSnapshot(string $token): JsonResponse
+    {
+        $snapshot = NominaSnapshot::where('token', $token)->firstOrFail();
+
+        return response()->json([
+            'success' => true,
+            'mes' => $snapshot->mes,
+            'data' => $snapshot->data,
+            'created_at' => $snapshot->created_at?->toIso8601String(),
         ]);
     }
 }

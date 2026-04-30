@@ -29,6 +29,9 @@ Route::prefix('v1')->group(function () {
     Route::post('rendicion/{token}/aprobar', [\App\Http\Controllers\Admin\RendicionController::class, 'aprobar']);
     Route::post('rendicion/{token}/rechazar', [\App\Http\Controllers\Admin\RendicionController::class, 'rechazar']);
 
+    // ── Nómina (público — accesible desde link compartido) ───────────
+    Route::get('nomina/{token}', [\App\Http\Controllers\Admin\PayrollController::class, 'showSnapshot']);
+
     // ── Auth (público) ──────────────────────────────────────────────
     Route::prefix('auth')->group(function () {
         Route::post('login', [\App\Http\Controllers\Auth\AuthController::class, 'login']);
@@ -148,6 +151,7 @@ Route::prefix('v1')->group(function () {
         Route::put('payroll/budget', [\App\Http\Controllers\Admin\PayrollController::class, 'updateBudget']);
         Route::post('payroll/send-liquidacion', [\App\Http\Controllers\Admin\PayrollController::class, 'sendLiquidacion']);
         Route::post('payroll/send-all', [\App\Http\Controllers\Admin\PayrollController::class, 'sendAll']);
+        Route::post('payroll/snapshot', [\App\Http\Controllers\Admin\PayrollController::class, 'generateSnapshot']);
 
         // Ajustes
         Route::get('adjustments', [\App\Http\Controllers\Admin\AdjustmentController::class, 'index']);
