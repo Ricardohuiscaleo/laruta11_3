@@ -443,28 +443,10 @@ class VentasService
             ->selectRaw('COALESCE(SUM(installment_amount) - SUM(COALESCE(delivery_fee, 0)), 0) as net')
             ->value('net');
 
-        // Total CMV from inventory_transactions (real ingredient consumption × current cost)
-        // This is more accurate than item_cost which may have stale prices
-        $totalCmv = 0;
-        if ($this->tableExists('inventory_transactions')) {
-            $totalCmv = (float) DB::table('inventory_transactions as it')
-                ->join('ingredients as i', 'it.ingredient_id', '=', 'i.id')
-                ->join('tuu_orders as o', 'it.order_reference', '=', 'o.order_number')
-                ->where('it.transaction_type', 'sale')
-                ->where('o.payment_status', 'paid')
-                ->where('o.order_number', 'NOT LIKE', 'RL6-%')
-                ->whereBetween('o.created_at', [$start, $end])
-                ->selectRaw('COALESCE(SUM(ABS(it.quantity) * i.cost_per_unit), 0) as total')
-                ->value('total');
-        }
-
-        // Ingredient breakdown from inventory_transactions
         // Exclude children of composite ingredients that are NOT used directly in any product recipe
         // (e.g., Carne Molida is only a sub-recipe of Hamburguesa R11, so exclude it to avoid double counting)
-        $ingredients = [];
-        $ingredientsCmvTotal = 0;
-        if ($this->tableExists('inventory_transactions')) {
-            // Find child ingredient IDs that are ONLY sub-recipe components (not in product_recipes)
+        $exclusiveChildIds = [];
+        if ($this->tableExists('ingredient_recipes')) {
             $exclusiveChildIds = DB::table('ingredient_recipes')
                 ->whereNotIn('child_ingredient_id', function ($q) {
                     $q->select('ingredient_id')->from('product_recipes');
@@ -472,7 +454,34 @@ class VentasService
                 ->pluck('child_ingredient_id')
                 ->unique()
                 ->toArray();
+        }
 
+        // Total CMV from inventory_transactions (real ingredient consumption × current cost)
+        // This is more accurate than item_cost which may have stale prices
+        // MUST exclude the same composite children as the breakdown to avoid double counting
+        $totalCmv = 0;
+        if ($this->tableExists('inventory_transactions')) {
+            $cmvQuery = DB::table('inventory_transactions as it')
+                ->join('ingredients as i', 'it.ingredient_id', '=', 'i.id')
+                ->join('tuu_orders as o', 'it.order_reference', '=', 'o.order_number')
+                ->where('it.transaction_type', 'sale')
+                ->where('o.payment_status', 'paid')
+                ->where('o.order_number', 'NOT LIKE', 'RL6-%')
+                ->whereBetween('o.created_at', [$start, $end]);
+
+            if (!empty($exclusiveChildIds)) {
+                $cmvQuery->whereNotIn('it.ingredient_id', $exclusiveChildIds);
+            }
+
+            $totalCmv = (float) $cmvQuery
+                ->selectRaw('COALESCE(SUM(ABS(it.quantity) * i.cost_per_unit), 0) as total')
+                ->value('total');
+        }
+
+        // Ingredient breakdown from inventory_transactions
+        $ingredients = [];
+        $ingredientsCmvTotal = 0;
+        if ($this->tableExists('inventory_transactions')) {
             $query = DB::table('inventory_transactions as it')
                 ->join('ingredients as i', 'it.ingredient_id', '=', 'i.id')
                 ->join('tuu_orders as o', 'it.order_reference', '=', 'o.order_number')
@@ -481,7 +490,6 @@ class VentasService
                 ->where('o.order_number', 'NOT LIKE', 'RL6-%')
                 ->whereBetween('o.created_at', [$start, $end]);
 
-            // Exclude exclusive sub-recipe children to avoid double counting with composites
             if (!empty($exclusiveChildIds)) {
                 $query->whereNotIn('it.ingredient_id', $exclusiveChildIds);
             }
