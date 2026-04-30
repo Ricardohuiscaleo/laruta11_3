@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4540368`) — MiniComandas: chevron "Ver pedido 👀" mapa embed, "Enviar a Rider" azul |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`75d8552`) — EdR chevron OPEX detalle, limpieza por ingredient category |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`75d8552`) — Limpieza usa compras_detalle+ingredient category, OPEX items detalle |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`85ac51e`) — Nómina: tabs Ruta11/Seguridad, resumen pagos estilo rendición con copiar/compartir |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`a6a2255`) — Nómina: créditos R11 solo en Ruta11, fix encoding categorías |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -109,15 +109,16 @@
 
 ## Sesiones Recientes
 
-### 2026-04-30c — Fix créditos R11 solo en Ruta11 + encoding categorías BD
+### 2026-04-30c — Fix créditos R11 solo en Ruta11 + encoding categorías BD + resumen pagos estilo rendición
 
 **Cambios código:**
 - `mi3/backend/app/Http/Controllers/Admin/PayrollController.php`: Crédito R11 pendiente solo se calcula cuando `$centro === 'ruta11'` (antes se incluía también en seguridad).
+- `mi3/frontend/components/admin/sections/NominaSection.tsx`: ResumenPagosModal reescrito estilo rendición — pills compactas (Ruta11|Seguridad|Total), detalle por trabajador con breakdown (base, desc, créditos, reemp), subtotales, botón "Copiar Resumen" genera mensaje WhatsApp estructurado con emojis. Bottom-sheet en mobile, modal centrado en desktop. Import `Share2`.
 
 **BD:** Fix encoding `ajustes_categorias` id=8: `Cuota PrÃ©stamo` → `Cuota Préstamo`, icono roto → 💰.
 
-**Commits:** `a6a2255`
-**Deploys:** mi3-backend ✅.
+**Commits:** `a6a2255`, `85ac51e`
+**Deploys:** mi3-backend ✅, mi3-frontend ✅.
 
 ### 2026-04-30b — Nómina: tabs Ruta11/Seguridad, detalle ajustes/créditos, resumen pagos
 
