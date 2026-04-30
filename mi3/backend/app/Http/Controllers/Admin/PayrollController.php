@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Events\AdminDataUpdatedEvent;
 use App\Http\Controllers\Controller;
+use App\Models\AjusteSueldo;
 use App\Models\PagoNomina;
 use App\Models\Personal;
 use App\Models\PresupuestoNomina;
@@ -27,113 +28,143 @@ class PayrollController extends Controller
     {
         $mes = $request->query('mes', now()->format('Y-m'));
         $raw = $this->nominaService->getResumen($mes);
+        $mesDate = $mes . '-01';
 
-        // Transform to frontend expected shape: {resumen: WorkerPayroll[], centros: PayrollSummary[]}
-        $workersMap = []; // personal_id => aggregated WorkerPayroll
+        $result = [];
 
         foreach (['ruta11', 'seguridad'] as $centro) {
+            $workers = [];
+
             foreach ($raw[$centro]['personal'] ?? [] as $entry) {
                 $p = $entry['personal'];
                 $liq = $entry['liquidacion'];
                 $pid = $p->id;
 
-                if (isset($workersMap[$pid])) {
-                    $workersMap[$pid]['sueldo_base'] += $liq['sueldo_base'];
-                    $workersMap[$pid]['dias_trabajados'] += $liq['dias_trabajados'];
-                    $workersMap[$pid]['reemplazos'] += $liq['reemplazos_hechos'];
-                    $workersMap[$pid]['ajustes_total'] += $liq['total_ajustes'];
-                    $workersMap[$pid]['total_reemplazando'] += $liq['total_reemplazando'] ?? 0;
-                    $workersMap[$pid]['total_reemplazado'] += $liq['total_reemplazados'] ?? 0;
-                    $workersMap[$pid]['reemplazos_realizados'] = array_merge(
-                        $workersMap[$pid]['reemplazos_realizados'],
-                        $liq['reemplazos_realizados'] ?? [],
-                    );
-                    $workersMap[$pid]['reemplazos_recibidos'] = array_merge(
-                        $workersMap[$pid]['reemplazos_recibidos'],
-                        $liq['reemplazos_recibidos'] ?? [],
-                    );
-                } else {
-                    $workersMap[$pid] = [
-                        'personal_id' => $pid,
-                        'nombre' => $p->nombre,
-                        'rol' => $p->rol,
-                        'sueldo_base' => $liq['sueldo_base'],
-                        'dias_trabajados' => $liq['dias_trabajados'],
-                        'reemplazos' => $liq['reemplazos_hechos'],
-                        'ajustes_total' => $liq['total_ajustes'],
-                        'total_reemplazando' => $liq['total_reemplazando'] ?? 0,
-                        'total_reemplazado' => $liq['total_reemplazados'] ?? 0,
-                        'reemplazos_realizados' => $liq['reemplazos_realizados'] ?? [],
-                        'reemplazos_recibidos' => $liq['reemplazos_recibidos'] ?? [],
-                        'gran_total' => 0, // recalculated below
-                    ];
+                // Get detailed adjustments for this worker in this month
+                $ajustes = AjusteSueldo::with('categoria')
+                    ->where('personal_id', $pid)
+                    ->where('mes', $mesDate)
+                    ->get()
+                    ->map(fn($a) => [
+                        'id' => $a->id,
+                        'monto' => $a->monto,
+                        'concepto' => $a->concepto,
+                        'categoria' => $a->categoria?->nombre ?? '',
+                        'categoria_slug' => $a->categoria?->slug ?? '',
+                        'notas' => $a->notas,
+                    ])
+                    ->toArray();
+
+                // Only include adjustments in ruta11 context (avoid double counting)
+                $hasRuta11Role = preg_match('/administrador|cajero|planchero/', $p->rol ?? '');
+                $includeAjustes = $centro === 'ruta11' || ($centro === 'seguridad' && !$hasRuta11Role);
+
+                // Separate descuentos (negative adjustments) from bonos (positive)
+                $descuentos = [];
+                $bonos = [];
+                if ($includeAjustes) {
+                    foreach ($ajustes as $a) {
+                        if ($a['monto'] < 0) {
+                            $descuentos[] = $a;
+                        } else {
+                            $bonos[] = $a;
+                        }
+                    }
                 }
 
-                // Recalculate gran_total from components
-                $w = &$workersMap[$pid];
-                $w['gran_total'] = $w['sueldo_base'] + $w['total_reemplazando'] - $w['total_reemplazado'] + $w['ajustes_total'];
-                unset($w);
+                // R11 credit pending
+                $creditoPendiente = 0;
+                if ($p->user_id) {
+                    $usuario = DB::table('usuarios')
+                        ->where('id', $p->user_id)
+                        ->where('es_credito_r11', 1)
+                        ->where('credito_r11_usado', '>', 0)
+                        ->first();
+
+                    if ($usuario) {
+                        $yaDescontado = DB::table('ajustes_sueldo')
+                            ->where('personal_id', $pid)
+                            ->where('mes', $mesDate)
+                            ->where('categoria_id', function ($q) {
+                                $q->select('id')
+                                    ->from('ajustes_categorias')
+                                    ->where('slug', 'descuento_credito_r11')
+                                    ->limit(1);
+                            })
+                            ->exists();
+
+                        $creditoPendiente = $yaDescontado ? 0 : (float) $usuario->credito_r11_usado;
+                    }
+                }
+
+                $totalDescuentos = collect($descuentos)->sum('monto'); // negative
+                $totalBonos = collect($bonos)->sum('monto'); // positive
+                $totalAjustes = $includeAjustes ? ($totalDescuentos + $totalBonos) : 0;
+
+                $totalAPagar = (int) round(
+                    $liq['sueldo_base']
+                    + ($liq['total_reemplazando'] ?? 0)
+                    - ($liq['total_reemplazados'] ?? 0)
+                    + $totalAjustes
+                    - $creditoPendiente
+                );
+
+                $workers[] = [
+                    'personal_id' => $pid,
+                    'nombre' => $p->nombre,
+                    'rol' => $p->rol,
+                    'sueldo_base' => (int) round($liq['sueldo_base']),
+                    'dias_trabajados' => $liq['dias_trabajados'],
+                    'reemplazos_hechos' => $liq['reemplazos_hechos'],
+                    'total_reemplazando' => (int) round($liq['total_reemplazando'] ?? 0),
+                    'total_reemplazado' => (int) round($liq['total_reemplazados'] ?? 0),
+                    'reemplazos_realizados' => $liq['reemplazos_realizados'] ?? [],
+                    'reemplazos_recibidos' => $liq['reemplazos_recibidos'] ?? [],
+                    'descuentos' => $descuentos,
+                    'bonos' => $bonos,
+                    'total_descuentos' => (int) round($totalDescuentos),
+                    'total_bonos' => (int) round($totalBonos),
+                    'credito_r11_pendiente' => $creditoPendiente,
+                    'total_a_pagar' => $totalAPagar,
+                ];
             }
-        }
 
-        // R11 credit pending calculation
-        $mesDate = $mes . '-01';
-        foreach ($workersMap as $pid => &$worker) {
-            $personal = Personal::find($pid);
-            if (!$personal || !$personal->user_id) {
-                continue;
-            }
-
-            $usuario = DB::table('usuarios')
-                ->where('id', $personal->user_id)
-                ->where('es_credito_r11', 1)
-                ->where('credito_r11_usado', '>', 0)
-                ->first();
-
-            if (!$usuario) {
-                continue;
-            }
-
-            $yaDescontado = DB::table('ajustes_sueldo')
-                ->where('personal_id', $pid)
-                ->where('mes', $mesDate)
-                ->where('categoria_id', function ($q) {
-                    $q->select('id')
-                        ->from('ajustes_categorias')
-                        ->where('slug', 'descuento_credito_r11')
-                        ->limit(1);
-                })
-                ->exists();
-
-            $worker['credito_r11_pendiente'] = $yaDescontado ? 0 : (float) $usuario->credito_r11_usado;
-        }
-        unset($worker);
-
-        $centros = [];
-        foreach (['ruta11', 'seguridad'] as $centro) {
-            // Exclude owner (dueño) from total_sueldos — cashflow is not a salary
-            $totalSueldos = collect($raw[$centro]['personal'] ?? [])
-                ->filter(fn($e) => !str_contains($e['personal']->rol ?? '', 'dueño'))
-                ->sum(fn($e) => $e['liquidacion']['sueldo_base']);
-            $totalPagado = collect($raw[$centro]['pagos'] ?? [])
-                ->sum('monto');
+            // Summary for this cost center
+            $totalSueldosBase = collect($workers)
+                ->filter(fn($w) => !str_contains($w['rol'] ?? '', 'dueño'))
+                ->sum('sueldo_base');
+            $totalDescuentosCentro = collect($workers)->sum('total_descuentos');
+            $totalCreditosCentro = collect($workers)->sum('credito_r11_pendiente');
+            $totalAPagarCentro = collect($workers)
+                ->filter(fn($w) => !str_contains($w['rol'] ?? '', 'dueño'))
+                ->sum('total_a_pagar');
+            $totalPagado = collect($raw[$centro]['pagos'] ?? [])->sum('monto');
             $presupuesto = $raw[$centro]['presupuesto'] ?? 0;
 
-            $centros[] = [
-                'centro_costo' => $centro,
-                'presupuesto' => $presupuesto,
-                'total_sueldos' => $totalSueldos,
-                'total_pagado' => $totalPagado,
-                'diferencia' => $presupuesto - $totalSueldos,
+            $result[$centro] = [
+                'workers' => $workers,
+                'summary' => [
+                    'presupuesto' => (int) round($presupuesto),
+                    'total_sueldos_base' => (int) round($totalSueldosBase),
+                    'total_descuentos' => (int) round($totalDescuentosCentro),
+                    'total_creditos' => (int) round($totalCreditosCentro),
+                    'total_a_pagar' => (int) round($totalAPagarCentro),
+                    'total_pagado' => (int) round($totalPagado),
+                    'diferencia' => (int) round($presupuesto - $totalAPagarCentro),
+                ],
+                'pagos' => collect($raw[$centro]['pagos'] ?? [])->map(fn($p) => [
+                    'id' => $p->id,
+                    'nombre' => $p->nombre,
+                    'monto' => $p->monto,
+                    'notas' => $p->notas,
+                    'es_externo' => $p->es_externo ?? false,
+                ])->toArray(),
             ];
         }
 
         return response()->json([
             'success' => true,
-            'data' => [
-                'resumen' => array_values($workersMap),
-                'centros' => $centros,
-            ],
+            'data' => $result,
         ]);
     }
 

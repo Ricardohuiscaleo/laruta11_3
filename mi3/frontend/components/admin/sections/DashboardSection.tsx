@@ -182,6 +182,7 @@ export default function DashboardSection() {
   const [breakdown, setBreakdown] = useState<PaymentBreakdown[]>([]);
   const [cmvData, setCmvData] = useState<CmvData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [edrLoading, setEdrLoading] = useState(false);
   const [shiftLoading, setShiftLoading] = useState(true);
   const [liveSales, setLiveSales] = useState<LiveSale[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -206,7 +207,7 @@ export default function DashboardSection() {
   })();
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
+    if (data) setEdrLoading(true); else setLoading(true);
     try {
       const monthParam = isCurrentMonth ? '' : `?month=${selectedMonth}`;
       const [dashRes, cmvRes] = await Promise.all([
@@ -216,7 +217,7 @@ export default function DashboardSection() {
       if (dashRes.data) setData(dashRes.data);
       if (cmvRes.data) setCmvData(cmvRes.data);
     } catch { /* silent */ }
-    finally { setLoading(false); }
+    finally { setLoading(false); setEdrLoading(false); }
   }, [selectedMonth, isCurrentMonth]);
 
   // Shift KPIs: only fetch once on mount (not affected by month navigation)
@@ -271,7 +272,18 @@ export default function DashboardSection() {
                 <button type="button" onClick={() => navigateMonth(1)} disabled={isCurrentMonth} className="h-7 w-7 flex items-center justify-center rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" aria-label="Mes siguiente">▶</button>
               </div>
             </div>
-            {pnl && metaEquilibrio > 0 && <MetaProgress meta={metaEquilibrio} ventas={ventas} />}
+            {pnl && metaEquilibrio > 0 && !edrLoading && <MetaProgress meta={metaEquilibrio} ventas={ventas} />}
+            {edrLoading ? (
+              <div className="px-3 py-6 space-y-3" role="status" aria-label="Cargando estado de resultados">
+                <div className="h-2 bg-gray-200 rounded-full animate-pulse" />
+                <div className="grid grid-cols-3 gap-2">
+                  {[1,2,3].map(i => <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />)}
+                </div>
+                {[1,2,3,4,5].map(i => <div key={i} className="h-6 bg-gray-100 rounded animate-pulse" />)}
+                <div className="h-12 bg-gray-200 rounded-b-xl animate-pulse" />
+              </div>
+            ) : (
+            <>
             <div className="grid grid-cols-3 gap-2 px-3 py-2">
               <div className="rounded-lg bg-gray-50 px-2 py-1.5 text-center"><p className="text-[9px] font-medium text-gray-500 uppercase">Pedidos</p><p className="text-base font-bold text-gray-900">{pnl?.ingresos.total_ordenes ?? 0}</p></div>
               <div className="rounded-lg bg-gray-50 px-2 py-1.5 text-center"><p className="text-[9px] font-medium text-gray-500 uppercase">Ticket</p><p className="text-base font-bold text-gray-900">{formatCLP(pnl?.ingresos.ticket_promedio ?? 0)}</p></div>
@@ -336,6 +348,8 @@ export default function DashboardSection() {
                 </div>
               </div>
             </div>
+            </>
+            )}
           </div>
           <div className="rounded-xl border bg-white shadow-sm p-4">
             <h3 className="text-xs font-semibold text-gray-500 mb-2">Aplicaciones</h3>
