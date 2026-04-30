@@ -25,7 +25,6 @@ export const secondaryNavItems: NavItem[] = [
   { href: '/dashboard/prestamos', label: 'Adelantos', icon: Wallet, badgeKey: 'prestamo-pendiente' },
   { href: '/dashboard/perfil', label: 'Perfil', icon: User },
   { href: '/dashboard/credito', label: 'Crédito', icon: CreditCard },
-  { href: '/dashboard/checklist', label: 'Checklist', icon: ClipboardCheck, badgeKey: 'checklist-pendiente' },
   { href: '/dashboard/reemplazos', label: 'Reemplazos', icon: Repeat2 },
   { href: '/dashboard/asistencia', label: 'Asistencia', icon: ClipboardCheck },
   { href: '/dashboard/cambios', label: 'Cambios', icon: ArrowLeftRight },

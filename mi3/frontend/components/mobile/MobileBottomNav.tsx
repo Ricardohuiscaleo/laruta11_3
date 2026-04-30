@@ -20,7 +20,6 @@ export default function MobileBottomNav({ variant = 'worker' }: { variant?: 'wor
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
   const hasPendingLoan = usePendingLoanBadge();
-  const hasPendingChecklist = usePendingChecklistBadge();
   const unreadCount = useUnreadNotifications();
 
   const primary = variant === 'admin' ? adminPrimaryNavItems : primaryNavItems;
@@ -34,10 +33,8 @@ export default function MobileBottomNav({ variant = 'worker' }: { variant?: 'wor
           {primary.map((item) => {
             const active = isNavItemActive(pathname, item.href);
             const Icon = item.icon;
-            const showDot = variant === 'worker' && (
-              (item.badgeKey === 'prestamo-pendiente' && hasPendingLoan) ||
-              (item.badgeKey === 'checklist-pendiente' && hasPendingChecklist)
-            );
+            const showDot = variant === 'worker' &&
+              (item.badgeKey === 'prestamo-pendiente' && hasPendingLoan);
             const showCount = item.badgeKey === 'notificaciones-unread' && unreadCount > 0;
             return (
               <Link key={item.href} href={item.href}
@@ -78,10 +75,8 @@ export default function MobileBottomNav({ variant = 'worker' }: { variant?: 'wor
               {secondary.map((item) => {
                 const active = isNavItemActive(pathname, item.href);
                 const Icon = item.icon;
-                const showBadge = variant === 'worker' && (
-                  (item.badgeKey === 'prestamo-pendiente' && hasPendingLoan) ||
-                  (item.badgeKey === 'checklist-pendiente' && hasPendingChecklist)
-                );
+                const showBadge = variant === 'worker' &&
+                  (item.badgeKey === 'prestamo-pendiente' && hasPendingLoan);
                 const showCount = item.badgeKey === 'notificaciones-unread' && unreadCount > 0;
                 return (
                   <Link key={item.href} href={item.href} onClick={() => setSheetOpen(false)}

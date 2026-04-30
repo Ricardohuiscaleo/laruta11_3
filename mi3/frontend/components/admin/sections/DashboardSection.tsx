@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
@@ -240,6 +240,15 @@ export default function DashboardSection() {
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => { fetchShift(); }, [fetchShift]);
 
+  // Use refs so the WebSocket listener always calls the latest fetch functions
+  // without re-subscribing to the channel (which would cause leave/join loops).
+  const fetchDataRef = useRef(fetchData);
+  const fetchShiftRef = useRef(fetchShift);
+  const isCurrentMonthRef = useRef(isCurrentMonth);
+  useEffect(() => { fetchDataRef.current = fetchData; }, [fetchData]);
+  useEffect(() => { fetchShiftRef.current = fetchShift; }, [fetchShift]);
+  useEffect(() => { isCurrentMonthRef.current = isCurrentMonth; }, [isCurrentMonth]);
+
   useEffect(() => {
     const echo = getEcho();
     if (!echo) return;
@@ -248,11 +257,11 @@ export default function DashboardSection() {
       if (payload?.order) {
         setLiveSales(prev => [{ order_number: payload.order.order_number ?? '', customer_name: payload.order.customer_name ?? '', total: payload.order.total ?? 0, timestamp: new Date().toISOString() }, ...prev].slice(0, 10));
       }
-      fetchShift();
-      if (isCurrentMonth) fetchData();
+      fetchShiftRef.current();
+      if (isCurrentMonthRef.current) fetchDataRef.current();
     });
     return () => { echo.leave('admin.ventas'); };
-  }, [fetchData, fetchShift, isCurrentMonth]);
+  }, []); // stable — subscribe once, never re-subscribe
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-amber-600" /></div>;
 

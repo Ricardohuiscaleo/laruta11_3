@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4540368`) — MiniComandas: chevron "Ver pedido 👀" mapa embed, "Enviar a Rider" azul |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`5a485fb`) — Nómina pública /nomina/TOKEN sin login, middleware excluido |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`ce290c5`) — Error boundaries admin SPA, null-safety DashboardSection |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28563f3`) — Nómina: snapshot API, tabla nomina_snapshots, guards migraciones |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -108,6 +108,18 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-04-30d — Fix error boundaries admin SPA + null-safety DashboardSection
+
+**Cambios código:**
+- `mi3/frontend/app/admin/error.tsx`: NUEVO. Error boundary a nivel de ruta Next.js — fallback con botón "Reintentar" e "Ir al inicio" en vez del error críptico genérico.
+- `mi3/frontend/components/admin/AdminShell.tsx`: `SectionErrorBoundary` class component — cada sección lazy-loaded envuelta en su propio error boundary. Si una sección crashea, solo esa muestra error con botón reintentar, las demás siguen funcionando.
+- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: `Promise.all` → `Promise.allSettled` para que un API fallido no mate al otro. Null-coalescing en WebSocket payload (`payload?.order`). `console.error` en catches para diagnóstico (antes eran `catch {}` silenciosos).
+
+**Diagnóstico:** "Application error: a client-side exception has occurred" aparecía porque no había ningún Error Boundary en la app admin. Cualquier error en cualquier componente (dato null del API, red, WebSocket) crasheaba toda la página sin recuperación.
+
+**Commits:** `ce290c5`
+**Deploys:** mi3-frontend ✅.
 
 ### 2026-04-30c — Nómina: página pública /nomina/TOKEN, créditos R11 solo Ruta11, encoding BD
 

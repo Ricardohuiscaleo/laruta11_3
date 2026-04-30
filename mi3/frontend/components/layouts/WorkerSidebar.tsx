@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import { logout } from '@/lib/auth';
 import { primaryNavItems, secondaryNavItems } from '@/lib/navigation';
 import { usePendingLoanBadge } from '@/hooks/usePendingLoanBadge';
-import { usePendingChecklistBadge } from '@/hooks/usePendingChecklistBadge';
 import ViewSwitcher from '@/components/ViewSwitcher';
 
 const links = [...primaryNavItems, ...secondaryNavItems];
@@ -15,7 +14,6 @@ const links = [...primaryNavItems, ...secondaryNavItems];
 export default function WorkerSidebar() {
   const pathname = usePathname();
   const hasPendingLoan = usePendingLoanBadge();
-  const hasPendingChecklist = usePendingChecklistBadge();
 
   return (
     <aside className="hidden md:flex md:flex-col w-64 bg-red-600 text-white">
@@ -26,8 +24,7 @@ export default function WorkerSidebar() {
         {links.map(({ href, label, icon: Icon, badgeKey }) => {
           const active = pathname === href;
           const showBadge =
-            (badgeKey === 'prestamo-pendiente' && hasPendingLoan) ||
-            (badgeKey === 'checklist-pendiente' && hasPendingChecklist);
+            (badgeKey === 'prestamo-pendiente' && hasPendingLoan);
           return (
             <Link
               key={href}

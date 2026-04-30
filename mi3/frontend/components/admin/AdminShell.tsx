@@ -280,19 +280,17 @@ export default function AdminShell() {
   const { user } = useAuth();
   const { badges, clearBadge, onEvent } = useAdminRealtime(user?.is_admin ? user.personal_id : null);
 
-  // Auto-refresh: when a realtime event arrives for the active section, force re-mount
-  const [refreshCounters, setRefreshCounters] = useState<Record<string, number>>({});
-
+  // Auto-refresh: when a realtime event arrives for the active section, notify via ref
+  // NOTE: We do NOT use key-based re-mounting (refreshCounters) because it causes
+  // infinite loops — re-mount → re-subscribe to WebSocket → event fires → re-mount.
+  // Instead, sections handle their own refresh via WebSocket listeners.
   useEffect(() => {
     onEvent((event) => {
-      if (event.type === 'admin.data.updated' && event.section === activeSection) {
-        setRefreshCounters(prev => ({
-          ...prev,
-          [event.section]: (prev[event.section] || 0) + 1,
-        }));
-      }
+      // Badges are already handled by useAdminRealtime.
+      // Sections that need live refresh (e.g., DashboardSection) subscribe
+      // to their own WebSocket channels directly.
     });
-  }, [activeSection, onEvent]);
+  }, [onEvent]);
 
   // Initialize from URL on mount
   useEffect(() => {
@@ -448,7 +446,7 @@ export default function AdminShell() {
         {Array.from(loadedSections).map(key => {
           const Component = sectionImports[key];
           return (
-            <div key={`${key}-${refreshCounters[key] || 0}`} className={activeSection === key ? 'block' : 'hidden'}>
+            <div key={key} className={activeSection === key ? 'block' : 'hidden'}>
               <SectionErrorBoundary sectionKey={key}>
                 <Suspense fallback={<SectionSkeleton />}>
                   <Component {...getSectionProps(key)} />
