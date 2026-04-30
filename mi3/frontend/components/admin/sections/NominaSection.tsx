@@ -94,6 +94,7 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<NominaTab>('ruta11');
   const [showResumen, setShowResumen] = useState(false);
+  const [generatingLink, setGeneratingLink] = useState(false);
 
   const mes = getMonthStr(monthOffset);
 
@@ -101,6 +102,18 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
     setActiveTab(key as NominaTab);
     setExpandedId(null);
   }, []);
+
+  const generatePublicLink = async () => {
+    setGeneratingLink(true);
+    try {
+      const res = await apiFetch<{ success: boolean; token: string; url: string }>(
+        '/admin/payroll/snapshot',
+        { method: 'POST', body: JSON.stringify({ mes }) },
+      );
+      window.open(res.url, '_blank');
+    } catch (err: any) { alert(err.message); }
+    finally { setGeneratingLink(false); }
+  };
 
   /* ─── Register tabs via onHeaderConfig ─── */
   useEffect(() => {
@@ -111,10 +124,11 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
           Total: {formatCLP(centro.summary.total_a_pagar)}
         </span>
         <button
-          onClick={() => setShowResumen(true)}
-          className="flex items-center gap-1 rounded-lg bg-amber-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-amber-700"
+          onClick={generatePublicLink}
+          disabled={generatingLink}
+          className="flex items-center gap-1 rounded-lg bg-amber-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50"
         >
-          <FileText className="h-3.5 w-3.5" /> Resumen
+          <FileText className="h-3.5 w-3.5" /> {generatingLink ? 'Generando...' : 'Resumen'}
         </button>
       </div>
     ) : undefined;
