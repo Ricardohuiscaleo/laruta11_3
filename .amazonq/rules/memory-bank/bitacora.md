@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4540368`) — MiniComandas: chevron "Ver pedido 👀" mapa embed, "Enviar a Rider" azul |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`659e7d2`) — R11WORK.png iconos, CMV untracked row, limit 50 |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`4ada487`) — CMV totalCmv excluye hijos compuestos (mismo filtro que breakdown) |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`2ef6474`) — Dashboard CMV usa VentasService fuente única (no caja3) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -110,15 +110,16 @@
 ### 2026-04-30a — Fix CMV doble conteo compuestos + leaf-only tracking app3
 
 **Cambios código:**
-- `mi3/backend/app/Services/Ventas/VentasService.php`: `getCmvBreakdown()` — `totalCmv` ahora excluye `exclusiveChildIds` (antes solo el breakdown los excluía, inflando el % CMV). Guard `tableExists('ingredient_recipes')`. Commits `4ada487`.
-- `app3/api/process_sale_inventory_fn.php`: Agregado `resolveIngredientDeductionApp()` — explota ingredientes compuestos a hijos (leaf-only). Query `product_recipes` ahora incluye `i.is_composite`. Commit `3dafb96`.
+- `mi3/backend/app/Services/Ventas/VentasService.php`: `getCmvBreakdown()` — `totalCmv` ahora excluye `exclusiveChildIds` (antes solo el breakdown los excluía, inflando el % CMV). Guard `tableExists('ingredient_recipes')`.
+- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: `costo_ingredientes` del EdR ahora usa `VentasService::getCmvBreakdown('month')` como fuente única en vez de caja3 `get_sales_analytics.php` (que usaba `item_cost * quantity`, fuente diferente e inflada).
+- `app3/api/process_sale_inventory_fn.php`: Agregado `resolveIngredientDeductionApp()` — explota ingredientes compuestos a hijos (leaf-only). Query `product_recipes` ahora incluye `i.is_composite`.
 
 **BD:** Eliminadas 132 transacciones duplicadas de Hamburguesa R11 (id=48) en órdenes donde ya existían txs de hijos (Carne Molida, Tocino, Longaniza). Costo inflado eliminado: $261.468. Overlap: 0.
 
-**Diagnóstico:** app3 no tenía `resolveIngredientDeduction` (caja3 sí). Desde 2025-11-11 cuando Hamburguesa R11 se marcó `is_composite=1`, app3 seguía creando txs del padre + caja3 creaba txs de hijos = doble conteo en 94 órdenes (132 txs).
+**Diagnóstico:** app3 no tenía `resolveIngredientDeduction` (caja3 sí). Desde 2025-11-11 cuando Hamburguesa R11 se marcó `is_composite=1`, app3 seguía creando txs del padre + caja3 creaba txs de hijos = doble conteo en 94 órdenes (132 txs). Además, el EdR usaba caja3 como fuente de CMV (item_cost) mientras el breakdown usaba inventory_transactions — fuentes inconsistentes.
 
-**Commits:** `4ada487` (mi3-backend), `3dafb96` (app3)
-**Deploys:** mi3-backend ✅, app3 ✅.
+**Commits:** `4ada487`, `3dafb96`, `2ef6474`
+**Deploys:** mi3-backend ✅ (×2), app3 ✅.
 
 ### 2026-04-29e — Fix datos: Tocino, Montina Big, CMV trazabilidad, nómina real
 
