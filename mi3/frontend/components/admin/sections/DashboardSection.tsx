@@ -210,13 +210,15 @@ export default function DashboardSection() {
     if (data) setEdrLoading(true); else setLoading(true);
     try {
       const monthParam = isCurrentMonth ? '' : `?month=${selectedMonth}`;
-      const [dashRes, cmvRes] = await Promise.all([
+      const [dashRes, cmvRes] = await Promise.allSettled([
         apiFetch<{ success: boolean; data: DashboardData }>(`/admin/dashboard${monthParam}`),
         apiFetch<{ success: boolean; data: CmvData }>(`/admin/ventas/cmv?period=month${isCurrentMonth ? '' : `&month=${selectedMonth}`}`),
       ]);
-      if (dashRes.data) setData(dashRes.data);
-      if (cmvRes.data) setCmvData(cmvRes.data);
-    } catch { /* silent */ }
+      if (dashRes.status === 'fulfilled' && dashRes.value?.data) setData(dashRes.value.data);
+      if (cmvRes.status === 'fulfilled' && cmvRes.value?.data) setCmvData(cmvRes.value.data);
+    } catch (err) {
+      console.error('[Dashboard] fetchData error:', err);
+    }
     finally { setLoading(false); setEdrLoading(false); }
   }, [selectedMonth, isCurrentMonth]);
 
@@ -225,8 +227,13 @@ export default function DashboardSection() {
     setShiftLoading(true);
     try {
       const shiftRes = await apiFetch<{ success: boolean; data: { kpis: ShiftKpis; payment_breakdown: PaymentBreakdown[] } }>('/admin/ventas/kpis?period=shift_today');
-      if (shiftRes.data) { setShiftKpis(shiftRes.data.kpis); setBreakdown(shiftRes.data.payment_breakdown); }
-    } catch { /* silent */ }
+      if (shiftRes.data) {
+        setShiftKpis(shiftRes.data.kpis ?? null);
+        setBreakdown(shiftRes.data.payment_breakdown ?? []);
+      }
+    } catch (err) {
+      console.error('[Dashboard] fetchShift error:', err);
+    }
     finally { setShiftLoading(false); }
   }, []);
 
@@ -238,8 +245,8 @@ export default function DashboardSection() {
     if (!echo) return;
     const channel = echo.channel('admin.ventas');
     channel.listen('.venta.nueva', (payload: any) => {
-      if (payload.order) {
-        setLiveSales(prev => [{ order_number: payload.order.order_number, customer_name: payload.order.customer_name, total: payload.order.total, timestamp: new Date().toISOString() }, ...prev].slice(0, 10));
+      if (payload?.order) {
+        setLiveSales(prev => [{ order_number: payload.order.order_number ?? '', customer_name: payload.order.customer_name ?? '', total: payload.order.total ?? 0, timestamp: new Date().toISOString() }, ...prev].slice(0, 10));
       }
       fetchShift();
       if (isCurrentMonth) fetchData();

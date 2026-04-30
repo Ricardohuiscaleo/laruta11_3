@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef, lazy, Suspense, type ReactNode, type ComponentType } from 'react';
-import { Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense, Component, type ReactNode, type ComponentType } from 'react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import PushNotificationInit from '@/components/PushNotificationInit';
 import TokenFromUrl from '@/components/TokenFromUrl';
@@ -99,6 +99,58 @@ function sectionFromPath(pathname: string): SectionKey {
 
 function pathFromSection(section: SectionKey): string {
   return section === 'inicio' ? '/admin' : `/admin/${section}`;
+}
+
+/* ─── Section Error Boundary ─── */
+
+interface SectionErrorBoundaryProps {
+  sectionKey: string;
+  children: ReactNode;
+}
+
+interface SectionErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class SectionErrorBoundary extends Component<SectionErrorBoundaryProps, SectionErrorBoundaryState> {
+  constructor(props: SectionErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): SectionErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error(`[SectionError:${this.props.sectionKey}]`, error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16 px-4 text-center" role="alert">
+          <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center mb-3">
+            <span className="text-xl" aria-hidden="true">⚠️</span>
+          </div>
+          <p className="text-sm font-medium text-gray-900 mb-1">Error en esta sección</p>
+          <p className="text-xs text-gray-500 mb-4 max-w-xs">
+            {this.state.error?.message || 'Ocurrió un error inesperado'}
+          </p>
+          <button
+            type="button"
+            onClick={() => this.setState({ hasError: false, error: null })}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-500 text-white text-xs font-medium rounded-lg hover:bg-red-600 transition-colors"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Reintentar
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 /* ─── Skeleton fallback ─── */
@@ -397,9 +449,11 @@ export default function AdminShell() {
           const Component = sectionImports[key];
           return (
             <div key={`${key}-${refreshCounters[key] || 0}`} className={activeSection === key ? 'block' : 'hidden'}>
-              <Suspense fallback={<SectionSkeleton />}>
-                <Component {...getSectionProps(key)} />
-              </Suspense>
+              <SectionErrorBoundary sectionKey={key}>
+                <Suspense fallback={<SectionSkeleton />}>
+                  <Component {...getSectionProps(key)} />
+                </Suspense>
+              </SectionErrorBoundary>
             </div>
           );
         })}
