@@ -209,19 +209,28 @@ export default function DashboardSection() {
     setLoading(true);
     try {
       const monthParam = isCurrentMonth ? '' : `?month=${selectedMonth}`;
-      const [dashRes, shiftRes, cmvRes] = await Promise.all([
+      const [dashRes, cmvRes] = await Promise.all([
         apiFetch<{ success: boolean; data: DashboardData }>(`/admin/dashboard${monthParam}`),
-        apiFetch<{ success: boolean; data: { kpis: ShiftKpis; payment_breakdown: PaymentBreakdown[] } }>('/admin/ventas/kpis?period=shift_today'),
         apiFetch<{ success: boolean; data: CmvData }>(`/admin/ventas/cmv?period=month${isCurrentMonth ? '' : `&month=${selectedMonth}`}`),
       ]);
       if (dashRes.data) setData(dashRes.data);
-      if (shiftRes.data) { setShiftKpis(shiftRes.data.kpis); setBreakdown(shiftRes.data.payment_breakdown); }
       if (cmvRes.data) setCmvData(cmvRes.data);
     } catch { /* silent */ }
-    finally { setLoading(false); setShiftLoading(false); }
+    finally { setLoading(false); }
   }, [selectedMonth, isCurrentMonth]);
 
+  // Shift KPIs: only fetch once on mount (not affected by month navigation)
+  const fetchShift = useCallback(async () => {
+    setShiftLoading(true);
+    try {
+      const shiftRes = await apiFetch<{ success: boolean; data: { kpis: ShiftKpis; payment_breakdown: PaymentBreakdown[] } }>('/admin/ventas/kpis?period=shift_today');
+      if (shiftRes.data) { setShiftKpis(shiftRes.data.kpis); setBreakdown(shiftRes.data.payment_breakdown); }
+    } catch { /* silent */ }
+    finally { setShiftLoading(false); }
+  }, []);
+
   useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { fetchShift(); }, [fetchShift]);
 
   useEffect(() => {
     const echo = getEcho();
@@ -231,10 +240,11 @@ export default function DashboardSection() {
       if (payload.order) {
         setLiveSales(prev => [{ order_number: payload.order.order_number, customer_name: payload.order.customer_name, total: payload.order.total, timestamp: new Date().toISOString() }, ...prev].slice(0, 10));
       }
-      fetchData();
+      fetchShift();
+      if (isCurrentMonth) fetchData();
     });
     return () => { echo.leave('admin.ventas'); };
-  }, [fetchData]);
+  }, [fetchData, fetchShift, isCurrentMonth]);
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-amber-600" /></div>;
 

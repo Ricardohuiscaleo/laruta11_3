@@ -563,14 +563,9 @@ class VentasService
         return $rows->map(function ($row) use ($meses) {
             $monthNum = (int) substr($row->month, 5, 2);
 
-            // Cost from order items (also using Chile timezone for month matching)
-            $cost = (float) DB::table('tuu_order_items as oi')
-                ->join('tuu_orders as o', 'oi.order_reference', '=', 'o.order_number')
-                ->where('o.payment_status', 'paid')
-                ->where('o.order_number', 'NOT LIKE', 'RL6-%')
-                ->whereRaw("DATE_FORMAT(CONVERT_TZ(o.created_at, '+00:00', '-03:00'), '%Y-%m') = ?", [$row->month])
-                ->selectRaw('COALESCE(SUM(oi.item_cost * oi.quantity), 0) as c')
-                ->value('c');
+            // Cost from inventory_transactions (same source as CMV breakdown)
+            $cmvData = $this->getCmvBreakdown('month', $row->month);
+            $cost = $cmvData['total_cmv'];
 
             // Nómina from pagos_nomina (column: mes, type: date)
             $nomina = (float) DB::table('pagos_nomina')
