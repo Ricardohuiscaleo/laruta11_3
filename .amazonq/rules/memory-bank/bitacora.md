@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`4540368`) — MiniComandas: chevron "Ver pedido 👀" mapa embed, "Enviar a Rider" azul |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`8ea3fa1`) — CMV breakdown pasa month al navegar meses |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`3df0f63`) — Fix Carbon Y-m overflow feb→mar, CMV fuente única VentasService |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`e4d6c04`) — Fetch separado shift/EdR, no re-renderiza al navegar meses |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`e4d6c04`) — CMV unificado inventory_transactions en EdR + gráfico mensual + breakdown |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -121,8 +121,8 @@
 
 **Diagnóstico:** app3 no tenía `resolveIngredientDeduction` (caja3 sí). Desde 2025-11-11 cuando Hamburguesa R11 se marcó `is_composite=1`, app3 seguía creando txs del padre + caja3 creaba txs de hijos = doble conteo en 94 órdenes (132 txs). Además, el EdR usaba caja3 como fuente de CMV (item_cost) mientras el breakdown usaba inventory_transactions — fuentes inconsistentes. Y el breakdown no respetaba la navegación de meses (siempre mostraba abril).
 
-**Commits:** `4ada487`, `3dafb96`, `2ef6474`, `8ea3fa1`, `3df0f63`
-**Deploys:** mi3-backend ✅ (×4), mi3-frontend ✅, app3 ✅.
+**Commits:** `4ada487`, `3dafb96`, `2ef6474`, `8ea3fa1`, `3df0f63`, `e4d6c04`
+**Deploys:** mi3-backend ✅ (×5), mi3-frontend ✅ (×2), app3 ✅.
 
 ### 2026-04-29e — Fix datos: Tocino, Montina Big, CMV trazabilidad, nómina real
 
