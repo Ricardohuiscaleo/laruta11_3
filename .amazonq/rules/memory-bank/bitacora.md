@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`11d843f`) — Fix delivery display MiniComandas + VentasDetalle |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`8522d20`) — Fix NominaSection Error #185 useMemo trailing |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`1ed8eb7`) — Fix AdminShell trailing comparison prevents Error #185 all sections |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`c47406e`) — Fix aprobar() double deduction + cron month + EdR fallback |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -117,14 +117,15 @@
 - `mi3/backend/app/Services/Loan/LoanService.php`: `procesarDescuentosMensuales()` — mismo fix `subMonth()`. Descuento adelanto de sueldo ahora se atribuye al mes anterior. ADEMÁS: `aprobar()` ahora marca `estado='pagado'` y `cuotas_pagadas=cuotas` inmediatamente para prevenir doble descuento (cron encontraba préstamo como "pendiente" y descontaba de nuevo).
 - `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: Eliminado guard `$isCurrentMonth` en fallback NominaService. EdR ahora muestra nómina calculada para cualquier mes, no solo el actual.
 - `mi3/frontend/components/admin/sections/NominaSection.tsx`: `trailing` JSX extraído a `useMemo([data, activeTab, generatingLink])`. Previene loop infinito de re-renders (Error #185) por referencia inestable en `onHeaderConfig`.
+- `mi3/frontend/components/admin/AdminShell.tsx`: `setHeaderConfig` ahora excluye `trailing` de la comparación de igualdad (JSX siempre es nueva referencia). Fix definitivo Error #185 para TODAS las secciones (NominaSection, CreditosSection, ComprasSection, etc.).
 - `mi3/backend/routes/console.php`: Crons `mi3:r11-auto-deduct` y `mi3:loan-auto-deduct` cambiados de 06:00/06:30 a 02:00/02:30 hora Chile.
 
 **Spec:** `.kiro/specs/fix-nomina-edr-bugs/` — bugfix.md + design.md + tasks.md completos.
 
 **Pendiente:** ~~Corregir en BD los ajustes_sueldo creados hoy (1 mayo) con `mes = 2026-05-01` → `mes = 2026-04-01`~~ COMPLETADO. IDs 82-85 corregidos via tinker.
 
-**Commits:** `8522d20`, `df77b18`, `c47406e`
-**Deploys:** mi3-backend ✅ (×3), mi3-frontend ✅.
+**Commits:** `8522d20`, `df77b18`, `c47406e`, `1ed8eb7`
+**Deploys:** mi3-backend ✅ (×3), mi3-frontend ✅ (×2).
 **BD:** IDs 82-84 ajustes_sueldo corregidos `mes=2026-05-01` → `mes=2026-04-01`, conceptos "mayo"→"abril". ID 85 eliminado (doble descuento adelanto $50.000 a Andrés Aguilera). Andrés: $292.154→$342.154.
 
 ### 2026-05-01a — Fix MiniComandas + VentasDetalle delivery display doble descuento visual
