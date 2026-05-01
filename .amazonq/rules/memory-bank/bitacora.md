@@ -1,16 +1,16 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-04-30)
+## Estado Actual (2026-05-01)
 
 ### Aplicaciones Desplegadas
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`46d0d85`) — Fix MiniComandas delivery display: base fee + descuento RL6 correcto |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`11d843f`) — Fix delivery display MiniComandas + VentasDetalle |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`c7e857f`) — Checklists removidos de worker app, solo en comandas/caja |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28563f3`) — Nómina: snapshot API, tabla nomina_snapshots, guards migraciones |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`8522d20`) — Fix NominaSection Error #185 useMemo trailing |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`8522d20`) — Fix cron month attribution R11/Loan + EdR nomina fallback |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -59,6 +59,7 @@
 - [x] **🚨 Ejecutar SQL `dispatch_photo_feedback` en BD** — Tabla creada en producción via docker exec.
 - [x] **🚨 Revertir descuento 10% temporal** — 4 productos revertidos manualmente (cron VPS no se ejecutó). is_featured=0, sale_price=NULL. Crons eliminados del VPS. Scripts apply/revert pendientes de eliminar del repo.
 - [ ] **🚨 URGENTE: Rotar AWS access key comprometida** — AWS detectó key `AKIAUQ24...WGTE` como comprometida y restringió servicios (Bedrock bloqueado). Key rotada a `...RKT7` en Coolify. Falta: 1) Actualizar `~/.aws/credentials` en VPS para chef-bot, 2) Desactivar key vieja en IAM, 3) Responder caso de soporte AWS (caso #177655445900588 respondido, esperando humano). Bedrock sigue bloqueado a nivel de cuenta.
+- [ ] **🚨 Corregir ajustes_sueldo mayo→abril en BD** — Los crons `mi3:r11-auto-deduct` y `mi3:loan-auto-deduct` corrieron hoy 1 mayo con el bug (antes del fix). Los registros en `ajustes_sueldo` con `mes = 2026-05-01` creados hoy deben actualizarse a `mes = 2026-04-01`. UPDATE ajustes_sueldo SET mes='2026-04-01' WHERE mes='2026-05-01' AND created_at >= '2026-05-01' AND (concepto LIKE '%Crédito R11%' OR concepto LIKE '%adelanto%').
 - [x] **🚨 CRÍTICO: Inventario no descuenta para R11/R11C/combos** — COMPLETADO. Guard idempotencia, order_status=sent_to_kitchen, callbacks preservan order_status, create_order centralizado, subtotal/delivery_fee server-side, backfill expandido, fix combos usa fixed_items JSON. Commits `bdee29d`, `98c5565`. Backfill: 218 órdenes procesadas, 0 errores.
 - [x] **Implementar Gemini como proveedor IA principal** — GeminiService.php creado con Structured Outputs, pipeline 2 fases (clasificación + análisis), token tracking, frontend v1.7. Commit `009259d`. Falta: test en vivo con imagen real.
 
@@ -109,13 +110,29 @@
 
 ## Sesiones Recientes
 
-### 2026-05-01a — Fix MiniComandas delivery display doble descuento visual
+### 2026-05-01b — Fix 4 bugs nómina/EdR: cron month, EdR fallback, React #185
 
 **Cambios código:**
-- `caja3/src/components/MiniComandas.jsx`: Fix display delivery en comandas. `delivery_fee` en BD ya es el monto descontado, pero se mostraba como base y luego se restaba `delivery_discount` de nuevo visualmente (ej: $2.500 - $1.000 = $1.500 en vez de $3.500 - $1.000 = $2.500). Ahora: base = `delivery_fee + delivery_discount` (con line-through), descuento RL6 con % dinámico, Total Delivery = `delivery_fee` (monto real cobrado). El cobro siempre estuvo correcto, solo era visual.
+- `mi3/backend/app/Services/Credit/R11CreditService.php`: `autoDeduct()` — `now()->format('Y-m')` → `now()->subMonth()->format('Y-m')`. Descuento crédito R11 ahora se atribuye al mes anterior (cuando se consumió el crédito).
+- `mi3/backend/app/Services/Loan/LoanService.php`: `procesarDescuentosMensuales()` — mismo fix `subMonth()`. Descuento adelanto de sueldo ahora se atribuye al mes anterior.
+- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: Eliminado guard `$isCurrentMonth` en fallback NominaService. EdR ahora muestra nómina calculada para cualquier mes, no solo el actual.
+- `mi3/frontend/components/admin/sections/NominaSection.tsx`: `trailing` JSX extraído a `useMemo([data, activeTab, generatingLink])`. Previene loop infinito de re-renders (Error #185) por referencia inestable en `onHeaderConfig`.
 
-**Commits:** `46d0d85`
-**Deploys:** caja3 ✅.
+**Spec:** `.kiro/specs/fix-nomina-edr-bugs/` — bugfix.md + design.md + tasks.md completos.
+
+**Pendiente:** Corregir en BD los ajustes_sueldo creados hoy (1 mayo) con `mes = 2026-05-01` → `mes = 2026-04-01` (el fix solo afecta ejecuciones futuras del cron).
+
+**Commits:** `8522d20`
+**Deploys:** mi3-backend ✅, mi3-frontend ✅.
+
+### 2026-05-01a — Fix MiniComandas + VentasDetalle delivery display doble descuento visual
+
+**Cambios código:**
+- `caja3/src/components/MiniComandas.jsx`: Fix display delivery en comandas. `delivery_fee` en BD ya es el monto descontado, pero se mostraba como base y luego se restaba `delivery_discount` de nuevo visualmente. Ahora: base = `delivery_fee + delivery_discount` (con line-through), descuento RL6 con % dinámico, Total Delivery = `delivery_fee` (monto real cobrado).
+- `caja3/src/components/VentasDetalle.jsx`: Mismo fix en Detalle de Ventas. Muestra base reconstruido + descuento RL6 + total correcto.
+
+**Commits:** `46d0d85`, `11d843f`
+**Deploys:** caja3 ✅ (×2).
 
 ### 2026-04-30f — Merma Smart: conversión auto + UX lista unificada
 
@@ -202,5 +219,5 @@
 ---
 
 > Sesiones anteriores (190+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-30c archivadas. Últimas archivadas: 2026-04-30c (Nómina página pública), 2026-04-30b (Nómina tabs), 2026-04-30a (Fix CMV doble conteo).
+> Sesiones 2026-04-19c→2026-04-30e archivadas. Últimas archivadas: 2026-04-30e (Quitar checklists worker), 2026-04-30d (Fix error boundaries), 2026-04-30c (Nómina página pública).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
