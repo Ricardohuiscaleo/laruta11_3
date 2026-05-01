@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`f541622`) — Merma Smart: lista unificada, columnas, sin spinners, conversión kg |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`863c3b3`) — Merma Smart: fix paso 3 vacío, validItems convierte unidades |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`c7e857f`) — Checklists removidos de worker app, solo en comandas/caja |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28563f3`) — Nómina: snapshot API, tabla nomina_snapshots, guards migraciones |
@@ -119,8 +119,8 @@
 
 **BD:** `ALTER TABLE ingredients ADD COLUMN peso_por_unidad DECIMAL(10,4), ADD COLUMN nombre_unidad_natural VARCHAR(50)`. Seeded: Tomate 0.150, Cebolla 0.200, Cebolla morada 0.200, Palta 0.200, Papa 0.200, Mango 0.300, Maracuyá 0.150.
 
-**Commits:** `a41e39d`, `900cc23`, `f541622`
-**Deploys:** caja3 ✅ (×3).
+**Commits:** `a41e39d`, `900cc23`, `f541622`, `863c3b3`
+**Deploys:** caja3 ✅ (×4).
 
 ### 2026-04-30e — Quitar checklists de app trabajadores (mi3 worker)
 
