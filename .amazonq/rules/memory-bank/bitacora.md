@@ -117,13 +117,15 @@
 - `mi3/backend/app/Services/Loan/LoanService.php`: `procesarDescuentosMensuales()` — mismo fix `subMonth()`. Descuento adelanto de sueldo ahora se atribuye al mes anterior.
 - `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: Eliminado guard `$isCurrentMonth` en fallback NominaService. EdR ahora muestra nómina calculada para cualquier mes, no solo el actual.
 - `mi3/frontend/components/admin/sections/NominaSection.tsx`: `trailing` JSX extraído a `useMemo([data, activeTab, generatingLink])`. Previene loop infinito de re-renders (Error #185) por referencia inestable en `onHeaderConfig`.
+- `mi3/backend/routes/console.php`: Crons `mi3:r11-auto-deduct` y `mi3:loan-auto-deduct` cambiados de 06:00/06:30 a 02:00/02:30 hora Chile.
 
 **Spec:** `.kiro/specs/fix-nomina-edr-bugs/` — bugfix.md + design.md + tasks.md completos.
 
 **Pendiente:** ~~Corregir en BD los ajustes_sueldo creados hoy (1 mayo) con `mes = 2026-05-01` → `mes = 2026-04-01`~~ COMPLETADO. IDs 82-85 corregidos via tinker.
 
-**Commits:** `8522d20`
-**Deploys:** mi3-backend ✅, mi3-frontend ✅.
+**Commits:** `8522d20`, `df77b18`
+**Deploys:** mi3-backend ✅ (×2), mi3-frontend ✅.
+**BD:** IDs 82-85 ajustes_sueldo corregidos `mes=2026-05-01` → `mes=2026-04-01`, conceptos "mayo"→"abril".
 
 ### 2026-05-01a — Fix MiniComandas + VentasDetalle delivery display doble descuento visual
 
