@@ -148,12 +148,13 @@ class LoanService
 
         DB::transaction(function () use ($prestamo, $aprobadoPorId, $montoAprobado, $fechaInicioDescuento, $notas, $categoriaId, $mes) {
             $prestamo->update([
-                'estado' => 'aprobado',
+                'estado' => 'pagado',
                 'monto_aprobado' => $montoAprobado,
                 'aprobado_por' => $aprobadoPorId,
                 'fecha_aprobacion' => now(),
                 'fecha_inicio_descuento' => $fechaInicioDescuento,
                 'notas_admin' => $notas,
+                'cuotas_pagadas' => $prestamo->cuotas, // Mark as fully paid — adjustment created below
             ]);
 
             // Create negative salary adjustment (adelanto = descuento de sueldo)
