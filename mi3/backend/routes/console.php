@@ -12,8 +12,8 @@ use App\Models\CronExecution;
 */
 
 $commands = [
-    ['cmd' => 'mi3:r11-auto-deduct',                    'name' => 'Descuento R11',              'schedule' => fn($s) => $s->monthlyOn(1, '06:00')],
-    ['cmd' => 'mi3:loan-auto-deduct',                   'name' => 'Descuento Adelantos',        'schedule' => fn($s) => $s->monthlyOn(1, '06:30')],
+    ['cmd' => 'mi3:r11-auto-deduct',                    'name' => 'Descuento R11',              'schedule' => fn($s) => $s->monthlyOn(1, '02:00')],
+    ['cmd' => 'mi3:loan-auto-deduct',                   'name' => 'Descuento Adelantos',        'schedule' => fn($s) => $s->monthlyOn(1, '02:30')],
     ['cmd' => 'mi3:r11-reminder',                       'name' => 'Recordatorio R11',           'schedule' => fn($s) => $s->monthlyOn(28, '10:00')],
     ['cmd' => 'mi3:create-daily-checklists',            'name' => 'Checklists Diarios',         'schedule' => fn($s) => $s->dailyAt('14:00')],
     ['cmd' => 'mi3:check-companion-absence',            'name' => 'Detectar Ausencia',          'schedule' => fn($s) => $s->dailyAt('19:00')],
