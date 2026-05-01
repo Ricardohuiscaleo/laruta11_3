@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`863c3b3`) — Merma Smart: fix paso 3 vacío, validItems convierte unidades |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`46d0d85`) — Fix MiniComandas delivery display: base fee + descuento RL6 correcto |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`c7e857f`) — Checklists removidos de worker app, solo en comandas/caja |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`28563f3`) — Nómina: snapshot API, tabla nomina_snapshots, guards migraciones |
@@ -109,6 +109,14 @@
 
 ## Sesiones Recientes
 
+### 2026-05-01a — Fix MiniComandas delivery display doble descuento visual
+
+**Cambios código:**
+- `caja3/src/components/MiniComandas.jsx`: Fix display delivery en comandas. `delivery_fee` en BD ya es el monto descontado, pero se mostraba como base y luego se restaba `delivery_discount` de nuevo visualmente (ej: $2.500 - $1.000 = $1.500 en vez de $3.500 - $1.000 = $2.500). Ahora: base = `delivery_fee + delivery_discount` (con line-through), descuento RL6 con % dinámico, Total Delivery = `delivery_fee` (monto real cobrado). El cobro siempre estuvo correcto, solo era visual.
+
+**Commits:** `46d0d85`
+**Deploys:** caja3 ✅.
+
 ### 2026-04-30f — Merma Smart: conversión auto + UX lista unificada
 
 **Cambios código:**
@@ -194,5 +202,5 @@
 ---
 
 > Sesiones anteriores (190+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-29e archivadas. Últimas archivadas: 2026-04-29e (Fix datos Tocino/CMV), 2026-04-29d (Dashboard Pro charts), 2026-04-29c (Ventas excluir RL6), 2026-04-29b (Monitor delivery pin destino).
+> Sesiones 2026-04-19c→2026-04-30c archivadas. Últimas archivadas: 2026-04-30c (Nómina página pública), 2026-04-30b (Nómina tabs), 2026-04-30a (Fix CMV doble conteo).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
