@@ -19,8 +19,8 @@ class R11CreditService
      */
     public function autoDeduct(): array
     {
-        $mes = now()->format('Y-m');
-        $mesNombre = now()->locale('es')->monthName;
+        $mes = now()->subMonth()->format('Y-m');
+        $mesNombre = now()->subMonth()->locale('es')->monthName;
         $categoriaR11 = AjusteCategoria::where('slug', 'descuento_credito_r11')->first();
 
         $deudores = Usuario::where('es_credito_r11', 1)

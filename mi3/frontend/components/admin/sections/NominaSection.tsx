@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, formatMonthES } from '@/lib/utils';
 import {
@@ -114,10 +114,11 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
     finally { setGeneratingLink(false); }
   };
 
-  /* ─── Register tabs via onHeaderConfig ─── */
-  useEffect(() => {
+  /* ─── Memoize trailing JSX to prevent infinite re-render loop ─── */
+  const trailing = useMemo(() => {
     const centro = data?.[activeTab];
-    const trailing = centro ? (
+    if (!centro) return undefined;
+    return (
       <div className="flex items-center gap-3 text-sm">
         <span className="font-semibold text-amber-700">
           Total: {formatCLP(centro.summary.total_a_pagar)}
@@ -130,8 +131,11 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
           <FileText className="h-3.5 w-3.5" /> {generatingLink ? 'Generando...' : 'Resumen'}
         </button>
       </div>
-    ) : undefined;
+    );
+  }, [data, activeTab, generatingLink]);
 
+  /* ─── Register tabs via onHeaderConfig ─── */
+  useEffect(() => {
     onHeaderConfig?.({
       tabs: [
         { key: 'ruta11', label: 'La Ruta 11' },
@@ -142,7 +146,7 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
       trailing,
       accent: 'amber',
     });
-  }, [activeTab, handleTabChange, onHeaderConfig, data]);
+  }, [activeTab, handleTabChange, onHeaderConfig, trailing]);
 
   /* ─── Fetch data ─── */
   const fetchData = useCallback(() => {

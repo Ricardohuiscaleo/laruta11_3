@@ -176,7 +176,7 @@ class DashboardController extends Controller
             }
 
             // Current month: use NominaService (calculated from shifts/contracts)
-            if ($totalNomina === 0.0 && $isCurrentMonth) {
+            if ($totalNomina === 0.0) {
                 $raw = $this->nominaService->getResumen($mes);
                 $totalNomina = collect($raw['ruta11']['personal'] ?? [])
                     ->filter(fn ($e) => ! str_contains($e['personal']->rol ?? '', 'dueño'))

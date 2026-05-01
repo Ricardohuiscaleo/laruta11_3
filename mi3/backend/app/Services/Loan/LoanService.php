@@ -245,8 +245,8 @@ class LoanService
      */
     public function procesarDescuentosMensuales(): array
     {
-        $mes = now()->format('Y-m');
-        $mesNombre = now()->locale('es')->monthName;
+        $mes = now()->subMonth()->format('Y-m');
+        $mesNombre = now()->subMonth()->locale('es')->monthName;
         $categoriaId = AjusteCategoria::where('slug', 'prestamo')->value('id');
 
         $prestamos = Prestamo::where('estado', 'aprobado')
