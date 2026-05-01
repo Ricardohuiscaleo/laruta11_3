@@ -121,9 +121,13 @@ export default function MermaPanel({ onClose }) {
   const validItems = mermaItems.filter(it => {
     const q = parseFloat(it.cantidad) || 0;
     if (q <= 0) return false;
+    // Para ingredientes, convertir a unidad base antes de comparar con stock
     if (it.item_type === 'ingredient' && it._raw) {
-      return convertToBaseUnit(q, it._raw) <= it.stock_actual;
+      const baseQty = convertToBaseUnit(q, it._raw);
+      return baseQty <= it.stock_actual || it.stock_actual <= 0;
     }
+    // Para productos: si no tiene stock tracking (stock=0), permitir siempre
+    if (it.stock_actual <= 0) return true;
     return q <= it.stock_actual;
   });
 
