@@ -59,7 +59,7 @@
 - [x] **🚨 Ejecutar SQL `dispatch_photo_feedback` en BD** — Tabla creada en producción via docker exec.
 - [x] **🚨 Revertir descuento 10% temporal** — 4 productos revertidos manualmente (cron VPS no se ejecutó). is_featured=0, sale_price=NULL. Crons eliminados del VPS. Scripts apply/revert pendientes de eliminar del repo.
 - [ ] **🚨 URGENTE: Rotar AWS access key comprometida** — AWS detectó key `AKIAUQ24...WGTE` como comprometida y restringió servicios (Bedrock bloqueado). Key rotada a `...RKT7` en Coolify. Falta: 1) Actualizar `~/.aws/credentials` en VPS para chef-bot, 2) Desactivar key vieja en IAM, 3) Responder caso de soporte AWS (caso #177655445900588 respondido, esperando humano). Bedrock sigue bloqueado a nivel de cuenta.
-- [ ] **🚨 Corregir ajustes_sueldo mayo→abril en BD** — Los crons `mi3:r11-auto-deduct` y `mi3:loan-auto-deduct` corrieron hoy 1 mayo con el bug (antes del fix). Los registros en `ajustes_sueldo` con `mes = 2026-05-01` creados hoy deben actualizarse a `mes = 2026-04-01`. UPDATE ajustes_sueldo SET mes='2026-04-01' WHERE mes='2026-05-01' AND created_at >= '2026-05-01' AND (concepto LIKE '%Crédito R11%' OR concepto LIKE '%adelanto%').
+- [x] **🚨 Corregir ajustes_sueldo mayo→abril en BD** — COMPLETADO. IDs 82,83,84 (Crédito R11) y 85 (adelanto) actualizados de `mes=2026-05-01` a `mes=2026-04-01`, conceptos corregidos de "mayo" a "abril". Mayo ahora tiene 0 registros.
 - [x] **🚨 CRÍTICO: Inventario no descuenta para R11/R11C/combos** — COMPLETADO. Guard idempotencia, order_status=sent_to_kitchen, callbacks preservan order_status, create_order centralizado, subtotal/delivery_fee server-side, backfill expandido, fix combos usa fixed_items JSON. Commits `bdee29d`, `98c5565`. Backfill: 218 órdenes procesadas, 0 errores.
 - [x] **Implementar Gemini como proveedor IA principal** — GeminiService.php creado con Structured Outputs, pipeline 2 fases (clasificación + análisis), token tracking, frontend v1.7. Commit `009259d`. Falta: test en vivo con imagen real.
 
@@ -120,7 +120,7 @@
 
 **Spec:** `.kiro/specs/fix-nomina-edr-bugs/` — bugfix.md + design.md + tasks.md completos.
 
-**Pendiente:** Corregir en BD los ajustes_sueldo creados hoy (1 mayo) con `mes = 2026-05-01` → `mes = 2026-04-01` (el fix solo afecta ejecuciones futuras del cron).
+**Pendiente:** ~~Corregir en BD los ajustes_sueldo creados hoy (1 mayo) con `mes = 2026-05-01` → `mes = 2026-04-01`~~ COMPLETADO. IDs 82-85 corregidos via tinker.
 
 **Commits:** `8522d20`
 **Deploys:** mi3-backend ✅, mi3-frontend ✅.
