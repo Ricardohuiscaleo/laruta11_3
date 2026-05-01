@@ -919,11 +919,13 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                 <div className="bg-gray-50 rounded p-1.5 space-y-0.5">
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-500">Delivery</span>
-                    <span className="font-semibold">${parseInt(order.delivery_fee).toLocaleString('es-CL')}</span>
+                    <span className={order.delivery_discount > 0 ? "font-semibold line-through text-gray-400" : "font-semibold"}>
+                      ${(parseInt(order.delivery_fee) + parseInt(order.delivery_discount || 0)).toLocaleString('es-CL')}
+                    </span>
                   </div>
                   {order.delivery_discount > 0 && (
                     <div className="flex justify-between text-xs text-green-600 ml-3">
-                      <span>↳ Desc. (28%)</span>
+                      <span>↳ Desc. RL6 ({Math.round(parseInt(order.delivery_discount) / (parseInt(order.delivery_fee) + parseInt(order.delivery_discount)) * 100)}%)</span>
                       <span className="font-semibold">-${parseInt(order.delivery_discount).toLocaleString('es-CL')}</span>
                     </div>
                   )}
@@ -935,7 +937,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                   )}
                   <div className="border-t border-gray-200 mt-1 pt-1 flex justify-between text-xs font-bold text-gray-800">
                     <span>Total Delivery</span>
-                    <span>${(parseInt(order.delivery_fee) - parseInt(order.delivery_discount || 0) + (order.payment_method === 'card' ? 500 : 0)).toLocaleString('es-CL')}</span>
+                    <span>${(parseInt(order.delivery_fee) + (order.payment_method === 'card' ? 500 : 0)).toLocaleString('es-CL')}</span>
                   </div>
                 </div>
               )}
