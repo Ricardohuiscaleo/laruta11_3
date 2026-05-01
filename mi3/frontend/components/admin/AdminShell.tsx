@@ -264,14 +264,20 @@ export default function AdminShell() {
   const setHeaderConfig = useCallback((section: string, config: SectionHeaderConfig) => {
     setHeaderConfigs(prev => {
       const existing = prev[section];
+      // Compare only primitive/stable fields — trailing is JSX (always new reference)
       if (existing &&
         existing.tabs === config.tabs &&
         existing.activeTab === config.activeTab &&
         existing.onTabChange === config.onTabChange &&
-        existing.trailing === config.trailing &&
         existing.accent === config.accent &&
         existing.version === config.version
-      ) return prev;
+      ) {
+        // Update trailing without triggering re-render if only trailing changed
+        if (existing.trailing !== config.trailing) {
+          existing.trailing = config.trailing;
+        }
+        return prev;
+      }
       return { ...prev, [section]: config };
     });
   }, []);
