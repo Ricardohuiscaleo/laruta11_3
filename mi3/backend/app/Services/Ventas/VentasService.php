@@ -580,21 +580,17 @@ class VentasService
                     ->sum('monto_total');
             }
 
-            // If still no data (current/future month), use NominaService for current month
+            // If still no data, use NominaService as fallback for any month
             $isProjected = false;
             if ($nomina === 0.0) {
-                $currentMonth = now()->format('Y-m');
-                if ($row->month === $currentMonth) {
-                    // For current month, use NominaService (same as DashboardController)
-                    try {
-                        $nominaService = app(\App\Services\Payroll\NominaService::class);
-                        $raw = $nominaService->getResumen($row->month);
-                        $nomina = collect($raw['ruta11']['personal'] ?? [])
-                            ->filter(fn ($e) => ! str_contains($e['personal']->rol ?? '', 'dueño'))
-                            ->sum(fn ($e) => $e['liquidacion']['total']);
-                    } catch (\Throwable $e) {
-                        // Fallback to projection if NominaService fails
-                    }
+                try {
+                    $nominaService = app(\App\Services\Payroll\NominaService::class);
+                    $raw = $nominaService->getResumen($row->month);
+                    $nomina = collect($raw['ruta11']['personal'] ?? [])
+                        ->filter(fn ($e) => ! str_contains($e['personal']->rol ?? '', 'dueño'))
+                        ->sum(fn ($e) => $e['liquidacion']['total']);
+                } catch (\Throwable $e) {
+                    // Fallback to projection if NominaService fails
                 }
 
                 // If still 0, project from avg of last 3 months
