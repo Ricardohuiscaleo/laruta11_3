@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`a3a6512`) — Hide phone in comandas, note contrast on delayed orders |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`1dd9951`) — Pipeline UI metadata, no auto-close delays |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`1af11b9`) — Gemini 3.1 flash-lite, upload metadata API, image size in SSE |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`b515812`) — Fix uploadProductImage: SigV4 directo + public-read ACL |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -110,6 +110,16 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-05-02f — Fix subida imágenes productos desde mi3 (403 S3)
+
+**Diagnóstico:** Imágenes subidas desde `mi.laruta11.cl/admin/recetas` daban 403 al intentar verlas. `RecipeController::uploadProductImage()` usaba Flysystem (`Storage::disk('s3')->put()`) que no sube correctamente al bucket (bug conocido, documentado en `ImagenService`). Las imágenes de caja3 funcionaban porque usan POST policy directo.
+
+**Cambios código:**
+- `mi3/backend/app/Http/Controllers/RecipeController.php`: `uploadProductImage()` reescrito — reemplazado Flysystem por PUT directo con SigV4 + header `x-amz-acl: public-read` (mismo patrón que `ImagenService.putObject()`). URL pública se construye explícitamente. Logging de errores mejorado.
+
+**Commits:** `b515812`
+**Deploys:** mi3-backend ✅.
 
 ### 2026-05-02e — Fix Gemini vision + upgrade modelo + pipeline UI metadata + remove delays
 

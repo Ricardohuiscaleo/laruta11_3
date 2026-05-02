@@ -362,8 +362,8 @@ class RecipeController extends Controller
      * Upload product image.
      * POST /api/v1/admin/recetas/{productId}/imagen
      *
-     * Uses direct S3 PUT with SigV4 + public-read ACL (Flysystem doesn't
-     * reliably set public ACL on this bucket).
+     * Uses direct S3 PUT with SigV4 (Flysystem doesn't reliably upload
+     * to this bucket). Bucket policy handles public-read access.
      */
     public function uploadProductImage(Request $request, int $productId): JsonResponse
     {
@@ -387,7 +387,7 @@ class RecipeController extends Controller
             $body = file_get_contents($file->getRealPath());
             $contentType = $file->getMimeType() ?: 'image/jpeg';
 
-            // SigV4 signed PUT with public-read ACL
+            // SigV4 signed PUT (bucket policy handles public read)
             $host = "{$bucket}.s3.{$region}.amazonaws.com";
             $url = "https://{$host}/{$key}";
             $now = gmdate('Ymd\THis\Z');
@@ -397,7 +397,6 @@ class RecipeController extends Controller
             $headers = [
                 'content-type' => $contentType,
                 'host' => $host,
-                'x-amz-acl' => 'public-read',
                 'x-amz-content-sha256' => $payloadHash,
                 'x-amz-date' => $now,
             ];
@@ -428,7 +427,6 @@ class RecipeController extends Controller
                 CURLOPT_TIMEOUT => 30,
                 CURLOPT_HTTPHEADER => [
                     "Content-Type: {$contentType}",
-                    "X-Amz-Acl: public-read",
                     "X-Amz-Date: {$now}",
                     "X-Amz-Content-Sha256: {$payloadHash}",
                     "Authorization: {$auth}",
