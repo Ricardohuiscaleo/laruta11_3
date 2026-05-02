@@ -26,12 +26,21 @@ interface ComboRow {
   is_active: boolean;
 }
 
+interface RecipeIngredient {
+  ingredient_id: number;
+  ingredient_name: string;
+  quantity: number;
+  unit: string;
+  cost: number;
+}
+
 interface FixedItem {
   product_id: number;
   product_name: string;
   quantity: number;
   cost_price: number;
   image_url: string | null;
+  ingredients: RecipeIngredient[];
 }
 
 interface SelectionOption {
@@ -69,6 +78,7 @@ interface DraftFixedItem {
   product_name: string;
   quantity: number;
   cost_price: number;
+  ingredients: RecipeIngredient[];
 }
 
 interface DraftOption {
@@ -562,6 +572,7 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
           product_name: fi.product_name,
           quantity: fi.quantity,
           cost_price: fi.cost_price || 0,
+          ingredients: fi.ingredients || [],
         }))
       );
 
@@ -648,6 +659,7 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
       product_name: product.name,
       quantity: 1,
       cost_price: product.cost_price || 0,
+      ingredients: [],
     }]);
   };
 
@@ -893,27 +905,46 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
           ) : (
             <div className="space-y-2">
               {fixedItems.map((fi, idx) => (
-                <div key={fi.product_id} className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50/50 px-3 py-2">
-                  <span className="flex-1 text-sm font-medium text-gray-900 truncate">{fi.product_name}</span>
-                  <span className="text-xs text-gray-400 tabular-nums whitespace-nowrap">{formatCLP(fi.cost_price)}</span>
-                  <span className="text-xs text-gray-300">×</span>
-                  <label className="sr-only" htmlFor={`fixed-qty-${fi.product_id}`}>Cantidad</label>
-                  <input
-                    id={`fixed-qty-${fi.product_id}`}
-                    type="number"
-                    value={fi.quantity}
-                    onChange={e => updateFixedQty(idx, Number(e.target.value))}
-                    min={1}
-                    className="w-14 rounded-md border px-2 py-1 text-sm tabular-nums text-center focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[36px]"
-                  />
-                  <span className="text-xs font-medium text-gray-600 tabular-nums whitespace-nowrap">= {formatCLP(fi.cost_price * fi.quantity)}</span>
-                  <button
-                    onClick={() => removeFixed(idx)}
-                    className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
-                    aria-label={`Eliminar ${fi.product_name}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                <div key={fi.product_id} className="rounded-lg border border-gray-100 bg-gray-50/50 overflow-hidden">
+                  <div className="flex items-center gap-2 px-3 py-2">
+                    <span className="flex-1 text-sm font-medium text-gray-900 truncate">{fi.product_name}</span>
+                    <span className="text-xs text-gray-400 tabular-nums whitespace-nowrap">{formatCLP(fi.cost_price)}</span>
+                    <span className="text-xs text-gray-300">×</span>
+                    <label className="sr-only" htmlFor={`fixed-qty-${fi.product_id}`}>Cantidad</label>
+                    <input
+                      id={`fixed-qty-${fi.product_id}`}
+                      type="number"
+                      value={fi.quantity}
+                      onChange={e => updateFixedQty(idx, Number(e.target.value))}
+                      min={1}
+                      className="w-14 rounded-md border px-2 py-1 text-sm tabular-nums text-center focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[36px]"
+                    />
+                    <span className="text-xs font-medium text-gray-600 tabular-nums whitespace-nowrap">= {formatCLP(fi.cost_price * fi.quantity)}</span>
+                    <button
+                      onClick={() => removeFixed(idx)}
+                      className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                      aria-label={`Eliminar ${fi.product_name}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  {/* Ingredient breakdown */}
+                  {fi.ingredients.length > 0 && (
+                    <div className="border-t border-gray-100 bg-white px-3 py-1.5">
+                      <div className="grid gap-0.5">
+                        {fi.ingredients.map(ing => (
+                          <div key={ing.ingredient_id} className="flex items-center justify-between text-[11px] text-gray-500">
+                            <span className="truncate">{ing.ingredient_name} <span className="text-gray-400">({ing.quantity}{ing.unit})</span></span>
+                            <span className="tabular-nums ml-2 flex-shrink-0">{formatCLP(ing.cost)}</span>
+                          </div>
+                        ))}
+                        <div className="flex items-center justify-between text-[11px] font-medium text-gray-700 border-t border-dashed border-gray-200 pt-0.5 mt-0.5">
+                          <span>Total ingredientes</span>
+                          <span className="tabular-nums">{formatCLP(fi.ingredients.reduce((s, i) => s + i.cost, 0))}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -1053,9 +1084,17 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
             <>
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Items Fijos</div>
               {fixedItems.map(fi => (
-                <div key={fi.product_id} className="flex items-center justify-between text-sm pl-2">
-                  <span className="text-gray-600 truncate">{fi.product_name} {fi.quantity > 1 ? `×${fi.quantity}` : ''}</span>
-                  <span className="tabular-nums text-gray-700">{formatCLP(fi.cost_price * fi.quantity)}</span>
+                <div key={fi.product_id} className="space-y-0.5">
+                  <div className="flex items-center justify-between text-sm pl-2">
+                    <span className="text-gray-800 font-medium truncate">{fi.product_name} {fi.quantity > 1 ? `×${fi.quantity}` : ''}</span>
+                    <span className="tabular-nums text-gray-700">{formatCLP(fi.cost_price * fi.quantity)}</span>
+                  </div>
+                  {fi.ingredients.length > 0 && fi.ingredients.map(ing => (
+                    <div key={ing.ingredient_id} className="flex items-center justify-between text-[11px] pl-4">
+                      <span className="text-gray-400 truncate">{ing.ingredient_name} ({ing.quantity}{ing.unit})</span>
+                      <span className="tabular-nums text-gray-400 ml-2 flex-shrink-0">{formatCLP(ing.cost * fi.quantity)}</span>
+                    </div>
+                  ))}
                 </div>
               ))}
               <div className="flex items-center justify-between text-sm font-medium border-t border-dashed pt-1">

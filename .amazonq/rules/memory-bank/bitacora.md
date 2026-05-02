@@ -111,13 +111,29 @@
 
 ## Sesiones Recientes
 
+### 2026-05-02b — Ajustar recetas tocino a tramos de 40g (peso real lámina)
+
+**BD:** Actualizado `product_recipes` para 7 productos que usaban Tocino Laminado (id=49). Ahora todas usan múltiplos de 40g (peso real de cada lámina):
+- Completo Tocino Ahumado (194): 50g → 40g
+- Pichanga Familiar (196): 50g → 40g
+- Tocino Extra (205): 50g → 40g
+- Pizza Mediana (232): 50g → 40g
+- Cheeseburger (218): 100g → 80g
+- Pizza Familiar (231): 100g → 80g
+- Hamburguesa Triple XXXL (193): 150g → 120g
+
+Sub-receta Hamburguesa R11 ya estaba en 40g, no se tocó. Pendiente: recalcular cost_price de los 7 productos afectados.
+
+**Commits:** ninguno (cambio solo en BD).
+**Deploys:** ninguno.
+
 ### 2026-05-02a — Fix combo editor: cost_price $0 → real values + editable price/image + detailed breakdown
 
 **Cambios código:**
-- `mi3/backend/app/Services/Recipe/ComboService.php`: `getComboDetail()` ahora incluye `cost_price` en `fixed_items` y en opciones de `selection_groups`. El JOIN con `products` ya traía el dato pero no se pasaba al response.
-- `mi3/frontend/app/admin/recetas/combos/page.tsx`: (1) Interfaces `FixedItem` y `SelectionOption` con `cost_price` e `is_active`. (2) Items fijos muestran `costo × qty = subtotal`. (3) Opciones seleccionables muestran `cost_price` real. (4) Precio de venta editable inline (clic → input → Enter/blur guarda via PUT). (5) Imagen del combo visible + editable (URL). (6) Resumen de costos detallado: desglose por item fijo, rango min-max por grupo, promedio × selecciones. (7) Autocomplete muestra costo en vez de precio.
+- `mi3/backend/app/Services/Recipe/ComboService.php`: `getComboDetail()` ahora incluye `cost_price` en `fixed_items` y en opciones de `selection_groups`.
+- `mi3/frontend/app/admin/recetas/combos/page.tsx`: Interfaces con `cost_price` e `is_active`. Precio editable inline. Resumen de costos detallado.
 
-**Diagnóstico:** Cálculo de costos en BD estaba correcto (verificado via MySQL). Bug era visual: editor mostraba $0 porque API no enviaba cost_price.
+**Diagnóstico:** Cálculo de costos en BD estaba correcto. Bug era visual: editor mostraba $0 porque API no enviaba cost_price.
 
 **Commits:** `f4cd430`, `62cdbc9`
 **Deploys:** mi3-backend ✅, mi3-frontend ✅ (×2).

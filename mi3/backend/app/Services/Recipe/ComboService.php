@@ -83,6 +83,49 @@ class ComboService
             ->orderBy('products.name')
             ->get();
 
+        // Pre-load recipes for all child products (fixed items)
+        $fixedProductIds = $components->where('is_fixed', true)
+            ->pluck('child_product_id')
+            ->unique()
+            ->values()
+            ->toArray();
+
+        $recipesMap = [];
+        if (!empty($fixedProductIds)) {
+            $recipes = DB::table('product_recipes')
+                ->join('ingredients', 'ingredients.id', '=', 'product_recipes.ingredient_id')
+                ->whereIn('product_recipes.product_id', $fixedProductIds)
+                ->select(
+                    'product_recipes.product_id',
+                    'product_recipes.ingredient_id',
+                    'ingredients.name as ingredient_name',
+                    'product_recipes.quantity',
+                    'product_recipes.unit',
+                    'ingredients.unit as ingredient_unit',
+                    'ingredients.cost_per_unit'
+                )
+                ->orderBy('product_recipes.product_id')
+                ->orderBy('ingredients.name')
+                ->get();
+
+            foreach ($recipes as $r) {
+                $cost = $this->calculateIngredientCostForCombo(
+                    (float) $r->cost_per_unit,
+                    $r->ingredient_unit,
+                    (float) $r->quantity,
+                    $r->unit
+                );
+
+                $recipesMap[$r->product_id][] = [
+                    'ingredient_id'   => $r->ingredient_id,
+                    'ingredient_name' => $r->ingredient_name,
+                    'quantity'        => (float) $r->quantity,
+                    'unit'            => $r->unit,
+                    'cost'            => round($cost, 2),
+                ];
+            }
+        }
+
         $fixedItems = [];
         $selectionGroups = [];
 
@@ -94,6 +137,7 @@ class ComboService
                     'quantity'     => $comp->quantity,
                     'cost_price'   => (float) $comp->cost_price,
                     'image_url'    => $comp->image_url,
+                    'ingredients'  => $recipesMap[$comp->child_product_id] ?? [],
                 ];
             } else {
                 $group = $comp->selection_group ?? 'Sin grupo';
@@ -119,6 +163,30 @@ class ComboService
             'fixed_items'      => $fixedItems,
             'selection_groups'  => $selectionGroups,
         ];
+    }
+
+    /**
+     * Calculate ingredient cost with unit conversion (simplified for combo context).
+     */
+    private function calculateIngredientCostForCombo(float $costPerUnit, string $ingredientUnit, float $quantity, string $recipeUnit): float
+    {
+        $conversions = [
+            'kg' => ['base' => 'g', 'factor' => 1000],
+            'g'  => ['base' => 'g', 'factor' => 1],
+            'lt' => ['base' => 'ml', 'factor' => 1000],
+            'ml' => ['base' => 'ml', 'factor' => 1],
+        ];
+
+        $ingredientConv = $conversions[$ingredientUnit] ?? null;
+        $recipeConv     = $conversions[$recipeUnit] ?? null;
+
+        if ($ingredientConv && $recipeConv && $ingredientConv['base'] === $recipeConv['base']) {
+            $quantityInIngredientUnit = ($quantity * $recipeConv['factor']) / $ingredientConv['factor'];
+            return $costPerUnit * $quantityInIngredientUnit;
+        }
+
+        // Same unit or unidad — direct multiplication
+        return $costPerUnit * $quantity;
     }
 
     /**
