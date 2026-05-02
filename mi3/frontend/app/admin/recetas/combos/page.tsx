@@ -6,6 +6,7 @@ import { formatCLP, cn } from '@/lib/utils';
 import {
   Loader2, ArrowLeft, Plus, Trash2, Save, Search, X,
   Package, ChevronRight, CircleDot, ToggleLeft, ToggleRight,
+  Pencil, ImageIcon,
 } from 'lucide-react';
 import BulkActionBar from '@/components/admin/BulkActionBar';
 import type { ApiResponse } from '@/types';
@@ -541,6 +542,13 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
   const [fixedItems, setFixedItems] = useState<DraftFixedItem[]>([]);
   const [groups, setGroups] = useState<DraftGroup[]>([]);
 
+  /* ─── Editable combo fields ─── */
+  const [comboPrice, setComboPrice] = useState(combo.price);
+  const [comboImageUrl, setComboImageUrl] = useState(combo.image_url || '');
+  const [editingPrice, setEditingPrice] = useState(false);
+  const [editingImage, setEditingImage] = useState(false);
+  const [savingMeta, setSavingMeta] = useState(false);
+
   const fetchDetail = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -580,6 +588,36 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
 
   useEffect(() => { fetchDetail(); }, [fetchDetail]);
 
+  /* ─── Save price/image ─── */
+  const saveComboMeta = async (fields: { price?: number; image_url?: string }) => {
+    setSavingMeta(true);
+    try {
+      await apiFetch(`/admin/recetas/${combo.id}/producto`, {
+        method: 'PUT',
+        body: JSON.stringify(fields),
+      });
+      setSuccessMsg('Actualizado');
+      setTimeout(() => setSuccessMsg(''), 2000);
+    } catch (e: any) {
+      setError(e.message || 'Error al actualizar');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setSavingMeta(false);
+    }
+  };
+
+  const handlePriceSave = () => {
+    if (comboPrice > 0) {
+      saveComboMeta({ price: comboPrice });
+    }
+    setEditingPrice(false);
+  };
+
+  const handleImageSave = () => {
+    saveComboMeta({ image_url: comboImageUrl || undefined });
+    setEditingImage(false);
+  };
+
   /* ─── Cost calculation (T2.5) ─── */
   const calculatedCost = useMemo(() => {
     const fixedCost = fixedItems.reduce((sum, fi) => sum + fi.cost_price * fi.quantity, 0);
@@ -594,9 +632,9 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
   }, [fixedItems, groups]);
 
   const calculatedMargin = useMemo(() => {
-    if (combo.price <= 0) return null;
-    return ((1 - calculatedCost / combo.price) * 100);
-  }, [calculatedCost, combo.price]);
+    if (comboPrice <= 0) return null;
+    return ((1 - calculatedCost / comboPrice) * 100);
+  }, [calculatedCost, comboPrice]);
 
   /* ─── Fixed items handlers ─── */
   const addFixedItem = (product: ProductSearchResult) => {
@@ -746,12 +784,54 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
+          {/* Combo image */}
+          <div className="relative flex-shrink-0">
+            {comboImageUrl ? (
+              <img src={comboImageUrl} alt={combo.name} className="h-12 w-12 rounded-lg object-cover border border-gray-200" />
+            ) : (
+              <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-200">
+                <ImageIcon className="h-5 w-5 text-gray-400" />
+              </div>
+            )}
+            <button
+              onClick={() => setEditingImage(!editingImage)}
+              className="absolute -bottom-1 -right-1 rounded-full bg-white border border-gray-200 p-0.5 hover:bg-gray-50 transition-colors"
+              aria-label="Editar imagen"
+            >
+              <Pencil className="h-3 w-3 text-gray-500" />
+            </button>
+          </div>
           <div>
             <h2 className="text-lg font-semibold text-gray-900">🍔 {combo.name}</h2>
-            <div className="flex flex-wrap gap-2 mt-1 text-xs">
-              <span className="text-gray-500">Precio: {formatCLP(combo.price)}</span>
+            <div className="flex flex-wrap items-center gap-2 mt-1 text-xs">
+              {editingPrice ? (
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-500">Precio: $</span>
+                  <label className="sr-only" htmlFor="combo-price-edit">Precio de venta</label>
+                  <input
+                    id="combo-price-edit"
+                    type="number"
+                    value={comboPrice}
+                    onChange={e => setComboPrice(Number(e.target.value))}
+                    onBlur={handlePriceSave}
+                    onKeyDown={e => e.key === 'Enter' && handlePriceSave()}
+                    min={1}
+                    autoFocus
+                    className="w-24 rounded border border-red-300 px-1.5 py-0.5 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-red-300"
+                  />
+                </div>
+              ) : (
+                <button
+                  onClick={() => setEditingPrice(true)}
+                  className="text-gray-500 hover:text-red-500 transition-colors inline-flex items-center gap-1"
+                  aria-label="Editar precio"
+                >
+                  Precio: {formatCLP(comboPrice)} <Pencil className="h-3 w-3" />
+                </button>
+              )}
               <span className="text-gray-500">Costo: {formatCLP(calculatedCost)}</span>
               <MarginBadge margin={calculatedMargin} />
+              {savingMeta && <Loader2 className="h-3 w-3 animate-spin text-gray-400" />}
             </div>
           </div>
         </div>
@@ -768,6 +848,29 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
           Guardar
         </button>
       </div>
+
+      {/* Image URL editor */}
+      {editingImage && (
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <label htmlFor="combo-image-url" className="text-xs font-medium text-gray-600 whitespace-nowrap">URL imagen:</label>
+          <input
+            id="combo-image-url"
+            type="url"
+            value={comboImageUrl}
+            onChange={e => setComboImageUrl(e.target.value)}
+            placeholder="https://..."
+            className="flex-1 rounded border border-gray-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[36px]"
+          />
+          <div className="flex gap-2">
+            <button onClick={handleImageSave} className="rounded bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600 min-h-[36px]">
+              Guardar
+            </button>
+            <button onClick={() => setEditingImage(false)} className="rounded border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 min-h-[36px]">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert">{error}</div>}
@@ -790,8 +893,10 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
           ) : (
             <div className="space-y-2">
               {fixedItems.map((fi, idx) => (
-                <div key={fi.product_id} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50/50 px-3 py-2">
+                <div key={fi.product_id} className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50/50 px-3 py-2">
                   <span className="flex-1 text-sm font-medium text-gray-900 truncate">{fi.product_name}</span>
+                  <span className="text-xs text-gray-400 tabular-nums whitespace-nowrap">{formatCLP(fi.cost_price)}</span>
+                  <span className="text-xs text-gray-300">×</span>
                   <label className="sr-only" htmlFor={`fixed-qty-${fi.product_id}`}>Cantidad</label>
                   <input
                     id={`fixed-qty-${fi.product_id}`}
@@ -799,9 +904,9 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
                     value={fi.quantity}
                     onChange={e => updateFixedQty(idx, Number(e.target.value))}
                     min={1}
-                    className="w-16 rounded-md border px-2 py-1 text-sm tabular-nums text-center focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[36px]"
+                    className="w-14 rounded-md border px-2 py-1 text-sm tabular-nums text-center focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[36px]"
                   />
-                  <span className="text-xs text-gray-400">×</span>
+                  <span className="text-xs font-medium text-gray-600 tabular-nums whitespace-nowrap">= {formatCLP(fi.cost_price * fi.quantity)}</span>
                   <button
                     onClick={() => removeFixed(idx)}
                     className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
@@ -882,7 +987,7 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
                       <div
                         key={opt.product_id}
                         className={cn(
-                          'flex items-center gap-3 rounded-lg border px-3 py-2',
+                          'flex items-center gap-2 rounded-lg border px-3 py-2',
                           opt.is_active
                             ? 'border-gray-100 bg-gray-50/50'
                             : 'border-red-100 bg-red-50/30 opacity-60'
@@ -906,6 +1011,9 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
                               INACTIVO
                             </span>
                           )}
+                        </span>
+                        <span className="text-xs text-gray-500 tabular-nums whitespace-nowrap" title="Costo ingredientes">
+                          {formatCLP(opt.cost_price)}
                         </span>
                         <div className="flex items-center gap-1">
                           <span className="text-xs text-gray-400">+$</span>
@@ -940,16 +1048,38 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
       {/* ── Cost Summary (T2.5) ── */}
       {(fixedItems.length > 0 || groups.some(g => g.options.length > 0)) && (
         <div className="rounded-xl border bg-white p-4 shadow-sm space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">Costo fijos</span>
-            <span className="tabular-nums">{formatCLP(fixedItems.reduce((s, fi) => s + fi.cost_price * fi.quantity, 0))}</span>
-          </div>
+          {/* Fixed items detail */}
+          {fixedItems.length > 0 && (
+            <>
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Items Fijos</div>
+              {fixedItems.map(fi => (
+                <div key={fi.product_id} className="flex items-center justify-between text-sm pl-2">
+                  <span className="text-gray-600 truncate">{fi.product_name} {fi.quantity > 1 ? `×${fi.quantity}` : ''}</span>
+                  <span className="tabular-nums text-gray-700">{formatCLP(fi.cost_price * fi.quantity)}</span>
+                </div>
+              ))}
+              <div className="flex items-center justify-between text-sm font-medium border-t border-dashed pt-1">
+                <span className="text-gray-600">Subtotal fijos</span>
+                <span className="tabular-nums">{formatCLP(fixedItems.reduce((s, fi) => s + fi.cost_price * fi.quantity, 0))}</span>
+              </div>
+            </>
+          )}
+          {/* Selection groups detail */}
           {groups.filter(g => g.options.length > 0).map((g, i) => {
             const avg = g.options.reduce((s, o) => s + o.cost_price, 0) / g.options.length;
+            const min = Math.min(...g.options.map(o => o.cost_price));
+            const max = Math.max(...g.options.map(o => o.cost_price));
             return (
-              <div key={i} className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">Prom. {g.name}</span>
-                <span className="tabular-nums">{formatCLP(avg)}</span>
+              <div key={i} className="space-y-1">
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mt-2">{g.name} ({g.options.length} opciones, elegir {g.max_selections})</div>
+                <div className="flex items-center justify-between text-sm pl-2">
+                  <span className="text-gray-600">Rango costo</span>
+                  <span className="tabular-nums text-gray-500">{formatCLP(min)} – {formatCLP(max)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm font-medium pl-2">
+                  <span className="text-gray-600">Promedio × {g.max_selections}</span>
+                  <span className="tabular-nums">{formatCLP(avg * g.max_selections)}</span>
+                </div>
               </div>
             );
           })}
@@ -1083,7 +1213,7 @@ function ProductAutocomplete({
                 {!product.is_active && <span className="text-xs">🔴</span>}
                 <span className="font-medium text-gray-900 truncate">{product.name}</span>
               </div>
-              <span className="text-xs text-gray-500 flex-shrink-0 ml-2">{formatCLP(product.price)}</span>
+              <span className="text-xs text-gray-500 flex-shrink-0 ml-2">costo {formatCLP(product.cost_price)}</span>
             </li>
           ))}
         </ul>
