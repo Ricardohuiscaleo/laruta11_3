@@ -461,6 +461,27 @@ class RecipeController extends Controller
     }
 
     /**
+     * Generate AI description for a product.
+     * POST /api/v1/admin/recetas/{productId}/generate-description
+     */
+    public function generateDescription(int $productId): JsonResponse
+    {
+        try {
+            $aiService = new \App\Services\Recipe\RecipeAIService();
+            $result = $aiService->generateDescription($productId);
+
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'error' => 'Producto no encontrado'], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Get price recommendations based on recipe cost and target margin.
      * GET /api/v1/admin/recetas/recommendations
      */

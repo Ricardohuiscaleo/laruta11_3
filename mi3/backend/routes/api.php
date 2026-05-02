@@ -235,6 +235,7 @@ Route::prefix('v1')->group(function () {
         Route::put('recetas/{productId}', [\App\Http\Controllers\RecipeController::class, 'update']);
         Route::put('recetas/{productId}/producto', [\App\Http\Controllers\RecipeController::class, 'updateProduct']);
         Route::post('recetas/{productId}/imagen', [\App\Http\Controllers\RecipeController::class, 'uploadProductImage']);
+        Route::post('recetas/{productId}/generate-description', [\App\Http\Controllers\RecipeController::class, 'generateDescription']);
         Route::delete('recetas/{productId}/{ingredientId}', [\App\Http\Controllers\RecipeController::class, 'destroyIngredient']);
 
         // Sub-recetas (ingredient recipes — composite ingredients)

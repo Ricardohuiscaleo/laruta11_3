@@ -146,6 +146,95 @@ PROMPT;
     }
 
     /**
+     * Generate a short product description using AI based on name + ingredients.
+     * Returns: ['description' => string, 'tokens' => int, 'cost_clp' => float]
+     */
+    public function generateDescription(int $productId): array
+    {
+        $product = \App\Models\Product::findOrFail($productId);
+
+        // Get recipe ingredients
+        $ingredients = DB::table('product_recipes')
+            ->join('ingredients', 'ingredients.id', '=', 'product_recipes.ingredient_id')
+            ->where('product_recipes.product_id', $productId)
+            ->select('ingredients.name', 'product_recipes.quantity', 'product_recipes.unit')
+            ->get();
+
+        $ingredientList = $ingredients->map(fn($i) => "{$i->name} ({$i->quantity}{$i->unit})")->implode(', ');
+
+        $categoryName = DB::table('categories')->where('id', $product->category_id)->value('name') ?? 'Producto';
+
+        $prompt = <<<PROMPT
+Eres el copywriter de "La Ruta 11", un restaurante de comida rápida gourmet en Arica, Chile.
+
+Genera una descripción CORTA (máximo 120 caracteres) para el menú digital del siguiente producto:
+
+Nombre: {$product->name}
+Categoría: {$categoryName}
+Ingredientes: {$ingredientList}
+Precio: \${$product->price}
+
+Reglas:
+- Máximo 120 caracteres
+- En español chileno casual pero apetitoso
+- Destaca los ingredientes principales (no todos)
+- No menciones el precio
+- No uses emojis
+- Debe provocar antojo
+PROMPT;
+
+        $schema = [
+            'type' => 'OBJECT',
+            'properties' => [
+                'description' => ['type' => 'STRING', 'description' => 'Descripción corta del producto (max 120 chars)'],
+            ],
+            'required' => ['description'],
+        ];
+
+        $result = $this->callGemini($prompt, $schema, 256);
+
+        if (!$result) {
+            throw new \RuntimeException('Gemini no respondió');
+        }
+
+        // Extract tokens
+        $usage = $result['usageMetadata'] ?? [];
+        $promptTokens = $usage['promptTokenCount'] ?? 0;
+        $candidateTokens = $usage['candidatesTokenCount'] ?? 0;
+        $totalTokens = $usage['totalTokenCount'] ?? ($promptTokens + $candidateTokens);
+
+        // Cost: Gemini Flash Lite ~$0.075/1M input, $0.30/1M output
+        $costUsd = ($promptTokens * 0.075 / 1_000_000) + ($candidateTokens * 0.30 / 1_000_000);
+        $costClp = round($costUsd * 950, 2); // ~950 CLP/USD
+
+        // Parse response
+        $text = '';
+        $candidates = $result['candidates'] ?? [];
+        if (!empty($candidates[0]['content']['parts'][0]['text'])) {
+            $parsed = json_decode($candidates[0]['content']['parts'][0]['text'], true);
+            $text = $parsed['description'] ?? '';
+        }
+
+        if (empty($text)) {
+            throw new \RuntimeException('Gemini devolvió descripción vacía');
+        }
+
+        // Save to product
+        $product->description = $text;
+        $product->save();
+
+        // Log token usage
+        Log::info("[RecipeAIService] generateDescription product={$productId} tokens={$totalTokens} cost_clp={$costClp}");
+
+        return [
+            'description' => $text,
+            'tokens' => $totalTokens,
+            'cost_clp' => $costClp,
+            'product_id' => $productId,
+        ];
+    }
+
+    /**
      * Save a recipe variant as a new product.
      */
     public function saveVariant(array $data, int $categoryId): array

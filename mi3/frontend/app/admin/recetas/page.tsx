@@ -6,7 +6,7 @@ import { formatCLP, cn } from '@/lib/utils';
 import {
   Loader2, Search, ArrowUpDown, ChevronDown, ChevronRight, AlertTriangle,
   ArrowLeft, Plus, Trash2, Save, X, Pencil, Upload, Image as ImageIcon,
-  UtensilsCrossed, Package, ToggleLeft, ToggleRight, Eye, EyeOff,
+  UtensilsCrossed, Package, ToggleLeft, ToggleRight, Eye, EyeOff, Zap,
 } from 'lucide-react';
 import BulkActionBar from '@/components/admin/BulkActionBar';
 import type { ApiResponse } from '@/types';
@@ -683,6 +683,7 @@ function RecipeEditor({ productId, onBack, isNew = false }: { productId: number;
   const [allSubcategories, setAllSubcategories] = useState<{ id: number; name: string; category_id: number }[]>([]);
   const [savingProduct, setSavingProduct] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [generatingDesc, setGeneratingDesc] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchDetail = useCallback(async () => {
@@ -826,6 +827,26 @@ function RecipeEditor({ productId, onBack, isNew = false }: { productId: number;
       setError(e.message || 'Error al actualizar producto');
     } finally {
       setSavingProduct(false);
+    }
+  };
+
+  /* Generate AI description */
+  const handleGenerateDescription = async () => {
+    setGeneratingDesc(true);
+    setError('');
+    try {
+      const res = await apiFetch<ApiResponse<{ description: string; tokens: number; cost_clp: number }>>(`/admin/recetas/${productId}/generate-description`, {
+        method: 'POST',
+      });
+      if (res.data) {
+        setEditDescription(res.data.description);
+        setSuccessMsg(`Descripción generada (${res.data.tokens} tokens · $${res.data.cost_clp} CLP)`);
+        setTimeout(() => setSuccessMsg(''), 5000);
+      }
+    } catch (e: any) {
+      setError(e.message || 'Error generando descripción');
+    } finally {
+      setGeneratingDesc(false);
     }
   };
 
@@ -1012,9 +1033,22 @@ function RecipeEditor({ productId, onBack, isNew = false }: { productId: number;
                     </div>
                   </div>
                   <div>
-                    <label htmlFor="edit-desc" className="block text-xs font-medium text-gray-500 mb-1">
-                      Descripción <span className="text-gray-400 font-normal">(para IA y menú)</span>
-                    </label>
+                    <div className="flex items-center gap-2 mb-1">
+                      <label htmlFor="edit-desc" className="block text-xs font-medium text-gray-500">
+                        Descripción <span className="text-gray-400 font-normal">(para IA y menú)</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleGenerateDescription}
+                        disabled={generatingDesc}
+                        className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-medium text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-50"
+                        title="Generar descripción con IA"
+                        aria-label="Generar descripción con inteligencia artificial"
+                      >
+                        {generatingDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
+                        IA
+                      </button>
+                    </div>
                     <textarea
                       id="edit-desc"
                       value={editDescription}
