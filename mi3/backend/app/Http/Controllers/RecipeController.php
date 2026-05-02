@@ -482,6 +482,36 @@ class RecipeController extends Controller
     }
 
     /**
+     * Get suggested packaging insumos for a category from portion_standards.
+     * GET /api/v1/admin/recetas/{categoryId}/suggested-packaging
+     */
+    public function suggestedPackaging(int $categoryId): JsonResponse
+    {
+        // Packaging categories in ingredients table
+        $packagingCategories = ['Packaging', 'packaging'];
+
+        $items = \Illuminate\Support\Facades\DB::table('portion_standards')
+            ->join('ingredients', 'ingredients.id', '=', 'portion_standards.ingredient_id')
+            ->where('portion_standards.category_id', $categoryId)
+            ->whereIn('ingredients.category', $packagingCategories)
+            ->select(
+                'ingredients.id',
+                'ingredients.name',
+                'ingredients.unit as ingredient_unit',
+                'ingredients.cost_per_unit',
+                'ingredients.category',
+                'portion_standards.quantity',
+                'portion_standards.unit'
+            )
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $items,
+        ]);
+    }
+
+    /**
      * Get price recommendations based on recipe cost and target margin.
      * GET /api/v1/admin/recetas/recommendations
      */

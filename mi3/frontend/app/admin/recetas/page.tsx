@@ -830,6 +830,51 @@ function RecipeEditor({ productId, onBack, isNew = false }: { productId: number;
     }
   };
 
+  /* Auto-add packaging insumos based on product category */
+  const handleAutoPackaging = async () => {
+    const catId = product?.category_id;
+    if (!catId) {
+      setError('Producto sin categoría asignada');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+    setError('');
+    try {
+      const res = await apiFetch<ApiResponse<Array<{ id: number; name: string; ingredient_unit: string; cost_per_unit: number; category: string; quantity: number; unit: string }>>>(`/admin/recetas/${catId}/suggested-packaging`);
+      const items = res.data || [];
+      if (items.length === 0) {
+        setError('No hay packaging sugerido para esta categoría');
+        setTimeout(() => setError(''), 3000);
+        return;
+      }
+      let added = 0;
+      const newIngredients = [...ingredients];
+      for (const item of items) {
+        if (!newIngredients.some(i => i.ingredient_id === item.id)) {
+          newIngredients.push({
+            ingredient_id: item.id,
+            name: item.name,
+            category: item.category || 'Packaging',
+            quantity: item.quantity,
+            unit: item.unit,
+            ingredient_unit: item.ingredient_unit || item.unit,
+            cost_per_unit: item.cost_per_unit,
+          });
+          added++;
+        }
+      }
+      setIngredients(newIngredients);
+      if (added > 0) {
+        setSuccessMsg(`${added} insumo${added > 1 ? 's' : ''} de packaging agregado${added > 1 ? 's' : ''}`);
+      } else {
+        setSuccessMsg('Packaging ya estaba completo');
+      }
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (e: any) {
+      setError(e.message || 'Error cargando packaging sugerido');
+    }
+  };
+
   /* Generate AI description */
   const handleGenerateDescription = async () => {
     setGeneratingDesc(true);
@@ -1140,6 +1185,17 @@ function RecipeEditor({ productId, onBack, isNew = false }: { productId: number;
             <Package className="h-4 w-4 text-blue-500" /> Insumos
             {insumoItems.length > 0 && (
               <span className="text-xs text-gray-400">({insumoItems.length})</span>
+            )}
+            {product?.category_id && [2, 3, 12].includes(product.category_id) && (
+              <button
+                type="button"
+                onClick={handleAutoPackaging}
+                className="inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-200 px-2 py-0.5 text-[10px] font-medium text-blue-700 hover:bg-blue-100 transition-colors"
+                title="Auto-agregar packaging según categoría"
+                aria-label="Auto-agregar insumos de packaging"
+              >
+                <Zap className="h-3 w-3" /> Packaging
+              </button>
             )}
           </h3>
           {insumoItems.length > 0 && (
