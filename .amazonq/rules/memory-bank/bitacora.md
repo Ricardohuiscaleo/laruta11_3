@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`a3a6512`) — Hide phone in comandas, note contrast on delayed orders |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`1dd9951`) — Pipeline UI metadata, no auto-close delays |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`b515812`) — Fix uploadProductImage: SigV4 directo + public-read ACL |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`a388f67`) — /rider/* rutas públicas en middleware |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`8aaa196`) — generateDescription + suggestedPackaging + fix uploadProductImage |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -111,15 +111,28 @@
 
 ## Sesiones Recientes
 
-### 2026-05-02f — Fix subida imágenes productos desde mi3 (403 S3)
+### 2026-05-02g — Fix rutas /rider/* públicas en middleware (delivery tracking + embed)
+
+**Diagnóstico:** Links de delivery enviados por WhatsApp desde MiniComandas (`https://mi.laruta11.cl/rider/{orderId}`) y el iframe embed (`/rider/{orderId}/embed`) redirigían a `/login` porque el middleware de Next.js no los tenía en la lista de rutas públicas. Las páginas en sí (`PublicRiderView`, `RiderMapEmbed`) son componentes públicos sin `useAuth()`.
+
+**Cambios código:**
+- `mi3/frontend/middleware.ts`: Agregado `pathname.startsWith('/rider')` a la lista de rutas públicas. Cubre `/rider`, `/rider/{id}` y `/rider/{id}/embed`.
+
+**Commits:** `a388f67`
+**Deploys:** mi3-frontend ✅.
+
+### 2026-05-02f — Fix subida imágenes productos mi3 + botón ⚡IA descripción Gemini
 
 **Diagnóstico:** Imágenes subidas desde `mi.laruta11.cl/admin/recetas` daban 403 al intentar verlas. `RecipeController::uploadProductImage()` usaba Flysystem (`Storage::disk('s3')->put()`) que no sube correctamente al bucket (bug conocido, documentado en `ImagenService`). Las imágenes de caja3 funcionaban porque usan POST policy directo.
 
 **Cambios código:**
-- `mi3/backend/app/Http/Controllers/RecipeController.php`: `uploadProductImage()` reescrito — reemplazado Flysystem por PUT directo con SigV4 + header `x-amz-acl: public-read` (mismo patrón que `ImagenService.putObject()`). URL pública se construye explícitamente. Logging de errores mejorado.
+- `mi3/backend/app/Http/Controllers/RecipeController.php`: `uploadProductImage()` reescrito — reemplazado Flysystem por PUT directo con SigV4 (mismo patrón que `ImagenService.putObject()`). Sin `x-amz-acl` (bucket tiene Block Public ACLs, bucket policy maneja lectura pública). Nuevo método `generateDescription()` para generar descripciones con IA. Nuevo método `suggestedPackaging()` para auto-agregar insumos de packaging por categoría.
+- `mi3/backend/app/Services/Recipe/RecipeAIService.php`: Nuevo método `generateDescription()` — usa Gemini Flash Lite para generar descripción corta (max 120 chars) basada en nombre+ingredientes+categoría. Guarda en BD, loguea tokens y costo CLP.
+- `mi3/backend/routes/api.php`: Nuevas rutas `POST recetas/{productId}/generate-description` y `GET recetas/{categoryId}/suggested-packaging`.
+- `mi3/frontend/app/admin/recetas/page.tsx`: Botón ⚡IA junto al label "Descripción" en RecipeEditor. Botón ⚡Packaging en sección Insumos (solo para Sandwiches/Hamburguesas/Papas) que auto-agrega packaging desde `portion_standards`.
 
-**Commits:** `b515812`
-**Deploys:** mi3-backend ✅.
+**Commits:** `b515812`, `695a97a`, `ba5b0b3`, `8aaa196`
+**Deploys:** mi3-backend ✅ (×4), mi3-frontend ✅ (×3).
 
 ### 2026-05-02e — Fix Gemini vision + upgrade modelo + pipeline UI metadata + remove delays
 
