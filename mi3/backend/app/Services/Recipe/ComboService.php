@@ -92,6 +92,7 @@ class ComboService
                     'product_id'   => $comp->child_product_id,
                     'product_name' => $comp->product_name,
                     'quantity'     => $comp->quantity,
+                    'cost_price'   => (float) $comp->cost_price,
                     'image_url'    => $comp->image_url,
                 ];
             } else {
@@ -108,6 +109,7 @@ class ComboService
                     'product_id'       => $comp->child_product_id,
                     'product_name'     => $comp->product_name,
                     'price_adjustment' => (float) $comp->price_adjustment,
+                    'cost_price'       => (float) $comp->cost_price,
                     'image_url'        => $comp->image_url,
                 ];
             }

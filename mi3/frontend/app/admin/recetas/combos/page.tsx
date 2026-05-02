@@ -29,6 +29,7 @@ interface FixedItem {
   product_id: number;
   product_name: string;
   quantity: number;
+  cost_price: number;
   image_url: string | null;
 }
 
@@ -36,6 +37,8 @@ interface SelectionOption {
   product_id: number;
   product_name: string;
   price_adjustment: number;
+  cost_price: number;
+  is_active: boolean;
   image_url: string | null;
 }
 
@@ -550,7 +553,7 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
           product_id: fi.product_id,
           product_name: fi.product_name,
           quantity: fi.quantity,
-          cost_price: 0,
+          cost_price: fi.cost_price || 0,
         }))
       );
 
@@ -562,8 +565,8 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
             product_id: opt.product_id,
             product_name: opt.product_name,
             price_adjustment: opt.price_adjustment,
-            cost_price: 0,
-            is_active: true,
+            cost_price: opt.cost_price || 0,
+            is_active: opt.is_active ?? true,
           })),
         })
       );
