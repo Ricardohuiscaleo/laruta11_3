@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`a3a6512`) — Hide phone in comandas, note contrast on delayed orders |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`62cdbc9`) — Combo editor: editable price/image, detailed cost breakdown |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`f4cd430`) — ComboService getComboDetail returns cost_price |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`9d5a744`) — Combo editor ingredient breakdown per fixed item |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`9d5a744`) — Combo detail API includes recipe ingredients |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -110,6 +110,17 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-05-02c — Combo editor: desglose ingredientes por item fijo + tocino 40g BD
+
+**Cambios código:**
+- `mi3/backend/app/Services/Recipe/ComboService.php`: `getComboDetail()` ahora pre-carga recetas (ingredientes) de cada item fijo via `product_recipes` + `ingredients`. Cada fixed_item incluye array `ingredients` con nombre, cantidad, unidad y costo calculado. Nuevo método `calculateIngredientCostForCombo()` con conversión kg↔g, lt↔ml.
+- `mi3/frontend/app/admin/recetas/combos/page.tsx`: Nueva interfaz `RecipeIngredient`. Items fijos muestran desglose de ingredientes debajo (nombre, cantidad+unidad, costo). Cost Summary también muestra ingredientes por item fijo multiplicados por cantidad.
+
+**BD:** 7 recetas de Tocino Laminado ajustadas a múltiplos de 40g (peso real lámina): Completo Tocino 50→40g, Pichanga 50→40g, Tocino Extra 50→40g, Pizza Mediana 50→40g, Cheeseburger 100→80g, Pizza Familiar 100→80g, Triple XXXL 150→120g.
+
+**Commits:** `9d5a744`
+**Deploys:** mi3-backend ✅, mi3-frontend ✅.
 
 ### 2026-05-02b — Ajustar recetas tocino a tramos de 40g (peso real lámina)
 

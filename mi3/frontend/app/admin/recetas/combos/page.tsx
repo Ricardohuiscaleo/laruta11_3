@@ -908,21 +908,25 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
                 <div key={fi.product_id} className="rounded-lg border border-gray-100 bg-gray-50/50 overflow-hidden">
                   <div className="flex items-center gap-2 px-3 py-2">
                     <span className="flex-1 text-sm font-medium text-gray-900 truncate">{fi.product_name}</span>
-                    <span className="text-xs text-gray-400 tabular-nums whitespace-nowrap">{formatCLP(fi.cost_price)}</span>
-                    <span className="text-xs text-gray-300">×</span>
-                    <label className="sr-only" htmlFor={`fixed-qty-${fi.product_id}`}>Cantidad</label>
-                    <input
-                      id={`fixed-qty-${fi.product_id}`}
-                      type="number"
-                      value={fi.quantity}
-                      onChange={e => updateFixedQty(idx, Number(e.target.value))}
-                      min={1}
-                      className="w-14 rounded-md border px-2 py-1 text-sm tabular-nums text-center focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[36px]"
-                    />
-                    <span className="text-xs font-medium text-gray-600 tabular-nums whitespace-nowrap">= {formatCLP(fi.cost_price * fi.quantity)}</span>
+                    <span className="text-xs text-gray-500 tabular-nums whitespace-nowrap">{formatCLP(fi.cost_price * fi.quantity)}</span>
+                    {/* Stepper (−) qty (+) */}
+                    <div className="flex items-center rounded-lg border border-gray-200 bg-white overflow-hidden">
+                      <button
+                        onClick={() => updateFixedQty(idx, fi.quantity - 1)}
+                        disabled={fi.quantity <= 1}
+                        className="px-2 py-1 text-sm text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors min-h-[32px]"
+                        aria-label={`Reducir cantidad de ${fi.product_name}`}
+                      >−</button>
+                      <span className="px-2 text-sm font-medium tabular-nums text-gray-900 min-w-[24px] text-center">{fi.quantity}</span>
+                      <button
+                        onClick={() => updateFixedQty(idx, fi.quantity + 1)}
+                        className="px-2 py-1 text-sm text-gray-500 hover:bg-gray-100 transition-colors min-h-[32px]"
+                        aria-label={`Aumentar cantidad de ${fi.product_name}`}
+                      >+</button>
+                    </div>
                     <button
                       onClick={() => removeFixed(idx)}
-                      className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                      className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors min-h-[32px] min-w-[32px] flex items-center justify-center"
                       aria-label={`Eliminar ${fi.product_name}`}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -984,15 +988,20 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
                     placeholder="Nombre del grupo"
                   />
                   <span className="text-xs text-gray-500 whitespace-nowrap">elegir</span>
-                  <label className="sr-only" htmlFor={`group-max-${gi}`}>Máximo selecciones</label>
-                  <input
-                    id={`group-max-${gi}`}
-                    type="number"
-                    value={group.max_selections}
-                    onChange={e => updateGroupMax(gi, Number(e.target.value))}
-                    min={1}
-                    className="w-14 rounded-md border border-gray-200 px-2 py-1 text-sm tabular-nums text-center focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[36px]"
-                  />
+                  <div className="flex items-center rounded-lg border border-gray-200 bg-white overflow-hidden">
+                    <button
+                      onClick={() => updateGroupMax(gi, group.max_selections - 1)}
+                      disabled={group.max_selections <= 1}
+                      className="px-2 py-1 text-sm text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors min-h-[32px]"
+                      aria-label={`Reducir selecciones de ${group.name}`}
+                    >−</button>
+                    <span className="px-2 text-sm font-medium tabular-nums text-gray-900 min-w-[24px] text-center">{group.max_selections}</span>
+                    <button
+                      onClick={() => updateGroupMax(gi, group.max_selections + 1)}
+                      className="px-2 py-1 text-sm text-gray-500 hover:bg-gray-100 transition-colors min-h-[32px]"
+                      aria-label={`Aumentar selecciones de ${group.name}`}
+                    >+</button>
+                  </div>
                 </div>
                 <button
                   onClick={() => removeGroup(gi)}
