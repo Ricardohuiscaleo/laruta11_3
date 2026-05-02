@@ -17,6 +17,12 @@ class GeminiService
     {
         $this->apiKey = (string) env('GOOGLE_API_KEY', env('google_api_key', ''));
         $this->model = (string) env('GEMINI_MODEL', 'gemini-2.5-flash-lite');
+
+        if (empty($this->apiKey)) {
+            Log::warning('[GeminiService] GOOGLE_API_KEY not configured — all calls will fail');
+        } else {
+            Log::debug("[GeminiService] Initialized with model={$this->model}");
+        }
     }
 
     // ─── Public Methods ───
@@ -120,6 +126,9 @@ class GeminiService
         ];
 
         $jsonPayload = json_encode($payload);
+        $imageSizeKb = (int) round(strlen($imageBase64) * 3 / 4 / 1024);
+
+        Log::info("[GeminiService] callGemini model={$this->model} timeout={$timeout}s image={$imageSizeKb}KB maxTokens={$maxOutputTokens}");
 
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -132,26 +141,36 @@ class GeminiService
             CURLOPT_CONNECTTIMEOUT => 5,
         ]);
 
+        $t0 = microtime(true);
         $responseBody = curl_exec($ch);
+        $elapsedMs = (int) round((microtime(true) - $t0) * 1000);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
         curl_close($ch);
 
         if ($curlError !== '') {
-            Log::error("[GeminiService] cURL error: {$curlError}");
+            Log::error("[GeminiService] cURL error after {$elapsedMs}ms: {$curlError}");
             return null;
         }
 
         if ($httpCode < 200 || $httpCode >= 300) {
-            Log::error("[GeminiService] HTTP {$httpCode}: " . substr((string) $responseBody, 0, 500));
+            Log::error("[GeminiService] HTTP {$httpCode} after {$elapsedMs}ms (model={$this->model}): " . substr((string) $responseBody, 0, 800));
             return null;
         }
 
         $decoded = json_decode((string) $responseBody, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            Log::error('[GeminiService] Failed to decode API response JSON');
+            Log::error("[GeminiService] Failed to decode JSON after {$elapsedMs}ms: " . substr((string) $responseBody, 0, 300));
             return null;
         }
+
+        // Check for blocked/empty candidates
+        $finishReason = $decoded['candidates'][0]['finishReason'] ?? null;
+        if ($finishReason !== null && $finishReason !== 'STOP') {
+            Log::warning("[GeminiService] Non-STOP finishReason={$finishReason} after {$elapsedMs}ms (model={$this->model})");
+        }
+
+        Log::info("[GeminiService] OK {$elapsedMs}ms tokens=" . ($decoded['usageMetadata']['totalTokenCount'] ?? '?'));
 
         return $decoded;
     }
@@ -167,12 +186,22 @@ class GeminiService
     {
         $prompt = $this->buildVisionPrompt();
         $schema = $this->buildVisionSchema();
-        $response = $this->callGemini($prompt, $imageBase64, $schema, 15, 2048);
+
+        // Attempt with retry (1 retry on failure)
+        $response = $this->callGemini($prompt, $imageBase64, $schema, 20, 2048);
         if ($response === null) {
-            return null;
+            Log::warning('[GeminiService] percibir: first attempt failed, retrying with longer timeout...');
+            usleep(500_000); // 500ms backoff
+            $response = $this->callGemini($prompt, $imageBase64, $schema, 30, 2048);
+            if ($response === null) {
+                Log::error('[GeminiService] percibir: retry also failed');
+                return null;
+            }
         }
+
         $parsed = $this->parseResponse($response);
         if ($parsed === null) {
+            Log::error('[GeminiService] percibir: parseResponse returned null');
             return null;
         }
 
@@ -353,9 +382,17 @@ class GeminiService
      */
     private function parseResponse(array $response): ?array
     {
+        // Check if candidates exist at all
+        if (empty($response['candidates'])) {
+            $blockReason = $response['promptFeedback']['blockReason'] ?? 'unknown';
+            Log::error("[GeminiService] No candidates in response. blockReason={$blockReason} response=" . substr(json_encode($response), 0, 500));
+            return null;
+        }
+
         $text = $response['candidates'][0]['content']['parts'][0]['text'] ?? null;
         if ($text === null) {
-            Log::error('[GeminiService] No text in response candidates');
+            $finishReason = $response['candidates'][0]['finishReason'] ?? 'unknown';
+            Log::error("[GeminiService] No text in candidates. finishReason={$finishReason} candidate=" . substr(json_encode($response['candidates'][0]), 0, 500));
             return null;
         }
 

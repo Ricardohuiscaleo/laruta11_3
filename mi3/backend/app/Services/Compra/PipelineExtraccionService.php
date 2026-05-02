@@ -279,14 +279,17 @@ class PipelineExtraccionService
             $visionResult = $this->gemini->percibir($imageBase64);
 
             if (!$visionResult) {
+                $elapsedVision = (int) round((microtime(true) - $phaseStart) * 1000);
+                $geminiModel = env('GEMINI_MODEL', 'gemini-2.5-flash-lite');
                 $pipelinePhases['vision'] = [
-                    'elapsed_ms' => (int) round((microtime(true) - $phaseStart) * 1000),
+                    'elapsed_ms' => $elapsedVision,
                     'success' => false,
                     'error' => 'Gemini vision returned null',
                     'engine' => 'gemini',
+                    'model' => $geminiModel,
                 ];
-                $emit('vision', 'error', ['message' => 'Agente Visión falló', 'engine' => 'multi-agent']);
-                Log::error('[Pipeline:MultiAgent] Agente Visión falló');
+                $emit('vision', 'error', ['message' => "Agente Visión falló (model={$geminiModel}, {$elapsedVision}ms)", 'engine' => 'multi-agent']);
+                Log::error("[Pipeline:MultiAgent] Agente Visión falló — model={$geminiModel} elapsed={$elapsedVision}ms. Check laravel.log for [GeminiService] errors above.");
                 return $this->failedResultMultiAgent($imageUrl, 'Agente Visión falló', $startTime, $pipelinePhases);
             }
 
@@ -875,15 +878,66 @@ class PipelineExtraccionService
         try {
             if (!str_starts_with($imageUrl, 'http')) {
                 $contents = Storage::disk('s3')->get($imageUrl);
-                return $contents ? base64_encode($contents) : null;
+            } else {
+                $response = \Illuminate\Support\Facades\Http::timeout(5)->get($imageUrl);
+                $contents = $response->successful() ? $response->body() : null;
             }
 
-            $response = \Illuminate\Support\Facades\Http::timeout(5)->get($imageUrl);
-            return $response->successful() ? base64_encode($response->body()) : null;
+            if (!$contents) {
+                return null;
+            }
+
+            // Resize large images to reduce payload and avoid Gemini timeouts
+            $resized = $this->resizeImageForVision($contents);
+            return base64_encode($resized);
         } catch (\Exception $e) {
             Log::warning('[Pipeline] Failed to get image: ' . $e->getMessage());
             return null;
         }
+    }
+
+    /**
+     * Resize image if it exceeds max dimensions for vision API.
+     * Gemini handles up to 3072px but large images cause slow structured output.
+     * Target: max 1536px on longest side, JPEG quality 85.
+     */
+    private function resizeImageForVision(string $imageData, int $maxDimension = 1536): string
+    {
+        $image = @imagecreatefromstring($imageData);
+        if ($image === false) {
+            // Not a valid image or GD not available — return original
+            return $imageData;
+        }
+
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $originalSizeKb = (int) round(strlen($imageData) / 1024);
+
+        // Only resize if image exceeds max dimension
+        if ($width <= $maxDimension && $height <= $maxDimension) {
+            imagedestroy($image);
+            Log::debug("[Pipeline] Image {$width}x{$height} ({$originalSizeKb}KB) — no resize needed");
+            return $imageData;
+        }
+
+        // Calculate new dimensions maintaining aspect ratio
+        $ratio = min($maxDimension / $width, $maxDimension / $height);
+        $newWidth = (int) round($width * $ratio);
+        $newHeight = (int) round($height * $ratio);
+
+        $resized = imagecreatetruecolor($newWidth, $newHeight);
+        imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+        imagedestroy($image);
+
+        ob_start();
+        imagejpeg($resized, null, 85);
+        $output = ob_get_clean();
+        imagedestroy($resized);
+
+        $newSizeKb = (int) round(strlen($output) / 1024);
+        Log::info("[Pipeline] Image resized {$width}x{$height} ({$originalSizeKb}KB) → {$newWidth}x{$newHeight} ({$newSizeKb}KB)");
+
+        return $output;
     }
 
     /**
