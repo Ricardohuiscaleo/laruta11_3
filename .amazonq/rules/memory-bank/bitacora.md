@@ -9,7 +9,7 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`11d843f`) — Fix delivery display MiniComandas + VentasDetalle |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`1ed8eb7`) — Fix AdminShell trailing comparison prevents Error #185 all sections |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`a8b2983`) — Fix AdminShell Error #185 v2: only compare primitives in setHeaderConfig |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`a103d52`) — Fix MonthlyChart nomina fallback + aprobar() double deduction + cron month + EdR fallback |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
@@ -78,6 +78,7 @@
 - [ ] **Utilidad dueño mal calculada en Nómina** — Yojhans muestra -$322k como "a pagar" con 0 días. Esto es la utilidad (resultado neto), no nómina. Revisar cómo se presenta en la UI — no debería parecer una liquidación de sueldo.
 - [ ] **Nómina abril $593.333 proyectada** — Es promedio de últimos 3 meses (pagos_nomina). Falta registrar nómina real de abril cuando se pague. ~~Además: trazabilidad nómina↔créditos↔ajustes no está conectada en el dashboard~~ RESUELTO: NominaSection reescrita con tabs Ruta11/Seguridad, detalle ajustes+créditos inline por trabajador, resumen de pagos modal. Falta: registrar pago real de abril.
 - [ ] **Discrepancia ventas mensuales vs EdR** — Gráfico mensual usa CONVERT_TZ pero puede haber diferencia residual con caja3 API. Verificar que ambos coincidan para abril.
+- [ ] **Investigar por qué `mi3:generate-shifts` del 25 abril no generó turnos de mayo** — El cron corrió con `success` pero 0 turnos para mayo. Turnos generados manualmente el 1 mayo (93 turnos). Checklists también regenerados manualmente (4). Posible bug: el comando genera turnos para el mes actual en vez del siguiente cuando corre el 25.
 
 - [x] Verificar upload S3 en compras — funciona correctamente.
 - [x] Verificar Gmail Token Refresh — funciona correctamente.
