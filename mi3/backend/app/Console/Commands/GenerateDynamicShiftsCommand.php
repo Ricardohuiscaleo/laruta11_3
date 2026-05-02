@@ -25,7 +25,8 @@ class GenerateDynamicShiftsCommand extends Command
 
     public function handle(): int
     {
-        $mesParam = $this->option('mes') ?? now()->format('Y-m');
+        // When run by scheduler (day 25), generate for NEXT month. When run manually with --mes, use that.
+        $mesParam = $this->option('mes') ?? now()->addMonth()->format('Y-m');
         $start = Carbon::parse($mesParam . '-01')->startOfMonth();
         $end = $start->copy()->endOfMonth();
 
