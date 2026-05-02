@@ -718,9 +718,6 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           <div className="flex items-center gap-1 text-xs flex-wrap">
             {order.customer_phone && (
               <>
-                <Phone size={12} className="text-gray-500" />
-                <span className="text-gray-600">{order.customer_phone}</span>
-                <span className="text-gray-400">|</span>
                 <a href={`tel:${order.customer_phone}`} className="bg-blue-500 hover:bg-blue-600 text-white py-0.5 px-2 rounded flex items-center gap-1">
                   <Phone size={10} />Llamar
                 </a>
@@ -1046,10 +1043,14 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
         </div>
 
         {order.customer_notes && (
-          <div className="mb-1 bg-yellow-200 border border-yellow-400 rounded p-2">
+          <div className={`mb-1 rounded p-2 border-2 ${
+            timeAlert && (timeAlert.color.includes('red') || timeAlert.color.includes('orange'))
+              ? 'bg-white border-black'
+              : 'bg-yellow-200 border-yellow-400'
+          }`}>
             <div className="flex items-start gap-1">
-              <MessageSquare size={14} className="mt-0.5 flex-shrink-0 text-black" />
-              <span className="text-sm text-black font-bold">{order.customer_notes}</span>
+              <MessageSquare size={16} className="mt-0.5 flex-shrink-0 text-black" />
+              <span className="text-base text-black font-black">{order.customer_notes}</span>
             </div>
           </div>
         )}
