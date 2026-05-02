@@ -19,6 +19,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const [photoSlots, setPhotoSlots] = useState({}); // keyed by order ID → {productos: {status, photoUrl, verification}, bolsa: {status, photoUrl, verification}}
   const [viewMode, setViewMode] = useState('list');
   const [riderMonitor, setRiderMonitor] = useState(null); // order.id of expanded rider monitor
+  const [packagingQty, setPackagingQty] = useState({}); // { [orderId]: { bolsa_grande: number, bolsa_mediana: number } }
   const [showNewFeaturePopup, setShowNewFeaturePopup] = useState(() => {
     const today = new Date();
     const d = today.getDate(), m = today.getMonth() + 1, y = today.getFullYear();
@@ -324,6 +325,12 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
     setProcessing(orderId);
     try {
+      // Register packaging for pickup orders (delivery registers at dispatch phase)
+      const order = orders.find(o => o.id === orderId);
+      if (order && order.delivery_type !== 'delivery') {
+        await registerPackaging(orderNumber, orderId, order.delivery_type);
+      }
+
       const response = await fetch('/api/tuu/update_order_status.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -349,6 +356,9 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
     setProcessing(orderId);
     try {
+      // Register packaging consumption for delivery orders
+      await registerPackaging(orderNumber, orderId, 'delivery');
+
       const response = await fetch('/api/tuu/update_order_status.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -644,6 +654,41 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
       case 'rl6_credit': return 'Crédito RL6';
       case 'r11_credit': return 'Crédito R11';
       default: return method;
+    }
+  };
+
+  // ── Packaging helpers ──
+  const getPackaging = (orderId, deliveryType) => {
+    if (packagingQty[orderId]) return packagingQty[orderId];
+    return { bolsa_grande: deliveryType === 'delivery' ? 1 : 0, bolsa_mediana: 0 };
+  };
+
+  const setPackagingValue = (orderId, bagType, delta, deliveryType) => {
+    setPackagingQty(prev => {
+      const current = prev[orderId] || getPackaging(orderId, deliveryType);
+      const newVal = Math.max(0, Math.min(10, current[bagType] + delta));
+      return { ...prev, [orderId]: { ...current, [bagType]: newVal } };
+    });
+  };
+
+  const registerPackaging = async (orderNumber, orderId, deliveryType) => {
+    const qty = getPackaging(orderId, deliveryType);
+    if (qty.bolsa_grande === 0 && qty.bolsa_mediana === 0) return true;
+    try {
+      const response = await fetch('/api/register_packaging_consumption.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_number: orderNumber, bolsa_grande: qty.bolsa_grande, bolsa_mediana: qty.bolsa_mediana })
+      });
+      const result = await response.json();
+      if (!result.success) {
+        console.warn('Packaging registration failed:', result.error);
+      }
+      return true;
+    } catch (error) {
+      console.error('Error registrando packaging:', error);
+      alert('⚠️ No se pudo registrar el consumo de bolsas. El pedido se procesará de todas formas.');
+      return false;
     }
   };
 
@@ -1229,6 +1274,46 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                   </div>
                 )}
               </div>
+            </div>
+          );
+        })()}
+
+        {/* ── Packaging Stepper Area ── */}
+        {(() => {
+          const isDelivery = order.delivery_type === 'delivery';
+          const isReadyPhase = order.order_status === 'ready';
+          if (isDelivery && isReadyPhase) return null;
+
+          const pkg = getPackaging(order.id, order.delivery_type);
+          const bags = [
+            { key: 'bolsa_grande', label: 'Grande', img: '/bolsa_deliverys/BOLSA PAPEL CAFE CON MANILLA 36x20x39 CM..jpg' },
+            { key: 'bolsa_mediana', label: 'Mediana', img: '/bolsa_deliverys/BOLSA PAPEL CAPE CON MANILLA 30x12x32.jpg' }
+          ];
+
+          return (
+            <div className="flex items-center gap-3 px-2 py-1 bg-amber-50 border border-amber-200 rounded mb-1" style={{ maxHeight: 60 }}>
+              <span className="text-[10px] text-amber-700 font-semibold">📦</span>
+              {bags.map(bag => (
+                <div key={bag.key} className="flex items-center gap-1">
+                  <img src={bag.img} alt={bag.label} className="w-6 h-6 rounded object-cover border border-amber-200" />
+                  <span className="text-[10px] font-medium text-gray-600">{bag.label}</span>
+                  <button
+                    onClick={() => setPackagingValue(order.id, bag.key, -1, order.delivery_type)}
+                    disabled={pkg[bag.key] <= 0}
+                    className="w-5 h-5 flex items-center justify-center rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-30 text-xs font-bold"
+                    aria-label={`Reducir ${bag.label}`}
+                  >−</button>
+                  <span className={`w-5 text-center text-xs font-bold rounded ${pkg[bag.key] > 0 ? 'bg-amber-200 text-amber-800' : 'text-gray-400'}`}>
+                    {pkg[bag.key]}
+                  </span>
+                  <button
+                    onClick={() => setPackagingValue(order.id, bag.key, 1, order.delivery_type)}
+                    disabled={pkg[bag.key] >= 10}
+                    className="w-5 h-5 flex items-center justify-center rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-30 text-xs font-bold"
+                    aria-label={`Aumentar ${bag.label}`}
+                  >+</button>
+                </div>
+              ))}
             </div>
           );
         })()}
