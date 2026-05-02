@@ -361,6 +361,9 @@ class RecipeController extends Controller
     /**
      * Upload product image.
      * POST /api/v1/admin/recetas/{productId}/imagen
+     *
+     * Uses direct S3 PUT with SigV4 + public-read ACL (Flysystem doesn't
+     * reliably set public ACL on this bucket).
      */
     public function uploadProductImage(Request $request, int $productId): JsonResponse
     {
@@ -372,18 +375,86 @@ class RecipeController extends Controller
             $product = \App\Models\Product::findOrFail($productId);
 
             $file = $request->file('image');
-            $key = "products/producto_{$productId}_" . time() . '.jpg';
+            $ext = $file->getClientOriginalExtension() ?: 'jpg';
+            $key = "products/producto_{$productId}_" . time() . ".{$ext}";
 
-            \Illuminate\Support\Facades\Storage::disk('s3')->put($key, file_get_contents($file->getRealPath()), 'public');
-            $url = \Illuminate\Support\Facades\Storage::disk('s3')->url($key);
+            // Read credentials from config (same source as ImagenService)
+            $bucket = config('filesystems.disks.s3.bucket', env('AWS_BUCKET', 'laruta11-images'));
+            $region = config('filesystems.disks.s3.region', env('AWS_DEFAULT_REGION', 'us-east-1'));
+            $awsKey = config('filesystems.disks.s3.key', env('AWS_ACCESS_KEY_ID', ''));
+            $awsSecret = config('filesystems.disks.s3.secret', env('AWS_SECRET_ACCESS_KEY', ''));
 
-            $product->image_url = $url;
+            $body = file_get_contents($file->getRealPath());
+            $contentType = $file->getMimeType() ?: 'image/jpeg';
+
+            // SigV4 signed PUT with public-read ACL
+            $host = "{$bucket}.s3.{$region}.amazonaws.com";
+            $url = "https://{$host}/{$key}";
+            $now = gmdate('Ymd\THis\Z');
+            $date = gmdate('Ymd');
+            $payloadHash = hash('sha256', $body);
+
+            $headers = [
+                'content-type' => $contentType,
+                'host' => $host,
+                'x-amz-acl' => 'public-read',
+                'x-amz-content-sha256' => $payloadHash,
+                'x-amz-date' => $now,
+            ];
+
+            $signedHeaders = implode(';', array_keys($headers));
+            $canonicalHeaders = '';
+            foreach ($headers as $k => $v) {
+                $canonicalHeaders .= "{$k}:{$v}\n";
+            }
+
+            $canonicalRequest = "PUT\n/{$key}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
+            $credentialScope = "{$date}/{$region}/s3/aws4_request";
+            $stringToSign = "AWS4-HMAC-SHA256\n{$now}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
+
+            $kDate = hash_hmac('sha256', $date, "AWS4{$awsSecret}", true);
+            $kRegion = hash_hmac('sha256', $region, $kDate, true);
+            $kService = hash_hmac('sha256', 's3', $kRegion, true);
+            $kSigning = hash_hmac('sha256', 'aws4_request', $kService, true);
+            $signature = hash_hmac('sha256', $stringToSign, $kSigning);
+
+            $auth = "AWS4-HMAC-SHA256 Credential={$awsKey}/{$credentialScope}, SignedHeaders={$signedHeaders}, Signature={$signature}";
+
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_CUSTOMREQUEST => 'PUT',
+                CURLOPT_POSTFIELDS => $body,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_HTTPHEADER => [
+                    "Content-Type: {$contentType}",
+                    "X-Amz-Acl: public-read",
+                    "X-Amz-Date: {$now}",
+                    "X-Amz-Content-Sha256: {$payloadHash}",
+                    "Authorization: {$auth}",
+                ],
+            ]);
+            $resp = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($code !== 200) {
+                \Illuminate\Support\Facades\Log::error("[uploadProductImage] S3 PUT failed: HTTP {$code} for {$key}. Response: " . substr($resp, 0, 500));
+                return response()->json([
+                    'success' => false,
+                    'error' => "Error subiendo a S3: HTTP {$code}",
+                ], 500);
+            }
+
+            $publicUrl = "https://{$bucket}.s3.amazonaws.com/{$key}";
+            $product->image_url = $publicUrl;
             $product->save();
 
-            return response()->json(['success' => true, 'image_url' => $url]);
+            return response()->json(['success' => true, 'image_url' => $publicUrl]);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'error' => 'Producto no encontrado'], 404);
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("[uploadProductImage] Exception: " . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'error' => 'Error al subir imagen: ' . $e->getMessage(),

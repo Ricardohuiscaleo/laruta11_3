@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`a3a6512`) — Hide phone in comandas, note contrast on delayed orders |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`9d5a744`) — Combo editor ingredient breakdown per fixed item |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`9d5a744`) — Combo detail API includes recipe ingredients |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`1dd9951`) — Pipeline UI metadata, no auto-close delays |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`1af11b9`) — Gemini 3.1 flash-lite, upload metadata API, image size in SSE |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -111,6 +111,34 @@
 
 ## Sesiones Recientes
 
+### 2026-05-02e — Fix Gemini vision + upgrade modelo + pipeline UI metadata + remove delays
+
+**Diagnóstico:** Pipeline multi-agente fallaba en fase Visión. API key y modelo funcionan. Compresión ya existía (frontend 1200px + backend 1200x800 + S3).
+
+**Cambios código:**
+- `GeminiService.php`: Modelo `gemini-2.5-flash-lite` → `gemini-3.1-flash-lite-preview`. Logging detallado. Retry 20s→30s. `parseResponse()` loguea blockReason.
+- `PipelineExtraccionService.php`: Resize >1536px. Emite `imageSizeKb` en SSE. Error incluye modelo+elapsed.
+- `ImagenService.php`: `uploadTemp()` retorna metadata (tamaño, resolución, % reducción).
+- `CompraController.php`: Pasa metadata al frontend.
+- `MobileExtractionSheet.tsx`: Muestra metadata upload y KB→Gemini. Eliminado auto-close 1.5s, botón "Listo" real.
+- `registro/page.tsx`: Captura uploadMeta. Eliminado setTimeout 3s auto-close.
+
+**Commits:** `5e61952`, `1144cbf`, `1af11b9`, `f79f7c6`, `1dd9951`
+**Deploys:** mi3-backend ✅ (×3), mi3-frontend ✅.
+
+### 2026-05-02d — Limpieza packaging de recetas: bolsas, pocillos, papel mantequilla
+
+**BD:** Eliminados ingredientes de packaging de `product_recipes` que no son 1:1 con el producto:
+- Bolsa Delivery Baja (id=43): eliminada de 28 recetas. Stock reseteado de -590 → 0.
+- Pocillo Salsero (id=103): eliminado de 4 recetas.
+- Papel Mantequilla (id=42): eliminado solo de Papas Fritas (product_id=17). Se mantiene en 10 productos (5 sandwiches + 5 hamburguesas).
+- Cajas (sandwich, completo, papa, aluminio, pizza) se mantienen en recetas (son 1:1).
+
+**Decisión:** Bolsas se gestionarán desde MiniComandas (caja3) al despachar, no por receta. Salsas/pocillos serán seleccionables desde caja3. Bolsa Delivery Baja será reemplazada por 2 modelos (mediana y grande).
+
+**Commits:** ninguno (cambio solo en BD).
+**Deploys:** ninguno.
+
 ### 2026-05-02c — Combo editor: desglose ingredientes por item fijo + tocino 40g BD
 
 **Cambios código:**
@@ -138,140 +166,8 @@ Sub-receta Hamburguesa R11 ya estaba en 40g, no se tocó. Pendiente: recalcular 
 **Commits:** ninguno (cambio solo en BD).
 **Deploys:** ninguno.
 
-### 2026-05-02a — Fix combo editor: cost_price $0 → real values + editable price/image + detailed breakdown
-
-**Cambios código:**
-- `mi3/backend/app/Services/Recipe/ComboService.php`: `getComboDetail()` ahora incluye `cost_price` en `fixed_items` y en opciones de `selection_groups`.
-- `mi3/frontend/app/admin/recetas/combos/page.tsx`: Interfaces con `cost_price` e `is_active`. Precio editable inline. Resumen de costos detallado.
-
-**Diagnóstico:** Cálculo de costos en BD estaba correcto. Bug era visual: editor mostraba $0 porque API no enviaba cost_price.
-
-**Commits:** `f4cd430`, `62cdbc9`
-**Deploys:** mi3-backend ✅, mi3-frontend ✅ (×2).
-
-### 2026-05-01c — Fix generate-shifts addMonth + hide phone comandas + note contrast
-
-**Cambios código:**
-- `mi3/backend/app/Console/Commands/GenerateDynamicShiftsCommand.php`: Default `now()->format('Y-m')` → `now()->addMonth()->format('Y-m')`. El cron del 25 ahora genera turnos del mes siguiente (antes generaba mes actual, todos ya existían → 0 creados silenciosamente).
-- `caja3/src/components/MiniComandas.jsx`: (1) Ocultar número de teléfono en comandas (botones Llamar/Mensaje siguen funcionando). (2) Nota del cliente: fondo blanco + borde negro en pedidos atrasados (amarillo/rojo) para mejor contraste. Texto más grande (`text-base font-black`).
-
-**BD:** 93 turnos mayo generados manualmente via SSH. 4 checklists mayo creados manualmente.
-
-**Commits:** `748f040`, `a3a6512`
-**Deploys:** mi3-backend ✅, caja3 ✅.
-
-### 2026-05-01b — Fix 4 bugs nómina/EdR: cron month, EdR fallback, React #185
-
-**Cambios código:**
-- `mi3/backend/app/Services/Credit/R11CreditService.php`: `autoDeduct()` — `now()->format('Y-m')` → `now()->subMonth()->format('Y-m')`. Descuento crédito R11 ahora se atribuye al mes anterior (cuando se consumió el crédito).
-- `mi3/backend/app/Services/Loan/LoanService.php`: `procesarDescuentosMensuales()` — mismo fix `subMonth()`. Descuento adelanto de sueldo ahora se atribuye al mes anterior. ADEMÁS: `aprobar()` ahora marca `estado='pagado'` y `cuotas_pagadas=cuotas` inmediatamente para prevenir doble descuento (cron encontraba préstamo como "pendiente" y descontaba de nuevo).
-- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: Eliminado guard `$isCurrentMonth` en fallback NominaService. EdR ahora muestra nómina calculada para cualquier mes, no solo el actual.
-- `mi3/frontend/components/admin/sections/NominaSection.tsx`: `trailing` JSX extraído a `useMemo([data, activeTab, generatingLink])`. Previene loop infinito de re-renders (Error #185) por referencia inestable en `onHeaderConfig`.
-- `mi3/frontend/components/admin/AdminShell.tsx`: `setHeaderConfig` ahora excluye `trailing` de la comparación de igualdad (JSX siempre es nueva referencia). Fix definitivo Error #185 para TODAS las secciones (NominaSection, CreditosSection, ComprasSection, etc.).
-- `mi3/backend/routes/console.php`: Crons `mi3:r11-auto-deduct` y `mi3:loan-auto-deduct` cambiados de 06:00/06:30 a 02:00/02:30 hora Chile.
-- `mi3/backend/app/Services/Ventas/VentasService.php`: `getMonthlyAggregates()` — mismo fix: NominaService fallback ahora funciona para cualquier mes en gráfico Ventas Mensuales (antes solo mes actual).
-
-**Spec:** `.kiro/specs/fix-nomina-edr-bugs/` — bugfix.md + design.md + tasks.md completos.
-
-**Pendiente:** ~~Corregir en BD los ajustes_sueldo creados hoy (1 mayo) con `mes = 2026-05-01` → `mes = 2026-04-01`~~ COMPLETADO. IDs 82-85 corregidos via tinker.
-
-**Commits:** `8522d20`, `df77b18`, `c47406e`, `1ed8eb7`, `a103d52`
-**Deploys:** mi3-backend ✅ (×4), mi3-frontend ✅ (×2).
-**BD:** IDs 82-84 ajustes_sueldo corregidos `mes=2026-05-01` → `mes=2026-04-01`, conceptos "mayo"→"abril". ID 85 eliminado (doble descuento adelanto $50.000 a Andrés Aguilera). Andrés: $292.154→$342.154.
-
-### 2026-05-01a — Fix MiniComandas + VentasDetalle delivery display doble descuento visual
-
-**Cambios código:**
-- `caja3/src/components/MiniComandas.jsx`: Fix display delivery en comandas. `delivery_fee` en BD ya es el monto descontado, pero se mostraba como base y luego se restaba `delivery_discount` de nuevo visualmente. Ahora: base = `delivery_fee + delivery_discount` (con line-through), descuento RL6 con % dinámico, Total Delivery = `delivery_fee` (monto real cobrado).
-- `caja3/src/components/VentasDetalle.jsx`: Mismo fix en Detalle de Ventas. Muestra base reconstruido + descuento RL6 + total correcto.
-
-**Commits:** `46d0d85`, `11d843f`
-**Deploys:** caja3 ✅ (×2).
-
-### 2026-04-30f — Merma Smart: conversión auto + UX lista unificada
-
-**Cambios código:**
-- `caja3/src/components/MermaPanel.jsx`: Reescritura completa — (1) Lista unificada ingredientes+productos en un solo buscador (productos con badge "prod"). (2) Items agregados en 1 fila compacta: nombre + stepper[-1+] o input decimal + unidad texto + costo + X. (3) Sin `<select>` nativo de unidades. (4) Botón "Siguiente" como footer fijo abajo con total visible. (5) Ingredientes con `peso_por_unidad` muestran stepper entero con conversión auto a kg. Stock muestra equivalencia natural ("≈ 21 tomates").
-- `caja3/src/utils/mermaUtils.js`: 8 funciones smart — `getMermaInputType()`, `convertToBaseUnit()`, `calculateSmartCost()`, `getConversionText()`, `stockInNaturalUnits()`, `validateSmartQuantity()`, `getSmartPlaceholder()`, `getSmartQuestion()`.
-- `caja3/api/registrar_merma.php`: Acepta `cantidad_natural`, auto-convierte via `peso_por_unidad`. `GREATEST(stock - qty, 0)` previene stock negativo.
-- `caja3/sql/merma_smart_columns.sql`: Migración + seed data.
-
-**BD:** `ALTER TABLE ingredients ADD COLUMN peso_por_unidad DECIMAL(10,4), ADD COLUMN nombre_unidad_natural VARCHAR(50)`. Seeded: Tomate 0.150, Cebolla 0.200, Cebolla morada 0.200, Palta 0.200, Papa 0.200, Mango 0.300, Maracuyá 0.150.
-
-**Commits:** `a41e39d`, `900cc23`, `f541622`, `863c3b3`
-**Deploys:** caja3 ✅ (×4).
-
-### 2026-04-30e — Quitar checklists de app trabajadores (mi3 worker)
-
-**Cambios código:**
-- `mi3/frontend/lib/navigation.ts`: Eliminado item `checklist` de `secondaryNavItems` (worker). Ya no aparece en navegación.
-- `mi3/frontend/components/layouts/WorkerSidebar.tsx`: Eliminado import y uso de `usePendingChecklistBadge`. Sidebar desktop sin badge checklist.
-- `mi3/frontend/components/mobile/MobileBottomNav.tsx`: Eliminado import y uso de `usePendingChecklistBadge`. Nav mobile sin badge checklist.
-- `mi3/frontend/app/dashboard/checklist/page.tsx`: Reemplazado con redirect a `/dashboard` (URLs cacheadas no dan error).
-
-**Decisión:** Checklists solo se usan en comandas (planchero) y caja (cajeras). Worker app no los necesita. Backend API y cron jobs intactos.
-
-**Commits:** `c7e857f`
-**Deploys:** mi3-frontend ✅.
-
-### 2026-04-30d — Fix error boundaries admin SPA + null-safety DashboardSection
-
-**Cambios código:**
-- `mi3/frontend/app/admin/error.tsx`: NUEVO. Error boundary a nivel de ruta Next.js — fallback con botón "Reintentar" e "Ir al inicio" en vez del error críptico genérico.
-- `mi3/frontend/components/admin/AdminShell.tsx`: `SectionErrorBoundary` class component — cada sección lazy-loaded envuelta en su propio error boundary. Eliminado `refreshCounters` key-based re-mount que causaba loop infinito (re-mount → re-subscribe WebSocket → evento → re-mount).
-- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: `Promise.all` → `Promise.allSettled`. WebSocket listener estabilizado con refs (subscribe once, never re-subscribe). Null-coalescing en payload. `console.error` en catches.
-- `mi3/frontend/components/mobile/MobileBottomNav.tsx`: Fix import faltante `usePendingChecklistBadge`.
-
-**Diagnóstico:** React error #185 (Maximum update depth exceeded) causado por: 1) AdminShell `refreshCounters` cambiaba key del componente → re-mount → re-subscribe WebSocket → evento → setState → re-mount = loop infinito. 2) DashboardSection WebSocket useEffect tenía `[fetchData, fetchShift, isCurrentMonth]` como deps → cada cambio de mes re-suscribía al canal.
-
-**Commits:** `ce290c5`, `c7e857f`
-**Deploys:** mi3-frontend ✅ (×2).
-
-### 2026-04-30c — Nómina: página pública /nomina/TOKEN, créditos R11 solo Ruta11, encoding BD
-
-**Cambios código:**
-- `mi3/backend/app/Http/Controllers/Admin/PayrollController.php`: Crédito R11 solo en `$centro === 'ruta11'`. Nuevos métodos `generateSnapshot()` (POST snapshot JSON a BD) y `showSnapshot()` (GET público sin auth).
-- `mi3/backend/app/Models/NominaSnapshot.php`: Modelo con token auto-generado `Str::random(12)`, cast `data` a array.
-- `mi3/backend/database/migrations/2026_04_30_000001_create_nomina_snapshots_table.php`: Tabla `nomina_snapshots` (token unique, mes, data JSON).
-- `mi3/backend/database/migrations/2026_04_28_*`: Guards `Schema::hasTable`/`hasColumn` para delivery_config y card_surcharge (ya existían en prod).
-- `mi3/backend/routes/api.php`: Ruta pública `GET /nomina/{token}`, ruta admin `POST /payroll/snapshot`.
-- `mi3/frontend/app/nomina/[token]/page.tsx`: Página pública estilo rendición — 2 secciones separadas (Ruta11/Seguridad) con totales independientes, chevrones expandibles, iconos lucide (Wallet/TrendingDown/CreditCard/ArrowUpRight/ArrowDownRight), detalle ajustes/créditos/reemplazos, share button genera mensaje corto (solo subtotales + link). Texto reemplazos descriptivo: `→ Reemplazó a Claudio · 12 abr` en vez de `→ Ricardo · días 14`.
-- `mi3/frontend/components/admin/sections/NominaSection.tsx`: Botón "Resumen" genera snapshot y abre `/nomina/TOKEN` en nueva pestaña. Eliminado `ResumenPagosModal` (250 líneas dead code), limpieza imports.
-
-**BD:** Fix encoding `ajustes_categorias` id=8: `PrÃ©stamo` → `Préstamo`. Migración `nomina_snapshots` ejecutada. Guards migraciones delivery_config + card_surcharge. Fix turno reemplazo Ricardo→Claudio: fecha 14→12 abr (swap tipos entre turnos id=1380 y id=1310).
-
-**Commits:** `a6a2255`, `85ac51e`, `8b4697d`, `f555b17`, `28563f3`, `6cc614e`, `ace82cb`, `25ca83b`, `5a485fb`
-**Deploys:** mi3-backend ✅ (×3), mi3-frontend ✅ (×4).
-
-### 2026-04-30b — Nómina: tabs Ruta11/Seguridad, detalle ajustes/créditos, resumen pagos
-
-**Cambios código:**
-- `mi3/backend/app/Http/Controllers/Admin/PayrollController.php`: Reescrito `index()` — respuesta separada por centro de costo (`ruta11`, `seguridad`), cada uno con `workers`, `summary`, `pagos`. Workers incluyen `descuentos` y `bonos` detallados (ajustes negativos/positivos separados con id para eliminar), `credito_r11_pendiente`, `total_a_pagar` (sueldo_base + reemplazos + ajustes - créditos). Summary: `total_sueldos_base`, `total_descuentos`, `total_creditos`, `total_a_pagar`.
-- `mi3/frontend/components/admin/sections/NominaSection.tsx`: Reescritura completa — 2 tabs (La Ruta 11 / Cam Seguridad) via `onHeaderConfig`, resumen por centro con Presupuesto→Sueldos→Descuentos→Créditos→Total a Pagar, cards expandibles por trabajador con detalle de reemplazos/bonos/descuentos (cada uno con botón eliminar), crédito R11 pendiente, breakdown total. Modal "Resumen de Pagos" con lista por centro + TOTAL NÓMINA combinado. Trailing en header muestra total del tab activo.
-- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: EdR skeleton loading — `edrLoading` state separado para no re-renderizar panel completo al navegar meses.
-
-**Commits:** `62acbee`
-**Deploys:** mi3-frontend ✅, mi3-backend ✅.
-
-### 2026-04-30a — Fix CMV doble conteo compuestos + leaf-only tracking app3
-
-**Cambios código:**
-- `mi3/backend/app/Services/Ventas/VentasService.php`: `getCmvBreakdown()` — `totalCmv` ahora excluye `exclusiveChildIds` (antes solo el breakdown los excluía, inflando el % CMV). Guard `tableExists('ingredient_recipes')`.
-- `mi3/backend/app/Http/Controllers/Admin/DashboardController.php`: `costo_ingredientes` del EdR ahora usa `VentasService::getCmvBreakdown('month')` como fuente única en vez de caja3 `get_sales_analytics.php` (que usaba `item_cost * quantity`, fuente diferente e inflada). Meses históricos también usan VentasService (antes usaban `item_cost * quantity` de `tuu_order_items`).
-- `mi3/backend/app/Http/Controllers/Admin/VentasController.php`: Endpoint `/ventas/cmv` acepta `?month=YYYY-MM` para consultar meses específicos.
-- `mi3/backend/app/Services/Ventas/VentasService.php`: `getCmvBreakdown()` acepta parámetro opcional `$month` para override del date range.
-- `mi3/frontend/components/admin/sections/DashboardSection.tsx`: CMV fetch pasa `&month=YYYY-MM` al navegar meses históricos.
-- `app3/api/process_sale_inventory_fn.php`: Agregado `resolveIngredientDeductionApp()` — explota ingredientes compuestos a hijos (leaf-only). Query `product_recipes` ahora incluye `i.is_composite`.
-
-**BD:** Eliminadas 132 transacciones duplicadas de Hamburguesa R11 (id=48) en órdenes donde ya existían txs de hijos (Carne Molida, Tocino, Longaniza). Costo inflado eliminado: $261.468. Overlap: 0.
-
-**Diagnóstico:** app3 no tenía `resolveIngredientDeduction` (caja3 sí). Desde 2025-11-11 cuando Hamburguesa R11 se marcó `is_composite=1`, app3 seguía creando txs del padre + caja3 creaba txs de hijos = doble conteo en 94 órdenes (132 txs). Además, el EdR usaba caja3 como fuente de CMV (item_cost) mientras el breakdown usaba inventory_transactions — fuentes inconsistentes. Y el breakdown no respetaba la navegación de meses (siempre mostraba abril).
-
-**Commits:** `4ada487`, `3dafb96`, `2ef6474`, `8ea3fa1`, `3df0f63`, `e4d6c04`, `1974508`, `df68714`
-**Deploys:** mi3-backend ✅ (×6), mi3-frontend ✅ (×3), app3 ✅.
-
 ---
 
 > Sesiones anteriores (190+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-04-30e archivadas. Últimas archivadas: 2026-04-30e (Quitar checklists worker), 2026-04-30d (Fix error boundaries), 2026-04-30c (Nómina página pública).
+> Sesiones 2026-04-19c→2026-05-02a archivadas. Últimas archivadas: 2026-05-02a (Fix combo editor cost_price), 2026-05-01c (Fix generate-shifts), 2026-05-01b (Fix nómina/EdR).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
