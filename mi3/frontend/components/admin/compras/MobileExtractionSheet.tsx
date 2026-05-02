@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Check, Eye, Brain, ShieldCheck, Scale, Camera, Loader2 } from 'lucide-react';
 import ExtractionPipeline from './ExtractionPipeline';
 import ReconciliationQuestions from './ReconciliationQuestions';
@@ -145,6 +145,7 @@ export default function MobileExtractionSheet({
 }: Props) {
   const [currentStep, setCurrentStep] = useState(0);
   const [stepDetails, setStepDetails] = useState<Record<string, StepDetail>>({});
+  const runningDataRef = useRef<Record<number, Record<string, unknown>>>({});
 
   useEffect(() => {
     if (uploading) { setCurrentStep(0); setStepDetails({}); }
@@ -164,20 +165,14 @@ export default function MobileExtractionSheet({
     if (idx === undefined) return;
     if (status === 'running') {
       setCurrentStep(idx);
-      // Store running data (e.g. imageSizeKb) to merge with done data later
-      if (data) {
-        setStepDetails(prev => ({ ...prev, [`_run_${idx}`]: { summary: '', badges: [], ...data } as unknown as StepDetail }));
-      }
+      if (data) runningDataRef.current[idx] = data;
     }
     if (status === 'done') {
       setCurrentStep(idx + 1);
-      setStepDetails(prev => {
-        const runData = prev[`_run_${idx}`] as unknown as Record<string, unknown> | undefined;
-        const merged = { ...(runData || {}), ...(data || {}) };
-        const next = { ...prev, [idx]: formatDetail(fase, merged) };
-        delete next[`_run_${idx}`];
-        return next;
-      });
+      const runData = runningDataRef.current[idx];
+      const merged = { ...(runData || {}), ...(data || {}) };
+      delete runningDataRef.current[idx];
+      setStepDetails(prev => ({ ...prev, [idx]: formatDetail(fase, merged) }));
     }
   }, []);
 
