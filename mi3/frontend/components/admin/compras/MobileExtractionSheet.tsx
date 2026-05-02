@@ -144,7 +144,7 @@ export default function MobileExtractionSheet({
   onResult, onError, onReconciliationNeeded, onReconciliationSubmit, onClose,
 }: Props) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [stepDetails, setStepDetails] = useState<Record<number, StepDetail>>({});
+  const [stepDetails, setStepDetails] = useState<Record<string, StepDetail>>({});
 
   useEffect(() => {
     if (uploading) { setCurrentStep(0); setStepDetails({}); }
