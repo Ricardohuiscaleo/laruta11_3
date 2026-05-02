@@ -16,7 +16,7 @@ class GeminiService
     public function __construct()
     {
         $this->apiKey = (string) env('GOOGLE_API_KEY', env('google_api_key', ''));
-        $this->model = (string) env('GEMINI_MODEL', 'gemini-2.5-flash-lite');
+        $this->model = (string) env('GEMINI_MODEL', 'gemini-3.1-flash-lite-preview');
 
         if (empty($this->apiKey)) {
             Log::warning('[GeminiService] GOOGLE_API_KEY not configured — all calls will fail');
