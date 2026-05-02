@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`a3a6512`) — Hide phone in comandas, note contrast on delayed orders |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`432850e`) — Packaging consumption steppers in MiniComandas |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`a388f67`) — /rider/* rutas públicas en middleware |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`8aaa196`) — generateDescription + suggestedPackaging + fix uploadProductImage |
@@ -110,6 +110,17 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-05-02h — Spec packaging-consumo-comandas: steppers bolsas en MiniComandas
+
+**Cambios código:**
+- `caja3/api/register_packaging_consumption.php`: NUEVO. Endpoint PHP para registrar consumo de bolsas. Transacciones tipo `consumption`, idempotencia por order_number, stock warnings, PDO transaccional.
+- `caja3/src/components/MiniComandas.jsx`: Estado `packagingQty` + helpers. Steppers inline con fotos reales de bolsas (Grande id=130, Mediana id=167). Pre-fill 1 para delivery. Ocultos en delivery fase 2. `deliverOrder` y `dispatchToDelivery` llaman a `registerPackaging`.
+
+**Spec:** `.kiro/specs/packaging-consumo-comandas/` — requirements + design + tasks completos.
+
+**Commits:** `432850e`
+**Deploys:** caja3 ✅.
 
 ### 2026-05-02g — Fix rutas /rider/* públicas en middleware (delivery tracking + embed)
 

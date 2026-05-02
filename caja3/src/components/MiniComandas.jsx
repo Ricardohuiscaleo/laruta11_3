@@ -1185,11 +1185,13 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                 <span className="flex items-center gap-1">
                   <Camera size={11} /> FOTOS DELIVERY
                 </span>
-                <span className="bg-white/20 px-1.5 rounded text-[9px]">{uploadedCount}/{photoReqs.length}</span>
+                <span className="flex items-center gap-1">
+                  <Package size={11} /> BOLSAS
+                </span>
               </div>
 
               <div className="p-1">
-                <div className="grid grid-cols-2 gap-1">
+                <div className="grid grid-cols-4 gap-1">
                   {photoReqs.map(req => {
                     const slot = getSlot(req.id);
                     const isRetake = !!(orderSlots[req.id] && orderSlots[req.id]._retake);
@@ -1246,6 +1248,32 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                       </label>
                     );
                   })}
+                  {/* Bag squares integrated into the grid */}
+                  {(() => {
+                    const pkg = getPackaging(order.id, order.delivery_type);
+                    const bags = [
+                      { key: 'bolsa_grande', label: 'Grande', img: '/bolsa_deliverys/BOLSA PAPEL CAFE CON MANILLA 36x20x39 CM..jpg' },
+                      { key: 'bolsa_mediana', label: 'Mediana', img: '/bolsa_deliverys/BOLSA PAPEL CAPE CON MANILLA 30x12x32.jpg' }
+                    ];
+                    return bags.map(bag => {
+                      const qty = pkg[bag.key];
+                      return (
+                        <div key={bag.key} className={`h-28 rounded-lg border-2 flex flex-col items-center justify-center gap-1 transition-all ${qty > 0 ? 'border-amber-400 bg-amber-50' : 'border-gray-200 bg-gray-50'}`}>
+                          <img src={bag.img} alt={bag.label} className="w-12 h-12 rounded-lg object-cover" />
+                          <span className="text-[9px] font-bold text-gray-600">{bag.label}</span>
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => setPackagingValue(order.id, bag.key, -1, order.delivery_type)} disabled={qty <= 0}
+                              className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-30 text-sm font-bold active:scale-90 transition-all"
+                              aria-label={`Reducir ${bag.label}`}>−</button>
+                            <span className={`w-6 text-center text-sm font-black rounded ${qty > 0 ? 'text-amber-700' : 'text-gray-400'}`}>{qty}</span>
+                            <button onClick={() => setPackagingValue(order.id, bag.key, 1, order.delivery_type)} disabled={qty >= 10}
+                              className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-30 text-sm font-bold active:scale-90 transition-all"
+                              aria-label={`Aumentar ${bag.label}`}>+</button>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
 
                 {/* Inline feedback */}
@@ -1283,7 +1311,10 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           const isDelivery = order.delivery_type === 'delivery';
           const isReadyPhase = order.order_status === 'ready';
           if (isDelivery && isReadyPhase) return null;
+          // For delivery, packaging is integrated into the photo grid above
+          if (isDelivery) return null;
 
+          // Pickup: show standalone bag squares
           const pkg = getPackaging(order.id, order.delivery_type);
           const bags = [
             { key: 'bolsa_grande', label: 'Grande', img: '/bolsa_deliverys/BOLSA PAPEL CAFE CON MANILLA 36x20x39 CM..jpg' },
@@ -1291,29 +1322,32 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           ];
 
           return (
-            <div className="flex items-center gap-3 px-2 py-1 bg-amber-50 border border-amber-200 rounded mb-1" style={{ maxHeight: 60 }}>
-              <span className="text-[10px] text-amber-700 font-semibold">📦</span>
-              {bags.map(bag => (
-                <div key={bag.key} className="flex items-center gap-1">
-                  <img src={bag.img} alt={bag.label} className="w-6 h-6 rounded object-cover border border-amber-200" />
-                  <span className="text-[10px] font-medium text-gray-600">{bag.label}</span>
-                  <button
-                    onClick={() => setPackagingValue(order.id, bag.key, -1, order.delivery_type)}
-                    disabled={pkg[bag.key] <= 0}
-                    className="w-5 h-5 flex items-center justify-center rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-30 text-xs font-bold"
-                    aria-label={`Reducir ${bag.label}`}
-                  >−</button>
-                  <span className={`w-5 text-center text-xs font-bold rounded ${pkg[bag.key] > 0 ? 'bg-amber-200 text-amber-800' : 'text-gray-400'}`}>
-                    {pkg[bag.key]}
-                  </span>
-                  <button
-                    onClick={() => setPackagingValue(order.id, bag.key, 1, order.delivery_type)}
-                    disabled={pkg[bag.key] >= 10}
-                    className="w-5 h-5 flex items-center justify-center rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-30 text-xs font-bold"
-                    aria-label={`Aumentar ${bag.label}`}
-                  >+</button>
+            <div className="mb-2 border border-amber-200 rounded-lg overflow-hidden bg-white shadow-sm">
+              <div className="bg-amber-600 px-2 py-0.5 text-[10px] font-black text-white flex items-center gap-1">
+                <Package size={11} /> BOLSAS DELIVERY
+              </div>
+              <div className="p-1">
+                <div className="grid grid-cols-2 gap-1">
+                  {bags.map(bag => {
+                    const qty = pkg[bag.key];
+                    return (
+                      <div key={bag.key} className={`h-28 rounded-lg border-2 flex flex-col items-center justify-center gap-1 transition-all ${qty > 0 ? 'border-amber-400 bg-amber-50' : 'border-gray-200 bg-gray-50'}`}>
+                        <img src={bag.img} alt={bag.label} className="w-12 h-12 rounded-lg object-cover" />
+                        <span className="text-[9px] font-bold text-gray-600">{bag.label}</span>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => setPackagingValue(order.id, bag.key, -1, order.delivery_type)} disabled={qty <= 0}
+                            className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-30 text-sm font-bold active:scale-90 transition-all"
+                            aria-label={`Reducir ${bag.label}`}>−</button>
+                          <span className={`w-6 text-center text-sm font-black rounded ${qty > 0 ? 'text-amber-700' : 'text-gray-400'}`}>{qty}</span>
+                          <button onClick={() => setPackagingValue(order.id, bag.key, 1, order.delivery_type)} disabled={qty >= 10}
+                            className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-30 text-sm font-bold active:scale-90 transition-all"
+                            aria-label={`Aumentar ${bag.label}`}>+</button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
+              </div>
             </div>
           );
         })()}
