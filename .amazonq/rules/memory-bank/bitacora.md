@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-05-01)
+## Estado Actual (2026-05-02)
 
 ### Aplicaciones Desplegadas
 
@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`a3a6512`) — Hide phone in comandas, note contrast on delayed orders |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`a8b2983`) — Fix AdminShell Error #185 v2: only compare primitives in setHeaderConfig |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`748f040`) — Fix generate-shifts addMonth + MonthlyChart nomina fallback + aprobar() + cron month + EdR |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`f4cd430`) — Fix combo detail editor shows real cost_price |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`f4cd430`) — Fix combo detail editor shows real cost_price |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -110,6 +110,17 @@
 ---
 
 ## Sesiones Recientes
+
+### 2026-05-02a — Fix combo detail editor: cost_price $0 → real values
+
+**Cambios código:**
+- `mi3/backend/app/Services/Recipe/ComboService.php`: `getComboDetail()` ahora incluye `cost_price` en `fixed_items` y en opciones de `selection_groups`. El JOIN con `products` ya traía el dato pero no se pasaba al response.
+- `mi3/frontend/app/admin/recetas/combos/page.tsx`: Interfaces `FixedItem` y `SelectionOption` actualizadas con `cost_price` e `is_active`. Mapping usa valores reales del backend en vez de hardcodear `0`.
+
+**Diagnóstico:** El cálculo de costos en BD estaba correcto (verificado: Combo Doble Mixta = $6.498.65 = fijos $5.721.98 + prom. bebidas $776.67). El bug era solo visual en el editor de detalle que mostraba "Costo fijos $0, Prom. Bebidas $0, Costo total $0".
+
+**Commits:** `f4cd430`
+**Deploys:** mi3-backend ✅, mi3-frontend ✅.
 
 ### 2026-05-01c — Fix generate-shifts addMonth + hide phone comandas + note contrast
 
