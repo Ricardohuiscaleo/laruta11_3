@@ -28,26 +28,54 @@ class ImagenService
 
     /**
      * Upload image to S3 under temp prefix.
-     * Compresses if > 500KB using GD.
+     * Compresses if > 500KB using GD. Returns metadata for pipeline UI.
      */
     public function uploadTemp(UploadedFile $file): array
     {
         $uuid = Str::uuid()->toString();
         $tempKey = "compras/temp/{$uuid}.jpg";
 
+        $originalSizeKb = (int) round($file->getSize() / 1024);
+        $originalRes = @getimagesize($file->getRealPath());
+        $originalWidth = $originalRes ? $originalRes[0] : 0;
+        $originalHeight = $originalRes ? $originalRes[1] : 0;
+
         $contents = file_get_contents($file->getRealPath());
+        $wasCompressed = false;
 
         if ($file->getSize() > 500 * 1024) {
             $contents = $this->compress($file->getRealPath());
+            $wasCompressed = true;
+        }
+
+        $finalSizeKb = (int) round(strlen($contents) / 1024);
+
+        // Get final resolution from compressed image
+        $finalWidth = $originalWidth;
+        $finalHeight = $originalHeight;
+        if ($wasCompressed) {
+            $tmpImg = @imagecreatefromstring($contents);
+            if ($tmpImg) {
+                $finalWidth = imagesx($tmpImg);
+                $finalHeight = imagesy($tmpImg);
+                imagedestroy($tmpImg);
+            }
         }
 
         $this->putObject($tempKey, $contents, 'image/jpeg');
 
         $tempUrl = "https://{$this->bucket}.s3.amazonaws.com/{$tempKey}";
+        $reductionPct = $originalSizeKb > 0 ? (int) round((1 - $finalSizeKb / $originalSizeKb) * 100) : 0;
 
         return [
             'tempUrl' => $tempUrl,
             'tempKey' => $tempKey,
+            'originalSizeKb' => $originalSizeKb,
+            'originalRes' => "{$originalWidth}x{$originalHeight}",
+            'finalSizeKb' => $finalSizeKb,
+            'finalRes' => "{$finalWidth}x{$finalHeight}",
+            'reductionPct' => max(0, $reductionPct),
+            'compressed' => $wasCompressed,
         ];
     }
 

@@ -257,6 +257,12 @@ class CompraController extends Controller
                 'success' => true,
                 'tempUrl' => $result['tempUrl'],
                 'tempKey' => $result['tempKey'],
+                'originalSizeKb' => $result['originalSizeKb'] ?? null,
+                'originalRes' => $result['originalRes'] ?? null,
+                'finalSizeKb' => $result['finalSizeKb'] ?? null,
+                'finalRes' => $result['finalRes'] ?? null,
+                'reductionPct' => $result['reductionPct'] ?? null,
+                'compressed' => $result['compressed'] ?? false,
             ]);
         } catch (\Exception $e) {
             return response()->json([

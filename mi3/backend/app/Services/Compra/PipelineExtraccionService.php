@@ -273,7 +273,8 @@ class PipelineExtraccionService
             }
 
             // ── PHASE 1: Visión (multimodal con imagen — única llamada con imagen) ──
-            $emit('vision', 'running', ['engine' => 'multi-agent']);
+            $imageSizeKb = (int) round(strlen($imageBase64) * 3 / 4 / 1024);
+            $emit('vision', 'running', ['engine' => 'multi-agent', 'imageSizeKb' => $imageSizeKb]);
             $phaseStart = microtime(true);
 
             $visionResult = $this->gemini->percibir($imageBase64);

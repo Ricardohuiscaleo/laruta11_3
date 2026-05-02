@@ -7,12 +7,19 @@ import ReconciliationQuestions from './ReconciliationQuestions';
 import type { ReconciliationQuestion } from './ExtractionPipeline';
 import type { ExtractionResult } from '@/types/compras';
 
+interface UploadMeta {
+  originalSizeKb?: number; originalRes?: string;
+  finalSizeKb?: number; finalRes?: string;
+  reductionPct?: number; compressed?: boolean;
+}
+
 interface Props {
   open: boolean;
   tempKey: string | null;
   tempUrl: string | null;
   uploading: boolean;
   uploadProgress: string | null;
+  uploadMeta?: UploadMeta | null;
   reconciliationQuestions: ReconciliationQuestion[];
   reconciliationLoading: boolean;
   onResult: (data: ExtractionResult, sugerencias?: ExtractionResult['sugerencias']) => void;
@@ -61,6 +68,7 @@ function formatDetail(fase: string, data: Record<string, unknown> | null): StepD
     case 'vision': {
       const tipo   = String(data.tipo_imagen || '?');
       const conf   = Math.round(Number(data.confianza || 0) * 100);
+      const imgKb  = Number(data.imageSizeKb || 0);
       const tipoIcons: Record<string, string> = {
         boleta: '🧾', factura: '📄', producto: '📦',
         bascula: '⚖️', transferencia: '💸', desconocido: '❓',
@@ -69,6 +77,7 @@ function formatDetail(fase: string, data: Record<string, unknown> | null): StepD
         summary: `${tipoIcons[tipo] || '📄'} ${tipo}`,
         badges: [
           { label: `${conf}% confianza`, color: conf >= 70 ? 'green' : 'amber' },
+          ...(imgKb > 0 ? [{ label: `${imgKb}KB → Gemini`, color: 'gray' as const }] : []),
           ...timeBadge,
           ...tokBadge,
         ],
@@ -130,7 +139,7 @@ function formatDetail(fase: string, data: Record<string, unknown> | null): StepD
 }
 
 export default function MobileExtractionSheet({
-  open, tempKey, uploading,
+  open, tempKey, uploading, uploadMeta,
   reconciliationQuestions, reconciliationLoading,
   onResult, onError, onReconciliationNeeded, onReconciliationSubmit, onClose,
 }: Props) {
@@ -142,21 +151,33 @@ export default function MobileExtractionSheet({
     else if (tempKey) setCurrentStep(1);
   }, [uploading, tempKey]);
 
-  // Auto-close when done
+  // No auto-close — user taps "Listo" button to dismiss
   useEffect(() => {
     if (!uploading && !tempKey && open && currentStep > 0 && reconciliationQuestions.length === 0) {
-      const timer = setTimeout(() => { setCurrentStep(0); setStepDetails({}); onClose(); }, 1500);
-      return () => clearTimeout(timer);
+      // Pipeline done — just ensure step is at 5 so "Listo" button shows
+      if (currentStep < 5) setCurrentStep(5);
     }
-  }, [uploading, tempKey, open, currentStep, reconciliationQuestions.length, onClose]);
+  }, [uploading, tempKey, open, currentStep, reconciliationQuestions.length]);
 
   const handlePhaseChange = useCallback((fase: string, status: string, data: Record<string, unknown> | null) => {
     const idx = STEP_MAP[fase];
     if (idx === undefined) return;
-    if (status === 'running') setCurrentStep(idx);
+    if (status === 'running') {
+      setCurrentStep(idx);
+      // Store running data (e.g. imageSizeKb) to merge with done data later
+      if (data) {
+        setStepDetails(prev => ({ ...prev, [`_run_${idx}`]: { summary: '', badges: [], ...data } as unknown as StepDetail }));
+      }
+    }
     if (status === 'done') {
       setCurrentStep(idx + 1);
-      setStepDetails(prev => ({ ...prev, [idx]: formatDetail(fase, data) }));
+      setStepDetails(prev => {
+        const runData = prev[`_run_${idx}`] as unknown as Record<string, unknown> | undefined;
+        const merged = { ...(runData || {}), ...(data || {}) };
+        const next = { ...prev, [idx]: formatDetail(fase, merged) };
+        delete next[`_run_${idx}`];
+        return next;
+      });
     }
   }, []);
 
@@ -206,7 +227,16 @@ export default function MobileExtractionSheet({
             // Upload step special detail
             const detail: StepDetail = i === 0
               ? (!uploading && currentStep > 0
-                  ? { summary: '✅ Imagen subida', badges: [] }
+                  ? {
+                      summary: '✅ Imagen subida',
+                      badges: [
+                        ...(uploadMeta?.originalSizeKb ? [{ label: `${uploadMeta.originalSizeKb}KB → ${uploadMeta.finalSizeKb}KB`, color: 'gray' as const }] : []),
+                        ...(uploadMeta?.reductionPct && uploadMeta.reductionPct > 0 ? [{ label: `-${uploadMeta.reductionPct}%`, color: 'green' as const }] : []),
+                      ],
+                      sub: uploadMeta?.originalRes && uploadMeta?.finalRes && uploadMeta.originalRes !== uploadMeta.finalRes
+                        ? `${uploadMeta.originalRes} → ${uploadMeta.finalRes}`
+                        : uploadMeta?.finalRes || undefined,
+                    }
                   : uploading
                     ? { summary: 'Subiendo imagen...', badges: [] }
                     : { summary: '', badges: [] })
@@ -296,7 +326,7 @@ export default function MobileExtractionSheet({
         {isDone && (
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => { setCurrentStep(0); setStepDetails({}); onClose(); }}
             className="mx-5 mb-5 flex w-[calc(100%-2.5rem)] items-center justify-center gap-2 rounded-xl bg-emerald-50 border border-emerald-100 py-3 animate-in fade-in zoom-in-95 duration-500 hover:bg-emerald-100 transition-colors cursor-pointer"
             aria-label="Cerrar extracción"
           >

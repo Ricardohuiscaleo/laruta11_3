@@ -249,6 +249,11 @@ export default function RegistroPage() {
   const [pipelineTempKey, setPipelineTempKey] = useState<string | null>(null);
   const [pipelineTempUrl, setPipelineTempUrl] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const [uploadMeta, setUploadMeta] = useState<{
+    originalSizeKb?: number; originalRes?: string;
+    finalSizeKb?: number; finalRes?: string;
+    reductionPct?: number; compressed?: boolean;
+  } | null>(null);
   const [reconciliationQuestions, setReconciliationQuestions] = useState<ReconciliationQuestion[]>([]);
   const [reconciliationLoading, setReconciliationLoading] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
@@ -306,9 +311,17 @@ export default function RegistroPage() {
         const compressed = await compressImage(imageFiles[0]);
         const fd = new FormData();
         fd.append('image', compressed);
-        const res = await comprasApi.upload<{ tempKey: string; tempUrl: string }>('/compras/upload-temp', fd);
+        const res = await comprasApi.upload<{ tempKey: string; tempUrl: string; originalSizeKb?: number; originalRes?: string; finalSizeKb?: number; finalRes?: string; reductionPct?: number; compressed?: boolean }>('/compras/upload-temp', fd);
         setPipelineTempKey(res.tempKey);
         setPipelineTempUrl(res.tempUrl);
+        setUploadMeta({
+          originalSizeKb: res.originalSizeKb,
+          originalRes: res.originalRes,
+          finalSizeKb: res.finalSizeKb,
+          finalRes: res.finalRes,
+          reductionPct: res.reductionPct,
+          compressed: res.compressed,
+        });
         // Always open extraction sheet (works on both mobile and desktop)
         setMobileSheetOpen(true);
       } catch (err) {
@@ -491,11 +504,10 @@ export default function RegistroPage() {
     });
     setGroups(newGroups);
     setSubmitted([]);
-    // Auto-close pipeline after 3 seconds to show completed state
-    setTimeout(() => {
-      setPipelineTempKey(null);
-      setPipelineTempUrl(null);
-    }, 3000);
+    // Clear pipeline state immediately — user closes via "Listo" button
+    setPipelineTempKey(null);
+    setPipelineTempUrl(null);
+    setUploadMeta(null);
   }, [pipelineTempKey, pipelineTempUrl, groups, submitted]);
 
   const handlePipelineError = useCallback(() => {
@@ -737,6 +749,7 @@ export default function RegistroPage() {
         tempUrl={pipelineTempUrl}
         uploading={uploading}
         uploadProgress={uploadProgress}
+        uploadMeta={uploadMeta}
         reconciliationQuestions={reconciliationQuestions}
         reconciliationLoading={reconciliationLoading}
         onResult={handlePipelineResult}
