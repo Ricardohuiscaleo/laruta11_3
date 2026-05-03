@@ -4,13 +4,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        'ruta-red': '#B91C1C',
-        'ruta-orange': '#C24100',
+        'ruta-red': '#DC2626',
+        'ruta-orange': '#EA580C',
         'ruta-yellow': '#FACC15',
-        'ruta-brown': '#78350F',
-        'ruta-black': '#0F172A',
-        'ruta-dark': '#020617',
-        'ruta-white': '#F8FAFC'
+        'ruta-green': '#16A34A',
+        'ruta-black': '#111111',
+        'ruta-dark': '#1A1A1A',
+        'ruta-white': '#FFFFFF',
+        'ruta-gray': '#F5F5F5',
       },
       fontFamily: {
         'poppins': ['Poppins', 'sans-serif'],

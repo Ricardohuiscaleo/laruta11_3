@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Heart, Calculator, X, Calendar, Users, MapPin, Clock, ChevronRight, Play } from 'lucide-react';
-import SocialProofTicker from './SocialProofTicker';
+import { Calculator, X, ChevronRight, Play, Star, MapPin } from 'lucide-react';
 
 export default function Hero() {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -34,10 +33,7 @@ export default function Hero() {
   };
 
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const sendWhatsApp = () => {
@@ -47,25 +43,10 @@ export default function Hero() {
       ? `${formData.eventDay} de ${months[parseInt(formData.eventMonth)]} de ${formData.eventYear}`
       : 'Por definir';
 
-    const message = `> 🎉 *COTIZACIÓN LA RUTA 11*
-
-*👤 Cliente:* ${formData.name}
-
-*📋 Detalles del evento:*
-- *Tipo:* ${formData.eventType}
-- *Fecha:* ${eventDate}
-- *Invitados:* ${formData.guestCount}
-- *Ubicación:* ${formData.location}
-- *Duración:* ${formData.duration}
-
-*📝 Información adicional:*
-> ${formData.additionalInfo || 'Sin información adicional'}
-
-_¡Gracias por contactar La Ruta 11!_ 🍔`;
+    const message = `> 🎉 *COTIZACIÓN LA RUTA 11*\n\n*👤 Cliente:* ${formData.name}\n\n*📋 Detalles del evento:*\n- *Tipo:* ${formData.eventType}\n- *Fecha:* ${eventDate}\n- *Invitados:* ${formData.guestCount}\n- *Ubicación:* ${formData.location}\n- *Duración:* ${formData.duration}\n\n*📝 Información adicional:*\n> ${formData.additionalInfo || 'Sin información adicional'}\n\n_¡Gracias por contactar La Ruta 11!_ 🍔`;
 
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-    window.open(whatsappUrl, '_blank');
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, '_blank');
     closeModal();
   };
 
@@ -77,247 +58,204 @@ _¡Gracias por contactar La Ruta 11!_ 🍔`;
         const response = await fetch('https://app.laruta11.cl/api/get_google_reviews.php');
         const result = await response.json();
         if (result.success) {
-          setGoogleData({
-            rating: result.rating.toString(),
-            count: result.total_ratings.toString()
-          });
+          setGoogleData({ rating: result.rating.toString(), count: result.total_ratings.toString() });
         }
-      } catch (error) {
-        console.error('Error fetching rating:', error);
-      }
+      } catch (error) { /* fallback values */ }
     };
     fetchRating();
   }, []);
 
   useEffect(() => {
     const img = new Image();
-    img.onload = () => {
-      setImageLoaded(true);
-    };
+    img.onload = () => setImageLoaded(true);
     img.src = 'https://laruta11-images.s3.amazonaws.com/products/68d1fd67a7e42_WhatsApp%2520Image%25202025-09-22%2520at%252022.51.41.webp';
   }, []);
 
   return (
-    <section
-      id="inicio"
-      className="relative min-h-[100vh] flex items-center pt-28 pb-20 overflow-hidden bg-ruta-dark"
-    >
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 z-0">
-        <div
-          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-[2000ms] ease-in-out scale-110 ${imageLoaded ? 'opacity-40 scale-100 blur-none' : 'opacity-0 scale-125 blur-xl'}`}
-          style={{
-            backgroundImage: `url('https://laruta11-images.s3.amazonaws.com/products/68d1fd67a7e42_WhatsApp%2520Image%25202025-09-22%2520at%252022.51.41.webp')`,
-          }}
-        />
+    <section id="inicio" className="relative min-h-screen flex items-center pt-24 pb-16 overflow-hidden bg-ruta-gray">
+      {/* Subtle background pattern */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #000 1px, transparent 0)', backgroundSize: '40px 40px' }} />
 
-        {/* Gradients */}
-        <div className="absolute inset-0 bg-gradient-to-b from-ruta-dark/80 via-ruta-dark/40 to-ruta-dark"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-ruta-dark via-transparent to-transparent"></div>
-      </div>
+      <div className="container mx-auto px-4 sm:px-6 relative z-10">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
 
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="grid lg:grid-cols-12 gap-12 items-center">
+          {/* Content */}
+          <div className={`transition-all duration-1000 delay-200 ${imageLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 mb-6 shadow-sm">
+              <MapPin className="w-4 h-4 text-ruta-red" />
+              <span className="text-sm font-semibold text-gray-700">Arica, Chile</span>
+              <span className="w-2 h-2 bg-ruta-green rounded-full animate-pulse" />
+            </div>
 
-          {/* Main Content */}
-          <div className="lg:col-span-7 xl:col-span-8">
-            <div className={`transition-all duration-1000 delay-300 transform ${imageLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-              <div className="flex items-center gap-3 mb-6">
-                <span className="h-[2px] w-12 bg-ruta-yellow"></span>
-                <span className="text-ruta-yellow font-bold uppercase tracking-[0.3em] text-xs sm:text-sm">
-                  Premium Food Truck Experience
-                </span>
-              </div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.05] mb-6 tracking-tight">
+              Sabor{' '}
+              <span className="text-ruta-red">Artesanal</span>
+              <br />
+              <span className="text-ruta-orange">en tu mesa</span>
+            </h1>
 
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold leading-[1.1] mb-8 tracking-tighter uppercase">
-                Sabor <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-ruta-yellow via-ruta-orange to-ruta-red">Artesanal,</span><br />
-                Hecho en <span className="text-ruta-yellow italic text-4xl md:text-6xl lg:text-7xl">Arica</span>
-              </h1>
+            <p className="text-lg sm:text-xl text-gray-600 max-w-lg mb-8 leading-relaxed">
+              Hamburguesas premium, completos y churrascos con procesos 100% artesanales. La mejor experiencia gourmet urbana de Arica.
+            </p>
 
-              <p className="text-lg md:text-xl text-ruta-white/80 max-w-2xl mb-10 leading-relaxed font-light">
-                La mejor experiencia gourmet urbana de la ciudad. Hamburguesas premium, completos y churrascos con procesos 100% artesanales y locales.
-              </p>
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-10">
+              <a
+                href="https://app.laruta11.cl"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center justify-center gap-2 px-8 py-4 bg-ruta-red hover:bg-red-700 text-white rounded-2xl font-bold text-base sm:text-lg transition-all duration-200 hover:shadow-xl hover:scale-[1.02] no-underline"
+              >
+                Ver Menú y Pedir
+                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </a>
 
-              {/* Social Proof Stats */}
-              <div className="mb-10">
-                <SocialProofTicker />
-              </div>
+              <button
+                onClick={openModal}
+                className="flex items-center justify-center gap-2 px-8 py-4 bg-white border-2 border-gray-200 text-ruta-black rounded-2xl font-bold text-base sm:text-lg hover:border-ruta-orange hover:text-ruta-orange transition-all duration-200"
+              >
+                <Calculator className="w-5 h-5" />
+                Cotizar Evento
+              </button>
+            </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <a
-                  href="https://app.laruta11.cl"
-                  target="_blank"
-                  className="group relative px-8 py-4 bg-ruta-yellow text-ruta-black rounded-full font-bold text-lg transition-all duration-300 hover:pr-12 hover:shadow-[0_0_30px_rgba(250,204,21,0.4)] flex items-center justify-center no-underline"
-                >
-                  Ver Menú Completo
-                  <ChevronRight className="absolute right-4 w-5 h-5 opacity-0 group-hover:opacity-100 transition-all duration-300" />
-                </a>
-
-                <button
-                  onClick={openModal}
-                  className="group px-8 py-4 bg-white/5 backdrop-blur-md border border-white/10 text-white rounded-full font-semibold text-lg hover:bg-white/10 transition-all duration-300 flex items-center justify-center gap-3"
-                >
-                  <Calculator className="w-5 h-5 text-ruta-yellow transition-transform duration-500 group-hover:rotate-12" />
-                  Cotizar Evento
-                </button>
-              </div>
-
-              {/* Stats/Proof */}
-              <div className="grid grid-cols-3 gap-8 mt-16 pt-10 border-t border-white/5 max-w-xl">
-                <div>
-                  <div className="text-3xl font-bold text-ruta-white mb-1">2k+</div>
-                  <div className="text-xs uppercase tracking-widest text-ruta-white/40">Clientes Felices</div>
+            {/* Stats */}
+            <div className="flex flex-wrap items-center gap-6 sm:gap-8">
+              <div className="flex items-center gap-2">
+                <div className="flex">
+                  {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 text-ruta-yellow fill-current" />)}
                 </div>
-                <div>
-                  <div className="text-3xl font-bold text-ruta-white mb-1">11+</div>
-                  <div className="text-xs uppercase tracking-widest text-ruta-white/40">Platos de Autor</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-ruta-yellow mb-1 flex items-center gap-2">
-                    {googleData.rating}/5
-                    <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" alt="Google" className="h-4 brightness-0 invert opacity-50" />
-                  </div>
-                  <div className="text-xs uppercase tracking-widest text-ruta-white/40 font-bold">Reseñas de Google</div>
-                </div>
+                <span className="text-sm font-bold text-ruta-black">{googleData.rating}</span>
+                <span className="text-sm text-gray-400">({googleData.count} reseñas)</span>
+              </div>
+              <div className="h-6 w-px bg-gray-200 hidden sm:block" />
+              <div className="text-sm text-gray-500">
+                <span className="font-bold text-ruta-black">2.000+</span> clientes felices
               </div>
             </div>
           </div>
 
-          {/* Floating Card Design (Visual Element) */}
-          <div className="hidden lg:block lg:col-span-5 xl:col-span-4">
-            <div className={`transition-all duration-[1500ms] delay-500 transform ${imageLoaded ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-20 opacity-0 scale-95'}`}>
-              <div className="relative p-2 rounded-[2.5rem] bg-gradient-to-br from-white/10 to-transparent border border-white/10 shadow-2xl backdrop-blur-sm overflow-hidden">
+          {/* Image */}
+          <div className={`transition-all duration-[1200ms] delay-400 ${imageLoaded ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-8 opacity-0 scale-95'}`}>
+            <div className="relative">
+              {/* Main image card */}
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-gray-100 bg-white">
                 <img
                   src="https://laruta11-images.s3.amazonaws.com/products/68d1fd67a7e42_WhatsApp%2520Image%25202025-09-22%2520at%252022.51.41.webp"
-                  alt="Doble Mixta (580g)"
-                  className="w-full h-auto rounded-[2.2rem] object-cover transition-transform duration-700 hover:scale-105"
+                  alt="Hamburguesa premium La Ruta 11"
+                  className="w-full aspect-[4/5] sm:aspect-square object-cover"
                 />
-
-                {/* Floating Tags */}
-                <div className="absolute top-6 right-6 px-4 py-2 bg-ruta-dark/60 backdrop-blur-md rounded-xl border border-white/20 text-xs font-bold uppercase tracking-widest text-ruta-yellow">
-                  ⭐ Favorita de Arica
+                {/* Overlay tag */}
+                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg border border-gray-100">
+                  <span className="text-xs font-bold text-ruta-red uppercase tracking-wide">⭐ Favorita de Arica</span>
                 </div>
-
-                <div className="absolute bottom-6 left-6 right-6 p-6 bg-ruta-dark/80 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl">
-                  <h4 className="font-bold text-lg tracking-tight">Doble Mixta (580g)</h4>
-                  <p className="text-xs text-ruta-white/60 mb-4 font-light leading-relaxed">
-                    400g carne premium, pollo filete, doble cheddar, tomate y cebolla caramelizada en pan brioche artesanal.
-                  </p>
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map(i => <Heart key={i} className="w-3 h-3 text-ruta-red fill-current" />)}
-                    <span className="ml-2 text-[10px] uppercase tracking-widest text-ruta-white/40 font-bold">580+ Recomiendan</span>
-                  </div>
+                {/* Bottom info */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-6">
+                  <h3 className="text-white font-bold text-lg">Doble Mixta (580g)</h3>
+                  <p className="text-white/80 text-sm">400g carne premium + pollo filete + doble cheddar</p>
                 </div>
               </div>
 
-              {/* Secondary Element */}
-              <div className="absolute -bottom-6 -left-12 p-5 bg-ruta-yellow rounded-3xl shadow-2xl animate-bounce duration-[3000ms]">
-                <Play className="w-6 h-6 text-ruta-black fill-current" />
-              </div>
+              {/* Floating accent */}
+              <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-ruta-yellow rounded-2xl -z-10 rotate-6" />
+              <div className="absolute -top-4 -left-4 w-16 h-16 bg-ruta-red/10 rounded-2xl -z-10 -rotate-6" />
             </div>
           </div>
-
         </div>
       </div>
 
-      {/* Improved Quote Modal */}
+      {/* Quote Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-ruta-dark/95 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-          <div className="bg-ruta-black rounded-[2rem] max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-white/10 shadow-2xl">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100">
             {/* Header */}
-            <div className="sticky top-0 z-10 bg-gradient-to-r from-ruta-red/20 to-ruta-orange/20 border-b border-white/10 p-6 md:p-8 backdrop-blur-xl">
+            <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-6 md:p-8 rounded-t-3xl">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-2xl font-extrabold tracking-tight mb-1">🍴 Reserva la Experiencia</h3>
-                  <p className="text-ruta-white/60 text-sm">Llevamos todo el sabor del food truck a tu evento.</p>
+                  <h3 className="text-2xl font-extrabold text-ruta-black mb-1">🍴 Cotiza tu Evento</h3>
+                  <p className="text-gray-500 text-sm">Llevamos el food truck a tu celebración.</p>
                 </div>
                 <button
                   onClick={closeModal}
-                  className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-colors border border-white/10"
+                  className="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
                 >
-                  <X className="w-5 h-5 text-ruta-white" />
+                  <X className="w-5 h-5 text-gray-600" />
                 </button>
               </div>
             </div>
 
-            {/* Form Content */}
-            <div className="p-6 md:p-8 space-y-8">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-widest text-ruta-white/40 font-bold px-1">Customer Name</label>
+            {/* Form */}
+            <div className="p-6 md:p-8 space-y-6">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs uppercase tracking-widest text-gray-400 font-bold">Nombre</label>
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    placeholder="E.g. John Doe"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 focus:border-ruta-yellow focus:ring-1 focus:ring-ruta-yellow focus:outline-none transition-all placeholder:text-white/20"
+                    placeholder="Tu nombre"
+                    className="w-full bg-ruta-gray border border-gray-200 rounded-xl px-4 py-3 focus:border-ruta-red focus:ring-1 focus:ring-ruta-red focus:outline-none transition-all text-ruta-black"
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-widest text-ruta-white/40 font-bold px-1">Event Type</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs uppercase tracking-widest text-gray-400 font-bold">Tipo de Evento</label>
                   <select
                     name="eventType"
                     value={formData.eventType}
                     onChange={handleInputChange}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 focus:border-ruta-yellow focus:outline-none appearance-none transition-all text-white/80"
+                    className="w-full bg-ruta-gray border border-gray-200 rounded-xl px-4 py-3 focus:border-ruta-red focus:outline-none text-ruta-black"
                   >
-                    <option value="" className="bg-ruta-black">Select an option...</option>
-                    <option value="Matrimonio" className="bg-ruta-black">Matrimonio</option>
-                    <option value="Cumpleaños" className="bg-ruta-black">Cumpleaños</option>
-                    <option value="Corporativo" className="bg-ruta-black">Corporativo</option>
-                    <option value="Graduación" className="bg-ruta-black">Graduación</option>
-                    <option value="Otro" className="bg-ruta-black">Otro</option>
+                    <option value="">Seleccionar...</option>
+                    <option value="Matrimonio">Matrimonio</option>
+                    <option value="Cumpleaños">Cumpleaños</option>
+                    <option value="Corporativo">Corporativo</option>
+                    <option value="Graduación">Graduación</option>
+                    <option value="Otro">Otro</option>
                   </select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-widest text-ruta-white/40 font-bold px-1">Guests</label>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs uppercase tracking-widest text-gray-400 font-bold">Invitados</label>
                   <input
                     type="number"
                     name="guestCount"
                     value={formData.guestCount}
                     onChange={handleInputChange}
                     placeholder="0"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 focus:border-ruta-yellow focus:outline-none"
+                    className="w-full bg-ruta-gray border border-gray-200 rounded-xl px-4 py-3 focus:border-ruta-red focus:outline-none text-ruta-black"
                   />
                 </div>
-                <div className="col-span-2 space-y-2">
-                  <label className="text-xs uppercase tracking-widest text-ruta-white/40 font-bold px-1">Location</label>
+                <div className="col-span-2 space-y-1.5">
+                  <label className="text-xs uppercase tracking-widest text-gray-400 font-bold">Ubicación</label>
                   <input
                     type="text"
                     name="location"
                     value={formData.location}
                     onChange={handleInputChange}
-                    placeholder="City, Hall, or Address"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 focus:border-ruta-yellow focus:outline-none"
+                    placeholder="Ciudad o dirección"
+                    className="w-full bg-ruta-gray border border-gray-200 rounded-xl px-4 py-3 focus:border-ruta-red focus:outline-none text-ruta-black"
                   />
                 </div>
               </div>
 
-              <div className="space-y-4 pt-4">
-                <div className="flex gap-4 pt-4">
-                  <button
-                    onClick={closeModal}
-                    className="flex-1 px-6 py-4 rounded-2xl border border-white/10 text-white font-bold hover:bg-white/5 transition-all"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={sendWhatsApp}
-                    className="flex-2 bg-gradient-to-r from-ruta-yellow to-ruta-orange hover:from-ruta-yellow/90 hover:to-ruta-orange/90 text-ruta-black px-8 py-5 rounded-2xl font-bold text-lg shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3"
-                  >
-                    Enviar Cotización
-                    <Play className="w-4 h-4 fill-current rotate-12" />
-                  </button>
-                </div>
-                <p className="text-[10px] text-center text-ruta-white/20 uppercase tracking-widest">
-                  Conexión segura vía WhatsApp Real-time Sync
-                </p>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={closeModal}
+                  className="flex-1 px-6 py-3.5 rounded-xl border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={sendWhatsApp}
+                  className="flex-[2] bg-ruta-green hover:bg-green-700 text-white px-8 py-3.5 rounded-xl font-bold text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  Enviar por WhatsApp
+                  <Play className="w-4 h-4 fill-current" />
+                </button>
               </div>
             </div>
           </div>
