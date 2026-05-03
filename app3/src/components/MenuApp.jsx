@@ -621,11 +621,12 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
   });
 
   return (
-    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl overflow-hidden animate-fade-in transition-shadow duration-300 border border-gray-200 lg:hover:border-orange-400 lg:hover:scale-[1.02] lg:transition-all">
-      <div className="flex lg:flex-col p-2 lg:p-0">
-        {/* Imagen - 45% izquierda en mobile, full width en desktop */}
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl overflow-hidden animate-fade-in transition-all duration-300 border border-gray-200 lg:rounded-lg lg:shadow-sm lg:hover:shadow-lg lg:hover:border-orange-400 lg:hover:scale-[1.02]">
+      {/* === MOBILE LAYOUT === */}
+      <div className="flex p-2 lg:hidden">
+        {/* Imagen - 45% izquierda */}
         <div
-          className="w-[45%] lg:w-full aspect-[4/5] lg:aspect-[4/3] cursor-pointer relative"
+          className="w-[45%] aspect-[4/5] cursor-pointer relative"
           onClick={() => setQuickViewProduct(product)}
           onTouchStart={handleDoubleTap}
         >
@@ -657,8 +658,8 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
           />
         </div>
 
-        {/* Contenido - 55% derecha en mobile, full width en desktop */}
-        <div className="w-[55%] lg:w-full flex flex-col">
+        {/* Contenido - 55% derecha */}
+        <div className="w-[55%] flex flex-col">
           <div className="p-3 flex-1">
             {/* Título */}
             <h3 className="text-sm font-bold text-gray-800 mb-2">{product.name}</h3>
@@ -757,6 +758,40 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
               <span className="font-bold" style={{ fontSize: 'clamp(11px, 3.2vw, 19.16px)' }}>{quantity > 0 ? 'Agregar más' : 'Agregar'}</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* === DESKTOP LAYOUT (vertical compacto) === */}
+      <div className="hidden lg:flex lg:flex-col cursor-pointer" onClick={() => setQuickViewProduct(product)}>
+        <div className="relative w-full aspect-[4/3] overflow-hidden">
+          {!!product.is_featured && !!product.sale_price && (
+            <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">🔥</div>
+          )}
+          {quantity > 0 && (
+            <div className="absolute top-2 right-2 z-10 bg-orange-500 text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center">{quantity}</div>
+          )}
+          {product.image ? (
+            <img src={product.image} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
+          ) : (
+            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-2xl">🍽️</div>
+          )}
+        </div>
+        <div className="p-2 text-center">
+          <h3 className="text-xs font-black text-gray-800 uppercase leading-tight line-clamp-2 mb-1">{product.name}</h3>
+          <div className="text-sm font-black text-green-600">
+            {!!product.is_featured && !!product.sale_price
+              ? <><span className="text-gray-400 line-through text-[10px] mr-1">${product.price.toLocaleString('es-CL')}</span>${product.sale_price.toLocaleString('es-CL')}</>
+              : `$${product.price.toLocaleString('es-CL')}`
+            }
+          </div>
+        </div>
+        <div className="px-2 pb-2" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => onAddToCart(product)}
+            className={`w-full py-1.5 rounded-lg text-xs font-bold transition-all ${quantity > 0 ? 'bg-yellow-500 text-black hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600 text-white'}`}
+          >
+            {quantity > 0 ? `+ Agregar (${quantity})` : '+ Agregar'}
+          </button>
         </div>
       </div>
     </div>
