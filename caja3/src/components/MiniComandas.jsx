@@ -20,6 +20,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const [viewMode, setViewMode] = useState('list');
   const [riderMonitor, setRiderMonitor] = useState(null); // order.id of expanded rider monitor
   const [packagingQty, setPackagingQty] = useState({}); // { [orderId]: { bolsa_grande: number, bolsa_mediana: number } }
+  const [bagInfoModal, setBagInfoModal] = useState(null); // { label, img, description }
   const [showNewFeaturePopup, setShowNewFeaturePopup] = useState(() => {
     const today = new Date();
     const d = today.getDate(), m = today.getMonth() + 1, y = today.getFullYear();
@@ -1202,7 +1203,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_1.5s_infinite]" style={{animation: 'shimmer 1.5s infinite', backgroundSize: '200% 100%'}} />
                           <Loader2 size={24} className="text-blue-500 animate-spin mb-1" />
                           <span className="text-[10px] font-bold text-blue-600">Subiendo y analizando...</span>
-                          <span className="text-[8px] text-blue-400 mt-0.5">{req.id === 'productos' ? '📸 Productos' : '🛍️ Bolsa'}</span>
+                          <span className="text-[8px] text-blue-400 mt-0.5">{req.id === 'productos' ? 'Antes de empaquetar' : 'Pedido listo en bolsa'}</span>
                         </div>
                       );
                     }
@@ -1223,7 +1224,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                           />
                           <div className="absolute top-0.5 left-0.5 flex items-center gap-0.5 bg-black/60 backdrop-blur-sm rounded px-1 py-0.5">
                             <BadgeIcon size={10} className={badgeColor} />
-                            <span className="text-[8px] font-bold text-white">{req.id === 'productos' ? 'Productos' : 'Bolsa'}</span>
+                            <span className="text-[8px] font-bold text-white">{req.id === 'productos' ? 'Productos' : 'En bolsa'}</span>
                           </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); handleDeleteSlot(req.id); }}
@@ -1242,7 +1243,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                           : 'border-gray-300 bg-gray-50 hover:bg-orange-50 hover:border-orange-400 text-gray-400 hover:text-orange-500 cursor-pointer'
                       }`}>
                         <ImagePlus size={20} />
-                        <span className="text-[9px] font-bold">{req.id === 'productos' ? '📸 Productos' : '🛍️ Bolsa'}</span>
+                        <span className="text-[9px] font-bold">{req.id === 'productos' ? 'Antes de empaquetar' : 'Pedido en bolsa'}</span>
                         <input type="file" accept="image/*" capture="environment" className="hidden" disabled={isAnyUploading}
                           onChange={e => { handleSlotUpload(e.target.files[0], req.id, isRetake); e.target.value = ''; }} />
                       </label>
@@ -1252,14 +1253,15 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                   {(() => {
                     const pkg = getPackaging(order.id, order.delivery_type);
                     const bags = [
-                      { key: 'bolsa_grande', label: 'Grande', img: '/bolsa_deliverys/BOLSA PAPEL CAFE CON MANILLA 36x20x39 CM..jpg' },
-                      { key: 'bolsa_mediana', label: 'Mediana', img: '/bolsa_deliverys/BOLSA PAPEL CAPE CON MANILLA 30x12x32.jpg' }
+                      { key: 'bolsa_grande', label: 'Grande', img: '/bolsa_deliverys/BOLSA PAPEL CAFE CON MANILLA 36x20x39 CM..jpg', desc: 'Para pedidos grandes: combos, pichangas, o 3+ productos. Medida 36×20×39 cm.' },
+                      { key: 'bolsa_mediana', label: 'Mediana', img: '/bolsa_deliverys/BOLSA PAPEL CAPE CON MANILLA 30x12x32.jpg', desc: 'Para pedidos chicos: 1-2 sandwiches o hamburguesas. Medida 30×12×32 cm.' }
                     ];
                     return bags.map(bag => {
                       const qty = pkg[bag.key];
                       return (
                         <div key={bag.key} className={`h-28 rounded-lg border-2 flex flex-col items-center justify-center gap-1 transition-all ${qty > 0 ? 'border-amber-400 bg-amber-50' : 'border-gray-200 bg-gray-50'}`}>
-                          <img src={bag.img} alt={bag.label} className="w-12 h-12 rounded-lg object-cover" />
+                          <img src={bag.img} alt={bag.label} className="w-12 h-12 rounded-lg object-cover cursor-pointer active:scale-95 transition-transform"
+                            onClick={() => setBagInfoModal(bag)} />
                           <span className="text-[9px] font-bold text-gray-600">{bag.label}</span>
                           <div className="flex items-center gap-1">
                             <button onClick={() => setPackagingValue(order.id, bag.key, -1, order.delivery_type)} disabled={qty <= 0}
@@ -1317,8 +1319,8 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           // Pickup: show standalone bag squares
           const pkg = getPackaging(order.id, order.delivery_type);
           const bags = [
-            { key: 'bolsa_grande', label: 'Grande', img: '/bolsa_deliverys/BOLSA PAPEL CAFE CON MANILLA 36x20x39 CM..jpg' },
-            { key: 'bolsa_mediana', label: 'Mediana', img: '/bolsa_deliverys/BOLSA PAPEL CAPE CON MANILLA 30x12x32.jpg' }
+            { key: 'bolsa_grande', label: 'Grande', img: '/bolsa_deliverys/BOLSA PAPEL CAFE CON MANILLA 36x20x39 CM..jpg', desc: 'Para pedidos grandes: combos, pichangas, o 3+ productos. Medida 36×20×39 cm.' },
+            { key: 'bolsa_mediana', label: 'Mediana', img: '/bolsa_deliverys/BOLSA PAPEL CAPE CON MANILLA 30x12x32.jpg', desc: 'Para pedidos chicos: 1-2 sandwiches o hamburguesas. Medida 30×12×32 cm.' }
           ];
 
           return (
@@ -1332,7 +1334,8 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                     const qty = pkg[bag.key];
                     return (
                       <div key={bag.key} className={`h-28 rounded-lg border-2 flex flex-col items-center justify-center gap-1 transition-all ${qty > 0 ? 'border-amber-400 bg-amber-50' : 'border-gray-200 bg-gray-50'}`}>
-                        <img src={bag.img} alt={bag.label} className="w-12 h-12 rounded-lg object-cover" />
+                        <img src={bag.img} alt={bag.label} className="w-12 h-12 rounded-lg object-cover cursor-pointer active:scale-95 transition-transform"
+                          onClick={() => setBagInfoModal(bag)} />
                         <span className="text-[9px] font-bold text-gray-600">{bag.label}</span>
                         <div className="flex items-center gap-1">
                           <button onClick={() => setPackagingValue(order.id, bag.key, -1, order.delivery_type)} disabled={qty <= 0}
@@ -1705,6 +1708,22 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Bag Info Modal */}
+      {bagInfoModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setBagInfoModal(null)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden" onClick={e => e.stopPropagation()}>
+            <img src={bagInfoModal.img} alt={bagInfoModal.label} className="w-full h-48 object-cover" />
+            <div className="p-4">
+              <h3 className="text-lg font-bold text-gray-900 mb-1">Bolsa {bagInfoModal.label}</h3>
+              <p className="text-sm text-gray-600 mb-4">{bagInfoModal.desc}</p>
+              <button onClick={() => setBagInfoModal(null)}
+                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-lg transition-colors active:scale-95"
+              >Entendido</button>
+            </div>
           </div>
         </div>
       )}
