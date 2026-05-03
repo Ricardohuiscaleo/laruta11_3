@@ -739,7 +739,6 @@ REGLAS:
 - NO redondees el peso a 1 kg si el empaque dice 500g. Usa exactamente lo que dice el empaque.
 - tipo_imagen = "producto", tipo_compra = "ingredientes"
 - fecha: NO uses fechas de vencimiento o fabricación del empaque. Si no hay fecha de compra visible, usa null.
-- proveedor: Es DONDE se compró (supermercado, distribuidora, tienda). Si el ingrediente tiene un proveedor habitual en el historial, úsalo. Si no hay información, usa null.
 
 NOTAS MANUSCRITAS DE ENTREGA:
 - Si la imagen es una nota escrita a mano (papel con texto manuscrito), interpreta así:
