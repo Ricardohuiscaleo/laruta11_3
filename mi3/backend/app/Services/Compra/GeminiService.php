@@ -737,8 +737,20 @@ REGLAS:
 - Bolsas azules/rosadas con productos redondos oscuros = probablemente Palta Hass
 - Si hay texto de peso visible en el empaque (ej: "500g", "1kg", "250ml"), usa ESE peso como cantidad. Ejemplo: empaque de 500g → cantidad=0.5, unidad="kg". Empaque de 1.5L → cantidad=1.5, unidad="lt".
 - NO redondees el peso a 1 kg si el empaque dice 500g. Usa exactamente lo que dice el empaque.
-- tipo_imagen = "producto", tipo_compra = "ingredientes"
+- tipo_imagen = "producto"
 - fecha: NO uses fechas de vencimiento o fabricación del empaque. Si no hay fecha de compra visible, usa null.
+
+PACKAGING, LIMPIEZA E INSUMOS:
+- Para servilletas, papel, bolsas, guantes, detergente, cloro, etc.: tipo_compra = "insumos", NO "ingredientes".
+- Los números en el empaque describen la PRESENTACIÓN (ej: "500 hojas", "100 unidades"), NO la cantidad comprada.
+- Si el empaque dice "NxPrecio" (ej: "6x$8.500"), significa N unidades incluidas en el paquete por ese precio TOTAL. Entonces: cantidad=N, precio_unitario=Precio/N, subtotal=Precio. Ejemplo: "6x$8.500" → cantidad=6, precio_unitario=1417, subtotal=8500.
+- Si NO hay precio visible en la imagen, usa precio_unitario=0 y subtotal=0. NO inventes precios.
+- Para alimentos con peso (queso, carne, etc.): tipo_compra = "ingredientes".
+
+SOBRES Y SACHETS PEQUEÑOS (<100g):
+- Para sobres de condimentos, salsas en polvo, especias: unidad = "unidad", NO convertir gramos a kg.
+- Lee el nombre EXACTO impreso en el empaque (marca + producto). Ej: "Culantrito con Espinaca Sibarita", no "Sal".
+- Si hay texto tipo "3x$1.000", son 3 unidades por $1.000 total. Precio unitario = $333.
 
 NOTAS MANUSCRITAS DE ENTREGA:
 - Si la imagen es una nota escrita a mano (papel con texto manuscrito), interpreta así:
@@ -1028,8 +1040,20 @@ REGLAS PRODUCTO FÍSICO:
 - Caja estándar de tomates ≈ 18-20 kg, saco de papas ≈ 25 kg
 - Bolsas azules/rosadas con productos redondos oscuros = probablemente Palta Hass
 - Si hay texto de peso visible, úsalo. Si no, estima.
-- tipo_imagen = "producto", tipo_compra = "ingredientes"
+- tipo_imagen = "producto"
 - fecha: NO uses fechas de vencimiento o fabricación del empaque. Si no hay fecha de compra visible, usa null.
+
+PACKAGING, LIMPIEZA E INSUMOS:
+- Para servilletas, papel, bolsas, guantes, detergente, cloro, etc.: tipo_compra = "insumos", NO "ingredientes".
+- Los números en el empaque describen la PRESENTACIÓN (ej: "500 hojas", "100 unidades"), NO la cantidad comprada.
+- Si el empaque dice "NxPrecio" (ej: "6x$8.500"), significa N unidades por ese precio TOTAL. cantidad=N, precio_unitario=Precio/N, subtotal=Precio.
+- Si NO hay precio visible, usa precio_unitario=0 y subtotal=0. NO inventes precios.
+- Para alimentos con peso (queso, carne, etc.): tipo_compra = "ingredientes".
+
+SOBRES Y SACHETS PEQUEÑOS (<100g):
+- Para sobres de condimentos, salsas en polvo, especias: unidad = "unidad", NO convertir gramos a kg.
+- Lee el nombre EXACTO impreso en el empaque (marca + producto).
+- Si hay texto tipo "3x$1.000", son 3 unidades por $1.000 total. Precio unitario = $333.
 
 NOTAS MANUSCRITAS DE ENTREGA:
 - Si el texto proviene de una nota escrita a mano, interpreta así:
