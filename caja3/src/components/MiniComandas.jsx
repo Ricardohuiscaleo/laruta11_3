@@ -1714,9 +1714,11 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
       {/* Bag Info Modal */}
       {bagInfoModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setBagInfoModal(null)}>
-          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden" onClick={e => e.stopPropagation()}>
-            <img src={bagInfoModal.img} alt={bagInfoModal.label} className="w-full h-48 object-cover" />
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] p-6" onClick={() => setBagInfoModal(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xs w-full overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="bg-amber-50 p-4 flex items-center justify-center">
+              <img src={bagInfoModal.img} alt={bagInfoModal.label} className="h-40 object-contain" />
+            </div>
             <div className="p-4">
               <h3 className="text-lg font-bold text-gray-900 mb-1">Bolsa {bagInfoModal.label}</h3>
               <p className="text-sm text-gray-600 mb-4">{bagInfoModal.desc}</p>
