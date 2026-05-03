@@ -236,6 +236,7 @@ class VentasService
                 'payment_method',
                 'installment_amount',
                 'delivery_fee',
+                'dispatch_photo_url',
                 'created_at',
             ])
             ->first();
@@ -368,12 +369,32 @@ class VentasService
         }
         $totalProfit = $subtotal - $totalCost;
 
+        // Parse dispatch photos
+        $dispatchPhotos = [];
+        if (!empty($order->dispatch_photo_url)) {
+            $decoded = json_decode($order->dispatch_photo_url, true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $type => $data) {
+                    if (is_string($data)) {
+                        $dispatchPhotos[] = ['type' => $type, 'url' => $data];
+                    } elseif (is_array($data) && isset($data['url'])) {
+                        $dispatchPhotos[] = [
+                            'type'         => $type,
+                            'url'          => $data['url'],
+                            'verification' => $data['verification'] ?? null,
+                        ];
+                    }
+                }
+            }
+        }
+
         return [
-            'order_number'   => $order->order_number,
-            'created_at'     => $order->created_at,
-            'customer_name'  => $order->customer_name,
-            'payment_method' => $order->payment_method,
-            'items'          => $resultItems,
+            'order_number'    => $order->order_number,
+            'created_at'      => $order->created_at,
+            'customer_name'   => $order->customer_name,
+            'payment_method'  => $order->payment_method,
+            'dispatch_photos' => $dispatchPhotos,
+            'items'           => $resultItems,
             'totals'         => [
                 'subtotal'     => $subtotal,
                 'delivery_fee' => (float) ($order->delivery_fee ?? 0),

@@ -77,11 +77,22 @@ interface OrderDetailItem {
   ingredients: IngredientConsumption[];
 }
 
+interface DispatchPhoto {
+  type: string;
+  url: string;
+  verification?: {
+    aprobado: boolean;
+    puntaje: number;
+    feedback: string;
+  } | null;
+}
+
 interface OrderDetail {
   order_number: string;
   created_at: string;
   customer_name: string | null;
   payment_method: string | null;
+  dispatch_photos: DispatchPhoto[];
   items: OrderDetailItem[];
   totals: {
     subtotal: number;
@@ -331,6 +342,38 @@ function OrderDetailPanel({ detail }: { detail: OrderDetail }) {
         <span className="text-gray-500">Costo: <span className="font-bold text-gray-900">{formatCLP(detail.totals.total_cost)}</span></span>
         <span className="text-gray-500">Utilidad: <span className={cn('font-bold', detail.totals.total_profit >= 0 ? 'text-green-600' : 'text-red-600')}>{formatCLP(detail.totals.total_profit)}</span></span>
       </div>
+
+      {/* Dispatch Photos + AI Feedback */}
+      {detail.dispatch_photos && detail.dispatch_photos.length > 0 && (
+        <div className="border-t pt-2 mt-2">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">📷 Fotos de Entrega</p>
+          <div className="flex flex-wrap gap-3">
+            {detail.dispatch_photos.map((photo, idx) => (
+              <div key={idx} className="flex flex-col gap-1">
+                <div className={cn(
+                  'w-20 h-20 rounded-lg overflow-hidden border-2 shadow-sm',
+                  photo.verification ? (photo.verification.aprobado ? 'border-green-400' : 'border-amber-400') : 'border-gray-200'
+                )}>
+                  <img src={photo.url} alt={`${photo.type}-${idx}`} className="w-full h-full object-cover" />
+                </div>
+                <span className="text-[9px] text-gray-400 capitalize text-center">{photo.type}</span>
+              </div>
+            ))}
+          </div>
+          {detail.dispatch_photos.some(p => p.verification) && (
+            <div className="mt-2 space-y-1">
+              {detail.dispatch_photos.filter(p => p.verification).map((photo, idx) => (
+                <div key={idx} className={cn(
+                  'text-[11px] px-2 py-1.5 rounded',
+                  photo.verification!.aprobado ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
+                )}>
+                  <span className="font-bold capitalize">{photo.type}:</span> {photo.verification!.feedback}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

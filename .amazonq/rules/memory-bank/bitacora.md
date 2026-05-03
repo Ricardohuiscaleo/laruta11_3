@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`55c20a2`) — Bag info modal fix z-index + labels descriptivos MiniComandas |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`a388f67`) — /rider/* rutas públicas en middleware |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`8aaa196`) — generateDescription + suggestedPackaging + fix uploadProductImage |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`8cab878`) — product images en Ventas detail modal |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`8cab878`) — LEFT JOIN products para image_url en getOrderDetail |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -184,24 +184,18 @@
 **Commits:** `9d5a744`
 **Deploys:** mi3-backend ✅, mi3-frontend ✅.
 
-### 2026-05-02b — Ajustar recetas tocino a tramos de 40g (peso real lámina)
+### 2026-05-02h — Product images en Ventas detail modal + git-sync-check hook
 
-**BD:** Actualizado `product_recipes` para 7 productos que usaban Tocino Laminado (id=49). Ahora todas usan múltiplos de 40g (peso real de cada lámina):
-- Completo Tocino Ahumado (194): 50g → 40g
-- Pichanga Familiar (196): 50g → 40g
-- Tocino Extra (205): 50g → 40g
-- Pizza Mediana (232): 50g → 40g
-- Cheeseburger (218): 100g → 80g
-- Pizza Familiar (231): 100g → 80g
-- Hamburguesa Triple XXXL (193): 150g → 120g
+**Cambios código:**
+- `mi3/backend/app/Services/Ventas/VentasService.php`: `getOrderDetail()` Query 2 ahora hace `LEFT JOIN products` para traer `image_url`. Campo incluido en respuesta JSON de cada item.
+- `mi3/frontend/components/admin/VentasPageContent.tsx`: Interfaz `OrderDetailItem` incluye `image_url`. `OrderDetailPanel` muestra miniatura 32×32px al lado del nombre del producto (condicional, solo si tiene imagen).
+- `.kiro/hooks/git-sync-check.kiro.hook`: Nuevo hook `promptSubmit` que al enviar mensaje hace `git fetch` + compara commits + `git pull` automático si está atrás.
 
-Sub-receta Hamburguesa R11 ya estaba en 40g, no se tocó. Pendiente: recalcular cost_price de los 7 productos afectados.
-
-**Commits:** ninguno (cambio solo en BD).
-**Deploys:** ninguno.
+**Commits:** `8cab878`
+**Deploys:** mi3-backend ✅, mi3-frontend ✅.
 
 ---
 
 > Sesiones anteriores (190+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-05-02a archivadas. Últimas archivadas: 2026-05-02a (Fix combo editor cost_price), 2026-05-01c (Fix generate-shifts), 2026-05-01b (Fix nómina/EdR).
+> Sesiones 2026-04-19c→2026-05-02b archivadas. Últimas archivadas: 2026-05-02b (Tocino 40g BD), 2026-05-02a (Fix combo editor cost_price), 2026-05-01c (Fix generate-shifts).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

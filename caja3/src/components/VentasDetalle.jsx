@@ -480,10 +480,21 @@ export default function VentasDetalle({ startDate: propStart, endDate: propEnd, 
                     try {
                       if (order.dispatch_photo_url) {
                         const decoded = JSON.parse(order.dispatch_photo_url);
-                        photos = Array.isArray(decoded) ? decoded : [order.dispatch_photo_url];
+                        if (Array.isArray(decoded)) {
+                          photos = decoded.map(u => ({ url: u }));
+                        } else if (typeof decoded === 'object' && decoded !== null) {
+                          // New format: {productos: {url, verification}, bolsa: {url, verification}}
+                          photos = Object.entries(decoded).map(([type, data]) => ({
+                            type,
+                            url: typeof data === 'string' ? data : data?.url,
+                            verification: data?.verification || null,
+                          }));
+                        } else {
+                          photos = [{ url: order.dispatch_photo_url }];
+                        }
                       }
                     } catch (e) {
-                      photos = [order.dispatch_photo_url];
+                      photos = [{ url: order.dispatch_photo_url }];
                     }
 
                     if (photos.length === 0) return null;
@@ -494,15 +505,30 @@ export default function VentasDetalle({ startDate: propStart, endDate: propEnd, 
                           <Camera size={12} /> Fotos de Entrega:
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          {photos.map((url, idx) => (
-                            <div
-                              key={idx}
-                              className="w-14 h-14 rounded-lg overflow-hidden border-2 border-white shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all"
-                              onClick={() => setViewingPhotos({ photos, currentIndex: idx })}
-                            >
-                              <img src={url} alt={`entrega-${idx}`} className="w-full h-full object-cover" />
+                          {photos.map((photo, idx) => (
+                            <div key={idx} className="flex flex-col items-center gap-1">
+                              <div
+                                className={`w-14 h-14 rounded-lg overflow-hidden border-2 shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all ${photo.verification ? (photo.verification.aprobado ? 'border-green-400' : 'border-amber-400') : 'border-white'}`}
+                                onClick={() => setViewingPhotos({ photos, currentIndex: idx })}
+                              >
+                                <img src={photo.url} alt={`entrega-${idx}`} className="w-full h-full object-cover" />
+                              </div>
+                              {photo.type && (
+                                <span className="text-[9px] text-gray-400 capitalize">{photo.type}</span>
+                              )}
                             </div>
                           ))}
+                        </div>
+                        {/* AI Feedback */}
+                        {photos.some(p => p.verification) && (
+                          <div className="mt-2 space-y-1">
+                            {photos.filter(p => p.verification).map((photo, idx) => (
+                              <div key={idx} className={`text-[10px] px-2 py-1 rounded ${photo.verification.aprobado ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+                                <span className="font-bold capitalize">{photo.type || 'Foto'}:</span> {photo.verification.feedback}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         </div>
                       </div>
                     );
@@ -532,7 +558,7 @@ export default function VentasDetalle({ startDate: propStart, endDate: propEnd, 
             )}
 
             <img
-              src={viewingPhotos.photos[viewingPhotos.currentIndex]}
+              src={viewingPhotos.photos[viewingPhotos.currentIndex]?.url || viewingPhotos.photos[viewingPhotos.currentIndex]}
               alt="full photo"
               className="max-w-full max-h-full object-contain rounded-xl shadow-2xl border border-white/5"
             />
