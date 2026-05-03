@@ -242,6 +242,7 @@ function ItemNameSearch({
 export default function RegistroPage() {
   const { registroGroups: groups, registroSubmitted: submitted, setRegistroGroups: setGroups, setRegistroSubmitted: setSubmitted, kpis: ctxKpis, refreshAll } = useCompras();
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [saldo, setSaldo] = useState<number | null>(ctxKpis?.saldo_disponible ?? null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -710,9 +711,14 @@ export default function RegistroPage() {
       {/* DESKTOP */}
       <label
         htmlFor="compras-file-input"
-        onDragOver={e => e.preventDefault()}
-        onDrop={e => { e.preventDefault(); if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); }}
-        className="hidden md:flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center hover:border-mi3-400 hover:bg-mi3-50/30 transition-colors"
+        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={e => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); }}
+        className={`hidden md:flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed p-6 text-center transition-all duration-200 ${
+          dragOver
+            ? 'border-mi3-500 bg-mi3-50 scale-[1.02] shadow-lg'
+            : 'border-gray-300 bg-gray-50 hover:border-mi3-400 hover:bg-mi3-50/30'
+        }`}
       >
         {uploading ? (
           <><Loader2 className="h-6 w-6 animate-spin text-mi3-500" /><p className="text-sm text-mi3-600">{uploadProgress || 'Subiendo foto...'}</p></>

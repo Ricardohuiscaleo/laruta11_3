@@ -963,48 +963,49 @@ class PipelineExtraccionService
     private function validatePackagedGoods(array $data): array
     {
         foreach ($data['items'] as &$item) {
-            // Only fix items with unidad="unidad" and cantidad=1 (suspicious for packaged goods)
-            if (($item['unidad'] ?? '') !== 'unidad' || ($item['cantidad'] ?? 0) != 1) {
+            $unidad = mb_strtolower($item['unidad'] ?? '');
+            $cantidad = (float) ($item['cantidad'] ?? 0);
+
+            // Convert grams to kg
+            if ($unidad === 'g' && $cantidad > 0) {
+                $item['cantidad'] = round($cantidad / 1000, 3);
+                $item['unidad'] = 'kg';
+                if ($item['cantidad'] > 0 && ($item['subtotal'] ?? 0) > 0) {
+                    $item['precio_unitario'] = (int) round($item['subtotal'] / $item['cantidad']);
+                }
                 continue;
             }
 
-            // Try to extract weight from empaque_detalle first, then from nombre
-            $sources = array_filter([
-                $item['empaque_detalle'] ?? '',
-                $item['nombre'] ?? '',
-            ]);
+            // Convert ml/cc to lt
+            if (in_array($unidad, ['ml', 'cc']) && $cantidad > 0) {
+                $item['cantidad'] = round($cantidad / 1000, 3);
+                $item['unidad'] = 'lt';
+                if ($item['cantidad'] > 0 && ($item['subtotal'] ?? 0) > 0) {
+                    $item['precio_unitario'] = (int) round($item['subtotal'] / $item['cantidad']);
+                }
+                continue;
+            }
 
-            foreach ($sources as $text) {
-                if (preg_match('/(\d+(?:[.,]\d+)?)\s*(g|kg|ml|l|lt|cc)/i', $text, $matches)) {
-                    $weight = (float) str_replace(',', '.', $matches[1]);
-                    $unit = mb_strtolower($matches[2]);
-
-                    if ($unit === 'g') {
-                        $item['cantidad'] = round($weight / 1000, 3);
-                        $item['unidad'] = 'kg';
-                    } elseif ($unit === 'kg') {
-                        $item['cantidad'] = $weight;
-                        $item['unidad'] = 'kg';
-                    } elseif (in_array($unit, ['ml', 'cc'])) {
-                        $item['cantidad'] = round($weight / 1000, 3);
-                        $item['unidad'] = 'lt';
-                    } elseif (in_array($unit, ['l', 'lt'])) {
-                        $item['cantidad'] = $weight;
-                        $item['unidad'] = 'lt';
+            // Fallback: unidad="unidad" with cantidad=1 but empaque_detalle has weight
+            if ($unidad === 'unidad' && $cantidad == 1) {
+                $sources = array_filter([$item['empaque_detalle'] ?? '', $item['nombre'] ?? '']);
+                foreach ($sources as $text) {
+                    if (preg_match('/(\d+(?:[.,]\d+)?)\s*(g|kg|ml|l|lt|cc)/i', $text, $matches)) {
+                        $weight = (float) str_replace(',', '.', $matches[1]);
+                        $unit = mb_strtolower($matches[2]);
+                        if ($unit === 'g') { $item['cantidad'] = round($weight / 1000, 3); $item['unidad'] = 'kg'; }
+                        elseif ($unit === 'kg') { $item['cantidad'] = $weight; $item['unidad'] = 'kg'; }
+                        elseif (in_array($unit, ['ml', 'cc'])) { $item['cantidad'] = round($weight / 1000, 3); $item['unidad'] = 'lt'; }
+                        elseif (in_array($unit, ['l', 'lt'])) { $item['cantidad'] = $weight; $item['unidad'] = 'lt'; }
+                        if ($item['cantidad'] > 0 && ($item['subtotal'] ?? 0) > 0) {
+                            $item['precio_unitario'] = (int) round($item['subtotal'] / $item['cantidad']);
+                        }
+                        break;
                     }
-
-                    // Recalculate precio_unitario based on new quantity
-                    if ($item['cantidad'] > 0 && ($item['subtotal'] ?? 0) > 0) {
-                        $item['precio_unitario'] = (int) round($item['subtotal'] / $item['cantidad']);
-                    }
-
-                    $data['notas_ia'] = ($data['notas_ia'] ?? '') . " [Peso {$weight}{$unit} extraído de empaque]";
-                    break; // Use first match
                 }
             }
         }
         unset($item);
-
         return $data;
     }
 

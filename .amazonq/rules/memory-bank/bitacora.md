@@ -6,11 +6,11 @@
 
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
-| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`da89a40`) — Gemini verification 1024px + visual reference prompt |
-| landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`483818b`) — dispatch photos + AI feedback en Ventas detail |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`483818b`) — dispatch_photo_url + image_url en getOrderDetail |
+| app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`f793acf`) — Desktop: grid 4 col, subcats fusionadas, cards compactas |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`94f5fb6`) — Fix menu-cards bebidas subcats 61-65 |
+| landing3 | laruta11.cl | Astro | ✅ Running (`0781c56`) — Redesign completo + 6 productos curados + horarios desde BD |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`906e66f`) — validatePackagedGoods frontend fallback + total tokens |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`906e66f`) — validatePackagedGoods post-processing (500g→0.5kg) |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -86,6 +86,8 @@
 
 ### 🟢 Mejoras futuras
 
+- [ ] **Unificar horarios app3 — BD como fuente de verdad** — CheckoutApp.jsx usa `businessHours.js` hardcodeado en vez de la BD (`food_truck_schedules`). Tareas: 1) CheckoutApp lea horarios de `get_status_data.php` (ya lo usa MenuApp), 2) Eliminar bypass RL6 24/7 (todos respetan horario), 3) Agregar validación server-side en `create_order.php`, 4) Eliminar `businessHours.js` y `check_business_hours.php` (código muerto).
+
 - [x] **Pipeline multi-agente compras (optimización costos Gemini)** — COMPLETADO. 4 agentes (Visión→Análisis→Validación→Reconciliación), FeedbackService auto-aprendizaje, frontend 4 fases SSE, ReconciliationQuestions UI, 8 property tests (25K+ assertions). Commit `0edcde8`. Pendiente: ejecutar migración `extraction_feedback` en BD, test en vivo con imagen real.
 - [x] **Crear ingrediente smart con categoría inferida** — Cuando se crea ingrediente inline desde compras, inferir categoría automáticamente del contexto (insumos si es envase, ingredientes si es alimento, etc.).
 - [x] **Refactorizar categorías de ingredientes** — Fix encoding "LÃ¡cteos"→"Lácteos", eliminar categoría vacía "Ingredientes" (0 items), Stock frontend debe mostrar todas las 14 categorías (hoy solo muestra Ingredientes y Bebidas), considerar tabla separada `ingredient_categories` en vez de string libre. Categorías actuales: Carnes(10), Vegetales(20), Salsas(8), Condimentos(8), Panes(4), Embutidos(1), Pre-elaborados(1), Lácteos(4), Bebidas(7), Gas(2), Servicios(4), Packaging(28), Limpieza(15).
@@ -111,16 +113,67 @@
 
 ## Sesiones Recientes
 
-### 2026-05-02h — Spec packaging-consumo-comandas: steppers bolsas en MiniComandas
+### 2026-05-03d — Pipeline compras IA: fix peso empaque + total tokens + prompt tuning
 
 **Cambios código:**
-- `caja3/api/register_packaging_consumption.php`: NUEVO. Endpoint PHP para registrar consumo de bolsas. Transacciones tipo `consumption`, idempotencia por order_number, stock warnings, PDO transaccional.
-- `caja3/src/components/MiniComandas.jsx`: Estado `packagingQty` + helpers. Delivery: grid 4 columnas (2 fotos + 2 bolsas) con header "FOTOS DELIVERY / BOLSAS". Pickup: grid 2 columnas solo bolsas con header "BOLSAS DELIVERY". Cuadrados h-28 con foto real, stepper (−/+), highlight amber cuando qty>0. Pre-fill 1 bolsa grande para delivery. Ocultos en delivery fase 2. `deliverOrder` y `dispatchToDelivery` llaman a `registerPackaging`.
+- `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: Nuevo método `validatePackagedGoods()` en post-processing. Cuando IA devuelve `unidad=unidad, cantidad=1` pero `empaque_detalle` tiene peso (ej: "500g"), convierte automáticamente a `cantidad=0.5, unidad=kg`. Parsea g/kg/ml/l/cc. Recalcula precio_unitario.
+- `mi3/backend/app/Services/Compra/GeminiService.php`: Prompt producto mejorado — instrucción explícita de usar peso exacto del empaque (500g→0.5kg). Proveedor: dejado a inferencia natural de la IA (revertido intento de forzar marca).
+- `mi3/frontend/app/admin/compras/registro/page.tsx`: Fallback frontend — parsea `empaque_detalle` cuando backend no corrigió. Muestra peso original archivo antes de compresión.
+- `mi3/frontend/components/admin/compras/MobileExtractionSheet.tsx`: Total tokens sumado en botón "Listo" del pipeline.
 
-**Spec:** `.kiro/specs/packaging-consumo-comandas/` — requirements + design + tasks completos.
+**Commits:** `b106a22`, `2f71553`, `d4fa622`, `f3bcf20`, `8e25394`, `b450b2b`, `906e66f`
+**Deploys:** mi3-backend ✅ (×4), mi3-frontend ✅ (×3).
 
-**Commits:** `432850e`, `1e6b5c7`, `c8d79d9`
-**Deploys:** caja3 ✅ (×3).
+### 2026-05-03c — app3 desktop layout: grid 3-4 columnas, tarjetas verticales compactas
+
+**Cambios código:**
+- `app3/src/components/MenuApp.jsx`: Vista desktop completamente separada de mobile. Desktop: tarjetas verticales compactas (imagen 4:3 + nombre uppercase + precio verde + botón agregar). Grid `lg:grid-cols-3 xl:grid-cols-4`. Headers de categoría rojos ocultos en desktop (`lg:hidden`). Subcategorías sutiles. Hover borde naranja + scale. Badge cantidad naranja. Mobile: intacto (horizontal con descripción+likes+reviews).
+
+**Commits:** `95caf2a`, `1299aa5`, `e455d7f`, `94f5fb6` (caja3), `f793acf`
+**Deploys:** app3 ✅ (×4), caja3 ✅ (×1).
+
+### 2026-05-03b — Landing3 redesign completo: paleta clara + navbar profesional
+
+**Cambios código:**
+- `landing3/tailwind.config.mjs`: Paleta actualizada — ruta-red (#DC2626), ruta-orange (#EA580C), ruta-green (#16A34A), ruta-gray (#F5F5F5). Eliminado ruta-brown.
+- `landing3/src/layouts/Layout.astro`: Body → `bg-ruta-white text-ruta-black`.
+- `landing3/src/components/Header.jsx`: Reescrito completo. Eliminado StaggeredMenu (GSAP pesado). Nuevo navbar limpio con backdrop-blur, CTA "Pedir Ahora" rojo visible en mobile+desktop, menú hamburguesa con overlay blanco. 146KB→5KB.
+- `landing3/src/components/Hero.jsx`: Fondo gris claro, tipografía negra, acentos rojo/naranja, imagen con bordes redondeados, stats Google.
+- `landing3/src/components/Services.jsx`: bg-ruta-gray, cards blancas con shadow, modal blanco.
+- `landing3/src/components/About.jsx`: bg-white, texto negro, badge rojo "HECHO EN ARICA".
+- `landing3/src/components/Menu.jsx`: bg-ruta-gray, product cards con border-gray-100.
+- `landing3/src/components/GoogleReviews.jsx`: bg-white, review cards claras, estrellas naranja.
+- `landing3/src/components/Location.jsx`: bg-ruta-gray, info card blanca, mapa sin grayscale.
+- `landing3/src/components/Contact.jsx`: Footer dark mantenido (contraste).
+- `landing3/src/components/icons/ActivityIcon.jsx` + `BellIcon.jsx`: Fix import path `../../lib/utils` (bug pre-existente).
+
+**Commits:** `1cded8b`, `476dba6`, `636e386`, `760b375`, `0781c56`
+**Deploys:** landing3 ✅ (×5).
+
+### 2026-05-03a — Cancelar orden fuera de horario + email reintegro RL6
+
+**BD:** Orden 1948 (T11-1777786429-3198) de Pablo Perez cancelada via `cancel_order.php`. Crédito RL6 $15.770 revertido (`usuarios.credito_usado` -$15.770, refund en `rl6_credit_transactions`). Pedido fue a las 01:33 Chile, fuera de horario (18:00-01:00). Bypass RL6 24/7 en CheckoutApp permitió el pedido.
+
+**Email:** Enviado a pableperezvalde@gmail.com (Gmail API, message_id `19dee24dc815ccf5`). Explica anulación, informa horario 18:00-01:00, invita a pedir hoy.
+
+**Hallazgos:** 3 fuentes de horario desincronizadas: 1) BD `food_truck_schedules` (18:00-01:00 parejo, fuente de verdad), 2) `businessHours.js` hardcodeado (horarios distintos por día), 3) `check_business_hours.php` (código muerto). CheckoutApp usa JS hardcodeado, no la BD. Bypass RL6 permite pedidos 24/7.
+
+**Pendiente:** Unificar horarios (CheckoutApp lea de BD) + eliminar bypass RL6 24/7 + validación server-side en create_order.
+
+**Commits:** ninguno (cambio solo en BD + email).
+**Deploys:** ninguno.
+
+### 2026-05-03e — BD: 3 condimentos nuevos + renombrar Servilletas
+
+**BD:** 
+- Renombrado ingrediente id=116: "Servilletas 300 24x24" → "Servilletas Premier Soft" (Packaging).
+- 3 ingredientes nuevos creados (Condimentos, unidad, $333 c/u — oferta 3x$1.000):
+  - id=168: Culantrito con Espinaca Sibarita
+  - id=169: Ají Amarillo Molido Sibarita
+  - id=170: Ajo Molido Fresco Batán
+
+**Commits:** ninguno (cambio solo en BD).
+**Deploys:** ninguno.
 
 ### 2026-05-02g — Fix rutas /rider/* públicas en middleware (delivery tracking + embed)
 
@@ -216,5 +269,5 @@
 ---
 
 > Sesiones anteriores (190+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-05-02d archivadas. Últimas archivadas: 2026-05-02d (Limpieza packaging recetas), 2026-05-02c (Combo editor ingredientes), 2026-05-02b (Tocino 40g BD).
+> Sesiones 2026-04-19c→2026-05-02h archivadas. Últimas archivadas: 2026-05-02h (Spec packaging-consumo-comandas), 2026-05-02d (Limpieza packaging recetas), 2026-05-02c (Combo editor ingredientes).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
