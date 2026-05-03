@@ -529,7 +529,7 @@ export default function VentasDetalle({ startDate: propStart, endDate: propEnd, 
                             ))}
                           </div>
                         )}
-                        </div>
+                      </div>
                       </div>
                     );
                   })()}
