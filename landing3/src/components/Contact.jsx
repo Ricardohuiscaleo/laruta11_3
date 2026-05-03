@@ -9,17 +9,17 @@ export default function Contact() {
   ];
 
   return (
-    <section id="contacto" className="py-32 bg-ruta-black relative border-t border-white/5">
+    <section id="contacto" className="py-32 bg-white relative border-t border-gray-100">
       <div className="container mx-auto px-6">
 
         <div className="text-center mb-24">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-ruta-yellow/20 bg-ruta-yellow/5 text-ruta-yellow text-[10px] uppercase tracking-[0.3em] font-bold mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-ruta-orange/20 bg-ruta-orange/5 text-ruta-orange text-[10px] uppercase tracking-[0.3em] font-bold mb-6">
             Redes y Feedback
           </div>
-          <h2 className="text-4xl md:text-6xl font-extrabold text-white tracking-tighter mb-6">
-            Mantente <span className="text-transparent bg-clip-text bg-gradient-to-r from-ruta-yellow to-ruta-orange">Conectado</span>
+          <h2 className="text-4xl md:text-6xl font-extrabold text-ruta-black tracking-tighter mb-6">
+            Mantente <span className="text-transparent bg-clip-text bg-gradient-to-r from-ruta-red to-ruta-orange">Conectado</span>
           </h2>
-          <p className="text-lg text-ruta-white/40 max-w-xl mx-auto font-light">
+          <p className="text-lg text-gray-500 max-w-xl mx-auto font-light">
             Únete a nuestra comunidad en redes sociales para enterarte de nuestras ubicaciones diarias y promociones exclusivas.
           </p>
         </div>
@@ -31,55 +31,50 @@ export default function Contact() {
               href={social.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative p-10 rounded-[2.5rem] bg-ruta-dark border border-white/5 transition-all duration-500 hover:-translate-y-2 hover:border-white/20 no-underline"
+              className="group relative p-10 rounded-[2.5rem] bg-ruta-gray border border-gray-100 transition-all duration-500 hover:-translate-y-2 hover:shadow-lg hover:border-gray-200 no-underline"
             >
-              <div className={`w-14 h-14 rounded-2xl ${social.color} flex items-center justify-center mb-8 shadow-2xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6`}>
+              <div className={`w-14 h-14 rounded-2xl ${social.color} flex items-center justify-center mb-8 shadow-lg transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6`}>
                 <social.icon className="w-7 h-7 text-white" />
               </div>
 
-              <h3 className="text-xl font-bold text-white mb-2">{social.name}</h3>
-              <p className="text-sm text-ruta-white/40 font-medium tracking-tight mb-8">{social.handle}</p>
+              <h3 className="text-xl font-bold text-ruta-black mb-2">{social.name}</h3>
+              <p className="text-sm text-gray-400 font-medium tracking-tight mb-8">{social.handle}</p>
 
-              <div className="flex items-center gap-2 text-ruta-white/20 group-hover:text-ruta-yellow transition-colors font-bold text-xs uppercase tracking-[0.2em]">
+              <div className="flex items-center gap-2 text-gray-300 group-hover:text-ruta-red transition-colors font-bold text-xs uppercase tracking-[0.2em]">
                 Seguir <ArrowUpRight className="w-4 h-4" />
-              </div>
-
-              {/* Corner Accent */}
-              <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className={`w-2 h-2 rounded-full ${social.color} blur-[2px]`}></div>
               </div>
             </a>
           ))}
         </div>
 
         {/* Footer Bottom */}
-        <div className="mt-32 pt-16 border-t border-white/5">
+        <div className="mt-32 pt-16 border-t border-gray-100">
           <div className="flex flex-col md:flex-row justify-between items-center gap-10">
 
             <div className="flex items-center gap-4">
               <img
                 src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png"
                 alt="La Ruta 11 Logo"
-                className="w-12 h-12 object-contain drop-shadow-[0_0_10px_rgba(250,204,21,0.2)]"
+                className="w-12 h-12 object-contain"
               />
               <div>
-                <div className="text-lg font-black text-white px-1">LA RUTA <span className="text-ruta-yellow">11</span></div>
-                <p className="text-[10px] text-ruta-white/30 uppercase tracking-[0.2em] px-1 font-bold">Arica • Chile • Premium Food Trucks</p>
+                <div className="text-lg font-black text-ruta-black px-1">LA RUTA <span className="text-ruta-red">11</span></div>
+                <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em] px-1 font-bold">Arica • Chile • Premium Food Trucks</p>
               </div>
             </div>
 
             <div className="text-center md:text-right space-y-4">
-              <div className="flex items-center justify-center md:justify-end gap-8 text-[10px] font-bold uppercase tracking-widest text-ruta-white/30">
-                <a href="https://agenterag.com/politica-de-privacidad/" className="hover:text-ruta-yellow transition-colors">Privacidad</a>
-                <a href="https://agenterag.com/terminos-y-condiciones/" className="hover:text-ruta-yellow transition-colors">Términos</a>
+              <div className="flex items-center justify-center md:justify-end gap-8 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                <a href="https://digitalizatodo.cl/politica-de-privacidad/" className="hover:text-ruta-red transition-colors no-underline">Privacidad</a>
+                <a href="https://digitalizatodo.cl/terminos-y-condiciones/" className="hover:text-ruta-red transition-colors no-underline">Términos</a>
               </div>
-              <p className="text-[10px] text-ruta-white/20 uppercase tracking-widest">
-                &copy; 2025 La Ruta 11 Food Trucks. Todo el sabor, sin los límites.
+              <p className="text-[10px] text-gray-300 uppercase tracking-widest">
+                &copy; 2026 La Ruta 11 Food Trucks. Todo el sabor, sin los límites.
               </p>
               <div className="pt-2">
-                <a href="https://agenterag.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/5 text-[10px] font-bold text-ruta-white/40 hover:text-ruta-yellow transition-all uppercase tracking-[0.2em] no-underline">
-                  <span className="w-1.5 h-1.5 rounded-full bg-ruta-yellow animate-pulse"></span>
-                  Crafted by agenterag.com
+                <a href="https://digitalizatodo.cl" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-ruta-gray border border-gray-200 text-[10px] font-bold text-gray-400 hover:text-ruta-red transition-all uppercase tracking-[0.2em] no-underline">
+                  <span className="w-1.5 h-1.5 rounded-full bg-ruta-red animate-pulse"></span>
+                  Administrado por digitalizatodo.cl
                 </a>
               </div>
             </div>

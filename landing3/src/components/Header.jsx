@@ -113,12 +113,12 @@ export default function Header() {
       >
         {/* Backdrop */}
         <div
-          className="absolute inset-0 bg-white backdrop-blur-xl"
+          className="absolute inset-0 bg-white"
           onClick={() => setIsOpen(false)}
         />
 
         {/* Menu Content */}
-        <div className={`relative h-full flex flex-col px-6 pt-8 pb-12 transition-transform duration-300 ${
+        <div className={`relative h-full flex flex-col px-6 pt-8 pb-12 bg-white transition-transform duration-300 ${
           isOpen ? 'translate-y-0' : '-translate-y-4'
         }`}>
           <div className="flex flex-col gap-1">
