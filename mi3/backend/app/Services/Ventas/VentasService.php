@@ -246,8 +246,17 @@ class VentasService
 
         // Query 2 — order items
         $items = DB::table('tuu_order_items')
+            ->leftJoin('products', 'tuu_order_items.product_id', '=', 'products.id')
             ->where('order_reference', $orderNumber)
-            ->select(['id', 'product_id', 'product_name', 'product_price', 'item_cost', 'quantity'])
+            ->select([
+                'tuu_order_items.id',
+                'tuu_order_items.product_id',
+                'tuu_order_items.product_name',
+                'tuu_order_items.product_price',
+                'tuu_order_items.item_cost',
+                'tuu_order_items.quantity',
+                'products.image_url',
+            ])
             ->get();
 
         // Query 3 — real ingredient consumption (only if table exists)
@@ -341,6 +350,7 @@ class VentasService
 
             $resultItems[] = [
                 'product_name' => $item->product_name,
+                'image_url'    => $item->image_url ?? null,
                 'quantity'     => $quantity,
                 'unit_price'   => $unitPrice,
                 'item_cost'    => $itemCost,

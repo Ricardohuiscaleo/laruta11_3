@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Git Sync Check",
+  "description": "Al enviar un mensaje, verifica si el repo local está atrás de origin/main. Si hay commits nuevos, informa cuántos y hace git pull automáticamente.",
+  "version": "1",
+  "when": {
+    "type": "promptSubmit"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "git fetch origin 2>/dev/null && BEHIND=$(git rev-list --count HEAD..origin/main 2>/dev/null) && if [ \"$BEHIND\" -gt 0 ]; then echo \"⚠️ Local está $BEHIND commits atrás de origin/main. Haciendo git pull...\" && git pull origin main 2>&1 && echo \"✅ Sincronizado con origin/main\"; else echo \"✅ Repo local al día con origin/main\"; fi"
+  }
+}

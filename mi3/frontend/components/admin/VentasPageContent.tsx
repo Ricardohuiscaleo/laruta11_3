@@ -69,6 +69,7 @@ interface IngredientConsumption {
 
 interface OrderDetailItem {
   product_name: string;
+  image_url?: string | null;
   quantity: number;
   unit_price: number;
   item_cost: number;
@@ -253,9 +254,18 @@ function OrderDetailPanel({ detail }: { detail: OrderDetail }) {
             <div key={idx} className="bg-white rounded-lg border overflow-hidden">
               {/* Item header row */}
               <div className="flex items-center justify-between px-3 py-2 text-sm">
-                <span className="font-medium text-gray-800">
-                  {item.product_name} <span className="text-gray-400">×{item.quantity}</span>
-                </span>
+                <div className="flex items-center gap-2">
+                  {item.image_url && (
+                    <img
+                      src={item.image_url}
+                      alt={item.product_name}
+                      className="w-8 h-8 rounded object-cover shrink-0"
+                    />
+                  )}
+                  <span className="font-medium text-gray-800">
+                    {item.product_name} <span className="text-gray-400">×{item.quantity}</span>
+                  </span>
+                </div>
                 <div className="flex items-center gap-3 text-xs shrink-0">
                   <span className="text-gray-600">{formatCLP(item.unit_price)}</span>
                   <span className="text-gray-400">C: {formatCLP(item.item_cost)}</span>
