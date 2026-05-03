@@ -307,6 +307,7 @@ export default function RegistroPage() {
     // Single photo: upload then show pipeline visual SSE
     if (imageFiles.length === 1) {
       setUploading(true);
+      const rawFileSize = imageFiles[0].size; // Peso original antes de compresión
       try {
         const compressed = await compressImage(imageFiles[0]);
         const fd = new FormData();
@@ -314,13 +315,15 @@ export default function RegistroPage() {
         const res = await comprasApi.upload<{ tempKey: string; tempUrl: string; originalSizeKb?: number; originalRes?: string; finalSizeKb?: number; finalRes?: string; reductionPct?: number; compressed?: boolean }>('/compras/upload-temp', fd);
         setPipelineTempKey(res.tempKey);
         setPipelineTempUrl(res.tempUrl);
+        const rawSizeKb = Math.round(rawFileSize / 1024);
+        const serverFinalKb = res.finalSizeKb || res.originalSizeKb || rawSizeKb;
         setUploadMeta({
-          originalSizeKb: res.originalSizeKb,
+          originalSizeKb: rawSizeKb,
           originalRes: res.originalRes,
-          finalSizeKb: res.finalSizeKb,
+          finalSizeKb: serverFinalKb,
           finalRes: res.finalRes,
-          reductionPct: res.reductionPct,
-          compressed: res.compressed,
+          reductionPct: rawSizeKb > 0 ? Math.round((1 - serverFinalKb / rawSizeKb) * 100) : 0,
+          compressed: res.compressed || rawSizeKb !== serverFinalKb,
         });
         // Always open extraction sheet (works on both mobile and desktop)
         setMobileSheetOpen(true);
