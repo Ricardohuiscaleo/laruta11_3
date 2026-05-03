@@ -159,8 +159,15 @@ class GeminiService
 
         $parsed = json_decode(trim($text), true);
         if (json_last_error() !== JSON_ERROR_NONE || !is_array($parsed)) {
-            error_log('[GeminiService] Failed to parse response text as JSON: ' . substr($text, 0, 300));
-            return null;
+            // Try cleaning control characters and trailing whitespace from values
+            $cleanText = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+/', '', trim($text));
+            // Also clean excessive whitespace inside string values
+            $cleanText = preg_replace('/\t+/', ' ', $cleanText);
+            $parsed = json_decode($cleanText, true);
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($parsed)) {
+                error_log('[GeminiService] Failed to parse response text as JSON: ' . substr($text, 0, 300));
+                return null;
+            }
         }
 
         // Attach token usage and timing metadata

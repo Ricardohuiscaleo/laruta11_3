@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`e3c1bee`) — Fix dispatch photos parsing + AI feedback en VentasDetalle |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`da89a40`) — Gemini verification 1024px + visual reference prompt |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`483818b`) — dispatch photos + AI feedback en Ventas detail |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`483818b`) — dispatch_photo_url + image_url en getOrderDetail |
@@ -184,6 +184,15 @@
 **Commits:** `9d5a744`
 **Deploys:** mi3-backend ✅, mi3-frontend ✅.
 
+### 2026-05-02j — Gemini dispatch verification: 1024px + visual reference prompt
+
+**Cambios código:**
+- `caja3/api/GeminiService.php`: Prompt de verificación de productos ahora incluye sección "REFERENCIA VISUAL" con descripción concreta de cómo se ve cada producto (caja blanca con hot dog = completo, bandeja aluminio = papas, botella plástica = bebida 1.5L, etc.). Mejora conteo de items.
+- `caja3/api/orders/save_dispatch_photo.php`: Resolución de compresión subida de 768px→1024px, calidad JPEG de 70→75. Más detalle para que Gemini cuente mejor.
+
+**Commits:** `da89a40`
+**Deploys:** caja3 ✅.
+
 ### 2026-05-02i — Dispatch photos + AI feedback en Ventas detail (mi3 + caja3)
 
 **Cambios código:**
@@ -207,5 +216,5 @@
 ---
 
 > Sesiones anteriores (190+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-05-02c archivadas. Últimas archivadas: 2026-05-02c (Combo editor ingredientes), 2026-05-02b (Tocino 40g BD), 2026-05-02a (Fix combo editor cost_price).
+> Sesiones 2026-04-19c→2026-05-02d archivadas. Últimas archivadas: 2026-05-02d (Limpieza packaging recetas), 2026-05-02c (Combo editor ingredientes), 2026-05-02b (Tocino 40g BD).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`
