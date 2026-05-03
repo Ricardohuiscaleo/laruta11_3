@@ -105,58 +105,65 @@ export default function Header() {
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
-      <div
-        className={`lg:hidden fixed inset-0 top-16 sm:top-20 z-40 transition-all duration-300 ${
-          isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
-        }`}
-      >
-        {/* Backdrop */}
-        <div
-          className="absolute inset-0 bg-white"
-          onClick={() => setIsOpen(false)}
-        />
-
-        {/* Menu Content */}
-        <div className={`relative h-full flex flex-col px-6 pt-8 pb-12 bg-white transition-transform duration-300 ${
-          isOpen ? 'translate-y-0' : '-translate-y-4'
-        }`}>
-          <div className="flex flex-col gap-1">
-            {navLinks.map((link, i) => (
-              <a
-                key={link.label}
-                href={link.href}
-                onClick={(e) => handleNavClick(e, link.href)}
-                className={`text-2xl font-bold text-ruta-black hover:text-ruta-red py-3 border-b border-gray-100 transition-all duration-300 no-underline ${
-                  isOpen ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
-                }`}
-                style={{ transitionDelay: isOpen ? `${i * 50}ms` : '0ms' }}
-              >
-                {link.label}
-              </a>
-            ))}
+      {/* Mobile Menu — Full screen overlay */}
+      {isOpen && (
+        <div className="lg:hidden fixed inset-0 z-[9999]">
+          {/* Solid white background covering everything */}
+          <div className="absolute inset-0 bg-white" />
+          
+          {/* Header area with close button */}
+          <div className="relative z-10 flex items-center justify-between h-16 sm:h-20 px-4 sm:px-6 border-b border-gray-100">
+            <a href="#inicio" onClick={(e) => handleNavClick(e, '#inicio')} className="flex items-center gap-2.5 no-underline">
+              <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" className="h-9 sm:h-11 w-auto" draggable={false} />
+              <span className="text-base sm:text-lg font-extrabold tracking-tight text-ruta-black uppercase">
+                La Ruta <span className="text-ruta-red">11</span>
+              </span>
+            </a>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 border border-gray-200 text-ruta-black"
+              aria-label="Cerrar menú"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          {/* Mobile CTA */}
-          <div className="mt-auto pt-8">
-            <a
-              href="https://app.laruta11.cl"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full bg-ruta-red hover:bg-red-700 text-white py-4 rounded-2xl font-bold text-lg transition-all no-underline"
-              onClick={() => setIsOpen(false)}
-            >
-              <Smartphone className="w-5 h-5" />
-              Pedir Ahora
-            </a>
-            <div className="flex items-center justify-center gap-6 mt-6">
-              <a href="https://www.instagram.com/laruta11foodtruck/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-ruta-red text-sm font-medium transition-colors no-underline">Instagram</a>
-              <span className="text-gray-200">•</span>
-              <a href="https://wa.me/56922504275" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-ruta-green text-sm font-medium transition-colors no-underline">WhatsApp</a>
+          {/* Menu Content */}
+          <div className="relative z-10 h-[calc(100vh-4rem)] sm:h-[calc(100vh-5rem)] flex flex-col px-6 pt-8 pb-12 bg-white overflow-y-auto">
+            <div className="flex flex-col gap-1">
+              {navLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  onClick={(e) => handleNavClick(e, link.href)}
+                  className="text-2xl font-bold text-ruta-black hover:text-ruta-red py-3 border-b border-gray-100 no-underline"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+
+            {/* Mobile CTA */}
+            <div className="mt-auto pt-8">
+              <a
+                href="https://app.laruta11.cl"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-3 w-full bg-ruta-red hover:bg-red-700 text-white py-4 rounded-2xl font-bold text-lg no-underline"
+                onClick={() => setIsOpen(false)}
+              >
+                <Smartphone className="w-5 h-5" />
+                Pedir Ahora
+              </a>
+              <div className="flex items-center justify-center gap-6 mt-6">
+                <a href="https://www.instagram.com/laruta11foodtruck/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-ruta-red text-sm font-medium no-underline">Instagram</a>
+                <span className="text-gray-200">•</span>
+                <a href="https://wa.me/56922504275" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-ruta-green text-sm font-medium no-underline">WhatsApp</a>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </header>
   );
 }
