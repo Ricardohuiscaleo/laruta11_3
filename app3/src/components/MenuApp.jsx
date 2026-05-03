@@ -2459,45 +2459,71 @@ export default function App() {
                     {categoryDisplayNames[cat]}
                   </div>
                   {isNested ? (
-                    <div className="space-y-8">
-                      {orderedEntries
-                        .filter(([, products]) => products && products.length > 0)
-                        .map(([subCategory, products]) => (
-                          <section key={subCategory}>
-                            <h3 className="text-lg font-black text-gray-700 capitalize border-b-2 border-orange-500 pb-2 px-2 mb-2 lg:text-sm lg:font-bold lg:border-b lg:border-gray-200 lg:text-gray-500">{
-                              {
-                                'papas': 'Papas Fritas',
-                                'aguas': 'Aguas',
-                                'latas_350ml': 'Latas 350ml',
-                                'energeticas_473ml': 'Energéticas 473ml',
-                                'energeticas_250ml': 'Energéticas 250ml',
-                                'bebidas_1_5l': 'Bebidas 1.5L',
-                                'jugos': 'Jugos 1.5L',
-                                'bebidas': 'Otras Bebidas',
-                                'lomo_vetado': 'Lomo Vetado',
-                              }[subCategory] || subCategory
-                            }</h3>
-                            <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-4 mt-4">
-                              {products.map(product => (
-                                <MenuItem
-                                  key={product.id}
-                                  product={product}
-                                  type={product.subcategory_name || subCategory}
-                                  onSelect={null}
-                                  onAddToCart={handleAddToCart}
-                                  onRemoveFromCart={handleRemoveFromCart}
-                                  quantity={getProductQuantity(product.id)}
-                                  isLiked={likedProducts.has(product.id)}
-                                  handleLike={handleLike}
-                                  setReviewsModalProduct={setReviewsModalProduct}
-                                  onShare={setShareModalProduct}
-                                  setQuickViewProduct={setQuickViewProduct}
-                                />
-                              ))}
-                            </div>
-                          </section>
-                        ))}
-                    </div>
+                    <>
+                      {/* MOBILE: subcategorías separadas */}
+                      <div className="space-y-8 lg:hidden">
+                        {orderedEntries
+                          .filter(([, products]) => products && products.length > 0)
+                          .map(([subCategory, products]) => (
+                            <section key={subCategory}>
+                              <h3 className="text-lg font-black text-gray-700 capitalize border-b-2 border-orange-500 pb-2 px-2 mb-2">{
+                                {
+                                  'papas': 'Papas Fritas',
+                                  'aguas': 'Aguas',
+                                  'latas_350ml': 'Latas 350ml',
+                                  'energeticas_473ml': 'Energéticas 473ml',
+                                  'energeticas_250ml': 'Energéticas 250ml',
+                                  'bebidas_1_5l': 'Bebidas 1.5L',
+                                  'jugos': 'Jugos 1.5L',
+                                  'bebidas': 'Otras Bebidas',
+                                  'lomo_vetado': 'Lomo Vetado',
+                                }[subCategory] || subCategory
+                              }</h3>
+                              <div className="grid grid-cols-1 gap-3 sm:gap-4 mt-4">
+                                {products.map(product => (
+                                  <MenuItem
+                                    key={product.id}
+                                    product={product}
+                                    type={product.subcategory_name || subCategory}
+                                    onSelect={null}
+                                    onAddToCart={handleAddToCart}
+                                    onRemoveFromCart={handleRemoveFromCart}
+                                    quantity={getProductQuantity(product.id)}
+                                    isLiked={likedProducts.has(product.id)}
+                                    handleLike={handleLike}
+                                    setReviewsModalProduct={setReviewsModalProduct}
+                                    onShare={setShareModalProduct}
+                                    setQuickViewProduct={setQuickViewProduct}
+                                  />
+                                ))}
+                              </div>
+                            </section>
+                          ))}
+                      </div>
+                      {/* DESKTOP: todos los productos en un solo grid */}
+                      <div className="hidden lg:grid lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {orderedEntries
+                          .filter(([, products]) => products && products.length > 0)
+                          .flatMap(([subCategory, products]) =>
+                            products.map(product => (
+                              <MenuItem
+                                key={product.id}
+                                product={product}
+                                type={product.subcategory_name || subCategory}
+                                onSelect={null}
+                                onAddToCart={handleAddToCart}
+                                onRemoveFromCart={handleRemoveFromCart}
+                                quantity={getProductQuantity(product.id)}
+                                isLiked={likedProducts.has(product.id)}
+                                handleLike={handleLike}
+                                setReviewsModalProduct={setReviewsModalProduct}
+                                onShare={setShareModalProduct}
+                                setQuickViewProduct={setQuickViewProduct}
+                              />
+                            ))
+                          )}
+                      </div>
+                    </>
                   ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-4">
                       {(Array.isArray(categoryData) ? categoryData : []).map(product => (
