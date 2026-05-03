@@ -397,11 +397,22 @@ export default function RegistroPage() {
         if (matched && sug.match) {
           const m = sug.match;
           const isIng = sug.match_type === 'ingredient';
-          // Smart quantity: if matched unit is kg/lt and item came as "unidad", use peso_bascula
+          // Smart quantity: convert package weight to ingredient unit
           let qty = item.cantidad || 0;
           const matchUnit = m.unit || item.unidad || 'unidad';
-          if ((matchUnit === 'kg' || matchUnit === 'lt') && item.unidad === 'unidad' && qty === 1 && pesoBascula > 0) {
-            qty = pesoBascula;
+          if ((matchUnit === 'kg' || matchUnit === 'lt') && item.unidad === 'unidad' && qty <= 1) {
+            // Try peso_bascula first, then parse empaque_detalle (e.g. "500g" → 0.5 kg)
+            let inferredWeight = pesoBascula;
+            if (!inferredWeight && item.empaque_detalle) {
+              const weightMatch = String(item.empaque_detalle).match(/(\d+(?:\.\d+)?)\s*(g|kg|ml|l|lt|cc)/i);
+              if (weightMatch) {
+                const val = parseFloat(weightMatch[1]);
+                const unit = weightMatch[2].toLowerCase();
+                if (unit === 'g' || unit === 'cc' || unit === 'ml') inferredWeight = val / 1000;
+                else inferredWeight = val;
+              }
+            }
+            if (inferredWeight > 0) qty = inferredWeight;
           }
           return {
             ingrediente_id: isIng ? m.id : null,
