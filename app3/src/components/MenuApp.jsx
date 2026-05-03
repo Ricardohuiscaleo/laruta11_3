@@ -621,11 +621,11 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
   });
 
   return (
-    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl overflow-hidden animate-fade-in transition-shadow duration-300 border border-gray-200">
-      <div className="flex p-2">
-        {/* Imagen - 45% izquierda con aspecto 4:5 */}
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl overflow-hidden animate-fade-in transition-shadow duration-300 border border-gray-200 lg:hover:border-orange-400 lg:hover:scale-[1.02] lg:transition-all">
+      <div className="flex lg:flex-col p-2 lg:p-0">
+        {/* Imagen - 45% izquierda en mobile, full width en desktop */}
         <div
-          className="w-[45%] aspect-[4/5] cursor-pointer relative"
+          className="w-[45%] lg:w-full aspect-[4/5] lg:aspect-[4/3] cursor-pointer relative"
           onClick={() => setQuickViewProduct(product)}
           onTouchStart={handleDoubleTap}
         >
@@ -657,8 +657,8 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
           />
         </div>
 
-        {/* Contenido - 55% derecha */}
-        <div className="w-[55%] flex flex-col">
+        {/* Contenido - 55% derecha en mobile, full width en desktop */}
+        <div className="w-[55%] lg:w-full flex flex-col">
           <div className="p-3 flex-1">
             {/* Título */}
             <h3 className="text-sm font-bold text-gray-800 mb-2">{product.name}</h3>
@@ -2428,7 +2428,7 @@ export default function App() {
 
               return (
                 <div key={cat} id={`category-${cat}`} className="scroll-mt-[140px]">
-                  <div className="bg-red-600 text-white font-bold text-lg py-3 px-4 -mx-0.5 sm:-mx-4 lg:-mx-8 xl:-mx-12 2xl:-mx-16 mb-4 mt-2">
+                  <div className="bg-red-600 text-white font-bold text-lg py-3 px-4 -mx-0.5 sm:-mx-4 lg:hidden mb-4 mt-2">
                     {categoryDisplayNames[cat]}
                   </div>
                   {isNested ? (
@@ -2437,7 +2437,7 @@ export default function App() {
                         .filter(([, products]) => products && products.length > 0)
                         .map(([subCategory, products]) => (
                           <section key={subCategory}>
-                            <h3 className="text-lg font-black text-gray-700 capitalize border-b-2 border-orange-500 pb-2 px-2 mb-2">{
+                            <h3 className="text-lg font-black text-gray-700 capitalize border-b-2 border-orange-500 pb-2 px-2 mb-2 lg:text-sm lg:font-bold lg:border-b lg:border-gray-200 lg:text-gray-500">{
                               {
                                 'papas': 'Papas Fritas',
                                 'aguas': 'Aguas',
@@ -2450,7 +2450,7 @@ export default function App() {
                                 'lomo_vetado': 'Lomo Vetado',
                               }[subCategory] || subCategory
                             }</h3>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 mt-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-4 mt-4">
                               {products.map(product => (
                                 <MenuItem
                                   key={product.id}
@@ -2472,7 +2472,7 @@ export default function App() {
                         ))}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-4">
                       {(Array.isArray(categoryData) ? categoryData : []).map(product => (
                         <MenuItem
                           key={product.id}
