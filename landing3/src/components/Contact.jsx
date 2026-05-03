@@ -1,4 +1,4 @@
-import { Phone, Mail, Instagram, Facebook, MessageCircle, ArrowUpRight } from 'lucide-react';
+import { Mail, Instagram, Facebook, MessageCircle, ArrowUpRight } from 'lucide-react';
 
 export default function Contact() {
   const socialLinks = [

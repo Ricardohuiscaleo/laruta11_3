@@ -113,7 +113,7 @@ export default function Header() {
       >
         {/* Backdrop */}
         <div
-          className="absolute inset-0 bg-white/98 backdrop-blur-xl"
+          className="absolute inset-0 bg-white backdrop-blur-xl"
           onClick={() => setIsOpen(false)}
         />
 

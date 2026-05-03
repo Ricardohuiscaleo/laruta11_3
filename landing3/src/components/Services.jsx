@@ -1,5 +1,5 @@
 import { ActivityIcon } from './icons/ActivityIcon';
-import { Truck, Smartphone, X, ChevronRight, Coins, BadgePercent } from 'lucide-react';
+import { X, ChevronRight, Coins, BadgePercent } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Services() {
@@ -37,24 +37,24 @@ export default function Services() {
       icon: BadgePercent,
       title: "Ahorra un 45%",
       description: "Al pedir directo por nuestra App, ahorras hasta un 45% comparado con PedidosYa o UberEats. Más comida, menos comisiones.",
-      accent: "text-blue-400"
+      accent: "text-blue-500"
     }
   ];
 
   return (
-    <section id="servicios" className="py-32 bg-ruta-dark">
+    <section id="servicios" className="py-32 bg-ruta-gray">
       <div className="container mx-auto px-6">
         <div className="text-center mb-24">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-ruta-yellow/20 bg-ruta-yellow/5 text-ruta-yellow text-[10px] uppercase tracking-[0.3em] font-bold mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-ruta-orange/20 bg-ruta-orange/5 text-ruta-orange text-[10px] uppercase tracking-[0.3em] font-bold mb-6">
             <span className="relative flex h-2 w-2">
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-ruta-yellow/80"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-ruta-orange/80"></span>
             </span>
             Nuestras Soluciones
           </div>
-          <h2 className="text-4xl md:text-6xl font-extrabold text-white tracking-tighter mb-6">
-            Experiencia <span className="text-transparent bg-clip-text bg-gradient-to-r from-ruta-yellow to-ruta-orange">Sin Límites</span>
+          <h2 className="text-4xl md:text-6xl font-extrabold text-ruta-black tracking-tighter mb-6">
+            Experiencia <span className="text-transparent bg-clip-text bg-gradient-to-r from-ruta-red to-ruta-orange">Sin Límites</span>
           </h2>
-          <p className="text-lg text-ruta-white/60 max-w-2xl mx-auto font-light leading-relaxed">
+          <p className="text-lg text-gray-500 max-w-2xl mx-auto font-light leading-relaxed">
             Más que comida, ofrecemos una infraestructura gastronómica completa para cualquier ocasión.
           </p>
         </div>
@@ -63,16 +63,16 @@ export default function Services() {
           {services.map((service, index) => (
             <div
               key={index}
-              className="group p-10 rounded-[2rem] bg-ruta-black border border-white/5 transition-all duration-500 hover:bg-white/5 hover:-translate-y-2"
+              className="group p-10 rounded-[2rem] bg-white border border-gray-100 shadow-sm transition-all duration-500 hover:shadow-lg hover:-translate-y-2"
             >
-              <div className={`w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-8 border border-white/10 ${service.accent}`}>
+              <div className={`w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-8 border border-gray-100 ${service.accent}`}>
                 <service.icon size={32} />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-4">{service.title}</h3>
-              <p className="text-ruta-white/50 text-sm leading-relaxed mb-6">
+              <h3 className="text-2xl font-bold text-ruta-black mb-4">{service.title}</h3>
+              <p className="text-gray-500 text-sm leading-relaxed mb-6">
                 {service.description}
               </p>
-              <div className="flex items-center gap-2 text-ruta-yellow text-xs font-bold uppercase tracking-widest cursor-pointer group-hover:gap-4 transition-all" onClick={openModal}>
+              <div className="flex items-center gap-2 text-ruta-orange text-xs font-bold uppercase tracking-widest cursor-pointer group-hover:gap-4 transition-all" onClick={openModal}>
                 Consultar <ChevronRight className="w-4 h-4" />
               </div>
             </div>
@@ -80,15 +80,15 @@ export default function Services() {
         </div>
 
         {/* Dynamic CTA */}
-        <div className="mt-16 p-1 rounded-[2.5rem] bg-gradient-to-r from-ruta-yellow/20 via-white/5 to-ruta-red/20">
-          <div className="bg-ruta-black rounded-[2.4rem] p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10">
+        <div className="mt-16 p-1 rounded-[2.5rem] bg-gradient-to-r from-ruta-red/20 via-gray-100 to-ruta-orange/20">
+          <div className="bg-white rounded-[2.4rem] p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10 shadow-sm">
             <div className="text-center md:text-left">
-              <h3 className="text-3xl font-bold text-white mb-2">¿Tienes un evento especial?</h3>
-              <p className="text-ruta-white/50 font-light">Diseñamos una propuesta gastronómica a tu medida.</p>
+              <h3 className="text-3xl font-bold text-ruta-black mb-2">¿Tienes un evento especial?</h3>
+              <p className="text-gray-500 font-light">Diseñamos una propuesta gastronómica a tu medida.</p>
             </div>
             <button
               onClick={openModal}
-              className="bg-ruta-yellow text-ruta-black px-10 py-5 rounded-full font-bold text-lg hover:scale-105 transition-all shadow-[0_10px_30px_rgba(250,204,21,0.2)] whitespace-nowrap"
+              className="bg-ruta-red text-white px-10 py-5 rounded-full font-bold text-lg hover:scale-105 transition-all shadow-[0_10px_30px_rgba(220,38,38,0.2)] whitespace-nowrap"
             >
               Cotizar Ahora
             </button>
@@ -98,12 +98,12 @@ export default function Services() {
 
       {/* Reusable Premium Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-ruta-dark/95 backdrop-blur-md flex items-center justify-center z-[150] p-4">
-          <div className="bg-ruta-black rounded-[2rem] max-w-md w-full p-8 border border-white/10 shadow-2xl">
+        <div className="fixed inset-0 bg-white/95 backdrop-blur-md flex items-center justify-center z-[150] p-4">
+          <div className="bg-white rounded-[2rem] max-w-md w-full p-8 border border-gray-200 shadow-2xl">
             <div className="flex justify-between items-center mb-8">
-              <h3 className="text-2xl font-extrabold tracking-tight text-white">Mensaje Directo</h3>
-              <button onClick={closeModal} className="p-2 hover:bg-white/5 rounded-full transition-colors">
-                <X className="w-6 h-6 text-white/40" />
+              <h3 className="text-2xl font-extrabold tracking-tight text-ruta-black">Mensaje Directo</h3>
+              <button onClick={closeModal} className="p-2 hover:bg-gray-50 rounded-full transition-colors">
+                <X className="w-6 h-6 text-gray-400" />
               </button>
             </div>
 
@@ -111,19 +111,19 @@ export default function Services() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Hola, me gustaría saber más sobre..."
-              className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 h-40 focus:border-ruta-yellow focus:outline-none text-white transition-all resize-none mb-8"
+              className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-6 h-40 focus:border-ruta-orange focus:outline-none text-ruta-black transition-all resize-none mb-8"
             />
 
             <div className="flex gap-4">
               <button
                 onClick={closeModal}
-                className="flex-1 px-6 py-4 rounded-xl border border-white/10 text-white font-bold hover:bg-white/5 transition-all"
+                className="flex-1 px-6 py-4 rounded-xl border border-gray-200 text-ruta-black font-bold hover:bg-gray-50 transition-all"
               >
                 Cerrar
               </button>
               <button
                 onClick={sendWhatsApp}
-                className="flex-1 px-6 py-4 rounded-xl bg-ruta-yellow text-ruta-black font-bold hover:shadow-[0_0_20px_rgba(250,204,21,0.3)] transition-all"
+                className="flex-1 px-6 py-4 rounded-xl bg-ruta-red text-white font-bold hover:shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all"
               >
                 Enviar
               </button>

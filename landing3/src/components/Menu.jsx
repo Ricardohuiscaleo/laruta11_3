@@ -22,16 +22,15 @@ export default function Menu() {
           });
 
           // Filter out inactive products and get a diverse selection of high-quality items
-          // E.g., items with images and good reviews
           const featuredProducts = allProducts
             .filter(p => p.active === 1 && p.image && p.image !== 'https://laruta11-images.s3.amazonaws.com/menu/default-product.jpg')
-            .sort((a, b) => b.likes - a.likes || b.reviews.average - a.reviews.average) // Prioritize liked/highly rated
-            .slice(0, 6); // Take top 6 for the landing page grid
+            .sort((a, b) => b.likes - a.likes || b.reviews.average - a.reviews.average)
+            .slice(0, 6);
 
           setProducts(featuredProducts);
         }
       } catch (error) {
-        console.error('Error fetching menu:', error);
+        // silently fail
       } finally {
         setIsLoading(false);
       }
@@ -45,54 +44,54 @@ export default function Menu() {
   };
 
   return (
-    <section id="menu" className="py-32 bg-ruta-dark relative overflow-hidden">
+    <section id="menu" className="py-32 bg-ruta-gray relative overflow-hidden">
       {/* Background Decor */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-ruta-yellow/20 to-transparent"></div>
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-ruta-orange/20 to-transparent"></div>
       <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-ruta-orange/5 rounded-full blur-[120px]"></div>
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
           <div className="max-w-2xl">
             <div className="flex items-center gap-3 mb-4">
-              <span className="h-px w-8 bg-ruta-yellow"></span>
-              <span className="text-ruta-yellow font-bold uppercase tracking-widest text-xs">
+              <span className="h-px w-8 bg-ruta-orange"></span>
+              <span className="text-ruta-orange font-bold uppercase tracking-widest text-xs">
                 Gastronomía de Vanguardia
               </span>
             </div>
-            <h2 className="text-4xl md:text-6xl font-extrabold text-white tracking-tighter leading-none">
+            <h2 className="text-4xl md:text-6xl font-extrabold text-ruta-black tracking-tighter leading-none">
               Nuestras <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-ruta-yellow to-ruta-orange">Especialidades</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-ruta-red to-ruta-orange">Especialidades</span>
             </h2>
           </div>
-          <p className="text-lg text-ruta-white/60 max-w-sm font-light leading-relaxed">
+          <p className="text-lg text-gray-500 max-w-sm font-light leading-relaxed">
             Cada plato es una obra de arte culinaria, preparada al momento con los ingredientes más frescos de la región.
           </p>
         </div>
 
         {isLoading ? (
           <div className="flex justify-center items-center py-20">
-            <LoaderIcon size={48} className="text-ruta-yellow" />
+            <LoaderIcon size={48} className="text-ruta-orange" />
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-10">
             {products.map((item, index) => (
               <div
                 key={item.id || index}
-                className="group relative h-[450px] rounded-[2.5rem] overflow-hidden bg-ruta-black border border-white/5 transition-all duration-500 hover:border-ruta-yellow/30 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                className="group relative h-[450px] rounded-[2.5rem] overflow-hidden bg-white border border-gray-100 shadow-sm transition-all duration-500 hover:border-ruta-orange/30 hover:shadow-lg"
               >
                 {/* Image Background */}
                 <div className="absolute inset-0 z-0 transition-transform duration-700 group-hover:scale-110">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-ruta-black via-ruta-black/80 to-transparent"></div>
+                  <img src={item.image} alt={item.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-90 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ruta-black via-ruta-black/70 to-transparent"></div>
                 </div>
 
                 {/* Content */}
                 <div className="absolute inset-0 p-8 flex flex-col justify-end z-10">
                   {/* Rating / Likes Badge */}
                   {(item.reviews.average > 0 || item.likes > 0) && (
-                    <div className="absolute top-6 right-6 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10">
-                      <Star className="w-3.5 h-3.5 text-ruta-yellow fill-ruta-yellow" />
-                      <span className="text-white text-xs font-bold">{item.reviews.average > 0 ? item.reviews.average.toFixed(1) : item.likes}</span>
+                    <div className="absolute top-6 right-6 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-gray-100 shadow-sm">
+                      <Star className="w-3.5 h-3.5 text-ruta-orange fill-ruta-orange" />
+                      <span className="text-ruta-black text-xs font-bold">{item.reviews.average > 0 ? item.reviews.average.toFixed(1) : item.likes}</span>
                     </div>
                   )}
 
@@ -101,8 +100,7 @@ export default function Menu() {
                       {item.name}
                     </h3>
 
-
-                    <p className="text-ruta-white/70 text-sm leading-relaxed mb-6 opacity-0 group-hover:opacity-100 transition-opacity duration-500 line-clamp-3">
+                    <p className="text-white/70 text-sm leading-relaxed mb-6 opacity-0 group-hover:opacity-100 transition-opacity duration-500 line-clamp-3">
                       {item.description}
                     </p>
 
@@ -124,18 +122,18 @@ export default function Menu() {
 
         {/* Modernized CTA */}
         <div className="mt-24 text-center">
-          <div className="inline-block p-[1px] rounded-full bg-gradient-to-r from-ruta-yellow via-ruta-orange to-ruta-red">
+          <div className="inline-block p-[1px] rounded-full bg-gradient-to-r from-ruta-red via-ruta-orange to-ruta-yellow">
             <a
               href="https://app.laruta11.cl"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 bg-ruta-dark px-10 py-5 rounded-full font-bold text-lg text-white hover:bg-transparent transition-all duration-300 no-underline"
+              className="flex items-center gap-3 bg-white px-10 py-5 rounded-full font-bold text-lg text-ruta-black hover:bg-transparent hover:text-white transition-all duration-300 no-underline"
             >
-              <Smartphone className="w-5 h-5 text-ruta-yellow" />
+              <Smartphone className="w-5 h-5 text-ruta-orange" />
               Ver Menú Completo
             </a>
           </div>
-          <p className="mt-6 text-ruta-white/30 text-xs font-medium uppercase tracking-[0.2em]">
+          <p className="mt-6 text-gray-400 text-xs font-medium uppercase tracking-[0.2em]">
             Servicio disponible según disponibilidad de stock diario
           </p>
         </div>
