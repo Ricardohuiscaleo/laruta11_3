@@ -1,6 +1,6 @@
 # La Ruta 11 — Bitácora de Desarrollo
 
-## Estado Actual (2026-05-02)
+## Estado Actual (2026-05-03)
 
 ### Aplicaciones Desplegadas
 
@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`f793acf`) — Desktop: grid 4 col, subcats fusionadas, cards compactas |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`94f5fb6`) — Fix menu-cards bebidas subcats 61-65 |
 | landing3 | laruta11.cl | Astro | ✅ Running (`0781c56`) — Redesign completo + 6 productos curados + horarios desde BD |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`906e66f`) — validatePackagedGoods frontend fallback + total tokens |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`906e66f`) — validatePackagedGoods post-processing (500g→0.5kg) |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`0f9c56a`) — Drop zone drag-over hover feedback |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`4acfc6f`) — Prompt producto: packaging NxPrecio, sachets, no inventar precios |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -113,6 +113,20 @@
 
 ## Sesiones Recientes
 
+### 2026-05-03f — Prompt producto mejorado + drop zone hover + 3 condimentos BD
+
+**Cambios código:**
+- `mi3/backend/app/Services/Compra/GeminiService.php`: `promptProducto()` y `textRulesProducto()` reescritos. Nuevas secciones: PACKAGING/LIMPIEZA/INSUMOS (tipo_compra="insumos", NxPrecio=N unidades por precio total, no inventar precios sin dato visible), SOBRES/SACHETS (<100g → unidad, leer nombre exacto empaque). Ejemplo: "6x$8.500" → cantidad=6, precio_unitario=$1.417, subtotal=$8.500.
+- `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: `validatePackagedGoods()` refactorizado — conversión directa g→kg y ml→lt, fallback empaque_detalle para unidad=1.
+- `mi3/frontend/app/admin/compras/registro/page.tsx`: Estado `dragOver` + visual feedback al arrastrar archivos sobre drop zone (borde mi3-500, bg-mi3-50, scale 1.02, shadow).
+
+**BD:**
+- Renombrado id=116: "Servilletas 300 24x24" → "Servilletas Premier Soft" (Packaging).
+- 3 ingredientes nuevos: id=168 Culantrito con Espinaca Sibarita, id=169 Ají Amarillo Molido Sibarita, id=170 Ajo Molido Fresco Batán (Condimentos, unidad, $333 c/u).
+
+**Commits:** `0f9c56a` (drop zone + validatePackagedGoods), `4acfc6f` (prompt producto mejorado)
+**Deploys:** mi3-frontend ✅, mi3-backend ✅ (×2).
+
 ### 2026-05-03d — Pipeline compras IA: fix peso empaque + total tokens + prompt tuning
 
 **Cambios código:**
@@ -149,31 +163,6 @@
 
 **Commits:** `1cded8b`, `476dba6`, `636e386`, `760b375`, `0781c56`
 **Deploys:** landing3 ✅ (×5).
-
-### 2026-05-03a — Cancelar orden fuera de horario + email reintegro RL6
-
-**BD:** Orden 1948 (T11-1777786429-3198) de Pablo Perez cancelada via `cancel_order.php`. Crédito RL6 $15.770 revertido (`usuarios.credito_usado` -$15.770, refund en `rl6_credit_transactions`). Pedido fue a las 01:33 Chile, fuera de horario (18:00-01:00). Bypass RL6 24/7 en CheckoutApp permitió el pedido.
-
-**Email:** Enviado a pableperezvalde@gmail.com (Gmail API, message_id `19dee24dc815ccf5`). Explica anulación, informa horario 18:00-01:00, invita a pedir hoy.
-
-**Hallazgos:** 3 fuentes de horario desincronizadas: 1) BD `food_truck_schedules` (18:00-01:00 parejo, fuente de verdad), 2) `businessHours.js` hardcodeado (horarios distintos por día), 3) `check_business_hours.php` (código muerto). CheckoutApp usa JS hardcodeado, no la BD. Bypass RL6 permite pedidos 24/7.
-
-**Pendiente:** Unificar horarios (CheckoutApp lea de BD) + eliminar bypass RL6 24/7 + validación server-side en create_order.
-
-**Commits:** ninguno (cambio solo en BD + email).
-**Deploys:** ninguno.
-
-### 2026-05-03e — BD: 3 condimentos nuevos + renombrar Servilletas
-
-**BD:** 
-- Renombrado ingrediente id=116: "Servilletas 300 24x24" → "Servilletas Premier Soft" (Packaging).
-- 3 ingredientes nuevos creados (Condimentos, unidad, $333 c/u — oferta 3x$1.000):
-  - id=168: Culantrito con Espinaca Sibarita
-  - id=169: Ají Amarillo Molido Sibarita
-  - id=170: Ajo Molido Fresco Batán
-
-**Commits:** ninguno (cambio solo en BD).
-**Deploys:** ninguno.
 
 ### 2026-05-02g — Fix rutas /rider/* públicas en middleware (delivery tracking + embed)
 
@@ -269,5 +258,5 @@
 ---
 
 > Sesiones anteriores (190+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-05-02h archivadas. Últimas archivadas: 2026-05-02h (Spec packaging-consumo-comandas), 2026-05-02d (Limpieza packaging recetas), 2026-05-02c (Combo editor ingredientes).
+> Sesiones 2026-04-19c→2026-05-03a archivadas. Últimas archivadas: 2026-05-03a (Cancelar orden fuera horario), 2026-05-02h (Spec packaging-consumo-comandas), 2026-05-02d (Limpieza packaging recetas).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

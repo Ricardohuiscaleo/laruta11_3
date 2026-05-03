@@ -462,6 +462,27 @@ class GeminiService
             }
         }
 
+        // Boletas chilenas: Total SIEMPRE es IVA incluido.
+        // Si Gemini devolvió monto_total e iva, asegurar que monto_neto = total - iva (no al revés).
+        $total = $data['monto_total'] ?? 0;
+        $iva = $data['iva'] ?? 0;
+        $neto = $data['monto_neto'] ?? 0;
+        if ($total > 0 && $iva > 0) {
+            $correctNeto = $total - $iva;
+            // Si monto_neto es mayor que monto_total, Gemini trató el total como neto — corregir
+            if ($neto > $total || $neto === 0) {
+                $data['monto_neto'] = $correctNeto;
+            }
+            // Si monto_neto + iva > monto_total (Gemini sumó IVA al total), corregir
+            if ($neto > 0 && ($neto + $iva) > ($total * 1.01)) {
+                $data['monto_neto'] = $correctNeto;
+            }
+        } elseif ($total > 0 && $iva === 0 && $neto === 0) {
+            // No hay IVA explícito: calcular estándar 19%
+            $data['monto_neto'] = (int) round($total / 1.19);
+            $data['iva'] = $total - $data['monto_neto'];
+        }
+
         if (!empty($data['items']) && is_array($data['items'])) {
             foreach ($data['items'] as &$item) {
                 if (isset($item['precio_unitario']) && is_numeric($item['precio_unitario'])) {
@@ -660,6 +681,7 @@ REGLAS BOLETA SUPERMERCADO CHILENO:
 - Después de "TOTAL" NO hay productos
 - "TARJETA DE DEBITO" o "VENTA DEBITO" → metodo_pago = "card"
 - Montos en pesos chilenos enteros (sin decimales)
+- IMPORTANTE IVA EN BOLETAS CHILENAS: El "Total" de una boleta SIEMPRE es IVA INCLUIDO. Si la boleta dice "El IVA de esta boleta es $X", ese IVA ya está DENTRO del total, NO se suma. Entonces: monto_total = Total (tal cual), iva = el valor informado, monto_neto = monto_total - iva. NUNCA hagas monto_total = total + iva.
 - Si no hay IVA explícito: monto_neto = round(total/1.19), iva = total - monto_neto
 
 RUTs conocidos:
@@ -991,6 +1013,7 @@ REGLAS BOLETA SUPERMERCADO CHILENO:
 - Después de "TOTAL" NO hay productos
 - "TARJETA DE DEBITO" o "VENTA DEBITO" → metodo_pago = "card"
 - Montos en pesos chilenos enteros (sin decimales)
+- IMPORTANTE IVA EN BOLETAS CHILENAS: El "Total" de una boleta SIEMPRE es IVA INCLUIDO. Si la boleta dice "El IVA de esta boleta es $X", ese IVA ya está DENTRO del total, NO se suma. Entonces: monto_total = Total (tal cual), iva = el valor informado, monto_neto = monto_total - iva. NUNCA hagas monto_total = total + iva.
 - Si no hay IVA explícito: monto_neto = round(total/1.19), iva = total - monto_neto
 
 RUTs conocidos:
