@@ -735,7 +735,8 @@ REGLAS:
 - Estima cantidad basándote en el tamaño visual y contexto
 - Caja estándar de tomates ≈ 18-20 kg, saco de papas ≈ 25 kg
 - Bolsas azules/rosadas con productos redondos oscuros = probablemente Palta Hass
-- Si hay texto de peso visible, úsalo. Si no, estima.
+- Si hay texto de peso visible en el empaque (ej: "500g", "1kg", "250ml"), usa ESE peso como cantidad. Ejemplo: empaque de 500g → cantidad=0.5, unidad="kg". Empaque de 1.5L → cantidad=1.5, unidad="lt".
+- NO redondees el peso a 1 kg si el empaque dice 500g. Usa exactamente lo que dice el empaque.
 - tipo_imagen = "producto", tipo_compra = "ingredientes"
 - fecha: NO uses fechas de vencimiento o fabricación del empaque. Si no hay fecha de compra visible, usa null.
 - proveedor: Para productos empacados, usa la MARCA visible en el empaque (ej: "Calo", "Colun", "Soprole", "PF"). NO uses el grupo empresarial dueño (NO "Agrosuper", NO "Nestlé Chile"). Si no hay marca visible, usa null.
