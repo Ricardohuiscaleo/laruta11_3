@@ -1254,7 +1254,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                     const pkg = getPackaging(order.id, order.delivery_type);
                     const bags = [
                       { key: 'bolsa_grande', label: 'Grande', img: '/bolsa_deliverys/BOLSA PAPEL CAFE CON MANILLA 36x20x39 CM..jpg', desc: 'Para pedidos grandes: combos, pichangas, o 3+ productos. Medida 36×20×39 cm.' },
-                      { key: 'bolsa_mediana', label: 'Mediana', img: '/bolsa_deliverys/BOLSA PAPEL CAPE CON MANILLA 30x12x32.jpg', desc: 'Para pedidos chicos: 1-2 sandwiches o hamburguesas. Medida 30×12×32 cm.' }
+                      { key: 'bolsa_mediana', label: 'Mediana', img: '/bolsa_deliverys/BOLSA PAPEL CAPE CON MANILLA 30x12x32.jpg', desc: 'Para pedidos chicos: 1-2 completos o papas medianas. Medida 30×12×32 cm.' }
                     ];
                     return bags.map(bag => {
                       const qty = pkg[bag.key];
@@ -1320,7 +1320,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           const pkg = getPackaging(order.id, order.delivery_type);
           const bags = [
             { key: 'bolsa_grande', label: 'Grande', img: '/bolsa_deliverys/BOLSA PAPEL CAFE CON MANILLA 36x20x39 CM..jpg', desc: 'Para pedidos grandes: combos, pichangas, o 3+ productos. Medida 36×20×39 cm.' },
-            { key: 'bolsa_mediana', label: 'Mediana', img: '/bolsa_deliverys/BOLSA PAPEL CAPE CON MANILLA 30x12x32.jpg', desc: 'Para pedidos chicos: 1-2 sandwiches o hamburguesas. Medida 30×12×32 cm.' }
+            { key: 'bolsa_mediana', label: 'Mediana', img: '/bolsa_deliverys/BOLSA PAPEL CAPE CON MANILLA 30x12x32.jpg', desc: 'Para pedidos chicos: 1-2 completos o papas medianas. Medida 30×12×32 cm.' }
           ];
 
           return (
@@ -1714,18 +1714,16 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
       {/* Bag Info Modal */}
       {bagInfoModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] p-6" onClick={() => setBagInfoModal(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-xs w-full overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="bg-amber-50 p-4 flex items-center justify-center">
-              <img src={bagInfoModal.img} alt={bagInfoModal.label} className="h-40 object-contain" />
-            </div>
-            <div className="p-4">
-              <h3 className="text-lg font-bold text-gray-900 mb-1">Bolsa {bagInfoModal.label}</h3>
-              <p className="text-sm text-gray-600 mb-4">{bagInfoModal.desc}</p>
-              <button onClick={() => setBagInfoModal(null)}
-                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-lg transition-colors active:scale-95"
-              >Entendido</button>
-            </div>
+        <div className="fixed inset-0 bg-black/80 flex flex-col z-[9999]" onClick={() => setBagInfoModal(null)}>
+          <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
+            <img src={bagInfoModal.img} alt={bagInfoModal.label} className="max-h-[60vh] max-w-full object-contain rounded-xl shadow-2xl" />
+          </div>
+          <div className="bg-white rounded-t-2xl p-5 safe-area-bottom" onClick={e => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-gray-900 mb-1">Bolsa {bagInfoModal.label}</h3>
+            <p className="text-sm text-gray-600 mb-4">{bagInfoModal.desc}</p>
+            <button onClick={() => setBagInfoModal(null)}
+              className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl transition-colors active:scale-95 text-base"
+            >Entendido</button>
           </div>
         </div>
       )}

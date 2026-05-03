@@ -7,7 +7,7 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`c8d79d9`) — Bag info modal + photo labels descriptivos en MiniComandas |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`55c20a2`) — Bag info modal fix z-index + labels descriptivos MiniComandas |
 | landing3 | laruta11.cl | Astro | ✅ Running |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`a388f67`) — /rider/* rutas públicas en middleware |
 | mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`8aaa196`) — generateDescription + suggestedPackaging + fix uploadProductImage |
