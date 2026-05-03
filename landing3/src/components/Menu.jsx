@@ -1,56 +1,61 @@
-import { Smartphone, ChevronRight, Star } from 'lucide-react';
-import { LoaderIcon } from './ui/LoaderIcon.jsx';
-import { useState, useEffect } from 'react';
+import { Smartphone, ChevronRight } from 'lucide-react';
+
+const FEATURED_PRODUCTS = [
+  {
+    id: 196,
+    name: 'Pichanga Familiar',
+    price: 18980,
+    image: 'https://laruta11-images.s3.amazonaws.com/products/68dde52594241_39ca9494-3ce5-4145-8cd5-74c6e8a72727.webp',
+    description: 'Lomo vetado, tocino ahumado, filete de pollo, lomito de cerdo, salchicha, tomate y cebolla caramelizada sobre papas rústicas.'
+  },
+  {
+    id: 187,
+    name: 'Combo Doble Mixta',
+    price: 14180,
+    image: 'https://laruta11-images.s3.amazonaws.com/products/69260b0031e58_1.webp',
+    description: 'Hamburguesa doble mixta, papa individual y una bebida en lata de 350 ml a elección.'
+  },
+  {
+    id: 11,
+    name: 'Hamburguesa Doble Mixta (580g)',
+    price: 12280,
+    image: 'https://laruta11-images.s3.amazonaws.com/products/68d1fd67a7e42_WhatsApp%2520Image%25202025-09-22%2520at%252022.51.41.webp',
+    description: '400g de hamburguesa premium, 180g de filete de pollo, doble queso cheddar fundido, tomate, mayonesa Kraft y cebolla caramelizada.'
+  },
+  {
+    id: 204,
+    name: 'Churrasco Italiano',
+    price: 5890,
+    image: 'https://laruta11-images.s3.amazonaws.com/products/69deeccab0f9d_9d2a8aa8-82a0-4040-8bc3-c8777a2f40f0.jpeg',
+    description: 'Clásico churrasco con palta, tomate y mayonesa Kraft en pan frica.'
+  },
+  {
+    id: 280,
+    name: 'Lucaso 11',
+    price: 6890,
+    image: 'https://laruta11-images.s3.amazonaws.com/products/producto_280_1777748819.jpeg',
+    description: 'Churrasco, queso, palta y tomate fresco en pan Frica. ¡El clásico que te encanta!'
+  },
+  {
+    id: 194,
+    name: 'Completo Tocino Ahumado',
+    price: 3780,
+    image: 'https://laruta11-images.s3.amazonaws.com/products/68db45ce0fc60_WhatsApp%2520Image%25202025-09-29%2520at%252023.50.28.webp',
+    description: 'Salchicha premium, tocino ahumado artesanal, queso mantecoso fundido y salsa especial Crazy Chicken.'
+  }
+];
 
 export default function Menu() {
-  const [products, setProducts] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchMenu = async () => {
-      try {
-        const response = await fetch('https://app.laruta11.cl/api/get_menu_products.php');
-        const data = await response.json();
-
-        if (data.success && data.menuData) {
-          // Flatten the nested menu structure to get a pool of products
-          let allProducts = [];
-          Object.values(data.menuData).forEach(subs => {
-            Object.values(subs).forEach(prods => {
-              allProducts = [...allProducts, ...prods];
-            });
-          });
-
-          // Filter out inactive products and get a diverse selection of high-quality items
-          const featuredProducts = allProducts
-            .filter(p => p.active === 1 && p.image && p.image !== 'https://laruta11-images.s3.amazonaws.com/menu/default-product.jpg')
-            .sort((a, b) => b.likes - a.likes || b.reviews.average - a.reviews.average)
-            .slice(0, 6);
-
-          setProducts(featuredProducts);
-        }
-      } catch (error) {
-        // silently fail
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMenu();
-  }, []);
-
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(price);
   };
 
   return (
-    <section id="menu" className="py-32 bg-ruta-gray relative overflow-hidden">
-      {/* Background Decor */}
+    <section id="menu" className="py-24 sm:py-32 bg-ruta-gray relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-ruta-orange/20 to-transparent"></div>
-      <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-ruta-orange/5 rounded-full blur-[120px]"></div>
 
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
+      <div className="container mx-auto px-4 sm:px-6 relative z-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-20 gap-6">
           <div className="max-w-2xl">
             <div className="flex items-center gap-3 mb-4">
               <span className="h-px w-8 bg-ruta-orange"></span>
@@ -58,83 +63,72 @@ export default function Menu() {
                 Gastronomía de Vanguardia
               </span>
             </div>
-            <h2 className="text-4xl md:text-6xl font-extrabold text-ruta-black tracking-tighter leading-none">
+            <h2 className="text-3xl sm:text-4xl md:text-6xl font-extrabold text-ruta-black tracking-tighter leading-none">
               Nuestras <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-ruta-red to-ruta-orange">Especialidades</span>
             </h2>
           </div>
-          <p className="text-lg text-gray-500 max-w-sm font-light leading-relaxed">
-            Cada plato es una obra de arte culinaria, preparada al momento con los ingredientes más frescos de la región.
+          <p className="text-base sm:text-lg text-gray-500 max-w-sm font-light leading-relaxed">
+            Cada plato es una obra de arte culinaria, preparada al momento con los ingredientes más frescos.
           </p>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center items-center py-20">
-            <LoaderIcon size={48} className="text-ruta-orange" />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-10">
-            {products.map((item, index) => (
-              <div
-                key={item.id || index}
-                className="group relative h-[450px] rounded-[2.5rem] overflow-hidden bg-white border border-gray-100 shadow-sm transition-all duration-500 hover:border-ruta-orange/30 hover:shadow-lg"
-              >
-                {/* Image Background */}
-                <div className="absolute inset-0 z-0 transition-transform duration-700 group-hover:scale-110">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-90 transition-opacity" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-ruta-black via-ruta-black/70 to-transparent"></div>
-                </div>
-
-                {/* Content */}
-                <div className="absolute inset-0 p-8 flex flex-col justify-end z-10">
-                  {/* Rating / Likes Badge */}
-                  {(item.reviews.average > 0 || item.likes > 0) && (
-                    <div className="absolute top-6 right-6 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-gray-100 shadow-sm">
-                      <Star className="w-3.5 h-3.5 text-ruta-orange fill-ruta-orange" />
-                      <span className="text-ruta-black text-xs font-bold">{item.reviews.average > 0 ? item.reviews.average.toFixed(1) : item.likes}</span>
-                    </div>
-                  )}
-
-                  <div className="transform transition-all duration-500 translate-y-4 group-hover:translate-y-0">
-                    <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-ruta-yellow transition-colors line-clamp-2">
-                      {item.name}
-                    </h3>
-
-                    <p className="text-white/70 text-sm leading-relaxed mb-6 opacity-0 group-hover:opacity-100 transition-opacity duration-500 line-clamp-3">
-                      {item.description}
-                    </p>
-
-                    <a
-                      href="https://app.laruta11.cl"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-white text-sm font-bold uppercase tracking-widest cursor-pointer group/link hover:text-ruta-yellow transition-colors"
-                    >
-                      <span>Pedir Ahora</span>
-                      <ChevronRight className="w-4 h-4 transition-transform group-hover/link:translate-x-1" />
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Modernized CTA */}
-        <div className="mt-24 text-center">
-          <div className="inline-block p-[1px] rounded-full bg-gradient-to-r from-ruta-red via-ruta-orange to-ruta-yellow">
-            <a
-              href="https://app.laruta11.cl"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 bg-white px-10 py-5 rounded-full font-bold text-lg text-ruta-black hover:bg-transparent hover:text-white transition-all duration-300 no-underline"
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          {FEATURED_PRODUCTS.map((item) => (
+            <div
+              key={item.id}
+              className="group relative h-[380px] sm:h-[420px] rounded-3xl overflow-hidden bg-white border border-gray-100 shadow-sm transition-all duration-500 hover:shadow-lg hover:border-ruta-orange/30"
             >
-              <Smartphone className="w-5 h-5 text-ruta-orange" />
-              Ver Menú Completo
-            </a>
-          </div>
-          <p className="mt-6 text-gray-400 text-xs font-medium uppercase tracking-[0.2em]">
-            Servicio disponible según disponibilidad de stock diario
+              {/* Image */}
+              <div className="absolute inset-0 z-0 transition-transform duration-700 group-hover:scale-105">
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+              </div>
+
+              {/* Price Badge */}
+              <div className="absolute top-4 right-4 z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-sm border border-gray-100">
+                <span className="text-sm font-bold text-ruta-red">{formatPrice(item.price)}</span>
+              </div>
+
+              {/* Content */}
+              <div className="absolute inset-0 p-6 flex flex-col justify-end z-10">
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 line-clamp-2">
+                  {item.name}
+                </h3>
+                <p className="text-white/70 text-sm leading-relaxed mb-4 line-clamp-2">
+                  {item.description}
+                </p>
+                <a
+                  href="https://app.laruta11.cl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-ruta-yellow text-sm font-bold uppercase tracking-wide no-underline group/link"
+                >
+                  Pedir <ChevronRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <div className="mt-16 sm:mt-24 text-center">
+          <a
+            href="https://app.laruta11.cl"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 bg-ruta-red hover:bg-red-700 text-white px-8 sm:px-10 py-4 sm:py-5 rounded-full font-bold text-base sm:text-lg transition-all duration-200 hover:shadow-xl hover:scale-[1.02] no-underline"
+          >
+            <Smartphone className="w-5 h-5" />
+            Ver Menú Completo
+          </a>
+          <p className="mt-4 text-gray-400 text-xs font-medium uppercase tracking-[0.2em]">
+            Disponibilidad sujeta a stock diario
           </p>
         </div>
       </div>
