@@ -762,36 +762,28 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
       </div>
 
       {/* === DESKTOP LAYOUT (vertical compacto) === */}
-      <div className="hidden lg:flex lg:flex-col cursor-pointer" onClick={() => setQuickViewProduct(product)}>
-        <div className="relative w-full aspect-[4/3] overflow-hidden">
+      <div className="hidden lg:flex lg:flex-col cursor-pointer group/card" onClick={() => setQuickViewProduct(product)}>
+        <div className="relative w-full aspect-square overflow-hidden rounded-t-lg">
           {!!product.is_featured && !!product.sale_price && (
             <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">🔥</div>
           )}
           {quantity > 0 && (
-            <div className="absolute top-2 right-2 z-10 bg-orange-500 text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center">{quantity}</div>
+            <div className="absolute top-2 right-2 z-10 bg-orange-500 text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center shadow-md">{quantity}</div>
           )}
           {product.image ? (
-            <img src={product.image} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
+            <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-300 group-hover/card:scale-105" loading="lazy" />
           ) : (
-            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-2xl">🍽️</div>
+            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-3xl">🍽️</div>
           )}
         </div>
         <div className="p-2 text-center">
-          <h3 className="text-xs font-black text-gray-800 uppercase leading-tight line-clamp-2 mb-1">{product.name}</h3>
-          <div className="text-sm font-black text-green-600">
+          <h3 className="text-[11px] font-bold text-gray-800 uppercase leading-tight line-clamp-2 mb-0.5 tracking-tight">{product.name}</h3>
+          <div className="text-base font-black text-green-600">
             {!!product.is_featured && !!product.sale_price
               ? <><span className="text-gray-400 line-through text-[10px] mr-1">${product.price.toLocaleString('es-CL')}</span>${product.sale_price.toLocaleString('es-CL')}</>
               : `$${product.price.toLocaleString('es-CL')}`
             }
           </div>
-        </div>
-        <div className="px-2 pb-2" onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={() => onAddToCart(product)}
-            className={`w-full py-1.5 rounded-lg text-xs font-bold transition-all ${quantity > 0 ? 'bg-yellow-500 text-black hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600 text-white'}`}
-          >
-            {quantity > 0 ? `+ Agregar (${quantity})` : '+ Agregar'}
-          </button>
         </div>
       </div>
     </div>
