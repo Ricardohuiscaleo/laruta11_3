@@ -390,19 +390,26 @@ export default function RegistroPage() {
       // Build items with DB match
       const extractedItems = img.extraction?.items || [];
       const sugItems = img.sugerencias?.items || [];
+      const pesoBascula = img.extraction?.peso_bascula || 0;
       const items: CompraItem[] = extractedItems.map((item, idx) => {
         const sug = sugItems[idx];
         const matched = sug?.pre_selected && sug?.match;
         if (matched && sug.match) {
           const m = sug.match;
           const isIng = sug.match_type === 'ingredient';
+          // Smart quantity: if matched unit is kg/lt and item came as "unidad", use peso_bascula
+          let qty = item.cantidad || 0;
+          const matchUnit = m.unit || item.unidad || 'unidad';
+          if ((matchUnit === 'kg' || matchUnit === 'lt') && item.unidad === 'unidad' && qty === 1 && pesoBascula > 0) {
+            qty = pesoBascula;
+          }
           return {
             ingrediente_id: isIng ? m.id : null,
             product_id: !isIng ? m.id : null,
             item_type: (sug.match_type || 'ingredient') as 'ingredient' | 'product',
             nombre: m.name,
-            cantidad: item.cantidad || 0,
-            unidad: m.unit || item.unidad || 'unidad',
+            cantidad: qty,
+            unidad: matchUnit,
             precio_unitario: item.precio_unitario || 0,
             subtotal: item.subtotal || (item.cantidad || 0) * (item.precio_unitario || 0),
             empaque_detalle: item.empaque_detalle || null,

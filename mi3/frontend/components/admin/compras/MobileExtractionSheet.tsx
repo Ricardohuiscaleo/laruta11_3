@@ -327,6 +327,17 @@ export default function MobileExtractionSheet({
           >
             <Check className="h-4 w-4 text-emerald-600" strokeWidth={2.5} />
             <span className="text-sm font-bold text-emerald-700">Listo</span>
+            {(() => {
+              const totalTok = Object.values(stepDetails).reduce((sum, d) => {
+                const tokBadge = d.badges?.find(b => b.label.includes('tok'));
+                if (tokBadge) {
+                  const num = parseInt(tokBadge.label.replace(/[^\d]/g, ''));
+                  return sum + (isNaN(num) ? 0 : num);
+                }
+                return sum;
+              }, 0);
+              return totalTok > 0 ? <span className="text-xs text-emerald-500 ml-1">· {totalTok.toLocaleString('es-CL')} tok total</span> : null;
+            })()}
           </button>
         )}
 
