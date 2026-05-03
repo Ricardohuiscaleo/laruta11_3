@@ -7,10 +7,10 @@
 | App | URL | Stack | Estado |
 |-----|-----|-------|--------|
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`3dafb96`) — leaf-only inventory tracking para compuestos |
-| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`55c20a2`) — Bag info modal fix z-index + labels descriptivos MiniComandas |
+| caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`e3c1bee`) — Fix dispatch photos parsing + AI feedback en VentasDetalle |
 | landing3 | laruta11.cl | Astro | ✅ Running |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`8cab878`) — product images en Ventas detail modal |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`8cab878`) — LEFT JOIN products para image_url en getOrderDetail |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`483818b`) — dispatch photos + AI feedback en Ventas detail |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`483818b`) — dispatch_photo_url + image_url en getOrderDetail |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -184,6 +184,16 @@
 **Commits:** `9d5a744`
 **Deploys:** mi3-backend ✅, mi3-frontend ✅.
 
+### 2026-05-02i — Dispatch photos + AI feedback en Ventas detail (mi3 + caja3)
+
+**Cambios código:**
+- `mi3/backend/app/Services/Ventas/VentasService.php`: `getOrderDetail()` trae `dispatch_photo_url` y `image_url` (LEFT JOIN products). Parsea JSON de fotos a array `dispatch_photos` con type, url, verification.
+- `mi3/frontend/components/admin/VentasPageContent.tsx`: Nueva interfaz `DispatchPhoto`. Sección "📷 Fotos de Entrega" con thumbnails 80×80, borde verde/ámbar según verificación IA, feedback texto por foto. Product images 32×32 en cada item.
+- `caja3/src/components/VentasDetalle.jsx`: Fix bug — parseo de `dispatch_photo_url` ahora soporta formato objeto `{productos: {url, verification}, bolsa: {url, verification}}` además del array legacy. Thumbnails con borde verde/ámbar, label tipo foto, panel feedback IA. Visor fullscreen usa `photo.url`.
+
+**Commits:** `483818b`, `701216e`, `e3c1bee`
+**Deploys:** mi3-backend ✅, mi3-frontend ✅, caja3 ✅ (2 retries por extra closing div).
+
 ### 2026-05-02h — Product images en Ventas detail modal + git-sync-check hook
 
 **Cambios código:**
@@ -197,5 +207,5 @@
 ---
 
 > Sesiones anteriores (190+ total, desde 2026-04-10) archivadas en `bitacora-archivo.md`
-> Sesiones 2026-04-19c→2026-05-02b archivadas. Últimas archivadas: 2026-05-02b (Tocino 40g BD), 2026-05-02a (Fix combo editor cost_price), 2026-05-01c (Fix generate-shifts).
+> Sesiones 2026-04-19c→2026-05-02c archivadas. Últimas archivadas: 2026-05-02c (Combo editor ingredientes), 2026-05-02b (Tocino 40g BD), 2026-05-02a (Fix combo editor cost_price).
 > Reglas del proyecto extraídas en `.kiro/steering/laruta11-rules.md`

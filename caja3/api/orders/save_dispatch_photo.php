@@ -91,12 +91,12 @@ try {
                 throw new Exception('No se pudo leer imagen desde S3 URL');
             }
             
-            // Compress: resize to max 768px (1 Gemini tile = 258 tokens) and JPEG quality 70
+            // Compress: resize to max 1024px and JPEG quality 75
             $srcImg = @imagecreatefromstring($imageData);
             if ($srcImg) {
                 $w = imagesx($srcImg);
                 $h = imagesy($srcImg);
-                $maxDim = 768;
+                $maxDim = 1024;
                 if ($w > $maxDim || $h > $maxDim) {
                     $ratio = min($maxDim / $w, $maxDim / $h);
                     $newW = (int)($w * $ratio);
@@ -107,7 +107,7 @@ try {
                     $srcImg = $dst;
                 }
                 ob_start();
-                imagejpeg($srcImg, null, 70);
+                imagejpeg($srcImg, null, 75);
                 $compressedData = ob_get_clean();
                 imagedestroy($srcImg);
                 $imageBase64 = base64_encode($compressedData);

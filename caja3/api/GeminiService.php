@@ -249,6 +249,15 @@ PEDIDO DEL CLIENTE:
 {$itemsList}{$notesSection}
 TAREA: Analiza esta foto y verifica que los productos del pedido estén presentes.
 
+REFERENCIA VISUAL — CÓMO SE VEN LOS PRODUCTOS:
+- COMPLETO/HOT DOG: Caja blanca rectangular abierta con un hot dog visible. Encima se ve verde (palta), rojo (tomate/ketchup) y blanco (mayonesa). Cuenta cada caja blanca con hot dog = 1 completo.
+- HAMBURGUESA: Caja blanca cuadrada o rectangular con pan redondo visible. Se ve carne, lechuga, tomate.
+- PAPAS FRITAS: Bandeja de aluminio con papas fritas amarillas, a veces con mayo/ketchup encima.
+- SALCHIPAPA: Bandeja de aluminio con papas fritas + trozos de salchicha cortada.
+- BEBIDA 1.5L: Botella grande de plástico (Coca-Cola, Fanta, Bilz, etc.).
+- BEBIDA LATA: Lata metálica pequeña.
+- COMBO: Incluye varios items (ej: completo + papas + bebida). Cuenta cada item por separado.
+
 VERIFICACIÓN OBLIGATORIA:
 1. COMPARA lo que ves en la foto contra la lista del pedido. ¿Cada item del pedido es visible?
 2. Si ves productos o ingredientes que NO están en el pedido (ej: un trozo de carne extra, pollo extra, lomo), pregunta si está bien.
