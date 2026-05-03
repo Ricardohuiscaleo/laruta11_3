@@ -738,6 +738,7 @@ REGLAS:
 - Si hay texto de peso visible, úsalo. Si no, estima.
 - tipo_imagen = "producto", tipo_compra = "ingredientes"
 - fecha: NO uses fechas de vencimiento o fabricación del empaque. Si no hay fecha de compra visible, usa null.
+- proveedor: Para productos empacados, usa la MARCA visible en el empaque (ej: "Calo", "Colun", "Soprole", "PF"). NO uses el grupo empresarial dueño (NO "Agrosuper", NO "Nestlé Chile"). Si no hay marca visible, usa null.
 
 NOTAS MANUSCRITAS DE ENTREGA:
 - Si la imagen es una nota escrita a mano (papel con texto manuscrito), interpreta así:
