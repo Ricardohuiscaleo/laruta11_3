@@ -1402,7 +1402,15 @@ class PipelineExtraccionService
 
                 $isPackagingEquiv = in_array($equivVisual, $packagingUnits, true);
 
-                if (in_array($itemUnit, $baseUnits, true) && !$isPackagingEquiv) {
+                // Only apply packaging conversion if item unit differs from the equivalence's real unit
+                // E.g. item=kg, equiv real=kg → already in target unit, just link ingredient
+                // E.g. item=unidad, equiv visual=bolsa, real=unidad → convert (2 bolsas × 6 = 12 unidades)
+                $equivReal = mb_strtolower(trim($equiv->unidad_real ?? ''));
+                $alreadyInTargetUnit = ($itemUnit === $equivReal) || 
+                    (in_array($itemUnit, ['kg', 'kilo', 'kilos'], true) && $equivReal === 'kg') ||
+                    (in_array($itemUnit, ['litro', 'litros', 'l'], true) && in_array($equivReal, ['litro', 'l'], true));
+
+                if ($alreadyInTargetUnit || (in_array($itemUnit, $baseUnits, true) && !$isPackagingEquiv)) {
                     // Item is already in base units and equivalence is NOT a packaging conversion
                     // Just link to the ingredient without converting
                     if (isset($itemsMatch[$idx]) && $equiv->ingrediente_id) {
