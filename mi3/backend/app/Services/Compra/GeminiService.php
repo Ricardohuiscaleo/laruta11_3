@@ -693,9 +693,8 @@ Proveedores conocidos: {$suppliers}
 Ingredientes conocidos: {$products}
 
 EQUIVALENCIAS DE PACKAGING (supermercado):
-- "PAN DE COMPLETO XL" o "PAN COMPLETO XL": 1 bolsa = 6 unidades de pan. Si la boleta dice "2 X", son 2 bolsas = 12 panes. Registrar cantidad=12, unidad=unidad, precio_unitario=subtotal/12. NO multiplicar por más de 6 panes por bolsa.
-- "PAN DE HAMBURGUESA": 1 bolsa = 4 unidades. Misma lógica.
-- Si el nombre del producto incluye "BOLSA" o "PACK", la cantidad de la boleta es bolsas, NO unidades individuales.
+- "PAN DE COMPLETO XL" o "PAN COMPLETO XL": se vende por bolsa. Si la boleta dice "2 X", son 2 bolsas. Registrar cantidad=2, unidad=unidad. El sistema convertirá a panes automáticamente.
+- "PAN DE HAMBURGUESA": se vende por bolsa. Misma lógica: registrar cantidad en bolsas.
 - Para salsas en botella (SALSA CHICKEN DIPP, SALSA BBQ, etc.): cantidad = lo que dice la boleta (generalmente 1), unidad = "unidad". Son botellas individuales.
 
 {$patterns}
@@ -1028,9 +1027,9 @@ RUTs conocidos:
 81.537.500-5 = Unimarc (Rendic Hermanos S.A. / SMU)
 
 EQUIVALENCIAS DE PACKAGING (supermercado):
-- "PAN DE COMPLETO XL" o "PAN COMPLETO": 1 bolsa = 6 unidades de pan. Si la boleta dice "3 x 1 UN", son 3 bolsas = 18 panes. Registrar cantidad=18, unidad=unidad, precio_unitario=total/18.
-- "PAN DE HAMBURGUESA": 1 bolsa = 4 unidades. Misma lógica.
-- Si el nombre del producto incluye "BOLSA" o "PACK", la cantidad de la boleta es bolsas, NO unidades individuales.
+- "PAN DE COMPLETO XL" o "PAN COMPLETO": se vende por bolsa. Si la boleta dice "3 x 1 UN", son 3 bolsas. Registrar cantidad=3, unidad=unidad. El sistema convertirá a panes automáticamente.
+- "PAN DE HAMBURGUESA": se vende por bolsa. Misma lógica: registrar cantidad en bolsas.
+- Para salsas en botella: cantidad = lo que dice la boleta, unidad = "unidad".
 
 {$patterns}
 RULES;

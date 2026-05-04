@@ -952,7 +952,6 @@ class PipelineExtraccionService
         $data = $this->mapPersonToSupplier($data);
         $data = $this->matchProveedorByRut($data);
         $data = $this->applySupplierRules($data);
-        $data = $this->applyPackagingEquivalences($data);
         return $data;
     }
 
@@ -1394,15 +1393,18 @@ class PipelineExtraccionService
             }
 
             if ($equiv) {
-                // Skip equivalence if item already has a base unit (kg, g, unidad, litro, ml)
-                // Equivalences are for converting packages (caja, saco, paquete, bidón) to base units
+                // Determine if this equivalence should convert quantities
+                // Packaging units (bolsa, caja, saco, paquete, bidón) always get converted
+                $packagingUnits = ['bolsa', 'caja', 'saco', 'paquete', 'bidon', 'bidón', 'pack', 'bandeja'];
                 $baseUnits = ['kg', 'g', 'unidad', 'litro', 'ml', 'l', 'kilos', 'kilo', 'litros', 'gramos', 'gramo', 'unidades'];
                 $itemUnit = mb_strtolower(trim($item['unidad'] ?? ''));
                 $equivVisual = mb_strtolower(trim($equiv->unidad_visual ?? ''));
 
-                if (in_array($itemUnit, $baseUnits, true) && !in_array($equivVisual, $baseUnits, true)) {
-                    // Item is already in base units, don't apply package conversion
-                    // But still link to the ingredient if possible
+                $isPackagingEquiv = in_array($equivVisual, $packagingUnits, true);
+
+                if (in_array($itemUnit, $baseUnits, true) && !$isPackagingEquiv) {
+                    // Item is already in base units and equivalence is NOT a packaging conversion
+                    // Just link to the ingredient without converting
                     if (isset($itemsMatch[$idx]) && $equiv->ingrediente_id) {
                         $ing = Ingredient::find($equiv->ingrediente_id);
                         if ($ing) {
