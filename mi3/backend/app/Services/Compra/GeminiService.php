@@ -681,7 +681,7 @@ REGLAS BOLETA SUPERMERCADO CHILENO:
 - Después de "TOTAL" NO hay productos
 - "TARJETA DE DEBITO" o "VENTA DEBITO" → metodo_pago = "card"
 - Montos en pesos chilenos enteros (sin decimales)
-- IMPORTANTE IVA EN BOLETAS CHILENAS: El "Total" de una boleta SIEMPRE es IVA INCLUIDO. Si la boleta dice "El IVA de esta boleta es $X", ese IVA ya está DENTRO del total, NO se suma. Entonces: monto_total = Total (tal cual), iva = el valor informado, monto_neto = monto_total - iva. NUNCA hagas monto_total = total + iva.
+- IMPORTANTE IVA EN BOLETAS CHILENAS: El "Total" de una boleta SIEMPRE es IVA INCLUIDO. Si la boleta dice "El IVA de esta boleta es 3.521", ese IVA ya está DENTRO del total, NO se suma. Entonces: monto_total = Total (tal cual), iva = el valor informado, monto_neto = monto_total - iva. NUNCA hagas monto_total = total + iva.
 - Si no hay IVA explícito: monto_neto = round(total/1.19), iva = total - monto_neto
 
 RUTs conocidos:
@@ -1013,7 +1013,7 @@ REGLAS BOLETA SUPERMERCADO CHILENO:
 - Después de "TOTAL" NO hay productos
 - "TARJETA DE DEBITO" o "VENTA DEBITO" → metodo_pago = "card"
 - Montos en pesos chilenos enteros (sin decimales)
-- IMPORTANTE IVA EN BOLETAS CHILENAS: El "Total" de una boleta SIEMPRE es IVA INCLUIDO. Si la boleta dice "El IVA de esta boleta es $X", ese IVA ya está DENTRO del total, NO se suma. Entonces: monto_total = Total (tal cual), iva = el valor informado, monto_neto = monto_total - iva. NUNCA hagas monto_total = total + iva.
+- IMPORTANTE IVA EN BOLETAS CHILENAS: El "Total" de una boleta SIEMPRE es IVA INCLUIDO. Si la boleta dice "El IVA de esta boleta es 3.521", ese IVA ya está DENTRO del total, NO se suma. Entonces: monto_total = Total (tal cual), iva = el valor informado, monto_neto = monto_total - iva. NUNCA hagas monto_total = total + iva.
 - Si no hay IVA explícito: monto_neto = round(total/1.19), iva = total - monto_neto
 
 RUTs conocidos:
