@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`f793acf`) — Desktop: grid 4 col, subcats fusionadas, cards compactas |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`94f5fb6`) — Fix menu-cards bebidas subcats 61-65 |
 | landing3 | laruta11.cl | Astro | ✅ Running (`0781c56`) — Redesign completo + 6 productos curados + horarios desde BD |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`0f9c56a`) — Drop zone drag-over hover feedback |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`4acfc6f`) — Prompt producto: packaging NxPrecio, sachets, no inventar precios |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`e755c9f`) — Fix IVA: eliminado isProveedorNeto, total siempre IVA incluido |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`65ba576`) — Fix boleta IVA incluido + prompt packaging/sachets + hotfix heredoc |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -116,16 +116,16 @@
 ### 2026-05-03f — Prompt producto mejorado + drop zone hover + 3 condimentos BD
 
 **Cambios código:**
-- `mi3/backend/app/Services/Compra/GeminiService.php`: `promptProducto()` y `textRulesProducto()` reescritos. Nuevas secciones: PACKAGING/LIMPIEZA/INSUMOS (tipo_compra="insumos", NxPrecio=N unidades por precio total, no inventar precios sin dato visible), SOBRES/SACHETS (<100g → unidad, leer nombre exacto empaque). Ejemplo: "6x$8.500" → cantidad=6, precio_unitario=$1.417, subtotal=$8.500.
+- `mi3/backend/app/Services/Compra/GeminiService.php`: `promptProducto()` y `textRulesProducto()` reescritos. Nuevas secciones: PACKAGING/LIMPIEZA/INSUMOS (tipo_compra="insumos", NxPrecio=N unidades por precio total, no inventar precios sin dato visible), SOBRES/SACHETS (<100g → unidad, leer nombre exacto empaque). `promptBoleta()` y `textRulesBoleta()`: regla IVA boletas chilenas (Total SIEMPRE es IVA incluido). `normalizeAmounts()`: safety net que corrige si Gemini trata total como neto. Hotfix heredoc `$X` → ejemplo concreto.
 - `mi3/backend/app/Services/Compra/PipelineExtraccionService.php`: `validatePackagedGoods()` refactorizado — conversión directa g→kg y ml→lt, fallback empaque_detalle para unidad=1.
-- `mi3/frontend/app/admin/compras/registro/page.tsx`: Estado `dragOver` + visual feedback al arrastrar archivos sobre drop zone (borde mi3-500, bg-mi3-50, scale 1.02, shadow).
+- `mi3/frontend/app/admin/compras/registro/page.tsx`: Estado `dragOver` + visual feedback al arrastrar archivos sobre drop zone. Eliminado `isProveedorNeto()` que multiplicaba total×1.19 para Arauco/Vanni — en Chile boletas siempre son IVA incluido.
 
 **BD:**
 - Renombrado id=116: "Servilletas 300 24x24" → "Servilletas Premier Soft" (Packaging).
 - 3 ingredientes nuevos: id=168 Culantrito con Espinaca Sibarita, id=169 Ají Amarillo Molido Sibarita, id=170 Ajo Molido Fresco Batán (Condimentos, unidad, $333 c/u).
 
-**Commits:** `0f9c56a` (drop zone + validatePackagedGoods), `4acfc6f` (prompt producto mejorado)
-**Deploys:** mi3-frontend ✅, mi3-backend ✅ (×2).
+**Commits:** `0f9c56a`, `4acfc6f`, `5d10199`, `65ba576`, `e755c9f` (fix IVA frontend)
+**Deploys:** mi3-frontend ✅ (×2), mi3-backend ✅ (×4).
 
 ### 2026-05-03d — Pipeline compras IA: fix peso empaque + total tokens + prompt tuning
 
