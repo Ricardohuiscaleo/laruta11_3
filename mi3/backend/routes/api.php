@@ -251,6 +251,7 @@ Route::prefix('v1')->group(function () {
         Route::get('ventas/kpis', [VentasController::class, 'kpis']);
         Route::get('ventas/top-products', [VentasController::class, 'topProducts']);
         Route::get('ventas/cmv', [VentasController::class, 'cmv']);
+        Route::get('ventas/cmv/{ingredientId}/products', [VentasController::class, 'cmvIngredientProducts']);
         Route::get('ventas/monthly', [VentasController::class, 'monthly']);
         Route::get('ventas/{orderNumber}/detail', [VentasController::class, 'detail']);
         Route::get('ventas', [VentasController::class, 'index']);

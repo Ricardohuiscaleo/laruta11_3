@@ -10,7 +10,7 @@
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`94f5fb6`) — Fix menu-cards bebidas subcats 61-65 |
 | landing3 | laruta11.cl | Astro | ✅ Running (`0781c56`) — Redesign completo + 6 productos curados + horarios desde BD |
 | mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`ae28ae4`) — Sidebar agrupada en 5 secciones colapsables |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`65ba576`) — Fix boleta IVA incluido + prompt packaging/sachets + hotfix heredoc |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`89cde85`) — Packaging equivalences BD-driven + hotfix target unit check |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs
@@ -124,8 +124,8 @@
 - Renombrado id=116: "Servilletas 300 24x24" → "Servilletas Premier Soft" (Packaging).
 - 3 ingredientes nuevos: id=168 Culantrito con Espinaca Sibarita, id=169 Ají Amarillo Molido Sibarita, id=170 Ajo Molido Fresco Batán (Condimentos, unidad, $333 c/u).
 
-**Commits:** `0f9c56a`, `4acfc6f`, `5d10199`, `65ba576`, `e755c9f` (fix IVA frontend)
-**Deploys:** mi3-frontend ✅ (×2), mi3-backend ✅ (×4).
+**Commits:** `0f9c56a`, `4acfc6f`, `5d10199`, `65ba576`, `e755c9f`, `0955080`, `ae28ae4`, `2c41d99`, `89cde85`
+**Deploys:** mi3-frontend ✅ (×3), mi3-backend ✅ (×7).
 
 ### 2026-05-03d — Pipeline compras IA: fix peso empaque + total tokens + prompt tuning
 

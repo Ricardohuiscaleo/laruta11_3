@@ -126,6 +126,26 @@ class VentasController extends Controller
     }
 
     /**
+     * GET /api/v1/admin/ventas/cmv/{ingredientId}/products
+     * Breakdown of which products consumed a specific ingredient.
+     */
+    public function cmvIngredientProducts(Request $request, int $ingredientId): JsonResponse
+    {
+        $request->validate([
+            'period' => 'sometimes|string|in:shift_today,today,week,month',
+            'month'  => 'sometimes|nullable|string|regex:/^\d{4}-\d{2}$/',
+        ]);
+
+        $period = $request->query('period', 'month');
+        $month  = $request->query('month');
+
+        return response()->json([
+            'success' => true,
+            'data'    => $this->ventasService->getCmvIngredientProducts($ingredientId, $period, $month),
+        ]);
+    }
+
+    /**
      * GET /api/v1/admin/ventas/monthly
      * Monthly aggregates for charts.
      */

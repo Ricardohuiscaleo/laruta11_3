@@ -569,6 +569,92 @@ class VentasService
     }
 
     /**
+     * Get breakdown of which products consumed a specific ingredient in a period.
+     * Returns: [{product_name, times_sold, recipe_qty, total_consumed, unit, cost}]
+     */
+    public function getCmvIngredientProducts(int $ingredientId, string $period, ?string $month = null): array
+    {
+        if ($month && preg_match('/^\d{4}-\d{2}$/', $month)) {
+            $base = Carbon::createFromFormat('Y-m-d', $month . '-01', 'America/Santiago');
+            $start = $base->copy()->startOfMonth()->startOfDay()->utc();
+            $end = $base->copy()->endOfMonth()->endOfDay()->utc();
+        } else {
+            [$start, $end] = $this->getDateRange($period);
+        }
+
+        // Get all sale transactions for this ingredient, grouped by order_item
+        $transactions = DB::table('inventory_transactions as it')
+            ->join('tuu_orders as o', 'it.order_reference', '=', 'o.order_number')
+            ->join('tuu_order_items as oi', function ($join) {
+                $join->on('oi.order_reference', '=', 'it.order_reference')
+                     ->where('oi.item_type', '=', 'product');
+            })
+            ->where('it.ingredient_id', $ingredientId)
+            ->where('it.transaction_type', 'sale')
+            ->where('o.payment_status', 'paid')
+            ->where('o.order_number', 'NOT LIKE', 'RL6-%')
+            ->whereBetween('o.created_at', [$start, $end])
+            ->whereNotNull('oi.product_id')
+            ->select('oi.product_id', 'oi.product_name', 'oi.order_reference', 'oi.quantity as item_qty')
+            ->distinct()
+            ->get();
+
+        // Get recipe quantities for this ingredient
+        $recipes = DB::table('product_recipes')
+            ->where('ingredient_id', $ingredientId)
+            ->pluck('quantity', 'product_id')
+            ->toArray();
+
+        // Aggregate by product (deduplicate by order_reference + product_id)
+        $productMap = [];
+        $seen = [];
+        foreach ($transactions as $tx) {
+            $dedupKey = $tx->order_reference . '-' . $tx->product_id;
+            if (isset($seen[$dedupKey])) {
+                continue;
+            }
+            $seen[$dedupKey] = true;
+
+            $recipeQty = $recipes[$tx->product_id] ?? null;
+            if ($recipeQty === null) {
+                continue;
+            }
+
+            $key = $tx->product_id;
+            if (!isset($productMap[$key])) {
+                $productMap[$key] = [
+                    'product_name' => $tx->product_name,
+                    'times_sold' => 0,
+                    'recipe_qty' => round((float) $recipeQty, 3),
+                ];
+            }
+            $productMap[$key]['times_sold'] += $tx->item_qty;
+        }
+
+        // Get ingredient info
+        $ingredient = DB::table('ingredients')->where('id', $ingredientId)->first();
+        $unit = $ingredient->unit ?? 'unidad';
+        $costPerUnit = (float) ($ingredient->cost_per_unit ?? 0);
+
+        // Build response
+        $products = array_values(array_map(function ($p) use ($unit, $costPerUnit) {
+            $totalConsumed = $p['times_sold'] * $p['recipe_qty'];
+            return [
+                'product_name' => $p['product_name'],
+                'times_sold' => $p['times_sold'],
+                'recipe_qty' => $p['recipe_qty'],
+                'total_consumed' => round($totalConsumed, 3),
+                'unit' => $unit,
+                'cost' => round($totalConsumed * $costPerUnit),
+            ];
+        }, $productMap));
+
+        usort($products, fn($a, $b) => $b['cost'] <=> $a['cost']);
+
+        return ['products' => $products];
+    }
+
+    /**
      * Monthly aggregates for the last N months (includes nómina from payroll).
      *
      * @return array<int, array{month: string, label: string, total_sales: float, total_cost: float, total_delivery: float, total_nomina: float, resultado: float}>

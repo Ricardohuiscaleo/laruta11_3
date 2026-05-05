@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
@@ -37,6 +37,7 @@ interface PaymentBreakdown { method: string; order_count: number; total_sales: n
 interface LiveSale { order_number: string; customer_name: string; total: number; timestamp: string }
 interface CmvIngredient { ingredient_id: number; name: string; total_quantity: number; unit: string; total_cost: number; percentage: number }
 interface CmvData { total_cmv: number; cmv_percentage: number; ingredients: CmvIngredient[]; untracked_cmv?: number }
+interface CmvProductBreakdown { product_name: string; times_sold: number; recipe_qty: number; total_consumed: number; unit: string; cost: number }
 
 /* ─── Helpers ─── */
 const apps = [
@@ -181,6 +182,7 @@ export default function DashboardSection() {
   const [shiftKpis, setShiftKpis] = useState<ShiftKpis | null>(null);
   const [breakdown, setBreakdown] = useState<PaymentBreakdown[]>([]);
   const [cmvData, setCmvData] = useState<CmvData | null>(null);
+  const [cmvExpanded, setCmvExpanded] = useState<Record<number, CmvProductBreakdown[] | 'loading'>>({});
   const [loading, setLoading] = useState(true);
   const [edrLoading, setEdrLoading] = useState(false);
   const [shiftLoading, setShiftLoading] = useState(true);
@@ -199,6 +201,24 @@ export default function DashboardSection() {
     const [y, m] = selectedMonth.split('-').map(Number);
     const d = new Date(y, m - 1 + dir, 1);
     setSelectedMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    setCmvExpanded({}); // Reset expanded state on month change
+  };
+
+  const toggleCmvIngredient = async (ingredientId: number) => {
+    if (cmvExpanded[ingredientId]) {
+      setCmvExpanded(prev => { const next = { ...prev }; delete next[ingredientId]; return next; });
+      return;
+    }
+    setCmvExpanded(prev => ({ ...prev, [ingredientId]: 'loading' }));
+    try {
+      const monthParam = isCurrentMonth ? '' : `&month=${selectedMonth}`;
+      const res = await apiFetch<{ success: boolean; data: { products: CmvProductBreakdown[] } }>(
+        `/admin/ventas/cmv/${ingredientId}/products?period=month${monthParam}`
+      );
+      setCmvExpanded(prev => ({ ...prev, [ingredientId]: res?.data?.products ?? [] }));
+    } catch {
+      setCmvExpanded(prev => { const next = { ...prev }; delete next[ingredientId]; return next; });
+    }
   };
 
   const selectedMonthLabel = (() => {
@@ -330,14 +350,50 @@ export default function DashboardSection() {
                     <table className="w-full text-[11px]" role="table" aria-label="CMV por ingrediente">
                       <thead><tr className="text-gray-400 text-[9px] uppercase tracking-wider"><th className="text-left px-3 py-1 font-medium">Ingrediente</th><th className="text-right px-2 py-1 font-medium">Consumo</th><th className="text-right px-2 py-1 font-medium">Costo</th><th className="text-right px-2 py-1 font-medium">%</th></tr></thead>
                       <tbody className="divide-y divide-gray-50">
-                        {cmvData.ingredients.map(ing => (
-                          <tr key={ing.ingredient_id} className={cn(ing.percentage > 10 && 'bg-red-50/60')}>
-                            <td className="px-3 py-1 font-medium text-gray-700">{ing.name}</td>
-                            <td className="text-right px-2 py-1 text-gray-500 tabular-nums">{ing.total_quantity} {ing.unit}</td>
-                            <td className="text-right px-2 py-1 text-gray-900 font-medium tabular-nums">{formatCLP(ing.total_cost)}</td>
-                            <td className={cn('text-right px-2 py-1 tabular-nums font-medium', ing.percentage > 10 ? 'text-red-600' : 'text-gray-500')}>{ing.percentage}%</td>
-                          </tr>
-                        ))}
+                        {cmvData.ingredients.map(ing => {
+                          const expanded = cmvExpanded[ing.ingredient_id];
+                          const isOpen = !!expanded;
+                          const isLoading = expanded === 'loading';
+                          const products = Array.isArray(expanded) ? expanded : [];
+                          return (
+                            <React.Fragment key={ing.ingredient_id}>
+                              <tr
+                                className={cn('cursor-pointer hover:bg-gray-50 transition-colors', ing.percentage > 10 && 'bg-red-50/60')}
+                                onClick={() => toggleCmvIngredient(ing.ingredient_id)}
+                              >
+                                <td className="px-3 py-1 font-medium text-gray-700">
+                                  <span className="inline-flex items-center gap-1">
+                                    <ChevronRight className={cn('h-3 w-3 text-gray-400 transition-transform', isOpen && 'rotate-90')} />
+                                    {ing.name}
+                                  </span>
+                                </td>
+                                <td className="text-right px-2 py-1 text-gray-500 tabular-nums">{ing.total_quantity} {ing.unit}</td>
+                                <td className="text-right px-2 py-1 text-gray-900 font-medium tabular-nums">{formatCLP(ing.total_cost)}</td>
+                                <td className={cn('text-right px-2 py-1 tabular-nums font-medium', ing.percentage > 10 ? 'text-red-600' : 'text-gray-500')}>{ing.percentage}%</td>
+                              </tr>
+                              {isOpen && (
+                                <tr>
+                                  <td colSpan={4} className="px-0 py-0">
+                                    {isLoading ? (
+                                      <div className="flex items-center gap-2 px-6 py-2 text-[10px] text-gray-400"><Loader2 className="h-3 w-3 animate-spin" />Cargando...</div>
+                                    ) : products.length > 0 ? (
+                                      <div className="bg-gray-50/80 px-6 py-1.5 space-y-0.5">
+                                        {products.map((p, i) => (
+                                          <div key={i} className="flex items-center justify-between text-[10px] text-gray-600">
+                                            <span>{p.product_name} ×{p.times_sold}</span>
+                                            <span className="tabular-nums">{p.total_consumed} {p.unit} ({p.recipe_qty}{p.unit}/u) · {formatCLP(p.cost)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div className="px-6 py-1.5 text-[10px] text-gray-400">Sin desglose disponible</div>
+                                    )}
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
