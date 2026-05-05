@@ -377,13 +377,19 @@ export default function DashboardSection() {
                                     {isLoading ? (
                                       <div className="flex items-center gap-2 px-6 py-2 text-[10px] text-gray-400"><Loader2 className="h-3 w-3 animate-spin" />Cargando...</div>
                                     ) : products.length > 0 ? (
-                                      <div className="bg-gray-50/80 px-6 py-1.5 space-y-0.5">
-                                        {products.map((p, i) => (
-                                          <div key={i} className="flex items-center justify-between text-[10px] text-gray-600">
-                                            <span>{p.product_name} ×{p.times_sold}</span>
-                                            <span className="tabular-nums">{p.total_consumed} {p.unit} ({p.recipe_qty}{p.unit}/u) · {formatCLP(p.cost)}</span>
-                                          </div>
-                                        ))}
+                                      <div className="bg-gray-50/80 px-4 py-1.5">
+                                        <div className="flex items-center justify-between text-[9px] text-gray-400 uppercase tracking-wider mb-1 px-2">
+                                          <span>Producto</span>
+                                          <span>Consumo (receta/u) · Costo</span>
+                                        </div>
+                                        <div className="space-y-0.5">
+                                          {products.map((p, i) => (
+                                            <div key={i} className="flex items-center justify-between text-[10px] text-gray-600 px-2">
+                                              <span>{p.product_name} ×{p.times_sold}</span>
+                                              <span className="tabular-nums">{p.total_consumed} {p.unit} ({p.recipe_qty}{p.unit}/u) · {formatCLP(p.cost)}</span>
+                                            </div>
+                                          ))}
+                                        </div>
                                       </div>
                                     ) : (
                                       <div className="px-6 py-1.5 text-[10px] text-gray-400">Sin desglose disponible</div>

@@ -587,7 +587,7 @@ class VentasService
             ->join('tuu_orders as o', 'it.order_reference', '=', 'o.order_number')
             ->join('tuu_order_items as oi', function ($join) {
                 $join->on('oi.order_reference', '=', 'it.order_reference')
-                     ->where('oi.item_type', '=', 'product');
+                     ->whereIn('oi.item_type', ['product', 'combo']);
             })
             ->where('it.ingredient_id', $ingredientId)
             ->where('it.transaction_type', 'sale')
@@ -595,7 +595,7 @@ class VentasService
             ->where('o.order_number', 'NOT LIKE', 'RL6-%')
             ->whereBetween('o.created_at', [$start, $end])
             ->whereNotNull('oi.product_id')
-            ->select('oi.product_id', 'oi.product_name', 'oi.order_reference', 'oi.quantity as item_qty')
+            ->select('oi.product_id', 'oi.product_name', 'oi.order_reference', 'oi.quantity as item_qty', 'oi.item_type')
             ->distinct()
             ->get();
 
@@ -623,8 +623,26 @@ class VentasService
             ->toArray();
 
         // Aggregate by product (deduplicate by order_reference + product_id)
+        // Also includes combos: combo_items contain products that use this ingredient
         $productMap = [];
         $seen = [];
+
+        // Build combo→product mapping: which products does each combo contain?
+        $comboProducts = DB::table('combo_items as ci')
+            ->join('combos as c', 'c.id', '=', 'ci.combo_id')
+            ->whereIn('ci.product_id', array_keys($recipes))
+            ->where('c.active', 1)
+            ->select('c.id as combo_id', 'c.name as combo_name', 'ci.product_id', 'ci.quantity')
+            ->get()
+            ->groupBy('combo_id');
+
+        // Map combo product_id (from products table where category_id=8) to combo_id
+        $comboProductToCombo = DB::table('products')
+            ->where('category_id', 8)
+            ->where('is_active', 1)
+            ->pluck('name', 'id')
+            ->toArray();
+
         foreach ($transactions as $tx) {
             $dedupKey = $tx->order_reference . '-' . $tx->product_id;
             if (isset($seen[$dedupKey])) {
@@ -632,20 +650,54 @@ class VentasService
             }
             $seen[$dedupKey] = true;
 
+            // Direct product match
             $recipeQty = $recipes[$tx->product_id] ?? null;
-            if ($recipeQty === null) {
+            if ($recipeQty !== null) {
+                $key = $tx->product_id;
+                if (!isset($productMap[$key])) {
+                    $productMap[$key] = [
+                        'product_name' => $tx->product_name,
+                        'times_sold' => 0,
+                        'recipe_qty' => round((float) $recipeQty, 3),
+                    ];
+                }
+                $productMap[$key]['times_sold'] += $tx->item_qty;
                 continue;
             }
 
-            $key = $tx->product_id;
-            if (!isset($productMap[$key])) {
-                $productMap[$key] = [
-                    'product_name' => $tx->product_name,
-                    'times_sold' => 0,
-                    'recipe_qty' => round((float) $recipeQty, 3),
-                ];
+            // Check if this is a combo — look for combo_data in order items
+            if ($tx->item_type === 'combo' || isset($comboProductToCombo[$tx->product_id])) {
+                // Find combo items that use this ingredient
+                $comboId = DB::table('combo_items')
+                    ->join('products as p', 'p.id', '=', DB::raw($tx->product_id))
+                    ->where('p.category_id', 8)
+                    ->value('combo_id');
+
+                // Try matching by product name to combo name
+                if (!$comboId) {
+                    $comboId = DB::table('combos')
+                        ->whereRaw('LOWER(name) = ?', [mb_strtolower($tx->product_name)])
+                        ->value('id');
+                }
+
+                if ($comboId && $comboProducts->has($comboId)) {
+                    foreach ($comboProducts->get($comboId) as $ci) {
+                        $ciRecipeQty = $recipes[$ci->product_id] ?? null;
+                        if ($ciRecipeQty === null) continue;
+
+                        $comboKey = 'combo-' . $comboId . '-' . $tx->product_id;
+                        $qtyPerCombo = (int) $ci->quantity * $ciRecipeQty;
+                        if (!isset($productMap[$comboKey])) {
+                            $productMap[$comboKey] = [
+                                'product_name' => $tx->product_name,
+                                'times_sold' => 0,
+                                'recipe_qty' => round($qtyPerCombo, 3),
+                            ];
+                        }
+                        $productMap[$comboKey]['times_sold'] += $tx->item_qty;
+                    }
+                }
             }
-            $productMap[$key]['times_sold'] += $tx->item_qty;
         }
 
         // Build response
