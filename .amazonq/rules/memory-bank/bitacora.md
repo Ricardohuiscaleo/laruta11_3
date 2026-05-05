@@ -9,8 +9,8 @@
 | app3 | app.laruta11.cl | Astro + React + PHP | ✅ Running (`f793acf`) — Desktop: grid 4 col, subcats fusionadas, cards compactas |
 | caja3 | caja.laruta11.cl | Astro + React + PHP | ✅ Running (`94f5fb6`) — Fix menu-cards bebidas subcats 61-65 |
 | landing3 | laruta11.cl | Astro | ✅ Running (`0781c56`) — Redesign completo + 6 productos curados + horarios desde BD |
-| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`0bd4f2f`) — CMV chevron expandible por producto |
-| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`cc8e1a9`) — CMV desglose por producto + conversión g→kg en recipe_qty |
+| mi3-frontend | mi.laruta11.cl | Next.js 14 + React + Echo | ✅ Running (`30ae2fd`) — CMV chevron expandible con combos + encabezados |
+| mi3-backend | api-mi3.laruta11.cl | Laravel 11 + PHP 8.3 + Reverb | ✅ Running (`30ae2fd`) — CMV desglose combos + conversión g→kg |
 | saas-backend | admin.digitalizatodo.cl | Laravel 11 + PHP 8.4 + Reverb | ✅ Running |
 
 ### Coolify UUIDs

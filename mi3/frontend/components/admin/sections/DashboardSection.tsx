@@ -377,20 +377,26 @@ export default function DashboardSection() {
                                     {isLoading ? (
                                       <div className="flex items-center gap-2 px-6 py-2 text-[10px] text-gray-400"><Loader2 className="h-3 w-3 animate-spin" />Cargando...</div>
                                     ) : products.length > 0 ? (
-                                      <div className="bg-gray-50/80 px-4 py-1.5">
-                                        <div className="flex items-center justify-between text-[9px] text-gray-400 uppercase tracking-wider mb-1 px-2">
-                                          <span>Producto</span>
-                                          <span>Consumo (receta/u) · Costo</span>
-                                        </div>
-                                        <div className="space-y-0.5">
+                                      <table className="w-full text-[10px]">
+                                        <thead>
+                                          <tr className="text-[9px] text-gray-400 uppercase tracking-wider">
+                                            <th className="text-left px-3 py-0.5 font-medium">Producto</th>
+                                            <th className="text-right px-2 py-0.5 font-medium">Consumo</th>
+                                            <th className="text-right px-2 py-0.5 font-medium">Costo</th>
+                                            <th className="text-right px-2 py-0.5 font-medium">Receta/u</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
                                           {products.map((p, i) => (
-                                            <div key={i} className="flex items-center justify-between text-[10px] text-gray-600 px-2">
-                                              <span>{p.product_name} ×{p.times_sold}</span>
-                                              <span className="tabular-nums">{p.total_consumed} {p.unit} ({p.recipe_qty}{p.unit}/u) · {formatCLP(p.cost)}</span>
-                                            </div>
+                                            <tr key={i} className="text-gray-600">
+                                              <td className="px-3 py-0.5">{p.product_name} ×{p.times_sold}</td>
+                                              <td className="text-right px-2 py-0.5 tabular-nums">{p.total_consumed} {p.unit}</td>
+                                              <td className="text-right px-2 py-0.5 tabular-nums font-medium">{formatCLP(p.cost)}</td>
+                                              <td className="text-right px-2 py-0.5 tabular-nums text-gray-400">{p.recipe_qty}{p.unit}/u</td>
+                                            </tr>
                                           ))}
-                                        </div>
-                                      </div>
+                                        </tbody>
+                                      </table>
                                     ) : (
                                       <div className="px-6 py-1.5 text-[10px] text-gray-400">Sin desglose disponible</div>
                                     )}
