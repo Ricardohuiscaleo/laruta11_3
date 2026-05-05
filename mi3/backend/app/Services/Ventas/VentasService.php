@@ -599,10 +599,27 @@ class VentasService
             ->distinct()
             ->get();
 
-        // Get recipe quantities for this ingredient
+        // Get ingredient info (needed for unit conversion in recipes)
+        $ingredient = DB::table('ingredients')->where('id', $ingredientId)->first();
+        $unit = $ingredient->unit ?? 'unidad';
+        $costPerUnit = (float) ($ingredient->cost_per_unit ?? 0);
+
+        // Get recipe quantities for this ingredient (with unit conversion)
         $recipes = DB::table('product_recipes')
             ->where('ingredient_id', $ingredientId)
-            ->pluck('quantity', 'product_id')
+            ->select('product_id', 'quantity', 'unit')
+            ->get()
+            ->mapWithKeys(function ($row) use ($unit) {
+                $qty = (float) $row->quantity;
+                $recipeUnit = mb_strtolower(trim($row->unit ?? ''));
+                // Convert recipe unit to ingredient unit if needed
+                if ($unit === 'kg' && $recipeUnit === 'g') {
+                    $qty = $qty / 1000;
+                } elseif ($unit === 'litro' && in_array($recipeUnit, ['ml', 'cc'])) {
+                    $qty = $qty / 1000;
+                }
+                return [$row->product_id => $qty];
+            })
             ->toArray();
 
         // Aggregate by product (deduplicate by order_reference + product_id)
@@ -630,11 +647,6 @@ class VentasService
             }
             $productMap[$key]['times_sold'] += $tx->item_qty;
         }
-
-        // Get ingredient info
-        $ingredient = DB::table('ingredients')->where('id', $ingredientId)->first();
-        $unit = $ingredient->unit ?? 'unidad';
-        $costPerUnit = (float) ($ingredient->cost_per_unit ?? 0);
 
         // Build response
         $products = array_values(array_map(function ($p) use ($unit, $costPerUnit) {
