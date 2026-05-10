@@ -373,15 +373,20 @@ export default function VentasDetalle({ startDate: propStart, endDate: propEnd, 
                       </>
                     )}
                     {order.delivery_type === 'delivery' && parseFloat(order.delivery_fee || 0) > 0 && (
-                      <span className="inline-flex items-center gap-1 bg-yellow-50 border border-yellow-200 text-yellow-800 px-1.5 py-0.5 rounded text-[10px] font-semibold">
-                        <Truck size={10} />
-                        ${Math.round(parseFloat(order.delivery_fee) + parseFloat(order.delivery_discount || 0)).toLocaleString('es-CL')}
+                      <span className="inline-flex flex-col bg-yellow-50 border border-yellow-200 text-yellow-800 px-1.5 py-0.5 rounded text-[10px] font-semibold gap-0.5">
+                        <span className="flex items-center gap-1">
+                          <Truck size={10} />
+                          Delivery: ${Math.round(parseFloat(order.delivery_fee) + parseFloat(order.delivery_discount || 0)).toLocaleString('es-CL')}
+                        </span>
                         {parseFloat(order.delivery_discount || 0) > 0 && (
-                          <span className="text-green-600">(-${Math.round(order.delivery_discount).toLocaleString('es-CL')} RL6 = ${Math.round(order.delivery_fee).toLocaleString('es-CL')})</span>
+                          <span className="text-green-600 ml-3">- ${Math.round(order.delivery_discount).toLocaleString('es-CL')} RL6</span>
                         )}
                         {order.payment_method === 'card' && (
-                          <span className="text-red-500">+${Math.round(order.card_surcharge || 0).toLocaleString('es-CL')} 💳</span>
+                          <span className="text-red-500 ml-3">+ ${Math.round(order.card_surcharge || 0).toLocaleString('es-CL')} 💳 Recargo</span>
                         )}
+                        <span className="text-gray-900 border-t border-yellow-200 pt-0.5 mt-0.5 ml-3">
+                          Total Delivery: ${Math.round(parseFloat(order.delivery_fee) + (order.payment_method === 'card' ? parseFloat(order.card_surcharge || 0) : 0)).toLocaleString('es-CL')}
+                        </span>
                         {order.delivery_distance_km && (
                           <span className="text-yellow-600">· {order.delivery_distance_km} km · ~{order.delivery_duration_min} min</span>
                         )}
