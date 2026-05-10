@@ -48,6 +48,7 @@ try {
                 delivery_address,
                 delivery_fee,
                 delivery_discount,
+                card_surcharge,
                 subtotal,
                 delivery_distance_km,
                 delivery_duration_min,
