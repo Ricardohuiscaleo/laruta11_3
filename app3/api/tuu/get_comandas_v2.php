@@ -59,9 +59,9 @@ try {
                    tuu_idempotency_key, tuu_device_used, status, payment_status, payment_method, order_status, 
                    delivery_type, delivery_address, pickup_time, customer_notes, 
                    subtotal, discount_amount, delivery_discount, delivery_extras, delivery_extras_items, cashback_used,
-                   special_instructions, rider_id, estimated_delivery_time, created_at, updated_at, 
-                   tuu_transaction_id, tuu_amount, tuu_timestamp, tuu_message, 
-                   tuu_account_id, tuu_currency, tuu_signature, delivery_fee, 
+                   special_instructions, rider_id, estimated_delivery_time, created_at, updated_at,
+                   tuu_transaction_id, tuu_amount, tuu_timestamp, tuu_message,
+                   tuu_account_id, tuu_currency, tuu_signature, delivery_fee, card_surcharge,
                    scheduled_time, is_scheduled, reward_used, reward_stamps_consumed, reward_applied_at
             FROM tuu_orders 
             {$where_clause}

@@ -975,12 +975,12 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                   {order.payment_method === 'card' && (
                     <div className="flex justify-between text-xs text-red-500 ml-3">
                       <span>↳ 💳 Recargo</span>
-                      <span className="font-semibold">+$500</span>
+                      <span className="font-semibold">+${parseInt(order.card_surcharge || 0).toLocaleString('es-CL')}</span>
                     </div>
                   )}
                   <div className="border-t border-gray-200 mt-1 pt-1 flex justify-between text-xs font-bold text-gray-800">
                     <span>Total Delivery</span>
-                    <span>${(parseInt(order.delivery_fee) + (order.payment_method === 'card' ? 500 : 0)).toLocaleString('es-CL')}</span>
+                    <span>${(parseInt(order.delivery_fee) + (order.payment_method === 'card' ? parseInt(order.card_surcharge || 0) : 0)).toLocaleString('es-CL')}</span>
                   </div>
                 </div>
               )}

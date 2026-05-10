@@ -260,7 +260,11 @@ try {
     }
 
     // Override client-provided values with server-calculated ones
-    $delivery_fee = $calculated_delivery_fee;
+    // Store delivery_fee as NET of discount to match caja3 convention
+    $delivery_fee = $calculated_delivery_fee - $delivery_discount;
+    if ($delivery_fee < 0) {
+        $delivery_fee = 0;
+    }
 
     // === Task 7.2: card_surcharge — read from BD, validate, store separately ===
     // Read delivery config (may already be loaded above, but safe to call again — helper is idempotent)
