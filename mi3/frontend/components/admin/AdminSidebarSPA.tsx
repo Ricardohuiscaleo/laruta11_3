@@ -22,7 +22,6 @@ interface SidebarLink {
 interface SidebarGroup {
   id: string;
   label: string;
-  emoji: string;
   links: SidebarLink[];
 }
 
@@ -30,7 +29,6 @@ const sidebarGroups: SidebarGroup[] = [
   {
     id: 'general',
     label: 'General',
-    emoji: '📊',
     links: [
       { key: 'inicio', label: 'Inicio', icon: Home },
       { key: 'notificaciones', label: 'Alertas', icon: Bell },
@@ -39,7 +37,6 @@ const sidebarGroups: SidebarGroup[] = [
   {
     id: 'personas',
     label: 'Personas',
-    emoji: '👥',
     links: [
       { key: 'personal', label: 'Usuarios', icon: Users },
       { key: 'turnos', label: 'Turnos', icon: Calendar },
@@ -51,7 +48,6 @@ const sidebarGroups: SidebarGroup[] = [
   {
     id: 'finanzas',
     label: 'Finanzas',
-    emoji: '💰',
     links: [
       { key: 'ventas', label: 'Ventas', icon: DollarSign },
       { key: 'compras', label: 'Compras', icon: ShoppingCart },
@@ -63,7 +59,6 @@ const sidebarGroups: SidebarGroup[] = [
   {
     id: 'operacion',
     label: 'Operación',
-    emoji: '🍔',
     links: [
       { key: 'recetas', label: 'Recetas', icon: ChefHat },
       { key: 'delivery', label: 'Delivery', icon: Truck },
@@ -74,7 +69,6 @@ const sidebarGroups: SidebarGroup[] = [
   {
     id: 'sistema',
     label: 'Sistema',
-    emoji: '⚙️',
     links: [
       { key: 'cronjobs', label: 'Cronjobs', icon: Clock },
     ],
@@ -199,22 +193,21 @@ export default function AdminSidebarSPA({ activeSection, onSectionChange, badges
         />
       </div>
 
-      <nav className="mt-1 flex-1 px-2 overflow-y-auto">
-        {sidebarGroups.map((group) => {
+      <nav className="mt-2 flex-1 px-2 overflow-y-auto">
+        {sidebarGroups.map((group, groupIndex) => {
           const groupOpen = isGroupOpen(group.id) || activeGroupId === group.id;
           const groupHasBadge = group.links.some(l => (badges[l.key] || 0) > 0);
 
           return (
-            <div key={group.id} className="mb-0.5">
+            <div key={group.id} className={cn('mb-1', groupIndex > 0 && 'border-t border-red-500/30 pt-2')}>
               {/* Group header */}
               {!collapsed ? (
                 <button
                   type="button"
                   onClick={() => toggleGroup(group.id)}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-red-300 hover:text-white transition-colors"
+                  className="flex w-full items-center gap-2 px-2 py-2 text-[11px] font-bold uppercase tracking-widest text-red-200/90 hover:text-white transition-colors"
                   aria-expanded={groupOpen}
                 >
-                  <span>{group.emoji}</span>
                   <span className="flex-1 text-left">{group.label}</span>
                   {groupHasBadge && !groupOpen && (
                     <span className="h-2 w-2 rounded-full bg-amber-400" />
@@ -225,14 +218,14 @@ export default function AdminSidebarSPA({ activeSection, onSectionChange, badges
                   )} />
                 </button>
               ) : (
-                <div className="flex justify-center py-1">
-                  <span className="text-xs" title={group.label}>{group.emoji}</span>
+                <div className="flex justify-center py-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-red-200/70" title={group.label}>{group.label.slice(0, 2)}</span>
                 </div>
               )}
 
               {/* Group links */}
               {(collapsed || groupOpen) && (
-                <div className={cn('space-y-0.5', !collapsed && 'ml-1')}>
+                <div className={cn('space-y-0.5', !collapsed && 'ml-3 pl-2 border-l-2 border-red-500/20')}>
                   {group.links.map((link) => {
                     const badgeCount = badges[link.key] || 0;
                     const showAlert = link.key === 'delivery' && hasPendingSettlement && badgeCount === 0;
