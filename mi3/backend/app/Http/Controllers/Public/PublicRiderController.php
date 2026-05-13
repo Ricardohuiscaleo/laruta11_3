@@ -114,6 +114,16 @@ class PublicRiderController extends Controller
             ]);
         }
 
+        // FIX: Si el rider entrega y el pago no está confirmado, auto-confirmar pago
+        if ($status === 'delivered' && $order->payment_status !== 'paid') {
+            DB::table('tuu_orders')
+                ->where('id', $orderId)
+                ->update([
+                    'payment_status' => 'paid',
+                    'updated_at'     => now(),
+                ]);
+        }
+
         $updatedOrder = $this->deliveryService->updateOrderStatus($orderId, $status);
 
         return response()->json([

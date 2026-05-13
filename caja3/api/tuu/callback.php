@@ -49,11 +49,29 @@ try {
         default => 'pending'
     };
 
-    $sql = "UPDATE tuu_orders SET 
-            status = ?, 
-            tuu_transaction_id = ?,
-            updated_at = NOW()
-            WHERE order_number = ?";
+    // FIX: Actualizar payment_status según resultado del pago
+    $payment_status = match($result) {
+        'completed' => 'paid',
+        'failed', 'cancelled' => 'unpaid',
+        default => 'unpaid'
+    };
+
+    if ($result === 'completed') {
+        $sql = "UPDATE tuu_orders SET 
+                status = ?, 
+                payment_status = 'paid',
+                tuu_transaction_id = ?,
+                updated_at = NOW()
+                WHERE order_number = ?";
+    } else {
+        $sql = "UPDATE tuu_orders SET 
+                status = ?, 
+                payment_status = 'unpaid',
+                order_status = 'cancelled',
+                tuu_transaction_id = ?,
+                updated_at = NOW()
+                WHERE order_number = ?";
+    }
     
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$new_status, $transaction_id, $order_id]);

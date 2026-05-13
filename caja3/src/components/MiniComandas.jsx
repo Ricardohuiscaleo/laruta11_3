@@ -326,8 +326,23 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
     setProcessing(orderId);
     try {
-      // Register packaging for pickup orders (delivery registers at dispatch phase)
+      // FIX: Si es delivery y no está pagado, confirmar pago automáticamente
       const order = orders.find(o => o.id === orderId);
+      if (order && order.delivery_type === 'delivery' && order.payment_status !== 'paid') {
+        const paymentResponse = await fetch('/api/confirm_transfer_payment.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_id: orderId })
+        });
+        const paymentResult = await paymentResponse.json();
+        if (!paymentResult.success) {
+          alert('Error confirmando pago: ' + (paymentResult.error || 'No se pudo confirmar'));
+          setProcessing(null);
+          return;
+        }
+      }
+
+      // Register packaging for pickup orders (delivery registers at dispatch phase)
       if (order && order.delivery_type !== 'delivery') {
         await registerPackaging(orderNumber, orderId, order.delivery_type);
       }
