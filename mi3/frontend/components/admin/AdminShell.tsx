@@ -250,15 +250,16 @@ export default function AdminShell() {
     if (prevSection.current !== activeSection) {
       prevSection.current = activeSection;
       // If the new section hasn't registered a config yet, clear it
-      if (!headerConfigs[activeSection]) {
-        setHeaderConfigs(prev => {
+      setHeaderConfigs(prev => {
+        if (!prev[activeSection]) {
           const next = { ...prev };
           delete next[activeSection];
           return next;
-        });
-      }
+        }
+        return prev;
+      });
     }
-  }, [activeSection, headerConfigs]);
+  }, [activeSection]);
 
   // Callback for sections to register their header config
   const setHeaderConfig = useCallback((section: string, config: SectionHeaderConfig) => {
