@@ -26,4 +26,18 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         // Return JSON for all API exceptions
         $exceptions->shouldRenderJsonWhen(fn () => true);
+
+        // Add CORS headers to exception responses
+        // (HandleCors middleware doesn't apply to exception handler responses)
+        $exceptions->respond(function ($response) {
+            $origin = request()->header('Origin');
+            $allowedOrigins = ['https://mi.laruta11.cl', 'https://app.laruta11.cl', 'https://caja.laruta11.cl'];
+            if ($origin && in_array($origin, $allowedOrigins, true)) {
+                $response->headers->set('Access-Control-Allow-Origin', $origin);
+                $response->headers->set('Access-Control-Allow-Credentials', 'true');
+                $response->headers->set('Access-Control-Allow-Methods', '*');
+                $response->headers->set('Access-Control-Allow-Headers', '*');
+            }
+            return $response;
+        });
     })->create();

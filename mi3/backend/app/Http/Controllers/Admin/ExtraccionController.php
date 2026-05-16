@@ -132,6 +132,8 @@ class ExtraccionController extends Controller
             'Cache-Control' => 'no-cache',
             'Connection' => 'keep-alive',
             'X-Accel-Buffering' => 'no',
+            'Access-Control-Allow-Origin' => 'https://mi.laruta11.cl',
+            'Access-Control-Allow-Credentials' => 'true',
         ]);
     }
 
@@ -199,7 +201,7 @@ class ExtraccionController extends Controller
             'prompt_tokens' => $promptTokens,
             'candidates_tokens' => $candidatesTokens,
             'total_tokens' => $promptTokens + $candidatesTokens,
-            'model' => 'gemini-2.5-flash-lite',
+            'model' => 'gemini-3.1-flash-lite',
         ]);
     }
 
