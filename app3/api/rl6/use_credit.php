@@ -1,7 +1,14 @@
 <?php
+ini_set('display_errors', 0);
+error_reporting(0);
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
+
+// Suprimir cualquier warning de sesión que pueda romper el JSON
+if (session_status() === PHP_SESSION_NONE) {
+    @session_start();
+}
 
 $config_paths = [
     __DIR__ . '/../config.php',

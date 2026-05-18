@@ -3,6 +3,11 @@ ini_set('display_errors', 0);
 error_reporting(0);
 header('Content-Type: application/json');
 
+// Suprimir cualquier warning de sesión que pueda romper el JSON
+if (session_status() === PHP_SESSION_NONE) {
+    @session_start();
+}
+
 // CORS restringido
 $allowed_origins = ['https://app.laruta11.cl', 'https://caja.laruta11.cl'];
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
