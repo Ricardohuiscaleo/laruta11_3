@@ -10,9 +10,11 @@ $config = [
     
     'aws_access_key_id' => getenv('AWS_ACCESS_KEY_ID'),
     'aws_secret_access_key' => getenv('AWS_SECRET_ACCESS_KEY'),
-    'aws_region' => getenv('AWS_REGION') ?: 'us-east-1',
-    's3_bucket' => getenv('S3_BUCKET'),
-    's3_url' => getenv('S3_URL'),
+    'aws_region' => getenv('AWS_DEFAULT_REGION') ?: getenv('AWS_REGION') ?: 'auto',
+    'aws_endpoint' => getenv('AWS_ENDPOINT'),
+    'aws_use_path_style' => filter_var(getenv('AWS_USE_PATH_STYLE_ENDPOINT'), FILTER_VALIDATE_BOOLEAN),
+    's3_bucket' => getenv('AWS_BUCKET') ?: getenv('S3_BUCKET'),
+    's3_url' => getenv('AWS_URL') ?: getenv('S3_URL'),
     
     'db_host' => getenv('DB_HOST'),
     'db_name' => getenv('DB_NAME'),
@@ -22,8 +24,8 @@ $config = [
     'app_url' => getenv('APP_URL') ?: 'https://laruta11.cl',
     'app_env' => getenv('APP_ENV') ?: 'production',
     'debug' => getenv('DEBUG') === 'true',
-    'logo_url' => 'https://laruta11-images.s3.amazonaws.com/menu/1755571382_test.jpg',
-    'favicon_url' => 'https://laruta11-images.s3.amazonaws.com/menu/1755571382_test.jpg',
+    'logo_url' => getenv('AWS_URL') ? getenv('AWS_URL') . '/menu/1755571382_test.jpg' : 'https://laruta11-images.s3.amazonaws.com/menu/1755571382_test.jpg',
+    'favicon_url' => getenv('AWS_URL') ? getenv('AWS_URL') . '/menu/1755571382_test.jpg' : 'https://laruta11-images.s3.amazonaws.com/menu/1755571382_test.jpg',
     
     'smtp_host' => getenv('SMTP_HOST') ?: '',
     'smtp_user' => getenv('SMTP_USER') ?: '',

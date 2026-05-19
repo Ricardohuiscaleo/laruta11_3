@@ -28,7 +28,7 @@ import MenuApp from '../components/MenuApp.jsx';
 		<meta name="twitter:card" content="summary_large_image">
 		<meta name="twitter:title" content="La Ruta 11 - Menú Digital">
 		<meta name="twitter:description" content="Menú digital de La Ruta 11. Completos, hamburguesas, churrascos y más.">
-		<meta name="twitter:image" content="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png">
+		<meta name="twitter:image" content={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`}>
 		
 		<!-- iOS PWA Support -->
 		<meta name="apple-mobile-web-app-capable" content="yes">
@@ -47,7 +47,7 @@ import MenuApp from '../components/MenuApp.jsx';
 	<body>
 		<div id="auth-check" style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: Inter, sans-serif;">
 			<div style="text-align: center;">
-				<img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" style="width: 60px; height: 60px; border-radius: 50%; margin-bottom: 20px;" />
+				<img src={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`} style="width: 60px; height: 60px; border-radius: 50%; margin-bottom: 20px;" />
 				<div>Verificando acceso...</div>
 			</div>
 		</div>

@@ -10,7 +10,7 @@ export const StaggeredMenu = ({
     displaySocials = true,
     displayItemNumbering = true,
     className,
-    logoUrl = 'https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png',
+    logoUrl = `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`,
     menuButtonColor = '#fff',
     openMenuButtonColor = '#fff',
     changeMenuColorOnOpen = true,

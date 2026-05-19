@@ -16,7 +16,7 @@ export default function Logo({ size = "medium", showText = true }) {
   return (
     <div className="flex items-center space-x-3">
       <img 
-        src="https://laruta11-images.s3.amazonaws.com/menu/1755571382_test.jpg"
+        src={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/1755571382_test.jpg`}
         alt="La Ruta11 Logo"
         className={`${sizes[size]} rounded-full object-cover shadow-lg`}
       />

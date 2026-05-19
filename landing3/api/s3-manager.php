@@ -1,4 +1,8 @@
 <?php
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use Aws\S3\S3Client;
+
 // Headers CORS para permitir requests desde Astro
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -12,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 class S3Manager {
     private $config;
+    private $s3;
     
     public function __construct() {
         // Try multiple possible paths
@@ -27,7 +32,6 @@ class S3Manager {
         foreach ($paths as $path) {
             if (file_exists($path)) {
                 $this->config = require $path;
-                // Debug: verificar que las credenciales AWS estén cargadas
                 if (empty($this->config['aws_access_key_id']) || empty($this->config['aws_secret_access_key'])) {
                     throw new Exception('Credenciales AWS no configuradas correctamente');
                 }
@@ -36,6 +40,34 @@ class S3Manager {
         }
         
         throw new Exception('Config file not found in any expected location');
+    }
+    
+    private function getS3() {
+        if (!$this->s3) {
+            $config = [
+                'version' => 'latest',
+                'region'  => $this->config['aws_region'],
+                'credentials' => [
+                    'key'    => $this->config['aws_access_key_id'],
+                    'secret' => $this->config['aws_secret_access_key'],
+                ],
+            ];
+            if (!empty($this->config['aws_endpoint'])) {
+                $config['endpoint'] = $this->config['aws_endpoint'];
+                $config['use_path_style_endpoint'] = $this->config['aws_use_path_style'];
+            }
+            $this->s3 = new S3Client($config);
+        }
+        return $this->s3;
+    }
+    
+    private function getBucket() {
+        return $this->config['s3_bucket'] ?: 'laruta11-images';
+    }
+    
+    private function getPublicUrl($key) {
+        $baseUrl = $this->config['s3_url'];
+        return rtrim($baseUrl, '/') . '/' . ltrim($key, '/');
     }
     
     private function parseMemoryLimit($limit) {
@@ -51,7 +83,6 @@ class S3Manager {
     }
     
     private function compressImage($sourcePath, $quality = 85, $maxWidth = 1920, $maxHeight = 1080) {
-        // Check if GD extension is available
         if (!extension_loaded('gd')) {
             throw new Exception('Extensión GD no disponible para compresión');
         }
@@ -63,22 +94,19 @@ class S3Manager {
         
         list($width, $height, $type) = $imageInfo;
         
-        // Check memory limit for large images
-        $memoryNeeded = $width * $height * 4; // 4 bytes per pixel
+        $memoryNeeded = $width * $height * 4;
         $memoryLimit = ini_get('memory_limit');
         if ($memoryLimit != -1) {
             $memoryLimitBytes = $this->parseMemoryLimit($memoryLimit);
-            if ($memoryNeeded > $memoryLimitBytes * 0.6) { // More conservative memory usage
+            if ($memoryNeeded > $memoryLimitBytes * 0.6) {
                 throw new Exception('Imagen demasiado grande para procesar en memoria');
             }
         }
         
-        // Additional check for very large images
-        if ($width * $height > 25000000) { // 25 megapixels max
+        if ($width * $height > 25000000) {
             throw new Exception('Imagen demasiado grande (máximo 25 megapixeles)');
         }
         
-        // Create image resource based on type
         $source = false;
         switch ($type) {
             case IMAGETYPE_JPEG:
@@ -105,19 +133,16 @@ class S3Manager {
             throw new Exception('No se pudo crear el recurso de imagen desde el archivo');
         }
         
-        // Calculate new dimensions
         $ratio = min($maxWidth / $width, $maxHeight / $height, 1);
         $newWidth = intval($width * $ratio);
         $newHeight = intval($height * $ratio);
         
-        // Create new image
         $compressed = @imagecreatetruecolor($newWidth, $newHeight);
         if (!$compressed) {
             imagedestroy($source);
             throw new Exception('No se pudo crear la imagen comprimida');
         }
         
-        // Preserve transparency for PNG and GIF
         if ($type == IMAGETYPE_PNG || $type == IMAGETYPE_GIF) {
             imagealphablending($compressed, false);
             imagesavealpha($compressed, true);
@@ -125,7 +150,6 @@ class S3Manager {
             imagefilledrectangle($compressed, 0, 0, $newWidth, $newHeight, $transparent);
         }
         
-        // Resize image
         $resizeResult = @imagecopyresampled($compressed, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
         if (!$resizeResult) {
             imagedestroy($source);
@@ -133,7 +157,6 @@ class S3Manager {
             throw new Exception('Error al redimensionar la imagen');
         }
         
-        // Save compressed image to temporary file
         $tempFile = tempnam(sys_get_temp_dir(), 'compressed_');
         if (!$tempFile) {
             imagedestroy($source);
@@ -179,7 +202,6 @@ class S3Manager {
             throw new Exception('No se recibió un archivo válido');
         }
         
-        // Validate file type
         $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mimeType = finfo_file($finfo, $file['tmp_name']);
@@ -192,18 +214,15 @@ class S3Manager {
         $originalSize = filesize($file['tmp_name']);
         $filePath = $file['tmp_name'];
         
-        // Compress image if requested and file is large (but not too large)
-        if ($compress && $originalSize > 500000 && $originalSize < 8388608) { // Only compress between 500KB and 8MB
+        if ($compress && $originalSize > 500000 && $originalSize < 8388608) {
             try {
-                $compressedPath = $this->compressImage($filePath, 70, 1400, 1000); // More aggressive compression
+                $compressedPath = $this->compressImage($filePath, 70, 1400, 1000);
                 $filePath = $compressedPath;
             } catch (Exception $e) {
-                // If compression fails, continue with original file
                 error_log('Compression failed for file size ' . $originalSize . ': ' . $e->getMessage());
             }
         }
         
-        // Generate filename
         $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
         if ($customName) {
             $filename = $customName;
@@ -216,58 +235,23 @@ class S3Manager {
         
         $key = $folder . '/' . $filename;
         
-        // Read file content
-        $content = file_get_contents($filePath);
-        $finalSize = strlen($content);
+        $s3 = $this->getS3();
+        $result = $s3->putObject([
+            'Bucket'      => $this->getBucket(),
+            'Key'         => $key,
+            'SourceFile'  => $filePath,
+            'ContentType' => $mimeType,
+        ]);
         
-        // Clean up temporary file if compression was used
         if ($compress && $originalSize > 500000 && isset($compressedPath)) {
             unlink($compressedPath);
         }
-        $contentType = $mimeType;
-        $contentLength = strlen($content);
         
-        // AWS S3 PUT request (more reliable for large files)
-        $date = gmdate('D, d M Y H:i:s T');
-        $resource = '/' . $this->config['s3_bucket'] . '/' . $key;
-        $stringToSign = "PUT\n\n{$contentType}\n{$date}\n{$resource}";
-        $signature = base64_encode(hash_hmac('sha1', $stringToSign, $this->config['aws_secret_access_key'], true));
-        
-        $url = 'https://' . $this->config['s3_bucket'] . '.s3.amazonaws.com/' . $key;
-        
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $content);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Date: ' . $date,
-            'Authorization: AWS ' . $this->config['aws_access_key_id'] . ':' . $signature,
-            'Content-Type: ' . $contentType,
-            'Content-Length: ' . $contentLength
-        ]);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 600); // 10 minutes timeout for large files
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 60);
-        curl_setopt($ch, CURLOPT_LOW_SPEED_LIMIT, 1024); // 1KB/s minimum speed
-        curl_setopt($ch, CURLOPT_LOW_SPEED_TIME, 120); // for 2 minutes
-        curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-        
-        $result = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
-        
-        if ($httpCode !== 200) {
-            $errorMsg = 'Error al subir a S3: HTTP ' . $httpCode;
-            if ($error) $errorMsg .= ' - ' . $error;
-            if ($result) $errorMsg .= ' - ' . substr($result, 0, 200);
-            throw new Exception($errorMsg);
-        }
-        
-        $finalUrl = 'https://' . $this->config['s3_bucket'] . '.s3.amazonaws.com/' . $key;
+        $finalSize = filesize($filePath);
         
         return [
             'key' => $key,
-            'url' => $finalUrl,
+            'url' => $this->getPublicUrl($key),
             'filename' => $filename,
             'original_size' => $originalSize,
             'final_size' => $finalSize,
@@ -276,45 +260,24 @@ class S3Manager {
     }
     
     public function listImages($folder = 'menu') {
-
-        
-        // Try authenticated request
-        $date = gmdate('D, d M Y H:i:s T');
-        $resource = '/' . $this->config['s3_bucket'] . '/';
-        $stringToSign = "GET\n\n\n{$date}\n{$resource}";
-        $signature = base64_encode(hash_hmac('sha1', $stringToSign, $this->config['aws_secret_access_key'], true));
-        
-        $url = 'https://' . $this->config['s3_bucket'] . '.s3.amazonaws.com/?prefix=' . $folder . '/';
-        
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Date: ' . $date,
-            'Authorization: AWS ' . $this->config['aws_access_key_id'] . ':' . $signature
+        $s3 = $this->getS3();
+        $results = $s3->listObjectsV2([
+            'Bucket' => $this->getBucket(),
+            'Prefix' => $folder . '/',
         ]);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        
-        $result = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        curl_close($ch);
-        
-
         
         $images = [];
-        if ($httpCode === 200 && $result) {
-            $xml = simplexml_load_string($result);
-            if ($xml && isset($xml->Contents)) {
-                foreach ($xml->Contents as $content) {
-                    $key = (string)$content->Key;
-                    if (preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $key)) {
-                        $images[] = [
-                            'key' => $key,
-                            'name' => basename($key),
-                            'url' => 'https://' . $this->config['s3_bucket'] . '.s3.amazonaws.com/' . $key,
-                            'size' => (int)$content->Size,
-                            'modified' => (string)$content->LastModified
-                        ];
-                    }
+        if (isset($results['Contents'])) {
+            foreach ($results['Contents'] as $content) {
+                $key = (string)$content['Key'];
+                if (preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $key)) {
+                    $images[] = [
+                        'key' => $key,
+                        'name' => basename($key),
+                        'url' => $this->getPublicUrl($key),
+                        'size' => (int)$content['Size'],
+                        'modified' => (string)$content['LastModified']
+                    ];
                 }
             }
         }
@@ -323,86 +286,39 @@ class S3Manager {
     }
     
     public function renameImage($oldKey, $newName, $folder = 'menu') {
-        // Generar nueva key
         $extension = pathinfo($oldKey, PATHINFO_EXTENSION);
         if (!preg_match('/\.' . $extension . '$/i', $newName)) {
             $newName .= '.' . $extension;
         }
         $newKey = $folder . '/' . $newName;
         
-        // Paso 1: Copiar archivo con nuevo nombre
-        $date = gmdate('D, d M Y H:i:s T');
-        $sourceResource = '/' . $this->config['s3_bucket'] . '/' . $oldKey;
-        $destResource = '/' . $this->config['s3_bucket'] . '/' . $newKey;
+        $s3 = $this->getS3();
+        $bucket = $this->getBucket();
         
-        $stringToSign = "PUT\n\n\n{$date}\nx-amz-copy-source:{$sourceResource}\n{$destResource}";
-        $signature = base64_encode(hash_hmac('sha1', $stringToSign, $this->config['aws_secret_access_key'], true));
-        
-        $copyUrl = 'https://' . $this->config['s3_bucket'] . '.s3.amazonaws.com/' . $newKey;
-        
-        $ch = curl_init($copyUrl);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Date: ' . $date,
-            'Authorization: AWS ' . $this->config['aws_access_key_id'] . ':' . $signature,
-            'x-amz-copy-source: ' . $sourceResource
+        $s3->copyObject([
+            'Bucket'     => $bucket,
+            'Key'        => $newKey,
+            'CopySource' => "{$bucket}/{$oldKey}",
         ]);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
         
-        $result = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        if ($httpCode !== 200) {
-            throw new Exception('Error al copiar archivo: HTTP ' . $httpCode);
-        }
-        
-        // Paso 2: Eliminar archivo original
-        $this->deleteImage($oldKey);
+        $s3->deleteObject([
+            'Bucket' => $bucket,
+            'Key'    => $oldKey,
+        ]);
         
         return [
             'old_key' => $oldKey,
             'new_key' => $newKey,
-            'new_url' => 'https://' . $this->config['s3_bucket'] . '.s3.amazonaws.com/' . $newKey
+            'new_url' => $this->getPublicUrl($newKey),
         ];
     }
     
     public function deleteImage($key) {
-        $date = gmdate('D, d M Y H:i:s T');
-        $resource = '/' . $this->config['s3_bucket'] . '/?delete';
-        $deleteXml = '<?xml version="1.0" encoding="UTF-8"?><Delete><Object><Key>' . htmlspecialchars($key) . '</Key></Object></Delete>';
-        $contentMd5 = base64_encode(md5($deleteXml, true));
-        
-        $stringToSign = "POST\n{$contentMd5}\ntext/xml\n{$date}\n{$resource}";
-        $signature = base64_encode(hash_hmac('sha1', $stringToSign, $this->config['aws_secret_access_key'], true));
-        
-        $url = 'https://' . $this->config['s3_bucket'] . '.s3.amazonaws.com/?delete';
-        
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $deleteXml);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Date: ' . $date,
-            'Authorization: AWS ' . $this->config['aws_access_key_id'] . ':' . $signature,
-            'Content-Type: text/xml',
-            'Content-MD5: ' . $contentMd5
+        $s3 = $this->getS3();
+        $s3->deleteObject([
+            'Bucket' => $this->getBucket(),
+            'Key'    => $key,
         ]);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-        
-        $result = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
-        
-        if ($httpCode !== 200) {
-            $errorMsg = 'Error al eliminar imagen: HTTP ' . $httpCode;
-            if ($error) $errorMsg .= ' - ' . $error;
-            if ($result) $errorMsg .= ' - ' . substr($result, 0, 200);
-            throw new Exception($errorMsg);
-        }
         
         return true;
     }

@@ -112,7 +112,7 @@ export default function RiderMapEmbed({ orderId }: { orderId: string }) {
           {foodTruck && (
             <AdvancedMarker position={foodTruck} zIndex={100}>
               <div className="flex flex-col items-center">
-                <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="R11" className="h-8 w-8 rounded-full border-2 border-red-500 shadow-lg bg-white" />
+                <img src={`${process.env.NEXT_PUBLIC_AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`} alt="R11" className="h-8 w-8 rounded-full border-2 border-red-500 shadow-lg bg-white" />
                 <span className="text-[7px] font-bold bg-red-600 text-white px-1 py-0.5 rounded-full mt-0.5">R11</span>
               </div>
             </AdvancedMarker>

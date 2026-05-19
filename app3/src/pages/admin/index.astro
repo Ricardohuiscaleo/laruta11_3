@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin - La Ruta 11</title>
-  <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" />
+  <link rel="icon" type="image/png" href={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`} />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #0a0a0a; line-height: 1.6; }
@@ -217,7 +217,7 @@
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <div class="logo">
-          <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" width="24" height="24" alt="La Ruta 11" style="border-radius: 4px;">
+          <img src={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`} width="24" height="24" alt="La Ruta 11" style="border-radius: 4px;">
           La Ruta 11
         </div>
       </div>
@@ -1147,7 +1147,7 @@
           <tr data-status="${product.is_active == 1 ? 'active' : 'inactive'}">
             <td><input type="checkbox" class="product-checkbox" value="${product.id}" onchange="updateSelection()"></td>
             <td>
-              <img src="${product.image_url || 'https://laruta11-images.s3.amazonaws.com/default-product.jpg'}" 
+              <img src="${product.image_url || `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/default-product.jpg`}" 
                    style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px;" 
                    alt="${product.name}" onerror="this.src='https://via.placeholder.com/50x50?text=IMG'">
             </td>
@@ -1472,7 +1472,7 @@
           <tr data-status="${product.is_active == 1 ? 'active' : 'inactive'}">
             <td><input type="checkbox" class="product-checkbox" value="${product.id}" onchange="updateSelection()"></td>
             <td>
-              <img src="${product.image_url || 'https://laruta11-images.s3.amazonaws.com/default-product.jpg'}" 
+              <img src="${product.image_url || `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/default-product.jpg`}" 
                    style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px;" 
                    alt="${product.name}" onerror="this.src='https://via.placeholder.com/50x50?text=IMG'">
             </td>

@@ -2187,7 +2187,7 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
           <tr data-status="${product.is_active == 1 ? 'active' : 'inactive'}">
             <td><input type="checkbox" class="product-checkbox" value="${product.id}" onchange="updateSelection()"></td>
             <td>
-              <img src="${product.image_url || 'https://laruta11-images.s3.amazonaws.com/default-product.jpg'}" 
+              <img src="${product.image_url || `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/default-product.jpg`}" 
                    style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px;" 
                    alt="${product.name}" onerror="this.src='https://via.placeholder.com/50x50?text=IMG'">
             </td>
@@ -2514,7 +2514,7 @@ import AdminDashboardShell from '../../components/AdminDashboardShell';
           <tr data-status="${product.is_active == 1 ? 'active' : 'inactive'}">
             <td><input type="checkbox" class="product-checkbox" value="${product.id}" onchange="updateSelection()"></td>
             <td>
-              <img src="${product.image_url || 'https://laruta11-images.s3.amazonaws.com/default-product.jpg'}" 
+              <img src="${product.image_url || `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/default-product.jpg`}" 
                    style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px;" 
                    alt="${product.name}" onerror="this.src='https://via.placeholder.com/50x50?text=IMG'">
             </td>

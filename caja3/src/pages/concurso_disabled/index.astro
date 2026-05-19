@@ -4,7 +4,7 @@
 <html lang="es">
 	<head>
 		<meta charset="utf-8" />
-		<link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" />
+		<link rel="icon" type="image/png" href={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`} />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 		<title>🎉 Concurso Inauguración - La Ruta 11</title>
 		<meta name="description" content="¡Participa en nuestro concurso de inauguración! Premio: $50.000 + Hamburguesas gratis por un año. Inscripción: $5.000" />
@@ -14,14 +14,14 @@
 		<meta property="og:url" content="https://app.laruta11.cl/concurso/" />
 		<meta property="og:title" content="🎉 Concurso Inauguración - La Ruta 11" />
 		<meta property="og:description" content="¡Participa en nuestro concurso de inauguración! Premio: $50.000 + Hamburguesas gratis por un año. Inscripción: $5.000" />
-		<meta property="og:image" content="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" />
+		<meta property="og:image" content={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`} />
 		
 		<!-- Twitter -->
 		<meta property="twitter:card" content="summary_large_image" />
 		<meta property="twitter:url" content="https://app.laruta11.cl/concurso/" />
 		<meta property="twitter:title" content="🎉 Concurso Inauguración - La Ruta 11" />
 		<meta property="twitter:description" content="¡Participa en nuestro concurso de inauguración! Premio: $50.000 + Hamburguesas gratis por un año. Inscripción: $5.000" />
-		<meta property="twitter:image" content="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" />
+		<meta property="twitter:image" content={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`} />
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -178,7 +178,7 @@
 			<div class="max-w-2xl mx-auto">
 				<!-- Header -->
 				<div class="text-center mb-8">
-					<img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" class="w-20 h-20 mx-auto mb-4">
+					<img src={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`} alt="La Ruta 11" class="w-20 h-20 mx-auto mb-4">
 					<h1 class="text-3xl font-bold text-gray-900 mb-2">🎉 Concurso Inauguración</h1>
 					<h2 class="text-xl font-semibold text-orange-600">La Ruta 11</h2>
 					<p class="text-sm text-red-600 font-semibold mt-2">⏰ ¡Últimos días para inscribirse!</p>
@@ -225,19 +225,19 @@
 						<h4 class="font-bold text-gray-900 mb-3">🍽️ Etapas del Concurso:</h4>
 						<div class="space-y-3 text-sm text-gray-700">
 							<div class="bg-gradient-to-r from-orange-50 to-orange-100 rounded-2xl border-2 border-orange-300 shadow-lg overflow-hidden">
-								<img id="completo-img" src="https://laruta11-images.s3.amazonaws.com/products/68d27e161dbe7_WhatsApp Image 2025-09-22 at 22.30.45.jpeg" alt="Completo" class="w-full aspect-[4/5] object-cover">
+								<img id="completo-img" src={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/products/68d27e161dbe7_WhatsApp Image 2025-09-22 at 22.30.45.jpeg`} alt="Completo" class="w-full aspect-[4/5] object-cover">
 								<div class="p-4 text-center">
 									<p class="text-xl font-bold text-orange-900"><strong>🌭 1ra Etapa:</strong> Comer un completo y beber un vaso de jugo en el menor tiempo posible</p>
 								</div>
 							</div>
 							<div class="bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-2xl border-2 border-yellow-300 shadow-lg overflow-hidden">
-								<img id="ave-img" src="https://laruta11-images.s3.amazonaws.com/products/68bd26a057e7f_159a68d8-fcfd-4131-846f-41a70bfc8136.jpeg" alt="Ave Italiana" class="w-full aspect-[4/5] object-cover">
+								<img id="ave-img" src={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/products/68bd26a057e7f_159a68d8-fcfd-4131-846f-41a70bfc8136.jpeg`} alt="Ave Italiana" class="w-full aspect-[4/5] object-cover">
 								<div class="p-4 text-center">
 									<p class="text-xl font-bold text-yellow-900"><strong>🍗 2da Etapa:</strong> Comer una ave italiana y beber un vaso de jugo en el menor tiempo posible</p>
 								</div>
 							</div>
 							<div class="bg-gradient-to-r from-red-50 to-red-100 rounded-2xl border-2 border-red-300 shadow-lg overflow-hidden">
-								<img id="hamburguesa-img" src="https://laruta11-images.s3.amazonaws.com/products/68d1fd67a7e42_WhatsApp Image 2025-09-22 at 22.51.41.jpeg" alt="Hamburguesa Doble Mixta" class="w-full aspect-[4/5] object-cover">
+								<img id="hamburguesa-img" src={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/products/68d1fd67a7e42_WhatsApp Image 2025-09-22 at 22.51.41.jpeg`} alt="Hamburguesa Doble Mixta" class="w-full aspect-[4/5] object-cover">
 								<div class="p-4 text-center">
 									<p class="text-xl font-bold text-red-900"><strong>🍔 3ra Etapa:</strong> Comer una hamburguesa doble mixta y beber un vaso de jugo en el menor tiempo posible</p>
 								</div>
@@ -554,9 +554,9 @@
 
 			async function cargarProductos() {
 				const fallbackImages = {
-					completo: 'https://laruta11-images.s3.amazonaws.com/products/68d27e161dbe7_WhatsApp Image 2025-09-22 at 22.30.45.jpeg',
-					ave: 'https://laruta11-images.s3.amazonaws.com/products/68bd26a057e7f_159a68d8-fcfd-4131-846f-41a70bfc8136.jpeg',
-					hamburguesa: 'https://laruta11-images.s3.amazonaws.com/products/68d1fd67a7e42_WhatsApp Image 2025-09-22 at 22.51.41.jpeg'
+					completo: `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/products/68d27e161dbe7_WhatsApp Image 2025-09-22 at 22.30.45.jpeg`,
+					ave: `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/products/68bd26a057e7f_159a68d8-fcfd-4131-846f-41a70bfc8136.jpeg`,
+					hamburguesa: `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/products/68d1fd67a7e42_WhatsApp Image 2025-09-22 at 22.51.41.jpeg`
 				};
 
 				try {

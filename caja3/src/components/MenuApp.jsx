@@ -2335,7 +2335,7 @@ export default function App() {
           <div className="flex items-center justify-between w-full gap-1 xs:gap-2 sm:gap-4">
             {/* Logo */}
             <div className="p-2 shrink-0">
-              <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" style={{ width: '28px', height: '28px' }} width="28" height="28" />
+              <img src={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`} alt="La Ruta 11" style={{ width: '28px', height: '28px' }} width="28" height="28" />
             </div>
 
             {/* Checklist */}

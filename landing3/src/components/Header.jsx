@@ -54,7 +54,7 @@ export default function Header() {
             className="flex items-center gap-2.5 group no-underline"
           >
             <img
-              src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png"
+              src={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`}
               alt="La Ruta 11"
               className="h-9 sm:h-11 w-auto"
               draggable={false}
@@ -114,7 +114,7 @@ export default function Header() {
           {/* Header area with close button */}
           <div className="relative z-10 flex items-center justify-between h-16 sm:h-20 px-4 sm:px-6 border-b border-gray-100">
             <a href="#inicio" onClick={(e) => handleNavClick(e, '#inicio')} className="flex items-center gap-2.5 no-underline">
-              <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" className="h-9 sm:h-11 w-auto" draggable={false} />
+              <img src={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`} alt="La Ruta 11" className="h-9 sm:h-11 w-auto" draggable={false} />
               <span className="text-base sm:text-lg font-extrabold tracking-tight text-ruta-black uppercase">
                 La Ruta <span className="text-ruta-red">11</span>
               </span>

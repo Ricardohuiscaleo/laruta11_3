@@ -53,7 +53,7 @@ export default function Contact() {
 
             <div className="flex items-center gap-4">
               <img
-                src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png"
+                src={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`}
                 alt="La Ruta 11 Logo"
                 className="w-12 h-12 object-contain"
               />

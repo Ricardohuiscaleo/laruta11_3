@@ -57,8 +57,8 @@ class PushNotificationService
             'url' => $url,
             'priority' => $prioridad,
             'badgeCount' => 1,
-            'icon' => 'https://laruta11-images.s3.amazonaws.com/menu/logo-work.png',
-            'badge' => 'https://laruta11-images.s3.amazonaws.com/menu/logo-work.png',
+            'icon' => config('filesystems.disks.s3.url') . '/menu/logo-work.png',
+            'badge' => config('filesystems.disks.s3.url') . '/menu/logo-work.png',
         ]);
 
         $webPush = $this->getWebPush();

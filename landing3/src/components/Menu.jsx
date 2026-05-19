@@ -5,42 +5,42 @@ const FEATURED_PRODUCTS = [
     id: 196,
     name: 'Pichanga Familiar',
     price: 18980,
-    image: 'https://laruta11-images.s3.amazonaws.com/products/68dde52594241_39ca9494-3ce5-4145-8cd5-74c6e8a72727.webp',
+    image: `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/products/68dde52594241_39ca9494-3ce5-4145-8cd5-74c6e8a72727.webp`,
     description: 'Lomo vetado, tocino ahumado, filete de pollo, lomito de cerdo, salchicha, tomate y cebolla caramelizada sobre papas rústicas.'
   },
   {
     id: 187,
     name: 'Combo Doble Mixta',
     price: 14180,
-    image: 'https://laruta11-images.s3.amazonaws.com/products/69260b0031e58_1.webp',
+    image: `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/products/69260b0031e58_1.webp`,
     description: 'Hamburguesa doble mixta, papa individual y una bebida en lata de 350 ml a elección.'
   },
   {
     id: 11,
     name: 'Hamburguesa Doble Mixta (580g)',
     price: 12280,
-    image: 'https://laruta11-images.s3.amazonaws.com/products/68d1fd67a7e42_WhatsApp%2520Image%25202025-09-22%2520at%252022.51.41.webp',
+    image: `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/products/68d1fd67a7e42_WhatsApp%2520Image%25202025-09-22%2520at%252022.51.41.webp`,
     description: '400g de hamburguesa premium, 180g de filete de pollo, doble queso cheddar fundido, tomate, mayonesa Kraft y cebolla caramelizada.'
   },
   {
     id: 204,
     name: 'Churrasco Italiano',
     price: 5890,
-    image: 'https://laruta11-images.s3.amazonaws.com/products/69deeccab0f9d_9d2a8aa8-82a0-4040-8bc3-c8777a2f40f0.jpeg',
+    image: `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/products/69deeccab0f9d_9d2a8aa8-82a0-4040-8bc3-c8777a2f40f0.jpeg`,
     description: 'Clásico churrasco con palta, tomate y mayonesa Kraft en pan frica.'
   },
   {
     id: 280,
     name: 'Lucaso 11',
     price: 6890,
-    image: 'https://laruta11-images.s3.amazonaws.com/products/producto_280_1777748819.jpeg',
+    image: `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/products/producto_280_1777748819.jpeg`,
     description: 'Churrasco, queso, palta y tomate fresco en pan Frica. ¡El clásico que te encanta!'
   },
   {
     id: 194,
     name: 'Completo Tocino Ahumado',
     price: 3780,
-    image: 'https://laruta11-images.s3.amazonaws.com/products/68db45ce0fc60_WhatsApp%2520Image%25202025-09-29%2520at%252023.50.28.webp',
+    image: `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/products/68db45ce0fc60_WhatsApp%2520Image%25202025-09-29%2520at%252023.50.28.webp`,
     description: 'Salchicha premium, tocino ahumado artesanal, queso mantecoso fundido y salsa especial Crazy Chicken.'
   }
 ];

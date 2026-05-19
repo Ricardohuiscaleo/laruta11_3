@@ -200,7 +200,7 @@ export default function PublicRiderView({ orderId }: { orderId: string }) {
               {/* Food truck marker — R11 logo */}
               <AdvancedMarker position={foodTruck} zIndex={100}>
                 <div className="flex flex-col items-center">
-                  <img src="https://laruta11-images.s3.amazonaws.com/menu/logo-optimized.png" alt="La Ruta 11" className="h-10 w-10 rounded-full border-2 border-red-500 shadow-lg bg-white" />
+                  <img src={`${process.env.NEXT_PUBLIC_AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`} alt="La Ruta 11" className="h-10 w-10 rounded-full border-2 border-red-500 shadow-lg bg-white" />
                   <span className="text-[8px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded-full mt-0.5 shadow">La Ruta 11</span>
                 </div>
               </AdvancedMarker>

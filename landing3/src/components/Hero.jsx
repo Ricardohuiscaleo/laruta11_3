@@ -68,7 +68,7 @@ export default function Hero() {
   useEffect(() => {
     const img = new Image();
     img.onload = () => setImageLoaded(true);
-    img.src = 'https://laruta11-images.s3.amazonaws.com/products/68d1fd67a7e42_WhatsApp%2520Image%25202025-09-22%2520at%252022.51.41.webp';
+    img.src = `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/products/68d1fd67a7e42_WhatsApp%2520Image%25202025-09-22%2520at%252022.51.41.webp`;
   }, []);
 
   return (
@@ -142,7 +142,7 @@ export default function Hero() {
               {/* Main image card */}
               <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-gray-100 bg-white">
                 <img
-                  src="https://laruta11-images.s3.amazonaws.com/products/68d1fd67a7e42_WhatsApp%2520Image%25202025-09-22%2520at%252022.51.41.webp"
+                  src={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/products/68d1fd67a7e42_WhatsApp%2520Image%25202025-09-22%2520at%252022.51.41.webp`}
                   alt="Hamburguesa premium La Ruta 11"
                   className="w-full aspect-[4/5] sm:aspect-square object-cover"
                 />
