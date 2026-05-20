@@ -19,6 +19,7 @@ class ImagenService
     private string $secret;
     private string $endpoint;
     private string $awsUrl;
+    private string $s3Url;
     private bool $usePathStyle;
 
     public function __construct()
@@ -28,7 +29,7 @@ class ImagenService
         $this->key = config('filesystems.disks.s3.key', env('AWS_ACCESS_KEY_ID', ''));
         $this->secret = config('filesystems.disks.s3.secret', env('AWS_SECRET_ACCESS_KEY', ''));
         $this->endpoint = config('filesystems.disks.s3.endpoint', env('AWS_ENDPOINT', ''));
-        $this->awsUrl = config('filesystems.disks.s3.url', env('AWS_URL', ''));
+        $this->s3Url = env('S3_URL', config('filesystems.disks.s3.url', env('AWS_URL', '')));
         $this->usePathStyle = config('filesystems.disks.s3.use_path_style_endpoint', env('AWS_USE_PATH_STYLE_ENDPOINT', false));
     }
 
@@ -70,7 +71,7 @@ class ImagenService
 
         $this->putObject($tempKey, $contents, 'image/jpeg');
 
-        $tempUrl = $this->awsUrl ? rtrim($this->awsUrl, '/') . "/{$tempKey}" : "https://{$this->bucket}.s3.amazonaws.com/{$tempKey}";
+        $tempUrl = $this->s3Url ? rtrim($this->s3Url, '/') . "/{$tempKey}" : "https://{$this->bucket}.s3.amazonaws.com/{$tempKey}";
         $reductionPct = $originalSizeKb > 0 ? (int) round((1 - $finalSizeKb / $originalSizeKb) * 100) : 0;
 
         return [
@@ -100,7 +101,7 @@ class ImagenService
             $this->deleteObject($tempKey);
         }
 
-        return $this->awsUrl ? rtrim($this->awsUrl, '/') . "/{$finalKey}" : "https://{$this->bucket}.s3.amazonaws.com/{$finalKey}";
+        return $this->s3Url ? rtrim($this->s3Url, '/') . "/{$finalKey}" : "https://{$this->bucket}.s3.amazonaws.com/{$finalKey}";
     }
 
     /**

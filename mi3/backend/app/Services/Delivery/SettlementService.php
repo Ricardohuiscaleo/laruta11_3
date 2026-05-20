@@ -18,6 +18,7 @@ class SettlementService
     private string $s3Secret;
     private string $s3Endpoint;
     private string $s3AwsUrl;
+    private string $s3Url;
     private bool $usePathStyle;
 
     public function __construct()
@@ -28,6 +29,7 @@ class SettlementService
         $this->s3Secret = config('filesystems.disks.s3.secret', env('AWS_SECRET_ACCESS_KEY', ''));
         $this->s3Endpoint = config('filesystems.disks.s3.endpoint', env('AWS_ENDPOINT', ''));
         $this->s3AwsUrl = config('filesystems.disks.s3.url', env('AWS_URL', ''));
+        $this->s3Url = env('S3_URL', $this->s3AwsUrl);
         $this->usePathStyle = config('filesystems.disks.s3.use_path_style_endpoint', env('AWS_USE_PATH_STYLE_ENDPOINT', false));
     }
 
@@ -197,7 +199,7 @@ class SettlementService
 
         $this->s3PutObject($objectKey, $body, $contentType);
 
-        return $this->s3AwsUrl ? rtrim($this->s3AwsUrl, '/') . "/{$objectKey}" : "https://{$this->s3Bucket}.s3.amazonaws.com/{$objectKey}";
+        return $this->s3Url ? rtrim($this->s3Url, '/') . "/{$objectKey}" : "https://{$this->s3Bucket}.s3.amazonaws.com/{$objectKey}";
     }
 
     /**

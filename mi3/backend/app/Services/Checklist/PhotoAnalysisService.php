@@ -330,6 +330,7 @@ PROMPT,
         $secret = config('filesystems.disks.s3.secret', env('AWS_SECRET_ACCESS_KEY', ''));
         $endpoint = config('filesystems.disks.s3.endpoint', env('AWS_ENDPOINT', ''));
         $awsUrl = config('filesystems.disks.s3.url', env('AWS_URL', ''));
+        $s3Url = env('S3_URL', $awsUrl);
         $usePathStyle = config('filesystems.disks.s3.use_path_style_endpoint', env('AWS_USE_PATH_STYLE_ENDPOINT', false));
 
         if ($endpoint) {
@@ -389,7 +390,7 @@ PROMPT,
             throw new \RuntimeException('Error al subir la foto a S3');
         }
 
-        return $awsUrl ? rtrim($awsUrl, '/') . "/{$objectKey}" : "https://{$bucket}.s3.amazonaws.com/{$objectKey}";
+        return $s3Url ? rtrim($s3Url, '/') . "/{$objectKey}" : "https://{$bucket}.s3.amazonaws.com/{$objectKey}";
     }
 
     /**
