@@ -278,6 +278,13 @@ Route::prefix('v1')->group(function () {
         // Delivery Config (parámetros de pricing de delivery)
         Route::get('delivery-config', [DeliveryConfigController::class, 'index']);
         Route::put('delivery-config', [DeliveryConfigController::class, 'update']);
+
+        // Ofertas (product offers/sale pricing)
+        Route::get('offers', [\App\Http\Controllers\Admin\OfferController::class, 'index']);
+        Route::post('offers/apply', [\App\Http\Controllers\Admin\OfferController::class, 'apply']);
+        Route::post('offers/remove', [\App\Http\Controllers\Admin\OfferController::class, 'remove']);
+        Route::post('offers/apply-category', [\App\Http\Controllers\Admin\OfferController::class, 'applyCategory']);
+        Route::post('offers/remove-category', [\App\Http\Controllers\Admin\OfferController::class, 'removeCategory']);
     });
 });
 

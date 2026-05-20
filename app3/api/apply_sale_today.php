@@ -26,7 +26,8 @@ try {
         'Completo Italiano',
         'Hass de Filete Pollo',
         'Completo Tocino Ahumado',
-        'Hass de Carne'
+        'Hass de Carne',
+        'Ave Italiana'
     ];
 
     $placeholders = implode(',', array_fill(0, count($productNames), '?'));

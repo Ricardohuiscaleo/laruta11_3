@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { List, Replace, TrendingUp, PackageSearch, Layers, Loader2, Scale, Sparkles, Package, Wine } from 'lucide-react';
+import { List, Replace, TrendingUp, PackageSearch, Layers, Loader2, Scale, Sparkles, Package, Wine, Tag } from 'lucide-react';
 import type { SectionHeaderConfig, TabDef } from '@/components/admin/AdminShell';
 
 const RecetasListTab = lazy(() => import('@/app/admin/recetas/page'));
@@ -13,6 +13,7 @@ const PorcionesTab = lazy(() => import('@/app/admin/recetas/porciones/page'));
 const CreadorIATab = lazy(() => import('@/app/admin/recetas/creador-ia/page'));
 const CombosTab = lazy(() => import('@/app/admin/recetas/combos/page'));
 const BebidasTab = lazy(() => import('@/app/admin/recetas/bebidas/page'));
+const OfertasTab = lazy(() => import('@/app/admin/recetas/ofertas/page'));
 
 const tabs: TabDef[] = [
   { key: 'listado', label: 'Recetas', icon: List },
@@ -20,13 +21,14 @@ const tabs: TabDef[] = [
   { key: 'combos', label: 'Combos', icon: Package },
   { key: 'porciones', label: 'Porciones', icon: Scale },
   { key: 'creador-ia', label: 'Creador IA', icon: Sparkles },
+  { key: 'ofertas', label: 'Ofertas', icon: Tag },
   { key: 'ajuste-masivo', label: 'Reemplazo', icon: Replace },
   { key: 'recomendaciones', label: 'Recomendaciones', icon: TrendingUp },
   { key: 'auditoria', label: 'Auditoría Stock', icon: PackageSearch },
   { key: 'sub-recetas', label: 'Sub-Recetas', icon: Layers },
 ];
 
-type TabKey = 'listado' | 'bebidas' | 'combos' | 'porciones' | 'creador-ia' | 'ajuste-masivo' | 'recomendaciones' | 'auditoria' | 'sub-recetas';
+type TabKey = 'listado' | 'bebidas' | 'combos' | 'porciones' | 'creador-ia' | 'ofertas' | 'ajuste-masivo' | 'recomendaciones' | 'auditoria' | 'sub-recetas';
 
 function TabSkeleton() {
   return (
@@ -64,6 +66,7 @@ export default function RecetasSection({ onHeaderConfig }: RecetasSectionProps) 
         {activeTab === 'combos' && <CombosTab />}
         {activeTab === 'porciones' && <PorcionesTab />}
         {activeTab === 'creador-ia' && <CreadorIATab />}
+        {activeTab === 'ofertas' && <OfertasTab />}
         {activeTab === 'ajuste-masivo' && <AjusteMasivoTab />}
         {activeTab === 'recomendaciones' && <RecomendacionesTab />}
         {activeTab === 'auditoria' && <AuditoriaTab />}
