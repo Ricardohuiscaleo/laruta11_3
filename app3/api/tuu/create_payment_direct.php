@@ -88,6 +88,9 @@ try {
         }
         
         // === SERVER-SIDE DELIVERY FEE CALCULATION (Task 2.3) ===
+        // FIX: leer delivery_discount ANTES de usarlo
+        $delivery_discount = (int)($input['delivery_discount'] ?? 0);
+
         $delivery_type = $input['delivery_type'] ?? 'pickup';
         $calculated_delivery_fee = 0;
         
@@ -103,54 +106,61 @@ try {
                 $truck = $truck_stmt->fetch(PDO::FETCH_ASSOC);
                 
                 if ($truck && $delivery_address) {
-                    $truck_lat = (float)$truck['latitud'];
-                    $truck_lng = (float)$truck['longitud'];
                     $base_fee = (int)$truck['tarifa_delivery'];
                     
-                    // Geocode delivery address
-                    $api_key = $config['ruta11_google_maps_api_key'] ?? $config['google_maps_api_key'] ?? '';
-                    $addr = $delivery_address;
-                    if (stripos($addr, 'arica') === false) {
-                        $addr .= ', Arica, Chile';
-                    }
-                    $encoded_addr = urlencode($addr);
-                    $geo_url = "https://maps.googleapis.com/maps/api/geocode/json?address={$encoded_addr}&key={$api_key}&language=es&region=cl";
-                    $geo_response = @file_get_contents($geo_url);
-                    $geo_data = json_decode($geo_response, true);
-                    
-                    if ($geo_data && $geo_data['status'] === 'OK' && !empty($geo_data['results'])) {
-                        $dest_lat = $geo_data['results'][0]['geometry']['location']['lat'];
-                        $dest_lng = $geo_data['results'][0]['geometry']['location']['lng'];
-                        
-                        // Try Google Directions, fallback to Haversine
-                        $distance_km = null;
-                        $dir_url = "https://maps.googleapis.com/maps/api/directions/json?origin={$truck_lat},{$truck_lng}&destination={$dest_lat},{$dest_lng}&key={$api_key}&mode=driving";
-                        $dir_response = @file_get_contents($dir_url);
-                        $dir_data = json_decode($dir_response, true);
-                        
-                        if ($dir_data && $dir_data['status'] === 'OK' && !empty($dir_data['routes'])) {
-                            $distance_km = round($dir_data['routes'][0]['legs'][0]['distance']['value'] / 1000, 1);
-                        } else {
-                            // Haversine fallback
-                            $R = 6371;
-                            $dLat = deg2rad($dest_lat - $truck_lat);
-                            $dLng = deg2rad($dest_lng - $truck_lng);
-                            $a = sin($dLat/2)*sin($dLat/2) + cos(deg2rad($truck_lat))*cos(deg2rad($dest_lat))*sin($dLng/2)*sin($dLng/2);
-                            $distance_km = round($R * 2 * atan2(sqrt($a), sqrt(1-$a)), 1);
-                        }
-                        
-                        // Calculate surcharge: +$1000 per 2km beyond 6km
-                        $surcharge = 0;
-                        if ($distance_km > 6) {
-                            $extra_km = $distance_km - 6;
-                            $brackets = ceil($extra_km / 2);
-                            $surcharge = $brackets * 1000;
-                        }
-                        $calculated_delivery_fee = $base_fee + $surcharge;
+                    // FIX RL6: si hay descuento delivery (cuarteles), usar tarifa base sin recargos
+                    if ($delivery_discount > 0) {
+                        $calculated_delivery_fee = $base_fee;
+                        error_log("create_payment_direct: RL6 delivery discount active — using base fee only: {$base_fee}");
                     } else {
-                        // Geocoding failed — fallback to client value
-                        $calculated_delivery_fee = $client_delivery_fee;
-                        error_log("Delivery fee: geocoding failed for '{$delivery_address}', using client value: {$client_delivery_fee}");
+                        $truck_lat = (float)$truck['latitud'];
+                        $truck_lng = (float)$truck['longitud'];
+                        
+                        // Geocode delivery address
+                        $api_key = $config['ruta11_google_maps_api_key'] ?? $config['google_maps_api_key'] ?? '';
+                        $addr = $delivery_address;
+                        if (stripos($addr, 'arica') === false) {
+                            $addr .= ', Arica, Chile';
+                        }
+                        $encoded_addr = urlencode($addr);
+                        $geo_url = "https://maps.googleapis.com/maps/api/geocode/json?address={$encoded_addr}&key={$api_key}&language=es&region=cl";
+                        $geo_response = @file_get_contents($geo_url);
+                        $geo_data = json_decode($geo_response, true);
+                        
+                        if ($geo_data && $geo_data['status'] === 'OK' && !empty($geo_data['results'])) {
+                            $dest_lat = $geo_data['results'][0]['geometry']['location']['lat'];
+                            $dest_lng = $geo_data['results'][0]['geometry']['location']['lng'];
+                            
+                            // Try Google Directions, fallback to Haversine
+                            $distance_km = null;
+                            $dir_url = "https://maps.googleapis.com/maps/api/directions/json?origin={$truck_lat},{$truck_lng}&destination={$dest_lat},{$dest_lng}&key={$api_key}&mode=driving";
+                            $dir_response = @file_get_contents($dir_url);
+                            $dir_data = json_decode($dir_response, true);
+                            
+                            if ($dir_data && $dir_data['status'] === 'OK' && !empty($dir_data['routes'])) {
+                                $distance_km = round($dir_data['routes'][0]['legs'][0]['distance']['value'] / 1000, 1);
+                            } else {
+                                // Haversine fallback
+                                $R = 6371;
+                                $dLat = deg2rad($dest_lat - $truck_lat);
+                                $dLng = deg2rad($dest_lng - $truck_lng);
+                                $a = sin($dLat/2)*sin($dLat/2) + cos(deg2rad($truck_lat))*cos(deg2rad($dest_lat))*sin($dLng/2)*sin($dLng/2);
+                                $distance_km = round($R * 2 * atan2(sqrt($a), sqrt(1-$a)), 1);
+                            }
+                            
+                            // Calculate surcharge: +$1000 per 2km beyond 6km
+                            $surcharge = 0;
+                            if ($distance_km > 6) {
+                                $extra_km = $distance_km - 6;
+                                $brackets = ceil($extra_km / 2);
+                                $surcharge = $brackets * 1000;
+                            }
+                            $calculated_delivery_fee = $base_fee + $surcharge;
+                        } else {
+                            // Geocoding failed — fallback to client value
+                            $calculated_delivery_fee = $client_delivery_fee;
+                            error_log("Delivery fee: geocoding failed for '{$delivery_address}', using client value: {$client_delivery_fee}");
+                        }
                     }
                 } else {
                     // No truck or no address — fallback to client value
@@ -165,11 +175,15 @@ try {
         }
         
         // Override client-provided values with server-calculated ones
-        $delivery_fee = $calculated_delivery_fee;
+        // Store delivery_fee as NET of discount to match convention
+        $delivery_fee = $calculated_delivery_fee - $delivery_discount;
+        if ($delivery_fee < 0) {
+            $delivery_fee = 0;
+        }
         
         // === SERVER-SIDE TOTAL RECALCULATION (Task 2.4) ===
         $discount_amount = (int)($input['discount_amount'] ?? 0);
-        $delivery_discount = (int)($input['delivery_discount'] ?? 0);
+        // $delivery_discount ya fue leído arriba (fix variable undefined)
         $delivery_extras_total = (int)($input['delivery_extras_total'] ?? 0);
         $cashback_used = (int)($input['cashback_used'] ?? 0);
         
