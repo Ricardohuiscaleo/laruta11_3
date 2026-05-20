@@ -230,6 +230,7 @@ export default function RecetasPage() {
   const [showInactive, setShowInactive] = useState(false);
   const [animatingIds, setAnimatingIds] = useState<Set<number>>(new Set());
   const [flashIds, setFlashIds] = useState<Set<number>>(new Set());
+  const [dragOverRowId, setDragOverRowId] = useState<number | null>(null);
 
   /* ─── Add Product: create + open editor ─── */
   const [creatingProduct, setCreatingProduct] = useState(false);
@@ -587,12 +588,16 @@ export default function RecetasPage() {
                           return (
                             <tr
                               key={p.id}
+                              onDragOver={e => { e.preventDefault(); e.stopPropagation(); setDragOverRowId(p.id); }}
+                              onDragLeave={() => setDragOverRowId(null)}
+                              onDrop={e => { e.preventDefault(); e.stopPropagation(); setDragOverRowId(null); const f = e.dataTransfer.files[0]; if (f?.type.match(/^image\/(jpeg|png|webp)$/) && f.size <= 5*1024*1024) handleQuickImageUpload(p.id, f); }}
                               className={cn(
-                                'hover:bg-gray-50 transition-colors',
+                                'transition-colors cursor-pointer',
                                 belowTarget && 'bg-amber-50/50',
                                 !isActive && 'opacity-50',
                                 animatingIds.has(p.id) && 'opacity-0 scale-95 transition-all duration-300',
                                 flashIds.has(p.id) && 'bg-green-100 transition-colors duration-500',
+                                dragOverRowId === p.id ? 'ring-2 ring-red-400 bg-red-50' : 'hover:bg-gray-50',
                               )}
                             >
                               <td className="px-2 py-3 w-10">
