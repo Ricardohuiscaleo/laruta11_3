@@ -374,7 +374,7 @@ const FoodTrucksModal = ({ isOpen, onClose, trucks, userLocation, deliveryZone, 
       <div className="bg-white w-full h-full flex flex-col animate-slide-up" onClick={(e) => e.stopPropagation()}>
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white flex justify-between items-center" style={{ padding: 'clamp(12px, 3vw, 16px)' }}>
           <h2 className="font-bold flex items-center gap-2" style={{ fontSize: 'clamp(16px, 4vw, 20px)' }}>
-            <img src="/icon.ico" alt="La Ruta 11" className="w-5 h-5" />
+            <img src="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/WhatsApp%20Image%202026-05-20%20at%2019.50.28.jpeg" alt="La Ruta 11" className="w-5 h-5" />
             Food Trucks Cercanos
           </h2>
           <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition-colors">
@@ -420,7 +420,7 @@ const FoodTrucksModal = ({ isOpen, onClose, trucks, userLocation, deliveryZone, 
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex items-start gap-2 flex-1">
                           <div className="bg-orange-100 p-2 rounded-lg">
-                            <img src="/icon.ico" alt="" className="w-5 h-5" />
+                            <img src="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/WhatsApp%20Image%202026-05-20%20at%2019.50.28.jpeg" alt="" className="w-5 h-5" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <h3 className="font-bold text-gray-800 text-sm">{truck.nombre}</h3>
@@ -480,7 +480,7 @@ const FoodTrucksModal = ({ isOpen, onClose, trucks, userLocation, deliveryZone, 
           ) : (
             <div className="text-center py-12 p-4">
               <div className="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <img src="/icon.ico" alt="" className="w-10 h-10 opacity-40" />
+                <img src="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/WhatsApp%20Image%202026-05-20%20at%2019.50.28.jpeg" alt="" className="w-10 h-10 opacity-40" />
               </div>
               <p className="text-gray-700 font-medium text-lg">No hay food trucks cerca</p>
               <p className="text-sm text-gray-500 mt-2 flex items-center justify-center gap-1">
@@ -1968,7 +1968,7 @@ export default function App() {
         {/* Sidebar PC - Fixed left */}
         <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-gray-200 z-40 overflow-y-auto">
           <div className="p-4 border-b flex-shrink-0">
-            <img src={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/1.jpg`} alt="La Ruta 11" className="w-10 h-10 mx-auto mb-2" />
+            <img src={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/WhatsApp%20Image%202026-05-20%20at%2019.50.28.jpeg`} alt="La Ruta 11" className="w-10 h-10 mx-auto mb-2" />
             <div className="flex items-center justify-center gap-2">
               <h2 className="text-center font-black text-gray-800 text-sm">MENÚ</h2>
               {(() => {
@@ -2065,7 +2065,7 @@ export default function App() {
                 {/* Fila única: Logo | Status | Menú | Búsqueda | Notificaciones | Carrito */}
                 <div className="flex items-center justify-between gap-2">
                   {/* Logo */}
-                  <img src={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/1.jpg`} alt="La Ruta 11" className="drop-shadow-sm flex-shrink-0" style={{ width: '24px', height: '24px' }} />
+                  <img src={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/WhatsApp%20Image%202026-05-20%20at%2019.50.28.jpeg`} alt="La Ruta 11" className="drop-shadow-sm flex-shrink-0" style={{ width: '24px', height: '24px' }} />
 
                   {/* Status */}
                   {(() => {
@@ -2190,7 +2190,7 @@ export default function App() {
                 {/* Fila única: Logo | Status | Búsqueda | Notificaciones | Carrito */}
                 <div className="flex items-center justify-between gap-3 lg:gap-4">
                   {/* Logo - Solo en sm, en lg está en sidebar */}
-                  <img src={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/1.jpg`} alt="La Ruta 11" className="w-10 h-10 drop-shadow-lg flex-shrink-0 lg:hidden" />
+                  <img src={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/WhatsApp%20Image%202026-05-20%20at%2019.50.28.jpeg`} alt="La Ruta 11" className="w-10 h-10 drop-shadow-lg flex-shrink-0 lg:hidden" />
 
                   {/* Menú adicional PC - Izquierda */}
                   <div className="hidden lg:flex items-center gap-3 mr-4 pr-4 border-r border-gray-200">

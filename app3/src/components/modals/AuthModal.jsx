@@ -115,7 +115,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess, showGuestOption = false, o
             <X size={24} />
           </button>
           <div className="flex items-center gap-3 mb-2">
-            <img src="/icon.ico" alt="La Ruta 11" className="w-12 h-12" />
+            <img src="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/WhatsApp%20Image%202026-05-20%20at%2019.50.28.jpeg" alt="La Ruta 11" className="w-12 h-12" />
             <div>
               <h2 className="text-2xl font-black text-white">LA RUTA 11</h2>
               <p className="text-orange-100 text-sm">Tu cuenta, tus beneficios</p>

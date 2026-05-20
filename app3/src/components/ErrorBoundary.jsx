@@ -20,7 +20,7 @@ class ErrorBoundary extends React.Component {
         <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-4">
-              <img src="/icon.ico" alt="La Ruta 11" className="w-full h-full" />
+              <img src="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/WhatsApp%20Image%202026-05-20%20at%2019.50.28.jpeg" alt="La Ruta 11" className="w-full h-full" />
             </div>
             <h1 className="text-xl font-bold text-gray-800 mb-2">¡Ups! Algo salió mal</h1>
             <p className="text-gray-600 mb-4">Estamos trabajando para solucionarlo</p>

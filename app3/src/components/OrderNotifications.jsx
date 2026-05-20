@@ -56,8 +56,8 @@ export default function OrderNotifications({ userId, onNotificationsUpdate }) {
               if ('Notification' in window && Notification.permission === 'granted') {
                 new Notification(`${notif.order_number} - La Ruta 11`, {
                   body: notif.message,
-                  icon: '/icon.ico',
-                  badge: '/icon.ico',
+                  icon: 'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/WhatsApp%20Image%202026-05-20%20at%2019.50.28.jpeg',
+                  badge: 'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/WhatsApp%20Image%202026-05-20%20at%2019.50.28.jpeg',
                   tag: `order-${notif.order_id}`,
                   requireInteraction: false,
                   silent: false

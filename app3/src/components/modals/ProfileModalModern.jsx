@@ -327,7 +327,7 @@ const ProfileModalModern = ({
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <img 
-                  src="/icon.ico" 
+                  src="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/WhatsApp%20Image%202026-05-20%20at%2019.50.28.jpeg" 
                   alt="La Ruta 11" 
                   className="w-10 h-10"
                 />
