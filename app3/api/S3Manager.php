@@ -167,12 +167,17 @@ class S3Manager {
             
             $authorization = "{$algorithm} Credential={$accessKey}/{$credentialScope}, SignedHeaders={$signedHeaders}, Signature={$signature}";
             
+            // Write file content to temp file for CURLOPT_INFILE
+            $tmpFile = tempnam(sys_get_temp_dir(), 'r2_');
+            file_put_contents($tmpFile, $fileContent);
+            $fp = fopen($tmpFile, 'r');
+            
             $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $fileContent);
+            curl_setopt($ch, CURLOPT_PUT, true);
+            curl_setopt($ch, CURLOPT_INFILE, $fp);
+            curl_setopt($ch, CURLOPT_INFILESIZE, $contentLength);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'Content-Type: ' . $contentType,
-                'Content-Length: ' . $contentLength,
                 'x-amz-content-sha256: ' . $contentHash,
                 'x-amz-date: ' . $amzDate,
                 'Authorization: ' . $authorization,
@@ -181,6 +186,20 @@ class S3Manager {
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_TIMEOUT, 60);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
+            
+            $result = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlInfo = curl_getinfo($ch);
+            $error = curl_error($ch);
+            fclose($fp);
+            unlink($tmpFile);
+            
+            $debugInfo = [
+                'url' => $url,
+                'http_code' => $httpCode,
+                'curl_error' => $error,
+                'total_time' => $curlInfo['total_time'] ?? 0,
+            ];
         } else {
             // AWS S3: POST with policy (legacy)
             $policy = base64_encode(json_encode([
