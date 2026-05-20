@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Image, Upload, Loader2 } from 'lucide-react';
 
@@ -14,7 +14,12 @@ interface ImageQuickDropProps {
 export default function ImageQuickDrop({ imageUrl, productName, onUpload, size = 36 }: ImageQuickDropProps) {
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [imageUrl]);
 
   const handleFile = useCallback(async (file: File) => {
     if (!file.type.match(/^image\/(jpeg|png|webp)$/)) return;
@@ -55,12 +60,12 @@ export default function ImageQuickDrop({ imageUrl, productName, onUpload, size =
       >
         {uploading ? (
           <Loader2 className="w-4 h-4 animate-spin text-red-500" />
-        ) : imageUrl ? (
+        ) : imageUrl && !imgError ? (
           <img
             src={imageUrl}
             alt={productName}
             className="h-full w-full object-cover"
-            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            onError={() => setImgError(true)}
           />
         ) : (
           <Image className="w-4 h-4 text-gray-400" />

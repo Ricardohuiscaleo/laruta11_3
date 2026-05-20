@@ -303,16 +303,12 @@ export default function BebidasTab() {
   const handleQuickImageUpload = useCallback(async (productId: number, file: File) => {
     const formData = new FormData();
     formData.append('image', file);
-    try {
-      const res = await apiFetch<ApiResponse<{ image_url: string }>>(`/admin/recetas/${productId}/imagen`, {
-        method: 'POST',
-        body: formData,
-      });
-      if (res.data?.image_url) {
-        setBeverages(prev => prev.map(b => b.id === productId ? { ...b, image_url: res.data!.image_url } : b));
-      }
-    } catch {
-      // non-critical
+    const res = await apiFetch<ApiResponse<{ image_url: string }>>(`/admin/recetas/${productId}/imagen`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (res.data?.image_url) {
+      setBeverages(prev => prev.map(b => b.id === productId ? { ...b, image_url: res.data!.image_url } : b));
     }
   }, []);
 
