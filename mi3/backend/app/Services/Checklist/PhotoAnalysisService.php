@@ -328,9 +328,17 @@ PROMPT,
         $region = config('filesystems.disks.s3.region', env('AWS_DEFAULT_REGION', 'us-east-1'));
         $key = config('filesystems.disks.s3.key', env('AWS_ACCESS_KEY_ID', ''));
         $secret = config('filesystems.disks.s3.secret', env('AWS_SECRET_ACCESS_KEY', ''));
+        $endpoint = config('filesystems.disks.s3.endpoint', env('AWS_ENDPOINT', ''));
+        $awsUrl = config('filesystems.disks.s3.url', env('AWS_URL', ''));
+        $usePathStyle = config('filesystems.disks.s3.use_path_style_endpoint', env('AWS_USE_PATH_STYLE_ENDPOINT', false));
 
-        $host = "{$bucket}.s3.{$region}.amazonaws.com";
-        $url = "https://{$host}/{$objectKey}";
+        if ($endpoint) {
+            $host = parse_url($endpoint, PHP_URL_HOST);
+            $url = $usePathStyle ? rtrim($endpoint, '/') . "/{$bucket}/{$objectKey}" : rtrim($endpoint, '/') . "/{$objectKey}";
+        } else {
+            $host = "{$bucket}.s3.{$region}.amazonaws.com";
+            $url = "https://{$host}/{$objectKey}";
+        }
         $now = gmdate('Ymd\THis\Z');
         $date = gmdate('Ymd');
         $payloadHash = hash('sha256', $contents);
@@ -380,7 +388,7 @@ PROMPT,
             throw new \RuntimeException('Error al subir la foto a S3');
         }
 
-        return "https://{$bucket}.s3.amazonaws.com/{$objectKey}";
+        return $awsUrl ? rtrim($awsUrl, '/') . "/{$objectKey}" : "https://{$bucket}.s3.amazonaws.com/{$objectKey}";
     }
 
     /**

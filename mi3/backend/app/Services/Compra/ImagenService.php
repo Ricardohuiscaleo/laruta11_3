@@ -17,6 +17,9 @@ class ImagenService
     private string $region;
     private string $key;
     private string $secret;
+    private string $endpoint;
+    private string $awsUrl;
+    private bool $usePathStyle;
 
     public function __construct()
     {
@@ -24,6 +27,9 @@ class ImagenService
         $this->region = config('filesystems.disks.s3.region', env('AWS_DEFAULT_REGION', 'us-east-1'));
         $this->key = config('filesystems.disks.s3.key', env('AWS_ACCESS_KEY_ID', ''));
         $this->secret = config('filesystems.disks.s3.secret', env('AWS_SECRET_ACCESS_KEY', ''));
+        $this->endpoint = config('filesystems.disks.s3.endpoint', env('AWS_ENDPOINT', ''));
+        $this->awsUrl = config('filesystems.disks.s3.url', env('AWS_URL', ''));
+        $this->usePathStyle = config('filesystems.disks.s3.use_path_style_endpoint', env('AWS_USE_PATH_STYLE_ENDPOINT', false));
     }
 
     /**
@@ -64,7 +70,7 @@ class ImagenService
 
         $this->putObject($tempKey, $contents, 'image/jpeg');
 
-        $tempUrl = "https://{$this->bucket}.s3.amazonaws.com/{$tempKey}";
+        $tempUrl = $this->awsUrl ? rtrim($this->awsUrl, '/') . "/{$tempKey}" : "https://{$this->bucket}.s3.amazonaws.com/{$tempKey}";
         $reductionPct = $originalSizeKb > 0 ? (int) round((1 - $finalSizeKb / $originalSizeKb) * 100) : 0;
 
         return [
@@ -94,7 +100,7 @@ class ImagenService
             $this->deleteObject($tempKey);
         }
 
-        return "https://{$this->bucket}.s3.amazonaws.com/{$finalKey}";
+        return $this->awsUrl ? rtrim($this->awsUrl, '/') . "/{$finalKey}" : "https://{$this->bucket}.s3.amazonaws.com/{$finalKey}";
     }
 
     /**
@@ -125,8 +131,13 @@ class ImagenService
      */
     private function putObject(string $objectKey, string $body, string $contentType = 'application/octet-stream'): bool
     {
-        $host = "{$this->bucket}.s3.{$this->region}.amazonaws.com";
-        $url = "https://{$host}/{$objectKey}";
+        if ($this->endpoint) {
+            $host = parse_url($this->endpoint, PHP_URL_HOST);
+            $url = $this->usePathStyle ? rtrim($this->endpoint, '/') . "/{$this->bucket}/{$objectKey}" : rtrim($this->endpoint, '/') . "/{$objectKey}";
+        } else {
+            $host = "{$this->bucket}.s3.{$this->region}.amazonaws.com";
+            $url = "https://{$host}/{$objectKey}";
+        }
         $now = gmdate('Ymd\THis\Z');
         $date = gmdate('Ymd');
         $payloadHash = hash('sha256', $body);
@@ -186,8 +197,13 @@ class ImagenService
      */
     private function getObject(string $objectKey): ?string
     {
-        $host = "{$this->bucket}.s3.{$this->region}.amazonaws.com";
-        $url = "https://{$host}/{$objectKey}";
+        if ($this->endpoint) {
+            $host = parse_url($this->endpoint, PHP_URL_HOST);
+            $url = $this->usePathStyle ? rtrim($this->endpoint, '/') . "/{$this->bucket}/{$objectKey}" : rtrim($this->endpoint, '/') . "/{$objectKey}";
+        } else {
+            $host = "{$this->bucket}.s3.{$this->region}.amazonaws.com";
+            $url = "https://{$host}/{$objectKey}";
+        }
         $now = gmdate('Ymd\THis\Z');
         $date = gmdate('Ymd');
         $payloadHash = hash('sha256', '');
@@ -238,8 +254,13 @@ class ImagenService
      */
     private function deleteObject(string $objectKey): bool
     {
-        $host = "{$this->bucket}.s3.{$this->region}.amazonaws.com";
-        $url = "https://{$host}/{$objectKey}";
+        if ($this->endpoint) {
+            $host = parse_url($this->endpoint, PHP_URL_HOST);
+            $url = $this->usePathStyle ? rtrim($this->endpoint, '/') . "/{$this->bucket}/{$objectKey}" : rtrim($this->endpoint, '/') . "/{$objectKey}";
+        } else {
+            $host = "{$this->bucket}.s3.{$this->region}.amazonaws.com";
+            $url = "https://{$host}/{$objectKey}";
+        }
         $now = gmdate('Ymd\THis\Z');
         $date = gmdate('Ymd');
         $payloadHash = hash('sha256', '');

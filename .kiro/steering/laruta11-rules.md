@@ -4,7 +4,9 @@ inclusion: auto
 
 # Reglas del Proyecto La Ruta 11
 
-Reglas extraídas de 211 lecciones aprendidas en producción. Seguir siempre.
+Reglas extraídas de 211+ lecciones aprendidas en producción. Seguir siempre.
+
+> **Nota**: Este archivo es usado por Kiro. Para VS Code Copilot, ver `.github/copilot-instructions.md` y `AGENTS.md`.
 
 ## S3 y Uploads
 

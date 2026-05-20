@@ -16,6 +16,9 @@ class SettlementService
     private string $s3Region;
     private string $s3Key;
     private string $s3Secret;
+    private string $s3Endpoint;
+    private string $s3AwsUrl;
+    private bool $usePathStyle;
 
     public function __construct()
     {
@@ -23,6 +26,9 @@ class SettlementService
         $this->s3Region = config('filesystems.disks.s3.region', env('AWS_DEFAULT_REGION', 'us-east-1'));
         $this->s3Key    = config('filesystems.disks.s3.key', env('AWS_ACCESS_KEY_ID', ''));
         $this->s3Secret = config('filesystems.disks.s3.secret', env('AWS_SECRET_ACCESS_KEY', ''));
+        $this->s3Endpoint = config('filesystems.disks.s3.endpoint', env('AWS_ENDPOINT', ''));
+        $this->s3AwsUrl = config('filesystems.disks.s3.url', env('AWS_URL', ''));
+        $this->usePathStyle = config('filesystems.disks.s3.use_path_style_endpoint', env('AWS_USE_PATH_STYLE_ENDPOINT', false));
     }
 
     /**
@@ -191,7 +197,7 @@ class SettlementService
 
         $this->s3PutObject($objectKey, $body, $contentType);
 
-        return "https://{$this->s3Bucket}.s3.amazonaws.com/{$objectKey}";
+        return $this->s3AwsUrl ? rtrim($this->s3AwsUrl, '/') . "/{$objectKey}" : "https://{$this->s3Bucket}.s3.amazonaws.com/{$objectKey}";
     }
 
     /**
@@ -199,8 +205,13 @@ class SettlementService
      */
     private function s3PutObject(string $objectKey, string $body, string $contentType = 'application/octet-stream'): void
     {
-        $host        = "{$this->s3Bucket}.s3.{$this->s3Region}.amazonaws.com";
-        $url         = "https://{$host}/{$objectKey}";
+        if ($this->s3Endpoint) {
+            $host = parse_url($this->s3Endpoint, PHP_URL_HOST);
+            $url  = $this->usePathStyle ? rtrim($this->s3Endpoint, '/') . "/{$this->s3Bucket}/{$objectKey}" : rtrim($this->s3Endpoint, '/') . "/{$objectKey}";
+        } else {
+            $host = "{$this->s3Bucket}.s3.{$this->s3Region}.amazonaws.com";
+            $url  = "https://{$host}/{$objectKey}";
+        }
         $now         = gmdate('Ymd\THis\Z');
         $date        = gmdate('Ymd');
         $payloadHash = hash('sha256', $body);

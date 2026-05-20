@@ -866,7 +866,8 @@ class PipelineExtraccionService
         }
 
         $bucket = config('filesystems.disks.s3.bucket', env('AWS_BUCKET', 'laruta11-images'));
-        $prefix = "https://{$bucket}.s3.amazonaws.com/";
+        $awsUrl = config('filesystems.disks.s3.url', env('AWS_URL', ''));
+        $prefix = $awsUrl ? rtrim($awsUrl, '/') . '/' : "https://{$bucket}.s3.amazonaws.com/";
         if (str_starts_with($imageUrl, $prefix)) {
             return substr($imageUrl, strlen($prefix));
         }

@@ -383,13 +383,21 @@ class RecipeController extends Controller
             $region = config('filesystems.disks.s3.region', env('AWS_DEFAULT_REGION', 'us-east-1'));
             $awsKey = config('filesystems.disks.s3.key', env('AWS_ACCESS_KEY_ID', ''));
             $awsSecret = config('filesystems.disks.s3.secret', env('AWS_SECRET_ACCESS_KEY', ''));
+            $endpoint = config('filesystems.disks.s3.endpoint', env('AWS_ENDPOINT', ''));
+            $awsUrl = config('filesystems.disks.s3.url', env('AWS_URL', ''));
+            $usePathStyle = config('filesystems.disks.s3.use_path_style_endpoint', env('AWS_USE_PATH_STYLE_ENDPOINT', false));
 
             $body = file_get_contents($file->getRealPath());
             $contentType = $file->getMimeType() ?: 'image/jpeg';
 
             // SigV4 signed PUT (bucket policy handles public read)
-            $host = "{$bucket}.s3.{$region}.amazonaws.com";
-            $url = "https://{$host}/{$key}";
+            if ($endpoint) {
+                $host = parse_url($endpoint, PHP_URL_HOST);
+                $url = $usePathStyle ? rtrim($endpoint, '/') . "/{$bucket}/{$key}" : rtrim($endpoint, '/') . "/{$key}";
+            } else {
+                $host = "{$bucket}.s3.{$region}.amazonaws.com";
+                $url = "https://{$host}/{$key}";
+            }
             $now = gmdate('Ymd\THis\Z');
             $date = gmdate('Ymd');
             $payloadHash = hash('sha256', $body);
@@ -444,7 +452,7 @@ class RecipeController extends Controller
                 ], 500);
             }
 
-            $publicUrl = "https://{$bucket}.s3.amazonaws.com/{$key}";
+            $publicUrl = $awsUrl ? rtrim($awsUrl, '/') . "/{$key}" : "https://{$bucket}.s3.amazonaws.com/{$key}";
             $product->image_url = $publicUrl;
             $product->save();
 
