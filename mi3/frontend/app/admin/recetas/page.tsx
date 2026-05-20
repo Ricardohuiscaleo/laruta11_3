@@ -11,6 +11,7 @@ import {
 import BulkActionBar from '@/components/admin/BulkActionBar';
 import type { ApiResponse } from '@/types';
 import { getIngredientEmoji } from '@/lib/ingredient-emoji';
+import ImageQuickDrop from '@/components/admin/ImageQuickDrop';
 
 /* ─── Types ─── */
 
@@ -23,6 +24,7 @@ interface RecipeProduct {
   margin: number | null;
   ingredient_count: number;
   is_active: boolean;
+  image_url: string | null;
 }
 
 interface RecipeIngredient {
@@ -353,6 +355,34 @@ export default function RecetasPage() {
     }
   }, [selectedIds, updateProducts]);
 
+  const handleQuickImageUpload = useCallback(async (productId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      const res = await apiFetch<ApiResponse<{ image_url: string }>>(`/admin/recetas/${productId}/imagen`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (res.data?.image_url && groupedData) {
+        setGroupedData(prev => {
+          if (!prev) return prev;
+          const updated = structuredClone(prev);
+          for (const catKey of Object.keys(updated.products)) {
+            const list = updated.products[catKey];
+            const idx = list.findIndex(p => p.id === productId);
+            if (idx !== -1) {
+              list[idx] = { ...list[idx], image_url: res.data!.image_url };
+              break;
+            }
+          }
+          return updated;
+        });
+      }
+    } catch {
+      // image upload non-critical
+    }
+  }, [groupedData]);
+
   const handleBulkDelete = useCallback(async () => {
     if (selectedIds.size === 0) return;
     const ids = Array.from(selectedIds);
@@ -539,6 +569,7 @@ export default function RecetasPage() {
                               aria-label="Seleccionar todos los productos"
                             />
                           </th>
+                          <th className="px-2 py-2 w-10"></th>
                           <th className="px-4 py-2">Producto</th>
                           <th className="px-2 py-2 w-16 text-center">Estado</th>
                           <th className="px-4 py-2 text-right hidden sm:table-cell">Precio</th>
@@ -571,6 +602,14 @@ export default function RecetasPage() {
                                   onChange={() => toggleSelect(p.id)}
                                   className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400 cursor-pointer"
                                   aria-label={`Seleccionar ${p.name}`}
+                                />
+                              </td>
+                              <td className="px-2 py-3 w-10">
+                                <ImageQuickDrop
+                                  imageUrl={(p as any).image_url}
+                                  productName={p.name}
+                                  onUpload={file => handleQuickImageUpload(p.id, file)}
+                                  size={36}
                                 />
                               </td>
                               <td

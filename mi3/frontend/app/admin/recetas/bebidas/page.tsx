@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
 import { Loader2, Plus, AlertTriangle, X, ChevronDown, ChevronRight, Image as ImageIcon, Search, ToggleLeft, ToggleRight } from 'lucide-react';
 import BulkActionBar from '@/components/admin/BulkActionBar';
+import ImageQuickDrop from '@/components/admin/ImageQuickDrop';
 import type { ApiResponse } from '@/types';
 
 /* ─── Types ─── */
@@ -296,6 +297,24 @@ export default function BebidasTab() {
     });
   };
 
+  /* ─── Quick image upload ─── */
+
+  const handleQuickImageUpload = useCallback(async (productId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      const res = await apiFetch<ApiResponse<{ image_url: string }>>(`/admin/recetas/${productId}/imagen`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (res.data?.image_url) {
+        setBeverages(prev => prev.map(b => b.id === productId ? { ...b, image_url: res.data!.image_url } : b));
+      }
+    } catch {
+      // non-critical
+    }
+  }, []);
+
   /* ─── Form handlers ─── */
   const updateField = (field: keyof FormData, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -463,6 +482,12 @@ export default function BebidasTab() {
                               className="mt-1 h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400 cursor-pointer"
                               aria-label={`Seleccionar ${b.name}`}
                             />
+                            <ImageQuickDrop
+                              imageUrl={b.image_url}
+                              productName={b.name}
+                              onUpload={file => handleQuickImageUpload(b.id, file)}
+                              size={36}
+                            />
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium text-gray-900 truncate">{b.name}</p>
                               {b.description && <p className="text-xs text-gray-500 truncate">{truncate(b.description, 60)}</p>}
@@ -510,7 +535,8 @@ export default function BebidasTab() {
                                 aria-label="Seleccionar todas las bebidas"
                               />
                             </th>
-                            <th className="px-4 py-2">Nombre</th>
+                            <th className="px-2 py-2 w-10"></th>
+                          <th className="px-4 py-2">Nombre</th>
                             <th className="px-2 py-2 w-16 text-center">Estado</th>
                             <th className="px-4 py-2">Descripción</th>
                             <th className="px-4 py-2 text-right">Precio</th>
@@ -531,6 +557,14 @@ export default function BebidasTab() {
                                   onChange={() => toggleSelect(b.id)}
                                   className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400 cursor-pointer"
                                   aria-label={`Seleccionar ${b.name}`}
+                                />
+                              </td>
+                              <td className="px-2 py-2.5 w-10">
+                                <ImageQuickDrop
+                                  imageUrl={b.image_url}
+                                  productName={b.name}
+                                  onUpload={file => handleQuickImageUpload(b.id, file)}
+                                  size={36}
                                 />
                               </td>
                               <td className="px-4 py-2.5 font-medium text-gray-900">{b.name}</td>

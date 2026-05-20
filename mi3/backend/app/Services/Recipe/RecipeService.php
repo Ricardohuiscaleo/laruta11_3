@@ -1041,6 +1041,7 @@ class RecipeService
                 'margin' => $this->calculateMargin((float) $product->price, $recipeCost),
                 'ingredient_count' => $ingredientCount,
                 'is_active' => (bool) $product->is_active,
+                'image_url' => $product->image_url,
             ];
         }
 
