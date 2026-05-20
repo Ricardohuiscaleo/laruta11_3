@@ -664,7 +664,7 @@ const CheckoutApp = () => {
             </button>
             <div className="flex items-center gap-3">
               <img
-                src={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`}
+                src={`${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`}
                 alt="La Ruta 11"
                 className="w-8 h-8"
               />
