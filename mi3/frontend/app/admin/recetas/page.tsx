@@ -230,7 +230,6 @@ export default function RecetasPage() {
   const [showInactive, setShowInactive] = useState(false);
   const [animatingIds, setAnimatingIds] = useState<Set<number>>(new Set());
   const [flashIds, setFlashIds] = useState<Set<number>>(new Set());
-  const [dragOverRowId, setDragOverRowId] = useState<number | null>(null);
 
   /* ─── Add Product: create + open editor ─── */
   const [creatingProduct, setCreatingProduct] = useState(false);
@@ -588,84 +587,17 @@ export default function RecetasPage() {
                           return (
                             <tr
                               key={p.id}
-                              onDragEnter={e => { e.preventDefault(); setDragOverRowId(p.id); }}
-                              onDragOver={e => { e.preventDefault(); setDragOverRowId(p.id); }}
-                              onDragLeave={() => setDragOverRowId(null)}
-                              onDrop={e => { e.preventDefault(); setDragOverRowId(null); const f = e.dataTransfer.files[0]; if (f) handleQuickImageUpload(p.id, f); }}
+                              onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('ring-2', 'ring-red-400', 'bg-red-50'); }}
+                              onDragLeave={e => { e.currentTarget.classList.remove('ring-2', 'ring-red-400', 'bg-red-50'); }}
+                              onDrop={e => { e.preventDefault(); e.currentTarget.classList.remove('ring-2', 'ring-red-400', 'bg-red-50'); const f = e.dataTransfer.files[0]; if (f) handleQuickImageUpload(p.id, f); }}
                               className={cn(
                                 'transition-colors cursor-pointer',
                                 belowTarget && 'bg-amber-50/50',
                                 !isActive && 'opacity-50',
                                 animatingIds.has(p.id) && 'opacity-0 scale-95 transition-all duration-300',
                                 flashIds.has(p.id) && 'bg-green-100 transition-colors duration-500',
-                                dragOverRowId === p.id ? 'ring-2 ring-red-400 bg-red-50' : 'hover:bg-gray-50',
-                              )}
-                            >
-                              <td className="px-2 py-3 w-10">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => toggleSelect(p.id)}
-                                  className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400 cursor-pointer"
-                                  aria-label={`Seleccionar ${p.name}`}
-                                />
-                              </td>
-                              <td className="px-2 py-3 w-10">
-                                <ImageQuickDrop
-                                  imageUrl={(p as any).image_url}
-                                  productName={p.name}
-                                  onUpload={file => handleQuickImageUpload(p.id, file)}
-                                  size={36}
-                                />
-                              </td>
-                              <td
-                                className="px-4 py-3 font-medium text-gray-900 cursor-pointer"
-                                onClick={() => setSelectedProductId(p.id)}
-                                role="button"
-                                tabIndex={0}
-                                onKeyDown={e => e.key === 'Enter' && setSelectedProductId(p.id)}
-                              >
-                                {p.name}
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); handleSingleToggle(p.id); }}
-                                  className={cn(
-                                    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition-colors min-h-[28px]',
-                                    isActive
-                                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                      : 'bg-red-100 text-red-600 hover:bg-red-200'
-                                  )}
-                                  aria-label={isActive ? `Desactivar ${p.name}` : `Activar ${p.name}`}
-                                >
-                                  {isActive
-                                    ? <><ToggleRight className="h-3 w-3" /> ON</>
-                                    : <><ToggleLeft className="h-3 w-3" /> OFF</>
-                                  }
-                                </button>
-                              </td>
-                              <td
-                                className="px-4 py-3 text-right tabular-nums hidden sm:table-cell cursor-pointer"
-                                onClick={() => setSelectedProductId(p.id)}
-                              >
-                                {formatCLP(p.price)}
-                              </td>
-                              <td
-                                className="px-4 py-3 text-right tabular-nums hidden sm:table-cell cursor-pointer"
-                                onClick={() => setSelectedProductId(p.id)}
-                              >
-                                {hasRecipe ? formatCLP(p.recipe_cost) : <span className="text-gray-400">$0</span>}
-                              </td>
-                              <td
-                                className="px-4 py-3 text-right cursor-pointer"
-                                onClick={() => setSelectedProductId(p.id)}
-                              >
-                                {hasRecipe ? (
-                                  <span className={cn(
-                                    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-                                    belowTarget ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
-                                  )}>
+                                'hover:bg-gray-50',
+                              )}>
                                     {belowTarget && <AlertTriangle className="h-3 w-3" />}
                                     {p.margin != null ? `${p.margin.toFixed(1)}%` : '—'}
                                   </span>

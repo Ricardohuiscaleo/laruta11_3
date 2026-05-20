@@ -32,20 +32,11 @@ export default function ImageQuickDrop({ imageUrl, productName, onUpload, size =
     }
   }, [onUpload]);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  }, [handleFile]);
-
   return (
     <div className="relative flex-shrink-0">
       <div
-        onDragOver={e => { e.preventDefault(); e.stopPropagation(); setDragOver(true); }}
+        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
-        onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
         className={cn(
           'flex items-center justify-center rounded-md border-2 overflow-hidden cursor-pointer transition-colors',

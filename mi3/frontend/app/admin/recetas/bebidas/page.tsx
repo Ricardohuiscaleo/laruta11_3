@@ -150,7 +150,6 @@ export default function BebidasTab() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [animatingIds, setAnimatingIds] = useState<Set<number>>(new Set());
   const [flashIds, setFlashIds] = useState<Set<number>>(new Set());
-  const [dragOverRowId, setDragOverRowId] = useState<number | null>(null);
 
   const fetchBeverages = useCallback(async () => {
     setLoading(true);
@@ -470,7 +469,7 @@ export default function BebidasTab() {
                         const isActive = b.is_active !== false && (b.is_active as unknown) !== 0;
                         const isSelected = selectedIds.has(b.id);
                         return (
-                        <div key={b.id} onDragEnter={e => { e.preventDefault(); setDragOverRowId(b.id); }} onDragOver={e => { e.preventDefault(); setDragOverRowId(b.id); }} onDragLeave={() => setDragOverRowId(null)} onDrop={e => { e.preventDefault(); setDragOverRowId(null); const f = e.dataTransfer.files[0]; if (f) handleQuickImageUpload(b.id, f); }} className={cn('p-4 space-y-1 transition-colors', b.is_low_stock && 'bg-amber-50/50', !isActive && 'opacity-50', animatingIds.has(b.id) && 'opacity-0 scale-95 transition-all duration-300', flashIds.has(b.id) && 'bg-green-100 transition-colors duration-500', dragOverRowId === b.id ? 'ring-2 ring-red-400 bg-red-50' : 'hover:bg-gray-50')}>
+                        <div key={b.id} onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('ring-2', 'ring-red-400', 'bg-red-50'); }} onDragLeave={e => { e.currentTarget.classList.remove('ring-2', 'ring-red-400', 'bg-red-50'); }} onDrop={e => { e.preventDefault(); e.currentTarget.classList.remove('ring-2', 'ring-red-400', 'bg-red-50'); const f = e.dataTransfer.files[0]; if (f) handleQuickImageUpload(b.id, f); }} className={cn('p-4 space-y-1 transition-colors', b.is_low_stock && 'bg-amber-50/50', !isActive && 'opacity-50', animatingIds.has(b.id) && 'opacity-0 scale-95 transition-all duration-300', flashIds.has(b.id) && 'bg-green-100 transition-colors duration-500', 'hover:bg-gray-50')}>
                           <div className="flex items-start gap-3">
                             <input
                               type="checkbox"
@@ -546,7 +545,7 @@ export default function BebidasTab() {
                             const isActive = b.is_active !== false && (b.is_active as unknown) !== 0;
                             const isSelected = selectedIds.has(b.id);
                             return (
-                            <tr key={b.id} onDragEnter={e => { e.preventDefault(); setDragOverRowId(b.id); }} onDragOver={e => { e.preventDefault(); setDragOverRowId(b.id); }} onDragLeave={() => setDragOverRowId(null)} onDrop={e => { e.preventDefault(); setDragOverRowId(null); const f = e.dataTransfer.files[0]; if (f) handleQuickImageUpload(b.id, f); }} className={cn('transition-colors cursor-pointer', b.is_low_stock && 'bg-amber-50/50', !isActive && 'opacity-50', animatingIds.has(b.id) && 'opacity-0 scale-95 transition-all duration-300', flashIds.has(b.id) && 'bg-green-100 transition-colors duration-500', dragOverRowId === b.id ? 'ring-2 ring-red-400 bg-red-50' : 'hover:bg-gray-50')}>
+                            <tr key={b.id} onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('ring-2', 'ring-red-400', 'bg-red-50'); }} onDragLeave={e => { e.currentTarget.classList.remove('ring-2', 'ring-red-400', 'bg-red-50'); }} onDrop={e => { e.preventDefault(); e.currentTarget.classList.remove('ring-2', 'ring-red-400', 'bg-red-50'); const f = e.dataTransfer.files[0]; if (f) handleQuickImageUpload(b.id, f); }} className={cn('transition-colors cursor-pointer', b.is_low_stock && 'bg-amber-50/50', !isActive && 'opacity-50', animatingIds.has(b.id) && 'opacity-0 scale-95 transition-all duration-300', flashIds.has(b.id) && 'bg-green-100 transition-colors duration-500', 'hover:bg-gray-50')}>
                               <td className="px-2 py-2.5 w-10">
                                 <input
                                   type="checkbox"
