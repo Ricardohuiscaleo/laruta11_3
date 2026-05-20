@@ -342,6 +342,7 @@ PROMPT,
         $now = gmdate('Ymd\THis\Z');
         $date = gmdate('Ymd');
         $payloadHash = hash('sha256', $contents);
+        $canonicalUri = $endpoint && $usePathStyle ? "/{$bucket}/{$objectKey}" : "/{$objectKey}";
 
         $headers = [
             'content-type' => $contentType,
@@ -354,7 +355,7 @@ PROMPT,
         $canonicalHeaders = '';
         foreach ($headers as $k => $v) $canonicalHeaders .= "{$k}:{$v}\n";
 
-        $canonicalRequest = "PUT\n/{$objectKey}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
+        $canonicalRequest = "PUT\n{$canonicalUri}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
         $credentialScope = "{$date}/{$region}/s3/aws4_request";
         $stringToSign = "AWS4-HMAC-SHA256\n{$now}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
 

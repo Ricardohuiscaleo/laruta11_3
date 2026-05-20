@@ -141,6 +141,7 @@ class ImagenService
         $now = gmdate('Ymd\THis\Z');
         $date = gmdate('Ymd');
         $payloadHash = hash('sha256', $body);
+        $canonicalUri = $this->endpoint && $this->usePathStyle ? "/{$this->bucket}/{$objectKey}" : "/{$objectKey}";
 
         $headers = [
             'content-type' => $contentType,
@@ -155,7 +156,7 @@ class ImagenService
             $canonicalHeaders .= "{$k}:{$v}\n";
         }
 
-        $canonicalRequest = "PUT\n/{$objectKey}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
+        $canonicalRequest = "PUT\n{$canonicalUri}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
         $credentialScope = "{$date}/{$this->region}/s3/aws4_request";
         $stringToSign = "AWS4-HMAC-SHA256\n{$now}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
 
@@ -207,6 +208,7 @@ class ImagenService
         $now = gmdate('Ymd\THis\Z');
         $date = gmdate('Ymd');
         $payloadHash = hash('sha256', '');
+        $canonicalUri = $this->endpoint && $this->usePathStyle ? "/{$this->bucket}/{$objectKey}" : "/{$objectKey}";
 
         $headers = [
             'host' => $host,
@@ -220,7 +222,7 @@ class ImagenService
             $canonicalHeaders .= "{$k}:{$v}\n";
         }
 
-        $canonicalRequest = "GET\n/{$objectKey}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
+        $canonicalRequest = "GET\n{$canonicalUri}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
         $credentialScope = "{$date}/{$this->region}/s3/aws4_request";
         $stringToSign = "AWS4-HMAC-SHA256\n{$now}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
 
@@ -264,6 +266,7 @@ class ImagenService
         $now = gmdate('Ymd\THis\Z');
         $date = gmdate('Ymd');
         $payloadHash = hash('sha256', '');
+        $canonicalUri = $this->endpoint && $this->usePathStyle ? "/{$this->bucket}/{$objectKey}" : "/{$objectKey}";
 
         $headers = [
             'host' => $host,
@@ -277,7 +280,7 @@ class ImagenService
             $canonicalHeaders .= "{$k}:{$v}\n";
         }
 
-        $canonicalRequest = "DELETE\n/{$objectKey}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
+        $canonicalRequest = "DELETE\n{$canonicalUri}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
         $credentialScope = "{$date}/{$this->region}/s3/aws4_request";
         $stringToSign = "AWS4-HMAC-SHA256\n{$now}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
 

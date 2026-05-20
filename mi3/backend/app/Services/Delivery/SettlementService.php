@@ -215,6 +215,7 @@ class SettlementService
         $now         = gmdate('Ymd\THis\Z');
         $date        = gmdate('Ymd');
         $payloadHash = hash('sha256', $body);
+        $canonicalUri = $this->s3Endpoint && $this->usePathStyle ? "/{$this->s3Bucket}/{$objectKey}" : "/{$objectKey}";
 
         $headers = [
             'content-type'         => $contentType,
@@ -229,7 +230,7 @@ class SettlementService
             $canonicalHeaders .= "{$k}:{$v}\n";
         }
 
-        $canonicalRequest = "PUT\n/{$objectKey}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
+        $canonicalRequest = "PUT\n{$canonicalUri}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
         $credentialScope  = "{$date}/{$this->s3Region}/s3/aws4_request";
         $stringToSign     = "AWS4-HMAC-SHA256\n{$now}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
 

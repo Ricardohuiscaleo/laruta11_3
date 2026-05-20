@@ -401,6 +401,7 @@ class RecipeController extends Controller
             $now = gmdate('Ymd\THis\Z');
             $date = gmdate('Ymd');
             $payloadHash = hash('sha256', $body);
+            $canonicalUri = $endpoint && $usePathStyle ? "/{$bucket}/{$key}" : "/{$key}";
 
             $headers = [
                 'content-type' => $contentType,
@@ -415,7 +416,7 @@ class RecipeController extends Controller
                 $canonicalHeaders .= "{$k}:{$v}\n";
             }
 
-            $canonicalRequest = "PUT\n/{$key}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
+            $canonicalRequest = "PUT\n{$canonicalUri}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
             $credentialScope = "{$date}/{$region}/s3/aws4_request";
             $stringToSign = "AWS4-HMAC-SHA256\n{$now}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
 
