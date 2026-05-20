@@ -1,4 +1,10 @@
 <?php
+/**
+ * S3Manager — Upload files to Cloudflare R2 or AWS S3
+ * 
+ * R2: uses shell_exec + curl with AWS Signature V4 (avoids PHP curl bugs)
+ * S3: uses POST with policy (legacy)
+ */
 class S3Manager {
     private $config;
     
@@ -6,278 +12,184 @@ class S3Manager {
         if ($config) {
             $this->config = $config;
         } else {
-            // Buscar config.php en múltiples niveles
-            $paths = [
-                '../config.php',
-                '../../config.php', 
-                '../../../config.php',
-                '../../../../config.php'
-            ];
-            
+            $paths = ['../config.php', '../../config.php', '../../../config.php', '../../../../config.php'];
             foreach ($paths as $path) {
-                if (file_exists($path)) {
-                    $this->config = require $path;
-                    return;
-                }
+                if (file_exists($path)) { $this->config = require $path; return; }
             }
-            
             throw new Exception('Config file not found');
         }
     }
     
     private function compressImage($sourcePath, $quality = 85, $maxWidth = 1200, $maxHeight = 800) {
         $imageInfo = getimagesize($sourcePath);
-        if (!$imageInfo) {
-            throw new Exception('No se pudo leer la información de la imagen');
-        }
+        if (!$imageInfo) throw new Exception('No se pudo leer la información de la imagen');
         
         list($width, $height, $type) = $imageInfo;
-        
         switch ($type) {
-            case IMAGETYPE_JPEG:
-                $source = imagecreatefromjpeg($sourcePath);
-                break;
-            case IMAGETYPE_PNG:
-                $source = imagecreatefrompng($sourcePath);
-                break;
-            case IMAGETYPE_GIF:
-                $source = imagecreatefromgif($sourcePath);
-                break;
-            case IMAGETYPE_WEBP:
-                $source = imagecreatefromwebp($sourcePath);
-                break;
-            default:
-                throw new Exception('Tipo de imagen no soportado');
+            case IMAGETYPE_JPEG: $source = imagecreatefromjpeg($sourcePath); break;
+            case IMAGETYPE_PNG:  $source = imagecreatefrompng($sourcePath); break;
+            case IMAGETYPE_GIF:  $source = imagecreatefromgif($sourcePath); break;
+            case IMAGETYPE_WEBP: $source = imagecreatefromwebp($sourcePath); break;
+            default: throw new Exception('Tipo de imagen no soportado');
         }
         
         $ratio = min($maxWidth / $width, $maxHeight / $height, 1);
         $newWidth = intval($width * $ratio);
         $newHeight = intval($height * $ratio);
-        
         $compressed = imagecreatetruecolor($newWidth, $newHeight);
         
         if ($type == IMAGETYPE_PNG || $type == IMAGETYPE_GIF) {
             imagealphablending($compressed, false);
             imagesavealpha($compressed, true);
-            $transparent = imagecolorallocatealpha($compressed, 255, 255, 255, 127);
-            imagefilledrectangle($compressed, 0, 0, $newWidth, $newHeight, $transparent);
+            imagefilledrectangle($compressed, 0, 0, $newWidth, $newHeight, imagecolorallocatealpha($compressed, 255, 255, 255, 127));
         }
-        
         imagecopyresampled($compressed, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
         
         $tempFile = tempnam(sys_get_temp_dir(), 'compressed_');
-        
         switch ($type) {
-            case IMAGETYPE_JPEG:
-                imagejpeg($compressed, $tempFile, $quality);
-                break;
-            case IMAGETYPE_PNG:
-                imagepng($compressed, $tempFile, 9 - intval($quality / 10));
-                break;
-            case IMAGETYPE_GIF:
-                imagegif($compressed, $tempFile);
-                break;
-            case IMAGETYPE_WEBP:
-                imagewebp($compressed, $tempFile, $quality);
-                break;
+            case IMAGETYPE_JPEG: imagejpeg($compressed, $tempFile, $quality); break;
+            case IMAGETYPE_PNG:  imagepng($compressed, $tempFile, 9 - intval($quality / 10)); break;
+            case IMAGETYPE_GIF:  imagegif($compressed, $tempFile); break;
+            case IMAGETYPE_WEBP: imagewebp($compressed, $tempFile, $quality); break;
         }
-        
-
-        
+        imagedestroy($source);
+        imagedestroy($compressed);
         return $tempFile;
     }
     
+    /**
+     * Build AWS Signature V4 Authorization header
+     */
+    private function signRequest($method, $url, $region, $service, $payloadHash, $contentType, $amzDate) {
+        $accessKey = $this->config['aws_access_key_id'];
+        $secretKey = $this->config['aws_secret_access_key'];
+        $host = parse_url($url, PHP_URL_HOST);
+        $uri = parse_url($url, PHP_URL_PATH);
+        $date = substr($amzDate, 0, 8);
+        
+        $canonicalHeaders = "content-type:{$contentType}\nhost:{$host}\nx-amz-content-sha256:{$payloadHash}\nx-amz-date:{$amzDate}\n";
+        $signedHeaders = 'content-type;host;x-amz-content-sha256;x-amz-date';
+        $canonicalRequest = "{$method}\n{$uri}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
+        
+        $algorithm = 'AWS4-HMAC-SHA256';
+        $credentialScope = "{$date}/{$region}/{$service}/aws4_request";
+        $stringToSign = "{$algorithm}\n{$amzDate}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
+        
+        $kDate = hash_hmac('sha256', $date, 'AWS4' . $secretKey, true);
+        $kRegion = hash_hmac('sha256', $region, $kDate, true);
+        $kService = hash_hmac('sha256', $service, $kRegion, true);
+        $kSigning = hash_hmac('sha256', 'aws4_request', $kService, true);
+        $signature = hash_hmac('sha256', $stringToSign, $kSigning);
+        
+        return "{$algorithm} Credential={$accessKey}/{$credentialScope}, SignedHeaders={$signedHeaders}, Signature={$signature}";
+    }
+    
     public function uploadFile($file, $key, $compress = true) {
-        // Debug: ver qué llega
-        error_log('S3Manager uploadFile - file array: ' . json_encode([
-            'name' => $file['name'] ?? 'not set',
-            'type' => $file['type'] ?? 'not set',
-            'tmp_name' => $file['tmp_name'] ?? 'not set',
-            'error' => $file['error'] ?? 'not set',
-            'size' => $file['size'] ?? 'not set'
+        error_log('S3Manager uploadFile: ' . json_encode([
+            'name' => $file['name'] ?? '?', 'size' => $file['size'] ?? 0, 'key' => $key
         ]));
         
         if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
-            throw new Exception('No se recibió un archivo válido. tmp_name=' . ($file['tmp_name'] ?? 'not set') . ', is_uploaded=' . (isset($file['tmp_name']) && is_uploaded_file($file['tmp_name']) ? 'yes' : 'no'));
+            throw new Exception('No se recibió un archivo válido');
         }
         
-        // Validate file type
         $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
         $finfo = new finfo(FILEINFO_MIME_TYPE);
         $mimeType = $finfo->file($file['tmp_name']);
-        
         if (!in_array($mimeType, $allowedTypes)) {
             throw new Exception('Tipo de archivo no permitido. Solo JPG, PNG, GIF, WEBP');
         }
         
-        $originalSize = filesize($file['tmp_name']);
         $filePath = $file['tmp_name'];
+        $originalSize = filesize($filePath);
         
-        // Compress if file > 500KB
         if ($compress && $originalSize > 500000) {
-            $compressedPath = $this->compressImage($filePath);
-            $filePath = $compressedPath;
+            $filePath = $this->compressImage($filePath);
         }
         
-        $contentType = $mimeType;
-        
-        // Cloudflare R2 / S3-compatible upload
-        // Use custom endpoint if configured (R2), otherwise fallback to AWS S3
         $endpoint = $this->config['s3_endpoint'] ?? null;
-        if ($endpoint) {
-            // R2: PUT object directly with AWS Signature V4
-            $url = rtrim($endpoint, '/') . '/' . $this->config['s3_bucket'] . '/' . $key;
-        } else {
-            // AWS S3: POST with policy
-            $url = 'https://' . $this->config['s3_bucket'] . '.s3.amazonaws.com/';
-        }
         
         if ($endpoint) {
-            // Cloudflare R2: PUT with AWS Signature V4
-            $fileContent = file_get_contents($filePath);
-            $contentLength = strlen($fileContent);
-            $contentHash = hash('sha256', $fileContent);
-            
+            // === Cloudflare R2: PUT via shell curl with AWS Signature V4 ===
+            $url = rtrim($endpoint, '/') . '/' . $this->config['s3_bucket'] . '/' . $key;
             $region = $this->config['s3_region'] ?? 'auto';
-            $service = 's3';
-            $accessKey = $this->config['aws_access_key_id'];
-            $secretKey = $this->config['aws_secret_access_key'];
+            $amzDate = gmdate('Ymd\THis\Z');
+            $payloadHash = hash('sha256', file_get_contents($filePath));
+            $authorization = $this->signRequest('PUT', $url, $region, 's3', $payloadHash, $mimeType, $amzDate);
             
-            // Build AWS Signature V4
-            $now = new DateTime('UTC');
-            $amzDate = $now->format('Ymd\THis\Z');
-            $dateStamp = $now->format('Ymd');
+            // shell_exec curl: most reliable for PUT + custom headers in PHP
+            $cmd = sprintf(
+                "curl -s -w '\n%%{http_code}' -X PUT %s -H 'Content-Type: %s' -H 'x-amz-content-sha256: %s' -H 'x-amz-date: %s' -H 'Authorization: %s' --data-binary @%s 2>&1",
+                escapeshellarg($url),
+                escapeshellarg($mimeType),
+                escapeshellarg($payloadHash),
+                escapeshellarg($amzDate),
+                escapeshellarg($authorization),
+                escapeshellarg($filePath)
+            );
             
-            $host = parse_url($url, PHP_URL_HOST);
-            $canonicalUri = '/' . $this->config['s3_bucket'] . '/' . $key;
-            $canonicalQueryString = '';
-            $canonicalHeaders = "content-type:{$contentType}\nhost:{$host}\nx-amz-content-sha256:{$contentHash}\nx-amz-date:{$amzDate}\n";
-            $signedHeaders = 'content-type;host;x-amz-content-sha256;x-amz-date';
+            $output = shell_exec($cmd);
+            $lines = explode("\n", trim($output));
+            $httpCode = (int)array_pop($lines);
+            $body = implode("\n", $lines);
             
-            $canonicalRequest = "PUT\n{$canonicalUri}\n{$canonicalQueryString}\n{$canonicalHeaders}\n{$signedHeaders}\n{$contentHash}";
-            $algorithm = 'AWS4-HMAC-SHA256';
-            $credentialScope = "{$dateStamp}/{$region}/{$service}/aws4_request";
-            $stringToSign = "{$algorithm}\n{$amzDate}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
+            error_log("S3Manager R2: HTTP {$httpCode} — {$url}");
             
-            $kDate = hash_hmac('sha256', $dateStamp, 'AWS4' . $secretKey, true);
-            $kRegion = hash_hmac('sha256', $region, $kDate, true);
-            $kService = hash_hmac('sha256', $service, $kRegion, true);
-            $kSigning = hash_hmac('sha256', 'aws4_request', $kService, true);
-            $signature = hash_hmac('sha256', $stringToSign, $kSigning);
-            
-            $authorization = "{$algorithm} Credential={$accessKey}/{$credentialScope}, SignedHeaders={$signedHeaders}, Signature={$signature}";
-            
-            // Write file content to temp file for CURLOPT_INFILE
-            $tmpFile = tempnam(sys_get_temp_dir(), 'r2_');
-            file_put_contents($tmpFile, $fileContent);
-            $fp = fopen($tmpFile, 'r');
-            
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_PUT, true);
-            curl_setopt($ch, CURLOPT_INFILE, $fp);
-            curl_setopt($ch, CURLOPT_INFILESIZE, $contentLength);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: ' . $contentType,
-                'x-amz-content-sha256: ' . $contentHash,
-                'x-amz-date: ' . $amzDate,
-                'Authorization: ' . $authorization,
-            ]);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
-            
-            $result = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curlInfo = curl_getinfo($ch);
-            $error = curl_error($ch);
-            fclose($fp);
-            unlink($tmpFile);
-            
-            $debugInfo = [
-                'url' => $url,
-                'http_code' => $httpCode,
-                'curl_error' => $error,
-                'total_time' => $curlInfo['total_time'] ?? 0,
-            ];
+            if ($httpCode !== 200 && $httpCode !== 204) {
+                throw new Exception("Error HTTP {$httpCode} subiendo a R2. " . substr($body, 0, 300));
+            }
         } else {
-            // AWS S3: POST with policy (legacy)
+            // === AWS S3: POST with policy (legacy) ===
+            $url = 'https://' . $this->config['s3_bucket'] . '.s3.amazonaws.com/';
+            
             $policy = base64_encode(json_encode([
                 'expiration' => gmdate('Y-m-d\TH:i:s\Z', time() + 3600),
                 'conditions' => [
                     ['bucket' => $this->config['s3_bucket']],
                     ['key' => $key],
-                    ['Content-Type' => $contentType],
+                    ['Content-Type' => $mimeType],
                     ['content-length-range', 0, 10485760]
                 ]
             ]));
             
             $signature = base64_encode(hash_hmac('sha1', $policy, $this->config['aws_secret_access_key'], true));
             
-            $postFields = [
-                'key' => $key,
-                'AWSAccessKeyId' => $this->config['aws_access_key_id'],
-                'policy' => $policy,
-                'signature' => $signature,
-                'Content-Type' => $contentType,
-                'file' => new CURLFile($filePath, $contentType, basename($file['name']))
-            ];
-            
             $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, []);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
-        }
-        curl_setopt($ch, CURLOPT_VERBOSE, false);
-        
-        $result = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlInfo = curl_getinfo($ch);
-        $error = curl_error($ch);
-        // Debug info
-        $debugInfo = [
-            'url' => $url,
-            'http_code' => $httpCode,
-            'curl_error' => $error,
-            'total_time' => $curlInfo['total_time'] ?? 0,
-            'connect_time' => $curlInfo['connect_time'] ?? 0
-        ];
-        
-        if ($result === false) {
-            throw new Exception("Error cURL: {$error}. Debug: " . json_encode($debugInfo));
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => [
+                    'key' => $key,
+                    'AWSAccessKeyId' => $this->config['aws_access_key_id'],
+                    'policy' => $policy,
+                    'signature' => $signature,
+                    'Content-Type' => $mimeType,
+                    'file' => new CURLFile($filePath, $mimeType, basename($file['name']))
+                ],
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_TIMEOUT => 60,
+                CURLOPT_CONNECTTIMEOUT => 30,
+            ]);
+            
+            $result = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+            
+            if ($error) throw new Exception("Error cURL: {$error}");
+            if ($httpCode !== 200 && $httpCode !== 204) {
+                throw new Exception("Error HTTP {$httpCode} subiendo a S3. " . substr($result, 0, 300));
+            }
         }
         
-        if ($error) {
-            throw new Exception("Error cURL: {$error}. HTTP: {$httpCode}");
-        }
-        
-        if ($httpCode === 0) {
-            throw new Exception("No se pudo conectar a S3. Verifique conectividad de red. Debug: " . json_encode($debugInfo));
-        }
-        
-        if ($httpCode !== 204 && $httpCode !== 200) {
-            $errorMsg = "Error HTTP {$httpCode} subiendo a S3";
-            if ($result) $errorMsg .= '. Respuesta: ' . substr($result, 0, 300);
-            throw new Exception($errorMsg);
-        }
-        
-        // Clean up compressed file
-        if ($compress && $originalSize > 500000 && isset($compressedPath)) {
-            unlink($compressedPath);
+        if ($compress && $originalSize > 500000 && $filePath !== $file['tmp_name']) {
+            @unlink($filePath);
         }
         
         return $this->config['s3_url'] . '/' . $key;
     }
     
     public function deleteFile($key) {
-        // Use R2 endpoint if configured, otherwise AWS S3
         $endpoint = $this->config['s3_endpoint'] ?? null;
         if ($endpoint) {
             $url = rtrim($endpoint, '/') . '/' . $this->config['s3_bucket'] . '/' . $key;
@@ -285,9 +197,8 @@ class S3Manager {
             $url = "https://{$this->config['s3_bucket']}.s3.{$this->config['s3_region']}.amazonaws.com/{$key}";
         }
         
-        $ch = curl_init();
+        $ch = curl_init($url);
         curl_setopt_array($ch, [
-            CURLOPT_URL => $url,
             CURLOPT_CUSTOMREQUEST => 'DELETE',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_SSL_VERIFYPEER => false,
@@ -298,8 +209,9 @@ class S3Manager {
             curl_setopt($ch, CURLOPT_USERPWD, $this->config['aws_access_key_id'] . ':' . $this->config['aws_secret_access_key']);
         }
         
-        $response = curl_exec($ch);
+        curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
         
         return $httpCode === 204 || $httpCode === 200;
     }
