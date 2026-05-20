@@ -1074,7 +1074,7 @@ const CheckoutApp = ({ onClose }) => {
                 <ArrowLeft size={20} className="text-white" />
               </button>
               <img
-                src={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`}
+                src={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/1.jpg`}
                 alt="La Ruta 11"
                 className="w-7 h-7 sm:w-8 sm:h-8"
               />
@@ -1474,10 +1474,10 @@ const CheckoutApp = ({ onClose }) => {
                     <div key={index} className="border-b border-gray-100 pb-3 last:border-b-0">
                       <div className="flex gap-2 items-start">
                         <img
-                          src={item.image_url || `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`}
+                          src={item.image_url || `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/1.jpg`}
                           alt={item.name}
                           className="w-12 h-12 object-cover rounded-md border border-gray-200 flex-shrink-0"
-                          onError={(e) => { e.target.src = `${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`; }}
+                          onError={(e) => { e.target.src = `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/1.jpg`; }}
                         />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-800 text-sm truncate">{item.name}</p>
@@ -2034,7 +2034,7 @@ const CheckoutApp = ({ onClose }) => {
                 <X size={24} />
               </button>
               <div className="flex items-center gap-3 mb-2">
-                <img src={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`} alt="La Ruta 11" className="w-12 h-12" />
+                <img src={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/1.jpg`} alt="La Ruta 11" className="w-12 h-12" />
                 <div>
                   <h2 className="text-2xl font-black text-white">LA RUTA 11</h2>
                   <p className="text-orange-100 text-sm">Tu cuenta, tus beneficios</p>

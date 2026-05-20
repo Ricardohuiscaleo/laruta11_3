@@ -95,7 +95,7 @@
             .xl\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
     </style>
-    <link rel="icon" type="image/png" href={`${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`} />
+    <link rel="icon" type="image/png" href={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`} />
 </head>
 <body class="bg-white min-h-screen">
     <div id="login-app"></div>
@@ -165,7 +165,7 @@
             return h('div', { className: 'min-h-screen bg-gray-100 flex items-center justify-center' },
                 h('div', { className: 'bg-white p-8 rounded-xl shadow-xl w-full max-w-md' },
                     h('div', { className: 'text-center mb-6' },
-                        h('img', { src: `${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`, alt: 'La Ruta 11', className: 'w-16 h-16 mx-auto mb-4' }),
+                        h('img', { src: `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`, alt: 'La Ruta 11', className: 'w-16 h-16 mx-auto mb-4' }),
                         h('h1', { className: 'text-2xl font-bold text-gray-800' }, 'Comandas - Cocina'),
                         h('p', { className: 'text-gray-600' }, 'Ingresa tus credenciales')
                     ),
@@ -235,7 +235,7 @@
                 if ('Notification' in window && Notification.permission === 'granted') {
                     new Notification(title, {
                         body: body,
-                        icon: `${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`
+                        icon: `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`
                     });
                 }
             };
@@ -453,7 +453,7 @@
                 if (imageUrl && imageUrl.trim() !== '') {
                     return imageUrl;
                 }
-                return `${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`;
+                return `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`;
             };
 
             const formatPhone = (phone) => {
@@ -644,7 +644,7 @@
                     h('div', { className: 'max-w-7xl mx-auto px-1 py-2' },
                         h('div', { className: 'flex items-center justify-between gap-4 mb-2' },
                             h('div', { className: 'flex items-center gap-2' },
-                                h('img', { src: `${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`, alt: 'La Ruta 11', className: 'w-6 h-6' }),
+                                h('img', { src: `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`, alt: 'La Ruta 11', className: 'w-6 h-6' }),
                                 h('h1', { className: 'font-bold text-gray-800 text-base' }, 'Comandas')
                             ),
                             h('div', { className: 'flex items-center gap-2 text-xs text-gray-600' },
@@ -828,7 +828,7 @@
                                                                         alt: item.product_name || 'Bebida',
                                                                         style: { width: '48px', height: '60px', objectFit: 'cover' },
                                                                         className: 'rounded border border-gray-200 flex-shrink-0',
-                                                                        onError: (e) => { e.target.src = `${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`; }
+                                                                        onError: (e) => { e.target.src = `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`; }
                                                                     }),
                                                                     h('h3', { className: 'font-bold text-gray-900 text-base flex-1' }, 
                                                                         (item.product_name || 'Bebida').replace(/\s*\(\d+g?\)/gi, '')
@@ -861,7 +861,7 @@
                                                                     alt: item.product_name || 'Producto',
                                                                     style: { width: '115px', height: '144px', objectFit: 'cover' },
                                                                     className: 'rounded border-2 border-white shadow flex-shrink-0',
-                                                                    onError: (e) => { e.target.src = `${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`; }
+                                                                    onError: (e) => { e.target.src = `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`; }
                                                                 }),
                                                                 // Columna 2: Info del producto
                                                                 h('div', { className: 'flex-1 min-w-0' },

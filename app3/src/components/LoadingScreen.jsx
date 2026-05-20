@@ -43,7 +43,7 @@ const LoadingScreen = ({ onComplete }) => {
         {/* Logo */}
         <div className="mb-8">
           <img 
-            src={`${import.meta.env.AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`} 
+            src={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/1.jpg`} 
             alt="La Ruta 11" 
             className="w-24 h-24 mx-auto animate-bounce object-contain"
           />

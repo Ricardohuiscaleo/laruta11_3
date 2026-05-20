@@ -29,7 +29,7 @@ export default function AdminSidebar() {
   return (
     <aside className="hidden md:flex md:flex-col w-64 bg-red-600 text-white">
       <div className="flex items-center border-b border-red-500 px-4 py-4">
-        <img src={`${process.env.NEXT_PUBLIC_AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-work.png`} alt="La Ruta 11 Work" className="h-8 w-auto" />
+        <img src={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/3.jpg`} alt="La Ruta 11 Work" className="h-8 w-auto" />
       </div>
       <nav className="mt-2 flex-1 space-y-1 px-2">
         {links.map(({ href, label, icon: Icon }) => {

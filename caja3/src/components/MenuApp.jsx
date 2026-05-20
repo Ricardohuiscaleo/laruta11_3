@@ -2335,7 +2335,7 @@ export default function App() {
           <div className="flex items-center justify-between w-full gap-1 xs:gap-2 sm:gap-4">
             {/* Logo */}
             <div className="p-2 shrink-0">
-              <img src={`${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`} alt="La Ruta 11" style={{ width: '28px', height: '28px' }} width="28" height="28" />
+              <img src={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`} alt="La Ruta 11" style={{ width: '28px', height: '28px' }} width="28" height="28" />
             </div>
 
             {/* Checklist */}

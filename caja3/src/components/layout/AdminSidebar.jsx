@@ -64,7 +64,7 @@ export function AdminSidebar({ activeView, onViewChange }) {
             <SidebarHeader className="border-b p-4">
                 <div className="flex items-center gap-3">
                     <img
-                        src={`${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`}
+                        src={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`}
                         className="w-8 h-8 rounded-md"
                         alt="Logo"
                     />

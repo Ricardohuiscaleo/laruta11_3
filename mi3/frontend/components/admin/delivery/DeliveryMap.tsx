@@ -192,7 +192,7 @@ function MapContent({ orders, riders, onAssignRider }: DeliveryMapProps) {
       <AdvancedMarker position={RUTA11} zIndex={1000}>
         <div className="flex flex-col items-center">
           <img
-            src={`${process.env.NEXT_PUBLIC_AWS_URL || 'https://laruta11-images.s3.amazonaws.com'}/menu/logo-optimized.png`}
+            src={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/3.jpg`}
             alt="La Ruta 11"
             className="h-10 w-10 rounded-full border-2 border-red-500 shadow-lg bg-white"
           />

@@ -31,8 +31,8 @@ self.addEventListener('push', function (event) {
 
   var options = {
     body: data.body || '',
-    icon: data.icon || 'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/menu/logo-work.png',
-    badge: 'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/menu/logo-work.png',
+    icon: data.icon || 'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/3.jpg',
+    badge: 'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/3.jpg',
     vibrate: [200, 100, 200],
     data: { url: data.url || '/dashboard' },
     tag: data.tag || 'mi3-notification',

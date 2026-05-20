@@ -475,7 +475,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
     const comboData = item.combo_data ? JSON.parse(item.combo_data) : null;
     const isCombo = item.item_type === 'combo' && comboData;
     const isChecked = !!checkedItems[`${orderId}-${item.id}`];
-    const imageUrl = item.image_url || item.image || `${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`;
+    const imageUrl = item.image_url || item.image || `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`;
 
     const toggleAll = (checked) => {
       const updates = { [`${orderId}-${item.id}`]: checked };
@@ -523,7 +523,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
               src={imageUrl} 
               alt={item.product_name} 
               className="w-full h-full object-cover" 
-              onError={(e) => { e.target.src = `${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`; }}
+              onError={(e) => { e.target.src = `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`; }}
             />
             {isChecked && (
               <div className="absolute inset-0 bg-green-600/80 flex items-center justify-center">
@@ -574,7 +574,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                   return selectionsArray.map((sel, sidx) => {
                     if (!sel || !sel.name) return null;
                     const itemKey = `${orderId}-sel-${item.id}-${group}-${sidx}`;
-                    const selImageUrl = sel.image_url || sel.image || `${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`;
+                    const selImageUrl = sel.image_url || sel.image || `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`;
                     return (
                       <label key={`${idx}-${sidx}`} className="flex items-center gap-1 cursor-pointer mb-0.5">
                         <input
@@ -587,7 +587,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                           src={selImageUrl} 
                           alt={sel.name} 
                           className="w-6 h-6 object-cover rounded border border-purple-300" 
-                          onError={(e) => { e.target.src = `${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`; }}
+                          onError={(e) => { e.target.src = `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`; }}
                         />
                         <span className={`text-[9px] ${checkedItems[itemKey] ? 'line-through text-gray-400' : 'text-gray-700'}`}>
                           {item.quantity}x {sel.name}
@@ -806,7 +806,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
               const comboData = item.combo_data ? JSON.parse(item.combo_data) : null;
               const isCombo = item.item_type === 'combo' && comboData;
               const isChecked = !!checkedItems[`${order.id}-${item.id}`];
-              const imageUrl = item.image_url || item.image || `${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`;
+              const imageUrl = item.image_url || item.image || `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`;
               return (
                 <div key={item.id}>
                   <label className={`flex items-center gap-2 px-1 py-1 rounded cursor-pointer ${isChecked ? 'bg-green-50 opacity-60' : 'bg-white'}`}>
@@ -820,7 +820,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                       setCheckedItems(prev => ({ ...prev, ...updates }));
                     }} className="w-3 h-3 accent-green-500 flex-shrink-0" />
                     <div className="w-11 h-11 flex-shrink-0 rounded overflow-hidden cursor-pointer" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewingOrderPhotos({ photos: [imageUrl], currentIndex: 0 }); }}>
-                      <img src={imageUrl} alt={item.product_name} className="w-full h-full object-cover" onError={(e) => { e.target.src = `${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`; }} />
+                      <img src={imageUrl} alt={item.product_name} className="w-full h-full object-cover" onError={(e) => { e.target.src = `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`; }} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <span className={`text-sm font-bold block truncate ${isChecked ? 'line-through text-gray-400' : 'text-gray-800'}`}>{item.quantity}x {item.product_name}</span>

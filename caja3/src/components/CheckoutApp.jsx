@@ -664,7 +664,7 @@ const CheckoutApp = () => {
             </button>
             <div className="flex items-center gap-3">
               <img
-                src={`${'https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev'}/menu/logo-optimized.png`}
+                src={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`}
                 alt="La Ruta 11"
                 className="w-8 h-8"
               />
