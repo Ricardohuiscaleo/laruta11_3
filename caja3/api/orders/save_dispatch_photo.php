@@ -28,7 +28,7 @@ try {
     foreach ([__DIR__ . '/../S3Manager.php', __DIR__ . '/../../S3Manager.php'] as $p) {
         if (file_exists($p)) {
             require_once $p;
-            $s3Manager = new S3Manager();
+            $s3Manager = new S3Manager($config);
             break;
         }
     }

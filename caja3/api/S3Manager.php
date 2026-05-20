@@ -12,7 +12,15 @@ class S3Manager {
         if ($config) {
             $this->config = $config;
         } else {
-            $paths = ['../config.php', '../../config.php', '../../../config.php', '../../../../config.php'];
+            $paths = [
+                __DIR__ . '/../config.php',
+                __DIR__ . '/../../config.php',
+                __DIR__ . '/../public/config.php',
+                '../config.php',
+                '../../config.php',
+                '../../../config.php',
+                '../../../../config.php'
+            ];
             foreach ($paths as $path) {
                 if (file_exists($path)) { $this->config = require $path; return; }
             }

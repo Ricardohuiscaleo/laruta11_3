@@ -62,7 +62,7 @@ try {
     }
     
     $compra_id = $_POST['compra_id'];
-    $s3Manager = new S3Manager();
+    $s3Manager = new S3Manager($config);
     $file = $_FILES['image'];
     $fileName = 'compras/respaldo_' . $compra_id . '_' . time() . '.jpg';
     

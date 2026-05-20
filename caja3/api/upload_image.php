@@ -4,6 +4,23 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
+$configPaths = [
+    __DIR__ . '/../config.php',
+    __DIR__ . '/../../config.php',
+    __DIR__ . '/../public/config.php',
+];
+$config = null;
+foreach ($configPaths as $path) {
+    if (file_exists($path)) {
+        $config = require $path;
+        break;
+    }
+}
+if (!$config) {
+    echo json_encode(['success' => false, 'error' => 'Config no encontrado']);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'error' => 'Método no permitido']);
     exit;
@@ -17,7 +34,7 @@ if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
 try {
     require_once __DIR__ . '/S3Manager.php';
     
-    $s3Manager = new S3Manager();
+    $s3Manager = new S3Manager($config);
     $file = $_FILES['image'];
     $fileName = 'products/' . uniqid() . '_' . basename($file['name']);
     

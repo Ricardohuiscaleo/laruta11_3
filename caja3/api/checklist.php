@@ -384,7 +384,7 @@ function uploadPhoto($conn, $config)
     try {
         require_once __DIR__ . '/S3Manager.php';
 
-        $s3Manager = new S3Manager();
+        $s3Manager = new S3Manager($config);
         $file = $_FILES['photo'];
         $fileName = 'checklist/' . date('Y/m') . '/' . uniqid() . '_' . basename($file['name']);
 
