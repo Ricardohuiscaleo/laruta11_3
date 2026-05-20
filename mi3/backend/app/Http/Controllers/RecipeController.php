@@ -458,7 +458,7 @@ class RecipeController extends Controller
             $product->image_url = $publicUrl;
             $product->save();
 
-            return response()->json(['success' => true, 'image_url' => $publicUrl]);
+            return response()->json(['success' => true, 'data' => ['image_url' => $publicUrl]]);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'error' => 'Producto no encontrado'], 404);
         } catch (\Exception $e) {

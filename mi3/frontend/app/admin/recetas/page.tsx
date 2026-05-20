@@ -588,9 +588,10 @@ export default function RecetasPage() {
                           return (
                             <tr
                               key={p.id}
-                              onDragOver={e => { e.preventDefault(); e.stopPropagation(); setDragOverRowId(p.id); }}
+                              onDragEnter={e => { e.preventDefault(); setDragOverRowId(p.id); }}
+                              onDragOver={e => { e.preventDefault(); setDragOverRowId(p.id); }}
                               onDragLeave={() => setDragOverRowId(null)}
-                              onDrop={e => { e.preventDefault(); e.stopPropagation(); setDragOverRowId(null); const f = e.dataTransfer.files[0]; if (f?.type.match(/^image\/(jpeg|png|webp)$/) && f.size <= 5*1024*1024) handleQuickImageUpload(p.id, f); }}
+                              onDrop={e => { e.preventDefault(); setDragOverRowId(null); const f = e.dataTransfer.files[0]; if (f) handleQuickImageUpload(p.id, f); }}
                               className={cn(
                                 'transition-colors cursor-pointer',
                                 belowTarget && 'bg-amber-50/50',
