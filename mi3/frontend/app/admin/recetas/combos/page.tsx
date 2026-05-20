@@ -9,6 +9,7 @@ import {
   Pencil, ImageIcon,
 } from 'lucide-react';
 import BulkActionBar from '@/components/admin/BulkActionBar';
+import ImageQuickDrop from '@/components/admin/ImageQuickDrop';
 import type { ApiResponse } from '@/types';
 
 /* ─── Types ─── */
@@ -182,6 +183,18 @@ export default function CombosPage() {
       setError(e instanceof Error ? e.message : 'Error al cambiar estado');
     }
   }, [updateCombos]);
+
+  const handleQuickImageUpload = useCallback(async (productId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await apiFetch<ApiResponse<{ image_url: string }>>(`/admin/recetas/${productId}/imagen`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (res.data?.image_url) {
+      setCombos(prev => prev.map(c => c.id === productId ? { ...c, image_url: res.data!.image_url } : c));
+    }
+  }, []);
 
   /* ─── Bulk action handlers ─── */
 
@@ -361,6 +374,9 @@ export default function CombosPage() {
               return (
               <div
                 key={combo.id}
+                onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('ring-2', 'ring-red-400', 'bg-red-50'); }}
+                onDragLeave={e => { e.currentTarget.classList.remove('ring-2', 'ring-red-400', 'bg-red-50'); }}
+                onDrop={e => { e.preventDefault(); e.currentTarget.classList.remove('ring-2', 'ring-red-400', 'bg-red-50'); const f = e.dataTransfer.files[0]; if (f) handleQuickImageUpload(combo.id, f); }}
                 className={cn('w-full rounded-xl border bg-white p-4 shadow-sm', !isActive && 'opacity-50', animatingIds.has(combo.id) && 'opacity-0 scale-95 transition-all duration-300', flashIds.has(combo.id) && 'bg-green-100 transition-colors duration-500')}
               >
                 <div className="flex items-start gap-3">
@@ -370,6 +386,12 @@ export default function CombosPage() {
                     onChange={() => toggleSelect(combo.id)}
                     className="mt-1 h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400 cursor-pointer"
                     aria-label={`Seleccionar ${combo.name}`}
+                  />
+                  <ImageQuickDrop
+                    imageUrl={combo.image_url}
+                    productName={combo.name}
+                    onUpload={file => handleQuickImageUpload(combo.id, file)}
+                    size={36}
                   />
                   <button
                     onClick={() => setEditingCombo(combo)}
@@ -432,6 +454,7 @@ export default function CombosPage() {
                       aria-label="Seleccionar todos los combos"
                     />
                   </th>
+                  <th className="px-2 py-3 w-10"></th>
                   <th className="px-4 py-3">Nombre</th>
                   <th className="px-2 py-3 w-16 text-center">Estado</th>
                   <th className="px-4 py-3 text-right">Precio</th>
@@ -449,6 +472,9 @@ export default function CombosPage() {
                   return (
                   <tr
                     key={combo.id}
+                    onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('ring-2', 'ring-red-400', 'bg-red-50'); }}
+                    onDragLeave={e => { e.currentTarget.classList.remove('ring-2', 'ring-red-400', 'bg-red-50'); }}
+                    onDrop={e => { e.preventDefault(); e.currentTarget.classList.remove('ring-2', 'ring-red-400', 'bg-red-50'); const f = e.dataTransfer.files[0]; if (f) handleQuickImageUpload(combo.id, f); }}
                     className={cn('hover:bg-gray-50 transition-colors', !isActive && 'opacity-50', animatingIds.has(combo.id) && 'opacity-0 scale-95 transition-all duration-300', flashIds.has(combo.id) && 'bg-green-100 transition-colors duration-500')}
                   >
                     <td className="px-2 py-3 w-10">
@@ -458,6 +484,14 @@ export default function CombosPage() {
                         onChange={() => toggleSelect(combo.id)}
                         className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400 cursor-pointer"
                         aria-label={`Seleccionar ${combo.name}`}
+                      />
+                    </td>
+                    <td className="px-2 py-3 w-10">
+                      <ImageQuickDrop
+                        imageUrl={combo.image_url}
+                        productName={combo.name}
+                        onUpload={file => handleQuickImageUpload(combo.id, file)}
+                        size={36}
                       />
                     </td>
                     <td
