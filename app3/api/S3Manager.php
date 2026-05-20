@@ -121,41 +121,70 @@ class S3Manager {
         
         $contentType = $mimeType;
         
-        // AWS S3 POST request with policy
-        $policy = base64_encode(json_encode([
-            'expiration' => gmdate('Y-m-d\TH:i:s\Z', time() + 3600),
-            'conditions' => [
-                ['bucket' => $this->config['s3_bucket']],
-                ['key' => $key],
-                ['Content-Type' => $contentType],
-                ['content-length-range', 0, 10485760] // 10MB max
-            ]
-        ]));
+        // Cloudflare R2 / S3-compatible upload
+        // Use custom endpoint if configured (R2), otherwise fallback to AWS S3
+        $endpoint = $this->config['s3_endpoint'] ?? null;
+        if ($endpoint) {
+            // R2: PUT object directly with AWS Signature V4
+            $url = rtrim($endpoint, '/') . '/' . $this->config['s3_bucket'] . '/' . $key;
+        } else {
+            // AWS S3: POST with policy
+            $url = 'https://' . $this->config['s3_bucket'] . '.s3.amazonaws.com/';
+        }
         
-        $signature = base64_encode(hash_hmac('sha1', $policy, $this->config['aws_secret_access_key'], true));
-        
-        $url = 'https://' . $this->config['s3_bucket'] . '.s3.amazonaws.com/';
-        
-        // Create multipart form data
-        $postFields = [
-            'key' => $key,
-            'AWSAccessKeyId' => $this->config['aws_access_key_id'],
-            'policy' => $policy,
-            'signature' => $signature,
-            'Content-Type' => $contentType,
-            'file' => new CURLFile($filePath, $contentType, basename($file['name']))
-        ];
-        
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
+        if ($endpoint) {
+            // Cloudflare R2: simple PUT with Authorization header
+            $fileContent = file_get_contents($filePath);
+            $contentLength = strlen($fileContent);
+            
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_PUT, true);
+            curl_setopt($ch, CURLOPT_INFILE, fopen($filePath, 'r'));
+            curl_setopt($ch, CURLOPT_INFILESIZE, $contentLength);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: ' . $contentType,
+                'Content-Length: ' . $contentLength,
+            ]);
+            curl_setopt($ch, CURLOPT_USERPWD, $this->config['aws_access_key_id'] . ':' . $this->config['aws_secret_access_key']);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
+        } else {
+            // AWS S3: POST with policy (legacy)
+            $policy = base64_encode(json_encode([
+                'expiration' => gmdate('Y-m-d\TH:i:s\Z', time() + 3600),
+                'conditions' => [
+                    ['bucket' => $this->config['s3_bucket']],
+                    ['key' => $key],
+                    ['Content-Type' => $contentType],
+                    ['content-length-range', 0, 10485760]
+                ]
+            ]));
+            
+            $signature = base64_encode(hash_hmac('sha1', $policy, $this->config['aws_secret_access_key'], true));
+            
+            $postFields = [
+                'key' => $key,
+                'AWSAccessKeyId' => $this->config['aws_access_key_id'],
+                'policy' => $policy,
+                'signature' => $signature,
+                'Content-Type' => $contentType,
+                'file' => new CURLFile($filePath, $contentType, basename($file['name']))
+            ];
+            
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, []);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
+        }
         curl_setopt($ch, CURLOPT_VERBOSE, false);
         
         $result = curl_exec($ch);
@@ -198,8 +227,13 @@ class S3Manager {
     }
     
     public function deleteFile($key) {
-        // Simple DELETE request
-        $url = "https://{$this->config['s3_bucket']}.s3.{$this->config['s3_region']}.amazonaws.com/{$key}";
+        // Use R2 endpoint if configured, otherwise AWS S3
+        $endpoint = $this->config['s3_endpoint'] ?? null;
+        if ($endpoint) {
+            $url = rtrim($endpoint, '/') . '/' . $this->config['s3_bucket'] . '/' . $key;
+        } else {
+            $url = "https://{$this->config['s3_bucket']}.s3.{$this->config['s3_region']}.amazonaws.com/{$key}";
+        }
         
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -210,9 +244,13 @@ class S3Manager {
             CURLOPT_TIMEOUT => 30
         ]);
         
+        if ($endpoint) {
+            curl_setopt($ch, CURLOPT_USERPWD, $this->config['aws_access_key_id'] . ':' . $this->config['aws_secret_access_key']);
+        }
+        
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         
-        return $httpCode === 204;
+        return $httpCode === 204 || $httpCode === 200;
     }
 }

@@ -115,6 +115,7 @@ $config = [
     's3_bucket' => getenv('S3_BUCKET'),
     's3_region' => getenv('S3_REGION'),
     's3_url' => getenv('S3_URL'),
+    's3_endpoint' => getenv('AWS_ENDPOINT'), // Cloudflare R2 endpoint
     
     'discount_codes' => [
         'PIZZA11' => ['product_id' => 231, 'discount_percent' => 20, 'name' => 'Pizza 20% OFF', 'active' => true],
