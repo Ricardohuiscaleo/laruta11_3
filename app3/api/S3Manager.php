@@ -133,19 +133,50 @@ class S3Manager {
         }
         
         if ($endpoint) {
-            // Cloudflare R2: simple PUT with Authorization header
+            // Cloudflare R2: PUT with AWS Signature V4
             $fileContent = file_get_contents($filePath);
             $contentLength = strlen($fileContent);
+            $contentHash = hash('sha256', $fileContent);
+            
+            $region = $this->config['s3_region'] ?? 'auto';
+            $service = 's3';
+            $accessKey = $this->config['aws_access_key_id'];
+            $secretKey = $this->config['aws_secret_access_key'];
+            
+            // Build AWS Signature V4
+            $now = new DateTime('UTC');
+            $amzDate = $now->format('Ymd\THis\Z');
+            $dateStamp = $now->format('Ymd');
+            
+            $host = parse_url($url, PHP_URL_HOST);
+            $canonicalUri = '/' . $this->config['s3_bucket'] . '/' . $key;
+            $canonicalQueryString = '';
+            $canonicalHeaders = "content-type:{$contentType}\nhost:{$host}\nx-amz-content-sha256:{$contentHash}\nx-amz-date:{$amzDate}\n";
+            $signedHeaders = 'content-type;host;x-amz-content-sha256;x-amz-date';
+            
+            $canonicalRequest = "PUT\n{$canonicalUri}\n{$canonicalQueryString}\n{$canonicalHeaders}\n{$signedHeaders}\n{$contentHash}";
+            $algorithm = 'AWS4-HMAC-SHA256';
+            $credentialScope = "{$dateStamp}/{$region}/{$service}/aws4_request";
+            $stringToSign = "{$algorithm}\n{$amzDate}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
+            
+            $kDate = hash_hmac('sha256', $dateStamp, 'AWS4' . $secretKey, true);
+            $kRegion = hash_hmac('sha256', $region, $kDate, true);
+            $kService = hash_hmac('sha256', $service, $kRegion, true);
+            $kSigning = hash_hmac('sha256', 'aws4_request', $kService, true);
+            $signature = hash_hmac('sha256', $stringToSign, $kSigning);
+            
+            $authorization = "{$algorithm} Credential={$accessKey}/{$credentialScope}, SignedHeaders={$signedHeaders}, Signature={$signature}";
             
             $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_PUT, true);
-            curl_setopt($ch, CURLOPT_INFILE, fopen($filePath, 'r'));
-            curl_setopt($ch, CURLOPT_INFILESIZE, $contentLength);
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $fileContent);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'Content-Type: ' . $contentType,
                 'Content-Length: ' . $contentLength,
+                'x-amz-content-sha256: ' . $contentHash,
+                'x-amz-date: ' . $amzDate,
+                'Authorization: ' . $authorization,
             ]);
-            curl_setopt($ch, CURLOPT_USERPWD, $this->config['aws_access_key_id'] . ':' . $this->config['aws_secret_access_key']);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_TIMEOUT, 60);
