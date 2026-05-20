@@ -22,7 +22,7 @@ RUN a2enmod rewrite headers && \
     echo 'PassEnv TELEGRAM_TOKEN TELEGRAM_CHAT_ID' >> /etc/apache2/apache2.conf && \
     echo 'PassEnv GMAIL_CLIENT_ID GMAIL_CLIENT_SECRET GMAIL_SENDER_EMAIL' >> /etc/apache2/apache2.conf && \
     echo 'PassEnv TUU_API_KEY TUU_ONLINE_RUT TUU_ONLINE_SECRET TUU_ONLINE_ENV TUU_ENVIRONMENT TUU_DEVICE_SERIAL' >> /etc/apache2/apache2.conf && \
-    echo 'PassEnv AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY S3_BUCKET S3_REGION S3_URL' >> /etc/apache2/apache2.conf
+    echo 'PassEnv AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY S3_BUCKET S3_REGION S3_URL AWS_ENDPOINT' >> /etc/apache2/apache2.conf
 
 # Copiar código
 WORKDIR /app
