@@ -138,9 +138,15 @@ import MenuApp from '../components/MenuApp.jsx';
 			const blurEl = document.getElementById('splash-blur');
 			const welcomeEl = document.getElementById('splash-welcome');
 
-			// Set welcome message from cookie
-			const nameMatch = document.cookie.match(/(?:^| )user_name=([^;]+)/);
-			const userName = nameMatch ? decodeURIComponent(nameMatch[1]) : null;
+			// Set welcome message from localStorage ruta11_user
+			let userName = null;
+			try {
+				const raw = localStorage.getItem('ruta11_user');
+				if (raw) {
+					const data = JSON.parse(raw);
+					if (data && data.nombre) userName = data.nombre;
+				}
+			} catch (e) {}
 			welcomeEl.textContent = userName
 				? 'Bienvenido a la Ruta 11 ' + userName + ' \u{1F60A}'
 				: 'Bienvenido a la Ruta 11 \u{1F60A}';
