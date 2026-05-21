@@ -53,9 +53,19 @@ import MenuApp from '../components/MenuApp.jsx';
 			#splash-screen {
 				position: fixed; inset: 0; z-index: 9999;
 				background: #000;
+				transition: opacity 0.8s ease-out;
 			}
 			#splash-screen video {
 				width: 100%; height: 100%; object-fit: cover;
+			}
+			#splash-blur {
+				position: fixed; inset: 0; z-index: 1;
+				background: rgba(0,0,0,0.12);
+				backdrop-filter: blur(20px);
+				-webkit-backdrop-filter: blur(20px);
+				opacity: 0;
+				transition: opacity 0.6s ease-out;
+				pointer-events: none;
 			}
 			#splash-screen .overlay {
 				position: fixed; inset: 0; z-index: 2;
@@ -104,6 +114,7 @@ import MenuApp from '../components/MenuApp.jsx';
 			>
 				<source src="/api/loading.mp4" type="video/mp4" />
 			</video>
+			<div id="splash-blur"></div>
 			<div id="splash-overlay" class="overlay">
 				<button class="enter-btn" id="enter-btn" disabled>Cargando…</button>
 			</div>
@@ -112,6 +123,7 @@ import MenuApp from '../components/MenuApp.jsx';
 			const video = document.getElementById('splash-video');
 			const overlay = document.getElementById('splash-overlay');
 			const enterBtn = document.getElementById('enter-btn');
+			const blurEl = document.getElementById('splash-blur');
 
 			video.addEventListener('canplaythrough', function ready() {
 				enterBtn.disabled = false;
@@ -125,14 +137,21 @@ import MenuApp from '../components/MenuApp.jsx';
 				enterBtn.removeEventListener('click', onClick);
 			});
 
+			video.addEventListener('timeupdate', function onTimeupdate() {
+				if (video.duration && video.currentTime >= video.duration - 1) {
+					blurEl.style.opacity = '1';
+					video.removeEventListener('timeupdate', onTimeupdate);
+				}
+			});
+
 			video.addEventListener('ended', function onEnd() {
 				const splash = document.getElementById('splash-screen');
 				if (!splash) return;
-				splash.style.transition = 'opacity 0.5s ease-out';
+				splash.style.transition = 'opacity 0.8s ease-out';
 				splash.style.opacity = '0';
 				setTimeout(() => {
 					splash.style.display = 'none';
-				}, 500);
+				}, 800);
 			}, { once: true });
 		</script>
 		<MenuApp client:only="react" />
