@@ -1695,11 +1695,11 @@ export default function App() {
       navigator.serviceWorker.register('/sw.js').catch(() => { });
     }
 
-    // Mostrar loader (video completo 10s + margen)
+    // Mostrar loader — video controla su propio cierre via ended event
     setIsLoading(true);
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 12000);
+    }, 30000);
 
     // NO auto-activar ubicación - solo si el usuario lo solicita manualmente
     // Verificar si ya se solicitó antes

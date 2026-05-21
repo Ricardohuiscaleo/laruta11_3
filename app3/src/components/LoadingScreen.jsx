@@ -27,7 +27,7 @@ const LoadingScreen = ({ onComplete }) => {
       video.addEventListener('ended', complete, { once: true });
     }
 
-    const timeout = setTimeout(complete, 15000);
+    const timeout = setTimeout(complete, 30000);
 
     return () => {
       clearTimeout(timeout);
