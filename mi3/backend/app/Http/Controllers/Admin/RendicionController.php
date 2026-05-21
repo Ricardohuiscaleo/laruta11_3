@@ -238,4 +238,54 @@ class RendicionController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Rendición anulada']);
     }
+
+    /**
+     * Rectificar monto transferido de una rendición ya aprobada.
+     * POST /api/v1/admin/rendiciones/{id}/rectificar
+     */
+    public function rectificar(Request $request, int $id): JsonResponse
+    {
+        $request->validate([
+            'monto_transferido' => 'required|numeric|min:0',
+            'motivo' => 'nullable|string|max:500',
+        ]);
+
+        $rendicion = Rendicion::findOrFail($id);
+
+        if ($rendicion->estado !== 'aprobada') {
+            return response()->json([
+                'success' => false,
+                'error' => 'Solo se pueden rectificar rendiciones aprobadas',
+            ], 422);
+        }
+
+        $montoAnterior = (float) $rendicion->monto_transferido;
+        $nuevoMonto = (float) $request->input('monto_transferido');
+        $nuevoSaldo = $nuevoMonto + (float) $rendicion->saldo_resultante;
+        $motivo = $request->input('motivo');
+
+        $notasAnotacion = sprintf(
+            '[Rectificado: $%s → $%s, saldo nuevo: $%s]',
+            number_format($montoAnterior, 0, ',', '.'),
+            number_format($nuevoMonto, 0, ',', '.'),
+            number_format($nuevoSaldo, 0, ',', '.')
+        );
+        if ($motivo) {
+            $notasAnotacion .= " Motivo: {$motivo}";
+        }
+
+        $rendicion->update([
+            'monto_transferido' => $nuevoMonto,
+            'saldo_nuevo' => $nuevoSaldo,
+            'notas' => ($rendicion->notas ?? '') . ' ' . $notasAnotacion,
+        ]);
+
+        RendicionActualizada::dispatch($rendicion->id, 'rectificada', $nuevoSaldo);
+
+        return response()->json([
+            'success' => true,
+            'rendicion' => $rendicion->fresh(),
+            'mensaje' => 'Monto transferido rectificado correctamente',
+        ]);
+    }
 }

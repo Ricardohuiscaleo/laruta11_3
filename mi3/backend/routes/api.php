@@ -115,6 +115,7 @@ Route::prefix('v1')->group(function () {
         Route::get('rendiciones/preview', [\App\Http\Controllers\Admin\RendicionController::class, 'preview']);
         Route::post('rendiciones', [\App\Http\Controllers\Admin\RendicionController::class, 'store']);
         Route::delete('rendiciones/{id}', [\App\Http\Controllers\Admin\RendicionController::class, 'anular']);
+        Route::post('rendiciones/{id}/rectificar', [\App\Http\Controllers\Admin\RendicionController::class, 'rectificar']);
 
         // Stock
         Route::get('stock', [\App\Http\Controllers\Admin\StockController::class, 'index']);

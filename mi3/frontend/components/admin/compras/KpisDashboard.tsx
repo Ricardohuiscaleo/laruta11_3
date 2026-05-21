@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { TrendingUp, DollarSign, Wallet, Check, Clock, X, RefreshCw } from 'lucide-react';
+import { TrendingUp, DollarSign, Wallet, Check, Clock, X, RefreshCw, Edit2 } from 'lucide-react';
 import { comprasApi } from '@/lib/compras-api';
 import { formatearPesosCLP, formatearFecha } from '@/lib/compras-utils';
 import { useCompras } from '@/contexts/ComprasContext';
@@ -28,6 +28,10 @@ export default function KpisDashboard() {
   const [historial, setHistorial] = useState<HistorialSaldoItem[]>([]);
   const [rendiciones, setRendiciones] = useState<RendicionItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rectifyId, setRectifyId] = useState<number | null>(null);
+  const [rectifyMonto, setRectifyMonto] = useState('');
+  const [rectifyMotivo, setRectifyMotivo] = useState('');
+  const [rectifying, setRectifying] = useState(false);
 
   const fetchAll = useCallback(() => {
     Promise.all([
@@ -52,6 +56,29 @@ export default function KpisDashboard() {
 
   // Sync KPIs from context
   useEffect(() => { if (ctxKpis) setKpis(ctxKpis); }, [ctxKpis]);
+
+  const openRectify = (r: RendicionItem) => {
+    setRectifyId(r.id);
+    setRectifyMonto(String(r.monto_transferido ?? 0));
+    setRectifyMotivo('');
+  };
+
+  const submitRectify = async () => {
+    if (rectifyId === null) return;
+    setRectifying(true);
+    try {
+      await comprasApi.post(`/rendiciones/${rectifyId}/rectificar`, {
+        monto_transferido: parseFloat(rectifyMonto.replace(/\./g, '').replace(/,/g, '')),
+        motivo: rectifyMotivo || null,
+      });
+      setRectifyId(null);
+      fetchAll();
+    } catch {
+      alert('Error al rectificar');
+    } finally {
+      setRectifying(false);
+    }
+  };
 
   if (loading) return <div className="p-6 text-center text-sm text-gray-500">Cargando...</div>;
   if (!kpis) return <div className="p-6 text-center text-sm text-gray-500">Error al cargar KPIs</div>;
@@ -129,37 +156,86 @@ export default function KpisDashboard() {
 
               return (
                 <div key={r.id} className="rounded-lg border bg-gray-50 p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    {badge}
-                    <span className="text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString('es-CL')}</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div>
-                      <p className="text-gray-500">Saldo ant.</p>
-                      <p className="font-semibold">{formatearPesosCLP(r.saldo_anterior)}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Compras</p>
-                      <p className="font-semibold text-red-600">-{formatearPesosCLP(r.total_compras)}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">{r.saldo_resultante >= 0 ? 'Caja' : 'Bolsillo'}</p>
-                      <p className={`font-semibold ${r.saldo_resultante >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatearPesosCLP(r.saldo_resultante)}
-                      </p>
-                    </div>
-                  </div>
-                  {r.monto_transferido != null && (
-                    <div className="grid grid-cols-2 gap-2 text-center text-xs mt-2 pt-2 border-t">
-                      <div>
-                        <p className="text-gray-500">Transferido</p>
-                        <p className="font-semibold text-blue-600">+{formatearPesosCLP(r.monto_transferido)}</p>
+                  {rectifyId === r.id ? (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-gray-700">Rectificar monto transferido</p>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={rectifyMonto}
+                          onChange={e => setRectifyMonto(e.target.value)}
+                          className="w-full rounded border px-2 py-1 text-xs"
+                          placeholder="Nuevo monto"
+                        />
+                        <input
+                          type="text"
+                          value={rectifyMotivo}
+                          onChange={e => setRectifyMotivo(e.target.value)}
+                          className="w-full rounded border px-2 py-1 text-xs"
+                          placeholder="Motivo (opcional)"
+                        />
                       </div>
-                      <div>
-                        <p className="text-gray-500">Saldo nuevo</p>
-                        <p className="font-bold text-green-700">{formatearPesosCLP(r.saldo_nuevo ?? 0)}</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={submitRectify}
+                          disabled={rectifying}
+                          className="rounded bg-blue-600 px-3 py-1 text-xs text-white disabled:opacity-50"
+                        >
+                          {rectifying ? 'Guardando...' : 'Guardar'}
+                        </button>
+                        <button
+                          onClick={() => setRectifyId(null)}
+                          className="rounded bg-gray-200 px-3 py-1 text-xs"
+                        >
+                          Cancelar
+                        </button>
                       </div>
                     </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between mb-2">
+                        {badge}
+                        <div className="flex items-center gap-2">
+                          {r.estado === 'aprobada' && (
+                            <button
+                              onClick={() => openRectify(r)}
+                              className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-0.5 text-[10px] text-amber-700 hover:bg-amber-200"
+                            >
+                              <Edit2 className="h-2.5 w-2.5" />Rectificar
+                            </button>
+                          )}
+                          <span className="text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString('es-CL')}</span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div>
+                          <p className="text-gray-500">Saldo ant.</p>
+                          <p className="font-semibold">{formatearPesosCLP(r.saldo_anterior)}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Compras</p>
+                          <p className="font-semibold text-red-600">-{formatearPesosCLP(r.total_compras)}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">{r.saldo_resultante >= 0 ? 'Caja' : 'Bolsillo'}</p>
+                          <p className={`font-semibold ${r.saldo_resultante >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatearPesosCLP(r.saldo_resultante)}
+                          </p>
+                        </div>
+                      </div>
+                      {r.monto_transferido != null && (
+                        <div className="grid grid-cols-2 gap-2 text-center text-xs mt-2 pt-2 border-t">
+                          <div>
+                            <p className="text-gray-500">Transferido</p>
+                            <p className="font-semibold text-blue-600">+{formatearPesosCLP(r.monto_transferido)}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">Saldo nuevo</p>
+                            <p className="font-bold text-green-700">{formatearPesosCLP(r.saldo_nuevo ?? 0)}</p>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               );
