@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { GiHamburger, GiHotDog, GiFrenchFries, GiMeat, GiSandwich, GiSteak } from 'react-icons/gi';
 import OnboardingModal from './OnboardingModal.jsx';
-import LoadingScreen from './LoadingScreen.jsx';
 import TUUPaymentIntegration from './TUUPaymentIntegration.jsx';
 import ReviewsModal from './ReviewsModal.jsx';
 import OrderNotifications from './OrderNotifications.jsx';
@@ -796,14 +795,12 @@ export default function App() {
   const [zoomedProduct, setZoomedProduct] = useState(null);
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
   const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', email: '', address: '', deliveryType: 'pickup', pickupTime: '' });
   const [menuWithImages, setMenuWithImages] = useState(menuData);
   const [likedProducts, setLikedProducts] = useState(new Set());
-  const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState(null);
   const [userOrders, setUserOrders] = useState([]);
   const [userStats, setUserStats] = useState(null);
@@ -1695,22 +1692,12 @@ export default function App() {
       navigator.serviceWorker.register('/sw.js').catch(() => { });
     }
 
-    // Mostrar loader — video controla su propio cierre via ended event
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 30000);
-
     // NO auto-activar ubicación - solo si el usuario lo solicita manualmente
     // Verificar si ya se solicitó antes
     const locationAsked = localStorage.getItem('location_asked');
     if (locationAsked === 'true') {
-      setLocationPermission('denied'); // Ya se preguntó antes, no volver a preguntar
+      setLocationPermission('denied');
     }
-
-    return () => {
-      clearTimeout(timer);
-    };
   }, []);
 
   // Sistema de tracking de uso — DESACTIVADO
@@ -1951,10 +1938,6 @@ export default function App() {
       setTimeout(() => setIsProfileOpen(true), 500);
     }
   }, [menuWithImages]);
-
-  if (isLoading) {
-    return <LoadingScreen onComplete={() => setIsLoading(false)} />;
-  }
 
   return (
     <>

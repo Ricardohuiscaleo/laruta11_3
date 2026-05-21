@@ -124,6 +124,16 @@ import MenuApp from '../components/MenuApp.jsx';
 				video.play();
 				enterBtn.removeEventListener('click', onClick);
 			});
+
+			video.addEventListener('ended', function onEnd() {
+				const splash = document.getElementById('splash-screen');
+				if (!splash) return;
+				splash.style.transition = 'opacity 0.5s ease-out';
+				splash.style.opacity = '0';
+				setTimeout(() => {
+					splash.style.display = 'none';
+				}, 500);
+			}, { once: true });
 		</script>
 		<MenuApp client:only="react" />
 		<script>
