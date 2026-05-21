@@ -52,8 +52,8 @@ export default function RendicionesPage() {
     lines.push(formatearPesosCLP(p.saldo_anterior));
     lines.push('Gastado');
     lines.push('-' + formatearPesosCLP(p.total_compras));
-    lines.push(p.saldo_resultante >= 0 ? 'Bolsillo Ricardo' : 'Bolsillo');
-    lines.push(formatearPesosCLP(p.saldo_resultante));
+    lines.push(p.saldo_resultante >= 0 ? 'Caja' : 'Bolsillo Ricardo');
+    lines.push(formatearPesosCLP(Math.abs(p.saldo_resultante)));
     p.compras.forEach((c, i) => {
       const date = formatFecha(c.fecha_compra);
       lines.push(`${i + 1}. ${c.proveedor} ${date}`);
@@ -121,9 +121,9 @@ export default function RendicionesPage() {
               <p className="text-lg font-bold text-red-600">-{formatearPesosCLP(preview.total_compras)}</p>
             </div>
             <div className={`rounded-lg p-3 ${preview.saldo_resultante >= 0 ? 'bg-green-50' : 'bg-amber-50'}`}>
-              <p className="text-xs text-gray-500">{preview.saldo_resultante >= 0 ? 'Bolsillo Ricardo' : 'Bolsillo'}</p>
+              <p className="text-xs text-gray-500">{preview.saldo_resultante >= 0 ? 'Caja' : 'Bolsillo Ricardo'}</p>
               <p className={`text-lg font-bold ${preview.saldo_resultante >= 0 ? 'text-green-700' : 'text-amber-700'}`}>
-                {formatearPesosCLP(preview.saldo_resultante)}
+                {formatearPesosCLP(Math.abs(preview.saldo_resultante))}
               </p>
             </div>
           </div>

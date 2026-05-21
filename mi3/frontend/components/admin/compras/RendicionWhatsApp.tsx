@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Send, Loader2, Check, ExternalLink } from 'lucide-react';
 import { comprasApi } from '@/lib/compras-api';
-import { formatearPesosCLP, formatearFecha } from '@/lib/compras-utils';
+import { formatearPesosCLP } from '@/lib/compras-utils';
 import type { Compra } from '@/types/compras';
 
 interface RendicionWhatsAppProps {
@@ -12,7 +12,11 @@ interface RendicionWhatsAppProps {
   onCreated?: () => void;
 }
 
-const YOJHANS_PHONE = '56962aborrar'; // placeholder — will use WhatsApp web share
+function formatFecha(f: string) {
+  const d = new Date(f);
+  const months = ['ene.', 'feb.', 'mar.', 'abr.', 'may.', 'jun.', 'jul.', 'ago.', 'sep.', 'oct.', 'nov.', 'dic.'];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
 
 export default function RendicionWhatsApp({ compras, onClose, onCreated }: RendicionWhatsAppProps) {
   const [saldoAnterior, setSaldoAnterior] = useState<number>(0);
@@ -24,7 +28,6 @@ export default function RendicionWhatsApp({ compras, onClose, onCreated }: Rendi
   const totalCompras = compras.reduce((sum, c) => sum + c.monto_total, 0);
   const saldoResultante = saldoAnterior - totalCompras;
 
-  // Load saldo anterior from last approved rendición
   useEffect(() => {
     comprasApi.get<{ success: boolean; saldo_anterior: number }>('/rendiciones/preview')
       .then(r => { if (r.success) setSaldoAnterior(r.saldo_anterior); })
@@ -32,24 +35,21 @@ export default function RendicionWhatsApp({ compras, onClose, onCreated }: Rendi
       .finally(() => setLoading(false));
   }, []);
 
-  const generateWhatsAppText = (tok: string) => {
-    const link = `https://mi.laruta11.cl/rendicion/${tok}`;
-    const lines = [
-      '📋 *RENDICIÓN DE GASTOS*',
-      '━━━━━━━━━━━━━━━━━━━━',
-      `*💰 Saldo anterior:* ${formatearPesosCLP(saldoAnterior)}`,
-      `*🛒 Total compras:* ${formatearPesosCLP(totalCompras)} (${compras.length} compras)`,
-    ];
-
-    if (saldoResultante >= 0) {
-      lines.push(`*✅ Caja disponible:* ${formatearPesosCLP(saldoResultante)}`);
-    } else {
-      lines.push(`*⚠️ Ricardo puso de su bolsillo:* ${formatearPesosCLP(Math.abs(saldoResultante))}`);
-    }
-
+  const buildMessage = (): string => {
+    const lines: string[] = [];
+    lines.push('📋 Generar Rendición');
     lines.push('');
-    lines.push(`🔗 Ver detalle y aprobar: ${link}`);
-
+    lines.push('Saldo anterior');
+    lines.push(formatearPesosCLP(saldoAnterior));
+    lines.push('Gastado');
+    lines.push('-' + formatearPesosCLP(totalCompras));
+    lines.push(saldoResultante >= 0 ? 'Caja' : 'Bolsillo Ricardo');
+    lines.push(formatearPesosCLP(Math.abs(saldoResultante)));
+    compras.forEach((c, i) => {
+      const date = formatFecha(c.fecha_compra);
+      lines.push(`${i + 1}. ${c.proveedor} ${date}`);
+      lines.push(formatearPesosCLP(c.monto_total));
+    });
     return lines.join('\n');
   };
 
@@ -60,8 +60,7 @@ export default function RendicionWhatsApp({ compras, onClose, onCreated }: Rendi
       if (res.success) {
         setToken(res.token);
         setCreated(true);
-        // Open WhatsApp with the message
-        const text = encodeURIComponent(generateWhatsAppText(res.token));
+        const text = encodeURIComponent(buildMessage());
         window.open(`https://wa.me/?text=${text}`, '_blank');
         onCreated?.();
       }
@@ -84,7 +83,6 @@ export default function RendicionWhatsApp({ compras, onClose, onCreated }: Rendi
         </div>
 
         <div className="space-y-4 p-4">
-          {/* Summary */}
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="rounded-lg bg-gray-50 p-3">
               <p className="text-xs text-gray-500">Saldo anterior</p>
@@ -95,27 +93,26 @@ export default function RendicionWhatsApp({ compras, onClose, onCreated }: Rendi
               <p className="text-base font-bold text-red-600">-{formatearPesosCLP(totalCompras)}</p>
             </div>
             <div className={`rounded-lg p-3 ${saldoResultante >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
-              <p className="text-xs text-gray-500">{saldoResultante >= 0 ? 'Caja disponible' : 'Bolsillo Ricardo'}</p>
+              <p className="text-xs text-gray-500">{saldoResultante >= 0 ? 'Caja' : 'Bolsillo Ricardo'}</p>
               <p className={`text-base font-bold ${saldoResultante >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                {saldoResultante >= 0 ? formatearPesosCLP(saldoResultante) : formatearPesosCLP(Math.abs(saldoResultante))}
+                {formatearPesosCLP(Math.abs(saldoResultante))}
               </p>
             </div>
           </div>
 
-          {/* Compras list */}
           <div className="space-y-1 max-h-48 overflow-y-auto">
             {compras.map((c, i) => (
               <div key={c.id} className="flex items-center justify-between rounded border bg-gray-50 px-3 py-1.5 text-sm">
                 <div>
-                  <span className="font-medium">{i + 1}. {c.proveedor}</span>
-                  <span className="ml-2 text-xs text-gray-400">{formatearFecha(c.fecha_compra)}</span>
+                  <span className="text-xs text-gray-400 mr-1">{i + 1}.</span>
+                  <span className="font-medium">{c.proveedor}</span>
+                  <span className="ml-1.5 text-xs text-gray-400">{formatFecha(c.fecha_compra)}</span>
                 </div>
                 <span className="font-medium">{formatearPesosCLP(c.monto_total)}</span>
               </div>
             ))}
           </div>
 
-          {/* Actions */}
           {!created ? (
             <button onClick={handleCreate} disabled={creating || compras.length === 0}
               className="w-full rounded-lg bg-green-600 py-3 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2">
