@@ -104,6 +104,17 @@ import MenuApp from '../components/MenuApp.jsx';
 				opacity: 0.4;
 				cursor: default;
 			}
+			.splash-welcome {
+				color: #fff;
+				font-size: 26px;
+				font-weight: 700;
+				text-align: center;
+				margin-bottom: 28px;
+				font-family: -apple-system, sans-serif;
+				text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+				padding: 0 28px;
+				line-height: 1.4;
+			}
 		</style>
 	</head>
 	<body>
@@ -116,6 +127,7 @@ import MenuApp from '../components/MenuApp.jsx';
 			</video>
 			<div id="splash-blur"></div>
 			<div id="splash-overlay" class="overlay">
+				<div id="splash-welcome" class="splash-welcome"></div>
 				<button class="enter-btn" id="enter-btn" disabled>Cargando…</button>
 			</div>
 		</div>
@@ -124,6 +136,14 @@ import MenuApp from '../components/MenuApp.jsx';
 			const overlay = document.getElementById('splash-overlay');
 			const enterBtn = document.getElementById('enter-btn');
 			const blurEl = document.getElementById('splash-blur');
+			const welcomeEl = document.getElementById('splash-welcome');
+
+			// Set welcome message from cookie
+			const nameMatch = document.cookie.match(/(?:^| )user_name=([^;]+)/);
+			const userName = nameMatch ? decodeURIComponent(nameMatch[1]) : null;
+			welcomeEl.textContent = userName
+				? 'Bienvenido a la Ruta 11 ' + userName + ' \u{1F60A}'
+				: 'Bienvenido a la Ruta 11 \u{1F60A}';
 
 			video.addEventListener('canplaythrough', function ready() {
 				enterBtn.disabled = false;
