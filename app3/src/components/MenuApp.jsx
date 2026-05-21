@@ -865,9 +865,16 @@ export default function App() {
   // Generar mainCategories dinámicamente desde menuCategories
   const mainCategories = useMemo(() => {
     if (menuCategories.length === 0) return [];
+
+    const priority = { combos: 0, churrascos: 1, completos: 2 };
+
     return menuCategories
       .filter(cat => cat.is_active === 1)
-      .sort((a, b) => a.sort_order - b.sort_order)
+      .sort((a, b) => {
+        const pa = priority[a.category_key] ?? 99 + a.sort_order;
+        const pb = priority[b.category_key] ?? 99 + b.sort_order;
+        return pa - pb;
+      })
       .map(cat => cat.category_key);
   }, [menuCategories]);
 
