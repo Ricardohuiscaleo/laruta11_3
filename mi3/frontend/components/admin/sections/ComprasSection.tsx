@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { Plus, FileText, Package, TrendingUp, BarChart3, Loader2, Terminal, Zap } from 'lucide-react';
+import { Plus, FileText, Package, TrendingUp, BarChart3, Loader2, Terminal, Zap, ScrollText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ComprasProvider } from '@/contexts/ComprasContext';
 import { getToken } from '@/lib/auth';
@@ -13,6 +13,7 @@ const StockTab = lazy(() => import('@/app/admin/compras/stock/page'));
 const ProyeccionCompras = lazy(() => import('@/components/admin/compras/ProyeccionCompras'));
 const KpisDashboard = lazy(() => import('@/components/admin/compras/KpisDashboard'));
 const ConsolaPage = lazy(() => import('@/app/admin/compras/consola/page'));
+const RendicionesPage = lazy(() => import('@/app/admin/compras/rendiciones/page'));
 
 const tabs: TabDef[] = [
   { key: 'registro', label: 'Registro', icon: Plus },
@@ -20,10 +21,11 @@ const tabs: TabDef[] = [
   { key: 'stock', label: 'Stock', icon: Package },
   { key: 'proyeccion', label: 'Proyección', icon: TrendingUp },
   { key: 'kpis', label: 'KPIs', icon: BarChart3 },
+  { key: 'rendiciones', label: 'Rendiciones', icon: ScrollText },
   { key: 'consola', label: 'Consola', icon: Terminal },
 ];
 
-type TabKey = 'registro' | 'historial' | 'stock' | 'proyeccion' | 'kpis' | 'consola';
+type TabKey = 'registro' | 'historial' | 'stock' | 'proyeccion' | 'kpis' | 'rendiciones' | 'consola';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 
@@ -116,6 +118,7 @@ export default function ComprasSection({ onHeaderConfig }: ComprasSectionProps) 
           {activeTab === 'stock' && <StockTab />}
           {activeTab === 'proyeccion' && <ProyeccionCompras />}
           {activeTab === 'kpis' && <KpisDashboard />}
+          {activeTab === 'rendiciones' && <RendicionesPage />}
           {activeTab === 'consola' && <ConsolaPage />}
         </Suspense>
       </div>
