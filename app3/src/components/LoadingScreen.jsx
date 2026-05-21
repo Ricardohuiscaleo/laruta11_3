@@ -1,93 +1,70 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+
+const VIDEO_URL = '/api/loading-opt.mp4';
+const POSTER_URL = '/api/loading-poster.jpg';
 
 const LoadingScreen = ({ onComplete }) => {
-  const [progress, setProgress] = useState(0);
-  const [currentText, setCurrentText] = useState('Iniciando...');
+  const videoRef = useRef(null);
+  const [ready, setReady] = useState(false);
+  const hasCompleted = useRef(false);
 
   useEffect(() => {
-    const loadResources = async () => {
-      // 1. Inicializar
-      setCurrentText('Iniciando aplicación...');
-      setProgress(5);
+    const video = videoRef.current;
+    if (!video) return;
 
-      // 2. Simular carga
-      setCurrentText('Preparando aplicación...');
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setProgress(85);
-
-      // 3. Verificar conectividad
-      setCurrentText('Conectando servicios...');
-      await new Promise(resolve => setTimeout(resolve, 200));
-      setProgress(95);
-
-      // 4. Finalizar
-      setCurrentText('¡Todo listo!');
-      setProgress(100);
-      
-      setTimeout(onComplete, 300);
+    const done = () => {
+      if (hasCompleted.current) return;
+      hasCompleted.current = true;
+      const el = video.parentElement;
+      if (el && el.style) {
+        el.style.transition = 'opacity 0.5s ease-out';
+        el.style.opacity = '0';
+      }
+      setTimeout(onComplete, 500);
     };
 
-    loadResources();
+    const onCanPlay = () => {
+      setReady(true);
+      video.play().catch(() => {});
+    };
+
+    if (video.readyState >= 3) {
+      onCanPlay();
+    } else {
+      video.addEventListener('canplaythrough', onCanPlay, { once: true });
+      video.addEventListener('loadeddata', onCanPlay, { once: true });
+    }
+
+    video.addEventListener('error', done, { once: true });
+
+    const timeout = setTimeout(done, 6000);
+    video.addEventListener('click', done);
+    window.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); done(); } });
+
+    return () => { clearTimeout(timeout); if (!hasCompleted.current) done(); };
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-orange-400 via-red-500 to-pink-500 flex items-center justify-center z-50">
-      {/* Animated background circles */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-white bg-opacity-10 rounded-full animate-pulse"></div>
-        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-white bg-opacity-5 rounded-full animate-bounce"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-white bg-opacity-5 rounded-full animate-ping"></div>
-      </div>
-
-      <div className="text-center z-10 px-8">
-        {/* Logo */}
-        <div className="mb-8">
-          <img 
-            src={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/WhatsApp%20Image%202026-05-20%20at%2019.50.28.jpeg`} 
-            alt="La Ruta 11" 
-            className="w-24 h-24 mx-auto animate-bounce object-contain"
-          />
-        </div>
-
-        {/* Title */}
-        <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">
-          La Ruta 11
-        </h1>
-        <p className="text-white text-opacity-90 mb-8 text-lg">
-          Paga online, recoge en local o pide delivery.
-        </p>
-
-        {/* Progress Bar */}
-        <div className="w-64 mx-auto mb-6">
-          <div className="bg-white bg-opacity-20 rounded-full h-3 overflow-hidden backdrop-blur-sm">
-            <div 
-              className="h-full bg-gradient-to-r from-white to-yellow-200 rounded-full transition-all duration-300 ease-out shadow-lg"
-              style={{ width: `${progress}%` }}
-            ></div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
+      <video
+        ref={videoRef}
+        muted
+        loop
+        playsInline
+        poster={POSTER_URL}
+        preload="auto"
+        className={`w-full h-full object-cover transition-opacity duration-500 ${ready ? 'opacity-100' : 'opacity-0'}`}
+      >
+        <source src={VIDEO_URL} type="video/mp4" />
+      </video>
+      {!ready && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black">
+          <img src={POSTER_URL} alt="" className="w-full h-full object-cover" />
+          <div className="absolute bottom-12 left-1/2 -translate-x-1/2">
+            <div className="w-6 h-6 border-2 border-white/40 border-t-white rounded-full animate-spin" />
           </div>
-          <p className="text-white text-opacity-80 mt-3 text-sm font-medium">
-            {progress}%
-          </p>
         </div>
-
-        {/* Loading Text */}
-        <p className="text-white text-opacity-90 text-lg font-medium animate-pulse">
-          {currentText}
-        </p>
-        
-        {/* Loading indicator */}
-        {progress < 85 && (
-          <div className="mt-4">
-            <div className="flex justify-center">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-            </div>
-          </div>
-        )}
-
-
-      </div>
-
-
+      )}
     </div>
   );
 };
