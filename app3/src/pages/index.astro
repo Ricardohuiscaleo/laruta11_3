@@ -57,50 +57,63 @@ import MenuApp from '../components/MenuApp.jsx';
 			#splash-screen video {
 				width: 100%; height: 100%; object-fit: cover;
 			}
-			#splash-screen .spinner {
-				position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
-				width: 20px; height: 20px;
-				border: 2px solid rgba(255,255,255,0.25);
-				border-top-color: #fff;
-				border-radius: 50%;
-				z-index: 1;
-				animation: spin 0.9s linear infinite;
-				pointer-events: none;
+			#splash-screen .overlay {
+				position: fixed; inset: 0; z-index: 2;
+				display: flex; flex-direction: column;
+				align-items: center; justify-content: center;
+				background: rgba(0,0,0,0.4);
+				backdrop-filter: blur(16px);
+				-webkit-backdrop-filter: blur(16px);
+				transition: opacity 0.5s ease-out;
 			}
-			@keyframes spin { to { transform: translateX(-50%) rotate(360deg); } }
-			#splash-screen .tap-hint {
-				position: fixed; bottom: 12px; left: 0; right: 0;
-				text-align: center;
-				color: rgba(255,255,255,0.3);
-				font-size: 10px;
+			#splash-screen .overlay.hidden {
+				opacity: 0; pointer-events: none;
+			}
+			#splash-screen .enter-btn {
+				padding: 14px 48px;
+				border-radius: 999px;
+				background: rgba(255,255,255,0.15);
+				border: 1px solid rgba(255,255,255,0.3);
+				color: #fff;
+				font-size: 18px;
+				font-weight: 600;
 				font-family: -apple-system, sans-serif;
-				z-index: 1;
-				pointer-events: none;
-				animation: pulse 2s ease-in-out infinite;
+				cursor: pointer;
+				transition: background 0.2s, transform 0.15s;
+				backdrop-filter: blur(4px);
+				-webkit-backdrop-filter: blur(4px);
+				letter-spacing: 1px;
 			}
-			@keyframes pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 0.7; } }
+			#splash-screen .enter-btn:hover {
+				background: rgba(255,255,255,0.25);
+			}
+			#splash-screen .enter-btn:active {
+				transform: scale(0.97);
+			}
 		</style>
 	</head>
 	<body>
 		<div id="splash-screen">
-			<video id="splash-video" autoplay muted playsinline
+			<video id="splash-video" muted playsinline
 				preload="auto"
-				data-autoplay
 				style="width:100%;height:100%;object-fit:cover;"
 			>
 				<source src="/api/loading-opt.mp4" type="video/mp4" />
 			</video>
-			<div class="spinner"></div>
-			<div class="tap-hint">Toca para continuar</div>
+			<div id="splash-overlay" class="overlay">
+				<button class="enter-btn" id="enter-btn">Entrar</button>
+			</div>
 		</div>
 		<script>
-			// Start video immediately (muted autoplay works on modern browsers)
-			document.getElementById('splash-video')?.play().catch(() => {});
-			// Tap anywhere to skip
-			document.getElementById('splash-screen')?.addEventListener('click', function skip() {
-				this.style.transition = 'opacity 0.3s ease-out';
-				this.style.opacity = '0';
-				setTimeout(() => { this.style.display = 'none'; }, 300);
+			const video = document.getElementById('splash-video');
+			const overlay = document.getElementById('splash-overlay');
+			const enterBtn = document.getElementById('enter-btn');
+
+			enterBtn.addEventListener('click', function onClick() {
+				overlay.classList.add('hidden');
+				video.muted = false;
+				video.play().catch(() => {});
+				enterBtn.removeEventListener('click', onClick);
 			});
 		</script>
 		<MenuApp client:only="react" />
