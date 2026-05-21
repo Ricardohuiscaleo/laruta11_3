@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { Plus, FileText, Package, TrendingUp, BarChart3, Loader2, Terminal, Zap, ScrollText } from 'lucide-react';
+import { Plus, FileText, Package, TrendingUp, BarChart3, Loader2, Terminal, Zap, ScrollText, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ComprasProvider } from '@/contexts/ComprasContext';
 import { getToken } from '@/lib/auth';
@@ -14,6 +14,7 @@ const ProyeccionCompras = lazy(() => import('@/components/admin/compras/Proyecci
 const KpisDashboard = lazy(() => import('@/components/admin/compras/KpisDashboard'));
 const ConsolaPage = lazy(() => import('@/app/admin/compras/consola/page'));
 const RendicionesPage = lazy(() => import('@/app/admin/compras/rendiciones/page'));
+const HistorialRendicionesPage = lazy(() => import('@/app/admin/compras/historial-rendiciones/page'));
 
 const tabs: TabDef[] = [
   { key: 'registro', label: 'Registro', icon: Plus },
@@ -22,10 +23,11 @@ const tabs: TabDef[] = [
   { key: 'proyeccion', label: 'Proyección', icon: TrendingUp },
   { key: 'kpis', label: 'KPIs', icon: BarChart3 },
   { key: 'rendiciones', label: 'Rendiciones', icon: ScrollText },
+  { key: 'historialRendiciones', label: 'Historial de Rendiciones', icon: Clock },
   { key: 'consola', label: 'Consola', icon: Terminal },
 ];
 
-type TabKey = 'registro' | 'historial' | 'stock' | 'proyeccion' | 'kpis' | 'rendiciones' | 'consola';
+type TabKey = 'registro' | 'historial' | 'stock' | 'proyeccion' | 'kpis' | 'rendiciones' | 'historialRendiciones' | 'consola';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 
@@ -119,6 +121,7 @@ export default function ComprasSection({ onHeaderConfig }: ComprasSectionProps) 
           {activeTab === 'proyeccion' && <ProyeccionCompras />}
           {activeTab === 'kpis' && <KpisDashboard />}
           {activeTab === 'rendiciones' && <RendicionesPage />}
+          {activeTab === 'historialRendiciones' && <HistorialRendicionesPage />}
           {activeTab === 'consola' && <ConsolaPage />}
         </Suspense>
       </div>
