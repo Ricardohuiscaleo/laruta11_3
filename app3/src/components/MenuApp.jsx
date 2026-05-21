@@ -795,6 +795,7 @@ export default function App() {
   const [zoomedProduct, setZoomedProduct] = useState(null);
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
