@@ -48,7 +48,6 @@ import MenuApp from '../components/MenuApp.jsx';
 
 		<!-- Video preload - served from CDN, cached by Cloudflare edge -->
 		<link rel="preload" as="video" href="/api/loading-opt.mp4" type="video/mp4" />
-		<link rel="preload" as="image" href="/api/loading-poster.jpg" />
 
 		<style>
 			#splash-screen {
@@ -85,7 +84,6 @@ import MenuApp from '../components/MenuApp.jsx';
 	<body>
 		<div id="splash-screen">
 			<video id="splash-video" autoplay muted playsinline
-				poster="/api/loading-poster.jpg"
 				preload="auto"
 				data-autoplay
 				style="width:100%;height:100%;object-fit:cover;"
