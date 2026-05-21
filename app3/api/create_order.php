@@ -144,11 +144,11 @@ try {
             $db_price = $ci['price'] ?? 0; // fallback to client price
 
             if ($ci_id) {
-                $price_stmt = $pdo->prepare("SELECT price FROM products WHERE id = ?");
+                $price_stmt = $pdo->prepare("SELECT price, sale_price FROM products WHERE id = ?");
                 $price_stmt->execute([$ci_id]);
                 $price_row = $price_stmt->fetch(PDO::FETCH_ASSOC);
                 if ($price_row) {
-                    $db_price = (int)$price_row['price'];
+                    $db_price = (int)($price_row['sale_price'] ?? $price_row['price']);
                 }
             }
 
@@ -162,11 +162,11 @@ try {
                     $cust_price = $cust['price'] ?? 0;
 
                     if ($cust_id) {
-                        $cust_price_stmt = $pdo->prepare("SELECT price FROM products WHERE id = ?");
+                        $cust_price_stmt = $pdo->prepare("SELECT price, sale_price FROM products WHERE id = ?");
                         $cust_price_stmt->execute([$cust_id]);
                         $cust_price_row = $cust_price_stmt->fetch(PDO::FETCH_ASSOC);
                         if ($cust_price_row) {
-                            $cust_price = (int)$cust_price_row['price'];
+                            $cust_price = (int)($cust_price_row['sale_price'] ?? $cust_price_row['price']);
                         }
                     }
 
