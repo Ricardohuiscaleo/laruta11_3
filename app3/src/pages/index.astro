@@ -46,7 +46,7 @@ import MenuApp from '../components/MenuApp.jsx';
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-		<!-- Video preload for instant loading -->
+		<!-- Video preload - served from CDN, cached by Cloudflare edge -->
 		<link rel="preload" as="video" href="/api/loading-opt.mp4" type="video/mp4" />
 		<link rel="preload" as="image" href="/api/loading-poster.jpg" />
 
@@ -54,35 +54,54 @@ import MenuApp from '../components/MenuApp.jsx';
 			#splash-screen {
 				position: fixed; inset: 0; z-index: 9999;
 				background: #000;
-				display: flex; align-items: center; justify-content: center;
 			}
-			#splash-screen img {
+			#splash-screen video {
 				width: 100%; height: 100%; object-fit: cover;
 			}
 			#splash-screen .spinner {
-				position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%);
-				width: 24px; height: 24px;
-				border: 2px solid rgba(255,255,255,0.3);
+				position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+				width: 20px; height: 20px;
+				border: 2px solid rgba(255,255,255,0.25);
 				border-top-color: #fff;
 				border-radius: 50%;
-				animation: spin 0.8s linear infinite;
+				z-index: 1;
+				animation: spin 0.9s linear infinite;
+				pointer-events: none;
 			}
 			@keyframes spin { to { transform: translateX(-50%) rotate(360deg); } }
-			#splash-screen.hide { opacity: 0; transition: opacity 0.3s ease-out; pointer-events: none; }
+			#splash-screen .tap-hint {
+				position: fixed; bottom: 12px; left: 0; right: 0;
+				text-align: center;
+				color: rgba(255,255,255,0.3);
+				font-size: 10px;
+				font-family: -apple-system, sans-serif;
+				z-index: 1;
+				pointer-events: none;
+				animation: pulse 2s ease-in-out infinite;
+			}
+			@keyframes pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 0.7; } }
 		</style>
 	</head>
 	<body>
 		<div id="splash-screen">
-			<img src="/api/loading-poster.jpg" alt="" />
+			<video id="splash-video" autoplay muted loop playsinline
+				poster="/api/loading-poster.jpg"
+				preload="auto"
+				style="width:100%;height:100%;object-fit:cover;"
+			>
+				<source src="/api/loading-opt.mp4" type="video/mp4" />
+			</video>
 			<div class="spinner"></div>
+			<div class="tap-hint">Toca para continuar</div>
 		</div>
 		<script>
-			// Hide splash as soon as first React render completes
-			requestAnimationFrame(() => {
-				requestAnimationFrame(() => {
-					const el = document.getElementById('splash-screen');
-					if (el) el.classList.add('hide');
-				});
+			// Start video immediately (muted autoplay works on modern browsers)
+			document.getElementById('splash-video')?.play().catch(() => {});
+			// Tap anywhere to skip
+			document.getElementById('splash-screen')?.addEventListener('click', function skip() {
+				this.style.transition = 'opacity 0.3s ease-out';
+				this.style.opacity = '0';
+				setTimeout(() => { this.style.display = 'none'; }, 300);
 			});
 		</script>
 		<MenuApp client:only="react" />
