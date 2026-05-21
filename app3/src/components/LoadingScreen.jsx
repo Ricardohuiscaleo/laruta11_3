@@ -19,16 +19,21 @@ const LoadingScreen = ({ onComplete }) => {
       }, 400);
     };
 
+    // When video ends, complete loading
+    if (video) video.addEventListener('ended', complete, { once: true });
+
     splash.addEventListener('click', complete);
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); complete(); }
     });
-    const timeout = setTimeout(complete, 8000);
 
-    // If video plays for at least 1.5s, let the app's timer handle completion
+    // Backup: complete after 15s if video never ends
+    const timeout = setTimeout(complete, 15000);
+
     return () => {
       clearTimeout(timeout);
       splash.removeEventListener('click', complete);
+      if (video) video.removeEventListener('ended', complete);
       if (!done) complete();
     };
   }, [onComplete]);
