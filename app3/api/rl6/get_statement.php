@@ -1,4 +1,5 @@
 <?php
+error_reporting(0);
 header('Content-Type: application/json');
 
 $config = require_once __DIR__ . '/../../config.php';
@@ -52,6 +53,9 @@ $result = $stmt->get_result();
 $transactions = [];
 while ($row = $result->fetch_assoc()) {
     $items = [];
+    $subtotal_productos = 0;
+    $delivery_fee = 0;
+    $delivery_discount = 0;
     
     // Si tiene order_id, obtener items de la venta y datos de delivery
     if ($row['order_id']) {
@@ -99,10 +103,6 @@ while ($row = $result->fetch_assoc()) {
         $stmt_order->execute();
         $result_order = $stmt_order->get_result();
         $order_data = $result_order->fetch_assoc();
-        
-        $delivery_fee = 0;
-        $delivery_discount = 0;
-        $subtotal_productos = 0;
         
         // Agregar delivery fee si existe
         if ($order_data && floatval($order_data['delivery_fee']) > 0) {
