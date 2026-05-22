@@ -48,9 +48,62 @@ try {
     };
     $objectKey = 'receipts/' . $order_number . '_' . time() . '.' . $ext;
 
-    require_once __DIR__ . '/../S3Manager.php';
-    $s3 = new S3Manager($config);
-    $receipt_url = $s3->uploadFile($_FILES['receipt'], $objectKey, false);
+    // Upload to Cloudflare R2 via S3-compatible API with SigV4
+    $body = file_get_contents($file['tmp_name']);
+    $mimeType = $file['type'];
+    $endpoint = rtrim($config['s3_endpoint'], '/');
+    $bucket = $config['s3_bucket'];
+    $region = $config['s3_region'] ?? 'auto';
+    $accessKey = $config['aws_access_key_id'];
+    $secretKey = $config['aws_secret_access_key'];
+
+    $url = "{$endpoint}/{$bucket}/{$objectKey}";
+    $host = parse_url($url, PHP_URL_HOST);
+    $uri = parse_url($url, PHP_URL_PATH);
+    $amzDate = gmdate('Ymd\THis\Z');
+    $date = gmdate('Ymd');
+    $payloadHash = hash('sha256', $body);
+    $service = 's3';
+
+    $canonicalHeaders = "content-type:{$mimeType}\nhost:{$host}\nx-amz-content-sha256:{$payloadHash}\nx-amz-date:{$amzDate}\n";
+    $signedHeaders = 'content-type;host;x-amz-content-sha256;x-amz-date';
+    $canonicalRequest = "PUT\n{$uri}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
+    $algorithm = 'AWS4-HMAC-SHA256';
+    $credentialScope = "{$date}/{$region}/{$service}/aws4_request";
+    $stringToSign = "{$algorithm}\n{$amzDate}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
+
+    $kDate = hash_hmac('sha256', $date, "AWS4{$secretKey}", true);
+    $kRegion = hash_hmac('sha256', $region, $kDate, true);
+    $kService = hash_hmac('sha256', $service, $kRegion, true);
+    $kSigning = hash_hmac('sha256', 'aws4_request', $kService, true);
+    $signature = hash_hmac('sha256', $stringToSign, $kSigning);
+    $authorization = "{$algorithm} Credential={$accessKey}/{$credentialScope}, SignedHeaders={$signedHeaders}, Signature={$signature}";
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_CUSTOMREQUEST => 'PUT',
+        CURLOPT_POSTFIELDS => $body,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            "Content-Type: {$mimeType}",
+            "x-amz-content-sha256: {$payloadHash}",
+            "x-amz-date: {$amzDate}",
+            "Authorization: {$authorization}",
+        ],
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_CONNECTTIMEOUT => 10,
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlError) throw new Exception("Error cURL subiendo a R2: {$curlError}");
+    if ($httpCode !== 200 && $httpCode !== 204) {
+        throw new Exception("Error HTTP {$httpCode} subiendo a R2: " . substr($response, 0, 200));
+    }
+
+    $receipt_url = rtrim($config['s3_url'], '/') . '/' . $objectKey;
 
     $pdo = new PDO(
         "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
