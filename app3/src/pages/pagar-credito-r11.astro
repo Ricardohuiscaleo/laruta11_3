@@ -127,7 +127,12 @@ const user_id = Astro.url.searchParams.get('user_id');
     </div>
 
     <script define:vars={{ serverUserId: user_id }}>
-        let userId = serverUserId;
+        function getUserIdFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('user_id');
+        }
+
+        let userId = serverUserId || getUserIdFromUrl();
 
         async function getUserId() {
             if (userId) return userId;

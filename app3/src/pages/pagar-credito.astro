@@ -119,11 +119,14 @@ const user_id = Astro.url.searchParams.get('user_id');
     </div>
 
     <script define:vars={{ serverUserId: user_id }}>
-        // Obtener user_id desde URL o sesión
-        let userId = serverUserId; // Desde URL
+        function getUserIdFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('user_id');
+        }
+        
+        let userId = serverUserId || getUserIdFromUrl();
         
         async function getUserId() {
-            // Si ya tenemos user_id desde URL, usarlo
             if (userId) return userId;
             
             try {
