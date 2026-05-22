@@ -156,6 +156,18 @@ import MenuApp from '../components/MenuApp.jsx';
 				enterBtn.textContent = 'Entrar';
 			}, { once: true });
 
+			video.addEventListener('error', function onError() {
+				enterBtn.disabled = false;
+				enterBtn.textContent = 'Entrar';
+			}, { once: true });
+
+			setTimeout(function fallback() {
+				if (enterBtn.disabled) {
+					enterBtn.disabled = false;
+					enterBtn.textContent = 'Entrar';
+				}
+			}, 5000);
+
 			enterBtn.addEventListener('click', function onClick() {
 				overlay.classList.add('hidden');
 				video.muted = false;
