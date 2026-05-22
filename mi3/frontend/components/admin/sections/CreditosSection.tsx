@@ -188,54 +188,75 @@ function UserDetailModal({
               <p className="text-sm text-gray-400 text-center py-4">Sin comprobantes</p>
             ) : (
               <div className="space-y-3">
-                {receipts.map(r => (
-                  <div key={r.order_number} className="border rounded-lg p-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold">{r.order_number}</p>
-                        <p className="text-xs text-gray-500">{r.description} · ${Math.round(r.amount).toLocaleString('es-CL')}</p>
-                        <p className="text-xs text-gray-400">{new Date(r.payment_date).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                      </div>
-                      <div className="text-right flex items-center gap-2">
-                        {receiptStatusBadge(r.receipt_status)}
-                        {r.receipt_path && r.receipt_path !== 'legacy_tuu' && (
+                {receipts.map(r => {
+                  const isImage = r.receipt_path && /\.(jpg|jpeg|png|webp)$/i.test(r.receipt_path);
+                  const isPdf = r.receipt_path && /\.pdf$/i.test(r.receipt_path);
+                  const hasFile = r.receipt_path && r.receipt_path !== 'legacy_tuu';
+                  return (
+                    <div key={r.order_number} className="border rounded-lg overflow-hidden">
+                      <div className="flex items-stretch">
+                        {hasFile && (
                           <a
-                            href={r.receipt_path}
+                            href={r.receipt_path!}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="rounded p-1 hover:bg-blue-50"
-                            title="Ver comprobante"
+                            className="group relative flex-shrink-0 w-32 bg-gray-100 overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all rounded-l-lg"
                           >
-                            <Eye className="h-4 w-4 text-blue-500" />
+                            {isImage ? (
+                              <img
+                                src={r.receipt_path!}
+                                alt="Comprobante"
+                                className="w-full h-24 object-cover group-hover:opacity-80 transition-opacity"
+                              />
+                            ) : isPdf ? (
+                              <div className="flex items-center justify-center h-24">
+                                <FileText className="h-10 w-10 text-red-400" />
+                              </div>
+                            ) : null}
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-all">
+                              <Eye className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+                            </div>
                           </a>
                         )}
+                        <div className="flex-1 p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold truncate">{r.order_number}</p>
+                              <p className="text-xs text-gray-500 truncate">{r.description} · ${Math.round(r.amount).toLocaleString('es-CL')}</p>
+                              <p className="text-xs text-gray-400">{new Date(r.payment_date).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                            </div>
+                            <div className="flex-shrink-0">
+                              {receiptStatusBadge(r.receipt_status)}
+                            </div>
+                          </div>
+                          {r.receipt_status === 'pending_review' && (
+                            <div className="flex gap-2 mt-2 pt-2 border-t">
+                              <button
+                                onClick={() => handleApprove(r.order_number)}
+                                disabled={acting === r.order_number}
+                                className="inline-flex items-center gap-1 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                              >
+                                {acting === r.order_number ? <Loader2 className="h-3 w-3 animate-spin" /> : <ThumbsUp className="h-3 w-3" />}
+                                Aprobar
+                              </button>
+                              <button
+                                onClick={() => handleReject(r.order_number)}
+                                disabled={acting === r.order_number}
+                                className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                              >
+                                {acting === r.order_number ? <Loader2 className="h-3 w-3 animate-spin" /> : <ThumbsDown className="h-3 w-3" />}
+                                Rechazar
+                              </button>
+                            </div>
+                          )}
+                          {r.receipt_admin_notes && (
+                            <p className="mt-1 text-xs text-gray-500 italic">Notas: {r.receipt_admin_notes}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    {r.receipt_status === 'pending_review' && (
-                      <div className="flex gap-2 mt-2 pt-2 border-t">
-                        <button
-                          onClick={() => handleApprove(r.order_number)}
-                          disabled={acting === r.order_number}
-                          className="inline-flex items-center gap-1 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
-                        >
-                          {acting === r.order_number ? <Loader2 className="h-3 w-3 animate-spin" /> : <ThumbsUp className="h-3 w-3" />}
-                          Aprobar
-                        </button>
-                        <button
-                          onClick={() => handleReject(r.order_number)}
-                          disabled={acting === r.order_number}
-                          className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
-                        >
-                          {acting === r.order_number ? <Loader2 className="h-3 w-3 animate-spin" /> : <ThumbsDown className="h-3 w-3" />}
-                          Rechazar
-                        </button>
-                      </div>
-                    )}
-                    {r.receipt_admin_notes && (
-                      <p className="mt-1 text-xs text-gray-500 italic">Notas: {r.receipt_admin_notes}</p>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
