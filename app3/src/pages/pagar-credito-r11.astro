@@ -181,7 +181,7 @@ const user_id = Astro.url.searchParams.get('user_id');
                 'Cuenta Corriente: 97618110',
                 'Email: saboresdelaruta11@gmail.com',
                 '',
-                'Monto: $' + (document.getElementById('transferAmount')?.value || '[ingresa el monto]'),
+                'Monto: ' + (document.getElementById('transferAmount')?.value || '[ingresa el monto]'),
             ].join('\n');
 
             if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -234,7 +234,7 @@ const user_id = Astro.url.searchParams.get('user_id');
                 statusDiv.classList.remove('hidden');
                 return;
             }
-            const rawMonto = amountInput.value.replace(/\./g, '');
+            const rawMonto = amountInput.value.replace(/[$.]/g, '');
             if (!rawMonto || Number(rawMonto) <= 0) {
                 statusDiv.className = 'text-sm mb-3 text-red-600';
                 statusDiv.textContent = 'Ingresa un monto válido';
@@ -248,7 +248,7 @@ const user_id = Astro.url.searchParams.get('user_id');
 
             const formData = new FormData();
             formData.append('user_id', userId);
-            formData.append('monto', amountInput.value.replace(/\./g, ''));
+            formData.append('monto', amountInput.value.replace(/[$.]/g, ''));
             formData.append('tipo', 'r11');
             formData.append('receipt', fileInput.files[0]);
 
@@ -319,7 +319,7 @@ const user_id = Astro.url.searchParams.get('user_id');
                 document.getElementById('creditoUsado').textContent = '$' + parseInt(user.credito_usado).toLocaleString('es-CL');
                 document.getElementById('creditoDisponible').textContent = '$' + parseInt(user.credito_disponible).toLocaleString('es-CL');
                 document.getElementById('saldoPagar').textContent = '$' + parseInt(user.credito_usado).toLocaleString('es-CL');
-                document.getElementById('transferAmount').value = parseInt(user.credito_usado).toLocaleString('es-CL');
+                document.getElementById('transferAmount').value = '$' + parseInt(user.credito_usado).toLocaleString('es-CL');
 
                 if (user.credito_usado > 0) {
                     document.getElementById('transferButton').classList.remove('hidden');
