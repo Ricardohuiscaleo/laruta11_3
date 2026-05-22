@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Events\AdminDataUpdatedEvent;
 use App\Http\Controllers\Controller;
 use App\Models\R11CreditTransaction;
+use App\Models\Rl6CreditTransaction;
 use App\Models\Usuario;
 use App\Services\Credit\RL6CreditService;
 use App\Services\Email\GmailService;
