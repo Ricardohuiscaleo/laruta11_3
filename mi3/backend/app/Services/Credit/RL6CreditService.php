@@ -497,7 +497,7 @@ class RL6CreditService
 <table width='600' cellpadding='0' cellspacing='0' style='background-color:#ffffff;border-radius:40px;overflow:hidden;box-shadow:0 10px 40px -10px rgba(0,0,0,0.15);border:1px solid {$t['border']};'>
 
   <tr><td style='background:{$t['grad']};padding:48px 20px;text-align:center;'>
-    <img src='" . config('filesystems.disks.s3.url') . "/menu/logo.png' alt='La Ruta 11' style='width:80px;height:80px;margin:0 auto 16px;display:block;filter:drop-shadow(0 10px 20px rgba(0,0,0,0.2));'>
+    <img src='https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/menu/logo.png' alt='La Ruta 11' style='width:80px;height:80px;margin:0 auto 16px;display:block;filter:drop-shadow(0 10px 20px rgba(0,0,0,0.2));'>
     <h1 style='color:#ffffff;margin:0;font-size:36px;font-weight:800;letter-spacing:-0.5px;'>La Ruta 11</h1>
     <p style='color:rgba(255,255,255,0.85);margin:4px 0 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:4px;'>Estado de Cuenta</p>
   </td></tr>

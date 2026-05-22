@@ -72,7 +72,7 @@ function sendRL6Email($to, $nombre, $rut, $grado, $unidad, $tipo = 'registro', $
 <tr><td align='center'>
 <table width='600' cellpadding='0' cellspacing='0' style='background:#fff;border-radius:16px;overflow:hidden;border:2px solid $color;'>
     <tr><td style='background:$color;padding:32px 20px;text-align:center;'>
-        <img src='https://laruta11-images.s3.amazonaws.com/menu/logo.png' alt='La Ruta 11' style='width:60px;height:60px;display:block;margin:0 auto 12px;'>
+        <img src='https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/menu/logo.png' alt='La Ruta 11' style='width:60px;height:60px;display:block;margin:0 auto 12px;'>
         <h1 style='color:#fff;margin:0;font-size:24px;font-weight:800;'>$title</h1>
     </td></tr>
     <tr><td style='padding:24px 20px;'>

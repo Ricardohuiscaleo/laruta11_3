@@ -11,14 +11,14 @@ $authenticated = isset($_SESSION['keys_admin']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Keys - Admin La Ruta 11</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" type="image/png" href="https://laruta11-images.s3.amazonaws.com/menu/logo.png" />
+    <link rel="icon" type="image/png" href="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/menu/logo.png" />
 </head>
 <body class="bg-gray-100">
     <?php if (!$authenticated): ?> 
     <div class="min-h-screen flex items-center justify-center">
         <div class="bg-white p-8 rounded-xl shadow-xl w-full max-w-md">
             <div class="text-center mb-6">
-                <img src="https://laruta11-images.s3.amazonaws.com/menu/logo.png" alt="La Ruta 11" class="w-16 h-16 mx-auto mb-4">
+                <img src="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/menu/logo.png" alt="La Ruta 11" class="w-16 h-16 mx-auto mb-4">
                 <h1 class="text-2xl font-bold text-gray-800">🔐 Acceso a Keys</h1>
                 <p class="text-gray-600">Ingresa tus credenciales admin</p>
             </div>

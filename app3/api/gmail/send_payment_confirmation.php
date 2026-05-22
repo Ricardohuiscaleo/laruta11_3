@@ -60,7 +60,7 @@ try {
                     
                     <tr>
                         <td style='background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 48px 20px; text-align: center;'>
-                            <img src='https://laruta11-images.s3.amazonaws.com/menu/logo.png' alt='La Ruta 11' style='width: 80px; height: 80px; margin: 0 auto 16px; display: block; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));'>
+                            <img src='https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/menu/logo.png' alt='La Ruta 11' style='width: 80px; height: 80px; margin: 0 auto 16px; display: block; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));'>
                             <h1 style='color: #ffffff; margin: 0; font-size: 36px; font-weight: 800; letter-spacing: -0.5px;'>¡Pago Confirmado!</h1>
                             <p style='color: #d1fae5; margin: 4px 0 0 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 4px;'>Crédito RL6</p>
                         </td>
