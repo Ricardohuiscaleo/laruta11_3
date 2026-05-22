@@ -10,6 +10,7 @@ use App\Services\Credit\RL6CreditService;
 use App\Services\Email\GmailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class CreditController extends Controller
@@ -259,6 +260,95 @@ class CreditController extends Controller
             'total_sent' => $totalSent,
             'total_failed' => $totalFailed,
             'failed' => $failed,
+        ]);
+    }
+
+    // ── RL6 Transactions ─────────────────────────────────────────
+
+    public function rl6Transactions(int $id): JsonResponse
+    {
+        $transactions = Rl6CreditTransaction::where('user_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(fn($t) => [
+                'id' => $t->id,
+                'amount' => (float) $t->amount,
+                'type' => $t->type,
+                'description' => $t->description,
+                'order_id' => $t->order_id,
+                'created_at' => $t->created_at,
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $transactions,
+        ]);
+    }
+
+    // ── Payment Receipt Management ───────────────────────────────
+
+    public function rl6Receipts(Request $request, RL6CreditService $service): JsonResponse
+    {
+        $userId = $request->input('user_id');
+        $receipts = $service->getReceipts($userId);
+
+        return response()->json([
+            'success' => true,
+            'data' => $receipts,
+        ]);
+    }
+
+    public function rl6ApproveReceipt(Request $request, string $orderNumber, RL6CreditService $service): JsonResponse
+    {
+        $adminId = $request->user()->id ?? $request->input('admin_id');
+        if (!$adminId) {
+            return response()->json(['success' => false, 'error' => 'admin_id requerido'], 400);
+        }
+
+        try {
+            $service->approveReceipt($orderNumber, (int) $adminId);
+            return response()->json(['success' => true, 'message' => 'Comprobante aprobado y crédito actualizado']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function rl6RejectReceipt(Request $request, string $orderNumber, RL6CreditService $service): JsonResponse
+    {
+        $adminId = $request->user()->id ?? $request->input('admin_id');
+        $notes = $request->input('notes');
+
+        if (!$adminId) {
+            return response()->json(['success' => false, 'error' => 'admin_id requerido'], 400);
+        }
+
+        try {
+            $service->rejectReceipt($orderNumber, (int) $adminId, $notes);
+            return response()->json(['success' => true, 'message' => 'Comprobante rechazado']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    // ── Pending Credit Applications ──────────────────────────────
+
+    public function pendingCredits(RL6CreditService $service): JsonResponse
+    {
+        $rl6 = $service->getPendingApplications();
+        $r11 = $service->getPendingR11Applications();
+
+        $all = collect(array_merge($rl6, $r11))
+            ->sortByDesc('fecha_solicitud')
+            ->values()
+            ->toArray();
+
+        return response()->json([
+            'success' => true,
+            'data' => $all,
+            'meta' => [
+                'total_rl6' => count($rl6),
+                'total_r11' => count($r11),
+            ],
         ]);
     }
 }

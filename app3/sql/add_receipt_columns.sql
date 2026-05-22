@@ -1,0 +1,10 @@
+-- Agregar columnas de comprobante de pago a tuu_orders
+-- Ejecutado en producción: sí
+-- ALTER TABLE tuu_orders
+--     ADD COLUMN receipt_path VARCHAR(500) DEFAULT NULL COMMENT 'Archivo comprobante',
+--     ADD COLUMN receipt_status ENUM('pending_review','approved','rejected') DEFAULT NULL,
+--     ADD COLUMN receipt_admin_notes TEXT DEFAULT NULL,
+--     ADD COLUMN receipt_reviewed_by INT DEFAULT NULL,
+--     ADD COLUMN receipt_reviewed_at DATETIME DEFAULT NULL,
+--     ADD COLUMN receipt_original_name VARCHAR(255) DEFAULT NULL,
+--     ADD INDEX idx_receipt_status (receipt_status);

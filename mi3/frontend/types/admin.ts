@@ -52,3 +52,38 @@ export interface CustomerUser {
 
 /** Email Estado types for RL6 collection emails */
 export type EmailEstado = 'sin_deuda' | 'recordatorio' | 'urgente' | 'moroso';
+
+/** Payment receipt from tuu_orders */
+export interface PaymentReceipt {
+  order_number: string;
+  user_id: number;
+  customer_name: string;
+  description: string;
+  amount: number;
+  payment_method: string;
+  payment_status: string;
+  receipt_path: string | null;
+  receipt_status: 'pending_review' | 'approved' | 'rejected' | null;
+  receipt_original_name: string | null;
+  receipt_admin_notes: string | null;
+  receipt_reviewed_by: number | null;
+  receipt_reviewed_at: string | null;
+  payment_date: string;
+  user_nombre: string;
+  user_rut: string | null;
+  user_grado: string | null;
+}
+
+/** Pending credit application */
+export interface PendingCredit {
+  id: number;
+  nombre: string;
+  email: string;
+  telefono: string;
+  rut: string | null;
+  grado_militar?: string | null;
+  unidad_trabajo?: string | null;
+  relacion_r11?: string | null;
+  tipo: 'RL6' | 'R11';
+  fecha_solicitud: string;
+}

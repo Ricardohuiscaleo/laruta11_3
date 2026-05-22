@@ -66,6 +66,36 @@ const user_id = Astro.url.searchParams.get('user_id');
                     </button>
                     <p class="text-xs text-gray-500 text-center mt-2">Pago seguro con Webpay</p>
                 </div>
+
+                <div id="transferButton" class="hidden mt-3">
+                    <button
+                        id="btnShowTransfer"
+                        class="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold py-3 px-6 rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-md flex items-center justify-center gap-2"
+                    >
+                        <span style="font-size: 20px;">🏦</span>
+                        <span>Pagar con Transferencia</span>
+                    </button>
+                </div>
+
+                <div id="transferForm" class="hidden mt-3 border border-emerald-200 rounded-lg p-4 bg-emerald-50">
+                    <h4 class="text-sm font-bold text-emerald-800 mb-3">Subir Comprobante de Transferencia</h4>
+                    <p class="text-xs text-emerald-600 mb-3">Transfiere al mismo monto y sube el comprobante. Lo revisaremos y aprobaremos a la brevedad.</p>
+
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Monto a pagar ($)</label>
+                    <input id="transferAmount" type="number" min="1" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" />
+
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Comprobante (JPG, PNG, PDF)</label>
+                    <input id="receiptFile" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" class="w-full text-sm mb-3 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200" />
+
+                    <div id="transferStatus" class="hidden text-sm mb-3"></div>
+
+                    <button
+                        id="btnSubmitTransfer"
+                        class="w-full bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-700 transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                        Subir Comprobante
+                    </button>
+                </div>
             </div>
 
             <div class="bg-white rounded-lg shadow-md p-6">
@@ -156,11 +186,90 @@ const user_id = Astro.url.searchParams.get('user_id');
             }
         }
         
-        // Agregar event listener al botón
+        // Agregar event listener al botón TUU
         document.addEventListener('DOMContentLoaded', function() {
             const btnPagar = document.getElementById('btnPagar');
             if (btnPagar) {
                 btnPagar.addEventListener('click', pagarCredito);
+            }
+        });
+        
+        // ─── Transferencia ───
+        async function pagarConTransferencia() {
+            const fileInput = document.getElementById('receiptFile');
+            const amountInput = document.getElementById('transferAmount');
+            const statusDiv = document.getElementById('transferStatus');
+            const btn = document.getElementById('btnSubmitTransfer');
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                statusDiv.className = 'text-sm mb-3 text-red-600';
+                statusDiv.textContent = 'Selecciona un comprobante';
+                statusDiv.classList.remove('hidden');
+                return;
+            }
+            if (!amountInput.value || Number(amountInput.value) <= 0) {
+                statusDiv.className = 'text-sm mb-3 text-red-600';
+                statusDiv.textContent = 'Ingresa un monto válido';
+                statusDiv.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="animate-spin">⏳</span> Subiendo...';
+            statusDiv.className = 'hidden';
+
+            const formData = new FormData();
+            formData.append('user_id', userId);
+            formData.append('monto', amountInput.value);
+            formData.append('tipo', 'rl6');
+            formData.append('receipt', fileInput.files[0]);
+
+            try {
+                const resp = await fetch('https://app.laruta11.cl/api/payments/upload_receipt.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await resp.json();
+
+                if (data.success) {
+                    statusDiv.className = 'text-sm mb-3 text-green-700 bg-green-100 rounded-lg p-3';
+                    statusDiv.innerHTML = '✅ Comprobante recibido. Queda en revisión. Te notificaremos cuando esté aprobado.';
+                    statusDiv.classList.remove('hidden');
+                    fileInput.value = '';
+                    btn.innerHTML = 'Subir Comprobante';
+                    btn.disabled = false;
+                } else {
+                    throw new Error(data.error || 'Error al subir comprobante');
+                }
+            } catch (err) {
+                statusDiv.className = 'text-sm mb-3 text-red-600';
+                statusDiv.textContent = 'Error: ' + err.message;
+                statusDiv.classList.remove('hidden');
+                btn.innerHTML = 'Subir Comprobante';
+                btn.disabled = false;
+            }
+        }
+
+        // Show transfer form
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnShow = document.getElementById('btnShowTransfer');
+            const form = document.getElementById('transferForm');
+            const amountInput = document.getElementById('transferAmount');
+            const btnSubmit = document.getElementById('btnSubmitTransfer');
+
+            if (btnShow) {
+                btnShow.addEventListener('click', function() {
+                    form.classList.remove('hidden');
+                    // Pre-fill amount from saldo
+                    const saldoEl = document.getElementById('saldoPagar');
+                    if (saldoEl) {
+                        const clean = saldoEl.textContent.replace(/[^0-9]/g, '');
+                        if (clean) amountInput.value = clean;
+                    }
+                });
+            }
+            if (btnSubmit) {
+                btnSubmit.addEventListener('click', pagarConTransferencia);
             }
         });
         
@@ -185,9 +294,10 @@ const user_id = Astro.url.searchParams.get('user_id');
                 document.getElementById('creditoDisponible').textContent = '$' + user.credito_disponible.toLocaleString('es-CL');
                 document.getElementById('saldoPagar').textContent = '$' + user.credito_usado.toLocaleString('es-CL');
                 
-                // Mostrar botón de pago si hay saldo pendiente
+                // Mostrar botones de pago si hay saldo pendiente
                 if (user.credito_usado > 0) {
                     document.getElementById('paymentButton').classList.remove('hidden');
+                    document.getElementById('transferButton').classList.remove('hidden');
                 }
 
                 document.getElementById('totalTx').textContent = `${transactions.length} transacciones`;
@@ -325,7 +435,32 @@ const user_id = Astro.url.searchParams.get('user_id');
         .hidden { display: none; }
         .flex-1 { flex: 1; }
         .rounded-full { border-radius: 9999px; }
+        .rounded-xl { border-radius: 0.75rem; }
         .opacity-90 { opacity: 0.9; }
+        .border-emerald-200 { border-color: #a7f3d0; }
+        .border-emerald-500 { border-color: #10b981; }
+        .bg-emerald-50 { background-color: #ecfdf5; }
+        .bg-emerald-100 { background-color: #d1fae5; }
+        .bg-emerald-600 { background-color: #059669; }
+        .bg-green-100 { background-color: #dcfce7; }
+        .text-emerald-600 { color: #059669; }
+        .text-emerald-700 { color: #047857; }
+        .text-emerald-800 { color: #065f46; }
+        .text-green-700 { color: #15803d; }
+        .hover\:bg-emerald-200:hover { background-color: #a7f3d0; }
+        .hover\:bg-emerald-700:hover { background-color: #047857; }
+        .hover\:from-emerald-600:hover { --tw-gradient-from: #059669; }
+        .hover\:to-emerald-700:hover { --tw-gradient-to: #047857; }
+        .from-emerald-500 { --tw-gradient-from: #10b981; }
+        .to-emerald-600 { --tw-gradient-to: #059669; }
+        .hover\:shadow-lg:hover { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .focus\:ring-2:focus { --tw-ring-offset-shadow: 0 0 0 2px; }
+        .focus\:ring-emerald-500:focus { --tw-ring-color: #10b981; }
+        .focus\:border-emerald-500:focus { border-color: #10b981; }
+        .outline-none { outline: none; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .disabled\:opacity-50:disabled { opacity: 0.5; }
 
         .transition { transition: all 0.2s; }
         .hover\:bg-gray-50:hover { background-color: #f9fafb; }

@@ -175,6 +175,17 @@ Route::prefix('v1')->group(function () {
         Route::get('credits/rl6/{id}/preview-email', [\App\Http\Controllers\Admin\CreditController::class, 'rl6PreviewEmail']);
         Route::post('credits/rl6/{id}/send-email', [\App\Http\Controllers\Admin\CreditController::class, 'rl6SendEmail']);
 
+        // Transacciones RL6 por usuario
+        Route::get('credits/rl6/{id}/transactions', [\App\Http\Controllers\Admin\CreditController::class, 'rl6Transactions']);
+
+        // Comprobantes de pago RL6/R11
+        Route::get('credits/rl6/receipts', [\App\Http\Controllers\Admin\CreditController::class, 'rl6Receipts']);
+        Route::post('credits/rl6/receipts/{orderNumber}/approve', [\App\Http\Controllers\Admin\CreditController::class, 'rl6ApproveReceipt']);
+        Route::post('credits/rl6/receipts/{orderNumber}/reject', [\App\Http\Controllers\Admin\CreditController::class, 'rl6RejectReceipt']);
+
+        // Solicitudes de crédito pendientes
+        Route::get('credits/pending', [\App\Http\Controllers\Admin\CreditController::class, 'pendingCredits']);
+
         // Users (customers from app3)
         Route::get('users/customers', [\App\Http\Controllers\Admin\UserController::class, 'customers']);
 

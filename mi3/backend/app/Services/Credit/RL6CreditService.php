@@ -7,6 +7,7 @@ use App\Models\Rl6CreditTransaction;
 use App\Models\Usuario;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RL6CreditService
 {
@@ -569,5 +570,162 @@ class RL6CreditService
 </td></tr>
 </table>
 </body></html>";
+    }
+
+    /**
+     * Get payment receipts from tuu_orders for RL6 users.
+     */
+    public function getReceipts(?int $userId = null): array
+    {
+        $query = DB::table('tuu_orders')
+            ->join('usuarios', 'tuu_orders.user_id', '=', 'usuarios.id')
+            ->where('usuarios.es_militar_rl6', 1)
+            ->whereNotNull('tuu_orders.receipt_status');
+
+        if ($userId) {
+            $query->where('tuu_orders.user_id', $userId);
+        }
+
+        $receipts = $query
+            ->select([
+                'tuu_orders.order_number',
+                'tuu_orders.user_id',
+                'tuu_orders.customer_name',
+                'tuu_orders.product_name as description',
+                'tuu_orders.installment_amount as amount',
+                'tuu_orders.payment_method',
+                'tuu_orders.payment_status',
+                'tuu_orders.receipt_path',
+                'tuu_orders.receipt_status',
+                'tuu_orders.receipt_original_name',
+                'tuu_orders.receipt_admin_notes',
+                'tuu_orders.receipt_reviewed_by',
+                'tuu_orders.receipt_reviewed_at',
+                'tuu_orders.created_at as payment_date',
+                'usuarios.nombre as user_nombre',
+                'usuarios.rut as user_rut',
+                'usuarios.grado_militar as user_grado',
+            ])
+            ->orderBy('tuu_orders.created_at', 'desc')
+            ->get()
+            ->toArray();
+
+        return $receipts;
+    }
+
+    /**
+     * Approve a payment receipt and process credit payment.
+     */
+    public function approveReceipt(string $orderNumber, int $adminId): void
+    {
+        DB::transaction(function () use ($orderNumber, $adminId) {
+            $order = DB::table('tuu_orders')
+                ->where('order_number', $orderNumber)
+                ->first();
+
+            if (!$order) {
+                throw new \Exception("Orden $orderNumber no encontrada");
+            }
+
+            $monto = (float) $order->installment_amount;
+
+            // Process credit payment (refund transaction + decrement usado)
+            $this->manualPayment($order->user_id, $monto);
+
+            // Mark receipt as approved in tuu_orders
+            DB::table('tuu_orders')
+                ->where('order_number', $orderNumber)
+                ->update([
+                    'receipt_status' => 'approved',
+                    'receipt_reviewed_by' => $adminId,
+                    'receipt_reviewed_at' => Carbon::now(),
+                    'payment_status' => 'paid',
+                    'updated_at' => Carbon::now(),
+                ]);
+
+            Log::info("RL6 receipt approved: order={$orderNumber}, user={$order->user_id}, amount={$monto}, admin={$adminId}");
+        });
+    }
+
+    /**
+     * Reject a payment receipt.
+     */
+    public function rejectReceipt(string $orderNumber, int $adminId, ?string $notes = null): void
+    {
+        DB::table('tuu_orders')
+            ->where('order_number', $orderNumber)
+            ->update([
+                'receipt_status' => 'rejected',
+                'receipt_admin_notes' => $notes,
+                'receipt_reviewed_by' => $adminId,
+                'receipt_reviewed_at' => Carbon::now(),
+                'payment_status' => 'unpaid',
+                'updated_at' => Carbon::now(),
+            ]);
+
+        Log::info("RL6 receipt rejected: order={$orderNumber}, admin={$adminId}, notes={$notes}");
+    }
+
+    /**
+     * Get pending RL6 credit applications (es_militar_rl6=1, not approved, has solicitud).
+     */
+    public function getPendingApplications(): array
+    {
+        $users = Usuario::where('es_militar_rl6', 1)
+            ->where('credito_aprobado', 0)
+            ->whereNotNull('fecha_solicitud_rl6')
+            ->select([
+                'id', 'nombre', 'email', 'telefono', 'rut',
+                'grado_militar', 'unidad_trabajo',
+                'limite_credito', 'credito_aprobado',
+                'fecha_solicitud_rl6',
+            ])
+            ->orderBy('fecha_solicitud_rl6', 'desc')
+            ->get()
+            ->map(fn($u) => [
+                'id' => $u->id,
+                'nombre' => $u->nombre,
+                'email' => $u->email,
+                'telefono' => $u->telefono,
+                'rut' => $u->rut,
+                'grado_militar' => $u->grado_militar,
+                'unidad_trabajo' => $u->unidad_trabajo,
+                'tipo' => 'RL6',
+                'fecha_solicitud' => $u->fecha_solicitud_rl6,
+            ])
+            ->values()
+            ->toArray();
+
+        return $users;
+    }
+
+    /**
+     * Get pending R11 credit applications.
+     */
+    public function getPendingR11Applications(): array
+    {
+        $users = Usuario::where('es_credito_r11', 1)
+            ->where('credito_r11_aprobado', 0)
+            ->select([
+                'id', 'nombre', 'email', 'telefono', 'rut',
+                'relacion_r11',
+                'limite_credito_r11', 'credito_r11_aprobado',
+            ])
+            ->orderBy('updated_at', 'desc')
+            ->get()
+            ->map(fn($u) => [
+                'id' => $u->id,
+                'nombre' => $u->nombre,
+                'email' => $u->email,
+                'telefono' => $u->telefono,
+                'rut' => $u->rut,
+                'relacion_r11' => $u->relacion_r11,
+                'tipo' => 'R11',
+                'fecha_solicitud' => $u->updated_at,
+            ])
+            ->values()
+            ->toArray();
+
+        return $users;
     }
 }
