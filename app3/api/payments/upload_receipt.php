@@ -38,22 +38,19 @@ try {
         throw new Exception('El archivo no puede superar los 10MB');
     }
 
-    $ext = match ($file['type']) {
-        'image/jpeg' => 'jpg',
+    $order_number = 'TRF-' . time() . '-' . strtoupper(substr(uniqid(), -6));
+    $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: match ($file['type']) {
+        'image/jpeg', 'image/jpg' => 'jpg',
         'image/png' => 'png',
         'image/webp' => 'webp',
         'application/pdf' => 'pdf',
         default => 'bin',
     };
-    $order_number = 'TRF-' . time() . '-' . strtoupper(substr(uniqid(), -6));
-    $filename = 'comprobante_' . $order_number . '_' . time() . '.' . $ext;
-    $upload_dir = __DIR__ . '/../uploads/receipts/';
-    if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
-    $dest = $upload_dir . $filename;
+    $objectKey = 'receipts/' . $order_number . '_' . time() . '.' . $ext;
 
-    if (!move_uploaded_file($file['tmp_name'], $dest)) {
-        throw new Exception('Error al guardar el archivo');
-    }
+    require_once __DIR__ . '/../S3Manager.php';
+    $s3 = new S3Manager($config);
+    $receipt_url = $s3->uploadFile($_FILES['receipt'], $objectKey, false);
 
     $pdo = new PDO(
         "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
@@ -98,7 +95,7 @@ try {
         $product_name,
         $monto,
         $monto,
-        $filename,
+        $receipt_url,
         $file['name'],
         $tipo === 'rl6' ? 1 : 0,
         $tipo === 'rl6' ? $monto : 0,

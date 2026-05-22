@@ -200,7 +200,7 @@ function UserDetailModal({
                         {receiptStatusBadge(r.receipt_status)}
                         {r.receipt_path && r.receipt_path !== 'legacy_tuu' && (
                           <a
-                            href={`https://app.laruta11.cl/uploads/receipts/${r.receipt_path}`}
+                            href={r.receipt_path}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="rounded p-1 hover:bg-blue-50"
