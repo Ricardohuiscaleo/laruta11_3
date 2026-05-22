@@ -32,7 +32,7 @@ try {
         o.user_id,
         o.customer_name,
         o.product_name,
-        o.amount,
+        o.product_price AS amount,
         o.payment_method,
         o.payment_status,
         o.receipt_path,
