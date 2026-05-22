@@ -54,6 +54,7 @@ function UserDetailModal({
   const [txError, setTxError] = useState('');
   const [recError, setRecError] = useState('');
   const [acting, setActing] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     apiFetch<{ data: Transaction[] }>(`/admin/credits/rl6/${user.id}/transactions`)
@@ -196,10 +197,8 @@ function UserDetailModal({
                     <div key={r.order_number} className="border rounded-lg overflow-hidden">
                       <div className="flex items-stretch">
                         {hasFile && (
-                          <a
-                            href={r.receipt_path!}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            onClick={() => setPreviewUrl(r.receipt_path!)}
                             className="group relative flex-shrink-0 w-32 bg-gray-100 overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all rounded-l-lg"
                           >
                             {isImage ? (
@@ -216,7 +215,7 @@ function UserDetailModal({
                             <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-all">
                               <Eye className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
                             </div>
-                          </a>
+                          </button>
                         )}
                         <div className="flex-1 p-3">
                           <div className="flex items-start justify-between gap-2">
@@ -262,6 +261,30 @@ function UserDetailModal({
           </div>
         </div>
       </div>
+
+      {/* Receipt preview modal */}
+      {previewUrl && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60" onClick={() => setPreviewUrl(null)} />
+          <div className="relative bg-white rounded-xl shadow-2xl max-w-2xl max-h-[90vh] overflow-auto z-10">
+            <div className="sticky top-0 bg-white flex items-center justify-between px-4 py-3 border-b rounded-t-xl">
+              <p className="text-sm font-semibold text-gray-700">Comprobante de Pago</p>
+              <button onClick={() => setPreviewUrl(null)} className="rounded-full p-1 hover:bg-gray-100">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-4">
+              {/\.(jpg|jpeg|png|webp)$/i.test(previewUrl) ? (
+                <img src={previewUrl} alt="Comprobante" className="w-full h-auto rounded" />
+              ) : /\.pdf$/i.test(previewUrl) ? (
+                <iframe src={previewUrl} className="w-full h-[70vh] rounded" title="Comprobante PDF" />
+              ) : (
+                <p className="text-sm text-gray-500">Vista previa no disponible</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
