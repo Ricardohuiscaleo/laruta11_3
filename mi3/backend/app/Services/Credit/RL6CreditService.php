@@ -5,6 +5,7 @@ namespace App\Services\Credit;
 use App\Models\EmailLog;
 use App\Models\Rl6CreditTransaction;
 use App\Models\Usuario;
+use App\Services\Email\GmailService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -618,23 +619,23 @@ class RL6CreditService
      */
     public function approveReceipt(string $orderNumber, int $adminId): void
     {
-        DB::transaction(function () use ($orderNumber, $adminId) {
-            $order = DB::table('tuu_orders')
-                ->where('order_number', $orderNumber)
-                ->first();
+        $order = DB::table('tuu_orders')
+            ->where('order_number', $orderNumber)
+            ->first();
 
-            if (!$order) {
-                throw new \Exception("Orden $orderNumber no encontrada");
-            }
+        if (!$order) {
+            throw new \Exception("Orden $orderNumber no encontrada");
+        }
 
-            $monto = (float) $order->installment_amount;
+        $monto = (float) $order->installment_amount;
 
+        DB::transaction(function () use ($order, $monto, $adminId) {
             // Process credit payment (refund transaction + decrement usado)
             $this->manualPayment($order->user_id, $monto);
 
             // Mark receipt as approved in tuu_orders
             DB::table('tuu_orders')
-                ->where('order_number', $orderNumber)
+                ->where('order_number', $order->order_number)
                 ->update([
                     'receipt_status' => 'approved',
                     'receipt_reviewed_by' => $adminId,
@@ -643,8 +644,103 @@ class RL6CreditService
                     'updated_at' => Carbon::now(),
                 ]);
 
-            Log::info("RL6 receipt approved: order={$orderNumber}, user={$order->user_id}, amount={$monto}, admin={$adminId}");
+            Log::info("RL6 receipt approved: order={$order->order_number}, user={$order->user_id}, amount={$monto}, admin={$adminId}");
         });
+
+        // Send payment confirmation email
+        try {
+            $user = Usuario::find($order->user_id);
+            if ($user && $user->email) {
+                $this->sendPaymentConfirmation($user, $order->order_number, $monto);
+            }
+        } catch (\Throwable $e) {
+            Log::error("Error sending payment confirmation email: {$e->getMessage()}");
+        }
+    }
+
+    private function sendPaymentConfirmation(Usuario $user, string $orderNumber, float $amount): void
+    {
+        $gmail = app(GmailService::class);
+        $nombre = htmlspecialchars($user->nombre);
+        $grado = htmlspecialchars($user->grado_militar ?? '');
+        $unidad = htmlspecialchars($user->unidad_trabajo ?? '');
+        $montoFmt = number_format($amount, 0, ',', '.');
+        $fecha = Carbon::now()->locale('es')->isoFormat('D [de] MMMM [del] YYYY, h:mm a');
+
+        $html = <<<HTML
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#ecfdf5;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#ecfdf5;padding:10px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:40px;overflow:hidden;box-shadow:0 10px 40px -10px rgba(16,185,129,0.2);border:1px solid #a7f3d0;">
+<tr><td style="background:linear-gradient(135deg,#10b981,#059669);padding:48px 20px;text-align:center;">
+<img src="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/menu/logo.png" alt="La Ruta 11" style="width:80px;height:80px;margin:0 auto 16px;display:block;filter:drop-shadow(0 10px 20px rgba(0,0,0,0.2));border-radius:50%;">
+<h1 style="color:#fff;margin:0;font-size:36px;font-weight:800;letter-spacing:-0.5px;">¡Pago Confirmado!</h1>
+<p style="color:#d1fae5;margin:4px 0 0 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:4px;">Crédito RL6</p>
+</td></tr>
+<tr><td style="padding:32px 20px 20px;background:#fff;">
+<div style="text-align:center;margin-bottom:32px;">
+<h2 style="color:#111827;margin:0 0 12px 0;font-size:24px;font-weight:800;">¡Hola, {$nombre}! 🎉</h2>
+<p style="color:#6b7280;line-height:1.6;margin:0;font-size:14px;font-weight:500;">Tu pago de crédito <strong>RL6</strong> ha sido aprobado exitosamente.</p>
+</div>
+<table width="100%" cellpadding="0" cellspacing="0">
+<tr><td align="center" style="padding-bottom:32px;">
+<div style="display:inline-block;background:#d1fae5;padding:8px 24px;border-radius:999px;margin:0 8px;"><p style="color:#065f46;margin:0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">{$grado}</p></div>
+<div style="display:inline-block;background:#f3f4f6;padding:8px 24px;border-radius:999px;margin:0 8px;"><p style="color:#4b5563;margin:0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Unidad {$unidad}</p></div>
+</td></tr>
+</table>
+</td></tr>
+<tr><td style="padding:0 20px 32px;">
+<div style="background:#f0fdf4;border:2px solid #bbf7d0;border-radius:32px;padding:24px;">
+<h3 style="text-align:center;font-size:10px;font-weight:900;color:#16a34a;text-transform:uppercase;letter-spacing:3px;margin:0 0 24px 0;">Detalles del Pago</h3>
+<table width="100%" cellpadding="0" cellspacing="0">
+<tr><td style="padding:12px 0;border-bottom:1px solid #d1fae5;">
+<table width="100%"><tr><td style="color:#6b7280;font-size:13px;font-weight:600;">Orden:</td><td style="color:#111827;font-size:13px;font-weight:700;text-align:right;">{$orderNumber}</td></tr></table>
+</td></tr>
+<tr><td style="padding:12px 0;border-bottom:1px solid #d1fae5;">
+<table width="100%"><tr><td style="color:#6b7280;font-size:13px;font-weight:600;">Monto Pagado:</td><td style="color:#10b981;font-size:24px;font-weight:800;text-align:right;">\${$montoFmt}</td></tr></table>
+</td></tr>
+<tr><td style="padding:12px 0;border-bottom:1px solid #d1fae5;">
+<table width="100%"><tr><td style="color:#6b7280;font-size:13px;font-weight:600;">Fecha de Aprobación:</td><td style="color:#111827;font-size:13px;font-weight:700;text-align:right;">{$fecha}</td></tr></table>
+</td></tr>
+<tr><td style="padding:12px 0;">
+<table width="100%"><tr><td style="color:#6b7280;font-size:13px;font-weight:600;">Estado:</td><td style="color:#10b981;font-size:13px;font-weight:700;text-align:right;">✅ Aprobado</td></tr></table>
+</td></tr>
+</table>
+</div>
+</td></tr>
+<tr><td style="padding:0 20px 32px;text-align:center;">
+<a href="https://app.laruta11.cl" style="display:inline-block;background:linear-gradient(135deg,#FF6B35,#F7931E);color:#fff;text-decoration:none;font-weight:800;font-size:16px;padding:16px 48px;border-radius:999px;box-shadow:0 4px 14px -4px rgba(255,107,53,0.5);">IR A LA APP</a>
+</td></tr>
+<tr><td style="background:#111827;padding:32px 20px;">
+<table width="100%"><tr><td style="text-align:center;">
+<img src="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/menu/logo.png" style="width:48px;height:48px;display:inline-block;border-radius:50%;margin-bottom:16px;">
+<p style="color:#9ca3af;font-size:12px;margin:0 0 4px 0;">📞 <strong style="color:#f3f4f6;">Ventas:</strong> +56 9 3622 7422</p>
+<p style="color:#9ca3af;font-size:12px;margin:0 0 4px 0;">🛠️ <strong style="color:#f3f4f6;">Soporte:</strong> +56 9 4539 2581</p>
+<p style="color:#9ca3af;font-size:12px;margin:0;">📧 saboresdelaruta11@gmail.com</p>
+<p style="color:#4b5563;font-size:11px;margin-top:16px;">© 2026 La Ruta 11 SpA · Yumbel 2629, Arica, Chile</p>
+</td></tr></table>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+
+        $subject = '✅ Pago de Crédito RL6 Confirmado - La Ruta 11';
+
+        $gmail->sendRL6CollectionEmail(
+            $user->id,
+            $user->email,
+            $html,
+            $subject,
+            'payment_confirmation'
+        );
+
+        Log::info("Payment confirmation email sent to {$user->email} for order {$orderNumber}");
     }
 
     /**
