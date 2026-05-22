@@ -43,31 +43,30 @@ interface Transaction {
 function UserDetailModal({
   user,
   onClose,
-  onApproveReceipt,
-  onRejectReceipt,
 }: {
   user: RL6CreditUser;
   onClose: () => void;
-  onApproveReceipt: (orderNumber: string) => void;
-  onRejectReceipt: (orderNumber: string) => void;
 }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [receipts, setReceipts] = useState<PaymentReceipt[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [txLoading, setTxLoading] = useState(true);
+  const [recLoading, setRecLoading] = useState(true);
+  const [txError, setTxError] = useState('');
+  const [recError, setRecError] = useState('');
   const [acting, setActing] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      apiFetch<{ data: Transaction[] }>(`/admin/credits/rl6/${user.id}/transactions`),
-      apiFetch<{ data: PaymentReceipt[] }>(`/admin/credits/rl6/receipts?user_id=${user.id}`),
-    ])
-      .then(([txRes, recRes]) => {
-        setTransactions(txRes.data || []);
-        setReceipts(recRes.data || []);
-      })
-      .catch(e => console.error(e))
-      .finally(() => setLoading(false));
+    apiFetch<{ data: Transaction[] }>(`/admin/credits/rl6/${user.id}/transactions`)
+      .then(res => setTransactions(res.data || []))
+      .catch(e => { setTxError(e.message); console.error('tx error', e); })
+      .finally(() => setTxLoading(false));
+  }, [user.id]);
+
+  useEffect(() => {
+    apiFetch<{ data: PaymentReceipt[] }>(`/admin/credits/rl6/receipts?user_id=${user.id}`)
+      .then(res => setReceipts(res.data || []))
+      .catch(e => { setRecError(e.message); console.error('rec error', e); })
+      .finally(() => setRecLoading(false));
   }, [user.id]);
 
   const handleApprove = async (orderNumber: string) => {
@@ -148,8 +147,10 @@ function UserDetailModal({
             <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
               <FileText className="h-4 w-4" /> Transacciones
             </h4>
-            {loading ? (
+            {txLoading ? (
               <div className="flex justify-center py-6"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>
+            ) : txError ? (
+              <p className="text-sm text-red-500 text-center py-4">Error: {txError}</p>
             ) : transactions.length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-4">Sin transacciones</p>
             ) : (
@@ -179,8 +180,10 @@ function UserDetailModal({
             <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
               <Eye className="h-4 w-4" /> Comprobantes de Pago
             </h4>
-            {loading ? (
+            {recLoading ? (
               <div className="flex justify-center py-6"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>
+            ) : recError ? (
+              <p className="text-sm text-red-500 text-center py-4">Error: {recError}</p>
             ) : receipts.length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-4">Sin comprobantes</p>
             ) : (
@@ -850,12 +853,6 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
         <UserDetailModal
           user={selectedUser}
           onClose={() => setSelectedUser(null)}
-          onApproveReceipt={(orderNumber) => {
-            setSelectedUser(prev => prev ? { ...prev } : null);
-          }}
-          onRejectReceipt={(orderNumber) => {
-            setSelectedUser(prev => prev ? { ...prev } : null);
-          }}
         />
       )}
 
