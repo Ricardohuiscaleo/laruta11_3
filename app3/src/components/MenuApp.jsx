@@ -630,9 +630,9 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
           onTouchStart={handleDoubleTap}
         >
           {!!product.sale_price && (
-            <div className="absolute top-0 left-0 z-10 w-14 h-14 overflow-hidden">
-              <div className="absolute bg-red-500 text-white text-[8px] font-black py-0.5 text-center w-[76px] -rotate-45 -left-[12px] top-[15px] shadow tracking-wide">
-                -{Math.round((1 - product.sale_price / product.price) * 100)}%
+            <div className="absolute top-0 left-0 z-10 overflow-hidden w-[100px] h-[100px]">
+              <div className="absolute bg-red-500 text-white text-[9px] font-black py-1 text-center shadow tracking-wider w-[160px] -rotate-45 -left-[30px] top-[10px]">
+                OFERTA
               </div>
             </div>
           )}
@@ -766,9 +766,9 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
       <div className="hidden lg:flex lg:flex-col cursor-pointer group/card" onClick={() => setQuickViewProduct(product)}>
         <div className="relative w-full aspect-square overflow-hidden rounded-t-lg">
           {!!product.sale_price && (
-            <div className="absolute top-0 left-0 z-10 w-14 h-14 overflow-hidden">
-              <div className="absolute bg-red-500 text-white text-[8px] font-black py-0.5 text-center w-[76px] -rotate-45 -left-[12px] top-[15px] shadow tracking-wide">
-                -{Math.round((1 - product.sale_price / product.price) * 100)}%
+            <div className="absolute top-0 left-0 z-10 overflow-hidden w-[100px] h-[100px]">
+              <div className="absolute bg-red-500 text-white text-[9px] font-black py-1 text-center shadow tracking-wider w-[160px] -rotate-45 -left-[30px] top-[10px]">
+                OFERTA
               </div>
             </div>
           )}
