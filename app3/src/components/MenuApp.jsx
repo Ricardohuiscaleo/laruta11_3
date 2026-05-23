@@ -630,10 +630,10 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
           onTouchStart={handleDoubleTap}
         >
           {!!product.sale_price && (
-            <div className="absolute top-0 left-0 z-10 overflow-hidden w-[100px] h-[100px]">
-              <div className="absolute bg-red-500 text-white text-[9px] font-black py-1 text-center shadow tracking-wider w-[160px] -rotate-45 -left-[30px] top-[10px]">
+            <div className="absolute top-0 left-0 z-10 w-0 h-0" style={{ borderTop: '52px solid #ef4444', borderRight: '52px solid transparent' }}>
+              <span className="absolute text-white text-[8px] font-black -top-[44px] left-0 w-[44px] text-center tracking-wider leading-tight">
                 OFERTA
-              </div>
+              </span>
             </div>
           )}
           {product.image ? (
@@ -766,10 +766,10 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
       <div className="hidden lg:flex lg:flex-col cursor-pointer group/card" onClick={() => setQuickViewProduct(product)}>
         <div className="relative w-full aspect-square overflow-hidden rounded-t-lg">
           {!!product.sale_price && (
-            <div className="absolute top-0 left-0 z-10 overflow-hidden w-[100px] h-[100px]">
-              <div className="absolute bg-red-500 text-white text-[9px] font-black py-1 text-center shadow tracking-wider w-[160px] -rotate-45 -left-[30px] top-[10px]">
+            <div className="absolute top-0 left-0 z-10 w-0 h-0" style={{ borderTop: '52px solid #ef4444', borderRight: '52px solid transparent' }}>
+              <span className="absolute text-white text-[8px] font-black -top-[44px] left-0 w-[44px] text-center tracking-wider leading-tight">
                 OFERTA
-              </div>
+              </span>
             </div>
           )}
           {quantity > 0 && (
