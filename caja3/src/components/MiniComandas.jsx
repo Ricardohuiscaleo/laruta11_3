@@ -828,12 +828,12 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                     </div>
                     {isChecked && <CheckCircle size={16} className="text-green-500 flex-shrink-0" />}
                   </label>
-                  {isCombo && !isChecked && (
+                  {!isChecked && (
                     <div className="ml-16 text-[9px] space-y-0.5 pb-1">
-                      {comboData.fixed_items && comboData.fixed_items.map((fixed, idx) => (
+                      {isCombo && comboData.fixed_items && comboData.fixed_items.map((fixed, idx) => (
                         <div key={idx} className="text-blue-700">• {item.quantity * (fixed.quantity || 1)}x {fixed.product_name || fixed.name}</div>
                       ))}
-                      {comboData.selections && Object.entries(comboData.selections).map(([group, sel]) => {
+                      {isCombo && comboData.selections && Object.entries(comboData.selections).map(([group, sel]) => {
                         const arr = Array.isArray(sel) ? sel : [sel];
                         return arr.map((s, sidx) => {
                           if (!s?.name) return null;
@@ -848,7 +848,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                           );
                         });
                       })}
-                      {comboData.customizations && comboData.customizations.length > 0 && comboData.customizations.map((c, idx) => (
+                      {comboData && comboData.customizations && comboData.customizations.length > 0 && comboData.customizations.map((c, idx) => (
                         <div key={idx} className="text-orange-700 font-bold">+ {c.quantity || item.quantity}x {c.name}</div>
                       ))}
                     </div>

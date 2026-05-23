@@ -229,6 +229,11 @@ Route::prefix('v1')->group(function () {
         Route::post('bebidas', [\App\Http\Controllers\Admin\BeverageController::class, 'store']);
         Route::get('bebidas/subcategorias', [\App\Http\Controllers\Admin\BeverageController::class, 'subcategories']);
 
+        // Extras (personalizar product management)
+        Route::get('extras', [\App\Http\Controllers\Admin\ExtrasController::class, 'index']);
+        Route::post('extras', [\App\Http\Controllers\Admin\ExtrasController::class, 'store']);
+        Route::put('extras/{id}', [\App\Http\Controllers\Admin\ExtrasController::class, 'update']);
+
         // Recetas (recipe management)
         // Static routes MUST come before {productId} to avoid route conflicts
         Route::post('recetas/crear-producto', [\App\Http\Controllers\RecipeController::class, 'createProduct']);
