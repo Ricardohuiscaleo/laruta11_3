@@ -45,160 +45,8 @@ import MenuApp from '../components/MenuApp.jsx';
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-
-		<!-- Video preload - served from CDN, cached by Cloudflare edge -->
-		<link rel="preload" as="video" href="/api/loading.mp4" type="video/mp4" />
-
-		<style>
-			#splash-screen {
-				position: fixed; inset: 0; z-index: 9999;
-				background: #000;
-				transition: opacity 0.8s ease-out;
-			}
-			#splash-screen video {
-				width: 100%; height: 100%; object-fit: cover;
-			}
-			#splash-blur {
-				position: fixed; inset: 0; z-index: 1;
-				background: rgba(0,0,0,0.12);
-				backdrop-filter: blur(20px);
-				-webkit-backdrop-filter: blur(20px);
-				opacity: 0;
-				transition: opacity 0.6s ease-out;
-				pointer-events: none;
-			}
-			#splash-screen .overlay {
-				position: fixed; inset: 0; z-index: 2;
-				display: flex; flex-direction: column;
-				align-items: center; justify-content: center;
-				background: rgba(0,0,0,0.4);
-				backdrop-filter: blur(16px);
-				-webkit-backdrop-filter: blur(16px);
-				transition: opacity 0.5s ease-out;
-			}
-			#splash-screen .overlay.hidden {
-				opacity: 0; pointer-events: none;
-			}
-			#splash-screen .enter-btn {
-				padding: 14px 48px;
-				border-radius: 999px;
-				background: rgba(255,255,255,0.15);
-				border: 1px solid rgba(255,255,255,0.3);
-				color: #fff;
-				font-size: 18px;
-				font-weight: 600;
-				font-family: -apple-system, sans-serif;
-				cursor: pointer;
-				transition: background 0.2s, transform 0.15s;
-				backdrop-filter: blur(4px);
-				-webkit-backdrop-filter: blur(4px);
-				letter-spacing: 1px;
-			}
-			#splash-screen .enter-btn:hover {
-				background: rgba(255,255,255,0.25);
-			}
-			#splash-screen .enter-btn:active {
-				transform: scale(0.97);
-			}
-			#splash-screen .enter-btn:disabled {
-				opacity: 0.4;
-				cursor: default;
-			}
-			.splash-welcome {
-				color: #fff;
-				font-size: 26px;
-				font-weight: 700;
-				text-align: center;
-				margin-bottom: 28px;
-				font-family: -apple-system, sans-serif;
-				text-shadow: 0 2px 10px rgba(0,0,0,0.4);
-				padding: 0 28px;
-				line-height: 1.4;
-			}
-		</style>
 	</head>
 	<body>
-		<div id="splash-screen">
-			<video id="splash-video" muted playsinline
-				preload="auto"
-				style="width:100%;height:100%;object-fit:cover;"
-			>
-				<source src="/api/loading.mp4" type="video/mp4" />
-			</video>
-			<div id="splash-blur"></div>
-			<div id="splash-overlay" class="overlay">
-				<div id="splash-welcome" class="splash-welcome"></div>
-				<button class="enter-btn" id="enter-btn" disabled>Cargando…</button>
-			</div>
-		</div>
-		<script>
-			const video = document.getElementById('splash-video');
-			const overlay = document.getElementById('splash-overlay');
-			const enterBtn = document.getElementById('enter-btn');
-			const blurEl = document.getElementById('splash-blur');
-			const welcomeEl = document.getElementById('splash-welcome');
-
-			// Set welcome message from localStorage ruta11_user
-			let userName = null;
-			try {
-				const raw = localStorage.getItem('ruta11_user');
-				if (raw) {
-					const data = JSON.parse(raw);
-					if (data && data.nombre) userName = data.nombre;
-				}
-			} catch (e) {}
-			welcomeEl.textContent = userName
-				? 'Bienvenido a La Ruta 11 ' + userName + ' \u{1F60A}'
-				: 'Bienvenido a La Ruta 11 \u{1F60A}';
-
-			const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-
-			if (isStandalone) {
-				enterBtn.disabled = false;
-				enterBtn.textContent = 'Entrar';
-			} else {
-				video.addEventListener('canplay', function ready() {
-					enterBtn.disabled = false;
-					enterBtn.textContent = 'Entrar';
-				}, { once: true });
-
-				video.addEventListener('error', function onError() {
-					enterBtn.disabled = false;
-					enterBtn.textContent = 'Entrar';
-				}, { once: true });
-
-				setTimeout(function fallback() {
-					if (enterBtn.disabled) {
-						enterBtn.disabled = false;
-						enterBtn.textContent = 'Entrar';
-					}
-				}, 3000);
-			}
-
-			enterBtn.addEventListener('click', function onClick() {
-				overlay.classList.add('hidden');
-				video.muted = false;
-				video.play();
-				enterBtn.removeEventListener('click', onClick);
-			});
-
-			video.addEventListener('timeupdate', function onTimeupdate() {
-				if (video.duration && video.currentTime >= video.duration - 1) {
-					blurEl.style.opacity = '1';
-					video.removeEventListener('timeupdate', onTimeupdate);
-				}
-			});
-
-			video.addEventListener('ended', function onEnd() {
-				const splash = document.getElementById('splash-screen');
-				if (!splash) return;
-				splash.style.transition = 'opacity 0.8s ease-out';
-				splash.style.opacity = '0';
-				setTimeout(() => {
-					splash.style.display = 'none';
-				}, 800);
-			}, { once: true });
-		</script>
 		<MenuApp client:only="react" />
 		<script>
 			// Cookie utilities
@@ -224,7 +72,7 @@ import MenuApp from '../components/MenuApp.jsx';
 					let userId = CookieManager.get('user_id');
 					if (!userId) {
 						userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-						CookieManager.set('user_id', userId, 365); // 1 año
+						CookieManager.set('user_id', userId, 365);
 					}
 					return userId;
 				},
@@ -276,15 +124,12 @@ import MenuApp from '../components/MenuApp.jsx';
 						platform: navigator.platform
 					};
 					
-					// NO solicitar geolocalización automáticamente
-					// Solo enviar datos de visita sin ubicación
 					this.sendData('/api/app/track_visit.php', visitData);
 				},
 				
 				setupEventListeners() {
-					// Track clicks on all elements
 					document.addEventListener('click', (e) => {
-						const element = e.target as HTMLElement;
+						const element = e.target;
 						if (!element) return;
 						
 						const productId = element.closest('[data-product-id]')?.getAttribute('data-product-id');
@@ -300,7 +145,6 @@ import MenuApp from '../components/MenuApp.jsx';
 						});
 					});
 					
-					// Track scroll depth
 					window.addEventListener('scroll', () => {
 						const scrollPercent = Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100);
 						if (scrollPercent > this.scrollDepth) {
@@ -308,7 +152,6 @@ import MenuApp from '../components/MenuApp.jsx';
 						}
 					});
 					
-					// Track page exit
 					window.addEventListener('beforeunload', () => {
 						const timeSpent = Math.round((Date.now() - this.pageStartTime) / 1000);
 						navigator.sendBeacon('/api/app/track_journey.php', JSON.stringify({
@@ -354,17 +197,15 @@ import MenuApp from '../components/MenuApp.jsx';
 				}
 			};
 			
-			// Initialize analytics
 			if (document.readyState === 'loading') {
 				document.addEventListener('DOMContentLoaded', () => Analytics.init());
 			} else {
 				Analytics.init();
 			}
 			
-			// Make utilities globally available
-			(window as any).Analytics = Analytics;
-			(window as any).UserSession = UserSession;
-			(window as any).CookieManager = CookieManager;
+			window.Analytics = Analytics;
+			window.UserSession = UserSession;
+			window.CookieManager = CookieManager;
 		</script>
 	</body>
 </html>
@@ -381,7 +222,6 @@ import MenuApp from '../components/MenuApp.jsx';
 	* {
 		box-sizing: border-box;
 	}
-	/* Eliminar sombras solo de modales y overlays */
 	.fixed.inset-0 {
 		box-shadow: none !important;
 	}
