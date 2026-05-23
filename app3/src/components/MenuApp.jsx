@@ -629,9 +629,11 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
           onClick={() => setQuickViewProduct(product)}
           onTouchStart={handleDoubleTap}
         >
-          {!!product.is_featured && !!product.sale_price && (
-            <div className="absolute top-1.5 left-1.5 z-10 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-md">
-              🔥 OFERTA
+          {!!product.sale_price && (
+            <div className="absolute top-0 left-0 z-10 w-14 h-14 overflow-hidden">
+              <div className="absolute bg-red-500 text-white text-[8px] font-black py-0.5 text-center w-[76px] -rotate-45 -left-[12px] top-[15px] shadow tracking-wide">
+                -{Math.round((1 - product.sale_price / product.price) * 100)}%
+              </div>
             </div>
           )}
           {product.image ? (
@@ -715,7 +717,7 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
 
               {/* Precio a la derecha - Estilo minimalista */}
               <span className="text-right">
-                {!!product.is_featured && !!product.sale_price ? (
+                {!!product.sale_price ? (
                   <>
                     <span className="text-gray-400 line-through text-[10px] block">${product.price.toLocaleString('es-CL')}</span>
                     <span className="text-red-500 font-black text-sm">${product.sale_price.toLocaleString('es-CL')}</span>
@@ -763,8 +765,12 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
       {/* === DESKTOP LAYOUT (vertical compacto) === */}
       <div className="hidden lg:flex lg:flex-col cursor-pointer group/card" onClick={() => setQuickViewProduct(product)}>
         <div className="relative w-full aspect-square overflow-hidden rounded-t-lg">
-          {!!product.is_featured && !!product.sale_price && (
-            <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">🔥</div>
+          {!!product.sale_price && (
+            <div className="absolute top-0 left-0 z-10 w-14 h-14 overflow-hidden">
+              <div className="absolute bg-red-500 text-white text-[8px] font-black py-0.5 text-center w-[76px] -rotate-45 -left-[12px] top-[15px] shadow tracking-wide">
+                -{Math.round((1 - product.sale_price / product.price) * 100)}%
+              </div>
+            </div>
           )}
           {quantity > 0 && (
             <div className="absolute top-2 right-2 z-10 bg-orange-500 text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center shadow-md">{quantity}</div>
@@ -778,7 +784,7 @@ const MenuItem = ({ product, onSelect, onAddToCart, onRemoveFromCart, quantity, 
         <div className="p-2 text-center">
           <h3 className="text-[11px] font-bold text-gray-800 uppercase leading-tight line-clamp-2 mb-0.5 tracking-tight">{product.name}</h3>
           <div className="text-base font-black text-green-600">
-            {!!product.is_featured && !!product.sale_price
+            {!!product.sale_price
               ? <><span className="text-gray-400 line-through text-[10px] mr-1">${product.price.toLocaleString('es-CL')}</span>${product.sale_price.toLocaleString('es-CL')}</>
               : `$${product.price.toLocaleString('es-CL')}`
             }
