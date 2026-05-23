@@ -382,7 +382,6 @@ export default function VentasDetalle({ startDate: propStart, endDate: propEnd, 
                         {order.payment_method === 'card' && (
                           <span className="text-red-500">(+${Math.round(order.card_surcharge || 0).toLocaleString('es-CL')} 💳)</span>
                         )}
-                        <span className="text-gray-900">= ${Math.round(parseFloat(order.delivery_fee) + (order.payment_method === 'card' ? parseFloat(order.card_surcharge || 0) : 0)).toLocaleString('es-CL')}</span>
                         {order.delivery_distance_km && (
                           <span className="text-yellow-600">· {order.delivery_distance_km} km</span>
                         )}
