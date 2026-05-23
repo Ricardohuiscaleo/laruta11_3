@@ -151,22 +151,29 @@ import MenuApp from '../components/MenuApp.jsx';
 				? 'Bienvenido a La Ruta 11 ' + userName + ' \u{1F60A}'
 				: 'Bienvenido a La Ruta 11 \u{1F60A}';
 
-			video.addEventListener('canplaythrough', function ready() {
+			const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
+			if (isStandalone) {
 				enterBtn.disabled = false;
 				enterBtn.textContent = 'Entrar';
-			}, { once: true });
-
-			video.addEventListener('error', function onError() {
-				enterBtn.disabled = false;
-				enterBtn.textContent = 'Entrar';
-			}, { once: true });
-
-			setTimeout(function fallback() {
-				if (enterBtn.disabled) {
+			} else {
+				video.addEventListener('canplay', function ready() {
 					enterBtn.disabled = false;
 					enterBtn.textContent = 'Entrar';
-				}
-			}, 5000);
+				}, { once: true });
+
+				video.addEventListener('error', function onError() {
+					enterBtn.disabled = false;
+					enterBtn.textContent = 'Entrar';
+				}, { once: true });
+
+				setTimeout(function fallback() {
+					if (enterBtn.disabled) {
+						enterBtn.disabled = false;
+						enterBtn.textContent = 'Entrar';
+					}
+				}, 3000);
+			}
 
 			enterBtn.addEventListener('click', function onClick() {
 				overlay.classList.add('hidden');
