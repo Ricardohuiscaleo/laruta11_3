@@ -43,6 +43,7 @@ export default function ExtrasTab() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [dragOverRow, setDragOverRow] = useState<number | null>(null);
 
   const fetchExtras = useCallback(async () => {
     setLoading(true);
@@ -256,7 +257,15 @@ export default function ExtrasTab() {
             </thead>
             <tbody className="divide-y">
               {filtered.map(item => (
-                <tr key={item.id} className={cn('hover:bg-gray-50', !item.is_active && 'text-gray-400')}>
+                <tr key={item.id}
+                  onDragOver={e => { e.preventDefault(); setDragOverRow(item.id); }}
+                  onDragLeave={() => setDragOverRow(null)}
+                  onDrop={e => { e.preventDefault(); setDragOverRow(null); const f = e.dataTransfer.files[0]; if (f) handleQuickImageUpload(item.id, f); }}
+                  className={cn(
+                    'transition-colors',
+                    !item.is_active && 'opacity-50',
+                    dragOverRow === item.id ? 'ring-2 ring-red-400 bg-red-50' : 'hover:bg-gray-50'
+                  )}>
                   <td className="px-3 py-2">
                     <input type="checkbox" checked={selectedIds.has(item.id)} onChange={() => toggleSelect(item.id)}
                       className="accent-red-500" />
