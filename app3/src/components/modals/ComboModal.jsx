@@ -51,38 +51,35 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
 
   const handleSelectionChange = (groupName, productId, maxSelections, action = 'toggle') => {
     setSelections(prev => {
-      const currentSelections = prev[groupName] || [];
-      
+      const current = prev[groupName];
+
       if (maxSelections === 1) {
-        const isSelected = currentSelections === productId;
-        return {
-          ...prev,
-          [groupName]: isSelected ? null : productId
-        };
-      } else {
-        const currentArray = Array.isArray(currentSelections) ? currentSelections : [];
-        const totalCount = currentArray.length;
-        
-        if (action === 'add') {
-          if (totalCount < maxSelections) {
-            return {
-              ...prev,
-              [groupName]: [...currentArray, productId]
-            };
-          }
-        } else if (action === 'remove') {
-          const index = currentArray.indexOf(productId);
-          if (index > -1) {
-            const newArray = [...currentArray];
-            newArray.splice(index, 1);
-            return {
-              ...prev,
-              [groupName]: newArray
-            };
-          }
+        if (action === 'toggle') {
+          return { ...prev, [groupName]: current === productId ? null : productId };
+        }
+        return prev;
+      }
+
+      // Multi-select: store counts per productId
+      const counts = (typeof current === 'object' && !Array.isArray(current) && current !== null)
+        ? { ...current }
+        : {};
+
+      if (!counts[productId]) counts[productId] = 0;
+      const total = Object.values(counts).reduce((s, c) => s + c, 0);
+
+      if (action === 'add') {
+        if (total < maxSelections) {
+          counts[productId] = (counts[productId] || 0) + 1;
+        }
+      } else if (action === 'remove') {
+        if (counts[productId] > 0) {
+          counts[productId] -= 1;
+          if (counts[productId] <= 0) delete counts[productId];
         }
       }
-      return prev;
+
+      return { ...prev, [groupName]: counts };
     });
   };
 
@@ -94,7 +91,12 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
       const group = comboData.selection_groups[groupName];
       if (!group) return;
       const options = group.options || [];
-      if (Array.isArray(selection)) {
+      if (typeof selection === 'object' && !Array.isArray(selection)) {
+        Object.entries(selection).forEach(([pid, qty]) => {
+          const opt = options.find(o => o.product_id === Number(pid));
+          if (opt) total += (opt.price_adjustment || 0) * (qty || 0);
+        });
+      } else if (Array.isArray(selection)) {
         selection.forEach(productId => {
           const opt = options.find(o => o.product_id === productId);
           if (opt) total += (opt.price_adjustment || 0);
@@ -132,23 +134,30 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
     Object.entries(selections).forEach(([groupName, selection]) => {
       const group = comboData.selection_groups?.[groupName];
       const options = group?.options || [];
-      if (Array.isArray(selection)) {
+      if (typeof selection === 'object' && !Array.isArray(selection)) {
+        const items = [];
+        Object.entries(selection).forEach(([pid, qty]) => {
+          const option = options.find(o => o.product_id === Number(pid));
+          if (option && qty > 0) {
+            for (let i = 0; i < qty; i++) {
+              items.push({ id: option.product_id, name: option.product_name, price: option.price_adjustment || 0 });
+            }
+          }
+        });
+        detailedSelections[groupName] = items;
+      } else if (Array.isArray(selection)) {
         detailedSelections[groupName] = selection.map(productId => {
           const option = options.find(o => o.product_id === productId);
-          return option ? {
-            id: option.product_id,
-            name: option.product_name,
-            price: option.price_adjustment || 0
-          } : null;
+          return option ? { id: option.product_id, name: option.product_name, price: option.price_adjustment || 0 } : null;
         }).filter(Boolean);
       } else if (selection) {
         const option = options.find(o => o.product_id === selection);
         if (option) {
-          detailedSelections[groupName] = {
+          detailedSelections[groupName] = [{
             id: option.product_id,
             name: option.product_name,
             price: option.price_adjustment || 0
-          };
+          }];
         }
       }
     });
@@ -252,16 +261,22 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                     ) : (
                       <div className="space-y-1">
                         {options.map((option, optionIndex) => {
-                          const currentCount = maxSelections === 1 
-                            ? (selections[groupName] === option.product_id ? 1 : 0)
-                            : (Array.isArray(selections[groupName]) ? selections[groupName].filter(id => id === option.product_id).length : 0);
-                          const totalSelected = Array.isArray(selections[groupName]) ? selections[groupName].length : (selections[groupName] ? 1 : 0);
+                          const currentCount = (() => {
+                            const sel = selections[groupName];
+                            if (!sel) return 0;
+                            if (maxSelections === 1) return sel === option.product_id ? 1 : 0;
+                            if (typeof sel === 'object' && !Array.isArray(sel)) {
+                              return sel[option.product_id] || 0;
+                            }
+                            if (Array.isArray(sel)) return sel.filter(id => id === option.product_id).length;
+                            return 0;
+                          })();
+                          const totalSelected = getTotalSelected(groupName);
                           const isSelected = currentCount > 0;
-                          
+
                           return (
                             <div key={optionIndex}
-                              onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections)}
-                              className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+                              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
                                 isSelected ? 'bg-orange-50 ring-1 ring-orange-300' : 'hover:bg-gray-50'
                               }`}>
                               {option.image_url ? (
@@ -269,15 +284,28 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                               ) : (
                                 <div className="w-7 h-7 rounded bg-gray-100 flex-shrink-0" />
                               )}
-                              <span className="flex-1 text-sm text-gray-700 truncate">{option.product_name}</span>
+                              <span className="flex-1 text-[13px] text-gray-700 truncate">{option.product_name}</span>
                               {option.price_adjustment > 0 ? (
                                 <span className="text-[11px] font-medium text-orange-600">+${parseInt(option.price_adjustment).toLocaleString('es-CL')}</span>
                               ) : (
                                 <span className="text-[11px] text-green-500">Incluido</span>
                               )}
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-orange-500 bg-orange-500' : 'border-gray-300'}`}>
-                                {isSelected && <Check size={12} className="text-white" />}
-                              </div>
+                              {maxSelections > 1 ? (
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <button onClick={(e) => { e.stopPropagation(); handleSelectionChange(groupName, option.product_id, maxSelections, 'remove'); }}
+                                    disabled={currentCount === 0}
+                                    className="w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-20 flex items-center justify-center text-gray-700 font-bold text-xs">−</button>
+                                  <span className="w-4 text-center font-bold text-xs text-gray-700">{currentCount}</span>
+                                  <button onClick={(e) => { e.stopPropagation(); handleSelectionChange(groupName, option.product_id, maxSelections, 'add'); }}
+                                    disabled={totalSelected >= maxSelections}
+                                    className="w-5 h-5 rounded-full bg-orange-500 hover:bg-orange-600 disabled:opacity-20 flex items-center justify-center text-white font-bold text-xs">+</button>
+                                </div>
+                              ) : (
+                                <div onClick={() => handleSelectionChange(groupName, option.product_id, 1)}
+                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 cursor-pointer ${isSelected ? 'border-orange-500 bg-orange-500' : 'border-gray-300'}`}>
+                                  {isSelected && <Check size={12} className="text-white" />}
+                                </div>
+                              )}
                             </div>
                           );
                         })}
