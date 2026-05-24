@@ -52,7 +52,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
       const response = await fetch(`/api/tuu/get_comandas_v2.php?t=${Date.now()}`);
       const data = await response.json();
       if (data.success) {
-        const orders = data.orders || [];
+        const orders = (data.orders || []).filter(o => !o.order_number?.startsWith('TRF-'));
         setOrders(orders);
         
         // Restore photoSlots from dispatch_photo_url for delivery orders
@@ -711,7 +711,8 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const activeOrders = orders.filter(o =>
     o.order_status !== 'delivered' &&
     o.order_status !== 'cancelled' &&
-    !o.order_number.startsWith('RL6-') // Ocultar pagos de crédito RL6 (no son pedidos de comida)
+    !o.order_number.startsWith('RL6-') && // Ocultar pagos de crédito RL6 (no son pedidos de comida)
+    !o.order_number.startsWith('TRF-')    // Ocultar pagos de crédito por transferencia
   );
   const activeChecklists = checklists.filter(c => c.status !== 'completed' && c.status !== 'missed');
   const immediateOrders = activeOrders.filter(o => !isScheduledOrder(o));
