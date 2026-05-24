@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
-import { Loader2, CheckCircle, XCircle, DollarSign, Mail, AlertTriangle, Eye, X, ThumbsUp, ThumbsDown, FileText } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, DollarSign, Mail, AlertTriangle, Eye, X, ThumbsUp, ThumbsDown, FileText, BarChart3 } from 'lucide-react';
 import type { SectionHeaderConfig } from '@/components/admin/AdminShell';
 import type { RL6CreditUser, RL6Summary, EmailEstado, PaymentReceipt, PendingCredit } from '@/types/admin';
 import EmailPreviewModal from '@/components/admin/EmailPreviewModal';
@@ -718,8 +718,8 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
 
     return (
       <div className="space-y-3">
-        {morosos.length > 0 && (
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
+          {morosos.length > 0 && (
             <button
               onClick={rl6BulkEmail}
               disabled={bulkSending}
@@ -728,8 +728,16 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
               {bulkSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <AlertTriangle className="h-4 w-4" />}
               {bulkSending ? 'Enviando...' : `Cobrar a Morosos (${morosos.length})`}
             </button>
-          </div>
-        )}
+          )}
+          <a
+            href="/rl6/resumen"
+            target="_blank"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <BarChart3 className="h-4 w-4" />
+            Resumen público
+          </a>
+        </div>
 
         {bulkResult && (
           <div className={cn(
