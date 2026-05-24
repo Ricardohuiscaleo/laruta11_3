@@ -226,22 +226,21 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                 {/* Right: Incluye */}
                 <div>
                   <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Incluye:</h4>
-                  {comboData.fixed_items && comboData.fixed_items.length > 0 ? (
-                    <ul className="space-y-1.5">
-                      {comboData.fixed_items.map((item, index) => (
-                        <li key={index} className="flex items-center gap-1.5 text-[12px] leading-tight">
-                          <span className="w-1 h-1 rounded-full bg-orange-400 flex-shrink-0 mt-0.5" />
-                          <span className="text-gray-700">{item.product_name}</span>
-                          {item.quantity > 1 && <span className="text-gray-400 text-[10px]">x{item.quantity}</span>}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-xs text-gray-400">—</p>
-                  )}
-                  {combo.description && (
-                    <p className="text-[11px] text-gray-400 mt-2 leading-snug">{combo.description}</p>
-                  )}
+                  <ul className="space-y-1.5">
+                    {comboData.fixed_items && comboData.fixed_items.map((item, index) => (
+                      <li key={index} className="flex items-center gap-1.5 text-[12px] leading-tight">
+                        <span className="w-1 h-1 rounded-full bg-orange-400 flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-700">{item.product_name}</span>
+                        {item.quantity > 1 && <span className="text-gray-400 text-[10px]">x{item.quantity}</span>}
+                      </li>
+                    ))}
+                    {comboData.selection_groups && Object.entries(comboData.selection_groups).map(([groupName, group]) => (
+                      <li key={groupName} className="flex items-center gap-1.5 text-[12px] leading-tight">
+                        <span className="w-1 h-1 rounded-full bg-gray-300 flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-500"> {groupName} a elección ({group.max_selections || 1})</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
 
