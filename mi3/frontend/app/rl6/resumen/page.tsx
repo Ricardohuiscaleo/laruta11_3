@@ -248,6 +248,9 @@ export default function RL6ResumenPage() {
                     <p className="text-xs text-gray-500 mt-0.5">
                       {d.grado_militar} · {d.unidad_trabajo}
                     </p>
+                    {d.tipo === 'deudor' && d.pagado_este_mes > 0 && (
+                      <p className="text-[10px] text-gray-400 mt-0.5">Pagó {fmt(d.pagado_este_mes)} este periodo, pero adeuda {fmt(d.credito_usado)}</p>
+                    )}
                   </div>
                   <div className="text-right flex-shrink-0 ml-2">
                     <p className={`text-sm font-bold ${d.tipo === 'pagado' ? 'text-green-600' : 'text-orange-700'}`}>{fmt(d.credito_usado)}</p>
