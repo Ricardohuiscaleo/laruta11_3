@@ -76,7 +76,7 @@ try {
     if (!$product_id) {
         // List all active combos (category_id=8)
         $stmt = $pdo->query("
-            SELECT id, name, price, image_url, description
+            SELECT id, name, price, sale_price, is_featured, image_url, description
             FROM products
             WHERE category_id = 8 AND is_active = 1
             ORDER BY name
@@ -94,7 +94,7 @@ try {
 
     // Single combo by product_id
     $stmt = $pdo->prepare("
-        SELECT id, name, price, image_url, description
+        SELECT id, name, price, sale_price, is_featured, image_url, description
         FROM products
         WHERE id = ? AND category_id = 8 AND is_active = 1
         LIMIT 1
@@ -174,6 +174,8 @@ function buildComboResponse(PDO $pdo, array $combo): array {
         'id'               => $productId,
         'name'             => $combo['name'],
         'price'            => (int)$combo['price'],
+        'sale_price'       => isset($combo['sale_price']) ? (float)$combo['sale_price'] : null,
+        'is_featured'      => (int)($combo['is_featured'] ?? 0),
         'image_url'        => $combo['image_url'] ?? null,
         'description'      => $combo['description'] ?? null,
         'fixed_items'      => $fixed_items,
