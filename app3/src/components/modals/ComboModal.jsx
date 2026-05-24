@@ -203,7 +203,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                     <img
                       src={combo.image_url || comboData.image_url}
                       alt={combo.name}
-                      className="w-full aspect-square object-cover rounded-lg mb-2"
+                      className="w-[70%] mx-auto aspect-[4/5] object-cover rounded-lg mb-2"
                       onError={(e) => { e.target.style.display = 'none'; }}
                     />
                   )}
