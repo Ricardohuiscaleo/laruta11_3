@@ -37,13 +37,6 @@ interface WorkerPhoto {
   rol: string;
 }
 
-interface RemovedWorker {
-  personalId: number;
-  nombre: string;
-  tipo: string;
-  fecha: string;
-}
-
 /* ── Helpers ── */
 
 const DAY_NAMES = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
@@ -152,15 +145,22 @@ function ProfileModal({
   allTurnos,
   workerRolMap,
   mes,
+  workers,
   onClose,
+  onReplacementChange,
 }: {
   turno: AdminTurno;
   workerPhotos: Record<number, WorkerPhoto>;
   allTurnos: AdminTurno[];
   workerRolMap: Record<number, string>;
   mes: string;
+  workers: WorkerOption[];
   onClose: () => void;
+  onReplacementChange: () => void;
 }) {
+  const [showPicker, setShowPicker] = useState(false);
+  const [removing, setRemoving] = useState(false);
+
   const photo = workerPhotos[turno.personal_id];
   const name = turno.personal_nombre || photo?.nombre || `#${turno.personal_id}`;
   const rol = photo?.rol || workerRolMap[turno.personal_id] || turno.tipo;
@@ -175,11 +175,48 @@ function ProfileModal({
     }
   })();
 
+  const isSeg = isSeguridad(turno.tipo);
+
   // Month stats for this worker
   const monthTurnos = allTurnos.filter((t) => t.personal_id === turno.personal_id);
   const totalShifts = monthTurnos.length;
   const replacementsDone = allTurnos.filter((t) => t.reemplazado_por === turno.personal_id).length;
   const replacementsReceived = monthTurnos.filter((t) => !!t.reemplazado_por).length;
+
+  const handleRemoveReplacement = async () => {
+    setRemoving(true);
+    try {
+      await apiFetch<ApiResponse<unknown>>('/admin/shifts', {
+        method: 'POST',
+        body: JSON.stringify({
+          personal_id: turno.personal_id,
+          fecha: turno.fecha,
+          tipo: isSeg ? 'seguridad' : 'normal',
+          reemplazado_por: null,
+          monto_reemplazo: null,
+          pago_por: null,
+        }),
+      });
+      onReplacementChange();
+      onClose();
+    } catch {
+      setRemoving(false);
+    }
+  };
+
+  if (showPicker) {
+    return (
+      <ReplacePicker
+        turno={turno}
+        workers={workers}
+        allTurnos={allTurnos}
+        workerPhotos={workerPhotos}
+        onBack={() => setShowPicker(false)}
+        onReplacementChange={onReplacementChange}
+        onClose={onClose}
+      />
+    );
+  }
 
   return (
     <div
@@ -213,12 +250,10 @@ function ProfileModal({
             <span className="text-xs text-gray-500">Tipo turno</span>
             <span className="text-xs font-semibold text-gray-700">{tipoLabel}</span>
           </div>
-          {turno.reemplazado_por && turno.reemplazante_nombre && (
-            <div className="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2">
-              <span className="text-xs text-amber-600">Reemplaza a</span>
-              <span className="text-xs font-semibold text-amber-700">{turno.personal_nombre}</span>
-            </div>
-          )}
+          <div className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2">
+            <span className="text-xs text-gray-500">Fecha</span>
+            <span className="text-xs font-semibold text-gray-700">{turno.fecha}</span>
+          </div>
           {turno.reemplazado_por && turno.reemplazante_nombre && (
             <div className="flex items-center justify-between rounded-lg bg-green-50 px-3 py-2">
               <span className="text-xs text-green-600">Reemplazante</span>
@@ -254,12 +289,193 @@ function ProfileModal({
           </div>
         </div>
 
+        {/* Replacement action */}
+        <div className="border-t border-gray-100 pt-3 mb-4">
+          {turno.reemplazado_por ? (
+            <div className="space-y-2">
+              <p className="text-xs text-center text-amber-700 font-medium">
+                Este turno tiene reemplazo
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowPicker(true)}
+                  className="flex-1 rounded-lg bg-amber-100 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-200 transition-colors"
+                >
+                  Cambiar Reemplazante
+                </button>
+                <button
+                  onClick={handleRemoveReplacement}
+                  disabled={removing}
+                  className="flex-1 rounded-lg bg-red-50 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50"
+                >
+                  {removing ? 'Eliminando…' : 'Quitar Reemplazo'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowPicker(true)}
+              className="w-full rounded-lg bg-amber-500 py-2.5 text-sm font-semibold text-white hover:bg-amber-600 transition-colors"
+            >
+              Asignar Reemplazo
+            </button>
+          )}
+        </div>
+
         <button
           onClick={onClose}
           className="w-full rounded-lg bg-gray-100 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-200 transition-colors"
         >
           Cerrar
         </button>
+      </div>
+    </div>
+  );
+}
+
+
+/* ── Replace Picker ── */
+
+function ReplacePicker({
+  turno,
+  workers,
+  allTurnos,
+  workerPhotos,
+  onBack,
+  onReplacementChange,
+  onClose,
+}: {
+  turno: AdminTurno;
+  workers: WorkerOption[];
+  allTurnos: AdminTurno[];
+  workerPhotos: Record<number, WorkerPhoto>;
+  onBack: () => void;
+  onReplacementChange: () => void;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState('');
+  const [submitting, setSubmitting] = useState<number | null>(null);
+
+  const isSeg = isSeguridad(turno.tipo);
+
+  const sameCategoryIds = useMemo(() => {
+    return new Set(
+      allTurnos
+        .filter((t) => {
+          if (t.personal_id === turno.personal_id) return false;
+          if (t.fecha !== turno.fecha) return false;
+          return isSeg ? isSeguridad(t.tipo) : !isSeguridad(t.tipo);
+        })
+        .map((t) => t.personal_id)
+    );
+  }, [allTurnos, turno.personal_id, turno.fecha, isSeg]);
+
+  const filtered = useMemo(() => {
+    return workers.filter((w) => {
+      if (w.activo === false) return false;
+      if (w.id === turno.personal_id) return false;
+      if (sameCategoryIds.has(w.id)) return false;
+      if (isSeg && !w.rol?.includes('seguridad')) return false;
+      if (!isSeg && !w.rol?.includes('cajero') && !w.rol?.includes('planchero')) return false;
+      if (search && !w.nombre.toLowerCase().includes(search.toLowerCase())) return false;
+      return true;
+    });
+  }, [workers, turno.personal_id, sameCategoryIds, isSeg, search]);
+
+  const handleSelect = async (replacementId: number) => {
+    setSubmitting(replacementId);
+    try {
+      const monto = isSeg ? 30000 : 20000;
+      const tipo = isSeg ? 'reemplazo_seguridad' : 'reemplazo';
+      await apiFetch<ApiResponse<unknown>>('/admin/shifts', {
+        method: 'POST',
+        body: JSON.stringify({
+          personal_id: turno.personal_id,
+          fecha: turno.fecha,
+          tipo,
+          reemplazado_por: replacementId,
+          monto_reemplazo: monto,
+          pago_por: 'empresa',
+        }),
+      });
+      onReplacementChange();
+      onClose();
+    } catch {
+      setSubmitting(null);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Seleccionar reemplazo"
+    >
+      <div
+        className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={onBack}
+            className="text-sm text-amber-600 hover:text-amber-700 font-semibold"
+          >
+            ← Volver
+          </button>
+          <h2 className="text-base font-bold text-gray-800">Reemplazo</h2>
+          <button onClick={onClose} aria-label="Cerrar">
+            <X className="h-5 w-5 text-gray-400" />
+          </button>
+        </div>
+
+        <p className="text-xs text-gray-500 mb-3 text-center">
+          ¿Quién reemplaza a <strong>{turno.personal_nombre?.split(' ')[0]}</strong> el <strong>{turno.fecha}</strong>?
+          <span className="ml-1 font-medium text-amber-600">({formatCLP(isSeg ? 30000 : 20000)})</span>
+        </p>
+
+        <input
+          type="text"
+          placeholder="Buscar trabajador…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-amber-300"
+          autoFocus
+        />
+
+        <div className="max-h-[300px] overflow-y-auto space-y-1">
+          {filtered.map((w) => {
+            const photo = workerPhotos[w.id];
+            const isLoading = submitting === w.id;
+            return (
+              <button
+                key={w.id}
+                onClick={() => handleSelect(w.id)}
+                disabled={submitting !== null}
+                className="w-full flex items-center gap-3 rounded-lg p-2.5 hover:bg-amber-50 transition-colors disabled:opacity-50"
+              >
+                <WorkerAvatar
+                  name={w.nombre}
+                  fotoUrl={photo?.foto_url}
+                  fotoRotation={photo?.foto_rotation}
+                  rol={w.rol}
+                  size="md"
+                />
+                <div className="flex-1 text-left">
+                  <span className="text-sm font-medium text-gray-800">{w.nombre}</span>
+                  <span className="ml-2 text-xs text-gray-400 capitalize">{w.rol}</span>
+                </div>
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin text-amber-500" />}
+              </button>
+            );
+          })}
+          {filtered.length === 0 && (
+            <p className="text-center text-sm text-gray-400 py-8">
+              {search ? 'Sin resultados' : 'No hay trabajadores disponibles este día'}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -398,6 +614,113 @@ function AssignModal({
 }
 
 
+/* ── Replace Row ── */
+
+function ReplaceRow({
+  turno,
+  workerPhotos,
+  onViewProfile,
+  onReplacementChange,
+}: {
+  turno: AdminTurno;
+  workerPhotos: Record<number, WorkerPhoto>;
+  onViewProfile: () => void;
+  onReplacementChange: () => void;
+}) {
+  const [deleting, setDeleting] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    const isSeg = isSeguridad(turno.tipo);
+    try {
+      await apiFetch<ApiResponse<unknown>>('/admin/shifts', {
+        method: 'POST',
+        body: JSON.stringify({
+          personal_id: turno.personal_id,
+          fecha: turno.fecha,
+          tipo: isSeg ? 'seguridad' : 'normal',
+          reemplazado_por: null,
+          monto_reemplazo: null,
+          pago_por: null,
+        }),
+      });
+      onReplacementChange();
+    } catch {
+      setDeleting(false);
+      setConfirm(false);
+    }
+  };
+
+  const reemplazantePhoto = workerPhotos[turno.reemplazado_por!];
+
+  return (
+    <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+      <td className="py-2.5 pr-3">
+        <button onClick={onViewProfile} className="text-xs text-gray-500 hover:text-amber-600 font-medium">
+          {turno.fecha}
+        </button>
+      </td>
+      <td className="py-2.5 pr-3">
+        <button onClick={onViewProfile} className="flex items-center gap-2 text-xs">
+          <span className="h-5 w-5 rounded-full bg-gray-200 flex items-center justify-center text-[8px] font-bold text-gray-500 overflow-hidden">
+            {workerPhotos[turno.personal_id]?.foto_url ? (
+              <img src={workerPhotos[turno.personal_id].foto_url!} alt="" className="h-full w-full object-cover"
+                style={{ transform: `rotate(${workerPhotos[turno.personal_id].foto_rotation || 0}deg)` }} />
+            ) : (
+              turno.personal_nombre?.[0]?.toUpperCase() || '?'
+            )}
+          </span>
+          <span className="text-gray-700 truncate max-w-[90px]">{turno.personal_nombre?.split(' ')[0]}</span>
+        </button>
+      </td>
+      <td className="py-2.5 pr-3">
+        <div className="flex items-center gap-2 text-xs">
+          <span className="h-5 w-5 rounded-full bg-amber-100 flex items-center justify-center text-[8px] font-bold text-amber-700 overflow-hidden">
+            {reemplazantePhoto?.foto_url ? (
+              <img src={reemplazantePhoto.foto_url} alt="" className="h-full w-full object-cover"
+                style={{ transform: `rotate(${reemplazantePhoto.foto_rotation || 0}deg)` }} />
+            ) : (
+              turno.reemplazante_nombre?.[0]?.toUpperCase() || '?'
+            )}
+          </span>
+          <span className="text-amber-700 font-medium truncate max-w-[90px]">{turno.reemplazante_nombre?.split(' ')[0]}</span>
+        </div>
+      </td>
+      <td className="py-2.5 pr-3 text-right text-xs font-medium text-gray-600">
+        {turno.monto_reemplazo != null ? formatCLP(turno.monto_reemplazo) : '—'}
+      </td>
+      <td className="py-2.5 text-right">
+        {confirm ? (
+          <div className="flex items-center justify-end gap-1.5">
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="text-[10px] font-semibold text-red-600 hover:text-red-800 disabled:opacity-50"
+            >
+              {deleting ? '…' : 'Sí'}
+            </button>
+            <button
+              onClick={() => setConfirm(false)}
+              className="text-[10px] text-gray-400 hover:text-gray-600"
+            >
+              No
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={(e) => { e.stopPropagation(); setConfirm(true); }}
+            className="text-[10px] font-semibold text-red-400 hover:text-red-600 transition-colors"
+          >
+            Eliminar
+          </button>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+
 /* ── Main Component ── */
 
 export default function TurnosSection() {
@@ -411,11 +734,7 @@ export default function TurnosSection() {
   const [showAssign, setShowAssign] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Replacement flow state
-  const [removedWorker, setRemovedWorker] = useState<RemovedWorker | null>(null);
   const [profileModal, setProfileModal] = useState<AdminTurno | null>(null);
-  const [replacingWith, setReplacingWith] = useState<number | null>(null);
-  const [replaceError, setReplaceError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
   const mes = getMonthStr(monthOffset);
@@ -455,12 +774,6 @@ export default function TurnosSection() {
       })
       .catch(() => {});
   }, []);
-
-  // Clear removed worker when date changes
-  useEffect(() => {
-    setRemovedWorker(null);
-    setReplaceError('');
-  }, [selectedDate]);
 
   // Auto-clear success toast
   useEffect(() => {
@@ -543,48 +856,6 @@ export default function TurnosSection() {
     [selectedTurnos]
   );
 
-  const isRemovedSeguridad = removedWorker
-    ? isSeguridad(removedWorker.tipo)
-    : false;
-
-  const isRemovedPlanchero = removedWorker
-    ? (workerRolMap[removedWorker.personalId] || '').includes('planchero')
-    : false;
-
-  // Available workers for replacement
-  const availableWorkers = useMemo(() => {
-    if (!removedWorker) return [];
-    const isSeg = isSeguridad(removedWorker.tipo);
-
-    // Only exclude workers who have a shift of the SAME category that day
-    // Seguridad replacement: only exclude those with seguridad shifts (not R11)
-    // R11 replacement: only exclude those with R11 shifts (not seguridad)
-    const sameContextIds = new Set(
-      selectedTurnos
-        .filter((t) => {
-          if (t.personal_id === removedWorker.personalId) return false;
-          return isSeg ? isSeguridad(t.tipo) : !isSeguridad(t.tipo);
-        })
-        .map((t) => t.personal_id)
-    );
-    const removedRol = workerRolMap[removedWorker.personalId] || '';
-
-    return workers.filter((w) => {
-      if (w.activo === false) return false;
-      if (sameContextIds.has(w.id)) return false;
-      if (w.id === removedWorker.personalId) return false;
-
-      if (isSeg) {
-        return w.rol?.includes('seguridad');
-      }
-
-      // Planchero manages internally
-      if (removedRol.includes('planchero')) return false;
-
-      return w.rol?.includes('cajero') || w.rol?.includes('planchero');
-    });
-  }, [removedWorker, selectedTurnos, workers, workerRolMap]);
-
   /* ── Handlers ── */
 
   const dayToDateStr = useCallback((day: number) => {
@@ -595,55 +866,6 @@ export default function TurnosSection() {
   const handleDayClick = useCallback((dateStr: string) => {
     setSelectedDate(dateStr);
   }, []);
-
-  const handleRemoveWorker = useCallback((turno: AdminTurno) => {
-    setReplaceError('');
-    setRemovedWorker({
-      personalId: turno.personal_id,
-      nombre: turno.personal_nombre,
-      tipo: turno.tipo,
-      fecha: turno.fecha,
-    });
-  }, []);
-
-  const handleCancelRemove = useCallback(() => {
-    setRemovedWorker(null);
-    setReplaceError('');
-  }, []);
-
-  const handleReplace = useCallback(async (replacementId: number) => {
-    if (!removedWorker) return;
-    setReplacingWith(replacementId);
-    setReplaceError('');
-
-    const isSeg = isSeguridad(removedWorker.tipo);
-    const monto = isSeg ? 30000 : 20000;
-    const tipo = isSeg ? 'reemplazo_seguridad' : 'reemplazo';
-
-    try {
-      await apiFetch<ApiResponse<unknown>>('/admin/shifts', {
-        method: 'POST',
-        body: JSON.stringify({
-          personal_id: removedWorker.personalId,
-          fecha: removedWorker.fecha,
-          tipo,
-          reemplazado_por: replacementId,
-          monto_reemplazo: monto,
-          pago_por: 'empresa',
-        }),
-      });
-      setRemovedWorker(null);
-      const replacementName = workers.find((w) => w.id === replacementId)?.nombre?.split(' ')[0] || '';
-      setSuccessMsg(`${replacementName} asignado como reemplazo`);
-      fetchShifts(true);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al crear reemplazo';
-      setReplaceError(msg);
-    } finally {
-      setReplacingWith(null);
-    }
-  }, [removedWorker, workers, fetchShifts]);
-
 
   /* ── Loading / Error ── */
 
@@ -860,7 +1082,7 @@ export default function TurnosSection() {
         ) : (
           <div className="space-y-5">
             {/* ── 🍔 La Ruta 11 Section ── */}
-            {(r11Turnos.length > 0 || (removedWorker && !isRemovedSeguridad)) && (
+            {r11Turnos.length > 0 && (
               <div>
                 <h4 className="text-xs font-semibold text-amber-700 mb-2 flex items-center gap-1.5">
                   🍔 La Ruta 11
@@ -868,90 +1090,47 @@ export default function TurnosSection() {
                 <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
                   {r11Turnos.map((t) => {
                     const photo = workerPhotos[t.personal_id];
-                    const isRemoved = removedWorker?.personalId === t.personal_id;
                     return (
-                      <div key={`${t.id}-${t.personal_id}`} className="relative group">
-                        {/* X button */}
-                        {!isRemoved && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleRemoveWorker(t); }}
-                            className="absolute -top-1 -right-1 z-10 h-5 w-5 rounded-full bg-red-500 text-white opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                            aria-label={`Reemplazar a ${t.personal_nombre}`}
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        )}
-                        {isRemoved ? (
-                          /* Vacancy placeholder */
-                          <div className="flex flex-col items-center gap-1 animate-in fade-in duration-300">
-                            <div className="h-14 w-14 rounded-full border-[3px] border-dashed border-amber-400 flex items-center justify-center bg-amber-50 animate-pulse">
-                              <Plus className="h-5 w-5 text-amber-400" />
-                            </div>
-                            <span className="text-xs text-amber-600">Vacante</span>
-                            <button
-                              onClick={handleCancelRemove}
-                              className="text-[10px] text-gray-400 hover:text-gray-600 underline"
-                            >
-                              Cancelar
-                            </button>
-                          </div>
-                        ) : (
-                          <div
-                            onClick={() => setProfileModal(t)}
-                            className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                            role="button"
-                            tabIndex={0}
-                            aria-label={`Ver perfil de ${t.personal_nombre}`}
-                            onKeyDown={(e) => { if (e.key === 'Enter') setProfileModal(t); }}
-                          >
-                            <WorkerAvatar
-                              name={t.personal_nombre || photo?.nombre || `#${t.personal_id}`}
-                              fotoUrl={photo?.foto_url}
-                              fotoRotation={photo?.foto_rotation}
-                              rol={photo?.rol || t.tipo}
-                              tipo={t.tipo}
-                              isReemplazo={!!t.reemplazado_por}
-                            />
-                            {t.reemplazado_por && t.reemplazante_nombre && (
-                              <div className="flex flex-col items-center mt-0.5 max-w-[80px]">
-                                <span className="text-[10px] line-through text-gray-400 truncate w-full text-center">
-                                  {t.personal_nombre?.split(' ')[0]}
-                                </span>
-                                <span className="text-[10px] text-gray-400">→</span>
-                                <span className="text-[10px] font-medium text-gray-700 truncate w-full text-center">
-                                  {t.reemplazante_nombre.split(' ')[0]}
-                                </span>
-                                {t.monto_reemplazo != null && (
-                                  <span className="text-xs text-gray-500">{formatCLP(t.monto_reemplazo)}</span>
-                                )}
-                              </div>
+                      <div
+                        key={`${t.id}-${t.personal_id}`}
+                        onClick={() => setProfileModal(t)}
+                        className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Ver perfil de ${t.personal_nombre}`}
+                        onKeyDown={(e) => { if (e.key === 'Enter') setProfileModal(t); }}
+                      >
+                        <WorkerAvatar
+                          name={t.personal_nombre || photo?.nombre || `#${t.personal_id}`}
+                          fotoUrl={photo?.foto_url}
+                          fotoRotation={photo?.foto_rotation}
+                          rol={photo?.rol || t.tipo}
+                          tipo={t.tipo}
+                          isReemplazo={!!t.reemplazado_por}
+                        />
+                        {t.reemplazado_por && t.reemplazante_nombre && (
+                          <div className="flex flex-col items-center mt-0.5 max-w-[80px]">
+                            <span className="text-[10px] line-through text-gray-400 truncate w-full text-center">
+                              {t.personal_nombre?.split(' ')[0]}
+                            </span>
+                            <span className="text-[10px] text-gray-400">→</span>
+                            <span className="text-[10px] font-medium text-gray-700 truncate w-full text-center">
+                              {t.reemplazante_nombre.split(' ')[0]}
+                            </span>
+                            {t.monto_reemplazo != null && (
+                              <span className="text-[10px] text-gray-500">{formatCLP(t.monto_reemplazo)}</span>
                             )}
                           </div>
                         )}
                       </div>
                     );
                   })}
-                  {/* Vacancy if removed worker was R11 but not in r11Turnos (edge case) */}
-                  {removedWorker && !isRemovedSeguridad && !r11Turnos.some((t) => t.personal_id === removedWorker.personalId) && (
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="h-14 w-14 rounded-full border-[3px] border-dashed border-amber-400 flex items-center justify-center bg-amber-50">
-                        <Plus className="h-5 w-5 text-amber-400" />
-                      </div>
-                      <span className="text-xs text-amber-600">Vacante</span>
-                      <button
-                        onClick={handleCancelRemove}
-                        className="text-[10px] text-gray-400 hover:text-gray-600 underline"
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
 
             {/* ── 🛡️ Cam Seguridad Section ── */}
-            {(seguridadTurnos.length > 0 || (removedWorker && isRemovedSeguridad)) && (
+            {seguridadTurnos.length > 0 && (
               <div>
                 <h4 className="text-xs font-semibold text-red-700 mb-2 flex items-center gap-1.5">
                   🛡️ Cam Seguridad
@@ -959,61 +1138,35 @@ export default function TurnosSection() {
                 <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
                   {seguridadTurnos.map((t) => {
                     const photo = workerPhotos[t.personal_id];
-                    const isRemoved = removedWorker?.personalId === t.personal_id;
                     return (
-                      <div key={`${t.id}-${t.personal_id}`} className="relative group">
-                        {!isRemoved && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleRemoveWorker(t); }}
-                            className="absolute -top-1 -right-1 z-10 h-5 w-5 rounded-full bg-red-500 text-white opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                            aria-label={`Reemplazar a ${t.personal_nombre}`}
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        )}
-                        {isRemoved ? (
-                          <div className="flex flex-col items-center gap-1 animate-in fade-in duration-300">
-                            <div className="h-14 w-14 rounded-full border-[3px] border-dashed border-red-400 flex items-center justify-center bg-red-50 animate-pulse">
-                              <Plus className="h-5 w-5 text-red-400" />
-                            </div>
-                            <span className="text-xs text-red-600">Vacante</span>
-                            <button
-                              onClick={handleCancelRemove}
-                              className="text-[10px] text-gray-400 hover:text-gray-600 underline"
-                            >
-                              Cancelar
-                            </button>
-                          </div>
-                        ) : (
-                          <div
-                            onClick={() => setProfileModal(t)}
-                            className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                            role="button"
-                            tabIndex={0}
-                            aria-label={`Ver perfil de ${t.personal_nombre}`}
-                            onKeyDown={(e) => { if (e.key === 'Enter') setProfileModal(t); }}
-                          >
-                            <WorkerAvatar
-                              name={t.personal_nombre || photo?.nombre || `#${t.personal_id}`}
-                              fotoUrl={photo?.foto_url}
-                              fotoRotation={photo?.foto_rotation}
-                              rol={photo?.rol || t.tipo}
-                              tipo={t.tipo}
-                              isReemplazo={!!t.reemplazado_por}
-                            />
-                            {t.reemplazado_por && t.reemplazante_nombre && (
-                              <div className="flex flex-col items-center mt-0.5 max-w-[80px]">
-                                <span className="text-[10px] line-through text-gray-400 truncate w-full text-center">
-                                  {t.personal_nombre?.split(' ')[0]}
-                                </span>
-                                <span className="text-[10px] text-gray-400">→</span>
-                                <span className="text-[10px] font-medium text-gray-700 truncate w-full text-center">
-                                  {t.reemplazante_nombre.split(' ')[0]}
-                                </span>
-                                {t.monto_reemplazo != null && (
-                                  <span className="text-xs text-gray-500">{formatCLP(t.monto_reemplazo)}</span>
-                                )}
-                              </div>
+                      <div
+                        key={`${t.id}-${t.personal_id}`}
+                        onClick={() => setProfileModal(t)}
+                        className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Ver perfil de ${t.personal_nombre}`}
+                        onKeyDown={(e) => { if (e.key === 'Enter') setProfileModal(t); }}
+                      >
+                        <WorkerAvatar
+                          name={t.personal_nombre || photo?.nombre || `#${t.personal_id}`}
+                          fotoUrl={photo?.foto_url}
+                          fotoRotation={photo?.foto_rotation}
+                          rol={photo?.rol || t.tipo}
+                          tipo={t.tipo}
+                          isReemplazo={!!t.reemplazado_por}
+                        />
+                        {t.reemplazado_por && t.reemplazante_nombre && (
+                          <div className="flex flex-col items-center mt-0.5 max-w-[80px]">
+                            <span className="text-[10px] line-through text-gray-400 truncate w-full text-center">
+                              {t.personal_nombre?.split(' ')[0]}
+                            </span>
+                            <span className="text-[10px] text-gray-400">→</span>
+                            <span className="text-[10px] font-medium text-gray-700 truncate w-full text-center">
+                              {t.reemplazante_nombre.split(' ')[0]}
+                            </span>
+                            {t.monto_reemplazo != null && (
+                              <span className="text-[10px] text-gray-500">{formatCLP(t.monto_reemplazo)}</span>
                             )}
                           </div>
                         )}
@@ -1025,76 +1178,47 @@ export default function TurnosSection() {
             )}
           </div>
         )}
+      </div>
 
-        {/* ── Replacement picker ── */}
-        {removedWorker && !isRemovedPlanchero && availableWorkers.length > 0 && (
-          <div className="mt-4 rounded-lg border-2 border-dashed border-amber-300 bg-amber-50/50 p-4">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">
-              ¿Quién reemplaza a {removedWorker.nombre.split(' ')[0]}?
-              <span className="ml-2 text-xs font-normal text-gray-400">
-                ({isRemovedSeguridad ? formatCLP(30000) : formatCLP(20000)})
-              </span>
-            </h4>
-            <div className="flex flex-wrap gap-3">
-              {availableWorkers.map((w) => {
-                const photo = workerPhotos[w.id];
-                const isLoading = replacingWith === w.id;
-                return (
-                  <button
-                    key={w.id}
-                    onClick={() => handleReplace(w.id)}
-                    disabled={replacingWith !== null}
-                    className="relative cursor-pointer disabled:opacity-50 transition-opacity"
-                    aria-label={`Asignar a ${w.nombre} como reemplazo`}
-                  >
-                    <WorkerAvatar
-                      name={w.nombre}
-                      fotoUrl={photo?.foto_url}
-                      fotoRotation={photo?.foto_rotation}
-                      rol={w.rol}
+      {/* ══════════════════════════════════════════════ */}
+      {/* ── Monthly Replacements Summary ──────────── */}
+      {/* ══════════════════════════════════════════════ */}
+      <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">
+          Reemplazos del mes
+        </h3>
+        {(() => {
+          const replacements = turnos.filter((t) => !!t.reemplazado_por);
+          if (replacements.length === 0) {
+            return <p className="text-sm text-gray-400 text-center py-4">Sin reemplazos este mes</p>;
+          }
+          return (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[10px] font-semibold text-gray-400 uppercase border-b border-gray-100">
+                    <th className="pb-2 pr-3">Fecha</th>
+                    <th className="pb-2 pr-3">Titular</th>
+                    <th className="pb-2 pr-3">Reemplazante</th>
+                    <th className="pb-2 pr-3 text-right">Monto</th>
+                    <th className="pb-2 text-right">Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {replacements.map((r) => (
+                    <ReplaceRow
+                      key={r.id}
+                      turno={r}
+                      workerPhotos={workerPhotos}
+                      onViewProfile={() => setProfileModal(r)}
+                      onReplacementChange={() => fetchShifts(true)}
                     />
-                    {isLoading && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="h-14 w-14 rounded-full bg-white/70 flex items-center justify-center">
-                          <Loader2 className="h-6 w-6 animate-spin text-amber-600" />
-                        </div>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
+                  ))}
+                </tbody>
+              </table>
             </div>
-            {replaceError && (
-              <p className="mt-2 text-sm text-red-600" role="alert">{replaceError}</p>
-            )}
-          </div>
-        )}
-
-        {/* ── Planchero message ── */}
-        {removedWorker && isRemovedPlanchero && (
-          <div className="mt-4 rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-700">
-            Andrés gestiona sus reemplazos internamente
-            <button
-              onClick={handleCancelRemove}
-              className="ml-3 text-xs text-green-500 hover:text-green-700 underline"
-            >
-              Cancelar
-            </button>
-          </div>
-        )}
-
-        {/* ── No available workers message ── */}
-        {removedWorker && !isRemovedPlanchero && availableWorkers.length === 0 && (
-          <div className="mt-4 rounded-lg bg-gray-50 border border-gray-200 p-3 text-sm text-gray-500">
-            No hay trabajadores disponibles para reemplazo este día
-            <button
-              onClick={handleCancelRemove}
-              className="ml-3 text-xs text-gray-400 hover:text-gray-600 underline"
-            >
-              Cancelar
-            </button>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* ── Assign Modal ── */}
@@ -1115,7 +1239,9 @@ export default function TurnosSection() {
           allTurnos={turnos}
           workerRolMap={workerRolMap}
           mes={mes}
+          workers={workers}
           onClose={() => setProfileModal(null)}
+          onReplacementChange={() => { setProfileModal(null); fetchShifts(true); }}
         />
       )}
     </div>
