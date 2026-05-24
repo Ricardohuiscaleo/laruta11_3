@@ -783,12 +783,12 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                 <a href={`tel:${order.customer_phone}`} className="bg-blue-500 hover:bg-blue-600 text-white py-0.5 px-2 rounded flex items-center gap-1">
                   <Phone size={10} />Llamar
                 </a>
-                <a href={`https://wa.me/56${order.customer_phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="bg-green-500 hover:bg-green-600 text-white py-0.5 px-2 rounded flex items-center gap-1">
+                <a href={`https://wa.me/56${order.customer_phone.replace(/[^0-9]/g, '').replace(/^56/, '')}`} target="_blank" rel="noopener noreferrer" className="bg-green-500 hover:bg-green-600 text-white py-0.5 px-2 rounded flex items-center gap-1">
                   <MessageSquare size={10} />Mensaje
                 </a>
                 {!isScheduled && order.delivery_type === 'delivery' && order.delivery_address && isPaid && (
                   <a
-                    href={`https://wa.me/56${order.customer_phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${order.customer_name}! 😊 Su pedido está en camino a ${order.delivery_address}.`)}`}
+                    href={`https://wa.me/56${order.customer_phone.replace(/[^0-9]/g, '').replace(/^56/, '')}?text=${encodeURIComponent(`Hola ${order.customer_name}! 😊 Su pedido está en camino a ${order.delivery_address}.`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="bg-orange-500 hover:bg-orange-600 text-white py-0.5 px-2 rounded flex items-center gap-1"

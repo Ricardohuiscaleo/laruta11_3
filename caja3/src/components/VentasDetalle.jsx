@@ -359,7 +359,7 @@ export default function VentasDetalle({ startDate: propStart, endDate: propEnd, 
                           <Phone size={8} />
                           Llamar
                         </a>
-                        <a href={`https://wa.me/56${order.customer_phone.replace(/[^0-9]/g, '')}`} target="_blank" className="bg-green-500 text-white px-2 py-0.5 rounded flex items-center gap-1">
+                        <a href={`https://wa.me/56${order.customer_phone.replace(/[^0-9]/g, '').replace(/^56/, '')}`} target="_blank" className="bg-green-500 text-white px-2 py-0.5 rounded flex items-center gap-1">
                           <MessageCircle size={8} />
                           WhatsApp
                         </a>
