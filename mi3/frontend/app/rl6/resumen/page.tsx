@@ -38,7 +38,7 @@ interface ApiResponse {
   deudores: Deudor[];
 }
 
-export default function RL6ResumenPage({ params }: { params: { token: string } }) {
+export default function RL6ResumenPage() {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -50,7 +50,7 @@ export default function RL6ResumenPage({ params }: { params: { token: string } }
     else setRefreshing(true);
     setError('');
     try {
-      const res = await fetch(`${API}/api/v1/rl6/resumen/${params.token}`, {
+      const res = await fetch(`${API}/api/v1/rl6/resumen`, {
         headers: { Accept: 'application/json' },
       });
       const d = await res.json();
@@ -64,7 +64,7 @@ export default function RL6ResumenPage({ params }: { params: { token: string } }
     }
   };
 
-  useEffect(() => { fetchData(); }, [params.token]);
+  useEffect(() => { fetchData(); }, []);
 
   const handleShare = async () => {
     if (!data) return;

@@ -355,13 +355,8 @@ class CreditController extends Controller
 
     // ── Resumen público RL6 ─────────────────────────────────
 
-    public function resumenPublico(string $token): JsonResponse
+    public function resumenPublico(): JsonResponse
     {
-        $expected = config('services.rl6_resumen_token');
-        if (!$expected || $token !== $expected) {
-            return response()->json(['success' => false, 'error' => 'Token inválido'], 404);
-        }
-
         $service = app(RL6CreditService::class);
         $rl6 = $service->getRL6Users();
 
