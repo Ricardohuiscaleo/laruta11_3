@@ -185,54 +185,64 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
               <p className="text-gray-600 mt-4">Cargando combo...</p>
             </div>
           ) : comboData ? (
-            <div className="space-y-6">
-              {/* Combo Header */}
-              <div className="text-center">
-                {(combo.image_url || comboData.image_url) && (
-                  <img 
-                    src={combo.image_url || comboData.image_url} 
-                    alt={combo.name} 
-                    className="w-32 h-32 object-cover rounded-lg mx-auto mb-4" 
-                    onError={(e) => { e.target.style.display = 'none'; }}
-                  />
-                )}
-                <h3 className="text-2xl font-bold text-gray-800">{combo.name}</h3>
-                <p className="text-gray-600 mt-2">{combo.description}</p>
-                <p className="text-2xl font-bold text-orange-500 mt-2">
-                  ${comboTotalPrice.toLocaleString('es-CL')}
+            <div>
+              {/* Two-column layout: left = foto+precio, right = Incluye */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 mb-5">
+                {/* Left: foto + precio */}
+                <div className="flex flex-col items-center justify-center bg-gray-50 rounded-xl p-4">
+                  {(combo.image_url || comboData.image_url) && (
+                    <img
+                      src={combo.image_url || comboData.image_url}
+                      alt={combo.name}
+                      className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-xl mb-3"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  )}
+                  <h3 className="font-black text-base sm:text-lg text-gray-800 text-center leading-tight">{combo.name}</h3>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    {combo.sale_price ? (
+                      <>
+                        <span className="text-xl sm:text-2xl font-black text-red-600">${combo.sale_price.toLocaleString('es-CL')}</span>
+                        <span className="text-xs text-gray-400 line-through">${combo.price.toLocaleString('es-CL')}</span>
+                      </>
+                    ) : (
+                      <span className="text-xl sm:text-2xl font-black text-orange-500">${comboTotalPrice.toLocaleString('es-CL')}</span>
+                    )}
+                  </div>
                   {selectionsPriceAdjustment > 0 && (
-                    <span className="text-sm font-normal text-gray-500 ml-2">
-                      (base ${parseInt(combo.price).toLocaleString('es-CL')} + ${selectionsPriceAdjustment.toLocaleString('es-CL')})
+                    <span className="text-[11px] text-gray-400 mt-1">
+                      +${selectionsPriceAdjustment.toLocaleString('es-CL')} por selecciones
                     </span>
                   )}
-                </p>
-              </div>
-
-              {/* Fixed Items */}
-              {comboData.fixed_items && comboData.fixed_items.length > 0 && (
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3">Incluye:</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {comboData.fixed_items.map((item, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        {item.image_url && (
-                          <img 
-                            src={item.image_url} 
-                            alt={item.product_name} 
-                            className="w-12 h-12 object-cover rounded" 
-                            onError={(e) => { e.target.style.display = 'none'; }}
-                          />
-                        )}
-                        <div>
-                          <p className="font-medium text-gray-800">{item.product_name}</p>
-                          <p className="text-sm text-gray-600">Cantidad: {item.quantity}</p>
-                        </div>
-                        <Check className="text-green-500 ml-auto" size={20} />
-                      </div>
-                    ))}
-                  </div>
                 </div>
-              )}
+
+                {/* Right: Incluye */}
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Incluye:</h4>
+                  {comboData.fixed_items && comboData.fixed_items.length > 0 ? (
+                    <ul className="space-y-2">
+                      {comboData.fixed_items.map((item, index) => (
+                        <li key={index} className="flex items-center gap-2 text-sm">
+                          {item.image_url ? (
+                            <img src={item.image_url} alt={item.product_name} className="w-8 h-8 object-cover rounded" onError={(e) => { e.target.style.display = 'none'; }} />
+                          ) : (
+                            <div className="w-8 h-8 rounded bg-orange-100 flex items-center justify-center flex-shrink-0">
+                              <Check size={14} className="text-orange-500" />
+                            </div>
+                          )}
+                          <span className="text-gray-700">{item.product_name}</span>
+                          {item.quantity > 1 && <span className="text-gray-400 text-xs">x{item.quantity}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-400">—</p>
+                  )}
+                  {combo.description && (
+                    <p className="text-[11px] text-gray-400 mt-3 leading-relaxed">{combo.description}</p>
+                  )}
+                </div>
+              </div>
 
               {/* Selection Groups */}
               {comboData.selection_groups && Object.entries(comboData.selection_groups).map(([groupName, group], groupIndex) => {
@@ -241,78 +251,41 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
                 const maxSelections = baseMaxSelections * quantity;
                 const totalSelected = getTotalSelected(groupName);
                 return (
-                  <div key={groupIndex}>
-                    <h4 className="text-lg font-semibold text-gray-800 mb-3">
-                      Elige tu {groupName} ({totalSelected}/{maxSelections}):
+                  <div key={groupIndex} className="border-t border-gray-100 pt-3">
+                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                      Elige {groupName} ({totalSelected}/{maxSelections})
                     </h4>
                     {options.length === 0 ? (
-                      <p className="text-gray-500 italic">Sin opciones disponibles</p>
+                      <p className="text-sm text-gray-400">Sin opciones disponibles</p>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
                         {options.map((option, optionIndex) => {
                           const currentCount = maxSelections === 1 
                             ? (selections[groupName] === option.product_id ? 1 : 0)
                             : (Array.isArray(selections[groupName]) ? selections[groupName].filter(id => id === option.product_id).length : 0);
                           const totalSelected = Array.isArray(selections[groupName]) ? selections[groupName].length : (selections[groupName] ? 1 : 0);
+                          const isSelected = currentCount > 0;
                           
                           return (
-                            <div
-                              key={optionIndex}
-                              className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
-                                currentCount > 0
-                                  ? 'border-orange-500 bg-orange-50'
-                                  : 'border-gray-200'
-                              }`}
-                            >
-                              {option.image_url && (
-                                <img 
-                                  src={option.image_url} 
-                                  alt={option.product_name} 
-                                  className="w-12 h-12 object-cover rounded" 
-                                  onError={(e) => { e.target.style.display = 'none'; }}
-                                />
-                              )}
-                              <div className="flex-1 text-left">
-                                <p className="font-medium text-gray-800">{option.product_name}</p>
-                                {option.price_adjustment > 0 ? (
-                                  <p className="text-sm text-orange-600">+${parseInt(option.price_adjustment).toLocaleString('es-CL')}</p>
-                                ) : (
-                                  <p className="text-sm text-green-600 font-medium">Incluido</p>
-                                )}
-                              </div>
-                              {maxSelections > 1 ? (
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections, 'remove')}
-                                    disabled={currentCount === 0}
-                                    className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-gray-700"
-                                    aria-label={`Quitar ${option.product_name}`}
-                                  >
-                                    -
-                                  </button>
-                                  <span className="w-8 text-center font-bold text-gray-800">{currentCount}</span>
-                                  <button
-                                    onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections, 'add')}
-                                    disabled={totalSelected >= maxSelections}
-                                    className="w-8 h-8 rounded-full bg-orange-500 hover:bg-orange-600 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-white"
-                                    aria-label={`Agregar ${option.product_name}`}
-                                  >
-                                    +
-                                  </button>
-                                </div>
+                            <div key={optionIndex}
+                              onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections)}
+                              className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+                                isSelected ? 'bg-orange-50 ring-1 ring-orange-300' : 'hover:bg-gray-50'
+                              }`}>
+                              {option.image_url ? (
+                                <img src={option.image_url} alt={option.product_name} className="w-7 h-7 object-cover rounded flex-shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />
                               ) : (
-                                <button
-                                  onClick={() => handleSelectionChange(groupName, option.product_id, maxSelections)}
-                                  className="w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all hover:bg-orange-50"
-                                  aria-label={`Seleccionar ${option.product_name}`}
-                                >
-                                  {currentCount > 0 ? (
-                                    <Check className="text-orange-500" size={24} />
-                                  ) : (
-                                    <div className="w-5 h-5 rounded-full border-2 border-gray-300"></div>
-                                  )}
-                                </button>
+                                <div className="w-7 h-7 rounded bg-gray-100 flex-shrink-0" />
                               )}
+                              <span className="flex-1 text-sm text-gray-700 truncate">{option.product_name}</span>
+                              {option.price_adjustment > 0 ? (
+                                <span className="text-[11px] font-medium text-orange-600">+${parseInt(option.price_adjustment).toLocaleString('es-CL')}</span>
+                              ) : (
+                                <span className="text-[11px] text-green-500">Incluido</span>
+                              )}
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-orange-500 bg-orange-500' : 'border-gray-300'}`}>
+                                {isSelected && <Check size={12} className="text-white" />}
+                              </div>
                             </div>
                           );
                         })}
