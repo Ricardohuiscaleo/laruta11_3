@@ -92,7 +92,7 @@ if (isset($input['callback_query'])) {
 
             if ($es_rl6) {
                 // Insert refund transaction
-                $pdo->prepare("INSERT INTO rl6_credit_transactions (user_id, amount, type, description, created_at) VALUES (?, ?, 'refund', 'Aprobado vía Telegram', NOW())")
+                $pdo->prepare("INSERT INTO rl6_credit_transactions (user_id, amount, type, description, created_at) VALUES (?, ?, 'refund', 'Pago manual - Transferencia - Aprobado vía Telegram', NOW())")
                     ->execute([$user_id, $monto]);
 
                 // Decrease credito_usado

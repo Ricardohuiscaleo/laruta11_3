@@ -46,10 +46,14 @@ class RL6CreditService
             ->selectRaw('user_id, COALESCE(SUM(amount), 0) as total')
             ->pluck('total', 'user_id');
 
-        // Pagos del mes actual (refunds)
+        // Pagos del mes actual (refunds) — solo pagos reales, no cancelaciones
         $pagosEsteMes = Rl6CreditTransaction::whereIn('user_id', $userIds)
             ->where('type', 'refund')
             ->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$currentYearMonth])
+            ->where(function ($q) {
+                $q->whereIn('description', ['Reembolso - Crédito pagado', 'Pago de crédito RL6 vía TUU'])
+                  ->orWhere('description', 'like', 'Pago manual - Transferencia%');
+            })
             ->groupBy('user_id')
             ->selectRaw('user_id, COALESCE(SUM(amount), 0) as total')
             ->pluck('total', 'user_id');
