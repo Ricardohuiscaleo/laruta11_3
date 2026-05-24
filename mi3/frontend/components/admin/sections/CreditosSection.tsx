@@ -169,60 +169,8 @@ function UserDetailModal({
                         {tx.type === 'refund' ? '+' : '-'}${Math.round(tx.amount).toLocaleString('es-CL')}
                       </span>
                       <p className="text-xs text-gray-400">{new Date(tx.created_at).toLocaleDateString('es-CL')}</p>
-      </div>
-
-      {/* Archived users */}
-      {showArchived && (
-        <div className="overflow-x-auto rounded-xl border bg-white shadow-sm">
-          <div className="border-b bg-amber-50 px-4 py-2 text-xs font-medium text-amber-800">
-            Usuarios Archivados
-          </div>
-          {archivedLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-amber-600" /></div>
-          ) : archivedUsers.length === 0 ? (
-            <div className="p-4 text-center text-sm text-gray-400">Sin usuarios archivados</div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
-                <tr>
-                  <th className="px-4 py-3">Nombre</th>
-                  <th className="px-4 py-3">RUT</th>
-                  <th className="px-4 py-3">Grado</th>
-                  <th className="px-4 py-3">Límite</th>
-                  <th className="px-4 py-3">Usado</th>
-                  <th className="px-4 py-3">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {archivedUsers.map(u => (
-                  <tr key={u.id} className="hover:bg-gray-50 text-gray-500">
-                    <td className="px-4 py-3 font-medium">{u.nombre}</td>
-                    <td className="px-4 py-3">{u.rut || '—'}</td>
-                    <td className="px-4 py-3">{u.grado_militar || '—'}</td>
-                    <td className="px-4 py-3">{formatCLP(u.limite_credito)}</td>
-                    <td className="px-4 py-3">{formatCLP(u.credito_usado)}</td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={async () => {
-                          if (!confirm(`¿Restaurar ${u.nombre} a la lista activa?`)) return;
-                          try {
-                            await apiFetch(`/admin/credits/rl6/${u.id}/unarchive`, { method: 'POST' });
-                            setArchivedUsers(prev => prev.filter(a => a.id !== u.id));
-                          } catch (err: any) { alert(err.message); }
-                        }}
-                        className="rounded p-1 hover:bg-green-50" title="Restaurar"
-                      >
-                        <RotateCcw className="h-4 w-4 text-green-600" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
-      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -913,6 +861,58 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
           </tbody>
         </table>
       </div>
+
+      {/* Archived users */}
+      {showArchived && (
+        <div className="overflow-x-auto rounded-xl border bg-white shadow-sm">
+          <div className="border-b bg-amber-50 px-4 py-2 text-xs font-medium text-amber-800">
+            Usuarios Archivados
+          </div>
+          {archivedLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-amber-600" /></div>
+          ) : archivedUsers.length === 0 ? (
+            <div className="p-4 text-center text-sm text-gray-400">Sin usuarios archivados</div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
+                <tr>
+                  <th className="px-4 py-3">Nombre</th>
+                  <th className="px-4 py-3">RUT</th>
+                  <th className="px-4 py-3">Grado</th>
+                  <th className="px-4 py-3">Límite</th>
+                  <th className="px-4 py-3">Usado</th>
+                  <th className="px-4 py-3">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {archivedUsers.map(u => (
+                  <tr key={u.id} className="hover:bg-gray-50 text-gray-500">
+                    <td className="px-4 py-3 font-medium">{u.nombre}</td>
+                    <td className="px-4 py-3">{u.rut || '—'}</td>
+                    <td className="px-4 py-3">{u.grado_militar || '—'}</td>
+                    <td className="px-4 py-3">{formatCLP(u.limite_credito)}</td>
+                    <td className="px-4 py-3">{formatCLP(u.credito_usado)}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`¿Restaurar ${u.nombre} a la lista activa?`)) return;
+                          try {
+                            await apiFetch(`/admin/credits/rl6/${u.id}/unarchive`, { method: 'POST' });
+                            setArchivedUsers(prev => prev.filter(a => a.id !== u.id));
+                          } catch (err: any) { alert(err.message); }
+                        }}
+                        className="rounded p-1 hover:bg-green-50" title="Restaurar"
+                      >
+                        <RotateCcw className="h-4 w-4 text-green-600" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
       </div>
     );
   };
