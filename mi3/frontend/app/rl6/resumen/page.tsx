@@ -242,7 +242,7 @@ export default function RL6ResumenPage() {
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-semibold text-gray-900 truncate">{d.nombre}</span>
                       {d.tipo === 'deudor' && d.es_moroso && <span className="inline-flex items-center rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700">MORA</span>}
-                      {d.tipo === 'pagado' && <span className="inline-flex items-center rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">PAGÓ</span>}
+                      {d.pagado_este_mes > 0 && <span className="inline-flex items-center rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">PAGÓ</span>}
                       {d.tipo === 'sin_deuda' && <span className="inline-flex items-center rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">AL DÍA</span>}
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5">
