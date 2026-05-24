@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
-import { Loader2, CheckCircle, XCircle, DollarSign, Mail, AlertTriangle, Eye, X, ThumbsUp, ThumbsDown, FileText, BarChart3 } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, DollarSign, Mail, AlertTriangle, Eye, X, ThumbsUp, ThumbsDown, FileText, BarChart3, Archive, RotateCcw } from 'lucide-react';
 import type { SectionHeaderConfig } from '@/components/admin/AdminShell';
 import type { RL6CreditUser, RL6Summary, EmailEstado, PaymentReceipt, PendingCredit } from '@/types/admin';
 import EmailPreviewModal from '@/components/admin/EmailPreviewModal';
@@ -169,8 +169,60 @@ function UserDetailModal({
                         {tx.type === 'refund' ? '+' : '-'}${Math.round(tx.amount).toLocaleString('es-CL')}
                       </span>
                       <p className="text-xs text-gray-400">{new Date(tx.created_at).toLocaleDateString('es-CL')}</p>
-                    </div>
-                  </div>
+      </div>
+
+      {/* Archived users */}
+      {showArchived && (
+        <div className="overflow-x-auto rounded-xl border bg-white shadow-sm">
+          <div className="border-b bg-amber-50 px-4 py-2 text-xs font-medium text-amber-800">
+            Usuarios Archivados
+          </div>
+          {archivedLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-amber-600" /></div>
+          ) : archivedUsers.length === 0 ? (
+            <div className="p-4 text-center text-sm text-gray-400">Sin usuarios archivados</div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
+                <tr>
+                  <th className="px-4 py-3">Nombre</th>
+                  <th className="px-4 py-3">RUT</th>
+                  <th className="px-4 py-3">Grado</th>
+                  <th className="px-4 py-3">Límite</th>
+                  <th className="px-4 py-3">Usado</th>
+                  <th className="px-4 py-3">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {archivedUsers.map(u => (
+                  <tr key={u.id} className="hover:bg-gray-50 text-gray-500">
+                    <td className="px-4 py-3 font-medium">{u.nombre}</td>
+                    <td className="px-4 py-3">{u.rut || '—'}</td>
+                    <td className="px-4 py-3">{u.grado_militar || '—'}</td>
+                    <td className="px-4 py-3">{formatCLP(u.limite_credito)}</td>
+                    <td className="px-4 py-3">{formatCLP(u.credito_usado)}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`¿Restaurar ${u.nombre} a la lista activa?`)) return;
+                          try {
+                            await apiFetch(`/admin/credits/rl6/${u.id}/unarchive`, { method: 'POST' });
+                            setArchivedUsers(prev => prev.filter(a => a.id !== u.id));
+                          } catch (err: any) { alert(err.message); }
+                        }}
+                        className="rounded p-1 hover:bg-green-50" title="Restaurar"
+                      >
+                        <RotateCcw className="h-4 w-4 text-green-600" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+      </div>
                 ))}
               </div>
             )}
@@ -305,6 +357,9 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
   const [rl6Loading, setRl6Loading] = useState(false);
   const [rl6Error, setRl6Error] = useState('');
   const [rl6Acting, setRl6Acting] = useState<number | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
+  const [archivedUsers, setArchivedUsers] = useState<any[]>([]);
+  const [archivedLoading, setArchivedLoading] = useState(false);
 
   /* ─── Receipt state ─── */
   const [rl6Receipts, setRl6Receipts] = useState<PaymentReceipt[]>([]);
@@ -478,6 +533,17 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
           total_morosos: user.es_moroso && newUsado === 0 ? prev.total_morosos - 1 : prev.total_morosos,
         };
       });
+    } catch (err: any) { alert(err.message); }
+    finally { setRl6Acting(null); }
+  };
+
+  const rl6Archive = async (user: RL6CreditUser) => {
+    if (!confirm(`¿Archivar crédito de ${user.nombre}? Se ocultará de listas activas pero no se perderán sus datos.`)) return;
+    setRl6Acting(user.id);
+    try {
+      await apiFetch(`/admin/credits/rl6/${user.id}/archive`, { method: 'POST' });
+      setRl6Data(prev => prev?.filter(u => u.id !== user.id) ?? null);
+      setRl6Summary(prev => prev ? { ...prev, total_usuarios: prev.total_usuarios - 1 } : null);
     } catch (err: any) { alert(err.message); }
     finally { setRl6Acting(null); }
   };
@@ -737,6 +803,23 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
             <BarChart3 className="h-4 w-4" />
             Resumen público
           </a>
+          <button
+            onClick={async () => {
+              setShowArchived(!showArchived);
+              if (!showArchived) {
+                setArchivedLoading(true);
+                try {
+                  const res = await apiFetch<{ data: any[] }>('/admin/credits/rl6/archived');
+                  setArchivedUsers(res.data || []);
+                } catch { setArchivedUsers([]); }
+                finally { setArchivedLoading(false); }
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-amber-50 transition-colors"
+          >
+            <Archive className="h-4 w-4 text-amber-600" />
+            {showArchived ? 'Ocultar' : 'Archivados'} {archivedUsers.length > 0 && `(${archivedUsers.length})`}
+          </button>
         </div>
 
         {bulkResult && (
@@ -818,6 +901,10 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
                     <button onClick={() => rl6ManualPayment(u)} disabled={rl6Acting === u.id}
                       className="rounded p-1 hover:bg-gray-100" title="Pago manual">
                       <DollarSign className="h-4 w-4 text-gray-500" />
+                    </button>
+                    <button onClick={() => rl6Archive(u)} disabled={rl6Acting === u.id}
+                      className="rounded p-1 hover:bg-amber-50" title="Archivar">
+                      <Archive className="h-4 w-4 text-amber-600" />
                     </button>
                   </div>
                 </td>

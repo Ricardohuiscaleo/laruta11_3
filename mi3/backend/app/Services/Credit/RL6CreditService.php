@@ -27,11 +27,12 @@ class RL6CreditService
 
         $users = Usuario::where('es_militar_rl6', 1)
             ->where('credito_aprobado', 1)
+            ->where('rl6_archived', 0)
             ->select([
                 'id', 'nombre', 'email', 'telefono', 'rut',
                 'grado_militar', 'unidad_trabajo',
                 'limite_credito', 'credito_usado', 'credito_bloqueado',
-                'credito_aprobado', 'fecha_ultimo_pago',
+                'credito_aprobado', 'fecha_ultimo_pago', 'rl6_archived',
             ])
             ->orderBy('nombre', 'asc')
             ->get();

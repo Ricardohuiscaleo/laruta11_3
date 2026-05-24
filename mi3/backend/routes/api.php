@@ -186,6 +186,11 @@ Route::prefix('v1')->group(function () {
         Route::post('credits/rl6/receipts/{orderNumber}/approve', [\App\Http\Controllers\Admin\CreditController::class, 'rl6ApproveReceipt']);
         Route::post('credits/rl6/receipts/{orderNumber}/reject', [\App\Http\Controllers\Admin\CreditController::class, 'rl6RejectReceipt']);
 
+        // Archivar/desarchivar RL6
+        Route::post('credits/rl6/{id}/archive', [\App\Http\Controllers\Admin\CreditController::class, 'rl6Archive']);
+        Route::post('credits/rl6/{id}/unarchive', [\App\Http\Controllers\Admin\CreditController::class, 'rl6Unarchive']);
+        Route::get('credits/rl6/archived', [\App\Http\Controllers\Admin\CreditController::class, 'rl6Archived']);
+
         // Solicitudes de crédito pendientes
         Route::get('credits/pending', [\App\Http\Controllers\Admin\CreditController::class, 'pendingCredits']);
 

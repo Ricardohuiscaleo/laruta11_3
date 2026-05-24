@@ -20,7 +20,7 @@ class Usuario extends Authenticatable
         // RL6 fields
         'es_militar_rl6', 'credito_aprobado', 'limite_credito',
         'credito_usado', 'credito_bloqueado', 'grado_militar',
-        'unidad_trabajo', 'rut', 'fecha_ultimo_pago',
+        'unidad_trabajo', 'rut', 'fecha_ultimo_pago', 'rl6_archived',
     ];
 
     protected $casts = [
@@ -35,6 +35,7 @@ class Usuario extends Authenticatable
         'credito_bloqueado' => 'boolean',
         'limite_credito' => 'float',
         'credito_usado' => 'float',
+        'rl6_archived' => 'boolean',
     ];
 
     protected $hidden = [

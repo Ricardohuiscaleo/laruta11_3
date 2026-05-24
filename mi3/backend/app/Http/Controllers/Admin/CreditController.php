@@ -388,4 +388,39 @@ class CreditController extends Controller
             'deudores' => $deudores,
         ]);
     }
+
+    // ── Archivar/Desarchivar RL6 ───────────────────────────────
+
+    public function rl6Archive(int $id): JsonResponse
+    {
+        $user = Usuario::findOrFail($id);
+        if (!$user->es_militar_rl6) {
+            return response()->json(['success' => false, 'error' => 'No es usuario RL6'], 400);
+        }
+        $user->update(['rl6_archived' => true]);
+        return response()->json(['success' => true, 'message' => 'Usuario archivado']);
+    }
+
+    public function rl6Unarchive(int $id): JsonResponse
+    {
+        $user = Usuario::findOrFail($id);
+        $user->update(['rl6_archived' => false]);
+        return response()->json(['success' => true, 'message' => 'Usuario restaurado']);
+    }
+
+    public function rl6Archived(RL6CreditService $service): JsonResponse
+    {
+        $users = Usuario::where('es_militar_rl6', 1)
+            ->where('rl6_archived', 1)
+            ->select(['id', 'nombre', 'email', 'rut', 'grado_militar', 'unidad_trabajo',
+                'limite_credito', 'credito_usado', 'fecha_ultimo_pago'])
+            ->orderBy('nombre')
+            ->get()
+            ->toArray();
+
+        return response()->json([
+            'success' => true,
+            'data' => $users,
+        ]);
+    }
 }
