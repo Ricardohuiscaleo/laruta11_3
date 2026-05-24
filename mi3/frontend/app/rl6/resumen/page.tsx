@@ -17,6 +17,7 @@ interface Deudor {
   es_moroso: boolean;
   dias_mora: number;
   pagado_este_mes: number;
+  tipo: 'deudor' | 'pagado' | 'sin_deuda';
 }
 
 interface Summary {
@@ -35,7 +36,7 @@ interface ApiResponse {
   generated_at: string;
   periodo: { inicio: string; fin: string };
   summary: Summary;
-  deudores: Deudor[];
+  usuarios: Deudor[];
 }
 
 export default function RL6ResumenPage() {
@@ -222,33 +223,34 @@ export default function RL6ResumenPage() {
       <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
         <div className="px-3 py-2 border-b bg-gray-50 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-700">
-            Deudores ({data.deudores.length})
+            Usuarios ({data.usuarios.length})
           </h3>
           <span className="text-xs text-gray-400">Total: {fmt(s.total_deuda_actual)}</span>
         </div>
 
-        {data.deudores.length === 0 ? (
+        {data.usuarios.length === 0 ? (
           <div className="p-6 text-center text-gray-400">
             <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-400" />
             <p className="text-sm">¡Todos al día! Sin deudas pendientes.</p>
           </div>
         ) : (
           <div className="divide-y">
-            {data.deudores.map((d, i) => (
-              <div key={i} className={`px-3 py-2.5 ${d.es_moroso ? 'bg-red-50' : d.pagado_este_mes > 0 ? 'bg-green-50' : ''}`}>
+            {data.usuarios.map((d, i) => (
+              <div key={i} className={`px-3 py-2.5 ${d.tipo === 'pagado' ? 'bg-green-50/50' : d.es_moroso ? 'bg-red-50' : d.tipo === 'sin_deuda' ? 'bg-gray-50/50' : ''}`}>
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-semibold text-gray-900 truncate">{d.nombre}</span>
-                      {d.es_moroso && <span className="inline-flex items-center rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700">MORA</span>}
-                      {d.pagado_este_mes > 0 && <span className="inline-flex items-center rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">PAGÓ</span>}
+                      {d.tipo === 'deudor' && d.es_moroso && <span className="inline-flex items-center rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700">MORA</span>}
+                      {d.tipo === 'pagado' && <span className="inline-flex items-center rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">PAGÓ</span>}
+                      {d.tipo === 'sin_deuda' && <span className="inline-flex items-center rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">AL DÍA</span>}
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {d.grado_militar} · {d.unidad_trabajo}
                     </p>
                   </div>
                   <div className="text-right flex-shrink-0 ml-2">
-                    <p className="text-sm font-bold text-orange-700">{fmt(d.credito_usado)}</p>
+                    <p className={`text-sm font-bold ${d.tipo === 'pagado' ? 'text-green-600' : 'text-orange-700'}`}>{fmt(d.credito_usado)}</p>
                     <p className="text-[10px] text-gray-400">de {fmt(d.limite_credito)}</p>
                   </div>
                 </div>

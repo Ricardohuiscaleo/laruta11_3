@@ -360,8 +360,7 @@ class CreditController extends Controller
         $service = app(RL6CreditService::class);
         $rl6 = $service->getRL6Users();
 
-        $deudores = collect($rl6['data'])
-            ->filter(fn($u) => $u['credito_usado'] > 0)
+        $usuarios = collect($rl6['data'])
             ->map(fn($u) => [
                 'nombre' => $u['nombre'],
                 'rut' => $u['rut'],
@@ -373,7 +372,26 @@ class CreditController extends Controller
                 'es_moroso' => $u['es_moroso'],
                 'dias_mora' => $u['dias_mora'],
                 'pagado_este_mes' => $u['pagado_este_mes'],
+                'tipo' => $u['credito_usado'] > 0 ? 'deudor' : ($u['pagado_este_mes'] > 0 ? 'pagado' : 'sin_deuda'),
             ])
+            ->sort(function ($a, $b) {
+                // 1. Deudores: mayor deuda primero
+                if ($a['credito_usado'] > 0 && $b['credito_usado'] > 0) {
+                    return $b['credito_usado'] <=> $a['credito_usado'];
+                }
+                if ($a['credito_usado'] > 0) return -1;
+                if ($b['credito_usado'] > 0) return 1;
+
+                // 2. Pagados del periodo: mayor pago primero
+                if ($a['pagado_este_mes'] > 0 && $b['pagado_este_mes'] > 0) {
+                    return $b['pagado_este_mes'] <=> $a['pagado_este_mes'];
+                }
+                if ($a['pagado_este_mes'] > 0) return -1;
+                if ($b['pagado_este_mes'] > 0) return 1;
+
+                // 3. Resto: alfabético
+                return strcmp($a['nombre'], $b['nombre']);
+            })
             ->values()
             ->toArray();
 
@@ -385,7 +403,7 @@ class CreditController extends Controller
                 'fin' => now()->format('Y-m-21'),
             ],
             'summary' => $rl6['summary'],
-            'deudores' => $deudores,
+            'usuarios' => $usuarios,
         ]);
     }
 
