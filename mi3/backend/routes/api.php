@@ -32,6 +32,9 @@ Route::prefix('v1')->group(function () {
     // ── Nómina (público — accesible desde link compartido) ───────────
     Route::get('nomina/{token}', [\App\Http\Controllers\Admin\PayrollController::class, 'showSnapshot']);
 
+    // ── Crédito RL6 (público — resumen vía link compartido) ──────────
+    Route::get('rl6/resumen/{token}', [\App\Http\Controllers\Admin\CreditController::class, 'resumenPublico']);
+
     // ── Auth (público) ──────────────────────────────────────────────
     Route::prefix('auth')->group(function () {
         Route::post('login', [\App\Http\Controllers\Auth\AuthController::class, 'login']);

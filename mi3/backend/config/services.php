@@ -20,4 +20,6 @@ return [
         'laruta11_chat_id' => env('TELEGRAM_LARUTA11_CHAT_ID', ''),
     ],
 
+    'rl6_resumen_token' => env('RL6_RESUMEN_TOKEN', ''),
+
 ];

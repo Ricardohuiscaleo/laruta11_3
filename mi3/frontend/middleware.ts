@@ -25,8 +25,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(dest, request.url));
   }
 
-  // Public routes (login, root, rendicion, nomina, rider) — no token required
-  if (pathname === '/login' || pathname === '/' || pathname.startsWith('/rendicion') || pathname.startsWith('/nomina') || pathname.startsWith('/rider')) {
+  // Public routes (login, root, rendicion, nomina, rider, rl6) — no token required
+  if (pathname === '/login' || pathname === '/' || pathname.startsWith('/rendicion') || pathname.startsWith('/nomina') || pathname.startsWith('/rider') || pathname.startsWith('/rl6')) {
     return NextResponse.next();
   }
 

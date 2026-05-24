@@ -156,6 +156,64 @@ try {
         $tipo === 'r11' ? $monto : 0,
     ]);
 
+    // ── Notificar a Telegram ─────────────────────────────────
+    $tg_token   = getenv('TELEGRAM_TOKEN');
+    $tg_chat_id = getenv('TELEGRAM_CHAT_ID');
+    if ($tg_token && $tg_chat_id) {
+        $fecha_tg = date('d M. Y, h:i a');
+        $monto_fmt = '$' . number_format((float)$monto, 0, ',', '.');
+        $grado_tg = $user['grado_militar'] ?? '';
+
+        $caption = "🧾 COMPROBANTE DE PAGO\n";
+        $caption .= "━━━━━━━━━━━━━━━━\n";
+        $caption .= "📋 Orden: {$order_number}\n";
+        $caption .= "👤 {$grado_tg} {$user['nombre']}\n";
+        $caption .= "💰 {$monto_fmt}\n";
+        $caption .= "🕐 {$fecha_tg}\n";
+        $caption .= "━━━━━━━━━━━━━━━━\n";
+        $caption .= strtoupper($tipo_label) . ' · REVISAR';
+
+        $buttons = [
+            'inline_keyboard' => [
+                [
+                    ['text' => '✅ Aprobar',  'callback_data' => "approve_trf_{$order_number}"],
+                    ['text' => '❌ Rechazar', 'callback_data' => "reject_trf_{$order_number}"],
+                ],
+            ],
+        ];
+
+        $is_image = in_array($mimeType, ['image/jpeg', 'image/png', 'image/webp']);
+        if ($is_image) {
+            $tg_url = "https://api.telegram.org/bot{$tg_token}/sendPhoto";
+            $tg_fields = [
+                'chat_id' => $tg_chat_id,
+                'photo' => $receipt_url,
+                'caption' => $caption,
+                'parse_mode' => 'HTML',
+                'reply_markup' => json_encode($buttons),
+            ];
+        } else {
+            $tg_url = "https://api.telegram.org/bot{$tg_token}/sendDocument";
+            $tg_fields = [
+                'chat_id' => $tg_chat_id,
+                'document' => $receipt_url,
+                'caption' => $caption,
+                'parse_mode' => 'HTML',
+                'reply_markup' => json_encode($buttons),
+            ];
+        }
+
+        $ch_tg = curl_init($tg_url);
+        curl_setopt_array($ch_tg, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_TIMEOUT => 10,
+            CURLOPT_POSTFIELDS => $tg_fields,
+        ]);
+        curl_exec($ch_tg);
+        curl_close($ch_tg);
+    }
+
     echo json_encode([
         'success' => true,
         'message' => 'Comprobante recibido. Queda en revisión.',

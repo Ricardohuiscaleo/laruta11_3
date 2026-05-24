@@ -352,4 +352,45 @@ class CreditController extends Controller
             ],
         ]);
     }
+
+    // ── Resumen público RL6 ─────────────────────────────────
+
+    public function resumenPublico(string $token): JsonResponse
+    {
+        $expected = config('services.rl6_resumen_token');
+        if (!$expected || $token !== $expected) {
+            return response()->json(['success' => false, 'error' => 'Token inválido'], 404);
+        }
+
+        $service = app(RL6CreditService::class);
+        $rl6 = $service->getRL6Users();
+
+        $deudores = collect($rl6['data'])
+            ->filter(fn($u) => $u['credito_usado'] > 0)
+            ->map(fn($u) => [
+                'nombre' => $u['nombre'],
+                'rut' => $u['rut'],
+                'grado_militar' => $u['grado_militar'],
+                'unidad_trabajo' => $u['unidad_trabajo'],
+                'limite_credito' => $u['limite_credito'],
+                'credito_usado' => $u['credito_usado'],
+                'disponible' => $u['disponible'],
+                'es_moroso' => $u['es_moroso'],
+                'dias_mora' => $u['dias_mora'],
+                'pagado_este_mes' => $u['pagado_este_mes'],
+            ])
+            ->values()
+            ->toArray();
+
+        return response()->json([
+            'success' => true,
+            'generated_at' => now()->toIso8601String(),
+            'periodo' => [
+                'inicio' => now()->subMonth()->format('Y-m-22'),
+                'fin' => now()->format('Y-m-21'),
+            ],
+            'summary' => $rl6['summary'],
+            'deudores' => $deudores,
+        ]);
+    }
 }
