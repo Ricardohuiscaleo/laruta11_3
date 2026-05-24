@@ -108,8 +108,8 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
   }, [selections, comboData]);
 
   const comboTotalPrice = useMemo(() => {
-    return (combo?.price || 0) + selectionsPriceAdjustment;
-  }, [combo?.price, selectionsPriceAdjustment]);
+    return (combo?.sale_price || combo?.price || 0) + selectionsPriceAdjustment;
+  }, [combo?.sale_price, combo?.price, selectionsPriceAdjustment]);
 
   const handleAddToCart = () => {
     if (!comboData) return;
@@ -156,7 +156,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
     const comboWithSelections = {
       ...combo,
       price: comboTotalPrice,
-      basePrice: combo.price,
+      basePrice: combo.sale_price || combo.price,
       selections: detailedSelections,
       fixed_items: comboData.fixed_items || [],
       quantity: 1
