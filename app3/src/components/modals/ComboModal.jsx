@@ -195,38 +195,39 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
             </div>
           ) : comboData ? (
             <div>
-              {/* Two-column layout: left = foto+precio, right = Incluye */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                {/* Left: foto + precio */}
-                <div className="flex flex-col items-center justify-center bg-gray-50 rounded-xl p-3">
+              {/* Two-column: left = foto, right = nombre + precio + incluye */}
+              <div className="grid grid-cols-[40%_60%] gap-2 mb-4">
+                {/* Left: solo la foto */}
+                <div className="flex items-start pt-1">
                   {(combo.image_url || comboData.image_url) && (
                     <img
                       src={combo.image_url || comboData.image_url}
                       alt={combo.name}
-                      className="w-[70%] mx-auto aspect-[4/5] object-cover rounded-lg mb-2"
+                      className="w-full aspect-[4/5] object-cover rounded-xl"
                       onError={(e) => { e.target.style.display = 'none'; }}
                     />
                   )}
-                  <h3 className="font-black text-[13px] text-gray-800 text-center leading-tight px-1">{combo.name}</h3>
-                  <div className="mt-1">
+                </div>
+
+                {/* Right: nombre + precio + Incluye */}
+                <div>
+                  <h3 className="font-black text-[14px] text-gray-800 leading-tight">{combo.name}</h3>
+                  <div className="mt-0.5">
                     {combo.sale_price ? (
                       <>
-                        <span className="text-lg font-black text-red-600 block text-center">${combo.sale_price.toLocaleString('es-CL')}</span>
-                        <span className="text-[10px] text-gray-400 line-through block text-center">${combo.price.toLocaleString('es-CL')}</span>
+                        <span className="text-lg font-black text-red-600">${combo.sale_price.toLocaleString('es-CL')}</span>
+                        <span className="text-[11px] text-gray-400 line-through ml-1.5">${combo.price.toLocaleString('es-CL')}</span>
                       </>
                     ) : (
                       <span className="text-lg font-black text-orange-500">${comboTotalPrice.toLocaleString('es-CL')}</span>
                     )}
+                    {selectionsPriceAdjustment > 0 && (
+                      <span className="text-[10px] text-gray-400 ml-1">+${selectionsPriceAdjustment.toLocaleString('es-CL')}</span>
+                    )}
                   </div>
-                  {selectionsPriceAdjustment > 0 && (
-                    <span className="text-[10px] text-gray-400 mt-0.5">+${selectionsPriceAdjustment.toLocaleString('es-CL')}</span>
-                  )}
-                </div>
 
-                {/* Right: Incluye */}
-                <div>
-                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Incluye:</h4>
-                  <ul className="space-y-1.5">
+                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-2.5 mb-1.5">Incluye:</h4>
+                  <ul className="space-y-1">
                     {comboData.fixed_items && comboData.fixed_items.map((item, index) => (
                       <li key={index} className="flex items-center gap-1.5 text-[12px] leading-tight">
                         <span className="w-1 h-1 rounded-full bg-orange-400 flex-shrink-0 mt-0.5" />
