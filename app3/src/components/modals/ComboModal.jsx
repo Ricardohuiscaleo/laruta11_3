@@ -187,59 +187,51 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
           ) : comboData ? (
             <div>
               {/* Two-column layout: left = foto+precio, right = Incluye */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 mb-5">
+              <div className="grid grid-cols-2 gap-3 mb-4">
                 {/* Left: foto + precio */}
-                <div className="flex flex-col items-center justify-center bg-gray-50 rounded-xl p-4">
+                <div className="flex flex-col items-center justify-center bg-gray-50 rounded-xl p-3">
                   {(combo.image_url || comboData.image_url) && (
                     <img
                       src={combo.image_url || comboData.image_url}
                       alt={combo.name}
-                      className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-xl mb-3"
+                      className="w-full aspect-square object-cover rounded-lg mb-2"
                       onError={(e) => { e.target.style.display = 'none'; }}
                     />
                   )}
-                  <h3 className="font-black text-base sm:text-lg text-gray-800 text-center leading-tight">{combo.name}</h3>
-                  <div className="mt-2 flex items-baseline gap-2">
+                  <h3 className="font-black text-[13px] text-gray-800 text-center leading-tight px-1">{combo.name}</h3>
+                  <div className="mt-1">
                     {combo.sale_price ? (
                       <>
-                        <span className="text-xl sm:text-2xl font-black text-red-600">${combo.sale_price.toLocaleString('es-CL')}</span>
-                        <span className="text-xs text-gray-400 line-through">${combo.price.toLocaleString('es-CL')}</span>
+                        <span className="text-lg font-black text-red-600 block text-center">${combo.sale_price.toLocaleString('es-CL')}</span>
+                        <span className="text-[10px] text-gray-400 line-through block text-center">${combo.price.toLocaleString('es-CL')}</span>
                       </>
                     ) : (
-                      <span className="text-xl sm:text-2xl font-black text-orange-500">${comboTotalPrice.toLocaleString('es-CL')}</span>
+                      <span className="text-lg font-black text-orange-500">${comboTotalPrice.toLocaleString('es-CL')}</span>
                     )}
                   </div>
                   {selectionsPriceAdjustment > 0 && (
-                    <span className="text-[11px] text-gray-400 mt-1">
-                      +${selectionsPriceAdjustment.toLocaleString('es-CL')} por selecciones
-                    </span>
+                    <span className="text-[10px] text-gray-400 mt-0.5">+${selectionsPriceAdjustment.toLocaleString('es-CL')}</span>
                   )}
                 </div>
 
                 {/* Right: Incluye */}
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Incluye:</h4>
+                <div>
+                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Incluye:</h4>
                   {comboData.fixed_items && comboData.fixed_items.length > 0 ? (
-                    <ul className="space-y-2">
+                    <ul className="space-y-1.5">
                       {comboData.fixed_items.map((item, index) => (
-                        <li key={index} className="flex items-center gap-2 text-sm">
-                          {item.image_url ? (
-                            <img src={item.image_url} alt={item.product_name} className="w-8 h-8 object-cover rounded" onError={(e) => { e.target.style.display = 'none'; }} />
-                          ) : (
-                            <div className="w-8 h-8 rounded bg-orange-100 flex items-center justify-center flex-shrink-0">
-                              <Check size={14} className="text-orange-500" />
-                            </div>
-                          )}
+                        <li key={index} className="flex items-center gap-1.5 text-[12px] leading-tight">
+                          <span className="w-1 h-1 rounded-full bg-orange-400 flex-shrink-0 mt-0.5" />
                           <span className="text-gray-700">{item.product_name}</span>
-                          {item.quantity > 1 && <span className="text-gray-400 text-xs">x{item.quantity}</span>}
+                          {item.quantity > 1 && <span className="text-gray-400 text-[10px]">x{item.quantity}</span>}
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-sm text-gray-400">—</p>
+                    <p className="text-xs text-gray-400">—</p>
                   )}
                   {combo.description && (
-                    <p className="text-[11px] text-gray-400 mt-3 leading-relaxed">{combo.description}</p>
+                    <p className="text-[11px] text-gray-400 mt-2 leading-snug">{combo.description}</p>
                   )}
                 </div>
               </div>
