@@ -43,6 +43,7 @@ export default function RegistroCompra() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [taxInfo, setTaxInfo] = useState<{ monto_neto: number; iva: number; otros_impuestos: number; monto_total: number } | null>(null);
+  const [useAiTotal, setUseAiTotal] = useState(true);
   const provRef = useRef<HTMLDivElement>(null);
   const provTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -135,6 +136,7 @@ export default function RegistroCompra() {
         otros_impuestos: data.otros_impuestos,
         monto_total: data.monto_total,
       });
+      setUseAiTotal(true);
     }
 
     setStep('formulario');
@@ -156,6 +158,7 @@ export default function RegistroCompra() {
   };
 
   const updateItem = (idx: number, field: keyof CompraFormItem, value: unknown) => {
+    setUseAiTotal(false);
     setForm(f => {
       const items = [...f.items];
       const item = { ...items[idx], [field]: value };
@@ -175,10 +178,13 @@ export default function RegistroCompra() {
   };
 
   const removeItem = (idx: number) => {
+    setUseAiTotal(false);
     setForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }));
   };
 
-  const total = form.items.reduce((sum, it) => sum + (it.subtotal || 0), 0);
+  const itemsTotal = form.items.reduce((sum, it) => sum + (it.subtotal || 0), 0);
+  const total = (taxInfo && useAiTotal) ? taxInfo.monto_total : itemsTotal;
+  const useAiTotalAvailable = taxInfo && taxInfo.monto_total > itemsTotal;
   const overBudget = saldo !== null && total > saldo;
 
   const handleSubmit = async () => {
@@ -372,9 +378,29 @@ export default function RegistroCompra() {
           <div className="rounded-xl border bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-lg font-bold text-gray-900">Total: {formatearPesosCLP(total)}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-lg font-bold text-gray-900">Total: {formatearPesosCLP(total)}</p>
+                  {useAiTotalAvailable && useAiTotal && (
+                    <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                      IVA+ICA incluido
+                    </span>
+                  )}
+                </div>
+                {useAiTotalAvailable && !useAiTotal && (
+                  <p className="text-xs text-gray-500">
+                    Items: {formatearPesosCLP(itemsTotal)} · Factura con IVA+ICA: <button onClick={() => setUseAiTotal(true)}
+                      className="text-blue-600 underline hover:text-blue-800">{formatearPesosCLP(taxInfo!.monto_total)}</button>
+                  </p>
+                )}
+                {useAiTotalAvailable && useAiTotal && (
+                  <p className="text-xs text-gray-500">
+                    Items neto: {formatearPesosCLP(itemsTotal)} · Según factura con impuestos
+                  </p>
+                )}
                 {saldo !== null && (
-                  <p className="text-xs text-gray-500">Saldo disponible: {formatearPesosCLP(saldo)}</p>
+                  <p className={`text-xs ${overBudget ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                    Saldo disponible: {formatearPesosCLP(saldo)}
+                  </p>
                 )}
               </div>
               <div className="flex gap-2">
