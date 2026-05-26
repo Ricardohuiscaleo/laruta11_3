@@ -451,14 +451,21 @@ export default function RegistroPage() {
 
       // Group by proveedor
       const existing = newGroups.find(g => g.proveedor.toLowerCase() === proveedor.toLowerCase());
+      const extTaxInfo = (img.extraction?.monto_total) ? {
+        monto_neto: img.extraction.monto_neto || 0,
+        iva: img.extraction.iva || 0,
+        otros_impuestos: img.extraction.otros_impuestos || 0,
+        monto_total: img.extraction.monto_total,
+      } : null;
       if (existing) {
         existing.images.push(img);
         existing.items.push(...items);
+        if (extTaxInfo && !existing.taxInfo) existing.taxInfo = extTaxInfo;
       } else {
         newGroups.unshift({ // Put new groups at the top for better mobile UX
           proveedor, fecha_compra: img.extraction?.fecha || new Date().toISOString().split('T')[0],
           metodo_pago: metodoPago, tipo_compra: tipoCompra, notas: '',
-          images: [img], items, expanded: true,
+          images: [img], items, expanded: true, taxInfo: extTaxInfo,
         });
       }
     }
@@ -518,11 +525,18 @@ export default function RegistroPage() {
     const metodoPago = data.metodo_pago || 'cash';
     const tipoCompra = data.tipo_compra || 'ingredientes';
 
+    const taxInfo = data.monto_total ? {
+      monto_neto: data.monto_neto || 0,
+      iva: data.iva || 0,
+      otros_impuestos: data.otros_impuestos || 0,
+      monto_total: data.monto_total,
+    } : null;
+
     const newGroups = [...groups.filter((_, i) => !submitted.includes(i))];
     newGroups.unshift({ // Add to top so new results are instantly visible on mobile
       proveedor, fecha_compra: data.fecha || new Date().toISOString().split('T')[0],
       metodo_pago: metodoPago, tipo_compra: tipoCompra, notas: '',
-      images: [img], items, expanded: true,
+      images: [img], items, expanded: true, taxInfo,
     });
     setGroups(newGroups);
     setSubmitted([]);
@@ -649,12 +663,13 @@ export default function RegistroPage() {
     if (!group.proveedor || group.items.length === 0) return;
     setSubmitting(true);
     try {
+      const hasTaxInfo = !!group.taxInfo;
       await comprasApi.post('/compras', {
         proveedor: group.proveedor,
         fecha_compra: group.fecha_compra,
         tipo_compra: group.tipo_compra,
         metodo_pago: group.metodo_pago,
-        monto_total: groupTotal(group),
+        monto_total: hasTaxInfo ? group.taxInfo!.monto_total : groupTotal(group),
         notas: group.notas || (group.images.length > 0 ? `${group.images.length} foto(s)` : ''),
         items: group.items.map(i => ({
           nombre_item: i.nombre, cantidad: i.cantidad, unidad: i.unidad,
@@ -663,6 +678,7 @@ export default function RegistroPage() {
         })),
         temp_keys: group.images.map(i => i.tempKey),
         usuario: 'Admin',
+        ...(hasTaxInfo ? { taxes_handled_by_ai: true } : {}),
       });
       setSubmitted(prev => [...prev, idx]);
       refreshAll();
@@ -677,7 +693,7 @@ export default function RegistroPage() {
   };
 
   const pendingGroups = groups.filter((_, i) => !submitted.includes(i));
-  const grandTotal = pendingGroups.reduce((s, g) => s + groupTotal(g), 0);
+  const grandTotal = pendingGroups.reduce((s, g) => s + (g.taxInfo?.monto_total ?? groupTotal(g)), 0);
 
   return (
     <div className="space-y-4">
@@ -792,7 +808,7 @@ export default function RegistroPage() {
       {/* Groups */}
       {groups.map((group, gi) => {
         const isSubmitted = submitted.includes(gi);
-        const total = groupTotal(group);
+        const total = group.taxInfo?.monto_total ?? groupTotal(group);
         return (
           <div key={gi} className={`rounded-xl border shadow-sm ${isSubmitted ? 'bg-green-50 border-green-200' : 'bg-white'}`}>
             {/* Header */}
@@ -841,6 +857,23 @@ export default function RegistroPage() {
                         </p>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Tax breakdown card */}
+                {group.taxInfo && (
+                  <div className="rounded-lg bg-purple-50 border border-purple-200 p-3 space-y-1">
+                    <p className="text-xs font-semibold text-purple-800">Desglose de impuestos</p>
+                    <div className="space-y-0.5">
+                      <p className="text-xs text-purple-700">Neto: {formatearPesosCLP(group.taxInfo.monto_neto)}</p>
+                      {group.taxInfo.otros_impuestos > 0 && (
+                        <p className="text-xs text-purple-700">ICA: {formatearPesosCLP(group.taxInfo.otros_impuestos)}</p>
+                      )}
+                      <p className="text-xs text-purple-700">IVA: {formatearPesosCLP(group.taxInfo.iva)}</p>
+                      <p className="text-xs font-bold text-purple-900 border-t border-purple-200 pt-0.5 mt-0.5">
+                        Total factura: {formatearPesosCLP(group.taxInfo.monto_total)}
+                      </p>
+                    </div>
                   </div>
                 )}
 

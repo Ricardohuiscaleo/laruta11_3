@@ -180,4 +180,5 @@ export interface RegistroGroup {
   images: RegistroImage[];
   items: RegistroItem[];
   expanded: boolean;
+  taxInfo?: { monto_neto: number; iva: number; otros_impuestos: number; monto_total: number } | null;
 }
