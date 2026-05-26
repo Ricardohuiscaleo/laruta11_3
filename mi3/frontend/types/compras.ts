@@ -34,6 +34,7 @@ export interface ExtractionResult {
   items: ExtractionItem[];
   monto_neto: number;
   iva: number;
+  otros_impuestos: number;
   monto_total: number;
   tipo_imagen: 'boleta' | 'factura' | 'producto' | 'bascula' | 'transferencia' | 'desconocido';
   fecha: string | null;
@@ -52,6 +53,7 @@ export interface ExtractionResult {
     items: number;
     monto_neto: number;
     iva: number;
+    otros_impuestos: number;
     monto_total: number;
     tipo_imagen: number;
     peso_bascula: number;

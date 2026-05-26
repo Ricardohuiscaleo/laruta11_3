@@ -203,7 +203,7 @@ class ExtraccionService
 Analiza esta imagen y determina qué tipo de contenido es. Responde SOLO con JSON.
 
 TIPO 1 — BOLETA O FACTURA (documento impreso con texto, montos, RUT):
-Extrae: proveedor, rut_proveedor, items (array con nombre/cantidad/unidad/precio_unitario/subtotal), monto_neto, iva, monto_total.
+Extrae: proveedor, rut_proveedor, items (array con nombre/cantidad/unidad/precio_unitario/subtotal), monto_neto, iva, otros_impuestos, monto_total.
 
 REGLA CRÍTICA — ESTRUCTURA DE BOLETAS DE SUPERMERCADO CHILENO:
 Las boletas de supermercado tienen esta estructura (de arriba a abajo):
@@ -345,6 +345,7 @@ Factura con columnas: CÓDIGO | CANTIDAD | U.M. | DESCRIPCIÓN | % DCTO | PRECIO
 - iva = valor de I.V.A. (19%)
 - monto_total = valor de TOTAL (el más grande, incluye IVA) — SIEMPRE usar este valor
 - Los subtotales de items son NETOS (sin IVA). El monto_total INCLUYE IVA.
+- ATENCIÓN — IMPUESTO ICA: En facturas de carnicerías/proveedores de carne, puede aparecer ICA (Impuesto a la Carne, ~5% del Neto). En ese caso: Total = Neto + ICA + IVA. Incluir ICA en "otros_impuestos".
 - Productos típicos: envases de cartulina, aluminio, hot dog, cajas pizza, bolsas delivery
 - VERIFICACIÓN: suma de subtotales de items debe ser ≈ monto_neto. Si no coincide, revisa los montos.
 {$knownSuppliers}{$rutMapping}{$knownProducts}{$productPatterns}
@@ -360,6 +361,7 @@ Formato de respuesta JSON:
   "items": [{"nombre": "nombre LIMPIO sin empaque", "cantidad": N_TOTAL_UNIDADES_O_KG, "unidad": "kg|unidad|g|L", "precio_unitario": N, "subtotal": N, "descuento": N_o_0, "empaque_detalle": "descripción del cálculo de empaque o null"}],
   "monto_neto": N o null,
   "iva": N o null,
+  "otros_impuestos": N o null,
   "monto_total": N o null,
   "peso_bascula": N o null,
   "unidad_bascula": "kg" o null,
@@ -729,8 +731,9 @@ PROMPT;
 
             // Monto total
             if (isset($extracted['monto_total']) && is_numeric($extracted['monto_total']) && $extracted['monto_total'] > 0) {
+                $otrosImpuestos = $extracted['otros_impuestos'] ?? 0;
                 if (isset($extracted['monto_neto']) && isset($extracted['iva'])) {
-                    $expectedTotal = $extracted['monto_neto'] + $extracted['iva'];
+                    $expectedTotal = $extracted['monto_neto'] + $extracted['iva'] + $otrosImpuestos;
                     $diff = abs($extracted['monto_total'] - $expectedTotal);
                     $scores['monto_total'] = $diff <= max(1, $expectedTotal * 0.01) ? 0.95 : 0.6;
                 } else {
@@ -792,10 +795,23 @@ PROMPT;
             }
         }
 
-        $moneyFields = ['monto_neto', 'iva', 'monto_total'];
+        $moneyFields = ['monto_neto', 'iva', 'otros_impuestos', 'monto_total'];
         foreach ($moneyFields as $field) {
             if (isset($extracted[$field]) && is_numeric($extracted[$field])) {
                 $extracted[$field] = (int) round((float) $extracted[$field]);
+            }
+        }
+
+        $total = $extracted['monto_total'] ?? 0;
+        $iva = $extracted['iva'] ?? 0;
+        $neto = $extracted['monto_neto'] ?? 0;
+        $otrosImpuestos = $extracted['otros_impuestos'] ?? 0;
+
+        // Factura con impuestos adicionales (ICA, etc.): Total = Neto + IVA + Otros Impuestos
+        if ($total > 0 && $otrosImpuestos > 0) {
+            $correctNeto = $total - $iva - $otrosImpuestos;
+            if ($neto !== $correctNeto) {
+                $extracted['monto_neto'] = $correctNeto;
             }
         }
 

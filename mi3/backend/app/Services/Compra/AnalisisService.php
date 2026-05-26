@@ -113,9 +113,22 @@ class AnalisisService
             }
         }
 
-        foreach (['monto_neto', 'iva', 'monto_total'] as $field) {
+        foreach (['monto_neto', 'iva', 'otros_impuestos', 'monto_total'] as $field) {
             if (isset($data[$field]) && is_numeric($data[$field])) {
                 $data[$field] = (int) round((float) $data[$field]);
+            }
+        }
+
+        $total = $data['monto_total'] ?? 0;
+        $iva = $data['iva'] ?? 0;
+        $neto = $data['monto_neto'] ?? 0;
+        $otrosImpuestos = $data['otros_impuestos'] ?? 0;
+
+        // Factura con impuestos adicionales (ICA, etc.): Total = Neto + IVA + Otros Impuestos
+        if ($total > 0 && $otrosImpuestos > 0) {
+            $correctNeto = $total - $iva - $otrosImpuestos;
+            if ($neto !== $correctNeto) {
+                $data['monto_neto'] = $correctNeto;
             }
         }
 
@@ -197,7 +210,7 @@ class AnalisisService
   "metodo_pago": "cash|transfer|card|credit",
   "tipo_compra": "ingredientes|insumos|equipamiento|otros",
   "items": [{"nombre": "...", "cantidad": N, "unidad": "kg|unidad|g|L", "precio_unitario": N, "subtotal": N, "descuento": 0, "empaque_detalle": null}],
-  "monto_neto": N, "iva": N, "monto_total": N,
+  "monto_neto": N, "iva": N, "otros_impuestos": N, "monto_total": N,
   "peso_bascula": null, "unidad_bascula": null,
   "notas_ia": "observaciones"
 }
@@ -265,6 +278,13 @@ REGLAS FACTURA CHILENA:
 - "Yumbel", "Arica" son direcciones del comprador, NO proveedores
 - RUT del proveedor está en el encabezado, cerca del nombre de la empresa emisora
 - URLs/dominios identifican al proveedor: ariztiaatunegocio.cl → Ariztía, agrosuper.cl → Agrosuper
+
+IMPUESTOS EN FACTURAS CHILENAS:
+- En boletas el Total ya incluye IVA. En facturas NO — Total = Neto + ICA + IVA.
+- IVA (19%): calculado sobre el Neto (monto_neto × 0.19)
+- ICA (Impuesto a la Carne, 5%): SOLO en facturas de carnicerías/proveedores de carne. Calculado sobre el Neto (monto_neto × 0.05). Inclúyelo en "otros_impuestos".
+- Total = monto_neto + iva + otros_impuestos (si los hay). NO usar fórmula de boleta "total - iva = neto".
+- Los precios unitarios visibles son NETOS (sin IVA). Extraer los valores que aparecen en el detalle.
 
 EMPAQUE EN FACTURAS MAYORISTAS:
 - "SALCHICHA BIG MONT 800G 10U 8X1" CANT=2 → 10×8×2 = 160 unidades

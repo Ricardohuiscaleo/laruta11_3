@@ -58,20 +58,26 @@ class CompraController extends Controller
             // Auto-classify tipo_compra based on ingredient category (Req 3.2)
             $data['tipo_compra'] = $this->autoClassifyTipoCompra($data);
 
+            // Si la IA ya extrajo IVA/ICA de la factura, saltar inyección manual de IVA
+            $taxesHandled = !empty($data['taxes_handled_by_ai']);
+            unset($data['taxes_handled_by_ai']);
+
             // Proveedores que facturan NETO: agregar 19% IVA a precios al registrar
-            $netoSuppliers = ['vanni', 'arauco'];
-            $provLower = mb_strtolower(trim($data['proveedor'] ?? ''));
-            $isNeto = false;
-            foreach ($netoSuppliers as $ns) {
-                if (str_contains($provLower, $ns)) { $isNeto = true; break; }
-            }
-            if ($isNeto) {
-                foreach ($data['items'] as &$item) {
-                    $item['precio_unitario'] = round($item['precio_unitario'] * 1.19);
-                    $item['subtotal'] = round($item['subtotal'] * 1.19);
+            if (!$taxesHandled) {
+                $netoSuppliers = ['vanni', 'arauco'];
+                $provLower = mb_strtolower(trim($data['proveedor'] ?? ''));
+                $isNeto = false;
+                foreach ($netoSuppliers as $ns) {
+                    if (str_contains($provLower, $ns)) { $isNeto = true; break; }
                 }
-                unset($item);
-                $data['monto_total'] = array_sum(array_column($data['items'], 'subtotal'));
+                if ($isNeto) {
+                    foreach ($data['items'] as &$item) {
+                        $item['precio_unitario'] = round($item['precio_unitario'] * 1.19);
+                        $item['subtotal'] = round($item['subtotal'] * 1.19);
+                    }
+                    unset($item);
+                    $data['monto_total'] = array_sum(array_column($data['items'], 'subtotal'));
+                }
             }
 
             $result = $this->compraService->registrar($data);

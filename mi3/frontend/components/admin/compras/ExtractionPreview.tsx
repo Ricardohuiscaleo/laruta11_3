@@ -102,28 +102,44 @@ export default function ExtractionPreview({ result, onUseData }: ExtractionPrevi
 
       {/* Montos (only for boleta/factura) */}
       {isDocumento && (result.monto_total > 0) && (
-        <div className="grid grid-cols-3 gap-3">
-          <div className={`rounded-md border p-2 ${fieldBorder(confianza.monto_neto)}`}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-gray-500">Neto</span>
-              <ConfidenceBadge score={confianza.monto_neto} />
+        <div>
+          <div className={`grid ${result.otros_impuestos > 0 ? 'grid-cols-4' : 'grid-cols-3'} gap-3`}>
+            <div className={`rounded-md border p-2 ${fieldBorder(confianza.monto_neto)}`}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-500">Neto</span>
+                <ConfidenceBadge score={confianza.monto_neto} />
+              </div>
+              <p className="text-sm font-medium">{formatCLP(result.monto_neto)}</p>
             </div>
-            <p className="text-sm font-medium">{formatCLP(result.monto_neto)}</p>
-          </div>
-          <div className={`rounded-md border p-2 ${fieldBorder(confianza.iva)}`}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-gray-500">IVA</span>
-              <ConfidenceBadge score={confianza.iva} />
+            {result.otros_impuestos > 0 && (
+              <div className={`rounded-md border p-2 ${fieldBorder(confianza.otros_impuestos)}`}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-gray-500">ICA</span>
+                  <ConfidenceBadge score={confianza.otros_impuestos} />
+                </div>
+                <p className="text-sm font-medium">{formatCLP(result.otros_impuestos)}</p>
+              </div>
+            )}
+            <div className={`rounded-md border p-2 ${fieldBorder(confianza.iva)}`}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-500">IVA</span>
+                <ConfidenceBadge score={confianza.iva} />
+              </div>
+              <p className="text-sm font-medium">{formatCLP(result.iva)}</p>
             </div>
-            <p className="text-sm font-medium">{formatCLP(result.iva)}</p>
-          </div>
-          <div className={`rounded-md border p-2 ${fieldBorder(confianza.monto_total)}`}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-gray-500">Total</span>
-              <ConfidenceBadge score={confianza.monto_total} />
+            <div className={`rounded-md border-2 p-2 ${fieldBorder(confianza.monto_total)}`}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-500 font-semibold">Total</span>
+                <ConfidenceBadge score={confianza.monto_total} />
+              </div>
+              <p className="text-sm font-bold text-gray-900">{formatCLP(result.monto_total)}</p>
             </div>
-            <p className="text-sm font-medium">{formatCLP(result.monto_total)}</p>
           </div>
+          {result.otros_impuestos > 0 && (
+            <p className="text-xs text-gray-500 mt-1.5 text-center">
+              {formatCLP(result.monto_neto)} + ICA {formatCLP(result.otros_impuestos)} + IVA {formatCLP(result.iva)} = <strong>{formatCLP(result.monto_total)}</strong>
+            </p>
+          )}
         </div>
       )}
 

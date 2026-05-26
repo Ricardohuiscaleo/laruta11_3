@@ -42,6 +42,7 @@ export default function RegistroCompra() {
   const [showProvDropdown, setShowProvDropdown] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [taxInfo, setTaxInfo] = useState<{ monto_neto: number; iva: number; otros_impuestos: number; monto_total: number } | null>(null);
   const provRef = useRef<HTMLDivElement>(null);
   const provTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -125,6 +126,17 @@ export default function RegistroCompra() {
       tipo_compra: data.tipo_compra || f.tipo_compra,
       items: [...f.items, ...newItems],
     }));
+
+    // Store tax breakdown from AI extraction (facturas with IVA/ICA)
+    if (data.monto_neto > 0 || data.iva > 0 || data.otros_impuestos > 0) {
+      setTaxInfo({
+        monto_neto: data.monto_neto,
+        iva: data.iva,
+        otros_impuestos: data.otros_impuestos,
+        monto_total: data.monto_total,
+      });
+    }
+
     setStep('formulario');
   };
 
@@ -176,6 +188,7 @@ export default function RegistroCompra() {
       await comprasApi.post('/compras', {
         ...form,
         monto_total: total,
+        taxes_handled_by_ai: taxInfo !== null,
         temp_keys: images.map(i => i.tempKey),
         usuario: 'Admin',
         items: form.items.map(it => ({
@@ -321,6 +334,39 @@ export default function RegistroCompra() {
             )}
             <ImageUploader images={images} onChange={setImages} />
           </div>
+
+          {/* Tax breakdown (from AI extraction) */}
+          {taxInfo && (
+            <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 shadow-sm">
+              <h3 className="mb-2 text-xs font-semibold text-blue-700 uppercase tracking-wide">Desglose de impuestos (según factura)</h3>
+              <div className="grid grid-cols-4 gap-2 text-sm">
+                <div className="rounded-md bg-white p-2 text-center border border-blue-100">
+                  <p className="text-xs text-gray-500">Neto</p>
+                  <p className="font-medium">{formatearPesosCLP(taxInfo.monto_neto)}</p>
+                </div>
+                {taxInfo.otros_impuestos > 0 && (
+                  <div className="rounded-md bg-white p-2 text-center border border-amber-200">
+                    <p className="text-xs text-amber-600 font-medium">ICA</p>
+                    <p className="font-medium">{formatearPesosCLP(taxInfo.otros_impuestos)}</p>
+                  </div>
+                )}
+                <div className="rounded-md bg-white p-2 text-center border border-blue-100">
+                  <p className="text-xs text-gray-500">IVA</p>
+                  <p className="font-medium">{formatearPesosCLP(taxInfo.iva)}</p>
+                </div>
+                <div className="rounded-md bg-blue-100 p-2 text-center border border-blue-300">
+                  <p className="text-xs text-blue-700 font-semibold">Total factura</p>
+                  <p className="font-bold text-blue-900">{formatearPesosCLP(taxInfo.monto_total)}</p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-1.5 text-center">
+                {formatearPesosCLP(taxInfo.monto_neto)}
+                {taxInfo.otros_impuestos > 0 ? ` + ICA ${formatearPesosCLP(taxInfo.otros_impuestos)}` : ''}
+                {' + IVA '}{formatearPesosCLP(taxInfo.iva)}
+                {' = '}<strong>{formatearPesosCLP(taxInfo.monto_total)}</strong>
+              </p>
+            </div>
+          )}
 
           {/* Total + Submit */}
           <div className="rounded-xl border bg-white p-4 shadow-sm">

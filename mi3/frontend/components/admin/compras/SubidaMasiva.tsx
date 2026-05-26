@@ -158,12 +158,14 @@ export default function SubidaMasiva() {
 
     setSubmitting(true);
     try {
+      const hasIAExtraction = group.images.some(i => i.extraction && (i.extraction.monto_neto > 0 || i.extraction.iva > 0));
       await comprasApi.post('/compras', {
         proveedor: group.proveedor,
         fecha_compra: new Date().toISOString().split('T')[0],
         tipo_compra: 'ingredientes',
         metodo_pago: group.metodo_pago,
         monto_total: group.monto_total,
+        taxes_handled_by_ai: hasIAExtraction,
         notas: `Subida masiva (${group.images.length} fotos)`,
         items: group.items.map(i => ({
           nombre_item: i.nombre,
@@ -306,6 +308,37 @@ export default function SubidaMasiva() {
                         </div>
                       ))}
                     </div>
+
+                    {/* Tax breakdown (from AI extraction) */}
+                    {(() => {
+                      const ext = group.images.find(i => i.extraction && (i.extraction.monto_neto > 0 || i.extraction.iva > 0 || i.extraction.otros_impuestos > 0))?.extraction;
+                      if (!ext) return null;
+                      return (
+                        <div className="rounded-md border border-blue-200 bg-blue-50/50 p-3">
+                          <p className="text-xs font-semibold text-blue-700 mb-1.5 uppercase tracking-wide">Desglose de impuestos (según factura)</p>
+                          <div className="grid grid-cols-4 gap-2 text-sm">
+                            <div className="rounded bg-white p-1.5 text-center border border-blue-100">
+                              <p className="text-xs text-gray-500">Neto</p>
+                              <p className="font-medium">{formatearPesosCLP(ext.monto_neto)}</p>
+                            </div>
+                            {ext.otros_impuestos > 0 && (
+                              <div className="rounded bg-white p-1.5 text-center border border-amber-200">
+                                <p className="text-xs text-amber-600 font-medium">ICA</p>
+                                <p className="font-medium">{formatearPesosCLP(ext.otros_impuestos)}</p>
+                              </div>
+                            )}
+                            <div className="rounded bg-white p-1.5 text-center border border-blue-100">
+                              <p className="text-xs text-gray-500">IVA</p>
+                              <p className="font-medium">{formatearPesosCLP(ext.iva)}</p>
+                            </div>
+                            <div className="rounded bg-blue-100 p-1.5 text-center border border-blue-300">
+                              <p className="text-xs text-blue-700 font-semibold">Total factura</p>
+                              <p className="font-bold text-blue-900">{formatearPesosCLP(ext.monto_total)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {/* IA notes */}
                     {group.images.some(i => (i.extraction as any)?.notas_ia) && (
