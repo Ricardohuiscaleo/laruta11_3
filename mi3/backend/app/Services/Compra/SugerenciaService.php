@@ -148,6 +148,9 @@ class SugerenciaService
         $cleaned = preg_replace('/\b\d+\s*(g|kg|u|ml|l|cc|x\d+)\b/i', '', $name);
         // Remove standalone numbers
         $cleaned = preg_replace('/\b\d+\b/', '', $cleaned);
+        // Remove noise words that are metadata/descriptors, not product names
+        $noiseWords = '/\b(nacional|importado|premium|cat|tipo|clase|grado|categoria|linea|marca)\b/i';
+        $cleaned = preg_replace($noiseWords, '', $cleaned);
         // Normalize accents for better matching
         $cleaned = $this->removeAccents($cleaned);
         // Split into words and filter
