@@ -119,7 +119,10 @@ class S3Manager {
         
         if ($endpoint) {
             // === Cloudflare R2: PUT via native PHP curl with AWS Signature V4 ===
-            $url = rtrim($endpoint, '/') . '/' . $this->config['s3_bucket'] . '/' . $key;
+            $endpoint = rtrim(trim($endpoint), '/');
+            $bucket = trim($this->config['s3_bucket']);
+            $key = ltrim($key, '/');
+            $url = "{$endpoint}/{$bucket}/{$key}";
             $region = $this->config['s3_region'] ?? 'auto';
             $amzDate = gmdate('Ymd\THis\Z');
             $data = file_get_contents($filePath);

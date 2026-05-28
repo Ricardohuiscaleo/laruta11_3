@@ -118,31 +118,42 @@ class S3Manager {
         $endpoint = $this->config['s3_endpoint'] ?? null;
         
         if ($endpoint) {
-            // === Cloudflare R2: PUT via shell curl with AWS Signature V4 ===
-            $url = rtrim($endpoint, '/') . '/' . $this->config['s3_bucket'] . '/' . $key;
+            // === Cloudflare R2: PUT via native PHP curl with AWS Signature V4 ===
+            $endpoint = rtrim($endpoint, '/');
+            $bucket = trim($this->config['s3_bucket']);
+            $key = ltrim($key, '/');
+            $url = "{$endpoint}/{$bucket}/{$key}";
             $region = $this->config['s3_region'] ?? 'auto';
             $amzDate = gmdate('Ymd\THis\Z');
-            $payloadHash = hash('sha256', file_get_contents($filePath));
+            $data = file_get_contents($filePath);
+            $payloadHash = hash('sha256', $data);
             $authorization = $this->signRequest('PUT', $url, $region, 's3', $payloadHash, $mimeType, $amzDate);
             
-            // shell_exec curl: most reliable for PUT + custom headers in PHP
-            $cmd = sprintf(
-                "curl -s -w '\n%%{http_code}' -X PUT %s -H 'Content-Type: %s' -H 'x-amz-content-sha256: %s' -H 'x-amz-date: %s' -H 'Authorization: %s' --data-binary @%s 2>&1",
-                escapeshellarg($url),
-                escapeshellarg($mimeType),
-                escapeshellarg($payloadHash),
-                escapeshellarg($amzDate),
-                escapeshellarg($authorization),
-                escapeshellarg($filePath)
-            );
+            // Native PHP curl: reliable PUT with custom headers
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_CUSTOMREQUEST => 'PUT',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_TIMEOUT => 60,
+                CURLOPT_CONNECTTIMEOUT => 30,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: ' . $mimeType,
+                    'x-amz-content-sha256: ' . $payloadHash,
+                    'x-amz-date: ' . $amzDate,
+                    'Authorization: ' . $authorization,
+                ],
+                CURLOPT_POSTFIELDS => $data,
+            ]);
             
-            $output = shell_exec($cmd);
-            $lines = explode("\n", trim($output));
-            $httpCode = (int)array_pop($lines);
-            $body = implode("\n", $lines);
+            $body = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
             
             error_log("S3Manager R2: HTTP {$httpCode} — {$url}");
             
+            if ($curlError) throw new Exception("Error cURL: {$curlError}");
             if ($httpCode !== 200 && $httpCode !== 204) {
                 throw new Exception("Error HTTP {$httpCode} subiendo a R2. " . substr($body, 0, 300));
             }
