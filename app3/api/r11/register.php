@@ -183,7 +183,8 @@ require_once __DIR__ . '/../S3Manager.php';
 function uploadToS3($file, $type, $user_id, $config) {
     try {
         $s3 = new S3Manager($config);
-        $fileName = 'carnets-trabajadores/' . $user_id . '_' . $type . '_' . time() . '_' . basename($file['name']);
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'jpg';
+        $fileName = 'carnets-trabajadores/' . $user_id . '_' . $type . '_' . time() . '.' . $ext;
         return $s3->uploadFile($file, $fileName);
     } catch (Throwable $e) {
         error_log('uploadToS3 error: ' . $e->getMessage());
