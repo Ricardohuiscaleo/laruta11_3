@@ -162,8 +162,12 @@ $selfie_url = uploadToS3($_FILES['selfie'], 'selfie', $user_id, $config);
 $carnet_frontal_url = uploadToS3($_FILES['carnet_frontal'], 'frontal', $user_id, $config);
 $carnet_trasero_url = uploadToS3($_FILES['carnet_trasero'], 'trasero', $user_id, $config);
 
-if (!$selfie_url || !$carnet_frontal_url || !$carnet_trasero_url) {
-    echo json_encode(['success' => false, 'error' => 'Error al subir imágenes']);
+$upload_errors = [];
+if (!$selfie_url) $upload_errors[] = 'selfie';
+if (!$carnet_frontal_url) $upload_errors[] = 'carnet_frontal';
+if (!$carnet_trasero_url) $upload_errors[] = 'carnet_trasero';
+if ($upload_errors) {
+    echo json_encode(['success' => false, 'error' => 'Error al subir imágenes', 'failed' => $upload_errors]);
     exit;
 }
 
