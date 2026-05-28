@@ -153,26 +153,18 @@ function uploadToS3($file, $type, $user_id, $config)
         $fileName = 'carnets-militares/' . $user_id . '_' . $type . '_' . time() . '.' . $ext;
         return $s3->uploadFile($file, $fileName);
     } catch (Throwable $e) {
-        return 'ERROR: ' . $e->getMessage();
+        return null;
     }
 }
 
-$selfie = uploadToS3($_FILES['selfie'], 'selfie', $user_id, $config);
-$carnet_frontal = uploadToS3($_FILES['carnet_frontal'], 'frontal', $user_id, $config);
-$carnet_trasero = uploadToS3($_FILES['carnet_trasero'], 'trasero', $user_id, $config);
+$selfie_url = uploadToS3($_FILES['selfie'], 'selfie', $user_id, $config);
+$carnet_frontal_url = uploadToS3($_FILES['carnet_frontal'], 'frontal', $user_id, $config);
+$carnet_trasero_url = uploadToS3($_FILES['carnet_trasero'], 'trasero', $user_id, $config);
 
-$errors = [];
-foreach (['selfie' => $selfie, 'carnet_frontal' => $carnet_frontal, 'carnet_trasero' => $carnet_trasero] as $k => $v) {
-    if (str_starts_with($v, 'ERROR: ')) $errors[] = "$k: $v";
-}
-if ($errors) {
-    echo json_encode(['success' => false, 'error' => 'Error al subir imágenes', 'details' => $errors]);
+if (!$selfie_url || !$carnet_frontal_url || !$carnet_trasero_url) {
+    echo json_encode(['success' => false, 'error' => 'Error al subir imágenes']);
     exit;
 }
-
-$selfie_url = $selfie;
-$carnet_frontal_url = $carnet_frontal;
-$carnet_trasero_url = $carnet_trasero;
 
 // Actualizar usuario en BD
 try {
