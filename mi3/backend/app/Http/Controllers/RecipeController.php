@@ -369,7 +369,7 @@ class RecipeController extends Controller
     {
         try {
             $request->validate([
-                'image' => 'required|image|max:5120',
+                'image' => 'required|image|max:10240',
             ]);
 
             $product = \App\Models\Product::findOrFail($productId);
