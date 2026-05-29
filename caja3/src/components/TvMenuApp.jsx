@@ -448,7 +448,7 @@ export default function TvMenuApp() {
         };
       });
       
-      const order = [3, 2, 4, 12, 8, 11, 10];
+      const order = [8, 2, 3, 4, 12, 11, 10];
       mappedProducts.sort((a, b) => order.indexOf(a.categoryKey) - order.indexOf(b.categoryKey));
       
       const isDev = window.location.port === '4321';

@@ -378,8 +378,9 @@ export default function RecetasPage() {
           return updated;
         });
       }
-    } catch {
-      // image upload non-critical
+    } catch (e: any) {
+      setError(e?.message || 'Error al subir imagen');
+      setTimeout(() => setError(''), 5000);
     }
   }, [groupedData]);
 

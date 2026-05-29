@@ -6,7 +6,7 @@ import { formatCLP, cn } from '@/lib/utils';
 import {
   Loader2, ArrowLeft, Plus, Trash2, Save, Search, X,
   Package, ChevronRight, CircleDot, ToggleLeft, ToggleRight,
-  Pencil, ImageIcon,
+  Pencil, ImageIcon, Upload,
 } from 'lucide-react';
 import BulkActionBar from '@/components/admin/BulkActionBar';
 import ImageQuickDrop from '@/components/admin/ImageQuickDrop';
@@ -187,12 +187,17 @@ export default function CombosPage() {
   const handleQuickImageUpload = useCallback(async (productId: number, file: File) => {
     const formData = new FormData();
     formData.append('image', file);
-    const res = await apiFetch<ApiResponse<{ image_url: string }>>(`/admin/recetas/${productId}/imagen`, {
-      method: 'POST',
-      body: formData,
-    });
-    if (res.data?.image_url) {
-      setCombos(prev => prev.map(c => c.id === productId ? { ...c, image_url: res.data!.image_url } : c));
+    try {
+      const res = await apiFetch<ApiResponse<{ image_url: string }>>(`/admin/recetas/${productId}/imagen`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (res.data?.image_url) {
+        setCombos(prev => prev.map(c => c.id === productId ? { ...c, image_url: res.data!.image_url } : c));
+      }
+    } catch (e: any) {
+      setError(e?.message || 'Error al subir imagen');
+      setTimeout(() => setError(''), 5000);
     }
   }, []);
 
@@ -277,6 +282,7 @@ export default function CombosPage() {
       <ComboEditor
         combo={editingCombo}
         onBack={() => { setEditingCombo(null); fetchCombos(); }}
+        onImageChange={(id, imageUrl) => setCombos(prev => prev.map(c => c.id === id ? { ...c, image_url: imageUrl } : c))}
       />
     );
   }
@@ -578,7 +584,7 @@ function MarginBadge({ margin }: { margin: number | null }) {
 
 /* ─── Combo Editor (T2.3 + T2.4 + T2.5) ─── */
 
-function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void }) {
+function ComboEditor({ combo, onBack, onImageChange }: { combo: ComboRow; onBack: () => void; onImageChange?: (comboId: number, imageUrl: string) => void }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -590,8 +596,9 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
   const [comboPrice, setComboPrice] = useState(combo.price);
   const [comboImageUrl, setComboImageUrl] = useState(combo.image_url || '');
   const [editingPrice, setEditingPrice] = useState(false);
-  const [editingImage, setEditingImage] = useState(false);
   const [savingMeta, setSavingMeta] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchDetail = useCallback(async () => {
     setLoading(true);
@@ -658,9 +665,29 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
     setEditingPrice(false);
   };
 
-  const handleImageSave = () => {
-    saveComboMeta({ image_url: comboImageUrl || undefined });
-    setEditingImage(false);
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await apiFetch<ApiResponse<{ image_url: string }>>(`/admin/recetas/${combo.id}/imagen`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (res.data?.image_url) {
+        setComboImageUrl(res.data.image_url);
+        onImageChange?.(combo.id, res.data.image_url);
+        setError('');
+      }
+    } catch (e: any) {
+      setError(e.message || 'Error al subir imagen');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   /* ─── Cost calculation (T2.5) ─── */
@@ -831,20 +858,37 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
             <ArrowLeft className="h-4 w-4" />
           </button>
           {/* Combo image */}
-          <div className="relative flex-shrink-0">
-            {comboImageUrl ? (
-              <img src={comboImageUrl} alt={combo.name} className="h-12 w-12 rounded-lg object-cover border border-gray-200" />
-            ) : (
-              <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-200">
-                <ImageIcon className="h-5 w-5 text-gray-400" />
-              </div>
-            )}
+          <div className="flex-shrink-0">
+            <div className="relative h-16 w-16 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden">
+              {comboImageUrl ? (
+                <img src={comboImageUrl} alt={combo.name} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <ImageIcon className="h-6 w-6 text-gray-300" />
+                </div>
+              )}
+              {uploadingImage && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                  <Loader2 className="h-5 w-5 animate-spin text-white" />
+                </div>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+              aria-label="Subir imagen del combo"
+            />
             <button
-              onClick={() => setEditingImage(!editingImage)}
-              className="absolute -bottom-1 -right-1 rounded-full bg-white border border-gray-200 p-0.5 hover:bg-gray-50 transition-colors"
-              aria-label="Editar imagen"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingImage}
+              className="mt-1 flex w-16 items-center justify-center gap-0.5 rounded-md border border-gray-200 px-1 py-1 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+              aria-label="Cambiar imagen"
             >
-              <Pencil className="h-3 w-3 text-gray-500" />
+              <Upload className="h-3 w-3" />
+              {uploadingImage ? '' : ''}
             </button>
           </div>
           <div>
@@ -894,29 +938,6 @@ function ComboEditor({ combo, onBack }: { combo: ComboRow; onBack: () => void })
           Guardar
         </button>
       </div>
-
-      {/* Image URL editor */}
-      {editingImage && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-          <label htmlFor="combo-image-url" className="text-xs font-medium text-gray-600 whitespace-nowrap">URL imagen:</label>
-          <input
-            id="combo-image-url"
-            type="url"
-            value={comboImageUrl}
-            onChange={e => setComboImageUrl(e.target.value)}
-            placeholder="https://..."
-            className="flex-1 rounded border border-gray-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[36px]"
-          />
-          <div className="flex gap-2">
-            <button onClick={handleImageSave} className="rounded bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600 min-h-[36px]">
-              Guardar
-            </button>
-            <button onClick={() => setEditingImage(false)} className="rounded border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 min-h-[36px]">
-              Cancelar
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Messages */}
       {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert">{error}</div>}
