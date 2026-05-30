@@ -417,6 +417,8 @@ class GeminiService
             return null;
         }
 
+        Log::debug('[GeminiService] parseResponse text: ' . substr($text, 0, 1000));
+
         // Try direct JSON decode
         $decoded = json_decode($text, true);
         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
