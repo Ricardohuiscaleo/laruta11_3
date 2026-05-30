@@ -740,7 +740,7 @@ export default function RegistroPage() {
         )}
       </label>
       {/* Shared hidden input */}
-      <input id="compras-file-input" ref={inputRef} type="file" accept="image/*" multiple className="hidden"
+      <input id="compras-file-input" ref={inputRef} type="file" accept="image/*" multiple className="absolute h-0 w-0 opacity-0 overflow-hidden pointer-events-none"
         onChange={e => {
           const files = e.target.files;
           if (files && files.length > 0) {

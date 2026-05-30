@@ -201,7 +201,7 @@ class ExtraccionController extends Controller
             'prompt_tokens' => $promptTokens,
             'candidates_tokens' => $candidatesTokens,
             'total_tokens' => $promptTokens + $candidatesTokens,
-            'model' => 'gemini-3.1-flash-lite',
+            'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
         ]);
     }
 

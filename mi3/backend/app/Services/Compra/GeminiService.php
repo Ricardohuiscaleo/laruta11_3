@@ -16,7 +16,7 @@ class GeminiService
     public function __construct()
     {
         $this->apiKey = (string) env('GOOGLE_API_KEY', env('google_api_key', ''));
-        $this->model = (string) env('GEMINI_MODEL', 'gemini-3.1-flash-lite');
+        $this->model = (string) env('GEMINI_MODEL', 'gemini-3.5-flash');
 
         if (empty($this->apiKey)) {
             Log::warning('[GeminiService] GOOGLE_API_KEY not configured — all calls will fail');
@@ -706,6 +706,9 @@ EQUIVALENCIAS DE PACKAGING (supermercado):
 - "PAN DE COMPLETO XL" o "PAN COMPLETO XL": se vende por bolsa. Si la boleta dice "2 X", son 2 bolsas. Registrar cantidad=2, unidad=unidad. El sistema convertirá a panes automáticamente.
 - "PAN DE HAMBURGUESA": se vende por bolsa. Misma lógica: registrar cantidad en bolsas.
 - Para salsas en botella (SALSA CHICKEN DIPP, SALSA BBQ, etc.): cantidad = lo que dice la boleta (generalmente 1), unidad = "unidad". Son botellas individuales.
+- "BIG MONTINA" o "SALCHICHA POLLO SURENA BIG MONTINA": 10 unidades por paquete. Si la boleta dice "3 X", son 3 paquetes. Registrar cantidad=3, unidad=unidad. Incluir empaque_detalle="Big Montina = 10 unidades/paquete".
+
+IMPORTANTE: Para productos que vienen en paquetes multi-unidad (salchichas BIG MONTINA, panes, etc.), usa el campo "empaque_detalle" para indicar la composición del paquete. Ej: "3 paquetes × 10 unidades = 30 unidades total".
 
 {$patterns}
 
@@ -735,12 +738,19 @@ REGLAS FACTURA CHILENA:
 - RUT del proveedor está en el encabezado, cerca del nombre de la empresa emisora
 - URLs/dominios identifican al proveedor: ariztiaatunegocio.cl → Ariztía, agrosuper.cl → Agrosuper
 
-IMPUESTOS EN FACTURAS CHILENAS:
-- En boletas el Total ya incluye IVA. En facturas NO — Total = Neto + ICA + IVA.
-- IVA (19%): calculado sobre el Neto (monto_neto × 0.19)
-- ICA (Impuesto a la Carne, 5%): SOLO en facturas de carnicerías/proveedores de carne. Calculado sobre el Neto (monto_neto × 0.05). Inclúyelo en "otros_impuestos".
-- Total = monto_neto + iva + otros_impuestos (si los hay). NO usar fórmula de boleta "total - iva = neto".
-- Los precios unitarios visibles son NETOS (sin IVA). Extraer los valores que aparecen en el detalle.
+IMPUESTOS EN FACTURAS CHILENAS — DISTINGUE SEGÚN TIPO:
+
+FACTURA MAYORISTA (Agrosuper, Ariztía, Super Pollo, Vanni, etc.):
+- Total = Neto + IVA + otros_impuestos (ICA si aplica).
+- IVA (19%): calculado sobre Neto.
+- ICA (5%): solo carnicerías, en "otros_impuestos".
+- Precios unitarios visibles son NETOS (sin IVA).
+
+FACTURA DE SUPERMERCADO (Cencosud/Jumbo, Santa Isabel, Unimarc, etc.):
+- Es como BOLETA pero formato factura (tiene RUT).
+- Precios en el detalle INCLUYEN IVA (igual que boleta).
+- Neto = Total / 1.19. IVA = Total - Neto.
+- Extrae NETO, IVA y TOTAL tal como aparecen.
 
 EMPAQUE EN FACTURAS MAYORISTAS:
 - "SALCHICHA BIG MONT 800G 10U 8X1" CANT=2 → 10×8×2 = 160 unidades
@@ -748,7 +758,20 @@ EMPAQUE EN FACTURAS MAYORISTAS:
 - nombre: LIMPIO sin empaque. precio_unitario: subtotal/cantidad_total
 - empaque_detalle: "10u/paq × 8paq/caja × 2 cajas = 160 unidades"
 
+FACTURAS DE SUPERMERCADO (Cencosud/Jumbo, etc.):
+- Cuando veas formato CONSUMIDOR tipo "3 X \$4.890" (cantidad × precio unitario), NO es formato mayorista.
+- cantidad = el número antes de "X" (3), unidad = "unidad", precio_unitario = el valor (\$4.890).
+- NO multipliques la cantidad por nada — la conversión a unidades individuales la hace el sistema después.
+- empaque_detalle: si el producto viene en paquetes multi-unidad conocidos, indícalo.
+  Ej: "SALCHICHA POLLO SURENA BIG MONTINA 800GR" "3 X \$4.890" →
+  cantidad=3, empaque_detalle="Big Montina = 10 unidades/paquete"
+
 FORMATO VANNI (RUT 76.979.850-1): cantidades directas, precios netos, TOTAL incluye IVA.
+
+PRODUCTOS CONOCIDOS CON PAQUETE MULTI-UNIDAD:
+- "BIG MONTINA" o "SALCHICHA POLLO SURENA BIG MONTINA" → 10 unidades por paquete
+- "PAN DE COMPLETO" → bolsa de panes
+- "PAN DE HAMBURGUESA" → bolsa de panes
 
 {$rutMap}
 Proveedores conocidos: {$suppliers}
@@ -1047,6 +1070,9 @@ EQUIVALENCIAS DE PACKAGING (supermercado):
 - "PAN DE COMPLETO XL" o "PAN COMPLETO": se vende por bolsa. Si la boleta dice "3 x 1 UN", son 3 bolsas. Registrar cantidad=3, unidad=unidad. El sistema convertirá a panes automáticamente.
 - "PAN DE HAMBURGUESA": se vende por bolsa. Misma lógica: registrar cantidad en bolsas.
 - Para salsas en botella: cantidad = lo que dice la boleta, unidad = "unidad".
+- "BIG MONTINA" o "SALCHICHA POLLO SURENA BIG MONTINA": 10 unidades por paquete. Si la boleta dice "3 X", son 3 paquetes. Registrar cantidad=3, unidad=unidad. Incluir empaque_detalle="Big Montina = 10 unidades/paquete".
+
+IMPORTANTE: Para productos multi-unidad, usa "empaque_detalle" con la composición. Ej: "3 paquetes × 10 unidades = 30 unidades total".
 
 {$patterns}
 RULES;
@@ -1062,12 +1088,19 @@ REGLAS FACTURA CHILENA:
 - RUT del proveedor está en el encabezado, cerca del nombre de la empresa emisora
 - URLs/dominios identifican al proveedor: ariztiaatunegocio.cl → Ariztía, agrosuper.cl → Agrosuper
 
-IMPUESTOS EN FACTURAS CHILENAS:
-- En boletas el Total ya incluye IVA. En facturas NO — Total = Neto + ICA + IVA.
-- IVA (19%): calculado sobre el Neto (monto_neto × 0.19)
-- ICA (Impuesto a la Carne, 5%): SOLO en facturas de carnicerías/proveedores de carne. Calculado sobre el Neto (monto_neto × 0.05). Inclúyelo en "otros_impuestos".
-- Total = monto_neto + iva + otros_impuestos (si los hay). NO usar fórmula de boleta "total - iva = neto".
-- Los precios unitarios visibles son NETOS (sin IVA). Extraer los valores que aparecen en el detalle.
+IMPUESTOS EN FACTURAS CHILENAS — DISTINGUE SEGÚN TIPO:
+
+FACTURA MAYORISTA (Agrosuper, Ariztía, Super Pollo, Vanni, etc.):
+- Total = Neto + IVA + otros_impuestos (ICA si aplica).
+- IVA (19%): calculado sobre Neto.
+- ICA (5%): solo carnicerías, en "otros_impuestos".
+- Precios unitarios visibles son NETOS (sin IVA).
+
+FACTURA DE SUPERMERCADO (Cencosud/Jumbo, Santa Isabel, Unimarc, etc.):
+- Es como BOLETA pero formato factura (tiene RUT).
+- Precios en el detalle INCLUYEN IVA (igual que boleta).
+- Neto = Total / 1.19. IVA = Total - Neto.
+- Extrae NETO, IVA y TOTAL tal como aparecen.
 
 EMPAQUE EN FACTURAS MAYORISTAS:
 - "SALCHICHA BIG MONT 800G 10U 8X1" CANT=2 → 10×8×2 = 160 unidades
@@ -1075,7 +1108,20 @@ EMPAQUE EN FACTURAS MAYORISTAS:
 - nombre: LIMPIO sin empaque. precio_unitario: subtotal/cantidad_total
 - empaque_detalle: "10u/paq × 8paq/caja × 2 cajas = 160 unidades"
 
+FACTURAS DE SUPERMERCADO (Cencosud/Jumbo, etc.):
+- Cuando veas formato CONSUMIDOR tipo "3 X $4.890" (cantidad × precio unitario), NO es formato mayorista.
+- cantidad = el número antes de "X" (3), unidad = "unidad", precio_unitario = el valor ($4.890).
+- NO multipliques la cantidad por nada — la conversión a unidades individuales la hace el sistema después.
+- empaque_detalle: si el producto viene en paquetes multi-unidad conocidos, indícalo.
+  Ej: "SALCHICHA POLLO SURENA BIG MONTINA 800GR" "3 X $4.890" →
+  cantidad=3, empaque_detalle="Big Montina = 10 unidades/paquete"
+
 FORMATO VANNI (RUT 76.979.850-1): cantidades directas, precios netos, TOTAL incluye IVA.
+
+PRODUCTOS CONOCIDOS CON PAQUETE MULTI-UNIDAD:
+- "BIG MONTINA" o "SALCHICHA POLLO SURENA BIG MONTINA" → 10 unidades por paquete
+- "PAN DE COMPLETO" → bolsa de panes
+- "PAN DE HAMBURGUESA" → bolsa de panes
 RULES;
     }
 
