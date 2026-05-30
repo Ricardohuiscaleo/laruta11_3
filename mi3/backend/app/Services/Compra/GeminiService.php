@@ -11,17 +11,17 @@ class GeminiService
 {
     private string $model;
     private string $apiKey;
-    private string $baseUrl = 'https://ollama.com/api';
+    private string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
 
     public function __construct()
     {
-        $this->apiKey = (string) env('OLLAMA_API_KEY', env('ollama_api_key', ''));
-        $this->model = (string) env('GEMINI_MODEL', 'gemini-3-flash-preview:cloud');
+        $this->apiKey = (string) env('GOOGLE_API_KEY', env('google_api_key', ''));
+        $this->model = (string) env('GEMINI_MODEL', 'gemini-3-flash-preview');
 
         if (empty($this->apiKey)) {
-            Log::warning('[GeminiService] OLLAMA_API_KEY not configured — all calls will fail');
+            Log::warning('[GeminiService] GOOGLE_API_KEY not configured — all calls will fail');
         } else {
-            Log::debug("[GeminiService] Initialized with model={$this->model} baseUrl={$this->baseUrl}");
+            Log::debug("[GeminiService] Initialized with model={$this->model}");
         }
     }
 
@@ -102,28 +102,33 @@ class GeminiService
     private function callGemini(string $prompt, string $imageBase64, array $schema, int $timeout, int $maxOutputTokens = 2048): ?array
     {
         if (empty($this->apiKey)) {
-            Log::error('[GeminiService] OLLAMA_API_KEY not configured');
+            Log::error('[GeminiService] GOOGLE_API_KEY not configured');
             return null;
         }
 
+        $url = "{$this->baseUrl}/{$this->model}:generateContent?key={$this->apiKey}";
         $imageSizeKb = (int) round(strlen($imageBase64) * 3 / 4 / 1024);
 
         $payload = [
-            'model' => $this->model,
-            'messages' => [
+            'contents' => [
                 [
-                    'role' => 'system',
-                    'content' => 'Eres un asistente experto en extracción de datos. RESPONDE ÚNICAMENTE EN FORMATO JSON VÁLIDO. No incluyas explicaciones ni texto adicional fuera del objeto JSON.',
-                ],
-                [
-                    'role' => 'user',
-                    'content' => $prompt,
-                    'images' => [$imageBase64],
+                    'parts' => [
+                        ['inline_data' => ['mime_type' => 'image/jpeg', 'data' => $imageBase64]],
+                        ['text' => $prompt],
+                    ],
                 ],
             ],
-            'stream' => false,
-            'options' => [
-                'num_predict' => $maxOutputTokens,
+            'safetySettings' => [
+                ['category' => 'HARM_CATEGORY_HARASSMENT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                ['category' => 'HARM_CATEGORY_HATE_SPEECH', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                ['category' => 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                ['category' => 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                ['category' => 'HARM_CATEGORY_CIVIC_INTEGRITY', 'threshold' => 'BLOCK_ONLY_HIGH'],
+            ],
+            'generationConfig' => [
+                'maxOutputTokens' => $maxOutputTokens,
+                'responseMimeType' => 'application/json',
+                'responseSchema' => $schema,
             ],
         ];
 
@@ -133,13 +138,10 @@ class GeminiService
 
         $ch = curl_init();
         curl_setopt_array($ch, [
-            CURLOPT_URL => "{$this->baseUrl}/chat",
+            CURLOPT_URL => $url,
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $jsonPayload,
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
-                "Authorization: Bearer {$this->apiKey}",
-            ],
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT => $timeout,
             CURLOPT_CONNECTTIMEOUT => 5,
@@ -168,13 +170,7 @@ class GeminiService
             return null;
         }
 
-        // Check done_reason
-        $doneReason = $decoded['done_reason'] ?? null;
-        if ($doneReason !== null && $doneReason !== 'stop' && $doneReason !== '') {
-            Log::warning("[GeminiService] Non-stop done_reason={$doneReason} after {$elapsedMs}ms (model={$this->model})");
-        }
-
-        Log::info("[GeminiService] OK {$elapsedMs}ms tokens=" . (($decoded['prompt_eval_count'] ?? 0) + ($decoded['eval_count'] ?? 0)));
+        Log::info("[GeminiService] OK {$elapsedMs}ms tokens=" . ($decoded['usageMetadata']['totalTokenCount'] ?? '?'));
 
         return $decoded;
     }
@@ -326,28 +322,32 @@ class GeminiService
     private function callGeminiText(string $prompt, array $schema, int $timeout, int $maxOutputTokens = 2048): ?array
     {
         if (empty($this->apiKey)) {
-            Log::error('[GeminiService] OLLAMA_API_KEY not configured');
+            Log::error('[GeminiService] GOOGLE_API_KEY not configured');
             return null;
         }
 
+        $url = "{$this->baseUrl}/{$this->model}:generateContent?key={$this->apiKey}";
+
         $payload = [
-            'model' => $this->model,
-            'messages' => [
+            'contents' => [
                 [
-                    'role' => 'system',
-                    'content' => 'Eres un asistente experto en extracción de datos. RESPONDE ÚNICAMENTE EN FORMATO JSON VÁLIDO. No incluyas explicaciones ni texto adicional fuera del objeto JSON.',
-                ],
-                [
-                    'role' => 'user',
-                    'content' => $prompt,
+                    'parts' => [
+                        ['text' => $prompt],
+                    ],
                 ],
             ],
-            'stream' => false,
-            'format' => 'json',
-            'options' => [
-                'temperature' => 0.1,
-                'num_predict' => $maxOutputTokens,
-            ]
+            'safetySettings' => [
+                ['category' => 'HARM_CATEGORY_HARASSMENT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                ['category' => 'HARM_CATEGORY_HATE_SPEECH', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                ['category' => 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                ['category' => 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                ['category' => 'HARM_CATEGORY_CIVIC_INTEGRITY', 'threshold' => 'BLOCK_ONLY_HIGH'],
+            ],
+            'generationConfig' => [
+                'maxOutputTokens' => $maxOutputTokens,
+                'responseMimeType' => 'application/json',
+                'responseSchema' => $schema,
+            ],
         ];
 
         $jsonPayload = json_encode($payload);
@@ -357,13 +357,10 @@ class GeminiService
 
         $ch = curl_init();
         curl_setopt_array($ch, [
-            CURLOPT_URL => "{$this->baseUrl}/chat",
+            CURLOPT_URL => $url,
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $jsonPayload,
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
-                "Authorization: Bearer {$this->apiKey}",
-            ],
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT => $timeout,
             CURLOPT_CONNECTTIMEOUT => 5,
@@ -392,12 +389,7 @@ class GeminiService
             return null;
         }
 
-        $doneReason = $decoded['done_reason'] ?? null;
-        if ($doneReason !== null && $doneReason !== 'stop' && $doneReason !== '') {
-            Log::warning("[GeminiService] Non-stop done_reason={$doneReason} after {$elapsedMs}ms (model={$this->model})");
-        }
-
-        Log::info("[GeminiService] OK {$elapsedMs}ms tokens=" . (($decoded['prompt_eval_count'] ?? 0) + ($decoded['eval_count'] ?? 0)));
+        Log::info("[GeminiService] OK {$elapsedMs}ms tokens=" . ($decoded['usageMetadata']['totalTokenCount'] ?? '?'));
 
         return $decoded;
     }
@@ -409,42 +401,59 @@ class GeminiService
      */
     private function parseResponse(array $response): ?array
     {
-        $text = trim($response['message']['content'] ?? '');
-        if ($text === '') {
-            Log::error('[GeminiService] No message content in response: ' . substr(json_encode($response), 0, 500));
+        if (empty($response['candidates'])) {
+            $blockReason = $response['promptFeedback']['blockReason'] ?? 'unknown';
+            Log::error("[GeminiService] No candidates in response. blockReason={$blockReason} response=" . substr(json_encode($response), 0, 500));
             return null;
         }
 
-        Log::debug('[GeminiService] parseResponse text: ' . substr($text, 0, 1000));
-
-        // Try direct JSON decode
-        $decoded = json_decode($text, true);
-        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-            return $decoded;
+        $parts = $response['candidates'][0]['content']['parts'] ?? [];
+        if (empty($parts)) {
+            Log::error('[GeminiService] No parts in candidate: ' . substr(json_encode($response['candidates'][0]), 0, 500));
+            return null;
         }
 
-        // Robust extraction: find first '{' and last '}'
-        $firstBrace = strpos($text, '{');
-        $lastBrace = strrpos($text, '}');
+        // Iterate all parts: skip thought parts, extract JSON from text parts
+        // Gemini 3.x models may include thinking/thought parts before the JSON output
+        foreach ($parts as $i => $part) {
+            if (!empty($part['thought'])) {
+                continue;
+            }
+            $text = trim($part['text'] ?? '');
+            if ($text === '') {
+                continue;
+            }
 
-        if ($firstBrace !== false && $lastBrace !== false && $lastBrace > $firstBrace) {
-            $jsonText = substr($text, $firstBrace, $lastBrace - $firstBrace + 1);
-            $decoded = json_decode($jsonText, true);
+            // Try direct JSON decode
+            $decoded = json_decode($text, true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                 return $decoded;
             }
-        }
 
-        // Fallback: try extracting from markdown ```json...``` blocks
-        if (preg_match('/```(?:json)?\s*([\s\S]*?)```/', $text, $matches)) {
-            $jsonText = trim($matches[1]);
-            $decoded = json_decode($jsonText, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                return $decoded;
+            // Robust extraction: find first '{' and last '}'
+            $firstBrace = strpos($text, '{');
+            $lastBrace = strrpos($text, '}');
+            if ($firstBrace !== false && $lastBrace !== false && $lastBrace > $firstBrace) {
+                $jsonText = substr($text, $firstBrace, $lastBrace - $firstBrace + 1);
+                $decoded = json_decode($jsonText, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    return $decoded;
+                }
             }
+
+            // Fallback: markdown ```json...``` blocks
+            if (preg_match('/```(?:json)?\s*([\s\S]*?)```/', $text, $matches)) {
+                $jsonText = trim($matches[1]);
+                $decoded = json_decode($jsonText, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    return $decoded;
+                }
+            }
+
+            Log::warning("[GeminiService] parseResponse part[{$i}] not valid JSON: " . substr($text, 0, 200));
         }
 
-        Log::error('[GeminiService] Failed to parse response: ' . substr($text, 0, 500));
+        Log::error('[GeminiService] Failed to parse JSON from any part. parts=' . count($parts));
         return null;
     }
 
@@ -453,12 +462,11 @@ class GeminiService
      */
     private function extractTokens(array $response): array
     {
-        $prompt = (int) ($response['prompt_eval_count'] ?? 0);
-        $candidates = (int) ($response['eval_count'] ?? 0);
+        $usage = $response['usageMetadata'] ?? [];
         return [
-            'prompt' => $prompt,
-            'candidates' => $candidates,
-            'total' => $prompt + $candidates,
+            'prompt' => (int) ($usage['promptTokenCount'] ?? 0),
+            'candidates' => (int) ($usage['candidatesTokenCount'] ?? 0),
+            'total' => (int) ($usage['totalTokenCount'] ?? 0),
         ];
     }
 
