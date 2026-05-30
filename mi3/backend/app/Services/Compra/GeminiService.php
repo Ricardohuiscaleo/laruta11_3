@@ -122,11 +122,9 @@ class GeminiService
                 ],
             ],
             'stream' => false,
-            'format' => 'json',
             'options' => [
-                'temperature' => 0.1,
                 'num_predict' => $maxOutputTokens,
-            ]
+            ],
         ];
 
         $jsonPayload = json_encode($payload);
