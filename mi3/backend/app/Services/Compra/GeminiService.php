@@ -125,7 +125,6 @@ class GeminiService
                 ['category' => 'HARM_CATEGORY_CIVIC_INTEGRITY', 'threshold' => 'BLOCK_ONLY_HIGH'],
             ],
             'generationConfig' => [
-                'temperature' => 0.1,
                 'maxOutputTokens' => $maxOutputTokens,
                 'responseMimeType' => 'application/json',
                 'responseSchema' => $schema,
@@ -351,7 +350,6 @@ class GeminiService
                 ['category' => 'HARM_CATEGORY_CIVIC_INTEGRITY', 'threshold' => 'BLOCK_ONLY_HIGH'],
             ],
             'generationConfig' => [
-                'temperature' => 0.1,
                 'maxOutputTokens' => $maxOutputTokens,
                 'responseMimeType' => 'application/json',
                 'responseSchema' => $schema,
