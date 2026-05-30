@@ -39,6 +39,7 @@ interface AiBudget {
   total_cost_usd: number;
   total_extractions: number;
   total_tokens: number;
+  model: string;
 }
 
 function TabSkeleton() {
@@ -55,6 +56,7 @@ function BudgetTrailing({ budget }: { budget: AiBudget | null }) {
     <div className="flex items-center gap-2 text-xs text-gray-500">
       <Zap className="h-3.5 w-3.5 text-amber-500 shrink-0" />
       <span className="hidden sm:inline">Presupuesto IA</span>
+      <span className="hidden lg:inline font-mono text-gray-400">({budget.model})</span>
       <span className="font-semibold text-gray-800">
         ${budget.remaining_clp.toLocaleString('es-CL')}
       </span>
