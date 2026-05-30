@@ -413,38 +413,48 @@ class GeminiService
      */
     private function parseResponse(array $response): ?array
     {
-        // Check if candidates exist at all
         if (empty($response['candidates'])) {
             $blockReason = $response['promptFeedback']['blockReason'] ?? 'unknown';
             Log::error("[GeminiService] No candidates in response. blockReason={$blockReason} response=" . substr(json_encode($response), 0, 500));
             return null;
         }
 
-        $text = $response['candidates'][0]['content']['parts'][0]['text'] ?? null;
-        if ($text === null) {
+        $parts = $response['candidates'][0]['content']['parts'] ?? [];
+        if (empty($parts)) {
             $finishReason = $response['candidates'][0]['finishReason'] ?? 'unknown';
-            Log::error("[GeminiService] No text in candidates. finishReason={$finishReason} candidate=" . substr(json_encode($response['candidates'][0]), 0, 500));
+            Log::error("[GeminiService] No parts in candidates. finishReason={$finishReason} candidate=" . substr(json_encode($response['candidates'][0]), 0, 500));
             return null;
         }
 
-        $text = trim($text);
+        // Try each part: skip thought parts, find JSON in text parts
+        foreach ($parts as $i => $part) {
+            if (!empty($part['thought'])) {
+                continue;
+            }
+            $text = trim($part['text'] ?? '');
+            if ($text === '') {
+                continue;
+            }
 
-        // Try direct JSON decode first
-        $decoded = json_decode($text, true);
-        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-            return $decoded;
-        }
-
-        // Fallback: try extracting from markdown ```json...``` blocks
-        if (preg_match('/```(?:json)?\s*([\s\S]*?)```/', $text, $matches)) {
-            $jsonText = trim($matches[1]);
-            $decoded = json_decode($jsonText, true);
+            // Try direct JSON decode
+            $decoded = json_decode($text, true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                 return $decoded;
             }
+
+            // Fallback: try extracting from markdown ```json...``` blocks
+            if (preg_match('/```(?:json)?\s*([\s\S]*?)```/', $text, $matches)) {
+                $jsonText = trim($matches[1]);
+                $decoded = json_decode($jsonText, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    return $decoded;
+                }
+            }
+
+            Log::warning("[GeminiService] parseResponse part[{$i}] not valid JSON: " . substr($text, 0, 200));
         }
 
-        Log::error('[GeminiService] Failed to parse response: ' . substr($text, 0, 300));
+        Log::error('[GeminiService] Failed to parse JSON from any part. parts=' . count($parts));
         return null;
     }
 
