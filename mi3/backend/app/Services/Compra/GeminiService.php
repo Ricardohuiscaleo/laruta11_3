@@ -743,12 +743,13 @@ Proveedores conocidos: {$suppliers}
 Ingredientes conocidos: {$products}
 
 EQUIVALENCIAS DE PACKAGING (supermercado):
-- "PAN DE COMPLETO XL" o "PAN COMPLETO XL": se vende por bolsa. Si la boleta dice "2 X", son 2 bolsas. Registrar cantidad=2, unidad=unidad. El sistema convertirá a panes automáticamente.
-- "PAN DE HAMBURGUESA": se vende por bolsa. Misma lógica: registrar cantidad en bolsas.
-- Para salsas en botella (SALSA CHICKEN DIPP, SALSA BBQ, etc.): cantidad = lo que dice la boleta (generalmente 1), unidad = "unidad". Son botellas individuales.
-- "BIG MONTINA" o "SALCHICHA POLLO SURENA BIG MONTINA": 10 unidades por paquete. Si la boleta dice "3 X", son 3 paquetes. Registrar cantidad=3, unidad=unidad. Incluir empaque_detalle="Big Montina = 10 unidades/paquete".
+- "PAN DE COMPLETO XL" o "PAN COMPLETO XL": se vende por bolsa. cantidad=1 por bolsa, unidad="unidad".
+- "PAN DE HAMBURGUESA": se vende por bolsa. cantidad=1 por bolsa, unidad="unidad".
+- Salsas en botella (SALSA CHICKEN DIPP, SALSA BBQ, etc.): cantidad=1, unidad="unidad". Son botellas individuales.
+- "BIG MONTINA" o "SALCHICHA POLLO SURENA BIG MONTINA" (cualquier variante): 10 unidades por paquete. DEBES multiplicar: si dice "3 X" → cantidad=30, unidad="unidad", precio_unitario=precio_total/30, empaque_detalle="3 paquetes × 10u c/u".
+- "LAMINADO DE TOCINO": 1 unidad = 50g = 0.05 kg. Si dice "5 X" → cantidad=0.25, unidad="kg".
 
-IMPORTANTE: Para productos que vienen en paquetes multi-unidad (salchichas BIG MONTINA, panes, etc.), usa el campo "empaque_detalle" para indicar la composición del paquete. Ej: "3 paquetes × 10 unidades = 30 unidades total".
+REGLA FUNDAMENTAL: Para productos multi-unidad, cantidad DEBE reflejar el número total de unidades individuales. Hacé la multiplicación vos mismo. NUNCA dejes paquetes sin multiplicar.
 
 {$patterns}
 
@@ -798,20 +799,19 @@ EMPAQUE EN FACTURAS MAYORISTAS:
 - nombre: LIMPIO sin empaque. precio_unitario: subtotal/cantidad_total
 - empaque_detalle: "10u/paq × 8paq/caja × 2 cajas = 160 unidades"
 
-FACTURAS DE SUPERMERCADO (Cencosud/Jumbo, etc.):
+FACTURAS DE SUPERMERCADO (Cencosud/Jumbo, Santa Isabel, Unimarc, etc.):
 - Cuando veas formato CONSUMIDOR tipo "3 X \$4.890" (cantidad × precio unitario), NO es formato mayorista.
-- cantidad = el número antes de "X" (3), unidad = "unidad", precio_unitario = el valor (\$4.890).
-- NO multipliques la cantidad por nada — la conversión a unidades individuales la hace el sistema después.
-- empaque_detalle: si el producto viene en paquetes multi-unidad conocidos, indícalo.
-  Ej: "SALCHICHA POLLO SURENA BIG MONTINA 800GR" "3 X \$4.890" →
-  cantidad=3, empaque_detalle="Big Montina = 10 unidades/paquete"
+- cantidad = número de paquetes × unidades_por_paquete (DEBES hacer la multiplicación si el producto es multi-unidad).
+- unidad = "unidad", precio_unitario = precio_unitario_visible / unidades_por_paquete.
+- empaque_detalle: explica el desglose (ej: "3 paquetes × 10 u = 30 unidades totales").
 
 FORMATO VANNI (RUT 76.979.850-1): cantidades directas, precios netos, TOTAL incluye IVA.
 
-PRODUCTOS CONOCIDOS CON PAQUETE MULTI-UNIDAD:
-- "BIG MONTINA" o "SALCHICHA POLLO SURENA BIG MONTINA" → 10 unidades por paquete
-- "PAN DE COMPLETO" → bolsa de panes
-- "PAN DE HAMBURGUESA" → bolsa de panes
+PRODUCTOS CONOCIDOS CON PAQUETE MULTI-UNIDAD (APLICA LA MULTIPLICACIÓN):
+- "BIG MONTINA" / "SALCHICHA POLLO SURENA BIG MONTINA" (cualquier variante) → 10 unidades por paquete.
+  Ej: boleta dice "3 X \$4.290" → cantidad=30, unidad="unidad", precio_unitario=429, empaque_detalle="3 paquetes × 10u c/u = 30u total"
+- "LAMINADO DE TOCINO" → 1 unidad = 50g. cantidad = número de láminas × 0.05 (kg).
+- "PAN DE COMPLETO" / "PAN DE HAMBURGUESA" → bolsa. cantidad=1 por bolsa, unidad="unidad".
 
 {$rutMap}
 Proveedores conocidos: {$suppliers}
@@ -1107,12 +1107,13 @@ RUTs conocidos:
 81.537.500-5 = Unimarc (Rendic Hermanos S.A. / SMU)
 
 EQUIVALENCIAS DE PACKAGING (supermercado):
-- "PAN DE COMPLETO XL" o "PAN COMPLETO": se vende por bolsa. Si la boleta dice "3 x 1 UN", son 3 bolsas. Registrar cantidad=3, unidad=unidad. El sistema convertirá a panes automáticamente.
-- "PAN DE HAMBURGUESA": se vende por bolsa. Misma lógica: registrar cantidad en bolsas.
-- Para salsas en botella: cantidad = lo que dice la boleta, unidad = "unidad".
-- "BIG MONTINA" o "SALCHICHA POLLO SURENA BIG MONTINA": 10 unidades por paquete. Si la boleta dice "3 X", son 3 paquetes. Registrar cantidad=3, unidad=unidad. Incluir empaque_detalle="Big Montina = 10 unidades/paquete".
+- "PAN DE COMPLETO XL" o "PAN COMPLETO": se vende por bolsa. cantidad=1, unidad="unidad".
+- "PAN DE HAMBURGUESA": se vende por bolsa. cantidad=1, unidad="unidad".
+- Salsas en botella: cantidad=1, unidad="unidad".
+- "BIG MONTINA" o "SALCHICHA POLLO SURENA BIG MONTINA" (cualquier variante): 10 unidades por paquete. DEBES multiplicar: si dice "3 X" → cantidad=30, precio_unitario=precio_total/30, empaque_detalle="3 paquetes × 10u c/u = 30u total".
+- "LAMINADO DE TOCINO": 1 unidad = 50g = 0.05kg. Si dice "5 X" → cantidad=0.25, unidad="kg".
 
-IMPORTANTE: Para productos multi-unidad, usa "empaque_detalle" con la composición. Ej: "3 paquetes × 10 unidades = 30 unidades total".
+REGLA FUNDAMENTAL: Para productos multi-unidad, cantidad DEBE ser el total de unidades individuales. Multiplicá vos mismo, no dejes paquetes sin expandir.
 
 {$patterns}
 RULES;
@@ -1148,20 +1149,19 @@ EMPAQUE EN FACTURAS MAYORISTAS:
 - nombre: LIMPIO sin empaque. precio_unitario: subtotal/cantidad_total
 - empaque_detalle: "10u/paq × 8paq/caja × 2 cajas = 160 unidades"
 
-FACTURAS DE SUPERMERCADO (Cencosud/Jumbo, etc.):
+FACTURAS DE SUPERMERCADO (Cencosud/Jumbo, Santa Isabel, Unimarc, etc.):
 - Cuando veas formato CONSUMIDOR tipo "3 X $4.890" (cantidad × precio unitario), NO es formato mayorista.
-- cantidad = el número antes de "X" (3), unidad = "unidad", precio_unitario = el valor ($4.890).
-- NO multipliques la cantidad por nada — la conversión a unidades individuales la hace el sistema después.
-- empaque_detalle: si el producto viene en paquetes multi-unidad conocidos, indícalo.
-  Ej: "SALCHICHA POLLO SURENA BIG MONTINA 800GR" "3 X $4.890" →
-  cantidad=3, empaque_detalle="Big Montina = 10 unidades/paquete"
+- cantidad = número de paquetes × unidades_por_paquete (DEBES hacer la multiplicación si el producto es multi-unidad).
+- unidad = "unidad", precio_unitario = precio_unitario_visible / unidades_por_paquete.
+- empaque_detalle: detalla el desglose (ej: "3 paquetes × 10u c/u = 30u total").
 
 FORMATO VANNI (RUT 76.979.850-1): cantidades directas, precios netos, TOTAL incluye IVA.
 
-PRODUCTOS CONOCIDOS CON PAQUETE MULTI-UNIDAD:
-- "BIG MONTINA" o "SALCHICHA POLLO SURENA BIG MONTINA" → 10 unidades por paquete
-- "PAN DE COMPLETO" → bolsa de panes
-- "PAN DE HAMBURGUESA" → bolsa de panes
+PRODUCTOS CONOCIDOS CON PAQUETE MULTI-UNIDAD (APLICA LA MULTIPLICACIÓN):
+- "BIG MONTINA" / "SALCHICHA POLLO SURENA BIG MONTINA" (cualquier variante) → 10 unidades por paquete.
+  Ej: boleta dice "3 X $4.290" → cantidad=30, unidad="unidad", precio_unitario=429, empaque_detalle="3 paquetes × 10u c/u = 30u total"
+- "LAMINADO DE TOCINO" → 1 unidad = 50g = 0.05kg. Si dice "5 X" → cantidad=0.25, unidad="kg".
+- "PAN DE COMPLETO" / "PAN DE HAMBURGUESA" → bolsa. cantidad=1, unidad="unidad".
 RULES;
     }
 
