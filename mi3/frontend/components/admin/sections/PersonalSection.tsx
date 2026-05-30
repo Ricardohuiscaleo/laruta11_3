@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
-import { Loader2, Plus, X, Pencil, ToggleLeft, ToggleRight, User, RotateCw, Search } from 'lucide-react';
+import { Loader2, Plus, X, Pencil, ToggleLeft, ToggleRight, User, RotateCw, Camera, Search } from 'lucide-react';
 import type { Personal, ApiResponse } from '@/types';
 import type { SectionHeaderConfig } from '@/components/admin/AdminShell';
 import type { CustomerUser } from '@/types/admin';
@@ -181,6 +181,20 @@ export default function PersonalSection({ onHeaderConfig }: PersonalSectionProps
     } catch {}
   };
 
+  const uploadFoto = async (id: number, file: File) => {
+    const fd = new FormData();
+    fd.append('foto', file);
+    try {
+      const res = await apiFetch<{ success: boolean; foto_url: string }>(`/admin/personal/${id}/upload-foto`, {
+        method: 'POST',
+        body: fd,
+      });
+      if (res.foto_url) {
+        setPersonal(prev => prev.map(p => p.id === id ? { ...p, foto_url: res.foto_url, foto_rotation: 0 } : p));
+      }
+    } catch {}
+  };
+
   /* ─── Render Work tab ─── */
   const renderWork = () => {
     if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-amber-600" /></div>;
@@ -226,6 +240,12 @@ export default function PersonalSection({ onHeaderConfig }: PersonalSectionProps
                           <User className="h-4 w-4 text-amber-600" />
                         </div>
                       )}
+                      <button onClick={(e) => { e.stopPropagation(); document.getElementById(`foto-upload-${p.id}`)?.click(); }}
+                        className="rounded p-1 hover:bg-gray-100" title="Subir foto">
+                        <Camera className="h-3.5 w-3.5 text-gray-400 hover:text-amber-600" />
+                      </button>
+                      <input id={`foto-upload-${p.id}`} type="file" accept="image/*" className="hidden"
+                        onChange={e => { const f = e.target.files?.[0]; if (f) { uploadFoto(p.id, f); e.target.value = ''; } }} />
                       {p.nombre}
                     </div>
                   </td>

@@ -143,6 +143,7 @@ Route::prefix('v1')->group(function () {
         Route::put('personal/{id}', [\App\Http\Controllers\Admin\PersonalController::class, 'update']);
         Route::patch('personal/{id}/toggle', [\App\Http\Controllers\Admin\PersonalController::class, 'toggle']);
         Route::patch('personal/{id}/rotate-foto', [\App\Http\Controllers\Admin\PersonalController::class, 'rotateFoto']);
+        Route::post('personal/{id}/upload-foto', [\App\Http\Controllers\Admin\PersonalController::class, 'uploadFoto']);
 
         // Turnos
         Route::get('shifts', [\App\Http\Controllers\Admin\ShiftController::class, 'index']);

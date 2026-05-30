@@ -9,6 +9,8 @@ use App\Models\Personal;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class PersonalController extends Controller
 {
@@ -97,5 +99,25 @@ class PersonalController extends Controller
         $personal = Personal::findOrFail($id);
         $personal->update(['foto_rotation' => (int) $request->input('rotation', 0) % 360]);
         return response()->json(['success' => true]);
+    }
+
+    public function uploadFoto(Request $request, int $id): JsonResponse
+    {
+        $personal = Personal::findOrFail($id);
+
+        $request->validate([
+            'foto' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        ]);
+
+        $file = $request->file('foto');
+        $uuid = Str::uuid()->toString();
+        $filename = "{$id}_{$uuid}." . $file->getClientOriginalExtension();
+        $path = Storage::disk('s3')->putFileAs('personal', $file, $filename);
+
+        $url = Storage::disk('s3')->url($path);
+
+        $personal->update(['foto_url' => $url, 'foto_rotation' => 0]);
+
+        return response()->json(['success' => true, 'foto_url' => $url]);
     }
 }
