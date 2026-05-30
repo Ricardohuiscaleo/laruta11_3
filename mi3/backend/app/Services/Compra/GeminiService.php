@@ -117,6 +117,13 @@ class GeminiService
                     ],
                 ],
             ],
+            'safetySettings' => [
+                ['category' => 'HARM_CATEGORY_HARASSMENT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                ['category' => 'HARM_CATEGORY_HATE_SPEECH', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                ['category' => 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                ['category' => 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                ['category' => 'HARM_CATEGORY_CIVIC_INTEGRITY', 'threshold' => 'BLOCK_ONLY_HIGH'],
+            ],
             'generationConfig' => [
                 'temperature' => 0.1,
                 'maxOutputTokens' => $maxOutputTokens,
@@ -234,7 +241,13 @@ class GeminiService
         $schema = $this->buildExtractionSchema();
         $response = $this->callGeminiText($prompt, $schema, 12, 2048);
         if ($response === null) {
-            return null;
+            Log::warning('[GeminiService] analizarTexto: first attempt failed, retrying...');
+            usleep(500_000);
+            $response = $this->callGeminiText($prompt, $schema, 15, 2048);
+            if ($response === null) {
+                Log::error('[GeminiService] analizarTexto: retry also failed');
+                return null;
+            }
         }
         $parsed = $this->parseResponse($response);
         if ($parsed === null) {
@@ -330,6 +343,13 @@ class GeminiService
                     ],
                 ],
             ],
+            'safetySettings' => [
+                ['category' => 'HARM_CATEGORY_HARASSMENT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                ['category' => 'HARM_CATEGORY_HATE_SPEECH', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                ['category' => 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                ['category' => 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+                ['category' => 'HARM_CATEGORY_CIVIC_INTEGRITY', 'threshold' => 'BLOCK_ONLY_HIGH'],
+            ],
             'generationConfig' => [
                 'temperature' => 0.1,
                 'maxOutputTokens' => $maxOutputTokens,
@@ -339,6 +359,9 @@ class GeminiService
         ];
 
         $jsonPayload = json_encode($payload);
+        $promptSize = strlen($prompt);
+
+        Log::info("[GeminiService] callGeminiText model={$this->model} timeout={$timeout}s prompt={$promptSize}chars maxTokens={$maxOutputTokens}");
 
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -351,26 +374,36 @@ class GeminiService
             CURLOPT_CONNECTTIMEOUT => 5,
         ]);
 
+        $t0 = microtime(true);
         $responseBody = curl_exec($ch);
+        $elapsedMs = (int) round((microtime(true) - $t0) * 1000);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
         curl_close($ch);
 
         if ($curlError !== '') {
-            Log::error("[GeminiService] cURL error: {$curlError}");
+            Log::error("[GeminiService] cURL error after {$elapsedMs}ms (model={$this->model}): {$curlError}");
             return null;
         }
 
         if ($httpCode < 200 || $httpCode >= 300) {
-            Log::error("[GeminiService] HTTP {$httpCode}: " . substr((string) $responseBody, 0, 500));
+            Log::error("[GeminiService] HTTP {$httpCode} after {$elapsedMs}ms (model={$this->model}): " . substr((string) $responseBody, 0, 500));
             return null;
         }
 
         $decoded = json_decode((string) $responseBody, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            Log::error('[GeminiService] Failed to decode API response JSON');
+            Log::error("[GeminiService] Failed to decode JSON after {$elapsedMs}ms (model={$this->model}): " . substr((string) $responseBody, 0, 300));
             return null;
         }
+
+        // Check for blocked/empty candidates
+        $finishReason = $decoded['candidates'][0]['finishReason'] ?? null;
+        if ($finishReason !== null && $finishReason !== 'STOP') {
+            Log::warning("[GeminiService] Non-STOP finishReason={$finishReason} after {$elapsedMs}ms (model={$this->model})");
+        }
+
+        Log::info("[GeminiService] OK {$elapsedMs}ms tokens=" . ($decoded['usageMetadata']['totalTokenCount'] ?? '?'));
 
         return $decoded;
     }
