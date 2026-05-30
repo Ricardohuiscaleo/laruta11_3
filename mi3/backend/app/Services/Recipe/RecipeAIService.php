@@ -11,7 +11,7 @@ class RecipeAIService
 {
     private string $apiKey;
     private string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
-    private string $model = 'gemini-3.5-flash';
+    private string $model = 'gemini-3-flash-preview:cloud';
 
     public function __construct()
     {

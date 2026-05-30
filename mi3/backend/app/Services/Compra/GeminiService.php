@@ -112,6 +112,10 @@ class GeminiService
             'model' => $this->model,
             'messages' => [
                 [
+                    'role' => 'system',
+                    'content' => 'Eres un asistente experto en extracción de datos. RESPONDE ÚNICAMENTE EN FORMATO JSON VÁLIDO. No incluyas explicaciones ni texto adicional fuera del objeto JSON.',
+                ],
+                [
                     'role' => 'user',
                     'content' => $prompt,
                     'images' => [$imageBase64],
@@ -119,6 +123,10 @@ class GeminiService
             ],
             'stream' => false,
             'format' => 'json',
+            'options' => [
+                'temperature' => 0.1,
+                'num_predict' => $maxOutputTokens,
+            ]
         ];
 
         $jsonPayload = json_encode($payload);
@@ -328,12 +336,20 @@ class GeminiService
             'model' => $this->model,
             'messages' => [
                 [
+                    'role' => 'system',
+                    'content' => 'Eres un asistente experto en extracción de datos. RESPONDE ÚNICAMENTE EN FORMATO JSON VÁLIDO. No incluyas explicaciones ni texto adicional fuera del objeto JSON.',
+                ],
+                [
                     'role' => 'user',
                     'content' => $prompt,
                 ],
             ],
             'stream' => false,
             'format' => 'json',
+            'options' => [
+                'temperature' => 0.1,
+                'num_predict' => $maxOutputTokens,
+            ]
         ];
 
         $jsonPayload = json_encode($payload);
@@ -395,17 +411,28 @@ class GeminiService
      */
     private function parseResponse(array $response): ?array
     {
-        if (empty($response['message']['content'])) {
+        $text = trim($response['message']['content'] ?? '');
+        if ($text === '') {
             Log::error('[GeminiService] No message content in response: ' . substr(json_encode($response), 0, 500));
             return null;
         }
-
-        $text = trim($response['message']['content']);
 
         // Try direct JSON decode
         $decoded = json_decode($text, true);
         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
             return $decoded;
+        }
+
+        // Robust extraction: find first '{' and last '}'
+        $firstBrace = strpos($text, '{');
+        $lastBrace = strrpos($text, '}');
+
+        if ($firstBrace !== false && $lastBrace !== false && $lastBrace > $firstBrace) {
+            $jsonText = substr($text, $firstBrace, $lastBrace - $firstBrace + 1);
+            $decoded = json_decode($jsonText, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
         }
 
         // Fallback: try extracting from markdown ```json...``` blocks
@@ -417,7 +444,7 @@ class GeminiService
             }
         }
 
-        Log::error('[GeminiService] Failed to parse response: ' . substr($text, 0, 300));
+        Log::error('[GeminiService] Failed to parse response: ' . substr($text, 0, 500));
         return null;
     }
 

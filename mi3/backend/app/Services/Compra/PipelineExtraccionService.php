@@ -281,7 +281,7 @@ class PipelineExtraccionService
 
             if (!$visionResult) {
                 $elapsedVision = (int) round((microtime(true) - $phaseStart) * 1000);
-                $geminiModel = env('GEMINI_MODEL', 'gemini-3.5-flash');
+                $geminiModel = env('GEMINI_MODEL', 'gemini-3-flash-preview:cloud');
                 $pipelinePhases['vision'] = [
                     'elapsed_ms' => $elapsedVision,
                     'success' => false,
@@ -688,7 +688,7 @@ class PipelineExtraccionService
                 'elapsed_ms' => (int) round((microtime(true) - $phaseStart) * 1000),
                 'success' => true,
                 'engine' => 'gemini',
-                'model_id' => env('GEMINI_MODEL', 'gemini-3.5-flash'),
+                'model_id' => env('GEMINI_MODEL', 'gemini-3-flash-preview:cloud'),
                 'tipo_usado' => $tipo,
                 'tokens' => $tokensAnalisis,
             ];
@@ -761,7 +761,7 @@ class PipelineExtraccionService
                 'confidence_scores' => $confidenceScores,
                 'overall_confidence' => $overallConfidence,
                 'processing_time_ms' => $processingTimeMs,
-                'model_id' => env('GEMINI_MODEL', 'gemini-3.5-flash'),
+                'model_id' => env('GEMINI_MODEL', 'gemini-3-flash-preview:cloud'),
                 'status' => 'success',
                 'error_message' => null,
             ]);
@@ -814,7 +814,7 @@ class PipelineExtraccionService
                 'confidence_scores' => [],
                 'overall_confidence' => 0,
                 'processing_time_ms' => $processingTimeMs,
-                'model_id' => env('GEMINI_MODEL', 'gemini-3.5-flash'),
+                'model_id' => env('GEMINI_MODEL', 'gemini-3-flash-preview:cloud'),
                 'status' => 'failed',
                 'error_message' => $error,
             ]);
