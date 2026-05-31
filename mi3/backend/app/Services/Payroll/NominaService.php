@@ -26,10 +26,10 @@ class NominaService
             $liqRuta11 = $this->liquidacionService->calcular($p, $mes, 'ruta11');
             $liqSeguridad = $this->liquidacionService->calcular($p, $mes, 'seguridad');
 
-            if ($liqRuta11['sueldo_base'] > 0 || $liqRuta11['dias_normales'] > 0) {
+            if ($liqRuta11['sueldo_base'] > 0 || $liqRuta11['total'] != 0) {
                 $ruta11[] = ['personal' => $p, 'liquidacion' => $liqRuta11];
             }
-            if ($liqSeguridad['sueldo_base'] > 0 || $liqSeguridad['dias_normales'] > 0) {
+            if ($liqSeguridad['sueldo_base'] > 0 || $liqSeguridad['total'] != 0) {
                 $seguridad[] = ['personal' => $p, 'liquidacion' => $liqSeguridad];
             }
         }
