@@ -57,7 +57,7 @@ export default function NominaPublicPage({ params }: { params: { token: string }
   if (!data) return null;
 
   const r11 = data.ruta11;
-  const seg = data.seguridad;
+  const seg = data.seguridad ?? { workers: [], summary: { presupuesto: 0, total_sueldos_base: 0, total_descuentos: 0, total_creditos: 0, total_a_pagar: 0 } };
   const r11Workers = r11.workers.filter(w => !w.rol?.includes('dueño'));
   const segWorkers = seg.workers.filter(w => !w.rol?.includes('dueño'));
   const grandTotal = r11.summary.total_a_pagar + seg.summary.total_a_pagar;

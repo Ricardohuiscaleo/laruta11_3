@@ -302,6 +302,15 @@ class PayrollController extends Controller
         $response = $this->index($fakeRequest);
         $payrollData = json_decode($response->getContent(), true)['data'] ?? [];
 
+        // El resumen público solo muestra Ruta 11 (excluye Cam Seguridad y reemplazos)
+        unset($payrollData['seguridad']);
+        if (isset($payrollData['ruta11']['workers'])) {
+            $payrollData['ruta11']['workers'] = array_values(array_filter(
+                $payrollData['ruta11']['workers'],
+                fn($w) => ($w['sueldo_base'] ?? 0) > 0 || ($w['dias_normales'] ?? 0) > 0
+            ));
+        }
+
         $snapshot = NominaSnapshot::create([
             'mes' => $mes,
             'data' => $payrollData,
