@@ -75,6 +75,7 @@ class PayrollController extends Controller
 
                 // R11 credit pending — only applies to ruta11 cost center
                 $creditoPendiente = 0;
+                $r11Compras = [];
                 if ($centro === 'ruta11' && $p->user_id) {
                     $usuario = DB::table('usuarios')
                         ->where('id', $p->user_id)
@@ -95,6 +96,25 @@ class PayrollController extends Controller
                             ->exists();
 
                         $creditoPendiente = $yaDescontado ? 0 : (float) $usuario->credito_r11_usado;
+
+                        // Fetch R11 purchase detail
+                        if ($creditoPendiente > 0) {
+                            $r11Compras = DB::table('tuu_orders')
+                                ->where('user_id', $usuario->id)
+                                ->where('pagado_con_credito_r11', 1)
+                                ->whereMonth('created_at', explode('-', $mes)[1])
+                                ->whereYear('created_at', explode('-', $mes)[0])
+                                ->orderBy('created_at', 'desc')
+                                ->select('order_number', 'product_name', 'monto_credito_r11', 'created_at')
+                                ->get()
+                                ->map(fn($o) => [
+                                    'orden' => $o->order_number,
+                                    'producto' => $o->product_name,
+                                    'monto' => (float) $o->monto_credito_r11,
+                                    'fecha' => $o->created_at,
+                                ])
+                                ->toArray();
+                        }
                     }
                 }
 
@@ -127,6 +147,7 @@ class PayrollController extends Controller
                     'total_descuentos' => (int) round($totalDescuentos),
                     'total_bonos' => (int) round($totalBonos),
                     'credito_r11_pendiente' => $creditoPendiente,
+                    'r11_compras' => $r11Compras,
                     'total_a_pagar' => $totalAPagar,
                 ];
             }

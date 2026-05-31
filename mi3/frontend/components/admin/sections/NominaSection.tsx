@@ -29,6 +29,13 @@ interface ReplacementGroup {
   pago_por: string;
 }
 
+interface R11Compra {
+  orden: string;
+  producto: string;
+  monto: number;
+  fecha: string;
+}
+
 interface WorkerPayroll {
   personal_id: number;
   nombre: string;
@@ -45,6 +52,7 @@ interface WorkerPayroll {
   total_descuentos: number;
   total_bonos: number;
   credito_r11_pendiente: number;
+  r11_compras: R11Compra[];
   total_a_pagar: number;
 }
 
@@ -453,12 +461,27 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
 
                   {/* Crédito R11 */}
                   {w.credito_r11_pendiente > 0 && (
-                    <div className="flex items-center justify-between rounded-lg bg-orange-50 px-2 py-1.5 text-xs">
-                      <div className="flex items-center gap-1">
-                        <CreditCard className="h-3.5 w-3.5 text-orange-500" />
-                        <span className="font-medium">Crédito R11 pendiente</span>
+                    <div className="rounded-lg bg-orange-50 border border-orange-200 overflow-hidden">
+                      <div className="flex items-center justify-between px-2 py-1.5 text-xs">
+                        <div className="flex items-center gap-1">
+                          <CreditCard className="h-3.5 w-3.5 text-orange-500" />
+                          <span className="font-medium">Crédito R11 pendiente</span>
+                        </div>
+                        <span className="font-semibold text-red-600">-{formatCLP(w.credito_r11_pendiente)}</span>
                       </div>
-                      <span className="font-semibold text-red-600">-{formatCLP(w.credito_r11_pendiente)}</span>
+                      {w.r11_compras && w.r11_compras.length > 0 && (
+                        <div className="border-t border-orange-200 divide-y divide-orange-200">
+                          {w.r11_compras.map((c, i) => (
+                            <div key={i} className="flex items-center justify-between px-2 py-1 text-[11px]">
+                              <div className="flex-1 min-w-0">
+                                <p className="truncate font-medium text-gray-700">{c.producto}</p>
+                                <p className="text-gray-400">{new Date(c.fecha).toLocaleDateString('es-CL')} · {c.orden}</p>
+                              </div>
+                              <span className="shrink-0 ml-2 font-semibold text-gray-700">{formatCLP(c.monto)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 
