@@ -78,16 +78,18 @@ export default function ExtractionPipeline({ tempKey, onResult, onError, onRecon
   const handleEvent = useCallback((event: PipelineEvent) => {
     const { fase, status, data, elapsed_ms, engine } = event;
 
-    if (fase === 'resultado') {
+      if (fase === 'resultado') {
       setTotalMs(elapsed_ms);
       if (status === 'done' && data?.success) {
         const result = data as unknown as {
+          extraction_log_id?: number;
           data: ExtractionResult;
           sugerencias: ExtractionResult['sugerencias'];
           confianza: ExtractionResult['confianza'];
         };
         const extraction: ExtractionResult = {
           ...result.data,
+          extraction_log_id: result.extraction_log_id ?? result.data?.extraction_log_id,
           confianza: result.confianza ?? result.data?.confianza,
           sugerencias: result.sugerencias ?? result.data?.sugerencias,
         };

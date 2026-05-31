@@ -92,11 +92,19 @@ class CompraController extends Controller
             // Capture feedback if extraction_log_id is present (auto-learning)
             $extractionLogId = $request->input('extraction_log_id');
             if ($extractionLogId) {
+                // Normalize field names to match extract schema
+                $feedbackData = $data;
+                $feedbackData['fecha'] = $data['fecha_compra'] ?? null;
+                $feedbackData['items'] = array_map(function ($item) {
+                    $item['nombre'] = $item['nombre_item'] ?? $item['nombre'] ?? '';
+                    unset($item['nombre_item'], $item['ingrediente_id'], $item['product_id'], $item['item_type']);
+                    return $item;
+                }, $data['items'] ?? []);
                 try {
                     $this->feedbackService->capturarFeedback(
                         (int) $extractionLogId,
                         $result['compra_id'],
-                        $data,
+                        $feedbackData,
                     );
                 } catch (\Exception $e) {
                     Log::warning('FeedbackService: Error capturando feedback', [

@@ -370,6 +370,7 @@ export default function RegistroPage() {
         const res = await comprasApi.post<{
           success: boolean;
           data?: ExtractionResult;
+          extraction_log_id?: number;
           confianza?: any;
           sugerencias?: { proveedor: any; items: ItemSugerencia[] };
           error?: string;
@@ -377,7 +378,7 @@ export default function RegistroPage() {
 
         if (res.success && res.data) {
           img.status = 'extracted';
-          img.extraction = { ...res.data, confianza: res.confianza ?? res.data.confianza, sugerencias: res.sugerencias };
+          img.extraction = { ...res.data, extraction_log_id: res.extraction_log_id, confianza: res.confianza ?? res.data.confianza, sugerencias: res.sugerencias };
           img.sugerencias = res.sugerencias;
         } else {
           img.status = 'error';
@@ -664,6 +665,7 @@ export default function RegistroPage() {
     setSubmitting(true);
     try {
       const hasTaxInfo = !!group.taxInfo;
+      const extractionLogId = group.images[0]?.extraction?.extraction_log_id;
       await comprasApi.post('/compras', {
         proveedor: group.proveedor,
         fecha_compra: group.fecha_compra,
@@ -679,6 +681,7 @@ export default function RegistroPage() {
         temp_keys: group.images.map(i => i.tempKey),
         usuario: 'Admin',
         ...(hasTaxInfo ? { taxes_handled_by_ai: true } : {}),
+        ...(extractionLogId ? { extraction_log_id: extractionLogId } : {}),
       });
       setSubmitted(prev => [...prev, idx]);
       refreshAll();

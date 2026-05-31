@@ -29,6 +29,7 @@ export interface ItemSugerencia {
 }
 
 export interface ExtractionResult {
+  extraction_log_id?: number;
   proveedor: string;
   rut_proveedor: string;
   items: ExtractionItem[];
