@@ -116,6 +116,7 @@ class PayrollController extends Controller
                     'rol' => $p->rol,
                     'sueldo_base' => (int) round($liq['sueldo_base']),
                     'dias_trabajados' => $liq['dias_trabajados'],
+                    'dias_normales' => $liq['dias_normales'],
                     'reemplazos_hechos' => $liq['reemplazos_hechos'],
                     'total_reemplazando' => (int) round($liq['total_reemplazando'] ?? 0),
                     'total_reemplazado' => (int) round($liq['total_reemplazados'] ?? 0),

@@ -21,7 +21,7 @@ interface AjusteDetail { id: number; monto: number; concepto: string; categoria:
 interface ReplacementGroup { personal_id: number; nombre: string; dias: number[]; monto: number; }
 interface Worker {
   personal_id: number; nombre: string; rol: string; sueldo_base: number;
-  dias_trabajados: number; total_reemplazando: number; total_reemplazado: number;
+  dias_trabajados: number; dias_normales?: number; total_reemplazando: number; total_reemplazado: number;
   reemplazos_realizados: ReplacementGroup[]; reemplazos_recibidos: ReplacementGroup[];
   descuentos: AjusteDetail[]; bonos: AjusteDetail[];
   total_descuentos: number; total_bonos: number;
