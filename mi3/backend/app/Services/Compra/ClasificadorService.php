@@ -221,26 +221,18 @@ PROMPT;
      */
     private function getPersonToSupplierMap(): array
     {
-        return [
-            'karen miranda olmedo' => 'ARIAKA',
-            'karen miranda' => 'ARIAKA',
-            'elcia vilca' => 'ARIAKA',
-            'eliana vilca' => 'ARIAKA',
-            'cecilia rojas hinojosa' => 'ARIAKA',
-            'cecilia rojas' => 'ARIAKA',
-            'maria mondañez mamani' => 'ARIAKA',
-            'maria mondanez mamani' => 'ARIAKA',
-            'giovanna loza salas' => 'ARIAKA',
-            'giovanna loza' => 'ARIAKA',
-            'ariel araya' => 'ARIAKA',
-            'ariel aliro araya villalobos' => 'ARIAKA',
-            'karina roco' => 'ARIAKA',
-            'elton san martin' => 'Abastible',
-            'elton san martín' => 'Abastible',
-            'karina andrea muñoz ahumada' => 'Ariztía (proveedor)',
-            'karina muñoz' => 'Ariztía (proveedor)',
-            'lucila cacera' => 'agro-lucila',
-        ];
+        $map = [];
+        try {
+            $rows = \DB::table('person_supplier_mappings')
+                ->select('person_name', 'supplier_name')
+                ->get();
+            foreach ($rows as $row) {
+                $map[$row->person_name] = $row->supplier_name;
+            }
+        } catch (\Exception $e) {
+            Log::warning('[ClasificadorService] Failed to load person_supplier_mappings: ' . $e->getMessage());
+        }
+        return $map;
     }
 
     /**

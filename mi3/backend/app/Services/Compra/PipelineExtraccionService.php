@@ -1078,32 +1078,32 @@ class PipelineExtraccionService
 
     private function mapPersonToSupplier(array $data): array
     {
-        $personToSupplier = [
-            'karen miranda olmedo' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
-            'karen miranda' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
-            'elcia vilca' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
-            'eliana vilca' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
-            'cecilia rojas hinojosa' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
-            'cecilia rojas' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
-            'maria mondañez mamani' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
-            'maria mondanez mamani' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
-            'giovanna loza salas' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
-            'giovanna loza' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
-            'ariel araya' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
-            'ariel aliro araya villalobos' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
-            'karina roco' => ['proveedor' => 'ARIAKA', 'item' => 'Servicios Delivery', 'tipo_compra' => 'otros'],
-            'elton san martin' => ['proveedor' => 'Abastible', 'item' => 'gas 15', 'tipo_compra' => 'ingredientes'],
-            'elton san martín' => ['proveedor' => 'Abastible', 'item' => 'gas 15', 'tipo_compra' => 'ingredientes'],
-            'karina andrea muñoz ahumada' => ['proveedor' => 'Ariztía (proveedor)', 'item' => null, 'tipo_compra' => 'ingredientes'],
-            'karina muñoz' => ['proveedor' => 'Ariztía (proveedor)', 'item' => null, 'tipo_compra' => 'ingredientes'],
-            'lucila cacera' => ['proveedor' => 'agro-lucila', 'item' => null, 'tipo_compra' => 'ingredientes'],
-            'ricardo huiscaleo' => null,
-            'ricardo aníbal huiscaleo' => null,
-            'ricardo aníbal huiscaleo llafquén' => null,
-            'ricardo anibal huiscaleo llafquen' => null,
-        ];
+        $personToSupplier = [];
+        try {
+            $rows = \DB::table('person_supplier_mappings')->get();
+            foreach ($rows as $row) {
+                $personToSupplier[$row->person_name] = [
+                    'proveedor' => $row->supplier_name,
+                    'item' => $row->item_name,
+                    'tipo_compra' => $row->tipo_compra ?? 'otros',
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::warning('[PipelineExtraccion] Failed to load person_supplier_mappings: ' . $e->getMessage());
+        }
+
+        // Ricardo Huiscaleo exclusion — never map to supplier
+        $ricardoPatterns = ['ricardo huiscaleo', 'ricardo aníbal huiscaleo', 'ricardo anibal huiscaleo'];
 
         $proveedor = mb_strtolower(trim($data['proveedor'] ?? ''));
+
+        foreach ($ricardoPatterns as $rp) {
+            if (str_contains($proveedor, $rp)) {
+                $data['proveedor'] = null;
+                $data['notas_ia'] = ($data['notas_ia'] ?? '') . ' [IA detectó al emisor como proveedor, corregido]';
+                return $data;
+            }
+        }
 
         foreach ($personToSupplier as $person => $mapping) {
             if (str_contains($proveedor, $person) || (similar_text($proveedor, $person, $pct) && $pct > 80)) {
