@@ -99,8 +99,8 @@ class LiquidacionService
             'dias_normales' => $diasNormales,
             'dias_reemplazados' => $diasReemplazados,
             'reemplazos_hechos' => $reemplazosHechos,
-            'reemplazos_realizados' => $this->groupReemplazos($reemplazosRealizados),
-            'reemplazos_recibidos' => $this->groupReemplazos($reemplazosRecibidos),
+            'reemplazos_realizados' => $this->groupReemplazos($reemplazosRealizados, true),
+            'reemplazos_recibidos' => $this->groupReemplazos($reemplazosRecibidos, false),
             'ajustes' => $includeAjustes ? $ajustes->toArray() : [],
             'total_ajustes' => $totalAjustes,
             'total_reemplazando' => (int) round($totalReemplazando),
@@ -196,17 +196,16 @@ class LiquidacionService
      *
      * Replicates the gruposReemplazados/gruposReemplazando grouping from PersonalApp.jsx.
      */
-    private function groupReemplazos(array $reemplazos): array
+    private function groupReemplazos(array $reemplazos, bool $hechosPorMi = false): array
     {
         $grupos = [];
 
         foreach ($reemplazos as $t) {
-            $tipo = $this->getTipo($t);
-            $isRecibido = in_array($tipo, ['reemplazo', 'reemplazo_seguridad']);
-
             // For received replacements, group by the replacer (reemplazado_por)
             // For done replacements, group by the titular (personal_id)
-            $key = $this->getReemplazadoPor($t) ?? $this->getPersonalId($t);
+            $key = $hechosPorMi
+                ? ($this->getPersonalId($t) ?? $this->getReemplazadoPor($t))
+                : ($this->getReemplazadoPor($t) ?? $this->getPersonalId($t));
             $fecha = $this->getFecha($t);
             $dia = (int) Carbon::parse($fecha)->format('d');
 

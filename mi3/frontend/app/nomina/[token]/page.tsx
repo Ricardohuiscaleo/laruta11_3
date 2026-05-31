@@ -118,11 +118,8 @@ export default function NominaPublicPage({ params }: { params: { token: string }
 
       {/* Grand total */}
       <div className="rounded-xl bg-gray-100 p-3 text-center">
-        <p className="text-xs text-gray-500">Total Nómina</p>
+        <p className="text-xs text-gray-500">Total Nómina La Ruta 11</p>
         <p className="text-lg font-bold text-gray-800">{fmt(grandTotal)}</p>
-        <p className="text-[11px] text-gray-400 mt-0.5">
-          Ruta 11: {fmt(r11.summary.total_a_pagar)} · Seguridad: {fmt(seg.summary.total_a_pagar)}
-        </p>
       </div>
     </div>
   );
