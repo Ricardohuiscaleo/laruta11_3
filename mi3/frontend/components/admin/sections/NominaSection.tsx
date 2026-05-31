@@ -100,6 +100,7 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
   const [error, setError] = useState('');
   const [sending, setSending] = useState<number | 'all' | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [r11CreditOpen, setR11CreditOpen] = useState<Set<number>>(new Set());
   const [activeTab, setActiveTab] = useState<NominaTab>('ruta11');
   const [generatingLink, setGeneratingLink] = useState(false);
 
@@ -462,14 +463,22 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
                   {/* Crédito R11 */}
                   {w.credito_r11_pendiente > 0 && (
                     <div className="rounded-lg bg-orange-50 border border-orange-200 overflow-hidden">
-                      <div className="flex items-center justify-between px-2 py-1.5 text-xs">
+                      <button
+                        onClick={() => setR11CreditOpen(prev => {
+                          const next = new Set(prev);
+                          next.has(w.personal_id) ? next.delete(w.personal_id) : next.add(w.personal_id);
+                          return next;
+                        })}
+                        className="flex items-center justify-between w-full px-2 py-1.5 text-xs text-left"
+                      >
                         <div className="flex items-center gap-1">
+                          <ChevronRight className={`h-3.5 w-3.5 text-orange-500 transition-transform ${r11CreditOpen.has(w.personal_id) ? 'rotate-90' : ''}`} />
                           <CreditCard className="h-3.5 w-3.5 text-orange-500" />
                           <span className="font-medium">Crédito R11 pendiente</span>
                         </div>
                         <span className="font-semibold text-red-600">-{formatCLP(w.credito_r11_pendiente)}</span>
-                      </div>
-                      {w.r11_compras && w.r11_compras.length > 0 && (
+                      </button>
+                      {r11CreditOpen.has(w.personal_id) && w.r11_compras && w.r11_compras.length > 0 && (
                         <div className="border-t border-orange-200 divide-y divide-orange-200">
                           {w.r11_compras.map((c, i) => (
                             <div key={i} className="flex items-center justify-between px-2 py-1 text-[11px]">
