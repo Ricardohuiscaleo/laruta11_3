@@ -37,15 +37,10 @@ class FeedbackService
             return;
         }
 
-        $proveedor = $datosGuardados['proveedor'] ?? $extractedData['proveedor'] ?? null;
-        $tipoImagen = $datosGuardados['tipo_imagen'] ?? $extractedData['tipo_imagen'] ?? null;
-
         foreach ($diffs as $diff) {
             ExtractionFeedback::create([
                 'extraction_log_id' => $extractionLogId,
                 'compra_id' => $compraId,
-                'proveedor' => $proveedor,
-                'tipo_imagen' => $tipoImagen,
                 'field_name' => $diff['field_name'],
                 'original_value' => $diff['original_value'],
                 'corrected_value' => $diff['corrected_value'],
@@ -120,23 +115,13 @@ class FeedbackService
     }
 
     /**
-     * Obtiene las últimas N correcciones para un proveedor/tipo como few-shot examples.
+     * Obtiene las últimas N correcciones como few-shot examples.
      *
      * Validates: Requirements 6.3, 6.5
      */
-    public function getFewShotExamples(?string $proveedor, ?string $tipoImagen, int $limit = 5): array
+    public function getFewShotExamples(int $limit = 5): array
     {
-        $query = ExtractionFeedback::query();
-
-        if ($proveedor) {
-            $query->where('proveedor', $proveedor);
-        } elseif ($tipoImagen) {
-            $query->where('tipo_imagen', $tipoImagen);
-        } else {
-            return [];
-        }
-
-        return $query
+        return ExtractionFeedback::query()
             ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get()
@@ -157,12 +142,11 @@ class FeedbackService
         $lines = [];
 
         foreach ($corrections as $correction) {
-            $proveedor = $correction['proveedor'] ?? 'este proveedor';
             $campo = $correction['field_name'] ?? 'campo';
             $original = $correction['original_value'] ?? '';
             $corregido = $correction['corrected_value'] ?? '';
 
-            $lines[] = "En extracciones anteriores de {$proveedor}, el usuario corrigió {$campo} de '{$original}' a '{$corregido}'";
+            $lines[] = "El usuario corrigió {$campo} de '{$original}' a '{$corregido}'";
         }
 
         return implode("\n", $lines);

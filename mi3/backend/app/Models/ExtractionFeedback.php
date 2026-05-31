@@ -12,8 +12,6 @@ class ExtractionFeedback extends Model
     protected $fillable = [
         'extraction_log_id',
         'compra_id',
-        'proveedor',
-        'tipo_imagen',
         'field_name',
         'original_value',
         'corrected_value',
