@@ -6,6 +6,7 @@ namespace App\Services\Compra;
 
 use App\Models\AiExtractionLog;
 use App\Models\ExtractionFeedback;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class FeedbackService
@@ -48,6 +49,72 @@ class FeedbackService
                 'field_name' => $diff['field_name'],
                 'original_value' => $diff['original_value'],
                 'corrected_value' => $diff['corrected_value'],
+            ]);
+        }
+
+        $this->autoLearnFromFeedback($diffs);
+    }
+
+    /**
+     * Auto-learn person→supplier mappings from proveedor corrections.
+     * Si el usuario corrigió el proveedor de un nombre de persona a un proveedor conocido,
+     * lo guarda en person_supplier_mappings para que la próxima vez la IA lo reconozca.
+     */
+    private function autoLearnFromFeedback(array $diffs): void
+    {
+        $excluded = ['ricardo huiscaleo', 'ricardo aníbal huiscaleo', 'ricardo anibal huiscaleo',
+                     'mercado pago'];
+
+        foreach ($diffs as $diff) {
+            if ($diff['field_name'] !== 'proveedor') continue;
+            if (empty($diff['original_value']) || empty($diff['corrected_value'])) continue;
+
+            $orig = mb_strtolower(trim($diff['original_value']));
+
+            // Skip excluded
+            $skip = false;
+            foreach ($excluded as $ex) {
+                if (str_contains($orig, $ex)) { $skip = true; break; }
+            }
+            if ($skip) continue;
+
+            // Skip if already mapped
+            if (DB::table('person_supplier_mappings')->where('person_name', $orig)->exists()) continue;
+
+            // Normalize supplier name
+            $corrected = mb_strtolower(trim($diff['corrected_value']));
+            $supplierName = $diff['corrected_value'];
+            $itemName = null;
+            $tipoCompra = 'otros';
+
+            if (str_contains($corrected, 'aria') || str_contains($corrected, 'riaka')) {
+                $supplierName = 'ARIAKA';
+                $itemName = 'Servicios Delivery';
+                $tipoCompra = 'otros';
+            } elseif (str_contains($corrected, 'abastible')) {
+                $supplierName = 'Abastible';
+                $itemName = 'gas 15';
+                $tipoCompra = 'ingredientes';
+            } elseif (str_contains($corrected, 'arizt') || str_contains($corrected, 'agrosuper')) {
+                $supplierName = 'Ariztía (proveedor)';
+                $tipoCompra = 'ingredientes';
+            }
+
+            DB::table('person_supplier_mappings')->insert([
+                'person_name' => $orig,
+                'supplier_name' => $supplierName,
+                'item_name' => $itemName,
+                'tipo_compra' => $tipoCompra,
+                'source' => 'learned',
+                'times_used' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            Log::info('[FeedbackService] Auto-learned person→supplier', [
+                'person_name' => $orig,
+                'supplier_name' => $supplierName,
+                'item_name' => $itemName,
             ]);
         }
     }
