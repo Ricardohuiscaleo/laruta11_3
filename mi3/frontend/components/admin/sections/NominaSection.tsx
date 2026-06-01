@@ -5,7 +5,7 @@ import { apiFetch } from '@/lib/api';
 import { formatCLP, formatMonthES } from '@/lib/utils';
 import {
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
-  Loader2, Send, Mail, Trash2,
+  Loader2, Send, Mail, Trash2, DollarSign,
   FileText, CreditCard,
 } from 'lucide-react';
 import type { SectionHeaderConfig } from '@/components/admin/AdminShell';
@@ -91,6 +91,7 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [sending, setSending] = useState<number | 'all' | null>(null);
+  const [paying, setPaying] = useState<number | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<NominaTab>('ruta11');
   const [generatingLink, setGeneratingLink] = useState(false);
@@ -182,6 +183,25 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
       alert('Liquidaciones enviadas');
     } catch (err: any) { alert(err.message); }
     finally { setSending(null); }
+  };
+
+  const payWorker = async (personalId: number, monto: number) => {
+    if (!confirm(`¿Confirmar pago de ${formatCLP(monto)} para este trabajador?`)) return;
+    if (!confirm('Esto también descontará el crédito R11 pendiente (si aplica). ¿Continuar?')) return;
+    setPaying(personalId);
+    try {
+      await apiFetch('/admin/payroll/pay-worker', {
+        method: 'POST',
+        body: JSON.stringify({
+          personal_id: personalId,
+          mes,
+          monto,
+          centro_costo: activeTab,
+        }),
+      });
+      fetchData();
+    } catch (err: any) { alert(err.message); }
+    finally { setPaying(null); }
   };
 
   const deleteAjuste = async (ajusteId: number) => {
@@ -504,6 +524,14 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
 
               {/* Action buttons */}
               <div className="px-4 pb-3 flex gap-2">
+                <button
+                  onClick={() => payWorker(w.personal_id, w.total_a_pagar)}
+                  disabled={paying === w.personal_id}
+                  className="flex items-center gap-1 rounded-lg bg-amber-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+                >
+                  <DollarSign className="h-3 w-3" />
+                  {paying === w.personal_id ? 'Pagando...' : 'Pagar'}
+                </button>
                 <button
                   onClick={() => sendLiquidacion(w.personal_id)}
                   disabled={sending === w.personal_id}
