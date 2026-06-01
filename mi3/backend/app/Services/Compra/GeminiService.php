@@ -1044,7 +1044,14 @@ PROMPT;
 
         $fewShotSection = '';
         if (!empty($fewShotExamples)) {
-            $fewShotSection = "\nAPRENDIZAJE DE CORRECCIONES ANTERIORES:\n" . implode("\n", $fewShotExamples) . "\nAplica estas correcciones si el contexto es similar.\n";
+            $lines = [];
+            foreach ($fewShotExamples as $fb) {
+                $field = $fb['field_name'] ?? '?';
+                $orig = is_array($fb['original_value'] ?? null) ? json_encode($fb['original_value']) : ($fb['original_value'] ?? '');
+                $corr = is_array($fb['corrected_value'] ?? null) ? json_encode($fb['corrected_value']) : ($fb['corrected_value'] ?? '');
+                $lines[] = "- {$field}: '{$orig}' → '{$corr}'";
+            }
+            $fewShotSection = "\nAPRENDIZAJE DE CORRECCIONES ANTERIORES:\n" . implode("\n", $lines) . "\nAplica estas correcciones si el contexto es similar.\n";
         }
 
         $typeRules = match ($tipo) {
