@@ -321,7 +321,7 @@ class PipelineExtraccionService
             // Load few-shot examples from feedback
             $fewShotExamples = [];
             try {
-                $corrections = $this->feedback->getFewShotExamples(null, $tipo);
+                $corrections = $this->feedback->getFewShotExamples();
                 if (!empty($corrections)) {
                     $fewShotExamples = $corrections;
                 }
