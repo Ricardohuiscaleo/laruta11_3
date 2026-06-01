@@ -12,9 +12,8 @@ use App\Models\CronExecution;
 */
 
 $commands = [
-    ['cmd' => 'mi3:r11-auto-deduct',                    'name' => 'Descuento R11',              'schedule' => fn($s) => $s->monthlyOn(1, '02:00')],
-    ['cmd' => 'mi3:loan-auto-deduct',                   'name' => 'Descuento Adelantos',        'schedule' => fn($s) => $s->monthlyOn(1, '02:30')],
     ['cmd' => 'mi3:r11-reminder',                       'name' => 'Recordatorio R11',           'schedule' => fn($s) => $s->monthlyOn(28, '10:00')],
+    ['cmd' => 'mi3:loan-auto-deduct',                   'name' => 'Descuento Adelantos',        'schedule' => fn($s) => $s->monthlyOn(1, '02:30')],
     ['cmd' => 'mi3:create-daily-checklists',            'name' => 'Checklists Diarios',         'schedule' => fn($s) => $s->dailyAt('14:00')],
     ['cmd' => 'mi3:check-companion-absence',            'name' => 'Detectar Ausencia',          'schedule' => fn($s) => $s->dailyAt('19:00')],
     ['cmd' => 'mi3:detect-absences',                    'name' => 'Descuento Inasistencias',    'schedule' => fn($s) => $s->dailyAt('02:00')],
@@ -23,6 +22,7 @@ $commands = [
     ['cmd' => 'delivery:generate-daily-settlement',     'name' => 'Settlement Delivery Diario', 'schedule' => fn($s) => $s->dailyAt('23:59')],
     ['cmd' => 'delivery:check-pending-settlements',     'name' => 'Verificar Settlements',      'schedule' => fn($s) => $s->dailyAt('12:00')],
     ['cmd' => 'mi3:cierre-diario',                      'name' => 'Cierre Diario Capital',      'schedule' => fn($s) => $s->dailyAt('04:15')],
+    // Reversión manual: php artisan mi3:r11-reverse-deduct (sin schedule)
 ];
 
 foreach ($commands as $c) {

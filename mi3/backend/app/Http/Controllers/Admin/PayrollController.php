@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Events\AdminDataUpdatedEvent;
 use App\Http\Controllers\Controller;
+use App\Models\AjusteCategoria;
 use App\Models\AjusteSueldo;
 use App\Models\NominaSnapshot;
 use App\Models\PagoNomina;
 use App\Models\Personal;
 use App\Models\PresupuestoNomina;
+use App\Models\R11CreditTransaction;
+use App\Models\Usuario;
 use App\Services\Email\GmailService;
 use App\Services\Payroll\LiquidacionService;
 use App\Services\Payroll\NominaService;
@@ -40,6 +43,11 @@ class PayrollController extends Controller
                 $p = $entry['personal'];
                 $liq = $entry['liquidacion'];
                 $pid = $p->id;
+
+                // Skip external replacements (paid same day, no base salary)
+                if ($liq['sueldo_base'] == 0 && !str_contains($p->rol ?? '', 'dueño')) {
+                    continue;
+                }
 
                 // Get detailed adjustments for this worker in this month
                 $ajustes = AjusteSueldo::with('categoria')
@@ -214,6 +222,78 @@ class PayrollController extends Controller
         }
 
         return response()->json(['success' => true, 'data' => $pago], 201);
+    }
+
+    public function payWorker(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'personal_id' => 'required|integer|exists:personal,id',
+            'mes' => 'required|date_format:Y-m',
+            'monto' => 'required|numeric|min:0',
+            'centro_costo' => 'required|in:ruta11,seguridad',
+            'notas' => 'nullable|string|max:500',
+        ]);
+
+        $mesDate = $data['mes'] . '-01';
+        $personal = Personal::findOrFail($data['personal_id']);
+        $pagoNombre = $data['nombre'] ?? $personal->nombre;
+
+        DB::transaction(function () use ($data, $mesDate, $personal, $pagoNombre) {
+            // 1. Create PagoNomina record
+            PagoNomina::create([
+                'mes' => $mesDate,
+                'personal_id' => $data['personal_id'],
+                'nombre' => $pagoNombre,
+                'monto' => $data['monto'],
+                'es_externo' => $data['es_externo'] ?? false,
+                'notas' => $data['notas'] ?? null,
+                'centro_costo' => $data['centro_costo'],
+            ]);
+
+            // 2. Process R11 credit deduction (only for ruta11 workers with user linked)
+            if ($data['centro_costo'] === 'ruta11' && $personal->user_id) {
+                $usuario = Usuario::where('id', $personal->user_id)
+                    ->where('es_credito_r11', 1)
+                    ->where('credito_r11_usado', '>', 0)
+                    ->first();
+
+                if ($usuario) {
+                    $montoR11 = (float) $usuario->credito_r11_usado;
+                    $mesNombre = \Carbon\Carbon::createFromFormat('Y-m', $data['mes'])->locale('es')->monthName;
+
+                    $categoriaR11 = AjusteCategoria::where('slug', 'descuento_credito_r11')->first();
+
+                    AjusteSueldo::create([
+                        'personal_id' => $data['personal_id'],
+                        'mes' => $mesDate,
+                        'monto' => -$montoR11,
+                        'concepto' => "Descuento Crédito R11 - {$mesNombre}",
+                        'categoria_id' => $categoriaR11?->id,
+                    ]);
+
+                    R11CreditTransaction::create([
+                        'user_id' => $usuario->id,
+                        'amount' => $montoR11,
+                        'type' => 'refund',
+                        'description' => "Descuento nómina {$mesNombre}",
+                    ]);
+
+                    $usuario->update([
+                        'credito_r11_usado' => 0,
+                        'credito_r11_bloqueado' => 0,
+                        'fecha_ultimo_pago_r11' => now()->toDateString(),
+                    ]);
+                }
+            }
+        });
+
+        try {
+            broadcast(new AdminDataUpdatedEvent('nomina', 'updated'));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast nomina payment: ' . $e->getMessage());
+        }
+
+        return response()->json(['success' => true]);
     }
 
     public function updateBudget(Request $request): JsonResponse

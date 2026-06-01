@@ -153,6 +153,7 @@ Route::prefix('v1')->group(function () {
         // Nómina
         Route::get('payroll', [\App\Http\Controllers\Admin\PayrollController::class, 'index']);
         Route::post('payroll/payments', [\App\Http\Controllers\Admin\PayrollController::class, 'storePayment']);
+        Route::post('payroll/pay-worker', [\App\Http\Controllers\Admin\PayrollController::class, 'payWorker']);
         Route::put('payroll/budget', [\App\Http\Controllers\Admin\PayrollController::class, 'updateBudget']);
         Route::post('payroll/send-liquidacion', [\App\Http\Controllers\Admin\PayrollController::class, 'sendLiquidacion']);
         Route::post('payroll/send-all', [\App\Http\Controllers\Admin\PayrollController::class, 'sendAll']);
