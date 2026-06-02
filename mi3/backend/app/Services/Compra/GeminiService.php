@@ -187,12 +187,13 @@ class GeminiService
         $prompt = $this->buildVisionPrompt();
         $schema = $this->buildVisionSchema();
 
-        // Attempt with retry (1 retry on failure)
-        $response = $this->callGemini($prompt, $imageBase64, $schema, 20, 2048);
+        // Attempt with retry (1 retry on failure). Higher maxOutputTokens to avoid
+        // truncation mid-JSON when texto_crudo is long (e.g. Mercado Pago receipts).
+        $response = $this->callGemini($prompt, $imageBase64, $schema, 20, 8192);
         if ($response === null) {
             Log::warning('[GeminiService] percibir: first attempt failed, retrying with longer timeout...');
             usleep(500_000); // 500ms backoff
-            $response = $this->callGemini($prompt, $imageBase64, $schema, 30, 2048);
+            $response = $this->callGemini($prompt, $imageBase64, $schema, 30, 8192);
             if ($response === null) {
                 Log::error('[GeminiService] percibir: retry also failed');
                 return null;
@@ -413,6 +414,9 @@ class GeminiService
             return null;
         }
 
+        $finishReason = $response['candidates'][0]['finishReason'] ?? 'UNKNOWN';
+        $isTruncated = in_array($finishReason, ['MAX_TOKENS', 'LENGTH'], true);
+
         // Iterate all parts: skip thought parts, extract JSON from text parts
         // Gemini 3.x models may include thinking/thought parts before the JSON output
         foreach ($parts as $i => $part) {
@@ -441,6 +445,25 @@ class GeminiService
                 }
             }
 
+            // Truncated response: try to recover by closing open string + JSON
+            if ($isTruncated && $firstBrace !== false) {
+                $partial = substr($text, $firstBrace);
+                // Strip trailing comma if any, then close unclosed string and object
+                $partial = rtrim($partial, ",\n\r\t ");
+                if (substr($partial, -1) !== '"' && str_ends_with($partial, '\\')) {
+                    $partial = substr($partial, 0, -1);
+                }
+                if (preg_match('/"[^"\\\\]*(?:\\\\.[^"\\\\]*)*$/', $partial)) {
+                    $partial .= '"';
+                }
+                $partial .= '}';
+                $decoded = json_decode($partial, true);
+                if (json_decode($partial) !== null && is_array($decoded)) {
+                    Log::warning("[GeminiService] parseResponse recovered from truncation (part[{$i}], finishReason={$finishReason})");
+                    return $decoded;
+                }
+            }
+
             // Fallback: markdown ```json...``` blocks
             if (preg_match('/```(?:json)?\s*([\s\S]*?)```/', $text, $matches)) {
                 $jsonText = trim($matches[1]);
@@ -453,7 +476,7 @@ class GeminiService
             Log::warning("[GeminiService] parseResponse part[{$i}] not valid JSON: " . substr($text, 0, 200));
         }
 
-        Log::error('[GeminiService] Failed to parse JSON from any part. parts=' . count($parts));
+        Log::error('[GeminiService] Failed to parse JSON from any part. parts=' . count($parts) . ' finishReason=' . $finishReason);
         return null;
     }
 
@@ -989,23 +1012,20 @@ PROMPT;
     private function buildVisionPrompt(): string
     {
         return <<<'PROMPT'
-Observa esta imagen con atención y extrae TODA la información posible.
+Observa esta imagen con atención y extrae la información esencial.
 
-1. TEXTO CRUDO: Transcribe TODO el texto visible en la imagen, línea por línea, exactamente como aparece. Incluye números, RUTs, montos, fechas, nombres. Si no hay texto, escribe "Sin texto visible".
+1. TEXTO CRUDO: Transcribe SOLO el texto relevante para identificar la compra: RUTs, montos, fechas, nombres de productos/servicios/proveedores, números de operación. NO transcribir textos legales, disclaimers,ni líneas de UI repetitivas (botones, menús). Mantén el texto en una sola línea separada por espacios. Si no hay texto relevante, escribe "Sin texto visible".
 
-2. DESCRIPCIÓN VISUAL: Describe detalladamente lo que ves:
-   - Objetos: cajas, sacos, bolsas, bandejas, gamelas, balanzas, documentos impresos
-   - Productos: identifica visualmente (tomates, papas, paltas, carne, pan, queso, etc.)
-   - Colores y formas: bolsa azul/rosada, productos redondos oscuros, etc.
-   - Estado: fresco, empacado, a granel, congelado
-   - Contexto: mostrador de feria, estante de supermercado, cocina, mesón
-   - Cantidades estimadas: "aproximadamente 20 kg en caja", "1 saco grande"
-   Si es un documento (boleta/factura), describe el formato del documento.
+2. DESCRIPCIÓN VISUAL: Describe brevemente lo que ves (1-2 frases):
+   - Objetos principales: cajas, sacos, bolsas, bandejas, balanzas, documentos impresos
+   - Productos visibles: tomate, papa, carne, pan, etc.
+   - Contexto: mostrador de feria, estante de supermercado, cocina, comprobante digital
+   Si es un documento (boleta/factura), describe el formato brevemente.
 
 3. CLASIFICACIÓN: Determina el tipo de imagen:
    - "boleta": documento de venta con RUT, productos, total
    - "factura": documento tributario formal con RUT emisor/receptor, IVA
-   - "producto": foto de producto físico (caja, saco, bolsa, bandeja) O nota manuscrita de entrega de producto (papel con nombre de producto, cantidad, peso, precio escritos a mano)
+   - "producto": foto de producto físico (caja, saco, bolsa, bandeja) O nota manuscrita de entrega
    - "bascula": báscula/balanza digital mostrando peso
    - "transferencia": comprobante de transferencia bancaria
    - "desconocido": no se puede determinar
