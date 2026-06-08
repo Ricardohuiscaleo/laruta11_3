@@ -15,6 +15,9 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
+# Disable security advisory blocking (Composer 2.8+ feature blocking laravel/framework ^11.31+)
+RUN composer config --global advisory.block false
+
 # Create Laravel base
 RUN composer create-project laravel/laravel:^11.0 /tmp/laravel --no-interaction --prefer-dist --no-scripts \
     && cp -a /tmp/laravel/. /var/www/html/ \
