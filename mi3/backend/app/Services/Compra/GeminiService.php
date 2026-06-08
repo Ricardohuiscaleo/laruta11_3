@@ -37,7 +37,7 @@ class GeminiService
         $prompt = $this->buildClassificationPrompt();
         $schema = $this->buildClassificationSchema();
 
-        $response = $this->callGemini($prompt, $imageBase64, $schema, 8, 256);
+        $response = $this->callGemini($prompt, $imageBase64, $schema, 8, 1024);
 
         if ($response === null) {
             return null;
@@ -234,11 +234,11 @@ class GeminiService
         $prompt = $this->buildTextAnalysisPrompt($textoCrudo, $descripcionVisual, $tipo, $contexto, $fewShotExamples);
         $schema = $this->buildExtractionSchema();
 
-        $response = $this->callGeminiText($prompt, $schema, 20, 2048);
+        $response = $this->callGeminiText($prompt, $schema, 20, 8192);
         if ($response === null) {
             Log::warning('[GeminiService] analizarTexto: first attempt failed, retrying...');
             usleep(500_000);
-            $response = $this->callGeminiText($prompt, $schema, 30, 2048);
+            $response = $this->callGeminiText($prompt, $schema, 30, 8192);
             if ($response === null) {
                 Log::error('[GeminiService] analizarTexto: retry also failed');
                 return null;
@@ -293,11 +293,11 @@ class GeminiService
         $prompt = $this->buildSelfValidatingAnalysisPrompt($textoCrudo, $descripcionVisual, $tipo, $contexto, $fewShotExamples);
         $schema = $this->buildExtractionWithValidationSchema();
 
-        $response = $this->callGeminiText($prompt, $schema, 20, 3072);
+        $response = $this->callGeminiText($prompt, $schema, 20, 8192);
         if ($response === null) {
             Log::warning('[GeminiService] analizarYValidar: first attempt failed, retrying...');
             usleep(500_000);
-            $response = $this->callGeminiText($prompt, $schema, 30, 3072);
+            $response = $this->callGeminiText($prompt, $schema, 30, 8192);
             if ($response === null) {
                 Log::error('[GeminiService] analizarYValidar: retry also failed');
                 return null;
