@@ -29,7 +29,7 @@ interface Props {
   onClose: () => void;
 }
 
-const STEP_MAP: Record<string, number> = { vision: 1, analisis: 2, validacion: 3, reconciliacion: 4 };
+const STEP_MAP: Record<string, number> = { vision: 1, analisis: 2, reconciliacion: 3 };
 
 interface StepDetail {
   summary: string;
@@ -40,8 +40,7 @@ interface StepDetail {
 const STEPS = [
   { id: 'upload',        label: 'Subida',   icon: Camera    },
   { id: 'vision',        label: 'Visión',   icon: Eye       },
-  { id: 'analisis',      label: 'Análisis', icon: Brain     },
-  { id: 'validacion',    label: 'Check',    icon: ShieldCheck },
+  { id: 'analisis',      label: 'Extraer',  icon: ShieldCheck },
   { id: 'reconciliacion',label: 'Ajuste',   icon: Scale     },
 ];
 
@@ -89,30 +88,19 @@ function formatDetail(fase: string, data: Record<string, unknown> | null): StepD
       const items       = Number(data.items_count || 0);
       const monto       = Number(data.monto_total || 0);
       const confidence  = Math.round(Number(data.overall_confidence || 0) * 100);
+      const incCount    = Number(data.inconsistencias_count || 0);
       const confColor: 'green' | 'amber' = confidence >= 70 ? 'green' : 'amber';
       const badges = [
         ...(confidence > 0 ? [{ label: `${confidence}%`, color: confColor }] : []),
         ...(items > 0 ? [{ label: `${items} ítems`, color: 'blue' as const }] : []),
+        ...(incCount > 0 ? [{ label: `${incCount} inc.`, color: 'amber' as const }] : []),
         ...timeBadge,
         ...tokBadge,
       ];
       return {
-        summary: proveedor ? `📋 ${proveedor}` : '📋 Estructurando',
+        summary: proveedor ? `📋 ${proveedor}` : '📋 Extrayendo',
         badges,
         sub: monto > 0 ? `$${monto.toLocaleString('es-CL')} total` : undefined,
-      };
-    }
-
-    case 'validacion': {
-      const inc   = Number(data.inconsistencias_count || (data.inconsistencias as unknown[])?.length || 0);
-      const isOk  = inc === 0;
-      return {
-        summary: isOk ? '✅ Sin inconsistencias' : `⚠️ ${inc} inconsistencia${inc > 1 ? 's' : ''}`,
-        badges: [
-          { label: isOk ? 'OK' : `${inc} problema${inc > 1 ? 's' : ''}`, color: isOk ? 'green' : 'amber' },
-          ...timeBadge,
-          ...tokBadge,
-        ],
       };
     }
 

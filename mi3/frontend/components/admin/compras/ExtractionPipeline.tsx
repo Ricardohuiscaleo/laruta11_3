@@ -7,8 +7,8 @@ import type { ExtractionResult } from '@/types/compras';
 
 // Legacy phase IDs (Bedrock/Gemini)
 type LegacyPhaseId = 'percepcion' | 'clasificacion' | 'analisis';
-// Multi-agent phase IDs
-type MultiAgentPhaseId = 'vision' | 'analisis' | 'validacion' | 'reconciliacion';
+// Multi-agent phase IDs (validacion merged into analisis)
+type MultiAgentPhaseId = 'vision' | 'analisis' | 'reconciliacion';
 // Combined type
 type PhaseId = LegacyPhaseId | MultiAgentPhaseId;
 type EngineType = 'gemini' | 'bedrock' | 'multi-agent' | null;
@@ -60,8 +60,7 @@ const GEMINI_PHASES: PipelinePhase[] = [
 
 const MULTI_AGENT_PHASES: PipelinePhase[] = [
   { id: 'vision', label: 'Percibiendo imagen', icon: <Eye className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
-  { id: 'analisis', label: 'Estructurando datos', icon: <Brain className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
-  { id: 'validacion', label: 'Validando coherencia', icon: <ShieldCheck className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
+  { id: 'analisis', label: 'Extrayendo y validando datos', icon: <ShieldCheck className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
   { id: 'reconciliacion', label: 'Reconciliando', icon: <Scale className="h-4 w-4" />, status: 'pending', data: null, elapsedMs: 0 },
 ];
 
@@ -123,7 +122,7 @@ export default function ExtractionPipeline({ tempKey, onResult, onError, onRecon
       }
 
       const phaseId = fase as PhaseId;
-      const multiAgentPhases: MultiAgentPhaseId[] = ['vision', 'analisis', 'validacion', 'reconciliacion'];
+      const multiAgentPhases: MultiAgentPhaseId[] = ['vision', 'analisis', 'reconciliacion'];
       const geminiPhases: LegacyPhaseId[] = ['clasificacion', 'analisis'];
       const bedrockPhases: LegacyPhaseId[] = ['percepcion', 'clasificacion', 'analisis'];
 
@@ -363,18 +362,30 @@ function PhaseDetails({ id, data }: { id: string; data: Record<string, unknown> 
     const itemsCount = data.items_count as number;
     const montoTotal = data.monto_total as number;
     const confidence = data.overall_confidence as number;
+    const inconsistenciasCount = data.inconsistencias_count as number | undefined;
     return (
-      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-        {proveedor && <span className="font-medium text-gray-700">{proveedor}</span>}
-        {itemsCount > 0 && <span className="text-gray-500">{itemsCount} items</span>}
-        {montoTotal > 0 && <span className="text-green-700 font-medium">${montoTotal.toLocaleString('es-CL')}</span>}
-        {confidence > 0 && (
-          <span className={`${confidence >= 0.7 ? 'text-green-600' : 'text-amber-600'}`}>
-            {Math.round(confidence * 100)}% confianza
-          </span>
-        )}
-        {tokens != null && tokens > 0 && (
-          <span className="text-gray-400">· {tokens} tokens</span>
+      <div className="mt-1 space-y-1">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {proveedor && <span className="font-medium text-gray-700">{proveedor}</span>}
+          {itemsCount > 0 && <span className="text-gray-500">{itemsCount} items</span>}
+          {montoTotal > 0 && <span className="text-green-700 font-medium">${montoTotal.toLocaleString('es-CL')}</span>}
+          {confidence > 0 && (
+            <span className={`${confidence >= 0.7 ? 'text-green-600' : 'text-amber-600'}`}>
+              {Math.round(confidence * 100)}% confianza
+            </span>
+          )}
+          {tokens != null && tokens > 0 && (
+            <span className="text-gray-400">· {tokens} tokens</span>
+          )}
+        </div>
+        {inconsistenciasCount !== undefined && (
+          <div className="text-xs">
+            {inconsistenciasCount === 0 ? (
+              <span className="text-green-600 font-medium">✓ Validación: sin inconsistencias</span>
+            ) : (
+              <span className="text-amber-600 font-medium">⚠️ Validación: {inconsistenciasCount} inconsistencia{inconsistenciasCount > 1 ? 's' : ''}</span>
+            )}
+          </div>
         )}
       </div>
     );
@@ -393,39 +404,6 @@ function PhaseDetails({ id, data }: { id: string; data: Record<string, unknown> 
         {confianza > 0 && <span className="text-gray-400">({Math.round(confianza * 100)}%)</span>}
         {tokens != null && tokens > 0 && (
           <span className="text-gray-400">· {tokens} tokens</span>
-        )}
-      </div>
-    );
-  }
-
-  // Multi-agent: Validation phase details
-  if (id === 'validacion') {
-    const inconsistencias = data.inconsistencias as Array<{ campo: string; descripcion: string; severidad: string }> | undefined;
-    const count = data.inconsistencias_count as number | undefined;
-    const numIssues = inconsistencias?.length ?? count ?? 0;
-    return (
-      <div className="mt-1 space-y-1">
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          {numIssues === 0 ? (
-            <span className="text-green-600 font-medium">✓ Sin inconsistencias</span>
-          ) : (
-            <span className="text-amber-600 font-medium">⚠️ {numIssues} inconsistencia{numIssues > 1 ? 's' : ''}</span>
-          )}
-          {tokens != null && tokens > 0 && (
-            <span className="text-gray-400">· {tokens} tokens</span>
-          )}
-        </div>
-        {inconsistencias && inconsistencias.length > 0 && (
-          <ul className="space-y-0.5">
-            {inconsistencias.slice(0, 3).map((inc, i) => (
-              <li key={i} className={`text-xs ${inc.severidad === 'error' ? 'text-red-600' : 'text-amber-600'}`}>
-                • {inc.descripcion}
-              </li>
-            ))}
-            {inconsistencias.length > 3 && (
-              <li className="text-xs text-gray-400">...y {inconsistencias.length - 3} más</li>
-            )}
-          </ul>
         )}
       </div>
     );

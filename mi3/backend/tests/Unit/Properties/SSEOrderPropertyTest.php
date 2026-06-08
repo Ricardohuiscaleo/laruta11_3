@@ -15,8 +15,8 @@ use PHPUnit\Framework\TestCase;
  *
  * Para cualquier ejecución del pipeline, los eventos SSE deben emitirse en orden estricto:
  * vision(running) → vision(done) → analisis(running) → analisis(done) →
- * validacion(running) → validacion(done) → reconciliacion(running) → reconciliacion(done) →
- * completado(done). Cada evento debe incluir fase, status, y elapsed_ms.
+ * reconciliacion(running) → reconciliacion(done) → completado(done).
+ * Validación está fusionada dentro del agente de análisis (auto-validación).
  *
  * **Validates: Requirements 5.1, 5.2**
  */
@@ -40,8 +40,6 @@ class SSEOrderPropertyTest extends TestCase
         ['fase' => 'vision', 'status' => 'done'],
         ['fase' => 'analisis', 'status' => 'running'],
         ['fase' => 'analisis', 'status' => 'done'],
-        ['fase' => 'validacion', 'status' => 'running'],
-        ['fase' => 'validacion', 'status' => 'done'],
         ['fase' => 'reconciliacion', 'status' => 'running'],
         ['fase' => 'reconciliacion', 'status' => 'done'],
         ['fase' => 'completado', 'status' => 'done'],
@@ -84,11 +82,11 @@ class SSEOrderPropertyTest extends TestCase
             'elapsed_ms' => (int) round((microtime(true) - $phaseStart) * 1000),
         ]);
 
-        // Phase 2: Analysis
+        // Phase 2: Analysis + auto-validation (merged)
         $emit('analisis', 'running', ['engine' => 'gemini']);
         $phaseStart = microtime(true);
         $contexto = ['suppliers' => ['Distribuidora Central'], 'ingredients' => []];
-        $analysisResult = $gemini->analizarTexto(
+        $combinedResult = $gemini->analizarYValidar(
             $visionResult['texto_crudo'],
             $visionResult['descripcion_visual'],
             $visionResult['tipo_imagen'],
@@ -96,39 +94,25 @@ class SSEOrderPropertyTest extends TestCase
             []
         );
 
-        if (!$analysisResult) {
-            $emit('analisis', 'error', ['message' => 'Agente Análisis falló']);
+        if (!$combinedResult) {
+            $emit('analisis', 'error', ['message' => 'Agente Análisis+Validación falló']);
             return ['success' => false];
         }
 
+        $inconsistencias = $combinedResult['inconsistencias'] ?? [];
+
         $emit('analisis', 'done', [
             'engine' => 'gemini',
-            'tokens' => $analysisResult['tokens']['total'],
-            'elapsed_ms' => (int) round((microtime(true) - $phaseStart) * 1000),
-        ]);
-
-        // Phase 3: Validation
-        $emit('validacion', 'running', ['engine' => 'gemini']);
-        $phaseStart = microtime(true);
-        $validationResult = $gemini->validar($analysisResult['data'], $contexto);
-
-        $inconsistencias = [];
-        if ($validationResult) {
-            $inconsistencias = $validationResult['inconsistencias'];
-        }
-
-        $emit('validacion', 'done', [
+            'tokens' => $combinedResult['tokens']['total'],
             'inconsistencias_count' => count($inconsistencias),
-            'engine' => 'gemini',
-            'tokens' => $validationResult['tokens']['total'] ?? 0,
             'elapsed_ms' => (int) round((microtime(true) - $phaseStart) * 1000),
         ]);
 
-        // Phase 4: Reconciliation
+        // Phase 3: Reconciliation
         $emit('reconciliacion', 'running', ['engine' => 'gemini']);
         $phaseStart = microtime(true);
         $reconciliationResult = $gemini->reconciliar(
-            $validationResult['datos_validados'] ?? $analysisResult['data'],
+            $combinedResult['data'],
             $inconsistencias,
             $visionResult['texto_crudo'],
             $contexto
@@ -158,14 +142,10 @@ class SSEOrderPropertyTest extends TestCase
     {
         $gemini = Mockery::mock(GeminiService::class);
         $gemini->shouldReceive('percibir')->andReturn($visionResult);
-        $gemini->shouldReceive('analizarTexto')->andReturn([
+        $gemini->shouldReceive('analizarYValidar')->andReturn([
             'data' => $analysisData,
-            'tokens' => ['prompt' => 100, 'candidates' => 50, 'total' => 150],
-        ]);
-        $gemini->shouldReceive('validar')->andReturn([
-            'datos_validados' => $analysisData,
             'inconsistencias' => [],
-            'tokens' => ['prompt' => 80, 'candidates' => 30, 'total' => 110],
+            'tokens' => ['prompt' => 180, 'candidates' => 80, 'total' => 260],
         ]);
         $gemini->shouldReceive('reconciliar')->andReturn([
             'datos_finales' => $analysisData,
@@ -346,7 +326,7 @@ class SSEOrderPropertyTest extends TestCase
 
             $this->simulatePipelineSSE($gemini, 'base64image');
 
-            $phasesWithElapsedMs = ['vision', 'analisis', 'validacion', 'reconciliacion'];
+            $phasesWithElapsedMs = ['vision', 'analisis', 'reconciliacion'];
 
             foreach ($this->capturedEvents as $event) {
                 if ($event['status'] === 'done' && in_array($event['fase'], $phasesWithElapsedMs)) {

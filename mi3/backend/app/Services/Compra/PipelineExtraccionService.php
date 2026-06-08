@@ -38,10 +38,16 @@ class PipelineExtraccionService
             }
         };
 
-        // ── Provider detection: Multi-agent first (if enabled), then Gemini, then AWS, else error ──
+        // ── Provider detection: Multi-agent first (if enabled), fallback to Gemini, then AWS ──
         if ($this->isGeminiAvailable()) {
             if (env('MULTI_AGENT_PIPELINE', true)) {
-                return $this->ejecutarMultiAgente($imageUrl, $onEvent);
+                $result = $this->ejecutarMultiAgente($imageUrl, $onEvent);
+                if ($result['success'] ?? false) {
+                    return $result;
+                }
+                Log::warning('[Pipeline] Multi-agent failed, falling back to Gemini legacy: ' . ($result['error'] ?? 'unknown'));
+                $emit('fallback', 'info', ['from' => 'multi-agent', 'to' => 'gemini', 'reason' => $result['error'] ?? 'unknown']);
+                return $this->ejecutarGemini($imageUrl, $onEvent);
             }
             return $this->ejecutarGemini($imageUrl, $onEvent);
         }
@@ -311,7 +317,7 @@ class PipelineExtraccionService
                 'elapsed_ms' => $pipelinePhases['vision']['elapsed_ms'],
             ]);
 
-            // ── PHASE 2: Análisis (text-only) ──
+            // ── PHASE 2: Análisis + Auto-Validación (combinado) ──
             $emit('analisis', 'running', ['engine' => 'multi-agent']);
             $phaseStart = microtime(true);
 
@@ -329,7 +335,7 @@ class PipelineExtraccionService
                 Log::warning('[Pipeline:MultiAgent] Failed to load few-shot examples: ' . $e->getMessage());
             }
 
-            $analysisResult = $this->gemini->analizarTexto(
+            $combinedResult = $this->gemini->analizarYValidar(
                 $visionResult['texto_crudo'],
                 $visionResult['descripcion_visual'],
                 $tipo,
@@ -337,77 +343,33 @@ class PipelineExtraccionService
                 $fewShotExamples,
             );
 
-            if (!$analysisResult) {
+            if (!$combinedResult) {
                 $pipelinePhases['analisis'] = [
                     'elapsed_ms' => (int) round((microtime(true) - $phaseStart) * 1000),
                     'success' => false,
-                    'error' => 'Gemini analysis returned null',
+                    'error' => 'Gemini analysis+validation returned null',
                     'engine' => 'gemini',
                 ];
-                $emit('analisis', 'error', ['message' => 'Agente Análisis falló', 'engine' => 'multi-agent']);
-                Log::error('[Pipeline:MultiAgent] Agente Análisis falló');
-                return $this->failedResultMultiAgent($imageUrl, 'Agente Análisis falló', $startTime, $pipelinePhases);
+                $emit('analisis', 'error', ['message' => 'Agente Análisis+Validación falló', 'engine' => 'multi-agent']);
+                Log::error('[Pipeline:MultiAgent] Agente Análisis+Validación falló');
+                return $this->failedResultMultiAgent($imageUrl, 'Agente Análisis+Validación falló', $startTime, $pipelinePhases);
             }
 
-            $extracted = $analysisResult['data'];
-            $tokensPerAgent['analisis'] = $analysisResult['tokens'];
+            $extracted = $combinedResult['data'];
+            $inconsistencias = $combinedResult['inconsistencias'] ?? [];
+            $tokensPerAgent['analisis'] = $combinedResult['tokens'];
             $pipelinePhases['analisis'] = [
                 'elapsed_ms' => (int) round((microtime(true) - $phaseStart) * 1000),
                 'success' => true,
                 'engine' => 'gemini',
+                'inconsistencias_count' => count($inconsistencias),
             ];
 
             $emit('analisis', 'done', [
                 'engine' => 'multi-agent',
-                'tokens' => $analysisResult['tokens']['total'],
-                'elapsed_ms' => $pipelinePhases['analisis']['elapsed_ms'],
-            ]);
-
-            // ── PHASE 3: Validación (text-only, graceful degradation) ──
-            $emit('validacion', 'running', ['engine' => 'multi-agent']);
-            $phaseStart = microtime(true);
-
-            $inconsistencias = [];
-            $validationSkipped = false;
-
-            try {
-                $validationResult = $this->gemini->validar($extracted, $contexto);
-
-                if ($validationResult) {
-                    // Do NOT replace $extracted with datos_validados — Gemini returns generic object
-                    // that may be empty. Only use inconsistencias from validation.
-                    $inconsistencias = $validationResult['inconsistencias'];
-                    $tokensPerAgent['validacion'] = $validationResult['tokens'];
-                    $pipelinePhases['validacion'] = [
-                        'elapsed_ms' => (int) round((microtime(true) - $phaseStart) * 1000),
-                        'inconsistencias_count' => count($inconsistencias),
-                        'engine' => 'gemini',
-                    ];
-                } else {
-                    $validationSkipped = true;
-                    Log::warning('[Pipeline:MultiAgent] Agente Validación retornó null, skipping');
-                    $pipelinePhases['validacion'] = [
-                        'elapsed_ms' => (int) round((microtime(true) - $phaseStart) * 1000),
-                        'skipped' => true,
-                        'reason' => 'Agent returned null',
-                    ];
-                }
-            } catch (\Exception $e) {
-                $validationSkipped = true;
-                Log::warning('[Pipeline:MultiAgent] Agente Validación falló: ' . $e->getMessage());
-                $pipelinePhases['validacion'] = [
-                    'elapsed_ms' => (int) round((microtime(true) - $phaseStart) * 1000),
-                    'skipped' => true,
-                    'reason' => $e->getMessage(),
-                ];
-            }
-
-            $emit('validacion', 'done', [
+                'tokens' => $combinedResult['tokens']['total'],
                 'inconsistencias_count' => count($inconsistencias),
-                'skipped' => $validationSkipped,
-                'engine' => 'multi-agent',
-                'tokens' => $tokensPerAgent['validacion']['total'],
-                'elapsed_ms' => $pipelinePhases['validacion']['elapsed_ms'],
+                'elapsed_ms' => $pipelinePhases['analisis']['elapsed_ms'],
             ]);
 
             // ── PHASE 4: Reconciliación (text-only, graceful degradation) ──
@@ -514,15 +476,17 @@ class PipelineExtraccionService
             $confidenceScores = $this->calculateConfidence($extracted);
             $overallConfidence = $this->calculateOverallConfidence($confidenceScores);
 
-            // ── Token tracking and cost calculation ──
+            // ── Token tracking and cost calculation (validacion merged into analisis) ──
+            $tokensValidacion = $tokensPerAgent['validacion'] ?? ['prompt' => 0, 'candidates' => 0, 'total' => 0];
+            $tokensReconciliacion = $tokensPerAgent['reconciliacion'] ?? ['prompt' => 0, 'candidates' => 0, 'total' => 0];
             $totalPromptTokens = $tokensPerAgent['vision']['prompt']
                 + $tokensPerAgent['analisis']['prompt']
-                + $tokensPerAgent['validacion']['prompt']
-                + $tokensPerAgent['reconciliacion']['prompt'];
+                + $tokensValidacion['prompt']
+                + $tokensReconciliacion['prompt'];
             $totalCandidatesTokens = $tokensPerAgent['vision']['candidates']
                 + $tokensPerAgent['analisis']['candidates']
-                + $tokensPerAgent['validacion']['candidates']
-                + $tokensPerAgent['reconciliacion']['candidates'];
+                + $tokensValidacion['candidates']
+                + $tokensReconciliacion['candidates'];
             $totalTokens = $totalPromptTokens + $totalCandidatesTokens;
             $estimatedCostUsd = ($totalPromptTokens * 0.10 + $totalCandidatesTokens * 0.40) / 1_000_000;
 
@@ -535,8 +499,7 @@ class PipelineExtraccionService
                     'tokens' => [
                         'vision' => $tokensPerAgent['vision'],
                         'analisis' => $tokensPerAgent['analisis'],
-                        'validacion' => $tokensPerAgent['validacion'],
-                        'reconciliacion' => $tokensPerAgent['reconciliacion'],
+                        'reconciliacion' => $tokensReconciliacion,
                         'total' => [
                             'prompt' => $totalPromptTokens,
                             'candidates' => $totalCandidatesTokens,
@@ -545,7 +508,7 @@ class PipelineExtraccionService
                     ],
                     'estimated_cost_usd' => round($estimatedCostUsd, 6),
                     'engine' => 'gemini',
-                    'pipeline_version' => 'multi-agent-v1',
+                    'pipeline_version' => 'multi-agent-v2',
                 ],
                 'extracted_data' => $extracted,
                 'confidence_scores' => $confidenceScores,

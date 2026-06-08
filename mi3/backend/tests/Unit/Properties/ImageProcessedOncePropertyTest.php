@@ -53,11 +53,11 @@ class ImageProcessedOncePropertyTest extends TestCase
                 ];
             });
 
-        // Mock analizarTexto — text-only, no image parameter
-        $mock->shouldReceive('analizarTexto')
+        // Mock analizarYValidar — text-only, no image parameter, includes auto-validation
+        $mock->shouldReceive('analizarYValidar')
             ->andReturnUsing(function (string $textoCrudo, string $descripcionVisual, string $tipo, array $contexto, array $fewShotExamples = []) use ($testCase) {
                 $testCase->callLog[] = [
-                    'method' => 'analizarTexto',
+                    'method' => 'analizarYValidar',
                     'has_image' => false,
                     'params' => ['textoCrudo', 'descripcionVisual', 'tipo', 'contexto', 'fewShotExamples'],
                 ];
@@ -68,24 +68,12 @@ class ImageProcessedOncePropertyTest extends TestCase
                         'items' => [['nombre' => 'Item 1', 'cantidad' => 1, 'unidad' => 'un', 'precio_unitario' => 1000, 'subtotal' => 1000]],
                         'monto_total' => 1000,
                     ],
-                    'tokens' => ['prompt' => 400, 'candidates' => 300, 'total' => 700],
+                    'inconsistencias' => [],
+                    'tokens' => ['prompt' => 750, 'candidates' => 400, 'total' => 1150],
                 ];
             });
 
-        // Mock validar — text-only, no image parameter
-        $mock->shouldReceive('validar')
-            ->andReturnUsing(function (array $datosExtraidos, array $contextoBd) use ($testCase) {
-                $testCase->callLog[] = [
-                    'method' => 'validar',
-                    'has_image' => false,
-                    'params' => ['datosExtraidos', 'contextoBd'],
-                ];
-                return [
-                    'datos_validados' => $datosExtraidos,
-                    'inconsistencias' => [],
-                    'tokens' => ['prompt' => 350, 'candidates' => 100, 'total' => 450],
-                ];
-            });
+        // validar is deprecated — merged into analizarYValidar
 
         // Mock reconciliar — text-only, no image parameter
         $mock->shouldReceive('reconciliar')
@@ -118,40 +106,33 @@ class ImageProcessedOncePropertyTest extends TestCase
             return ['success' => false, 'error' => 'vision_failed'];
         }
 
-        // Phase 2: Analysis (text-only)
+        // Phase 2: Analysis + validation (combined)
         $contexto = ['proveedores' => [], 'ingredientes' => [], 'rut_map' => []];
         $fewShot = [];
-        $analysisResult = $gemini->analizarTexto(
+        $combinedResult = $gemini->analizarYValidar(
             $visionResult['texto_crudo'],
             $visionResult['descripcion_visual'],
             $visionResult['tipo_imagen'],
             $contexto,
             $fewShot
         );
-        if ($analysisResult === null) {
+        if ($combinedResult === null) {
             return ['success' => false, 'error' => 'analysis_failed'];
         }
 
-        // Phase 3: Validation (text-only)
-        $validationResult = $gemini->validar($analysisResult['data'], $contexto);
-        if ($validationResult === null) {
-            $validationResult = [
-                'datos_validados' => $analysisResult['data'],
-                'inconsistencias' => [],
-            ];
-        }
+        $inconsistencias = $combinedResult['inconsistencias'] ?? [];
 
-        // Phase 4: Reconciliation (text-only)
+        // Phase 3: Reconciliation (text-only)
         $reconciliationResult = $gemini->reconciliar(
-            $validationResult['datos_validados'],
-            $validationResult['inconsistencias'],
+            $combinedResult['data'],
+            $inconsistencias,
             $visionResult['texto_crudo'],
             $contexto
         );
 
         return [
             'success' => true,
-            'data' => $reconciliationResult['datos_finales'] ?? $validationResult['datos_validados'],
+            'data' => $reconciliationResult['datos_finales'] ?? $combinedResult['data'],
         ];
     }
 
@@ -198,8 +179,8 @@ class ImageProcessedOncePropertyTest extends TestCase
 
             $this->assertTrue($result['success'], 'Pipeline should complete successfully');
 
-            // Verify exactly 4 calls were made (one per agent)
-            $this->assertCount(4, $this->callLog, 'Pipeline should make exactly 4 GeminiService calls');
+            // Verify exactly 3 calls were made (vision, analysis+validation merged, reconciliation)
+            $this->assertCount(3, $this->callLog, 'Pipeline should make exactly 3 GeminiService calls (validacion merged into analisis)');
 
             // Verify only percibir received image data
             $callsWithImage = array_filter($this->callLog, fn($call) => $call['has_image'] === true);
@@ -212,8 +193,8 @@ class ImageProcessedOncePropertyTest extends TestCase
     }
 
     /**
-     * Property: Agents 2, 3, 4 never receive image data.
-     * For any valid image, analizarTexto, validar, and reconciliar must operate text-only.
+     * Property: Agents 2, 3 never receive image data.
+     * For any valid image, analizarYValidar and reconciliar must operate text-only.
      */
     public function testTextOnlyAgentsNeverReceiveImage(): void
     {
@@ -240,8 +221,8 @@ class ImageProcessedOncePropertyTest extends TestCase
                 );
             }
 
-            // Verify we have exactly 3 text-only calls
-            $this->assertCount(3, $textOnlyCalls, 'Should have exactly 3 text-only agent calls');
+            // Verify we have exactly 2 text-only calls (analisis+validacion merged, reconciliacion)
+            $this->assertCount(2, $textOnlyCalls, 'Should have exactly 2 text-only agent calls (analisis+validacion merged, reconciliacion)');
         });
     }
 
@@ -277,7 +258,7 @@ class ImageProcessedOncePropertyTest extends TestCase
     }
 
     /**
-     * Property: Pipeline execution order is always Vision → Analysis → Validation → Reconciliation.
+     * Property: Pipeline execution order is always Vision → Analysis+Validation (merged) → Reconciliation.
      * For any image, the agents must be called in strict sequential order.
      */
     public function testAgentExecutionOrderIsStrict(): void
@@ -292,23 +273,23 @@ class ImageProcessedOncePropertyTest extends TestCase
 
             $this->simulateMultiAgentPipeline($gemini, $imageBase64);
 
-            $expectedOrder = ['percibir', 'analizarTexto', 'validar', 'reconciliar'];
+            $expectedOrder = ['percibir', 'analizarYValidar', 'reconciliar'];
             $actualOrder = array_map(fn($call) => $call['method'], $this->callLog);
 
             $this->assertSame(
                 $expectedOrder,
                 $actualOrder,
-                'Agents must execute in order: percibir → analizarTexto → validar → reconciliar'
+                'Agents must execute in order: percibir → analizarYValidar → reconciliar'
             );
         });
     }
 
     /**
-     * Property: analizarTexto receives text from percibir, not image.
-     * For any image, the text passed to analizarTexto must come from percibir's output,
+     * Property: analizarYValidar receives text from percibir, not image.
+     * For any image, the text passed to analizarYValidar must come from percibir's output,
      * not from the original image data.
      */
-    public function testAnalizarTextoReceivesTextFromVisionNotImage(): void
+    public function testAnalizarYValidarReceivesTextFromVisionNotImage(): void
     {
         $this->forAll(
             $this->imageBase64Generator()
@@ -332,7 +313,7 @@ class ImageProcessedOncePropertyTest extends TestCase
                     ];
                 });
 
-            $mock->shouldReceive('analizarTexto')
+            $mock->shouldReceive('analizarYValidar')
                 ->andReturnUsing(function (string $textoCrudo, string $descripcionVisual, string $tipo, array $contexto, array $fewShot = []) use (&$receivedParams, $imageBase64) {
                     $receivedParams['textoCrudo'] = $textoCrudo;
                     $receivedParams['descripcionVisual'] = $descripcionVisual;
@@ -341,7 +322,7 @@ class ImageProcessedOncePropertyTest extends TestCase
                     $this->assertNotSame(
                         $imageBase64,
                         $textoCrudo,
-                        'analizarTexto must NOT receive the raw image base64 as text'
+                        'analizarYValidar must NOT receive the raw image base64 as text'
                     );
 
                     return [
@@ -351,15 +332,10 @@ class ImageProcessedOncePropertyTest extends TestCase
                             'items' => [],
                             'monto_total' => 0,
                         ],
+                        'inconsistencias' => [],
                         'tokens' => ['prompt' => 400, 'candidates' => 300, 'total' => 700],
                     ];
                 });
-
-            $mock->shouldReceive('validar')->andReturn([
-                'datos_validados' => ['items' => [], 'monto_total' => 0],
-                'inconsistencias' => [],
-                'tokens' => ['prompt' => 350, 'candidates' => 100, 'total' => 450],
-            ]);
 
             $mock->shouldReceive('reconciliar')->andReturn([
                 'datos_finales' => ['items' => [], 'monto_total' => 0],
@@ -370,16 +346,16 @@ class ImageProcessedOncePropertyTest extends TestCase
 
             $this->simulateMultiAgentPipeline($mock, $imageBase64);
 
-            // Verify analizarTexto received text derived from vision, not the image
+            // Verify analizarYValidar received text derived from vision, not the image
             $this->assertStringStartsWith(
                 'TEXTO_VISION_',
                 $receivedParams['textoCrudo'],
-                'analizarTexto must receive text output from percibir'
+                'analizarYValidar must receive text output from percibir'
             );
             $this->assertStringStartsWith(
                 'DESC_VISUAL_',
                 $receivedParams['descripcionVisual'],
-                'analizarTexto must receive visual description from percibir'
+                'analizarYValidar must receive visual description from percibir'
             );
         });
     }

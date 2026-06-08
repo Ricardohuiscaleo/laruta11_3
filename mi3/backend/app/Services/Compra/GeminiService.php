@@ -233,18 +233,21 @@ class GeminiService
     {
         $prompt = $this->buildTextAnalysisPrompt($textoCrudo, $descripcionVisual, $tipo, $contexto, $fewShotExamples);
         $schema = $this->buildExtractionSchema();
-        $response = $this->callGeminiText($prompt, $schema, 12, 2048);
+
+        $response = $this->callGeminiText($prompt, $schema, 20, 2048);
         if ($response === null) {
             Log::warning('[GeminiService] analizarTexto: first attempt failed, retrying...');
             usleep(500_000);
-            $response = $this->callGeminiText($prompt, $schema, 15, 2048);
+            $response = $this->callGeminiText($prompt, $schema, 30, 2048);
             if ($response === null) {
                 Log::error('[GeminiService] analizarTexto: retry also failed');
                 return null;
             }
         }
+
         $parsed = $this->parseResponse($response);
         if ($parsed === null) {
+            Log::error('[GeminiService] analizarTexto: parseResponse returned null after retry');
             return null;
         }
         $parsed = $this->normalizeAmounts($parsed);
@@ -277,6 +280,43 @@ class GeminiService
             'inconsistencias' => $parsed['inconsistencias'] ?? [],
             'tokens' => $tokens,
         ];
+    }
+
+    /**
+     * Agente 2+3 combinado: Análisis + Validación en 1 llamada.
+     * Extrae datos estructurados y auto-valida en un solo paso.
+     *
+     * @return array{data: array, inconsistencias: array, tokens: array}|null
+     */
+    public function analizarYValidar(string $textoCrudo, string $descripcionVisual, string $tipo, array $contexto, array $fewShotExamples = []): ?array
+    {
+        $prompt = $this->buildSelfValidatingAnalysisPrompt($textoCrudo, $descripcionVisual, $tipo, $contexto, $fewShotExamples);
+        $schema = $this->buildExtractionWithValidationSchema();
+
+        $response = $this->callGeminiText($prompt, $schema, 20, 3072);
+        if ($response === null) {
+            Log::warning('[GeminiService] analizarYValidar: first attempt failed, retrying...');
+            usleep(500_000);
+            $response = $this->callGeminiText($prompt, $schema, 30, 3072);
+            if ($response === null) {
+                Log::error('[GeminiService] analizarYValidar: retry also failed');
+                return null;
+            }
+        }
+
+        $parsed = $this->parseResponse($response);
+        if ($parsed === null) {
+            Log::error('[GeminiService] analizarYValidar: parseResponse returned null');
+            return null;
+        }
+
+        // Strip validation fields before normalizeAmounts
+        $inconsistencias = $parsed['inconsistencias'] ?? [];
+        unset($parsed['inconsistencias']);
+        $parsed = $this->normalizeAmounts($parsed);
+        $tokens = $this->extractTokens($response);
+
+        return ['data' => $parsed, 'inconsistencias' => $inconsistencias, 'tokens' => $tokens];
     }
 
     /**
@@ -352,9 +392,9 @@ class GeminiService
         ];
 
         $jsonPayload = json_encode($payload);
-        $promptSize = strlen($prompt);
+        $promptSizeKb = (int) round(strlen($jsonPayload) / 1024);
 
-        Log::info("[GeminiService] callGeminiText model={$this->model} timeout={$timeout}s prompt={$promptSize}chars maxTokens={$maxOutputTokens}");
+        Log::info("[GeminiService] callGeminiText model={$this->model} timeout={$timeout}s prompt={$promptSizeKb}KB maxTokens={$maxOutputTokens}");
 
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -375,22 +415,27 @@ class GeminiService
         curl_close($ch);
 
         if ($curlError !== '') {
-            Log::error("[GeminiService] cURL error after {$elapsedMs}ms (model={$this->model}): {$curlError}");
+            Log::error("[GeminiService] callGeminiText cURL error after {$elapsedMs}ms (model={$this->model}): {$curlError}");
             return null;
         }
 
         if ($httpCode < 200 || $httpCode >= 300) {
-            Log::error("[GeminiService] HTTP {$httpCode} after {$elapsedMs}ms (model={$this->model}): " . substr((string) $responseBody, 0, 500));
+            Log::error("[GeminiService] callGeminiText HTTP {$httpCode} after {$elapsedMs}ms (model={$this->model}): " . substr((string) $responseBody, 0, 800));
             return null;
         }
 
         $decoded = json_decode((string) $responseBody, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            Log::error("[GeminiService] Failed to decode JSON after {$elapsedMs}ms (model={$this->model}): " . substr((string) $responseBody, 0, 300));
+            Log::error("[GeminiService] callGeminiText failed to decode JSON after {$elapsedMs}ms (model={$this->model}): " . substr((string) $responseBody, 0, 300));
             return null;
         }
 
-        Log::info("[GeminiService] OK {$elapsedMs}ms tokens=" . ($decoded['usageMetadata']['totalTokenCount'] ?? '?'));
+        $finishReason = $decoded['candidates'][0]['finishReason'] ?? null;
+        if ($finishReason !== null && $finishReason !== 'STOP') {
+            Log::warning("[GeminiService] callGeminiText non-STOP finishReason={$finishReason} after {$elapsedMs}ms (model={$this->model})");
+        }
+
+        Log::info("[GeminiService] callGeminiText OK {$elapsedMs}ms tokens=" . ($decoded['usageMetadata']['totalTokenCount'] ?? '?'));
 
         return $decoded;
     }
@@ -644,6 +689,73 @@ class GeminiService
                 'peso_bascula' => ['type' => 'number'],
                 'unidad_bascula' => ['type' => 'string'],
                 'notas_ia' => ['type' => 'string'],
+            ],
+            'required' => ['tipo_imagen', 'items', 'monto_total'],
+        ];
+    }
+
+    /**
+     * Schema combinado: extracción + auto-validación.
+     * inconsistencies es opcional — solo se incluye si hay errores.
+     */
+    private function buildExtractionWithValidationSchema(): array
+    {
+        return [
+            'type' => 'object',
+            'properties' => [
+                'tipo_imagen' => ['type' => 'string'],
+                'proveedor' => ['type' => 'string'],
+                'rut_proveedor' => ['type' => 'string'],
+                'fecha' => ['type' => 'string'],
+                'metodo_pago' => [
+                    'type' => 'string',
+                    'enum' => ['cash', 'transfer', 'card', 'credit'],
+                ],
+                'tipo_compra' => [
+                    'type' => 'string',
+                    'enum' => ['ingredientes', 'insumos', 'equipamiento', 'otros'],
+                ],
+                'items' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'nombre' => ['type' => 'string'],
+                            'cantidad' => ['type' => 'number'],
+                            'unidad' => ['type' => 'string'],
+                            'precio_unitario' => ['type' => 'integer'],
+                            'subtotal' => ['type' => 'integer'],
+                            'descuento' => ['type' => 'integer'],
+                            'empaque_detalle' => ['type' => 'string'],
+                            'categoria_sugerida' => [
+                                'type' => 'string',
+                                'enum' => array_merge(IngredientCategory::VALID_CATEGORIES, ['Sin categoría']),
+                            ],
+                        ],
+                        'required' => ['nombre', 'cantidad', 'unidad', 'precio_unitario', 'subtotal'],
+                    ],
+                ],
+                'monto_neto' => ['type' => 'integer'],
+                'iva' => ['type' => 'integer'],
+                'otros_impuestos' => ['type' => 'integer'],
+                'monto_total' => ['type' => 'integer'],
+                'peso_bascula' => ['type' => 'number'],
+                'unidad_bascula' => ['type' => 'string'],
+                'notas_ia' => ['type' => 'string'],
+                'inconsistencias' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'campo' => ['type' => 'string'],
+                            'valor_actual' => ['type' => 'string'],
+                            'valor_esperado' => ['type' => 'string'],
+                            'severidad' => ['type' => 'string', 'enum' => ['error', 'advertencia']],
+                            'descripcion' => ['type' => 'string'],
+                        ],
+                        'required' => ['campo', 'valor_actual', 'valor_esperado', 'severidad', 'descripcion'],
+                    ],
+                ],
             ],
             'required' => ['tipo_imagen', 'items', 'monto_total'],
         ];
@@ -1105,6 +1217,66 @@ Para cada ítem, infiere la categoría más probable entre: Carnes, Vegetales, S
 Si no puedes inferir con confianza, usa "Sin categoría".
 
 Formato respuesta:
+{$this->jsonFormat()}
+PROMPT;
+    }
+
+    /**
+     * Prompt combinado: análisis + auto-validación en 1 sola llamada.
+     */
+    private function buildSelfValidatingAnalysisPrompt(string $textoCrudo, string $descripcionVisual, string $tipo, array $contexto, array $fewShotExamples): string
+    {
+        $suppliers = $this->formatSuppliers($contexto);
+        $products = $this->formatProducts($contexto);
+        $rutMap = $this->formatRutMap($contexto);
+
+        $fewShotSection = '';
+        if (!empty($fewShotExamples)) {
+            $fewShotSection = "\nAPRENDIZAJE DE CORRECCIONES ANTERIORES:\n" . implode("\n", $fewShotExamples) . "\nAplica estas correcciones si el contexto es similar.\n";
+        }
+
+        $typeRules = match ($tipo) {
+            'boleta' => $this->textRulesBoleta($contexto),
+            'factura' => $this->textRulesFactura($contexto),
+            'producto' => $this->textRulesProducto($contexto),
+            'bascula' => $this->textRulesBascula($contexto),
+            'transferencia' => $this->textRulesTransferencia($contexto),
+            default => $this->textRulesGeneral($contexto),
+        };
+
+        return <<<PROMPT
+Analiza y valida el siguiente texto extraído de una imagen de tipo "{$tipo}".
+
+TEXTO EXTRAÍDO DE LA IMAGEN:
+{$textoCrudo}
+
+DESCRIPCIÓN VISUAL:
+{$descripcionVisual}
+
+{$typeRules}
+
+{$fewShotSection}
+
+{$rutMap}
+Proveedores conocidos: {$suppliers}
+Ingredientes conocidos: {$products}
+
+CATEGORÍAS DE INGREDIENTES:
+Para cada ítem, infiere la categoría más probable entre: Carnes, Vegetales, Salsas, Condimentos, Panes, Embutidos, Pre-elaborados, Lácteos, Bebidas, Gas, Servicios, Packaging, Limpieza.
+Si no puedes inferir con confianza, usa "Sin categoría".
+
+AUTO-VALIDACIÓN REQUERIDA (verifica antes de responder):
+1. ARITMÉTICA: Para cada item, ¿subtotal ≈ precio_unitario × cantidad? (tolerancia 2%)
+2. TOTAL: ¿monto_total ≈ monto_neto + iva + otros_impuestos? (tolerancia 2%)
+3. FISCAL: Si hay IVA, ¿iva ≈ monto_neto × 0.19? (tolerancia 2%)
+4. PROVEEDOR: ¿El proveedor NO es "La Ruta 11", "Ricardo Huiscaleo" o variantes?
+5. FECHA: ¿La fecha es razonable (no es fecha de empaque/vencimiento, no es futura)?
+6. ITEMS: ¿Hay al menos 1 item? ¿Los nombres son razonables?
+
+Si encuentras inconsistencias, inclúyelas en el campo "inconsistencias". Cada inconsistencia debe tener: campo, valor_actual, valor_esperado, severidad (error/advertencia), descripcion.
+Si todo está correcto, omite "inconsistencias" o déjalo vacío.
+
+Formato respuesta (JSON):
 {$this->jsonFormat()}
 PROMPT;
     }
