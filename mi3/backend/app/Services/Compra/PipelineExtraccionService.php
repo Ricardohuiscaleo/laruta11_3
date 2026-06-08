@@ -324,12 +324,13 @@ class PipelineExtraccionService
             $tipo = $visionResult['tipo_imagen'];
             $contexto = $this->clasificador->cargarContexto($tipo);
 
-            // Load few-shot examples from feedback
+            // Load few-shot examples from feedback (formatted as strings)
             $fewShotExamples = [];
             try {
                 $corrections = $this->feedback->getFewShotExamples();
                 if (!empty($corrections)) {
-                    $fewShotExamples = $corrections;
+                    $formatted = $this->feedback->formatearEjemplos($corrections);
+                    $fewShotExamples = $formatted !== '' ? [$formatted] : [];
                 }
             } catch (\Exception $e) {
                 Log::warning('[Pipeline:MultiAgent] Failed to load few-shot examples: ' . $e->getMessage());
