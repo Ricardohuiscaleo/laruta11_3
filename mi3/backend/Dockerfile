@@ -15,13 +15,14 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Disable security advisory blocking (Composer 2.8+ feature blocking laravel/framework ^11.31+)
-RUN composer config --global advisory.block false
-
-# Create Laravel base
-RUN composer create-project laravel/laravel:^11.0 /tmp/laravel --no-interaction --prefer-dist --no-scripts \
+# Create Laravel base (--no-install skips dependency resolution, avoiding Composer 2.8+ advisory blocks)
+RUN composer create-project laravel/laravel:^11.0 /tmp/laravel --no-interaction --prefer-dist --no-install --no-scripts \
     && cp -a /tmp/laravel/. /var/www/html/ \
     && rm -rf /tmp/laravel
+
+# Install dependencies (disable advisory block for known CVEs in laravel/framework ^11.31+)
+RUN composer config policy.advisories.block false \
+    && composer install --no-interaction --no-scripts --optimize-autoloader
 
 # Install project-specific dependencies
 RUN composer require laravel/sanctum:^4.0 minishlink/web-push:^9.0 laravel/reverb:^1.0 pusher/pusher-php-server:^7.2 league/flysystem-aws-s3-v3:^3.0 --no-interaction --no-scripts --optimize-autoloader
