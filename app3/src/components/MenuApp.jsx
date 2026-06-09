@@ -1757,16 +1757,9 @@ export default function App() {
 
   // Detectar producto compartido en URL o prop inicial
   useEffect(() => {
-    let sharedProductId = null;
-
-    // Detectar desde window.SHARED_PRODUCT_ID (páginas /p/[id])
-    if (typeof window !== 'undefined' && window.SHARED_PRODUCT_ID) {
-      sharedProductId = window.SHARED_PRODUCT_ID;
-    } else {
-      // Detectar desde URL params (?product=218)
-      const urlParams = new URLSearchParams(window.location.search);
-      sharedProductId = urlParams.get('product');
-    }
+    // Detectar producto compartido desde URL params (?product=218)
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedProductId = urlParams.get('product');
 
     if (sharedProductId && Object.keys(menuWithImages).length > 0) {
       const allProducts = [];
@@ -1785,10 +1778,7 @@ export default function App() {
       const sharedProduct = allProducts.find(p => p.id == sharedProductId);
       if (sharedProduct) {
         setQuickViewProduct(sharedProduct);
-        // Solo limpiar URL si viene de parámetro, no de página /p/[id]
-        if (!window.SHARED_PRODUCT_ID) {
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
   }, [menuWithImages]); // Se ejecuta cuando menuWithImages cambia

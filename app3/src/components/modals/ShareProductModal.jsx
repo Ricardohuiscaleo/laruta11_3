@@ -9,7 +9,7 @@ const ShareProductModal = ({ isOpen, onClose, product }) => {
   useEffect(() => {
     if (isOpen && product) {
       // Generar QR code usando API gratuita
-      const productUrl = `${window.location.origin}/p/${product.id}`;
+      const productUrl = `${window.location.origin}/?product=${product.id}`;
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(productUrl)}`;
       setQrCode(qrUrl);
     }
@@ -17,7 +17,7 @@ const ShareProductModal = ({ isOpen, onClose, product }) => {
 
   if (!isOpen || !product) return null;
 
-  const productUrl = `${window.location.origin}/p/${product.id}`;
+  const productUrl = `${window.location.origin}/?product=${product.id}`;
   // Determinar género según categoría
   const getGender = (product) => {
     const category = product.category_name?.toLowerCase() || '';
