@@ -96,6 +96,12 @@ interface DraftGroup {
   options: DraftOption[];
 }
 
+interface PredefinedGroup {
+  name: string;
+  max_selections: number;
+  options: DraftOption[];
+}
+
 /* ─── Main Page ─── */
 
 export default function CombosPage() {
@@ -598,6 +604,7 @@ function ComboEditor({ combo, onBack, onImageChange }: { combo: ComboRow; onBack
   const [editingPrice, setEditingPrice] = useState(false);
   const [savingMeta, setSavingMeta] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [loadingGroups, setLoadingGroups] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchDetail = useCallback(async () => {
@@ -748,6 +755,35 @@ function ComboEditor({ combo, onBack, onImageChange }: { combo: ComboRow; onBack
 
   const removeGroup = (index: number) => {
     setGroups(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const addPredefinedGroups = async () => {
+    setLoadingGroups(true);
+    try {
+      const res = await apiFetch<ApiResponse<PredefinedGroup[]>>('/admin/combos/predefined-groups');
+      const pg = res.data ?? [];
+      if (pg.length === 0) {
+        setError('No hay bebidas disponibles (stock > 0 y activas)');
+        setTimeout(() => setError(''), 3000);
+        return;
+      }
+      setGroups(prev => {
+        const existingNames = new Set(prev.map(g => g.name));
+        const newGroups = pg
+          .filter(g => !existingNames.has(g.name) && g.options.length > 0)
+          .map(g => ({ name: g.name, max_selections: g.max_selections, options: g.options }));
+        if (newGroups.length === 0) {
+          setError('Los grupos de bebidas ya están agregados');
+          setTimeout(() => setError(''), 3000);
+        }
+        return [...prev, ...newGroups];
+      });
+    } catch (e: any) {
+      setError(e.message || 'Error al cargar grupos predefinidos');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setLoadingGroups(false);
+    }
   };
 
   const addOptionToGroup = (groupIndex: number, product: ProductSearchResult) => {
@@ -1013,15 +1049,25 @@ function ComboEditor({ combo, onBack, onImageChange }: { combo: ComboRow; onBack
 
       {/* ── Selection Groups Section (T2.3) ── */}
       <section className="space-y-3" aria-label="Grupos de selección">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <h3 className="text-sm font-medium text-gray-700">🔄 Grupos de Selección</h3>
-          <button
-            onClick={addGroup}
-            className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors min-h-[36px]"
-            aria-label="Nuevo grupo de selección"
-          >
-            <Plus className="h-3 w-3" /> Nuevo Grupo
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={addPredefinedGroups}
+              disabled={loadingGroups}
+              className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors min-h-[36px] disabled:opacity-50"
+              aria-label="Agregar grupos predefinidos de bebidas"
+            >
+              {loadingGroups ? <Loader2 className="h-3 w-3 animate-spin" /> : <Package className="h-3 w-3" />} Agregar Bebidas
+            </button>
+            <button
+              onClick={addGroup}
+              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors min-h-[36px]"
+              aria-label="Nuevo grupo de selección"
+            >
+              <Plus className="h-3 w-3" /> Nuevo Grupo
+            </button>
+          </div>
         </div>
 
         {groups.length === 0 ? (

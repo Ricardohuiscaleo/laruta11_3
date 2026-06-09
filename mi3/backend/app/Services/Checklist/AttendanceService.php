@@ -68,6 +68,17 @@ class AttendanceService
                 continue;
             }
 
+            // Skip security shifts — only R11 shifts (normal, reemplazo) generate checklists
+            if (in_array($turno->tipo, ['seguridad', 'reemplazo_seguridad'])) {
+                continue;
+            }
+
+            // Only process cajero/planchero workers
+            $roles = $personal->getRolesArray();
+            if (empty(array_intersect($roles, ['cajero', 'planchero']))) {
+                continue;
+            }
+
             // Skip if already processed (worker may have multiple shifts via roles)
             if (in_array($personalId, array_column($ausentes, 'personal_id'))) {
                 continue;

@@ -284,4 +284,71 @@ class ComboService
     {
         return ComboComponent::where('combo_product_id', $productId)->delete();
     }
+
+    /**
+     * Get predefined selection groups for combos.
+     *
+     * Returns beverage products (active + in stock, excluding Dr Pepper)
+     * grouped by format detected from product name.
+     *
+     * @return array<int, array{name: string, max_selections: int, options: array}>
+     */
+    public function getPredefinedGroups(): array
+    {
+        $products = DB::table('products')
+            ->whereIn('subcategory_id', [10, 11, 27, 28])
+            ->where('is_active', true)
+            ->where('stock_quantity', '>', 0)
+            ->where('name', 'NOT LIKE', '%Dr Pepper%')
+            ->orderBy('name')
+            ->get(['id', 'name', 'price', 'cost_price', 'stock_quantity']);
+
+        $grouped = [];
+        foreach ($products as $p) {
+            $groupName = $this->detectBeverageGroup($p->name);
+            $grouped[$groupName][] = [
+                'product_id'       => (int) $p->id,
+                'product_name'     => $p->name,
+                'cost_price'       => (float) ($p->cost_price ?? 0),
+                'price_adjustment' => 0,
+                'is_active'        => true,
+            ];
+        }
+
+        $groups = [];
+        $sort = 0;
+        foreach ($grouped as $name => $options) {
+            $groups[] = [
+                'name'            => $name,
+                'max_selections'  => 1,
+                'options'         => $options,
+                'sort_order'      => $sort++,
+            ];
+        }
+
+        return $groups;
+    }
+
+    /**
+     * Detect beverage group name from product name based on format.
+     */
+    private function detectBeverageGroup(string $productName): string
+    {
+        if (preg_match('/\b350\s*(cc|ml)\b/i', $productName)) {
+            return 'Bebidas 350ml';
+        }
+        if (preg_match('/\b473\s*ml\b/i', $productName)) {
+            return 'Bebidas 473ml';
+        }
+        if (preg_match('/\b1[\.,:]?\s*5\s*(lt|l)\b/i', $productName)) {
+            return 'Bebidas 1.5L';
+        }
+        if (preg_match('/\b2[\.,:]?\s*(lt|l)\b/i', $productName)) {
+            return 'Bebidas 2L';
+        }
+        if (preg_match('/\b3\s*(lt|l)\b/i', $productName)) {
+            return 'Bebidas 3L';
+        }
+        return 'Otras Bebidas';
+    }
 }

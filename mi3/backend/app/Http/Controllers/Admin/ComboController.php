@@ -129,6 +129,17 @@ class ComboController extends Controller
     }
 
     /**
+     * Get predefined selection groups (beverages).
+     * GET /api/v1/admin/combos/predefined-groups
+     */
+    public function predefinedGroups(): JsonResponse
+    {
+        $groups = $this->service->getPredefinedGroups();
+
+        return response()->json(['success' => true, 'data' => $groups]);
+    }
+
+    /**
      * Delete all combo components.
      * DELETE /api/v1/admin/combos/{productId}
      */

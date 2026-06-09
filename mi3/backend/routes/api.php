@@ -291,6 +291,7 @@ Route::prefix('v1')->group(function () {
         // Combos (combo component management)
         Route::get('combos', [\App\Http\Controllers\Admin\ComboController::class, 'index']);
         Route::post('combos', [\App\Http\Controllers\Admin\ComboController::class, 'create']);
+        Route::get('combos/predefined-groups', [\App\Http\Controllers\Admin\ComboController::class, 'predefinedGroups']);
         Route::get('combos/{productId}', [\App\Http\Controllers\Admin\ComboController::class, 'show']);
         Route::post('combos/{productId}', [\App\Http\Controllers\Admin\ComboController::class, 'store']);
         Route::delete('combos/{productId}', [\App\Http\Controllers\Admin\ComboController::class, 'destroy']);
