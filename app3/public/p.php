@@ -78,15 +78,15 @@ $category = htmlspecialchars($product['category_name'] ?? 'Producto', ENT_QUOTES
 <meta name="twitter:image" content="<?= $imageUrl ?>">
 <?php endif; ?>
 
-<meta http-equiv="refresh" content="0;url=<?= $productUrl ?>">
 </head>
-<body>
-<h1><?= $productName ?></h1>
-<p><?= $productDesc ?></p>
-<p>Precio: $<?= $productPrice ?></p>
-<?php if ($imageUrl): ?>
-<img src="<?= $imageUrl ?>" alt="<?= $productName ?>" style="max-width:400px">
-<?php endif; ?>
-<p><a href="<?= $productUrl ?>">Ver en La Ruta 11</a></p>
+<body style="margin:0;background:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh">
+<div style="text-align:center;padding:20px">
+<img src="<?= $imageUrl ?: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍔</text></svg>' ?>" alt="<?= $productName ?>" style="width:280px;height:280px;object-fit:cover;border-radius:16px;margin-bottom:16px">
+<h1 style="font-size:22px;margin:0 0 4px;color:#1a1a1a"><?= $productName ?></h1>
+<p style="font-size:16px;margin:0 0 8px;color:#666"><?= $productDesc ?></p>
+<p style="font-size:20px;font-weight:bold;margin:0 0 20px;color:#ea580c">$<?= $productPrice ?></p>
+<a href="<?= $productUrl ?>" style="display:inline-block;background:#ea580c;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-size:16px;font-weight:600">Ver en La Ruta 11</a>
+</div>
+<script>setTimeout(function(){window.location.replace("<?= $productUrl ?>")},1500)</script>
 </body>
 </html>
