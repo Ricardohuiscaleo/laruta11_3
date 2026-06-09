@@ -24,6 +24,7 @@ COPY --from=builder /app/dist /var/www/html
 COPY api /var/www/html/api
 COPY public/load-env.php /var/www/html/
 COPY public/config.php /var/www/html/
+COPY public/p.php /var/www/html/
 
 # Permisos
 RUN chown -R www-data:www-data /var/www/html && \
