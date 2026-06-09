@@ -763,7 +763,7 @@ function ComboEditor({ combo, onBack, onImageChange }: { combo: ComboRow; onBack
       const res = await apiFetch<ApiResponse<PredefinedGroup[]>>('/admin/combos/predefined-groups');
       const pg = res.data ?? [];
       if (pg.length === 0) {
-        setError('No hay bebidas disponibles (stock > 0 y activas)');
+        setError('No hay bebidas activas disponibles');
         setTimeout(() => setError(''), 3000);
         return;
       }

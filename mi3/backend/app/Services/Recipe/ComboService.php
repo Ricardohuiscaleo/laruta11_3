@@ -288,24 +288,30 @@ class ComboService
     /**
      * Get predefined selection groups for combos.
      *
-     * Returns beverage products (active + in stock, excluding Dr Pepper)
-     * grouped by format detected from product name.
+     * Returns beverage products (active, excluding Dr Pepper)
+     * grouped by subcategory (format).
      *
      * @return array<int, array{name: string, max_selections: int, options: array}>
      */
     public function getPredefinedGroups(): array
     {
         $products = DB::table('products')
-            ->whereIn('subcategory_id', [10, 11, 27, 28])
-            ->where('is_active', true)
-            ->where('stock_quantity', '>', 0)
-            ->where('name', 'NOT LIKE', '%Dr Pepper%')
-            ->orderBy('name')
-            ->get(['id', 'name', 'price', 'cost_price', 'stock_quantity']);
+            ->join('subcategories', 'subcategories.id', '=', 'products.subcategory_id')
+            ->whereIn('products.subcategory_id', [62, 63, 64, 65, 10, 11])
+            ->where('products.is_active', true)
+            ->where('products.name', 'NOT LIKE', '%Dr Pepper%')
+            ->orderBy('subcategories.sort_order')
+            ->orderBy('products.name')
+            ->get([
+                'products.id',
+                'products.name',
+                'products.cost_price',
+                'subcategories.name as subcategory_name',
+            ]);
 
         $grouped = [];
         foreach ($products as $p) {
-            $groupName = $this->detectBeverageGroup($p->name);
+            $groupName = $this->resolveGroupName($p->subcategory_name);
             $grouped[$groupName][] = [
                 'product_id'       => (int) $p->id,
                 'product_name'     => $p->name,
@@ -330,25 +336,17 @@ class ComboService
     }
 
     /**
-     * Detect beverage group name from product name based on format.
+     * Map subcategory name to display group name.
      */
-    private function detectBeverageGroup(string $productName): string
+    private function resolveGroupName(string $subcategoryName): string
     {
-        if (preg_match('/\b350\s*(cc|ml)\b/i', $productName)) {
-            return 'Bebidas 350ml';
-        }
-        if (preg_match('/\b473\s*ml\b/i', $productName)) {
-            return 'Bebidas 473ml';
-        }
-        if (preg_match('/\b1[\.,:]?\s*5\s*(lt|l)\b/i', $productName)) {
-            return 'Bebidas 1.5L';
-        }
-        if (preg_match('/\b2[\.,:]?\s*(lt|l)\b/i', $productName)) {
-            return 'Bebidas 2L';
-        }
-        if (preg_match('/\b3\s*(lt|l)\b/i', $productName)) {
-            return 'Bebidas 3L';
-        }
-        return 'Otras Bebidas';
+        return match ($subcategoryName) {
+            'Latas 350ml'       => 'Bebidas 350ml',
+            'Energéticas 473ml' => 'Bebidas 473ml',
+            'Energéticas 250ml' => 'Bebidas 250ml',
+            'Bebidas 1.5L'      => 'Bebidas 1.5L',
+            'Jugos'             => 'Jugos',
+            default             => 'Otras Bebidas',
+        };
     }
 }
