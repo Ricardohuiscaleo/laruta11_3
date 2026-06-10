@@ -125,6 +125,68 @@ class AnalisisController extends Controller
         return $horas;
     }
 
+    private function horasConCMV($inicio, $fin): array
+    {
+        $ventas = DB::table('tuu_orders')
+            ->where('payment_status', 'paid')
+            ->where('order_number', 'NOT LIKE', 'RL6-%')
+            ->whereBetween('created_at', [$inicio, $fin])
+            ->selectRaw("DATE_FORMAT(CONVERT_TZ(created_at, '+00:00', '-04:00'), '%H') as hora")
+            ->selectRaw('COUNT(*) as ordenes')
+            ->selectRaw('COALESCE(SUM(installment_amount), 0) as ingresos')
+            ->groupByRaw("DATE_FORMAT(CONVERT_TZ(created_at, '+00:00', '-04:00'), '%H')")
+            ->orderBy('hora')
+            ->get()
+            ->keyBy('hora');
+
+        $cmv = DB::table('tuu_order_items as oi')
+            ->join('tuu_orders as o', 'oi.order_reference', '=', 'o.order_number')
+            ->where('o.payment_status', 'paid')
+            ->where('o.order_number', 'NOT LIKE', 'RL6-%')
+            ->whereBetween('o.created_at', [$inicio, $fin])
+            ->selectRaw("DATE_FORMAT(CONVERT_TZ(o.created_at, '+00:00', '-04:00'), '%H') as hora")
+            ->selectRaw('COALESCE(SUM(oi.item_cost * oi.quantity), 0) as cmv')
+            ->groupByRaw("DATE_FORMAT(CONVERT_TZ(o.created_at, '+00:00', '-04:00'), '%H')")
+            ->get()
+            ->keyBy('hora');
+
+        $horas = [];
+        for ($h = 0; $h < 24; $h++) {
+            $hPad = str_pad($h, 2, '0', STR_PAD_LEFT);
+            $v = $ventas->get($hPad);
+            $c = $cmv->get($hPad);
+            $ingresos = (float) ($v->ingresos ?? 0);
+            $cmvVal = (float) ($c->cmv ?? 0);
+
+            // Staff: 2 cajeras + 2 plancheros + 1 admin = $1,500,000/mes → $50,000/día
+            // Operativo 12h/día (15-02, con 01-02 mínimo) → ~$4,167/hr promedio
+            // Peak: 3 personas (18-22) × $3,125/hr = $9,375/hr
+            // Low: 1 persona (resto) × $2,000/hr
+            $costoStaff = match(true) {
+                $hPad >= '18' && $hPad <= '22' => 9375,
+                $hPad >= '15' && $hPad <= '17' => 2000,
+                $hPad == '23' || $hPad == '00' => 2000,
+                default => 0,
+            };
+            $costoArriendo = match(true) {
+                $hPad >= '15' || $hPad <= '02' => 694, // $500K/mes ÷ 30 ÷ 12h activas
+                default => 0,
+            };
+
+            $horas[] = [
+                'hora' => $hPad,
+                'ordenes' => (int) ($v->ordenes ?? 0),
+                'ingresos' => $ingresos,
+                'cmv' => (float) round($cmvVal),
+                'costo_staff' => $costoStaff,
+                'costo_fijo' => $costoArriendo,
+                'costo_total' => round($costoStaff + $costoArriendo),
+                'resultado' => (int) round($ingresos - $cmvVal - $costoStaff - $costoArriendo),
+            ];
+        }
+        return $horas;
+    }
+
     private function topProductos($inicio, $fin, int $limit): array
     {
         return DB::table('tuu_order_items as oi')
@@ -344,13 +406,36 @@ class AnalisisController extends Controller
         $costoCmv = (float) ($cmv->costo ?? 0);
         $ventasCmv = (float) ($cmv->ventas ?? 0);
         $pctMargen = $ventasCmv > 0 ? round(($ventasCmv - $costoCmv) / $ventasCmv * 100, 1) : 0;
-        $fugaCompras = round($comprasTotales - $costoCmv);
+
+        // fuga_compras solo en meses con compras registradas (excluye meses sin data de compras)
+        $mesesConCompras = DB::table('compras')
+            ->where('estado', 'pagado')
+            ->whereBetween('fecha_compra', [$inicio, $fin])
+            ->selectRaw("DATE_FORMAT(fecha_compra, '%Y-%m') as mes")
+            ->distinct()->pluck('mes');
+        $cmvConCompras = DB::table('tuu_order_items as oi')
+            ->join('tuu_orders as o', 'oi.order_reference', '=', 'o.order_number')
+            ->where('o.payment_status', 'paid')
+            ->where('o.order_number', 'NOT LIKE', 'RL6-%')
+            ->whereBetween('o.created_at', [$inicio, $fin])
+            ->selectRaw("DATE_FORMAT(o.created_at, '%Y-%m') as mes")
+            ->selectRaw('COALESCE(SUM(oi.item_cost * oi.quantity), 0) as costo')
+            ->groupBy('mes')
+            ->whereIn(DB::raw("DATE_FORMAT(o.created_at, '%Y-%m')"), $mesesConCompras)
+            ->get()
+            ->sum('costo');
+        $comprasConVentas = DB::table('compras')
+            ->where('estado', 'pagado')
+            ->whereBetween('fecha_compra', [$inicio, $fin])
+            ->whereIn(DB::raw("DATE_FORMAT(fecha_compra, '%Y-%m')"), $mesesConCompras)
+            ->sum('monto_total');
+        $fugaCompras = round((float)$comprasConVentas - (float)$cmvConCompras);
 
         $historial = $this->historialConCompras($inicio, $fin);
 
         $topProductos = $this->topProductosAnual($inicio, $fin, 15);
 
-        $horas = $this->horasConVentas($inicio, $fin);
+        $horas = $this->horasConCMV($inicio, $fin);
 
         $diaSemana = DB::table('tuu_orders')
             ->where('payment_status', 'paid')

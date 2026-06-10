@@ -40,7 +40,7 @@ interface AnualData {
     id: number; nombre: string; cantidad: number; pedidos: number;
     ingresos: number; costo: number; margen: number; pct_margen: number;
   }[];
-  horas: { hora: string; ordenes: number; ingresos: number }[];
+  horas: { hora: string; ordenes: number; ingresos: number; cmv: number; costo_staff: number; costo_fijo: number; costo_total: number; resultado: number }[];
   horas_muertas: string[];
   horas_activas: number;
   dia_semana: { dia: string; ordenes: number; ingresos: number; ticket: number }[];
@@ -120,10 +120,22 @@ export default function AnalisisSection({ onHeaderConfig }: { onHeaderConfig?: (
   if (!data) return null;
 
   const r = data.resumen;
-  const hourData = Array.from({ length: 24 }, (_, i) => ({ hora: String(i).padStart(2, '0'), ordenes: 0, ingresos: 0 }));
+  const hourData = Array.from({ length: 24 }, (_, i) => ({ hora: String(i).padStart(2, '0'), ordenes: 0, ingresos: 0, cmv: 0, costo_staff: 0, costo_fijo: 0, costo_total: 0, resultado: 0 }));
   data.horas.forEach(h => { const idx = parseInt(h.hora); if (idx >= 0 && idx < 24) hourData[idx] = h; });
   const bestHour = hourData.reduce((a, b) => b.ingresos > a.ingresos ? b : a, hourData[0]);
-  const peakBlock = hourData.filter(h => h.ordenes > 10).map(h => h.hora).join('-');
+  const operativo = hourData.filter(h => h.hora >= '15' || h.hora <= '02');
+  const activeHours = operativo.filter(h => h.ordenes > 0).length;
+  const totalHoras = operativo.length;
+
+  // Color mapping: green (peak) → yellow → red (dead)
+  const maxIngreso = Math.max(...operativo.map(h => h.ingresos), 1);
+  function horaColor(monto: number) {
+    const pct = monto / maxIngreso;
+    if (pct >= 0.5) return '#22c55e';   // verde — peak
+    if (pct >= 0.15) return '#eab308';  // amarillo — medio
+    if (pct >= 0.02) return '#f97316';  // naranja — bajo
+    return '#ef4444';                    // rojo — muerto
+  }
 
   return (
     <div className="space-y-5 py-4">
@@ -161,43 +173,77 @@ export default function AnalisisSection({ onHeaderConfig }: { onHeaderConfig?: (
         </ResponsiveContainer>
       </div>
 
-      {/* Hourly + Day of week side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <Clock className="h-4 w-4 text-red-500" /> Distribución Horaria (12 meses)
-          </h3>
-          <div className="mb-2 flex items-center gap-3 text-xs text-gray-500">
-            <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-green-500" /> {data.horas_activas}/24 hrs activas</span>
-            {bestHour && <span>Peak: <strong>{bestHour.hora}:00</strong> · {formatCLP(bestHour.ingresos)}</span>}
-          </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={hourData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="hora" tick={{ fontSize: 9 }} interval={2} />
-              <YAxis tickFormatter={(v: any) => `$${((v as number) / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: any) => formatCLP(v as number)} labelFormatter={(h: any) => `${h}:00`} />
-              <Bar dataKey="ingresos" name="Ingresos" fill="#3b82f6" radius={[2, 2, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+      {/* Hourly analysis: 15h-02h with costs */}
+      <div className="rounded-xl border bg-white p-4 shadow-sm">
+        <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+          <Clock className="h-4 w-4 text-red-500" /> Distribución Horaria (12 meses) — Staff 5p: 2 cajeras + 2 plancheros + 1 admin
+        </h3>
+        <div className="mb-2 flex flex-wrap items-center gap-4 text-xs text-gray-500">
+          <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-green-500" /> {activeHours}/{totalHoras}h activas (15h-02h)</span>
+          {bestHour && <span>Peak: <strong>{bestHour.hora}:00</strong> · {formatCLP(bestHour.ingresos)} · {bestHour.ordenes} pedidos</span>}
+          <span>Staff: $1,500,000/mes · Arriendo: $500,000/mes</span>
         </div>
 
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-purple-500" /> Ventas por Día de la Semana
-          </h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={data.dia_semana}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="dia" tick={{ fontSize: 10 }} />
-              <YAxis tickFormatter={(v: any) => `$${((v as number) / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: any, name: any, props: any) => {
-                if (name === 'Ingresos') return formatCLP(v as number);
-                return [v, name];
-              }} />
-              <Bar dataKey="ingresos" name="Ingresos" fill="#a855f7" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        {/* Color legend */}
+        <div className="flex items-center gap-3 mb-3 text-[10px]">
+          <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-[#22c55e]" /> Peak (&gt;50%)</span>
+          <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-[#eab308]" /> Medio (15-50%)</span>
+          <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-[#f97316]" /> Bajo (2-15%)</span>
+          <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-[#ef4444]" /> Muerto (&lt;2%)</span>
+        </div>
+
+        <ResponsiveContainer width="100%" height={230}>
+          <BarChart data={operativo}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis dataKey="hora" tick={{ fontSize: 11 }} interval={0} />
+            <YAxis tickFormatter={(v: any) => (v === 0 ? '0' : `$${((v as number) / 1000000).toFixed(1)}M`)} tick={{ fontSize: 9 }} />
+            <Tooltip
+              formatter={(v: any) => formatCLP(v as number)}
+              labelFormatter={(h: any) => `${h}:00 - ${h}:59`}
+              contentStyle={{ fontSize: 11 }}
+            />
+            <Bar
+              dataKey="ingresos"
+              name="Ingresos"
+              shape={(props: any) => {
+                const { x, y, width, height, payload } = props;
+                const fill = horaColor(payload.ingresos);
+                return <rect x={x} y={y} width={width} height={height} fill={fill} rx={2} ry={2} />;
+              }}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+
+        {/* Hour-by-hour breakdown with costs */}
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-[11px]">
+            <thead>
+              <tr className="border-b text-left text-gray-400">
+                <th className="py-1 pr-2 font-medium">Hora</th>
+                <th className="py-1 pr-2 font-medium text-right">Pedidos</th>
+                <th className="py-1 pr-2 font-medium text-right">Ingresos</th>
+                <th className="py-1 pr-2 font-medium text-right">CMV</th>
+                <th className="py-1 pr-2 font-medium text-right">Staff</th>
+                <th className="py-1 pr-2 font-medium text-right">Fijo</th>
+                <th className="py-1 pr-2 font-medium text-right">Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {operativo.map((h) => (
+                <tr key={h.hora} className={cn("border-b last:border-0", h.resultado < 0 ? "bg-red-50/30" : "bg-green-50/30")}>
+                  <td className="py-1 pr-2 font-medium">{h.hora}:00</td>
+                  <td className="py-1 pr-2 text-right">{h.ordenes}</td>
+                  <td className="py-1 pr-2 text-right">{formatCLP(h.ingresos)}</td>
+                  <td className="py-1 pr-2 text-right text-gray-500">{formatCLP(h.cmv)}</td>
+                  <td className="py-1 pr-2 text-right text-gray-500">{formatCLP(h.costo_staff)}</td>
+                  <td className="py-1 pr-2 text-right text-gray-500">{formatCLP(h.costo_fijo)}</td>
+                  <td className={cn("py-1 pr-2 text-right font-semibold", h.resultado >= 0 ? "text-green-700" : "text-red-600")}>
+                    {formatCLP(h.resultado)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
