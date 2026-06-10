@@ -150,22 +150,6 @@ class AnalisisController extends Controller
             ->get()
             ->keyBy('hora');
 
-        $dias = (int) max($inicio->diffInDays($fin), 1);
-
-        // Staff diario: $1,500,000/mes / 30 = $50,000/día. Arriendo: $500,000/mes / 30 = $16,667/día.
-        // 3 personas en peak (18-22h), 1 persona en valle (15-17, 23-00), 0 en madrugada.
-        // Persona-horas por día: 3×4h + 1×5h = 12 + 5 = 17 persona-horas
-        // Costo por persona-hora: $50,000 / 17 = $2,941
-        $staffPorHora = fn(string $h): int => match(true) {
-            $h >= '18' && $h <= '22' => (int) round(3 * 2941),
-            ($h >= '15' && $h <= '17') || $h === '23' || $h === '00' => (int) round(1 * 2941),
-            default => 0,
-        };
-        $fijoPorHora = fn(string $h): int => match(true) {
-            $h >= '15' || $h <= '02' => (int) round(16667 / 11),
-            default => 0,
-        };
-
         $horas = [];
         for ($h = 0; $h < 24; $h++) {
             $hPad = str_pad($h, 2, '0', STR_PAD_LEFT);
@@ -173,18 +157,16 @@ class AnalisisController extends Controller
             $c = $cmv->get($hPad);
             $ingresos = (float) ($v->ingresos ?? 0);
             $cmvVal = (float) ($c->cmv ?? 0);
-            $staffDia = $staffPorHora($hPad);
-            $fijoDia = $fijoPorHora($hPad);
+            $margen = $ingresos - $cmvVal;
+            $pctMargen = $ingresos > 0 ? round($margen / $ingresos * 100, 1) : 0;
 
             $horas[] = [
                 'hora' => $hPad,
                 'ordenes' => (int) ($v->ordenes ?? 0),
                 'ingresos' => $ingresos,
                 'cmv' => (float) round($cmvVal),
-                'costo_staff' => (int) round($staffDia * $dias),
-                'costo_fijo' => (int) round($fijoDia * $dias),
-                'costo_total' => (int) round(($staffDia + $fijoDia) * $dias),
-                'resultado' => (int) round($ingresos - $cmvVal - ($staffDia + $fijoDia) * $dias),
+                'margen' => (int) round($margen),
+                'pct_margen' => $pctMargen,
             ];
         }
         return $horas;
@@ -461,6 +443,25 @@ class AnalisisController extends Controller
         $productosState = DB::table('products')
             ->selectRaw("COUNT(*) as total, SUM(CASE WHEN is_active=1 THEN 1 ELSE 0 END) as activos, SUM(CASE WHEN is_active=0 THEN 1 ELSE 0 END) as inactivos")
             ->first();
+
+        // Gastos operacionales reales 12 meses (gas, limpieza, servicios, mermas, otros)
+        $gastos = DB::table('compras')
+            ->where('estado', 'pagado')
+            ->whereIn('tipo_compra', ['gas','limpieza','servicios','mermas','otros'])
+            ->whereBetween('fecha_compra', [$inicio, $fin])
+            ->selectRaw("COALESCE(SUM(monto_total), 0) as total")
+            ->first();
+        $gastosOperacion = (float) ($gastos->total ?? 0);
+
+        // Nómina mensual real de personal activo
+        $nominaRow = DB::table('personal')
+            ->where('activo', 1)
+            ->selectRaw('COALESCE(SUM(sueldo_base_cajero + sueldo_base_planchero + sueldo_base_admin + sueldo_base_seguridad), 0) as total')
+            ->first();
+        $nominaMensual = (float) ($nominaRow->total ?? 0);
+        $nominaAnual = $nominaMensual * 12;
+
+        $resultadoNeto = round($ventasCmv - $costoCmv - $nominaAnual - $gastosOperacion);
 
         $recomendaciones = [];
         $horasMuertas = $this->horasSinVentas($horas);

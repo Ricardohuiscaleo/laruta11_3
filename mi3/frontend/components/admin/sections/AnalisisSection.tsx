@@ -40,7 +40,7 @@ interface AnualData {
     id: number; nombre: string; cantidad: number; pedidos: number;
     ingresos: number; costo: number; margen: number; pct_margen: number;
   }[];
-  horas: { hora: string; ordenes: number; ingresos: number; cmv: number; costo_staff: number; costo_fijo: number; costo_total: number; resultado: number }[];
+  horas: { hora: string; ordenes: number; ingresos: number; cmv: number; margen: number; pct_margen: number }[];
   horas_muertas: string[];
   horas_activas: number;
   dia_semana: { dia: string; ordenes: number; ingresos: number; ticket: number }[];
@@ -120,10 +120,9 @@ export default function AnalisisSection({ onHeaderConfig }: { onHeaderConfig?: (
   if (!data) return null;
 
   const r = data.resumen;
-  const hourData = Array.from({ length: 24 }, (_, i) => ({ hora: String(i).padStart(2, '0'), ordenes: 0, ingresos: 0, cmv: 0, costo_staff: 0, costo_fijo: 0, costo_total: 0, resultado: 0 }));
+  const hourData = Array.from({ length: 24 }, (_, i) => ({ hora: String(i).padStart(2, '0'), ordenes: 0, ingresos: 0, cmv: 0, margen: 0, pct_margen: 0 }));
   data.horas.forEach(h => { const idx = parseInt(h.hora); if (idx >= 0 && idx < 24) hourData[idx] = h; });
   const bestHour = hourData.reduce((a, b) => b.ingresos > a.ingresos ? b : a, hourData[0]);
-  // Orden: 15 16 17 18 19 20 21 22 23 00 01 02
   const ordenHorario = ['15','16','17','18','19','20','21','22','23','00','01','02'];
   const operativo = ordenHorario.map(h => hourData.find(x => x.hora === h)!);
   const activeHours = operativo.filter(h => h.ordenes > 0).length;
@@ -216,7 +215,7 @@ export default function AnalisisSection({ onHeaderConfig }: { onHeaderConfig?: (
           </BarChart>
         </ResponsiveContainer>
 
-        {/* Hour-by-hour breakdown with costs */}
+        {/* Hour-by-hour breakdown real data only */}
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-[11px]">
             <thead>
@@ -225,23 +224,19 @@ export default function AnalisisSection({ onHeaderConfig }: { onHeaderConfig?: (
                 <th className="py-1 pr-2 font-medium text-right">Pedidos</th>
                 <th className="py-1 pr-2 font-medium text-right">Ingresos</th>
                 <th className="py-1 pr-2 font-medium text-right">CMV</th>
-                <th className="py-1 pr-2 font-medium text-right">Staff</th>
-                <th className="py-1 pr-2 font-medium text-right">Fijo</th>
-                <th className="py-1 pr-2 font-medium text-right">Resultado</th>
+                <th className="py-1 pr-2 font-medium text-right">Margen</th>
+                <th className="py-1 pr-2 font-medium text-right">%Mg</th>
               </tr>
             </thead>
             <tbody>
               {operativo.map((h) => (
-                <tr key={h.hora} className={cn("border-b last:border-0", h.resultado < 0 ? "bg-red-50/30" : "bg-green-50/30")}>
+                <tr key={h.hora} className={cn("border-b last:border-0", h.margen < 0 ? "bg-red-50/30" : "bg-green-50/30")}>
                   <td className="py-1 pr-2 font-medium">{h.hora}:00</td>
                   <td className="py-1 pr-2 text-right">{h.ordenes}</td>
                   <td className="py-1 pr-2 text-right">{formatCLP(h.ingresos)}</td>
                   <td className="py-1 pr-2 text-right text-gray-500">{formatCLP(h.cmv)}</td>
-                  <td className="py-1 pr-2 text-right text-gray-500">{formatCLP(h.costo_staff)}</td>
-                  <td className="py-1 pr-2 text-right text-gray-500">{formatCLP(h.costo_fijo)}</td>
-                  <td className={cn("py-1 pr-2 text-right font-semibold", h.resultado >= 0 ? "text-green-700" : "text-red-600")}>
-                    {formatCLP(h.resultado)}
-                  </td>
+                  <td className={cn("py-1 pr-2 text-right font-semibold", h.margen >= 0 ? "text-green-700" : "text-red-600")}>{formatCLP(h.margen)}</td>
+                  <td className={cn("py-1 pr-2 text-right", h.pct_margen >= 40 ? "text-green-600" : h.pct_margen >= 20 ? "text-amber-600" : "text-red-600")}>{h.pct_margen}%</td>
                 </tr>
               ))}
             </tbody>
