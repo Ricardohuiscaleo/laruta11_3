@@ -150,6 +150,18 @@ class AnalisisController extends Controller
             ->get()
             ->keyBy('hora');
 
+        $dias = (int) max($inicio->diffInDays($fin), 30);
+
+        // Staff real: 2 cajeras(300) + 2 plancheros(300) + 1 admin(300) = $1,500,000/mes → $50,000/día
+        // Operativo 15h-02h = 11h/día. Peak 18-22 = 4h (3 personas). Resto = 1 persona turno.
+        $costoStaffHora = [
+            '18-22_peak' => 9375,   // 3 personas × $3,125
+            '15-17_low' => 2000,    // 1 persona
+            '23-00_low' => 2000,
+            '01-02_noche' => 0,    // sin staff
+        ];
+        $costoFijoHora = 694; // $500K/mes ÷ 30 ÷ ~24h (pero solo activo en horario operativo)
+
         $horas = [];
         for ($h = 0; $h < 24; $h++) {
             $hPad = str_pad($h, 2, '0', STR_PAD_LEFT);
@@ -158,30 +170,27 @@ class AnalisisController extends Controller
             $ingresos = (float) ($v->ingresos ?? 0);
             $cmvVal = (float) ($c->cmv ?? 0);
 
-            // Staff: 2 cajeras + 2 plancheros + 1 admin = $1,500,000/mes → $50,000/día
-            // Operativo 12h/día (15-02, con 01-02 mínimo) → ~$4,167/hr promedio
-            // Peak: 3 personas (18-22) × $3,125/hr = $9,375/hr
-            // Low: 1 persona (resto) × $2,000/hr
-            $costoStaff = match(true) {
+            // Staff por hora × días del período (12 meses = 365 días)
+            $costoStaffUnitario = match(true) {
                 $hPad >= '18' && $hPad <= '22' => 9375,
                 $hPad >= '15' && $hPad <= '17' => 2000,
                 $hPad == '23' || $hPad == '00' => 2000,
                 default => 0,
             };
-            $costoArriendo = match(true) {
-                $hPad >= '15' || $hPad <= '02' => 694, // $500K/mes ÷ 30 ÷ 12h activas
-                default => 0,
-            };
+            $costoStaffTotal = $costoStaffUnitario * $dias;
+
+            $usaFijo = ($hPad >= '15' || $hPad <= '02');
+            $costoFijoTotal = $usaFijo ? $costoFijoHora * $dias : 0;
 
             $horas[] = [
                 'hora' => $hPad,
                 'ordenes' => (int) ($v->ordenes ?? 0),
                 'ingresos' => $ingresos,
                 'cmv' => (float) round($cmvVal),
-                'costo_staff' => $costoStaff,
-                'costo_fijo' => $costoArriendo,
-                'costo_total' => round($costoStaff + $costoArriendo),
-                'resultado' => (int) round($ingresos - $cmvVal - $costoStaff - $costoArriendo),
+                'costo_staff' => (int) $costoStaffTotal,
+                'costo_fijo' => (int) round($costoFijoTotal),
+                'costo_total' => (int) round($costoStaffTotal + $costoFijoTotal),
+                'resultado' => (int) round($ingresos - $cmvVal - $costoStaffTotal - $costoFijoTotal),
             ];
         }
         return $horas;
