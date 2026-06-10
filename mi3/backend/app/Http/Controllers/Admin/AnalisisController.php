@@ -150,17 +150,21 @@ class AnalisisController extends Controller
             ->get()
             ->keyBy('hora');
 
-        $dias = (int) max($inicio->diffInDays($fin), 30);
+        $dias = (int) max($inicio->diffInDays($fin), 1);
 
-        // Staff real: 2 cajeras(300) + 2 plancheros(300) + 1 admin(300) = $1,500,000/mes → $50,000/día
-        // Operativo 15h-02h = 11h/día. Peak 18-22 = 4h (3 personas). Resto = 1 persona turno.
-        $costoStaffHora = [
-            '18-22_peak' => 9375,   // 3 personas × $3,125
-            '15-17_low' => 2000,    // 1 persona
-            '23-00_low' => 2000,
-            '01-02_noche' => 0,    // sin staff
-        ];
-        $costoFijoHora = 694; // $500K/mes ÷ 30 ÷ ~24h (pero solo activo en horario operativo)
+        // Staff diario: $1,500,000/mes / 30 = $50,000/día. Arriendo: $500,000/mes / 30 = $16,667/día.
+        // 3 personas en peak (18-22h), 1 persona en valle (15-17, 23-00), 0 en madrugada.
+        // Persona-horas por día: 3×4h + 1×5h = 12 + 5 = 17 persona-horas
+        // Costo por persona-hora: $50,000 / 17 = $2,941
+        $staffPorHora = fn(string $h): int => match(true) {
+            $h >= '18' && $h <= '22' => (int) round(3 * 2941),
+            ($h >= '15' && $h <= '17') || $h === '23' || $h === '00' => (int) round(1 * 2941),
+            default => 0,
+        };
+        $fijoPorHora = fn(string $h): int => match(true) {
+            $h >= '15' || $h <= '02' => (int) round(16667 / 11),
+            default => 0,
+        };
 
         $horas = [];
         for ($h = 0; $h < 24; $h++) {
@@ -169,28 +173,18 @@ class AnalisisController extends Controller
             $c = $cmv->get($hPad);
             $ingresos = (float) ($v->ingresos ?? 0);
             $cmvVal = (float) ($c->cmv ?? 0);
-
-            // Staff por hora × días del período (12 meses = 365 días)
-            $costoStaffUnitario = match(true) {
-                $hPad >= '18' && $hPad <= '22' => 9375,
-                $hPad >= '15' && $hPad <= '17' => 2000,
-                $hPad == '23' || $hPad == '00' => 2000,
-                default => 0,
-            };
-            $costoStaffTotal = $costoStaffUnitario * $dias;
-
-            $usaFijo = ($hPad >= '15' || $hPad <= '02');
-            $costoFijoTotal = $usaFijo ? $costoFijoHora * $dias : 0;
+            $staffDia = $staffPorHora($hPad);
+            $fijoDia = $fijoPorHora($hPad);
 
             $horas[] = [
                 'hora' => $hPad,
                 'ordenes' => (int) ($v->ordenes ?? 0),
                 'ingresos' => $ingresos,
                 'cmv' => (float) round($cmvVal),
-                'costo_staff' => (int) $costoStaffTotal,
-                'costo_fijo' => (int) round($costoFijoTotal),
-                'costo_total' => (int) round($costoStaffTotal + $costoFijoTotal),
-                'resultado' => (int) round($ingresos - $cmvVal - $costoStaffTotal - $costoFijoTotal),
+                'costo_staff' => (int) round($staffDia * $dias),
+                'costo_fijo' => (int) round($fijoDia * $dias),
+                'costo_total' => (int) round(($staffDia + $fijoDia) * $dias),
+                'resultado' => (int) round($ingresos - $cmvVal - ($staffDia + $fijoDia) * $dias),
             ];
         }
         return $horas;
