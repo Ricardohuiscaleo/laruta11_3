@@ -36,27 +36,23 @@ try {
     
     $s3Manager = new S3Manager($config);
     $file = $_FILES['image'];
-    $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'jpg';
-    $fileName = 'products/' . uniqid() . '_' . time() . '.' . $ext;
+    $fileName = 'products/' . uniqid() . '_' . time() . '.webp';
     
     $originalSize = filesize($file['tmp_name']);
     $imageUrl = $s3Manager->uploadFile($file, $fileName);
     
     // Calculate compression info
     $compressionInfo = '';
-    if ($originalSize > 500000) {
-        // Estimate compressed size (real compression happens in S3Manager)
-        $estimatedFinalSize = $originalSize * 0.15; // Aproximadamente 85% de compresión
-        $compressionRatio = round((($originalSize - $estimatedFinalSize) / $originalSize) * 100, 1);
-        $compressionInfo = "Comprimida ~{$compressionRatio}% (" . round($originalSize/1024, 1) . "KB → ~" . round($estimatedFinalSize/1024, 1) . "KB). ";
-    }
+    $estimatedFinalSize = $originalSize * 0.15;
+    $compressionRatio = round((($originalSize - $estimatedFinalSize) / $originalSize) * 100, 1);
+    $compressionInfo = "Comprimida ~{$compressionRatio}% (" . round($originalSize/1024, 1) . "KB → ~" . round($estimatedFinalSize/1024, 1) . "KB). ";
     
     echo json_encode([
         'success' => true,
         'url' => $imageUrl,
         'original_size' => $originalSize,
-        'final_size' => isset($estimatedFinalSize) ? $estimatedFinalSize : $originalSize,
-        'compressed' => $originalSize > 500000,
+        'final_size' => $estimatedFinalSize,
+        'compressed' => true,
         'compression_info' => $compressionInfo,
         'message' => $compressionInfo . 'Subida exitosa a AWS S3: ' . $imageUrl
     ]);

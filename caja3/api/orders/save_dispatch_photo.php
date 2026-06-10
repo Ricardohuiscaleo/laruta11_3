@@ -36,7 +36,7 @@ try {
         throw new Exception('S3Manager no encontrado');
 
     $orderId = intval($_POST['order_id']);
-    $fileName = 'despacho/pedido_' . $orderId . '_' . time() . '.jpg';
+    $fileName = 'despacho/pedido_' . $orderId . '_' . time() . '.webp';
     $url = $s3Manager->uploadFile($_FILES['photo'], $fileName);
 
     $pdo = new PDO(

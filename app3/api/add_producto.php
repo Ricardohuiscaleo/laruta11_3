@@ -71,8 +71,7 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     try {
         $s3Manager = new S3Manager($config);
         $file = $_FILES['image'];
-        $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'jpg';
-        $fileName = 'products/' . uniqid() . '_' . time() . '.' . $ext;
+        $fileName = 'products/' . uniqid() . '_' . time() . '.webp';
         
         $image_url = $s3Manager->uploadFile($file, $fileName);
         

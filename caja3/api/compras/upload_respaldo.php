@@ -64,7 +64,7 @@ try {
     $compra_id = $_POST['compra_id'];
     $s3Manager = new S3Manager($config);
     $file = $_FILES['image'];
-    $fileName = 'compras/respaldo_' . $compra_id . '_' . time() . '.jpg';
+    $fileName = 'compras/respaldo_' . $compra_id . '_' . time() . '.webp';
     
     $originalSize = $file['size'];
     $imageUrl = $s3Manager->uploadFile($file, $fileName);

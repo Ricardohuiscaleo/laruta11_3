@@ -28,7 +28,7 @@ class S3Manager {
         }
     }
     
-    private function compressImage($sourcePath, $quality = 85, $maxWidth = 1200, $maxHeight = 800) {
+    private function compressImage($sourcePath, $quality = 85, $maxWidth = 800, $maxHeight = 2000) {
         $imageInfo = getimagesize($sourcePath);
         if (!$imageInfo) throw new Exception('No se pudo leer la información de la imagen');
         
@@ -46,20 +46,13 @@ class S3Manager {
         $newHeight = intval($height * $ratio);
         $compressed = imagecreatetruecolor($newWidth, $newHeight);
         
-        if ($type == IMAGETYPE_PNG || $type == IMAGETYPE_GIF) {
-            imagealphablending($compressed, false);
-            imagesavealpha($compressed, true);
-            imagefilledrectangle($compressed, 0, 0, $newWidth, $newHeight, imagecolorallocatealpha($compressed, 255, 255, 255, 127));
-        }
+        imagealphablending($compressed, false);
+        imagesavealpha($compressed, true);
+        imagefilledrectangle($compressed, 0, 0, $newWidth, $newHeight, imagecolorallocatealpha($compressed, 255, 255, 255, 127));
         imagecopyresampled($compressed, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
         
-        $tempFile = tempnam(sys_get_temp_dir(), 'compressed_');
-        switch ($type) {
-            case IMAGETYPE_JPEG: imagejpeg($compressed, $tempFile, $quality); break;
-            case IMAGETYPE_PNG:  imagepng($compressed, $tempFile, 9 - intval($quality / 10)); break;
-            case IMAGETYPE_GIF:  imagegif($compressed, $tempFile); break;
-            case IMAGETYPE_WEBP: imagewebp($compressed, $tempFile, $quality); break;
-        }
+        $tempFile = tempnam(sys_get_temp_dir(), 'compressed_') . '.webp';
+        imagewebp($compressed, $tempFile, $quality);
         imagedestroy($source);
         imagedestroy($compressed);
         return $tempFile;
@@ -111,8 +104,10 @@ class S3Manager {
         $filePath = $file['tmp_name'];
         $originalSize = filesize($filePath);
         
-        if ($compress && $originalSize > 500000) {
+        if ($compress && strpos($mimeType, 'image/') === 0) {
             $filePath = $this->compressImage($filePath);
+            $key = preg_replace('/\.\w+$/', '.webp', $key);
+            $mimeType = 'image/webp';
         }
         
         $endpoint = $this->config['s3_endpoint'] ?? null;
@@ -200,7 +195,7 @@ class S3Manager {
             }
         }
         
-        if ($compress && $originalSize > 500000 && $filePath !== $file['tmp_name']) {
+        if ($filePath !== $file['tmp_name']) {
             @unlink($filePath);
         }
         

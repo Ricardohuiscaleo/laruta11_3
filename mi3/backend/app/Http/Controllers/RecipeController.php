@@ -375,8 +375,42 @@ class RecipeController extends Controller
             $product = \App\Models\Product::findOrFail($productId);
 
             $file = $request->file('image');
-            $ext = $file->getClientOriginalExtension() ?: 'jpg';
-            $key = "products/producto_{$productId}_" . time() . ".{$ext}";
+            $key = "products/producto_{$productId}_" . time() . ".webp";
+
+            // Convert to WebP with GD, resize to max 800px width
+            $imageInfo = @getimagesize($file->getRealPath());
+            if ($imageInfo) {
+                [$width, $height] = $imageInfo;
+                $maxWidth = 800;
+                $ratio = min($maxWidth / $width, 1);
+                $newWidth = intval($width * $ratio);
+                $newHeight = intval($height * $ratio);
+                $source = match ($imageInfo[2]) {
+                    IMAGETYPE_JPEG => @imagecreatefromjpeg($file->getRealPath()),
+                    IMAGETYPE_PNG  => @imagecreatefrompng($file->getRealPath()),
+                    IMAGETYPE_GIF  => @imagecreatefromgif($file->getRealPath()),
+                    IMAGETYPE_WEBP => @imagecreatefromwebp($file->getRealPath()),
+                    default        => null,
+                };
+                if ($source) {
+                    $webp = imagecreatetruecolor($newWidth, $newHeight);
+                    imagealphablending($webp, false);
+                    imagesavealpha($webp, true);
+                    imagefilledrectangle($webp, 0, 0, $newWidth, $newHeight, imagecolorallocatealpha($webp, 255, 255, 255, 127));
+                    imagecopyresampled($webp, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+                    $tempFile = tempnam(sys_get_temp_dir(), 'product_webp_') . '.webp';
+                    imagewebp($webp, $tempFile, 85);
+                    imagedestroy($source);
+                    imagedestroy($webp);
+                    $body = file_get_contents($tempFile);
+                    @unlink($tempFile);
+                } else {
+                    $body = file_get_contents($file->getRealPath());
+                }
+            } else {
+                $body = file_get_contents($file->getRealPath());
+            }
+            $contentType = 'image/webp';
 
             // Read credentials from config (same source as ImagenService)
             $bucket = config('filesystems.disks.s3.bucket', env('AWS_BUCKET', 'laruta11-images'));
@@ -387,9 +421,6 @@ class RecipeController extends Controller
             $awsUrl = config('filesystems.disks.s3.url', env('AWS_URL', ''));
             $s3Url = env('S3_URL', $awsUrl);
             $usePathStyle = config('filesystems.disks.s3.use_path_style_endpoint', env('AWS_USE_PATH_STYLE_ENDPOINT', false));
-
-            $body = file_get_contents($file->getRealPath());
-            $contentType = $file->getMimeType() ?: 'image/jpeg';
 
             // SigV4 signed PUT (bucket policy handles public read)
             if ($endpoint) {
