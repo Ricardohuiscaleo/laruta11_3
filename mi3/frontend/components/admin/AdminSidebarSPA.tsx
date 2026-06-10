@@ -5,7 +5,7 @@ import {
   Home, Users, Calendar, Receipt, SlidersHorizontal,
   CreditCard, ArrowLeftRight, LogOut, Clock, Truck,
   Bell, Wallet, ShoppingCart, ClipboardCheck, ChevronLeft, ChevronRight,
-  ChefHat, DollarSign, Settings, ChevronDown,
+  ChefHat, DollarSign, Settings, ChevronDown, TrendingUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/auth';
@@ -30,7 +30,7 @@ const sidebarGroups: SidebarGroup[] = [
     id: 'general',
     label: 'General',
     links: [
-      { key: 'inicio', label: 'Inicio', icon: Home },
+      { key: 'inicio', label: 'Operación', icon: Home },
       { key: 'notificaciones', label: 'Alertas', icon: Bell },
     ],
   },
@@ -64,6 +64,7 @@ const sidebarGroups: SidebarGroup[] = [
       { key: 'delivery', label: 'Delivery', icon: Truck },
       { key: 'delivery-config', label: 'Config', icon: Settings },
       { key: 'checklists', label: 'Checklists', icon: ClipboardCheck },
+      { key: 'analisis', label: 'Análisis', icon: TrendingUp },
     ],
   },
   {

@@ -16,7 +16,7 @@ export type SectionKey =
   | 'inicio' | 'personal' | 'turnos' | 'nomina' | 'ajustes'
   | 'creditos' | 'cambios' | 'cronjobs' | 'delivery' | 'delivery-config'
   | 'notificaciones' | 'adelantos' | 'compras' | 'checklists'
-  | 'recetas' | 'capital' | 'ventas';
+  | 'recetas' | 'capital' | 'ventas' | 'analisis';
 
 /* ─── Header config that sections can provide ─── */
 
@@ -55,6 +55,7 @@ const SECTION_TITLES: Record<SectionKey, string> = {
   recetas: 'Recetas',
   capital: 'Capital de Trabajo',
   ventas: 'Ventas',
+  analisis: 'Análisis',
 };
 
 /* ─── Accent styles for tabs ─── */
@@ -87,6 +88,7 @@ const sectionImports: Record<SectionKey, React.LazyExoticComponent<React.Compone
   recetas: lazy(() => import('@/components/admin/sections/RecetasSection')),
   capital: lazy(() => import('@/components/admin/sections/CapitalTrabajoSection')),
   ventas: lazy(() => import('@/components/admin/sections/VentasSection')),
+  analisis: lazy(() => import('@/components/admin/sections/AnalisisSection')),
 };
 
 /* ─── URL ↔ Section mapping ─── */

@@ -5,7 +5,7 @@ import {
   Home, Users, Calendar, Bell, MoreHorizontal, LogOut,
   Truck, Wallet, ShoppingCart, Receipt, ClipboardCheck,
   SlidersHorizontal, CreditCard, ArrowLeftRight, Clock,
-  ChefHat, DollarSign, Settings,
+  ChefHat, DollarSign, Settings, TrendingUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/auth';
@@ -39,6 +39,7 @@ const secondaryItems: NavItem[] = [
   { key: 'cambios', label: 'Cambios', icon: ArrowLeftRight },
   { key: 'cronjobs', label: 'Cronjobs', icon: Clock },
   { key: 'capital', label: 'Capital', icon: Wallet },
+  { key: 'analisis', label: 'Análisis', icon: TrendingUp },
 ];
 
 interface MobileBottomNavSPAProps {

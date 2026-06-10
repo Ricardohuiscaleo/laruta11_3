@@ -288,6 +288,10 @@ Route::prefix('v1')->group(function () {
         Route::patch('productos/bulk-price', [\App\Http\Controllers\Admin\ProductBulkController::class, 'bulkPrice']);
         Route::delete('productos/bulk-delete', [\App\Http\Controllers\Admin\ProductBulkController::class, 'bulkDelete']);
 
+        // Análisis estratégico
+        Route::get('analisis/resumen', [\App\Http\Controllers\Admin\AnalisisController::class, 'resumen']);
+        Route::get('analisis/mensual', [\App\Http\Controllers\Admin\AnalisisController::class, 'mensual']);
+
         // Combos (combo component management)
         Route::get('combos', [\App\Http\Controllers\Admin\ComboController::class, 'index']);
         Route::post('combos', [\App\Http\Controllers\Admin\ComboController::class, 'create']);
