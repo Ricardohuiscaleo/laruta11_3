@@ -5,103 +5,109 @@ import dynamic from 'next/dynamic';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
 import {
-  Loader2, TrendingUp, TrendingDown, Clock, Package, Truck,
+  Loader2, TrendingUp, TrendingDown, Clock, Truck,
   AlertTriangle, BarChart3, Calendar, DollarSign, ShoppingBag,
+  Zap, ShieldAlert, Package, Percent,
 } from 'lucide-react';
 import type { SectionHeaderConfig } from '@/components/admin/AdminShell';
 
 const BarChart = dynamic(() => import('recharts').then(m => m.BarChart), { ssr: false });
 const Bar = dynamic(() => import('recharts').then(m => m.Bar), { ssr: false });
+const LineChart = dynamic(() => import('recharts').then(m => m.LineChart), { ssr: false });
+const Line = dynamic(() => import('recharts').then(m => m.Line), { ssr: false });
 const XAxis = dynamic(() => import('recharts').then(m => m.XAxis), { ssr: false });
 const YAxis = dynamic(() => import('recharts').then(m => m.YAxis), { ssr: false });
 const Tooltip = dynamic(() => import('recharts').then(m => m.Tooltip), { ssr: false });
 const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
-const LineChart = dynamic(() => import('recharts').then(m => m.LineChart), { ssr: false });
-const Line = dynamic(() => import('recharts').then(m => m.Line), { ssr: false });
 const CartesianGrid = dynamic(() => import('recharts').then(m => m.CartesianGrid), { ssr: false });
 const Legend = dynamic(() => import('recharts').then(m => m.Legend), { ssr: false });
+const ComposedChart = dynamic(() => import('recharts').then(m => m.ComposedChart), { ssr: false });
 
-interface AnalisisData {
-  mes: string;
-  ventas_totales: number;
-  total_ordenes: number;
-  ticket_promedio: number;
-  compras_mes: number;
-  resultado_estimado: number;
+interface Recomendacion { tipo: string; texto: string; severidad: string; }
+
+interface AnualData {
+  periodo: { desde: string; hasta: string };
+  resumen: {
+    ordenes: number; ventas: number; ticket: number; compras: number;
+    delivery_fees: number; cmv: number; margen_bruto: number;
+    pct_margen: number; fuga_compras: number; pct_fuga: number;
+  };
+  historial: {
+    mes: string; ordenes: number; ventas: number; compras: number;
+    delivery_fees: number; cmv: number; margen: number; pct_margen: number; ticket: number;
+  }[];
+  top_productos: {
+    id: number; nombre: string; cantidad: number; pedidos: number;
+    ingresos: number; costo: number; margen: number; pct_margen: number;
+  }[];
   horas: { hora: string; ordenes: number; ingresos: number }[];
-  top_productos: { id: number; nombre: string; cantidad: number; pedidos: number; ingresos: number }[];
-  bottom_productos: { id: number; nombre: string; cantidad: number; precio: number }[];
-  delivery_impact: { tipos: { tipo: string; ordenes: number; pct_ordenes: number; ingresos: number; ingresos_sin_envio: number; fee_envio: number }[]; total_delivery_fees: number };
-  dia_semana: { dia: string; ordenes: number; ingresos: number }[];
-  historial_mensual: { mes: string; ordenes: number; ingresos: number; fee_envio: number }[];
+  horas_muertas: string[];
+  horas_activas: number;
+  dia_semana: { dia: string; ordenes: number; ingresos: number; ticket: number }[];
   productos: { total: number; activos: number; inactivos: number };
+  recomendaciones: Recomendacion[];
 }
 
 const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 function nombreMes(ym: string) {
   const [y, m] = ym.split('-');
-  return `${meses[parseInt(m) - 1]} ${y}`;
+  return `${meses[parseInt(m) - 1]}`;
+}
+
+function nombreMesCorto(ym: string) {
+  const [y, m] = ym.split('-');
+  return `${meses[parseInt(m) - 1].substring(0, 3)}`;
 }
 
 function KpiCard({ label, value, sub, color, icon: Icon }: { label: string; value: string; sub?: string; color: string; icon: React.ComponentType<{ className?: string }> }) {
   return (
-    <div className="rounded-xl border bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</span>
-        <Icon className={cn('h-5 w-5', color)} />
+    <div className="rounded-xl border bg-white p-3 shadow-sm">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">{label}</span>
+        <Icon className={cn('h-4 w-4', color)} />
       </div>
-      <div className={cn('text-2xl font-bold', color.replace('text-', 'text-'))}>{value}</div>
-      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+      <div className="text-xl font-bold">{value}</div>
+      {sub && <p className="text-[11px] text-gray-400 mt-0.5">{sub}</p>}
     </div>
   );
 }
 
+function SeveridadBadge({ severidad }: { severidad: string }) {
+  const map: Record<string, { bg: string; text: string; label: string }> = {
+    alta:   { bg: 'bg-red-100', text: 'text-red-700', label: 'Crítico' },
+    media:  { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Alerta' },
+    baja:   { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Info' },
+  };
+  const s = map[severidad] || map.baja;
+  return <span className={cn('text-[10px] px-1.5 py-0.5 rounded font-semibold uppercase shrink-0', s.bg, s.text)}>{s.label}</span>;
+}
+
+const CHART_COLORS = ['#22c55e', '#3b82f6', '#f97316', '#a855f7', '#ef4444'];
+
 export default function AnalisisSection({ onHeaderConfig }: { onHeaderConfig?: (config: SectionHeaderConfig) => void }) {
-  const [data, setData] = useState<AnalisisData | null>(null);
+  const [data, setData] = useState<AnualData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  });
 
-  useEffect(() => {
-    onHeaderConfig?.({ accent: 'red' });
-  }, [onHeaderConfig]);
+  useEffect(() => { onHeaderConfig?.({ accent: 'red' }); }, [onHeaderConfig]);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
-      const res = await apiFetch<{ success: boolean; data: AnalisisData; error?: string }>(`/admin/analisis/resumen?month=${selectedMonth}`);
+      const res = await apiFetch<{ success: boolean; data: AnualData; error?: string }>('/admin/analisis/anual');
       if (res.success) setData(res.data);
       else setError(res.error || 'Error al cargar datos');
-    } catch (e) {
+    } catch {
       setError('Error de conexión al servidor');
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedMonth]);
+    } finally { setLoading(false); }
+  }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const changeMonth = (delta: number) => {
-    const [y, m] = selectedMonth.split('-').map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
-    setSelectedMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-  };
-
-  const isCurrentMonth = selectedMonth === (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`; })();
-
   if (loading && !data) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-red-500" />
-      </div>
-    );
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-red-500" /></div>;
   }
-
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -111,85 +117,59 @@ export default function AnalisisSection({ onHeaderConfig }: { onHeaderConfig?: (
       </div>
     );
   }
-
   if (!data) return null;
 
-  const hourData = Array.from({ length: 24 }, (_, i) => {
-    const h = String(i).padStart(2, '0');
-    const found = data.horas.find(x => x.hora === h);
-    return { hora: h, ordenes: found?.ordenes || 0, ingresos: found?.ingresos || 0 };
-  });
-
-  const bestHour = [...hourData].sort((a, b) => b.ingresos - a.ingresos)[0];
-  const worstHours = hourData.filter(h => h.ordenes === 0).map(h => `${h.hora}:00`);
-  const activeHours = hourData.filter(h => h.ordenes > 0).length;
-
-  const topProducts = data.top_productos.slice(0, 5);
-  const bottomProducts = data.bottom_productos.slice(0, 5);
-
-  const hasDelivery = data.delivery_impact?.tipos?.some((t: any) => t.tipo === 'delivery');
-  const deliveryData = data.delivery_impact?.tipos || [];
-
-  const historial = data.historial_mensual || [];
-  const maxIngreso = Math.max(...historial.map(h => h.ingresos), 1);
+  const r = data.resumen;
+  const hourData = Array.from({ length: 24 }, (_, i) => ({ hora: String(i).padStart(2, '0'), ordenes: 0, ingresos: 0 }));
+  data.horas.forEach(h => { const idx = parseInt(h.hora); if (idx >= 0 && idx < 24) hourData[idx] = h; });
+  const bestHour = hourData.reduce((a, b) => b.ingresos > a.ingresos ? b : a, hourData[0]);
+  const peakBlock = hourData.filter(h => h.ordenes > 10).map(h => h.hora).join('-');
 
   return (
-    <div className="space-y-6 py-4">
-      {/* Month selector */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button onClick={() => changeMonth(-1)} className="px-3 py-1.5 text-sm font-medium rounded-lg border hover:bg-gray-50 transition-colors">&larr;</button>
-          <span className="text-base font-semibold text-gray-800 min-w-[140px] text-center">
-            {nombreMes(data.mes)}
-            {isCurrentMonth && <span className="ml-2 text-xs text-amber-500 font-normal">(parcial)</span>}
-          </span>
-          <button onClick={() => changeMonth(1)} disabled={isCurrentMonth} className={cn("px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors", isCurrentMonth ? "opacity-30 cursor-not-allowed" : "hover:bg-gray-50")}>&rarr;</button>
-        </div>
+    <div className="space-y-5 py-4">
+      {/* Periodo header */}
+      <div className="flex items-center gap-2 text-sm text-gray-500">
+        <Calendar className="h-4 w-4" />
+        <span>Análisis acumulado: <strong className="text-gray-700">{nombreMes(data.periodo.desde)} {data.periodo.desde.split('-')[0]}</strong> → <strong className="text-gray-700">{nombreMes(data.periodo.hasta)} {data.periodo.hasta.split('-')[0]}</strong></span>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiCard label="Ventas" value={formatCLP(data.ventas_totales)} sub={`${data.total_ordenes} pedidos`} color="text-green-600" icon={TrendingUp} />
-        <KpiCard label="Ticket Promedio" value={formatCLP(data.ticket_promedio)} sub="por pedido" color="text-blue-600" icon={DollarSign} />
-        <KpiCard label="Compras" value={formatCLP(data.compras_mes)} sub="insumos del mes" color="text-red-600" icon={ShoppingBag} />
-        <KpiCard label="Resultado" value={formatCLP(data.resultado_estimado)} sub={data.resultado_estimado >= 0 ? "superávit estimado" : "déficit estimado"} color={data.resultado_estimado >= 0 ? "text-green-600" : "text-red-600"} icon={BarChart3} />
+      {/* KPI Cards — top row */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <KpiCard label="Ventas totales" value={formatCLP(r.ventas)} sub={`${r.ordenes} pedidos · ticket ${formatCLP(r.ticket)}`} color="text-green-600" icon={TrendingUp} />
+        <KpiCard label="Margen bruto" value={formatCLP(r.margen_bruto)} sub={`${r.pct_margen}% margen`} color={r.pct_margen >= 40 ? "text-green-600" : "text-amber-600"} icon={Percent} />
+        <KpiCard label="Compras" value={formatCLP(r.compras)} sub={`CMV real: ${formatCLP(r.cmv)}`} color="text-red-600" icon={ShoppingBag} />
+        <KpiCard label="Delivery fees" value={formatCLP(r.delivery_fees)} sub={`${r.compras > 0 ? ((r.delivery_fees / r.ventas) * 100).toFixed(1) : 0}% del revenue`} color="text-orange-600" icon={Truck} />
+        <KpiCard label="Fuga compras" value={formatCLP(r.fuga_compras)} sub={`${r.pct_fuga}% de lo comprado`} color={r.pct_fuga > 10 ? "text-red-600" : "text-amber-600"} icon={AlertTriangle} />
       </div>
 
-      {/* Two-column layout for larger screens */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Monthly trend — sales + CMV + margin */}
+      <div className="rounded-xl border bg-white p-4 shadow-sm">
+        <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-red-500" /> Evolución Mensual — Ingresos, CMV y Margen
+        </h3>
+        <ResponsiveContainer width="100%" height={240}>
+          <ComposedChart data={data.historial}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis dataKey="mes" tickFormatter={nombreMesCorto} tick={{ fontSize: 10 }} interval={0} />
+            <YAxis tickFormatter={(v: any) => `$${((v as number) / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
+            <Tooltip formatter={(v: any) => formatCLP(v as number)} labelFormatter={(ym: any) => nombreMes(ym as string)} />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Bar dataKey="ventas" name="Ventas" fill="#22c55e" radius={[2, 2, 0, 0]} />
+            <Bar dataKey="cmv" name="CMV" fill="#ef4444" radius={[2, 2, 0, 0]} />
+            <Line type="monotone" dataKey="delivery_fees" name="Fee Delivery" stroke="#f97316" strokeWidth={2} dot={{ r: 3 }} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
 
-        {/* Monthly trend */}
+      {/* Hourly + Day of week side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="rounded-xl border bg-white p-4 shadow-sm">
           <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-red-500" />
-            Tendencia Mensual (últimos 12 meses)
-          </h3>
-          {historial.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={historial}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="mes" tickFormatter={nombreMes} tick={{ fontSize: 10 }} interval={2} />
-                <YAxis tickFormatter={(v: any) => `$${((v as number) / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(v: any) => formatCLP(v as number)} labelFormatter={(ym: any) => nombreMes(ym as string)} />
-                <Legend />
-                <Bar dataKey="ingresos" name="Ingresos" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="fee_envio" name="Fee Delivery" fill="#f97316" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-sm text-gray-400 py-8 text-center">Sin datos históricos</p>
-          )}
-        </div>
-
-        {/* Hourly distribution */}
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <Clock className="h-4 w-4 text-red-500" />
-            Distribución por Hora
+            <Clock className="h-4 w-4 text-red-500" /> Distribución Horaria (12 meses)
           </h3>
           <div className="mb-2 flex items-center gap-3 text-xs text-gray-500">
-            <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-green-500" /> {activeHours}/24 hrs activas</span>
-            {bestHour && <span>Mejor hora: <strong>{bestHour.hora}:00</strong></span>}
+            <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-green-500" /> {data.horas_activas}/24 hrs activas</span>
+            {bestHour && <span>Peak: <strong>{bestHour.hora}:00</strong> · {formatCLP(bestHour.ingresos)}</span>}
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={hourData}>
@@ -200,150 +180,98 @@ export default function AnalisisSection({ onHeaderConfig }: { onHeaderConfig?: (
               <Bar dataKey="ingresos" name="Ingresos" fill="#3b82f6" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-          {worstHours.length > 0 && (
-            <p className="text-xs text-gray-400 mt-2">
-              Horas sin ventas en este período: {worstHours.join(', ')}
-            </p>
-          )}
+        </div>
+
+        <div className="rounded-xl border bg-white p-4 shadow-sm">
+          <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-purple-500" /> Ventas por Día de la Semana
+          </h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={data.dia_semana}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="dia" tick={{ fontSize: 10 }} />
+              <YAxis tickFormatter={(v: any) => `$${((v as number) / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
+              <Tooltip formatter={(v: any, name: any, props: any) => {
+                if (name === 'Ingresos') return formatCLP(v as number);
+                return [v, name];
+              }} />
+              <Bar dataKey="ingresos" name="Ingresos" fill="#a855f7" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Products section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top products */}
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-green-500" />
-            Top Productos
-          </h3>
-          {topProducts.length > 0 ? (
-            <div className="space-y-1.5">
-              {topProducts.map((p, i) => (
-                <div key={p.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-gray-50">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className={cn("h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0", i === 0 ? "bg-amber-500" : i === 1 ? "bg-gray-400" : i === 2 ? "bg-orange-600" : "bg-gray-200 text-gray-500")}>{i + 1}</span>
-                    <span className="text-sm truncate">{p.nombre}</span>
-                  </div>
-                  <div className="text-right shrink-0 ml-2">
-                    <span className="text-sm font-semibold">{p.cantidad} uds</span>
-                    <span className="text-xs text-gray-400 ml-2">{formatCLP(p.ingresos)}</span>
-                  </div>
-                </div>
+      {/* Top productos — full profitability table */}
+      <div className="rounded-xl border bg-white p-4 shadow-sm">
+        <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+          <Package className="h-4 w-4 text-green-500" /> Top Productos por Rentabilidad (12 meses)
+        </h3>
+        <p className="text-xs text-gray-400 mb-3">Ordenado por unidades vendidas. Margen = ingresos − costo ingredientes.</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b text-left text-gray-500">
+                <th className="py-2 pr-3 font-medium">#</th>
+                <th className="py-2 pr-3 font-medium">Producto</th>
+                <th className="py-2 pr-3 font-medium text-right">Vendidos</th>
+                <th className="py-2 pr-3 font-medium text-right">Ingresos</th>
+                <th className="py-2 pr-3 font-medium text-right">Costo</th>
+                <th className="py-2 pr-3 font-medium text-right">Margen</th>
+                <th className="py-2 pr-3 font-medium text-right">%Mg</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.top_productos.map((p, i) => (
+                <tr key={p.id} className={cn("border-b last:border-0 hover:bg-gray-50", i % 2 === 0 ? "bg-white" : "bg-gray-50/50")}>
+                  <td className="py-1.5 pr-3 text-gray-400">{i + 1}</td>
+                  <td className="py-1.5 pr-3 font-medium text-gray-800 max-w-[180px] truncate">{p.nombre}</td>
+                  <td className="py-1.5 pr-3 text-right">{p.cantidad}</td>
+                  <td className="py-1.5 pr-3 text-right">{formatCLP(p.ingresos)}</td>
+                  <td className="py-1.5 pr-3 text-right text-gray-500">{formatCLP(p.costo)}</td>
+                  <td className={cn("py-1.5 pr-3 text-right font-semibold", p.margen >= 0 ? "text-green-700" : "text-red-600")}>{formatCLP(p.margen)}</td>
+                  <td className={cn("py-1.5 pr-3 text-right font-semibold", p.pct_margen >= 40 ? "text-green-600" : p.pct_margen >= 20 ? "text-amber-600" : "text-red-600")}>{p.pct_margen}%</td>
+                </tr>
               ))}
-            </div>
-          ) : <p className="text-sm text-gray-400 py-4 text-center">Sin ventas este mes</p>}
-        </div>
-
-        {/* Bottom products */}
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <TrendingDown className="h-4 w-4 text-red-500" />
-            Productos Sin Rotación
-          </h3>
-          {bottomProducts.length > 0 ? (
-            <div className="space-y-1.5">
-              {bottomProducts.map(p => (
-                <div key={p.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-gray-50">
-                  <span className="text-sm truncate">{p.nombre}</span>
-                  <div className="text-right shrink-0 ml-2">
-                    <span className="text-xs font-medium text-red-500">0 vendidos</span>
-                    {p.precio > 0 && <span className="text-xs text-gray-400 ml-2">{formatCLP(p.precio)}</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : <p className="text-sm text-gray-400 py-4 text-center">Sin datos</p>}
-          <p className="text-xs text-gray-400 mt-3">
-            {data.productos.activos} productos activos · {data.bottom_productos.length} con 0 ventas este mes
-          </p>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* Delivery impact */}
-      {deliveryData.length > 0 && (
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
+      {/* Strategic recommendations */}
+      {data.recomendaciones.length > 0 && (
+        <div className="rounded-xl border-l-4 border-l-red-500 bg-red-50 p-4">
           <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <Truck className="h-4 w-4 text-orange-500" />
-            Impacto Delivery
+            <ShieldAlert className="h-4 w-4 text-red-500" /> Recomendaciones Estratégicas (basado en 12 meses de datos)
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {deliveryData.map((t: any) => (
-              <div key={t.tipo} className="p-3 rounded-lg bg-gray-50">
-                <p className="text-xs text-gray-500 uppercase font-medium">{t.tipo === 'pickup' ? 'Retiro' : t.tipo === 'delivery' ? 'Delivery' : t.tipo}</p>
-                <p className="text-lg font-bold mt-1">{t.pct_ordenes}%</p>
-                <p className="text-xs text-gray-400">{t.ordenes} pedidos · {formatCLP(t.ingresos_sin_envio)}</p>
-                {t.tipo === 'delivery' && t.fee_envio > 0 && (
-                  <p className="text-xs text-amber-600 font-medium mt-1">Fee total: {formatCLP(t.fee_envio)}</p>
-                )}
+          <div className="space-y-2">
+            {data.recomendaciones.map((rec, i) => (
+              <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-white/60">
+                <SeveridadBadge severidad={rec.severidad} />
+                <span className="text-sm text-gray-800">{rec.texto}</span>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Day of week */}
-      {data.dia_semana.length > 0 && (
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-purple-500" />
-            Ventas por Día de la Semana
-          </h3>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={data.dia_semana}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="dia" tick={{ fontSize: 10 }} />
-              <YAxis tickFormatter={(v: any) => `$${((v as number) / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: any) => formatCLP(v as number)} />
-              <Bar dataKey="ingresos" name="Ingresos" fill="#a855f7" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+      {/* Productos inactivos / summary footer */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="rounded-xl border bg-white p-3 shadow-sm flex items-center gap-3">
+          <Package className="h-5 w-5 text-gray-400 shrink-0" />
+          <div><p className="text-[11px] text-gray-500">Productos activos</p><p className="text-lg font-bold">{data.productos.activos}</p></div>
         </div>
-      )}
-
-      {/* Strategic recommendations */}
-      <div className="rounded-xl border-l-4 border-l-amber-500 bg-amber-50 p-4">
-        <h3 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-amber-500" />
-          Puntos Clave
-        </h3>
-        <ul className="space-y-1.5 text-sm text-gray-700">
-          {worstHours.length > 3 && (
-            <li className="flex items-start gap-2">
-              <span className="text-amber-500 mt-0.5">•</span>
-              <span><strong>{worstHours.length} horas</strong> sin actividad comercial este mes. Evaluar reducción de horario operacional.</span>
-            </li>
-          )}
-          {activeHours > 0 && bestHour && (
-            <li className="flex items-start gap-2">
-              <span className="text-amber-500 mt-0.5">•</span>
-              <span>El pico de ventas es a las <strong>{bestHour.hora}:00</strong> con {formatCLP(bestHour.ingresos)}. Concentrar personal en horas punta.</span>
-            </li>
-          )}
-          {hasDelivery && (
-            <li className="flex items-start gap-2">
-              <span className="text-amber-500 mt-0.5">•</span>
-              <span>Delivery representa <strong>{deliveryData.find((t: any) => t.tipo === 'delivery')?.pct_ordenes}%</strong> de pedidos. Fee total: {formatCLP(data.delivery_impact.total_delivery_fees)}. Evaluar impacto en precio final.</span>
-            </li>
-          )}
-          {bottomProducts.length > 5 && (
-            <li className="flex items-start gap-2">
-              <span className="text-amber-500 mt-0.5">•</span>
-              <span><strong>{data.bottom_productos.length} productos</strong> sin ventas este mes. Revisar rotación y considerar dar de baja o replantear receta.</span>
-            </li>
-          )}
-          {data.productos.inactivos > 0 && (
-            <li className="flex items-start gap-2">
-              <span className="text-amber-500 mt-0.5">•</span>
-              <span><strong>{data.productos.inactivos} productos</strong> están inactivos. Evaluar si reactivar o eliminar definitivamente para simplificar inventario.</span>
-            </li>
-          )}
-          {data.compras_mes > data.ventas_totales * 0.4 && (
-            <li className="flex items-start gap-2">
-              <span className="text-red-500 mt-0.5">•</span>
-              <span className="text-red-800">Las compras representan <strong>{((data.compras_mes / data.ventas_totales) * 100).toFixed(0)}%</strong> de las ventas. Revisar costos de insumos y mermas.</span>
-            </li>
-          )}
-        </ul>
+        <div className="rounded-xl border bg-white p-3 shadow-sm flex items-center gap-3">
+          <TrendingDown className="h-5 w-5 text-gray-400 shrink-0" />
+          <div><p className="text-[11px] text-gray-500">Productos inactivos</p><p className="text-lg font-bold text-red-500">{data.productos.inactivos}</p></div>
+        </div>
+        <div className="rounded-xl border bg-white p-3 shadow-sm flex items-center gap-3">
+          <Clock className="h-5 w-5 text-gray-400 shrink-0" />
+          <div><p className="text-[11px] text-gray-500">Horas sin ventas 12m</p><p className="text-lg font-bold text-red-500">{data.horas_muertas.length}</p></div>
+        </div>
+        <div className="rounded-xl border bg-white p-3 shadow-sm flex items-center gap-3">
+          <Truck className="h-5 w-5 text-gray-400 shrink-0" />
+          <div><p className="text-[11px] text-gray-500">Fee delivery 12m</p><p className="text-lg font-bold text-orange-500">{formatCLP(r.delivery_fees)}</p></div>
+        </div>
       </div>
     </div>
   );

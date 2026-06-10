@@ -272,7 +272,6 @@ class AnalisisController extends Controller
 
         $ventas = $this->ventasDelMes($mesInicio, $mesFin);
 
-        // Products this month
         $productos = DB::table('tuu_order_items as oi')
             ->join('tuu_orders as o', 'oi.order_reference', '=', 'o.order_number')
             ->where('o.payment_status', 'paid')
@@ -312,5 +311,201 @@ class AnalisisController extends Controller
             'compras' => $compras,
             'horas' => $horas,
         ]]);
+    }
+
+    public function anual(): JsonResponse
+    {
+        $inicio = now()->subMonths(12)->startOfMonth();
+        $fin = now();
+
+        $resumen = DB::table('tuu_orders')
+            ->where('payment_status', 'paid')
+            ->where('order_number', 'NOT LIKE', 'RL6-%')
+            ->whereBetween('created_at', [$inicio, $fin])
+            ->selectRaw('COUNT(*) as ordenes')
+            ->selectRaw('COALESCE(SUM(installment_amount), 0) as ventas')
+            ->selectRaw('COALESCE(SUM(delivery_fee), 0) as delivery_fees')
+            ->first();
+
+        $comprasTotales = (float) DB::table('compras')
+            ->where('estado', 'pagado')
+            ->whereBetween('fecha_compra', [$inicio, $fin])
+            ->sum('monto_total');
+
+        $cmv = DB::table('tuu_order_items as oi')
+            ->join('tuu_orders as o', 'oi.order_reference', '=', 'o.order_number')
+            ->where('o.payment_status', 'paid')
+            ->where('o.order_number', 'NOT LIKE', 'RL6-%')
+            ->whereBetween('o.created_at', [$inicio, $fin])
+            ->selectRaw('COALESCE(SUM(oi.item_cost * oi.quantity), 0) as costo')
+            ->selectRaw('COALESCE(SUM(oi.subtotal), 0) as ventas')
+            ->first();
+
+        $costoCmv = (float) ($cmv->costo ?? 0);
+        $ventasCmv = (float) ($cmv->ventas ?? 0);
+        $pctMargen = $ventasCmv > 0 ? round(($ventasCmv - $costoCmv) / $ventasCmv * 100, 1) : 0;
+        $fugaCompras = round($comprasTotales - $costoCmv);
+
+        $historial = $this->historialConCompras($inicio, $fin);
+
+        $topProductos = $this->topProductosAnual($inicio, $fin, 15);
+
+        $horas = $this->horasConVentas($inicio, $fin);
+
+        $diaSemana = DB::table('tuu_orders')
+            ->where('payment_status', 'paid')
+            ->where('order_number', 'NOT LIKE', 'RL6-%')
+            ->whereBetween('created_at', [$inicio, $fin])
+            ->selectRaw("DATE_FORMAT(created_at, '%W') as dia")
+            ->selectRaw('COUNT(*) as ordenes')
+            ->selectRaw('COALESCE(SUM(installment_amount), 0) as ingresos')
+            ->selectRaw('ROUND(COALESCE(SUM(installment_amount), 0) / NULLIF(COUNT(*), 0)) as ticket')
+            ->groupByRaw("DAYOFWEEK(created_at), DATE_FORMAT(created_at, '%W')")
+            ->orderByRaw('DAYOFWEEK(created_at)')
+            ->get()
+            ->map(fn($r) => [
+                'dia' => $r->dia,
+                'ordenes' => (int) $r->ordenes,
+                'ingresos' => (float) $r->ingresos,
+                'ticket' => (int) $r->ticket,
+            ]);
+
+        $productosState = DB::table('products')
+            ->selectRaw("COUNT(*) as total, SUM(CASE WHEN is_active=1 THEN 1 ELSE 0 END) as activos, SUM(CASE WHEN is_active=0 THEN 1 ELSE 0 END) as inactivos")
+            ->first();
+
+        $recomendaciones = [];
+        $horasMuertas = $this->horasSinVentas($horas);
+        if (count($horasMuertas) > 5) {
+            $recomendaciones[] = ['tipo' => 'horario', 'texto' => count($horasMuertas) . ' horas sin ventas en 12 meses. Horario operativo debe ser 18-23h. Reducción inmediata.', 'severidad' => 'alta'];
+        }
+        if ($fugaCompras > 100000) {
+            $recomendaciones[] = ['tipo' => 'mermas', 'texto' => 'Fuga de $' . number_format($fugaCompras, 0, ',', '.') . ' en compras vs costo de productos vendidos. Mermas, sobre-stock o packaging sin asignar.', 'severidad' => 'alta'];
+        }
+        if ($historial->count() > 2) {
+            $ultimos = $historial->slice(-3)->values();
+            if ($ultimos[0]['ventas'] < $ultimos[1]['ventas'] * 0.8 && $ultimos[1]['ventas'] < $ultimos[2]['ventas'] * 0.8) {
+                $recomendaciones[] = ['tipo' => 'tendencia', 'texto' => '2 meses consecutivos de caída en ventas. Tendencia bajista. Revisar estrategia comercial.', 'severidad' => 'alta'];
+            }
+        }
+        $recomendaciones[] = ['tipo' => 'delivery', 'texto' => 'Fees de delivery acumulados: $' . number_format((float) $resumen->delivery_fees, 0, ',', '.') . ' en 12 meses. Promover pickup con descuento directo.', 'severidad' => 'media'];
+        $recomendaciones[] = ['tipo' => 'productos', 'texto' => (int) $productosState->inactivos . ' productos inactivos de ' . (int) $productosState->total . '. Depurar catálogo o reactivar con estrategia.', 'severidad' => 'media'];
+
+        return response()->json(['success' => true, 'data' => [
+            'periodo' => ['desde' => $inicio->format('Y-m'), 'hasta' => now()->format('Y-m')],
+            'resumen' => [
+                'ordenes' => (int) ($resumen->ordenes ?? 0),
+                'ventas' => (float) ($resumen->ventas ?? 0),
+                'ticket' => ($resumen->ordenes ?? 0) > 0 ? round($resumen->ventas / $resumen->ordenes) : 0,
+                'compras' => $comprasTotales,
+                'delivery_fees' => (float) ($resumen->delivery_fees ?? 0),
+                'cmv' => $costoCmv,
+                'margen_bruto' => round($ventasCmv - $costoCmv),
+                'pct_margen' => $pctMargen,
+                'fuga_compras' => $fugaCompras,
+                'pct_fuga' => $comprasTotales > 0 ? round($fugaCompras / $comprasTotales * 100, 1) : 0,
+            ],
+            'historial' => $historial,
+            'top_productos' => $topProductos,
+            'horas' => $horas,
+            'horas_muertas' => $horasMuertas,
+            'horas_activas' => $horas->filter(fn($h) => $h['ordenes'] > 0)->count(),
+            'dia_semana' => $diaSemana,
+            'productos' => ['total' => (int) $productosState->total, 'activos' => (int) $productosState->activos, 'inactivos' => (int) $productosState->inactivos],
+            'recomendaciones' => $recomendaciones,
+        ]]);
+    }
+
+    private function historialConCompras($inicio, $fin): \Illuminate\Support\Collection
+    {
+        $ventas = DB::table('tuu_orders')
+            ->where('payment_status', 'paid')
+            ->where('order_number', 'NOT LIKE', 'RL6-%')
+            ->whereBetween('created_at', [$inicio, $fin])
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as mes")
+            ->selectRaw('COUNT(*) as ordenes')
+            ->selectRaw('COALESCE(SUM(installment_amount), 0) as ventas')
+            ->selectRaw('COALESCE(SUM(delivery_fee), 0) as delivery_fees')
+            ->groupBy('mes')->orderBy('mes')->get()
+            ->keyBy('mes');
+
+        $compras = DB::table('compras')
+            ->where('estado', 'pagado')
+            ->whereBetween('fecha_compra', [$inicio, $fin])
+            ->selectRaw("DATE_FORMAT(fecha_compra, '%Y-%m') as mes")
+            ->selectRaw('COALESCE(SUM(monto_total), 0) as compras')
+            ->groupBy('mes')->orderBy('mes')->get()
+            ->keyBy('mes');
+
+        $cmv = DB::table('tuu_order_items as oi')
+            ->join('tuu_orders as o', 'oi.order_reference', '=', 'o.order_number')
+            ->where('o.payment_status', 'paid')
+            ->where('o.order_number', 'NOT LIKE', 'RL6-%')
+            ->whereBetween('o.created_at', [$inicio, $fin])
+            ->selectRaw("DATE_FORMAT(o.created_at, '%Y-%m') as mes")
+            ->selectRaw('COALESCE(SUM(oi.item_cost * oi.quantity), 0) as cmv')
+            ->groupBy('mes')->orderBy('mes')->get()
+            ->keyBy('mes');
+
+        $result = collect();
+        for ($i = 11; $i >= 0; $i--) {
+            $mes = now()->subMonths($i)->format('Y-m');
+            $v = $ventas->get($mes);
+            $c = $compras->get($mes);
+            $m = $cmv->get($mes);
+            $ventasMes = (float) ($v->ventas ?? 0);
+            $cmvMes = (float) ($m->cmv ?? 0);
+            $result->push([
+                'mes' => $mes,
+                'ordenes' => (int) ($v->ordenes ?? 0),
+                'ventas' => $ventasMes,
+                'compras' => (float) ($c->compras ?? 0),
+                'delivery_fees' => (float) ($v->delivery_fees ?? 0),
+                'cmv' => $cmvMes,
+                'margen' => round($ventasMes - $cmvMes),
+                'pct_margen' => $ventasMes > 0 ? round(($ventasMes - $cmvMes) / $ventasMes * 100, 1) : 0,
+                'ticket' => ($v->ordenes ?? 0) > 0 ? round($ventasMes / $v->ordenes) : 0,
+            ]);
+        }
+
+        return $result;
+    }
+
+    private function topProductosAnual($inicio, $fin, int $limit): array
+    {
+        return DB::table('tuu_order_items as oi')
+            ->join('tuu_orders as o', 'oi.order_reference', '=', 'o.order_number')
+            ->where('o.payment_status', 'paid')
+            ->where('o.order_number', 'NOT LIKE', 'RL6-%')
+            ->whereBetween('o.created_at', [$inicio, $fin])
+            ->selectRaw('oi.product_id, oi.product_name, SUM(oi.quantity) as cantidad, COUNT(DISTINCT oi.order_reference) as pedidos, SUM(oi.subtotal) as ingresos, COALESCE(SUM(oi.item_cost * oi.quantity), 0) as costo')
+            ->groupBy('oi.product_id', 'oi.product_name')
+            ->orderByDesc('cantidad')
+            ->limit($limit)
+            ->get()
+            ->map(fn($r) => [
+                'id' => (int) $r->product_id,
+                'nombre' => $r->product_name,
+                'cantidad' => (int) $r->cantidad,
+                'pedidos' => (int) $r->pedidos,
+                'ingresos' => (float) $r->ingresos,
+                'costo' => (float) $r->costo,
+                'margen' => (float) $r->ingresos - (float) $r->costo,
+                'pct_margen' => (float) $r->ingresos > 0 ? round(((float) $r->ingresos - (float) $r->costo) / (float) $r->ingresos * 100, 1) : 0,
+            ])
+            ->toArray();
+    }
+
+    private function horasSinVentas($horas): array
+    {
+        $todas = array_fill_keys(array_map(fn($i) => str_pad($i, 2, '0', STR_PAD_LEFT), range(0, 23)), 0);
+        foreach ($horas as $h) {
+            $todas[$h['hora']] = $h['ordenes'];
+        }
+        $muertas = [];
+        foreach ($todas as $h => $c) {
+            if ($c === 0) $muertas[] = $h . ':00';
+        }
+        return $muertas;
     }
 }

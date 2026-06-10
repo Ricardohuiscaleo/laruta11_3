@@ -291,6 +291,7 @@ Route::prefix('v1')->group(function () {
         // Análisis estratégico
         Route::get('analisis/resumen', [\App\Http\Controllers\Admin\AnalisisController::class, 'resumen']);
         Route::get('analisis/mensual', [\App\Http\Controllers\Admin\AnalisisController::class, 'mensual']);
+        Route::get('analisis/anual', [\App\Http\Controllers\Admin\AnalisisController::class, 'anual']);
 
         // Combos (combo component management)
         Route::get('combos', [\App\Http\Controllers\Admin\ComboController::class, 'index']);
