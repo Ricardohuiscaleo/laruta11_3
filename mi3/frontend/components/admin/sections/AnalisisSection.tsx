@@ -123,7 +123,9 @@ export default function AnalisisSection({ onHeaderConfig }: { onHeaderConfig?: (
   const hourData = Array.from({ length: 24 }, (_, i) => ({ hora: String(i).padStart(2, '0'), ordenes: 0, ingresos: 0, cmv: 0, costo_staff: 0, costo_fijo: 0, costo_total: 0, resultado: 0 }));
   data.horas.forEach(h => { const idx = parseInt(h.hora); if (idx >= 0 && idx < 24) hourData[idx] = h; });
   const bestHour = hourData.reduce((a, b) => b.ingresos > a.ingresos ? b : a, hourData[0]);
-  const operativo = hourData.filter(h => h.hora >= '15' || h.hora <= '02');
+  // Orden: 15 16 17 18 19 20 21 22 23 00 01 02
+  const ordenHorario = ['15','16','17','18','19','20','21','22','23','00','01','02'];
+  const operativo = ordenHorario.map(h => hourData.find(x => x.hora === h)!);
   const activeHours = operativo.filter(h => h.ordenes > 0).length;
   const totalHoras = operativo.length;
 
