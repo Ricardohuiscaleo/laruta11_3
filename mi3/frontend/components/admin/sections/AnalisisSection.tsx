@@ -74,7 +74,7 @@ export default function AnalisisSection({ onHeaderConfig }: { onHeaderConfig?: (
     setLoading(true);
     setError(null);
     try {
-      const res = await apiFetch(`/admin/analisis/resumen?month=${selectedMonth}`);
+      const res = await apiFetch<{ success: boolean; data: AnalisisData; error?: string }>(`/admin/analisis/resumen?month=${selectedMonth}`);
       if (res.success) setData(res.data);
       else setError(res.error || 'Error al cargar datos');
     } catch (e) {
@@ -169,8 +169,8 @@ export default function AnalisisSection({ onHeaderConfig }: { onHeaderConfig?: (
               <BarChart data={historial}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="mes" tickFormatter={nombreMes} tick={{ fontSize: 10 }} interval={2} />
-                <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(v: number) => formatCLP(v)} labelFormatter={nombreMes} />
+                <YAxis tickFormatter={(v: any) => `$${((v as number) / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
+                <Tooltip formatter={(v: any) => formatCLP(v as number)} labelFormatter={(ym: any) => nombreMes(ym as string)} />
                 <Legend />
                 <Bar dataKey="ingresos" name="Ingresos" fill="#22c55e" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="fee_envio" name="Fee Delivery" fill="#f97316" radius={[4, 4, 0, 0]} />
@@ -195,8 +195,8 @@ export default function AnalisisSection({ onHeaderConfig }: { onHeaderConfig?: (
             <BarChart data={hourData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="hora" tick={{ fontSize: 9 }} interval={2} />
-              <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: number) => formatCLP(v)} labelFormatter={h => `${h}:00`} />
+              <YAxis tickFormatter={(v: any) => `$${((v as number) / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
+              <Tooltip formatter={(v: any) => formatCLP(v as number)} labelFormatter={(h: any) => `${h}:00`} />
               <Bar dataKey="ingresos" name="Ingresos" fill="#3b82f6" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -292,8 +292,8 @@ export default function AnalisisSection({ onHeaderConfig }: { onHeaderConfig?: (
             <BarChart data={data.dia_semana}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="dia" tick={{ fontSize: 10 }} />
-              <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: number) => formatCLP(v)} />
+              <YAxis tickFormatter={(v: any) => `$${((v as number) / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
+              <Tooltip formatter={(v: any) => formatCLP(v as number)} />
               <Bar dataKey="ingresos" name="Ingresos" fill="#a855f7" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
