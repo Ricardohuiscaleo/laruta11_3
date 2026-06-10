@@ -409,7 +409,7 @@ class AnalisisController extends Controller
             'top_productos' => $topProductos,
             'horas' => $horas,
             'horas_muertas' => $horasMuertas,
-            'horas_activas' => $horas->filter(fn($h) => $h['ordenes'] > 0)->count(),
+            'horas_activas' => count(array_filter($horas, fn($h) => $h['ordenes'] > 0)),
             'dia_semana' => $diaSemana,
             'productos' => ['total' => (int) $productosState->total, 'activos' => (int) $productosState->activos, 'inactivos' => (int) $productosState->inactivos],
             'recomendaciones' => $recomendaciones,
