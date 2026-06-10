@@ -365,6 +365,15 @@ const GRADOS_MILITARES = [
         console.error('Error al leer localStorage:', e);
       }
 
+      // Botón Registrarme / Iniciar Sesión
+      var btnAbrirLogin = document.getElementById('btnAbrirLogin');
+      if (btnAbrirLogin) {
+        btnAbrirLogin.addEventListener('click', function() {
+          try { sessionStorage.setItem('rl6_redirect', '/rl6'); } catch(e) {}
+          window.location.href = '/?login=1&redirect=/rl6';
+        });
+      }
+
       // Mostrar pantalla según estado de sesión
       var siLogueado = document.getElementById('siLogueado');
       var modalLoginRequired = document.getElementById('modalLoginRequired');
