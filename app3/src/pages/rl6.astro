@@ -164,6 +164,37 @@ const GRADOS_MILITARES = [
               </div>
               <button type="button" id="btnContinuar" class="px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-lg hover:shadow-lg transition duration-300 transform hover:scale-105">Continuar →</button>
             </div>
+            <!-- RL6 Pendiente: solicitud enviada, aún no aprobada -->
+            <div id="rl6Pendiente" class="hidden">
+              <div class="text-6xl mb-4">🎖️</div>
+              <h3 class="text-2xl font-bold mb-4 text-slate-900">¡Solicitud Enviada!</h3>
+              <div class="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-6 text-left">
+                <p class="text-amber-900 font-semibold mb-2">Tu solicitud de crédito RL6 está en revisión.</p>
+                <ul class="text-sm text-amber-800 space-y-2">
+                  <li>✅ Recibimos tus datos y fotos</li>
+                  <li>👮 El equipo revisará tu información militar</li>
+                  <li>📱 Te notificaremos por Telegram cuando sea aprobado</li>
+                  <li>💳 Una vez aprobado, podrás usarlo en La Ruta 11</li>
+                </ul>
+              </div>
+              <a href="/" class="inline-block px-6 py-3 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition">Volver al inicio</a>
+            </div>
+            <!-- RL6 Aprobado: crédito activo -->
+            <div id="rl6Aprobado" class="hidden text-center">
+              <div class="text-6xl mb-4">✅</div>
+              <h3 class="text-2xl font-bold mb-4 text-green-700">¡Crédito RL6 Aprobado!</h3>
+              <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-white rounded-xl border p-4">
+                  <p class="text-xs text-gray-500 mb-1">Límite</p>
+                  <p id="rl6Limite" class="text-xl font-black text-green-700">$0</p>
+                </div>
+                <div class="bg-white rounded-xl border p-4">
+                  <p class="text-xs text-gray-500 mb-1">Disponible</p>
+                  <p id="rl6Disponible" class="text-xl font-black text-green-600">$0</p>
+                </div>
+              </div>
+              <a href="/" class="inline-block px-6 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition">Ir al menú</a>
+            </div>
           </div>
 
           <form id="formMultiPaso" enctype="multipart/form-data" class="space-y-4 hidden">
@@ -374,15 +405,32 @@ const GRADOS_MILITARES = [
         });
       }
 
-      // Mostrar pantalla según estado de sesión
+      // Mostrar pantalla según estado de sesión y RL6
       var siLogueado = document.getElementById('siLogueado');
       var modalLoginRequired = document.getElementById('modalLoginRequired');
       var nombreUsuario = document.getElementById('nombreUsuario');
+      var rl6Pendiente = document.getElementById('rl6Pendiente');
+      var rl6Aprobado = document.getElementById('rl6Aprobado');
+      var registroSection = document.getElementById('registro');
       
-      if (usuarioLogueado && siLogueado && nombreUsuario) {
-        siLogueado.classList.remove('hidden');
-        var primerNombre = String(usuarioLogueado['nombre'] || '').split(' ')[0];
-        nombreUsuario.textContent = primerNombre;
+      if (usuarioLogueado) {
+        var esRL6 = usuarioLogueado['es_militar_rl6'] == 1 || usuarioLogueado['es_militar_rl6'] === '1';
+        var aprobado = usuarioLogueado['credito_aprobado'] == 1 || usuarioLogueado['credito_aprobado'] === '1';
+        
+        if (esRL6 && aprobado && rl6Aprobado) {
+          if (registroSection) registroSection.style.display = 'none';
+          rl6Aprobado.classList.remove('hidden');
+          var userData = usuarioLogueado;
+          document.getElementById('rl6Limite').textContent = '$' + parseInt(userData['limite_credito'] || 0).toLocaleString('es-CL');
+          document.getElementById('rl6Disponible').textContent = '$' + parseInt((userData['limite_credito'] || 0) - (userData['credito_usado'] || 0)).toLocaleString('es-CL');
+        } else if (esRL6 && rl6Pendiente) {
+          if (registroSection) registroSection.style.display = 'none';
+          rl6Pendiente.classList.remove('hidden');
+        } else if (siLogueado && nombreUsuario) {
+          siLogueado.classList.remove('hidden');
+          var primerNombre = String(usuarioLogueado['nombre'] || '').split(' ')[0];
+          nombreUsuario.textContent = primerNombre;
+        }
       } else if (modalLoginRequired) {
         modalLoginRequired.classList.remove('hidden');
       }
@@ -720,7 +768,7 @@ const GRADOS_MILITARES = [
                 localStorage.setItem('ruta11_user', JSON.stringify(updatedUser));
               }
               
-              window.location.href = '/';
+              window.location.href = '/rl6?registro=exito';
             } else {
               // Verificar si hay bloqueo con cronómetro
               if (result.blocked_until && result.remaining_seconds) {
