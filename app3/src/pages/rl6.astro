@@ -369,8 +369,8 @@ const GRADOS_MILITARES = [
       var btnAbrirLogin = document.getElementById('btnAbrirLogin');
       if (btnAbrirLogin) {
         btnAbrirLogin.addEventListener('click', function() {
-          try { sessionStorage.setItem('rl6_redirect', '/rl6'); } catch(e) {}
-          window.location.href = '/?login=1&redirect=/rl6';
+          try { localStorage.setItem('rl6_redirect', 'true'); } catch(e) {}
+          window.location.href = '/?login=required';
         });
       }
 

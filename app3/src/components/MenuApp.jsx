@@ -2624,6 +2624,22 @@ export default function App() {
             setIsLoginOpen(false);
             loadNotifications();
             loadUserOrders();
+            // Check for rl6 redirect after manual login
+            try {
+              const rl6Redirect = localStorage.getItem('rl6_redirect');
+              if (rl6Redirect === 'true') {
+                localStorage.removeItem('rl6_redirect');
+                window.location.href = '/rl6?login=success';
+                return;
+              }
+            } catch (e) {}
+            try {
+              const r11Redirect = sessionStorage.getItem('r11_redirect');
+              if (r11Redirect) {
+                sessionStorage.removeItem('r11_redirect');
+                window.location.href = r11Redirect + '?login=success';
+              }
+            } catch (e) {}
           }}
           showGuestOption={true}
           onGuestCheckout={handleCheckout}
