@@ -199,6 +199,16 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
     return comboItem.component_customizations[componentIndex].customizations?.filter(c => c.isSauce) || [];
   };
 
+  const getComponentSaucePrice = (sauces) => {
+    if (!sauces || sauces.length <= 1) return 0;
+    return (sauces.length - 1) * SAUCE_PRICE;
+  };
+
+  const getComponentCustoms = (comboItem, componentIndex) => {
+    if (!comboItem.component_customizations || !comboItem.component_customizations[componentIndex]) return [];
+    return comboItem.component_customizations[componentIndex].customizations?.filter(c => !c.isSauce) || [];
+  };
+
   const isComponentSauceSelected = (comboItem, componentIndex, sauceId) => {
     return getComponentSauces(comboItem, componentIndex).some(s => s.id === sauceId);
   };
@@ -214,6 +224,40 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
       comp.customizations = [...otherCustoms, ...currentSauces.filter(s => s.id !== salsa.id)];
     } else {
       comp.customizations = [...otherCustoms, ...currentSauces, { ...salsa, quantity: 1, isSauce: true }];
+    }
+    components[componentIndex] = comp;
+    onUpdateComponentSauces(comboItem.cartItemId, components);
+  };
+
+  const handleComponentCustomAdd = (comboItem, componentIndex, personalizarItem) => {
+    if (!comboItem.component_customizations) return;
+    const components = [...comboItem.component_customizations];
+    const comp = { ...components[componentIndex] };
+    const currentCustoms = comp.customizations || [];
+    const nonSauce = currentCustoms.filter(c => !c.isSauce);
+    const sauces = currentCustoms.filter(c => c.isSauce);
+    const existing = nonSauce.find(c => c.id === personalizarItem.id);
+    if (existing) {
+      comp.customizations = [...nonSauce.map(c => c.id === personalizarItem.id ? { ...c, quantity: c.quantity + 1 } : c), ...sauces];
+    } else {
+      comp.customizations = [...nonSauce, { ...personalizarItem, quantity: 1 }, ...sauces];
+    }
+    components[componentIndex] = comp;
+    onUpdateComponentSauces(comboItem.cartItemId, components);
+  };
+
+  const handleComponentCustomRemove = (comboItem, componentIndex, personalizarItem) => {
+    if (!comboItem.component_customizations) return;
+    const components = [...comboItem.component_customizations];
+    const comp = { ...components[componentIndex] };
+    const currentCustoms = comp.customizations || [];
+    const nonSauce = currentCustoms.filter(c => !c.isSauce);
+    const sauces = currentCustoms.filter(c => c.isSauce);
+    const existing = nonSauce.find(c => c.id === personalizarItem.id);
+    if (existing && existing.quantity > 1) {
+      comp.customizations = [...nonSauce.map(c => c.id === personalizarItem.id ? { ...c, quantity: c.quantity - 1 } : c), ...sauces];
+    } else {
+      comp.customizations = [...nonSauce.filter(c => c.id !== personalizarItem.id), ...sauces];
     }
     components[componentIndex] = comp;
     onUpdateComponentSauces(comboItem.cartItemId, components);
@@ -357,12 +401,54 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                                   const compSauces = getComponentSauces(item, ci);
                                   return (
                                     <div key={ci} className="bg-gray-50 rounded-md p-2">
-                                      <p className="text-xs font-medium text-gray-700 mb-1">{comp.label}</p>
+                                      <div className="flex items-center justify-between mb-1">
+                                        <p className="text-xs font-medium text-gray-700">{comp.label}</p>
+                                        <button
+                                          onClick={() => {
+                                            const key = `${item.cartItemId}-comp-${ci}`;
+                                            toggleExpanded(key);
+                                          }}
+                                          className="text-[10px] text-orange-600 font-semibold hover:underline flex-shrink-0"
+                                        >
+                                          {expandedItems.has(`${item.cartItemId}-comp-${ci}`) ? '▾ Personalizar' : '▸ Personalizar'}
+                                        </button>
+                                      </div>
                                       {compSauces.length > 0 && (
-                                        <div className="flex flex-wrap gap-1 mb-1">
+                                        <div className="flex flex-wrap gap-1 mb-0.5">
                                           {compSauces.map((s, si) => (
-                                            <span key={si} className="text-[10px] text-orange-600 font-medium">• {s.name}</span>
+                                            <span key={si} className="text-[10px] text-orange-600 font-medium">
+                                              • {s.name}
+                                            </span>
                                           ))}
+                                          <span className="text-[10px] text-orange-500 font-medium ml-1">
+                                            {getComponentSaucePrice(compSauces) === 0 ? '(1ra gratis)' : `(+$${getComponentSaucePrice(compSauces).toLocaleString('es-CL')})`}
+                                          </span>
+                                        </div>
+                                      )}
+                                      {expandedItems.has(`${item.cartItemId}-comp-${ci}`) && personalizarItems.length > 0 && (
+                                        <div className="mt-1 mb-1.5 pt-1 border-t border-gray-200 space-y-0.5">
+                                          <p className="text-[9px] font-semibold text-gray-500">EXTRAS:</p>
+                                          {personalizarItems.map(pi => {
+                                            const qty = getComponentCustoms(item, ci).filter(c => c.id === pi.id).reduce((s, c) => s + c.quantity, 0);
+                                            const extrasNonSauce = getComponentCustoms(item, ci);
+                                            const totalExtras = extrasNonSauce.reduce((s, c) => s + c.quantity, 0);
+                                            return (
+                                              <div key={pi.id} className="flex items-center justify-between bg-white rounded-md px-2 py-1">
+                                                <div className="min-w-0 flex-1">
+                                                  <p className="text-[10px] font-medium text-gray-800 truncate">{pi.name}</p>
+                                                  <p className="text-[9px] text-orange-500 font-medium">${pi.price.toLocaleString('es-CL')}</p>
+                                                </div>
+                                                <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                                                  <button onClick={() => handleComponentCustomRemove(item, ci, pi)}
+                                                    className="w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-700 font-bold text-xs">−</button>
+                                                  <span className="w-4 text-center font-bold text-xs text-gray-700">{qty}</span>
+                                                  <button onClick={() => handleComponentCustomAdd(item, ci, pi)}
+                                                    disabled={totalExtras >= 5}
+                                                    className="w-5 h-5 rounded-full bg-orange-500 hover:bg-orange-600 disabled:opacity-30 flex items-center justify-center text-white font-bold text-xs">+</button>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
                                         </div>
                                       )}
                                       {!comp.no_salsas && (
